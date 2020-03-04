@@ -13,7 +13,7 @@ from vispy.visuals.transforms import ChainTransform
 
 from .qt_dims import QtDims
 from .qt_layerlist import QtLayerList
-from ..resources import resources_dir
+from ..resources import combine_stylesheets
 from ..utils.theme import template
 from ..utils.misc import str_to_rgb
 from ..utils.interactions import (
@@ -75,8 +75,7 @@ class QtViewer(QSplitter):
         Button controls for the napari viewer.
     """
 
-    with open(os.path.join(resources_dir, 'stylesheet.qss'), 'r') as f:
-        raw_stylesheet = f.read()
+    raw_stylesheet = combine_stylesheets()
 
     def __init__(self, viewer):
         super().__init__()

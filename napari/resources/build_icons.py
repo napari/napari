@@ -4,6 +4,7 @@ for styling svg elements using qss
 
 run as python -m napari.resources.build_icons"""
 
+from os import listdir, makedirs
 from os.path import join
 
 from ..resources import resources_dir
@@ -16,78 +17,76 @@ insert = """<style type="text/css">
     rect{fill:{{ color }}}
 </style>"""
 
-icons = [
-    '2D',
-    '3D',
-    'add',
-    'console',
-    'copy_to_clipboard',
-    'delete',
-    'delete_shape',
-    'direct',
-    'down_arrow',
+svgpath = join(resources_dir, 'icons', 'svg')
+qrcpath = join(resources_dir, 'res.qrc')
+icons = [i.replace('.svg', '') for i in sorted(listdir(svgpath))]
+
+TEXT_ICONS = ['visibility']
+
+HIGHLIGHT_ICONS = ['visibility_off', 'menu']
+
+SECONDARY_ICONS = [
     'drop_down',
-    'ellipse',
-    'fill',
-    'grid',
-    'home',
-    'left_arrow',
-    'long_right_arrow',
-    'long_left_arrow',
-    'line',
-    'minus',
-    'move_back',
-    'move_front',
-    'new_image',
-    'new_labels',
-    'new_points',
-    'new_shapes',
-    'new_surface',
-    'new_vectors',
-    'paint',
-    'path',
-    'picker',
     'plus',
-    'polygon',
-    'pop_out',
+    'minus',
     'properties_contract',
     'properties_expand',
-    'rectangle',
-    'right_arrow',
-    'roll',
-    'select',
-    'step_left',
-    'step_right',
-    'transpose',
-    'up_arrow',
-    'vertex_insert',
-    'vertex_remove',
-    'visibility',
-    'visibility_off',
-    'zoom',
 ]
 
-for name, palette in palettes.items():
-    for icon in icons:
-        file = icon + '.svg'
-        if icon == 'visibility':
-            css = insert.replace('{{ color }}', palette['text'])
-        elif icon in ['visibility_off', 'menu']:
-            css = insert.replace('{{ color }}', palette['highlight'])
-        elif icon in [
-            'drop_down',
-            'plus',
-            'minus',
-            'properties_contract',
-            'properties_expand',
-        ]:
-            css = insert.replace('{{ color }}', palette['secondary'])
-        else:
-            css = insert.replace('{{ color }}', palette['icon'])
-        with open(join(resources_dir, 'icons', 'svg', file), 'r') as fr:
-            contents = fr.readlines()
-            fr.close()
-            contents.insert(4, css)
-            with open(join(resources_dir, 'icons', name, file), 'w') as fw:
-                fw.write("".join(contents))
-                fw.close()
+
+def build_icons():
+
+    qrc_string = '''
+    <!DOCTYPE RCC>
+    <RCC version="1.0">
+    <qresource>
+        <file>icons/cursor/cursor_disabled.png</file>
+        <file>icons/cursor/cursor_square.png</file>'''
+
+    for name, palette in palettes.items():
+        palette_dir = join(resources_dir, 'icons', name)
+        makedirs(palette_dir, exist_ok=True)
+        for icon in icons:
+            file = icon + '.svg'
+            qrc_string += f'\n    <file>icons/{name}/{file}</file>'
+            if icon in TEXT_ICONS:
+                css = insert.replace('{{ color }}', palette['text'])
+            elif icon in HIGHLIGHT_ICONS:
+                css = insert.replace('{{ color }}', palette['highlight'])
+            elif icon in SECONDARY_ICONS:
+                css = insert.replace('{{ color }}', palette['secondary'])
+            else:
+                css = insert.replace('{{ color }}', palette['icon'])
+            with open(join(svgpath, file), 'r') as fr:
+                contents = fr.readlines()
+                fr.close()
+                contents.insert(4, css)
+                with open(join(palette_dir, file), 'w') as fw:
+                    fw.write("".join(contents))
+                    fw.close()
+
+    qrc_string += '''
+    </qresource>
+    </RCC>
+    '''
+
+    with open(qrcpath, 'w') as f:
+        f.write(qrc_string)
+
+
+if __name__ == "__main__":
+    from subprocess import run
+
+    qtpy_file = join(resources_dir, 'qt.py')
+
+    build_icons()
+    try:
+        run(['pyside2-rcc', '-o', qtpy_file, qrcpath])
+    except FileNotFoundError:
+        run(['pyrcc5', '-o', qtpy_file, qrcpath])
+
+    with open(qtpy_file, "rt") as fin:
+        data = fin.read()
+        data = data.replace('PySide2', 'qtpy').replace('PyQt5', 'qtpy')
+    with open(qtpy_file, "wt") as fin:
+        fin.write(data)

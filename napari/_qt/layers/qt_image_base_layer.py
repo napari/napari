@@ -21,6 +21,7 @@ class QtBaseImageControls(QtLayerControls):
         self.layer.events.contrast_limits.connect(self._on_clims_change)
 
         comboBox = QComboBox(self)
+        comboBox.setObjectName("colormapComboBox")
         comboBox.addItems(self.layer.colormaps)
         comboBox._allitems = set(self.layer.colormaps)
         comboBox.activated[str].connect(self.changeColor)
