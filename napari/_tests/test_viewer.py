@@ -140,15 +140,3 @@ def test_update(viewer_factory):
     # if we do not sleep, main thread closes before update
     # thread finishes and many qt components get cleaned
     time.sleep(3)
-
-
-def test_viewer_cleanup(qapp):
-    """Test that closing the viewer doesn't leave any orphaned widgets."""
-    initial = len(qapp.topLevelWidgets())
-    viewer = Viewer()
-    viewer.close()
-    qapp.processEvents()
-
-    # somtimes unable to get the very last QMainWindow to clean up in pytest...
-    # but all the other widgets should be gone
-    assert initial <= len(qapp.topLevelWidgets()) <= initial + 1

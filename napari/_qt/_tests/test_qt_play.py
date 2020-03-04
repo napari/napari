@@ -16,6 +16,7 @@ def make_worker(
     # sets up an AnimationWorker ready for testing, and breaks down when done
     dims = Dims(4)
     qtdims = QtDims(dims)
+    qtbot.addWidget(qtdims)
     nz = 8
     step = 1
     dims.set_range(0, (0, nz, step))
@@ -171,5 +172,6 @@ def test_playing_hidden_slider_does_nothing(view):
 
     view.dims.dims.events.axis.connect(increment)
 
-    view.dims.play(2, 20)
+    with pytest.warns(UserWarning):
+        view.dims.play(2, 20)
     assert not view.dims.is_playing

@@ -20,7 +20,7 @@ class QtBaseImageControls(QtLayerControls):
         self.layer.events.gamma.connect(self.gamma_slider_update)
         self.layer.events.contrast_limits.connect(self._on_clims_change)
 
-        comboBox = QComboBox()
+        comboBox = QComboBox(self)
         comboBox.addItems(self.layer.colormaps)
         comboBox._allitems = set(self.layer.colormaps)
         comboBox.activated[str].connect(self.changeColor)
@@ -28,7 +28,9 @@ class QtBaseImageControls(QtLayerControls):
 
         # Create contrast_limits slider
         self.contrastLimitsSlider = QHRangeSlider(
-            self.layer.contrast_limits, self.layer.contrast_limits_range
+            self.layer.contrast_limits,
+            self.layer.contrast_limits_range,
+            parent=self,
         )
         self.contrastLimitsSlider.mousePressEvent = self._clim_mousepress
         set_clim = partial(setattr, self.layer, 'contrast_limits')
@@ -37,7 +39,7 @@ class QtBaseImageControls(QtLayerControls):
         self.contrastLimitsSlider.rangeChanged.connect(set_climrange)
 
         # gamma slider
-        sld = QSlider(Qt.Horizontal)
+        sld = QSlider(Qt.Horizontal, parent=self)
         sld.setFocusPolicy(Qt.NoFocus)
         sld.setMinimum(2)
         sld.setMaximum(200)
@@ -47,7 +49,7 @@ class QtBaseImageControls(QtLayerControls):
         self.gammaSlider = sld
         self.gamma_slider_update()
 
-        self.colorbarLabel = QLabel()
+        self.colorbarLabel = QLabel(parent=self)
         self.colorbarLabel.setObjectName('colorbar')
         self.colorbarLabel.setToolTip('Colorbar')
 
@@ -64,7 +66,7 @@ class QtBaseImageControls(QtLayerControls):
         """
         if event.button() == Qt.RightButton:
             self.clim_pop = create_range_popup(
-                self.layer, 'contrast_limits', self
+                self.layer, 'contrast_limits', parent=self
             )
             self.clim_pop.finished.connect(self.clim_pop.deleteLater)
             reset, fullrange = create_clim_reset_buttons(self.layer)
@@ -120,6 +122,10 @@ class QtBaseImageControls(QtLayerControls):
 
     def mouseMoveEvent(self, event):
         self.layer.status = self.layer._contrast_limits_msg
+
+    def closeEvent(self, event):
+        self.deleteLater()
+        event.accept()
 
 
 def create_range_popup(layer, attr, parent=None):

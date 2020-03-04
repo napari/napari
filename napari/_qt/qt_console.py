@@ -137,4 +137,5 @@ class QtConsole(RichJupyterWidget):
         # RichJupyterWidget doesn't clean these up
         self._completion_widget.deleteLater()
         self._call_tip_widget.deleteLater()
+        self.deleteLater()
         event.accept()

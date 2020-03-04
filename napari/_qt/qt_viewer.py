@@ -628,6 +628,7 @@ class QtViewer(QSplitter):
         self.dims.stop()
         if self.pool.activeThreadCount() > 0:
             self.pool.clear()
+        self.canvas.deleteLater()
         self.console.close()
         self.dockConsole.deleteLater()
         event.accept()

@@ -175,3 +175,7 @@ class QRangeSliderPopup(QtPopup):
             self.slider.setFocus()
             return
         super().keyPressEvent(event)
+
+    def closeEvent(self, event):
+        self.deleteLater()
+        event.accept()
