@@ -307,7 +307,7 @@ class Points(Layer):
 
         # initialize view data
         self._indices_view = []
-        self._point_scale_view = []
+        self._view_size_scale = []
 
         self._drag_box = None
         self._drag_box_stored = None
@@ -1158,7 +1158,7 @@ class Points(Layer):
                 self.size[
                     np.ix_(self._indices_view, self.dims.displayed)
                 ].mean(axis=1)
-                * self._point_scale_view
+                * self._view_size_scale
             )
 
         else:
@@ -1274,7 +1274,7 @@ class Points(Layer):
         """Sets the view given the indices to slice with."""
         # get the indices of points in view
         indices, scale = self._slice_data(self.dims.indices)
-        self._point_scale_view = scale
+        self._view_size_scale = scale
         self._indices_view = indices
         # get the selected points that are in view
         selected = []
