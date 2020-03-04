@@ -1162,8 +1162,8 @@ class Points(Layer):
             )
 
         else:
-            # if no points in this slice send dummy data
-            sizes = [0]
+            # if no points, return an empty list
+            sizes = np.array([])
         return sizes
 
     @property
