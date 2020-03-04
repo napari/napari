@@ -14,6 +14,7 @@ from ..qt_color_dialog import QColorSwatchEdit
 from ..qt_mode_buttons import QtModePushButton, QtModeRadioButton
 from ..utils import qt_signals_blocked
 from .qt_base_layer import QtLayerControls
+from ..utils import disable_with_opacity
 
 
 class QtPointsControls(QtLayerControls):
@@ -90,28 +91,29 @@ class QtPointsControls(QtLayerControls):
         self.button_group.addButton(self.panzoom_button)
 
         button_row = QHBoxLayout()
+        button_row.addStretch(1)
         button_row.addWidget(self.delete_button)
         button_row.addWidget(self.addition_button)
         button_row.addWidget(self.select_button)
         button_row.addWidget(self.panzoom_button)
-        button_row.addStretch(1)
+        button_row.setContentsMargins(0, 0, 0, 5)
         button_row.setSpacing(4)
 
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
-        self.grid_layout.addLayout(button_row, 0, 1, 1, 2)
+        self.grid_layout.addLayout(button_row, 0, 1)
         self.grid_layout.addWidget(QLabel('opacity:'), 1, 0)
-        self.grid_layout.addWidget(self.opacitySlider, 1, 1, 1, 2)
+        self.grid_layout.addWidget(self.opacitySlider, 1, 1)
         self.grid_layout.addWidget(QLabel('point size:'), 2, 0)
-        self.grid_layout.addWidget(self.sizeSlider, 2, 1, 1, 2)
+        self.grid_layout.addWidget(self.sizeSlider, 2, 1)
         self.grid_layout.addWidget(QLabel('blending:'), 3, 0)
-        self.grid_layout.addWidget(self.blendComboBox, 3, 1, 1, 2)
+        self.grid_layout.addWidget(self.blendComboBox, 3, 1)
         self.grid_layout.addWidget(QLabel('symbol:'), 4, 0)
-        self.grid_layout.addWidget(self.symbolComboBox, 4, 1, 1, 2)
+        self.grid_layout.addWidget(self.symbolComboBox, 4, 1)
         self.grid_layout.addWidget(QLabel('face color:'), 5, 0)
-        self.grid_layout.addWidget(self.faceColorEdit, 5, 1, 1, 2)
+        self.grid_layout.addWidget(self.faceColorEdit, 5, 1)
         self.grid_layout.addWidget(QLabel('edge color:'), 6, 0)
-        self.grid_layout.addWidget(self.edgeColorEdit, 6, 1, 1, 2)
+        self.grid_layout.addWidget(self.edgeColorEdit, 6, 1)
         self.grid_layout.addWidget(QLabel('n-dim:'), 7, 0)
         self.grid_layout.addWidget(self.ndimCheckBox, 7, 1)
         self.grid_layout.setRowStretch(8, 1)
@@ -183,6 +185,8 @@ class QtPointsControls(QtLayerControls):
             self.edgeColorEdit.setColor(self.layer.current_edge_color)
 
     def _on_editable_change(self, event=None):
-        self.select_button.setEnabled(self.layer.editable)
-        self.addition_button.setEnabled(self.layer.editable)
-        self.delete_button.setEnabled(self.layer.editable)
+        disable_with_opacity(
+            self,
+            ['select_button', 'addition_button', 'delete_button'],
+            self.layer.editable,
+        )
