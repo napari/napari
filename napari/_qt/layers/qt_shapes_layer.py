@@ -20,8 +20,8 @@ class QtShapesControls(QtLayerControls):
 
     Parameters
     ----------
-    layer : napari.layers.Layer
-        An instance of a napari layer.
+    layer : napari.layers.Shapes
+        An instance of a napari Shapes layer.
 
     Attributes
     ----------
@@ -43,8 +43,8 @@ class QtShapesControls(QtLayerControls):
         Drop down list allowing user to set face color of points.
     grid_layout : qtpy.QtWidgets.QGridLayout
         Layout of Qt widget controls for the layer.
-    layer : napari.layers.Layer
-        An instance of a napari layer.
+    layer : napari.layers.Shapes
+        An instance of a napari Shapes layer.
     line_button : qtpy.QtWidgets.QtModeRadioButton
         Button to add lines to shapes layer.
     move_back_button : qtpy.QtWidgets.QtModePushButton

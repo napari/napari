@@ -9,8 +9,8 @@ class QtVectorsControls(QtLayerControls):
 
     Parameters
     ----------
-    layer : napari.layers.Layer
-        An instance of a napari layer.
+    layer : napari.layers.Vectors
+        An instance of a napari Vectors layer.
 
     Attributes
     ----------
@@ -20,8 +20,8 @@ class QtVectorsControls(QtLayerControls):
         Dropdown widget to select display color for vectors.
     grid_layout : qtpy.QtWidgets.QGridLayout
         Layout of Qt widget controls for the layer.
-    layer : napari.layers.Layer
-        An instance of a napari layer.
+    layer : napari.layers.Vectors
+        An instance of a napari Vectors layer.
     lengthSpinBox : qtpy.QtWidgets.QDoubleSpinBox
         Spin box widget controlling line length of vectors.
         Multiplicative factor on projections for length of all vectors.

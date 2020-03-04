@@ -7,15 +7,16 @@ class QtSurfaceControls(QtBaseImageControls):
 
     Parameters
     ----------
-    layer : napari.layers.Layer
-        An instance of a napari layer.
+    layer : napari.layers.Surface
+        An instance of a napari Surface layer.
 
     Attributes
     ----------
     grid_layout : qtpy.QtWidgets.QGridLayout
         Layout of Qt widget controls for the layer.
-    layer : napari.layers.Layer
-        An instance of a napari layer.
+    layer : napari.layers.Surface
+        An instance of a napari Surface layer.
+
     """
 
     def __init__(self, layer):

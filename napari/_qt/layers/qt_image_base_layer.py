@@ -13,9 +13,10 @@ from .qt_base_layer import QtLayerControls
 
 
 class QtBaseImageControls(QtLayerControls):
-    """Qt view and controls for base image layer types.
+    """Superclass for classes requiring colormaps, contrast & gamma sliders.
 
-    Subclassed by QtImageControls and QtSurfaceControls.
+    This class is never directly instantiated anywhere.
+    It is subclassed by QtImageControls and QtSurfaceControls.
 
     Parameters
     ----------

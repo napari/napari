@@ -22,8 +22,8 @@ class QtLabelsControls(QtLayerControls):
 
     Parameters
     ----------
-    layer : napari.layers.Layer
-        An instance of a napari layer.
+    layer : napari.layers.Labels
+        An instance of a napari Labels layer.
 
     Attributes
     ----------
@@ -38,8 +38,8 @@ class QtLabelsControls(QtLayerControls):
         Available mode options are: PAN_ZOOM, PICKER, PAINT, or FILL
     grid_layout : qtpy.QtWidgets.QGridLayout
         Layout of Qt widget controls for the layer.
-    layer : napari.layers.Layer
-        An instance of a napari layer.
+    layer : napari.layers.Labels
+        An instance of a napari Labels layer.
     ndimCheckBox : qtpy.QtWidgets.QCheckBox
         Checkbox to control if label layer is n-dimensional.
     paint_button : qtpy.QtWidgets.QtModeRadioButton

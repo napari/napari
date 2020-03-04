@@ -21,8 +21,8 @@ class QtPointsControls(QtLayerControls):
 
     Parameters
     ----------
-    layer : napari.layers.Layer
-        An instance of a napari layer.
+    layer : napari.layers.Points
+        An instance of a napari Points layer.
 
     Attributes
     ----------
@@ -42,8 +42,8 @@ class QtPointsControls(QtLayerControls):
         Dropdown widget to select display color for shape faces.
     grid_layout : qtpy.QtWidgets.QGridLayout
         Layout of Qt widget controls for the layer.
-    layer : napari.layers.Layer
-        An instance of a napari layer.
+    layer : napari.layers.Points
+        An instance of a napari Points layer.
     ndimCheckBox : qtpy.QtWidgets.QCheckBox
         Checkbox to indicate whether layer is n-dimensional.
     panzoom_button : qtpy.QtWidgets.QtModeRadioButton

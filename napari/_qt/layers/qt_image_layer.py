@@ -9,8 +9,8 @@ class QtImageControls(QtBaseImageControls):
 
     Parameters
     ----------
-    layer : napari.layers.Layer
-        An instance of a napari layer.
+    layer : napari.layers.Image
+        An instance of a napari Image layer.
 
     Attributes
     ----------
@@ -28,8 +28,8 @@ class QtImageControls(QtBaseImageControls):
         Slider controlling the isosurface threshold value for rendering.
     isoThresholdLabel : qtpy.QtWidgets.QLabel
         Label for the isosurface threshold slider widget.
-    layer : napari.layers.Layer
-        An instance of a napari layer.
+    layer : napari.layers.Image
+        An instance of a napari Image layer.
     renderComboBox : qtpy.QtWidgets.QComboBox
         Dropdown menu to select the rendering mode for image display.
     renderLabel : qtpy.QtWidgets.QLabel
