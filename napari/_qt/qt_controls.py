@@ -3,7 +3,7 @@ from .layers import create_qt_controls
 
 
 class QtControls(QStackedWidget):
-    """Qt widget controls.
+    """Container widget for QtLayerControl widgets.
 
     Parameters
     ----------
