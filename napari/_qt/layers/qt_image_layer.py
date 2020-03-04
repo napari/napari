@@ -15,7 +15,7 @@ class QtImageControls(QtBaseImageControls):
     Attributes
     ----------
     attenuationSlider : qtpy.QtWidgets.QSlider
-        Slider controlling attenuation rate for maximum intensity projections.
+        Slider controlling attenuation rate for `attenuated_mip` mode.
     attenuationLabel : qtpy.QtWidgets.QLabel
         Label for the attenuation slider widget.
     grid_layout : qtpy.QtWidgets.QGridLayout
