@@ -289,7 +289,7 @@ class QtShapesControls(QtLayerControls):
         self.layer.current_edge_color = text
 
     def changeWidth(self, value):
-        """Change edge line width of shapes.
+        """Change edge line width of shapes on the layer model.
 
         Parameters
         ----------
@@ -299,7 +299,7 @@ class QtShapesControls(QtLayerControls):
         self.layer.current_edge_width = float(value) / 2
 
     def changeOpacity(self, value):
-        """Change opacity value of shapes.
+        """Change opacity value of shapes on the layer model.
 
         Parameters
         ----------
@@ -311,7 +311,7 @@ class QtShapesControls(QtLayerControls):
             self.layer.current_opacity = value / 100
 
     def _on_edge_width_change(self, event=None):
-        """Change edge line width of shapes.
+        """Receive layer model edge line width change event and update the slider.
 
         Parameters
         ----------
@@ -324,7 +324,7 @@ class QtShapesControls(QtLayerControls):
             self.widthSlider.setValue(value)
 
     def _on_edge_color_change(self, event=None):
-        """Change edge color of shapes.
+        """Receive layer model edge color change event and update the color swatch.
 
         Parameters
         ----------
@@ -340,7 +340,7 @@ class QtShapesControls(QtLayerControls):
         self.edgeColorSwatch.setStyleSheet("background-color: " + color)
 
     def _on_face_color_change(self, event=None):
-        """Change face color of shapes.
+        """Receive layer model face color change event and update the color swatch.
 
         Parameters
         ----------
@@ -356,7 +356,7 @@ class QtShapesControls(QtLayerControls):
         self.faceColorSwatch.setStyleSheet("background-color: " + color)
 
     def _on_opacity_change(self, event=None):
-        """Change opacity value of shapes.
+        """Receive layer model opacity change event and update the opacity slider.
 
         Parameters
         ----------
@@ -367,7 +367,7 @@ class QtShapesControls(QtLayerControls):
             self.opacitySlider.setValue(self.layer.current_opacity * 100)
 
     def _on_editable_change(self, event=None):
-        """Toggle editable status of shapes.
+        """Receive layer model editable change event and enable/disable editing buttons.
 
         Parameters
         ----------

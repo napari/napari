@@ -204,7 +204,7 @@ class QtPointsControls(QtLayerControls):
             raise ValueError("Mode not recognized")
 
     def changeSymbol(self, text):
-        """Change marker symbol of the points.
+        """Change marker symbol of the points on the layer model.
 
         Parameters
         ----------
@@ -214,7 +214,7 @@ class QtPointsControls(QtLayerControls):
         self.layer.symbol = text
 
     def changeSize(self, value):
-        """Change size of points.
+        """Change size of points on the layer model.
 
         Parameters
         ----------
@@ -237,7 +237,7 @@ class QtPointsControls(QtLayerControls):
             self.layer.n_dimensional = False
 
     def _on_n_dim_change(self, event):
-        """Toggle n-dimensional state.
+        """Receive layer model n-dimensional change event and update the checkbox.
 
         Parameters
         ----------
@@ -248,7 +248,7 @@ class QtPointsControls(QtLayerControls):
             self.ndimCheckBox.setChecked(self.layer.n_dimensional)
 
     def _on_symbol_change(self, event):
-        """Change marker symbol of points.
+        """Receive layer model marker symbol change event and update the dropdown menu.
 
         Parameters
         ----------
@@ -262,7 +262,7 @@ class QtPointsControls(QtLayerControls):
             self.symbolComboBox.setCurrentIndex(index)
 
     def _on_size_change(self, event=None):
-        """Change size of points.
+        """Receive layer model size change event and update point size slider.
 
         Parameters
         ----------
@@ -275,13 +275,13 @@ class QtPointsControls(QtLayerControls):
 
     @Slot(np.ndarray)
     def changeFaceColor(self, color: np.ndarray):
-        """Update the layer model based on user input in the color picker."""
+        """Update face color of the layer model based on color picker user input."""
         with self.layer.events.current_face_color.blocker():
             self.layer.current_face_color = color
 
     @Slot(np.ndarray)
     def changeEdgeColor(self, color: np.ndarray):
-        """Update the layer model based on user input in the color picker."""
+        """Update edge color of the layer model based on color picker user input."""
         with self.layer.events.current_edge_color.blocker():
             self.layer.current_edge_color = color
 
@@ -296,7 +296,7 @@ class QtPointsControls(QtLayerControls):
             self.edgeColorEdit.setColor(self.layer.current_edge_color)
 
     def _on_editable_change(self, event=None):
-        """Toggle editable status of the points.
+        """Receive layer model editable change event and enable/disable editing buttons.
 
         Parameters
         ----------

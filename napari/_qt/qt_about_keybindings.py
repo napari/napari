@@ -138,7 +138,7 @@ class QtAboutKeybindings(QDialog):
             self.textEditBox.setHtml(text)
 
     def toggle_visible(self, event):
-        """Toggle visibility of the widget.
+        """Receive event and show/hide visibility of keybindings.
 
         Parameters
         ----------

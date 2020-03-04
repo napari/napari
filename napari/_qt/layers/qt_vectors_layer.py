@@ -80,7 +80,7 @@ class QtVectorsControls(QtLayerControls):
         self.grid_layout.setSpacing(4)
 
     def change_edge_color(self, text):
-        """Change edge color of vectors.
+        """Change edge color of vectors on the layer model.
 
         Parameters
         ----------
@@ -91,7 +91,7 @@ class QtVectorsControls(QtLayerControls):
         self.layer.edge_color = text
 
     def change_width(self, value):
-        """Change edge line width of vectors.
+        """Change edge line width of vectors on the layer model.
 
         Parameters
         ----------
@@ -103,7 +103,7 @@ class QtVectorsControls(QtLayerControls):
         self.setFocus()
 
     def change_length(self, value):
-        """Change length of vectors.
+        """Change length of vectors on the layer model.
 
         Multiplicative factor on projections for length of all vectors.
 
@@ -128,7 +128,7 @@ class QtVectorsControls(QtLayerControls):
             self.lengthSpinBox.setValue(self.layer.length)
 
     def _on_width_change(self, event=None):
-        """"Change edge line width of vectors.
+        """"Receive layer model width change event and update the width spinbox.
 
         Parameters
         ----------
@@ -139,7 +139,7 @@ class QtVectorsControls(QtLayerControls):
             self.widthSpinBox.setValue(self.layer.edge_width)
 
     def _on_edge_color_change(self, event=None):
-        """Change edge color of vectors.
+        """"Receive layer model edge color change event and update the color swatch.
 
         Parameters
         ----------

@@ -168,7 +168,7 @@ class QtLabelsControls(QtLayerControls):
         self.layer.status = str(self.layer.mode)
 
     def _on_mode_change(self, event):
-        """Update ticks in checkbox widgets when label layer mode is changed.
+        """Receive layer model mode change event and update ticks in checkbox widgets.
 
         Parameters
         ----------
@@ -245,7 +245,7 @@ class QtLabelsControls(QtLayerControls):
             self.layer.n_dimensional = False
 
     def _on_selection_change(self, event=None):
-        """Switch currently selected selected label.
+        """Receive layer model label selection change event and update spinbox to match.
 
         Parameters
         ----------
@@ -257,7 +257,7 @@ class QtLabelsControls(QtLayerControls):
             self.selectionSpinBox.setValue(int(value))
 
     def _on_brush_size_change(self, event=None):
-        """Update brush size for the label layer.
+        """Receive layer model brush size change event and update bursh size slider.
 
         Parameters
         ----------
@@ -270,7 +270,7 @@ class QtLabelsControls(QtLayerControls):
             self.brushSizeSlider.setValue(value)
 
     def _on_n_dim_change(self, event=None):
-        """Toggle n-dimensional state.
+        """Receive layer model n-dim mode change event and update n-dim checkbox.
 
         Parameters
         ----------
@@ -281,7 +281,7 @@ class QtLabelsControls(QtLayerControls):
             self.ndimCheckBox.setChecked(self.layer.n_dimensional)
 
     def _on_contig_change(self, event=None):
-        """Toggle whether labels are contiguous or not.
+        """Receive layer model contiguous change event and update contiguous checkbox.
 
         Parameters
         ----------
@@ -292,7 +292,7 @@ class QtLabelsControls(QtLayerControls):
             self.contigCheckBox.setChecked(self.layer.contiguous)
 
     def _on_editable_change(self, event=None):
-        """Toggle whether the labels are editable or not.
+        """Receive layer model editable change event and enable/disable editing buttons.
 
         Parameters
         ----------
@@ -325,7 +325,7 @@ class QtColorBox(QWidget):
         self.layer.events.selected_label.connect(self.update_color)
 
     def update_color(self, event):
-        """Update the colorbox.
+        """Receive layer model label selection change event and update the colorbox.
 
         Parameters
         ----------
@@ -335,7 +335,7 @@ class QtColorBox(QWidget):
         self.update()
 
     def paintEvent(self, event):
-        """Paint the colorbox.
+        """Receive change event and (re-)paint the colorbox.
 
         Parameters
         ----------

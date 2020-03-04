@@ -81,7 +81,7 @@ class QtBaseImageControls(QtLayerControls):
         self._on_colormap_change()
 
     def changeColor(self, text):
-        """Change layer colormap.
+        """Change colormap on the layer model.
 
         Parameters
         ----------
@@ -117,6 +117,13 @@ class QtBaseImageControls(QtLayerControls):
             )
 
     def _on_clims_change(self, event=None):
+        """Receive layer model contrast limits change event and update contrast slider.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional.
+            Event from the Qt context, by default None.
+        """
         with qt_signals_blocked(self.contrastLimitsSlider):
             self.contrastLimitsSlider.setRange(
                 self.layer.contrast_limits_range
@@ -134,6 +141,13 @@ class QtBaseImageControls(QtLayerControls):
                 self.clim_pop._on_values_change(clims)
 
     def _on_colormap_change(self, event=None):
+        """Receive layer model colormap change event and update colormap dropdown menu.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional.
+            Event from the Qt context, by default None.
+        """
         name = self.layer.colormap[0]
         if name not in self.colormapComboBox._allitems:
             self.colormapComboBox._allitems.add(name)
@@ -151,9 +165,24 @@ class QtBaseImageControls(QtLayerControls):
         self.colorbarLabel.setPixmap(QPixmap.fromImage(image))
 
     def gamma_slider_changed(self, value):
+        """Change gamma value on the layer model.
+
+        Parameters
+        ----------
+        value : float
+            Gamma adjustment value.
+            https://en.wikipedia.org/wiki/Gamma_correction
+        """
         self.layer.gamma = value / 100
 
     def gamma_slider_update(self, event=None):
+        """Receive the layer model gamma change event and update the gamma slider.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional.
+            Event from the Qt context, by default None.
+        """
         with qt_signals_blocked(self.gammaSlider):
             self.gammaSlider.setValue(self.layer.gamma * 100)
 
