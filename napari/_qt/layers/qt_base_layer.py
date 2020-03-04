@@ -5,7 +5,9 @@ from ...layers.base._constants import Blending
 
 
 class QtLayerControls(QFrame):
-    """Qt view and controls for the napari base Layer class.
+    """Superclass for all the other LayerControl classes.
+
+    This class is never directly instantiated anywhere.
 
     Parameters
     ----------
