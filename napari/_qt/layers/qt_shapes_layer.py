@@ -26,7 +26,7 @@ class QtShapesControls(QtLayerControls):
     Attributes
     ----------
     button_group : qtpy.QtWidgets.QButtonGroup
-        Button group for shapes controls (add, select, delete shapes).
+        Button group for shapes layer modes (SELECT, DIRECT, PAN_ZOOM, ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE, ADD_PATH, ADD_POLYGON, VERTEX_INSERT, VERTEX_REMOVE).
     delete_button : qtpy.QtWidgets.QtModePushButton
         Button to delete selected shapes
     direct_button : qtpy.QtWidgets.QtModeRadioButton
