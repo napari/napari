@@ -507,7 +507,7 @@ class QtPlayButton(QPushButton):
         self.mode_combo = mode_combo
 
     def mouseReleaseEvent(self, event):
-        """Do action on mouse release.
+        """Show popup for right-click, toggle animation for right click.
 
         Parameters
         ----------
