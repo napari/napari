@@ -29,7 +29,7 @@ class QtPointsControls(QtLayerControls):
     addition_button : qtpy.QtWidgets.QtModeRadioButton
         Button to add points to layer.
     button_group : qtpy.QtWidgets.QButtonGroup
-        Button group of points layer controls (add, select, delete).
+        Button group of points layer modes (ADD, PAN_ZOOM, SELECT).
     delete_button : qtpy.QtWidgets.QtModePushButton
         Button to delete points from layer.
     edgeColorSwatch : qtpy.QtWidgets.QFrame
