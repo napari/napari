@@ -22,13 +22,6 @@ def test_plugin_autodiscovery(plugin_manager):
     invalid plugins.
     """
     assert 'working' in plugin_manager._name2plugin
-    # note, entry_points supercede naming convention
-    # the "napari_working_plugin" distribution points to "napari_test_plugin"
-    # but the name of the distribution is "working"...
-    # so while the "napari_test_plugin" *module* fits the naming convention
-    # it will appear in the plugins using the entry_points entry instead.
-    assert 'napari_test_plugin' not in plugin_manager._name2plugin
-
     assert 'napari_bad_plugin' in plugin_manager._name2plugin
 
     # napari_invalid_plugin has an invalid hook implementation, and will load
@@ -69,7 +62,7 @@ def test_iter_plugins():
         {
             ('unimportable', 'unimportable_plugin'),
             ('invalid', 'invalid_plugin'),
-            ('working', 'napari_test_plugin'),
+            ('working', 'working_plugin'),
         }
     )
 
@@ -92,7 +85,7 @@ def test_iter_plugins():
         {
             ('unimportable', 'unimportable_plugin'),
             ('invalid', 'invalid_plugin'),
-            ('working', 'napari_test_plugin'),
+            ('working', 'working_plugin'),
             ('napari_bad_plugin', 'napari_bad_plugin'),
             ('napari_invalid_plugin', 'napari_invalid_plugin'),
             ('napari_unimportable_plugin', 'napari_unimportable_plugin'),
