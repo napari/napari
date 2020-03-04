@@ -62,8 +62,6 @@ class Window:
         self._qt_center.setLayout(QHBoxLayout())
         self._status_bar = QStatusBar()
         self._qt_window.setStatusBar(self._status_bar)
-        self._qt_window.closeEvent = self.closeEvent
-        self.close = self._qt_window.close
 
         self._add_menubar()
 
@@ -346,7 +344,7 @@ class Window:
             imsave(path, QImg2array(img))  # scikit-image imsave method
         return QImg2array(img)
 
-    def closeEvent(self, event):
-        self.main_menu.deleteLater()
+    def close(self):
         self.qt_viewer.close()
-        event.accept()
+        self._qt_window.close()
+        del self._qt_window
