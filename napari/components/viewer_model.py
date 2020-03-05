@@ -86,14 +86,9 @@ class ViewerModel(AddLayersMixin, KeymapMixin):
         self.dims.events.ndisplay.connect(self._update_layers)
         self.dims.events.order.connect(self._update_layers)
         self.dims.events.axis.connect(self._update_layers)
-        self.layers.events.added.connect(self._on_layers_change)
-        self.layers.events.removed.connect(self._on_layers_change)
-        self.layers.events.added.connect(self._update_active_layer)
-        self.layers.events.removed.connect(self._update_active_layer)
-        self.layers.events.reordered.connect(self._update_active_layer)
-        self.layers.events.added.connect(self._update_grid)
-        self.layers.events.removed.connect(self._update_grid)
-        self.layers.events.reordered.connect(self._update_grid)
+        self.layers.events.changed.connect(self._on_layers_change)
+        self.layers.events.changed.connect(self._update_active_layer)
+        self.layers.events.changed.connect(self._update_grid)
 
         # Hold callbacks for when mouse moves with nothing pressed
         self.mouse_move_callbacks = []

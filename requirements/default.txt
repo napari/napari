@@ -5,6 +5,7 @@ ipykernel>=5.1.1
 numpy>=1.10.0
 qtpy>=1.7.0
 qtconsole>=4.5.1
+jupyter-client<6.0.0  # not a direct dependency; remove once fixed
 scipy>=1.2.0
 scikit-image>=0.15.0
 vispy>=0.6.4
@@ -14,3 +15,4 @@ PyOpenGL>=3.1.0
 PySide2>=5.12.3
 wrapt>=1.11.1
 numpydoc>=0.9.2
+pluggy>=0.13.0

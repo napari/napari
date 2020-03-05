@@ -26,6 +26,7 @@ def view_image(
     ndisplay=2,
     order=None,
     axis_labels=None,
+    show=True,
 ):
     """Create a viewer and add an image layer.
 
@@ -106,6 +107,8 @@ def view_image(
         ndisplay is 2 or 3.
     axis_labels : list of str
         Dimension names.
+    show : bool, optional
+        Whether to show the viewer after instantiation. by default True.
 
     Returns
     -------
@@ -113,7 +116,11 @@ def view_image(
         The newly-created viewer.
     """
     viewer = Viewer(
-        title=title, ndisplay=ndisplay, order=order, axis_labels=axis_labels
+        title=title,
+        ndisplay=ndisplay,
+        order=order,
+        axis_labels=axis_labels,
+        show=show,
     )
     viewer.add_image(
         data=data,
@@ -166,6 +173,7 @@ def view_points(
     ndisplay=2,
     order=None,
     axis_labels=None,
+    show=True,
 ):
     """Create a viewer and add a points layer.
 
@@ -231,6 +239,18 @@ def view_points(
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
+    title : string
+        The title of the viewer window.
+    ndisplay : {2, 3}
+        Number of displayed dimensions.
+    order : tuple of int
+        Order in which dimensions are displayed where the last two or last
+        three dimensions correspond to row x column or plane x row x column if
+        ndisplay is 2 or 3.
+    axis_labels : list of str
+        Dimension names.
+    show : bool, optional
+        Whether to show the viewer after instantiation. by default True.
 
     Returns
     -------
@@ -243,7 +263,11 @@ def view_points(
     http://api.vispy.org/en/latest/visuals.html#vispy.visuals.MarkersVisual
     """
     viewer = Viewer(
-        title=title, ndisplay=ndisplay, order=order, axis_labels=axis_labels
+        title=title,
+        ndisplay=ndisplay,
+        order=order,
+        axis_labels=axis_labels,
+        show=show,
     )
     viewer.add_points(
         data=data,
@@ -284,11 +308,12 @@ def view_labels(
     opacity=0.7,
     blending='translucent',
     visible=True,
+    path=None,
     title='napari',
     ndisplay=2,
     order=None,
     axis_labels=None,
-    path=None,
+    show=True,
 ):
     """Create a viewer and add a labels (or segmentation) layer.
 
@@ -338,6 +363,8 @@ def view_labels(
         ndisplay is 2 or 3.
     axis_labels : list of str
         Dimension names.
+    show : bool, optional
+        Whether to show the viewer after instantiation. by default True.
 
     Returns
     -------
@@ -345,7 +372,11 @@ def view_labels(
         The newly-created viewer.
     """
     viewer = Viewer(
-        title=title, ndisplay=ndisplay, order=order, axis_labels=axis_labels
+        title=title,
+        ndisplay=ndisplay,
+        order=order,
+        axis_labels=axis_labels,
+        show=show,
     )
     viewer.add_labels(
         data=data,
@@ -383,6 +414,7 @@ def view_shapes(
     ndisplay=2,
     order=None,
     axis_labels=None,
+    show=True,
 ):
     """Create a viewer and add a shapes layer.
 
@@ -447,6 +479,8 @@ def view_shapes(
         ndisplay is 2 or 3.
     axis_labels : list of str
         Dimension names.
+    show : bool, optional
+        Whether to show the viewer after instantiation. by default True.
 
     Returns
     -------
@@ -454,7 +488,11 @@ def view_shapes(
         The newly-created viewer.
     """
     viewer = Viewer(
-        title=title, ndisplay=ndisplay, order=order, axis_labels=axis_labels
+        title=title,
+        ndisplay=ndisplay,
+        order=order,
+        axis_labels=axis_labels,
+        show=show,
     )
     viewer.add_shapes(
         data=data,
@@ -491,6 +529,7 @@ def view_surface(
     ndisplay=2,
     order=None,
     axis_labels=None,
+    show=True,
 ):
     """Create a viewer and add a surface layer.
 
@@ -541,6 +580,8 @@ def view_surface(
         ndisplay is 2 or 3.
     axis_labels : list of str
         Dimension names.
+    show : bool, optional
+        Whether to show the viewer after instantiation. by default True.
 
     Returns
     -------
@@ -548,7 +589,11 @@ def view_surface(
         The newly-created viewer.
     """
     viewer = Viewer(
-        title=title, ndisplay=ndisplay, order=order, axis_labels=axis_labels
+        title=title,
+        ndisplay=ndisplay,
+        order=order,
+        axis_labels=axis_labels,
+        show=show,
     )
     viewer.add_surface(
         data,
@@ -583,6 +628,7 @@ def view_vectors(
     ndisplay=2,
     order=None,
     axis_labels=None,
+    show=True,
 ):
     """Create a viewer and add a vectors layer.
 
@@ -626,6 +672,8 @@ def view_vectors(
         ndisplay is 2 or 3.
     axis_labels : list of str
         Dimension names.
+    show : bool, optional
+        Whether to show the viewer after instantiation. by default True.
 
     Returns
     -------
@@ -633,7 +681,11 @@ def view_vectors(
         The newly-created viewer.
     """
     viewer = Viewer(
-        title=title, ndisplay=ndisplay, order=order, axis_labels=axis_labels
+        title=title,
+        ndisplay=ndisplay,
+        order=order,
+        axis_labels=axis_labels,
+        show=show,
     )
     viewer.add_vectors(
         data,

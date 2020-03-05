@@ -1016,6 +1016,7 @@ class Points(Layer):
 
         # Update properties based on selected points
         if len(self._selected_data) == 0:
+            self._set_highlight()
             return
         index = self._selected_data
         edge_colors = np.unique(self.edge_color[index], axis=0)
@@ -1044,6 +1045,7 @@ class Points(Layer):
         n_unique_properties = np.array([len(v) for v in properties.values()])
         if np.all(n_unique_properties == 1):
             self.current_properties = properties
+        self._set_highlight()
 
     def interaction_box(self, index):
         """Create the interaction box around a list of points in view.
@@ -1283,7 +1285,8 @@ class Points(Layer):
                 ind = list(self._indices_view).index(c)
                 selected.append(ind)
         self._selected_view = selected
-        self._set_highlight()
+        with self.events.highlight.blocker():
+            self._set_highlight(force=True)
 
     def _set_highlight(self, force=False):
         """Render highlights of shapes including boundaries, vertices,
@@ -1311,7 +1314,10 @@ class Points(Layer):
                 if len(self._selected_view) > 0:
                     index = copy(self._selected_view)
                     # highlight the hovered point if not in adding mode
-                    if self._value is not None and self._mode != Mode.ADD:
+                    if (
+                        self._value in self._indices_view
+                        and self._mode == Mode.SELECT
+                    ):
                         hover_point = list(self._indices_view).index(
                             self._value
                         )
@@ -1321,8 +1327,11 @@ class Points(Layer):
                             index.append(hover_point)
                     index.sort()
                 else:
-                    # don't highlight hovered points in add mode
-                    if self._mode != Mode.ADD:
+                    # only highlight hovered points in select mode
+                    if (
+                        self._value in self._indices_view
+                        and self._mode == Mode.SELECT
+                    ):
                         hover_point = list(self._indices_view).index(
                             self._value
                         )
@@ -1548,6 +1557,8 @@ class Points(Layer):
                     self._set_highlight()
             else:
                 self._set_highlight()
+        else:
+            self._set_highlight()
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.

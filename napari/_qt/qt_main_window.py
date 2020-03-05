@@ -3,11 +3,11 @@ Custom Qt widgets that serve as native objects that the public-facing elements
 wrap.
 """
 # set vispy to use same backend as qtpy
-import os
+from skimage.io import imsave
 
 from .qt_about import QtAbout
 from .qt_viewer_dock_widget import QtViewerDockWidget
-from ..resources import resources_dir
+from ..resources import combine_stylesheets
 
 # these "# noqa" comments are here to skip flake8 linting (E402),
 # these module-level imports have to come after `app.use_app(API)`
@@ -43,8 +43,7 @@ class Window:
         Contained viewer widget.
     """
 
-    with open(os.path.join(resources_dir, 'stylesheet.qss'), 'r') as f:
-        raw_stylesheet = f.read()
+    raw_stylesheet = combine_stylesheets()
 
     def __init__(self, qt_viewer, *, show=True):
 
@@ -137,9 +136,17 @@ class Window:
         )
         open_folder.triggered.connect(self.qt_viewer._open_folder)
 
+        screenshot = QAction('Screenshot', self._qt_window)
+        screenshot.setShortcut('Ctrl+Alt+S')
+        screenshot.setStatusTip(
+            'Save screenshot of current display, default .png'
+        )
+        screenshot.triggered.connect(self.qt_viewer._save_screenshot)
+
         self.file_menu = self.main_menu.addMenu('&File')
         self.file_menu.addAction(open_images)
         self.file_menu.addAction(open_folder)
+        self.file_menu.addAction(screenshot)
 
     def _add_view_menu(self):
         toggle_visible = QAction('Toggle menubar visibility', self._qt_window)
@@ -316,8 +323,13 @@ class Window:
         """
         self._help.setText(event.text)
 
-    def screenshot(self):
+    def screenshot(self, path=None):
         """Take currently displayed viewer and convert to an image array.
+
+        Parameters
+        ----------
+        path : str
+            Filename for saving screenshot image.
 
         Returns
         -------
@@ -326,6 +338,8 @@ class Window:
             upper-left corner of the rendered region.
         """
         img = self._qt_window.grab().toImage()
+        if path is not None:
+            imsave(path, QImg2array(img))  # scikit-image imsave method
         return QImg2array(img)
 
     def closeEvent(self, event):

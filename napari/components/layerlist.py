@@ -15,6 +15,11 @@ def _add(event):
 class LayerList(ListModel):
     """List-like layer collection with built-in reordering and callback hooks.
 
+    Parameters
+    ----------
+    iterable : iterable
+        Iterable of napari.layer.Layer
+
     Attributes
     ----------
     events : vispy.util.event.EmitterGroup
@@ -24,9 +29,11 @@ class LayerList(ListModel):
             * reordered(): whenever the list is reordered
     """
 
-    def __init__(self):
+    def __init__(self, iterable=()):
         super().__init__(
-            basetype=Layer, lookup={str: lambda q, e: q == e.name}
+            basetype=Layer,
+            iterable=iterable,
+            lookup={str: lambda q, e: q == e.name},
         )
 
         self.events.added.connect(_add)
@@ -41,7 +48,7 @@ class LayerList(ListModel):
         ----------
         name : str
             Original name.
-        layer : Layer, optional
+        layer : napari.layers.Layer, optional
             Layer for which name is generated.
 
         Returns
