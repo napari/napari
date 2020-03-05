@@ -248,6 +248,7 @@ class QtDimSliderWidget(QWidget):
     def loop_mode(self):
         """Loop mode for animation.
 
+        Loop mode enumeration napari._qt._constants.LoopMode
         Available options for the loop mode string enumeration are:
         - LoopMode.ONCE
             Animation will stop once movie reaches the max frame
