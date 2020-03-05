@@ -11,7 +11,7 @@ def get_layer_data_from_plugins(
     """Iterate reader hooks and return first non-None LayerData or None.
 
     This function returns as soon as the path has been read successfully,
-    whilecatching any plugin exceptions, storing them for later retrievial,
+    while catching any plugin exceptions, storing them for later retrievial,
     providing useful error messages, and relooping until either layer data is
     returned, or no readers are found.
 

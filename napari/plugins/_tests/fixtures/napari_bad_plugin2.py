@@ -1,5 +1,8 @@
 """
-Test plugin that is technically correct, but would cause performance problems
+This plugin registers fine, and passes hook_specification validation.
+But errors when the actual reader function is called.  This is used for testing
+the get_layer_data_from_plugins loop.
+
 """
 import pluggy
 
@@ -7,7 +10,7 @@ napari_hook_implementation = pluggy.HookimplMarker("napari")
 
 
 def reader_function(path):
-    raise IOError("whoops")
+    raise IOError(f"Plugin failed to read path: {path}")
 
 
 @napari_hook_implementation
