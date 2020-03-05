@@ -307,10 +307,9 @@ class QtLabelsControls(QtLayerControls):
         )
 
 
-
 class QtColorBox(QWidget):
-    """QtColorBox class
     """A widget that shows a square with the current label color.
+
     Parameters
     ----------
     layer : napari.layers.Layer
@@ -339,7 +338,7 @@ class QtColorBox(QWidget):
         self.update()
 
     def paintEvent(self, event):
-        """Receive change event and (re-)paint the colorbox.
+        """Paint the colorbox.  If no color, display a checkerboard pattern.
 
         Parameters
         ----------

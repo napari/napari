@@ -400,4 +400,3 @@ class QtShapesControls(QtLayerControls):
             ],
             self.layer.editable,
         )
-
