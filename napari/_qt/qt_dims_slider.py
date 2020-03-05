@@ -218,7 +218,7 @@ class QtDimSliderWidget(QWidget):
             self._update_slice_labels()
 
     def _update_slice_labels(self):
-        """Update slice labels to match current position of dimension slider."""
+        """Update slice labels to match current dimension slider position."""
         step = self.dims.range[self.axis][2]
         self.curslice_label.setText(
             str(int(self.dims.point[self.axis] // step))
@@ -532,13 +532,13 @@ class QtPlayButton(QPushButton):
         self.play_requested.emit(self.axis)
 
     def _handle_start(self):
-        """On animation start, set playing property to True and update style."""
+        """On animation start, set playing property to True & update style."""
         self.setProperty('playing', 'True')
         self.style().unpolish(self)
         self.style().polish(self)
 
     def _handle_stop(self):
-        """On animation stop, set playing property to False and update style."""
+        """On animation stop, set playing property to False & update style."""
         self.setProperty('playing', 'False')
         self.style().unpolish(self)
         self.style().polish(self)

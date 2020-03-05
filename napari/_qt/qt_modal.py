@@ -130,7 +130,7 @@ class QtPopup(QDialog):
         self.show()
 
     def keyPressEvent(self, event):
-        """Close window on return, else pass key press event through to super class.
+        """Close window on return, else pass event through to super class.
 
         Parameters
         ----------

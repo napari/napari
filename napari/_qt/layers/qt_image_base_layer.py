@@ -118,7 +118,7 @@ class QtBaseImageControls(QtLayerControls):
             )
 
     def _on_clims_change(self, event=None):
-        """Receive layer model contrast limits change event and update contrast slider.
+        """Receive layer model contrast limits change event and update slider.
 
         Parameters
         ----------
@@ -142,7 +142,7 @@ class QtBaseImageControls(QtLayerControls):
                 self.clim_pop._on_values_change(clims)
 
     def _on_colormap_change(self, event=None):
-        """Receive layer model colormap change event and update colormap dropdown menu.
+        """Receive layer model colormap change event and update dropdown menu.
 
         Parameters
         ----------
@@ -177,7 +177,7 @@ class QtBaseImageControls(QtLayerControls):
         self.layer.gamma = value / 100
 
     def gamma_slider_update(self, event=None):
-        """Receive the layer model gamma change event and update the gamma slider.
+        """Receive the layer model gamma change event and update the slider.
 
         Parameters
         ----------

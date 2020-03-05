@@ -28,7 +28,9 @@ class QtShapesControls(QtLayerControls):
     Attributes
     ----------
     button_group : qtpy.QtWidgets.QButtonGroup
-        Button group for shapes layer modes (SELECT, DIRECT, PAN_ZOOM, ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE, ADD_PATH, ADD_POLYGON, VERTEX_INSERT, VERTEX_REMOVE).
+        Button group for shapes layer modes
+        (SELECT, DIRECT, PAN_ZOOM, ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE,
+        ADD_PATH, ADD_POLYGON, VERTEX_INSERT, VERTEX_REMOVE).
     delete_button : qtpy.QtWidgets.QtModePushButton
         Button to delete selected shapes
     direct_button : qtpy.QtWidgets.QtModeRadioButton
@@ -232,7 +234,7 @@ class QtShapesControls(QtLayerControls):
         self.layer.status = str(self.layer.mode)
 
     def set_mode(self, event):
-        """"Update ticks in checkbox widgets when shapes layer mode is changed.
+        """"Update ticks in checkbox widgets when shapes layer mode changed.
 
         Available modes for shapes layer are:
         * SELECT
@@ -319,7 +321,7 @@ class QtShapesControls(QtLayerControls):
             self.layer.current_opacity = value / 100
 
     def _on_edge_width_change(self, event=None):
-        """Receive layer model edge line width change event and update the slider.
+        """Receive layer model edge line width change event and update slider.
 
         Parameters
         ----------
@@ -332,7 +334,7 @@ class QtShapesControls(QtLayerControls):
             self.widthSlider.setValue(value)
 
     def _on_edge_color_change(self, event=None):
-        """Receive layer model edge color change event and update the color swatch.
+        """Receive layer model edge color change event and update color swatch.
 
         Parameters
         ----------
@@ -348,7 +350,7 @@ class QtShapesControls(QtLayerControls):
         self.edgeColorSwatch.setStyleSheet("background-color: " + color)
 
     def _on_face_color_change(self, event=None):
-        """Receive layer model face color change event and update the color swatch.
+        """Receive layer model face color change event and update color swatch.
 
         Parameters
         ----------
@@ -364,7 +366,7 @@ class QtShapesControls(QtLayerControls):
         self.faceColorSwatch.setStyleSheet("background-color: " + color)
 
     def _on_opacity_change(self, event=None):
-        """Receive layer model opacity change event and update the opacity slider.
+        """Receive layer model opacity change event and update opacity slider.
 
         Parameters
         ----------
@@ -375,7 +377,7 @@ class QtShapesControls(QtLayerControls):
             self.opacitySlider.setValue(self.layer.current_opacity * 100)
 
     def _on_editable_change(self, event=None):
-        """Receive layer model editable change event and enable/disable editing buttons.
+        """Receive layer model editable change event & enable/disable buttons.
 
         Parameters
         ----------

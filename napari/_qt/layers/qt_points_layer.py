@@ -239,7 +239,7 @@ class QtPointsControls(QtLayerControls):
             self.layer.n_dimensional = False
 
     def _on_n_dim_change(self, event):
-        """Receive layer model n-dimensional change event and update the checkbox.
+        """Receive layer model n-dimensional change event and update checkbox.
 
         Parameters
         ----------
@@ -250,7 +250,7 @@ class QtPointsControls(QtLayerControls):
             self.ndimCheckBox.setChecked(self.layer.n_dimensional)
 
     def _on_symbol_change(self, event):
-        """Receive layer model marker symbol change event and update the dropdown menu.
+        """Receive marker symbol change event and update the dropdown menu.
 
         Parameters
         ----------
@@ -277,13 +277,13 @@ class QtPointsControls(QtLayerControls):
 
     @Slot(np.ndarray)
     def changeFaceColor(self, color: np.ndarray):
-        """Update face color of the layer model based on color picker user input."""
+        """Update face color of layer model from color picker user input."""
         with self.layer.events.current_face_color.blocker():
             self.layer.current_face_color = color
 
     @Slot(np.ndarray)
     def changeEdgeColor(self, color: np.ndarray):
-        """Update edge color of the layer model based on color picker user input."""
+        """Update edge color of layer model from color picker user input."""
         with self.layer.events.current_edge_color.blocker():
             self.layer.current_edge_color = color
 
@@ -298,7 +298,7 @@ class QtPointsControls(QtLayerControls):
             self.edgeColorEdit.setColor(self.layer.current_edge_color)
 
     def _on_editable_change(self, event=None):
-        """Receive layer model editable change event and enable/disable editing buttons.
+        """Receive layer model editable change event & enable/disable buttons.
 
         Parameters
         ----------

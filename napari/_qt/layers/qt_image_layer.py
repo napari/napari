@@ -167,7 +167,7 @@ class QtImageControls(QtBaseImageControls):
             self.layer.iso_threshold = value / 100
 
     def _on_iso_threshold_change(self, event):
-        """Receive layer model isosurface change event and update isosurface slider.
+        """Receive layer model isosurface change event and update the slider.
 
         Parameters
         ----------
@@ -189,7 +189,7 @@ class QtImageControls(QtBaseImageControls):
             self.layer.attenuation = value / 100
 
     def _on_attenuation_change(self, event):
-        """Receive layer model attenuation change event and update attenuation slider.
+        """Receive layer model attenuation change event and update the slider.
 
         Parameters
         ----------
@@ -200,7 +200,7 @@ class QtImageControls(QtBaseImageControls):
             self.attenuationSlider.setValue(self.layer.attenuation * 100)
 
     def _on_interpolation_change(self, event):
-        """Receive layer model interpolation change event and update interpolation dropdown menu.
+        """Receive layer interpolation change event and update dropdown menu.
 
         Parameters
         ----------
@@ -214,7 +214,7 @@ class QtImageControls(QtBaseImageControls):
             self.interpComboBox.setCurrentIndex(index)
 
     def _on_rendering_change(self, event):
-        """Receive layer model rendering change event and update rendering mode dropdown menu.
+        """Receive layer model rendering change event and update dropdown menu.
 
         Parameters
         ----------

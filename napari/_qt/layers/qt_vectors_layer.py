@@ -128,7 +128,7 @@ class QtVectorsControls(QtLayerControls):
             self.lengthSpinBox.setValue(self.layer.length)
 
     def _on_width_change(self, event=None):
-        """"Receive layer model width change event and update the width spinbox.
+        """"Receive layer model width change event and update width spinbox.
 
         Parameters
         ----------
@@ -139,7 +139,7 @@ class QtVectorsControls(QtLayerControls):
             self.widthSpinBox.setValue(self.layer.edge_width)
 
     def _on_edge_color_change(self, event=None):
-        """"Receive layer model edge color change event and update the color swatch.
+        """"Receive layer model edge color change event & update color swatch.
 
         Parameters
         ----------

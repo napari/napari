@@ -94,7 +94,7 @@ class QtLayerControls(QFrame):
             self.opacitySlider.setValue(self.layer.opacity * 100)
 
     def _on_blending_change(self, event=None):
-        """Receive layer model blending mode change event and update blending slider.
+        """Receive layer model blending mode change event and update slider.
 
         Parameters
         ----------

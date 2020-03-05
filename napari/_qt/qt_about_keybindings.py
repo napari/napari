@@ -22,7 +22,7 @@ class QtAboutKeybindings(QDialog):
     Attributes
     ----------
     keybindings_strs : collections.OrderedDict
-        Ordered dictionary of hotkey shortcuts and their associated keybindings.
+        Ordered dictionary of hotkey shortcuts and associated keybindings.
         Dictionary keys include:
         - 'All active keybindings'
         - 'Image layer'

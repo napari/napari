@@ -81,7 +81,7 @@ class QtAbout(QDialog):
         Paramters
         ---------
         qt_viewer : QtViewer
-            The QtViewer instance that the `About napari` dialog box belongs to.
+            QtViewer instance that the `About napari` dialog box belongs to.
         """
         d = QtAbout()
         d.setObjectName('QtAbout')
