@@ -480,6 +480,7 @@ class QtPlayButton(QPushButton):
         self.popup.frame.setLayout(form_layout)
 
         fpsspin = QtCustomDoubleSpinBox(self.popup)
+        fpsspin.setObjectName("fpsSpinBox")
         fpsspin.setAlignment(Qt.AlignCenter)
         fpsspin.setValue(self.fps)
         if hasattr(fpsspin, 'setStepType'):
@@ -493,6 +494,7 @@ class QtPlayButton(QPushButton):
         self.fpsspin = fpsspin
 
         revcheck = QCheckBox(self.popup)
+        revcheck.setObjectName("playDirectionCheckBox")
         form_layout.insertRow(
             1, QLabel('play direction:', parent=self.popup), revcheck
         )

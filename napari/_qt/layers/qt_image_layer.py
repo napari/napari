@@ -1,5 +1,5 @@
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QLabel, QComboBox, QSlider
+from qtpy.QtWidgets import QLabel, QComboBox, QSlider, QHBoxLayout
 from .qt_image_base_layer import QtBaseImageControls
 from ...layers.image._constants import Interpolation, Rendering
 
@@ -86,30 +86,34 @@ class QtImageControls(QtBaseImageControls):
         self.attenuationLabel = QLabel('attenuation:')
         self._on_ndisplay_change()
 
+        colormap_layout = QHBoxLayout()
+        colormap_layout.addWidget(self.colorbarLabel)
+        colormap_layout.addWidget(self.colormapComboBox)
+        colormap_layout.addStretch(1)
+
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
         self.grid_layout.addWidget(QLabel('opacity:'), 0, 0)
-        self.grid_layout.addWidget(self.opacitySlider, 0, 1, 1, 2)
+        self.grid_layout.addWidget(self.opacitySlider, 0, 1)
         self.grid_layout.addWidget(QLabel('contrast limits:'), 1, 0)
-        self.grid_layout.addWidget(self.contrastLimitsSlider, 1, 1, 1, 2)
+        self.grid_layout.addWidget(self.contrastLimitsSlider, 1, 1)
         self.grid_layout.addWidget(QLabel('gamma:'), 2, 0)
-        self.grid_layout.addWidget(self.gammaSlider, 2, 1, 1, 2)
-        self.grid_layout.addWidget(self.isoThresholdLabel, 3, 0)
-        self.grid_layout.addWidget(self.isoThresholdSlider, 3, 1, 1, 2)
-        self.grid_layout.addWidget(self.attenuationLabel, 3, 0)
-        self.grid_layout.addWidget(self.attenuationSlider, 3, 1, 1, 2)
-        self.grid_layout.addWidget(QLabel('colormap:'), 4, 0)
-        self.grid_layout.addWidget(self.colormapComboBox, 4, 2)
-        self.grid_layout.addWidget(self.colorbarLabel, 4, 1)
-        self.grid_layout.addWidget(QLabel('blending:'), 5, 0)
-        self.grid_layout.addWidget(self.blendComboBox, 5, 1, 1, 2)
-        self.grid_layout.addWidget(self.renderLabel, 6, 0)
-        self.grid_layout.addWidget(self.renderComboBox, 6, 1, 1, 2)
-        self.grid_layout.addWidget(self.interpLabel, 7, 0)
-        self.grid_layout.addWidget(self.interpComboBox, 7, 1, 1, 2)
-        self.grid_layout.setRowStretch(8, 1)
+        self.grid_layout.addWidget(self.gammaSlider, 2, 1)
+        self.grid_layout.addWidget(QLabel('colormap:'), 3, 0)
+        self.grid_layout.addLayout(colormap_layout, 3, 1)
+        self.grid_layout.addWidget(QLabel('blending:'), 4, 0)
+        self.grid_layout.addWidget(self.blendComboBox, 4, 1)
+        self.grid_layout.addWidget(self.renderLabel, 5, 0)
+        self.grid_layout.addWidget(self.renderComboBox, 5, 1)
+        self.grid_layout.addWidget(self.interpLabel, 6, 0)
+        self.grid_layout.addWidget(self.interpComboBox, 6, 1)
+        self.grid_layout.addWidget(self.isoThresholdLabel, 7, 0)
+        self.grid_layout.addWidget(self.isoThresholdSlider, 7, 1)
+        self.grid_layout.addWidget(self.attenuationLabel, 8, 0)
+        self.grid_layout.addWidget(self.attenuationSlider, 8, 1)
+        self.grid_layout.setRowStretch(9, 1)
         self.grid_layout.setColumnStretch(1, 1)
-        self.grid_layout.setVerticalSpacing(4)
+        self.grid_layout.setSpacing(4)
 
     def changeInterpolation(self, text):
         """Change interpolation mode for image display.

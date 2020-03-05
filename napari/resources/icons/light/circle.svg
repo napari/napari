@@ -1,0 +1,12 @@
+<svg version="1.1" id="Layer_1" 
+    xmlns="http://www.w3.org/2000/svg" 
+    xmlns:xlink="http://www.w3.org/1999/xlink" viewBox="0 0 100 100">
+    <g>
+<style type="text/css">
+    path{fill:rgb(107, 105, 103)}
+    polygon{fill:rgb(107, 105, 103)}
+    circle{fill:rgb(107, 105, 103)}
+    rect{fill:rgb(107, 105, 103)}
+</style>        <circle cx="50" cy="50" r="50"/>
+    </g>
+</svg>

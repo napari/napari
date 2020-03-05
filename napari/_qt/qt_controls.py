@@ -23,7 +23,7 @@ class QtControls(QStackedWidget):
 
     def __init__(self, viewer):
         super().__init__()
-
+        self.setProperty("emphasized", True)
         self.viewer = viewer
 
         self.setMouseTracking(True)
