@@ -310,7 +310,7 @@ class QtLabelsControls(QtLayerControls):
 
 class QtColorBox(QWidget):
     """QtColorBox class
-
+    """A widget that shows a square with the current label color.
     Parameters
     ----------
     layer : napari.layers.Layer
