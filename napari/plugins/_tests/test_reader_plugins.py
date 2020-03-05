@@ -6,10 +6,20 @@ from napari import Viewer
 
 
 def test_iter_reader_plugins(plugin_manager):
-    """Test safe iteration through reader plugins even with errors."""
+    """Test safe iteration through reader plugins even with errors.
+
+    `napari_bad_plugin2` is a plugin that loads fine but throws an error during
+    file-reading.  this tests that we can gracefully handle that.
+    """
 
     # the plugin loads fine, so there should be no exceptions yet.
     assert 'napari_bad_plugin2' not in plugin_manager._exceptions
+
+    # we want 'napari_bad_plugin2' to be the first plugin called.  But
+    # `napari_test_plugin` will be in line first... Until we can
+    # reorder the call-order of plugins, (#1023), this line serves to prevent
+    # that good plugin from running.
+    plugin_manager.set_blocked('napari_test_plugin')
 
     # but when we try to read an image path, it will raise an IOError.
     # we want to catch and store that IOError, and then move on to give other
