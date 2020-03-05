@@ -1,5 +1,5 @@
 import numpy as np
-from skimage.transform import SimilarityTransform
+from skimage.transform import SimilarityTransform, AffineTransform
 
 from ._constants import Box
 from ..utils.event import EmitterGroup, Event
@@ -66,6 +66,7 @@ class InteractionBox:
         self._show_handle = show_handle
 
         self._selected_vertex = None
+        self._fixed_vertex = None
         self._drag_start = None
         self._drag_start_angle = None
         self._fixed_aspect = False
@@ -76,7 +77,7 @@ class InteractionBox:
             points_changed=Event,
             rotated=Event,
             scaled=Event,
-            dragged=Event,
+            translated=Event,
         )
         self._create_box_from_points()
         self._add_rotation_handle()
@@ -113,7 +114,7 @@ class InteractionBox:
     @property
     def angle(self):
         offset = self._box[Box.HANDLE] - self._box[Box.CENTER]
-        angle = -np.degrees(np.arctan2(offset[0], -offset[1]))
+        angle = -np.degrees(np.arctan2(offset[0], -offset[1])) - 90
         return angle
 
     def _compute_vertices_and_box(self):
@@ -220,12 +221,13 @@ class InteractionBox:
         """ Gets called whenever a drag is started to remember starting values
         """
 
-        self._drag_start_coordinates = [
-            layer.coordinates[i] for i in layer.dims.displayed
-        ]
+        self._drag_start_coordinates = np.array(
+            [layer.coordinates[i] for i in layer.dims.displayed]
+        )
         self._drag_start_box = np.copy(self._box)
         self._drag_start_angle = self.angle
         self._drag_angle = 0
+        self._drag_scale = [1.0, 1.0]
 
     def _clear_drag_start_values(self):
         """ Gets called at the end of a drag to reset remembered values
@@ -235,30 +237,16 @@ class InteractionBox:
         self._drag_start_box = None
         self._drag_start_angle = None
         self._drag_angle = 0
+        self._drag_scale = [1.0, 1.0]
 
-    def _drag_transform_box(self):
-        """ Gets called when rotation,scale or translation change due to drag.
-            The function calculates a transform that is used to transform the box
-            and is passed back to the layer.
-        """
-        # rotate
-        center = self._drag_start_box[Box.CENTER]
-        tform1 = SimilarityTransform(translation=-center)
-        tform2 = SimilarityTransform(rotation=-np.radians(self._drag_angle))
-        tform3 = SimilarityTransform(translation=center)
-        transform = tform1 + tform2 + tform3
-
-        self._box = transform(self._drag_start_box)
-        self.events.points_changed()
-
-    def _on_rotation_drag(self, layer, event):
+    def _on_drag_rotation(self, layer, event):
         """ Gets called upon mouse_move in the case of a rotation
         """
-
+        center = self._drag_start_box[Box.CENTER]
         new_offset = [
             layer.coordinates[i] for i in layer.dims.displayed
-        ] - self._box[Box.CENTER]
-        new_angle = -np.degrees(np.arctan2(new_offset[0], -new_offset[1]))
+        ] - center
+        new_angle = -np.degrees(np.arctan2(new_offset[0], -new_offset[1])) - 90
 
         if np.linalg.norm(new_offset) < 1:
             self._drag_angle = 0
@@ -269,8 +257,66 @@ class InteractionBox:
         else:
             self._drag_angle = new_angle - self._drag_start_angle
 
-        self._drag_transform_box()
+        tform1 = SimilarityTransform(translation=-center)
+        tform2 = SimilarityTransform(rotation=-np.radians(self._drag_angle))
+        tform3 = SimilarityTransform(translation=center)
+        transform = tform1 + tform2 + tform3
+        self._box = transform(self._drag_start_box)
+        self.events.points_changed()
         self.events.rotated(angle=self._drag_angle)
+
+    def _on_drag_scale(self, layer, event):
+        """ Gets called upon mouse_move in the case of a scaling operation
+        """
+
+        # Transform everything in axis-aligned space with fixed point at origin
+        center = self._drag_start_box[self._fixed_vertex]
+        transform = SimilarityTransform(translation=-center)
+        transform += SimilarityTransform(
+            rotation=np.radians(self._drag_start_angle)
+        )
+        coord = transform(
+            [layer.coordinates[i] for i in layer.dims.displayed]
+        )[0]
+        drag_start = transform(self._drag_start_box[self._selected_vertex])[0]
+        # If sidepoint of fixed aspect ratio project offset onto vector along which to scale
+        # Since the fixed verted is now at the origin this vector is drag_start
+        if self._fixed_aspect or self._selected_vertex % 2 == 1:
+            offset = coord - drag_start
+            offset_proj = (
+                np.dot(drag_start, offset) / (np.linalg.norm(drag_start) ** 2)
+            ) * drag_start
+            scale = np.array([1.0, 1.0]) + (offset_proj) / drag_start
+        else:
+            scale = coord / drag_start
+
+        scale = np.nan_to_num(scale, nan=1.0)
+
+        # Apply scaling
+        transform += AffineTransform(scale=scale)
+
+        # Rotate and translate back
+        transform += SimilarityTransform(
+            rotation=-np.radians(self._drag_start_angle)
+        )
+        transform += SimilarityTransform(translation=center)
+        self._box = transform(self._drag_start_box)
+        self.events.points_changed()
+        self.events.scaled(scale=scale)
+
+    def _on_drag_translate(self, layer, event):
+        """ Gets called upon mouse_move in the case of a translation operation
+        """
+
+        offset = (
+            np.array([layer.coordinates[i] for i in layer.dims.displayed])
+            - self._drag_start_coordinates
+        )
+
+        transform = SimilarityTransform(translation=offset)
+        self._box = transform(self._drag_start_box)
+        self.events.points_changed()
+        self.events.translated(translate=offset)
 
     def initialize_mouse_events(self, layer):
         """ Adds event handling functions to the layer
@@ -309,20 +355,20 @@ class InteractionBox:
             drag_callback = None
             if self._selected_vertex is not None:
                 if self._selected_vertex == Box.HANDLE:
-                    drag_callback = self._on_rotation_drag
+                    drag_callback = self._on_drag_rotation
                     yield
                 else:
-                    drag_callback = None
+                    self._fixed_vertex = (self._selected_vertex + 4) % Box.LEN
+                    drag_callback = self._on_drag_scale
                     yield
             else:
                 if inside_boxes(
                     np.array([self._box - self._drag_start_coordinates])
                 )[0]:
-                    drag_callback = None
+                    drag_callback = self._on_drag_translate
                     yield
                 else:
                     self.points = None
-                    drag_callback = None
                     yield
 
             # Handle events during dragging
