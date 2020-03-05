@@ -29,7 +29,7 @@ into two statements with the yield keyword::
         # on key release
         viewer.status = 'goodbye world :('
 
-To create a keymap that will block others, simply ``bind_key(..., ...)```.
+To create a keymap that will block others, ``bind_key(..., ...)```.
 """
 
 import inspect
@@ -241,7 +241,7 @@ def bind_key(keymap, key, func=UNDEFINED, *, overwrite=False):
             # on key release
             viewer.status = 'goodbye world :('
 
-    To create a keymap that will block others, simply ``bind_key(..., ...)```.
+    To create a keymap that will block others, ``bind_key(..., ...)```.
     """
     if func is UNDEFINED:
 
@@ -318,6 +318,28 @@ class KeymapProvider:
     bind_key = KeybindingDescriptor(bind_key)
 
 
+def _bind_keymap(keymap, instance):
+    """Bind all functions in a keymap to an instance.
+
+    Parameters
+    ----------
+    keymap : dict
+        Keymap to bind.
+    instance : object
+        Instance to bind to.
+
+    Returns
+    -------
+    bound_keymap : dict
+        Keymap with functions bound to the instance.
+    """
+    bound_keymap = {
+        key: types.MethodType(func, instance) if func is not Ellipsis else func
+        for key, func in keymap.items()
+    }
+    return bound_keymap
+
+
 class KeymapHandler:
     """Mix-in to add key handling functionality.
 
@@ -338,8 +360,8 @@ class KeymapHandler:
         maps = []
 
         for parent in self.keymap_providers:
-            maps.append(parent.keymap)
-            maps.append(parent.class_keymap)
+            maps.append(_bind_keymap(parent.keymap, parent))
+            maps.append(_bind_keymap(parent.class_keymap, parent))
 
         return ChainMap(*maps)
 
@@ -353,15 +375,14 @@ class KeymapHandler:
                 break
         keymaps = keymaps[: i + 1]  # trim maps after a catch-all
 
-        active_keymap = {}
+        active_keymap = ChainMap(*keymaps)
+        active_keymap_final = {
+            k: func
+            for k, func in active_keymap.items()
+            if func is not Ellipsis
+        }
 
-        for keymap in reversed(keymaps):
-            for key, func in keymap.items():
-                active_keymap[key] = func
-                if func is Ellipsis:  # blocker
-                    del active_keymap[key]
-
-        return active_keymap
+        return active_keymap_final
 
     def press_key(self, key_combo):
         """Simulate a key press to activate a keybinding.
@@ -372,27 +393,20 @@ class KeymapHandler:
             Key combination.
         """
         key_combo = normalize_key_combo(key_combo)
+        keymap = self.active_keymap
+        if key_combo in keymap:
+            func = keymap[key_combo]
+        elif Ellipsis in keymap:  # catch-all
+            func = keymap[Ellipsis]
+        else:
+            return  # no keybinding found
 
-        for parent in self.keymap_providers:
-            for combo in (key_combo, Ellipsis):
-                if combo in parent.keymap:
-                    func = parent.keymap[combo]
-                    break
-                if combo in parent.class_keymap:
-                    func = parent.class_keymap[combo]
-                    break
-            else:  # no binding in this provider
-                continue
-            break  # there was a binding in this provider; stop search
-        else:  # no bindings in any provider
-            return
-
-        if func is ...:  # blocker
+        if func is Ellipsis:  # blocker
             return
         elif not callable(func):
             raise TypeError(f"expected {func} to be callable")
 
-        gen = func(parent)
+        gen = func()
 
         if inspect.isgeneratorfunction(func):
             try:

@@ -1,9 +1,11 @@
 import inspect
+import types
 
 import pytest
 
 from .. import keybindings
 from ..keybindings import (
+    _bind_keymap,
     bind_key,
     components_to_key_combo,
     KeymapHandler,
@@ -125,6 +127,27 @@ def test_keymap_provider():
     assert Baz.class_keymap == {'A', ...}
 
 
+def test_bind_keymap():
+    class Foo:
+        ...
+
+    def bar(foo):
+        return foo
+
+    def baz(foo):
+        return foo
+
+    keymap = {'A': bar, 'B': baz, 'C': ...}
+
+    foo = Foo()
+
+    assert _bind_keymap(keymap, foo) == {
+        'A': types.MethodType(bar, foo),
+        'B': types.MethodType(baz, foo),
+        'C': ...,
+    }
+
+
 def test_keymap_handler():
     class Foo(KeymapProvider):
         class_keymap = {
@@ -144,11 +167,14 @@ def test_keymap_handler():
     handler = KeymapHandler()
     handler.keymap_providers.insert(0, foo)
 
-    assert handler.keymap_chain.maps == [foo.keymap, foo.class_keymap]
+    assert handler.keymap_chain.maps == [
+        _bind_keymap(foo.keymap, foo),
+        _bind_keymap(foo.class_keymap, foo),
+    ]
     assert handler.active_keymap == {
-        'A': foo.class_keymap['A'],
-        'B': foo.keymap['B'],
-        'E': foo.keymap['E'],
+        'A': types.MethodType(foo.class_keymap['A'], foo),
+        'B': types.MethodType(foo.keymap['B'], foo),
+        'E': types.MethodType(foo.keymap['E'], foo),
     }
 
     # non-overwritten class keybinding
@@ -182,15 +208,15 @@ def test_keymap_handler():
     handler.keymap_providers.insert(0, bar)
 
     assert handler.keymap_chain.maps == [
-        bar.keymap,
-        bar.class_keymap,
-        foo.keymap,
-        foo.class_keymap,
+        _bind_keymap(bar.keymap, bar),
+        _bind_keymap(bar.class_keymap, bar),
+        _bind_keymap(foo.keymap, foo),
+        _bind_keymap(foo.class_keymap, foo),
     ]
     assert handler.active_keymap == {
-        'A': foo.class_keymap['A'],
-        'B': foo.keymap['B'],
-        'E': bar.class_keymap['E'],
+        'A': types.MethodType(foo.class_keymap['A'], foo),
+        'B': types.MethodType(foo.keymap['B'], foo),
+        'E': types.MethodType(bar.class_keymap['E'], bar),
     }
 
     # check 'bar' callback
@@ -209,8 +235,8 @@ def test_keymap_handler():
 
     bar.class_keymap[...] = catch_all
     assert handler.active_keymap == {
-        ...: catch_all,
-        'E': bar.class_keymap['E'],
+        ...: types.MethodType(catch_all, bar),
+        'E': types.MethodType(bar.class_keymap['E'], bar),
     }
     assert not hasattr(bar, 'catch_all')
     handler.press_key('Z')
@@ -218,7 +244,9 @@ def test_keymap_handler():
 
     # empty
     bar.class_keymap[...] = ...
-    assert handler.active_keymap == {'E': bar.class_keymap['E']}
+    assert handler.active_keymap == {
+        'E': types.MethodType(bar.class_keymap['E'], bar)
+    }
     del foo.B
     handler.press_key('B')
     assert not hasattr(foo, 'B')
