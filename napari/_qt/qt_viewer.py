@@ -1,4 +1,3 @@
-import os.path
 import inspect
 from pathlib import Path
 

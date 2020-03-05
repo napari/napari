@@ -1,7 +1,4 @@
-from napari.plugins.utils import (
-    get_layer_data_from_plugins,
-    permute_hook_implementations,
-)
+from napari.plugins.utils import get_layer_data_from_plugins
 from tempfile import NamedTemporaryFile
 import numpy as np
 from skimage import io
@@ -10,13 +7,6 @@ from napari import Viewer
 
 def test_iter_reader_plugins(plugin_manager):
     """Test safe iteration through reader plugins even with errors."""
-
-    # first we move one of the "bad" plugins to the front of the line
-    # napari_bad_plugin2 returns a successful "napari_get_reader"
-    # but then raises an IOError
-    permute_hook_implementations(
-        plugin_manager.hook.napari_get_reader, ['napari_bad_plugin2']
-    )
 
     # the plugin loads fine, so there should be no exceptions yet.
     assert 'napari_bad_plugin2' not in plugin_manager._exceptions
