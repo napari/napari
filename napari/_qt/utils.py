@@ -3,6 +3,7 @@ from contextlib import contextmanager
 import numpy as np
 from qtpy import API_NAME
 from qtpy.QtCore import QObject, QThread
+from qtpy.QtWidgets import QGraphicsOpacityEffect
 
 
 def QImg2array(img):
@@ -123,3 +124,12 @@ def qt_signals_blocked(obj):
     obj.blockSignals(True)
     yield
     obj.blockSignals(False)
+
+
+def disable_with_opacity(obj, widget_list, disabled):
+    for wdg in widget_list:
+        widget = getattr(obj, wdg)
+        widget.setEnabled(obj.layer.editable)
+        op = QGraphicsOpacityEffect(obj)
+        op.setOpacity(1 if obj.layer.editable else 0.5)
+        widget.setGraphicsEffect(op)

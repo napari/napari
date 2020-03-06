@@ -12,13 +12,6 @@ from setuptools import find_packages, setup
 
 import versioneer
 
-
-import os.path as osp
-import sys
-from setuptools import setup, find_packages
-
-import versioneer
-
 MIN_PY_MAJOR_VER = 3
 MIN_PY_MINOR_VER = 6
 MIN_PY_VER = f"{MIN_PY_MAJOR_VER}.{MIN_PY_MINOR_VER}"
@@ -67,7 +60,7 @@ with open(osp.join('requirements', 'default.txt')) as f:
         splitted = line.split("#")
         stripped = splitted[0].strip()
         if len(stripped) > 0:
-            requirements.append(splitted)
+            requirements.append(stripped)
 
 setup(
     name=DISTNAME,

@@ -13,6 +13,33 @@ from .qt_base_layer import QtLayerControls
 
 
 class QtBaseImageControls(QtLayerControls):
+    """Superclass for classes requiring colormaps, contrast & gamma sliders.
+
+    This class is never directly instantiated anywhere.
+    It is subclassed by QtImageControls and QtSurfaceControls.
+
+    Parameters
+    ----------
+    layer : napari.layers.Layer
+        An instance of a napari layer.
+
+    Attributes
+    ----------
+    clim_pop : napari._qt.qt_range_slider_popup.QRangeSliderPopup
+        Popup widget launching the contrast range slider.
+    colorbarLabel : qtpy.QtWidgets.QLabel
+        Label text of colorbar widget.
+    colormapComboBox : qtpy.QtWidgets.QComboBox
+        Dropdown widget for selecting the layer colormap.
+    contrastLimitsSlider : qtpy.QtWidgets.QHRangeSlider
+        Contrast range slider widget.
+    gammaSlider : qtpy.QtWidgets.QSlider
+        Gamma adjustment slider widget.
+    layer : napari.layers.Layer
+        An instance of a napari layer.
+
+    """
+
     def __init__(self, layer):
         super().__init__(layer)
 
@@ -21,6 +48,7 @@ class QtBaseImageControls(QtLayerControls):
         self.layer.events.contrast_limits.connect(self._on_clims_change)
 
         comboBox = QComboBox()
+        comboBox.setObjectName("colormapComboBox")
         comboBox.addItems(self.layer.colormaps)
         comboBox._allitems = set(self.layer.colormaps)
         comboBox.activated[str].connect(self.changeColor)
@@ -54,6 +82,13 @@ class QtBaseImageControls(QtLayerControls):
         self._on_colormap_change()
 
     def changeColor(self, text):
+        """Change colormap on the layer model.
+
+        Parameters
+        ----------
+        text : str
+            Colormap name.
+        """
         self.layer.colormap = text
 
     def _clim_mousepress(self, event):
@@ -61,6 +96,11 @@ class QtBaseImageControls(QtLayerControls):
 
         The expanded slider provides finer control, directly editable values,
         and the ability to change the available range of the sliders.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
         """
         if event.button() == Qt.RightButton:
             self.clim_pop = create_range_popup(
@@ -78,6 +118,13 @@ class QtBaseImageControls(QtLayerControls):
             )
 
     def _on_clims_change(self, event=None):
+        """Receive layer model contrast limits change event and update slider.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional.
+            Event from the Qt context, by default None.
+        """
         with qt_signals_blocked(self.contrastLimitsSlider):
             self.contrastLimitsSlider.setRange(
                 self.layer.contrast_limits_range
@@ -95,6 +142,13 @@ class QtBaseImageControls(QtLayerControls):
                 self.clim_pop._on_values_change(clims)
 
     def _on_colormap_change(self, event=None):
+        """Receive layer model colormap change event and update dropdown menu.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional.
+            Event from the Qt context, by default None.
+        """
         name = self.layer.colormap[0]
         if name not in self.colormapComboBox._allitems:
             self.colormapComboBox._allitems.add(name)
@@ -112,9 +166,24 @@ class QtBaseImageControls(QtLayerControls):
         self.colorbarLabel.setPixmap(QPixmap.fromImage(image))
 
     def gamma_slider_changed(self, value):
+        """Change gamma value on the layer model.
+
+        Parameters
+        ----------
+        value : float
+            Gamma adjustment value.
+            https://en.wikipedia.org/wiki/Gamma_correction
+        """
         self.layer.gamma = value / 100
 
     def gamma_slider_update(self, event=None):
+        """Receive the layer model gamma change event and update the slider.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional.
+            Event from the Qt context, by default None.
+        """
         with qt_signals_blocked(self.gammaSlider):
             self.gammaSlider.setValue(self.layer.gamma * 100)
 
@@ -129,7 +198,7 @@ def create_range_popup(layer, attr, parent=None):
 
     Parameters
     ----------
-    layer : napari.Layer
+    layer : napari.layers.Layer
         probably an instance of Image or Surface layer
     attr : str
         the attribute to control with the slider.
@@ -187,7 +256,8 @@ def create_clim_reset_buttons(layer):
 
     Parameters
     ----------
-    layer : Image or Surface Layer
+    layer : napari.layers.Layer
+        Image or Surface Layer
 
     Returns
     -------

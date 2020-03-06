@@ -1,0 +1,2 @@
+[napari.plugin]
+working = working_plugin

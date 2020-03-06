@@ -12,6 +12,13 @@ def test_empty_layers_list():
     assert len(layers) == 0
 
 
+def test_initialize_from_list():
+    layers = LayerList(
+        [Image(np.random.random((10, 10))), Image(np.random.random((10, 10)))]
+    )
+    assert len(layers) == 2
+
+
 def test_adding_layer():
     """
     Test adding a Layer

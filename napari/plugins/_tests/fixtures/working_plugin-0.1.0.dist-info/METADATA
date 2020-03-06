@@ -1,0 +1,7 @@
+Metadata-Version: 2.1
+Name: working
+Version: 0.1.0
+Author-Email: example@invalid.com
+Home-Page: https://www.example.com
+Requires-Python: >=3.6
+Requires-Dist: napari (>=0.2.11)

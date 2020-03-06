@@ -44,7 +44,7 @@ if sys.platform.startswith("win") and sys.version_info >= (3, 8):
 
 
 class QtConsole(RichJupyterWidget):
-    """Qt view for console.
+    """Qt view for the console, an integrated iPython terminal in napari.
 
     Parameters
     ----------
@@ -129,7 +129,8 @@ class QtConsole(RichJupyterWidget):
         # self.execute_on_complete_input = True
 
     def shutdown(self):
+        """Shut down the integrated console in napari."""
         if self.kernel_client is not None:
             self.kernel_client.stop_channels()
-        if self.kernel_manager is not None:
+        if self.kernel_manager is not None and self.kernel_manager.has_kernel:
             self.kernel_manager.shutdown_kernel()
