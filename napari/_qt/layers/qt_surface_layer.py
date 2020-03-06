@@ -3,6 +3,22 @@ from qtpy.QtWidgets import QLabel, QHBoxLayout
 
 
 class QtSurfaceControls(QtBaseImageControls):
+    """Qt view and controls for the napari Surface layer.
+
+    Parameters
+    ----------
+    layer : napari.layers.Surface
+        An instance of a napari Surface layer.
+
+    Attributes
+    ----------
+    grid_layout : qtpy.QtWidgets.QGridLayout
+        Layout of Qt widget controls for the layer.
+    layer : napari.layers.Surface
+        An instance of a napari Surface layer.
+
+    """
+
     def __init__(self, layer):
         super().__init__(layer)
 

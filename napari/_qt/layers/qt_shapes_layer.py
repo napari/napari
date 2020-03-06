@@ -18,6 +18,66 @@ from ..utils import disable_with_opacity
 
 
 class QtShapesControls(QtLayerControls):
+    """Qt view and controls for the napari Shapes layer.
+
+    Parameters
+    ----------
+    layer : napari.layers.Shapes
+        An instance of a napari Shapes layer.
+
+    Attributes
+    ----------
+    button_group : qtpy.QtWidgets.QButtonGroup
+        Button group for shapes layer modes
+        (SELECT, DIRECT, PAN_ZOOM, ADD_RECTANGLE, ADD_ELLIPSE, ADD_LINE,
+        ADD_PATH, ADD_POLYGON, VERTEX_INSERT, VERTEX_REMOVE).
+    delete_button : qtpy.QtWidgets.QtModePushButton
+        Button to delete selected shapes
+    direct_button : qtpy.QtWidgets.QtModeRadioButton
+        Button to select individual vertices in shapes.
+    edgeColorSwatch : qtpy.QtWidgets.QFrame
+        Thumbnail display of points edge color.
+    edgeComboBox : qtpy.QtWidgets.QComboBox
+        Drop down list allowing user to set edge color of points.
+    ellipse_button : qtpy.QtWidgets.QtModeRadioButton
+        Button to add ellipses to shapes layer.
+    faceColorSwatch : qtpy.QtWidgets.QFrame
+        Thumbnail display of points face color.
+    faceComboBox : qtpy.QtWidgets.QComboBox
+        Drop down list allowing user to set face color of points.
+    grid_layout : qtpy.QtWidgets.QGridLayout
+        Layout of Qt widget controls for the layer.
+    layer : napari.layers.Shapes
+        An instance of a napari Shapes layer.
+    line_button : qtpy.QtWidgets.QtModeRadioButton
+        Button to add lines to shapes layer.
+    move_back_button : qtpy.QtWidgets.QtModePushButton
+        Button to move selected shape(s) to the back.
+    move_front_button : qtpy.QtWidgets.QtModePushButton
+        Button to move shape(s) to the front.
+    panzoom_button : qtpy.QtWidgets.QtModeRadioButton
+        Button to pan/zoom shapes layer.
+    path_button : qtpy.QtWidgets.QtModeRadioButton
+        Button to add paths to shapes layer.
+    polygon_button : qtpy.QtWidgets.QtModeRadioButton
+        Button to add polygons to shapes layer.
+    rectangle_button : qtpy.QtWidgets.QtModeRadioButton
+        Button to add rectangles to shapes layer.
+    select_button : qtpy.QtWidgets.QtModeRadioButton
+        Button to select shapes.
+    vertex_insert_button : qtpy.QtWidgets.QtModeRadioButton
+        Button to insert vertex into shape.
+    vertex_remove_button : qtpy.QtWidgets.QtModeRadioButton
+        Button to remove vertex from shapes.
+    widthSlider : qtpy.QtWidgets.QSlider
+        Slider controlling line edge width of shapes.
+
+    Raises
+    ------
+    ValueError
+        Raise error if shapes mode is not recognized.
+    """
+
     def __init__(self, layer):
         super().__init__(layer)
 
@@ -164,9 +224,40 @@ class QtShapesControls(QtLayerControls):
         self.grid_layout.setSpacing(4)
 
     def mouseMoveEvent(self, event):
+        """On mouse move, update layer mode status.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
         self.layer.status = str(self.layer.mode)
 
     def set_mode(self, event):
+        """"Update ticks in checkbox widgets when shapes layer mode changed.
+
+        Available modes for shapes layer are:
+        * SELECT
+        * DIRECT
+        * PAN_ZOOM
+        * ADD_RECTANGLE
+        * ADD_ELLIPSE
+        * ADD_LINE
+        * ADD_PATH
+        * ADD_POLYGON
+        * VERTEX_INSERT
+        * VERTEX_REMOVE
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+
+        Raises
+        ------
+        ValueError
+            Raise error if event.mode is not ADD, PAN_ZOOM, or SELECT.
+        """
         mode_buttons = {
             Mode.SELECT: self.select_button,
             Mode.DIRECT: self.direct_button,
@@ -186,25 +277,70 @@ class QtShapesControls(QtLayerControls):
             raise ValueError(f"Mode '{event.mode}'not recognized")
 
     def changeFaceColor(self, text):
+        """Change face color of shapes.
+
+        Parameters
+        ----------
+        text : str
+            Face color for shapes, color name or hex string.
+            Eg: 'white', 'red', 'blue', '#00ff00', etc.
+        """
         self.layer.current_face_color = text
 
     def changeEdgeColor(self, text):
+        """Change edge color of shapes.
+
+        Parameters
+        ----------
+        text : str
+            Edge color for shapes, color name or hex string.
+            Eg: 'white', 'red', 'blue', '#00ff00', etc.
+        """
         self.layer.current_edge_color = text
 
     def changeWidth(self, value):
+        """Change edge line width of shapes on the layer model.
+
+        Parameters
+        ----------
+        value : float
+            Line width of shapes.
+        """
         self.layer.current_edge_width = float(value) / 2
 
     def changeOpacity(self, value):
+        """Change opacity value of shapes on the layer model.
+
+        Parameters
+        ----------
+        value : float
+            Opacity value for shapes.
+            Input range 0 - 100 (transparent to fully opaque).
+        """
         with self.layer.events.blocker(self._on_opacity_change):
             self.layer.current_opacity = value / 100
 
     def _on_edge_width_change(self, event=None):
+        """Receive layer model edge line width change event and update slider.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional.
+            Event from the Qt context, by default None.
+        """
         with self.layer.events.edge_width.blocker():
             value = self.layer.current_edge_width
             value = np.clip(int(2 * value), 0, 40)
             self.widthSlider.setValue(value)
 
     def _on_edge_color_change(self, event=None):
+        """Receive layer model edge color change event and update color swatch.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional.
+            Event from the Qt context, by default None.
+        """
         with self.layer.events.edge_color.blocker():
             index = self.edgeComboBox.findText(
                 self.layer.current_edge_color, Qt.MatchFixedString
@@ -214,6 +350,13 @@ class QtShapesControls(QtLayerControls):
         self.edgeColorSwatch.setStyleSheet("background-color: " + color)
 
     def _on_face_color_change(self, event=None):
+        """Receive layer model face color change event and update color swatch.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional.
+            Event from the Qt context, by default None.
+        """
         with self.layer.events.face_color.blocker():
             index = self.faceComboBox.findText(
                 self.layer.current_face_color, Qt.MatchFixedString
@@ -223,10 +366,24 @@ class QtShapesControls(QtLayerControls):
         self.faceColorSwatch.setStyleSheet("background-color: " + color)
 
     def _on_opacity_change(self, event=None):
+        """Receive layer model opacity change event and update opacity slider.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional.
+            Event from the Qt context, by default None.
+        """
         with self.layer.events.opacity.blocker():
             self.opacitySlider.setValue(self.layer.current_opacity * 100)
 
     def _on_editable_change(self, event=None):
+        """Receive layer model editable change event & enable/disable buttons.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional.
+            Event from the Qt context, by default None.
+        """
         disable_with_opacity(
             self,
             [
