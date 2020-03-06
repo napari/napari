@@ -305,12 +305,9 @@ class Points(Layer):
 
         self._drag_start = None
 
-        # Nx2 array of points in the currently viewed slice
-        self._data_view = np.empty((0, 2))
-        # Sizes of points in the currently viewed slice
-        self._size_view = 0
-        # Full data indices of points located in the currently viewed slice
+        # initialize view data
         self._indices_view = []
+        self._view_size_scale = []
 
         self._drag_box = None
         self._drag_box_stored = None
@@ -1067,8 +1064,8 @@ class Points(Layer):
         if len(index) == 0:
             box = None
         else:
-            data = self._data_view[index]
-            size = self._size_view[index]
+            data = self._view_data[index]
+            size = self._view_size[index]
             if data.ndim == 1:
                 data = np.expand_dims(data, axis=0)
             data = points_to_squares(data, size)
@@ -1129,6 +1126,72 @@ class Points(Layer):
 
         self.events.mode(mode=mode)
 
+    @property
+    def _view_data(self):
+        """Get the coords of the points in view
+
+        Returns
+        -------
+        view_data : (N x D) np.ndarray
+            Array of coordinates for the N points in view
+        """
+        if len(self._indices_view) > 0:
+
+            data = self.data[np.ix_(self._indices_view, self.dims.displayed)]
+
+        else:
+            # if no points in this slice send dummy data
+            data = np.zeros((0, self.dims.ndisplay))
+
+        return data
+
+    @property
+    def _view_size(self):
+        """Get the sizes of the points in view
+
+       Returns
+       -------
+       view_size : (N x D) np.ndarray
+           Array of sizes for the N points in view
+        """
+        if len(self._indices_view) > 0:
+            # Get the point sizes and scale for ndim display
+            sizes = (
+                self.size[
+                    np.ix_(self._indices_view, self.dims.displayed)
+                ].mean(axis=1)
+                * self._view_size_scale
+            )
+
+        else:
+            # if no points, return an empty list
+            sizes = np.array([])
+        return sizes
+
+    @property
+    def _view_face_color(self) -> np.ndarray:
+        """Get the face colors of the points in view
+
+        Returns
+        -------
+        view_face_color : (N x 4) np.ndarray
+            RGBA color array for the face colors of the N points in view.
+            If there are no points in view, returns array of length 0.
+        """
+        return self.face_color[self._indices_view]
+
+    @property
+    def _view_edge_color(self) -> np.ndarray:
+        """Get the edge colors of the points in view
+
+        Returns
+        -------
+        view_edge_color : (N x 4) np.ndarray
+            RGBA color array for the edge colors of the N points in view.
+            If there are no points in view, returns array of length 0.
+        """
+        return self.edge_color[self._indices_view]
+
     def _set_editable(self, editable=None):
         """Set editable mode based on layer properties."""
         if editable is None:
@@ -1140,18 +1203,16 @@ class Points(Layer):
         if not self.editable:
             self.mode = Mode.PAN_ZOOM
 
-    def _slice_data(self, indices):
+    def _slice_data(self, dims_indices):
         """Determines the slice of points given the indices.
 
         Parameters
         ----------
-        indices : sequence of int or slice
+        dims_indices : sequence of int or slice
             Indices to slice with.
 
         Returns
         ----------
-        in_slice_data : (N, 2) array
-            Coordinates of points in the currently viewed slice.
         slice_indices : list
             Indices of points in the currently viewed slice.
         scale : float, (N, ) array
@@ -1161,29 +1222,26 @@ class Points(Layer):
         """
         # Get a list of the data for the points in this slice
         not_disp = list(self.dims.not_displayed)
-        disp = list(self.dims.displayed)
-        indices = np.array(indices)
+        indices = np.array(dims_indices)
         if len(self.data) > 0:
             if self.n_dimensional is True and self.ndim > 2:
                 distances = abs(self.data[:, not_disp] - indices[not_disp])
                 sizes = self.size[:, not_disp] / 2
                 matches = np.all(distances <= sizes, axis=1)
-                in_slice_data = self.data[np.ix_(matches, disp)]
                 size_match = sizes[matches]
                 size_match[size_match == 0] = 1
                 scale_per_dim = (size_match - distances[matches]) / size_match
                 scale_per_dim[size_match == 0] = 1
                 scale = np.prod(scale_per_dim, axis=1)
-                indices = np.where(matches)[0].astype(int)
-                return in_slice_data, indices, scale
+                slice_indices = np.where(matches)[0].astype(int)
+                return slice_indices, scale
             else:
                 data = self.data[:, not_disp].astype('int')
                 matches = np.all(data == indices[not_disp], axis=1)
-                in_slice_data = self.data[np.ix_(matches, disp)]
-                indices = np.where(matches)[0].astype(int)
-                return in_slice_data, indices, 1
+                slice_indices = np.where(matches)[0].astype(int)
+                return slice_indices, 1
         else:
-            return [], [], []
+            return [], []
 
     def _get_value(self):
         """Determine if points at current coordinates.
@@ -1194,14 +1252,14 @@ class Points(Layer):
             Index of point that is at the current coordinate if any.
         """
         # Display points if there are any in this slice
-        if len(self._data_view) > 0:
+        if len(self._view_data) > 0:
             # Get the point sizes
             distances = abs(
-                self._data_view
+                self._view_data
                 - [self.coordinates[d] for d in self.dims.displayed]
             )
             in_slice_matches = np.all(
-                distances <= np.expand_dims(self._size_view, axis=1) / 2,
+                distances <= np.expand_dims(self._view_size, axis=1) / 2,
                 axis=1,
             )
             indices = np.where(in_slice_matches)[0]
@@ -1216,29 +1274,11 @@ class Points(Layer):
 
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
-
-        in_slice_data, indices, scale = self._slice_data(self.dims.indices)
-
-        # Display points if there are any in this slice
-        if len(in_slice_data) > 0:
-            # Get the point sizes
-            sizes = (
-                self.size[np.ix_(indices, self.dims.displayed)].mean(axis=1)
-                * scale
-            )
-
-            # Update the points node
-            data = np.array(in_slice_data)
-
-        else:
-            # if no points in this slice send dummy data
-            data = np.zeros((0, self.dims.ndisplay))
-            sizes = [0]
-        self._data_view = data
-        self._size_view = sizes
+        # get the indices of points in view
+        indices, scale = self._slice_data(self.dims.indices)
+        self._view_size_scale = scale
         self._indices_view = indices
-        # Make sure if changing planes any selected points not in the current
-        # plane are removed
+        # get the selected points that are in view
         selected = []
         for c in self.selected_data:
             if c in self._indices_view:
@@ -1258,7 +1298,6 @@ class Points(Layer):
         force : bool
             Bool that forces a redraw to occur when `True`
         """
-        # if self._mode == Mode.SELECT:
         # Check if any point ids have changed since last call
         if self.selected:
             if (
@@ -1322,7 +1361,7 @@ class Points(Layer):
         """Update thumbnail with current points and colors."""
         colormapped = np.zeros(self._thumbnail_shape)
         colormapped[..., 3] = 1
-        if len(self._data_view) > 0:
+        if len(self._view_data) > 0:
             min_vals = [self.dims.range[i][0] for i in self.dims.displayed]
             shape = np.ceil(
                 [
@@ -1333,13 +1372,13 @@ class Points(Layer):
             zoom_factor = np.divide(
                 self._thumbnail_shape[:2], shape[-2:]
             ).min()
-            if len(self._data_view) > self._max_points_thumbnail:
+            if len(self._view_data) > self._max_points_thumbnail:
                 thumbnail_indices = np.random.randint(
-                    0, len(self._data_view), self._max_points_thumbnail
+                    0, len(self._view_data), self._max_points_thumbnail
                 )
-                points = self._data_view[thumbnail_indices]
+                points = self._view_data[thumbnail_indices]
             else:
-                points = self._data_view
+                points = self._view_data
                 thumbnail_indices = self._indices_view
             coords = np.floor(
                 (points[:, -2:] - min_vals[-2:] + 0.5) * zoom_factor
@@ -1403,7 +1442,7 @@ class Points(Layer):
 
     def _paste_data(self):
         """Paste any point from clipboard and select them."""
-        npoints = len(self._data_view)
+        npoints = len(self._view_data)
         totpoints = len(self.data)
 
         if len(self._clipboard.keys()) > 0:
@@ -1478,7 +1517,7 @@ class Points(Layer):
         props = {'stroke-width': width, 'opacity': opacity}
 
         for i, d, s in zip(
-            self._indices_view, self._data_view, self._size_view
+            self._indices_view, self._view_data, self._view_size
         ):
             d = d[::-1]
             cx = str(d[0])
@@ -1549,9 +1588,9 @@ class Points(Layer):
         self._drag_start = None
         if self._is_selecting:
             self._is_selecting = False
-            if len(self._data_view) > 0:
+            if len(self._view_data) > 0:
                 selection = points_in_box(
-                    self._drag_box, self._data_view, self._size_view
+                    self._drag_box, self._view_data, self._view_size
                 )
                 self.selected_data = self._indices_view[selection]
             else:
