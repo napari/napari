@@ -19,6 +19,44 @@ from ..utils import disable_with_opacity
 
 
 class QtLabelsControls(QtLayerControls):
+    """Qt view and controls for the napari Labels layer.
+
+    Parameters
+    ----------
+    layer : napari.layers.Labels
+        An instance of a napari Labels layer.
+
+    Attributes
+    ----------
+    button_group : qtpy.QtWidgets.QButtonGroup
+        Button group of labels layer modes: PAN_ZOOM, PICKER, PAINT, or FILL.
+    colormapUpdate : qtpy.QtWidgets.QPushButton
+        Button to update colormap of label layer.
+    contigCheckBox : qtpy.QtWidgets.QCheckBox
+        Checkbox to control if label layer is contiguous.
+    fill_button : qtpy.QtWidgets.QtModeRadioButton
+        Button to select FILL mode on Labels layer.
+    grid_layout : qtpy.QtWidgets.QGridLayout
+        Layout of Qt widget controls for the layer.
+    layer : napari.layers.Labels
+        An instance of a napari Labels layer.
+    ndimCheckBox : qtpy.QtWidgets.QCheckBox
+        Checkbox to control if label layer is n-dimensional.
+    paint_button : qtpy.QtWidgets.QtModeRadioButton
+        Button to select PAINT mode on Labels layer.
+    panzoom_button : qtpy.QtWidgets.QtModeRadioButton
+        Button to select PAN_ZOOM mode on Labels layer.
+    pick_button : qtpy.QtWidgets.QtModeRadioButton
+        Button to select PICKER mode on Labels layer.
+    selectionSpinBox : qtpy.QtWidgets.QSpinBox
+        Widget to select a specfic label by its index.
+
+    Raises
+    ------
+    ValueError
+        Raise error if label mode is not PAN_ZOOM, PICKER, PAINT, or FILL.
+    """
+
     def __init__(self, layer):
         super().__init__(layer)
 
@@ -119,10 +157,19 @@ class QtLabelsControls(QtLayerControls):
         self.grid_layout.setSpacing(4)
 
     def mouseMoveEvent(self, event):
+        """On mouse move, set layer status equal to the current selected mode.
+
+        Available mode options are: PAN_ZOOM, PICKER, PAINT, or FILL
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
         self.layer.status = str(self.layer.mode)
 
     def _on_mode_change(self, event):
-        """Update ticks in checkbox widgets when label layer mode is changed.
+        """Receive layer model mode change event and update checkbox ticks.
 
         Parameters
         ----------
@@ -199,7 +246,7 @@ class QtLabelsControls(QtLayerControls):
             self.layer.n_dimensional = False
 
     def _on_selection_change(self, event=None):
-        """Switch currently selected selected label.
+        """Receive layer model label selection change event and update spinbox.
 
         Parameters
         ----------
@@ -211,7 +258,7 @@ class QtLabelsControls(QtLayerControls):
             self.selectionSpinBox.setValue(int(value))
 
     def _on_brush_size_change(self, event=None):
-        """Update brush size for the label layer.
+        """Receive layer model brush size change event and update the slider.
 
         Parameters
         ----------
@@ -224,7 +271,7 @@ class QtLabelsControls(QtLayerControls):
             self.brushSizeSlider.setValue(value)
 
     def _on_n_dim_change(self, event=None):
-        """Toggle n-dimensional state.
+        """Receive layer model n-dim mode change event and update the checkbox.
 
         Parameters
         ----------
@@ -235,10 +282,24 @@ class QtLabelsControls(QtLayerControls):
             self.ndimCheckBox.setChecked(self.layer.n_dimensional)
 
     def _on_contig_change(self, event=None):
+        """Receive layer model contiguous change event and update the checkbox.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional.
+            Event from the Qt context.
+        """
         with self.layer.events.contiguous.blocker():
             self.contigCheckBox.setChecked(self.layer.contiguous)
 
     def _on_editable_change(self, event=None):
+        """Receive layer model editable change event & enable/disable buttons.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional.
+            Event from the Qt context.
+        """
         disable_with_opacity(
             self,
             ['pick_button', 'paint_button', 'fill_button'],
@@ -247,6 +308,14 @@ class QtLabelsControls(QtLayerControls):
 
 
 class QtColorBox(QWidget):
+    """A widget that shows a square with the current label color.
+
+    Parameters
+    ----------
+    layer : napari.layers.Layer
+        An instance of a napari layer.
+    """
+
     def __init__(self, layer):
         super().__init__()
 
@@ -259,10 +328,17 @@ class QtColorBox(QWidget):
         self.layer.events.selected_label.connect(self.update_color)
 
     def update_color(self, event):
+        """Receive layer model label selection change event & update colorbox.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
         self.update()
 
     def paintEvent(self, event):
-        """Paint the colorbox.
+        """Paint the colorbox.  If no color, display a checkerboard pattern.
 
         Parameters
         ----------

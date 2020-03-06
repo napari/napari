@@ -580,6 +580,10 @@ class QtViewer(QSplitter):
     def dragEnterEvent(self, event):
         """Ignore event if not dragging & dropping a file or URL to open.
 
+        Using event.ignore() here allows the event to pass through the
+        parent widget to its child widget, otherwise the parent widget
+        would catch the event and not pass it on to the child widget.
+
         Parameters
         ----------
         event : qtpy.QtCore.QEvent
