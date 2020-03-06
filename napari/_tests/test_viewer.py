@@ -1,5 +1,5 @@
-import sys
 import time
+import sys
 
 import numpy as np
 import pytest
@@ -115,8 +115,7 @@ def test_screenshot(viewer_factory):
     assert screenshot.ndim == 3
 
 
-def test_update(viewer_factory):
-    import time
+def test_update(viewer_factory, qtbot):
 
     data = np.random.random((512, 512))
     view, viewer = viewer_factory()
@@ -126,15 +125,19 @@ def test_update(viewer_factory):
         # number of times to update
 
         for k in range(num_updates):
-            time.sleep(update_period)
+            qtbot.wait(update_period * 1000)
 
             dat = np.random.random((512, 512))
             layer.data = dat
 
             assert layer.data.all() == dat.all()
 
-    viewer.update(layer_update, update_period=0.01, num_updates=100)
+    pool = viewer.update(layer_update, update_period=0.005, num_updates=100)
 
-    # if we do not sleep, main thread closes before update
-    # thread finishes and many qt components get cleaned
-    time.sleep(3)
+    # wait until threadpool is finished
+    i = 0
+    while pool.activeThreadCount():
+        qtbot.wait(20)
+        i += 1
+        if i > 150:
+            raise TimeoutError("pool didn't close fast enough")
