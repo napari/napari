@@ -123,9 +123,7 @@ class QtImageControls(QtBaseImageControls):
             self._toggle_rendering_parameter_visbility()
 
     def _toggle_rendering_parameter_visbility(self):
-        rendering = self.layer.rendering
-        if isinstance(rendering, str):
-            rendering = Rendering(rendering)
+        rendering = Rendering(self.layer.rendering)
         if rendering == Rendering.ISO:
             self.isoThresholdSlider.show()
             self.isoThresholdLabel.show()

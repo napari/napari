@@ -251,10 +251,7 @@ class Layer(KeymapMixin, ABC):
 
     @blending.setter
     def blending(self, blending):
-        if isinstance(blending, str):
-            blending = Blending(blending)
-
-        self._blending = blending
+        self._blending = Blending(blending)
         self.events.blending()
 
     @property

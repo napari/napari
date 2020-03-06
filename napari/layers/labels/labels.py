@@ -302,9 +302,7 @@ class Labels(Image):
 
     @mode.setter
     def mode(self, mode: Union[str, Mode]):
-
-        if isinstance(mode, str):
-            mode = Mode(mode)
+        mode = Mode(mode)
 
         if not self.editable:
             mode = Mode.PAN_ZOOM

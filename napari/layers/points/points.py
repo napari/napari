@@ -692,8 +692,7 @@ class Points(Layer):
 
     @edge_color_mode.setter
     def edge_color_mode(self, edge_color_mode: Union[str, ColorMode]):
-        if isinstance(edge_color_mode, str):
-            edge_color_mode = ColorMode(edge_color_mode)
+        edge_color_mode = ColorMode(edge_color_mode)
 
         if edge_color_mode == ColorMode.DIRECT:
             self._edge_color_mode = edge_color_mode
@@ -835,8 +834,7 @@ class Points(Layer):
 
     @face_color_mode.setter
     def face_color_mode(self, face_color_mode):
-        if isinstance(face_color_mode, str):
-            face_color_mode = ColorMode(face_color_mode)
+        face_color_mode = ColorMode(face_color_mode)
 
         if face_color_mode == ColorMode.DIRECT:
             self._face_color_mode = face_color_mode
@@ -1093,8 +1091,7 @@ class Points(Layer):
 
     @mode.setter
     def mode(self, mode):
-        if isinstance(mode, str):
-            mode = Mode(mode)
+        mode = Mode(mode)
 
         if not self.editable:
             mode = Mode.PAN_ZOOM
