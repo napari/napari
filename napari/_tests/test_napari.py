@@ -11,7 +11,7 @@ from napari._tests.utils import (
 
 
 @pytest.mark.parametrize('layer_type, data, ndim', layer_test_data)
-def test_view(qapp, layer_type, data, ndim):
+def test_view(qtbot, layer_type, data, ndim):
     np.random.seed(0)
     viewer = view_layer_type(layer_type, data)
     view = viewer.window.qt_viewer
@@ -19,7 +19,7 @@ def test_view(qapp, layer_type, data, ndim):
     viewer.close()
 
 
-def test_view_multichannel(qapp):
+def test_view_multichannel(qtbot):
     """Test adding image."""
     np.random.seed(0)
     data = np.random.random((15, 10, 5))

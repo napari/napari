@@ -3,7 +3,6 @@ import time
 
 import numpy as np
 import pytest
-from qtpy.QtCore import QEventLoop
 from qtpy.QtWidgets import QApplication
 
 from napari import Viewer
@@ -51,8 +50,7 @@ def test_viewer(viewer_factory):
         # test to complete its draw cycle, then pop back out of fullscreen.
         start = time.time()
         while time.time() < start + 1:
-            qapp = QApplication.instance()
-            qapp.processEvents(QEventLoop.ProcessEventsFlag.AllEvents, 0)
+            QApplication.processEvents()
 
         viewer.window._qt_window.showNormal()
 

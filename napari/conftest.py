@@ -3,21 +3,22 @@ import warnings
 
 import pytest
 from napari import Viewer
+from qtpy.QtWidgets import QApplication
 
 
 def pytest_addoption(parser):
-    """An option to keep viewers hidden during tests.
+    """An option to show viewers during tests. (Hidden by default).
 
-    This speeds tests up by about %18, and does not seem to negatively affect
-    tests.
+    Showing viewers decreases tests by about %18.  Note, due to the placement
+    of this conftest.py file, you must specify the napari folder (in the pytest
+    command) to use this flag.
 
     Example
     -------
-    $ pytest napari -v --hide-viewer
+    $ pytest napari --show-viewer
     """
-
     parser.addoption(
-        "--hide-viewer",
+        "--show-viewer",
         action="store_true",
         default=False,
         help="don't show viewer during tests",
@@ -25,12 +26,12 @@ def pytest_addoption(parser):
 
 
 @pytest.fixture
-def qapp(qapp):
-    """A modified qapp fixture that makes sure no widgets have been leaked."""
-    initial = qapp.topLevelWidgets()
-    yield qapp
-    qapp.processEvents()
-    leaks = set(qapp.topLevelWidgets()).difference(initial)
+def qtbot(qtbot):
+    """A modified qtbot fixture that makes sure no widgets have been leaked."""
+    initial = QApplication.topLevelWidgets()
+    yield qtbot
+    QApplication.processEvents()
+    leaks = set(QApplication.topLevelWidgets()).difference(initial)
     # still not sure how to clean up some of the remaining vispy
     # vispy.app.backends._qt.CanvasBackendDesktop widgets...
     if any([n.__class__.__name__ != 'CanvasBackendDesktop' for n in leaks]):
@@ -40,12 +41,12 @@ def qapp(qapp):
 
 
 @pytest.fixture(scope="function")
-def viewer_factory(qapp, request):
+def viewer_factory(qtbot, request):
     viewers: List[Viewer] = []
 
     def actual_factory(*model_args, **model_kwargs):
         model_kwargs['show'] = model_kwargs.pop(
-            'show', not request.config.getoption("--hide-viewer")
+            'show', request.config.getoption("--show-viewer")
         )
         viewer = Viewer(*model_args, **model_kwargs)
         viewers.append(viewer)

@@ -17,7 +17,6 @@ def popup(qtbot):
         step_size=1,
     )
     qtbot.addWidget(popup)
-    popup.show()
     return popup
 
 
