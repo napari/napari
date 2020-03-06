@@ -82,8 +82,16 @@ class StringEnumMeta(EnumMeta):
         """
         # simple value lookup
         if names is None:
-            value = value.lower()
-            return super().__call__(value)
+            if isinstance(value, str):
+                return super().__call__(value.lower())
+            elif isinstance(value, cls):
+                return value
+            else:
+                raise ValueError(
+                    f'{cls} may only be called with a `str`'
+                    f' or an instance of {cls}'
+                )
+
         # otherwise create new Enum class
         return cls._create_(
             value,

@@ -1,7 +1,6 @@
 """
 Range slider, extended QWidget slider for napari.
 """
-
 from qtpy.QtGui import QPainter, QColor
 from qtpy.QtCore import Signal, Property, Qt
 from qtpy.QtWidgets import QWidget

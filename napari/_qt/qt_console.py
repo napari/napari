@@ -129,6 +129,7 @@ class QtConsole(RichJupyterWidget):
         # self.execute_on_complete_input = True
 
     def closeEvent(self, event):
+        """Clean up the integrated console in napari."""
         if self.kernel_client is not None:
             self.kernel_client.stop_channels()
         if self.kernel_manager is not None and self.kernel_manager.has_kernel:

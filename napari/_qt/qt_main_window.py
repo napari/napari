@@ -39,8 +39,18 @@ class Window:
 
     Attributes
     ----------
+    file_menu : qtpy.QtWidgets.QMenu
+        File menu.
+    help_menu : qtpy.QtWidgets.QMenu
+        Help menu.
+    main_menu : qtpy.QtWidgets.QMainWindow.menuBar
+        Main menubar.
     qt_viewer : QtViewer
         Contained viewer widget.
+    view_menu : qtpy.QtWidgets.QMenu
+        View menu.
+    window_menu : qtpy.QtWidgets.QMenu
+        Window menu.
     """
 
     raw_stylesheet = combine_stylesheets()
@@ -93,6 +103,7 @@ class Window:
             self.show()
 
     def _add_menubar(self):
+        """Add menubar to napari app."""
         self.main_menu = self._qt_window.menuBar()
         # Menubar shortcuts are only active when the menubar is visible.
         # Therefore, we set a global shortcut not associated with the menubar
@@ -123,6 +134,7 @@ class Window:
             self._main_menu_shortcut.setEnabled(False)
 
     def _add_file_menu(self):
+        """Add 'File' menu to app menubar."""
         open_images = QAction('Open image(s)...', self._qt_window)
         open_images.setShortcut('Ctrl+O')
         open_images.setStatusTip('Open image file(s)')
@@ -148,6 +160,7 @@ class Window:
         self.file_menu.addAction(screenshot)
 
     def _add_view_menu(self):
+        """Add 'View' menu to app menubar."""
         toggle_visible = QAction('Toggle menubar visibility', self._qt_window)
         toggle_visible.setShortcut('Ctrl+M')
         toggle_visible.setStatusTip('Hide Menubar')
@@ -161,6 +174,7 @@ class Window:
         self.view_menu.addAction(toggle_theme)
 
     def _add_window_menu(self):
+        """Add 'Window' menu to app menubar."""
         exit_action = QAction("Close window", self._qt_window)
         exit_action.setShortcut("Ctrl+W")
         exit_action.setStatusTip('Close napari window')
@@ -169,6 +183,7 @@ class Window:
         self.window_menu.addAction(exit_action)
 
     def _add_help_menu(self):
+        """Add 'Help' menu to app menubar."""
         self.help_menu = self.main_menu.addMenu('&Help')
 
         about_action = QAction("napari info", self._qt_window)
@@ -293,6 +308,13 @@ class Window:
             self._qt_window.activateWindow()  # for Windows
 
     def _update_palette(self, palette):
+        """Update widget color palette.
+
+        Parameters
+        ----------
+        palette : qtpy.QtGui.QPalette
+            Color palette for each widget state (Active, Disabled, Inactive).
+        """
         # set window styles which don't use the primary stylesheet
         # FIXME: this is a problem with the stylesheet not using properties
         self._status_bar.setStyleSheet(
@@ -309,16 +331,31 @@ class Window:
 
     def _status_changed(self, event):
         """Update status bar.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
         """
         self._status_bar.showMessage(event.text)
 
     def _title_changed(self, event):
         """Update window title.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
         """
         self._qt_window.setWindowTitle(event.text)
 
     def _help_changed(self, event):
         """Update help message on status bar.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
         """
         self._help.setText(event.text)
 
@@ -342,6 +379,7 @@ class Window:
         return QImg2array(img)
 
     def close(self):
+        """Close the viewer window and cleanup sub-widgets."""
         self.qt_viewer.close()
         self._qt_window.close()
         del self._qt_window
