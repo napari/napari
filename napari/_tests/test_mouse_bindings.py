@@ -148,7 +148,7 @@ def test_unselected_layer_mouse_bindings(viewer_factory):
     """Test adding mouse bindings to a layer that is not selected
     """
     np.random.seed(0)
-    view, viewer = viewer_factory()
+    view, viewer = viewer_factory(show=True)
 
     layer = viewer.add_image(np.random.random((10, 20)))
     layer.selected = False
