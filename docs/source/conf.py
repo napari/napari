@@ -85,6 +85,15 @@ html_static_path = []
 
 # -- Extension configuration -------------------------------------------------
 
+# add_mdule_names = False avoids showing the full path to a function or class
+# e.g.
+# napari.layers.points.keybindings.activate_add_mode(layer)
+# becomes
+# activate_add_mode
+# (we can show the full module path elsewhere on the page)
+
+add_module_names = False
+
 # -- Options for todo extension ----------------------------------------------
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
