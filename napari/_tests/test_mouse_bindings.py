@@ -6,7 +6,7 @@ def test_viewer_mouse_bindings(viewer_factory):
     """Test adding mouse bindings to the viewer
     """
     np.random.seed(0)
-    view, viewer = viewer_factory()
+    view, viewer = viewer_factory(show=True)
 
     mock_press = Mock()
     mock_drag = Mock()
@@ -76,7 +76,7 @@ def test_layer_mouse_bindings(viewer_factory):
     """Test adding mouse bindings to a layer that is selected
     """
     np.random.seed(0)
-    view, viewer = viewer_factory()
+    view, viewer = viewer_factory(show=True)
 
     layer = viewer.add_image(np.random.random((10, 20)))
     layer.selected = True
