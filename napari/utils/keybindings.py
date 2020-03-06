@@ -368,14 +368,15 @@ class KeymapHandler:
     @property
     def active_keymap(self):
         """dict: Active keymap, created by resolving the keymap chain."""
-        keymaps = self.keymap_chain.maps
+        active_keymap = self.keymap_chain
+        keymaps = active_keymap.maps
 
         for i, keymap in enumerate(keymaps):
-            if Ellipsis in keymap:  # catch-all
+            if Ellipsis in keymap:  # catch-all key
+                # trim all keymaps after catch-all
+                active_keymap = ChainMap(*keymaps[: i + 1])
                 break
-        keymaps = keymaps[: i + 1]  # trim maps after a catch-all
 
-        active_keymap = ChainMap(*keymaps)
         active_keymap_final = {
             k: func
             for k, func in active_keymap.items()
@@ -397,7 +398,7 @@ class KeymapHandler:
         if key_combo in keymap:
             func = keymap[key_combo]
         elif Ellipsis in keymap:  # catch-all
-            func = keymap[Ellipsis]
+            func = keymap[...]
         else:
             return  # no keybinding found
 

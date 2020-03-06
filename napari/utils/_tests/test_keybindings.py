@@ -148,24 +148,31 @@ def test_bind_keymap():
     }
 
 
-def test_keymap_handler():
-    class Foo(KeymapProvider):
-        class_keymap = {
-            'A': lambda x: setattr(x, 'A', ...),
-            'B': lambda x: setattr(x, 'B', ...),
-            'C': lambda x: setattr(x, 'C', ...),
-            'D': ...,
-        }
-
-    foo = Foo()
-    foo.keymap = {
-        'B': lambda x: setattr(x, 'B', None),  # overwrite
-        'E': lambda x: setattr(x, 'E', None),  # new entry
-        'C': ...,  # blocker
+class Foo(KeymapProvider):
+    class_keymap = {
+        'A': lambda x: setattr(x, 'A', ...),
+        'B': lambda x: setattr(x, 'B', ...),
+        'C': lambda x: setattr(x, 'C', ...),
+        'D': ...,
     }
 
+    def __init__(self):
+        self.keymap = {
+            'B': lambda x: setattr(x, 'B', None),  # overwrite
+            'E': lambda x: setattr(x, 'E', None),  # new entry
+            'C': ...,  # blocker
+        }
+
+
+class Bar(KeymapProvider):
+    class_keymap = {'E': lambda x: setattr(x, 'E', 42)}
+
+
+def test_handle_single_keymap_provider():
+    foo = Foo()
+
     handler = KeymapHandler()
-    handler.keymap_providers.insert(0, foo)
+    handler.keymap_providers = [foo]
 
     assert handler.keymap_chain.maps == [
         _bind_keymap(foo.keymap, foo),
@@ -178,34 +185,39 @@ def test_keymap_handler():
     }
 
     # non-overwritten class keybinding
+    # 'A' in Foo and not foo
     assert not hasattr(foo, 'A')
     handler.press_key('A')
     assert foo.A is ...
 
     # keybinding blocker on class
+    # 'D' in Foo and not foo but has no func
     handler.press_key('D')
     assert not hasattr(foo, 'D')
 
     # non-overwriting instance keybinding
+    # 'E' not in Foo and in foo
     assert not hasattr(foo, 'E')
     handler.press_key('E')
     assert foo.E is None
 
     # overwriting instance keybinding
+    # 'B' in Foo and in foo; foo has priority
     assert not hasattr(foo, 'B')
     handler.press_key('B')
     assert foo.B is None
 
     # keybinding blocker on instance
-    handler.press_key('D')
-    assert not hasattr(foo, 'D')
+    # 'C' in Foo and in Foo; foo has priority but no func
+    handler.press_key('C')
+    assert not hasattr(foo, 'C')
 
-    # add another provider
-    class Bar(KeymapProvider):
-        class_keymap = {'E': lambda x: setattr(x, 'E', 42)}
 
+def test_handle_multiple_keymap_providers():
+    foo = Foo()
     bar = Bar()
-    handler.keymap_providers.insert(0, bar)
+    handler = KeymapHandler()
+    handler.keymap_providers = [bar, foo]
 
     assert handler.keymap_chain.maps == [
         _bind_keymap(bar.keymap, bar),
@@ -220,16 +232,18 @@ def test_keymap_handler():
     }
 
     # check 'bar' callback
+    # 'E' in bar and foo; bar takes priority
     assert not hasattr(bar, 'E')
     handler.press_key('E')
     assert bar.E == 42
 
     # check 'foo' callback
+    # 'B' not in bar and in foo
     handler.press_key('B')
     assert not hasattr(bar, 'B')
 
     # catch-all key combo
-    # default
+    # if key not found in 'bar' keymap; default to this binding
     def catch_all(x):
         x.catch_all = True
 
@@ -251,7 +265,8 @@ def test_keymap_handler():
     handler.press_key('B')
     assert not hasattr(foo, 'B')
 
-    # handle on-release bindings
+
+def test_handle_on_release_bindings():
     def make_42(x):
         # on press
         x.SPAM = 42
@@ -272,6 +287,7 @@ def test_keymap_handler():
         class_keymap = {'A': make_42, 'Control-Shift-B': add_then_subtract}
 
     baz = Baz()
+    handler = KeymapHandler()
     handler.keymap_providers = [baz]
 
     # one-statement generator function
@@ -294,21 +310,21 @@ def test_keymap_handler():
 
 
 def test_bind_key_method():
-    class Foo(KeymapProvider):
+    class Foo2(KeymapProvider):
         ...
 
-    foo = Foo()
+    foo = Foo2()
 
     # instance binding
     foo.bind_key('A', lambda: 42)
     assert foo.keymap['A']() == 42
 
     # class binding
-    @Foo.bind_key('B')
+    @Foo2.bind_key('B')
     def bar():
         return 'SPAM'
 
-    assert Foo.class_keymap['B'] is bar
+    assert Foo2.class_keymap['B'] is bar
 
 
 def test_bind_key_doc():
