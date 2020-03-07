@@ -164,6 +164,7 @@ class Image(IntensityVisualizationMixin, Layer):
         )
 
         super().__init__(
+            data,
             ndim,
             name=name,
             metadata=metadata,
