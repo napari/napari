@@ -1,14 +1,12 @@
 import time
-import sys
 
 import numpy as np
 import pytest
-from qtpy.QtWidgets import QApplication
 
 from napari import Viewer
 from napari._tests.utils import (
-    check_viewer_functioning,
     add_layer_by_type,
+    check_viewer_functioning,
     layer_test_data,
 )
 
@@ -44,15 +42,8 @@ def test_viewer(viewer_factory):
         if func.__name__ == 'play':
             func(viewer)
 
-    if sys.platform == 'darwin':
-        # on some versions of Darwin, exiting while fullscreen seems to tickle
-        # some bug deep in NSWindow.  This forces the fullscreen keybinding
-        # test to complete its draw cycle, then pop back out of fullscreen.
-        start = time.time()
-        while time.time() < start + 1:
-            QApplication.processEvents()
-
-        viewer.window._qt_window.showNormal()
+    # the test for fullscreen that used to be here has been moved to the
+    # Window.close() method.
 
 
 @pytest.mark.first  # provided by pytest-ordering
@@ -115,8 +106,7 @@ def test_screenshot(viewer_factory):
     assert screenshot.ndim == 3
 
 
-def test_update(viewer_factory, qtbot):
-
+def test_update(viewer_factory):
     data = np.random.random((512, 512))
     view, viewer = viewer_factory()
     layer = viewer.add_image(data)
@@ -125,19 +115,13 @@ def test_update(viewer_factory, qtbot):
         # number of times to update
 
         for k in range(num_updates):
-            qtbot.wait(update_period * 1000)
+            time.sleep(update_period)
 
             dat = np.random.random((512, 512))
             layer.data = dat
 
             assert layer.data.all() == dat.all()
 
-    pool = viewer.update(layer_update, update_period=0.005, num_updates=100)
-
-    # wait until threadpool is finished
-    i = 0
-    while pool.activeThreadCount():
-        qtbot.wait(20)
-        i += 1
-        if i > 150:
-            raise TimeoutError("pool didn't close fast enough")
+    viewer.update(layer_update, update_period=0.01, num_updates=100)
+    # the previous time.sleep() that used to be here has been replaced with
+    # QtViewer.pool.waitForDone() in the closeEvent of the QtViewer.

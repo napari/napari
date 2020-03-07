@@ -629,11 +629,11 @@ class QtViewer(QSplitter):
         # or Abort trap. (calling stop() when no animation is occuring is also
         # not a problem)
         self.dims.stop()
-        if self.pool.activeThreadCount() > 0:
-            self.pool.clear()
         self.canvas.native.deleteLater()
         self.console.close()
         self.dockConsole.deleteLater()
+        if not self.pool.waitForDone(10000):
+            raise TimeoutError("Timed out waiting for QtViewer.pool to finish")
         event.accept()
 
 

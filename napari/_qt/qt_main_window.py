@@ -2,6 +2,8 @@
 Custom Qt widgets that serve as native objects that the public-facing elements
 wrap.
 """
+import time
+
 # set vispy to use same backend as qtpy
 from skimage.io import imsave
 
@@ -13,6 +15,7 @@ from ..resources import combine_stylesheets
 # these module-level imports have to come after `app.use_app(API)`
 # see discussion on #638
 from qtpy.QtWidgets import (  # noqa: E402
+    QApplication,
     QMainWindow,
     QWidget,
     QHBoxLayout,
@@ -21,7 +24,6 @@ from qtpy.QtWidgets import (  # noqa: E402
     QAction,
     QShortcut,
     QStatusBar,
-    QApplication,
 )
 from qtpy.QtCore import Qt  # noqa: E402
 from qtpy.QtGui import QKeySequence  # noqa: E402
@@ -380,6 +382,14 @@ class Window:
 
     def close(self):
         """Close the viewer window and cleanup sub-widgets."""
+        # on some versions of Darwin, exiting while fullscreen seems to tickle
+        # some bug deep in NSWindow.  This forces the fullscreen keybinding
+        # test to complete its draw cycle, then pop back out of fullscreen.
+        if self._qt_window.isFullScreen():
+            self._qt_window.showNormal()
+            for i in range(7):
+                time.sleep(0.1)
+                QApplication.processEvents()
         self.qt_viewer.close()
         self._qt_window.close()
         del self._qt_window
