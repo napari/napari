@@ -24,10 +24,10 @@ from ..utils.color_transformations import (
     ColorType,
 )
 from ._points_constants import Symbol, SYMBOL_ALIAS, Mode, ColorMode
+from ._points_mouse_bindings import add, select, highlight
 from ._points_utils import (
     create_box,
     points_to_squares,
-    points_in_box,
     dataframe_to_properties,
     guess_continuous,
     map_property,
@@ -185,15 +185,15 @@ class Points(Layer):
 
     Extended Summary
     ----------
-    _data_view : array (M, 2)
+    _view_data : array (M, 2)
         2D coordinates of points in the currently viewed slice.
-    _size_view : array (M, )
+    _view_size : array (M, )
         Size of the point markers in the currently viewed slice.
     _indices_view : array (M, )
         Integer indices of the points in the currently viewed slice.
     _selected_view :
         Integer indices of selected points in the currently viewed slice within
-        the `_data_view` array.
+        the `_view_data` array.
     _selected_box : array (4, 2) or None
         Four corners of any box either around currently selected points or
         being created during a drag action. Starting in the top left and
@@ -1101,16 +1101,25 @@ class Points(Layer):
             return
         old_mode = self._mode
 
+        if old_mode == Mode.ADD:
+            self.mouse_drag_callbacks.remove(add)
+        elif old_mode == Mode.SELECT:
+            self.mouse_move_callbacks.remove(highlight)
+            self.mouse_drag_callbacks.remove(select)
+
         if mode == Mode.ADD:
             self.cursor = 'pointing'
             self.interactive = False
             self.help = 'hold <space> to pan/zoom'
             self.selected_data = []
             self._set_highlight()
+            self.mouse_drag_callbacks.append(add)
         elif mode == Mode.SELECT:
             self.cursor = 'standard'
             self.interactive = False
             self.help = 'hold <space> to pan/zoom'
+            self.mouse_move_callbacks.append(highlight)
+            self.mouse_drag_callbacks.append(select)
         elif mode == Mode.PAN_ZOOM:
             self.cursor = 'standard'
             self.interactive = True
@@ -1535,65 +1544,3 @@ class Points(Layer):
             xml_list.append(element)
 
         return xml_list
-
-    def on_mouse_move(self, event):
-        """Called whenever mouse moves over canvas.
-        """
-        if self._mode == Mode.SELECT:
-            if event.is_dragging:
-                if len(self.selected_data) > 0:
-                    self._move(self.selected_data, self.coordinates)
-                else:
-                    self._is_selecting = True
-                    if self._drag_start is None:
-                        self._drag_start = [
-                            self.coordinates[d] for d in self.dims.displayed
-                        ]
-                    self._drag_box = np.array(
-                        [
-                            self._drag_start,
-                            [self.coordinates[d] for d in self.dims.displayed],
-                        ]
-                    )
-                    self._set_highlight()
-            else:
-                self._set_highlight()
-        else:
-            self._set_highlight()
-
-    def on_mouse_press(self, event):
-        """Called whenever mouse pressed in canvas.
-        """
-        shift = 'Shift' in event.modifiers
-
-        if self._mode == Mode.SELECT:
-            if shift and self._value is not None:
-                if self._value in self.selected_data:
-                    self.selected_data = [
-                        x for x in self.selected_data if x != self._value
-                    ]
-                else:
-                    self.selected_data += [self._value]
-            elif self._value is not None:
-                if self._value not in self.selected_data:
-                    self.selected_data = [self._value]
-            else:
-                self.selected_data = []
-            self._set_highlight()
-        elif self._mode == Mode.ADD:
-            self.add(self.coordinates)
-
-    def on_mouse_release(self, event):
-        """Called whenever mouse released in canvas.
-        """
-        self._drag_start = None
-        if self._is_selecting:
-            self._is_selecting = False
-            if len(self._view_data) > 0:
-                selection = points_in_box(
-                    self._drag_box, self._view_data, self._view_size
-                )
-                self.selected_data = self._indices_view[selection]
-            else:
-                self.selected_data = []
-            self._set_highlight(force=True)
