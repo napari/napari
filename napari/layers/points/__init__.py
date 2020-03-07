@@ -1,2 +1,2 @@
 from .points import Points
-from . import keybindings
+from . import _points_key_bindings

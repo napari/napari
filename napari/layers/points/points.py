@@ -11,7 +11,6 @@ from vispy.color.colormap import Colormap
 from ..base import Layer
 from ...utils.event import Event
 from ...utils.status_messages import format_float
-from ._constants import Symbol, SYMBOL_ALIAS, Mode, ColorMode
 from ...utils.colormaps.standardize_color import (
     transform_color,
     hex_to_name,
@@ -24,7 +23,11 @@ from ..utils.color_transformations import (
     normalize_and_broadcast_colors,
     ColorType,
 )
-from .points_utils import (
+from ._points_constants import Symbol, SYMBOL_ALIAS, Mode, ColorMode
+from ._points_utils import (
+    create_box,
+    points_to_squares,
+    points_in_box,
     dataframe_to_properties,
     guess_continuous,
     map_property,
@@ -1594,77 +1597,3 @@ class Points(Layer):
             else:
                 self.selected_data = []
             self._set_highlight(force=True)
-
-
-def create_box(data):
-    """Create the axis aligned interaction box of a list of points
-
-    Parameters
-    ----------
-    data : (N, 2) array
-        Points around which the interaction box is created
-
-    Returns
-    -------
-    box : (4, 2) array
-        Vertices of the interaction box
-    """
-    min_val = data.min(axis=0)
-    max_val = data.max(axis=0)
-    tl = np.array([min_val[0], min_val[1]])
-    tr = np.array([max_val[0], min_val[1]])
-    br = np.array([max_val[0], max_val[1]])
-    bl = np.array([min_val[0], max_val[1]])
-    box = np.array([tl, tr, br, bl])
-    return box
-
-
-def points_to_squares(points, sizes):
-    """Expand points to squares defined by their size
-
-    Parameters
-    ----------
-    points : (N, 2) array
-        Points to be turned into squares
-    sizes : (N,) array
-        Size of each point
-
-    Returns
-    -------
-    rect : (4N, 2) array
-        Vertices of the expanded points
-    """
-    rect = np.concatenate(
-        [
-            points + np.sqrt(2) / 2 * np.array([sizes, sizes]).T,
-            points + np.sqrt(2) / 2 * np.array([sizes, -sizes]).T,
-            points + np.sqrt(2) / 2 * np.array([-sizes, sizes]).T,
-            points + np.sqrt(2) / 2 * np.array([-sizes, -sizes]).T,
-        ],
-        axis=0,
-    )
-    return rect
-
-
-def points_in_box(corners, points, sizes):
-    """Determine which points are in an axis aligned box defined by the corners
-
-    Parameters
-    ----------
-    points : (N, 2) array
-        Points to be checked
-    sizes : (N,) array
-        Size of each point
-
-    Returns
-    -------
-    inside : list
-        Indices of points inside the box
-    """
-    box = create_box(corners)[[0, 2]]
-    rect = points_to_squares(points, sizes)
-    below_top = np.all(box[1] >= rect, axis=1)
-    above_bottom = np.all(rect >= box[0], axis=1)
-    inside = np.logical_and(below_top, above_bottom)
-    inside = np.unique(np.where(inside)[0] % len(points))
-    return list(inside)
