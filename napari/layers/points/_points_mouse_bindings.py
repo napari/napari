@@ -70,11 +70,13 @@ def select(layer, event):
             selection = points_in_box(
                 layer._drag_box, layer._view_data, layer._view_size
             )
-            # If shift add any selected points to existing ones
+            # If shift combine drag selection with existing selected ones
             if shift:
-                layer.selected_data = np.unique(
-                    layer.selected_data + list(layer._indices_view[selection])
+                new_selected = layer._indices_view[selection]
+                target = set(layer.selected_data).symmetric_difference(
+                    set(new_selected)
                 )
+                layer.selected_data = list(target)
             else:
                 layer.selected_data = layer._indices_view[selection]
         else:
@@ -86,3 +88,8 @@ def add(layer, event):
     """Add a new point at the clicked position."""
     # on press
     layer.add(layer.coordinates)
+
+
+def highlight(layer, event):
+    """Highlight hovered points."""
+    layer._set_highlight()
