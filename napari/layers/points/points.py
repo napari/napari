@@ -24,7 +24,7 @@ from ..utils.color_transformations import (
     ColorType,
 )
 from ._points_constants import Symbol, SYMBOL_ALIAS, Mode, ColorMode
-from ._points_mouse_bindings import add, select, highlight
+from ._points_mouse_bindings import add, select
 from ._points_utils import (
     create_box,
     points_to_squares,
@@ -1104,7 +1104,6 @@ class Points(Layer):
         if old_mode == Mode.ADD:
             self.mouse_drag_callbacks.remove(add)
         elif old_mode == Mode.SELECT:
-            self.mouse_move_callbacks.remove(highlight)
             self.mouse_drag_callbacks.remove(select)
 
         if mode == Mode.ADD:
@@ -1118,7 +1117,6 @@ class Points(Layer):
             self.cursor = 'standard'
             self.interactive = False
             self.help = 'hold <space> to pan/zoom'
-            self.mouse_move_callbacks.append(highlight)
             self.mouse_drag_callbacks.append(select)
         elif mode == Mode.PAN_ZOOM:
             self.cursor = 'standard'

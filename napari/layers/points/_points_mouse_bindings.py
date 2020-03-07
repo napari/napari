@@ -4,27 +4,48 @@ from ._points_utils import points_in_box
 
 
 def select(layer, event):
-    """Select points."""
+    """Select points.
+
+    Clicking on a point will select that point. If holding shift while clicking
+    that point will be added to or removed from the existing selection
+    depending on whether it is selected or not.
+
+    Clicking and dragging a point that is already selected will drag all the
+    currently selected points.
+
+    Clicking and dragging on an empty part of the canvas (i.e. not on a point)
+    will create a drag box that will select all points inside it when finished.
+    Holding shift throughout the entirety of this process will add those points
+    to any existing selection, otherwise these will become the only selected
+    points.
+    """
     # on press
     shift = 'Shift' in event.modifiers
-    if shift and layer._value is not None:
-        if layer._value in layer.selected_data:
-            layer.selected_data = [
-                x for x in layer.selected_data if x != layer._value
-            ]
+
+    # if shift add / remove any from existing selection
+    if shift:
+        if layer._value is not None:
+            if layer._value in layer.selected_data:
+                layer.selected_data = [
+                    x for x in layer.selected_data if x != layer._value
+                ]
+            else:
+                layer.selected_data += [layer._value]
         else:
-            layer.selected_data += [layer._value]
-    elif layer._value is not None:
-        if layer._value not in layer.selected_data:
-            layer.selected_data = [layer._value]
+            pass
     else:
-        layer.selected_data = []
+        if layer._value is not None:
+            if layer._value not in layer.selected_data:
+                layer.selected_data = [layer._value]
+        else:
+            layer.selected_data = []
     layer._set_highlight()
     yield
 
     # on move
     while event.type == 'mouse_move':
-        if len(layer.selected_data) > 0:
+        # If not holding shift and some points selected then drag them
+        if not shift and len(layer.selected_data) > 0:
             layer._move(layer.selected_data, layer.coordinates)
         else:
             layer._is_selecting = True
@@ -49,36 +70,19 @@ def select(layer, event):
             selection = points_in_box(
                 layer._drag_box, layer._view_data, layer._view_size
             )
-            layer.selected_data = layer._indices_view[selection]
+            # If shift add any selected points to existing ones
+            if shift:
+                layer.selected_data = np.unique(
+                    layer.selected_data + list(layer._indices_view[selection])
+                )
+            else:
+                layer.selected_data = layer._indices_view[selection]
         else:
             layer.selected_data = []
         layer._set_highlight(force=True)
 
 
 def add(layer, event):
-    """Add a point at the cursor position."""
+    """Add a new point at the clicked position."""
     # on press
     layer.add(layer.coordinates)
-    yield
-
-    # on move
-    while event.type == 'mouse_move':
-        yield
-
-    # on release
-    layer._drag_start = None
-    if layer._is_selecting:
-        layer._is_selecting = False
-        if len(layer._view_data) > 0:
-            selection = points_in_box(
-                layer._drag_box, layer._view_data, layer._view_size
-            )
-            layer.selected_data = layer._indices_view[selection]
-        else:
-            layer.selected_data = []
-        layer._set_highlight(force=True)
-
-
-def highlight(layer, event):
-    """Highlight hovered points."""
-    layer._set_highlight()
