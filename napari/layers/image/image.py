@@ -336,9 +336,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @interpolation.setter
     def interpolation(self, interpolation):
-        if isinstance(interpolation, str):
-            interpolation = Interpolation(interpolation)
-        self._interpolation = interpolation
+        self._interpolation = Interpolation(interpolation)
         self.events.interpolation()
 
     @property
@@ -364,10 +362,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @rendering.setter
     def rendering(self, rendering):
-        if isinstance(rendering, str):
-            rendering = Rendering(rendering)
-
-        self._rendering = rendering
+        self._rendering = Rendering(rendering)
         self.events.rendering()
 
     def _get_state(self):

@@ -230,9 +230,7 @@ class QtImageControls(QtBaseImageControls):
 
     def _toggle_rendering_parameter_visbility(self):
         """Hide isosurface rendering parameters if they aren't needed."""
-        rendering = self.layer.rendering
-        if isinstance(rendering, str):
-            rendering = Rendering(rendering)
+        rendering = Rendering(self.layer.rendering)
         if rendering == Rendering.ISO:
             self.isoThresholdSlider.show()
             self.isoThresholdLabel.show()

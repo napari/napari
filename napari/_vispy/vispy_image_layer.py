@@ -134,9 +134,7 @@ class VispyImageLayer(VispyBaseLayer):
     def _on_threshold_change(self, event=None):
         if self.layer.dims.ndisplay == 2:
             return
-        rendering = self.layer.rendering
-        if isinstance(rendering, str):
-            rendering = Rendering(rendering)
+        rendering = Rendering(self.layer.rendering)
         if rendering == Rendering.ISO:
             self.node.threshold = float(self.layer.iso_threshold)
         elif rendering == Rendering.ATTENUATED_MIP:
