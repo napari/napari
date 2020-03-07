@@ -1,6 +1,5 @@
 from os.path import abspath, dirname, join
 from glob import glob
-from . import qt
 from typing import Optional, List
 
 resources_dir = abspath(dirname(__file__))
@@ -20,3 +19,11 @@ def combine_stylesheets(extra: Optional[List[str]] = []):
             with open(file, 'r') as f:
                 out += f.read()
     return out
+
+
+def import_resources():
+    from .build_icons import build_icons
+    import importlib
+
+    build_icons(overwrite=False)
+    importlib.import_module('napari.resources.qt')

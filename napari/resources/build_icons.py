@@ -5,7 +5,8 @@ for styling svg elements using qss
 run as python -m napari.resources.build_icons"""
 
 from os import listdir, makedirs
-from os.path import join
+from os.path import exists, join
+from subprocess import run
 
 from ..resources import resources_dir
 from ..utils.theme import palettes
@@ -17,9 +18,9 @@ insert = """<style type="text/css">
     rect{fill:{{ color }}}
 </style>"""
 
-svgpath = join(resources_dir, 'icons', 'svg')
-qrcpath = join(resources_dir, 'res.qrc')
-icons = [i.replace('.svg', '') for i in sorted(listdir(svgpath))]
+SVGPATH = join(resources_dir, 'icons', 'svg')
+QRCPATH = join(resources_dir, 'res.qrc')
+ICONS = [i.replace('.svg', '') for i in sorted(listdir(SVGPATH))]
 
 TEXT_ICONS = ['visibility']
 
@@ -34,7 +35,11 @@ SECONDARY_ICONS = [
 ]
 
 
-def build_icons():
+def build_resources(qrcpath=None, overwrite=False):
+    qrcpath = qrcpath or QRCPATH
+
+    if exists(qrcpath) and (not overwrite):
+        return qrcpath
 
     qrc_string = '''
     <!DOCTYPE RCC>
@@ -46,7 +51,7 @@ def build_icons():
     for name, palette in palettes.items():
         palette_dir = join(resources_dir, 'icons', name)
         makedirs(palette_dir, exist_ok=True)
-        for icon in icons:
+        for icon in ICONS:
             file = icon + '.svg'
             qrc_string += f'\n    <file>icons/{name}/{file}</file>'
             if icon in TEXT_ICONS:
@@ -57,7 +62,7 @@ def build_icons():
                 css = insert.replace('{{ color }}', palette['secondary'])
             else:
                 css = insert.replace('{{ color }}', palette['icon'])
-            with open(join(svgpath, file), 'r') as fr:
+            with open(join(SVGPATH, file), 'r') as fr:
                 contents = fr.readlines()
                 fr.close()
                 contents.insert(4, css)
@@ -73,20 +78,32 @@ def build_icons():
     with open(qrcpath, 'w') as f:
         f.write(qrc_string)
 
+    return qrcpath
 
-if __name__ == "__main__":
-    from subprocess import run
 
-    qtpy_file = join(resources_dir, 'qt.py')
+def build_python_resources(res_qrc, out_path, overwrite=False):
 
-    build_icons()
+    if exists(out_path):
+        return
+
     try:
-        run(['pyside2-rcc', '-o', qtpy_file, qrcpath])
+        run(['pyrcc5', '-o', out_path, res_qrc])
     except FileNotFoundError:
-        run(['pyrcc5', '-o', qtpy_file, qrcpath])
+        run(['pyside2-rcc', '-o', out_path, res_qrc])
 
-    with open(qtpy_file, "rt") as fin:
+    with open(out_path, "rt") as fin:
         data = fin.read()
         data = data.replace('PySide2', 'qtpy').replace('PyQt5', 'qtpy')
-    with open(qtpy_file, "wt") as fin:
+    with open(out_path, "wt") as fin:
         fin.write(data)
+
+
+def build_icons(out_path=None, overwrite=False):
+    out_path = out_path or join(resources_dir, 'qt.py')
+    resources_path = build_resources()
+    build_python_resources(resources_path, out_path)
+    return out_path
+
+
+if __name__ == "__main__":
+    build_icons(overwrite=True)
