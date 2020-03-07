@@ -79,7 +79,7 @@ def select(layer, event):
                 layer.selected_data = layer._indices_view[selection]
         else:
             layer.selected_data = []
-        layer._set_highlight(force=True)
+    layer._set_highlight(force=True)
 
 
 def add(layer, event):

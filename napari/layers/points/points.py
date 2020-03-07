@@ -1325,6 +1325,7 @@ class Points(Layer):
                     if (
                         self._value in self._indices_view
                         and self._mode == Mode.SELECT
+                        and not self._is_selecting
                     ):
                         hover_point = list(self._indices_view).index(
                             self._value
@@ -1339,6 +1340,7 @@ class Points(Layer):
                     if (
                         self._value in self._indices_view
                         and self._mode == Mode.SELECT
+                        and not self._is_selecting
                     ):
                         hover_point = list(self._indices_view).index(
                             self._value
