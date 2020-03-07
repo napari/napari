@@ -387,7 +387,7 @@ class Window:
         # test to complete its draw cycle, then pop back out of fullscreen.
         if self._qt_window.isFullScreen():
             self._qt_window.showNormal()
-            for i in range(7):
+            for i in range(8):
                 time.sleep(0.1)
                 QApplication.processEvents()
         self.qt_viewer.close()
