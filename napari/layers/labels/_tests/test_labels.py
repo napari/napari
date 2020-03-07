@@ -96,8 +96,8 @@ def test_changing_modes():
     assert layer.mode == 'paint'
     assert layer.interactive is False
 
-    layer.mode = 'picker'
-    assert layer.mode == 'picker'
+    layer.mode = 'pick'
+    assert layer.mode == 'pick'
     assert layer.interactive is False
 
     layer.mode = 'pan_zoom'

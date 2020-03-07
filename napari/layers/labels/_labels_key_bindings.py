@@ -37,7 +37,7 @@ def activate_pan_zoom_mode(layer):
 @Labels.bind_key('L')
 def activate_picker_mode(layer):
     """Activate the label picker."""
-    layer.mode = Mode.PICKER
+    layer.mode = Mode.PICK
 
 
 @Labels.bind_key('E')
