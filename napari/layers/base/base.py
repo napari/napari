@@ -181,13 +181,10 @@ class Layer(KeymapMixin, ABC):
         self.dims.events.order.connect(self._update_dims)
         self.dims.events.axis.connect(self.refresh)
 
-        # self.mouse_move_callbacks = []
-        # self.mouse_drag_callbacks = []
+        self.mouse_move_callbacks = []
+        self.mouse_drag_callbacks = []
         self._persisted_mouse_event = {}
         self._mouse_drag_gen = {}
-
-    mouse_move_callbacks = []  # Note this is now at class level
-    mouse_drag_callbacks = []  # Note this is now at class level
 
     def __str__(self):
         """Return self.name."""

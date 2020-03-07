@@ -1,3 +1,2 @@
 from .labels import Labels
-from . import keybindings
-from . import mouse_functions
+from . import _labels_key_bindings
