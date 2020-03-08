@@ -266,7 +266,7 @@ class VispyImageLayer(VispyBaseLayer):
             scale = np.ones(self.layer.ndim)
             for i, d in enumerate(self.layer.dims.displayed):
                 scale[d] = downsample[i]
-            self.layer._scale_view = scale
+            self.layer._transform_view.scale = scale
             self._on_scale_change()
             slices = tuple(slice(None, None, ds) for ds in downsample)
             data = data[slices]
