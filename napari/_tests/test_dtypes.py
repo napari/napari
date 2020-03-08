@@ -1,7 +1,5 @@
 import numpy as np
 import pytest
-from napari import Viewer
-
 
 dtypes = [
     np.dtype(np.bool),
@@ -20,12 +18,10 @@ dtypes = [
 
 
 @pytest.mark.parametrize('dtype', dtypes)
-def test_image_dytpes(qtbot, dtype):
+def test_image_dytpes(viewer_factory, dtype):
     """Test different dtype images."""
     np.random.seed(0)
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
+    view, viewer = viewer_factory()
 
     # add dtype image data
     data = np.random.randint(20, size=(30, 40)).astype(dtype)
@@ -39,6 +35,3 @@ def test_image_dytpes(qtbot, dtype):
     ]
     viewer.add_image(data, is_pyramid=True)
     assert np.all(viewer.layers[1].data == data)
-
-    # Close the viewer
-    viewer.window.close()

@@ -127,21 +127,27 @@ class VispyBaseLayer(ABC):
         self.node.update()
 
     def _on_scale_change(self, event=None):
-        self.scale = [
-            self.layer.scale[d] * self.layer._scale_view[d]
-            for d in self.layer.dims.displayed[::-1]
-        ]
+        scale = (
+            self.layer._transform_view.compose(self.layer._transform)
+            .set_slice(self.layer.dims.displayed)
+            .scale
+        )
+        # convert NumPy axis ordering to VisPy axis ordering
+        self.scale = scale[::-1]
         if self.layer.is_pyramid:
             self.layer.top_left = self.find_top_left()
         self.layer.position = self._transform_position(self._position)
 
     def _on_translate_change(self, event=None):
-        self.translate = [
-            self.layer.translate[d]
-            + self.layer._translate_view[d]
-            + self.layer.translate_grid[d]
-            for d in self.layer.dims.displayed[::-1]
-        ]
+        translate = (
+            self.layer._transform_grid.compose(
+                self.layer._transform_view.compose(self.layer._transform)
+            )
+            .set_slice(self.layer.dims.displayed)
+            .translate
+        )
+        # convert NumPy axis ordering to VisPy axis ordering
+        self.translate = translate[::-1]
         self.layer.position = self._transform_position(self._position)
 
     def _transform_position(self, position):

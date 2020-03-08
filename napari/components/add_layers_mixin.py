@@ -1,6 +1,6 @@
 import itertools
 from logging import getLogger
-from typing import Sequence, List, Optional, Union
+from typing import List, Optional, Sequence, Union
 
 import numpy as np
 

@@ -7,20 +7,16 @@ def test_console(qtbot):
     """Test creating the console."""
     console = QtConsole()
     qtbot.addWidget(console)
-
     assert console.kernel_client is not None
-    console.shutdown()
 
 
 def test_console_user_variables(qtbot):
     """Test creating the console with user variables."""
     console = QtConsole({'var': 3})
     qtbot.addWidget(console)
-
     assert console.kernel_client is not None
     assert 'var' in console.shell.user_ns
     assert console.shell.user_ns['var'] == 3
-    console.shutdown()
 
 
 def test_multiple_consoles(qtbot):
@@ -34,8 +30,6 @@ def test_multiple_consoles(qtbot):
     assert console_b.kernel_client is not None
     assert 'var_a' in console_a.shell.user_ns
     assert 'var_b' in console_a.shell.user_ns
-    console_a.shutdown()
-    console_b.shutdown()
 
 
 def test_ipython_console(qtbot):
@@ -50,4 +44,3 @@ def test_ipython_console(qtbot):
         console = QtConsole()
         qtbot.addWidget(console)
         assert console.kernel_client is None
-        console.shutdown()

@@ -78,7 +78,7 @@ class QtViewer(QSplitter):
 
     def __init__(self, viewer):
         super().__init__()
-
+        self.setAttribute(Qt.WA_DeleteOnClose)
         self.pool = QThreadPool()
 
         QCoreApplication.setAttribute(
@@ -128,9 +128,6 @@ class QtViewer(QSplitter):
         self.dockLayerList.setMaximumWidth(258)
         self.dockLayerList.setMinimumWidth(258)
 
-        self.aboutKeybindings = QtAboutKeybindings(self.viewer)
-        self.aboutKeybindings.hide()
-
         # This dictionary holds the corresponding vispy visual for each layer
         self.layer_to_visual = {}
 
@@ -141,7 +138,7 @@ class QtViewer(QSplitter):
         else:
             self.viewerButtons.consoleButton.setEnabled(False)
 
-        self.canvas = SceneCanvas(keys=None, vsync=True)
+        self.canvas = SceneCanvas(keys=None, vsync=True, parent=self)
         self.canvas.events.ignore_callback_errors = False
         self.canvas.events.draw.connect(self.dims.enable_play)
         self.canvas.native.setMinimumSize(QSize(200, 200))
@@ -416,7 +413,6 @@ class QtViewer(QSplitter):
         bracket_color = QtGui.QColor(*str_to_rgb(palette['highlight']))
         self.console._bracket_matcher.format.setBackground(bracket_color)
         self.setStyleSheet(themed_stylesheet)
-        self.aboutKeybindings.setStyleSheet(themed_stylesheet)
         self.canvas.bgcolor = palette['canvas']
 
     def toggle_console(self):
@@ -436,6 +432,10 @@ class QtViewer(QSplitter):
         self.viewerButtons.consoleButton.style().polish(
             self.viewerButtons.consoleButton
         )
+
+    def show_keybindings_dialog(self, event=None):
+        dialog = QtAboutKeybindings(self.viewer, parent=self)
+        dialog.show()
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
@@ -618,21 +618,17 @@ class QtViewer(QSplitter):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
-        if self.pool.activeThreadCount() > 0:
-            self.pool.clear()
+        # if the viewer.QtDims object is playing an axis, we need to terminate
+        # the AnimationThread before close, otherwise it will cauyse a segFault
+        # or Abort trap. (calling stop() when no animation is occuring is also
+        # not a problem)
+        self.dims.stop()
+        self.canvas.native.deleteLater()
+        self.console.close()
+        self.dockConsole.deleteLater()
+        if not self.pool.waitForDone(10000):
+            raise TimeoutError("Timed out waiting for QtViewer.pool to finish")
         event.accept()
-
-    def shutdown(self):
-        """Shutdown and close viewer.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
-        """
-        self.pool.clear()
-        self.canvas.close()
-        self.console.shutdown()
 
 
 def viewbox_key_event(event):
