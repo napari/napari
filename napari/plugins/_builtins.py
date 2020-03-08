@@ -2,15 +2,16 @@
 Internal napari hook implementations to be registered by the plugin manager
 """
 from pluggy import HookimplMarker
-from ..types import ReaderFunction, LayerData, List
+from typing import Union, List
+from ..types import ReaderFunction, LayerData
 from ..utils import io
 
 napari_hook_implementation = HookimplMarker("napari")
 
 
-def _interal_reader_plugin(path: str) -> List[LayerData]:
+def _interal_reader_plugin(path: Union[str, List[str]]) -> List[LayerData]:
     """Pass ``path`` to our magic_imread function and return as LayerData."""
-    return [(io.magic_imread(path),)]
+    return [(io.magic_imread(path, stack=not isinstance(path, str)),)]
 
 
 @napari_hook_implementation(trylast=True)

@@ -150,7 +150,6 @@ def view_path(
     path,
     *,
     stack=False,
-    use_dask=None,
     title='napari',
     ndisplay=2,
     order=None,
@@ -162,14 +161,13 @@ def view_path(
     Parameters
     ----------
     path : str or list of str
-        Path(s) to view.
+        A filepath, directory, or URL (or a list of any) to open.
     stack : bool, optional
-        Concatenate multiple input files into a single stack,
-        by default False
-    use_dask : bool, optional
-        Whether to use dask to create a lazy array, rather than NumPy.
-        If ``None``, will resolve to True if filenames contains more than
-        one image, False otherwise.  by default None.
+        If a list of strings is passed and ``stack`` is ``True``, then the
+        entire list will be passed to plugins.  It is then up to individual
+        plugins to know how to handle a list of paths.  If ``stack`` is
+        ``False``, then the ``path`` list is broken up and passed to plugin
+        readers one by one.  by default False.
     title : string, optional
         The title of the viewer window. by default 'napari'
     ndisplay : {2, 3}, optional
@@ -195,7 +193,7 @@ def view_path(
         axis_labels=axis_labels,
         show=show,
     )
-    viewer.add_path(path=path, stack=stack, use_dask=use_dask)
+    viewer.add_path(path=path, stack=stack)
     return viewer
 
 
