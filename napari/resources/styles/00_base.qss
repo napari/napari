@@ -536,10 +536,7 @@ QProgressBar::vertical {
 
 QProgressBar::chunk {
     width: 1px;
-    /* background-color: qlineargradient(
-                        x1: 0, y1: 0, x2: 0, y2: 1,
-                        stop: 0 {{ highlight }}, stop: 1 {{ foreground }}
-                      ); */
+    background-color: vgradient({{ highlight }} - {{ foreground }});
 }
 
 /* ----------------- QToolTip ------------------ */
@@ -589,38 +586,22 @@ QTabBar::tab {
   border-top-left-radius: 4px;
   border-top-right-radius: 4px;
   padding: 3px 6px;
-  /* background: qlineargradient(
-                    x1: 0, y1: 0, x2: 0, y2: 1,
-                    stop: 0 {{ lighten(foreground, 15) }},
-                    stop: 1 {{ foreground }}
-                  ); */
+  background: vgradient({{ lighten(foreground, 15) }} - {{ foreground }});
 }
 
 
 QWidget[emphasized="true"] QTabBar::tab {
   background-color: {{ primary }};
   border: 1px solid {{ foreground }};
-  /* background: qlineargradient(
-                  x1: 0, y1: 0, x2: 0, y2: 1,
-                  stop: 0 {{ lighten(primary, 15) }},
-                  stop: 1 {{ primary }}
-                ); */
+  background: vgradient({{ lighten(primary, 15) }} - {{ primary }});
 }
 
 QTabBar::tab:selected {
-    /* background: qlineargradient(
-                    x1: 0, y1: 0, x2: 0, y2: 1,
-                    stop: 0 {{ lighten(highlight, 15) }},
-                    stop: 1 {{ highlight }}
-                  ); */
+  background: vgradient({{ lighten(highlight, 15) }} - {{ highlight }});
 }
 
 QWidget[emphasized="true"] QTabBar::tab:selected {
-    /* background: qlineargradient(
-                    x1: 0, y1: 0, x2: 0, y2: 1,
-                    stop: 0 {{ lighten(secondary, 15) }},
-                    stop: 1 {{ secondary }}
-                  ); */
+    background: vgradient({{ lighten(secondary, 15) }} - {{ secondary }});
 }
 
 /* ----------------- QLabel ------------------ */
