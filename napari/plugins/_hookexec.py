@@ -72,7 +72,7 @@ def _multicall(hook_impls, caller_kwargs, firstresult=False):
                     res = None
                     # this is where the plugin function actually gets called
                     # we put it in a try/except so that if one plugin throws
-                    # an exception, we don't loose the whole loop
+                    # an exception, we don't lose the whole loop
                     try:
                         res = hook_impl.function(*args)
                     except Exception as exc:
