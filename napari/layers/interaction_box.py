@@ -64,6 +64,7 @@ class InteractionBox:
         self._points = points
         self._show = show
         self._show_handle = show_handle
+        self._show_vertices = True
 
         self._selected_vertex = None
         self._fixed_vertex = None
@@ -112,6 +113,15 @@ class InteractionBox:
         self.events.points_changed()
 
     @property
+    def show_vertices(self):
+        return self._show_vertices
+
+    @show_vertices.setter
+    def show_vertices(self, show_vertices):
+        self._show_vertices = show_vertices
+        self.events.points_changed()
+
+    @property
     def angle(self):
         offset = self._box[Box.HANDLE] - self._box[Box.CENTER]
         angle = -np.degrees(np.arctan2(offset[0], -offset[1])) - 90
@@ -147,6 +157,11 @@ class InteractionBox:
 
             edge_color = self._highlight_color
             vertices = box[:, ::-1]
+            if self._show_vertices:
+                vertices = box[:, ::-1]
+            else:
+                vertices = np.empty((0, 2))
+
             # Use a subset of the vertices of the interaction_box to plot
             # the line around the edge
             if self._show_handle:
@@ -286,11 +301,14 @@ class InteractionBox:
             offset_proj = (
                 np.dot(drag_start, offset) / (np.linalg.norm(drag_start) ** 2)
             ) * drag_start
+
+            # Prevent numeric instabilities
+            offset_proj[np.abs(offset_proj) < 1e-5] = 0
+            drag_start[drag_start == 0.0] = 1e-5
+
             scale = np.array([1.0, 1.0]) + (offset_proj) / drag_start
         else:
             scale = coord / drag_start
-
-        scale = np.nan_to_num(scale, nan=1.0)
 
         # Apply scaling
         transform += AffineTransform(scale=scale)
@@ -317,6 +335,28 @@ class InteractionBox:
         self._box = transform(self._drag_start_box)
         self.events.points_changed()
         self.events.translated(translate=offset)
+
+    def _on_drag_newbox(self, layer, event):
+        """ Gets called upon mouse_move in the case of a drawing a new box
+        """
+
+        self.points = np.array(
+            [
+                self._drag_start_coordinates,
+                np.array([layer.coordinates[i] for i in layer.dims.displayed]),
+            ]
+        )
+        self.show_handle = False
+        self.show_vertices = False
+        self.events.points_changed()
+
+    def _on_end_newbox(self, layer, event):
+        """ Gets called upon mouse_move in the case of a drawing a new box
+        """
+        self.show = False
+        self.show_handle = True
+        self.show_vertices = True
+        self.events.points_changed()
 
     def initialize_mouse_events(self, layer):
         """ Adds event handling functions to the layer
@@ -353,6 +393,7 @@ class InteractionBox:
             # Handling drag start, decide what action to take
             self._set_drag_start_values(layer)
             drag_callback = None
+            final_callback = None
             if self._selected_vertex is not None:
                 if self._selected_vertex == Box.HANDLE:
                     drag_callback = self._on_drag_rotation
@@ -369,6 +410,8 @@ class InteractionBox:
                     yield
                 else:
                     self.points = None
+                    drag_callback = self._on_drag_newbox
+                    final_callback = self._on_end_newbox
                     yield
 
             # Handle events during dragging
@@ -376,5 +419,8 @@ class InteractionBox:
                 if drag_callback is not None:
                     drag_callback(layer, event)
                 yield
+
+            if final_callback is not None:
+                final_callback(layer, event)
 
             self._clear_drag_start_values()
