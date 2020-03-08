@@ -3,6 +3,7 @@ from tempfile import NamedTemporaryFile
 import numpy as np
 from skimage import io
 import os
+from pathlib import Path
 
 
 def test_iter_reader_plugins(plugin_manager):
@@ -70,7 +71,11 @@ def test_builtin_reader_plugin_stacks(viewer_factory, builtin_plugin_manager):
         tmps.append(tmp)
 
     _, viewer = viewer_factory()
-    viewer.add_path([tmp.name for tmp in tmps], stack=True)
+    # add_path should take both strings and Path object, so we make one of the
+    # pathnames a Path object
+    names = [tmp.name for tmp in tmps]
+    names[0] = Path(names[0])
+    viewer.add_path(names, stack=True)
     assert np.allclose(viewer.layers[0].data, data)
     for tmp in tmps:
         tmp.close()

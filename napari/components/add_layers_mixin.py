@@ -1,7 +1,7 @@
 import itertools
 from logging import getLogger
 from typing import List, Optional, Sequence, Union
-
+from os import fspath
 import numpy as np
 
 from .. import layers
@@ -76,6 +76,7 @@ class AddLayersMixin:
             A list of any layers that were added to the viewer.
         """
         paths = [path] if isinstance(path, str) else path
+        paths = [fspath(path) for path in paths]  # PathObjects -> str
         if not isinstance(paths, (tuple, list)):
             raise ValueError(
                 "'path' argument must be a string, list, or tuple"
