@@ -1,4 +1,6 @@
+import os
 import warnings
+
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from xml.etree.ElementTree import Element, tostring
@@ -9,6 +11,8 @@ from ._constants import Blending
 from ...components import Dims
 from ...utils.event import EmitterGroup, Event
 from ...utils.keybindings import KeymapMixin
+from ...utils.misc import ROOT_DIR
+from ...utils.naming import magic_name
 from ...utils.status_messages import status_format, format_float
 from ..transforms import ScaleTranslate
 
@@ -104,6 +108,7 @@ class Layer(KeymapMixin, ABC):
 
     def __init__(
         self,
+        data,
         ndim,
         *,
         name=None,
@@ -115,6 +120,9 @@ class Layer(KeymapMixin, ABC):
         visible=True,
     ):
         super().__init__()
+
+        if name is None and data is not None and os.getenv('MAGICNAME'):
+            name = magic_name(data, path_prefix=ROOT_DIR)
 
         self.metadata = metadata or {}
         self._opacity = opacity
@@ -263,10 +271,7 @@ class Layer(KeymapMixin, ABC):
 
     @blending.setter
     def blending(self, blending):
-        if isinstance(blending, str):
-            blending = Blending(blending)
-
-        self._blending = blending
+        self._blending = Blending(blending)
         self.events.blending()
 
     @property

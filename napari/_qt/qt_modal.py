@@ -18,6 +18,18 @@ class QtPopup(QDialog):
     |  |  |  +-------------------------
     |  |  |  |
     |  |  |  |  (add a new layout here)
+
+    Parameters
+    ----------
+    parent : qtpy.QtWidgets:QWidget
+        Parent widget of the popup dialog box.
+
+    Attributes
+    ----------
+    frame : qtpy.QtWidgets.QFrame
+        Frame of the popup dialog box.
+    layout : qtpy.QtWidgets.QVBoxLayout
+        Layout of the popup dialog box.
     """
 
     def __init__(self, parent):
@@ -33,6 +45,7 @@ class QtPopup(QDialog):
         self.layout().setContentsMargins(0, 0, 0, 0)
 
     def show_above_mouse(self, *args):
+        """Show popup dialog above the mouse cursor position."""
         pos = QCursor().pos()  # mouse position
         szhint = self.sizeHint()
         pos -= QPoint(szhint.width() / 2, szhint.height() + 14)
@@ -117,6 +130,13 @@ class QtPopup(QDialog):
         self.show()
 
     def keyPressEvent(self, event):
+        """Close window on return, else pass event through to super class.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
         if event.key() in (Qt.Key_Return, Qt.Key_Enter):
             return self.close()
         super().keyPressEvent(event)
