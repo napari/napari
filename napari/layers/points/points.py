@@ -888,6 +888,21 @@ class Points(Layer):
                             self.face_color_cycle,
                         )
                     }
+
+                else:
+                    # add properties if they are not in the colormap and update_color_mapping==False
+                    face_color_cycle_keys = [*self.face_color_cycle_map]
+                    props_in_map = np.in1d(
+                        face_color_properties, face_color_cycle_keys
+                    )
+                    if not np.all(props_in_map):
+                        props_to_add = np.unique(
+                            face_color_properties[np.logical_not(props_in_map)]
+                        )
+                        for prop in props_to_add:
+                            self.face_color_cycle_map[prop] = next(
+                                self.face_color_cycle
+                            )
                 face_colors = np.array(
                     [
                         self.face_color_cycle_map[x]
@@ -927,6 +942,20 @@ class Points(Layer):
                             self.edge_color_cycle,
                         )
                     }
+                else:
+                    # add properties if they are not in the colormap and update_color_mapping==False
+                    edge_color_cycle_keys = [*self.edge_color_cycle_map]
+                    props_in_map = np.in1d(
+                        edge_color_properties, edge_color_cycle_keys
+                    )
+                    if not np.all(props_in_map):
+                        props_to_add = np.unique(
+                            edge_color_properties[np.logical_not(props_in_map)]
+                        )
+                        for prop in props_to_add:
+                            self.edge_color_cycle_map[prop] = next(
+                                self.edge_color_cycle
+                            )
                 edge_colors = np.array(
                     [
                         self.edge_color_cycle_map[x]
