@@ -2,6 +2,8 @@
 Custom Qt widgets that serve as native objects that the public-facing elements
 wrap.
 """
+import time
+
 # set vispy to use same backend as qtpy
 from skimage.io import imsave
 
@@ -13,6 +15,7 @@ from ..resources import combine_stylesheets
 # these module-level imports have to come after `app.use_app(API)`
 # see discussion on #638
 from qtpy.QtWidgets import (  # noqa: E402
+    QApplication,
     QMainWindow,
     QWidget,
     QHBoxLayout,
@@ -21,7 +24,6 @@ from qtpy.QtWidgets import (  # noqa: E402
     QAction,
     QShortcut,
     QStatusBar,
-    QApplication,
 )
 from qtpy.QtCore import Qt  # noqa: E402
 from qtpy.QtGui import QKeySequence  # noqa: E402
@@ -60,6 +62,7 @@ class Window:
         self.qt_viewer = qt_viewer
 
         self._qt_window = QMainWindow()
+        self._qt_window.setAttribute(Qt.WA_DeleteOnClose)
         self._qt_window.setUnifiedTitleAndToolBarOnMac(True)
         self._qt_center = QWidget(self._qt_window)
 
@@ -68,8 +71,6 @@ class Window:
         self._qt_center.setLayout(QHBoxLayout())
         self._status_bar = QStatusBar()
         self._qt_window.setStatusBar(self._status_bar)
-        self._qt_window.closeEvent = self.closeEvent
-        self.close = self._qt_window.close
 
         self._add_menubar()
 
@@ -200,7 +201,7 @@ class Window:
         about_keybindings.setShortcutContext(Qt.ApplicationShortcut)
         about_keybindings.setStatusTip('keybindings')
         about_keybindings.triggered.connect(
-            self.qt_viewer.aboutKeybindings.toggle_visible
+            self.qt_viewer.show_keybindings_dialog
         )
         self.help_menu.addAction(about_keybindings)
 
@@ -379,18 +380,16 @@ class Window:
             imsave(path, QImg2array(img))  # scikit-image imsave method
         return QImg2array(img)
 
-    def closeEvent(self, event):
-        """Close the main window.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
-        """
-        # Forward close event to the console to trigger proper shutdown
-        self.qt_viewer.console.shutdown()
-        # if the viewer.QtDims object is playing an axis, we need to terminate the
-        # AnimationThread before close, otherwise it will cauyse a segFault or Abort trap.
-        # (calling stop() when no animation is occuring is also not a problem)
-        self.qt_viewer.dims.stop()
-        event.accept()
+    def close(self):
+        """Close the viewer window and cleanup sub-widgets."""
+        # on some versions of Darwin, exiting while fullscreen seems to tickle
+        # some bug deep in NSWindow.  This forces the fullscreen keybinding
+        # test to complete its draw cycle, then pop back out of fullscreen.
+        if self._qt_window.isFullScreen():
+            self._qt_window.showNormal()
+            for i in range(8):
+                time.sleep(0.1)
+                QApplication.processEvents()
+        self.qt_viewer.close()
+        self._qt_window.close()
+        del self._qt_window

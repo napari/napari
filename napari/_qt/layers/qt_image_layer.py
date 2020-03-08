@@ -45,7 +45,7 @@ class QtImageControls(QtBaseImageControls):
         self.layer.events.attenuation.connect(self._on_attenuation_change)
         self.layer.dims.events.ndisplay.connect(self._on_ndisplay_change)
 
-        interp_comboBox = QComboBox()
+        interp_comboBox = QComboBox(self)
         interp_comboBox.addItems(Interpolation.keys())
         index = interp_comboBox.findText(
             self.layer.interpolation, Qt.MatchFixedString
@@ -55,7 +55,7 @@ class QtImageControls(QtBaseImageControls):
         self.interpComboBox = interp_comboBox
         self.interpLabel = QLabel('interpolation:')
 
-        renderComboBox = QComboBox()
+        renderComboBox = QComboBox(self)
         renderComboBox.addItems(Rendering.keys())
         index = renderComboBox.findText(
             self.layer.rendering, Qt.MatchFixedString
@@ -65,7 +65,7 @@ class QtImageControls(QtBaseImageControls):
         self.renderComboBox = renderComboBox
         self.renderLabel = QLabel('rendering:')
 
-        sld = QSlider(Qt.Horizontal)
+        sld = QSlider(Qt.Horizontal, parent=self)
         sld.setFocusPolicy(Qt.NoFocus)
         sld.setMinimum(0)
         sld.setMaximum(100)
@@ -75,7 +75,7 @@ class QtImageControls(QtBaseImageControls):
         self.isoThresholdSlider = sld
         self.isoThresholdLabel = QLabel('iso threshold:')
 
-        sld = QSlider(Qt.Horizontal)
+        sld = QSlider(Qt.Horizontal, parent=self)
         sld.setFocusPolicy(Qt.NoFocus)
         sld.setMinimum(0)
         sld.setMaximum(200)

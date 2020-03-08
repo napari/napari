@@ -99,3 +99,7 @@ class Viewer(ViewerModel):
     def show(self):
         """Resize, show, and raise the viewer window."""
         self.window.show()
+
+    def close(self):
+        """Close the viewer window."""
+        self.window.close()

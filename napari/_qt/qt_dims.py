@@ -400,3 +400,8 @@ class QtDims(QWidget):
         # this is mostly here to connect to the main SceneCanvas.events.draw
         # event in the qt_viewer
         self._play_ready = True
+
+    def closeEvent(self, event):
+        [w.deleteLater() for w in self.slider_widgets]
+        self.deleteLater()
+        event.accept()
