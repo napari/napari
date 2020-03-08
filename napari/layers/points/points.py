@@ -890,7 +890,8 @@ class Points(Layer):
                     }
 
                 else:
-                    # add properties if they are not in the colormap and update_color_mapping==False
+                    # add properties if they are not in the colormap
+                    # and update_color_mapping==False
                     face_color_cycle_keys = [*self.face_color_cycle_map]
                     props_in_map = np.in1d(
                         face_color_properties, face_color_cycle_keys
@@ -943,7 +944,8 @@ class Points(Layer):
                         )
                     }
                 else:
-                    # add properties if they are not in the colormap and update_color_mapping==False
+                    # add properties if they are not in the colormap
+                    # and update_color_mapping==False
                     edge_color_cycle_keys = [*self.edge_color_cycle_map]
                     props_in_map = np.in1d(
                         edge_color_properties, edge_color_cycle_keys
