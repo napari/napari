@@ -297,17 +297,12 @@ class Shapes(Layer):
         self.events.face_color.connect(self._update_thumbnail)
         self.events.edge_color.connect(self._update_thumbnail)
 
-        self.edge_color = edge_color
-        self.face_color = face_color
-        self._current_edge_color = self.edge_color[-1]
-        self._current_face_color = self.face_color[-1]
-
         self.add(
             data,
             shape_type=shape_type,
             edge_width=edge_width,
-            edge_color=self.edge_color,
-            face_color=self.face_color,
+            edge_color=edge_color,
+            face_color=face_color,
             opacity=opacity,
             z_index=z_index,
         )
@@ -665,8 +660,10 @@ class Shapes(Layer):
                 ensure_iterable(z_index),
             )
             num_of_shapes = len(data)
-            self.face_color = np.zeros((num_of_shapes, 4), dtype=np.float32)
-            self.edge_color = np.zeros((num_of_shapes, 4), dtype=np.float32)
+            new_face_colors = np.zeros((num_of_shapes, 4), dtype=np.float32)
+            new_face_colors[:, -1] = opacity
+            new_edge_colors = np.zeros((num_of_shapes, 4), dtype=np.float32)
+            new_edge_colors[:, -1] = opacity
             for shape_idx, (d, st, ew, ec, fc, o, z) in enumerate(shape_inputs):
                 # A False slice_key means the shape is invalid as it is not
                 # confined to a single plane
@@ -684,10 +681,20 @@ class Shapes(Layer):
 
                 # Add shape
                 self._data_view.add(shape)
-                self.face_color[shape_idx, :] = shape.face_color
-                self.edge_color[shape_idx, :] = shape.edge_color
-            self.current_face_color = shape.face_color
-            self.current_edge_color = shape.edge_color
+                new_face_colors[shape_idx, :] = shape.face_color
+                new_edge_colors[shape_idx, :] = shape.edge_color
+            self._current_face_color = shape.face_color
+            self._current_edge_color = shape.edge_color
+
+            # If we just instantiated the layer then we can directly set
+            # new face and edge colors. Else we'll append to the existing
+            # ones the new values.
+            if len(self._data_view) == num_of_shapes:
+                self._face_color = new_face_colors
+                self._edge_color = new_edge_colors
+            else:
+                self._face_color = np.concatenate((self.face_color, new_face_colors), axis=0)
+                self._edge_color = np.concatenate((self.edge_color, new_edge_colors), axis=0)
 
         self._display_order_stored = copy(self.dims.order)
         self._ndisplay_stored = copy(self.dims.ndisplay)

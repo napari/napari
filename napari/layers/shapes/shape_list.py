@@ -239,10 +239,8 @@ class ShapeList:
         self._mesh.triangles_index = np.append(
             self._mesh.triangles_index, index, axis=0
         )
-        color = shape.face_color
-        # TODO fix the next lines for edges and faces
-        color[0, 3] = color[0, 3] * shape.opacity
-        color_array = np.repeat(color, len(triangles), axis=0)
+
+        color_array = np.repeat(shape.face_color, len(triangles), axis=0)
         self._mesh.triangles_colors = np.append(
             self._mesh.triangles_colors, color_array, axis=0
         )
@@ -274,9 +272,7 @@ class ShapeList:
         self._mesh.triangles_index = np.append(
             self._mesh.triangles_index, index, axis=0
         )
-        color = shape.edge_color
-        color[0, 3] = color[0, 3] * shape.opacity
-        color_array = np.repeat(color, len(triangles), axis=0)
+        color_array = np.repeat(shape.edge_color, len(triangles), axis=0)
         self._mesh.triangles_colors = np.append(
             self._mesh.triangles_colors, color_array, axis=0
         )
@@ -468,8 +464,8 @@ class ShapeList:
         """
         self.shapes[index].edge_color = edge_color
         indices = np.all(self._mesh.triangles_index == [index, 1], axis=1)
-        color = self.shapes[index].edge_color.rgba
-        color[3] = color[3] * self.shapes[index].opacity
+        color = self.shapes[index].edge_color
+        color[0, 3] = color[0, 3] * self.shapes[index].opacity
         self._mesh.triangles_colors[indices] = color
         self._update_displayed()
 
@@ -487,8 +483,8 @@ class ShapeList:
         """
         self.shapes[index].face_color = face_color
         indices = np.all(self._mesh.triangles_index == [index, 0], axis=1)
-        color = self.shapes[index].face_color.rgba
-        color[3] = color[3] * self.shapes[index].opacity
+        color = self.shapes[index].face_color
+        color[0, 3] = color[0, 3] * self.shapes[index].opacity
         self._mesh.triangles_colors[indices] = color
         self._update_displayed()
 
@@ -504,12 +500,12 @@ class ShapeList:
         """
         self.shapes[index].opacity = opacity
         indices = np.all(self._mesh.triangles_index == [index, 1], axis=1)
-        color = self.shapes[index].edge_color.rgba
-        self._mesh.triangles_colors[indices, 3] = color[3] * opacity
+        color = self.shapes[index].edge_color
+        self._mesh.triangles_colors[indices, 3] = color[0, 3] * opacity
 
         indices = np.all(self._mesh.triangles_index == [index, 0], axis=1)
-        color = self.shapes[index].face_color.rgba
-        self._mesh.triangles_colors[indices, 3] = color[3] * opacity
+        color = self.shapes[index].face_color
+        self._mesh.triangles_colors[indices, 3] = color[0, 3] * opacity
         self._update_displayed()
 
     def update_dims_order(self, dims_order):
@@ -730,6 +726,9 @@ class ShapeList:
         else:
             return None
 
+    def __len__(self):
+        return len(self.data)
+        
     def to_masks(self, mask_shape=None, zoom_factor=1, offset=[0, 0]):
         """Returns N binary masks, one for each shape, embedded in an array of
         shape `mask_shape`.

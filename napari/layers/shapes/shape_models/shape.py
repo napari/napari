@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from copy import copy
+import warnings
 
 import numpy as np
 
@@ -276,15 +277,22 @@ class Shape(ABC):
 
     @opacity.setter
     def opacity(self, opacity):
+        if type(opacity) in {np.ndarray, list, tuple}:
+            opacity = opacity[0]
+        if opacity > 1.0 or opacity < 0.0:
+            warnings.warn(f"Input opacity value was {opacity}, which is outside the allowed range of [0.0, 1.0]. Defaulting to 1.0.")
+            opacity = 1.0
         self._opacity = opacity
+        self._face_color[0, -1] = opacity
+        self._edge_color[0, -1] = opacity
 
     @property
     def svg_props(self):
         """dict: color and width properties in the svg specification"""
         width = str(self.edge_width)
-        face_color = (255 * self.face_color.rgba).astype(np.int)
+        face_color = (255 * self.face_color).astype(np.int)
         fill = f'rgb{tuple(face_color[:3])}'
-        edge_color = (255 * self.edge_color.rgba).astype(np.int)
+        edge_color = (255 * self.edge_color).astype(np.int)
         stroke = f'rgb{tuple(edge_color[:3])}'
         opacity = str(self.opacity)
 
