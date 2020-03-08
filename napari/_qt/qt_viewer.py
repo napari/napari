@@ -4,7 +4,7 @@ from pathlib import Path
 from qtpy import QtGui
 from qtpy.QtCore import QCoreApplication, Qt, QSize
 from qtpy.QtWidgets import QWidget, QVBoxLayout, QFileDialog, QSplitter
-from qtpy.QtGui import QCursor, QPixmap
+from qtpy.QtGui import QCursor, QPixmap, QGuiApplication
 from qtpy.QtCore import QThreadPool
 from skimage.io import imsave
 from vispy.scene import SceneCanvas, PanZoomCamera, ArcballCamera
@@ -602,13 +602,14 @@ class QtViewer(QSplitter):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
+        shift_down = QGuiApplication.keyboardModifiers() & Qt.ShiftModifier
         filenames = []
         for url in event.mimeData().urls():
             if url.isLocalFile():
                 filenames.append(url.toLocalFile())
             else:
                 filenames.append(url.toString())
-        self.viewer.add_path(filenames)
+        self.viewer.add_path(filenames, stack=bool(shift_down))
 
     def closeEvent(self, event):
         """Clear pool of worker threads and close.
