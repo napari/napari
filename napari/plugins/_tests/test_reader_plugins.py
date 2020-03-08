@@ -2,6 +2,7 @@ from napari.plugins.utils import get_layer_data_from_plugins
 from tempfile import NamedTemporaryFile
 import numpy as np
 from skimage import io
+import os
 
 
 def test_iter_reader_plugins(plugin_manager):
@@ -56,6 +57,24 @@ def test_builtin_reader_plugin(viewer_factory, builtin_plugin_manager):
         viewer.add_path(tmp.name)
 
         assert np.allclose(viewer.layers[0].data, data)
+
+
+def test_builtin_reader_plugin_stacks(viewer_factory, builtin_plugin_manager):
+    """Test the builtin reader plugin reads multiple files as a stack."""
+    data = np.random.rand(5, 20, 20)
+    tmps = []
+    for plane in data:
+        tmp = NamedTemporaryFile(suffix='.tif', delete=False)
+        io.imsave(tmp.name, plane)
+        tmp.seek(0)
+        tmps.append(tmp)
+
+    _, viewer = viewer_factory()
+    viewer.add_path([tmp.name for tmp in tmps], stack=True)
+    assert np.allclose(viewer.layers[0].data, data)
+    for tmp in tmps:
+        tmp.close()
+        os.unlink(tmp.name)
 
 
 def test_nonsense_path_is_ok(plugin_manager):
