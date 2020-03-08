@@ -28,16 +28,40 @@ class Transform:
         """Transform input coordinates to output."""
         return self.func(coords)
 
-    def set_slice(self, axes: Sequence[int]):
-        """Return a transform subset to the visible dimensions."""
+    def set_slice(self, axes: Sequence[int]) -> 'Transform':
+        """Return a transform subset to the visible dimensions.
+
+        Parameters
+        ----------
+        axes : Sequence[int]
+            Axes to subset the current transform with.
+
+        Returns
+        -------
+        Transform
+            Resulting transform.
+        """
         raise NotImplementedError('Cannot subset arbitrary transforms.')
 
-    def set_pad(self, axes: Sequence[int]):
-        """Return a transform with added axes for non-visible dimensions."""
+    def set_pad(self, axes: Sequence[int]) -> 'Transform':
+        """Return a transform with added axes for non-visible dimensions.
+
+        Parameters
+        ----------
+        axes : Sequence[int]
+            Location of axes to pad the current transform with. Passing a list
+            allows padding to occur at specific locations and for set_pad to
+            be like an inverse to the set_slice method.
+
+        Returns
+        -------
+        Transform
+            Resulting transform.
+        """
         raise NotImplementedError('Cannot subset arbitrary transforms.')
 
     @property
-    def inverse(self):
+    def inverse(self) -> 'Transform':
         if self._inverse_func is not None:
             return Transform(self._inverse_func, self.func)
         else:
@@ -82,16 +106,40 @@ class ScaleTranslate(Transform):
         return np.squeeze(scale * coords + translate)
 
     @property
-    def inverse(self):
+    def inverse(self) -> 'ScaleTranslate':
         """Return the inverse transform."""
         return ScaleTranslate(1 / self.scale, -1 / self.scale * self.translate)
 
-    def set_slice(self, axes: Sequence[int]):
-        """Return a transform subset to the visible dimensions."""
+    def set_slice(self, axes: Sequence[int]) -> 'ScaleTranslate':
+        """Return a transform subset to the visible dimensions.
+
+        Parameters
+        ----------
+        axes : Sequence[int]
+            Axes to subset the current transform with.
+
+        Returns
+        -------
+        Transform
+            Resulting transform.
+        """
         return ScaleTranslate(self.scale[axes], self.translate[axes])
 
-    def set_pad(self, axes: Sequence[int]):
-        """Return a transform with added axes for non-visible dimensions."""
+    def set_pad(self, axes: Sequence[int]) -> 'ScaleTranslate':
+        """Return a transform with added axes for non-visible dimensions.
+
+        Parameters
+        ----------
+        axes : Sequence[int]
+            Location of axes to pad the current transform with. Passing a list
+            allows padding to occur at specific locations and for set_pad to
+            be like an inverse to the set_slice method.
+
+        Returns
+        -------
+        Transform
+            Resulting transform.
+        """
         n = len(axes) + len(self.scale)
         not_axes = [i for i in range(n) if i not in axes]
         scale = np.ones(n)
@@ -100,7 +148,7 @@ class ScaleTranslate(Transform):
         translate[not_axes] = self.translate
         return ScaleTranslate(scale, translate)
 
-    def compose(self, transform):
+    def compose(self, transform: 'ScaleTranslate') -> 'ScaleTranslate':
         """Return the composite of this transform and the proivded one."""
         scale = self.scale * transform.scale
         translate = self.translate + self.scale * transform.translate

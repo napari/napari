@@ -140,6 +140,14 @@ class Layer(KeymapMixin, ABC):
         # Create main transform mapping data to a world-like coordinate
         self._transform = ScaleTranslate(scale, translate)
         # Create additional transform mapping viewed data to data coordinate
+        # This is useful for cases where the displayed data is not the base
+        # data given by the user. In such cases, we need to transform the
+        # coordinates from the displayed data space to the original input data
+        # space. One example of such a situation is viewing a lower resolution
+        # level of an input pyramid, where _transform contains the transform
+        # only from the base level to world coordinates, another is when an
+        # image is larger than the maximum allowed texture size and has been
+        # downsampled
         self._transform_view = ScaleTranslate(np.ones(ndim), np.zeros(ndim))
         # Create additional transform mapping world-coordinates into a grid
         # for looking at layers side-by-side
