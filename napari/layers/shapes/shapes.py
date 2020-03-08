@@ -297,7 +297,6 @@ class Shapes(Layer):
         self.events.face_color.connect(self._update_thumbnail)
         self.events.edge_color.connect(self._update_thumbnail)
 
-        self._data_len = len(data)
         self.edge_color = edge_color
         self.face_color = face_color
         self._current_edge_color = self.edge_color[-1]
@@ -338,15 +337,6 @@ class Shapes(Layer):
         return ndim
 
     def _get_extent(self):
-
-        if len(self.dims_order) != data.shape[1]:
-            self._dims_order = list(range(data.shape[1]))
-
-        if len(data) == 2 and data.shape[1] == 2:
-            data = find_corners(data)
-
-        if len(data) != 4:
-            print(data)
         """Determine ranges for slicing given by (min, max, step)."""
         if self.nshapes == 0:
             maxs = [1] * self.ndim
@@ -674,9 +664,10 @@ class Shapes(Layer):
                 ensure_iterable(opacity),
                 ensure_iterable(z_index),
             )
-
-            for d, st, ew, ec, fc, o, z in shape_inputs:
-
+            num_of_shapes = len(data)
+            self.face_color = np.zeros((num_of_shapes, 4), dtype=np.float32)
+            self.edge_color = np.zeros((num_of_shapes, 4), dtype=np.float32)
+            for shape_idx, (d, st, ew, ec, fc, o, z) in enumerate(shape_inputs):
                 # A False slice_key means the shape is invalid as it is not
                 # confined to a single plane
                 shape_cls = shape_classes[ShapeType(st)]
@@ -693,6 +684,10 @@ class Shapes(Layer):
 
                 # Add shape
                 self._data_view.add(shape)
+                self.face_color[shape_idx, :] = shape.face_color
+                self.edge_color[shape_idx, :] = shape.edge_color
+            self.current_face_color = shape.face_color
+            self.current_edge_color = shape.edge_color
 
         self._display_order_stored = copy(self.dims.order)
         self._ndisplay_stored = copy(self.dims.ndisplay)
