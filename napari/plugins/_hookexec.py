@@ -25,8 +25,11 @@ from typing import Optional, Sequence, Any
 
 from pluggy.callers import HookCallError, _raise_wrapfail, _Result
 from pluggy.hooks import HookImpl
+from .exceptions import PluginError
 
 
+# Vendored with slight modifications from pluggy:
+# https://github.com/pytest-dev/pluggy/blob/master/src/pluggy/callers.py#L157
 def _multicall(hook_impls, caller_kwargs, firstresult=False):
     """Execute a call into multiple python functions/methods and return the
     result(s).
@@ -66,7 +69,27 @@ def _multicall(hook_impls, caller_kwargs, firstresult=False):
                     except StopIteration:
                         _raise_wrapfail(gen, "did not yield")
                 else:
-                    res = hook_impl.function(*args)
+                    res = None
+                    # this is where the plugin function actually gets called
+                    # we put it in a try/except so that if one plugin throws
+                    # an exception, we don't loose the whole loop
+                    try:
+                        res = hook_impl.function(*args)
+                    except Exception as exc:
+                        msg = (
+                            f"Error in plugin '{hook_impl.plugin_name}', "
+                            f"hook '{str(hook_impl.function.__name__)}'"
+                        )
+                        err = PluginError(
+                            msg,
+                            hook_impl.plugin_name,
+                            hook_impl.plugin.__name__,
+                        )
+                        err.__cause__ = exc
+                        # TODO: storing and retrieving these plugin errors is
+                        # being addressed in #1024:
+                        # https://github.com/napari/napari/pull/1024
+
                     if res is not None:
                         results.append(res)
                         if with_impl:
