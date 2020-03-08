@@ -134,9 +134,7 @@ class VispyImageLayer(VispyBaseLayer):
     def _on_threshold_change(self, event=None):
         if self.layer.dims.ndisplay == 2:
             return
-        rendering = self.layer.rendering
-        if isinstance(rendering, str):
-            rendering = Rendering(rendering)
+        rendering = Rendering(self.layer.rendering)
         if rendering == Rendering.ISO:
             self.node.threshold = float(self.layer.iso_threshold)
         elif rendering == Rendering.ATTENUATED_MIP:
@@ -268,7 +266,7 @@ class VispyImageLayer(VispyBaseLayer):
             scale = np.ones(self.layer.ndim)
             for i, d in enumerate(self.layer.dims.displayed):
                 scale[d] = downsample[i]
-            self.layer._scale_view = scale
+            self.layer._transform_view.scale = scale
             self._on_scale_change()
             slices = tuple(slice(None, None, ds) for ds in downsample)
             data = data[slices]

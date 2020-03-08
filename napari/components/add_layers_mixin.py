@@ -2,9 +2,8 @@ import itertools
 import numpy as np
 
 from .. import layers
-from ..utils import colormaps
+from ..utils import colormaps, io
 from ..utils.misc import ensure_iterable, is_iterable
-from ..utils import io
 
 
 class AddLayersMixin:

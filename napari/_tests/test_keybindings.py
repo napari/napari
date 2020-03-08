@@ -1,16 +1,13 @@
 import numpy as np
 from unittest.mock import Mock
-from napari import Viewer
 from vispy import keys
 
 
-def test_viewer_keybindings(qtbot):
+def test_viewer_keybindings(viewer_factory):
     """Test adding keybindings to the viewer
     """
     np.random.seed(0)
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
+    view, viewer = viewer_factory()
 
     mock_press = Mock()
     mock_release = Mock()
@@ -73,17 +70,12 @@ def test_viewer_keybindings(qtbot):
     mock_shift_release.method.assert_called_once()
     mock_shift_release.reset_mock()
 
-    # Close the viewer
-    viewer.window.close()
 
-
-def test_layer_keybindings(qtbot):
+def test_layer_keybindings(viewer_factory):
     """Test adding keybindings to a layer
     """
     np.random.seed(0)
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
+    view, viewer = viewer_factory()
 
     layer = viewer.add_image(np.random.random((10, 20)))
     layer.selected = True
@@ -145,6 +137,3 @@ def test_layer_keybindings(qtbot):
     mock_shift_press.method.assert_not_called()
     mock_shift_release.method.assert_called_once()
     mock_shift_release.reset_mock()
-
-    # Close the viewer
-    viewer.window.close()

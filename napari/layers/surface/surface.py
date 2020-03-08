@@ -112,6 +112,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         ndim = data[0].shape[1]
 
         super().__init__(
+            data,
             ndim,
             name=name,
             metadata=metadata,
