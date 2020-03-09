@@ -1,6 +1,50 @@
-from typing import Callable, List, Tuple, Union, Any, Dict
+from functools import wraps
+from typing import Any, Callable, Dict, List, Protocol, Tuple, Union
+
+import numpy as np
+
+
+class ArrayLike(Protocol):
+    """This is a WOEFULLY inadqueate stub for a duck-array type.
+
+    Mostly, just a placeholder for the concept of needing an ArrayLike type.
+    Ultimately, this should come from https://github.com/napari/image-types
+    """
+
+    shape: Tuple[int, ...]
+    ndim: int
+    dtype: np.dtype
+
 
 # layer data may be: (data,) (data, meta), or (data, meta, layer_type)
-# using "Any" for the data type for now
+# using "Any" for the data type until ArrayLike is more mature.
 LayerData = Union[Tuple[Any], Tuple[Any, Dict], Tuple[Any, Dict, str]]
-ReaderFunction = Callable[[str], List[LayerData]]
+
+PathLike = Union[str, List[str]]
+ReaderFunction = Callable[[PathLike], List[LayerData]]
+
+
+def array_return_to_layerdata_return(
+    func: Callable[[PathLike], ArrayLike]
+) -> ReaderFunction:
+    """Convert a PathLike -> ArrayLike function to a PathLike -> LayerData.
+
+    Parameters
+    ----------
+    func : Callable[[PathLike], ArrayLike]
+        A function that accepts a string or list of strings, and returns an
+        ArrayLike.
+
+    Returns
+    -------
+    reader_function : Callable[[PathLike], List[LayerData]]
+        A function that accepts a string or list of strings, and returns data
+        as a list of LayerData: List[Tuple[ArrayLike]]
+    """
+
+    @wraps(func)
+    def reader_function(*args, **kwargs) -> List[LayerData]:
+        result = func(*args, **kwargs)
+        return [(result,)]
+
+    return reader_function
