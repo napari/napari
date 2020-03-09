@@ -40,60 +40,56 @@ We may want to consider removing this code if that merges, but we may also just
 wish to maintain our internal hook looping logic.
 """
 import sys
-from typing import (
-    Optional,
-    Sequence,
-    Any,
-    overload,
-    Literal,
-    List,
-    Tuple,
-    Union,
-)
+from typing import Optional, Sequence, Any, List, Tuple, Union, overload
 
 from pluggy.callers import HookCallError, _raise_wrapfail, _Result
 from pluggy.hooks import HookImpl, _HookCaller
 from .exceptions import PluginError
 
+try:
+    # Literal came in py3.8, backports available in typing-extensions
+    # stopping short of depending on that here.
+    from typing import Literal
+except ImportError:
+    Literal = None
 
-@overload
-def _multicall(
-    hook_impls: Sequence[HookImpl],
-    caller_kwargs: dict,
-    return_impl: Literal[False],
-    firstresult: Literal[True],
-) -> Any:
-    ...
+if Literal is not None:
 
+    @overload
+    def _multicall(
+        hook_impls: Sequence[HookImpl],
+        caller_kwargs: dict,
+        return_impl: Literal[False],
+        firstresult: Literal[True],
+    ) -> Any:
+        ...
 
-@overload
-def _multicall(
-    hook_impls: Sequence[HookImpl],
-    caller_kwargs: dict,
-    return_impl: Literal[False],
-    firstresult: Literal[False],
-) -> List[Any]:
-    ...
+    @overload
+    def _multicall(
+        hook_impls: Sequence[HookImpl],
+        caller_kwargs: dict,
+        return_impl: Literal[False],
+        firstresult: Literal[False],
+    ) -> List[Any]:
+        ...
 
+    @overload
+    def _multicall(
+        hook_impls: Sequence[HookImpl],
+        caller_kwargs: dict,
+        return_impl: Literal[True],
+        firstresult: Literal[True],
+    ) -> Tuple[Any, HookImpl]:
+        ...
 
-@overload
-def _multicall(
-    hook_impls: Sequence[HookImpl],
-    caller_kwargs: dict,
-    return_impl: Literal[True],
-    firstresult: Literal[True],
-) -> Tuple[Any, HookImpl]:
-    ...
-
-
-@overload
-def _multicall(
-    hook_impls: Sequence[HookImpl],
-    caller_kwargs: dict,
-    return_impl: Literal[True],
-    firstresult: Literal[False],
-) -> List[Tuple[Any, HookImpl]]:
-    ...
+    @overload
+    def _multicall(
+        hook_impls: Sequence[HookImpl],
+        caller_kwargs: dict,
+        return_impl: Literal[True],
+        firstresult: Literal[False],
+    ) -> List[Tuple[Any, HookImpl]]:
+        ...
 
 
 # Vendored with slight modifications from pluggy.callers._multicall:
