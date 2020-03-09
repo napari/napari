@@ -88,10 +88,29 @@ One of the [values](MISSION_AND_VALUES.md#our-values) of napari is to be **a too
 
 - Ensuring our installation success rate is close to 100%. We can still struggle with installation of Qt in complex cases, and have had problems with dependency conflicts with other Python packages. We have recently added support for a [conda-forge package](https://github.com/conda-forge/napari-feedstock) and are working towards distributing bundled applications in [#496](https://github.com/napari/napari/pull/496). See the [`installation` label](https://github.com/napari/napari/labels/installation) for a current list issues related to installation.
 
-- Monitoring performance using [benchmarks](BENCHMARKS.md) to ensure we remain highly performant as we develop new features.
+- Monitoring and improving performance using [benchmarks](BENCHMARKS.md) to ensure we remain highly performant as we develop new features. See the [`performance` label](https://github.com/napari/napari/labels/performance) for a current list issues related to performance.
 
 ### Enhancing the viewer through development of fundamental features
 
+The heart of napari is its viewer, a highly performant, fully-featured graphical user interface, alone with fundamental layer types, including images, labels, points, shapes, surfaces, and vectors. A top development priority of this roadmap is to ensure that all the basic features of the viewer and layers that are needed for image analysis and visualization are in place and working well. A list of currently planned features can be found in [#420](https://github.com/napari/napari/issues/420) and is summarized into main areas here.
+
+- Support for a world based coordinate system, allowing for physical coordinates, and chaining together of transforms - including affine and deformable transforms. This coordinate system should include support for multiscale representations 
+of data such as pyramids, and a model for our camera system. See the [World Coordinates project board](https://github.com/napari/napari/projects/10) for more details.
+
+- Layer groupings [#970](https://github.com/napari/napari/issues/970) and linked multicanvas support [#760](https://github.com/napari/napari/issues/760) that will allow groups of layers to be assigned to different canvases that can render different views of the data, for example simultaneous 2D orthoviews and 3D rendering, or linked 2D views of the same physical location in different images.
+
+- Support for annotation labels including text rendering [#600](https://github.com/napari/napari/pull/600).
+
+- Linked 1D plots such as histograms, timeseries, or z-profiles [#823](https://github.com/napari/napari/pull/823) and
+[#675](https://github.com/napari/napari/pull/675).
+
+- Support for generating animations [#780](https://github.com/napari/napari/pull/780).
+
+- Draggable and resizable layers [#299](https://github.com/napari/napari/issues/299) and [#989](https://github.com/napari/napari/pull/989).
+
+- Improved support for big and remote data, see [#881](https://github.com/napari/napari/issues/881), including making changing views non-blocking [#845](https://github.com/napari/napari/issues/845), better caching [#718](https://github.com/napari/napari/issues/718), and more done asynchronously.
+
+Not prioritized during this roadmap, but features that will likely be develop in future roadmaps are general support for undo / redo functionality [#474](https://github.com/napari/napari/issues/299), a history feature, and macro generation.
 
 ### Adding basic plugin management infrastructure
 
