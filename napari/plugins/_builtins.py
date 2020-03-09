@@ -11,11 +11,12 @@ napari_hook_implementation = HookimplMarker("napari")
 
 def _interal_reader_plugin(path: Union[str, List[str]]) -> List[LayerData]:
     """Pass ``path`` to our magic_imread function and return as LayerData."""
-    return [(io.magic_imread(path, stack=not isinstance(path, str)),)]
+    # magic_imread is already capable of accepting both a str or a list
+    return [(io.magic_imread(path),)]
 
 
 @napari_hook_implementation(trylast=True)
-def napari_get_reader(path: str) -> ReaderFunction:
+def napari_get_reader(path: Union[str, List[str]]) -> ReaderFunction:
     """Our internal fallback file reader at the end of the reader plugin chain.
 
     This will assume that the filepath is an image, and will pass all of the
