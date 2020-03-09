@@ -1,12 +1,12 @@
 from . import PluginError, log_plugin_error
 from . import plugin_manager as napari_plugin_manager
-from ._hookexec import _hookexec
-from typing import Optional
+from ._hook_callers import execute_hook
+from typing import Optional, Union, Sequence
 from ..types import LayerData
 
 
-def get_layer_data_from_plugins(
-    path: str, plugin_manager=None
+def read_data_with_plugins(
+    path: Union[str, Sequence[str]], plugin_manager=None
 ) -> Optional[LayerData]:
     """Iterate reader hooks and return first non-None LayerData or None.
 
@@ -33,13 +33,13 @@ def get_layer_data_from_plugins(
         plugins are (or they all error), returns None
     """
     plugin_manager = plugin_manager or napari_plugin_manager
-    skip_imps = []
+    skip_impls = []
     while True:
-        (reader, imp) = _hookexec(
+        (reader, implementation) = execute_hook(
             plugin_manager.hook.napari_get_reader,
             path=path,
-            with_impl=True,
-            skip_imps=skip_imps,
+            return_impl=True,
+            skip_impls=skip_impls,
         )
         if not reader:
             # we're all out of reader plugins
@@ -47,20 +47,22 @@ def get_layer_data_from_plugins(
         try:
             return reader(path)  # try to read the data.
         except Exception as exc:
-            # If _hookexec did return a reader, but the reader then failed
+            # If execute_hook did return a reader, but the reader then failed
             # while trying to read the path, we store the traceback for later
             # retrieval, warn the user, and continue looking for readers
             # (skipping this one)
             msg = (
-                f"Error in plugin '{imp.plugin_name}', "
+                f"Error in plugin '{implementation.plugin_name}', "
                 "hook 'napari_get_reader'"
             )
-            err = PluginError(msg, imp.plugin_name, imp.plugin.__name__)
+            err = PluginError(
+                msg, implementation.plugin_name, implementation.plugin.__name__
+            )
             err.__cause__ = exc  # like `raise PluginError() from exc`
             # store the exception for later retrieval
-            plugin_manager._exceptions[imp.plugin_name].append(err)
-            skip_imps.append(imp)  # don't try this impl again
-            if imp.plugin_name != 'builtins':
+            plugin_manager._exceptions[implementation.plugin_name].append(err)
+            skip_impls.append(implementation)  # don't try this impl again
+            if implementation.plugin_name != 'builtins':
                 # If builtins doesn't work, they will get a "no reader" found
                 # error anyway, so it looks a bit weird to show them that the
                 # "builtin plugin" didn't work.
