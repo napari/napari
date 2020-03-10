@@ -3,10 +3,8 @@ import os
 import pkgutil
 import re
 import sys
-from collections import defaultdict
 from logging import getLogger
-from traceback import format_exception
-from typing import DefaultDict, Dict, Generator, List, Optional, Tuple, Union
+from typing import Generator, Optional, Tuple, Union
 
 import pluggy
 
@@ -42,11 +40,6 @@ class NapariPluginManager(pluggy.PluginManager):
             will simply search the current sys.path.  by default True
         """
         super().__init__("napari")
-        # this dict is a mapping of plugin_name: List[raised_exception_objects]
-        # this will be used to retrieve traceback info on demand
-        self._exceptions: DefaultDict[str, List[PluginError]] = defaultdict(
-            list
-        )
 
         # define hook specifications and validators
         self.add_hookspecs(hook_specifications)
@@ -100,8 +93,7 @@ class NapariPluginManager(pluggy.PluginManager):
                 self._register_module(plugin_name, module_name)
                 count += 1
             except PluginError as exc:
-                self._exceptions[plugin_name].append(exc)
-                log_plugin_error(exc)
+                logger.error(exc.format_with_contact_info())
                 self.unregister(name=plugin_name)
             except Exception as exc:
                 logger.error(
@@ -148,55 +140,6 @@ class NapariPluginManager(pluggy.PluginManager):
             self.register(mod, name=plugin_name)
         except Exception as exc:
             raise PluginRegistrationError(plugin_name, module_name) from exc
-
-    def format_exceptions(self, plugin_name: str) -> str:
-        """Return formatted tracebacks for all exceptions raised by plugin.
-
-        Parameters
-        ----------
-        plugin_name : str
-            The name of a plugin for which to retrieve tracebacks
-
-        Returns
-        -------
-        str
-            A formatted string with traceback information for every exception
-            raised by ``plugin_name`` during this session.
-        """
-        from napari import __version__
-
-        if not self._exceptions.get(plugin_name):
-            return ''
-
-        _linewidth = 80
-        _pad = (_linewidth - len(plugin_name) - 18) // 2
-        msg = [
-            f'{"=" * _pad} Errors for plugin "{plugin_name}" {"=" * _pad}',
-            '',
-            f'{"napari version": >16}: {__version__}',
-        ]
-        try:
-            err0 = self._exceptions[plugin_name][0]
-            package_meta = fetch_module_metadata(err0.plugin_module)
-            msg.extend(
-                [
-                    f'{"plugin name": >16}: {package_meta["name"]}',
-                    f'{"version": >16}: {package_meta["version"]}',
-                    f'{"module": >16}: {err0.plugin_module}',
-                ]
-            )
-        except Exception:
-            pass
-        msg += ['']
-
-        for n, err in enumerate(self._exceptions.get(plugin_name, [])):
-            _pad = _linewidth - len(str(err)) - 10
-            msg += ['', f'ERROR #{n + 1}:  {str(err)} {"-" * _pad}', '']
-            msg.extend(format_exception(err.__class__, err, err.__traceback__))
-
-        msg += ['=' * 80]
-
-        return "\n".join(msg)
 
 
 def entry_points_for(
@@ -315,9 +258,11 @@ def iter_plugin_modules(
     seen_modules = set()
     if group and not os.environ.get("NAPARI_DISABLE_ENTRYPOINT_PLUGINS"):
         for ep in entry_points_for(group):
-            module = entry_point_pattern.match(ep.value).group('module')
-            seen_modules.add(module.split(".")[0])
-            yield ep.name, module
+            match = entry_point_pattern.match(ep.value)
+            if match:
+                module = match.group('module')
+                seen_modules.add(module.split(".")[0])
+                yield ep.name, module
     if prefix and not os.environ.get("NAPARI_DISABLE_NAMEPREFIX_PLUGINS"):
         for module in modules_starting_with(prefix):
             if module not in seen_modules:
@@ -326,54 +271,3 @@ def iter_plugin_modules(
                 except Exception:
                     name = None
                 yield name or module, module
-
-
-def fetch_module_metadata(distname: str) -> Optional[Dict[str, str]]:
-    """Attempt to retrieve name, version, contact email & url for a package.
-
-    Parameters
-    ----------
-    distname : str
-        Name of a distribution.  Note: this must match the *name* of the
-        package in the METADATA file... not the name of the module.
-
-    Returns
-    -------
-    package_info : dict or None
-        A dict with keys 'name', 'version', 'email', and 'url'.
-        Returns None of the distname cannot be found.
-    """
-    try:
-        meta = importlib_metadata.metadata(distname)
-    except importlib_metadata.PackageNotFoundError:
-        return None
-    return {
-        'name': meta.get('Name'),
-        'version': meta.get('Version'),
-        'email': meta.get('Author-Email') or meta.get('Maintainer-Email'),
-        'url': meta.get('Home-page') or meta.get('Download-Url'),
-    }
-
-
-def log_plugin_error(exc: PluginError) -> None:
-    """Log PluginError to logger, with helpful contact info if possible.
-
-    Parameters
-    ----------
-    exc : PluginError
-        An instance of a PluginError
-    """
-    from napari import __version__
-
-    msg = f'\n\nPluginError: {exc}'
-    if exc.__cause__:
-        cause = str(exc.__cause__).replace("\n", "\n" + " " * 13)
-        msg += f'\n  Cause was: {cause}'
-    contact = fetch_module_metadata(exc.plugin_module)
-    if contact:
-        msg += "\n  Please notify the plugin developer:\n"
-        extra = [f'{k: >11}: {v}' for k, v in contact.items()]
-        extra += [f'{"napari": >11}: v{__version__}']
-        msg += "\n".join(extra)
-    msg += '\n'
-    logger.error(msg)

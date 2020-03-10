@@ -8,6 +8,7 @@ import time
 from skimage.io import imsave
 
 from .qt_about import QtAbout
+from .qt_plugin_report import QtPluginErrReporter
 from .qt_viewer_dock_widget import QtViewerDockWidget
 from ..resources import combine_stylesheets
 
@@ -77,6 +78,7 @@ class Window:
         self._add_file_menu()
         self._add_view_menu()
         self._add_window_menu()
+        self._add_plugins_menu()
         self._add_help_menu()
 
         self._status_bar.showMessage('Ready')
@@ -189,6 +191,20 @@ class Window:
         exit_action.triggered.connect(self._qt_window.close)
         self.window_menu = self.main_menu.addMenu('&Window')
         self.window_menu.addAction(exit_action)
+
+    def _add_plugins_menu(self):
+        self.plugins_menu = self.main_menu.addMenu('&Plugins')
+
+        report_plugin_action = QAction("Plugin errors...", self._qt_window)
+        report_plugin_action.setStatusTip(
+            'Review stack traces for plugin exceptions and notify developers'
+        )
+        report_plugin_action.triggered.connect(self._show_plugin_err_reporter)
+        self.plugins_menu.addAction(report_plugin_action)
+
+    def _show_plugin_err_reporter(self):
+        plugin_sorter = QtPluginErrReporter(parent=self._qt_window)
+        plugin_sorter.exec_()
 
     def _add_help_menu(self):
         """Add 'Help' menu to app menubar."""
