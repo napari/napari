@@ -8,15 +8,6 @@ from pluggy import PluginValidationError
 from napari.plugins import NapariPluginManager, manager
 
 
-@pytest.fixture
-def plugin_manager():
-    """PluginManager fixture that loads some test plugins"""
-    fixture_path = os.path.join(os.path.dirname(__file__), 'fixtures')
-    plugin_manager = NapariPluginManager(autodiscover=fixture_path)
-    assert fixture_path not in sys.path, 'discover path leaked into sys.path'
-    return plugin_manager
-
-
 def test_plugin_autodiscovery(plugin_manager):
     """make sure loading by naming convention works, and doesn't crash on
     invalid plugins.
