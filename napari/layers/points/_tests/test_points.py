@@ -598,6 +598,35 @@ def test_edge_color_cycle():
     )
 
 
+def test_adding_value_edge_color_cycle():
+    """ Test that adding values to properties used to set an edge color cycle
+    and then calling Points.refresh_colors() performs the update and adds the
+    new value to the edge_color_cycle_map.
+
+    See: https://github.com/napari/napari/issues/988
+    """
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    annotations = {'point_type': np.array(['A', 'B'] * int((shape[0] / 2)))}
+    color_cycle = ['red', 'blue']
+    layer = Points(
+        data,
+        properties=annotations,
+        edge_color='point_type',
+        edge_color_cycle=color_cycle,
+    )
+
+    # make point 0 point_type C
+    point_types = layer.properties['point_type']
+    point_types[0] = 'C'
+    layer.properties['point_type'] = point_types
+    layer.refresh_colors(update_color_mapping=False)
+
+    edge_color_map_keys = [*layer.edge_color_cycle_map]
+    assert 'C' in edge_color_map_keys
+
+
 def test_edge_color_colormap():
     # create Points using with face_color colormap
     shape = (10, 2)
@@ -768,6 +797,35 @@ def test_face_color_cycle():
             (face_color_array[1], face_color_array[3:], transform_color('red'))
         ),
     )
+
+
+def test_adding_value_face_color_cycle():
+    """ Test that adding values to properties used to set an face color cycle
+    and then calling Points.refresh_colors() performs the update and adds the
+    new value to the face_color_cycle_map.
+
+    See: https://github.com/napari/napari/issues/988
+    """
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    annotations = {'point_type': np.array(['A', 'B'] * int((shape[0] / 2)))}
+    color_cycle = ['red', 'blue']
+    layer = Points(
+        data,
+        properties=annotations,
+        face_color='point_type',
+        face_color_cycle=color_cycle,
+    )
+
+    # make point 0 point_type C
+    point_types = layer.properties['point_type']
+    point_types[0] = 'C'
+    layer.properties['point_type'] = point_types
+    layer.refresh_colors(update_color_mapping=False)
+
+    face_color_map_keys = [*layer.face_color_cycle_map]
+    assert 'C' in face_color_map_keys
 
 
 def test_face_color_colormap():
