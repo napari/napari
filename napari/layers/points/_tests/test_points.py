@@ -804,7 +804,7 @@ def test_adding_value_face_color_cycle():
     and then calling Points.refresh_colors() performs the update and adds the
     new value to the face_color_cycle_map.
 
-    See: https://github.com/napari/napari/pull/1034
+    See: https://github.com/napari/napari/issues/988
     """
     shape = (10, 2)
     np.random.seed(0)
