@@ -3,14 +3,14 @@ from os.path import abspath, dirname, join
 from glob import glob
 from typing import List, Optional
 from .build_icons import build_pyqt_resources
+from functools import lru_cache
 
 overwrite = bool(environ.get('NAPARI_REBUILD_RESOURCES'))
 build_pyqt_resources(overwrite=overwrite)
 from . import _qt
 
-_STYLESHEET = None  # cached stylesheet string, built once per session
 
-
+@lru_cache
 def get_stylesheet(extra: Optional[List[str]] = None) -> str:
     """Combine all qss files into single (cached) style string.
     
@@ -29,19 +29,15 @@ def get_stylesheet(extra: Optional[List[str]] = None) -> str:
         the combined stylesheet.
     """
     resources_dir = abspath(dirname(__file__))
-
-    global _STYLESHEET
-    if _STYLESHEET is None:
-        _STYLESHEET = ''
-        for file in sorted(glob(join(resources_dir, 'styles/*.qss'))):
-            with open(file, 'r') as f:
-                _STYLESHEET += f.read()
-    out = _STYLESHEET
+    stylesheet = ''
+    for file in sorted(glob(join(resources_dir, 'styles/*.qss'))):
+        with open(file, 'r') as f:
+            stylesheet += f.read()
     if extra:
         for file in extra:
             with open(file, 'r') as f:
-                out += f.read()
-    return out
+                stylesheet += f.read()
+    return stylesheet
 
 
 __all__ = ['build_pyqt_resources', 'get_stylesheet']
