@@ -5,7 +5,7 @@ from typing import List, Union
 
 from pluggy import HookimplMarker
 
-from ..types import ReaderFunction, array_return_to_layerdata_return
+from ..types import ReaderFunction, image_reader_to_layerdata_reader
 from ..utils.io import magic_imread
 
 napari_hook_implementation = HookimplMarker("napari")
@@ -28,4 +28,4 @@ def napari_get_reader(path: Union[str, List[str]]) -> ReaderFunction:
     callable
         function that returns layer_data to be handed to viewer._add_layer_data
     """
-    return array_return_to_layerdata_return(magic_imread)
+    return image_reader_to_layerdata_reader(magic_imread)

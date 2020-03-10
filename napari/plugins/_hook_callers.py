@@ -60,7 +60,7 @@ def _multicall(
     Parameters
     ----------
     hook_impls : list
-        A sequence of HookImpl objects
+        A sequence of hook implementation (HookImpl) objects
     caller_kwargs : dict
         Keyword:value pairs to pass to each ``hook_impl.function``.  Every
         key in the dict must be present in the ``argnames`` property for each
@@ -186,7 +186,7 @@ def execute_hook(
     Calling hooks the normal way...
     >>> result = plugin_manager.hook.my_hook(arg=arg)
 
-    ...is identical to calling them with this function as follows:
+    ...is equivalent to calling them with this function as follows:
     >>> result = execute_hook(plugin_manager.hook.my_hook, arg=arg)
 
     The difference is that this function offers the ability to skip certain

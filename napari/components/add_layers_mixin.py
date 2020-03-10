@@ -830,7 +830,6 @@ class AddLayersMixin:
 
         layer_type = (layer_type or '').lower()
 
-        # this came from __main__.py
         # assumes that big integer type arrays are likely labels.
         if not layer_type:
             if hasattr(data, 'dtype') and data.dtype in (

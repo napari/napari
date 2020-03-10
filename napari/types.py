@@ -1,13 +1,22 @@
 from functools import wraps
-from typing import Any, Callable, Dict, List, Tuple, Union, NewType
+from typing import Any, Callable, Dict, List, Tuple, Union
 
 import numpy as np
+import dask.array as da
 
-# This is a WOEFULLY inadqueate stub for a duck-array type.
+try:
+    import zarr
+except ImportError:
+    zarr = None
+
+# This is a WOEFULLY inadequate stub for a duck-array type.
 # Mostly, just a placeholder for the concept of needing an ArrayLike type.
-# It doesn't actually get used for type checking anywhere.
 # Ultimately, this should come from https://github.com/napari/image-types
-ArrayLike = NewType("ArrayLike", np.array)
+# and should probably be replaced by a typing.Protocol
+if zarr:
+    ArrayLike = Union[np.ndarray, da.Array, zarr.Array]
+else:
+    ArrayLike = Union[np.ndarray, da.Array]
 
 # layer data may be: (data,) (data, meta), or (data, meta, layer_type)
 # using "Any" for the data type until ArrayLike is more mature.
@@ -17,7 +26,7 @@ PathLike = Union[str, List[str]]
 ReaderFunction = Callable[[PathLike], List[LayerData]]
 
 
-def array_return_to_layerdata_return(
+def image_reader_to_layerdata_reader(
     func: Callable[[PathLike], ArrayLike]
 ) -> ReaderFunction:
     """Convert a PathLike -> ArrayLike function to a PathLike -> LayerData.
