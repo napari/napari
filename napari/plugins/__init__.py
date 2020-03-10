@@ -15,10 +15,11 @@ napari_hook_implementation = HookimplMarker("napari")
 plugin_manager = NapariPluginManager()
 
 __all__ = [
+    "napari_hook_implementation",
     "NapariPluginManager",
     "plugin_manager",
     "PluginError",
-    "PluginRegistrationError",
     "PluginImportError",
+    "PluginRegistrationError",
     "execute_hook",
 ]
