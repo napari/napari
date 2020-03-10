@@ -193,6 +193,7 @@ class Window:
         self.window_menu.addAction(exit_action)
 
     def _add_plugins_menu(self):
+        """Add 'Plugins' menu to app menubar."""
         self.plugins_menu = self.main_menu.addMenu('&Plugins')
 
         report_plugin_action = QAction("Plugin errors...", self._qt_window)
