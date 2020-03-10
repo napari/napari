@@ -2,8 +2,8 @@
 """
 from typing import Optional
 
-from qtpy.QtGui import QGuiApplication
 from qtpy.QtCore import Qt
+from qtpy.QtGui import QGuiApplication
 from qtpy.QtWidgets import (
     QCheckBox,
     QComboBox,
@@ -19,12 +19,12 @@ from qtpy.QtWidgets import (
 
 from napari.plugins.manager import NapariPluginManager
 
+from ..plugins import plugin_manager as napari_plugin_manager
 from ..plugins.exceptions import (
     PLUGIN_ERRORS,
-    format_exceptions,
     fetch_module_metadata,
+    format_exceptions,
 )
-from ..plugins import plugin_manager as napari_plugin_manager
 
 
 class QtPluginErrReporter(QDialog):
@@ -69,25 +69,29 @@ class QtPluginErrReporter(QDialog):
         self.pluginComboBox.activated[str].connect(self.set_plugin)
         self.pluginComboBox.setCurrentText(self.NULL_OPTION)
 
-        self.sendToDeveloperButton = QPushButton('open issue at plugin', self)
-        self.sendToDeveloperButton.hide()
+        self.openAtGithubButton = QPushButton('Open issue at github', self)
+        self.openAtGithubButton.setToolTip(
+            "Open webrowser and submit this traceback\n"
+            "to the developer's github issue tracker"
+        )
+        self.openAtGithubButton.hide()
         self.copyButton = QPushButton()
         self.copyButton.hide()
         self.copyButton.setObjectName("QtCopyToClipboardButton")
-        self.setToolTip("Copy to clipboard")
+        self.setToolTip("Copy traceback to clipboard")
         self.copyButton.clicked.connect(self.copyToClipboard)
 
         top_row_layout = QHBoxLayout()
         top_row_layout.setContentsMargins(11, 5, 10, 0)
         top_row_layout.addWidget(self.pluginComboBox)
         top_row_layout.addStretch(1)
-        top_row_layout.addWidget(self.sendToDeveloperButton)
+        top_row_layout.addWidget(self.openAtGithubButton)
         top_row_layout.addWidget(self.copyButton)
         top_row_layout.setSpacing(5)
 
         row2_layout = QHBoxLayout()
         row2_layout.setContentsMargins(11, 0, 10, 5)
-        row2_layout.setSpacing(6)
+        row2_layout.setSpacing(2)
         self.onlyErrorsCheckbox = QCheckBox(self)
         self.onlyErrorsCheckbox.stateChanged.connect(self._on_errbox_change)
         self.onlyErrorsCheckbox.setChecked(True)
@@ -101,10 +105,10 @@ class QtPluginErrReporter(QDialog):
         self.setMinimumHeight(600)
 
     def set_plugin(self, plugin: str) -> None:
-        self.sendToDeveloperButton.hide()
+        self.openAtGithubButton.hide()
         self.copyButton.hide()
         try:
-            self.sendToDeveloperButton.clicked.disconnect()
+            self.openAtGithubButton.clicked.disconnect()
         except RuntimeError:
             pass
         if plugin in PLUGIN_ERRORS:
@@ -121,14 +125,15 @@ class QtPluginErrReporter(QDialog):
 
                     err = format_exceptions(plugin, as_html=False)
                     err = (
-                        "\n\n\n\n<details>\n<summary>Traceback</summary>"
+                        "<!--Provide detail on the error here-->\n\n\n\n"
+                        "<details>\n<summary>Traceback from napari</summary>"
                         f"\n\n```\n{err}\n```\n</details>"
                     )
                     url = f'{meta.get("url")}/issues/new?&body={err}'
                     webbrowser.open(url, new=2)
 
-                self.sendToDeveloperButton.clicked.connect(onclick)
-                self.sendToDeveloperButton.show()
+                self.openAtGithubButton.clicked.connect(onclick)
+                self.openAtGithubButton.show()
         else:
             self.textEditBox.setText('')
 
