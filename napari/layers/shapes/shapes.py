@@ -221,6 +221,7 @@ class Shapes(Layer):
         # Don't pass on opacity value to base layer as it could be a list
         # and will get set bellow
         super().__init__(
+            data,
             ndim,
             name=name,
             metadata=metadata,
@@ -539,8 +540,7 @@ class Shapes(Layer):
 
     @mode.setter
     def mode(self, mode):
-        if isinstance(mode, str):
-            mode = Mode(mode)
+        mode = Mode(mode)
 
         if not self.editable:
             mode = Mode.PAN_ZOOM

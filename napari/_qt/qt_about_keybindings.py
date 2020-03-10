@@ -12,11 +12,39 @@ from ..utils.interactions import get_keybindings_summary
 
 
 class QtAboutKeybindings(QDialog):
+    """Qt dialog window for displaying keybinding information.
+
+    Parameters
+    ----------
+    viewer : napari.components.ViewerModel
+        Napari viewer containing the rendered scene, layers, and controls.
+
+    Attributes
+    ----------
+    keybindings_strs : collections.OrderedDict
+        Ordered dictionary of hotkey shortcuts and associated keybindings.
+        Dictionary keys include:
+        - 'All active keybindings'
+        - 'Image layer'
+        - 'Labels layer'
+        - 'Points layer'
+        - 'Shapes layer'
+        - 'Surface layer'
+        - 'Vectors layer'
+    layout : qtpy.QtWidgets.QVBoxLayout
+        Layout of the widget.
+    layerTypeComboBox : qtpy.QtWidgets.QComboBox
+        Dropdown menu to select layer type.
+    textEditBox : qtpy.QtWidgets.QTextEdit
+        Text box widget containing table of keybindings information.
+    viewer : napari.components.ViewerModel
+        Napari viewer containing the rendered scene, layers, and controls.
+    """
 
     ALL_ACTIVE_KEYBINDINGS = 'All active keybindings'
 
-    def __init__(self, viewer):
-        super().__init__()
+    def __init__(self, viewer, parent=None):
+        super().__init__(parent=parent)
 
         self.viewer = viewer
         self.layout = QVBoxLayout()
@@ -67,9 +95,31 @@ class QtAboutKeybindings(QDialog):
         self.update_active_layer()
 
     def change_layer_type(self, text):
+        """Change layer type selected in dropdown menu.
+
+        Parameters
+        ----------
+        text : str
+            Dictionary key to access keybindings associated with the layer.
+            Available keys include:
+            - 'All active keybindings'
+            - 'Image layer'
+            - 'Labels layer'
+            - 'Points layer'
+            - 'Shapes layer'
+            - 'Surface layer'
+            - 'Vectors layer'
+        """
         self.textEditBox.setHtml(self.keybindings_strs[text])
 
     def update_active_layer(self, event=None):
+        """Update the active layer and display keybindings for that layer type.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional.
+            Event from the Qt context, by default None.
+        """
         col = self.viewer.palette['secondary']
         text = ''
         # Add class and instance viewer keybindings
@@ -86,10 +136,3 @@ class QtAboutKeybindings(QDialog):
         self.keybindings_strs[self.ALL_ACTIVE_KEYBINDINGS] = text
         if self.layerTypeComboBox.currentText() == self.ALL_ACTIVE_KEYBINDINGS:
             self.textEditBox.setHtml(text)
-
-    def toggle_visible(self, event):
-        if self.isVisible():
-            self.hide()
-        else:
-            self.show()
-            self.raise_()

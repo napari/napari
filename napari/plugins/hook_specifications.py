@@ -20,14 +20,14 @@ imperative.
 """
 
 import pluggy
-from typing import Optional
+from typing import Optional, Union, List
 from ..types import ReaderFunction
 
 napari_hook_specification = pluggy.HookspecMarker("napari")
 
 
 @napari_hook_specification(firstresult=True)
-def napari_get_reader(path: str) -> Optional[ReaderFunction]:
+def napari_get_reader(path: Union[str, List[str]]) -> Optional[ReaderFunction]:
     """Return function capable of loading `path` into napari, or None.
 
     This function will be called on File -> Open... or when a user drags and
@@ -37,10 +37,14 @@ def napari_get_reader(path: str) -> Optional[ReaderFunction]:
     function should return a callable that accepts the same filepath, and
     returns a list of layer_data tuples: Union[Tuple[Any], Tuple[Any, Dict]].
 
+    Note: ``path`` may be either a str or a list of str, and implementations
+    should do their own checking for list or str, and handle each case as
+    desired.
+
     Parameters
     ----------
-    path : str
-        Path to file, directory, or resource (like a URL)
+    path : str or list of str
+        Path to file, directory, or resource (like a URL), or a list of paths.
 
     Returns
     -------

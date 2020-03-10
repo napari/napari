@@ -93,6 +93,7 @@ class Vectors(Layer):
     ):
 
         super().__init__(
+            data,
             2,
             name=name,
             metadata=metadata,

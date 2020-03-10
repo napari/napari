@@ -23,7 +23,7 @@ def test_random_points():
     layer = Points(data)
     assert np.all(layer.data == data)
     assert layer.ndim == shape[1]
-    assert layer._data_view.ndim == 2
+    assert layer._view_data.ndim == 2
     assert len(layer.data) == 10
     assert len(layer.selected_data) == 0
 
@@ -36,7 +36,7 @@ def test_integer_points():
     layer = Points(data)
     assert np.all(layer.data == data)
     assert layer.ndim == shape[1]
-    assert layer._data_view.ndim == 2
+    assert layer._view_data.ndim == 2
     assert len(layer.data) == 10
 
 
@@ -48,7 +48,7 @@ def test_negative_points():
     layer = Points(data)
     assert np.all(layer.data == data)
     assert layer.ndim == shape[1]
-    assert layer._data_view.ndim == 2
+    assert layer._view_data.ndim == 2
     assert len(layer.data) == 10
 
 
@@ -59,7 +59,7 @@ def test_empty_points_array():
     layer = Points(data)
     assert np.all(layer.data == data)
     assert layer.ndim == shape[1]
-    assert layer._data_view.ndim == 2
+    assert layer._view_data.ndim == 2
     assert len(layer.data) == 0
 
 
@@ -71,7 +71,7 @@ def test_3D_points():
     layer = Points(data)
     assert np.all(layer.data == data)
     assert layer.ndim == shape[1]
-    assert layer._data_view.ndim == 2
+    assert layer._view_data.ndim == 2
     assert len(layer.data) == 10
 
 
@@ -83,7 +83,7 @@ def test_4D_points():
     layer = Points(data)
     assert np.all(layer.data == data)
     assert layer.ndim == shape[1]
-    assert layer._data_view.ndim == 2
+    assert layer._view_data.ndim == 2
     assert len(layer.data) == 10
 
 
@@ -98,7 +98,7 @@ def test_changing_points():
     layer.data = data_b
     assert np.all(layer.data == data_b)
     assert layer.ndim == shape_b[1]
-    assert layer._data_view.ndim == 2
+    assert layer._view_data.ndim == 2
     assert len(layer.data) == 20
 
 
@@ -598,6 +598,35 @@ def test_edge_color_cycle():
     )
 
 
+def test_adding_value_edge_color_cycle():
+    """ Test that adding values to properties used to set an edge color cycle
+    and then calling Points.refresh_colors() performs the update and adds the
+    new value to the edge_color_cycle_map.
+
+    See: https://github.com/napari/napari/issues/988
+    """
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    annotations = {'point_type': np.array(['A', 'B'] * int((shape[0] / 2)))}
+    color_cycle = ['red', 'blue']
+    layer = Points(
+        data,
+        properties=annotations,
+        edge_color='point_type',
+        edge_color_cycle=color_cycle,
+    )
+
+    # make point 0 point_type C
+    point_types = layer.properties['point_type']
+    point_types[0] = 'C'
+    layer.properties['point_type'] = point_types
+    layer.refresh_colors(update_color_mapping=False)
+
+    edge_color_map_keys = [*layer.edge_color_cycle_map]
+    assert 'C' in edge_color_map_keys
+
+
 def test_edge_color_colormap():
     # create Points using with face_color colormap
     shape = (10, 2)
@@ -768,6 +797,35 @@ def test_face_color_cycle():
             (face_color_array[1], face_color_array[3:], transform_color('red'))
         ),
     )
+
+
+def test_adding_value_face_color_cycle():
+    """ Test that adding values to properties used to set an face color cycle
+    and then calling Points.refresh_colors() performs the update and adds the
+    new value to the face_color_cycle_map.
+
+    See: https://github.com/napari/napari/issues/988
+    """
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    annotations = {'point_type': np.array(['A', 'B'] * int((shape[0] / 2)))}
+    color_cycle = ['red', 'blue']
+    layer = Points(
+        data,
+        properties=annotations,
+        face_color='point_type',
+        face_color_cycle=color_cycle,
+    )
+
+    # make point 0 point_type C
+    point_types = layer.properties['point_type']
+    point_types[0] = 'C'
+    layer.properties['point_type'] = point_types
+    layer.refresh_colors(update_color_mapping=False)
+
+    face_color_map_keys = [*layer.face_color_cycle_map]
+    assert 'C' in face_color_map_keys
 
 
 def test_face_color_colormap():
@@ -1108,3 +1166,64 @@ def test_xml_list():
     assert type(xml) == list
     assert len(xml) == shape[0]
     assert np.all([type(x) == Element for x in xml])
+
+
+def test_view_data():
+    coords = np.array([[0, 1, 1], [0, 2, 2], [1, 3, 3], [3, 3, 3]])
+    layer = Points(coords)
+
+    layer.dims.set_point(0, 0)
+    assert np.all(
+        layer._view_data == coords[np.ix_([0, 1], layer.dims.displayed)]
+    )
+
+    layer.dims.set_point(0, 1)
+    assert np.all(
+        layer._view_data == coords[np.ix_([2], layer.dims.displayed)]
+    )
+
+    layer.dims.ndisplay = 3
+    assert np.all(layer._view_data == coords)
+
+
+def test_view_size():
+    coords = np.array([[0, 1, 1], [0, 2, 2], [1, 3, 3], [3, 3, 3]])
+    sizes = np.array([[3, 5, 5], [3, 5, 5], [3, 3, 3], [2, 2, 3]])
+    layer = Points(coords, size=sizes, n_dimensional=False)
+
+    layer.dims.set_point(0, 0)
+    assert np.all(
+        layer._view_size == sizes[np.ix_([0, 1], layer.dims.displayed)]
+    )
+
+    layer.dims.set_point(0, 1)
+    assert np.all(layer._view_size == sizes[np.ix_([2], layer.dims.displayed)])
+
+    layer.n_dimensional = True
+    assert len(layer._view_size) == 3
+
+
+def test_view_colors():
+    coords = [[0, 1, 1], [0, 2, 2], [1, 3, 3], [3, 3, 3]]
+    face_color = np.array(
+        [[1, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1], [0, 0, 1, 1]]
+    )
+    edge_color = np.array(
+        [[0, 0, 1, 1], [1, 0, 0, 1], [0, 1, 0, 1], [0, 0, 1, 1]]
+    )
+
+    layer = Points(coords, face_color=face_color, edge_color=edge_color)
+    layer.dims.set_point(0, 0)
+    print(layer.face_color)
+    print(layer._view_face_color)
+    assert np.all(layer._view_face_color == face_color[[0, 1]])
+    assert np.all(layer._view_edge_color == edge_color[[0, 1]])
+
+    layer.dims.set_point(0, 1)
+    assert np.all(layer._view_face_color == face_color[[2]])
+    assert np.all(layer._view_edge_color == edge_color[[2]])
+
+    # view colors should return empty array if there are no points
+    layer.dims.set_point(0, 2)
+    assert len(layer._view_face_color) == 0
+    assert len(layer._view_edge_color) == 0

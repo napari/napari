@@ -1,11 +1,11 @@
 import itertools
 from logging import getLogger
-from typing import Sequence, List, Optional, Union
-
+from typing import List, Optional, Sequence, Union
+from os import fspath
 import numpy as np
 
 from .. import layers
-from ..plugins.utils import get_layer_data_from_plugins
+from ..plugins.io import read_data_with_plugins
 from ..utils import colormaps, io
 from ..utils.misc import ensure_iterable, is_iterable
 
@@ -49,57 +49,6 @@ class AddLayersMixin:
 
         if len(self.layers) == 1:
             self.reset_view()
-
-    def add_path(
-        self,
-        path: Union[str, Sequence[str]],
-        stack: bool = False,
-        use_dask: Optional[bool] = None,
-    ) -> List[layers.Layer]:
-        """Add a path to the viewer
-
-        Paths will be handed one-by-one to the napari_get_reader hook.
-
-        Parameters
-        ----------
-        path : str or list of str
-            path(s) to view.
-        stack : bool, optional
-            Concatenate multiple input files into a single stack,
-            by default False
-        use_dask : bool, optional
-            Whether to use dask to create a lazy array, rather than NumPy.
-            If ``None``, will resolve to True if filenames contains more than
-            one image, False otherwise.  by default None.
-        """
-        paths = [path] if isinstance(path, str) else path
-        if not isinstance(paths, (tuple, list)):
-            raise ValueError(
-                "'path' argument must be a string, list, or tuple"
-            )
-
-        added_layers: List[layers.Layer] = []
-        if stack:
-            images = io.magic_imread(paths, use_dask=use_dask, stack=stack)
-            added = self.add_image(images)
-            added = added if isinstance(added, list) else [added]
-            added_layers.extend(added)
-            return added
-
-        # iterate through each path provided, looking for a suitable reader
-        for _path in paths:
-            layer_data = get_layer_data_from_plugins(_path)
-            if layer_data:
-                for data in layer_data:
-                    added = self._add_layer_from_data(*data)
-                    added = added if isinstance(added, list) else [added]
-                    added_layers.extend(added)
-            else:
-                logger.error(
-                    f'No plugin found capable of reading path: {_path}.'
-                )
-
-        return added_layers
 
     def add_image(
         self,
@@ -750,6 +699,90 @@ class AddLayersMixin:
         self.add_layer(layer)
         return layer
 
+    def add_path(
+        self, path: Union[str, Sequence[str]], stack: bool = False
+    ) -> List[layers.Layer]:
+        """Add a path or list of paths to the viewer.
+
+        A list of paths will be handed one-by-one to the napari_get_reader hook
+        if stack is False, otherwise the full list is passed to each plugin
+        hook.
+
+        Parameters
+        ----------
+        path : str or list of str
+            A filepath, directory, or URL (or a list of any) to open.
+        stack : bool, optional
+            If a list of strings is passed and ``stack`` is ``True``, then the
+            entire list will be passed to plugins.  It is then up to individual
+            plugins to know how to handle a list of paths.  If ``stack`` is
+            ``False``, then the ``path`` list is broken up and passed to plugin
+            readers one by one.  by default False.
+
+        Returns
+        -------
+        layers : list
+            A list of any layers that were added to the viewer.
+        """
+        paths = [path] if isinstance(path, str) else path
+        paths = [fspath(path) for path in paths]  # PathObjects -> str
+        if not isinstance(paths, (tuple, list)):
+            raise ValueError(
+                "'path' argument must be a string, list, or tuple"
+            )
+
+        if stack:
+            return self._add_layers_with_plugins(paths)
+
+        added: List[layers.Layer] = []  # for layers that get added
+        for _path in paths:
+            added.extend(self._add_layers_with_plugins(_path))
+
+        return added
+
+    def _add_layers_with_plugins(
+        self, path_or_paths: Union[str, Sequence[str]]
+    ) -> List[layers.Layer]:
+        """Load a path or a list of paths into the viewer using plugins.
+
+        This function is mostly called from self.add_path, where the ``stack``
+        argument determines whether a list of strings is handed to plugins one
+        at a time, or en-masse.
+
+        Parameters
+        ----------
+        path_or_paths : str or list of str
+            A filepath, directory, or URL (or a list of any) to open. If a
+            list, the assumption is that the list is to be treated as a stack.
+
+        Returns
+        -------
+        List[layers.Layer]
+            A list of any layers that were added to the viewer.
+        """
+        layer_data = read_data_with_plugins(path_or_paths)
+
+        if not layer_data:
+            # if layer_data is empty, it means no plugin could read path
+            # we just want to provide some useful feedback, which includes
+            # whether or not paths were passed to plugins as a list.
+            if isinstance(path_or_paths, (tuple, list)):
+                path_repr = f"[{path_or_paths[0]}, ...] as stack"
+            else:
+                path_repr = path_or_paths
+            msg = f'No plugin found capable of reading {path_repr}.'
+            logger.error(msg)
+            return []
+
+        # add each layer to the viewer
+        added: List[layers.Layer] = []  # for layers that get added
+        for data in layer_data:
+            new = self._add_layer_from_data(*data)
+            # some add_* methods return a List[Layer] others just a Layer
+            # we want to always return a list
+            added.extend(new if isinstance(new, list) else [new])
+        return added
+
     def _add_layer_from_data(
         self, data, meta: dict = None, layer_type: Optional[str] = None
     ) -> Union[layers.Layer, List[layers.Layer]]:
@@ -797,7 +830,6 @@ class AddLayersMixin:
 
         layer_type = (layer_type or '').lower()
 
-        # this came from __main__.py
         # assumes that big integer type arrays are likely labels.
         if not layer_type:
             if hasattr(data, 'dtype') and data.dtype in (

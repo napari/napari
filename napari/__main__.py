@@ -60,26 +60,9 @@ def main():
         action='store_false',
         help='interpret all dimensions in the image as spatial',
     )
-    parser.add_argument(
-        '-D',
-        '--use-dask',
-        action='store_true',
-        help='Use dask to read in images. This conserves memory. This option '
-        'does nothing if a single image is given.',
-        default=None,
-    )
-    parser.add_argument(
-        '-N',
-        '--use-numpy',
-        action='store_false',
-        dest='use_dask',
-        help='Use NumPy to read in images. This can be more performant than '
-        'dask if all the images fit in RAM. This option does nothing if '
-        'only a single image is given.',
-    )
     args = parser.parse_args()
     with gui_qt(startup_logo=True):
-        view_path(args.images, stack=args.stack, use_dask=args.use_dask)
+        view_path(args.images, stack=args.stack)
 
 
 if __name__ == '__main__':

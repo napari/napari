@@ -1,20 +1,18 @@
 """
 Internal napari hook implementations to be registered by the plugin manager
 """
+from typing import List, Union
+
 from pluggy import HookimplMarker
-from ..types import ReaderFunction, LayerData, List
-from ..utils import io
+
+from ..types import ReaderFunction, image_reader_to_layerdata_reader
+from ..utils.io import magic_imread
 
 napari_hook_implementation = HookimplMarker("napari")
 
 
-def _interal_reader_plugin(path: str) -> List[LayerData]:
-    """Pass ``path`` to our magic_imread function and return as LayerData."""
-    return [(io.magic_imread(path),)]
-
-
 @napari_hook_implementation(trylast=True)
-def napari_get_reader(path: str) -> ReaderFunction:
+def napari_get_reader(path: Union[str, List[str]]) -> ReaderFunction:
     """Our internal fallback file reader at the end of the reader plugin chain.
 
     This will assume that the filepath is an image, and will pass all of the
@@ -30,4 +28,4 @@ def napari_get_reader(path: str) -> ReaderFunction:
     callable
         function that returns layer_data to be handed to viewer._add_layer_data
     """
-    return _interal_reader_plugin
+    return image_reader_to_layerdata_reader(magic_imread)
