@@ -90,5 +90,9 @@ def test_iter_plugins():
 def test_format_exceptions(plugin_manager):
     """Test that format_exceptions returns a string with traceback info."""
 
-    assert 'Traceback' in format_exceptions('invalid')
+    # check both as_html=True and False
+    assert 'Traceback' in format_exceptions('invalid', as_html=False)
+    assert 'Traceback' in format_exceptions('invalid', as_html=True)
+
+    # formatting exceptions for a plugin that has not errored returns None.
     assert not format_exceptions('working')
