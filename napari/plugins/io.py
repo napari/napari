@@ -1,6 +1,6 @@
 from . import PluginError, log_plugin_error
 from . import plugin_manager as napari_plugin_manager
-from ._hookexec import execute_hook
+from ._hook_callers import execute_hook
 from typing import Optional, Union, Sequence
 from ..types import LayerData
 

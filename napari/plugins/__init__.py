@@ -2,7 +2,7 @@ import sys
 
 from pluggy import HookimplMarker
 
-from ._hookexec import execute_hook
+from ._hook_callers import execute_hook
 from .exceptions import PluginError, PluginImportError, PluginRegistrationError
 from .manager import NapariPluginManager, log_plugin_error
 
