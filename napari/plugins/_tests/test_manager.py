@@ -6,6 +6,7 @@ import pytest
 from pluggy import PluginValidationError
 
 from napari.plugins import NapariPluginManager, manager
+from napari.plugins.exceptions import format_exceptions
 
 
 def test_plugin_autodiscovery(plugin_manager):
@@ -89,5 +90,5 @@ def test_iter_plugins():
 def test_format_exceptions(plugin_manager):
     """Test that format_exceptions returns a string with traceback info."""
 
-    assert 'Traceback' in plugin_manager.format_exceptions('invalid')
-    assert not plugin_manager.format_exceptions('working')
+    assert 'Traceback' in format_exceptions('invalid')
+    assert not format_exceptions('working')

@@ -1,9 +1,12 @@
-from napari.plugins.io import read_data_with_plugins
-from tempfile import NamedTemporaryFile
-import numpy as np
-from skimage import io
 import os
 from pathlib import Path
+from tempfile import NamedTemporaryFile
+
+import numpy as np
+from skimage import io
+
+from napari.plugins.exceptions import PLUGIN_ERRORS, format_exceptions
+from napari.plugins.io import read_data_with_plugins
 
 
 def test_iter_reader_plugins(plugin_manager):
@@ -14,7 +17,7 @@ def test_iter_reader_plugins(plugin_manager):
     """
 
     # the plugin loads fine, so there should be no exceptions yet.
-    assert 'napari_bad_plugin2' not in plugin_manager._exceptions
+    assert 'napari_bad_plugin2' not in PLUGIN_ERRORS
 
     # we want 'napari_bad_plugin2' to be the first plugin called.  But
     # `napari_test_plugin` will be in line first... Until we can
@@ -31,9 +34,9 @@ def test_iter_reader_plugins(plugin_manager):
     assert layer_data
 
     # but the exception from `bad_plugin2` should now be stored.
-    assert 'napari_bad_plugin2' in plugin_manager._exceptions
+    assert 'napari_bad_plugin2' in PLUGIN_ERRORS
     # we can print out a string that should have the explanation of the error.
-    exception_string = plugin_manager.format_exceptions('napari_bad_plugin2')
+    exception_string = format_exceptions('napari_bad_plugin2')
     assert 'IOError' in exception_string
     assert "napari_get_reader" in exception_string
 
