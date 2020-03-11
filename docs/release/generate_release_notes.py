@@ -94,36 +94,6 @@ all_commits = list(
 )
 all_hashes = set(c.sha for c in all_commits)
 
-authors = set()
-reviewers = set()
-committers = set()
-users = dict()  # keep track of known usernames
-
-
-def find_author_info(commit):
-    """Return committer and author of a commit.
-    Parameters
-    ----------
-    commit : Github commit
-        The commit to query.
-    Returns
-    -------
-    committer : str or None
-        The git committer.
-    author : str
-        The git author.
-    """
-    committer = None
-    if commit.committer is not None:
-        committer = commit.committer.name or commit.committer.login
-    git_author = commit.raw_data['commit']['author']['name']
-    if commit.author is not None:
-        author = commit.author.name or commit.author.login + f' ({git_author})'
-    else:
-        # Users that deleted their accounts will appear as None
-        author = git_author
-    return committer, author
-
 
 def add_to_users(users, new_user):
     if new_user.name is None:
@@ -132,21 +102,22 @@ def add_to_users(users, new_user):
         users[new_user.login] = new_user.name
 
 
-for commit in tqdm(all_commits, desc='Getting commiters and authors'):
-    committer, author = find_author_info(commit)
-    if committer is not None:
-        committers.add(committer)
-        # users maps github ids to a unique name.
-        add_to_users(users, commit.committer)
-        committers.add(users[commit.committer.login])
+authors = set()
+committers = set()
+reviewers = set()
+users = {}
 
+for commit in tqdm(all_commits, desc="Getting commiters and authors"):
+    if commit.committer is not None:
+        add_to_users(users, commit.committer)
+        committers.add(commit.committer.login)
     if commit.author is not None:
         add_to_users(users, commit.author)
-    authors.add(author)
+        authors.add(commit.author.login)
 
-# this gets found as a commiter
-committers.discard('GitHub Web Flow')
-authors.discard('Azure Pipelines Bot')
+# remove these bots.
+committers.discard("web-flow")
+authors.discard("azure-pipelines-bot")
 
 highlights = OrderedDict()
 
@@ -171,9 +142,9 @@ for pull in tqdm(
     if pr.merge_commit_sha in all_hashes:
         summary = pull.title
         for review in pr.get_reviews():
-            if review.user.login not in users:
-                users[review.user.login] = review.user.name
-            reviewers.add(users[review.user.login])
+            if review.user is not None:
+                add_to_users(users, review.user)
+                reviewers.add(review.user.login)
         for key, key_dict in highlights.items():
             pr_title_prefix = (key + ': ').lower()
             if summary.lower().startswith(pr_title_prefix):
@@ -222,8 +193,9 @@ for section, pull_request_dicts in highlights.items():
 contributors = OrderedDict()
 
 contributors['authors'] = authors
-# contributors['committers'] = committers
 contributors['reviewers'] = reviewers
+# ignore committers
+# contributors['committers'] = committers
 
 for section_name, contributor_set in contributors.items():
     print()
@@ -231,10 +203,10 @@ for section_name, contributor_set in contributors.items():
         contributor_set.remove(None)
     committer_str = (
         f'{len(contributor_set)} {section_name} added to this '
-        'release [alphabetical by first name or login]'
+        'release [alphabetical by username]'
     )
     print(committer_str)
     print('-' * len(committer_str))
     for c in sorted(contributor_set, key=str.lower):
-        print(f'- {c}')
+        print(f"- `{users[c]} <https://github.com/{c}>`_")
     print()
