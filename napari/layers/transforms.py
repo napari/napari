@@ -196,7 +196,9 @@ class ScaleTranslate(Transform):
         Transform
             Resulting transform.
         """
-        return ScaleTranslate(self.scale[axes], self.translate[axes])
+        return ScaleTranslate(
+            self.scale[axes], self.translate[axes], name=self.name
+        )
 
     def set_pad(self, axes: Sequence[int]) -> 'ScaleTranslate':
         """Return a transform with added axes for non-visible dimensions.
@@ -219,4 +221,4 @@ class ScaleTranslate(Transform):
         scale[not_axes] = self.scale
         translate = np.zeros(n)
         translate[not_axes] = self.translate
-        return ScaleTranslate(scale, translate)
+        return ScaleTranslate(scale, translate, name=self.name)

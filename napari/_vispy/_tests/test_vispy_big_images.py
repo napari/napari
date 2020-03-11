@@ -12,7 +12,7 @@ def test_big_2D_image(viewer_factory):
     assert visual.node is not None
     if visual.MAX_TEXTURE_SIZE_2D is not None:
         ds = np.ceil(np.divide(shape, visual.MAX_TEXTURE_SIZE_2D)).astype(int)
-        assert np.all(layer._transform_view.scale == ds)
+        assert np.all(layer._transforms['view2data'].scale == ds)
 
 
 def test_big_3D_image(viewer_factory):
@@ -26,4 +26,4 @@ def test_big_3D_image(viewer_factory):
     assert visual.node is not None
     if visual.MAX_TEXTURE_SIZE_3D is not None:
         ds = np.ceil(np.divide(shape, visual.MAX_TEXTURE_SIZE_3D)).astype(int)
-        assert np.all(layer._transform_view.scale == ds)
+        assert np.all(layer._transforms['view2data'].scale == ds)
