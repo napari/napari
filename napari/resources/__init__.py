@@ -51,7 +51,7 @@ def import_resources(version='', overwrite=False):
         tempfile.close()
 
 
-@lru_cache
+@lru_cache(maxsize=4)
 def get_stylesheet(extra: Optional[List[str]] = None) -> str:
     """Combine all qss files into single (cached) style string.
     

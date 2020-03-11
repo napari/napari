@@ -5,7 +5,7 @@ from pathlib import Path
 from qtpy import QtGui
 from qtpy.QtCore import QCoreApplication, Qt, QSize
 from qtpy.QtWidgets import QWidget, QVBoxLayout, QFileDialog, QSplitter
-from qtpy.QtGui import QCursor, QPixmap
+from qtpy.QtGui import QCursor
 from qtpy.QtCore import QThreadPool
 from skimage.io import imsave
 from vispy.scene import SceneCanvas, PanZoomCamera, ArcballCamera
@@ -24,7 +24,7 @@ from ..utils.interactions import (
 )
 from ..utils.keybindings import components_to_key_combo
 
-from .utils import QImg2array
+from .utils import QImg2array, square_pixmap
 from .qt_controls import QtControls
 from .qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .qt_console import QtConsole
@@ -169,10 +169,8 @@ class QtViewer(QSplitter):
         self._last_visited_dir = str(Path.home())
 
         self._cursors = {
-            'disabled': QCursor(
-                QPixmap(':/icons/cursor/cursor_disabled.png').scaled(20, 20)
-            ),
             'cross': Qt.CrossCursor,
+            'disabled': Qt.ForbiddenCursor,
             'forbidden': Qt.ForbiddenCursor,
             'pointing': Qt.PointingHandCursor,
             'standard': QCursor(),
@@ -370,16 +368,8 @@ class QtViewer(QSplitter):
             Event from the Qt context.
         """
         cursor = self.viewer.cursor
-        size = self.viewer.cursor_size
         if cursor == 'square':
-            if size < 10 or size > 300:
-                q_cursor = self._cursors['cross']
-            else:
-                q_cursor = QCursor(
-                    QPixmap(':/icons/cursor/cursor_square.png').scaledToHeight(
-                        size
-                    )
-                )
+            q_cursor = QCursor(square_pixmap(self.viewer.cursor_size))
         else:
             q_cursor = self._cursors[cursor]
         self.canvas.native.setCursor(q_cursor)

@@ -45,10 +45,7 @@ def build_resources(qrcpath=None, overwrite=None):
     <!DOCTYPE RCC>
     <RCC version="1.0">
     <qresource>
-        <file>icons/cursor/cursor_disabled.png</file>
-        <file>icons/cursor/cursor_square.png</file>"""
-    # FIXME!
-    # cursors currently only work when qrcpath is in napari/resources
+    """
 
     for name, palette in palettes.items():
         palette_dir = os.path.join(os.path.dirname(qrcpath), 'icons', name)
