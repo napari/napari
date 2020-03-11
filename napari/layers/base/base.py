@@ -14,7 +14,7 @@ from ...utils.keybindings import KeymapMixin
 from ...utils.misc import ROOT_DIR
 from ...utils.naming import magic_name
 from ...utils.status_messages import status_format, format_float
-from ..transforms import ScaleTranslate
+from ..transforms import ScaleTranslate, TransformChain
 
 
 class Layer(KeymapMixin, ABC):
@@ -145,21 +145,30 @@ class Layer(KeymapMixin, ABC):
         if translate is None:
             translate = [0] * ndim
 
-        # Create main transform mapping data to a world-like coordinate
-        self._transform = ScaleTranslate(scale, translate)
-        # Create additional transform mapping viewed data to data coordinate
-        # This is useful for cases where the displayed data is not the base
-        # data given by the user. In such cases, we need to transform the
-        # coordinates from the displayed data space to the original input data
-        # space. One example of such a situation is viewing a lower resolution
-        # level of an input pyramid, where _transform contains the transform
-        # only from the base level to world coordinates, another is when an
-        # image is larger than the maximum allowed texture size and has been
-        # downsampled
-        self._transform_view = ScaleTranslate(np.ones(ndim), np.zeros(ndim))
-        # Create additional transform mapping world-coordinates into a grid
-        # for looking at layers side-by-side
-        self._transform_grid = ScaleTranslate(np.ones(ndim), np.zeros(ndim))
+        # Create a transform chain consisting of three transforms:
+        # - An initial transform mapping viewed data to the data coordinates
+        #   This is useful for cases where the displayed data is not the base
+        #   data given by the user. In such cases, we need to transform the
+        #   coordinates from the displayed data space to the original input data
+        #   space. One example of such a situation is viewing a lower resolution
+        #   level of an input pyramid, where _transform contains the transform
+        #   only from the base level to world coordinates, another is when an
+        #   image is larger than the maximum allowed texture size and has been
+        #   downsampled
+        # - A main transform mapping data to a world-like coordinate
+        # - An additional transform mapping world-coordinates into a grid
+        #   for looking at layers side-by-side
+        self._transforms = TransformChain(
+            [
+                ScaleTranslate(
+                    np.ones(ndim), np.zeros(ndim), name='view2data'
+                ),
+                ScaleTranslate(scale, translate, name='data2world'),
+                ScaleTranslate(
+                    np.ones(ndim), np.zeros(ndim), name='world2grid'
+                ),
+            ]
+        )
 
         self.coordinates = (0,) * ndim
         self._position = (0,) * self.dims.ndisplay
@@ -305,35 +314,35 @@ class Layer(KeymapMixin, ABC):
     @property
     def scale(self):
         """list: Anisotropy factors to scale the layer by."""
-        return self._transform.scale
+        return self._transforms['data2world'].scale
 
     @scale.setter
     def scale(self, scale):
-        self._transform.scale = np.array(scale)
+        self._transforms['data2world'].scale = np.array(scale)
         self._update_dims()
         self.events.scale()
 
     @property
     def translate(self):
         """list: Factors to shift the layer by."""
-        return self._transform.translate
+        return self._transforms['data2world'].translate
 
     @translate.setter
     def translate(self, translate):
-        self._transform.translate = np.array(translate)
+        self._transforms['data2world'].translate = np.array(translate)
         self._update_dims()
         self.events.translate()
 
     @property
     def translate_grid(self):
         """list: Factors to shift the layer by."""
-        return self._transform_grid.translate
+        return self._transforms['world2grid'].translate
 
     @translate_grid.setter
     def translate_grid(self, translate_grid):
         if np.all(self.translate_grid == translate_grid):
             return
-        self._transform_grid.translate = np.array(translate_grid)
+        self._transforms['world2grid'].translate = np.array(translate_grid)
         self.events.translate()
 
     @property
@@ -366,14 +375,10 @@ class Layer(KeymapMixin, ABC):
         old_ndim = self.dims.ndim
         if old_ndim > ndim:
             keep_axes = range(old_ndim - ndim, old_ndim)
-            self._transform = self._transform.set_slice(keep_axes)
-            self._transform_view = self._transform_view.set_slice(keep_axes)
-            self._transform_grid = self._transform_grid.set_slice(keep_axes)
+            self._transforms = self._transforms.set_slice(keep_axes)
         elif old_ndim < ndim:
             new_axes = range(ndim - old_ndim)
-            self._transform = self._transform.set_pad(new_axes)
-            self._transform_view = self._transform_view.set_pad(new_axes)
-            self._transform_grid = self._transform_grid.set_pad(new_axes)
+            self._transforms = self._transforms.set_pad(new_axes)
 
         self.dims.ndim = ndim
 
@@ -623,9 +628,7 @@ class Layer(KeymapMixin, ABC):
         msg : string
             String containing a message that can be used as a status update.
         """
-        coordinates = self._transform_view.compose(self._transform)(
-            self.coordinates
-        )
+        coordinates = self._transforms.composite(self.coordinates)
         full_coord = np.round(coordinates).astype(int)
 
         msg = f'{self.name} {full_coord}'
