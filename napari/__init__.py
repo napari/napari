@@ -1,3 +1,8 @@
+from ._version import get_versions
+
+__version__ = get_versions()['version']
+del get_versions
+
 import os
 from distutils.version import StrictVersion
 from pathlib import Path
@@ -47,14 +52,11 @@ from .view_layers import (
     view_vectors,
 )
 from ._qt import gui_qt
-from ._version import get_versions
 from .utils import sys_info, _magicgui
 
 # register napari object types with magicgui if it is installed
 _magicgui.register_types_with_magicgui()
 
-__version__ = get_versions()['version']
-del get_versions
 
 # this unused import is here to fix a very strange bug.
 # there is some mysterious magical goodness in scipy stats that needs

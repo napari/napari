@@ -47,9 +47,11 @@ def build_resources(qrcpath=None, overwrite=None):
     <qresource>
         <file>icons/cursor/cursor_disabled.png</file>
         <file>icons/cursor/cursor_square.png</file>"""
+    # FIXME!
+    # cursors currently only work when qrcpath is in napari/resources
 
     for name, palette in palettes.items():
-        palette_dir = os.path.join(RESOURCES_DIR, 'icons', name)
+        palette_dir = os.path.join(os.path.dirname(qrcpath), 'icons', name)
         os.makedirs(palette_dir, exist_ok=True)
         for icon in ICONS:
             file = icon + '.svg'
@@ -86,9 +88,7 @@ def build_resources(qrcpath=None, overwrite=None):
 
 
 def build_pyqt_resources(
-    out_path: Optional[str] = None,
-    res_qrc: Optional[str] = None,
-    overwrite: bool = False,
+    out_path: Optional[str] = None, overwrite: bool = False
 ) -> str:
     """Build a res.qrc file from icons and convert for python usage.
 
@@ -106,10 +106,6 @@ def build_pyqt_resources(
     out_path : str, optional
         Path to write the converted "qt.py" resource file, by default
         os.path.join(RESOURCES_DIR, 'qt.py')
-    res_qrc : str, optional
-        Path to a res.qrc file, such as would be returned by build_resources,
-        if None, build_resources will be called using the default path.
-        by default None
     overwrite : bool, optional
         Whether to force rebuilding of the out file, by default False
 
@@ -123,12 +119,13 @@ def build_pyqt_resources(
     if os.path.exists(out_path) and not overwrite:
         return out_path
 
-    res_qrc = build_resources(overwrite=overwrite)
+    qrc_path = os.path.join(os.path.dirname(out_path), 'res.qrc')
+    qrc_path = build_resources(qrc_path, overwrite=overwrite)
 
     try:
-        run(['pyrcc5', '-o', out_path, res_qrc])
+        run(['pyrcc5', '-o', out_path, qrc_path])
     except FileNotFoundError:
-        run(['pyside2-rcc', '-o', out_path, res_qrc])
+        run(['pyside2-rcc', '-o', out_path, qrc_path])
 
     with open(out_path, "rt") as fin:
         data = fin.read()
@@ -139,10 +136,10 @@ def build_pyqt_resources(
     # cleanup.
     # we do this here because pip uninstall napari would not collect these
     for name in palettes:
-        palette_dir = os.path.join(RESOURCES_DIR, 'icons', name)
+        palette_dir = os.path.join(os.path.dirname(qrc_path), 'icons', name)
         shutil.rmtree(palette_dir, ignore_errors=True)
     try:
-        os.remove(res_qrc)
+        os.remove(qrc_path)
     except Exception:
         pass
     return out_path
