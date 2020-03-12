@@ -136,7 +136,7 @@ def get_stylesheet(extra: Optional[List[str]] = None) -> str:
     Returns
     -------
     css : str
-        the combined stylesheet.
+        The combined stylesheet.
     """
     resources_dir = abspath(dirname(__file__))
     stylesheet = ''
