@@ -123,7 +123,10 @@ class QtPopup(QDialog):
         # necessary for transparent round corners
         self.resize(self.sizeHint())
         # make sure the popup is completely on the screen
-        screen_size = QGuiApplication.screenAt(QCursor.pos()).size()
+        if hasattr(QGuiApplication, 'screenAt'):
+            screen_size = QGuiApplication.screenAt(QCursor.pos()).size()
+        else:
+            screen_size = QGuiApplication.screens()[0].size()
         left = max(min(screen_size.width() - width, left), 0)
         top = max(min(screen_size.height() - height, top), 0)
         self.setGeometry(left, top, width, height)
