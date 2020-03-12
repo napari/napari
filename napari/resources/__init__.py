@@ -104,8 +104,8 @@ def import_resources(version: str = '', overwrite: bool = False) -> None:
         or tempfile is not None
     )
     # this actually builds the res.qrc Qt resources file, and then from that
-    # autogenerates the python resources file that needs to be imported
-    # if the file already exists and overwrite is False, it will not be
+    # autogenerates the python resources file that needs to be imported.
+    # If the file already exists and overwrite is False, it will not be
     # regenerated.
     respath = build_pyqt_resources(fspath(target_file), overwrite=overwrite)
     # import the python resources file and add to sys.modules
