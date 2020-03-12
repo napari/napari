@@ -103,9 +103,6 @@ class Labels(Image):
     _selected_color : 4-tuple or None
         RGBA tuple of the color of the selected label, or None if the
         background label `0` is selected.
-    _last_cursor_coord : list or None
-        Coordinates of last cursor click before painting, gets reset to None
-        after painting is done. Used for interpolating brush strokes.
     """
 
     _history_limit = 100
@@ -159,7 +156,6 @@ class Labels(Image):
         self._n_dimensional = False
         self._contiguous = True
         self._brush_size = 10
-        self._last_cursor_coord = None
 
         self._selected_label = 0
         self._selected_color = None
