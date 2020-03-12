@@ -118,15 +118,18 @@ def build_pyqt_resources(
     out_path = out_path or os.path.join(RESOURCES_DIR, '_qt.py')
     if os.path.exists(out_path) and not overwrite:
         return out_path
-    print("BIUOLD")
+
+    # build the resource file to the same path
     qrc_path = os.path.join(os.path.dirname(out_path), 'res.qrc')
     qrc_path = build_resources(qrc_path, overwrite=overwrite)
 
+    # then convert it to a python file
     try:
         run(['pyrcc5', '-o', out_path, qrc_path])
     except FileNotFoundError:
         run(['pyside2-rcc', '-o', out_path, qrc_path])
 
+    # make sure we import from qtpy
     with open(out_path, "rt") as fin:
         data = fin.read()
         data = data.replace('PySide2', 'qtpy').replace('PyQt5', 'qtpy')
