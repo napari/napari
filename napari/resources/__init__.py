@@ -42,12 +42,8 @@ def _try_touch_file(target) -> Optional[Path]:
     return target
 
 
-def import_resources(overwrite: bool = False) -> None:
+def import_resources(version: str = '', overwrite: bool = False) -> None:
     """Build and import our icons as Qt resources.
-    
-    The compiled resources will be written to a file that encodes the current
-    napari version, as well as Qt backend and version:
-        ``_qt_resources_{napari.__version__}_{API}_{QT_VERSION}.py``
 
     This function attempts to write that file to one of three locations
     (in this order):
@@ -60,6 +56,11 @@ def import_resources(overwrite: bool = False) -> None:
 
     Parameters
     ----------
+    version : str, optional
+        Version string, by default the resources will be written to a file that
+        encodes the current napari version, as well as Qt backend and version:
+        ``_qt_resources_{napari.__version__}_{API}_{QT_VERSION}.py``
+
     overwrite : bool, optional
         Whether to recompile and overwrite the resources.
         By default, resources will be rebuilt if any of the following are True:
@@ -73,7 +74,7 @@ def import_resources(overwrite: bool = False) -> None:
         If we cannot write to any of the requested locations.
     """
     # the resources filename holds the napari version, Qt API, and QT version
-    version = f'{__version__}_{API}_{QT_VERSION}'
+    version = version or f'{__version__}_{API}_{QT_VERSION}'
     filename = f'_qt_resources_{version}.py'
     tempfile = None
     # see if we can write to the current napari/resources directory
@@ -112,6 +113,7 @@ def import_resources(overwrite: bool = False) -> None:
     # if we had to create a tempfile in the process, we can close it now.
     if tempfile:
         tempfile.close()
+    return respath
 
 
 @lru_cache(maxsize=4)
