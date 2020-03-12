@@ -12,8 +12,12 @@ from typing import Optional
 from ..utils.theme import palettes
 
 RESOURCES_DIR = os.path.abspath(os.path.dirname(__file__))
-SVGPATH = os.path.join(RESOURCES_DIR, 'icons', 'svg')
-ICONS = [i.replace('.svg', '') for i in sorted(os.listdir(SVGPATH))]
+SVGPATH = os.path.join(RESOURCES_DIR, 'icons')
+ICONS = [
+    i.replace('.svg', '')
+    for i in sorted(os.listdir(SVGPATH))
+    if i.endswith('.svg')
+]
 
 TEXT_ICONS = ['visibility']
 
@@ -48,11 +52,11 @@ def build_resources(qrcpath=None, overwrite=None):
     """
 
     for name, palette in palettes.items():
-        palette_dir = os.path.join(os.path.dirname(qrcpath), 'icons', name)
+        palette_dir = os.path.join(os.path.dirname(qrcpath), 'themes', name)
         os.makedirs(palette_dir, exist_ok=True)
         for icon in ICONS:
             file = icon + '.svg'
-            qrc_string += f'\n    <file>icons/{name}/{file}</file>'
+            qrc_string += f'\n    <file>themes/{name}/{file}</file>'
             if icon in TEXT_ICONS:
                 css = svg_style_insert.replace('{{ color }}', palette['text'])
             elif icon in HIGHLIGHT_ICONS:
@@ -132,9 +136,8 @@ def build_pyqt_resources(
 
     # cleanup.
     # we do this here because pip uninstall napari would not collect these
-    for name in palettes:
-        palette_dir = os.path.join(os.path.dirname(qrc_path), 'icons', name)
-        shutil.rmtree(palette_dir, ignore_errors=True)
+    palette_dir = os.path.join(os.path.dirname(qrc_path), 'themes')
+    shutil.rmtree(palette_dir, ignore_errors=True)
     try:
         os.remove(qrc_path)
     except Exception:

@@ -63,7 +63,7 @@ Icons are typically used inside of one of our `stylesheet.qss` files, with the `
 
 ```css
 QtDeleteButton {
-   image: url(":/icons/{{ folder }}/delete.svg");
+   image: url(":/themes/{{ folder }}/delete.svg");
 }
 ```
 
