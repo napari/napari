@@ -132,7 +132,7 @@ def get_stylesheet(extra: Optional[List[str]] = None) -> str:
     Parameters
     ----------
     extra : list of str, optional
-        Additional qss files to include in stylesheet, by default None
+        Additional paths to QSS files to include in stylesheet, by default None
     
     Returns
     -------
