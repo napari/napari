@@ -19,7 +19,10 @@ def _try_touch_file(target) -> Optional[Path]:
     
     If the target already exists, it will not be touched.  If it does not
     exist, this function attempts to create it and delete it (i.e. testing
-    permissions).  If successful, the path is returned, if not, return None.
+    permissions).  NOTE: all parent directories required to write the file will
+    be created, but NOT deleted.  
+    
+    If successful, the path is returned, if not, return None.
  
     Parameters
     ----------
@@ -34,11 +37,12 @@ def _try_touch_file(target) -> Optional[Path]:
     target = Path(target)
     if not target.exists():
         try:
+            # create parent directories
             target.parent.mkdir(parents=True, exist_ok=True)
-            target.touch()
+            target.touch()  # create the file itself
         except Exception:
             return None
-        target.unlink()
+        target.unlink()  # delete it
     return target
 
 
