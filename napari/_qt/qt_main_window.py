@@ -142,6 +142,11 @@ class Window:
         open_images.setStatusTip('Open image file(s)')
         open_images.triggered.connect(self.qt_viewer._open_images)
 
+        open_stack = QAction('Open image series as stack...', self._qt_window)
+        open_stack.setShortcut('Ctrl+Alt+O')
+        open_stack.setStatusTip('Open image files')
+        open_stack.triggered.connect(self.qt_viewer._open_images_as_stack)
+
         open_folder = QAction('Open Folder...', self._qt_window)
         open_folder.setShortcut('Ctrl+Shift+O')
         open_folder.setStatusTip(
@@ -158,6 +163,7 @@ class Window:
 
         self.file_menu = self.main_menu.addMenu('&File')
         self.file_menu.addAction(open_images)
+        self.file_menu.addAction(open_stack)
         self.file_menu.addAction(open_folder)
         self.file_menu.addAction(screenshot)
 

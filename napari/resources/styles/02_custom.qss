@@ -371,6 +371,7 @@ QtDimSliderWidget > QLineEdit {
 #slice_label {
   font-size: 11pt;
   color: {{ secondary }};
+  background: transparent;
 }
 
 #slice_label_sep{

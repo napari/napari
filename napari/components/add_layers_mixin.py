@@ -1,9 +1,15 @@
 import itertools
+from logging import getLogger
+from typing import List, Optional, Sequence, Union
+from os import fspath
 import numpy as np
 
 from .. import layers
+from ..plugins.io import read_data_with_plugins
 from ..utils import colormaps, io
 from ..utils.misc import ensure_iterable, is_iterable
+
+logger = getLogger(__name__)
 
 
 class AddLayersMixin:
@@ -66,7 +72,7 @@ class AddLayersMixin:
         blending=None,
         visible=True,
         path=None,
-    ):
+    ) -> Union[layers.Image, List[layers.Image]]:
         """Add an image layer to the layers list.
 
         Parameters
@@ -261,7 +267,7 @@ class AddLayersMixin:
         opacity=1,
         blending='translucent',
         visible=True,
-    ):
+    ) -> layers.Points:
         """Add a points layer to the layers list.
 
         Parameters
@@ -382,7 +388,7 @@ class AddLayersMixin:
         blending='translucent',
         visible=True,
         path=None,
-    ):
+    ) -> layers.Labels:
         """Add a labels (or segmentation) layer to the layers list.
 
         An image-like layer where every pixel contains an integer ID
@@ -466,7 +472,7 @@ class AddLayersMixin:
         opacity=0.7,
         blending='translucent',
         visible=True,
-    ):
+    ) -> layers.Shapes:
         """Add a shapes layer to the layers list.
 
         Parameters
@@ -562,7 +568,7 @@ class AddLayersMixin:
         opacity=1,
         blending='translucent',
         visible=True,
-    ):
+    ) -> layers.Surface:
         """Add a surface layer to the layers list.
 
         Parameters
@@ -638,7 +644,7 @@ class AddLayersMixin:
         opacity=0.7,
         blending='translucent',
         visible=True,
-    ):
+    ) -> layers.Vectors:
         """Add a vectors layer to the layers list.
 
         Parameters
@@ -693,9 +699,93 @@ class AddLayersMixin:
         self.add_layer(layer)
         return layer
 
+    def add_path(
+        self, path: Union[str, Sequence[str]], stack: bool = False
+    ) -> List[layers.Layer]:
+        """Add a path or list of paths to the viewer.
+
+        A list of paths will be handed one-by-one to the napari_get_reader hook
+        if stack is False, otherwise the full list is passed to each plugin
+        hook.
+
+        Parameters
+        ----------
+        path : str or list of str
+            A filepath, directory, or URL (or a list of any) to open.
+        stack : bool, optional
+            If a list of strings is passed and ``stack`` is ``True``, then the
+            entire list will be passed to plugins.  It is then up to individual
+            plugins to know how to handle a list of paths.  If ``stack`` is
+            ``False``, then the ``path`` list is broken up and passed to plugin
+            readers one by one.  by default False.
+
+        Returns
+        -------
+        layers : list
+            A list of any layers that were added to the viewer.
+        """
+        paths = [path] if isinstance(path, str) else path
+        paths = [fspath(path) for path in paths]  # PathObjects -> str
+        if not isinstance(paths, (tuple, list)):
+            raise ValueError(
+                "'path' argument must be a string, list, or tuple"
+            )
+
+        if stack:
+            return self._add_layers_with_plugins(paths)
+
+        added: List[layers.Layer] = []  # for layers that get added
+        for _path in paths:
+            added.extend(self._add_layers_with_plugins(_path))
+
+        return added
+
+    def _add_layers_with_plugins(
+        self, path_or_paths: Union[str, Sequence[str]]
+    ) -> List[layers.Layer]:
+        """Load a path or a list of paths into the viewer using plugins.
+
+        This function is mostly called from self.add_path, where the ``stack``
+        argument determines whether a list of strings is handed to plugins one
+        at a time, or en-masse.
+
+        Parameters
+        ----------
+        path_or_paths : str or list of str
+            A filepath, directory, or URL (or a list of any) to open. If a
+            list, the assumption is that the list is to be treated as a stack.
+
+        Returns
+        -------
+        List[layers.Layer]
+            A list of any layers that were added to the viewer.
+        """
+        layer_data = read_data_with_plugins(path_or_paths)
+
+        if not layer_data:
+            # if layer_data is empty, it means no plugin could read path
+            # we just want to provide some useful feedback, which includes
+            # whether or not paths were passed to plugins as a list.
+            if isinstance(path_or_paths, (tuple, list)):
+                path_repr = f"[{path_or_paths[0]}, ...] as stack"
+            else:
+                path_repr = path_or_paths
+            msg = f'No plugin found capable of reading {path_repr}.'
+            logger.error(msg)
+            return []
+
+        # add each layer to the viewer
+        added: List[layers.Layer] = []  # for layers that get added
+        for data in layer_data:
+            new = self._add_layer_from_data(*data)
+            # some add_* methods return a List[Layer] others just a Layer
+            # we want to always return a list
+            added.extend(new if isinstance(new, list) else [new])
+        return added
+
     def _add_layer_from_data(
-        self, data, meta: dict = None, layer_type: str = 'image'
-    ):
+        self, data, meta: dict = None, layer_type: Optional[str] = None
+    ) -> Union[layers.Layer, List[layers.Layer]]:
         """Add arbitrary layer data to the viewer.
 
         Primarily intended for usage by reader plugin hooks.
@@ -711,7 +801,9 @@ class AddLayersMixin:
             not valid for the corresponding method.
         layer_type : str
             Type of layer to add.  MUST have a corresponding add_* method on
-            on the viewer instance.
+            on the viewer instance.  If not provided, the layer is assumed to
+            be "image", unless data.dtype is one of (np.int32, np.uint32,
+            np.int64, np.uint64), in which case it is assumed to be "labels".
 
         Raises
         ------
@@ -736,7 +828,20 @@ class AddLayersMixin:
 
         """
 
-        layer_type = layer_type.lower()
+        layer_type = (layer_type or '').lower()
+
+        # assumes that big integer type arrays are likely labels.
+        if not layer_type:
+            if hasattr(data, 'dtype') and data.dtype in (
+                np.int32,
+                np.uint32,
+                np.int64,
+                np.uint64,
+            ):
+                layer_type = 'labels'
+            else:
+                layer_type = 'image'
+
         if layer_type not in layers.NAMES:
             raise ValueError(
                 f"Unrecognized layer_type: '{layer_type}'. "
@@ -752,7 +857,7 @@ class AddLayersMixin:
             )
 
         try:
-            add_method(data, **(meta or {}))
+            layer = add_method(data, **(meta or {}))
         except TypeError as exc:
             if 'unexpected keyword argument' in str(exc):
                 bad_key = str(exc).split('keyword argument ')[-1]
@@ -760,3 +865,5 @@ class AddLayersMixin:
                     "_add_layer_from_data received an unexpected keyword "
                     f"argument ({bad_key}) for layer type {layer_type}"
                 ) from exc
+
+        return layer

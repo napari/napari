@@ -7,6 +7,12 @@ import os
 from distutils.version import StrictVersion
 from pathlib import Path
 from qtpy import API_NAME
+from ._version import get_versions
+
+# putting up higher due to circular imports if plugin exceptions are raised
+# on startup (we need to be able to show the napari version in the traceback.)
+__version__ = get_versions()['version']
+del get_versions
 
 
 if API_NAME == 'PySide2':
@@ -44,6 +50,7 @@ vispy_logger.setLevel(logging.WARNING)
 from .viewer import Viewer
 from . import keybindings
 from .view_layers import (
+    view_path,
     view_image,
     view_labels,
     view_surface,

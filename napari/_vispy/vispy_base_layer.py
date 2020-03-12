@@ -1,7 +1,8 @@
-from vispy.gloo import gl
-from vispy.app import Canvas
-from vispy.visuals.transforms import STTransform
 from abc import ABC, abstractmethod
+from functools import lru_cache
+from vispy.app import Canvas
+from vispy.gloo import gl
+from vispy.visuals.transforms import STTransform
 
 
 class VispyBaseLayer(ABC):
@@ -214,6 +215,7 @@ class VispyBaseLayer(ABC):
         self.layer.scale_factor = self.scale_factor
 
 
+@lru_cache()
 def get_max_texture_sizes():
     """Get maximum texture sizes for 2D and 3D rendering.
 
@@ -225,8 +227,11 @@ def get_max_texture_sizes():
         Max texture size allowed by the vispy canvas during 2D rendering.
     """
     # A canvas must be created to access gl values
-    _ = Canvas(show=False)
-    MAX_TEXTURE_SIZE_2D = gl.glGetParameter(gl.GL_MAX_TEXTURE_SIZE)
+    c = Canvas(show=False)
+    try:
+        MAX_TEXTURE_SIZE_2D = gl.glGetParameter(gl.GL_MAX_TEXTURE_SIZE)
+    finally:
+        c.close()
     if MAX_TEXTURE_SIZE_2D == ():
         MAX_TEXTURE_SIZE_2D = None
     # vispy doesn't expose GL_MAX_3D_TEXTURE_SIZE so hard coding
