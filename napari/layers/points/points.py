@@ -321,6 +321,7 @@ class Points(Layer):
             if edge_color_cycle is None:
                 edge_color_cycle = DEFAULT_COLOR_CYCLE
             self.edge_color_cycle = edge_color_cycle
+            self.edge_color_cycle_map = {}
             self.edge_colormap = edge_colormap
             self._edge_contrast_limits = edge_contrast_limits
 
@@ -329,6 +330,7 @@ class Points(Layer):
             if face_color_cycle is None:
                 face_color_cycle = DEFAULT_COLOR_CYCLE
             self.face_color_cycle = face_color_cycle
+            self.face_color_cycle_map = {}
             self.face_colormap = face_colormap
             self._face_contrast_limits = face_contrast_limits
 
@@ -621,7 +623,7 @@ class Points(Layer):
             default="white",
         )
         if self._edge_color_mode == ColorMode.CYCLE:
-            self.refresh_colors()
+            self.refresh_colors(update_color_mapping=True)
 
     @property
     def edge_colormap(self):
@@ -690,8 +692,7 @@ class Points(Layer):
 
     @edge_color_mode.setter
     def edge_color_mode(self, edge_color_mode: Union[str, ColorMode]):
-        if isinstance(edge_color_mode, str):
-            edge_color_mode = ColorMode(edge_color_mode)
+        edge_color_mode = ColorMode(edge_color_mode)
 
         if edge_color_mode == ColorMode.DIRECT:
             self._edge_color_mode = edge_color_mode
@@ -763,7 +764,7 @@ class Points(Layer):
             default="white",
         )
         if self._face_color_mode == ColorMode.CYCLE:
-            self.refresh_colors()
+            self.refresh_colors(update_color_mapping=True)
 
     @property
     def face_colormap(self):
@@ -833,8 +834,7 @@ class Points(Layer):
 
     @face_color_mode.setter
     def face_color_mode(self, face_color_mode):
-        if isinstance(face_color_mode, str):
-            face_color_mode = ColorMode(face_color_mode)
+        face_color_mode = ColorMode(face_color_mode)
 
         if face_color_mode == ColorMode.DIRECT:
             self._face_color_mode = face_color_mode
@@ -863,7 +863,7 @@ class Points(Layer):
             self._face_color_mode = face_color_mode
             self.refresh_colors()
 
-    def refresh_colors(self, update_color_mapping: bool = True):
+    def refresh_colors(self, update_color_mapping: bool = False):
         """Calculate and update face and edge colors if using a cycle or color map
 
         Parameters
@@ -890,6 +890,22 @@ class Points(Layer):
                             self.face_color_cycle,
                         )
                     }
+
+                else:
+                    # add properties if they are not in the colormap
+                    # and update_color_mapping==False
+                    face_color_cycle_keys = [*self.face_color_cycle_map]
+                    props_in_map = np.in1d(
+                        face_color_properties, face_color_cycle_keys
+                    )
+                    if not np.all(props_in_map):
+                        props_to_add = np.unique(
+                            face_color_properties[np.logical_not(props_in_map)]
+                        )
+                        for prop in props_to_add:
+                            self.face_color_cycle_map[prop] = next(
+                                self.face_color_cycle
+                            )
                 face_colors = np.array(
                     [
                         self.face_color_cycle_map[x]
@@ -903,7 +919,7 @@ class Points(Layer):
                 face_color_properties = self.properties[
                     self._face_color_property
                 ]
-                if update_color_mapping:
+                if update_color_mapping or self.face_contrast_limits is None:
                     face_colors, contrast_limits = map_property(
                         prop=face_color_properties,
                         colormap=self.face_colormap[1],
@@ -929,6 +945,21 @@ class Points(Layer):
                             self.edge_color_cycle,
                         )
                     }
+                else:
+                    # add properties if they are not in the colormap
+                    # and update_color_mapping==False
+                    edge_color_cycle_keys = [*self.edge_color_cycle_map]
+                    props_in_map = np.in1d(
+                        edge_color_properties, edge_color_cycle_keys
+                    )
+                    if not np.all(props_in_map):
+                        props_to_add = np.unique(
+                            edge_color_properties[np.logical_not(props_in_map)]
+                        )
+                        for prop in props_to_add:
+                            self.edge_color_cycle_map[prop] = next(
+                                self.edge_color_cycle
+                            )
                 edge_colors = np.array(
                     [
                         self.edge_color_cycle_map[x]
@@ -940,7 +971,7 @@ class Points(Layer):
                 edge_color_properties = self.properties[
                     self._edge_color_property
                 ]
-                if update_color_mapping:
+                if update_color_mapping or self.edge_contrast_limits is None:
                     edge_colors, contrast_limits = map_property(
                         prop=edge_color_properties,
                         colormap=self.edge_colormap[1],
@@ -1091,8 +1122,7 @@ class Points(Layer):
 
     @mode.setter
     def mode(self, mode):
-        if isinstance(mode, str):
-            mode = Mode(mode)
+        mode = Mode(mode)
 
         if not self.editable:
             mode = Mode.PAN_ZOOM

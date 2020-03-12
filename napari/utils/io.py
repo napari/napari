@@ -92,7 +92,17 @@ def magic_imread(filenames, *, use_dask=None, stack=True):
             if use_dask:
                 image = da.stack(images)
             else:
-                image = np.stack(images)
+                try:
+                    image = np.stack(images)
+                except ValueError as e:
+                    if 'input arrays must have the same shape' in str(e):
+                        msg = (
+                            'To stack multiple files into a single array with '
+                            'numpy, all input arrays must have the same shape.'
+                            ' Set `use_dask` to True to stack arrays with '
+                            'different shapes.'
+                        )
+                        raise ValueError(msg) from e
         else:
             image = images  # return a list
     return image
