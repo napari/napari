@@ -109,6 +109,7 @@ def import_resources(version: str = '', overwrite: bool = False) -> None:
     # regenerated.
     respath = build_pyqt_resources(fspath(target_file), overwrite=overwrite)
     # import the python resources file and add to sys.modules
+    # https://stackoverflow.com/a/67692/1631624
     spec = spec_from_file_location("napari._qt_resources", respath)
     module = module_from_spec(spec)
     # important to add to sys.modules! otherwise segfault when function ends.
