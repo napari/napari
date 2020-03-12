@@ -169,7 +169,6 @@ class QtViewer(QSplitter):
 
         self._cursors = {
             'cross': Qt.CrossCursor,
-            'disabled': Qt.ForbiddenCursor,
             'forbidden': Qt.ForbiddenCursor,
             'pointing': Qt.PointingHandCursor,
             'standard': QCursor(),
@@ -363,7 +362,11 @@ class QtViewer(QSplitter):
         """
         cursor = self.viewer.cursor
         if cursor == 'square':
-            q_cursor = QCursor(square_pixmap(self.viewer.cursor_size))
+            size = self.viewer.cursor_size
+            if size < 8 or size > 300:
+                q_cursor = self._cursors['cross']
+            else:
+                q_cursor = QCursor(square_pixmap(size))
         else:
             q_cursor = self._cursors[cursor]
         self.canvas.native.setCursor(q_cursor)
