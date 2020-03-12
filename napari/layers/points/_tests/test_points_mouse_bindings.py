@@ -13,10 +13,8 @@ from napari.utils.interactions import (
 
 def test_not_adding_or_selecting_point():
     """Don't add or select a point by clicking on one in pan_zoom mode."""
-    layer, n_points, first_point, _ = create_known_points_layer()
-
+    layer, n_points, _ = create_known_points_layer()
     layer.mode = 'pan_zoom'
-    layer.position = first_point
 
     Event = collections.namedtuple('Event', 'type is_dragging')
 
@@ -35,7 +33,7 @@ def test_not_adding_or_selecting_point():
 
 def test_add_point():
     """Add point by clicking in add mode."""
-    layer, n_points, _, known_non_point = create_known_points_layer()
+    layer, n_points, known_non_point = create_known_points_layer()
 
     # Add point at location where non exists
     layer.mode = 'add'
@@ -58,10 +56,10 @@ def test_add_point():
 
 def test_select_point():
     """Select a point by clicking on one in select mode."""
-    layer, n_points, first_point, _ = create_known_points_layer()
+    layer, n_points, _ = create_known_points_layer()
 
     layer.mode = 'select'
-    layer.position = first_point
+    layer.position = tuple(layer.data[0])
 
     Event = collections.namedtuple('Event', 'type is_dragging modifiers')
 
@@ -84,11 +82,11 @@ def test_select_point():
 
 def test_not_adding_or_selecting_after_in_add_mode_point():
     """Don't add or select a point by clicking on one in pan_zoom mode."""
-    layer, n_points, first_point, _ = create_known_points_layer()
+    layer, n_points, _ = create_known_points_layer()
 
     layer.mode = 'add'
     layer.mode = 'pan_zoom'
-    layer.position = first_point
+    layer.position = tuple(layer.data[0])
 
     Event = collections.namedtuple('Event', 'type is_dragging')
 
@@ -107,11 +105,11 @@ def test_not_adding_or_selecting_after_in_add_mode_point():
 
 def test_not_adding_or_selecting_after_in_select_mode_point():
     """Don't add or select a point by clicking on one in pan_zoom mode."""
-    layer, n_points, first_point, _ = create_known_points_layer()
+    layer, n_points, _ = create_known_points_layer()
 
     layer.mode = 'select'
     layer.mode = 'pan_zoom'
-    layer.position = first_point
+    layer.position = tuple(layer.data[0])
 
     Event = collections.namedtuple('Event', 'type is_dragging')
 
@@ -130,10 +128,10 @@ def test_not_adding_or_selecting_after_in_select_mode_point():
 
 def test_unselect_select_point():
     """Select a point by clicking on one in select mode."""
-    layer, n_points, first_point, _ = create_known_points_layer()
+    layer, n_points, _ = create_known_points_layer()
 
     layer.mode = 'select'
-    layer.position = first_point
+    layer.position = tuple(layer.data[0])
     layer.selected_data = [2, 3]
 
     Event = collections.namedtuple('Event', 'type is_dragging modifiers')
@@ -157,10 +155,10 @@ def test_unselect_select_point():
 
 def test_add_select_point():
     """Add to a selection of points point by shift-clicking on one."""
-    layer, n_points, first_point, _ = create_known_points_layer()
+    layer, n_points, _ = create_known_points_layer()
 
     layer.mode = 'select'
-    layer.position = first_point
+    layer.position = tuple(layer.data[0])
     layer.selected_data = [2, 3]
 
     Event = collections.namedtuple('Event', 'type is_dragging modifiers')
@@ -184,10 +182,10 @@ def test_add_select_point():
 
 def test_remove_select_point():
     """Remove from a selection of points point by shift-clicking on one."""
-    layer, n_points, first_point, _ = create_known_points_layer()
+    layer, n_points, _ = create_known_points_layer()
 
     layer.mode = 'select'
-    layer.position = first_point
+    layer.position = tuple(layer.data[0])
     layer.selected_data = [0, 2, 3]
 
     Event = collections.namedtuple('Event', 'type is_dragging modifiers')
@@ -211,7 +209,7 @@ def test_remove_select_point():
 
 def test_not_selecting_point():
     """Don't select a point by not clicking on one in select mode."""
-    layer, n_points, _, known_non_point = create_known_points_layer()
+    layer, n_points, known_non_point = create_known_points_layer()
 
     layer.mode = 'select'
     layer.position = known_non_point
@@ -236,7 +234,7 @@ def test_not_selecting_point():
 
 def test_unselecting_points():
     """Unselect points by not clicking on one in select mode."""
-    layer, n_points, _, known_non_point = create_known_points_layer()
+    layer, n_points, known_non_point = create_known_points_layer()
 
     layer.mode = 'select'
     layer.position = known_non_point
@@ -263,7 +261,7 @@ def test_unselecting_points():
 
 def test_selecting_all_points_with_drag():
     """Select all points when drag box includes all of them."""
-    layer, n_points, _, known_non_point = create_known_points_layer()
+    layer, n_points, known_non_point = create_known_points_layer()
 
     layer.mode = 'select'
     layer.position = known_non_point
@@ -301,7 +299,7 @@ def test_selecting_all_points_with_drag():
 
 def test_selecting_no_points_with_drag():
     """Select all points when drag box includes all of them."""
-    layer, n_points, _, known_non_point = create_known_points_layer()
+    layer, n_points, known_non_point = create_known_points_layer()
 
     layer.mode = 'select'
     layer.position = known_non_point
