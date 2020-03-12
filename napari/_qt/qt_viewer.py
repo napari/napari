@@ -363,7 +363,10 @@ class QtViewer(QSplitter):
         cursor = self.viewer.cursor
         if cursor == 'square':
             size = self.viewer.cursor_size
-            if size < 8 or size > 300:
+            # make sure the square fits within the current canvas
+            if size < 8 or size > (
+                min(*self.viewer.window.qt_viewer.canvas.size) - 4
+            ):
                 q_cursor = self._cursors['cross']
             else:
                 q_cursor = QCursor(square_pixmap(size))
