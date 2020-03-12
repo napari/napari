@@ -123,9 +123,11 @@ class QtPopup(QDialog):
         # necessary for transparent round corners
         self.resize(self.sizeHint())
         # make sure the popup is completely on the screen
+        # In Qt ≥5.10 we can use screenAt to know which monitor the mouse is on
         if hasattr(QGuiApplication, 'screenAt'):
             screen_size = QGuiApplication.screenAt(QCursor.pos()).size()
         else:
+            # otherwise we just use the size of the first monitor
             screen_size = QGuiApplication.screens()[0].size()
         left = max(min(screen_size.width() - width, left), 0)
         top = max(min(screen_size.height() - height, top), 0)
