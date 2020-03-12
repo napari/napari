@@ -48,7 +48,7 @@ If you wish to tell the linter to ignore a specific line use the `# noqa` commen
 ## Adding icons
 
 If you want to add a new icon to the app, make the icon in whatever program you
-like and add it to `napari/resources/icons/`.
+like and add it to `napari/resources/icons/`.  Icons must be in `.svg` format.
 
 Icons are automatically built into a Qt resource file that is imported when
 napari is run.  If you have changed the icons and would like to force a rebuild
@@ -60,6 +60,10 @@ example:
 ```sh
 export NAPARI_REBUILD_RESOURCES=1
 ```
+
+*note: with some SVG files, the "themed" (styled) SVGs are not properly
+generated.  If you are adding a new icon, double check to make sure that it is
+being rendered properly*
 
 Icons are typically used inside of one of our `stylesheet.qss` files, with the
 `{{ folder }}` variable used to expand the current theme name.
