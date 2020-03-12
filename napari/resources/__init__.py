@@ -1,41 +1,96 @@
-from os import environ, fspath
-from os.path import abspath, dirname, join, expanduser
-from glob import glob
-from typing import List, Optional
-from .build_icons import build_pyqt_resources
-from functools import lru_cache
-from importlib.util import spec_from_file_location, module_from_spec
-from tempfile import NamedTemporaryFile
 import sys
+from functools import lru_cache
+from glob import glob
+from importlib.util import module_from_spec, spec_from_file_location
+from os import environ, fspath
+from os.path import abspath, dirname, expanduser, join
 from pathlib import Path
+from tempfile import NamedTemporaryFile
+from typing import List, Optional
+
+from qtpy import API, QT_VERSION
+
+from .. import __version__
+from .build_icons import build_pyqt_resources
 
 
-def _try_touch_file(target_file):
-    target_file = Path(target_file)
-    if not target_file.exists():
+def _try_touch_file(target) -> Optional[Path]:
+    """Test to see if we have permissions to create a file at ``target``.
+    
+    If the target already exists, it will not be touched.  If it does not
+    exist, this function attempts to create it and delete it (i.e. testing
+    permissions).  If successful, the path is returned, if not, return None.
+ 
+    Parameters
+    ----------
+    target : str
+        Filepath to test
+    
+    Returns
+    -------
+    target : str or None
+        Returns the target if it is writeable, returns None if it is not.
+    """
+    target = Path(target)
+    if not target.exists():
         try:
-            target_file.parent.mkdir(parents=True, exist_ok=True)
-            target_file.touch()
+            target.parent.mkdir(parents=True, exist_ok=True)
+            target.touch()
         except Exception:
             return None
-        target_file.unlink()
-    return target_file
+        target.unlink()
+    return target
 
 
-def import_resources(version='', overwrite=False):
-    filename = f'_qt_resources{"_" if version else ""}{version}.py'
-    target_file = _try_touch_file(join(abspath(dirname(__file__)), filename))
+def import_resources(overwrite: bool = False) -> None:
+    """Build and import our icons as Qt resources.
+    
+    The compiled resources will be written to a file that encodes the current
+    napari version, as well as Qt backend and version:
+        ``_qt_resources_{napari.__version__}_{API}_{QT_VERSION}.py``
+
+    This function attempts to write that file to one of three locations
+    (in this order):
+        1. The directory of *this* file (currently ``napari/resources``)
+        2. The user ~/.config/napari directory
+        3. A temporary file.
+
+    If a temporary file must be used, resources will need to be rebuilt at each
+    launch of napari (which takes ~300ms on a decent computer).
+
+    Parameters
+    ----------
+    overwrite : bool, optional
+        Whether to recompile and overwrite the resources.
+        By default, resources will be rebuilt if any of the following are True:
+            - the resources file does not already exist.
+            - ``overwrite`` argument is True
+            - the ``NAPARI_REBUILD_RESOURCES`` environmental variable is set
+    
+    Raises
+    ------
+    PermissionError
+        If we cannot write to any of the requested locations.
+    """
+    # the resources filename holds the napari version, Qt API, and QT version
+    version = f'{__version__}_{API}_{QT_VERSION}'
+    filename = f'_qt_resources_{version}.py'
     tempfile = None
+    # see if we can write to the current napari/resources directory
+    target_file = _try_touch_file(join(abspath(dirname(__file__)), filename))
+    # if not, try to write to ~/.config/napari
     if not target_file:
         target_file = expanduser(join('~', '.config', 'napari', filename))
         target_file = _try_touch_file(target_file)
+    # if that still doesn't work, create a temporary file.
     if not target_file:
         tempfile = NamedTemporaryFile(suffix='.py')
         target_file = _try_touch_file(tempfile.name)
+    # if we can't even write a temporary file, we're probably screwed...
     if not target_file:
         raise PermissionError(
-            "Could not write qt_resource to disk. Please report this with a "
-            "description of your environment at "
+            "Could not write qt_resources to disk. Please report this with a "
+            "description of your environment (pip freeze) at "
             "https://github.com/napari/napari/issues"
         )
     overwrite = (
@@ -43,10 +98,18 @@ def import_resources(version='', overwrite=False):
         or bool(environ.get('NAPARI_REBUILD_RESOURCES'))
         or tempfile is not None
     )
+    # this actually builds the res.qrc Qt resources file, and then from that
+    # autogenerates the python resources file that needs to be imported
+    # if the file already exists and overwrite is False, it will not be
+    # regenerated.
     respath = build_pyqt_resources(fspath(target_file), overwrite=overwrite)
+    # import the python resources file and add to sys.modules
     spec = spec_from_file_location("napari._qt_resources", respath)
-    sys.modules[spec.name] = module_from_spec(spec)
-    spec.loader.exec_module(sys.modules[spec.name])
+    module = module_from_spec(spec)
+    # important to add to sys.modules! otherwise segfault when function ends.
+    sys.modules[spec.name] = module
+    spec.loader.exec_module(module)
+    # if we had to create a tempfile in the process, we can close it now.
     if tempfile:
         tempfile.close()
 
@@ -81,4 +144,4 @@ def get_stylesheet(extra: Optional[List[str]] = None) -> str:
     return stylesheet
 
 
-__all__ = ['build_pyqt_resources', 'get_stylesheet']
+__all__ = ['build_pyqt_resources', 'get_stylesheet', 'import_resources']

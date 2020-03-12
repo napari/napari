@@ -1,8 +1,7 @@
 """Utility script to generate copies of icons with colors based
 on our themes. Neccessary workaround because qt does not allow
 for styling svg elements using qss
-
-run as python -m napari.resources.build_icons"""
+"""
 
 import os
 import shutil
@@ -119,7 +118,7 @@ def build_pyqt_resources(
     out_path = out_path or os.path.join(RESOURCES_DIR, '_qt.py')
     if os.path.exists(out_path) and not overwrite:
         return out_path
-
+    print("BIUOLD")
     qrc_path = os.path.join(os.path.dirname(out_path), 'res.qrc')
     qrc_path = build_resources(qrc_path, overwrite=overwrite)
 
@@ -143,7 +142,3 @@ def build_pyqt_resources(
     except Exception:
         pass
     return out_path
-
-
-if __name__ == "__main__":
-    build_pyqt_resources(overwrite=True)
