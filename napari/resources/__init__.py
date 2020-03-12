@@ -63,7 +63,7 @@ def import_resources(version: str = '', overwrite: bool = False) -> None:
 
     overwrite : bool, optional
         Whether to recompile and overwrite the resources.
-        By default, resources will be rebuilt if any of the following are True:
+        Resources will be rebuilt if any of the following are True:
             - the resources file does not already exist.
             - ``overwrite`` argument is True
             - the ``NAPARI_REBUILD_RESOURCES`` environmental variable is set
