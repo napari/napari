@@ -6,7 +6,7 @@ from contextlib import contextmanager
 from xml.etree.ElementTree import Element, tostring
 import numpy as np
 from skimage import img_as_ubyte
-from ._constants import Blending
+from ._base_constants import Blending
 
 from ...components import Dims
 from ...utils.event import EmitterGroup, Event

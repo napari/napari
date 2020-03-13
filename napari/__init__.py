@@ -43,7 +43,7 @@ vispy_logger = logging.getLogger('vispy')
 vispy_logger.setLevel(logging.WARNING)
 
 from .viewer import Viewer
-from . import keybindings
+from . import _viewer_key_bindings
 from .view_layers import (
     view_path,
     view_image,

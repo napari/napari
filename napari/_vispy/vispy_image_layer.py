@@ -4,7 +4,7 @@ from .volume import Volume as VolumeNode
 from vispy.color import Colormap
 import numpy as np
 from .vispy_base_layer import VispyBaseLayer
-from ..layers.image._constants import Rendering
+from ..layers.image._image_constants import Rendering
 from ..layers import Image, Labels
 
 
