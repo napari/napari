@@ -1,20 +1,20 @@
 import numpy as np
-from napari.layers.shapes.shape_list import ShapeList
-from napari.layers.shapes.shape_models import Rectangle, Polygon, Path
+from napari.layers.shapes._shapes_list import ShapesList
+from napari.layers.shapes._shapes_models import Rectangle, Polygon, Path
 
 
 def test_empty_shape_list():
-    """Test instantiating empty ShapeList."""
-    shape_list = ShapeList()
+    """Test instantiating empty ShapesList."""
+    shape_list = ShapesList()
     assert len(shape_list.shapes) == 0
 
 
 def test_adding_to_shape_list():
-    """Test adding shapes to ShapeList."""
+    """Test adding shapes to ShapesList."""
     np.random.seed(0)
     data = 20 * np.random.random((4, 2))
     shape = Rectangle(data)
-    shape_list = ShapeList()
+    shape_list = ShapesList()
 
     shape_list.add(shape)
     assert len(shape_list.shapes) == 1
@@ -22,9 +22,9 @@ def test_adding_to_shape_list():
 
 
 def test_nD_shapes():
-    """Test adding shapes to ShapeList."""
+    """Test adding shapes to ShapesList."""
     np.random.seed(0)
-    shape_list = ShapeList()
+    shape_list = ShapesList()
     data = 20 * np.random.random((6, 3))
     data[:, 0] = 0
     shape_a = Polygon(data)

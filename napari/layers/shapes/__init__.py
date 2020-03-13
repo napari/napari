@@ -1,2 +1,2 @@
 from .shapes import Shapes
-from . import keybindings
+from . import _shapes_keybindings

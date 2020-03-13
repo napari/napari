@@ -1,18 +1,16 @@
 import numpy as np
 from xml.etree.ElementTree import Element
 from .shape import Shape
-from ..shape_utils import find_corners, rectangle_to_box
+from .._shapes_utils import create_box
 
 
-class Rectangle(Shape):
-    """Class for a single rectangle
+class Path(Shape):
+    """Class for a single path, which is a sequence of line segments.
 
     Parameters
     ----------
-    data : (4, D) or (2, 2) array
-        Either a (2, 2) array specifying the two corners of an axis aligned
-        rectangle, or a (4, D) array specifying the four corners of a bounding
-        box that contains the rectangle. These need not be axis aligned.
+    data : np.ndarray
+        NxD array of vertices specifying the path.
     edge_width : float
         thickness of lines and edges.
     edge_color : str | tuple
@@ -54,14 +52,13 @@ class Rectangle(Shape):
             dims_order=dims_order,
             ndisplay=ndisplay,
         )
-
-        self._closed = True
+        self._filled = False
         self.data = data
-        self.name = 'rectangle'
+        self.name = 'path'
 
     @property
     def data(self):
-        """(4, D) array: rectangle vertices.
+        """np.ndarray: NxD array of vertices.
         """
         return self._data
 
@@ -72,14 +69,10 @@ class Rectangle(Shape):
         if len(self.dims_order) != data.shape[1]:
             self._dims_order = list(range(data.shape[1]))
 
-        if len(data) == 2 and data.shape[1] == 2:
-            data = find_corners(data)
-
-        if len(data) != 4:
-            print(data)
+        if len(data) < 2:
             raise ValueError(
-                f"""Data shape does not match a rectangle.
-                             Rectangle expects four corner vertices,
+                f"""Data shape does not match a path. A
+                             Path expects at least two vertices,
                              {len(data)} provided."""
             )
 
@@ -88,11 +81,9 @@ class Rectangle(Shape):
 
     def _update_displayed_data(self):
         """Update the data that is to be displayed."""
-        # Add four boundary lines and then two triangles for each
-        self._set_meshes(self.data_displayed, face=False)
-        self._face_vertices = self.data_displayed
-        self._face_triangles = np.array([[0, 1, 2], [0, 2, 3]])
-        self._box = rectangle_to_box(self.data_displayed)
+        # For path connect every all data
+        self._set_meshes(self.data_displayed, face=False, closed=False)
+        self._box = create_box(self.data_displayed)
 
         data_not_displayed = self.data[:, self.dims_not_displayed]
         self.slice_key = np.round(
@@ -111,37 +102,12 @@ class Rectangle(Shape):
         element : xml.etree.ElementTree.Element
             xml element specifying the shape according to svg.
         """
+        data = self.data[:, self.dims_displayed]
+        points = ' '.join([f'{d[1]},{d[0]}' for d in data])
+
         props = self.svg_props
-        data = self.data[:, self.dims_displayed[::-1]]
+        props['fill'] = 'none'
 
-        offset = data[1] - data[0]
-        angle = -np.arctan2(offset[0], -offset[1])
-        if not angle == 0:
-            # if shape has been rotated, shift to origin
-            cen = data.mean(axis=0)
-            coords = data - cen
+        element = Element('polyline', points=points, **props)
 
-            # rotate back to axis aligned
-            c, s = np.cos(angle), np.sin(-angle)
-            rotation = np.array([[c, s], [-s, c]])
-            coords = coords @ rotation.T
-
-            # shift back to center
-            coords = coords + cen
-
-            # define rotation around center
-            transform = f'rotate({np.degrees(-angle)} {cen[0]} {cen[1]})'
-            props['transform'] = transform
-        else:
-            coords = data
-
-        x = str(coords.min(axis=0)[0])
-        y = str(coords.min(axis=0)[1])
-        size = abs(coords[2] - coords[0])
-        width = str(size[0])
-        height = str(size[1])
-
-        element = Element(
-            'rect', x=x, y=y, width=width, height=height, **props
-        )
         return element

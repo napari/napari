@@ -6,10 +6,10 @@ from ...utils.misc import ensure_iterable
 from ...utils.status_messages import format_float
 from ..base import Layer
 from vispy.color import get_color_names
-from ._constants import Mode, Box, BACKSPACE, shape_classes, ShapeType
-from .shape_list import ShapeList
-from .shape_utils import create_box, point_to_lines
-from .shape_models import Rectangle, Ellipse, Line, Path, Polygon
+from ._shapes_constants import Mode, Box, BACKSPACE, shape_classes, ShapeType
+from ._shapes_list import ShapesList
+from ._shapes_utils import create_box, point_to_lines
+from ._shapes_models import Rectangle, Ellipse, Line, Path, Polygon
 
 
 class Shapes(Layer):
@@ -118,9 +118,9 @@ class Shapes(Layer):
 
     Extended Summary
     ----------
-    _data_dict : Dict of ShapeList
+    _data_dict : Dict of ShapesList
         Dictionary containing all the shape data indexed by slice tuple
-    _data_view : ShapeList
+    _data_view : ShapesList
         Object containing the currently viewed shape data.
     _mode_history : Mode
         Interactive mode captured on press of <space>.
@@ -266,7 +266,7 @@ class Shapes(Layer):
         else:
             self._current_opacity = 0.7
 
-        self._data_view = ShapeList(ndisplay=self.dims.ndisplay)
+        self._data_view = ShapesList(ndisplay=self.dims.ndisplay)
         self._data_view.slice_key = np.array(self.dims.indices)[
             list(self.dims.not_displayed)
         ]
@@ -321,7 +321,7 @@ class Shapes(Layer):
     @data.setter
     def data(self, data, shape_type='rectangle'):
         self._finish_drawing()
-        self._data_view = ShapeList()
+        self._data_view = ShapesList()
         self.add(data, shape_type=shape_type)
         self._update_dims()
         self.events.data()

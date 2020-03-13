@@ -1,6 +1,6 @@
 import numpy as np
 from napari.layers import Shapes
-from napari.layers.shapes import keybindings
+from napari.layers.shapes import _shapes_keybindings as keybindings
 
 
 def test_lock_aspect_ratio():
