@@ -61,10 +61,6 @@ example:
 export NAPARI_REBUILD_RESOURCES=1
 ```
 
-*note: with some SVG files, the "themed" (styled) SVGs are not properly
-generated.  If you are adding a new icon, double check to make sure that it is
-being rendered properly*
-
 Icons are typically used inside of one of our `stylesheet.qss` files, with the
 `{{ folder }}` variable used to expand the current theme name.
 
