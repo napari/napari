@@ -5,7 +5,7 @@ from importlib.util import module_from_spec, spec_from_file_location
 from os import environ, fspath
 from os.path import abspath, dirname, expanduser, join
 from pathlib import Path
-from tempfile import NamedTemporaryFile
+from tempfile import TemporaryDirectory
 from typing import List, Optional
 
 from qtpy import API, QT_VERSION
@@ -80,17 +80,21 @@ def import_resources(version: str = '', overwrite: bool = False) -> None:
     # the resources filename holds the napari version, Qt API, and QT version
     version = version or f'{__version__}_{API}_{QT_VERSION}'
     filename = f'_qt_resources_{version}.py'
-    tempfile = None
+
     # see if we can write to the current napari/resources directory
     target_file = _try_touch_file(join(abspath(dirname(__file__)), filename))
     # if not, try to write to ~/.config/napari
     if not target_file:
         target_file = expanduser(join('~', '.config', 'napari', filename))
         target_file = _try_touch_file(target_file)
-    # if that still doesn't work, create a temporary file.
+    # if that still doesn't work, create a temporary directory.
+    # all required files (themed SVG icons, res.qrc) will be temporarily built
+    # in this directory, and cleaned up after the resources are imported
     if not target_file:
-        tempfile = NamedTemporaryFile(suffix='.py')
-        target_file = _try_touch_file(tempfile.name)
+        # not using context manager because we need it for build_pyqt_resources
+        # but tempdir will be cleaned automatically when the function ends
+        tempdir = TemporaryDirectory()
+        target_file = join(tempdir.name, filename)
     # if we can't even write a temporary file, we're probably screwed...
     if not target_file:
         raise PermissionError(
@@ -98,16 +102,14 @@ def import_resources(version: str = '', overwrite: bool = False) -> None:
             "description of your environment (pip freeze) at "
             "https://github.com/napari/napari/issues"
         )
-    overwrite = (
-        overwrite
-        or bool(environ.get('NAPARI_REBUILD_RESOURCES'))
-        or tempfile is not None
-    )
-    # this actually builds the res.qrc Qt resources file, and then from that
-    # autogenerates the python resources file that needs to be imported.
+
+    # build the res.qrc Qt resources file, and then from that autogenerate
+    # the python resources file that needs to be imported.
     # If the file already exists and overwrite is False, it will not be
     # regenerated.
+    overwrite = overwrite or bool(environ.get('NAPARI_REBUILD_RESOURCES'))
     respath = build_pyqt_resources(fspath(target_file), overwrite=overwrite)
+
     # import the python resources file and add to sys.modules
     # https://stackoverflow.com/a/67692/1631624
     spec = spec_from_file_location("napari._qt_resources", respath)
@@ -115,9 +117,6 @@ def import_resources(version: str = '', overwrite: bool = False) -> None:
     # important to add to sys.modules! otherwise segfault when function ends.
     sys.modules[spec.name] = module
     spec.loader.exec_module(module)
-    # if we had to create a tempfile in the process, we can close it now.
-    if tempfile:
-        tempfile.close()
     return respath
 
 
