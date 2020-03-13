@@ -146,18 +146,18 @@ class Layer(KeymapMixin, ABC):
             translate = [0] * ndim
 
         # Create a transform chain consisting of three transforms:
-        # - An initial transform mapping viewed data to the data coordinates
-        #   This is useful for cases where the displayed data is not the base
-        #   data given by the user. In such cases, we need to transform the
-        #   coordinates from the displayed data space to the original input data
-        #   space. One example of such a situation is viewing a lower resolution
-        #   level of an input pyramid, where _transform contains the transform
-        #   only from the base level to world coordinates, another is when an
-        #   image is larger than the maximum allowed texture size and has been
-        #   downsampled
-        # - A main transform mapping data to a world-like coordinate
-        # - An additional transform mapping world-coordinates into a grid
-        #   for looking at layers side-by-side
+        # 1. `view2data`: An initial transform mapping the actually viewed data
+        #   to the data coordinates. This is useful for cases where the
+        #   displayed data is not the base data given by the user. In such
+        #   cases, we need to  transform the coordinates from the displayed
+        #   data space to the original input data space. One example of such a
+        #   situation is viewing a lower resolution level of an input pyramid,
+        #   another is when an image is larger than the maximum allowed texture
+        #   size and has been downsampled so it can be viewed.
+        # 2. `data2world`: The main transform mapping data to a world-like
+        #   coordinate.
+        # 3. `world2grid`: An additional transform mapping world-coordinates
+        #   into a grid for looking at layers side-by-side.
         self._transforms = TransformChain(
             [
                 ScaleTranslate(
@@ -313,7 +313,7 @@ class Layer(KeymapMixin, ABC):
 
     @property
     def scale(self):
-        """list: Anisotropy factors to scale the layer by."""
+        """list: Anisotropy factors to scale data into world coordinates."""
         return self._transforms['data2world'].scale
 
     @scale.setter
@@ -324,7 +324,7 @@ class Layer(KeymapMixin, ABC):
 
     @property
     def translate(self):
-        """list: Factors to shift the layer by."""
+        """list: Factors to shift the layer by in units of world coordinates."""
         return self._transforms['data2world'].translate
 
     @translate.setter
