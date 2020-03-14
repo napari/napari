@@ -33,13 +33,11 @@ def read_data_with_plugins(
         plugins are (or they all error), returns None
     """
     plugin_manager = plugin_manager or napari_plugin_manager
-    skip_impls = []
+    hook = plugin_manager.hook.napari_get_reader
+    skip = [i for i in hook.get_hookimpls() if not getattr(i, 'enabled', True)]
     while True:
         (reader, implementation) = execute_hook(
-            plugin_manager.hook.napari_get_reader,
-            path=path,
-            return_impl=True,
-            skip_impls=skip_impls,
+            hook, path=path, return_impl=True, skip_impls=skip
         )
         if not reader:
             # we're all out of reader plugins
@@ -61,7 +59,7 @@ def read_data_with_plugins(
             err.__cause__ = exc  # like `raise PluginError() from exc`
             # store the exception for later retrieval
             plugin_manager._exceptions[implementation.plugin_name].append(err)
-            skip_impls.append(implementation)  # don't try this impl again
+            skip.append(implementation)  # don't try this impl again
             if implementation.plugin_name != 'builtins':
                 # If builtins doesn't work, they will get a "no reader" found
                 # error anyway, so it looks a bit weird to show them that the
