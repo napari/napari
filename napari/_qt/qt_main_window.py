@@ -10,7 +10,7 @@ from skimage.io import imsave
 from .qt_about import QtAbout
 from .qt_plugin_list import QtPluginSorter
 from .qt_viewer_dock_widget import QtViewerDockWidget
-from ..resources import combine_stylesheets
+from ..resources import get_stylesheet
 
 # these "# noqa" comments are here to skip flake8 linting (E402),
 # these module-level imports have to come after `app.use_app(API)`
@@ -56,7 +56,7 @@ class Window:
         Window menu.
     """
 
-    raw_stylesheet = combine_stylesheets()
+    raw_stylesheet = get_stylesheet()
 
     def __init__(self, qt_viewer, *, show=True):
 

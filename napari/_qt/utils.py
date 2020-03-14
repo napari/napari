@@ -1,8 +1,11 @@
 from contextlib import contextmanager
+from functools import lru_cache
+from typing import Type
 
 import numpy as np
 from qtpy import API_NAME
-from qtpy.QtCore import QObject, QThread
+from qtpy.QtCore import QObject, QSize, Qt, QThread
+from qtpy.QtGui import QPainter, QPixmap
 from qtpy.QtWidgets import QGraphicsOpacityEffect
 
 
@@ -39,7 +42,7 @@ def QImg2array(img):
 
 
 def new_worker_qthread(
-    Worker: type(QObject), *args, start=False, connections=None, **kwargs
+    Worker: Type[QObject], *args, start=False, connections=None, **kwargs
 ):
     """This is a convenience method to start a worker in a Qthread
 
@@ -127,9 +130,24 @@ def qt_signals_blocked(obj):
 
 
 def disable_with_opacity(obj, widget_list, disabled):
+    """Set enabled state on a list of widgets. If disabled, decrease opacity"""
     for wdg in widget_list:
         widget = getattr(obj, wdg)
         widget.setEnabled(obj.layer.editable)
         op = QGraphicsOpacityEffect(obj)
         op.setOpacity(1 if obj.layer.editable else 0.5)
         widget.setGraphicsEffect(op)
+
+
+@lru_cache(maxsize=64)
+def square_pixmap(size):
+    """Create a white/black hollow square pixmap. For use as labels cursor."""
+    pixmap = QPixmap(QSize(size, size))
+    pixmap.fill(Qt.transparent)
+    painter = QPainter(pixmap)
+    painter.setPen(Qt.white)
+    painter.drawRect(0, 0, size - 1, size - 1)
+    painter.setPen(Qt.black)
+    painter.drawRect(1, 1, size - 3, size - 3)
+    painter.end()
+    return pixmap
