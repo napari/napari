@@ -78,16 +78,20 @@ hook (our primary "reader plugin" hook) as an example.  It is defined as:
    ReaderFunction = Callable[[str], List[LayerData]]
 
    @napari_hook_specification(firstresult=True)
-   def napari_get_reader(path: str) -> Optional[ReaderFunction]: ...
+   def napari_get_reader(
+       path: Union[str, List[str]]
+   ) -> Optional[ReaderFunction]:
+       ...
 
-Note that it takes a ``str`` and either returns ``None`` or a function.  From
-the docstring of the hook specification, we see that the implementation should
-return ``None`` if the path is of an unrecognized format, otherwise it should
-return a ``ReaderFunction``, which is a function that takes a ``str`` (the
-filepath to read) and returns a ``list`` of ``LayerData``, where ``LayerData``
-is any one of ``(data,)``, ``(data, meta)``, or ``(data, meta, layer_type)``.
+Note that it takes a ``str`` or a ``list`` of ``str`` and either returns
+``None`` or a function.  From the docstring of the hook specification, we see
+that the implementation should return ``None`` if the path is of an
+unrecognized format, otherwise it should return a ``ReaderFunction``, which is
+a function that takes a ``str`` (the filepath to read) and returns a ``list``
+of ``LayerData``, where ``LayerData`` is any one of ``(data,)``, ``(data,
+meta)``, or ``(data, meta, layer_type)``.
 
-That seems like a bit of a mouthful!  But it's a precise (but flexible)
+That seems like a bit of a mouthful!  But it's a precise (though flexible)
 contract that we can follow, and know that napari will handle the rest.
 
 
@@ -112,11 +116,13 @@ napari to open an imaginary ``.ext`` filetype.
 
    @napari_hook_implementation
    def napari_get_reader(path):
-      if not path.endswith(".ext"):
-         # if we do not know how to read the file, we return None.
-         return None
-      # otherwise we return the actual reader function
-      return my_reader
+      # remember, path can be a list, so we check it's type first...
+      # (this example plugin doesn't handle lists)
+      if isinstance(path, str) and path.endswith(".ext"):
+         # If we recognize the format, we return the actual reader function
+         return my_reader
+      # otherwise we return None.
+      return None
 
 
    def my_reader(path):
