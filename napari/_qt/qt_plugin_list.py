@@ -2,12 +2,11 @@
 """
 from typing import Optional
 
-from pluggy.manager import PluginManager, _HookCaller
-from qtpy.QtCore import Qt, Signal
-from qtpy.QtGui import QDrag, QPixmap, QPainter, QCursor
+from pluggy.manager import HookImpl, PluginManager, _HookCaller
+from qtpy.QtCore import QEvent, Qt, Signal, Slot
 from qtpy.QtWidgets import (
-    QComboBox,
     QCheckBox,
+    QComboBox,
     QDialog,
     QFrame,
     QGraphicsOpacityEffect,
@@ -20,46 +19,95 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from .utils import drag_with_pixmap
 from ..plugins import plugin_manager as napari_plugin_manager
 from ..plugins.utils import HookOrderType, permute_hook_implementations
 
 
 class ImplementationListItem(QFrame):
-    def __init__(self, item, position=0, parent=None):
+    """A Widget to render each hook implementation in a QtHookImplListWidget.
+
+    Parameters
+    ----------
+    item : QListWidgetItem
+        An item instance from a QListWidget. This will most likely come from
+        :meth:`QtHookImplListWidget.add_hook_implementation_to_list`.
+    parent : QWidget, optional
+        The parent widget, by default None
+
+    Attributes
+    ----------
+    plugin_name_label : QLabel
+        The name of the plugin providing the hook implementation.
+    enabled_checkbox : QCheckBox
+        Checkbox to set the ``enabled`` status of the corresponding hook
+        implementation.
+    opacity : QGraphicsOpacityEffect
+        The opacity of the whole widget.  When self.enabled_checkbox is
+        unchecked, the opacity of the item is decreased.
+    """
+
+    def __init__(self, item: QListWidgetItem, parent: QWidget = None) -> None:
         super().__init__(parent)
+        self.setToolTip("Click and drag to change call order")
         self.item = item
         self.opacity = QGraphicsOpacityEffect(self)
         self.setGraphicsEffect(self.opacity)
         layout = QHBoxLayout()
         self.setLayout(layout)
 
-        self.positionLabel = QLabel()
+        self.position_label = QLabel()
         self.update_position_label()
 
-        self.label = QLabel(item.hookimpl.plugin_name)
-        self.activeCheckBox = QCheckBox(self)
-        self.activeCheckBox.stateChanged.connect(self._set_enabled)
-        self.activeCheckBox.setChecked(getattr(item.hookimpl, 'enabled', True))
-        layout.addWidget(self.positionLabel)
-        layout.addWidget(self.activeCheckBox)
-        layout.addWidget(self.label)
+        self.plugin_name_label = QLabel(item.hookimpl.plugin_name)
+        self.enabled_checkbox = QCheckBox(self)
+        self.enabled_checkbox.setToolTip("Uncheck to disable this plugin")
+        self.enabled_checkbox.stateChanged.connect(self._set_enabled)
+        self.enabled_checkbox.setChecked(
+            getattr(item.hookimpl, 'enabled', True)
+        )
+        layout.addWidget(self.position_label)
+        layout.addWidget(self.enabled_checkbox)
+        layout.addWidget(self.plugin_name_label)
         layout.setStretch(2, 1)
         layout.setContentsMargins(0, 0, 0, 0)
 
-    def _set_enabled(self, state):
-        self.opacity.setOpacity(1 if state else 0.5)
+    def _set_enabled(self, state: bool) -> None:
+        """Set the enabled state of this hook implementation to ``state``."""
         # "hookimpl.enabled" is NOT a pluggy attribute... we are adding that to
         # allow skipping of hook_implementations.
         # see plugins.io.read_data_with_plugins() for an example
         setattr(self.item.hookimpl, 'enabled', bool(state))
+        self.opacity.setOpacity(1 if state else 0.5)
 
-    def update_position_label(self):
+    def update_position_label(self, order=None) -> None:
+        """Update the label showing the position of this item in the list.
+
+        Parameters
+        ----------
+        order : list, optional
+            A HookOrderType list ... unused by this function, but here for ease
+            of signal connection, by default None.
+        """
         position = self.item.listWidget().indexFromItem(self.item).row() + 1
-        self.positionLabel.setText(str(position))
+        self.position_label.setText(str(position))
 
 
 class QtHookImplListWidget(QListWidget):
-    """A QListWidget that allows sorting of plugin hooks."""
+    """A ListWidget to display & sort the call order of a hook implementation.
+
+    This class will usually be instantiated by a
+    :class:`~napari._qt.qt_plugin_list.QtPluginSorter`.  Each item in the list
+    will be rendered as a :class:`ImplementationListItem`.
+
+    Parameters
+    ----------
+    parent : QWidget, optional
+        Optional parent widget, by default None
+    hook : pluggy.manager._HookCaller, optional
+        The pluggy ``_HookCaller`` for which to show implementations.
+        by default None (i.e. no hooks shown)
+    """
 
     order_changed = Signal(list)  # emitted when the user changes the order.
 
@@ -67,19 +115,7 @@ class QtHookImplListWidget(QListWidget):
         self,
         parent: Optional[QWidget] = None,
         hook: Optional[_HookCaller] = None,
-    ):
-        """A ListWidget that shows all of the hook implementations for a spec.
-
-        Usually instantiated by QtPluginSorter.
-
-        Parameters
-        ----------
-        parent : QWidget, optional
-            Optional parent widget, by default None
-        hook : pluggy.manager._HookCaller, optional
-            A pluggy HookCaller to show implementations for. by default None
-            (i.e. no hooks shown)
-        """
+    ) -> None:
         super().__init__(parent)
         self.setDefaultDropAction(Qt.MoveAction)
         self.setDragEnabled(True)
@@ -110,7 +146,7 @@ class QtHookImplListWidget(QListWidget):
         for hookimpl in reversed(hook.get_hookimpls()):
             self.add_hook_implementation_to_list(hookimpl)
 
-    def add_hook_implementation_to_list(self, hookimpl):
+    def add_hook_implementation_to_list(self, hookimpl: HookImpl) -> None:
         # don't want users to be able to resort builtin plugins.
         # this may change in the future, and might require hook-specific rules
         if hookimpl.plugin_name == 'builtins':
@@ -123,7 +159,7 @@ class QtHookImplListWidget(QListWidget):
         self.order_changed.connect(widg.update_position_label)
         self.setItemWidget(item, widg)
 
-    def dropEvent(self, event):
+    def dropEvent(self, event: QEvent) -> None:
         """Triggered when the user moves & drops one of the items in the list.
 
         Parameters
@@ -135,11 +171,12 @@ class QtHookImplListWidget(QListWidget):
         order = [self.item(r).hookimpl for r in range(self.count())]
         self.order_changed.emit(order)
 
-    def startDrag(self, supportedActions):
+    def startDrag(self, supportedActions: Qt.DropActions) -> None:
         drag = drag_with_pixmap(self)
         drag.exec_(supportedActions, Qt.MoveAction)
 
-    def permute_hook(self, order: HookOrderType):
+    @Slot(list)
+    def permute_hook(self, order: HookOrderType) -> None:
         """Rearrage the call order of the hooks for the current hook impl.
 
         Parameters
@@ -154,6 +191,40 @@ class QtHookImplListWidget(QListWidget):
 
 
 class QtPluginSorter(QDialog):
+    """Dialog that allows a user to change the call order of plugin hooks.
+
+    A main QComboBox lets the user pick which hook specification they would
+    like to reorder.  Then a :class:`QtHookImplListWidget` shows the current
+    call order for all implementations of the current hook specification.  The
+    user may then reorder them, or disable them by checking the checkbox next
+    to each hook implementation name.
+
+    Parameters
+    ----------
+    plugin_manager : pluggy.PluginManager, optional
+        An instance of a pluggy PluginManager, by default, the main
+        :class:`~napari.plugins.manager.NapariPluginManager` instance
+    parent : QWidget, optional
+        Optional parent widget, by default None
+    initial_hook : str, optional
+        If provided the QComboBox at the top of the dialog will be set to
+        this hook, by default None
+    firstresult_only : bool, optional
+        If True, only hook specifications that declare the "firstresult"
+        option will be included.  (these are hooks for which only the first
+        non None result is returned).  by default True (because it makes
+        less sense to sort hooks where we just collect all results anyway)
+        https://pluggy.readthedocs.io/en/latest/#first-result-only
+
+    Attributes
+    ----------
+    hook_combo_box : QComboBox
+        A dropdown menu to select the current hook.
+    hook_list : QtHookImplListWidget
+        The list widget that displays (and allows sorting of) all of the hook
+        implementations for the currently selected hook.
+    """
+
     NULL_OPTION = 'select hook... '
 
     def __init__(
@@ -164,35 +235,13 @@ class QtPluginSorter(QDialog):
         initial_hook: Optional[str] = None,
         firstresult_only: bool = True,
     ) -> None:
-        """Dialog that allows a user to change the call order of plugin hooks.
-
-        A main QComboBox lets the user pick which hook specification they would
-        like to reorder.
-
-        Parameters
-        ----------
-        plugin_manager : pluggy.PluginManager, optional
-            an instance of a pluggy PluginManager, by default the main
-            NapariPluginManager instance
-        parent : QWidget, optional
-            Optional parent widget, by default None
-        initial_hook : str, optional
-            If provided the QComboBox at the top of the dialog will be set to
-            this hook, by default None
-        firstresult_only : bool, optional
-            If True, only hook specifications that declare the "firstresult"
-            option will be included.  (these are hooks for which only the first
-            non None result is returned).  by default True (because it makes
-            less sense to sort hooks where we just collect all results anyway)
-            https://pluggy.readthedocs.io/en/latest/#first-result-only
-        """
         plugin_manager = plugin_manager or napari_plugin_manager
         super().__init__(parent)
         self.plugin_manager = plugin_manager
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
-        self.hookComboBox = QComboBox()
-        self.hookComboBox.addItem(self.NULL_OPTION)
+        self.hook_combo_box = QComboBox()
+        self.hook_combo_box.addItem(self.NULL_OPTION)
 
         # populate the combo box with all of the hooks known by the plugin mngr
         hooks = []
@@ -204,10 +253,12 @@ class QtPluginSorter(QDialog):
                 if not hook_caller.spec.opts.get('firstresult', False):
                     continue
             hooks.append(name)
-        self.hookComboBox.addItems(hooks)
-
-        self.hookComboBox.activated[str].connect(self.change_hook)
-        self.hookList = QtHookImplListWidget(parent=self)
+        self.hook_combo_box.addItems(hooks)
+        self.hook_combo_box.setToolTip(
+            "select the hook specification to reorder"
+        )
+        self.hook_combo_box.activated[str].connect(self.set_current_hook)
+        self.hook_list = QtHookImplListWidget(parent=self)
 
         title = QLabel('Plugin Sorter')
         title.setObjectName("h2")
@@ -221,14 +272,14 @@ class QtPluginSorter(QDialog):
         instructions.setWordWrap(True)
         self.layout.addWidget(instructions)
 
-        self.layout.addWidget(self.hookComboBox)
-        self.layout.addWidget(self.hookList)
+        self.layout.addWidget(self.hook_combo_box)
+        self.layout.addWidget(self.hook_list)
         if initial_hook is not None:
-            self.hookComboBox.setCurrentText(initial_hook)
-            self.change_hook(initial_hook)
+            self.hook_combo_box.setCurrentText(initial_hook)
+            self.set_current_hook(initial_hook)
 
-    def change_hook(self, hook: str) -> None:
-        """Change the hook specification shown in the list.
+    def set_current_hook(self, hook: str) -> None:
+        """Change the hook specification shown in the list widget.
 
         Parameters
         ----------
@@ -236,25 +287,7 @@ class QtPluginSorter(QDialog):
             Name of the new hook specification to show.
         """
         if hook == self.NULL_OPTION:
-            self.hookList.set_hook(None)
+            hook_caller = None
         else:
-            self.hookList.set_hook(getattr(self.plugin_manager.hook, hook))
-
-
-def drag_with_pixmap(list_widget: QListWidget) -> QDrag:
-    # this a good example of how to set the pixmap for the item being
-    # dragged in a QListWidget using custom widgets.
-    # We may want to reuse this in the future for QtLayerList
-    drag = QDrag(list_widget)
-    drag.setMimeData(list_widget.mimeData(list_widget.selectedItems()))
-    size = list_widget.viewport().visibleRegion().boundingRect().size()
-    pixmap = QPixmap(size)
-    pixmap.fill(Qt.transparent)
-    painter = QPainter(pixmap)
-    for index in list_widget.selectedIndexes():
-        rect = list_widget.visualRect(index)
-        painter.drawPixmap(rect, list_widget.viewport().grab(rect))
-    painter.end()
-    drag.setPixmap(pixmap)
-    drag.setHotSpot(list_widget.viewport().mapFromGlobal(QCursor.pos()))
-    return drag
+            hook_caller = getattr(self.plugin_manager.hook, hook)
+        self.hook_list.set_hook(hook_caller)
