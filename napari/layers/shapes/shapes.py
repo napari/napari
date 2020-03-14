@@ -984,8 +984,11 @@ class Shapes(Layer):
             vertices = self._data_view.displayed_vertices[
                 self._data_view.displayed_index == index
             ]
-            if len(vertices) <= 2:
+            if len(vertices) <= 3:
                 self._data_view.remove(index)
+            else:
+                data_full = self.expand_shape(vertices)
+                self._data_view.edit(index, data_full[:-1])
         self._is_creating = False
         self._update_dims()
 
