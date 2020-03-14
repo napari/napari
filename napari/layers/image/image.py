@@ -164,6 +164,7 @@ class Image(IntensityVisualizationMixin, Layer):
         )
 
         super().__init__(
+            data,
             ndim,
             name=name,
             metadata=metadata,
@@ -335,9 +336,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @interpolation.setter
     def interpolation(self, interpolation):
-        if isinstance(interpolation, str):
-            interpolation = Interpolation(interpolation)
-        self._interpolation = interpolation
+        self._interpolation = Interpolation(interpolation)
         self.events.interpolation()
 
     @property
@@ -363,10 +362,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @rendering.setter
     def rendering(self, rendering):
-        if isinstance(rendering, str):
-            rendering = Rendering(rendering)
-
-        self._rendering = rendering
+        self._rendering = Rendering(rendering)
         self.events.rendering()
 
     def _get_state(self):
@@ -449,7 +445,7 @@ class Image(IntensityVisualizationMixin, Layer):
             scale = np.ones(self.ndim)
             for d in self.dims.displayed:
                 scale[d] = self.level_downsamples[self.data_level][d]
-            self._scale_view = scale
+            self._transform_view.scale = scale
 
             if np.any(disp_shape > self._max_tile_shape):
                 for d in self.dims.displayed:
@@ -458,11 +454,11 @@ class Image(IntensityVisualizationMixin, Layer):
                         self._top_left[d] + self._max_tile_shape,
                         1,
                     )
-                self._translate_view = (
-                    self._top_left * self.scale * self._scale_view
+                self._transform_view.translate = (
+                    self._top_left * self.scale * self._transform_view.scale
                 )
             else:
-                self._translate_view = [0] * self.ndim
+                self._transform_view.translate = [0] * self.ndim
 
             image = np.asarray(
                 self._data_pyramid[level][tuple(indices)]
@@ -487,7 +483,7 @@ class Image(IntensityVisualizationMixin, Layer):
                     self._data_pyramid[-1][tuple(indices)]
                 ).transpose(order)
         else:
-            self._scale_view = np.ones(self.dims.ndim)
+            self._transform_view.scale = np.ones(self.dims.ndim)
             image = np.asarray(self.data[self.dims.indices]).transpose(order)
             thumbnail = image
 

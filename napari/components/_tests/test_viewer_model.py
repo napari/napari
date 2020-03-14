@@ -221,8 +221,10 @@ def test_swappable_dims():
     viewer = ViewerModel()
     np.random.seed(0)
     image_data = np.random.random((7, 12, 10, 15))
-    viewer.add_image(image_data)
-    assert np.all(viewer.layers['Image']._data_view == image_data[0, 0, :, :])
+    image_name = viewer.add_image(image_data).name
+    assert np.all(
+        viewer.layers[image_name]._data_view == image_data[0, 0, :, :]
+    )
 
     points_data = np.random.randint(6, size=(10, 4))
     viewer.add_points(points_data)
@@ -231,14 +233,20 @@ def test_swappable_dims():
     viewer.add_vectors(vectors_data)
 
     labels_data = np.random.randint(20, size=(7, 12, 10, 15))
-    viewer.add_labels(labels_data)
-    assert np.all(viewer.layers['Labels']._data_raw == labels_data[0, 0, :, :])
+    labels_name = viewer.add_labels(labels_data).name
+    assert np.all(
+        viewer.layers[labels_name]._data_raw == labels_data[0, 0, :, :]
+    )
 
     # Swap dims
     viewer.dims.order = [0, 2, 1, 3]
     assert viewer.dims.order == [0, 2, 1, 3]
-    assert np.all(viewer.layers['Image']._data_view == image_data[0, :, 0, :])
-    assert np.all(viewer.layers['Labels']._data_raw == labels_data[0, :, 0, :])
+    assert np.all(
+        viewer.layers[image_name]._data_view == image_data[0, :, 0, :]
+    )
+    assert np.all(
+        viewer.layers[labels_name]._data_raw == labels_data[0, :, 0, :]
+    )
 
 
 def test_grid():

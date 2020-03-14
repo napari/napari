@@ -1,11 +1,10 @@
-import os.path
 import inspect
 from pathlib import Path
 
 from qtpy import QtGui
 from qtpy.QtCore import QCoreApplication, Qt, QSize
 from qtpy.QtWidgets import QWidget, QVBoxLayout, QFileDialog, QSplitter
-from qtpy.QtGui import QCursor, QPixmap
+from qtpy.QtGui import QCursor, QPixmap, QGuiApplication
 from qtpy.QtCore import QThreadPool
 from skimage.io import imsave
 from vispy.scene import SceneCanvas, PanZoomCamera, ArcballCamera
@@ -79,7 +78,7 @@ class QtViewer(QSplitter):
 
     def __init__(self, viewer):
         super().__init__()
-
+        self.setAttribute(Qt.WA_DeleteOnClose)
         self.pool = QThreadPool()
 
         QCoreApplication.setAttribute(
@@ -129,9 +128,6 @@ class QtViewer(QSplitter):
         self.dockLayerList.setMaximumWidth(258)
         self.dockLayerList.setMinimumWidth(258)
 
-        self.aboutKeybindings = QtAboutKeybindings(self.viewer)
-        self.aboutKeybindings.hide()
-
         # This dictionary holds the corresponding vispy visual for each layer
         self.layer_to_visual = {}
 
@@ -142,7 +138,7 @@ class QtViewer(QSplitter):
         else:
             self.viewerButtons.consoleButton.setEnabled(False)
 
-        self.canvas = SceneCanvas(keys=None, vsync=True)
+        self.canvas = SceneCanvas(keys=None, vsync=True, parent=self)
         self.canvas.events.ignore_callback_errors = False
         self.canvas.events.draw.connect(self.dims.enable_play)
         self.canvas.native.setMinimumSize(QSize(200, 200))
@@ -327,7 +323,17 @@ class QtViewer(QSplitter):
             directory=self._last_visited_dir,  # home dir by default
         )
         if (filenames != []) and (filenames is not None):
-            self._add_files(filenames)
+            self.viewer.add_path(filenames)
+
+    def _open_images_as_stack(self):
+        """Add image files as a stack, from the menubar."""
+        filenames, _ = QFileDialog.getOpenFileNames(
+            parent=self,
+            caption='Select images...',
+            directory=self._last_visited_dir,  # home dir by default
+        )
+        if (filenames != []) and (filenames is not None):
+            self.viewer.add_path(filenames, stack=True)
 
     def _open_folder(self):
         """Add a folder of files from the menubar."""
@@ -337,22 +343,7 @@ class QtViewer(QSplitter):
             directory=self._last_visited_dir,  # home dir by default
         )
         if folder not in {'', None}:
-            self._add_files([folder])
-
-    def _add_files(self, filenames):
-        """Add an image layer to the viewer.
-
-        If multiple images are selected, they are stacked along the 0th
-        axis.
-
-        Parameters
-        -------
-        filenames : list
-            List of filenames to be opened
-        """
-        if len(filenames) > 0:
-            self.viewer.add_image(path=filenames)
-            self._last_visited_dir = os.path.dirname(filenames[0])
+            self.viewer.add_path([folder])
 
     def _on_interactive(self, event):
         """Link interactive attributes of view and viewer.
@@ -422,7 +413,6 @@ class QtViewer(QSplitter):
         bracket_color = QtGui.QColor(*str_to_rgb(palette['highlight']))
         self.console._bracket_matcher.format.setBackground(bracket_color)
         self.setStyleSheet(themed_stylesheet)
-        self.aboutKeybindings.setStyleSheet(themed_stylesheet)
         self.canvas.bgcolor = palette['canvas']
 
     def toggle_console(self):
@@ -442,6 +432,10 @@ class QtViewer(QSplitter):
         self.viewerButtons.consoleButton.style().polish(
             self.viewerButtons.consoleButton
         )
+
+    def show_keybindings_dialog(self, event=None):
+        dialog = QtAboutKeybindings(self.viewer, parent=self)
+        dialog.show()
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
@@ -608,13 +602,14 @@ class QtViewer(QSplitter):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
+        shift_down = QGuiApplication.keyboardModifiers() & Qt.ShiftModifier
         filenames = []
         for url in event.mimeData().urls():
             if url.isLocalFile():
                 filenames.append(url.toLocalFile())
             else:
                 filenames.append(url.toString())
-        self._add_files(filenames)
+        self.viewer.add_path(filenames, stack=bool(shift_down))
 
     def closeEvent(self, event):
         """Clear pool of worker threads and close.
@@ -624,21 +619,17 @@ class QtViewer(QSplitter):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
-        if self.pool.activeThreadCount() > 0:
-            self.pool.clear()
+        # if the viewer.QtDims object is playing an axis, we need to terminate
+        # the AnimationThread before close, otherwise it will cauyse a segFault
+        # or Abort trap. (calling stop() when no animation is occuring is also
+        # not a problem)
+        self.dims.stop()
+        self.canvas.native.deleteLater()
+        self.console.close()
+        self.dockConsole.deleteLater()
+        if not self.pool.waitForDone(10000):
+            raise TimeoutError("Timed out waiting for QtViewer.pool to finish")
         event.accept()
-
-    def shutdown(self):
-        """Shutdown and close viewer.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
-        """
-        self.pool.clear()
-        self.canvas.close()
-        self.console.shutdown()
 
 
 def viewbox_key_event(event):
