@@ -48,22 +48,41 @@ napari_hook_specification = pluggy.HookspecMarker("napari")
 def napari_get_reader(path: Union[str, List[str]]) -> Optional[ReaderFunction]:
     """Return a function capable of loading ``path`` into napari, or ``None``.
 
-    This is the primary **reader plugin** function.
-
-    It will be called on ``File -> Open...`` or when a user drops a file or
-    folder onto the viewer. This function must execute *quickly*, and should
-    return ``None`` if the filepath is of an unrecognized format for this
-    reader plugin.  If the filepath is a recognized format, this function
-    should return a callable that accepts the same filepath, and returns a list
-    of layer_data tuples: ``Union[Tuple[Any], Tuple[Any, Dict]]``.
+    This is the primary "**reader plugin**" function.  It accepts a path or
+    list of paths, and returns a list of data to be added to the ``Viewer``.
 
     The main place this hook is used is in :func:`Viewer.add_path()
     <napari.components.add_layers_mixin.AddLayersMixin.add_path>`, via the
-    :func:`~napari.plugins.utils.get_layer_data_from_plugins` function.
+    :func:`~napari.plugins.io.read_data_with_plugins` function.
 
-    Note: ``path`` may be either a str or a list of str, and implementations
-    should do their own checking for list or str, and handle each case as
-    desired.
+    It will also be called on ``File -> Open...`` or when a user drops a file
+    or folder onto the viewer. This function must execute *quickly*, and should
+    return ``None`` if the filepath is of an unrecognized format for this
+    reader plugin.  If ``path`` is determined to be recognized format, this
+    function should return a *new* function that accepts the same filepath (or
+    list of paths), and returns a list of ``LayerData`` tuples, where each
+    tuple is a 1-, 2-, or 3-tuple of ``(data,)``, ``(data, meta)``, or ``(data,
+    meta, layer_type)`` .
+
+    ``napari`` will then use each tuple in the returned list to generate a new
+    layer in the viewer using the :func:`Viewer._add_layer_from_data()
+    <napari.components.add_layers_mixin.AddLayersMixin._add_layer_from_data>`
+    method.  The first, (optional) second, and (optional) third items in each
+    tuple in the returned layer_data list, therefore correspond to the
+    ``data``, ``meta``, and ``layer_type`` arguments of the
+    :func:`Viewer._add_layer_from_data()
+    <napari.components.add_layers_mixin.AddLayersMixin._add_layer_from_data>`
+    method, respectively.
+
+
+    .. important::
+
+       ``path`` may be either a ``str`` or a ``list`` of ``str``.  If a
+       ``list``, then each path in the list can be assumed to be one part of a
+       larger multi-dimensional stack (for instance: a list of 2D image files
+       that should be stacked along a third axis). Implementations should do
+       their own checking for ``list`` or ``str``, and handle each case as
+       desired.
 
     Parameters
     ----------
