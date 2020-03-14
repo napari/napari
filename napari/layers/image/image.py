@@ -133,7 +133,6 @@ class Image(IntensityVisualizationMixin, Layer):
     """
 
     _colormaps = AVAILABLE_COLORMAPS
-    _max_tile_shape = 1600
 
     def __init__(
         self,
@@ -187,7 +186,8 @@ class Image(IntensityVisualizationMixin, Layer):
         self.rgb = rgb
         self._data = data
         self._data_pyramid = data_pyramid
-        self._top_left = np.zeros(ndim, dtype=int)
+        self._corner_pixels = np.zeros((2, ndim), dtype=int)
+        self._corner_pixels[1] = 1
         if self.is_pyramid:
             self._data_level = len(data_pyramid) - 1
         else:
@@ -289,15 +289,15 @@ class Image(IntensityVisualizationMixin, Layer):
         return np.divide(self.level_shapes[0], self.level_shapes)
 
     @property
-    def top_left(self):
-        """tuple: Location of top left canvas pixel in image."""
-        return self._top_left
+    def corner_pixels(self):
+        """tuple: Top left and bottom right canvas pixels in data."""
+        return self._corner_pixels
 
-    @top_left.setter
-    def top_left(self, top_left):
-        if np.all(self._top_left == top_left):
+    @corner_pixels.setter
+    def corner_pixels(self, corner_pixels):
+        if np.all(self._corner_pixels == corner_pixels):
             return
-        self._top_left = top_left.astype(int)
+        self._corner_pixels = corner_pixels.astype(int)
         self.refresh()
 
     @property
@@ -441,49 +441,45 @@ class Image(IntensityVisualizationMixin, Layer):
             )
             indices[not_disp] = downsampled_indices
 
-            disp_shape = self.level_shapes[level, self.dims.displayed]
             scale = np.ones(self.ndim)
             for d in self.dims.displayed:
                 scale[d] = self.level_downsamples[self.data_level][d]
             self._transforms['view2data'].scale = scale
 
-            if np.any(disp_shape > self._max_tile_shape):
-                for d in self.dims.displayed:
-                    indices[d] = slice(
-                        self._top_left[d],
-                        self._top_left[d] + self._max_tile_shape,
-                        1,
-                    )
-                self._transforms['view2data'].translate = (
-                    self._top_left
-                    * self.scale
-                    * self._transforms['view2data'].scale
+            for d in self.dims.displayed:
+                indices[d] = slice(
+                    self.corner_pixels[0, d], self.corner_pixels[1, d], 1,
                 )
-            else:
-                self._transforms['view2data'].translate = [0] * self.ndim
+            self._transforms['view2data'].translate = (
+                self.corner_pixels[0]
+                * self.scale
+                * self._transforms['view2data'].scale
+            )
 
             image = np.asarray(
                 self._data_pyramid[level][tuple(indices)]
             ).transpose(order)
 
-            if level == len(self._data_pyramid) - 1:
-                thumbnail = image
-            else:
-                # Slice thumbnail
-                indices = np.array(self.dims.indices)
-                downsampled_indices = (
-                    indices[not_disp] / self.level_downsamples[-1, not_disp]
-                )
-                downsampled_indices = np.round(
-                    downsampled_indices.astype(float)
-                ).astype(int)
-                downsampled_indices = np.clip(
-                    downsampled_indices, 0, self.level_shapes[-1, not_disp] - 1
-                )
-                indices[not_disp] = downsampled_indices
-                thumbnail = np.asarray(
-                    self._data_pyramid[-1][tuple(indices)]
-                ).transpose(order)
+            if np.product(image.shape) == 0:
+                image = np.zeros((1, 1))
+
+            print('asfas', level, image.shape, self.corner_pixels)
+
+            # Slice thumbnail
+            indices = np.array(self.dims.indices)
+            downsampled_indices = (
+                indices[not_disp] / self.level_downsamples[-1, not_disp]
+            )
+            downsampled_indices = np.round(
+                downsampled_indices.astype(float)
+            ).astype(int)
+            downsampled_indices = np.clip(
+                downsampled_indices, 0, self.level_shapes[-1, not_disp] - 1
+            )
+            indices[not_disp] = downsampled_indices
+            thumbnail = np.asarray(
+                self._data_pyramid[-1][tuple(indices)]
+            ).transpose(order)
         else:
             self._transforms['view2data'].scale = np.ones(self.dims.ndim)
             image = np.asarray(self.data[self.dims.indices]).transpose(order)

@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from functools import lru_cache
+import numpy as np
 from vispy.app import Canvas
 from vispy.gloo import gl
 from vispy.visuals.transforms import STTransform
@@ -46,6 +47,8 @@ class VispyBaseLayer(ABC):
 
         self.layer = layer
         self.node = node
+
+        self.tile_rounding = 400
 
         MAX_TEXTURE_SIZE_2D, MAX_TEXTURE_SIZE_3D = get_max_texture_sizes()
         self.MAX_TEXTURE_SIZE_2D = MAX_TEXTURE_SIZE_2D
@@ -134,7 +137,7 @@ class VispyBaseLayer(ABC):
         # convert NumPy axis ordering to VisPy axis ordering
         self.scale = scale[::-1]
         if self.layer.is_pyramid:
-            self.layer.top_left = self.find_top_left()
+            self.layer.corner_pixels = self.find_extrema()
         self.layer.position = self._transform_position(self._position)
 
     def _on_translate_change(self, event=None):
@@ -177,6 +180,89 @@ class VispyBaseLayer(ABC):
         self._on_scale_change()
         self._on_translate_change()
 
+    def compute_data_level(self, size):
+        """Computed what level of the pyramid should be viewed given the
+        current size of the requested field of view.
+
+        Parameters
+        ----------
+        size : 2-tuple
+            Requested size of field of view in image coordinates
+
+        Returns
+        ----------
+        level : int
+            Level of the pyramid to be viewing.
+        """
+        # Convert requested field of view from the camera into log units
+        size = np.log2(np.max(size))
+
+        # Max allowed tile in log units
+        max_size = np.log2(self.tile_rounding * 4)
+
+        # Allow for more than 2x coverage of field of view with max tile
+        diff = size - max_size + 1.25
+
+        # Find closed downsample level to diff
+        ds = self.layer.level_downsamples[:, self.layer.dims.displayed].max(
+            axis=1
+        )
+        level = np.argmin(abs(np.log2(ds) - diff))
+
+        return level
+
+    def find_extrema(self):
+        """Finds the extreme pixels of the canvas in data.
+
+        Depends on the current pan and zoom position.
+
+        Returns
+        ----------
+        corner_pixels : array
+            Coordinates of top left and bottom right canvas pixel in the data.
+        """
+        nd = self.layer.dims.ndisplay
+        # Find image coordinate of top left canvas pixel
+        if self.node.canvas is not None:
+            transform = self.node.canvas.scene.node_transform(self.node)
+            top_left_canvas = [0, 0]
+            tl_raw_data = (
+                transform.map(top_left_canvas)[:nd]
+                + self.translate[:nd] / self.scale[:nd]
+            )
+            bottom_right_canvas = self.node.canvas.size
+            br_raw_data = (
+                transform.map(bottom_right_canvas)[:nd]
+                + self.translate[:nd] / self.scale[:nd]
+            )
+        else:
+            tl_raw_data = [0] * nd
+            br_raw_data = [1] * nd
+
+        top_left = np.zeros(self.layer.ndim, dtype=int)
+        bottom_right = np.zeros(self.layer.ndim, dtype=int)
+        for i, d in enumerate(self.layer.dims.displayed[::-1]):
+            top_left[d] = tl_raw_data[i]
+            bottom_right[d] = br_raw_data[i]
+
+        # Clip according to the max image shape
+        top_left = np.clip(
+            top_left, 0, np.subtract(self.layer.level_shapes[0], 1)
+        )
+
+        # Clip according to the max image shape
+        bottom_right = np.clip(
+            bottom_right, 0, np.subtract(self.layer.level_shapes[0], 1)
+        )
+
+        # Convert to offset for image array
+        top_left = self.tile_rounding * np.floor(top_left / self.tile_rounding)
+        bottom_right = self.tile_rounding * np.ceil(
+            bottom_right / self.tile_rounding
+        )
+
+        return np.array([top_left, bottom_right]).astype(int)
+
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas."""
         if event.pos is None:
@@ -204,9 +290,19 @@ class VispyBaseLayer(ABC):
         self.layer.on_mouse_release(event)
 
     def on_draw(self, event):
-        """Called whenever the canvas is drawn.
+        """Called whenever the canvas is drawn, which happens whenever new
+        data is sent to the canvas or the camera is moved.
         """
         self.layer.scale_factor = self.scale_factor
+        if self.layer.is_pyramid:
+            self.layer.scale_factor = self.scale_factor
+            size = self.camera.rect.size
+            data_level = self.compute_data_level(size)
+
+            if data_level != self.layer.data_level:
+                self.layer.data_level = data_level
+            else:
+                self.layer.corner_pixels = self.find_extrema()
 
 
 @lru_cache()
