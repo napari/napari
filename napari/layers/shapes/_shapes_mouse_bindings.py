@@ -66,6 +66,7 @@ def select(layer, event):
 
 
 def add_line_rectangle_ellipse(layer, event):
+    """Add a line, rectangle or ellipse."""
     coord = [layer.coordinates[i] for i in layer.dims.displayed]
 
     # on press
@@ -105,6 +106,7 @@ def add_line_rectangle_ellipse(layer, event):
 
 
 def add_path_polygon(layer, event):
+    """Add a path or polygon."""
     coord = [layer.coordinates[i] for i in layer.dims.displayed]
 
     # on press
@@ -138,12 +140,14 @@ def add_path_polygon(layer, event):
 
 
 def add_path_polygon_creating(layer, event):
+    """While a path or polygon move next vertex to be added."""
     if layer._is_creating:
         coord = [layer.coordinates[i] for i in layer.dims.displayed]
         layer._move(coord)
 
 
 def vertex_insert(layer, event):
+    """Insert a vertex into a selected shape."""
     coord = [layer.coordinates[i] for i in layer.dims.displayed]
     if len(layer.selected_data) == 0:
         # If none selected return immediately
@@ -210,6 +214,7 @@ def vertex_insert(layer, event):
 
 
 def vertex_remove(layer, event):
+    """Remove a vertex from a selected shape."""
     if layer._value[1] is not None:
         # have clicked on a current vertex so remove
         index = layer._value[0]
