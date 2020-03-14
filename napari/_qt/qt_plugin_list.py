@@ -147,6 +147,13 @@ class QtHookImplListWidget(QListWidget):
             self.add_hook_implementation_to_list(hookimpl)
 
     def add_hook_implementation_to_list(self, hookimpl: HookImpl) -> None:
+        """Add a list item for ``hookimpl`` with a custom widget.
+
+        Parameters
+        ----------
+        hookimpl : HookImpl
+            The hook implementation object to add to the list.
+        """
         # don't want users to be able to resort builtin plugins.
         # this may change in the future, and might require hook-specific rules
         if hookimpl.plugin_name == 'builtins':

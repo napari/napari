@@ -406,6 +406,13 @@ QtAbout > QTextEdit{
   padding: 2px;
 }
 
-#hithere QObject {
-  background: red;
+
+/* ------------ Plugin Sorter ------------ */
+
+QtHookImplListWidget::item {
+  background-color: {{ background }};
+}
+
+QtHookImplListWidget::item:selected {
+  background-color: {{ background }};
 }
