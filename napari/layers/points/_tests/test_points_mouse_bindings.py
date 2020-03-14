@@ -1,14 +1,38 @@
 import numpy as np
 import collections
-from napari.layers.points._tests.test_points_utils import (
-    create_known_points_layer,
-)
+from napari.layers import Points
 from napari.utils.interactions import (
     ReadOnlyWrapper,
     mouse_press_callbacks,
     mouse_move_callbacks,
     mouse_release_callbacks,
 )
+
+
+def create_known_points_layer():
+    """Create points layer with known coordinates
+
+    Returns
+    -------
+    layer : napar.layers.Points
+        Points layer.
+    n_points : int
+        Number of points in the points layer
+    known_non_point : list
+        Data coordinates that are known to contain no points. Useful during
+        testing when needing to guarantee no point is clicked on.
+    """
+    data = [[1, 3], [8, 4], [10, 10], [15, 4]]
+    known_non_point = [20, 30]
+    n_points = len(data)
+
+    layer = Points(data, size=1)
+    assert np.all(layer.data == data)
+    assert layer.ndim == 2
+    assert len(layer.data) == n_points
+    assert len(layer.selected_data) == 0
+
+    return layer, n_points, known_non_point
 
 
 def test_not_adding_or_selecting_point():
