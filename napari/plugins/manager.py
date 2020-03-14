@@ -149,6 +149,48 @@ class NapariPluginManager(pluggy.PluginManager):
         except Exception as exc:
             raise PluginRegistrationError(plugin_name, module_name) from exc
 
+    def set_implementation_enabled(
+        self, hook_spec: str, plugin_name: str, enabled: bool
+    ) -> None:
+        """Enable or disable a specific hook implementation.
+
+        Parameters
+        ----------
+        hook_spec : str
+            The name of a hook specification.
+        plugin_name : str
+            The name of a plugin implementing ``hook_spec``.
+        enabled : bool
+            Whether or not the implementation should be enabled.
+
+        Raises
+        ------
+        AttributeError
+            If the plugin manager has no hook_specification named
+            ``hook_spec``.
+        KeyError
+            If ``plugin_name`` has not provided a hook implementation for
+            ``hook_spec``.
+        """
+        try:
+            hook_caller = getattr(self.hook, hook_spec)
+        except AttributeError:
+            raise AttributeError(f"{self} has no hook named '{hook_spec}'")
+
+        try:
+            implementation = next(
+                imp
+                for imp in hook_caller.get_hookimpls()
+                if imp.plugin_name == plugin_name
+            )
+        except StopIteration:
+            raise KeyError(
+                f"No implementation of {hook_spec} found "
+                f"for plugin {plugin_name}."
+            )
+
+        setattr(implementation, 'enabled', enabled)
+
     def format_exceptions(self, plugin_name: str) -> str:
         """Return formatted tracebacks for all exceptions raised by plugin.
 
