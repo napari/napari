@@ -38,8 +38,9 @@ FRAG_SHADER = """
 uniform $sampler_type u_volumetex;
 uniform vec3 u_shape;
 uniform float u_threshold;
-uniform float clim_min;
-uniform float clim_max;
+uniform float display_min;
+uniform float display_max;
+uniform float gamma;
 uniform float u_relative_step_size;
 
 //varyings
@@ -237,8 +238,9 @@ MIP_SNIPPETS = dict(
             maxval = max(maxval, $sample(u_volumetex, loc).g);
             loc += step * 0.1;
         }
-        maxval = (maxval - clim_min) / (clim_max - clim_min);
-        gl_FragColor = $cmap(maxval);
+        maxval = max(maxval - display_min, 0);
+        maxval = maxval / (display_max - display_min);
+        gl_FragColor = $cmap(pow(maxval, gamma));
         """,
 )
 MIP_FRAG_SHADER = FRAG_SHADER.format(**MIP_SNIPPETS)
@@ -338,7 +340,9 @@ ATTENUATED_MIP_SNIPPETS = dict(
         }
         """,
     after_loop="""
-        gl_FragColor = $cmap(maxval);
+        maxval = max(maxval - display_min, 0);
+        maxval = maxval / (display_max - display_min);
+        gl_FragColor = $cmap(pow(maxval, gamma));
         """,
 )
 ATTENUATED_MIP_FRAG_SHADER = FRAG_SHADER.format(**ATTENUATED_MIP_SNIPPETS)
@@ -359,7 +363,8 @@ class Volume(BaseVolume):
     def __init__(self, *args, **kwargs):
         self._interpolation = 'linear'
         self._threshold = 0
-        self._clim_range = [0, 1]
+        self._gamma = 1
+        self._display_lims = kwargs.pop('display_lims', [0, 1])
         super().__init__(*args, **kwargs)
 
     @property
@@ -399,12 +404,15 @@ class Volume(BaseVolume):
             if (hasattr(self.cmap, 'texture_lut'))
             else None
         )
+        self.shared_program['display_min'] = self.norm_display_lims(
+            self.display_lims[0]
+        )
+        self.shared_program['display_max'] = self.norm_display_lims(
+            self.display_lims[1]
+        )
+        self.shared_program['gamma'] = self.gamma
         if 'u_threshold' in self.shared_program:
             self.shared_program['u_threshold'] = self.threshold
-        if 'clim_min' in self.shared_program:
-            self.shared_program['clim_min'] = self.clim[0]
-        if 'clim_max' in self.shared_program:
-            self.shared_program['clim_max'] = self.clim[1]
         self.update()
 
     @property
@@ -437,34 +445,36 @@ class Volume(BaseVolume):
             self.update()
 
     @property
-    def clim(self):
-        """ The contrast limits that were applied to the volume data.
-        Settable via set_data().
-        """
-        return self._clim
+    def display_lims(self):
+        """Contrast limits for display
 
-    @clim.setter
-    def clim(self, clim):
-        self._clim = clim
-        if 'clim_min' in self.shared_program:
-            self.shared_program['clim_min'] = self.norm_clim(clim[0])
-        if 'clim_max' in self.shared_program:
-            self.shared_program['clim_max'] = self.norm_clim(clim[1])
+        Volume.clim is used to normalize the data to 0-1 during set_data.
+        But that is done on the CPU, and we'd like contrast set on the GPU.
+        So we use ``display_lims`` to correspond to the napari clim sliders,
+        and napari's clim_range will correspond to the vispy.Volume.clim.
+        """
+        return self._display_lims
+
+    @display_lims.setter
+    def display_lims(self, display_lims):
+        self._display_lims = display_lims
+        self.shared_program['display_min'] = self.norm_display_lims(
+            display_lims[0]
+        )
+        self.shared_program['display_max'] = self.norm_display_lims(
+            display_lims[1]
+        )
         self.update()
 
-    def norm_clim(self, val):
-        return (val - self.clim_range[0]) / (
-            self.clim_range[1] - self.clim_range[0]
-        )
+    def norm_display_lims(self, val):
+        return (val - self.clim[0]) / (self.clim[1] - self.clim[0])
 
     @property
-    def clim_range(self):
-        """ The contrast limits range that were applied to the volume data.
-        Settable via set_data().
-        """
-        return self._clim_range
+    def gamma(self):
+        return self._gamma
 
-    @clim_range.setter
-    def clim_range(self, clim_range):
-        self._clim_range = clim_range
+    @gamma.setter
+    def gamma(self, gamma):
+        self._gamma = float(gamma)
+        self.shared_program['gamma'] = self.gamma
         self.update()

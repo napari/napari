@@ -1,7 +1,6 @@
 import warnings
 from vispy.scene.visuals import Image as ImageNode
 from .volume import Volume as VolumeNode
-from vispy.color import Colormap
 import numpy as np
 from .vispy_base_layer import VispyBaseLayer
 from ..layers.image._constants import Rendering
@@ -44,7 +43,11 @@ class VispyImageLayer(VispyBaseLayer):
         else:
             if data is None:
                 data = np.zeros((1, 1, 1))
-            self.node = VolumeNode(data, clim=self.layer.contrast_limits)
+            self.node = VolumeNode(
+                data,
+                clim=self.layer.contrast_limits_range,
+                display_lims=self.layer.contrast_limits,
+            )
 
         self.node.parent = parent
         self.reset()
@@ -110,10 +113,6 @@ class VispyImageLayer(VispyBaseLayer):
 
     def _on_colormap_change(self, event=None):
         cmap = self.layer.colormap[1]
-        if self.layer.gamma != 1:
-            # when gamma!=1, we instantiate a new colormap
-            # with 256 control points from 0-1
-            cmap = Colormap(cmap[np.linspace(0, 1, 256) ** self.layer.gamma])
 
         # Below is fixed in #1712
         if not self.layer.dims.ndisplay == 2:
@@ -126,14 +125,13 @@ class VispyImageLayer(VispyBaseLayer):
         if self.layer.dims.ndisplay == 2:
             self.node.clim = self.layer.contrast_limits
         else:
-            if self.node.clim != self.layer.contrast_limits:
-                self.node.clim = self.layer.contrast_limits
-            if self.node.clim_range != self.layer.contrast_limits_range:
-                self.node.clim_range = self.layer.contrast_limits_range
+            if self.node.display_lims != self.layer.contrast_limits:
+                self.node.display_lims = self.layer.contrast_limits
+            if self.node.clim != self.layer.contrast_limits_range:
                 self._on_data_change()
 
     def _on_gamma_change(self, event=None):
-        self._on_colormap_change()
+        self.node.gamma = self.layer.gamma
 
     def _on_threshold_change(self, event=None):
         if self.layer.dims.ndisplay == 2:

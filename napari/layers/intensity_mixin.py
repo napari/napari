@@ -86,8 +86,8 @@ class IntensityVisualizationMixin:
 
     @property
     def contrast_limits(self):
-        """list of float: Limits to use for the colormap."""
-        return list(self._contrast_limits)
+        """tuple of float: Limits to use for the colormap."""
+        return tuple(self._contrast_limits)
 
     @contrast_limits.setter
     def contrast_limits(self, contrast_limits):
@@ -110,13 +110,13 @@ class IntensityVisualizationMixin:
     @property
     def contrast_limits_range(self):
         """The current valid range of the contrast limits."""
-        return list(self._contrast_limits_range)
+        return tuple(self._contrast_limits_range)
 
     @contrast_limits_range.setter
     def contrast_limits_range(self, value):
         """Set the valid range of the contrast limits"""
         validate_2_tuple(value)
-        if list(value) == self.contrast_limits_range:
+        if tuple(value) == self.contrast_limits_range:
             return
 
         # if either value is "None", it just preserves the current range
