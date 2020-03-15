@@ -38,6 +38,8 @@ FRAG_SHADER = """
 uniform $sampler_type u_volumetex;
 uniform vec3 u_shape;
 uniform float u_threshold;
+uniform float clim_min;
+uniform float clim_max;
 uniform float u_relative_step_size;
 
 //varyings
@@ -235,6 +237,7 @@ MIP_SNIPPETS = dict(
             maxval = max(maxval, $sample(u_volumetex, loc).g);
             loc += step * 0.1;
         }
+        maxval = (maxval - clim_min) / (clim_max - clim_min);
         gl_FragColor = $cmap(maxval);
         """,
 )
@@ -356,6 +359,7 @@ class Volume(BaseVolume):
     def __init__(self, *args, **kwargs):
         self._interpolation = 'linear'
         self._threshold = 0
+        self._clim_range = [0, 1]
         super().__init__(*args, **kwargs)
 
     @property
@@ -397,6 +401,10 @@ class Volume(BaseVolume):
         )
         if 'u_threshold' in self.shared_program:
             self.shared_program['u_threshold'] = self.threshold
+        if 'clim_min' in self.shared_program:
+            self.shared_program['clim_min'] = self.clim[0]
+        if 'clim_max' in self.shared_program:
+            self.shared_program['clim_max'] = self.clim[1]
         self.update()
 
     @property
@@ -427,3 +435,36 @@ class Volume(BaseVolume):
             self._interpolation = interp
             self._tex.interpolation = self._interpolation
             self.update()
+
+    @property
+    def clim(self):
+        """ The contrast limits that were applied to the volume data.
+        Settable via set_data().
+        """
+        return self._clim
+
+    @clim.setter
+    def clim(self, clim):
+        self._clim = clim
+        if 'clim_min' in self.shared_program:
+            self.shared_program['clim_min'] = self.norm_clim(clim[0])
+        if 'clim_max' in self.shared_program:
+            self.shared_program['clim_max'] = self.norm_clim(clim[1])
+        self.update()
+
+    def norm_clim(self, val):
+        return (val - self.clim_range[0]) / (
+            self.clim_range[1] - self.clim_range[0]
+        )
+
+    @property
+    def clim_range(self):
+        """ The contrast limits range that were applied to the volume data.
+        Settable via set_data().
+        """
+        return self._clim_range
+
+    @clim_range.setter
+    def clim_range(self, clim_range):
+        self._clim_range = clim_range
+        self.update()

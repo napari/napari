@@ -92,7 +92,7 @@ class VispyImageLayer(VispyBaseLayer):
                 self.node._need_colortransform_update = True
                 self.node.set_data(data)
             else:
-                self.node.set_data(data, clim=self.layer.contrast_limits)
+                self.node.set_data(data, clim=self.layer.contrast_limits_range)
         self.node.update()
 
     def _on_interpolation_change(self, event=None):
@@ -126,7 +126,11 @@ class VispyImageLayer(VispyBaseLayer):
         if self.layer.dims.ndisplay == 2:
             self.node.clim = self.layer.contrast_limits
         else:
-            self._on_data_change()
+            if self.node.clim != self.layer.contrast_limits:
+                self.node.clim = self.layer.contrast_limits
+            if self.node.clim_range != self.layer.contrast_limits_range:
+                self.node.clim_range = self.layer.contrast_limits_range
+                self._on_data_change()
 
     def _on_gamma_change(self, event=None):
         self._on_colormap_change()
