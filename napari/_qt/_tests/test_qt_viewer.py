@@ -18,6 +18,7 @@ def test_qt_viewer(viewer_factory):
 
     assert viewer.title == 'napari'
     assert view.viewer == viewer
+    assert view.console is None
 
     assert len(viewer.layers) == 0
     assert view.layers.vbox_layout.count() == 2
@@ -25,6 +26,17 @@ def test_qt_viewer(viewer_factory):
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
+
+
+def test_qt_viewer_with_console(viewer_factory):
+    """Test instantiating console from viewer."""
+    view, viewer = viewer_factory()
+    assert view.console is None
+
+    # Test creation of console
+    view.toggle_console(None)
+    assert view.console is not None
+    assert view.dockConsole.widget == view.console
 
 
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)

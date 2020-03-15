@@ -155,6 +155,11 @@ def test_update_console(viewer_factory):
     """Test updating the console with local variables."""
     view, viewer = viewer_factory()
 
+    # Create console
+    assert view.console is None
+    view.toggle_console(None)
+    assert view.console is not None
+
     # Check viewer in console
     assert view.console.kernel_client is not None
     assert 'viewer' in view.console.shell.user_ns
