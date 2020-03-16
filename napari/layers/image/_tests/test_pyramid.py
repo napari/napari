@@ -299,18 +299,18 @@ def test_contrast_limits():
     assert layer.contrast_limits[0] >= 0
     assert layer.contrast_limits[1] <= 1
     assert layer.contrast_limits[0] < layer.contrast_limits[1]
-    assert layer.contrast_limits == layer._contrast_limits_range
+    assert layer.contrast_limits == layer.contrast_limits_range
 
     # Change contrast_limits property
-    contrast_limits = [0, 2]
+    contrast_limits = (0, 2)
     layer.contrast_limits = contrast_limits
     assert layer.contrast_limits == contrast_limits
-    assert layer._contrast_limits_range == contrast_limits
+    assert layer.contrast_limits_range == contrast_limits
 
     # Set contrast_limits as keyword argument
     layer = Image(data, is_pyramid=True, contrast_limits=contrast_limits)
     assert layer.contrast_limits == contrast_limits
-    assert layer._contrast_limits_range == contrast_limits
+    assert layer.contrast_limits_range == contrast_limits
 
 
 def test_contrast_limits_range():
@@ -319,17 +319,17 @@ def test_contrast_limits_range():
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     layer = Image(data, is_pyramid=True)
-    assert layer._contrast_limits_range[0] >= 0
-    assert layer._contrast_limits_range[1] <= 1
-    assert layer._contrast_limits_range[0] < layer._contrast_limits_range[1]
+    assert layer.contrast_limits_range[0] >= 0
+    assert layer.contrast_limits_range[1] <= 1
+    assert layer.contrast_limits_range[0] < layer.contrast_limits_range[1]
 
     # If all data is the same value the contrast_limits_range and
     # contrast_limits defaults to [0, 1]
     shapes = [(40, 20), (20, 10), (10, 5)]
     data = [np.zeros(s) for s in shapes]
     layer = Image(data, is_pyramid=True)
-    assert layer._contrast_limits_range == [0, 1]
-    assert layer.contrast_limits == [0.0, 1.0]
+    assert layer.contrast_limits_range == (0, 1)
+    assert layer.contrast_limits == (0.0, 1.0)
 
 
 def test_metadata():

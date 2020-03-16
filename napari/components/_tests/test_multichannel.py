@@ -111,14 +111,14 @@ def test_contrast_limits():
     viewer = ViewerModel()
     np.random.seed(0)
     data = np.random.random((15, 10, 5))
-    clims = [0.3, 0.7]
+    clims = (0.3, 0.7)
     viewer.add_image(data, contrast_limits=clims, channel_axis=-1)
     assert len(viewer.layers) == data.shape[-1]
     for i in range(data.shape[-1]):
         assert viewer.layers[i].contrast_limits == clims
 
     viewer = ViewerModel()
-    clims = [[0.3, 0.7], [0.1, 0.9], [0.3, 0.9], [0.4, 0.9], [0.2, 0.9]]
+    clims = [(0.3, 0.7), (0.1, 0.9), (0.3, 0.9), (0.4, 0.9), (0.2, 0.9)]
     viewer.add_image(data, contrast_limits=clims, channel_axis=-1)
     assert len(viewer.layers) == data.shape[-1]
     for i in range(data.shape[-1]):
