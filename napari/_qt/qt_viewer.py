@@ -1,4 +1,3 @@
-import os.path
 from pathlib import Path
 
 from qtpy import QtGui
