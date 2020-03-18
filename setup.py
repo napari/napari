@@ -54,12 +54,19 @@ if sys.version_info < (MIN_PY_MAJOR_VER, MIN_PY_MINOR_VER):
     )
     sys.exit(1)
 
+try:
+    import PyQt5  # noqa: F401
+
+    pyqt = True
+except ImportError:
+    pyqt = False
+
 requirements = []
 with open(osp.join('requirements', 'default.txt')) as f:
     for line in f:
         splitted = line.split("#")
         stripped = splitted[0].strip()
-        if len(stripped) > 0:
+        if len(stripped) > 0 and not (pyqt and stripped.startswith("PySide2")):
             requirements.append(stripped)
 
 setup(
