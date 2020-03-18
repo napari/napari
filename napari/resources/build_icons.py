@@ -109,16 +109,15 @@ def build_resources_qrc(
         2-tuple of (path-to-qrc.res, path-to-theme-directory).
     """
     qrc_path = os.path.join(dest_dir, 'res.qrc')
+    theme_dir = os.path.join(dest_dir, 'themes')
     if os.path.exists(qrc_path) and (not overwrite):
-        return qrc_path
+        return qrc_path, theme_dir
 
     qrc_string = """
     <!DOCTYPE RCC>
     <RCC version="1.0">
     <qresource>
     """
-
-    theme_dir = os.path.join(dest_dir, 'themes')
     for filename in themify_icons(theme_dir):
         qrc_string += f'\n    <file>themes/{filename}</file>'
 
