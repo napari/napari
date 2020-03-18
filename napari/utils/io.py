@@ -6,7 +6,6 @@ from pathlib import Path
 
 import numpy as np
 import tifffile
-import imageio
 
 from dask import delayed
 from dask import array as da
@@ -18,6 +17,8 @@ def imsave(filename: str, data: np.ndarray):
     if ext in [".tif", "tiff"]:
         tifffile.imsave(filename, data)
     else:
+        import imageio
+
         imageio.imsave(filename, data)
 
 
@@ -27,6 +28,8 @@ def imread(filename: str):
     if ext in [".tif", "tiff", ".lsm"]:
         image = tifffile.imread(filename)
     else:
+        import imageio
+
         image = imageio.imread(filename)
 
     if not hasattr(image, 'ndim'):

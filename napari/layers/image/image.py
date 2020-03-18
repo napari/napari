@@ -4,7 +4,6 @@ from base64 import b64encode
 from xml.etree.ElementTree import Element
 
 import numpy as np
-from imageio import imwrite
 from scipy import ndimage as ndi
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS
@@ -623,6 +622,8 @@ class Image(IntensityVisualizationMixin, Layer):
             List of a single xml element specifying the currently viewed image
             as a png according to the svg specification.
         """
+        from imageio import imwrite
+
         if self.dims.ndisplay == 3:
             image = np.max(self._data_thumbnail, axis=0)
         else:
