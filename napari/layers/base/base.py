@@ -5,7 +5,6 @@ from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from xml.etree.ElementTree import Element, tostring
 import numpy as np
-from skimage import img_as_ubyte
 from ._base_constants import Blending
 
 from ...components import Dims
@@ -452,7 +451,7 @@ class Layer(KeymapProvider, ABC):
         if thumbnail.dtype != np.uint8:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                thumbnail = img_as_ubyte(thumbnail)
+                thumbnail = convert_to_uint8(thumbnail)
 
         padding_needed = np.subtract(self._thumbnail_shape, thumbnail.shape)
         pad_amounts = [(p // 2, (p + 1) // 2) for p in padding_needed]
@@ -737,3 +736,33 @@ class Layer(KeymapProvider, ABC):
         """Called whenever mouse released in canvas.
         """
         return
+
+
+def convert_to_uint8(data: np.ndarray):
+    out_dtype = np.dtype(np.uint8)
+    out_max = np.iinfo(out_dtype).max
+    if data.dtype == out_dtype:
+        return data
+    in_kind = data.dtype.kind
+    if in_kind == "f":
+        image_out = np.multiply(data, out_max, dtype=data.dtype)
+        np.rint(image_out, out=image_out)
+        np.clip(image_out, 0, out_max, out=image_out)
+        return image_out.astype(out_dtype)
+
+    if in_kind in "ui":
+        if in_kind == "u":
+            if data.max() < out_max:
+                return data.astype(out_dtype)
+            return np.right_shift(data, (data.dtype.itemsize - 1) * 8).astype(
+                out_dtype
+            )
+        else:
+            np.maximum(data, 0, out=data, dtype=data.dtype)
+            if data.dtype == np.int8:
+                return (data * 2).astype(np.uint8)
+            if data.max() < out_max:
+                return data.astype(out_dtype)
+            return np.right_shift(
+                data, (data.dtype.itemsize - 1) * 8 - 1
+            ).astype(out_dtype)

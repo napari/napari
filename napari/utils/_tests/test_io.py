@@ -4,6 +4,7 @@ from pathlib import Path
 import numpy as np
 from dask import array as da
 from skimage.data import data_dir
+from skimage import io as sk_io
 from tempfile import TemporaryDirectory
 from napari.utils import io
 import pytest
@@ -161,3 +162,10 @@ def test_zarr_pyramid():
         # the context manager. Alternatively, we could convert to NumPy here.
         for images, images_in in zip(pyramid, pyramid_in):
             np.testing.assert_array_equal(images, images_in)
+
+
+def test_which_iread():
+    if os.environ.get("NO_SKIMAGE", False):
+        assert io._imread.__module__ == io.imread.__module__
+    else:
+        assert io._imread.__module__ == sk_io.imread.__module__

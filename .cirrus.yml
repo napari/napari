@@ -82,6 +82,8 @@ linux_task:
     - pip install pyqt5
     - pytest -v
 
+  test_own_imread_script: NO_SKIMAGE=1 pytest -v
+
 
 mac_task:
   auto_cancellation: true
@@ -130,6 +132,8 @@ mac_task:
     - python -c "import napari; print(napari.__version__)"
 
   test_script: pytest -v
+
+  test_own_imread_script: NO_SKIMAGE=1 pytest -v
 
 
 win_task:
