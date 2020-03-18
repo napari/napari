@@ -744,6 +744,8 @@ def convert_to_uint8(data: np.ndarray):
     if data.dtype == out_dtype:
         return data
     in_kind = data.dtype.kind
+    if in_kind == "b":
+        return data.astype(out_dtype) * 255
     if in_kind == "f":
         image_out = np.multiply(data, out_max, dtype=data.dtype)
         np.rint(image_out, out=image_out)

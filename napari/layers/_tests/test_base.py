@@ -9,6 +9,7 @@ from ..base.base import convert_to_uint8
 def test_uint(dtype):
     data = np.arange(50, dtype=dtype)
     data_scaled = data * 256 ** (data.dtype.itemsize - 1)
+    assert convert_to_uint8(data_scaled).dtype == np.uint8
     assert np.all(data == convert_to_uint8(data_scaled))
     assert np.all(img_as_ubyte(data) == convert_to_uint8(data))
     assert np.all(img_as_ubyte(data_scaled) == convert_to_uint8(data_scaled))
@@ -18,6 +19,8 @@ def test_uint(dtype):
 def test_int(dtype):
     data = np.arange(50, dtype=dtype)
     data_scaled = data * 256 ** (data.dtype.itemsize - 1)
+    assert convert_to_uint8(data).dtype == np.uint8
+    assert convert_to_uint8(data_scaled).dtype == np.uint8
     assert np.all(img_as_ubyte(data) == convert_to_uint8(data))
     assert np.all(2 * data == convert_to_uint8(data_scaled))
     assert np.all(img_as_ubyte(data_scaled) == convert_to_uint8(data_scaled))
@@ -31,9 +34,18 @@ def test_int(dtype):
 def test_float(dtype):
     data = np.linspace(0, 0.5, 128, dtype=dtype, endpoint=False)
     res = np.arange(128, dtype=np.uint8)
+    assert convert_to_uint8(data).dtype == np.uint8
     assert np.all(convert_to_uint8(data) == res)
     data = np.linspace(0, 1, 256, dtype=dtype)
     res = np.arange(256, dtype=np.uint8)
     assert np.all(convert_to_uint8(data) == res)
     assert np.all(img_as_ubyte(data) == convert_to_uint8(data))
     assert np.all(img_as_ubyte(data - 0.5) == convert_to_uint8(data - 0.5))
+
+
+def test_bool():
+    data = np.zeros((10, 10), dtype=np.bool)
+    data[2:-2, 2:-2] = 1
+    converted = convert_to_uint8(data)
+    assert converted.dtype == np.uint8
+    assert np.all(img_as_ubyte(data) == converted)
