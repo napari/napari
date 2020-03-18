@@ -220,6 +220,7 @@ codecov_task:
   install_script: |
     python -m pip install --retries 3 --upgrade pip
     pip install -r requirements.txt
+    pip install -e .
     pip install pytest-cov codecov
 
   coverage_script: |
