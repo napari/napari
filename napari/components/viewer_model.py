@@ -8,11 +8,11 @@ from .add_layers_mixin import AddLayersMixin
 from .dims import Dims
 from .layerlist import LayerList
 from ..utils.event import EmitterGroup, Event
-from ..utils.keybindings import KeymapMixin
+from ..utils.keybindings import KeymapHandler, KeymapProvider
 from ..utils.theme import palettes
 
 
-class ViewerModel(AddLayersMixin, KeymapMixin):
+class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
     """Viewer containing the rendered scene, layers, and controlling elements
     including dimension sliders, and control bars for color limits.
 
@@ -89,6 +89,8 @@ class ViewerModel(AddLayersMixin, KeymapMixin):
         self.layers.events.changed.connect(self._on_layers_change)
         self.layers.events.changed.connect(self._update_active_layer)
         self.layers.events.changed.connect(self._update_grid)
+
+        self.keymap_providers = [self]
 
         # Hold callbacks for when mouse moves with nothing pressed
         self.mouse_move_callbacks = []
@@ -235,7 +237,15 @@ class ViewerModel(AddLayersMixin, KeymapMixin):
     def active_layer(self, active_layer):
         if active_layer == self.active_layer:
             return
+
+        if self._active_layer is not None:
+            self.keymap_providers.remove(self._active_layer)
+
         self._active_layer = active_layer
+
+        if active_layer is not None:
+            self.keymap_providers.insert(0, active_layer)
+
         self.events.active_layer(item=self._active_layer)
 
     def _scene_shape(self):

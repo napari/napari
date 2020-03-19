@@ -1,10 +1,9 @@
-import inspect
 from pathlib import Path
 
 from qtpy import QtGui
 from qtpy.QtCore import QCoreApplication, Qt, QSize
 from qtpy.QtWidgets import QWidget, QVBoxLayout, QFileDialog, QSplitter
-from qtpy.QtGui import QCursor, QPixmap, QGuiApplication
+from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtCore import QThreadPool
 from skimage.io import imsave
 from vispy.scene import SceneCanvas, PanZoomCamera, ArcballCamera
@@ -12,7 +11,7 @@ from vispy.visuals.transforms import ChainTransform
 
 from .qt_dims import QtDims
 from .qt_layerlist import QtLayerList
-from ..resources import combine_stylesheets
+from ..resources import get_stylesheet
 from ..utils.theme import template
 from ..utils.misc import str_to_rgb
 from ..utils.interactions import (
@@ -23,7 +22,7 @@ from ..utils.interactions import (
 )
 from ..utils.keybindings import components_to_key_combo
 
-from .utils import QImg2array
+from .utils import QImg2array, square_pixmap
 from .qt_controls import QtControls
 from .qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .qt_console import QtConsole
@@ -74,7 +73,7 @@ class QtViewer(QSplitter):
         Button controls for the napari viewer.
     """
 
-    raw_stylesheet = combine_stylesheets()
+    raw_stylesheet = get_stylesheet()
 
     def __init__(self, viewer):
         super().__init__()
@@ -168,9 +167,6 @@ class QtViewer(QSplitter):
         self._last_visited_dir = str(Path.home())
 
         self._cursors = {
-            'disabled': QCursor(
-                QPixmap(':/icons/cursor/cursor_disabled.png').scaled(20, 20)
-            ),
             'cross': Qt.CrossCursor,
             'forbidden': Qt.ForbiddenCursor,
             'pointing': Qt.PointingHandCursor,
@@ -178,8 +174,6 @@ class QtViewer(QSplitter):
         }
 
         self._update_palette(viewer.palette)
-
-        self._key_release_generators = {}
 
         self.viewer.events.interactive.connect(self._on_interactive)
         self.viewer.events.cursor.connect(self._on_cursor)
@@ -364,16 +358,15 @@ class QtViewer(QSplitter):
             Event from the Qt context.
         """
         cursor = self.viewer.cursor
-        size = self.viewer.cursor_size
         if cursor == 'square':
-            if size < 10 or size > 300:
+            size = self.viewer.cursor_size
+            # make sure the square fits within the current canvas
+            if size < 8 or size > (
+                min(*self.viewer.window.qt_viewer.canvas.size) - 4
+            ):
                 q_cursor = self._cursors['cross']
             else:
-                q_cursor = QCursor(
-                    QPixmap(':/icons/cursor/cursor_square.png').scaledToHeight(
-                        size
-                    )
-                )
+                q_cursor = QCursor(square_pixmap(size))
         else:
             q_cursor = self._cursors[cursor]
         self.canvas.native.setCursor(q_cursor)
@@ -505,31 +498,13 @@ class QtViewer(QSplitter):
             and event.native.isAutoRepeat()
             and event.key.name not in ['Up', 'Down', 'Left', 'Right']
         ) or event.key is None:
-            # pass is no key is present or if key is held down, unless the
+            # pass if no key is present or if key is held down, unless the
             # key being held down is one of the navigation keys
+            # this helps for scrolling, etc.
             return
 
-        comb = components_to_key_combo(event.key.name, event.modifiers)
-
-        layer = self.viewer.active_layer
-
-        if layer is not None and comb in layer.keymap:
-            parent = layer
-        elif comb in self.viewer.keymap:
-            parent = self.viewer
-        else:
-            return
-
-        func = parent.keymap[comb]
-        gen = func(parent)
-
-        if inspect.isgenerator(gen):
-            try:
-                next(gen)
-            except StopIteration:  # only one statement
-                pass
-            else:
-                self._key_release_generators[event.key] = gen
+        combo = components_to_key_combo(event.key.name, event.modifiers)
+        self.viewer.press_key(combo)
 
     def on_key_release(self, event):
         """Called whenever key released in canvas.
@@ -539,10 +514,8 @@ class QtViewer(QSplitter):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
-        try:
-            next(self._key_release_generators[event.key])
-        except (KeyError, StopIteration):
-            pass
+        combo = components_to_key_combo(event.key.name, event.modifiers)
+        self.viewer.release_key(combo)
 
     def on_draw(self, event):
         """Called whenever drawn in canvas. Called for all layers, not just top

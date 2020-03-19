@@ -3,6 +3,15 @@
 import re
 from ast import literal_eval
 
+try:
+    from qtpy import QT_VERSION
+
+    major, minor, *rest = QT_VERSION.split('.')
+    use_gradients = (int(major) >= 5) and (int(minor) >= 12)
+except Exception:
+    use_gradients = False
+
+
 palettes = {
     'dark': {
         'folder': 'dark',
@@ -36,7 +45,7 @@ palettes = {
     },
 }
 
-
+gradient_pattern = re.compile(r'([vh])gradient\((.+)\)')
 darken_pattern = re.compile(r'{{\s?darken\((\w+),?\s?([-\d]+)?\)\s?}}')
 lighten_pattern = re.compile(r'{{\s?lighten\((\w+),?\s?([-\d]+)?\)\s?}}')
 
@@ -63,6 +72,21 @@ def lighten(color: str, percentage=10):
     return f'rgb({red}, {green}, {blue})'
 
 
+def gradient(stops, horizontal=True):
+    if not use_gradients:
+        return stops[-1]
+
+    if horizontal:
+        grad = 'qlineargradient(x1: 0, y1: 0, x2: 1, y2: 0, '
+    else:
+        grad = 'qlineargradient(x1: 0, y1: 0, x2: 0, y2: 1, '
+
+    _stops = [f'stop: {n} {stop}' for n, stop in enumerate(stops)]
+    grad += ", ".join(_stops) + ")"
+
+    return grad
+
+
 def template(css, **palette):
     def darken_match(matchobj):
         color, percentage = matchobj.groups()
@@ -72,7 +96,13 @@ def template(css, **palette):
         color, percentage = matchobj.groups()
         return lighten(palette[color], percentage)
 
+    def gradient_match(matchobj):
+        horizontal = matchobj.groups()[1] == 'h'
+        stops = [i.strip() for i in matchobj.groups()[1].split('-')]
+        return gradient(stops, horizontal)
+
     for k, v in palette.items():
+        css = gradient_pattern.sub(gradient_match, css)
         css = darken_pattern.sub(darken_match, css)
         css = lighten_pattern.sub(lighten_match, css)
         css = css.replace('{{ %s }}' % k, v)
