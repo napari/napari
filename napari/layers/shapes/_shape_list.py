@@ -5,7 +5,7 @@ from ._shapes_utils import inside_triangles, triangles_intersect_box
 from ._shapes_constants import shape_classes, ShapeType
 
 
-class ShapesList:
+class ShapeList:
     """List of shapes class.
 
     Parameters
