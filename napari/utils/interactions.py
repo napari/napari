@@ -166,36 +166,36 @@ elif sys.platform.startswith('linux'):
     KEY_SYMBOLS.update({'Meta': 'Super'})
 
 
-def get_keybindings_summary(keymap, col='rgb(134, 142, 147)'):
-    """Get summary of keybindings in keymap.
+def get_key_bindings_summary(keymap, col='rgb(134, 142, 147)'):
+    """Get summary of key bindings in keymap.
 
     Parameters
     ---------
     keymap : dict
-        Dictionary of keybindings.
+        Dictionary of key bindings.
     col : str
         Color string in format rgb(int, int, int) used for highlighting
         keypress combination.
 
     Returns
     ---------
-    keybindings_str : str
-        String with summary of all keybindings and their functions.
+    key_bindings_str : str
+        String with summary of all key_bindings and their functions.
     """
-    keybindings_str = '<table border="0" width="100%">'
+    key_bindings_str = '<table border="0" width="100%">'
     for key in keymap:
         keycodes = [KEY_SYMBOLS.get(k, k) for k in key.split('-')]
         keycodes = "+".join(
             [f"<span style='color: {col}'><b>{k}</b></span>" for k in keycodes]
         )
-        keybindings_str += (
+        key_bindings_str += (
             "<tr><td width='80' style='text-align: right; padding: 4px;'>"
             f"<span style='color: rgb(66, 72, 80)'>{keycodes}</span></td>"
             "<td style='text-align: left; padding: 4px; color: #CCC;'>"
             f"{get_function_summary(keymap[key])}</td></tr>"
         )
-    keybindings_str += '</table>'
-    return keybindings_str
+    key_bindings_str += '</table>'
+    return key_bindings_str
 
 
 def get_function_summary(func):

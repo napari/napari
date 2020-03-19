@@ -10,7 +10,7 @@ from ._base_constants import Blending
 
 from ...components import Dims
 from ...utils.event import EmitterGroup, Event
-from ...utils.keybindings import KeymapProvider
+from ...utils.key_bindings import KeymapProvider
 from ...utils.misc import ROOT_DIR
 from ...utils.naming import magic_name
 from ...utils.status_messages import status_format, format_float

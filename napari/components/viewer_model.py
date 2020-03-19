@@ -8,7 +8,7 @@ from .add_layers_mixin import AddLayersMixin
 from .dims import Dims
 from .layerlist import LayerList
 from ..utils.event import EmitterGroup, Event
-from ..utils.keybindings import KeymapHandler, KeymapProvider
+from ..utils.key_bindings import KeymapHandler, KeymapProvider
 from ..utils.theme import palettes
 
 
