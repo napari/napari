@@ -397,6 +397,6 @@ QtAbout > QTextEdit{
   padding: 2px;
 }
 
-#hithere QObject {
-  background: red;
+#pluginInfo {
+  color: text;
 }
