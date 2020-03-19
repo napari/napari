@@ -29,6 +29,8 @@ clean:
 %: Makefile
 	git fetch --tags  # update tags so version info is correct
 	make buildapi
+	rm -rf source/developers
+	cp -R developers source/
 	rm -rf source/release
 	cp -R release source/
 	rm -f source/release/generate_release_notes.py

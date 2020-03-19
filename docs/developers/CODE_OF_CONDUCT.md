@@ -1,4 +1,4 @@
-# napari Code of Conduct
+# Code of Conduct
 
 ## Introduction
 This code of conduct applies to all spaces managed by the napari project, including all public and private mailing lists, issue trackers, wikis, blogs, Twitter, and any other communication channel used by our community. The napari project does not organise in-person events, however events related to our community should have a code of conduct similar in spirit to this one.
@@ -79,7 +79,7 @@ In cases not involving clear severe and obvious breaches of this code of conduct
 
 The committee will respond to any report as soon as possible, and at most within 72 hours.
 
-# Endnotes
+## Endnotes
 We are thankful to the groups behind the following documents, from which we drew content and inspiration:
 
 * [The SciPy Code of Conduct](https://docs.scipy.org/doc/scipy/reference/dev/conduct/code_of_conduct.html)

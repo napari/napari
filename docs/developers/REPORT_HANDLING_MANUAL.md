@@ -1,4 +1,4 @@
-# napari Code of Conduct - How to follow up on a report
+# Code of Conduct - How to follow up on a report
 This is the manual followed by napari's Code of Conduct Committee. It’s used when we respond to an issue to make sure we’re consistent and fair.
 
 Enforcing the Code of Conduct impacts our community today and for the future. It’s an action that we do not take lightly. When reviewing enforcement measures, the Code of Conduct Committee will keep the following values and guidelines in mind:
@@ -68,7 +68,7 @@ It is important to retain an archive of all activities of this committee to ensu
 
 The Code of Conduct Committee should aim to have a resolution agreed upon within two weeks. In the event that a resolution can’t be determined in that time, the committee will respond to the reporter(s) with an update and projected timeline for resolution.
 
-# Resolutions
+## Resolutions
 The committee must agree on a resolution by consensus. If the group cannot reach consensus and deadlocks for over a week, the group will turn the matter over to the Steering Council for resolution.
 
 Possible responses may include:
@@ -99,5 +99,5 @@ Finally, the committee will make a report to the napari core team in the event o
 
 The committee will never publicly discuss the issue; all public statements will be made by the chair of the Code of Conduct Committee.
 
-# Conflicts of Interest
+## Conflicts of Interest
 In the event of any conflict of interest, a committee member must immediately notify the other members, and recuse themselves if necessary.
