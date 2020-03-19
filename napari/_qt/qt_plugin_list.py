@@ -161,7 +161,7 @@ class QtHookImplListWidget(QListWidget):
         item = QListWidgetItem(parent=self)
         item.hookimpl = hookimpl
         self.addItem(item)
-        widg = ImplementationListItem(item)
+        widg = ImplementationListItem(item, parent=self)
         item.setSizeHint(widg.sizeHint())
         self.order_changed.connect(widg.update_position_label)
         self.setItemWidget(item, widg)
@@ -244,6 +244,7 @@ class QtPluginSorter(QDialog):
     ) -> None:
         plugin_manager = plugin_manager or napari_plugin_manager
         super().__init__(parent)
+        self.setWindowModality(Qt.NonModal)
         self.plugin_manager = plugin_manager
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)

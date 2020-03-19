@@ -201,7 +201,12 @@ class Window:
 
     def _show_plugin_sorter(self):
         plugin_sorter = QtPluginSorter(parent=self._qt_window)
-        plugin_sorter.exec_()
+        dw = self.add_dock_widget(
+            plugin_sorter, name='Plugin Sorter', area="right"
+        )
+        plugin_sorter.finished.connect(dw.close)
+        plugin_sorter.finished.connect(plugin_sorter.deleteLater)
+        plugin_sorter.finished.connect(dw.deleteLater)
 
     def _add_help_menu(self):
         """Add 'Help' menu to app menubar."""

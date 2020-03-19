@@ -409,10 +409,15 @@ QtAbout > QTextEdit{
 
 /* ------------ Plugin Sorter ------------ */
 
-QtHookImplListWidget::item {
+ImplementationListItem {
   background-color: {{ background }};
+  border-radius: 2px;
 }
 
-QtHookImplListWidget::item:selected {
-  background-color: {{ background }};
+QtHookImplListWidget::item {
+  background: transparent;
+}
+
+QtHookImplListWidget {
+  background-color: {{ console }};
 }
