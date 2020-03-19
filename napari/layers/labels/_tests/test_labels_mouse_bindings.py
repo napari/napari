@@ -9,6 +9,10 @@ from napari.utils.interactions import (
 )
 
 
+# Create a namedtuple for simulating vispy mouse events
+Event = collections.namedtuple('Event', 'type is_dragging')
+
+
 def test_paint():
     """Test painting labels with different brush sizes."""
     data = np.ones((20, 20))
@@ -18,13 +22,12 @@ def test_paint():
     layer.selected_label = 3
     layer.position = (0, 0)
 
-    Event = collections.namedtuple('Event', 'type is_dragging')
-
     # Simulate click
     event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
     mouse_press_callbacks(layer, event)
 
     layer.position = (19, 19)
+
     # Simulate drag
     event = ReadOnlyWrapper(Event(type='mouse_move', is_dragging=True))
     mouse_move_callbacks(layer, event)
@@ -48,17 +51,17 @@ def test_pick():
     data[-5:, -5:] = 3
     layer = Labels(data)
     assert layer.selected_label == 0
+
     layer.mode = 'pick'
-
-    Event = collections.namedtuple('Event', 'type is_dragging')
-
     layer.position = (0, 0)
+
     # Simulate click
     event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
     mouse_press_callbacks(layer, event)
     assert layer.selected_label == 2
 
     layer.position = (19, 19)
+
     # Simulate click
     event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
     mouse_press_callbacks(layer, event)
@@ -77,11 +80,9 @@ def test_fill():
     assert np.unique(layer.data[-5:, :5]) == 1
 
     layer.mode = 'fill'
-
-    Event = collections.namedtuple('Event', 'type is_dragging')
-
     layer.position = (0, 0)
     layer.selected_label = 4
+
     # Simulate click
     event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
     mouse_press_callbacks(layer, event)
@@ -92,6 +93,7 @@ def test_fill():
 
     layer.position = (19, 19)
     layer.selected_label = 5
+
     # Simulate click
     event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
     mouse_press_callbacks(layer, event)
