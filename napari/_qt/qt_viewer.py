@@ -1,4 +1,3 @@
-import inspect
 from pathlib import Path
 
 from qtpy import QtGui
@@ -175,8 +174,6 @@ class QtViewer(QSplitter):
         }
 
         self._update_palette(viewer.palette)
-
-        self._key_release_generators = {}
 
         self.viewer.events.interactive.connect(self._on_interactive)
         self.viewer.events.cursor.connect(self._on_cursor)
@@ -501,31 +498,13 @@ class QtViewer(QSplitter):
             and event.native.isAutoRepeat()
             and event.key.name not in ['Up', 'Down', 'Left', 'Right']
         ) or event.key is None:
-            # pass is no key is present or if key is held down, unless the
+            # pass if no key is present or if key is held down, unless the
             # key being held down is one of the navigation keys
+            # this helps for scrolling, etc.
             return
 
-        comb = components_to_key_combo(event.key.name, event.modifiers)
-
-        layer = self.viewer.active_layer
-
-        if layer is not None and comb in layer.keymap:
-            parent = layer
-        elif comb in self.viewer.keymap:
-            parent = self.viewer
-        else:
-            return
-
-        func = parent.keymap[comb]
-        gen = func(parent)
-
-        if inspect.isgenerator(gen):
-            try:
-                next(gen)
-            except StopIteration:  # only one statement
-                pass
-            else:
-                self._key_release_generators[event.key] = gen
+        combo = components_to_key_combo(event.key.name, event.modifiers)
+        self.viewer.press_key(combo)
 
     def on_key_release(self, event):
         """Called whenever key released in canvas.
@@ -535,10 +514,8 @@ class QtViewer(QSplitter):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
-        try:
-            next(self._key_release_generators[event.key])
-        except (KeyError, StopIteration):
-            pass
+        combo = components_to_key_combo(event.key.name, event.modifiers)
+        self.viewer.release_key(combo)
 
     def on_draw(self, event):
         """Called whenever drawn in canvas. Called for all layers, not just top
