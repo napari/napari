@@ -522,6 +522,26 @@ class Points(Layer):
             warnings.warn('property used for edge_color dropped')
 
     @property
+    def current_properties(self):
+        return self._current_properties
+
+    @current_properties.setter
+    def current_properties(self, current_properties):
+        self._current_properties = current_properties
+
+        if (
+            self._update_properties
+            and len(self.selected_data) > 0
+            and self._mode != Mode.ADD
+        ):
+            props = self.properties
+            for k in props:
+                props[k][self.selected_data] = current_properties[k]
+            self.properties = props
+
+            self.refresh_colors()
+
+    @property
     def default_properties(self):
         """dict {str: array (N,)}, DataFrame: default annotations"""
         return self._default_properties
