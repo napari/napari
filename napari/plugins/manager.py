@@ -189,7 +189,7 @@ class NapariPluginManager(pluggy.PluginManager):
                 f"for plugin {plugin_name}."
             )
 
-        setattr(implementation, 'enabled', enabled)
+        implementation.enabled = enabled
 
     def format_exceptions(self, plugin_name: str) -> str:
         """Return formatted tracebacks for all exceptions raised by plugin.

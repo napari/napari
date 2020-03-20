@@ -1,6 +1,6 @@
 """Provides a QtPluginSorter that allows the user to change plugin call order.
 """
-from typing import Optional
+from typing import Optional, Union
 
 from pluggy.manager import HookImpl, PluginManager, _HookCaller
 from qtpy.QtCore import QEvent, Qt, Signal, Slot
@@ -25,13 +25,13 @@ from ..plugins.utils import HookOrderType, permute_hook_implementations
 
 
 class ImplementationListItem(QFrame):
-    """A Widget to render each hook implementation in a QtHookImplListWidget.
+    """A Widget to render each hook implementation item in a ListWidget.
 
     Parameters
     ----------
     item : QListWidgetItem
         An item instance from a QListWidget. This will most likely come from
-        :meth:`QtHookImplListWidget.add_hook_implementation_to_list`.
+        :meth:`QtHookImplementationListWidget.add_hook_implementation_to_list`.
     parent : QWidget, optional
         The parent widget, by default None
 
@@ -59,12 +59,12 @@ class ImplementationListItem(QFrame):
         self.position_label = QLabel()
         self.update_position_label()
 
-        self.plugin_name_label = QLabel(item.hookimpl.plugin_name)
+        self.plugin_name_label = QLabel(item.hook_implementation.plugin_name)
         self.enabled_checkbox = QCheckBox(self)
         self.enabled_checkbox.setToolTip("Uncheck to disable this plugin")
         self.enabled_checkbox.stateChanged.connect(self._set_enabled)
         self.enabled_checkbox.setChecked(
-            getattr(item.hookimpl, 'enabled', True)
+            getattr(item.hook_implementation, 'enabled', True)
         )
         layout.addWidget(self.position_label)
         layout.addWidget(self.enabled_checkbox)
@@ -72,12 +72,12 @@ class ImplementationListItem(QFrame):
         layout.setStretch(2, 1)
         layout.setContentsMargins(0, 0, 0, 0)
 
-    def _set_enabled(self, state: bool):
+    def _set_enabled(self, state: Union[bool, int]):
         """Set the enabled state of this hook implementation to ``state``."""
-        # "hookimpl.enabled" is NOT a pluggy attribute... we are adding that to
-        # allow skipping of hook_implementations.
+        # "hook_implementation.enabled" is NOT a pluggy attribute...
+        # we are adding that to allow skipping of hook_implementations.
         # see plugins.io.read_data_with_plugins() for an example
-        setattr(self.item.hookimpl, 'enabled', bool(state))
+        self.item.hook_implementation.enabled = bool(state)
         self.opacity.setOpacity(1 if state else 0.5)
 
     def update_position_label(self, order=None):
@@ -93,7 +93,7 @@ class ImplementationListItem(QFrame):
         self.position_label.setText(str(position))
 
 
-class QtHookImplListWidget(QListWidget):
+class QtHookImplementationListWidget(QListWidget):
     """A ListWidget to display & sort the call order of a hook implementation.
 
     This class will usually be instantiated by a
@@ -143,23 +143,19 @@ class QtHookImplListWidget(QListWidget):
         self.hook = hook
         if not hook:
             return
-        for hookimpl in reversed(hook.get_hookimpls()):
-            self.add_hook_implementation_to_list(hookimpl)
+        for hook_implementation in reversed(hook.get_hookimpls()):
+            self.add_hook_implementation_to_list(hook_implementation)
 
-    def add_hook_implementation_to_list(self, hookimpl: HookImpl):
-        """Add a list item for ``hookimpl`` with a custom widget.
+    def add_hook_implementation_to_list(self, hook_implementation: HookImpl):
+        """Add a list item for ``hook_implementation`` with a custom widget.
 
         Parameters
         ----------
-        hookimpl : HookImpl
+        hook_implementation : pluggy.HookImpl
             The hook implementation object to add to the list.
         """
-        # don't want users to be able to resort builtin plugins.
-        # this may change in the future, and might require hook-specific rules
-        if hookimpl.plugin_name == 'builtins':
-            return
         item = QListWidgetItem(parent=self)
-        item.hookimpl = hookimpl
+        item.hook_implementation = hook_implementation
         self.addItem(item)
         widg = ImplementationListItem(item, parent=self)
         item.setSizeHint(widg.sizeHint())
@@ -175,7 +171,7 @@ class QtHookImplListWidget(QListWidget):
             The event that triggered the dropEvent.
         """
         super().dropEvent(event)
-        order = [self.item(r).hookimpl for r in range(self.count())]
+        order = [self.item(r).hook_implementation for r in range(self.count())]
         self.order_changed.emit(order)
 
     def startDrag(self, supportedActions: Qt.DropActions):
@@ -189,8 +185,8 @@ class QtHookImplListWidget(QListWidget):
         Parameters
         ----------
         order : list
-            A list of str, hookimpls, or module_or_class, with the desired
-            CALL ORDER of the hook implementations.
+            A list of str, hook_implementation, or module_or_class, with the
+            desired CALL ORDER of the hook implementations.
         """
         if not self.hook:
             return
@@ -201,10 +197,10 @@ class QtPluginSorter(QDialog):
     """Dialog that allows a user to change the call order of plugin hooks.
 
     A main QComboBox lets the user pick which hook specification they would
-    like to reorder.  Then a :class:`QtHookImplListWidget` shows the current
-    call order for all implementations of the current hook specification.  The
-    user may then reorder them, or disable them by checking the checkbox next
-    to each hook implementation name.
+    like to reorder.  Then a :class:`QtHookImplementationListWidget` shows the
+    current call order for all implementations of the current hook
+    specification.  The user may then reorder them, or disable them by checking
+    the checkbox next to each hook implementation name.
 
     Parameters
     ----------
@@ -227,7 +223,7 @@ class QtPluginSorter(QDialog):
     ----------
     hook_combo_box : QComboBox
         A dropdown menu to select the current hook.
-    hook_list : QtHookImplListWidget
+    hook_list : QtHookImplementationListWidget
         The list widget that displays (and allows sorting of) all of the hook
         implementations for the currently selected hook.
     """
@@ -266,7 +262,7 @@ class QtPluginSorter(QDialog):
             "select the hook specification to reorder"
         )
         self.hook_combo_box.activated[str].connect(self.set_current_hook)
-        self.hook_list = QtHookImplListWidget(parent=self)
+        self.hook_list = QtHookImplementationListWidget(parent=self)
 
         title = QLabel('Plugin Sorter')
         title.setObjectName("h2")
