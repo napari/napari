@@ -73,3 +73,8 @@ from scipy import stats  # noqa: F401
 
 del _magicgui
 del stats
+
+# Note that importing _viewer_key_bindings is needed as the Viewer gets
+# decorated with keybindings during that process, but it is not directly needed
+# by our users
+del _viewer_key_bindings
