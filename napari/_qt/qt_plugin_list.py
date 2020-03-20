@@ -47,7 +47,7 @@ class ImplementationListItem(QFrame):
         unchecked, the opacity of the item is decreased.
     """
 
-    def __init__(self, item: QListWidgetItem, parent: QWidget = None) -> None:
+    def __init__(self, item: QListWidgetItem, parent: QWidget = None):
         super().__init__(parent)
         self.setToolTip("Click and drag to change call order")
         self.item = item
@@ -72,7 +72,7 @@ class ImplementationListItem(QFrame):
         layout.setStretch(2, 1)
         layout.setContentsMargins(0, 0, 0, 0)
 
-    def _set_enabled(self, state: bool) -> None:
+    def _set_enabled(self, state: bool):
         """Set the enabled state of this hook implementation to ``state``."""
         # "hookimpl.enabled" is NOT a pluggy attribute... we are adding that to
         # allow skipping of hook_implementations.
@@ -80,7 +80,7 @@ class ImplementationListItem(QFrame):
         setattr(self.item.hookimpl, 'enabled', bool(state))
         self.opacity.setOpacity(1 if state else 0.5)
 
-    def update_position_label(self, order=None) -> None:
+    def update_position_label(self, order=None):
         """Update the label showing the position of this item in the list.
 
         Parameters
@@ -115,7 +115,7 @@ class QtHookImplListWidget(QListWidget):
         self,
         parent: Optional[QWidget] = None,
         hook: Optional[_HookCaller] = None,
-    ) -> None:
+    ):
         super().__init__(parent)
         self.setDefaultDropAction(Qt.MoveAction)
         self.setDragEnabled(True)
@@ -130,7 +130,7 @@ class QtHookImplListWidget(QListWidget):
         self.order_changed.connect(self.permute_hook)
         self.set_hook(hook)
 
-    def set_hook(self, hook: Optional[_HookCaller]) -> None:
+    def set_hook(self, hook: Optional[_HookCaller]):
         """Set the list widget to show hook implementations for ``hook``.
 
         Parameters
@@ -146,7 +146,7 @@ class QtHookImplListWidget(QListWidget):
         for hookimpl in reversed(hook.get_hookimpls()):
             self.add_hook_implementation_to_list(hookimpl)
 
-    def add_hook_implementation_to_list(self, hookimpl: HookImpl) -> None:
+    def add_hook_implementation_to_list(self, hookimpl: HookImpl):
         """Add a list item for ``hookimpl`` with a custom widget.
 
         Parameters
@@ -166,7 +166,7 @@ class QtHookImplListWidget(QListWidget):
         self.order_changed.connect(widg.update_position_label)
         self.setItemWidget(item, widg)
 
-    def dropEvent(self, event: QEvent) -> None:
+    def dropEvent(self, event: QEvent):
         """Triggered when the user moves & drops one of the items in the list.
 
         Parameters
@@ -178,12 +178,12 @@ class QtHookImplListWidget(QListWidget):
         order = [self.item(r).hookimpl for r in range(self.count())]
         self.order_changed.emit(order)
 
-    def startDrag(self, supportedActions: Qt.DropActions) -> None:
+    def startDrag(self, supportedActions: Qt.DropActions):
         drag = drag_with_pixmap(self)
         drag.exec_(supportedActions, Qt.MoveAction)
 
     @Slot(list)
-    def permute_hook(self, order: HookOrderType) -> None:
+    def permute_hook(self, order: HookOrderType):
         """Rearrage the call order of the hooks for the current hook impl.
 
         Parameters
@@ -241,7 +241,7 @@ class QtPluginSorter(QDialog):
         *,
         initial_hook: Optional[str] = None,
         firstresult_only: bool = True,
-    ) -> None:
+    ):
         plugin_manager = plugin_manager or napari_plugin_manager
         super().__init__(parent)
         self.setWindowModality(Qt.NonModal)
@@ -286,7 +286,7 @@ class QtPluginSorter(QDialog):
             self.hook_combo_box.setCurrentText(initial_hook)
             self.set_current_hook(initial_hook)
 
-    def set_current_hook(self, hook: str) -> None:
+    def set_current_hook(self, hook: str):
         """Change the hook specification shown in the list widget.
 
         Parameters
