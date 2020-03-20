@@ -78,10 +78,8 @@ START_ORDER = ['p2', 'p3', 'p1']
         (['p1', 'p2', 'p3'], ['p1', 'p2', 'p3']),
         (['p1', 'p3', 'p2'], ['p1', 'p3', 'p2']),
         (['p1', 'p3'], ['p1', 'p3', 'p2']),
-        ([p1, p3], ['p1', 'p3', 'p2']),
         (['p1'], ['p1', 'p2', 'p3']),
         (['p3'], ['p3', 'p2', 'p1']),
-        ([p3], ['p3', 'p2', 'p1']),
     ],
 )
 def test_permute_hook_implementations(pm, order, expected):
@@ -93,13 +91,11 @@ def test_permute_hook_implementations(pm, order, expected):
 
 def test_permute_hook_implementations_raises(pm):
     """Test that invalid calls to permute_hook_implementations raise errors."""
-    with pytest.raises(ValueError):
-        # this plugin instance is not in the list
-        permute_hook_implementations(pm.hook.myhook, [Plugin_W2(), p1])
 
     with pytest.raises(TypeError):
-        # this plugin instance is in the list, but cannot mix types.
-        permute_hook_implementations(pm.hook.myhook, [p2, 'p1'])
+        # both implementations are valid, but cannot mix types.
+        imp0 = pm.hook.myhook.get_hookimpls()[0]
+        permute_hook_implementations(pm.hook.myhook, [imp0, 'p2'])
 
     with pytest.raises(ValueError):
         # 'p4' is not in the list

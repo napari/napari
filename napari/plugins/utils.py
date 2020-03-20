@@ -1,8 +1,36 @@
-from typing import Union, List, Set
-from types import ModuleType
+from typing import Union, List
 from pluggy.hooks import HookImpl, _HookCaller
 
-HookOrderType = Union[List[str], List[ModuleType], List[HookImpl]]
+HookOrderType = Union[List[str], List[HookImpl]]
+
+
+def _guess_order_type(order: HookOrderType) -> str:
+    """Guess which of the two HookOrderType lists ``order`` is, or raise.
+
+    Parameters
+    ----------
+    order : list
+        A list of str (plugin names), or ``HookImpl`` instances,
+
+    Returns
+    -------
+    str
+        a string representation of the type of objects in the order list.
+        ('plugin_name' or 'hook_implementation_instance')
+
+    Raises
+    ------
+    TypeError
+        If the list is neither entirely strings nor entirely HookImpl instances
+    """
+    if all(isinstance(o, HookImpl) for o in order):
+        return 'hook_implementation_instance'
+    if all(isinstance(o, str) for o in order):
+        return 'plugin_name'
+    raise TypeError(
+        "``order`` must be composed of either ALL str (plugin names), "
+        "or ALL HookImpl instances"
+    )
 
 
 def permute_hook_implementations(
@@ -20,75 +48,80 @@ def permute_hook_implementations(
     hook_caller : pluggy.hooks._HookCaller
         The hook caller to reorder
     order : list
-        A list of str, hookimpls, or module_or_class, with the desired
-        CALL ORDER of the hook implementations.
+        A list of str (plugin names), or ``HookImpl`` instances,
+        in the desired CALL ORDER of the hook implementations.
 
     Raises
     ------
+    TypeError
+        If ``order`` is neither entirely strings nor entirely HookImpl
+        instances.
     ValueError
         If the 'order' list cannot be interpreted as a list of "plugin_name"
-        or "plugin" (module_or_class)
+        or ``HookImpl`` instances.
     ValueError
-        if 'order' argument has multiple entries for the same hookimpl
+        if 'order' argument has multiple entries for the same implementation.
     """
-    if all(isinstance(o, HookImpl) for o in order):
-        attr = None
-    elif all(isinstance(o, str) for o in order):
-        attr = 'plugin_name'
-    elif any(isinstance(o, str) for o in order):
-        raise TypeError(
-            "order list must be either ALL strings, or ALL modules/classes"
-        )
-    else:
-        attr = 'plugin'
+    # make sure items in order are unique
+    if len(order) != len(set(order)):
+        raise ValueError("repeated item in order")
 
-    hookimpls = hook_caller.get_hookimpls()
-    if len(order) > len(hookimpls):
+    # get a list of all hook implementations in hook_caller
+    hook_implementations = hook_caller.get_hookimpls()
+    if len(order) > len(hook_implementations):
         raise ValueError(
-            f"too many values ({len(order)} > {len(hookimpls)}) in order."
+            "too many values in order: "
+            f"({len(order)} > {len(hook_implementations)})"
         )
-    if attr:
-        hookattrs = [getattr(hookimpl, attr) for hookimpl in hookimpls]
-    else:
-        hookattrs = hookimpls
 
-    # find the current position of items specified in `order`
+    # figure out what list type was entered for ``order`` (or raise error)
+    order_type = _guess_order_type(order)
+
+    # build a list of the corresponding type (i.e. a list of HookImpl instances
+    # or a list of the names of plugins that implement the current hook spec)
+    if order_type == 'plugin_name':
+        implementation_list = [imp.plugin_name for imp in hook_implementations]
+    else:
+        implementation_list = hook_implementations
+
+    # find the current position of each item specified in `order`
     indices = []
-    seen: Set[HookOrderType] = set()
-    for i in order:
-        if i in seen:
-            raise ValueError(
-                f"'order' argument had multiple entries for hookimpl: {i}"
-            )
-        seen.add(i)
+    for elem in order:
         try:
-            indices.append(hookattrs.index(i))
+            indices.append(implementation_list.index(elem))
         except ValueError as e:
-            msg = f"Could not find hookimpl '{i}'."
-            if attr != 'plugin_name':
-                msg += (
-                    " If all items in `order` "
-                    "argument are not strings, they are assumed to be an "
-                    "imported plugin module or class."
-                )
+            msg = f"Could not find implementation '{elem}' for {hook_caller}."
             raise ValueError(msg) from e
 
-    # make new arrays for _wrappers and _nonwrappers
-    _wrappers = []
-    _nonwraps = []
+    # make new lists for the rearranged _wrappers and _nonwrappers
+    # see for details on the difference between wrappers and nonwrappers, see:
+    # https://pluggy.readthedocs.io/en/latest/#wrappers
+    _wrappers: List[HookImpl] = []
+    _nonwraps: List[HookImpl] = []
     for i in indices:
-        imp = hookimpls[i]
-        methods = _wrappers if imp.hookwrapper else _nonwraps
-        methods.insert(0, imp)
+        hook_implementation = hook_implementations[i]
+        if hook_implementation.hookwrapper:
+            # (this hook implementation is a wrapper)
+            _wrappers.insert(0, hook_implementation)
+        else:
+            _nonwraps.insert(0, hook_implementation)
 
     # remove items that have been pulled, leaving only items that
     # were not specified in `order` argument
+    # do this rather than using .pop() above to avoid changing indices
     for i in sorted(indices, reverse=True):
-        del hookimpls[i]
+        del hook_implementations[i]
 
-    if hookimpls:
-        _wrappers = [x for x in hookimpls if x.hookwrapper] + _wrappers
-        _nonwraps = [x for x in hookimpls if not x.hookwrapper] + _nonwraps
+    # if there are any hook_implementations left over, add them to the
+    # beginning of their respective lists
+    if hook_implementations:
+        _wrappers = [
+            x for x in hook_implementations if x.hookwrapper
+        ] + _wrappers
+        _nonwraps = [
+            x for x in hook_implementations if not x.hookwrapper
+        ] + _nonwraps
 
+    # update the original hook_caller object
     hook_caller._wrappers = _wrappers
     hook_caller._nonwrappers = _nonwraps
