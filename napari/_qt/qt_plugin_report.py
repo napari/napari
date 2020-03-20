@@ -6,19 +6,16 @@ from typing import Optional
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QGuiApplication
 from qtpy.QtWidgets import (
-    QCheckBox,
     QComboBox,
     QDialog,
     QHBoxLayout,
     QLabel,
-    QListView,
     QPushButton,
     QTextEdit,
     QVBoxLayout,
     QWidget,
 )
 
-from ..plugins import plugin_manager
 from ..plugins.exceptions import (
     PLUGIN_ERRORS,
     fetch_module_metadata,
@@ -39,7 +36,7 @@ class QtPluginErrReporter(QDialog):
 
     Attributes
     ----------
-    text_box : qtpy.QtWidgets.QTextEdit
+    text_area : qtpy.QtWidgets.QTextEdit
         The text area where traceback information will be shown.
     plugin_combo : qtpy.QtWidgets.QComboBox
         The dropdown menu used to select the current plugin
@@ -51,9 +48,6 @@ class QtPluginErrReporter(QDialog):
     clipboard_button : qtpy.QtWidgets.QPushButton
         A button that, when pressed, copies the current traceback information
         to the clipboard.  (HTML tags are removed in the copied text.)
-    only_errors_checkbox : qtpy.QtWidgets.QCheckBox
-        When checked, only plugins that have raised errors during this session
-        will be visible in the ``plugin_combo``.
     plugin_meta : qtpy.QtWidgets.QLabel
         A label that will show available plugin metadata (such as home page).
     """
@@ -75,22 +69,15 @@ class QtPluginErrReporter(QDialog):
         self.layout.setContentsMargins(10, 10, 10, 10)
         self.setLayout(self.layout)
 
-        self.text_box = QTextEdit()
-        self.text_box.setTextInteractionFlags(Qt.TextSelectableByMouse)
-        self.text_box.setMinimumWidth(360)
+        self.text_area = QTextEdit()
+        self.text_area.setTextInteractionFlags(Qt.TextSelectableByMouse)
+        self.text_area.setMinimumWidth(360)
 
         # Create plugin dropdown menu
-        # the union here is only needed if we want to also have plugins
-        # wITHOUT errors in the dropdown
-        plugin_names = set(PLUGIN_ERRORS).union(
-            set(plugin_manager._name2plugin)
-        )
-        listview = QListView()
         self.plugin_combo = QComboBox()
-        self.plugin_combo.setView(listview)
         self.plugin_combo.addItem(self.NULL_OPTION)
-        self.plugin_combo.addItems(list(sorted(plugin_names)))
-        self.plugin_combo.activated[str].connect(self.set_plugin)
+        self.plugin_combo.addItems(list(sorted(set(PLUGIN_ERRORS))))
+        self.plugin_combo.currentTextChanged.connect(self.set_plugin)
         self.plugin_combo.setCurrentText(self.NULL_OPTION)
 
         # create github button (gets connected in self.set_plugin)
@@ -108,12 +95,7 @@ class QtPluginErrReporter(QDialog):
         self.clipboard_button.setToolTip("Copy traceback to clipboard")
         self.clipboard_button.clicked.connect(self.copyToClipboard)
 
-        self.only_errors_checkbox = QCheckBox(
-            'only show plugins with errors', self
-        )
-        self.only_errors_checkbox.stateChanged.connect(self._on_errbox_change)
-        self.only_errors_checkbox.setChecked(True)
-
+        # plugin_meta contains a URL to the home page, (and/or other details)
         self.plugin_meta = QLabel('', parent=self)
         self.plugin_meta.setObjectName("pluginInfo")
         self.plugin_meta.setTextFormat(Qt.RichText)
@@ -124,10 +106,8 @@ class QtPluginErrReporter(QDialog):
         # make layout
         row_1_layout = QHBoxLayout()
         row_1_layout.setContentsMargins(11, 5, 10, 0)
-        row_1_layout.addWidget(self.only_errors_checkbox)
         row_1_layout.addStretch(1)
         row_1_layout.addWidget(self.plugin_meta)
-
         row_2_layout = QHBoxLayout()
         row_2_layout.setContentsMargins(11, 5, 10, 0)
         row_2_layout.addWidget(self.plugin_combo)
@@ -135,10 +115,9 @@ class QtPluginErrReporter(QDialog):
         row_2_layout.addWidget(self.github_button)
         row_2_layout.addWidget(self.clipboard_button)
         row_2_layout.setSpacing(5)
-
         self.layout.addLayout(row_1_layout)
         self.layout.addLayout(row_2_layout)
-        self.layout.addWidget(self.text_box, 1)
+        self.layout.addWidget(self.text_area, 1)
         self.setMinimumWidth(750)
         self.setMinimumHeight(600)
 
@@ -146,7 +125,15 @@ class QtPluginErrReporter(QDialog):
             self.set_plugin(initial_plugin)
 
     def set_plugin(self, plugin: str) -> None:
-        """Set the current plugin shown in the dropdown and text area."""
+        """Set the current plugin shown in the dropdown and text area.
+
+        Parameters
+        ----------
+        plugin : str
+            name of a plugin that has created an error this session.
+        """
+        if plugin not in PLUGIN_ERRORS:
+            raise ValueError("No errors reported for plugin '{plugin}'")
         self.plugin_combo.setCurrentText(plugin)
         self.github_button.hide()
         self.clipboard_button.hide()
@@ -154,16 +141,12 @@ class QtPluginErrReporter(QDialog):
             self.github_button.clicked.disconnect()
         except RuntimeError:
             pass
-        if plugin in PLUGIN_ERRORS:
-            err_string = format_exceptions(plugin, as_html=True)
-            self.text_box.setHtml(err_string)
-            self.clipboard_button.show()
-            self._set_meta(plugin)
-        else:
-            self.plugin_meta.setText('')
-            self.text_box.setText(f'No errors recorded for plugin "{plugin}"')
 
-    def _set_meta(self, plugin: str):
+        err_string = format_exceptions(plugin, as_html=True)
+        self.text_area.setHtml(err_string)
+        self.clipboard_button.show()
+
+        # set metadata and outbound links/buttons
         err0 = PLUGIN_ERRORS[plugin][0]
         meta = fetch_module_metadata(err0.plugin_module)
         meta_text = ''
@@ -192,21 +175,6 @@ class QtPluginErrReporter(QDialog):
 
             self.github_button.clicked.connect(onclick)
             self.github_button.show()
-
-    def _on_errbox_change(self, state: bool):
-        """Handle click event on the only_errors_checkbox."""
-        view = self.plugin_combo.view()
-        _shown = 1
-        for row in range(1, self.plugin_combo.count()):
-            plugin_name = self.plugin_combo.itemText(row)
-            has_err = plugin_name in PLUGIN_ERRORS
-            # if the box is checked, hide plugins that have no errors
-            if state and not has_err:
-                view.setRowHidden(row, True)
-            else:
-                view.setRowHidden(row, False)
-                _shown += 1
-        view.setMinimumHeight(_shown * 18)
 
     def copyToClipboard(self) -> None:
         """Copy current plugin traceback info to clipboard as plain text."""
