@@ -364,8 +364,14 @@ class Points(Layer):
                 k: np.asarray([v[0]])
                 for k, v in self.default_properties.items()
             }
-            self._current_edge_color = np.array([0, 0, 0, 1])
-            self._current_face_color = np.array([1, 1, 1, 1])
+            if self.edge_color_mode == ColorMode.DIRECT:
+                self._current_edge_color = self.edge_color[-1]
+            else:
+                self._current_edge_color = np.array([0, 0, 0, 1])
+            if self.face_color_mode == ColorMode.DIRECT:
+                self._current_face_color = self.face_color[-1]
+            else:
+                self._current_face_color = np.array([1, 1, 1, 1])
         else:
             self._current_edge_color = self.edge_color[-1]
             self._current_face_color = self.face_color[-1]
