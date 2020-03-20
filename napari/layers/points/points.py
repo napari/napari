@@ -257,6 +257,7 @@ class Points(Layer):
             current_face_color=Event,
             edge_color=Event,
             current_edge_color=Event,
+            current_properties=Event,
             symbol=Event,
             n_dimensional=Event,
             highlight=Event,
@@ -540,6 +541,7 @@ class Points(Layer):
             self.properties = props
 
             self.refresh_colors()
+            self.events.current_properties()
 
     @property
     def default_properties(self):
