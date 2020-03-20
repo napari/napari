@@ -15,6 +15,29 @@ def test_empty_points():
     assert pts.data.shape == (0, 2)
 
 
+def test_empty_points_with_properties():
+    """ Test instantiating an empty Points layer with properties"""
+    properties = {'label': np.empty(0)}
+    default_properties = {'label': np.array(['label1'])}
+    pts = Points(properties=properties, default_properties=default_properties)
+    assert pts.current_properties == default_properties
+
+    # add two points and verify the default property was applied
+    pts.add([10, 10])
+    pts.add([20, 20])
+    props = {'label': np.array(['label1', 'label1'])}
+    np.testing.assert_equal(pts.properties, props)
+
+
+def test_empty_points_with_properties_no_defaults():
+    """ Test instantiating an empty Points layer with properties,
+        but no defaults raises an error, as the defaults are required.
+    """
+    properties = {'label': np.empty(0)}
+    with pytest.raises(ValueError):
+        Points(properties=properties)
+
+
 def test_random_points():
     """Test instantiating Points layer with random 2D data."""
     shape = (10, 2)
@@ -598,6 +621,26 @@ def test_edge_color_cycle():
     )
 
 
+def test_add_edge_color_cycle_to_empty_layer():
+    """ Test adding a point to an empty layer when edge color is a color cycle"""
+    annotations = {'point_type': np.empty(0)}
+    default_properties = {'point_type': np.array(['A'])}
+    color_cycle = ['red', 'blue']
+    layer = Points(
+        properties=annotations,
+        default_properties=default_properties,
+        edge_color='point_type',
+        edge_color_cycle=color_cycle,
+    )
+
+    # add a point
+    layer.add([10, 10])
+    props = {'point_type': np.array(['A'])}
+    edge_color = np.array([[1, 0, 0, 1]])
+    assert layer.properties == props
+    np.testing.assert_allclose(layer.edge_color, edge_color)
+
+
 def test_adding_value_edge_color_cycle():
     """ Test that adding values to properties used to set an edge color cycle
     and then calling Points.refresh_colors() performs the update and adds the
@@ -797,6 +840,26 @@ def test_face_color_cycle():
             (face_color_array[1], face_color_array[3:], transform_color('red'))
         ),
     )
+
+
+def test_add_face_color_cycle_to_empty_layer():
+    """ Test adding a point to an empty layer when edge color is a color cycle"""
+    annotations = {'point_type': np.empty(0)}
+    default_properties = {'point_type': np.array(['A'])}
+    color_cycle = ['red', 'blue']
+    layer = Points(
+        properties=annotations,
+        default_properties=default_properties,
+        face_color='point_type',
+        face_color_cycle=color_cycle,
+    )
+
+    # add a point
+    layer.add([10, 10])
+    props = {'point_type': np.array(['A'])}
+    face_color = np.array([[1, 0, 0, 1]])
+    assert layer.properties == props
+    np.testing.assert_allclose(layer.face_color, face_color)
 
 
 def test_adding_value_face_color_cycle():
