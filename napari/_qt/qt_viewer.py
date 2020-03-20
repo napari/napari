@@ -88,7 +88,7 @@ class QtViewer(QSplitter):
         self.layers = QtLayerList(self.viewer.layers)
         self.layerButtons = QtLayerButtons(self.viewer)
         self.viewerButtons = QtViewerButtons(self.viewer)
-        self.console = None
+        self._console = None
 
         layerList = QWidget()
         layerList.setObjectName('layerList')
@@ -127,7 +127,9 @@ class QtViewer(QSplitter):
 
         # This dictionary holds the corresponding vispy visual for each layer
         self.layer_to_visual = {}
-        self.viewerButtons.consoleButton.clicked.connect(self.toggle_console)
+        self.viewerButtons.consoleButton.clicked.connect(
+            self.toggle_console_visibility
+        )
 
         self.canvas = SceneCanvas(keys=None, vsync=True, parent=self)
         self.canvas.events.ignore_callback_errors = False
@@ -183,6 +185,22 @@ class QtViewer(QSplitter):
         self.viewer.events.layers_change.connect(lambda x: self.dims.stop())
 
         self.setAcceptDrops(True)
+
+    @property
+    def console(self):
+        """QtConsole: iPython console terminal integrated into the napari GUI.
+        """
+        if self._console is None:
+            from .qt_console import QtConsole
+
+            self.console = QtConsole({'viewer': self.viewer})
+        return self._console
+
+    @console.setter
+    def console(self, console):
+        self._console = console
+        self.dockConsole.widget = console
+        self._update_palette(None)
 
     def _constrain_width(self, event):
         """Allow the layer controls to be wider, only if floated.
@@ -395,18 +413,11 @@ class QtViewer(QSplitter):
         self.setStyleSheet(themed_stylesheet)
         self.canvas.bgcolor = self.viewer.palette['canvas']
 
-    def toggle_console(self, event):
+    def toggle_console_visibility(self, event):
         """Toggle console visible and not visible.
 
         Imports the console the first time it is requested.
         """
-        if self.console is None:
-            from .qt_console import QtConsole
-
-            self.console = QtConsole({'viewer': self.viewer})
-            self.dockConsole.widget = self.console
-            self._update_palette(None)
-
         viz = not self.dockConsole.isVisible()
         # modulate visibility at the dock widget level as console is docakable
         self.dockConsole.setVisible(viz)

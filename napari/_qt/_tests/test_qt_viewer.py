@@ -34,7 +34,7 @@ def test_qt_viewer_with_console(viewer_factory):
     assert view.console is None
 
     # Test creation of console
-    view.toggle_console(None)
+    view.toggle_console_visibility(None)
     assert view.console is not None
     assert view.dockConsole.widget == view.console
 
