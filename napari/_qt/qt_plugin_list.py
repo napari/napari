@@ -107,6 +107,11 @@ class QtHookImplementationListWidget(QListWidget):
     hook : pluggy.manager._HookCaller, optional
         The pluggy ``_HookCaller`` for which to show implementations.
         by default None (i.e. no hooks shown)
+
+    Attributes
+    ----------
+    hook_caller : pluggy.manager._HookCaller or None
+        The current ``_HookCaller`` instance being shown in the list.
     """
 
     order_changed = Signal(list)  # emitted when the user changes the order.
@@ -114,7 +119,7 @@ class QtHookImplementationListWidget(QListWidget):
     def __init__(
         self,
         parent: Optional[QWidget] = None,
-        hook: Optional[_HookCaller] = None,
+        hook_caller: Optional[_HookCaller] = None,
     ):
         super().__init__(parent)
         self.setDefaultDropAction(Qt.MoveAction)
@@ -128,22 +133,23 @@ class QtHookImplementationListWidget(QListWidget):
             QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding
         )
         self.order_changed.connect(self.permute_hook)
-        self.set_hook(hook)
+        self.hook_caller = None
+        self.set_hook_caller(hook_caller)
 
-    def set_hook(self, hook: Optional[_HookCaller]):
-        """Set the list widget to show hook implementations for ``hook``.
+    def set_hook_caller(self, hook_caller: Optional[_HookCaller]):
+        """Set the list widget to show hook implementations for ``hook_caller``.
 
         Parameters
         ----------
-        hook : _HookCaller, optional
-            A pluggy HookCaller to show implementations for. by default None
-            (i.e. no hooks shown)
+        hook : pluggy.manager._HookCaller, optional
+            A pluggy ``_HookCaller`` to show implementations for. by default
+            None (i.e. no hooks shown)
         """
         self.clear()
-        self.hook = hook
-        if not hook:
+        self.hook_caller = hook_caller
+        if not hook_caller:
             return
-        for hook_implementation in reversed(hook.get_hookimpls()):
+        for hook_implementation in reversed(hook_caller.get_hookimpls()):
             self.add_hook_implementation_to_list(hook_implementation)
 
     def add_hook_implementation_to_list(self, hook_implementation: HookImpl):
@@ -188,9 +194,9 @@ class QtHookImplementationListWidget(QListWidget):
             A list of str, hook_implementation, or module_or_class, with the
             desired CALL ORDER of the hook implementations.
         """
-        if not self.hook:
+        if not self.hook_caller:
             return
-        permute_hook_implementations(self.hook, order)
+        permute_hook_implementations(self.hook_caller, order)
 
 
 class QtPluginSorter(QDialog):
@@ -294,4 +300,4 @@ class QtPluginSorter(QDialog):
             hook_caller = None
         else:
             hook_caller = getattr(self.plugin_manager.hook, hook)
-        self.hook_list.set_hook(hook_caller)
+        self.hook_list.set_hook_caller(hook_caller)
