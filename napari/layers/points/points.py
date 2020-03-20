@@ -1167,7 +1167,8 @@ class Points(Layer):
         }
         n_unique_properties = np.array([len(v) for v in properties.values()])
         if np.all(n_unique_properties == 1):
-            self.current_properties = properties
+            with self.block_update_properties():
+                self.current_properties = properties
         self._set_highlight()
 
     def interaction_box(self, index):
