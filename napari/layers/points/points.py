@@ -557,7 +557,7 @@ class Points(Layer):
             self.properties = props
 
             self.refresh_colors()
-            self.events.current_properties()
+        self.events.current_properties()
 
     @property
     def default_properties(self):
