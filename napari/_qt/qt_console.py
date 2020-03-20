@@ -141,7 +141,7 @@ class QtConsole(RichJupyterWidget):
         themed_stylesheet : str
             Stylesheet that has already been themed with the current pallete.
         """
-        # self.style_sheet = themed_stylesheet
+        self.style_sheet = themed_stylesheet
         self.syntax_style = palette['syntax_style']
         bracket_color = QColor(*str_to_rgb(palette['highlight']))
         self._bracket_matcher.format.setBackground(bracket_color)

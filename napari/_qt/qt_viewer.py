@@ -406,7 +406,7 @@ class QtViewer(QSplitter):
         themed_stylesheet = template(
             self.raw_stylesheet, **self.viewer.palette
         )
-        if self.console is not None:
+        if self._console is not None:
             self.console._update_palette(
                 self.viewer.palette, themed_stylesheet
             )
@@ -418,6 +418,9 @@ class QtViewer(QSplitter):
 
         Imports the console the first time it is requested.
         """
+        # force instantiation of console if not already instantiated
+        _ = self.console
+
         viz = not self.dockConsole.isVisible()
         # modulate visibility at the dock widget level as console is docakable
         self.dockConsole.setVisible(viz)
@@ -626,7 +629,7 @@ class QtViewer(QSplitter):
         # not a problem)
         self.dims.stop()
         self.canvas.native.deleteLater()
-        if self.console is not None:
+        if self._console is not None:
             self.console.close()
         self.dockConsole.deleteLater()
         if not self.pool.waitForDone(10000):

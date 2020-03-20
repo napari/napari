@@ -18,7 +18,8 @@ def test_qt_viewer(viewer_factory):
 
     assert viewer.title == 'napari'
     assert view.viewer == viewer
-    assert view.console is None
+    # Check no console is present before it is requested
+    assert view._console is None
 
     assert len(viewer.layers) == 0
     assert view.layers.vbox_layout.count() == 2
@@ -31,11 +32,21 @@ def test_qt_viewer(viewer_factory):
 def test_qt_viewer_with_console(viewer_factory):
     """Test instantiating console from viewer."""
     view, viewer = viewer_factory()
-    assert view.console is None
-
-    # Test creation of console
-    view.toggle_console_visibility(None)
+    # Check no console is present before it is requested
+    assert view._console is None
+    # Check console is created when requested
     assert view.console is not None
+    assert view.dockConsole.widget == view.console
+
+
+def test_qt_viewer_toggle_console(viewer_factory):
+    """Test instantiating console from viewer."""
+    view, viewer = viewer_factory()
+    # Check no console is present before it is requested
+    assert view._console is None
+    # Check console has been created when it is supposed to be shown
+    view.toggle_console_visibility(None)
+    assert view._console is not None
     assert view.dockConsole.widget == view.console
 
 
