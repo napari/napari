@@ -1,8 +1,8 @@
 import numpy as np
-from .shape_models import Shape, Line, Path
-from .shape_utils import inside_triangles, triangles_intersect_box
-from .mesh import Mesh
-from ._constants import shape_classes, ShapeType
+from ._mesh import Mesh
+from ._shapes_models import Shape, Line, Path
+from ._shapes_utils import inside_triangles, triangles_intersect_box
+from ._shapes_constants import shape_classes, ShapeType
 
 
 class ShapeList:

@@ -1,23 +1,18 @@
 import numpy as np
 from xml.etree.ElementTree import Element
 from .shape import Shape
-from ..shape_utils import (
-    triangulate_edge,
-    triangulate_ellipse,
-    center_radii_to_corners,
-    rectangle_to_box,
-)
+from .._shapes_utils import find_corners, rectangle_to_box
 
 
-class Ellipse(Shape):
-    """Class for a single ellipse
+class Rectangle(Shape):
+    """Class for a single rectangle
 
     Parameters
     ----------
-    data : (4, D) array or (2, 2) array.
-        Either a (2, 2) array specifying the center and radii of an axis
-        aligned ellipse, or a (4, D) array specifying the four corners of a
-        boudning box that contains the ellipse. These need not be axis aligned.
+    data : (4, D) or (2, 2) array
+        Either a (2, 2) array specifying the two corners of an axis aligned
+        rectangle, or a (4, D) array specifying the four corners of a bounding
+        box that contains the rectangle. These need not be axis aligned.
     edge_width : float
         thickness of lines and edges.
     edge_color : str | tuple
@@ -61,13 +56,12 @@ class Ellipse(Shape):
         )
 
         self._closed = True
-        self._use_face_vertices = True
         self.data = data
-        self.name = 'ellipse'
+        self.name = 'rectangle'
 
     @property
     def data(self):
-        """(4, D) array: ellipse vertices.
+        """(4, D) array: rectangle vertices.
         """
         return self._data
 
@@ -79,12 +73,13 @@ class Ellipse(Shape):
             self._dims_order = list(range(data.shape[1]))
 
         if len(data) == 2 and data.shape[1] == 2:
-            data = center_radii_to_corners(data[0], data[1])
+            data = find_corners(data)
 
         if len(data) != 4:
+            print(data)
             raise ValueError(
-                f"""Data shape does not match a ellipse.
-                             Ellipse expects four corner vertices,
+                f"""Data shape does not match a rectangle.
+                             Rectangle expects four corner vertices,
                              {len(data)} provided."""
             )
 
@@ -93,11 +88,10 @@ class Ellipse(Shape):
 
     def _update_displayed_data(self):
         """Update the data that is to be displayed."""
-        # Build boundary vertices with num_segments
-        vertices, triangles = triangulate_ellipse(self.data_displayed)
-        self._set_meshes(vertices[1:-1], face=False)
-        self._face_vertices = vertices
-        self._face_triangles = triangles
+        # Add four boundary lines and then two triangles for each
+        self._set_meshes(self.data_displayed, face=False)
+        self._face_vertices = self.data_displayed
+        self._face_triangles = np.array([[0, 1, 2], [0, 2, 3]])
         self._box = rectangle_to_box(self.data_displayed)
 
         data_not_displayed = self.data[:, self.dims_not_displayed]
@@ -107,29 +101,6 @@ class Ellipse(Shape):
                 np.max(data_not_displayed, axis=0),
             ]
         ).astype('int')
-
-    def transform(self, transform):
-        """Performs a linear transform on the shape
-
-        Parameters
-        ----------
-        transform : np.ndarray
-            2x2 array specifying linear transform.
-        """
-        self._box = self._box @ transform.T
-        self._data[:, self.dims_displayed] = (
-            self._data[:, self.dims_displayed] @ transform.T
-        )
-        self._face_vertices = self._face_vertices @ transform.T
-
-        points = self._face_vertices[1:-1]
-
-        centers, offsets, triangles = triangulate_edge(
-            points, closed=self._closed
-        )
-        self._edge_vertices = centers
-        self._edge_offsets = offsets
-        self._edge_triangles = triangles
 
     def to_xml(self):
         """Generates an xml element that defintes the shape according to the
@@ -164,11 +135,13 @@ class Ellipse(Shape):
         else:
             coords = data
 
-        cx = str(cen[0])
-        cy = str(cen[1])
+        x = str(coords.min(axis=0)[0])
+        y = str(coords.min(axis=0)[1])
         size = abs(coords[2] - coords[0])
-        rx = str(size[0] / 2)
-        ry = str(size[1] / 2)
+        width = str(size[0])
+        height = str(size[1])
 
-        element = Element('ellipse', cx=cx, cy=cy, rx=rx, ry=ry, **props)
+        element = Element(
+            'rect', x=x, y=y, width=width, height=height, **props
+        )
         return element
