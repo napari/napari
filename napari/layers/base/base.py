@@ -146,14 +146,14 @@ class Layer(KeymapMixin, ABC):
             translate = [0] * ndim
 
         # Create a transform chain consisting of three transforms:
-        # 1. `view2data`: An initial transform mapping the actually viewed data
-        #   to the data coordinates. This is useful for cases where the
-        #   displayed data is not the base data given by the user. In such
-        #   cases, we need to  transform the coordinates from the displayed
-        #   data space to the original input data space. One example of such a
-        #   situation is viewing a lower resolution level of an input pyramid,
-        #   another is when an image is larger than the maximum allowed texture
-        #   size and has been downsampled so it can be viewed.
+        # 1. `tile2data`: An initial transform only needed displaying tiles
+        #   of an image. It maps pixels of tile into the pixels of the tile
+        #   into the coordinate space of the full resolution data and can
+        #   usually be represented by a scale factor and a translation. A
+        #   common use case is viewing part of lower resolution level of an
+        #   image pyramid, another is using a downsampled version of an image
+        #   when the full image size is larger than the maximum allowed texture
+        #   size of your graphics card.
         # 2. `data2world`: The main transform mapping data to a world-like
         #   coordinate.
         # 3. `world2grid`: An additional transform mapping world-coordinates
@@ -161,7 +161,7 @@ class Layer(KeymapMixin, ABC):
         self._transforms = TransformChain(
             [
                 ScaleTranslate(
-                    np.ones(ndim), np.zeros(ndim), name='view2data'
+                    np.ones(ndim), np.zeros(ndim), name='tile2data'
                 ),
                 ScaleTranslate(scale, translate, name='data2world'),
                 ScaleTranslate(
@@ -378,7 +378,7 @@ class Layer(KeymapMixin, ABC):
             self._transforms = self._transforms.set_slice(keep_axes)
         elif old_ndim < ndim:
             new_axes = range(ndim - old_ndim)
-            self._transforms = self._transforms.set_pad(new_axes)
+            self._transforms = self._transforms.expand_dims(new_axes)
 
         self.dims.ndim = ndim
 
@@ -628,7 +628,7 @@ class Layer(KeymapMixin, ABC):
         msg : string
             String containing a message that can be used as a status update.
         """
-        coordinates = self._transforms.composite(self.coordinates)
+        coordinates = self._transforms.simplified(self.coordinates)
         full_coord = np.round(coordinates).astype(int)
 
         msg = f'{self.name} {full_coord}'

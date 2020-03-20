@@ -15,13 +15,13 @@ def test_transform_chain():
     npt.assert_allclose(new_coord_1, new_coord_2)
 
 
-def test_transform_chain_composite():
+def test_transform_chain_simplified():
     coord = [10, 13]
     transform_a = ScaleTranslate(scale=[2, 3], translate=[8, -5])
     transform_b = ScaleTranslate(scale=[0.3, 1.4], translate=[-2.2, 3])
 
     transform_chain = TransformChain([transform_a, transform_b])
-    transform_c = transform_chain.composite
+    transform_c = transform_chain.simplified
 
     new_coord_1 = transform_c(coord)
     new_coord_2 = transform_chain(coord)
@@ -58,7 +58,7 @@ def test_transform_chain_slice():
     npt.assert_allclose(new_coord_1, new_coord_2)
 
 
-def test_transform_chain_pad():
+def test_transform_chain_expanded():
     coord = [10, 3, 13]
     transform_a = ScaleTranslate(scale=[2, 1, 3], translate=[8, 0, -5])
     transform_b = ScaleTranslate(scale=[0.3, 1, 1.4], translate=[-2.2, 0, 3])
@@ -67,8 +67,8 @@ def test_transform_chain_pad():
 
     transform_chain_a = TransformChain([transform_a, transform_b])
     transform_chain_b = TransformChain([transform_c, transform_d])
-    transform_chain_padded = transform_chain_b.set_pad([1])
+    transform_chain_expandded = transform_chain_b.expand_dims([1])
 
     new_coord_2 = transform_chain_a(coord)
-    new_coord_1 = transform_chain_padded(coord)
+    new_coord_1 = transform_chain_expandded(coord)
     npt.assert_allclose(new_coord_1, new_coord_2)

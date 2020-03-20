@@ -128,7 +128,7 @@ class VispyBaseLayer(ABC):
         self.node.update()
 
     def _on_scale_change(self, event=None):
-        scale = self.layer._transforms.composite.set_slice(
+        scale = self.layer._transforms.simplified.set_slice(
             self.layer.dims.displayed
         ).scale
         # convert NumPy axis ordering to VisPy axis ordering
@@ -138,7 +138,7 @@ class VispyBaseLayer(ABC):
         self.layer.position = self._transform_position(self._position)
 
     def _on_translate_change(self, event=None):
-        translate = self.layer._transforms.composite.set_slice(
+        translate = self.layer._transforms.simplified.set_slice(
             self.layer.dims.displayed
         ).translate
         # convert NumPy axis ordering to VisPy axis ordering

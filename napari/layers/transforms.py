@@ -37,7 +37,7 @@ class Transform:
             raise ValueError('Inverse function was not provided.')
 
     def compose(self, transform: 'Transform') -> 'Transform':
-        """Return the composite of this transform and the proivded one."""
+        """Return the composite of this transform and the provided one."""
         raise ValueError('Transform composition rule not provided')
 
     def set_slice(self, axes: Sequence[int]) -> 'Transform':
@@ -55,15 +55,15 @@ class Transform:
         """
         raise NotImplementedError('Cannot subset arbitrary transforms.')
 
-    def set_pad(self, axes: Sequence[int]) -> 'Transform':
+    def expand_dims(self, axes: Sequence[int]) -> 'Transform':
         """Return a transform with added axes for non-visible dimensions.
 
         Parameters
         ----------
         axes : Sequence[int]
-            Location of axes to pad the current transform with. Passing a list
-            allows padding to occur at specific locations and for set_pad to
-            be like an inverse to the set_slice method.
+            Location of axes to expand the current transform with. Passing a
+            list allows expanion to occur at specific locations and for
+            expand_dims to be like an inverse to the set_slice method.
 
         Returns
         -------
@@ -93,8 +93,8 @@ class TransformChain(ListModel, Transform):
         return TransformChain([tf.inverse for tf in self[::-1]])
 
     @property
-    def composite(self) -> 'Transform':
-        """Return a composite of the transform chain."""
+    def simplified(self) -> 'Transform':
+        """Return the composite of the transforms inside the transform chain."""
         if len(self) == 0:
             return None
         if len(self) == 1:
@@ -117,22 +117,22 @@ class TransformChain(ListModel, Transform):
         """
         return TransformChain([tf.set_slice(axes) for tf in self])
 
-    def set_pad(self, axes: Sequence[int]) -> 'Transform':
+    def expand_dims(self, axes: Sequence[int]) -> 'Transform':
         """Return a transform chain with added axes for non-visible dimensions.
 
         Parameters
         ----------
         axes : Sequence[int]
-            Location of axes to pad the current transform chain with. Passing a
-            list allows padding to occur at specific locations and for set_pad
-            to be like an inverse to the set_slice method.
+            Location of axes to expand the current transform with. Passing a
+            list allows expanion to occur at specific locations and for
+            expand_dims to be like an inverse to the set_slice method.
 
         Returns
         -------
         TransformChain
             Resulting transform chain.
         """
-        return TransformChain([tf.set_pad(axes) for tf in self])
+        return TransformChain([tf.expand_dims(axes) for tf in self])
 
 
 class ScaleTranslate(Transform):
@@ -178,7 +178,7 @@ class ScaleTranslate(Transform):
         return ScaleTranslate(1 / self.scale, -1 / self.scale * self.translate)
 
     def compose(self, transform: 'ScaleTranslate') -> 'ScaleTranslate':
-        """Return the composite of this transform and the proivded one."""
+        """Return the composite of this transform and the provided one."""
         scale = self.scale * transform.scale
         translate = self.translate + self.scale * transform.translate
         return ScaleTranslate(scale, translate)
@@ -200,15 +200,15 @@ class ScaleTranslate(Transform):
             self.scale[axes], self.translate[axes], name=self.name
         )
 
-    def set_pad(self, axes: Sequence[int]) -> 'ScaleTranslate':
+    def expand_dims(self, axes: Sequence[int]) -> 'ScaleTranslate':
         """Return a transform with added axes for non-visible dimensions.
 
         Parameters
         ----------
         axes : Sequence[int]
-            Location of axes to pad the current transform with. Passing a list
-            allows padding to occur at specific locations and for set_pad to
-            be like an inverse to the set_slice method.
+            Location of axes to expand the current transform with. Passing a
+            list allows expanion to occur at specific locations and for
+            expand_dims to be like an inverse to the set_slice method.
 
         Returns
         -------

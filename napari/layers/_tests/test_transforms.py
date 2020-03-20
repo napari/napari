@@ -48,11 +48,11 @@ def test_scale_translate_slice():
 def test_scale_translate_pad():
     transform_a = ScaleTranslate(scale=[2, 3], translate=[8, -5], name='st')
     transform_b = ScaleTranslate(scale=[2, 1, 3], translate=[8, 0, -5])
-    npt.assert_allclose(transform_a.set_pad([1]).scale, transform_b.scale)
+    npt.assert_allclose(transform_a.expand_dims([1]).scale, transform_b.scale)
     npt.assert_allclose(
-        transform_a.set_pad([1]).translate, transform_b.translate
+        transform_a.expand_dims([1]).translate, transform_b.translate
     )
-    assert transform_a.set_pad([1]).name == 'st'
+    assert transform_a.expand_dims([1]).name == 'st'
 
 
 def test_scale_translate_identity_default():
