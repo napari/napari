@@ -237,8 +237,8 @@ class QtPluginSorter(QDialog):
     def __init__(
         self,
         plugin_manager: Optional[PluginManager] = None,
-        parent: Optional[QWidget] = None,
         *,
+        parent: Optional[QWidget] = None,
         initial_hook: Optional[str] = None,
         firstresult_only: bool = True,
     ):
