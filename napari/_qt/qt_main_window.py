@@ -88,9 +88,7 @@ class Window:
 
         self._update_palette(qt_viewer.viewer.palette)
 
-        if self.qt_viewer.console.shell is not None:
-            self._add_viewer_dock_widget(self.qt_viewer.dockConsole)
-
+        self._add_viewer_dock_widget(self.qt_viewer.dockConsole)
         self._add_viewer_dock_widget(self.qt_viewer.dockLayerControls)
         self._add_viewer_dock_widget(self.qt_viewer.dockLayerList)
 

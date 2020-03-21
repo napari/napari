@@ -66,7 +66,24 @@ class Viewer(ViewerModel):
         )
         qt_viewer = QtViewer(self)
         self.window = Window(qt_viewer, show=show)
-        self.update_console = self.window.qt_viewer.console.push
+
+    def update_console(self, variables):
+        """Update console's namespace with desired variables.
+
+        Parameters
+        ----------
+        variables : dict, str or list/tuple of str
+            The variables to inject into the console's namespace.  If a dict, a
+            simple update is done.  If a str, the string is assumed to have
+            variable names separated by spaces.  A list/tuple of str can also
+            be used to give the variable names.  If just the variable names are
+            give (list/tuple/str) then the variable values looked up in the
+            callers frame.
+        """
+        if self.window.qt_viewer.console is None:
+            return
+        else:
+            self.window.qt_viewer.console.push(variables)
 
     def screenshot(self, path=None, *, with_viewer=False):
         """Take currently displayed screen and convert to an image array.
