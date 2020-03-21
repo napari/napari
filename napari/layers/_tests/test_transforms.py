@@ -45,7 +45,7 @@ def test_scale_translate_slice():
     assert transform_b.set_slice([0, 2]).name == 'st'
 
 
-def test_scale_translate_pad():
+def test_scale_translate_expand_dims():
     transform_a = ScaleTranslate(scale=[2, 3], translate=[8, -5], name='st')
     transform_b = ScaleTranslate(scale=[2, 1, 3], translate=[8, 0, -5])
     npt.assert_allclose(transform_a.expand_dims([1]).scale, transform_b.scale)

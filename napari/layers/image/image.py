@@ -454,8 +454,8 @@ class Image(IntensityVisualizationMixin, Layer):
                         self._top_left[d] + self._max_tile_shape,
                         1,
                     )
-                # Note that top left marks the ocation of top left canvas
-                # pixel in image
+                # Note that top left marks the location of top left canvas
+                # pixel in data coordinates
                 self._transforms['tile2data'].translate = (
                     self._top_left
                     * self._transforms['data2world'].scale
