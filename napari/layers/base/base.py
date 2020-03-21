@@ -147,13 +147,12 @@ class Layer(KeymapMixin, ABC):
 
         # Create a transform chain consisting of three transforms:
         # 1. `tile2data`: An initial transform only needed displaying tiles
-        #   of an image. It maps pixels of tile into the pixels of the tile
-        #   into the coordinate space of the full resolution data and can
-        #   usually be represented by a scale factor and a translation. A
-        #   common use case is viewing part of lower resolution level of an
-        #   image pyramid, another is using a downsampled version of an image
-        #   when the full image size is larger than the maximum allowed texture
-        #   size of your graphics card.
+        #   of an image. It maps pixels of the tile into the coordinate space
+        #   of the full resolution data and can usually be represented by a
+        #   scale factor and a translation. A common use case is viewing part
+        #   of lower resolution level of an image pyramid, another is using a
+        #   downsampled version of an image when the full image size is larger
+        #   than the maximum allowed texture size of your graphics card.
         # 2. `data2world`: The main transform mapping data to a world-like
         #   coordinate.
         # 3. `world2grid`: An additional transform mapping world-coordinates
