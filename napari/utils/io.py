@@ -5,7 +5,6 @@ from glob import glob
 from pathlib import Path
 
 import numpy as np
-import tifffile
 
 from dask import delayed
 from dask import array as da
@@ -15,6 +14,8 @@ def imsave(filename: str, data: np.ndarray):
     """custom imaplementation of imread to avoid skimage dependecy"""
     ext = os.path.splitext(filename)[1]
     if ext in [".tif", "tiff"]:
+        import tifffile
+
         tifffile.imsave(filename, data)
     else:
         import imageio
@@ -26,6 +27,8 @@ def imread(filename: str):
     """custom imaplementation of imread to avoid skimage dependecy"""
     ext = os.path.splitext(filename)[1]
     if ext in [".tif", "tiff", ".lsm"]:
+        import tifffile
+
         image = tifffile.imread(filename)
     else:
         import imageio
