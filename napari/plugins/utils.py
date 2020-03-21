@@ -36,20 +36,37 @@ def _guess_order_type(order: HookOrderType) -> str:
 def permute_hook_implementations(
     hook_caller: _HookCaller, order: HookOrderType
 ):
-    """Change the call order of hookimplementations for a pluggy HookCaller.
+    """Rearrange the call order of hook implementations in a pluggy HookCaller.
 
-    Pluggy does not allow a built-in way to change the call order after
-    instantiation.  hookimpls are called in last-in-first-out order.
-    This function accepts the desired call order (a list of plugin names, or
-    plugin modules) and reorders the hookcaller accordingly.
+    In a pluggy plugin manager, the hook implementations registered for each plugin are
+    stored in ``_HookCaller`` objects that share the same name as the corresponding hook
+    specification; and each ``_HookCaller`` instance is stored under the
+    ``plugin_manager.hook`` namespace. For instance:
+    ``plugin_manager.hook.name_of_hook_specification``.
+
+    By default, hook implementations are called in last-in-first-out order of registration,
+    and pluggy does not provide a built-in way to rearrange the call order of hook
+    implementations.
+
+    This function accepts a `_HookCaller` instance and the desired call order of the hook
+    implementations (in the form of list of plugin names, or a list of actual ``HookImpl``
+    instances in the corresponding hook caller) and reorders the implementations in the hook
+    caller accordingly.
+
+    Note: hook implementations are actually stored in *two* separate list attributes in the
+    hook caller: ``_HookCaller._wrappers`` and ``_HookCaller._nonwrappers``, according to
+    whether the corresponding ``HookImpl`` instance was marked as a wrapper or not.  For
+    more, see: https://pluggy.readthedocs.io/en/latest/#wrappers
 
     Parameters
     ----------
     hook_caller : pluggy.hooks._HookCaller
         The hook caller to reorder
     order : list
-        A list of str (plugin names), or ``HookImpl`` instances,
-        in the desired CALL ORDER of the hook implementations.
+        A list of str (plugin names), or ``HookImpl`` instances, in the desired CALL ORDER
+        of the hook implementations.  The list does not *need* to include every hook
+        implementation in the ``hook_caller.get_hookimpls()``, but those that are not
+        included will be moved to the end of the call order.
 
     Raises
     ------
@@ -61,6 +78,41 @@ def permute_hook_implementations(
         or ``HookImpl`` instances.
     ValueError
         if 'order' argument has multiple entries for the same implementation.
+
+    Examples
+    --------
+    Imagine you had a hook specification named ``print_plugin_name``, that expected plugins
+    to simply print their own name. An implementation might look like:
+
+    >>> # hook implementation for ``plugin_1``
+    >>> @hook_implementation
+    ... def print_plugin_name():
+    ...     print("plugin_1")
+
+    If three different plugins provided hook implementations. An example call for that hook
+    might look like:
+
+    >>> plugin_manager.hook.print_plugin_name()
+    plugin_1
+    plugin_2
+    plugin_3
+
+    If you wanted to rearrange their call order, you could do this:
+
+    >>> hook_caller = plugin_manager.hook.print_plugin_name
+    >>> new_order = ["plugin_2", "plugin_3", "plugin_1"]
+    >>> permute_hook_implementations(hook_caller, new_order)
+    >>> plugin_manager.hook.print_plugin_name()
+    plugin_2
+    plugin_3
+    plugin_1
+
+    You can also just specify one or more item to move them to the front of the call order:
+    >>> permute_hook_implementations(hook_caller, ["plugin_3"])
+    >>> plugin_manager.hook.print_plugin_name()
+    plugin_3
+    plugin_2
+    plugin_1
     """
     # make sure items in order are unique
     if len(order) != len(set(order)):
