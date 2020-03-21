@@ -12,7 +12,7 @@ from qtpy.QtWidgets import (
 )
 from vispy.color import Color
 from .qt_base_layer import QtLayerControls
-from ...layers.shapes._constants import Mode
+from ...layers.shapes._shapes_constants import Mode
 from ..qt_mode_buttons import QtModeRadioButton, QtModePushButton
 from ..utils import disable_with_opacity
 
