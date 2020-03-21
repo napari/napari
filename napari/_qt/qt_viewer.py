@@ -18,13 +18,13 @@ from ..utils.interactions import (
     mouse_move_callbacks,
     mouse_release_callbacks,
 )
-from ..utils.keybindings import components_to_key_combo
+from ..utils.key_bindings import components_to_key_combo
 
 from .utils import QImg2array, square_pixmap
 from .qt_controls import QtControls
 from .qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .qt_viewer_dock_widget import QtViewerDockWidget
-from .qt_about_keybindings import QtAboutKeybindings
+from .qt_about_key_bindings import QtAboutKeyBindings
 from .._vispy import create_vispy_visual
 
 
@@ -434,8 +434,8 @@ class QtViewer(QSplitter):
             self.viewerButtons.consoleButton
         )
 
-    def show_keybindings_dialog(self, event=None):
-        dialog = QtAboutKeybindings(self.viewer, parent=self)
+    def show_key_bindings_dialog(self, event=None):
+        dialog = QtAboutKeyBindings(self.viewer, parent=self)
         dialog.show()
 
     def on_mouse_press(self, event):

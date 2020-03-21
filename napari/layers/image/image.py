@@ -11,10 +11,10 @@ from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.event import Event
 from ...utils.status_messages import format_float
 from ..base import Layer
-from ..layer_utils import calc_data_range
+from ..utils.layer_utils import calc_data_range
 from ..intensity_mixin import IntensityVisualizationMixin
-from ._constants import Interpolation, Rendering
-from .image_utils import get_pyramid_and_rgb
+from ._image_constants import Interpolation, Rendering
+from ._image_utils import get_pyramid_and_rgb
 
 
 # Mixin must come before Layer

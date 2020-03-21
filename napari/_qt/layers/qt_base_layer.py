@@ -1,7 +1,7 @@
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QSlider, QGridLayout, QFrame, QComboBox
 
-from ...layers.base._constants import Blending
+from ...layers.base._base_constants import Blending
 
 
 class QtLayerControls(QFrame):

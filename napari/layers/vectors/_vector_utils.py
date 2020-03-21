@@ -1,6 +1,6 @@
 import numpy as np
 from copy import copy
-from ..layer_utils import segment_normal
+from ..utils.layer_utils import segment_normal
 
 
 def vectors_to_coordinates(vectors):
