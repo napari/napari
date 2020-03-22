@@ -4,7 +4,7 @@ from .volume import Volume as VolumeNode
 from vispy.color import Colormap
 import numpy as np
 from .vispy_base_layer import VispyBaseLayer
-from ..layers.image._constants import Rendering
+from ..layers.image._image_constants import Rendering
 from ..layers import Image, Labels
 
 
@@ -134,31 +134,11 @@ class VispyImageLayer(VispyBaseLayer):
     def _on_threshold_change(self, event=None):
         if self.layer.dims.ndisplay == 2:
             return
-        rendering = self.layer.rendering
-        if isinstance(rendering, str):
-            rendering = Rendering(rendering)
+        rendering = Rendering(self.layer.rendering)
         if rendering == Rendering.ISO:
             self.node.threshold = float(self.layer.iso_threshold)
         elif rendering == Rendering.ATTENUATED_MIP:
             self.node.threshold = float(self.layer.attenuation)
-
-    def _on_scale_change(self, event=None):
-        self.scale = [
-            self.layer.scale[d] * self.layer._scale_view[d]
-            for d in self.layer.dims.displayed[::-1]
-        ]
-        if self.layer.is_pyramid:
-            self.layer.top_left = self.find_top_left()
-        self.layer.position = self._transform_position(self._position)
-
-    def _on_translate_change(self, event=None):
-        self.translate = [
-            self.layer.translate[d]
-            + self.layer._translate_view[d]
-            + self.layer.translate_grid[d]
-            for d in self.layer.dims.displayed[::-1]
-        ]
-        self.layer.position = self._transform_position(self._position)
 
     def compute_data_level(self, size):
         """Computed what level of the pyramid should be viewed given the
@@ -286,7 +266,7 @@ class VispyImageLayer(VispyBaseLayer):
             scale = np.ones(self.layer.ndim)
             for i, d in enumerate(self.layer.dims.displayed):
                 scale[d] = downsample[i]
-            self.layer._scale_view = scale
+            self.layer._transforms['tile2data'].scale = scale
             self._on_scale_change()
             slices = tuple(slice(None, None, ds) for ds in downsample)
             data = data[slices]

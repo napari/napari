@@ -2,7 +2,7 @@ import dask.array as da
 import numpy as np
 import pytest
 from skimage.transform import pyramid_gaussian
-from napari.layers.image.image_utils import (
+from napari.layers.image._image_utils import (
     fast_pyramid,
     get_pyramid_and_rgb,
     guess_pyramid,

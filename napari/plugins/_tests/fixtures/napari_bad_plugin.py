@@ -7,12 +7,12 @@ import time
 napari_hook_implementation = pluggy.HookimplMarker("napari")
 
 
-def reader_function():
-    pass
+def reader_function(path):
+    return True
 
 
 @napari_hook_implementation
 def napari_get_reader(path):
     time.sleep(1)  # this is too long!!
-    if path.endswith('true'):
+    if path.endswith('ext'):
         return reader_function

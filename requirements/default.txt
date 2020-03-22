@@ -12,7 +12,7 @@ vispy>=0.6.4
 IPython>=7.7.0
 backcall>=0.1.0
 PyOpenGL>=3.1.0
-PySide2>=5.12.3
 wrapt>=1.11.1
 numpydoc>=0.9.2
 pluggy>=0.13.0
+# Qt version is managed from setup.py to install PySide2 when no Qt libraries are found

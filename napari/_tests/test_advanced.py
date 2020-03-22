@@ -1,18 +1,14 @@
 import numpy as np
 
-from napari import Viewer
 
-
-def test_4D_5D_images(qtbot):
+def test_4D_5D_images(viewer_factory):
     """Test adding 4D followed by 5D image layers to the viewer.
 
     Intially only 2 sliders should be present, then a third slider should be
     created.
     """
     np.random.seed(0)
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
+    view, viewer = viewer_factory()
 
     # add 4D image data
     data = np.random.random((2, 6, 30, 40))
@@ -32,16 +28,11 @@ def test_4D_5D_images(qtbot):
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 3
 
-    # Close the viewer
-    viewer.window.close()
 
-
-def test_5D_image_3D_rendering(qtbot):
+def test_5D_image_3D_rendering(viewer_factory):
     """Test 3D rendering of a 5D image."""
     np.random.seed(0)
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
+    view, viewer = viewer_factory()
 
     # add 4D image data
     data = np.random.random((2, 10, 12, 13, 14))
@@ -60,18 +51,13 @@ def test_5D_image_3D_rendering(qtbot):
     assert viewer.layers[0]._data_view.ndim == 3
     assert np.sum(view.dims._displayed_sliders) == 2
 
-    # Close the viewer
-    viewer.window.close()
 
-
-def test_change_image_dims(qtbot):
+def test_change_image_dims(viewer_factory):
     """Test changing the dims and shape of an image layer in place and checking
     the numbers of sliders and their ranges changes appropriately.
     """
     np.random.seed(0)
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
+    view, viewer = viewer_factory()
 
     # add 3D image data
     data = np.random.random((10, 30, 40))
@@ -106,20 +92,15 @@ def test_change_image_dims(qtbot):
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 1
 
-    # Close the viewer
-    viewer.window.close()
 
-
-def test_range_one_image(qtbot):
+def test_range_one_image(viewer_factory):
     """Test adding an image with a range one dimensions.
 
     There should be no slider shown for the axis corresponding to the range
     one dimension.
     """
     np.random.seed(0)
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
+    view, viewer = viewer_factory()
 
     # add 5D image data with range one dimensions
     data = np.random.random((1, 1, 1, 100, 200))
@@ -140,20 +121,15 @@ def test_range_one_image(qtbot):
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 3
 
-    # Close the viewer
-    viewer.window.close()
 
-
-def test_range_one_images_and_points(qtbot):
+def test_range_one_images_and_points(viewer_factory):
     """Test adding images with range one dimensions and points.
 
     Intially no sliders should be present as the images have range one
     dimensions. On adding the points the sliders should be displayed.
     """
     np.random.seed(0)
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
+    view, viewer = viewer_factory()
 
     # add 5D image data with range one dimensions
     data = np.random.random((1, 1, 1, 100, 200))
@@ -174,15 +150,10 @@ def test_range_one_images_and_points(qtbot):
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 3
 
-    # Close the viewer
-    viewer.window.close()
 
-
-def test_update_console(qtbot):
+def test_update_console(viewer_factory):
     """Test updating the console with local variables."""
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
+    view, viewer = viewer_factory()
 
     # Check viewer in console
     assert view.console.kernel_client is not None
@@ -197,15 +168,10 @@ def test_update_console(qtbot):
     assert 'b' in view.console.shell.user_ns
     assert view.console.shell.user_ns['b'] == b
 
-    # Close the viewer
-    viewer.window.close()
 
-
-def test_changing_display_surface(qtbot):
+def test_changing_display_surface(viewer_factory):
     """Test adding 3D surface and changing its display."""
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
+    view, viewer = viewer_factory()
 
     np.random.seed(0)
     vertices = np.random.random((10, 3))
@@ -242,15 +208,10 @@ def test_changing_display_surface(qtbot):
     for s in len_slider:
         viewer.dims.set_point(0, s)
 
-    # Close the viewer
-    viewer.window.close()
 
-
-def test_labels_undo_redo(qtbot):
+def test_labels_undo_redo(viewer_factory):
     """Test undoing/redoing on the labels layer."""
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
+    view, viewer = viewer_factory()
 
     data = np.zeros((50, 50), dtype=np.uint8)
     data[:5, :5] = 1
@@ -289,6 +250,3 @@ def test_labels_undo_redo(qtbot):
     # cannot undo as limit exceded
     labels.undo()
     assert np.array_equal(l2, labels.data)
-
-    # Close the viewer
-    viewer.window.close()
