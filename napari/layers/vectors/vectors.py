@@ -5,7 +5,7 @@ from copy import copy
 from ..base import Layer
 from ...utils.event import Event
 from ...utils.status_messages import format_float
-from .vector_utils import vectors_to_coordinates, generate_vector_meshes
+from ._vector_utils import vectors_to_coordinates, generate_vector_meshes
 from vispy.color import get_color_names, Color
 
 

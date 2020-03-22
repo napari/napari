@@ -2,17 +2,20 @@
 Custom Qt widgets that serve as native objects that the public-facing elements
 wrap.
 """
+import time
+
 # set vispy to use same backend as qtpy
 from skimage.io import imsave
 
 from .qt_about import QtAbout
 from .qt_viewer_dock_widget import QtViewerDockWidget
-from ..resources import combine_stylesheets
+from ..resources import get_stylesheet
 
 # these "# noqa" comments are here to skip flake8 linting (E402),
 # these module-level imports have to come after `app.use_app(API)`
 # see discussion on #638
 from qtpy.QtWidgets import (  # noqa: E402
+    QApplication,
     QMainWindow,
     QWidget,
     QHBoxLayout,
@@ -21,7 +24,6 @@ from qtpy.QtWidgets import (  # noqa: E402
     QAction,
     QShortcut,
     QStatusBar,
-    QApplication,
 )
 from qtpy.QtCore import Qt  # noqa: E402
 from qtpy.QtGui import QKeySequence  # noqa: E402
@@ -53,13 +55,14 @@ class Window:
         Window menu.
     """
 
-    raw_stylesheet = combine_stylesheets()
+    raw_stylesheet = get_stylesheet()
 
     def __init__(self, qt_viewer, *, show=True):
 
         self.qt_viewer = qt_viewer
 
         self._qt_window = QMainWindow()
+        self._qt_window.setAttribute(Qt.WA_DeleteOnClose)
         self._qt_window.setUnifiedTitleAndToolBarOnMac(True)
         self._qt_center = QWidget(self._qt_window)
 
@@ -68,8 +71,6 @@ class Window:
         self._qt_center.setLayout(QHBoxLayout())
         self._status_bar = QStatusBar()
         self._qt_window.setStatusBar(self._status_bar)
-        self._qt_window.closeEvent = self.closeEvent
-        self.close = self._qt_window.close
 
         self._add_menubar()
 
@@ -87,9 +88,7 @@ class Window:
 
         self._update_palette(qt_viewer.viewer.palette)
 
-        if self.qt_viewer.console.shell is not None:
-            self._add_viewer_dock_widget(self.qt_viewer.dockConsole)
-
+        self._add_viewer_dock_widget(self.qt_viewer.dockConsole)
         self._add_viewer_dock_widget(self.qt_viewer.dockLayerControls)
         self._add_viewer_dock_widget(self.qt_viewer.dockLayerList)
 
@@ -141,6 +140,11 @@ class Window:
         open_images.setStatusTip('Open image file(s)')
         open_images.triggered.connect(self.qt_viewer._open_images)
 
+        open_stack = QAction('Open image series as stack...', self._qt_window)
+        open_stack.setShortcut('Ctrl+Alt+O')
+        open_stack.setStatusTip('Open image files')
+        open_stack.triggered.connect(self.qt_viewer._open_images_as_stack)
+
         open_folder = QAction('Open Folder...', self._qt_window)
         open_folder.setShortcut('Ctrl+Shift+O')
         open_folder.setStatusTip(
@@ -157,6 +161,7 @@ class Window:
 
         self.file_menu = self.main_menu.addMenu('&File')
         self.file_menu.addAction(open_images)
+        self.file_menu.addAction(open_stack)
         self.file_menu.addAction(open_folder)
         self.file_menu.addAction(screenshot)
 
@@ -195,14 +200,14 @@ class Window:
         )
         self.help_menu.addAction(about_action)
 
-        about_keybindings = QAction("keybindings", self._qt_window)
-        about_keybindings.setShortcut("Ctrl+Alt+/")
-        about_keybindings.setShortcutContext(Qt.ApplicationShortcut)
-        about_keybindings.setStatusTip('keybindings')
-        about_keybindings.triggered.connect(
-            self.qt_viewer.aboutKeybindings.toggle_visible
+        about_key_bindings = QAction("Show key bindings", self._qt_window)
+        about_key_bindings.setShortcut("Ctrl+Alt+/")
+        about_key_bindings.setShortcutContext(Qt.ApplicationShortcut)
+        about_key_bindings.setStatusTip('key_bindings')
+        about_key_bindings.triggered.connect(
+            self.qt_viewer.show_key_bindings_dialog
         )
-        self.help_menu.addAction(about_keybindings)
+        self.help_menu.addAction(about_key_bindings)
 
     def add_dock_widget(
         self,
@@ -379,18 +384,16 @@ class Window:
             imsave(path, QImg2array(img))  # scikit-image imsave method
         return QImg2array(img)
 
-    def closeEvent(self, event):
-        """Close the main window.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
-        """
-        # Forward close event to the console to trigger proper shutdown
-        self.qt_viewer.console.shutdown()
-        # if the viewer.QtDims object is playing an axis, we need to terminate the
-        # AnimationThread before close, otherwise it will cauyse a segFault or Abort trap.
-        # (calling stop() when no animation is occuring is also not a problem)
-        self.qt_viewer.dims.stop()
-        event.accept()
+    def close(self):
+        """Close the viewer window and cleanup sub-widgets."""
+        # on some versions of Darwin, exiting while fullscreen seems to tickle
+        # some bug deep in NSWindow.  This forces the fullscreen keybinding
+        # test to complete its draw cycle, then pop back out of fullscreen.
+        if self._qt_window.isFullScreen():
+            self._qt_window.showNormal()
+            for i in range(8):
+                time.sleep(0.1)
+                QApplication.processEvents()
+        self.qt_viewer.close()
+        self._qt_window.close()
+        del self._qt_window

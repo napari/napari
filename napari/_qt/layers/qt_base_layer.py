@@ -1,7 +1,7 @@
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QSlider, QGridLayout, QFrame, QComboBox
 
-from ...layers.base._constants import Blending
+from ...layers.base._base_constants import Blending
 
 
 class QtLayerControls(QFrame):
@@ -35,14 +35,14 @@ class QtLayerControls(QFrame):
         self.setObjectName('layer')
         self.setMouseTracking(True)
 
-        self.grid_layout = QGridLayout()
+        self.grid_layout = QGridLayout(self)
         self.grid_layout.setContentsMargins(0, 0, 0, 0)
         self.grid_layout.setSpacing(2)
         self.grid_layout.setColumnMinimumWidth(0, 86)
         self.grid_layout.setColumnStretch(1, 1)
         self.setLayout(self.grid_layout)
 
-        sld = QSlider(Qt.Horizontal)
+        sld = QSlider(Qt.Horizontal, parent=self)
         sld.setFocusPolicy(Qt.NoFocus)
         sld.setMinimum(0)
         sld.setMaximum(100)
@@ -51,7 +51,7 @@ class QtLayerControls(QFrame):
         self.opacitySlider = sld
         self._on_opacity_change()
 
-        blend_comboBox = QComboBox()
+        blend_comboBox = QComboBox(self)
         blend_comboBox.addItems(Blending.keys())
         index = blend_comboBox.findText(
             self.layer.blending, Qt.MatchFixedString
