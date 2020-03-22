@@ -1,0 +1,94 @@
+stages:
+  - stage: Tests
+    jobs:
+    - job: linux
+      pool: {vmImage: 'Ubuntu-16.04'}
+      continueOnError: true
+      strategy:
+        matrix:
+          Python36: { python.version: '3.6' }
+          Python37: { python.version: '3.7' }
+          Python38: { python.version: '3.8' }
+      steps:
+        - {task: UsePythonVersion@0, inputs: {versionSpec: '$(python.version)'}}
+        - script: sudo apt-get install -y libdbus-1-3 libxkbcommon-x11-0
+          displayName: "install libs"
+        - script: pip install tox cython numpy pytest-azurepipelines
+          displayName: "Install deps"
+        - script: tox -e 'py$(python.version)-PyQt5,py$(python.version)-PySide2'
+          displayName: "Run Tox"
+    - job: macos
+      pool: {vmImage: 'macOS-10.14'}
+      strategy:
+        matrix:
+          Python36: { python.version: '3.6' }
+          Python37: { python.version: '3.7' }
+          Python38: { python.version: '3.8' }
+      steps:
+        - {task: UsePythonVersion@0, inputs: {versionSpec: '$(python.version)'}}
+        - script: pip install tox cython numpy pytest-azurepipelines
+          displayName: "Install deps"
+        - script: tox -e 'py$(python.version)-PyQt5,py$(python.version)-PySide2'
+          displayName: "Run Tox"
+    - job: windows
+      pool: {vmImage: 'vs2017-win2016'}
+      strategy:
+        matrix:
+          Python36: { python.version: '3.6' }
+          Python37: { python.version: '3.7' }
+          Python38: { python.version: '3.8' }
+      steps:
+        - {task: UsePythonVersion@0, inputs: {versionSpec: '$(python.version)'}}
+        - script: pip install tox cython numpy pytest-azurepipelines
+          displayName: "Install deps"
+        - script: tox -e py$(python.version)-PyQt5,py$(python.version)-PySide2
+          displayName: "Run Tox"
+
+  - stage: Builds
+    dependsOn: Tests
+    jobs:
+      - job: linux_pyinstaller
+        pool: {vmImage: 'Ubuntu-16.04'}
+        steps:
+          - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x64}}
+          - bash: |
+              python -m pip install -r requirements.txt
+              python -m pip install -r pyinstaller
+              python -m pip install .
+              python  build_utils/create_and_pack_executable.py
+          - script: sudo apt-get install -y libdbus-1-3 libxkbcommon-x11-0
+            displayName: "install libs"
+
+          - task: PublishBuildArtifacts@1
+            inputs:
+              pathToPublish: dist2
+              artifactName: execs
+
+      - job: macos_pyinstaller
+        pool: {vmImage: 'macOS-10.14'}
+        steps:
+          - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x64}}
+          - bash: sudo xcode-select -s /Applications/Xcode_10.app/Contents/Developer
+          - bash: |
+              python -m pip install -r requirements.txt
+              python -m pip install -r pyinstaller
+              python -m pip install .
+              python  build_utils/create_and_pack_executable.py
+          - task: PublishBuildArtifacts@1
+            inputs:
+              pathToPublish: dist2
+              artifactName: execs
+
+      - job: windows_pyinstaller
+        pool: {vmImage: 'vs2017-win2016'}
+        steps:
+          - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x64}}
+          - bash: |
+              python -m pip install -r requirements.txt
+              python -m pip install -r pyinstaller
+              python -m pip install .
+              python  build_utils/create_and_pack_executable.py
+          - task: PublishBuildArtifacts@1
+            inputs:
+              pathToPublish: dist2
+              artifactName: execs
