@@ -3,7 +3,6 @@ stages:
     jobs:
     - job: linux
       pool: {vmImage: 'Ubuntu-16.04'}
-      continueOnError: true
       strategy:
         matrix:
           Python36: { python.version: '3.6' }
@@ -32,6 +31,10 @@ stages:
           displayName: "Run Tox"
     - job: windows
       pool: {vmImage: 'vs2017-win2016'}
+      continueOnError: true
+      variables:
+        PYTHON_ARCH: 64
+        VISPY_GL_LIB: $(Build.SourcesDirectory)\opengl32.dll
       strategy:
         matrix:
           Python36: { python.version: '3.6' }
@@ -39,6 +42,13 @@ stages:
           Python38: { python.version: '3.8' }
       steps:
         - {task: UsePythonVersion@0, inputs: {versionSpec: '$(python.version)'}}
+        - powershell: Invoke-RestMethod -Uri https://raw.githubusercontent.com/vispy/vispy/v0.5.3/make/install_opengl.ps1 -Method Get -OutFile opengl.ps1
+        - powershell: ./opengl.ps1
+        - powershell: rm opengl.ps1
+        - bash: |
+            echo $VISPY_GL_LIB
+            echo $PWD
+        - script: dir $(Build.SourcesDirectory)
         - script: pip install tox cython numpy pytest-azurepipelines
           displayName: "Install deps"
         - script: tox -e py$(python.version)-PyQt5,py$(python.version)-PySide2
