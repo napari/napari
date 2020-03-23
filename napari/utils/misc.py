@@ -1,8 +1,10 @@
 """Miscellaneous utility functions.
 """
 import os.path as osp
+import os
 from enum import Enum, EnumMeta
 import re
+import sys
 import inspect
 import itertools
 import numpy as np
@@ -253,3 +255,18 @@ def all_subclasses(cls: Type) -> set:
     return set(cls.__subclasses__()).union(
         [s for c in cls.__subclasses__() for s in all_subclasses(c)]
     )
+
+
+def absolute_resource(relative_path):
+    """Get absolute path to resource, works for dev and for PyInstaller """
+    if "napari" + os.sep in relative_path:
+        # In PyInstaller, subdirectories in the napari module are placed at the top level
+        # so this function wants a path relative to the top level napari folder
+        relative_path = relative_path.split("napari" + os.sep)[-1]
+    try:
+        # PyInstaller creates a temp folder and stores path in _MEIPASS
+        base_path = sys._MEIPASS
+    except Exception:
+        base_path = osp.abspath(osp.dirname(sys.modules["napari"].__file__))
+
+    return os.path.join(base_path, relative_path)

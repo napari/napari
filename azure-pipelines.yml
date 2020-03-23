@@ -1,4 +1,54 @@
 stages:
+  - stage: Builds
+    jobs:
+      - job: linux_pyinstaller
+        pool: {vmImage: 'Ubuntu-16.04'}
+        steps:
+          - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x64}}
+          - bash: |
+              python -m pip install -r requirements.txt
+              python -m pip install pyinstaller
+              python -m pip install .
+              cd bundle
+              python create_and_pack_executable.py
+          - script: sudo apt-get install -y libdbus-1-3 libxkbcommon-x11-0
+            displayName: "install libs"
+
+          - task: PublishBuildArtifacts@1
+            inputs:
+              pathToPublish: dist2
+              artifactName: execs
+
+      - job: macos_pyinstaller
+        pool: {vmImage: 'macOS-10.14'}
+        steps:
+          - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x64}}
+          - bash: sudo xcode-select -s /Applications/Xcode_10.app/Contents/Developer
+          - bash: |
+              python -m pip install -r requirements.txt
+              python -m pip install pyinstaller
+              python -m pip install .
+              cd bundle
+              python create_and_pack_executable.py
+          - task: PublishBuildArtifacts@1
+            inputs:
+              pathToPublish: dist2
+              artifactName: execs
+
+      - job: windows_pyinstaller
+        pool: {vmImage: 'vs2017-win2016'}
+        steps:
+          - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x64}}
+          - bash: |
+              python -m pip install -r requirements.txt
+              python -m pip install pyinstaller
+              python -m pip install .
+              cd bundle
+              python create_and_pack_executable.py
+          - task: PublishBuildArtifacts@1
+            inputs:
+              pathToPublish: dist2
+              artifactName: execs
   - stage: Tests
     jobs:
     - job: linux
@@ -53,52 +103,3 @@ stages:
           displayName: "Install deps"
         - script: tox -e py$(python.version)-PyQt5,py$(python.version)-PySide2
           displayName: "Run Tox"
-
-  - stage: Builds
-    dependsOn: Tests
-    jobs:
-      - job: linux_pyinstaller
-        pool: {vmImage: 'Ubuntu-16.04'}
-        steps:
-          - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x64}}
-          - bash: |
-              python -m pip install -r requirements.txt
-              python -m pip install -r pyinstaller
-              python -m pip install .
-              python  build_utils/create_and_pack_executable.py
-          - script: sudo apt-get install -y libdbus-1-3 libxkbcommon-x11-0
-            displayName: "install libs"
-
-          - task: PublishBuildArtifacts@1
-            inputs:
-              pathToPublish: dist2
-              artifactName: execs
-
-      - job: macos_pyinstaller
-        pool: {vmImage: 'macOS-10.14'}
-        steps:
-          - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x64}}
-          - bash: sudo xcode-select -s /Applications/Xcode_10.app/Contents/Developer
-          - bash: |
-              python -m pip install -r requirements.txt
-              python -m pip install -r pyinstaller
-              python -m pip install .
-              python  build_utils/create_and_pack_executable.py
-          - task: PublishBuildArtifacts@1
-            inputs:
-              pathToPublish: dist2
-              artifactName: execs
-
-      - job: windows_pyinstaller
-        pool: {vmImage: 'vs2017-win2016'}
-        steps:
-          - {task: UsePythonVersion@0, inputs: {versionSpec: '3.7', architecture: x64}}
-          - bash: |
-              python -m pip install -r requirements.txt
-              python -m pip install -r pyinstaller
-              python -m pip install .
-              python  build_utils/create_and_pack_executable.py
-          - task: PublishBuildArtifacts@1
-            inputs:
-              pathToPublish: dist2
-              artifactName: execs

@@ -1,15 +1,17 @@
 # -*- mode: python ; coding: utf-8 -*-
 
 import sys
-from os.path import abspath, join, dirname, pardir
+import os
+from os.path import abspath, join, dirname, pardir,relpath
 from PyInstaller.building.build_main import Analysis, PYZ, EXE, COLLECT, BUNDLE
 from PyInstaller.utils.hooks import collect_data_files
 import napari
+from napari.resources import import_resources
 
 sys.modules['FixTk'] = None
 
 NAPARI_ROOT = dirname(napari.__file__)
-BUNDLE_ROOT = abspath(join(NAPARI_ROOT, pardir, 'bundle'))
+BUNDLE_ROOT = os.environ.get("BUNDLE_ROOT", abspath(join(NAPARI_ROOT, pardir, 'bundle')))
 
 
 def get_icon():
@@ -95,6 +97,9 @@ def format(x):
 
 
 DATA_FILES = [format(f) for f in collect_data_files('napari') if keep(f[0])]
+# add resources generated during startup on developer machine
+resources_path = import_resources()
+DATA_FILES.append(format((resources_path, relpath(dirname(resources_path), NAPARI_ROOT))))
 NAME = 'napari'
 WINDOWED = True
 DEBUG = False
@@ -104,7 +109,7 @@ HOOKSPATH = join(BUNDLE_ROOT, 'hooks')
 print("HOOKS PATH:", HOOKSPATH)
 
 a = Analysis(
-    ['napari.py'],
+    [join(NAPARI_ROOT, '__main__.py')],
     pathex=[BUNDLE_ROOT],
     datas=DATA_FILES,
     hookspath=[HOOKSPATH],

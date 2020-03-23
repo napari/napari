@@ -3,9 +3,14 @@ napari command line viewer.
 """
 import argparse
 import sys
+import multiprocessing
 
-from . import __version__, gui_qt, view_path
-from .utils import citation_text, sys_info
+
+from napari import __version__, gui_qt, view_path
+from napari.utils import citation_text, sys_info
+
+# for usage multiprocessing on windows
+multiprocessing.freeze_support()
 
 
 class InfoAction(argparse.Action):

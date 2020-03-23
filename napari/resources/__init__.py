@@ -12,6 +12,7 @@ from qtpy import API, QT_VERSION
 
 from .. import __version__
 from .build_icons import build_pyqt_resources
+from ..utils.misc import absolute_resource
 
 
 def _try_touch_file(target) -> Optional[Path]:
@@ -90,7 +91,9 @@ def import_resources(version: str = '', overwrite: bool = False) -> str:
     filename = f'_qt_resources_{version}.py'
 
     # see if we can write to the current napari/resources directory
-    target_file = _try_touch_file(join(abspath(dirname(__file__)), filename))
+    target_file = _try_touch_file(
+        absolute_resource(join(abspath(dirname(__file__)), filename))
+    )
     # if not, try to write to ~/.config/napari
     if not target_file:
         target_file = expanduser(join('~', '.config', 'napari', filename))
@@ -146,7 +149,7 @@ def get_stylesheet(extra: Optional[List[str]] = None) -> str:
     css : str
         The combined stylesheet.
     """
-    resources_dir = abspath(dirname(__file__))
+    resources_dir = absolute_resource(abspath(dirname(__file__)))
     stylesheet = ''
     for file in sorted(glob(join(resources_dir, 'styles/*.qss'))):
         with open(file, 'r') as f:
