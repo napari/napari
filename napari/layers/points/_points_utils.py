@@ -70,11 +70,14 @@ def points_in_box(corners, points, sizes):
         Indices of points inside the box
     """
     box = create_box(corners)[[0, 2]]
-    rect = points_to_squares(points, sizes)
-    below_top = np.all(box[1] >= rect, axis=1)
-    above_bottom = np.all(rect >= box[0], axis=1)
-    inside = np.logical_and(below_top, above_bottom)
-    inside = np.unique(np.where(inside)[0] % len(points))
+    # Check all four corners in a square around a given point. If any corner
+    # is inside the box, then that point is considered inside
+    point_corners = points_to_squares(points, sizes)
+    below_top = np.all(box[1] >= point_corners, axis=1)
+    above_bottom = np.all(point_corners >= box[0], axis=1)
+    point_corners_in_box = np.where(np.logical_and(below_top, above_bottom))[0]
+    # Determine indices of points which have at least one corner inside box
+    inside = np.unique(point_corners_in_box % len(points))
     return list(inside)
 
 

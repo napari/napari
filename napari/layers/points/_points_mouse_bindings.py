@@ -26,20 +26,20 @@ def select(layer, event):
     if shift:
         if layer._value is not None:
             if layer._value in layer.selected_data:
-                layer.selected_data = [
-                    x for x in layer.selected_data if x != layer._value
-                ]
+                layer.selected_data.remove(layer._value)
             else:
-                layer.selected_data += [layer._value]
+                layer.selected_data.add(layer._value)
+            layer.selected_data = layer._selected_data
         else:
             pass
     else:
         if layer._value is not None:
             if layer._value not in layer.selected_data:
-                layer.selected_data = [layer._value]
+                layer.selected_data = {layer._value}
         else:
             layer.selected_data = []
     layer._set_highlight()
+
     yield
 
     # on move

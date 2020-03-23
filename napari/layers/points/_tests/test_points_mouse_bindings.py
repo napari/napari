@@ -1,3 +1,4 @@
+import pytest
 import numpy as np
 import collections
 from napari.layers import Points
@@ -9,6 +10,13 @@ from napari.utils.interactions import (
 )
 
 
+# Create a namedtuple for simulating vispy mouse events
+@pytest.fixture
+def Event():
+    return collections.namedtuple('Event', 'type is_dragging modifiers')
+
+
+@pytest.fixture
 def create_known_points_layer():
     """Create points layer with known coordinates
 
@@ -35,19 +43,21 @@ def create_known_points_layer():
     return layer, n_points, known_non_point
 
 
-def test_not_adding_or_selecting_point():
+def test_not_adding_or_selecting_point(create_known_points_layer, Event):
     """Don't add or select a point by clicking on one in pan_zoom mode."""
-    layer, n_points, _ = create_known_points_layer()
+    layer, n_points, _ = create_known_points_layer
     layer.mode = 'pan_zoom'
 
-    Event = collections.namedtuple('Event', 'type is_dragging')
-
     # Simulate click
-    event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
+    event = ReadOnlyWrapper(
+        Event(type='mouse_press', is_dragging=False, modifiers=[])
+    )
     mouse_press_callbacks(layer, event)
 
     # Simulate release
-    event = ReadOnlyWrapper(Event(type='mouse_release', is_dragging=False))
+    event = ReadOnlyWrapper(
+        Event(type='mouse_release', is_dragging=False, modifiers=[])
+    )
     mouse_release_callbacks(layer, event)
 
     # Check no new point added and non selected
@@ -55,22 +65,24 @@ def test_not_adding_or_selecting_point():
     assert len(layer.selected_data) == 0
 
 
-def test_add_point():
+def test_add_point(create_known_points_layer, Event):
     """Add point by clicking in add mode."""
-    layer, n_points, known_non_point = create_known_points_layer()
+    layer, n_points, known_non_point = create_known_points_layer
 
     # Add point at location where non exists
     layer.mode = 'add'
     layer.position = known_non_point
 
-    Event = collections.namedtuple('Event', 'type is_dragging')
-
     # Simulate click
-    event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
+    event = ReadOnlyWrapper(
+        Event(type='mouse_press', is_dragging=False, modifiers=[])
+    )
     mouse_press_callbacks(layer, event)
 
     # Simulate release
-    event = ReadOnlyWrapper(Event(type='mouse_release', is_dragging=False))
+    event = ReadOnlyWrapper(
+        Event(type='mouse_release', is_dragging=False, modifiers=[])
+    )
     mouse_release_callbacks(layer, event)
 
     # Check new point added at coordinates location
@@ -78,14 +90,12 @@ def test_add_point():
     np.testing.assert_allclose(layer.data[-1], known_non_point)
 
 
-def test_select_point():
+def test_select_point(create_known_points_layer, Event):
     """Select a point by clicking on one in select mode."""
-    layer, n_points, _ = create_known_points_layer()
+    layer, n_points, _ = create_known_points_layer
 
     layer.mode = 'select'
     layer.position = tuple(layer.data[0])
-
-    Event = collections.namedtuple('Event', 'type is_dragging modifiers')
 
     # Simulate click
     event = ReadOnlyWrapper(
@@ -101,25 +111,27 @@ def test_select_point():
 
     # Check clicked point selected
     assert len(layer.selected_data) == 1
-    assert layer.selected_data[0] == 0
+    assert 0 in layer.selected_data
 
 
-def test_not_adding_or_selecting_after_in_add_mode_point():
+def test_after_in_add_mode_point(create_known_points_layer, Event):
     """Don't add or select a point by clicking on one in pan_zoom mode."""
-    layer, n_points, _ = create_known_points_layer()
+    layer, n_points, _ = create_known_points_layer
 
     layer.mode = 'add'
     layer.mode = 'pan_zoom'
     layer.position = tuple(layer.data[0])
 
-    Event = collections.namedtuple('Event', 'type is_dragging')
-
     # Simulate click
-    event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
+    event = ReadOnlyWrapper(
+        Event(type='mouse_press', is_dragging=False, modifiers=[])
+    )
     mouse_press_callbacks(layer, event)
 
     # Simulate release
-    event = ReadOnlyWrapper(Event(type='mouse_release', is_dragging=False))
+    event = ReadOnlyWrapper(
+        Event(type='mouse_release', is_dragging=False, modifiers=[])
+    )
     mouse_release_callbacks(layer, event)
 
     # Check no new point added and non selected
@@ -127,22 +139,24 @@ def test_not_adding_or_selecting_after_in_add_mode_point():
     assert len(layer.selected_data) == 0
 
 
-def test_not_adding_or_selecting_after_in_select_mode_point():
+def test_after_in_select_mode_point(create_known_points_layer, Event):
     """Don't add or select a point by clicking on one in pan_zoom mode."""
-    layer, n_points, _ = create_known_points_layer()
+    layer, n_points, _ = create_known_points_layer
 
     layer.mode = 'select'
     layer.mode = 'pan_zoom'
     layer.position = tuple(layer.data[0])
 
-    Event = collections.namedtuple('Event', 'type is_dragging')
-
     # Simulate click
-    event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
+    event = ReadOnlyWrapper(
+        Event(type='mouse_press', is_dragging=False, modifiers=[])
+    )
     mouse_press_callbacks(layer, event)
 
     # Simulate release
-    event = ReadOnlyWrapper(Event(type='mouse_release', is_dragging=False))
+    event = ReadOnlyWrapper(
+        Event(type='mouse_release', is_dragging=False, modifiers=[])
+    )
     mouse_release_callbacks(layer, event)
 
     # Check no new point added and non selected
@@ -150,15 +164,13 @@ def test_not_adding_or_selecting_after_in_select_mode_point():
     assert len(layer.selected_data) == 0
 
 
-def test_unselect_select_point():
+def test_unselect_select_point(create_known_points_layer, Event):
     """Select a point by clicking on one in select mode."""
-    layer, n_points, _ = create_known_points_layer()
+    layer, n_points, _ = create_known_points_layer
 
     layer.mode = 'select'
     layer.position = tuple(layer.data[0])
-    layer.selected_data = [2, 3]
-
-    Event = collections.namedtuple('Event', 'type is_dragging modifiers')
+    layer.selected_data = {2, 3}
 
     # Simulate click
     event = ReadOnlyWrapper(
@@ -174,18 +186,16 @@ def test_unselect_select_point():
 
     # Check clicked point selected
     assert len(layer.selected_data) == 1
-    assert layer.selected_data[0] == 0
+    assert 0 in layer.selected_data
 
 
-def test_add_select_point():
+def test_add_select_point(create_known_points_layer, Event):
     """Add to a selection of points point by shift-clicking on one."""
-    layer, n_points, _ = create_known_points_layer()
+    layer, n_points, _ = create_known_points_layer
 
     layer.mode = 'select'
     layer.position = tuple(layer.data[0])
-    layer.selected_data = [2, 3]
-
-    Event = collections.namedtuple('Event', 'type is_dragging modifiers')
+    layer.selected_data = {2, 3}
 
     # Simulate click
     event = ReadOnlyWrapper(
@@ -201,18 +211,16 @@ def test_add_select_point():
 
     # Check clicked point selected
     assert len(layer.selected_data) == 3
-    assert layer.selected_data == [2, 3, 0]
+    assert layer.selected_data == {2, 3, 0}
 
 
-def test_remove_select_point():
+def test_remove_select_point(create_known_points_layer, Event):
     """Remove from a selection of points point by shift-clicking on one."""
-    layer, n_points, _ = create_known_points_layer()
+    layer, n_points, _ = create_known_points_layer
 
     layer.mode = 'select'
     layer.position = tuple(layer.data[0])
-    layer.selected_data = [0, 2, 3]
-
-    Event = collections.namedtuple('Event', 'type is_dragging modifiers')
+    layer.selected_data = {0, 2, 3}
 
     # Simulate click
     event = ReadOnlyWrapper(
@@ -228,17 +236,15 @@ def test_remove_select_point():
 
     # Check clicked point selected
     assert len(layer.selected_data) == 2
-    assert layer.selected_data == [2, 3]
+    assert layer.selected_data == {2, 3}
 
 
-def test_not_selecting_point():
+def test_not_selecting_point(create_known_points_layer, Event):
     """Don't select a point by not clicking on one in select mode."""
-    layer, n_points, known_non_point = create_known_points_layer()
+    layer, n_points, known_non_point = create_known_points_layer
 
     layer.mode = 'select'
     layer.position = known_non_point
-
-    Event = collections.namedtuple('Event', 'type is_dragging modifiers')
 
     # Simulate click
     event = ReadOnlyWrapper(
@@ -256,17 +262,15 @@ def test_not_selecting_point():
     assert len(layer.selected_data) == 0
 
 
-def test_unselecting_points():
+def test_unselecting_points(create_known_points_layer, Event):
     """Unselect points by not clicking on one in select mode."""
-    layer, n_points, known_non_point = create_known_points_layer()
+    layer, n_points, known_non_point = create_known_points_layer
 
     layer.mode = 'select'
     layer.position = known_non_point
-    layer.selected_data = [2, 3]
+    layer.selected_data = {2, 3}
     assert len(layer.selected_data) == 2
 
-    Event = collections.namedtuple('Event', 'type is_dragging modifiers')
-
     # Simulate click
     event = ReadOnlyWrapper(
         Event(type='mouse_press', is_dragging=False, modifiers=[])
@@ -283,14 +287,12 @@ def test_unselecting_points():
     assert len(layer.selected_data) == 0
 
 
-def test_selecting_all_points_with_drag():
+def test_selecting_all_points_with_drag(create_known_points_layer, Event):
     """Select all points when drag box includes all of them."""
-    layer, n_points, known_non_point = create_known_points_layer()
+    layer, n_points, known_non_point = create_known_points_layer
 
     layer.mode = 'select'
     layer.position = known_non_point
-
-    Event = collections.namedtuple('Event', 'type is_dragging modifiers')
 
     # Simulate click
     event = ReadOnlyWrapper(
@@ -321,14 +323,12 @@ def test_selecting_all_points_with_drag():
     assert len(layer.selected_data) == n_points
 
 
-def test_selecting_no_points_with_drag():
+def test_selecting_no_points_with_drag(create_known_points_layer, Event):
     """Select all points when drag box includes all of them."""
-    layer, n_points, known_non_point = create_known_points_layer()
+    layer, n_points, known_non_point = create_known_points_layer
 
     layer.mode = 'select'
     layer.position = known_non_point
-
-    Event = collections.namedtuple('Event', 'type is_dragging modifiers')
 
     # Simulate click
     event = ReadOnlyWrapper(

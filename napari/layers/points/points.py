@@ -453,7 +453,7 @@ class Points(Layer):
                 )
 
                 self.size = np.concatenate((self._size, size), axis=0)
-                self.selected_data = list(np.arange(cur_npoints, len(data)))
+                self.selected_data = set(np.arange(cur_npoints, len(data)))
 
         self._update_dims()
         self.events.data()
@@ -677,7 +677,8 @@ class Points(Layer):
             and self._mode != Mode.ADD
         ):
             cur_colors: np.ndarray = self.edge_color
-            cur_colors[self.selected_data] = self._current_edge_color
+            index = list(self.selected_data)
+            cur_colors[index] = self._current_edge_color
             self.edge_color = cur_colors
         self.events.current_edge_color()
 
@@ -818,7 +819,8 @@ class Points(Layer):
             and self._mode != Mode.ADD
         ):
             cur_colors: np.ndarray = self.face_color
-            cur_colors[self.selected_data] = self._current_face_color
+            index = list(self.selected_data)
+            cur_colors[index] = self._current_face_color
             self.face_color = cur_colors
 
         self.events.current_face_color()
@@ -1036,12 +1038,12 @@ class Points(Layer):
 
     @property
     def selected_data(self):
-        """list: list of currently selected points."""
+        """set: set of currently selected points."""
         return self._selected_data
 
     @selected_data.setter
     def selected_data(self, selected_data):
-        self._selected_data = list(selected_data)
+        self._selected_data = set(selected_data)
         selected = []
         for c in self._selected_data:
             if c in self._indices_view:
@@ -1053,7 +1055,7 @@ class Points(Layer):
         if len(self._selected_data) == 0:
             self._set_highlight()
             return
-        index = self._selected_data
+        index = list(self._selected_data)
         edge_colors = np.unique(self.edge_color[index], axis=0)
         if len(edge_colors) == 1:
             edge_color = edge_colors[0]
@@ -1145,7 +1147,7 @@ class Points(Layer):
             self.cursor = 'pointing'
             self.interactive = False
             self.help = 'hold <space> to pan/zoom'
-            self.selected_data = []
+            self.selected_data = set()
             self._set_highlight()
             self.mouse_drag_callbacks.append(add)
         elif mode == Mode.SELECT:
@@ -1450,7 +1452,7 @@ class Points(Layer):
 
     def remove_selected(self):
         """Removes selected points if any."""
-        index = copy(self.selected_data)
+        index = list(self.selected_data)
         index.sort()
         if len(index) > 0:
             self._size = np.delete(self._size, index, axis=0)
@@ -1462,7 +1464,7 @@ class Points(Layer):
                 )
             if self._value in self.selected_data:
                 self._value = None
-            self.selected_data = []
+            self.selected_data = set()
             self.data = np.delete(self.data, index, axis=0)
 
     def _move(self, index, coord):
@@ -1532,14 +1534,14 @@ class Points(Layer):
     def _copy_data(self):
         """Copy selected points to clipboard."""
         if len(self.selected_data) > 0:
+            index = list(self.selected_data)
             self._clipboard = {
-                'data': deepcopy(self.data[self.selected_data]),
-                'edge_color': deepcopy(self.edge_color[self.selected_data]),
-                'face_color': deepcopy(self.face_color[self.selected_data]),
-                'size': deepcopy(self.size[self.selected_data]),
+                'data': deepcopy(self.data[index]),
+                'edge_color': deepcopy(self.edge_color[index]),
+                'face_color': deepcopy(self.face_color[index]),
+                'size': deepcopy(self.size[index]),
                 'properties': {
-                    k: deepcopy(v[self.selected_data])
-                    for k, v in self.properties.items()
+                    k: deepcopy(v[index]) for k, v in self.properties.items()
                 },
                 'indices': self.dims.indices,
             }
