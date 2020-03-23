@@ -76,9 +76,10 @@ class InteractionBox:
             source=self,
             auto_connect=False,
             points_changed=Event,
-            rotated=Event,
-            scaled=Event,
-            translated=Event,
+            transform_changed_drag=Event,
+            transform_changed_final=Event,
+            selection_box_changed_drag=Event,
+            selection_box_changed_final=Event,
         )
         self._create_box_from_points()
         self._add_rotation_handle()
@@ -126,6 +127,19 @@ class InteractionBox:
         offset = self._box[Box.HANDLE] - self._box[Box.CENTER]
         angle = -np.degrees(np.arctan2(offset[0], -offset[1])) - 90
         return angle
+
+    def points_in_box(self, points):
+        """ Calculates from a list of points which are inside the box.
+         Parameters
+        ----------
+        points : (2, 2) array
+            Points to be checked
+
+        Returns
+        -------
+        inside : list of bool
+            Booleans indicating if point inside of box
+        """
 
     def _compute_vertices_and_box(self):
         """Compute location of the box for rendering.
@@ -240,7 +254,8 @@ class InteractionBox:
             [layer.coordinates[i] for i in layer.dims.displayed]
         )
         self._drag_start_box = np.copy(self._box)
-        self._drag_start_angle = self.angle
+        if self._box is not None:
+            self._drag_start_angle = self.angle
         self._drag_angle = 0
         self._drag_scale = [1.0, 1.0]
 
@@ -278,7 +293,7 @@ class InteractionBox:
         transform = tform1 + tform2 + tform3
         self._box = transform(self._drag_start_box)
         self.events.points_changed()
-        self.events.rotated(angle=self._drag_angle)
+        self.events.transform_changed_drag(transform=transform)
 
     def _on_drag_scale(self, layer, event):
         """ Gets called upon mouse_move in the case of a scaling operation
@@ -320,7 +335,7 @@ class InteractionBox:
         transform += SimilarityTransform(translation=center)
         self._box = transform(self._drag_start_box)
         self.events.points_changed()
-        self.events.scaled(scale=scale)
+        self.events.transform_changed_drag(transform=transform)
 
     def _on_drag_translate(self, layer, event):
         """ Gets called upon mouse_move in the case of a translation operation
@@ -334,7 +349,7 @@ class InteractionBox:
         transform = SimilarityTransform(translation=offset)
         self._box = transform(self._drag_start_box)
         self.events.points_changed()
-        self.events.translated(translate=offset)
+        self.events.transform_changed_drag(transform=transform)
 
     def _on_drag_newbox(self, layer, event):
         """ Gets called upon mouse_move in the case of a drawing a new box
@@ -346,9 +361,12 @@ class InteractionBox:
                 np.array([layer.coordinates[i] for i in layer.dims.displayed]),
             ]
         )
+        self.show = True
         self.show_handle = False
         self.show_vertices = False
-        self.events.points_changed()
+        self.events.selection_box_changed_drag(
+            box=self._box[Box.WITHOUT_HANDLE]
+        )
 
     def _on_end_newbox(self, layer, event):
         """ Gets called upon mouse_move in the case of a drawing a new box
@@ -356,7 +374,11 @@ class InteractionBox:
         self.show = False
         self.show_handle = True
         self.show_vertices = True
-        self.events.points_changed()
+        # self.points = None
+        if self._box is not None:
+            self.events.selection_box_changed_final(
+                box=self._box[Box.WITHOUT_HANDLE]
+            )
 
     def initialize_mouse_events(self, layer):
         """ Adds event handling functions to the layer
@@ -387,14 +409,14 @@ class InteractionBox:
 
         @layer.mouse_drag_callbacks.append
         def mouse_drag(layer, event):
-            if not self.show or self._box is None:
-                return
+            # if not self.show or self._box is None:
+            #    return
 
             # Handling drag start, decide what action to take
             self._set_drag_start_values(layer)
             drag_callback = None
             final_callback = None
-            if self._selected_vertex is not None:
+            if self._show and self._selected_vertex is not None:
                 if self._selected_vertex == Box.HANDLE:
                     drag_callback = self._on_drag_rotation
                     yield
@@ -403,9 +425,13 @@ class InteractionBox:
                     drag_callback = self._on_drag_scale
                     yield
             else:
-                if inside_boxes(
-                    np.array([self._box - self._drag_start_coordinates])
-                )[0]:
+                if (
+                    self._box is not None
+                    and self._show
+                    and inside_boxes(
+                        np.array([self._box - self._drag_start_coordinates])
+                    )[0]
+                ):
                     drag_callback = self._on_drag_translate
                     yield
                 else:
@@ -413,7 +439,6 @@ class InteractionBox:
                     drag_callback = self._on_drag_newbox
                     final_callback = self._on_end_newbox
                     yield
-
             # Handle events during dragging
             while event.type == 'mouse_move':
                 if drag_callback is not None:
