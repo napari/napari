@@ -120,6 +120,11 @@ class QtViewer(QSplitter):
             shortcut='Ctrl+Shift+C',
         )
         self.dockConsole.setVisible(False)
+        # because the console is loaded lazily in the @getter, this line just
+        # gets (or creates) the console when the dock console is made visible.
+        self.dockConsole.visibilityChanged.connect(
+            lambda visible: self.console if visible else None
+        )
         self.dockLayerControls.visibilityChanged.connect(self._constrain_width)
         self.dockLayerList.setMaximumWidth(258)
         self.dockLayerList.setMinimumWidth(258)
