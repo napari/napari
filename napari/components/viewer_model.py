@@ -111,7 +111,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             return
 
         self._palette = palette
-        self.events.palette()
+        self.events.palette(palette=palette)
 
     @property
     def theme(self):
