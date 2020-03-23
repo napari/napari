@@ -101,8 +101,8 @@ DATA_FILES = [format(f) for f in collect_data_files('napari') if keep(f[0])]
 resources_path = import_resources()
 DATA_FILES.append(format((resources_path, relpath(dirname(resources_path), NAPARI_ROOT))))
 NAME = 'napari'
-WINDOWED = True
-DEBUG = False
+WINDOWED = False
+DEBUG = True
 UPX = False
 BLOCK_CIPHER = None
 HOOKSPATH = join(BUNDLE_ROOT, 'hooks')
