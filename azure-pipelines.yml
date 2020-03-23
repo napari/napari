@@ -26,8 +26,8 @@ stages:
           - bash: sudo xcode-select -s /Applications/Xcode_10.app/Contents/Developer
           - bash: |
               python -m pip install -r requirements.txt
-              python -m pip install pyinstaller
-              python -m pip install .
+              python -m pip install pyinstaller PyQt5 wheel
+              python -m pip install --no-build-isolation .
               cd bundle
               python create_and_pack_executable.py
           - task: PublishBuildArtifacts@1
