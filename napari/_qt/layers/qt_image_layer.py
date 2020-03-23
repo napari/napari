@@ -1,7 +1,7 @@
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QLabel, QComboBox, QSlider, QHBoxLayout
 from .qt_image_base_layer import QtBaseImageControls
-from ...layers.image._constants import Interpolation, Rendering
+from ...layers.image._image_constants import Interpolation, Rendering
 
 
 class QtImageControls(QtBaseImageControls):

@@ -865,5 +865,7 @@ class AddLayersMixin:
                     "_add_layer_from_data received an unexpected keyword "
                     f"argument ({bad_key}) for layer type {layer_type}"
                 ) from exc
+            else:
+                raise exc
 
         return layer

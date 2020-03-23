@@ -4,7 +4,7 @@ from .volume import Volume as VolumeNode
 from vispy.color import Colormap
 import numpy as np
 from .vispy_base_layer import VispyBaseLayer
-from ..layers.image._constants import Rendering
+from ..layers.image._image_constants import Rendering
 from ..layers import Image, Labels
 
 
@@ -266,7 +266,7 @@ class VispyImageLayer(VispyBaseLayer):
             scale = np.ones(self.layer.ndim)
             for i, d in enumerate(self.layer.dims.displayed):
                 scale[d] = downsample[i]
-            self.layer._transform_view.scale = scale
+            self.layer._transforms['tile2data'].scale = scale
             self._on_scale_change()
             slices = tuple(slice(None, None, ds) for ds in downsample)
             data = data[slices]

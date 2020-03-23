@@ -7,7 +7,7 @@ from ..utils.colormaps import make_colorbar
 from ..utils.event import Event
 from ..utils.status_messages import format_float
 from ..utils.validators import validate_n_seq
-from .layer_utils import increment_unnamed_colormap
+from .utils.layer_utils import increment_unnamed_colormap
 
 
 validate_2_tuple = validate_n_seq(2)

@@ -9,7 +9,7 @@ from skimage.io import imsave
 
 from .qt_about import QtAbout
 from .qt_viewer_dock_widget import QtViewerDockWidget
-from ..resources import combine_stylesheets
+from ..resources import get_stylesheet
 
 # these "# noqa" comments are here to skip flake8 linting (E402),
 # these module-level imports have to come after `app.use_app(API)`
@@ -55,7 +55,7 @@ class Window:
         Window menu.
     """
 
-    raw_stylesheet = combine_stylesheets()
+    raw_stylesheet = get_stylesheet()
 
     def __init__(self, qt_viewer, *, show=True):
 
@@ -88,9 +88,7 @@ class Window:
 
         self._update_palette(qt_viewer.viewer.palette)
 
-        if self.qt_viewer.console.shell is not None:
-            self._add_viewer_dock_widget(self.qt_viewer.dockConsole)
-
+        self._add_viewer_dock_widget(self.qt_viewer.dockConsole)
         self._add_viewer_dock_widget(self.qt_viewer.dockLayerControls)
         self._add_viewer_dock_widget(self.qt_viewer.dockLayerList)
 
@@ -202,14 +200,14 @@ class Window:
         )
         self.help_menu.addAction(about_action)
 
-        about_keybindings = QAction("keybindings", self._qt_window)
-        about_keybindings.setShortcut("Ctrl+Alt+/")
-        about_keybindings.setShortcutContext(Qt.ApplicationShortcut)
-        about_keybindings.setStatusTip('keybindings')
-        about_keybindings.triggered.connect(
-            self.qt_viewer.show_keybindings_dialog
+        about_key_bindings = QAction("Show key bindings", self._qt_window)
+        about_key_bindings.setShortcut("Ctrl+Alt+/")
+        about_key_bindings.setShortcutContext(Qt.ApplicationShortcut)
+        about_key_bindings.setStatusTip('key_bindings')
+        about_key_bindings.triggered.connect(
+            self.qt_viewer.show_key_bindings_dialog
         )
-        self.help_menu.addAction(about_keybindings)
+        self.help_menu.addAction(about_key_bindings)
 
     def add_dock_widget(
         self,

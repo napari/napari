@@ -31,7 +31,7 @@ def test_viewer(viewer_factory):
     viewer.dims.ndisplay = 2
     assert viewer.dims.ndisplay == 2
 
-    # Run all class keybindings
+    # Run all class key bindings
     for func in viewer.class_keymap.values():
         func(viewer)
         # the `play` keybinding calls QtDims.play_dim(), which then creates a
@@ -67,7 +67,7 @@ def test_add_layer(viewer_factory, layer_class, data, ndim, visible):
     layer = add_layer_by_type(viewer, layer_class, data, visible=visible)
     check_viewer_functioning(viewer, view, data, ndim)
 
-    # Run all class keybindings
+    # Run all class key bindings
     for func in layer.class_keymap.values():
         func(layer)
 
