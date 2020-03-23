@@ -1,3 +1,4 @@
+import pytest
 import numpy as np
 import collections
 from napari.layers import Labels
@@ -10,10 +11,12 @@ from napari.utils.interactions import (
 
 
 # Create a namedtuple for simulating vispy mouse events
-Event = collections.namedtuple('Event', 'type is_dragging')
+@pytest.fixture
+def Event():
+    return collections.namedtuple('Event', 'type is_dragging')
 
 
-def test_paint():
+def test_paint(Event):
     """Test painting labels with different brush sizes."""
     data = np.ones((20, 20))
     layer = Labels(data)
@@ -44,7 +47,7 @@ def test_paint():
     assert np.unique(layer.data[-5:, :5]) == 1
 
 
-def test_pick():
+def test_pick(Event):
     """Test picking label."""
     data = np.ones((20, 20))
     data[:5, :5] = 2
@@ -68,7 +71,7 @@ def test_pick():
     assert layer.selected_label == 3
 
 
-def test_fill():
+def test_fill(Event):
     """Test filling label."""
     data = np.ones((20, 20))
     data[:5, :5] = 2
