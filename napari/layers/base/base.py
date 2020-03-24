@@ -178,6 +178,7 @@ class Layer(KeymapProvider, ABC):
         self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         self._update_properties = True
         self._name = ''
+        self._parent = None
         self.events = EmitterGroup(
             source=self,
             auto_connect=True,
@@ -355,6 +356,14 @@ class Layer(KeymapProvider, ABC):
             return
         self._position = position
         self._update_coordinates()
+
+    @property
+    def parent(self):
+        return self._parent
+
+    @parent.setter
+    def parent(self, parent):
+        self._parent = parent
 
     def _update_dims(self, event=None):
         """Updates dims model, which is useful after data has been changed."""
