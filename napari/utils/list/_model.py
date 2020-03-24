@@ -1,4 +1,4 @@
-from ...utils.event import EmitterGroup
+from ...utils.event import EmitterGroup, Event
 
 from ._multi import MultiIndexList
 from ._typed import TypedList
@@ -33,6 +33,7 @@ class ListModel(MultiIndexList, TypedList):
             removed=None,
             reordered=None,
             changed=None,
+            name=Event,
         )
         self.events.added.connect(self.events.changed)
         self.events.removed.connect(self.events.changed)
