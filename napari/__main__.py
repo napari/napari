@@ -67,4 +67,17 @@ def main():
 
 
 if __name__ == '__main__':
-    sys.exit(main())
+
+    # FIXME: still not working... but this would allow us to run tests from
+    # bundled apps.
+    # https://docs.pytest.org/en/latest/example/simple.html#freezing-pytest
+    if len(sys.argv) > 1 and sys.argv[1] == "--pytest":
+        import pytest
+        import pytestqt
+        import pytest_ordering
+
+        sys.exit(
+            pytest.main(sys.argv[2:], plugins=[pytestqt, pytest_ordering])
+        )
+    else:
+        sys.exit(main())
