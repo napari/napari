@@ -86,7 +86,7 @@ class Window:
         self._qt_center.layout().addWidget(self.qt_viewer)
         self._qt_center.layout().setContentsMargins(4, 0, 4, 0)
 
-        self._update_palette(qt_viewer.viewer.palette)
+        self._update_palette()
 
         self._add_viewer_dock_widget(self.qt_viewer.dockConsole)
         self._add_viewer_dock_widget(self.qt_viewer.dockLayerControls)
@@ -95,9 +95,7 @@ class Window:
         self.qt_viewer.viewer.events.status.connect(self._status_changed)
         self.qt_viewer.viewer.events.help.connect(self._help_changed)
         self.qt_viewer.viewer.events.title.connect(self._title_changed)
-        self.qt_viewer.viewer.events.palette.connect(
-            lambda event: self._update_palette(event.palette)
-        )
+        self.qt_viewer.viewer.events.palette.connect(self._update_palette)
 
         if show:
             self.show()
@@ -313,16 +311,11 @@ class Window:
             self._qt_window.raise_()  # for macOS
             self._qt_window.activateWindow()  # for Windows
 
-    def _update_palette(self, palette):
-        """Update widget color palette.
-
-        Parameters
-        ----------
-        palette : qtpy.QtGui.QPalette
-            Color palette for each widget state (Active, Disabled, Inactive).
-        """
+    def _update_palette(self, event=None):
+        """Update widget color palette."""
         # set window styles which don't use the primary stylesheet
         # FIXME: this is a problem with the stylesheet not using properties
+        palette = self.qt_viewer.viewer.palette
         self._status_bar.setStyleSheet(
             template(
                 'QStatusBar { background: {{ background }}; '
