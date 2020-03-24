@@ -1,10 +1,12 @@
 import warnings
 from vispy.scene.visuals import Image as ImageNode
-from vispy.scene.visuals import Volume as VolumeNode
+from .volume import Volume as VolumeNode
 from vispy.color import Colormap
 import numpy as np
 from .vispy_base_layer import VispyBaseLayer
-from ..layers.image._constants import Rendering
+from ..layers.image._image_constants import Rendering
+from ..layers import Image, Labels
+
 
 texture_dtypes = [
     np.dtype(np.int8),
@@ -20,22 +22,15 @@ class VispyImageLayer(VispyBaseLayer):
         node = ImageNode(None, method='auto')
         super().__init__(layer, node)
 
-        self.layer.events.rendering.connect(
-            lambda e: self._on_rendering_change()
-        )
-        self.layer.events.interpolation.connect(
-            lambda e: self._on_interpolation_change()
-        )
-        self.layer.events.colormap.connect(
-            lambda e: self._on_colormap_change()
-        )
+        self.layer.events.rendering.connect(self._on_rendering_change)
+        self.layer.events.interpolation.connect(self._on_interpolation_change)
+        self.layer.events.colormap.connect(self._on_colormap_change)
         self.layer.events.contrast_limits.connect(
-            lambda e: self._on_contrast_limits_change()
+            self._on_contrast_limits_change
         )
-        self.layer.events.gamma.connect(lambda e: self._on_gamma_change())
-        self.layer.events.iso_threshold.connect(
-            lambda e: self._on_iso_threshold_change()
-        )
+        self.layer.events.gamma.connect(self._on_gamma_change)
+        self.layer.events.iso_threshold.connect(self._on_threshold_change)
+        self.layer.events.attenuation.connect(self._on_threshold_change)
 
         self._on_display_change()
         self._on_data_change()
@@ -54,7 +49,7 @@ class VispyImageLayer(VispyBaseLayer):
         self.node.parent = parent
         self.reset()
 
-    def _on_data_change(self):
+    def _on_data_change(self, event=None):
         data = self.layer._data_view
         dtype = np.dtype(data.dtype)
         if dtype not in texture_dtypes:
@@ -100,16 +95,20 @@ class VispyImageLayer(VispyBaseLayer):
                 self.node.set_data(data, clim=self.layer.contrast_limits)
         self.node.update()
 
-    def _on_interpolation_change(self):
-        if self.layer.dims.ndisplay == 2:
+    def _on_interpolation_change(self, event=None):
+        if self.layer.dims.ndisplay == 3 and isinstance(self.layer, Labels):
+            self.node.interpolation = 'nearest'
+        elif self.layer.dims.ndisplay == 3 and isinstance(self.layer, Image):
+            self.node.interpolation = 'linear'
+        else:
             self.node.interpolation = self.layer.interpolation
 
-    def _on_rendering_change(self):
+    def _on_rendering_change(self, event=None):
         if self.layer.dims.ndisplay == 3:
             self.node.method = self.layer.rendering
-            self._on_iso_threshold_change()
+            self._on_threshold_change()
 
-    def _on_colormap_change(self):
+    def _on_colormap_change(self, event=None):
         cmap = self.layer.colormap[1]
         if self.layer.gamma != 1:
             # when gamma!=1, we instantiate a new colormap
@@ -123,40 +122,23 @@ class VispyImageLayer(VispyBaseLayer):
             )
         self.node.cmap = cmap
 
-    def _on_contrast_limits_change(self):
+    def _on_contrast_limits_change(self, event=None):
         if self.layer.dims.ndisplay == 2:
             self.node.clim = self.layer.contrast_limits
         else:
             self._on_data_change()
 
-    def _on_gamma_change(self):
+    def _on_gamma_change(self, event=None):
         self._on_colormap_change()
 
-    def _on_iso_threshold_change(self):
-        rendering = self.layer.rendering
-        if isinstance(rendering, str):
-            rendering = Rendering(rendering)
-        if self.layer.dims.ndisplay == 3 and rendering == Rendering.ISO:
+    def _on_threshold_change(self, event=None):
+        if self.layer.dims.ndisplay == 2:
+            return
+        rendering = Rendering(self.layer.rendering)
+        if rendering == Rendering.ISO:
             self.node.threshold = float(self.layer.iso_threshold)
-            self.node.shared_program['u_threshold'] = self.node.threshold
-
-    def _on_scale_change(self):
-        self.scale = [
-            self.layer.scale[d] * self.layer._scale_view[d]
-            for d in self.layer.dims.displayed[::-1]
-        ]
-        if self.layer.is_pyramid:
-            self.layer.top_left = self.find_top_left()
-        self.layer.position = self._transform_position(self._position)
-
-    def _on_translate_change(self):
-        self.translate = [
-            self.layer.translate[d]
-            + self.layer._translate_view[d]
-            + self.layer.translate_grid[d]
-            for d in self.layer.dims.displayed[::-1]
-        ]
-        self.layer.position = self._transform_position(self._position)
+        elif rendering == Rendering.ATTENUATED_MIP:
+            self.node.threshold = float(self.layer.attenuation)
 
     def compute_data_level(self, size):
         """Computed what level of the pyramid should be viewed given the
@@ -239,7 +221,7 @@ class VispyImageLayer(VispyBaseLayer):
             else:
                 self.layer.top_left = self.find_top_left()
 
-    def reset(self):
+    def reset(self, event=None):
         self._reset_base()
         self._on_interpolation_change()
         self._on_colormap_change()
@@ -284,7 +266,7 @@ class VispyImageLayer(VispyBaseLayer):
             scale = np.ones(self.layer.ndim)
             for i, d in enumerate(self.layer.dims.displayed):
                 scale[d] = downsample[i]
-            self.layer._scale_view = scale
+            self.layer._transforms['tile2data'].scale = scale
             self._on_scale_change()
             slices = tuple(slice(None, None, ds) for ds in downsample)
             data = data[slices]

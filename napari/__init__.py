@@ -1,7 +1,18 @@
+from ._version import get_versions
+
+__version__ = get_versions()['version']
+del get_versions
+
 import os
 from distutils.version import StrictVersion
 from pathlib import Path
 from qtpy import API_NAME
+from ._version import get_versions
+
+# putting up higher due to circular imports if plugin exceptions are raised
+# on startup (we need to be able to show the napari version in the traceback.)
+__version__ = get_versions()['version']
+del get_versions
 
 
 if API_NAME == 'PySide2':
@@ -26,9 +37,24 @@ if StrictVersion(QtCore.__version__) < StrictVersion('5.12.3'):
     """
     warn(message=warn_message)
 
+from vispy import app
+import logging
+
+# set vispy application to the appropriate qt backend
+app.use_app(API_NAME)
+del app
+# set vispy logger to show warning and errors only
+vispy_logger = logging.getLogger('vispy')
+vispy_logger.setLevel(logging.WARNING)
+
 from .viewer import Viewer
-from . import keybindings
+
+# Note that importing _viewer_key_bindings is needed as the Viewer gets
+# decorated with keybindings during that process, but it is not directly needed
+# by our users and so is deleted below
+from . import _viewer_key_bindings  # noqa: F401
 from .view_layers import (
+    view_path,
     view_image,
     view_labels,
     view_surface,
@@ -37,8 +63,18 @@ from .view_layers import (
     view_vectors,
 )
 from ._qt import gui_qt
-from ._version import get_versions
+from .utils import sys_info, _magicgui
+
+# register napari object types with magicgui if it is installed
+_magicgui.register_types_with_magicgui()
 
 
-__version__ = get_versions()['version']
-del get_versions
+# this unused import is here to fix a very strange bug.
+# there is some mysterious magical goodness in scipy stats that needs
+# to be imported early.
+# see: https://github.com/napari/napari/issues/925
+from scipy import stats  # noqa: F401
+
+del _magicgui
+del stats
+del _viewer_key_bindings

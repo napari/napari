@@ -6,10 +6,10 @@ from ...utils.misc import ensure_iterable
 from ...utils.status_messages import format_float
 from ..base import Layer
 from vispy.color import get_color_names
-from ._constants import Mode, Box, BACKSPACE, shape_classes, ShapeType
-from .shape_list import ShapeList
-from .shape_utils import create_box, point_to_lines
-from .shape_models import Rectangle, Ellipse, Line, Path, Polygon
+from ._shapes_constants import Mode, Box, BACKSPACE, shape_classes, ShapeType
+from ._shape_list import ShapeList
+from ._shapes_utils import create_box, point_to_lines
+from ._shapes_models import Rectangle, Ellipse, Line, Path, Polygon
 
 
 class Shapes(Layer):
@@ -72,28 +72,28 @@ class Shapes(Layer):
     data : (N, ) list of array
         List of shape data, where each element is an (N, D) array of the
         N vertices of a shape in D dimensions.
-    shape_types : (N, ) list of str
+    shape_type : (N, ) list of str
         Name of shape type for each shape.
-    edge_colors : (N, ) list of str
+    edge_color : (N, ) list of str
         Name of edge color for each shape.
-    face_colors : (N, ) list of str
+    face_color : (N, ) list of str
         Name of face color for each shape.
-    edge_widths : (N, ) list of float
+    edge_width : (N, ) list of float
         Edge width for each shape.
-    opacities : (N, ) list of float
+    opacity : (N, ) list of float
         Opacity for each shape.
-    z_indices : (N, ) list of int
+    z_index : (N, ) list of int
         z-index for each shape.
-    edge_width : float
+    current_edge_width : float
         Thickness of lines and edges of the next shape to be added or the
         currently selected shape.
-    edge_color : str
+    current_edge_color : str
         Color of the edge of the next shape to be added or the currently
         selected shape.
-    face_color : str
+    current_face_color : str
         Color of the face of the next shape to be added or the currently
         selected shape.
-    opacity : float
+    current_opacity : float
         Opacity of the next shape to be added or the currently selected shape.
     selected_data : list
         List of currently selected shapes.
@@ -221,6 +221,7 @@ class Shapes(Layer):
         # Don't pass on opacity value to base layer as it could be a list
         # and will get set bellow
         super().__init__(
+            data,
             ndim,
             name=name,
             metadata=metadata,
@@ -246,29 +247,29 @@ class Shapes(Layer):
         # be drawn. Each shape has a corresponding property with the
         # value for itself
         if np.isscalar(edge_width):
-            self._edge_width = edge_width
+            self._current_edge_width = edge_width
         else:
-            self._edge_width = 1
+            self._current_edge_width = 1
 
         if type(edge_color) is str:
-            self._edge_color = edge_color
+            self._current_edge_color = edge_color
         else:
-            self._edge_color = 'black'
+            self._current_edge_color = 'black'
 
         if type(face_color) is str:
-            self._face_color = face_color
+            self._current_face_color = face_color
         else:
-            self._face_color = 'white'
+            self._current_face_color = 'white'
 
         if np.isscalar(opacity):
-            self._opacity = opacity
+            self._current_opacity = opacity
         else:
-            self._opacity = 0.7
+            self._current_opacity = 0.7
 
         self._data_view = ShapeList(ndisplay=self.dims.ndisplay)
-        self._data_slice_keys = np.empty(
-            (0, 2, len(self.dims.not_displayed)), dtype=int
-        )
+        self._data_view.slice_key = np.array(self.dims.indices)[
+            list(self.dims.not_displayed)
+        ]
 
         self._value = (None, None)
         self._value_stored = (None, None)
@@ -295,9 +296,9 @@ class Shapes(Layer):
         self._status = self.mode
         self._help = 'enter a selection mode to edit shape properties'
 
-        self.events.deselect.connect(lambda x: self._finish_drawing())
-        self.events.face_color.connect(lambda e: self._update_thumbnail())
-        self.events.edge_color.connect(lambda e: self._update_thumbnail())
+        self.events.deselect.connect(self._finish_drawing)
+        self.events.face_color.connect(self._update_thumbnail)
+        self.events.edge_color.connect(self._update_thumbnail)
 
         self.add(
             data,
@@ -350,28 +351,28 @@ class Shapes(Layer):
         return len(self._data_view.shapes)
 
     @property
-    def edge_width(self):
+    def current_edge_width(self):
         """float: Width of shape edges including lines and paths."""
-        return self._edge_width
+        return self._current_edge_width
 
-    @edge_width.setter
-    def edge_width(self, edge_width):
-        self._edge_width = edge_width
+    @current_edge_width.setter
+    def current_edge_width(self, edge_width):
+        self._current_edge_width = edge_width
         if self._update_properties:
             index = self.selected_data
             for i in index:
                 self._data_view.update_edge_width(i, edge_width)
-        self.status = format_float(self.edge_width)
+        self.status = format_float(self.current_edge_width)
         self.events.edge_width()
 
     @property
-    def edge_color(self):
+    def current_edge_color(self):
         """str: color of shape edges including lines and paths."""
-        return self._edge_color
+        return self._current_edge_color
 
-    @edge_color.setter
-    def edge_color(self, edge_color):
-        self._edge_color = edge_color
+    @current_edge_color.setter
+    def current_edge_color(self, edge_color):
+        self._current_edge_color = edge_color
         if self._update_properties:
             index = self.selected_data
             for i in index:
@@ -379,13 +380,13 @@ class Shapes(Layer):
         self.events.edge_color()
 
     @property
-    def face_color(self):
+    def current_face_color(self):
         """str: color of shape faces."""
-        return self._face_color
+        return self._current_face_color
 
-    @face_color.setter
-    def face_color(self, face_color):
-        self._face_color = face_color
+    @current_face_color.setter
+    def current_face_color(self, face_color):
+        self._current_face_color = face_color
         if self._update_properties:
             index = self.selected_data
             for i in index:
@@ -393,52 +394,52 @@ class Shapes(Layer):
         self.events.face_color()
 
     @property
-    def opacity(self):
+    def current_opacity(self):
         """float: Opacity value between 0.0 and 1.0."""
-        return self._opacity
+        return self._current_opacity
 
-    @opacity.setter
-    def opacity(self, opacity):
+    @current_opacity.setter
+    def current_opacity(self, opacity):
         if not 0.0 <= opacity <= 1.0:
             raise ValueError(
                 'opacity must be between 0.0 and 1.0; ' f'got {opacity}'
             )
 
-        self._opacity = opacity
+        self._current_opacity = opacity
         if self._update_properties:
             index = self.selected_data
             for i in index:
                 self._data_view.update_opacity(i, opacity)
-        self.status = format_float(self.opacity)
+        self.status = format_float(self.current_opacity)
         self.events.opacity()
 
     @property
-    def shape_types(self):
+    def shape_type(self):
         """list of str: name of shape type for each shape."""
         return self._data_view.shape_types
 
     @property
-    def edge_colors(self):
+    def edge_color(self):
         """list of str: name of edge color for each shape."""
         return self._data_view.edge_colors
 
     @property
-    def face_colors(self):
+    def face_color(self):
         """list of str: name of face color for each shape."""
         return self._data_view.face_colors
 
     @property
-    def edge_widths(self):
+    def edge_width(self):
         """list of float: edge width for each shape."""
         return self._data_view.edge_widths
 
     @property
-    def opacities(self):
+    def opacity(self):
         """list of float: opacity for each shape."""
         return self._data_view.opacities
 
     @property
-    def z_indices(self):
+    def z_index(self):
         """list of int: z_index for each shape."""
         return self._data_view.z_indices
 
@@ -464,7 +465,7 @@ class Shapes(Layer):
         if len(face_colors) == 1:
             face_color = face_colors[0]
             with self.block_update_properties():
-                self.face_color = face_color
+                self.current_face_color = face_color
 
         edge_colors = list(
             set(
@@ -477,7 +478,7 @@ class Shapes(Layer):
         if len(edge_colors) == 1:
             edge_color = edge_colors[0]
             with self.block_update_properties():
-                self.edge_color = edge_color
+                self.current_edge_color = edge_color
 
         edge_width = list(
             set([self._data_view.shapes[i].edge_width for i in selected_data])
@@ -485,7 +486,7 @@ class Shapes(Layer):
         if len(edge_width) == 1:
             edge_width = edge_width[0]
             with self.block_update_properties():
-                self.edge_width = edge_width
+                self.current_edge_width = edge_width
 
         opacities = list(
             set([self._data_view.shapes[i].opacity for i in selected_data])
@@ -493,7 +494,29 @@ class Shapes(Layer):
         if len(opacities) == 1:
             opacity = opacities[0]
             with self.block_update_properties():
-                self.opacity = opacity
+                self.current_opacity = opacity
+
+    def _get_state(self):
+        """Get dictionary of layer state.
+
+        Returns
+        -------
+        state : dict
+            Dictionary of layer state.
+        """
+        state = self._get_base_state()
+        state.update(
+            {
+                'shape_type': self.shape_type,
+                'opacity': self.opacity,
+                'z_index': self.z_index,
+                'edge_width': self.edge_width,
+                'face_color': self.face_color,
+                'edge_color': self.edge_color,
+                'data': self.data,
+            }
+        )
+        return state
 
     @property
     def mode(self):
@@ -517,8 +540,7 @@ class Shapes(Layer):
 
     @mode.setter
     def mode(self, mode):
-        if isinstance(mode, str):
-            mode = Mode(mode)
+        mode = Mode(mode)
 
         if not self.editable:
             mode = Mode.PAN_ZOOM
@@ -552,7 +574,7 @@ class Shapes(Layer):
                 'hold <space> to pan/zoom, ' 'press <esc> to finish drawing'
             )
         else:
-            raise ValueError("Mode not recongnized")
+            raise ValueError("Mode not recognized")
 
         self.status = str(mode)
         self._mode = mode
@@ -632,13 +654,13 @@ class Shapes(Layer):
             shapes.
         """
         if edge_width is None:
-            edge_width = self.edge_width
+            edge_width = self.current_edge_width
         if edge_color is None:
-            edge_color = self.edge_color
+            edge_color = self.current_edge_color
         if face_color is None:
-            face_color = self.face_color
+            face_color = self.current_face_color
         if opacity is None:
-            opacity = self.opacity
+            opacity = self.current_opacity
         if self._data_view is not None:
             z_index = z_index or max(self._data_view._z_index, default=-1) + 1
         else:
@@ -903,7 +925,7 @@ class Shapes(Layer):
         self._drag_box_stored = copy(self._drag_box)
         self.events.highlight()
 
-    def _finish_drawing(self):
+    def _finish_drawing(self, event=None):
         """Reset properties used in shape drawing."""
         index = copy(self._moving_value[0])
         self._is_moving = False
@@ -932,7 +954,7 @@ class Shapes(Layer):
         self._is_creating = False
         self._update_dims()
 
-    def _update_thumbnail(self):
+    def _update_thumbnail(self, event=None):
         """Update thumbnail with current points and colors."""
         # calculate min vals for the vertices and pad with 0.5
         # the offset is needed to ensure that the top left corner of the shapes
@@ -1626,7 +1648,7 @@ class Shapes(Layer):
                         self._selected_box = self.interaction_box(shapes)
                 self.refresh()
         else:
-            raise ValueError("Mode not recongnized")
+            raise ValueError("Mode not recognized")
 
     def on_mouse_move(self, event):
         """Called whenever mouse moves over canvas.
@@ -1678,7 +1700,7 @@ class Shapes(Layer):
         elif self._mode in [Mode.VERTEX_INSERT, Mode.VERTEX_REMOVE]:
             self._set_highlight()
         else:
-            raise ValueError("Mode not recongnized")
+            raise ValueError("Mode not recognized")
 
     def on_mouse_release(self, event):
         """Called whenever mouse released in canvas.
@@ -1745,4 +1767,4 @@ class Shapes(Layer):
         ):
             pass
         else:
-            raise ValueError("Mode not recongnized")
+            raise ValueError("Mode not recognized")

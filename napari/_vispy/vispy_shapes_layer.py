@@ -15,19 +15,17 @@ class VispyShapesLayer(VispyBaseLayer):
 
         super().__init__(layer, node)
 
-        self.layer.events.edge_width.connect(lambda e: self._on_data_change())
-        self.layer.events.edge_color.connect(lambda e: self._on_data_change())
-        self.layer.events.face_color.connect(lambda e: self._on_data_change())
-        self.layer.events.opacity.connect(lambda e: self._on_data_change())
-        self.layer.events.highlight.connect(
-            lambda e: self._on_highlight_change()
-        )
+        self.layer.events.edge_width.connect(self._on_data_change)
+        self.layer.events.edge_color.connect(self._on_data_change)
+        self.layer.events.face_color.connect(self._on_data_change)
+        self.layer.events.opacity.connect(self._on_data_change)
+        self.layer.events.highlight.connect(self._on_highlight_change)
 
         self._reset_base()
         self._on_data_change()
         self._on_highlight_change()
 
-    def _on_data_change(self):
+    def _on_data_change(self, event=None):
         faces = self.layer._data_view._mesh.displayed_triangles
         colors = self.layer._data_view._mesh.displayed_triangles_colors
         vertices = self.layer._data_view._mesh.vertices
@@ -50,7 +48,7 @@ class VispyShapesLayer(VispyBaseLayer):
         )
         self.node.update()
 
-    def _on_highlight_change(self):
+    def _on_highlight_change(self, event=None):
         # Compute the vertices and faces of any shape outlines
         vertices, faces = self.layer._outline_shapes()
 
@@ -101,5 +99,5 @@ class VispyShapesLayer(VispyBaseLayer):
             pos=pos, color=edge_color, width=width
         )
 
-    def _on_opacity_change(self):
+    def _on_opacity_change(self, event=None):
         pass
