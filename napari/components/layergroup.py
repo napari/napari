@@ -2,32 +2,18 @@ from __future__ import annotations
 
 from .layerlist import LayerList
 from ..layers import Layer
+from ..utils.event import Event
 
 
-class LayerGroup(Layer):
-    """
-    The Composite class represents the complex components that may have
-    children. Usually, the Composite objects delegate the actual work to their
-    children and then "sum-up" the result.
-    """
-
-    def __init__(self, name='LayerGroup', visible=True) -> None:
-        self._children: LayerList[Layer] = []
+class LayerGroup(LayerList, Layer):
+    def __init__(
+        self, iterable=(), *, name='LayerGroup', visible=True
+    ) -> None:
+        super().__init__(iterable)
         self._name = name
-        self._visible = visible
-
-    """
-    A composite object can add or remove other components (both simple or
-    complex) to or from its child list.
-    """
-
-    def append(self, component: Layer) -> None:
-        self._children.append(component)
-        component.parent = self
-
-    def remove(self, component: Layer) -> None:
-        self._children.remove(component)
-        component.parent = None
+        self._selected = True
+        self._visible = True
+        self.events.add(visible=Event, select=Event, deselect=Event)
 
     @property
     def visible(self):
@@ -37,43 +23,16 @@ class LayerGroup(Layer):
     @visible.setter
     def visible(self, visibility):
         self._visible = visibility
-        for child in self._children:
+        for child in self:
             child._visible = visibility
 
     def __repr__(self):
         cls = type(self)
         results = []
-        for child in self._children:
+        for child in self:
             results.append(child.__repr__())
         string_repr = (
             f"<{cls.__name__} layer {repr(self.name)}"
             + f" at {hex(id(self))} containing > [{' + '.join(results)}]"
         )
         return string_repr
-
-    def __len__(self):
-        return len(self._children)
-
-    def __getitem__(self, indices):
-        return self._children[indices]
-
-    def _get_extent(self, *args, **kwargs):
-        raise NotImplementedError
-
-    def _get_ndim(self, *args, **kwargs):
-        raise NotImplementedError
-
-    def _get_state(self, *args, **kwargs):
-        raise NotImplementedError
-
-    def _get_value(self, *args, **kwargs):
-        raise NotImplementedError
-
-    def _set_view_slice(self, *args, **kwargs):
-        raise NotImplementedError
-
-    def _update_thumbnail(self, *args, **kwargs):
-        raise NotImplementedError
-
-    def data(self, *args, **kwargs):
-        raise NotImplementedError
