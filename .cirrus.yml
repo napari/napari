@@ -69,7 +69,7 @@ linux_task:
   install_script:
     - python -m pip install --retries 3 --upgrade pip
     - pip install --retries 3 -r requirements.txt
-    - python setup.py develop
+    - python -m pip install -e .
 
   check_script:
     - conda list
@@ -123,7 +123,7 @@ mac_task:
   install_script:
     - python -m pip install --retries 3 --upgrade pip
     - pip install --retries 3 -r requirements.txt
-    - python setup.py develop
+    - python -m pip install -e .
 
   check_script:
     - conda list
@@ -187,7 +187,7 @@ win_task:
   install_script:
     - python -m pip install --retries 3 --upgrade pip
     - pip install --retries 3 -r requirements.txt
-    - python setup.py develop
+    - python -m pip install -e .
 
   check_script:
     - conda list
@@ -220,6 +220,7 @@ codecov_task:
   install_script: |
     python -m pip install --retries 3 --upgrade pip
     pip install -r requirements.txt
+    pip install -e .
     pip install pytest-cov codecov
 
   coverage_script: |
@@ -245,7 +246,7 @@ push_docs_task:
     python -m pip install --retries 3 --upgrade pip
     pip install --retries 3 -r requirements/default.txt
     pip install --retries 3 -r requirements/docs.txt
-    python setup.py develop
+    pip install -e .
 
   build_script: make docs
 

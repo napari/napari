@@ -1,11 +1,15 @@
 """Miscellaneous utility functions.
 """
+import os.path as osp
 from enum import Enum, EnumMeta
 import re
 import inspect
 import itertools
 import numpy as np
 from typing import Type
+
+
+ROOT_DIR = osp.dirname(osp.dirname(__file__))
 
 
 def str_to_rgb(arg):
@@ -82,8 +86,16 @@ class StringEnumMeta(EnumMeta):
         """
         # simple value lookup
         if names is None:
-            value = value.lower()
-            return super().__call__(value)
+            if isinstance(value, str):
+                return super().__call__(value.lower())
+            elif isinstance(value, cls):
+                return value
+            else:
+                raise ValueError(
+                    f'{cls} may only be called with a `str`'
+                    f' or an instance of {cls}'
+                )
+
         # otherwise create new Enum class
         return cls._create_(
             value,

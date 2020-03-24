@@ -162,6 +162,10 @@ class QtDeleteButton(QPushButton):
     def dragLeaveEvent(self, event):
         """The cursor leaves the widget during a drag and drop operation.
 
+        Using event.ignore() here allows the event to pass through the
+        parent widget to its child widget, otherwise the parent widget
+        would catch the event and not pass it on to the child widget.
+
         Parameters
         ----------
         event : qtpy.QtCore.QEvent

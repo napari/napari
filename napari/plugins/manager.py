@@ -11,6 +11,7 @@ from typing import DefaultDict, Dict, Generator, List, Optional, Tuple, Union
 import pluggy
 
 from . import _builtins, hook_specifications
+from .exceptions import PluginError, PluginImportError, PluginRegistrationError
 
 logger = getLogger(__name__)
 
@@ -18,31 +19,6 @@ if sys.version_info >= (3, 8):
     from importlib import metadata as importlib_metadata
 else:
     import importlib_metadata
-
-
-class PluginError(Exception):
-    def __init__(
-        self, message: str, plugin_name: str, plugin_module: str
-    ) -> None:
-        super().__init__(message)
-        self.plugin_name = plugin_name
-        self.plugin_module = plugin_module
-
-
-class PluginImportError(PluginError, ImportError):
-    """Raised when a plugin fails to import."""
-
-    def __init__(self, plugin_name: str, plugin_module: str) -> None:
-        msg = f'Failed to import plugin: "{plugin_name}"'
-        super().__init__(msg, plugin_name, plugin_module)
-
-
-class PluginRegistrationError(PluginError):
-    """Raised when a plugin fails to register with pluggy."""
-
-    def __init__(self, plugin_name: str, plugin_module: str) -> None:
-        msg = f'Failed to register plugin: "{plugin_name}"'
-        super().__init__(msg, plugin_name, plugin_module)
 
 
 class NapariPluginManager(pluggy.PluginManager):
@@ -200,7 +176,7 @@ class NapariPluginManager(pluggy.PluginManager):
             f'{"napari version": >16}: {__version__}',
         ]
         try:
-            err0 = self._exceptions.get(plugin_name)[0]
+            err0 = self._exceptions[plugin_name][0]
             package_meta = fetch_module_metadata(err0.plugin_module)
             msg.extend(
                 [
@@ -389,7 +365,7 @@ def log_plugin_error(exc: PluginError) -> None:
     """
     from napari import __version__
 
-    msg = f'\nPluginError: {exc}'
+    msg = f'\n\nPluginError: {exc}'
     if exc.__cause__:
         cause = str(exc.__cause__).replace("\n", "\n" + " " * 13)
         msg += f'\n  Cause was: {cause}'
@@ -399,4 +375,5 @@ def log_plugin_error(exc: PluginError) -> None:
         extra = [f'{k: >11}: {v}' for k, v in contact.items()]
         extra += [f'{"napari": >11}: v{__version__}']
         msg += "\n".join(extra)
+    msg += '\n'
     logger.error(msg)

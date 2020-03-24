@@ -1,24 +1,19 @@
-import sys
 import time
 
 import numpy as np
 import pytest
-from qtpy.QtCore import QEventLoop
-from qtpy.QtWidgets import QApplication
 
 from napari import Viewer
 from napari._tests.utils import (
-    check_viewer_functioning,
     add_layer_by_type,
+    check_viewer_functioning,
     layer_test_data,
 )
 
 
-def test_viewer(qtbot):
+def test_viewer(viewer_factory):
     """Test instantiating viewer."""
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
+    view, viewer = viewer_factory()
 
     assert viewer.title == 'napari'
     assert view.viewer == viewer
@@ -36,28 +31,19 @@ def test_viewer(qtbot):
     viewer.dims.ndisplay = 2
     assert viewer.dims.ndisplay == 2
 
-    # Run all class keybindings
+    # Run all class key bindings
     for func in viewer.class_keymap.values():
         func(viewer)
-        # the `play` keybinding calls QtDims.play_dim(), which then creates a new QThread.
-        # we must then run the keybinding a second time, which will call QtDims.stop(),
-        # otherwise the thread will be killed at the end of the test without cleanup,
-        # causing a segmentation fault.  (though the tests still pass)
+        # the `play` keybinding calls QtDims.play_dim(), which then creates a
+        # new QThread. we must then run the keybinding a second time, which
+        # will call QtDims.stop(), otherwise the thread will be killed at the
+        # end of the test without cleanup, causing a segmentation fault.
+        # (though the tests still pass)
         if func.__name__ == 'play':
             func(viewer)
 
-    if sys.platform == 'darwin':
-        # on some versions of Darwin, exiting while fullscreen seems to tickle
-        # some bug deep in NSWindow.  This forces the fullscreen keybinding
-        # test to complete its draw cycle, then pop back out of fullscreen.
-        start = time.time()
-        while time.time() < start + 1:
-            qapp = QApplication.instance()
-            qapp.processEvents(QEventLoop.ProcessEventsFlag.AllEvents, 0)
-
-        viewer.window._qt_window.showNormal()
-
-    viewer.window.close()
+    # the test for fullscreen that used to be here has been moved to the
+    # Window.close() method.
 
 
 @pytest.mark.first  # provided by pytest-ordering
@@ -76,26 +62,19 @@ def test_no_qt_loop():
 
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
 @pytest.mark.parametrize('visible', [True, False])
-def test_add_layer(qtbot, layer_class, data, ndim, visible):
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
+def test_add_layer(viewer_factory, layer_class, data, ndim, visible):
+    view, viewer = viewer_factory()
     layer = add_layer_by_type(viewer, layer_class, data, visible=visible)
     check_viewer_functioning(viewer, view, data, ndim)
 
-    # Run all class keybindings
+    # Run all class key bindings
     for func in layer.class_keymap.values():
         func(layer)
 
-    # Close the viewer
-    viewer.window.close()
 
-
-def test_screenshot(qtbot):
+def test_screenshot(viewer_factory):
     "Test taking a screenshot"
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
+    view, viewer = viewer_factory()
 
     np.random.seed(0)
     # Add image
@@ -126,18 +105,10 @@ def test_screenshot(qtbot):
     screenshot = viewer.screenshot(with_viewer=True)
     assert screenshot.ndim == 3
 
-    # Close the viewer
-    viewer.window.close()
 
-
-def test_update(qtbot):
-    import time
-
+def test_update(viewer_factory):
     data = np.random.random((512, 512))
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
-
+    view, viewer = viewer_factory()
     layer = viewer.add_image(data)
 
     def layer_update(*, update_period, num_updates):
@@ -152,9 +123,17 @@ def test_update(qtbot):
             assert layer.data.all() == dat.all()
 
     viewer.update(layer_update, update_period=0.01, num_updates=100)
+    # the previous time.sleep() that used to be here has been replaced with
+    # QtViewer.pool.waitForDone() in the closeEvent of the QtViewer.
 
-    # if we do not sleep, main thread closes before update thread finishes and many qt components get cleaned
-    time.sleep(3)
 
-    # Close the viewer
-    viewer.window.close()
+def test_changing_theme(viewer_factory):
+    """Test instantiating viewer."""
+    view, viewer = viewer_factory()
+    assert viewer.palette['folder'] == 'dark'
+
+    viewer.theme = 'light'
+    assert viewer.palette['folder'] == 'light'
+
+    with pytest.raises(ValueError):
+        viewer.theme = 'nonexistent_theme'

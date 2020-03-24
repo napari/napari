@@ -54,6 +54,22 @@ if sys.version_info < (MIN_PY_MAJOR_VER, MIN_PY_MINOR_VER):
     )
     sys.exit(1)
 
+QT_MIN_VERSION = "5.12.3"
+
+try:
+    import PyQt5  # noqa: F401
+
+    pyqt = True
+except ImportError:
+    pyqt = False
+
+try:
+    import PySide2  # noqa: F401
+
+    pyside = True
+except ImportError:
+    pyside = False
+
 requirements = []
 with open(osp.join('requirements', 'default.txt')) as f:
     for line in f:
@@ -61,6 +77,12 @@ with open(osp.join('requirements', 'default.txt')) as f:
         stripped = splitted[0].strip()
         if len(stripped) > 0:
             requirements.append(stripped)
+
+if pyqt:
+    requirements.append("PyQt5>=" + QT_MIN_VERSION)
+if pyside or not (pyqt or pyside):
+    requirements.append("PySide2>=" + QT_MIN_VERSION)
+
 
 setup(
     name=DISTNAME,
