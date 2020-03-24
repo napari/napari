@@ -10,6 +10,7 @@ from typing import DefaultDict, Dict, Generator, List, Optional, Tuple, Union
 
 import pluggy
 
+from ..utils.appdirs import user_site_packages
 from . import _builtins, hook_specifications
 from .exceptions import PluginError, PluginImportError, PluginRegistrationError
 
@@ -87,8 +88,11 @@ class NapariPluginManager(pluggy.PluginManager):
         count : int
             The number of plugin modules successfully loaded.
         """
-        if path:
-            sys.path.insert(0, path)
+        paths = [path] if path else []
+        if getattr(sys, 'frozen', False):
+            paths.append(user_site_packages())
+        if paths:
+            sys.path.extend(paths)
 
         count = 0
         for plugin_name, module_name in iter_plugin_modules(
@@ -114,8 +118,9 @@ class NapariPluginManager(pluggy.PluginManager):
             msg += "\n  ".join([n for n, m in self.list_name_plugin()])
             logger.info(msg)
 
-        if path:
-            sys.path.remove(path)
+        if paths:
+            for p in paths:
+                sys.path.remove(p)
 
         return count
 
