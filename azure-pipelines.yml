@@ -80,11 +80,11 @@ stages:
         - script: tox -e 'py$(python.version)-PyQt5,py$(python.version)-PySide2'
           displayName: "Run Tox"
     - job: windows
-      pool: {vmImage: 'vs2017-win2016'}
+      pool: {vmImage: 'windows-2019'}
       continueOnError: true
       variables:
         PYTHON_ARCH: 64
-        VISPY_GL_LIB: $(Build.SourcesDirectory)\opengl32.dll
+        # VISPY_GL_LIB: $(Build.SourcesDirectory)\opengl32.dll
       strategy:
         matrix:
           Python36: { python.version: '3.6' }
