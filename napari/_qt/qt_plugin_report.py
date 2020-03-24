@@ -139,7 +139,9 @@ class QtPluginErrReporter(QDialog):
         self.clipboard_button.hide()
         try:
             self.github_button.clicked.disconnect()
-        except RuntimeError:
+        # when disconnecting a non-existent signal
+        # PySide2 raises runtimeError, PyQt5 raises TypeError
+        except (RuntimeError, TypeError):
             pass
 
         err_string = format_exceptions(plugin, as_html=True)
