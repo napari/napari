@@ -9,9 +9,10 @@ import shutil
 from subprocess import run
 from typing import Dict, List, Tuple
 
+from ..utils.misc import absolute_resource
 from ..utils.theme import palettes as _palettes
 
-RESOURCES_DIR = os.path.abspath(os.path.dirname(__file__))
+RESOURCES_DIR = absolute_resource(os.path.dirname(__file__))
 SVGPATH = os.path.join(RESOURCES_DIR, 'icons')
 
 svg_tag_open = re.compile(r'(<svg[^>]*>)')

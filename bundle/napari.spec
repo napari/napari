@@ -79,7 +79,9 @@ def get_version():
 
 
 def keep(x):
-    if any(x.endswith(e) for e in ('.svg', '.DS_Store', '.qrc')):
+    if any(x.endswith(e) for e in ('.DS_Store', '.qrc')):
+        return False
+    if any(i in x for i in ('.mypy_cache', 'plugins/_tests/fixtures')):
         return False
     return True
 
@@ -105,6 +107,8 @@ print("HOOKS PATH:", HOOKSPATH)
 
 a = Analysis(
     [join(NAPARI_ROOT, '__main__.py')],
+    # https://github.com/pypa/setuptools/issues/1963  # noqa
+    hiddenimports=['pkg_resources.py2_warn', 'importlib', 'napari.conftest'],
     pathex=[BUNDLE_ROOT],
     datas=DATA_FILES,
     hookspath=[HOOKSPATH],

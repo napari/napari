@@ -5,6 +5,7 @@ from pluggy import HookimplMarker
 from ._hook_callers import execute_hook
 from .exceptions import PluginError, PluginImportError, PluginRegistrationError
 from .manager import NapariPluginManager, log_plugin_error
+from . import pypi
 
 # Marker to be imported and used in plugins (and for own implementations)
 # Note: plugins may also just import pluggy directly and make their own
@@ -22,4 +23,5 @@ __all__ = [
     "PluginImportError",
     "execute_hook",
     "log_plugin_error",
+    "pypi",
 ]

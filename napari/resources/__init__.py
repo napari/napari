@@ -11,6 +11,7 @@ from typing import List, Optional
 from qtpy import API, QT_VERSION
 
 from .. import __version__
+from ..utils.misc import absolute_resource
 from .build_icons import build_pyqt_resources
 
 
@@ -138,7 +139,7 @@ def get_stylesheet(extra: Optional[List[str]] = None) -> str:
     css : str
         The combined stylesheet.
     """
-    resources_dir = abspath(dirname(__file__))
+    resources_dir = absolute_resource(dirname(__file__))
     stylesheet = ''
     for file in sorted(glob(join(resources_dir, 'styles/*.qss'))):
         with open(file, 'r') as f:
