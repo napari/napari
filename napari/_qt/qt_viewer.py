@@ -120,6 +120,11 @@ class QtViewer(QSplitter):
             shortcut='Ctrl+Shift+C',
         )
         self.dockConsole.setVisible(False)
+        # because the console is loaded lazily in the @getter, this line just
+        # gets (or creates) the console when the dock console is made visible.
+        self.dockConsole.visibilityChanged.connect(
+            lambda visible: self.console if visible else None
+        )
         self.dockLayerControls.visibilityChanged.connect(self._constrain_width)
         self.dockLayerList.setMaximumWidth(258)
         self.dockLayerList.setMinimumWidth(258)
@@ -166,7 +171,7 @@ class QtViewer(QSplitter):
             'standard': QCursor(),
         }
 
-        self._update_palette(None)
+        self._update_palette()
 
         self.viewer.events.interactive.connect(self._on_interactive)
         self.viewer.events.cursor.connect(self._on_cursor)
@@ -197,7 +202,7 @@ class QtViewer(QSplitter):
     def console(self, console):
         self._console = console
         self.dockConsole.widget = console
-        self._update_palette(None)
+        self._update_palette()
 
     def _constrain_width(self, event):
         """Allow the layer controls to be wider, only if floated.
@@ -397,7 +402,7 @@ class QtViewer(QSplitter):
             # Assumes default camera has the same properties as PanZoomCamera
             self.view.camera.rect = event.rect
 
-    def _update_palette(self, event):
+    def _update_palette(self, event=None):
         """Update the napari GUI theme."""
         # template and apply the primary stylesheet
         themed_stylesheet = template(
@@ -410,7 +415,7 @@ class QtViewer(QSplitter):
         self.setStyleSheet(themed_stylesheet)
         self.canvas.bgcolor = self.viewer.palette['canvas']
 
-    def toggle_console_visibility(self, event):
+    def toggle_console_visibility(self, event=None):
         """Toggle console visible and not visible.
 
         Imports the console the first time it is requested.
