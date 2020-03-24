@@ -363,6 +363,21 @@ class Shapes(Layer):
         self.events.edge_width()
 
     @property
+    def face_color(self):
+        return self._data_view.face_colors
+
+    @face_color.setter
+    def face_color(self, color):
+        color = transform_color_with_defaults(
+            num_entries=len(self.data),
+            colors=color,
+            elem_name='face_color',
+            default='white',
+        )
+        color = normalize_and_broadcast_colors(len(self.data), color)
+        self._data_view.face_color = color
+
+    @property
     def current_edge_color(self):
         """Edge color of marker for next added shape of the selected shape(s)."""
         hex_ = rgb_to_hex(self._current_edge_color)[0]
@@ -659,11 +674,6 @@ class Shapes(Layer):
                 ensure_iterable(opacity),
                 ensure_iterable(z_index),
             )
-            num_of_shapes = len(data)
-            new_face_colors = np.zeros((num_of_shapes, 4), dtype=np.float32)
-            new_face_colors[:, -1] = opacity
-            new_edge_colors = np.zeros((num_of_shapes, 4), dtype=np.float32)
-            new_edge_colors[:, -1] = opacity
             for shape_idx, (d, st, ew, ec, fc, o, z) in enumerate(shape_inputs):
                 # A False slice_key means the shape is invalid as it is not
                 # confined to a single plane
@@ -681,20 +691,8 @@ class Shapes(Layer):
 
                 # Add shape
                 self._data_view.add(shape)
-                new_face_colors[shape_idx, :] = shape.face_color
-                new_edge_colors[shape_idx, :] = shape.edge_color
             self._current_face_color = shape.face_color
             self._current_edge_color = shape.edge_color
-
-            # If we just instantiated the layer then we can directly set
-            # new face and edge colors. Else we'll append to the existing
-            # ones the new values.
-            if len(self._data_view) == num_of_shapes:
-                self._face_color = new_face_colors
-                self._edge_color = new_edge_colors
-            else:
-                self._face_color = np.concatenate((self.face_color, new_face_colors), axis=0)
-                self._edge_color = np.concatenate((self.edge_color, new_edge_colors), axis=0)
 
         self._display_order_stored = copy(self.dims.order)
         self._ndisplay_stored = copy(self.dims.ndisplay)

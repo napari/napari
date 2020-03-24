@@ -31,10 +31,10 @@ class ShapeList:
         by those values.
     shape_types : (N, ) list of str
         Name of shape type for each shape.
-    edge_colors : (N, ) list of str
-        Name of edge color for each shape.
-    face_colors : (N, ) list of str
-        Name of face color for each shape.
+    edge_colors : Nx4 np.ndarray
+        RGBA array of edge colors
+    face_colors : (N, ) Nx4 np.ndarray
+        RGBA array of face colors
     edge_widths : (N, ) list of float
         Edge width for each shape.
     opacities : (N, ) list of float
@@ -57,10 +57,12 @@ class ShapeList:
     _mesh : Mesh
         Mesh object containing all the mesh information that will ultimately
         be rendered.
+    _num_of_shapes : int
+        Number of shapes
     """
 
-    def __init__(self, data=[], ndisplay=2):
-
+    def __init__(self, data=None, ndisplay=2):
+        data = data or []
         self._ndisplay = ndisplay
         self.shapes = []
         self._displayed = []
@@ -73,9 +75,12 @@ class ShapeList:
         self._z_order = np.empty((0), dtype=int)
 
         self._mesh = Mesh(ndisplay=self.ndisplay)
-
-        for d in data:
-            self.add(d)
+        self._num_of_shapes = len(data)
+        self._edge_colors = []
+        self._face_colors = []
+        self._opacities = []
+        for index, d in data:
+            self.add(d, shape_index=index)
 
     @property
     def data(self):
@@ -115,13 +120,17 @@ class ShapeList:
 
     @property
     def edge_colors(self):
-        """list of str: name of edge color for each shape."""
-        return [s._edge_color_name for s in self.shapes]
+        """Nx4 RGBA array of edge colors, row per shape."""
+        return np.concatenate(self._edge_colors, axis=0)
+
+    @edge_colors.setter
+    def edge_colors(self, colors):
+
 
     @property
     def face_colors(self):
-        """list of str: name of face color for each shape."""
-        return [s._face_color_name for s in self.shapes]
+        """Nx4 RGBA array of face colors, row per shape."""
+        return np.concatenate(self._face_colors, axis=0)
 
     @property
     def edge_widths(self):
@@ -130,8 +139,8 @@ class ShapeList:
 
     @property
     def opacities(self):
-        """list of float: opacity for each shape."""
-        return [s.opacity for s in self.shapes]
+        """N-length array of opacity values for each shape"""
+        return np.concatenate(self._opacities, axis=0)
 
     @property
     def z_indices(self):
@@ -203,10 +212,16 @@ class ShapeList:
             shape_index = len(self.shapes)
             self.shapes.append(shape)
             self._z_index = np.append(self._z_index, shape.z_index)
+            self._edge_colors.append(shape.edge_color)
+            self._face_colors.append(shape.face_color)
+            self._opacities.append(shape.opacity)
         else:
             z_refresh = False
             self.shapes[shape_index] = shape
             self._z_index[shape_index] = shape.z_index
+            self._edge_colors[shape_index] = shape.edge_color
+            self._face_colors[shape_index] = shape.face_color
+            self._opacities[shape_index] = shape.opacity
 
         self._vertices = np.append(
             self._vertices, shape.data_displayed, axis=0
@@ -728,7 +743,7 @@ class ShapeList:
 
     def __len__(self):
         return len(self.data)
-        
+
     def to_masks(self, mask_shape=None, zoom_factor=1, offset=[0, 0]):
         """Returns N binary masks, one for each shape, embedded in an array of
         shape `mask_shape`.
