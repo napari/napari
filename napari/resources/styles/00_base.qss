@@ -104,7 +104,7 @@ QComboBox::drop-down {
 }
 
 QComboBox::down-arrow {
-   image: url(":/icons/{{ folder }}/drop_down.svg");
+   image: url(":/themes/{{ folder }}/drop_down.svg");
    width: 14px;
    height: 14px;
 }
@@ -206,11 +206,11 @@ QAbstractSpinBox::down-arrow {
 }
 
 QAbstractSpinBox::up-arrow {
-   image: url(":/icons/{{ folder }}/plus.svg");
+   image: url(":/themes/{{ folder }}/plus.svg");
 }
 
 QAbstractSpinBox::down-arrow {
-   image: url(":/icons/{{ folder }}/minus.svg");
+   image: url(":/themes/{{ folder }}/minus.svg");
 }
 
 /* ----------------- QCheckBox ------------------ */
@@ -239,11 +239,11 @@ QCheckBox::indicator:unchecked {
 }
 
 QCheckBox::indicator:checked {
-  image: url(":/icons/{{ folder }}/check.svg");
+  image: url(":/themes/{{ folder }}/check.svg");
 }
 
 QCheckBox::indicator:indeterminate {
-  image: url(":/icons/{{ folder }}/minus.svg");
+  image: url(":/themes/{{ folder }}/minus.svg");
   padding: 2px;
   width: 14px;
   height: 14px;
@@ -290,7 +290,7 @@ QRadioButton::indicator::checked {
 }
 
 QRadioButton::indicator::checked {
-  image: url(":/icons/{{ folder }}/circle.svg");
+  image: url(":/themes/{{ folder }}/circle.svg");
   height: 6px;
   width: 6px;
   padding: 5px;
@@ -467,19 +467,19 @@ QWidget[emphasized="true"] QScrollBar::sub-line:horizontal:pressed {
 }
 
 QScrollBar:left-arrow:horizontal {
-    image: url(":/icons/{{ folder }}/left_arrow.svg");
+    image: url(":/themes/{{ folder }}/left_arrow.svg");
 }
 
 QScrollBar::right-arrow:horizontal {
-    image: url(":/icons/{{ folder }}/right_arrow.svg");
+    image: url(":/themes/{{ folder }}/right_arrow.svg");
 }
 
 QScrollBar:up-arrow:vertical {
-    image: url(":/icons/{{ folder }}/up_arrow.svg");
+    image: url(":/themes/{{ folder }}/up_arrow.svg");
 }
 
 QScrollBar::down-arrow:vertical {
-    image: url(":/icons/{{ folder }}/down_arrow.svg");
+    image: url(":/themes/{{ folder }}/down_arrow.svg");
 }
 
 QScrollBar::left-arrow,
@@ -536,10 +536,7 @@ QProgressBar::vertical {
 
 QProgressBar::chunk {
     width: 1px;
-    background-color: qlineargradient(
-                        x1: 0, y1: 0, x2: 0, y2: 1,
-                        stop: 0 {{ highlight }}, stop: 1 {{ foreground }}
-                      );
+    background-color: vgradient({{ highlight }} - {{ foreground }});
 }
 
 /* ----------------- QToolTip ------------------ */
@@ -589,38 +586,22 @@ QTabBar::tab {
   border-top-left-radius: 4px;
   border-top-right-radius: 4px;
   padding: 3px 6px;
-  background: qlineargradient(
-                    x1: 0, y1: 0, x2: 0, y2: 1,
-                    stop: 0 {{ lighten(foreground, 15) }},
-                    stop: 1 {{ foreground }}
-                  );
+  background: vgradient({{ lighten(foreground, 15) }} - {{ foreground }});
 }
 
 
 QWidget[emphasized="true"] QTabBar::tab {
   background-color: {{ primary }};
   border: 1px solid {{ foreground }};
-  background: qlineargradient(
-                  x1: 0, y1: 0, x2: 0, y2: 1,
-                  stop: 0 {{ lighten(primary, 15) }},
-                  stop: 1 {{ primary }}
-                );
+  background: vgradient({{ lighten(primary, 15) }} - {{ primary }});
 }
 
 QTabBar::tab:selected {
-    background: qlineargradient(
-                    x1: 0, y1: 0, x2: 0, y2: 1,
-                    stop: 0 {{ lighten(highlight, 15) }},
-                    stop: 1 {{ highlight }}
-                  );
+  background: vgradient({{ lighten(highlight, 15) }} - {{ highlight }});
 }
 
 QWidget[emphasized="true"] QTabBar::tab:selected {
-    background: qlineargradient(
-                    x1: 0, y1: 0, x2: 0, y2: 1,
-                    stop: 0 {{ lighten(secondary, 15) }},
-                    stop: 1 {{ secondary }}
-                  );
+    background: vgradient({{ lighten(secondary, 15) }} - {{ secondary }});
 }
 
 /* ----------------- QLabel ------------------ */

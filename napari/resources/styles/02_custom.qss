@@ -51,11 +51,11 @@ QMainWindow::separator:hover {
     width: 12px;
     height: 12px;
     padding: 0;
-    image: url(":/icons/{{ folder }}/delete_shape.svg");
+    image: url(":/themes/{{ folder }}/delete_shape.svg");
 }
 
 #QTitleBarFloatButton{
-    image: url(":/icons/{{ folder }}/pop_out.svg");
+    image: url(":/themes/{{ folder }}/pop_out.svg");
     width: 10px;
     height: 8px;
     padding: 2 1 2 1;
@@ -170,31 +170,31 @@ QLabel[layer_type_label="true"] {
 }
 
 QLabel#Shapes {
-  image: url(":/icons/{{ folder }}/new_shapes.svg");
+  image: url(":/themes/{{ folder }}/new_shapes.svg");
 }
 
 QLabel#Points {
-  image: url(":/icons/{{ folder }}/new_points.svg");
+  image: url(":/themes/{{ folder }}/new_points.svg");
 }
 
 QLabel#Labels {
-  image: url(":/icons/{{ folder }}/new_labels.svg");
+  image: url(":/themes/{{ folder }}/new_labels.svg");
 }
 
 QLabel#Image {
-  image: url(":/icons/{{ folder }}/new_image.svg");
+  image: url(":/themes/{{ folder }}/new_image.svg");
 }
 
 QLabel#Pyramid {
-  image: url(":/icons/{{ folder }}/new_image.svg");
+  image: url(":/themes/{{ folder }}/new_image.svg");
 }
 
 QLabel#Surface {
-  image: url(":/icons/{{ folder }}/new_surface.svg");
+  image: url(":/themes/{{ folder }}/new_surface.svg");
 }
 
 QLabel#Vectors {
-  image: url(":/icons/{{ folder }}/new_vectors.svg");
+  image: url(":/themes/{{ folder }}/new_vectors.svg");
 }
 
 /* The name of the layer*/
@@ -230,11 +230,11 @@ QtLayerWidget > QCheckBox#visibility::indicator{
 }
 
 QtLayerWidget > QCheckBox#visibility::indicator:unchecked {
-  image: url(":/icons/{{ folder }}/visibility_off.svg");
+  image: url(":/themes/{{ folder }}/visibility_off.svg");
 }
 
 QtLayerWidget > QCheckBox#visibility::indicator:checked {
-  image: url(":/icons/{{ folder }}/visibility.svg");
+  image: url(":/themes/{{ folder }}/visibility.svg");
 }
 
 
@@ -289,11 +289,11 @@ QtDimSliderWidget > QScrollBar::handle[last_used=true]:horizontal {
 }
 
 QtDimSliderWidget > QScrollBar:left-arrow:horizontal {
-    image: url(":/icons/{{ folder }}/step_left.svg");
+    image: url(":/themes/{{ folder }}/step_left.svg");
 }
 
 QtDimSliderWidget > QScrollBar::right-arrow:horizontal {
-    image: url(":/icons/{{ folder }}/step_right.svg");
+    image: url(":/themes/{{ folder }}/step_right.svg");
 }
 
 QtDimSliderWidget > QLineEdit {
@@ -317,7 +317,7 @@ QtDimSliderWidget > QLineEdit {
 }
 
 #playDirectionCheckBox::indicator {
-   image: url(":/icons/{{ folder }}/long_right_arrow.svg");
+   image: url(":/themes/{{ folder }}/long_right_arrow.svg");
    width: 22px;
    height: 22px;
    padding: 0 6px;
@@ -329,7 +329,7 @@ QtDimSliderWidget > QLineEdit {
 }
 
 #playDirectionCheckBox::indicator:checked {
-   image: url(":/icons/{{ folder }}/long_left_arrow.svg");
+   image: url(":/themes/{{ folder }}/long_left_arrow.svg");
 }
 
 #playDirectionCheckBox::indicator:pressed {
@@ -371,6 +371,7 @@ QtDimSliderWidget > QLineEdit {
 #slice_label {
   font-size: 11pt;
   color: {{ secondary }};
+  background: transparent;
 }
 
 #slice_label_sep{
