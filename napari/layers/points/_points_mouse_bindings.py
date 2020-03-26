@@ -26,6 +26,9 @@ def select(layer, event):
 
     # if shift add / remove any from existing selection
     if modify_selection:
+        # layer._value is defined in the base layer and contains the value
+        # under the cursor. For points, this is the index of the highlighted
+        # point.
         if layer._value is not None:
             if layer._value in layer.selected_data:
                 layer.selected_data.remove(layer._value)
