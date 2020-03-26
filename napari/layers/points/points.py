@@ -1478,6 +1478,7 @@ class Points(Layer):
             Coordinates to move points to
         """
         if len(index) > 0:
+            index = list(index)
             disp = list(self.dims.displayed)
             if self._drag_start is None:
                 center = self.data[np.ix_(index, disp)].mean(axis=0)

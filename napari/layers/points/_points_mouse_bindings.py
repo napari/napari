@@ -24,32 +24,28 @@ def select(layer, event):
         'Shift' in event.modifiers or 'Control' in event.modifiers
     )
 
-    # if shift add / remove any from existing selection
+    # if modifying selection add / remove any from existing selection
     if modify_selection:
         # layer._value is defined in the base layer and contains the value
         # under the cursor. For points, this is the index of the highlighted
         # point.
         if layer._value is not None:
-            if layer._value in layer.selected_data:
-                layer.selected_data.remove(layer._value)
-            else:
-                layer.selected_data.add(layer._value)
-            layer.selected_data = layer._selected_data
-        else:
-            pass
+            layer.selected_data = _toggle_selected(
+                layer.selected_data, layer._value
+            )
     else:
         if layer._value is not None:
             if layer._value not in layer.selected_data:
                 layer.selected_data = {layer._value}
         else:
-            layer.selected_data = []
+            layer.selected_data = set()
     layer._set_highlight()
 
     yield
 
     # on move
     while event.type == 'mouse_move':
-        # If not holding shift and some points selected then drag them
+        # If not holding modifying selection and points selected then drag them
         if not modify_selection and len(layer.selected_data) > 0:
             layer._move(layer.selected_data, layer.coordinates)
         else:
@@ -85,7 +81,7 @@ def select(layer, event):
             else:
                 layer.selected_data = layer._indices_view[selection]
         else:
-            layer.selected_data = []
+            layer.selected_data = set()
     layer._set_highlight(force=True)
 
 
@@ -98,3 +94,26 @@ def add(layer, event):
 def highlight(layer, event):
     """Highlight hovered points."""
     layer._set_highlight()
+
+
+def _toggle_selected(selected_data, value):
+    """Add or remove value from the selected data set.
+
+    Paramerters
+    -----------
+    selected_data : set
+        Set of selected data points to be modified.
+    value : int
+        Index of point to add or remove from selected data set.
+
+    Returns
+    -------
+    set
+        Modified selected_data set.
+    """
+    if value in selected_data:
+        selected_data.remove(value)
+    else:
+        selected_data.add(value)
+
+    return selected_data
