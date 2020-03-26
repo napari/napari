@@ -152,3 +152,7 @@ def get_stylesheet(extra: Optional[List[str]] = None) -> str:
 
 
 __all__ = ['build_pyqt_resources', 'get_stylesheet', 'import_resources']
+
+
+if __name__ == '__main__':
+    import_resources()

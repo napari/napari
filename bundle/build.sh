@@ -30,6 +30,8 @@ else
     DIR=$(dirname $(readlink -f $0));
 fi
 
+python -m napari.resources._pkg_tools
+
 if [ -f "$DIR/napari.spec" ]; then
     pyinstaller --noconfirm --clean --log-level=INFO "$DIR/napari.spec";
 else
