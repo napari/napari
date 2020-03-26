@@ -13,7 +13,7 @@ from qtpy.QtCore import Qt
 
 import numpy as np
 from .qt_base_layer import QtLayerControls
-from ...layers.labels._constants import Mode
+from ...layers.labels._labels_constants import Mode
 from ..qt_mode_buttons import QtModeRadioButton
 from ..utils import disable_with_opacity
 
@@ -107,7 +107,7 @@ class QtLabelsControls(QtLayerControls):
             layer, 'zoom', Mode.PAN_ZOOM, tooltip='Pan/zoom mode', checked=True
         )
         self.pick_button = QtModeRadioButton(
-            layer, 'picker', Mode.PICKER, tooltip='Pick mode'
+            layer, 'picker', Mode.PICK, tooltip='Pick mode'
         )
         self.paint_button = QtModeRadioButton(
             layer, 'paint', Mode.PAINT, tooltip='Paint mode'
@@ -179,12 +179,12 @@ class QtLabelsControls(QtLayerControls):
         Raises
         ------
         ValueError
-            Raise error if event.mode is not PAN_ZOOM, PICKER, PAINT, or FILL
+            Raise error if event.mode is not PAN_ZOOM, PICK, PAINT, or FILL
         """
         mode = event.mode
         if mode == Mode.PAN_ZOOM:
             self.panzoom_button.setChecked(True)
-        elif mode == Mode.PICKER:
+        elif mode == Mode.PICK:
             self.pick_button.setChecked(True)
         elif mode == Mode.PAINT:
             self.paint_button.setChecked(True)

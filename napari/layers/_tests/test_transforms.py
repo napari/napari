@@ -4,9 +4,10 @@ from napari.layers.transforms import ScaleTranslate
 
 def test_scale_translate():
     coord = [10, 13]
-    transform = ScaleTranslate(scale=[2, 3], translate=[8, -5])
+    transform = ScaleTranslate(scale=[2, 3], translate=[8, -5], name='st')
     new_coord = transform(coord)
     target_coord = [2 * 10 + 8, 3 * 13 - 5]
+    assert transform.name == 'st'
     npt.assert_allclose(new_coord, target_coord)
 
 
@@ -34,20 +35,24 @@ def test_scale_translate_compose():
 
 def test_scale_translate_slice():
     transform_a = ScaleTranslate(scale=[2, 3], translate=[8, -5])
-    transform_b = ScaleTranslate(scale=[2, 1, 3], translate=[8, 3, -5])
+    transform_b = ScaleTranslate(
+        scale=[2, 1, 3], translate=[8, 3, -5], name='st'
+    )
     npt.assert_allclose(transform_b.set_slice([0, 2]).scale, transform_a.scale)
     npt.assert_allclose(
         transform_b.set_slice([0, 2]).translate, transform_a.translate
     )
+    assert transform_b.set_slice([0, 2]).name == 'st'
 
 
-def test_scale_translate_pad():
-    transform_a = ScaleTranslate(scale=[2, 3], translate=[8, -5])
+def test_scale_translate_expand_dims():
+    transform_a = ScaleTranslate(scale=[2, 3], translate=[8, -5], name='st')
     transform_b = ScaleTranslate(scale=[2, 1, 3], translate=[8, 0, -5])
-    npt.assert_allclose(transform_a.set_pad([1]).scale, transform_b.scale)
+    npt.assert_allclose(transform_a.expand_dims([1]).scale, transform_b.scale)
     npt.assert_allclose(
-        transform_a.set_pad([1]).translate, transform_b.translate
+        transform_a.expand_dims([1]).translate, transform_b.translate
     )
+    assert transform_a.expand_dims([1]).name == 'st'
 
 
 def test_scale_translate_identity_default():
