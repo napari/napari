@@ -20,10 +20,13 @@ def select(layer, event):
     points.
     """
     # on press
-    shift = 'Shift' in event.modifiers
+    print(event.modifiers)
+    modify_selection = (
+        'Shift' in event.modifiers or 'Control' in event.modifiers
+    )
 
     # if shift add / remove any from existing selection
-    if shift:
+    if modify_selection:
         if layer._value is not None:
             if layer._value in layer.selected_data:
                 layer.selected_data.remove(layer._value)
@@ -45,7 +48,7 @@ def select(layer, event):
     # on move
     while event.type == 'mouse_move':
         # If not holding shift and some points selected then drag them
-        if not shift and len(layer.selected_data) > 0:
+        if not modify_selection and len(layer.selected_data) > 0:
             layer._move(layer.selected_data, layer.coordinates)
         else:
             layer._is_selecting = True
@@ -71,7 +74,7 @@ def select(layer, event):
                 layer._drag_box, layer._view_data, layer._view_size
             )
             # If shift combine drag selection with existing selected ones
-            if shift:
+            if modify_selection:
                 new_selected = layer._indices_view[selection]
                 target = set(layer.selected_data).symmetric_difference(
                     set(new_selected)
