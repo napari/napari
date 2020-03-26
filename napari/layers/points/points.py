@@ -540,6 +540,7 @@ class Points(Layer):
 
     @property
     def current_properties(self):
+        """Dict[str: np.ndarray]: properties for the next added point."""
         return self._current_properties
 
     @current_properties.setter
