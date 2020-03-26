@@ -55,29 +55,29 @@ stages:
       pool: {vmImage: 'Ubuntu-16.04'}
       strategy:
         matrix:
-          Python36: { python.version: '3.6' }
-          Python37: { python.version: '3.7' }
-          Python38: { python.version: '3.8' }
+          Python36: { python.version: '3.6', toxenv: "36" }
+          Python37: { python.version: '3.7', toxenv: "37" }
+          Python38: { python.version: '3.8', toxenv: "38" }
       steps:
         - {task: UsePythonVersion@0, inputs: {versionSpec: '$(python.version)'}}
         - script: sudo apt-get install -y libdbus-1-3 libxkbcommon-x11-0
           displayName: "install libs"
         - script: pip install tox cython numpy pytest-azurepipelines
           displayName: "Install deps"
-        - script: tox -e 'py$(python.version)-PyQt5,py$(python.version)-PySide2'
+        - script: tox -e 'py$(toxenv)-PyQt5,py$(toxenv)-PySide2'
           displayName: "Run Tox"
     - job: macos
       pool: {vmImage: 'macOS-10.14'}
       strategy:
         matrix:
-          Python36: { python.version: '3.6' }
-          Python37: { python.version: '3.7' }
-          Python38: { python.version: '3.8' }
+          Python36: { python.version: '3.6', toxenv: "36" }
+          Python37: { python.version: '3.7', toxenv: "37" }
+          Python38: { python.version: '3.8', toxenv: "38" }
       steps:
         - {task: UsePythonVersion@0, inputs: {versionSpec: '$(python.version)'}}
         - script: pip install tox cython numpy pytest-azurepipelines
           displayName: "Install deps"
-        - script: tox -e 'py$(python.version)-PyQt5,py$(python.version)-PySide2'
+        - script: tox -e 'py$(toxenv)-PyQt5,py$(toxenv)-PySide2'
           displayName: "Run Tox"
     - job: windows
       pool: {vmImage: 'windows-2019'}
@@ -87,9 +87,9 @@ stages:
         # VISPY_GL_LIB: $(Build.SourcesDirectory)\opengl32.dll
       strategy:
         matrix:
-          Python36: { python.version: '3.6' }
-          Python37: { python.version: '3.7' }
-          Python38: { python.version: '3.8' }
+          Python36: { python.version: '3.6', toxenv: "36" }
+          Python37: { python.version: '3.7', toxenv: "37" }
+          Python38: { python.version: '3.8', toxenv: "38" }
       steps:
         - {task: UsePythonVersion@0, inputs: {versionSpec: '$(python.version)'}}
         - powershell: Invoke-RestMethod -Uri https://raw.githubusercontent.com/vispy/vispy/v0.5.3/make/install_opengl.ps1 -Method Get -OutFile opengl.ps1
@@ -101,5 +101,5 @@ stages:
         - script: dir $(Build.SourcesDirectory)
         - script: pip install tox cython numpy pytest-azurepipelines
           displayName: "Install deps"
-        - script: tox -e py$(python.version)-PyQt5,py$(python.version)-PySide2
+        - script: tox -e py$(toxenv)-PyQt5,py$(toxenv)-PySide2
           displayName: "Run Tox"
