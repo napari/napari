@@ -42,6 +42,17 @@ def test_empty_points_with_properties_no_defaults():
         Points(properties=properties)
 
 
+def test_empty_points_with_properties_bad_default_keys():
+    """ Test instantiating a Points layer with mismatched
+        properties and default_properties raises a KeyError
+    """
+    properties = {'label': np.empty(0)}
+    default_properties = {'not_label': np.array([5])}
+
+    with pytest.raises(KeyError):
+        Points(properties=properties, default_properties=default_properties)
+
+
 def test_random_points():
     """Test instantiating Points layer with random 2D data."""
     shape = (10, 2)

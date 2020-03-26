@@ -290,6 +290,14 @@ class Points(Layer):
                 'default_properties must be set for empty Points layers with colors that depend on properties'
             )
 
+        if (
+            self._default_properties
+            and self.default_properties.keys() != self.properties.keys()
+        ):
+            raise KeyError(
+                'default_properties and properites should have the same keys'
+            )
+
         # Save the point style params
         self.symbol = symbol
         self._n_dimensional = n_dimensional
