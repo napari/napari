@@ -10,10 +10,17 @@ from napari.utils.interactions import (
 )
 
 
-# Create a namedtuple for simulating vispy mouse events
 @pytest.fixture
 def Event():
-    return collections.namedtuple('Event', 'type is_dragging')
+    """Create a subclass for simulating vispy mouse events.
+
+    Returns
+    -------
+    Event : Type
+        A new tuple subclass named Event that can be used to create a
+        NamedTuple object with fields "type" and "is_dragging".
+    """
+    return collections.namedtuple('Event', field_names=['type', 'is_dragging'])
 
 
 def test_paint(Event):
