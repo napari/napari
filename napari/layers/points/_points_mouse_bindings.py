@@ -20,7 +20,6 @@ def select(layer, event):
     points.
     """
     # on press
-    print(event.modifiers)
     modify_selection = (
         'Shift' in event.modifiers or 'Control' in event.modifiers
     )
