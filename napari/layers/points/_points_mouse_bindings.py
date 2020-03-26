@@ -35,6 +35,9 @@ def select(layer, event):
             )
     else:
         if layer._value is not None:
+            # If the current index is not in the current list make it the only
+            # index selected, otherwise don't change the selection so that
+            # the current selection can be dragged together.
             if layer._value not in layer.selected_data:
                 layer.selected_data = {layer._value}
         else:
