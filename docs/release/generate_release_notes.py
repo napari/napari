@@ -47,6 +47,7 @@ except ImportError:
 
 GH_USER = 'napari'
 GH_REPO = 'napari'
+GH = "https://github.com"
 GH_TOKEN = os.environ.get('GH_TOKEN')
 if GH_TOKEN is None:
     raise RuntimeError(
@@ -203,10 +204,13 @@ for section_name, contributor_set in contributors.items():
         contributor_set.remove(None)
     committer_str = (
         f'{len(contributor_set)} {section_name} added to this '
-        'release [alphabetical by username]'
+        'release (alphabetical)'
     )
     print(committer_str)
     print('-' * len(committer_str))
-    for c in sorted(contributor_set, key=str.lower):
-        print(f"- `{users[c]} <https://github.com/{c}>`_")
+
+    for c in sorted(contributor_set, key=lambda x: users[x].lower()):
+        commit_link = f"<{GH}/{GH_USER}/{GH_REPO}/commits?author={c}>"
+        user_link = f"<{GH}/{c}>"
+        print(f"- `{users[c]} {commit_link}`_ - `@{c} {user_link}`_")
     print()
