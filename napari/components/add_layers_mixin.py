@@ -869,3 +869,46 @@ class AddLayersMixin:
                 raise exc
 
         return layer
+
+    # def _save_layers_with_plugins(
+    #     self, path_or_paths: Union[str, Sequence[str]]
+    # ) -> List[layers.Layer]:
+    #     """Load a path or a list of paths into the viewer using plugins.
+    #
+    #     This function is mostly called from self.add_path, where the ``stack``
+    #     argument determines whether a list of strings is handed to plugins one
+    #     at a time, or en-masse.
+    #
+    #     Parameters
+    #     ----------
+    #     path_or_paths : str or list of str
+    #         A filepath, directory, or URL (or a list of any) to open. If a
+    #         list, the assumption is that the list is to be treated as a stack.
+    #
+    #     Returns
+    #     -------
+    #     List[layers.Layer]
+    #         A list of any layers that were added to the viewer.
+    #     """
+    #     layer_data = write_data_with_plugins(path_or_paths)
+    #
+    #     if not layer_data:
+    #         # if layer_data is empty, it means no plugin could read path
+    #         # we just want to provide some useful feedback, which includes
+    #         # whether or not paths were passed to plugins as a list.
+    #         if isinstance(path_or_paths, (tuple, list)):
+    #             path_repr = f"[{path_or_paths[0]}, ...] as stack"
+    #         else:
+    #             path_repr = path_or_paths
+    #         msg = f'No plugin found capable of reading {path_repr}.'
+    #         logger.error(msg)
+    #         return []
+    #
+    #     # add each layer to the viewer
+    #     added: List[layers.Layer] = []  # for layers that get added
+    #     for data in layer_data:
+    #         new = self._add_layer_from_data(*data)
+    #         # some add_* methods return a List[Layer] others just a Layer
+    #         # we want to always return a list
+    #         added.extend(new if isinstance(new, list) else [new])
+    #     return added
