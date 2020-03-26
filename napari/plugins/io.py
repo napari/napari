@@ -15,7 +15,7 @@ def read_data_with_plugins(
     This function returns as soon as the path has been read successfully,
     while catching any plugin exceptions, storing them for later retrievial,
     providing useful error messages, and relooping until either layer data is
-    returned, or no readers are found.
+    returned, or no valid readers are found.
 
     Exceptions will be caught and stored as PluginErrors
     (in plugins.PLUGIN_ERRORS)
@@ -23,7 +23,74 @@ def read_data_with_plugins(
     Parameters
     ----------
     path : str
-        The path (file, directory, url) to open
+        The path (file, directory, url) to open.
+    plugin_manager : pluggy.PluginManager, optional
+        Instance of a pluggy PluginManager.  by default the main napari
+        plugin_manager will be used.
+
+    Returns
+    -------
+    LayerData or None
+        LayerData that can be *passed to _add_layer_from_data.  If no reader
+        plugins are (or they all error), returns None.
+    """
+    plugin_manager = plugin_manager or napari_plugin_manager
+    skip_impls = []
+    while True:
+        (reader, implementation) = execute_hook(
+            plugin_manager.hook.napari_get_reader,
+            path=path,
+            return_impl=True,
+            skip_impls=skip_impls,
+        )
+        if not reader:
+            # we're all out of reader plugins
+            return None
+        try:
+            return reader(path)  # try to read the data.
+        except Exception as exc:
+            # If execute_hook did return a reader, but the reader then failed
+            # while trying to read the path, we store the traceback for later
+            # retrieval, warn the user, and continue looking for readers
+            # (skipping this one)
+            msg = (
+                f"Error in plugin '{implementation.plugin_name}', "
+                "hook 'napari_get_reader'"
+            )
+            err = PluginError(
+                msg, implementation.plugin_name, implementation.plugin.__name__
+            )
+            err.__cause__ = exc  # like `raise PluginError() from exc`
+            # store the exception for later retrieval
+            plugin_manager._exceptions[implementation.plugin_name].append(err)
+            skip_impls.append(implementation)  # don't try this impl again
+            if implementation.plugin_name != 'builtins':
+                # If builtins doesn't work, they will get a "no reader" found
+                # error anyway, so it looks a bit weird to show them that the
+                # "builtin plugin" didn't work.
+                log_plugin_error(err)  # let the user know
+
+
+def write_data_with_plugins(
+    path: Union[str, Sequence[str]],
+    layer_data: LayerData,
+    extension: Optional[str],
+    plugin_manager=None,
+):
+    """Iterate writer hooks and write data for the first non-None LayerData or None.
+
+    This function returns as soon as the data has been written successfully,
+    while catching any plugin exceptions, storing them for later retrievial,
+    providing useful error messages, and relooping until either data is
+    writen, or no valid writers are found.
+
+    Exceptions will be caught and stored as PluginErrors
+    (in plugin_manager._exceptions)
+
+    Parameters
+    ----------
+    path : str
+        The path (file, directory, url) to open.
     plugin_manager : pluggy.PluginManager, optional
         Instance of a pluggy PluginManager.  by default the main napari
         plugin_manager will be used.

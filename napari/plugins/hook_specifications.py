@@ -34,7 +34,7 @@ Hook specifications are a feature of
 
 import pluggy
 from typing import Optional, Union, List
-from ..types import ReaderFunction
+from ..types import ReaderFunction, WriterFunction
 
 napari_hook_specification = pluggy.HookspecMarker("napari")
 
@@ -96,4 +96,41 @@ def napari_get_reader(path: Union[str, List[str]]) -> Optional[ReaderFunction]:
         where ``layer_data`` is one of ``(data,)``, ``(data, meta)``, or
         ``(data, meta, layer_type)``.
         If unable to read the path, must return ``None`` (not ``False``!).
+    """
+
+
+@napari_hook_specification(firstresult=True)
+def napari_get_writer(
+    path: Union[str, List[str]],
+    layer_types: List[str],
+    extension: Optional[str],
+) -> Optional[WriterFunction]:
+    """Return function capable of writing napari layer data into a `path`.
+
+    This function will be called on File -> Save.... This function must execute
+    QUICKLY, and should return ``None`` if the filepath is of an unrecognized
+    format for the reader plugin or the layer types are not recognized. If the
+    filepath is a recognized format, this function should return a callable
+    that accepts the same filepath, a list of layer_data tuples:
+    Union[Tuple[Any], Tuple[Any, Dict]], and optionally an extension.
+
+    Note: ``path`` may be either a str or a list of str, and implementations
+    should do their own checking for list or str, and handle each case as
+    desired.
+
+    Parameters
+    ----------
+    path : str or list of str
+        Path to file, directory, or resource (like a URL), or a list of paths.
+    layer_types : list of str
+        List of layer types that will be provided to the writer function.
+    extension : str, optional
+        Extension that will set the extension for the file being written.
+
+    Returns
+    -------
+    Callable or None
+        A function that accepts the path, a list of layer_data (where
+        layer_data is (data, meta, layer_type)). If unable to write to the
+        path or write the layer_data, must return ``None`` (not False).
     """
