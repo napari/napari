@@ -11,10 +11,10 @@ from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.event import Event
 from ...utils.status_messages import format_float
 from ..base import Layer
-from ..layer_utils import calc_data_range
+from ..utils.layer_utils import calc_data_range
 from ..intensity_mixin import IntensityVisualizationMixin
-from ._constants import Interpolation, Rendering
-from .image_utils import get_pyramid_and_rgb
+from ._image_constants import Interpolation, Rendering
+from ._image_utils import get_pyramid_and_rgb
 
 
 # Mixin must come before Layer
@@ -445,7 +445,7 @@ class Image(IntensityVisualizationMixin, Layer):
             scale = np.ones(self.ndim)
             for d in self.dims.displayed:
                 scale[d] = self.level_downsamples[self.data_level][d]
-            self._transform_view.scale = scale
+            self._transforms['tile2data'].scale = scale
 
             if np.any(disp_shape > self._max_tile_shape):
                 for d in self.dims.displayed:
@@ -454,11 +454,15 @@ class Image(IntensityVisualizationMixin, Layer):
                         self._top_left[d] + self._max_tile_shape,
                         1,
                     )
-                self._transform_view.translate = (
-                    self._top_left * self.scale * self._transform_view.scale
+                # Note that top left marks the location of top left canvas
+                # pixel in data coordinates
+                self._transforms['tile2data'].translate = (
+                    self._top_left
+                    * self._transforms['data2world'].scale
+                    * self._transforms['tile2data'].scale
                 )
             else:
-                self._transform_view.translate = [0] * self.ndim
+                self._transforms['tile2data'].translate = [0] * self.ndim
 
             image = np.asarray(
                 self._data_pyramid[level][tuple(indices)]
@@ -483,7 +487,7 @@ class Image(IntensityVisualizationMixin, Layer):
                     self._data_pyramid[-1][tuple(indices)]
                 ).transpose(order)
         else:
-            self._transform_view.scale = np.ones(self.dims.ndim)
+            self._transforms['tile2data'].scale = np.ones(self.dims.ndim)
             image = np.asarray(self.data[self.dims.indices]).transpose(order)
             thumbnail = image
 

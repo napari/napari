@@ -1,5 +1,5 @@
 import numpy as np
-from napari.layers.shapes.shape_models import (
+from napari.layers.shapes._shapes_models import (
     Rectangle,
     Polygon,
     Path,

@@ -2,7 +2,7 @@ from enum import auto
 import sys
 
 from ...utils.misc import StringEnum
-from .shape_models import Rectangle, Ellipse, Line, Path, Polygon
+from ._shapes_models import Rectangle, Ellipse, Line, Path, Polygon
 
 
 class Mode(StringEnum):

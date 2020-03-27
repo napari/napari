@@ -8,10 +8,10 @@ from qtpy.QtWidgets import (
 )
 from collections import OrderedDict
 import napari
-from ..utils.interactions import get_keybindings_summary
+from ..utils.interactions import get_key_bindings_summary
 
 
-class QtAboutKeybindings(QDialog):
+class QtAboutKeyBindings(QDialog):
     """Qt dialog window for displaying keybinding information.
 
     Parameters
@@ -21,10 +21,10 @@ class QtAboutKeybindings(QDialog):
 
     Attributes
     ----------
-    keybindings_strs : collections.OrderedDict
-        Ordered dictionary of hotkey shortcuts and associated keybindings.
+    key_bindings_strs : collections.OrderedDict
+        Ordered dictionary of hotkey shortcuts and associated key bindings.
         Dictionary keys include:
-        - 'All active keybindings'
+        - 'All active key bindings'
         - 'Image layer'
         - 'Labels layer'
         - 'Points layer'
@@ -36,12 +36,12 @@ class QtAboutKeybindings(QDialog):
     layerTypeComboBox : qtpy.QtWidgets.QComboBox
         Dropdown menu to select layer type.
     textEditBox : qtpy.QtWidgets.QTextEdit
-        Text box widget containing table of keybindings information.
+        Text box widget containing table of key bindings information.
     viewer : napari.components.ViewerModel
         Napari viewer containing the rendered scene, layers, and controls.
     """
 
-    ALL_ACTIVE_KEYBINDINGS = 'All active keybindings'
+    ALL_ACTIVE_KEYBINDINGS = 'All active key bindings'
 
     def __init__(self, viewer, parent=None):
         super().__init__(parent=parent)
@@ -53,13 +53,13 @@ class QtAboutKeybindings(QDialog):
         self.setWindowModality(Qt.NonModal)
         self.setLayout(self.layout)
 
-        # stacked keybindings widgets
+        # stacked key bindings widgets
         self.textEditBox = QTextEdit()
         self.textEditBox.setTextInteractionFlags(Qt.TextSelectableByMouse)
         self.textEditBox.setMinimumWidth(360)
         # Can switch to a normal dict when our minimum Python is 3.7
-        self.keybindings_strs = OrderedDict()
-        self.keybindings_strs[self.ALL_ACTIVE_KEYBINDINGS] = ''
+        self.key_bindings_strs = OrderedDict()
+        self.key_bindings_strs[self.ALL_ACTIVE_KEYBINDINGS] = ''
         col = self.viewer.palette['secondary']
         layers = [
             napari.layers.Image,
@@ -71,14 +71,14 @@ class QtAboutKeybindings(QDialog):
         ]
         for layer in layers:
             if len(layer.class_keymap) == 0:
-                text = 'No keybindings'
+                text = 'No key bindings'
             else:
-                text = get_keybindings_summary(layer.class_keymap, col=col)
-            self.keybindings_strs[f"{layer.__name__} layer"] = text
+                text = get_key_bindings_summary(layer.class_keymap, col=col)
+            self.key_bindings_strs[f"{layer.__name__} layer"] = text
 
         # layer type selection
         self.layerTypeComboBox = QComboBox()
-        self.layerTypeComboBox.addItems(list(self.keybindings_strs))
+        self.layerTypeComboBox.addItems(list(self.key_bindings_strs))
         self.layerTypeComboBox.activated[str].connect(self.change_layer_type)
         self.layerTypeComboBox.setCurrentText(self.ALL_ACTIVE_KEYBINDINGS)
         # self.change_layer_type(current_layer)
@@ -100,9 +100,9 @@ class QtAboutKeybindings(QDialog):
         Parameters
         ----------
         text : str
-            Dictionary key to access keybindings associated with the layer.
+            Dictionary key to access key bindings associated with the layer.
             Available keys include:
-            - 'All active keybindings'
+            - 'All active key bindings'
             - 'Image layer'
             - 'Labels layer'
             - 'Points layer'
@@ -110,10 +110,10 @@ class QtAboutKeybindings(QDialog):
             - 'Surface layer'
             - 'Vectors layer'
         """
-        self.textEditBox.setHtml(self.keybindings_strs[text])
+        self.textEditBox.setHtml(self.key_bindings_strs[text])
 
     def update_active_layer(self, event=None):
-        """Update the active layer and display keybindings for that layer type.
+        """Update the active layer and display key bindings for that layer type.
 
         Parameters
         ----------
@@ -121,18 +121,10 @@ class QtAboutKeybindings(QDialog):
             Event from the Qt context, by default None.
         """
         col = self.viewer.palette['secondary']
-        text = ''
-        # Add class and instance viewer keybindings
-        text += get_keybindings_summary(self.viewer.class_keymap, col=col)
-        text += get_keybindings_summary(self.viewer.keymap, col=col)
+        # Add class and instance viewer key bindings
+        text = get_key_bindings_summary(self.viewer.active_keymap, col=col)
 
-        layer = self.viewer.active_layer
-        if layer is not None:
-            # Add class and instance layer keybindings for the active layer
-            text += get_keybindings_summary(layer.class_keymap, col=col)
-            text += get_keybindings_summary(layer.keymap, col=col)
-
-        # Update layer speficic keybindings if all active are displayed
-        self.keybindings_strs[self.ALL_ACTIVE_KEYBINDINGS] = text
+        # Update layer speficic key bindings if all active are displayed
+        self.key_bindings_strs[self.ALL_ACTIVE_KEYBINDINGS] = text
         if self.layerTypeComboBox.currentText() == self.ALL_ACTIVE_KEYBINDINGS:
             self.textEditBox.setHtml(text)

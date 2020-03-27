@@ -6,7 +6,7 @@ for styling svg elements using qss
 import os
 import re
 import shutil
-from subprocess import run
+from subprocess import check_call, CalledProcessError
 from typing import Dict, List, Tuple
 
 from ..utils.theme import palettes as _palettes
@@ -109,16 +109,15 @@ def build_resources_qrc(
         2-tuple of (path-to-qrc.res, path-to-theme-directory).
     """
     qrc_path = os.path.join(dest_dir, 'res.qrc')
+    theme_dir = os.path.join(dest_dir, 'themes')
     if os.path.exists(qrc_path) and (not overwrite):
-        return qrc_path
+        return qrc_path, theme_dir
 
     qrc_string = """
     <!DOCTYPE RCC>
     <RCC version="1.0">
     <qresource>
     """
-
-    theme_dir = os.path.join(dest_dir, 'themes')
     for filename in themify_icons(theme_dir):
         qrc_string += f'\n    <file>themes/{filename}</file>'
 
@@ -169,9 +168,9 @@ def build_pyqt_resources(out_path: str, overwrite: bool = False) -> str:
 
     # then convert it to a python file
     try:
-        run(['pyrcc5', '-o', out_path, qrc_path])
-    except FileNotFoundError:
-        run(['pyside2-rcc', '-o', out_path, qrc_path])
+        check_call(['pyrcc5', '-o', out_path, qrc_path])
+    except (FileNotFoundError, CalledProcessError):
+        check_call(['pyside2-rcc', '-o', out_path, qrc_path])
 
     # make sure we import from qtpy
     with open(out_path, "rt") as fin:

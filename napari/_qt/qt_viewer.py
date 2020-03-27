@@ -1,7 +1,5 @@
-import inspect
 from pathlib import Path
 
-from qtpy import QtGui
 from qtpy.QtCore import QCoreApplication, Qt, QSize
 from qtpy.QtWidgets import QWidget, QVBoxLayout, QFileDialog, QSplitter
 from qtpy.QtGui import QCursor, QGuiApplication
@@ -14,21 +12,19 @@ from .qt_dims import QtDims
 from .qt_layerlist import QtLayerList
 from ..resources import get_stylesheet
 from ..utils.theme import template
-from ..utils.misc import str_to_rgb
 from ..utils.interactions import (
     ReadOnlyWrapper,
     mouse_press_callbacks,
     mouse_move_callbacks,
     mouse_release_callbacks,
 )
-from ..utils.keybindings import components_to_key_combo
+from ..utils.key_bindings import components_to_key_combo
 
 from .utils import QImg2array, square_pixmap
 from .qt_controls import QtControls
 from .qt_viewer_buttons import QtLayerButtons, QtViewerButtons
-from .qt_console import QtConsole
 from .qt_viewer_dock_widget import QtViewerDockWidget
-from .qt_about_keybindings import QtAboutKeybindings
+from .qt_about_key_bindings import QtAboutKeyBindings
 from .._vispy import create_vispy_visual
 
 
@@ -91,7 +87,7 @@ class QtViewer(QSplitter):
         self.layers = QtLayerList(self.viewer.layers)
         self.layerButtons = QtLayerButtons(self.viewer)
         self.viewerButtons = QtViewerButtons(self.viewer)
-        self.console = QtConsole({'viewer': self.viewer})
+        self._console = None
 
         layerList = QWidget()
         layerList.setObjectName('layerList')
@@ -117,26 +113,27 @@ class QtViewer(QSplitter):
         )
         self.dockConsole = QtViewerDockWidget(
             self,
-            self.console,
+            QWidget(),
             name='console',
             area='bottom',
             allowed_areas=['top', 'bottom'],
             shortcut='Ctrl+Shift+C',
         )
         self.dockConsole.setVisible(False)
+        # because the console is loaded lazily in the @getter, this line just
+        # gets (or creates) the console when the dock console is made visible.
+        self.dockConsole.visibilityChanged.connect(
+            lambda visible: self.console if visible else None
+        )
         self.dockLayerControls.visibilityChanged.connect(self._constrain_width)
         self.dockLayerList.setMaximumWidth(258)
         self.dockLayerList.setMinimumWidth(258)
 
         # This dictionary holds the corresponding vispy visual for each layer
         self.layer_to_visual = {}
-
-        if self.console.shell is not None:
-            self.viewerButtons.consoleButton.clicked.connect(
-                lambda: self.toggle_console()
-            )
-        else:
-            self.viewerButtons.consoleButton.setEnabled(False)
+        self.viewerButtons.consoleButton.clicked.connect(
+            self.toggle_console_visibility
+        )
 
         self.canvas = SceneCanvas(keys=None, vsync=True, parent=self)
         self.canvas.events.ignore_callback_errors = False
@@ -174,16 +171,12 @@ class QtViewer(QSplitter):
             'standard': QCursor(),
         }
 
-        self._update_palette(viewer.palette)
-
-        self._key_release_generators = {}
+        self._update_palette()
 
         self.viewer.events.interactive.connect(self._on_interactive)
         self.viewer.events.cursor.connect(self._on_cursor)
         self.viewer.events.reset_view.connect(self._on_reset_view)
-        self.viewer.events.palette.connect(
-            lambda event: self._update_palette(event.palette)
-        )
+        self.viewer.events.palette.connect(self._update_palette)
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
         self.viewer.layers.events.added.connect(self._add_layer)
         self.viewer.layers.events.removed.connect(self._remove_layer)
@@ -194,6 +187,22 @@ class QtViewer(QSplitter):
         self.viewer.events.layers_change.connect(lambda x: self.dims.stop())
 
         self.setAcceptDrops(True)
+
+    @property
+    def console(self):
+        """QtConsole: iPython console terminal integrated into the napari GUI.
+        """
+        if self._console is None:
+            from .qt_console import QtConsole
+
+            self.console = QtConsole({'viewer': self.viewer})
+        return self._console
+
+    @console.setter
+    def console(self, console):
+        self._console = console
+        self.dockConsole.widget = console
+        self._update_palette()
 
     def _constrain_width(self, event):
         """Allow the layer controls to be wider, only if floated.
@@ -393,26 +402,27 @@ class QtViewer(QSplitter):
             # Assumes default camera has the same properties as PanZoomCamera
             self.view.camera.rect = event.rect
 
-    def _update_palette(self, palette):
-        """Update the napari GUI theme.
-
-        Parameters
-        ----------
-        palette : dict of str: str
-            Color palette with which to style the viewer.
-            Property of napari.components.viewer_model.ViewerModel
-        """
+    def _update_palette(self, event=None):
+        """Update the napari GUI theme."""
         # template and apply the primary stylesheet
-        themed_stylesheet = template(self.raw_stylesheet, **palette)
-        self.console.style_sheet = themed_stylesheet
-        self.console.syntax_style = palette['syntax_style']
-        bracket_color = QtGui.QColor(*str_to_rgb(palette['highlight']))
-        self.console._bracket_matcher.format.setBackground(bracket_color)
+        themed_stylesheet = template(
+            self.raw_stylesheet, **self.viewer.palette
+        )
+        if self._console is not None:
+            self.console._update_palette(
+                self.viewer.palette, themed_stylesheet
+            )
         self.setStyleSheet(themed_stylesheet)
-        self.canvas.bgcolor = palette['canvas']
+        self.canvas.bgcolor = self.viewer.palette['canvas']
 
-    def toggle_console(self):
-        """Toggle console visible and not visible."""
+    def toggle_console_visibility(self, event=None):
+        """Toggle console visible and not visible.
+
+        Imports the console the first time it is requested.
+        """
+        # force instantiation of console if not already instantiated
+        _ = self.console
+
         viz = not self.dockConsole.isVisible()
         # modulate visibility at the dock widget level as console is docakable
         self.dockConsole.setVisible(viz)
@@ -429,8 +439,8 @@ class QtViewer(QSplitter):
             self.viewerButtons.consoleButton
         )
 
-    def show_keybindings_dialog(self, event=None):
-        dialog = QtAboutKeybindings(self.viewer, parent=self)
+    def show_key_bindings_dialog(self, event=None):
+        dialog = QtAboutKeyBindings(self.viewer, parent=self)
         dialog.show()
 
     def on_mouse_press(self, event):
@@ -501,31 +511,13 @@ class QtViewer(QSplitter):
             and event.native.isAutoRepeat()
             and event.key.name not in ['Up', 'Down', 'Left', 'Right']
         ) or event.key is None:
-            # pass is no key is present or if key is held down, unless the
+            # pass if no key is present or if key is held down, unless the
             # key being held down is one of the navigation keys
+            # this helps for scrolling, etc.
             return
 
-        comb = components_to_key_combo(event.key.name, event.modifiers)
-
-        layer = self.viewer.active_layer
-
-        if layer is not None and comb in layer.keymap:
-            parent = layer
-        elif comb in self.viewer.keymap:
-            parent = self.viewer
-        else:
-            return
-
-        func = parent.keymap[comb]
-        gen = func(parent)
-
-        if inspect.isgenerator(gen):
-            try:
-                next(gen)
-            except StopIteration:  # only one statement
-                pass
-            else:
-                self._key_release_generators[event.key] = gen
+        combo = components_to_key_combo(event.key.name, event.modifiers)
+        self.viewer.press_key(combo)
 
     def on_key_release(self, event):
         """Called whenever key released in canvas.
@@ -535,10 +527,8 @@ class QtViewer(QSplitter):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
-        try:
-            next(self._key_release_generators[event.key])
-        except (KeyError, StopIteration):
-            pass
+        combo = components_to_key_combo(event.key.name, event.modifiers)
+        self.viewer.release_key(combo)
 
     def on_draw(self, event):
         """Called whenever drawn in canvas. Called for all layers, not just top
@@ -621,7 +611,8 @@ class QtViewer(QSplitter):
         # not a problem)
         self.dims.stop()
         self.canvas.native.deleteLater()
-        self.console.close()
+        if self._console is not None:
+            self.console.close()
         self.dockConsole.deleteLater()
         if not self.pool.waitForDone(10000):
             raise TimeoutError("Timed out waiting for QtViewer.pool to finish")

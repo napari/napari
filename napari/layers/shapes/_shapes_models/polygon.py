@@ -1,16 +1,16 @@
 import numpy as np
 from xml.etree.ElementTree import Element
 from .shape import Shape
-from ..shape_utils import create_box
+from .._shapes_utils import create_box
 
 
-class Line(Shape):
-    """Class for a single line segment
+class Polygon(Shape):
+    """Class for a single polygon
 
     Parameters
     ----------
-    data : (2, D) array
-        Line vertices.
+    data : np.ndarray
+        NxD array of vertices specifying the shape.
     edge_width : float
         thickness of lines and edges.
     edge_color : str | tuple
@@ -52,13 +52,13 @@ class Line(Shape):
             dims_order=dims_order,
             ndisplay=ndisplay,
         )
-        self._filled = False
+        self._closed = True
         self.data = data
-        self.name = 'line'
+        self.name = 'polygon'
 
     @property
     def data(self):
-        """(2, D) array: line vertices.
+        """np.ndarray: NxD array of vertices.
         """
         return self._data
 
@@ -69,10 +69,10 @@ class Line(Shape):
         if len(self.dims_order) != data.shape[1]:
             self._dims_order = list(range(data.shape[1]))
 
-        if len(data) != 2:
+        if len(data) < 2:
             raise ValueError(
-                f"""Data shape does not match a line. A
-                             line expects two end vertices,
+                f"""Data shape does not match a polygon. A
+                             Polygon expects at least two vertices,
                              {len(data)} provided."""
             )
 
@@ -81,8 +81,7 @@ class Line(Shape):
 
     def _update_displayed_data(self):
         """Update the data that is to be displayed."""
-        # For path connect every all data
-        self._set_meshes(self.data_displayed, face=False, closed=False)
+        self._set_meshes(self.data_displayed)
         self._box = create_box(self.data_displayed)
 
         data_not_displayed = self.data[:, self.dims_not_displayed]
@@ -103,11 +102,8 @@ class Line(Shape):
             xml element specifying the shape according to svg.
         """
         data = self.data[:, self.dims_displayed]
-        x1 = str(data[0, 0])
-        y1 = str(data[0, 1])
-        x2 = str(data[1, 0])
-        y2 = str(data[1, 1])
+        points = ' '.join([f'{d[1]},{d[0]}' for d in data])
 
-        element = Element('line', x1=y1, y1=x1, x2=y2, y2=x2, **self.svg_props)
+        element = Element('polygon', points=points, **self.svg_props)
 
         return element

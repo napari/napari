@@ -13,7 +13,7 @@ PageUp, PageDown, Insert, Delete, Home, End, Escape, Backspace, F1,
 F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, Space, Enter, and Tab
 
 Functions take in only one argument: the parent that the function
-was bound to. This is the viewer or layer.
+was bound to.
 
 By default, all functions are assumed to work on key presses only,
 but can be denoted to work on release too by separating the function
@@ -29,11 +29,13 @@ into two statements with the yield keyword::
         # on key release
         viewer.status = 'goodbye world :('
 
+To create a keymap that will block others, ``bind_key(..., ...)```.
 """
 
+import inspect
 import re
 import types
-from collections import UserDict
+from collections import ChainMap
 
 from vispy.util import keys
 
@@ -188,11 +190,16 @@ def bind_key(keymap, key, func=UNDEFINED, *, overwrite=False):
     ----------
     keymap : dict of str: callable
         Keymap to modify.
-    key : str
+    key : str or ...
         Key combination.
-    func : callable or None
+        ``...`` acts as a wildcard if no key combinations can be matched
+        in the keymap (this will overwrite all key combinations
+        further down the lookup chain).
+    func : callable, None, or ...
         Callable to bind to the key combination.
         If ``None`` is passed, unbind instead.
+        ``...`` acts as a blocker, effectively unbinding the key
+        combination for all keymaps further down the lookup chain.
     overwrite : bool, keyword-only, optional
         Whether to overwrite the key combination if it already exists.
 
@@ -218,7 +225,7 @@ def bind_key(keymap, key, func=UNDEFINED, *, overwrite=False):
     F2, F3, F4, F5, F6, F7, F8, F9, F10, F11, F12, Space, Enter, and Tab
 
     Functions take in only one argument: the parent that the function
-    was bound to. This is the viewer or layer.
+    was bound to.
 
     By default, all functions are assumed to work on key presses only,
     but can be denoted to work on release too by separating the function
@@ -234,6 +241,7 @@ def bind_key(keymap, key, func=UNDEFINED, *, overwrite=False):
             # on key release
             viewer.status = 'goodbye world :('
 
+    To create a keymap that will block others, ``bind_key(..., ...)```.
     """
     if func is UNDEFINED:
 
@@ -243,7 +251,8 @@ def bind_key(keymap, key, func=UNDEFINED, *, overwrite=False):
 
         return inner
 
-    key = normalize_key_combo(key)
+    if key is not Ellipsis:
+        key = normalize_key_combo(key)
 
     if func is not None and key in keymap and not overwrite:
         raise ValueError(
@@ -254,7 +263,7 @@ def bind_key(keymap, key, func=UNDEFINED, *, overwrite=False):
     unbound = keymap.pop(key, None)
 
     if func is not None:
-        if not callable(func):
+        if func is not Ellipsis and not callable(func):
             raise TypeError("'func' must be a callable")
         keymap[key] = func
 
@@ -263,7 +272,7 @@ def bind_key(keymap, key, func=UNDEFINED, *, overwrite=False):
 
 class KeybindingDescriptor:
     """Descriptor which transforms ``func`` into a method with the first
-    argument bound to ``class_keymap`` or ``_keymap`` depending on if it was
+    argument bound to ``class_keymap`` or ``keymap`` depending on if it was
     called from the class or the instance, respectively.
 
     Parameters
@@ -275,78 +284,28 @@ class KeybindingDescriptor:
     def __init__(self, func):
         self.__func__ = func
 
-    def __get__(self, instance, klass):
-        if instance is None:  # used on class
-            try:
-                keymap = klass.class_keymap
-            except AttributeError:
-                return self.__func__
+    def __get__(self, instance, cls):
+        if instance is not None:
+            keymap = instance.keymap
         else:
-            keymap = instance._keymap
+            keymap = cls.class_keymap
 
         return types.MethodType(self.__func__, keymap)
 
 
-class InheritedKeymap(UserDict):
-    """Dictionary which inherits from another.
+class KeymapProvider:
+    """Mix-in to add keymap functionality.
 
-    Values of ``None`` are treated as though the key doesn't exist.
-
-    Parameters
+    Attributes
     ----------
-    parent : callable() -> dict
-        Parent keymap.
-    contents : dict, optional
-        Contents with which to initialize.
-    """
-
-    def __init__(self, parent, contents={}):
-        super().__init__(contents)
-        self._parent = parent
-
-    def __getitem__(self, key):
-        try:
-            val = super().__getitem__(key)
-        except KeyError:
-            val = self._parent()[key]
-
-        if val is None:
-            raise KeyError(key)
-
-        return val
-
-    def __contains__(self, key):
-        try:
-            self[key]
-        except KeyError:
-            return False
-        else:
-            return True
-
-    def __delitem__(self, key):
-        self[key] = None
-
-    def copy(self):
-        return InheritedKeymap(self._parent, self.data.copy())
-
-    def pop(self, key, default=UNDEFINED):
-        try:
-            default = self[key]
-        except KeyError:
-            if default is UNDEFINED:
-                raise
-        else:
-            del self[key]
-
-        return default
-
-
-class KeymapMixin:
-    """Mix-in to add keymap functionality. Must still define ``class_keymap``
-    in every subclass.
+    class_keymap : dict
+        Class keymap.
+    keymap : dict
+        Instance keymap.
     """
 
     def __init__(self):
+        super().__init__()
         self.keymap = {}
 
     def __init_subclass__(cls, **kwargs):
@@ -356,17 +315,119 @@ class KeymapMixin:
             # if in __dict__, was defined in class and not inherited
             cls.class_keymap = {}
 
-    @property
-    def keymap(self):
-        """InheritedKeymap : Keymap used for shortcuts.
-        Inherits from ``class_keymap``.
-
-        Do not directly set key bindings; use ``bind_key`` instead.
-        """
-        return self._keymap.copy()
-
-    @keymap.setter
-    def keymap(self, keymap):
-        self._keymap = InheritedKeymap(lambda: self.class_keymap, keymap)
-
     bind_key = KeybindingDescriptor(bind_key)
+
+
+def _bind_keymap(keymap, instance):
+    """Bind all functions in a keymap to an instance.
+
+    Parameters
+    ----------
+    keymap : dict
+        Keymap to bind.
+    instance : object
+        Instance to bind to.
+
+    Returns
+    -------
+    bound_keymap : dict
+        Keymap with functions bound to the instance.
+    """
+    bound_keymap = {
+        key: types.MethodType(func, instance) if func is not Ellipsis else func
+        for key, func in keymap.items()
+    }
+    return bound_keymap
+
+
+class KeymapHandler:
+    """Mix-in to add key handling functionality.
+
+    Attributes
+    ----------
+    keymap_providers : list of KeymapProvider
+        Classes that provide the keymaps for this class to handle.
+    """
+
+    def __init__(self):
+        super().__init__()
+        self._key_release_generators = {}
+        self.keymap_providers = []
+
+    @property
+    def keymap_chain(self):
+        """collections.ChainMap: Chain of keymaps from keymap providers."""
+        maps = []
+
+        for parent in self.keymap_providers:
+            maps.append(_bind_keymap(parent.keymap, parent))
+            maps.append(_bind_keymap(parent.class_keymap, parent))
+
+        return ChainMap(*maps)
+
+    @property
+    def active_keymap(self):
+        """dict: Active keymap, created by resolving the keymap chain."""
+        active_keymap = self.keymap_chain
+        keymaps = active_keymap.maps
+
+        for i, keymap in enumerate(keymaps):
+            if Ellipsis in keymap:  # catch-all key
+                # trim all keymaps after catch-all
+                active_keymap = ChainMap(*keymaps[: i + 1])
+                break
+
+        active_keymap_final = {
+            k: func
+            for k, func in active_keymap.items()
+            if func is not Ellipsis
+        }
+
+        return active_keymap_final
+
+    def press_key(self, key_combo):
+        """Simulate a key press to activate a keybinding.
+
+        Parameters
+        ----------
+        key_combo : str
+            Key combination.
+        """
+        key_combo = normalize_key_combo(key_combo)
+        keymap = self.active_keymap
+        if key_combo in keymap:
+            func = keymap[key_combo]
+        elif Ellipsis in keymap:  # catch-all
+            func = keymap[...]
+        else:
+            return  # no keybinding found
+
+        if func is Ellipsis:  # blocker
+            return
+        elif not callable(func):
+            raise TypeError(f"expected {func} to be callable")
+
+        gen = func()
+
+        if inspect.isgeneratorfunction(func):
+            try:
+                next(gen)  # call function
+            except StopIteration:  # only one statement
+                pass
+            else:
+                key, _ = parse_key_combo(key_combo)
+                self._key_release_generators[key] = gen
+
+    def release_key(self, key_combo):
+        """Simulate a key release for a keybinding.
+
+        Parameters
+        ----------
+        key_combo : str
+            Key combination.
+        """
+        key, _ = parse_key_combo(key_combo)
+        try:
+            next(self._key_release_generators[key])  # call function
+        except (KeyError, StopIteration):
+            pass
