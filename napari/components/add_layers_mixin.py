@@ -123,8 +123,9 @@ class AddLayersMixin:
             Threshold for isosurface.
         attenuation : float
             Attenuation rate for attenuated maximum intensity projection.
-        name : str
-            Name of the layer.
+        name : str or list of str
+            Name of the layer.  If a list then must be same length as the axis
+            that is being expanded as channels.
         metadata : dict
             Layer metadata.
         scale : tuple of float
@@ -137,8 +138,10 @@ class AddLayersMixin:
             One of a list of preset blending modes that determines how RGB and
             alpha values of the layer visual get mixed. Allowed values are
             {'opaque', 'translucent', and 'additive'}.
-        visible : bool
+        visible : bool or list of bool
             Whether the layer visual is currently being displayed.
+            If a list then must be same length as the axis that is
+            being expanded as channels.
         path : str or list of str
             Path or list of paths to image data. Paths can be passed as strings
             or `pathlib.Path` instances.
@@ -210,12 +213,18 @@ class AddLayersMixin:
                 contrast_limits = ensure_iterable(contrast_limits)
 
             gamma = ensure_iterable(gamma)
+            visible = ensure_iterable(visible)
 
             layer_list = []
             zipped_args = zip(
-                range(n_channels), colormap, contrast_limits, gamma, name
+                range(n_channels),
+                colormap,
+                contrast_limits,
+                gamma,
+                name,
+                visible,
             )
-            for i, cmap, clims, _gamma, name in zipped_args:
+            for i, cmap, clims, _gamma, name, visible in zipped_args:
                 if is_pyramid:
                     image = [
                         np.take(data[j], i, axis=channel_axis)

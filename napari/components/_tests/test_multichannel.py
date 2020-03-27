@@ -144,6 +144,18 @@ def test_gamma():
         assert viewer.layers[i].gamma == gammas[i]
 
 
+def test_multichannel_visibility():
+    """Test adding multichannel image with custom visibility."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    data = np.random.random((15, 10, 5))
+    visibles = [True, False, False, True, True]
+    viewer.add_image(data, visible=visibles, channel_axis=-1)
+    assert len(viewer.layers) == data.shape[-1]
+    for i in range(data.shape[-1]):
+        assert viewer.layers[i].visible == visibles[i]
+
+
 def test_multichannel_pyramid():
     """Test adding multichannel pyramid."""
     viewer = ViewerModel()
