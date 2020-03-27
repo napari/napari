@@ -57,7 +57,7 @@ class ListModel(MultiIndexList, TypedList):
         self.events.added(item=obj, index=self.__locitem__(index))
 
     def append(self, obj):
-        super(TypedList, self).append(obj)
+        TypedList.append(self, obj)
         self.events.added(item=obj, index=len(self) - 1)
 
     def pop(self, key):
