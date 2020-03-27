@@ -71,5 +71,5 @@ class LayerGroup(Layer):
     @visible.setter
     def visible(self, visibility):
         self._visible = visibility
-        for child in self._children:
+        for child in self:
             child.visible = visibility
