@@ -71,7 +71,7 @@ START_ORDER = ['p2', 'p3', 'p1']
 )
 def test_reordering_hook_caller(dummy_plugin_manager, order, expected_result):
     """Test that the permute_hook_implementations function reorders hooks."""
-    hook_caller = dummy_plugin_manager.hook.myhook
+    hook_caller = dummy_plugin_manager.hooks.myhook
 
     assert hook_caller() == START_ORDER
     hook_caller.bring_to_front(order)
@@ -88,7 +88,7 @@ def test_reordering_hook_caller(dummy_plugin_manager, order, expected_result):
 
 def test_reordering_hook_caller_raises(dummy_plugin_manager):
     """Test that invalid calls to permute_hook_implementations raise errors."""
-    hook_caller = dummy_plugin_manager.hook.myhook
+    hook_caller = dummy_plugin_manager.hooks.myhook
 
     with pytest.raises(TypeError):
         # all items must be the name of a plugin, or a HookImpl instance

@@ -256,9 +256,9 @@ class QtPluginSorter(QDialog):
         self.hook_combo_box = QComboBox()
         self.hook_combo_box.addItem(self.NULL_OPTION)
 
-        # populate the combo box with all of the hooks known by the plugin mngr
+        # populate comboBox with all of the hooks known by the plugin manager
         hooks = []
-        for name, hook_caller in vars(plugin_manager.hook).items():
+        for name, hook_caller in vars(plugin_manager.hooks).items():
             if firstresult_only:
                 # if the firstresult_only option is set
                 # we only want to include hook_specifications that declare the
@@ -302,5 +302,5 @@ class QtPluginSorter(QDialog):
         if hook == self.NULL_OPTION:
             hook_caller = None
         else:
-            hook_caller = getattr(self.plugin_manager.hook, hook)
+            hook_caller = getattr(self.plugin_manager.hooks, hook)
         self.hook_list.set_hook_caller(hook_caller)
