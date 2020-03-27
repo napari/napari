@@ -9,11 +9,11 @@ hookimpl = pluggy.HookimplMarker("dummy")
 def _get_call_order(hook_caller):
     # get_hookimpls() returns hook implementations in REVERSE call order
     # so we reverse them here
-    hookimpls = list(
+    hook_implementations = list(
         reversed([i.plugin_name for i in hook_caller.get_hookimpls()])
     )
-    hookimpls.extend([i.plugin_name for i in hook_caller._wrappers])
-    return hookimpls
+    hook_implementations.extend([i.plugin_name for i in hook_caller._wrappers])
+    return hook_implementations
 
 
 class MySpec(object):
