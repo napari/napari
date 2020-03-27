@@ -132,7 +132,7 @@ def format_exceptions(plugin_name: str, as_html: bool = False) -> str:
             )
     except Exception:
         pass
-    msg += ['']
+    msg.append('')
 
     for n, err in enumerate(PLUGIN_ERRORS.get(plugin_name, [])):
         _pad = _linewidth - len(str(err)) - 10
@@ -151,7 +151,7 @@ def format_exceptions(plugin_name: str, as_html: bool = False) -> str:
         else:
             msg.append(vbtb.text(etype, value, tb))
 
-    msg += ['=' * 80]
+    msg.append('=' * _linewidth)
 
     return ("<br>" if as_html else "\n").join(msg)
 
