@@ -72,4 +72,4 @@ class LayerGroup(Layer):
     def visible(self, visibility):
         self._visible = visibility
         for child in self._children:
-            child._visible = visibility
+            child.visible = visibility
