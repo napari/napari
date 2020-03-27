@@ -6,7 +6,6 @@ import numpy as np
 from skimage import io
 
 from napari.plugins.io import read_data_with_plugins
-from napari.plugins.utils import permute_hook_implementations
 
 
 def test_iter_reader_plugins(plugin_manager):
@@ -19,8 +18,8 @@ def test_iter_reader_plugins(plugin_manager):
     # the plugin loads fine, so there should be no exceptions yet.
     assert 'napari_bad_plugin2' not in plugin_manager._exceptions
 
-    permute_hook_implementations(
-        plugin_manager.hook.napari_get_reader, ['napari_bad_plugin2']
+    plugin_manager.hook.napari_get_reader.bring_to_front(
+        ['napari_bad_plugin2']
     )
 
     # but when we try to read an image path, it will raise an IOError.

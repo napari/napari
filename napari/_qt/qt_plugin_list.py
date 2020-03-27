@@ -1,8 +1,7 @@
 """Provides a QtPluginSorter that allows the user to change plugin call order.
 """
-from typing import Optional, Union
+from typing import List, Optional, Union
 
-from pluggy.manager import HookImpl, PluginManager, _HookCaller
 from qtpy.QtCore import QEvent, Qt, Signal, Slot
 from qtpy.QtWidgets import (
     QCheckBox,
@@ -19,9 +18,9 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from .utils import drag_with_pixmap
 from ..plugins import plugin_manager as napari_plugin_manager
-from ..plugins.utils import HookOrderType, permute_hook_implementations
+from ..plugins.manager import HookImpl, PluginManager, _HookCaller
+from .utils import drag_with_pixmap
 
 
 class ImplementationListItem(QFrame):
@@ -133,7 +132,7 @@ class QtHookImplementationListWidget(QListWidget):
             QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding
         )
         self.order_changed.connect(self.permute_hook)
-        self.hook_caller = None
+        self.hook_caller: Optional[_HookCaller] = None
         self.set_hook_caller(hook_caller)
 
     def set_hook_caller(self, hook_caller: Optional[_HookCaller]):
@@ -150,10 +149,10 @@ class QtHookImplementationListWidget(QListWidget):
         if not hook_caller:
             return
 
-        # get_hookimpls() returns hook implementations in REVERSE call order
+        # _nonwrappers returns hook implementations in REVERSE call order
         # so we reverse them here to show them in the list in the order in
         # which they get called.
-        for hook_implementation in reversed(hook_caller.get_hookimpls()):
+        for hook_implementation in reversed(hook_caller._nonwrappers):
             self.add_hook_implementation_to_list(hook_implementation)
 
     def add_hook_implementation_to_list(self, hook_implementation: HookImpl):
@@ -189,7 +188,7 @@ class QtHookImplementationListWidget(QListWidget):
         drag.exec_(supportedActions, Qt.MoveAction)
 
     @Slot(list)
-    def permute_hook(self, order: HookOrderType):
+    def permute_hook(self, order: List[HookImpl]):
         """Rearrage the call order of the hooks for the current hook impl.
 
         Parameters
@@ -200,7 +199,7 @@ class QtHookImplementationListWidget(QListWidget):
         """
         if not self.hook_caller:
             return
-        permute_hook_implementations(self.hook_caller, order)
+        self.hook_caller.bring_to_front(order)
 
 
 class QtPluginSorter(QDialog):
@@ -214,9 +213,9 @@ class QtPluginSorter(QDialog):
 
     Parameters
     ----------
-    plugin_manager : pluggy.PluginManager, optional
-        An instance of a pluggy PluginManager, by default, the main
-        :class:`~napari.plugins.manager.NapariPluginManager` instance
+    plugin_manager : PluginManager, optional
+        An instance of a PluginManager. by default, the main
+        :class:`~napari.plugins.manager.PluginManager` instance
     parent : QWidget, optional
         Optional parent widget, by default None
     initial_hook : str, optional
