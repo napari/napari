@@ -37,7 +37,18 @@ class _HookCaller(pluggy.hooks._HookCaller):
     _nonwrappers: List[HookImpl]
 
     def get_hookimpl_for_plugin(self, plugin_name: str):
-        return self._nonwrappers[self.index(plugin_name)]
+        """Return hook implementation instance for ``plugin_name`` if found."""
+        try:
+            return next(
+                imp
+                for imp in self.get_hookimpls()
+                if imp.plugin_name == plugin_name
+            )
+        except StopIteration:
+            raise KeyError(
+                f"No implementation of {self.name} found "
+                f"for plugin {plugin_name}."
+            )
 
     def index(self, value: Union[str, HookImpl]) -> int:
         """Return index of plugin_name or a HookImpl in self._nonwrappers"""
@@ -154,6 +165,32 @@ class _HookCaller(pluggy.hooks._HookCaller):
         # update the _nonwrappers list with the reordered list
         self._nonwrappers = _new_nonwrappers
 
+    def _set_plugin_enabled(self, plugin_name: str, enabled: bool):
+        """Enable or disable the hook implementation for a specific plugin.
+
+        Parameters
+        ----------
+        plugin_name : str
+            The name of a plugin implementing ``hook_spec``.
+        enabled : bool
+            Whether or not the implementation should be enabled.
+
+        Raises
+        ------
+        KeyError
+            If ``plugin_name`` has not provided a hook implementation for this
+            hook specification.
+        """
+        self.get_hookimpl_for_plugin(plugin_name).enabled = enabled
+
+    def enable_plugin(self, plugin_name: str):
+        """enable implementation for ``plugin_name``."""
+        self._set_plugin_enabled(plugin_name, True)
+
+    def disable_plugin(self, plugin_name: str):
+        """disable implementation for ``plugin_name``."""
+        self._set_plugin_enabled(plugin_name, False)
+
 
 pluggy.manager._HookCaller = _HookCaller
 
@@ -164,9 +201,9 @@ class PluginManager(pluggy.PluginManager):
 
     def __init__(
         self,
-        project_name="napari",
+        project_name: str = "napari",
         autodiscover: Optional[Union[bool, str]] = True,
-    ) -> None:
+    ):
         """pluggy.PluginManager subclass with napari-specific functionality
 
         In addition to the pluggy functionality, this subclass adds
@@ -267,7 +304,7 @@ class PluginManager(pluggy.PluginManager):
 
         return count
 
-    def _register_module(self, plugin_name: str, module_name: str) -> None:
+    def _register_module(self, plugin_name: str, module_name: str):
         """Try to register `module_name` as a plugin named `plugin_name`.
 
         Parameters
@@ -296,48 +333,6 @@ class PluginManager(pluggy.PluginManager):
             self.register(mod, name=plugin_name)
         except Exception as exc:
             raise PluginRegistrationError(plugin_name, module_name) from exc
-
-    def set_implementation_enabled(
-        self, hook_spec: str, plugin_name: str, enabled: bool
-    ) -> None:
-        """Enable or disable a specific hook implementation.
-
-        Parameters
-        ----------
-        hook_spec : str
-            The name of a hook specification.
-        plugin_name : str
-            The name of a plugin implementing ``hook_spec``.
-        enabled : bool
-            Whether or not the implementation should be enabled.
-
-        Raises
-        ------
-        AttributeError
-            If the plugin manager has no hook_specification named
-            ``hook_spec``.
-        KeyError
-            If ``plugin_name`` has not provided a hook implementation for
-            ``hook_spec``.
-        """
-        try:
-            hook_caller = getattr(self.hook, hook_spec)
-        except AttributeError:
-            raise AttributeError(f"{self} has no hook named '{hook_spec}'")
-
-        try:
-            implementation = next(
-                imp
-                for imp in hook_caller.get_hookimpls()
-                if imp.plugin_name == plugin_name
-            )
-        except StopIteration:
-            raise KeyError(
-                f"No implementation of {hook_spec} found "
-                f"for plugin {plugin_name}."
-            )
-
-        implementation.enabled = enabled
 
     def format_exceptions(self, plugin_name: str) -> str:
         """Return formatted tracebacks for all exceptions raised by plugin.
@@ -545,7 +540,7 @@ def fetch_module_metadata(distname: str) -> Optional[Dict[str, str]]:
     }
 
 
-def log_plugin_error(exc: PluginError) -> None:
+def log_plugin_error(exc: PluginError):
     """Log PluginError to logger, with helpful contact info if possible.
 
     Parameters
