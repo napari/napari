@@ -6,7 +6,10 @@ import re
 import IPython.core.ultratb
 
 
+# This is a mapping of plugin_name -> PluginError instances
+# all PluginErrors get added to this in PluginError.__init__
 PLUGIN_ERRORS: DefaultDict[str, List['PluginError']] = defaultdict(list)
+
 
 if sys.version_info >= (3, 8):
     from importlib import metadata as importlib_metadata
