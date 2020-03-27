@@ -153,9 +153,9 @@ class QtHookImplementationListWidget(QListWidget):
         # so we reverse them here to show them in the list in the order in
         # which they get called.
         for hook_implementation in reversed(hook_caller._nonwrappers):
-            self.add_hook_implementation_to_list(hook_implementation)
+            self.append_hook_implementation(hook_implementation)
 
-    def add_hook_implementation_to_list(self, hook_implementation: HookImpl):
+    def append_hook_implementation(self, hook_implementation: HookImpl):
         """Add a list item for ``hook_implementation`` with a custom widget.
 
         Parameters
