@@ -18,6 +18,7 @@ def test_iter_reader_plugins(plugin_manager):
     # the plugin loads fine, so there should be no exceptions yet.
     assert 'napari_bad_plugin2' not in plugin_manager._exceptions
 
+    # make sure 'napari_bad_plugin2' gets called first
     plugin_manager.hooks.napari_get_reader.bring_to_front(
         ['napari_bad_plugin2']
     )
