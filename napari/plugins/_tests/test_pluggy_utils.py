@@ -7,6 +7,8 @@ hookimpl = pluggy.HookimplMarker("dummy")
 
 
 def _get_call_order(hook_caller):
+    # get_hookimpls() returns hook implementations in REVERSE call order
+    # so we reverse them here
     hookimpls = list(
         reversed([i.plugin_name for i in hook_caller.get_hookimpls()])
     )

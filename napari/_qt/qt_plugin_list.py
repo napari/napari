@@ -149,6 +149,10 @@ class QtHookImplementationListWidget(QListWidget):
         self.hook_caller = hook_caller
         if not hook_caller:
             return
+
+        # get_hookimpls() returns hook implementations in REVERSE call order
+        # so we reverse them here to show them in the list in the order in
+        # which they get called.
         for hook_implementation in reversed(hook_caller.get_hookimpls()):
             self.add_hook_implementation_to_list(hook_implementation)
 
