@@ -622,6 +622,7 @@ class Image(IntensityVisualizationMixin, Layer):
             List of a single xml element specifying the currently viewed image
             as a png according to the svg specification.
         """
+        # we delay this import to minimize import time at launch
         from imageio import imwrite
 
         if self.dims.ndisplay == 3:

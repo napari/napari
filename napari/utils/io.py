@@ -11,9 +11,17 @@ from dask import array as da
 
 
 def imsave(filename: str, data: np.ndarray):
-    """custom imaplementation of imread to avoid skimage dependecy"""
+    """Custom implementation of imsave to avoid skimage dependency.
+
+    Parameters
+    ----------
+    filename : string
+        The path to write the file to.
+    data : np.ndarray
+        The image data.
+    """
     ext = os.path.splitext(filename)[1]
-    if ext in [".tif", "tiff"]:
+    if ext in [".tif", ".tiff"]:
         import tifffile
 
         tifffile.imsave(filename, data)
@@ -23,10 +31,21 @@ def imsave(filename: str, data: np.ndarray):
         imageio.imsave(filename, data)
 
 
-def imread(filename: str):
-    """custom imaplementation of imread to avoid skimage dependecy"""
+def imread(filename: str) -> np.ndarray:
+    """Custom implementation of imread to avoid skimage dependency.
+
+    Parameters
+    ----------
+    filename : string
+        The path from which to read the image.
+
+    Returns
+    -------
+    data : np.ndarray
+        The image data.
+    """
     ext = os.path.splitext(filename)[1]
-    if ext in [".tif", "tiff", ".lsm"]:
+    if ext in [".tif", ".tiff", ".lsm"]:
         import tifffile
 
         image = tifffile.imread(filename)

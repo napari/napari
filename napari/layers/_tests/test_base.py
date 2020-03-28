@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from skimage import img_as_ubyte
+from skimage.util import img_as_ubyte
 
 from ..base.base import convert_to_uint8
 
