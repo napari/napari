@@ -11,7 +11,7 @@ class LayerGroup(Layer):
         self._children = LayerList(iterable=iterable)
 
     def _render(self):
-        """recursively return list of strings that can render ascii tree."""
+        """Recursively return list of strings that can render ascii tree."""
         lines = []
         lines.append(self.name)
 
@@ -30,16 +30,30 @@ class LayerGroup(Layer):
         """Render ascii tree string representation of this layer group"""
         return "\n".join(self._render())
 
-    def __repr__(self):
+    def _render_repr(self):
+        """Recursively return list of strings for unambiguous representation"""
+        lines = []
         cls = type(self)
-        results = []
-        for child in self._children:
-            results.append(child.__repr__())
-        string_repr = (
-            f"<{cls.__name__} layer {repr(self.name)}"
-            + f" at {hex(id(self))} containing > [{' + '.join(results)}]"
-        )
-        return string_repr
+        lines.append(f"<{cls.__name__} '{self.name}' at {hex(id(self))}>")
+
+        for n, child in enumerate(self):
+            try:
+                child_tree = child._render_repr()
+            except AttributeError:
+                cls = type(child)
+                child_tree = [
+                    f"<{cls.__name__} layer '{child.name}' at "
+                    f"{hex(id(self))}>"
+                ]
+            lines.append('  +--' + child_tree.pop(0))
+            spacer = '   ' if n == len(self) - 1 else '  |'
+            lines.extend([spacer + l for l in child_tree])
+
+        return lines
+
+    def __repr__(self):
+        """Render unambiguous tree string representation of this layer group"""
+        return "\n".join(self._render_repr())
 
     def __len__(self):
         return len(self._children)
