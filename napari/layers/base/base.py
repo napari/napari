@@ -10,6 +10,7 @@ from ._base_constants import Blending
 from ...components import Dims
 from ...utils.event import EmitterGroup, Event
 from ...utils.key_bindings import KeymapProvider
+from ..utils.layer_utils import convert_to_uint8
 from ...utils.misc import ROOT_DIR
 from ...utils.naming import magic_name
 from ...utils.status_messages import status_format, format_float
@@ -736,35 +737,3 @@ class Layer(KeymapProvider, ABC):
         """Called whenever mouse released in canvas.
         """
         return
-
-
-def convert_to_uint8(data: np.ndarray):
-    out_dtype = np.dtype(np.uint8)
-    out_max = np.iinfo(out_dtype).max
-    if data.dtype == out_dtype:
-        return data
-    in_kind = data.dtype.kind
-    if in_kind == "b":
-        return data.astype(out_dtype) * 255
-    if in_kind == "f":
-        image_out = np.multiply(data, out_max, dtype=data.dtype)
-        np.rint(image_out, out=image_out)
-        np.clip(image_out, 0, out_max, out=image_out)
-        return image_out.astype(out_dtype)
-
-    if in_kind in "ui":
-        if in_kind == "u":
-            if data.max() < out_max:
-                return data.astype(out_dtype)
-            return np.right_shift(data, (data.dtype.itemsize - 1) * 8).astype(
-                out_dtype
-            )
-        else:
-            np.maximum(data, 0, out=data, dtype=data.dtype)
-            if data.dtype == np.int8:
-                return (data * 2).astype(np.uint8)
-            if data.max() < out_max:
-                return data.astype(out_dtype)
-            return np.right_shift(
-                data, (data.dtype.itemsize - 1) * 8 - 1
-            ).astype(out_dtype)
