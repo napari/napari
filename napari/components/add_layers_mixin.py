@@ -394,6 +394,8 @@ class AddLayersMixin:
         An image-like layer where every pixel contains an integer ID
         corresponding to the region it belongs to.
 
+        Modifies the input array in-place.
+
         Parameters
         ----------
         data : array or list of array
@@ -432,6 +434,14 @@ class AddLayersMixin:
         -------
         layer : :class:`napari.layers.Labels`
             The newly-created labels layer.
+
+        Notes
+        -----
+        Pass deep copy of the input array as a parameter to avoid modification of input data array.
+
+        For example, call add_labels as follows::
+            viewer.add_labels(data.copy())
+        where data is the input array.
         """
         if data is None and path is None:
             raise ValueError("One of either data or path must be provided")
