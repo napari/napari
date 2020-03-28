@@ -3,7 +3,7 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 import numpy as np
-from skimage import io
+from napari.utils import io
 
 from napari.plugins.exceptions import PLUGIN_ERRORS, format_exceptions
 from napari.plugins.io import read_data_with_plugins

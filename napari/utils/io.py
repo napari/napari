@@ -64,15 +64,6 @@ def imread(filename: str) -> np.ndarray:
     return image
 
 
-if not os.environ.get("NO_SKIMAGE", False):
-    try:
-        from skimage.io import imread as _imread
-    except ImportError:
-        _imread = imread
-else:
-    _imread = imread
-
-
 def _alphanumeric_key(s):
     """Convert string to list of strings and ints that gives intuitive sorting.
 
@@ -163,15 +154,15 @@ def magic_imread(filenames, *, use_dask=None, stack=True):
                 shape = zarr_shape
         else:
             if shape is None:
-                image = _imread(filename)
+                image = imread(filename)
                 shape = image.shape
                 dtype = image.dtype
             if use_dask:
                 image = da.from_delayed(
-                    delayed(_imread)(filename), shape=shape, dtype=dtype
+                    delayed(imread)(filename), shape=shape, dtype=dtype
                 )
             elif len(images) > 0:  # not read by shape clause
-                image = _imread(filename)
+                image = imread(filename)
         images.append(image)
     if len(images) == 1:
         image = images[0]
