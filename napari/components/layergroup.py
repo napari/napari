@@ -10,6 +10,26 @@ class LayerGroup(Layer):
         self._name = name
         self._children = LayerList(iterable=iterable)
 
+    def _render(self):
+        """recursively return list of strings that can render ascii tree."""
+        lines = []
+        lines.append(self.name)
+
+        for n, child in enumerate(self):
+            try:
+                child_tree = child._render()
+            except AttributeError:
+                child_tree = [child.name]
+            lines.append('  +--' + child_tree.pop(0))
+            spacer = '   ' if n == len(self) - 1 else '  |'
+            lines.extend([spacer + l for l in child_tree])
+
+        return lines
+
+    def __str__(self):
+        """Render ascii tree string representation of this layer group"""
+        return "\n".join(self._render())
+
     def __repr__(self):
         cls = type(self)
         results = []
