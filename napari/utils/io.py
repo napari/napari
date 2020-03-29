@@ -54,9 +54,6 @@ def imread(filename: str) -> np.ndarray:
 
         image = imageio.imread(filename)
 
-    if not hasattr(image, 'ndim'):
-        return image
-
     if image.ndim > 2:
         if image.shape[-1] not in (3, 4) and image.shape[-3] in (3, 4):
             image = np.swapaxes(image, -1, -3)
