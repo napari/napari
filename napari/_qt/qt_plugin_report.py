@@ -92,7 +92,7 @@ class QtPluginErrReporter(QDialog):
         self.clipboard_button = QPushButton()
         self.clipboard_button.hide()
         self.clipboard_button.setObjectName("QtCopyToClipboardButton")
-        self.clipboard_button.setToolTip("Copy traceback to clipboard")
+        self.clipboard_button.setToolTip("Copy error log to clipboard")
         self.clipboard_button.clicked.connect(self.copyToClipboard)
 
         # plugin_meta contains a URL to the home page, (and/or other details)
