@@ -22,6 +22,14 @@ lint_task:
   test_script:
     - flake8 napari
 
+requirements_task:
+  name: Check if all requirements are listed
+  install_script:
+    - python -m pip install --retries 3 --upgrade "pip<19.3"
+    - pip install pip_check_reqs
+    - pip install --retries 3 -r requirements-dev.txt
+  test_script:
+    - pip-missing-reqs napari --ignore-file="**/_tests/*" --ignore-module=PySide2 --ignore-module=zarr  --ignore-file=napari/conftest.py
 
 linux_task:
   auto_cancellation: true
@@ -64,11 +72,11 @@ linux_task:
     folder: ~/.cache/pip
     populate_script: 
       - python -m pip install --retries 3 --upgrade pip
-      - pip install --retries 3 -r requirements.txt
+      - pip install --retries 3 -r requirements-dev.txt
 
   install_script:
     - python -m pip install --retries 3 --upgrade pip
-    - pip install --retries 3 -r requirements.txt
+    - pip install --retries 3 -r requirements-dev.txt
     - python -m pip install -e .
 
   check_script:
@@ -118,11 +126,11 @@ mac_task:
     populate_script:
       - export MACOSX_DEPLOYMENT_TARGET=10.10
       - python -m pip install --retries 3 --upgrade pip
-      - pip install -r requirements.txt
+      - pip install -r requirements-dev.txt
 
   install_script:
     - python -m pip install --retries 3 --upgrade pip
-    - pip install --retries 3 -r requirements.txt
+    - pip install --retries 3 -r requirements-dev.txt
     - python -m pip install -e .
 
   check_script:
@@ -182,11 +190,11 @@ win_task:
     folder: $LOCALAPPDATA\pip\Cache
     populate_script: 
       - python -m pip install --retries 3 --upgrade pip
-      - pip install -r requirements.txt
+      - pip install -r requirements-dev.txt
 
   install_script:
     - python -m pip install --retries 3 --upgrade pip
-    - pip install --retries 3 -r requirements.txt
+    - pip install --retries 3 -r requirements-dev.txt
     - python -m pip install -e .
 
   check_script:
@@ -219,7 +227,7 @@ codecov_task:
 
   install_script: |
     python -m pip install --retries 3 --upgrade pip
-    pip install -r requirements.txt
+    pip install -r requirements-dev.txt
     pip install -e .
     pip install pytest-cov codecov
 
