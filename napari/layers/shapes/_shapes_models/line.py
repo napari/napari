@@ -1,16 +1,16 @@
 import numpy as np
 from xml.etree.ElementTree import Element
 from .shape import Shape
-from ..shape_utils import create_box
+from .._shapes_utils import create_box
 
 
-class Path(Shape):
-    """Class for a single path, which is a sequence of line segments.
+class Line(Shape):
+    """Class for a single line segment
 
     Parameters
     ----------
-    data : np.ndarray
-        NxD array of vertices specifying the path.
+    data : (2, D) array
+        Line vertices.
     edge_width : float
         thickness of lines and edges.
     edge_color : str | tuple
@@ -54,11 +54,11 @@ class Path(Shape):
         )
         self._filled = False
         self.data = data
-        self.name = 'path'
+        self.name = 'line'
 
     @property
     def data(self):
-        """np.ndarray: NxD array of vertices.
+        """(2, D) array: line vertices.
         """
         return self._data
 
@@ -69,10 +69,10 @@ class Path(Shape):
         if len(self.dims_order) != data.shape[1]:
             self._dims_order = list(range(data.shape[1]))
 
-        if len(data) < 2:
+        if len(data) != 2:
             raise ValueError(
-                f"""Data shape does not match a path. A
-                             Path expects at least two vertices,
+                f"""Data shape does not match a line. A
+                             line expects two end vertices,
                              {len(data)} provided."""
             )
 
@@ -103,11 +103,11 @@ class Path(Shape):
             xml element specifying the shape according to svg.
         """
         data = self.data[:, self.dims_displayed]
-        points = ' '.join([f'{d[1]},{d[0]}' for d in data])
+        x1 = str(data[0, 0])
+        y1 = str(data[0, 1])
+        x2 = str(data[1, 0])
+        y2 = str(data[1, 1])
 
-        props = self.svg_props
-        props['fill'] = 'none'
-
-        element = Element('polyline', points=points, **props)
+        element = Element('line', x1=y1, y1=x1, x2=y2, y2=x2, **self.svg_props)
 
         return element

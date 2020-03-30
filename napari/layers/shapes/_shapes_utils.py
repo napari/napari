@@ -1,5 +1,5 @@
 import numpy as np
-from ..layer_utils import segment_normal
+from ..utils.layer_utils import segment_normal
 from vispy.geometry import PolygonData
 from vispy.visuals.tube import _frenet_frames
 

@@ -46,7 +46,7 @@ def _try_touch_file(target) -> Optional[Path]:
     return target
 
 
-def import_resources(version: str = '', overwrite: bool = False) -> None:
+def import_resources(version: str = '', overwrite: bool = False) -> str:
     """Build and import our icons as Qt resources.
 
     This function attempts to write that file to one of three locations
@@ -71,7 +71,13 @@ def import_resources(version: str = '', overwrite: bool = False) -> None:
             - the resources file does not already exist.
             - ``overwrite`` argument is True
             - the ``NAPARI_REBUILD_RESOURCES`` environmental variable is set
-    
+
+    Returns
+    -------
+    out_path : str
+        Path to the python resource file. File is already imported under `napari._qt_resources name`.
+        Copy this file to make the SVGs and other resources available in bundled application.
+
     Raises
     ------
     PermissionError

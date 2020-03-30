@@ -2,7 +2,7 @@ from abc import ABC, abstractmethod
 import numpy as np
 from copy import copy
 from vispy.color import Color
-from ..shape_utils import (
+from .._shapes_utils import (
     triangulate_edge,
     triangulate_face,
     is_collinear,

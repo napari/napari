@@ -5,7 +5,7 @@ from typing import Type
 import numpy as np
 from qtpy import API_NAME
 from qtpy.QtCore import QObject, QSize, Qt, QThread
-from qtpy.QtGui import QPainter, QPixmap
+from qtpy.QtGui import QPainter, QPixmap, QImage
 from qtpy.QtWidgets import QGraphicsOpacityEffect
 
 
@@ -23,6 +23,9 @@ def QImg2array(img):
         Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
         upper-left corner of the rendered region.
     """
+    # Fix when  image is provided in wrong format (ex. test on Azure pipelines)
+    if img.format() != QImage.Format_ARGB32:
+        img = img.convertToFormat(QImage.Format_ARGB32)
     b = img.constBits()
     h, w, c = img.height(), img.width(), 4
 

@@ -88,20 +88,16 @@ class Window:
         self._qt_center.layout().addWidget(self.qt_viewer)
         self._qt_center.layout().setContentsMargins(4, 0, 4, 0)
 
-        self._update_palette(qt_viewer.viewer.palette)
+        self._update_palette()
 
-        if self.qt_viewer.console.shell is not None:
-            self._add_viewer_dock_widget(self.qt_viewer.dockConsole)
-
+        self._add_viewer_dock_widget(self.qt_viewer.dockConsole)
         self._add_viewer_dock_widget(self.qt_viewer.dockLayerControls)
         self._add_viewer_dock_widget(self.qt_viewer.dockLayerList)
 
         self.qt_viewer.viewer.events.status.connect(self._status_changed)
         self.qt_viewer.viewer.events.help.connect(self._help_changed)
         self.qt_viewer.viewer.events.title.connect(self._title_changed)
-        self.qt_viewer.viewer.events.palette.connect(
-            lambda event: self._update_palette(event.palette)
-        )
+        self.qt_viewer.viewer.events.palette.connect(self._update_palette)
 
         if show:
             self.show()
@@ -219,14 +215,14 @@ class Window:
         )
         self.help_menu.addAction(about_action)
 
-        about_keybindings = QAction("keybindings", self._qt_window)
-        about_keybindings.setShortcut("Ctrl+Alt+/")
-        about_keybindings.setShortcutContext(Qt.ApplicationShortcut)
-        about_keybindings.setStatusTip('keybindings')
-        about_keybindings.triggered.connect(
-            self.qt_viewer.show_keybindings_dialog
+        about_key_bindings = QAction("Show key bindings", self._qt_window)
+        about_key_bindings.setShortcut("Ctrl+Alt+/")
+        about_key_bindings.setShortcutContext(Qt.ApplicationShortcut)
+        about_key_bindings.setStatusTip('key_bindings')
+        about_key_bindings.triggered.connect(
+            self.qt_viewer.show_key_bindings_dialog
         )
-        self.help_menu.addAction(about_keybindings)
+        self.help_menu.addAction(about_key_bindings)
 
     def add_dock_widget(
         self,
@@ -332,16 +328,11 @@ class Window:
             self._qt_window.raise_()  # for macOS
             self._qt_window.activateWindow()  # for Windows
 
-    def _update_palette(self, palette):
-        """Update widget color palette.
-
-        Parameters
-        ----------
-        palette : qtpy.QtGui.QPalette
-            Color palette for each widget state (Active, Disabled, Inactive).
-        """
+    def _update_palette(self, event=None):
+        """Update widget color palette."""
         # set window styles which don't use the primary stylesheet
         # FIXME: this is a problem with the stylesheet not using properties
+        palette = self.qt_viewer.viewer.palette
         self._status_bar.setStyleSheet(
             template(
                 'QStatusBar { background: {{ background }}; '
