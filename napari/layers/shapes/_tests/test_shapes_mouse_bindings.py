@@ -151,7 +151,7 @@ def test_vertex_insert(create_known_shapes_layer, Event):
 
     n_coord = len(layer.data[0])
     layer.mode = 'vertex_insert'
-    layer.selected_data = [0]
+    layer.selected_data = {0}
     layer.position = known_non_shape
 
     # Simulate click
@@ -180,7 +180,7 @@ def test_vertex_remove(create_known_shapes_layer, Event):
 
     n_coord = len(layer.data[0])
     layer.mode = 'vertex_remove'
-    layer.selected_data = [0]
+    layer.selected_data = {0}
     layer.position = tuple(layer.data[0][0])
 
     # Simulate click
@@ -222,7 +222,7 @@ def test_select_shape(mode, create_known_shapes_layer, Event):
 
     # Check clicked shape selected
     assert len(layer.selected_data) == 1
-    assert layer.selected_data[0] == 0
+    assert layer.selected_data == {0}
 
 
 def test_drag_shape(create_known_shapes_layer, Event):
@@ -247,7 +247,7 @@ def test_drag_shape(create_known_shapes_layer, Event):
     mouse_release_callbacks(layer, event)
 
     assert len(layer.selected_data) == 1
-    assert layer.selected_data[0] == 0
+    assert layer.selected_data == {0}
 
     # Simulate click
     event = ReadOnlyWrapper(
@@ -273,7 +273,7 @@ def test_drag_shape(create_known_shapes_layer, Event):
 
     # Check clicked shape selected
     assert len(layer.selected_data) == 1
-    assert layer.selected_data[0] == 0
+    assert layer.selected_data == {0}
     np.testing.assert_allclose(layer.data[0], orig_data + [10, 5])
 
 
@@ -282,7 +282,7 @@ def test_drag_vertex(create_known_shapes_layer, Event):
     layer, n_shapes, _ = create_known_shapes_layer
 
     layer.mode = 'direct'
-    layer.selected_data = [0]
+    layer.selected_data = {0}
     layer.position = tuple(layer.data[0][0])
 
     # Simulate click
@@ -306,7 +306,7 @@ def test_drag_vertex(create_known_shapes_layer, Event):
 
     # Check clicked shape selected
     assert len(layer.selected_data) == 1
-    assert layer.selected_data[0] == 0
+    assert layer.selected_data == {0}
     np.testing.assert_allclose(layer.data[0][-1], [0, 0])
 
 
@@ -356,7 +356,7 @@ def test_unselect_select_shape(mode, create_known_shapes_layer, Event):
 
     layer.mode = mode
     layer.position = tuple(layer.data[0][0])
-    layer.selected_data = [1]
+    layer.selected_data = {1}
 
     # Simulate click
     event = ReadOnlyWrapper(
@@ -372,7 +372,7 @@ def test_unselect_select_shape(mode, create_known_shapes_layer, Event):
 
     # Check clicked shape selected
     assert len(layer.selected_data) == 1
-    assert layer.selected_data[0] == 0
+    assert layer.selected_data == {0}
 
 
 @pytest.mark.parametrize('mode', ['select', 'direct'])
@@ -406,7 +406,7 @@ def test_unselecting_shapes(mode, create_known_shapes_layer, Event):
 
     layer.mode = mode
     layer.position = known_non_shape
-    layer.selected_data = [0, 1]
+    layer.selected_data = {0, 1}
     assert len(layer.selected_data) == 2
 
     # Simulate click

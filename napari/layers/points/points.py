@@ -155,7 +155,7 @@ class Points(Layer):
     n_dimensional : bool
         If True, renders points not just in central plane but also in all
         n-dimensions according to specified point marker size.
-    selected_data : list
+    selected_data : set
         Integer indices of any selected points.
     mode : str
         Interactive mode. The normal, default mode is PAN_ZOOM, which
@@ -293,9 +293,9 @@ class Points(Layer):
             self._current_size = 10
 
         # Indices of selected points
-        self._selected_data = []
-        self._selected_data_stored = []
-        self._selected_data_history = []
+        self._selected_data = set()
+        self._selected_data_stored = set()
+        self._selected_data_history = set()
         # Indices of selected points within the currently viewed slice
         self._selected_view = []
         # Index of hovered point
@@ -1165,7 +1165,7 @@ class Points(Layer):
             raise ValueError("Mode not recognized")
 
         if not (mode == Mode.SELECT and old_mode == Mode.SELECT):
-            self._selected_data_stored = []
+            self._selected_data_stored = set()
 
         self.status = str(mode)
         self._mode = mode
@@ -1527,7 +1527,7 @@ class Points(Layer):
             self._selected_view = list(
                 range(npoints, npoints + len(self._clipboard['data']))
             )
-            self._selected_data = list(
+            self._selected_data = set(
                 range(totpoints, totpoints + len(self._clipboard['data']))
             )
             self.refresh()

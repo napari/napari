@@ -72,7 +72,7 @@ def test_copy_paste():
 
     assert len(layer.data) == 3
     assert layer._clipboard == {}
-    layer.selected_data = [0, 1]
+    layer.selected_data = {0, 1}
 
     key_bindings.copy(layer)
     assert len(layer.data) == 3
@@ -101,7 +101,7 @@ def test_delete():
     layer.mode = 'direct'
 
     assert len(layer.data) == 3
-    layer.selected_data = [0, 1]
+    layer.selected_data = {0, 1}
 
     key_bindings.delete_selected(layer)
     assert len(layer.data) == 1

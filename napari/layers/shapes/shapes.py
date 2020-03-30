@@ -106,7 +106,7 @@ class Shapes(Layer):
         selected shape.
     current_opacity : float
         Opacity of the next shape to be added or the currently selected shape.
-    selected_data : list
+    selected_data : set
         List of currently selected shapes.
     nshapes : int
         Total number of shapes.
@@ -135,10 +135,10 @@ class Shapes(Layer):
         Object containing the currently viewed shape data.
     _mode_history : Mode
         Interactive mode captured on press of <space>.
-    _selected_data_history : list
-        List of currently selected captured on press of <space>.
-    _selected_data_stored : list
-        List of selected previously displayed. Used to prevent rerendering the
+    _selected_data_history : set
+        Set of currently selected captured on press of <space>.
+    _selected_data_stored : set
+        Set of selected previously displayed. Used to prevent rerendering the
         same highlighted shapes when no data has changed.
     _selected_box : None | np.ndarray
         `None` if no shapes are selected, otherwise a 10x2 array of vertices of
@@ -285,9 +285,9 @@ class Shapes(Layer):
         self._value = (None, None)
         self._value_stored = (None, None)
         self._moving_value = (None, None)
-        self._selected_data = []
-        self._selected_data_stored = []
-        self._selected_data_history = []
+        self._selected_data = set()
+        self._selected_data_stored = set()
+        self._selected_data_history = set()
         self._selected_box = None
 
         self._drag_start = None
@@ -370,8 +370,7 @@ class Shapes(Layer):
     def current_edge_width(self, edge_width):
         self._current_edge_width = edge_width
         if self._update_properties:
-            index = self.selected_data
-            for i in index:
+            for i in self.selected_data:
                 self._data_view.update_edge_width(i, edge_width)
         self.status = format_float(self.current_edge_width)
         self.events.edge_width()
@@ -385,8 +384,7 @@ class Shapes(Layer):
     def current_edge_color(self, edge_color):
         self._current_edge_color = edge_color
         if self._update_properties:
-            index = self.selected_data
-            for i in index:
+            for i in self.selected_data:
                 self._data_view.update_edge_color(i, edge_color)
         self.events.edge_color()
 
@@ -399,8 +397,7 @@ class Shapes(Layer):
     def current_face_color(self, face_color):
         self._current_face_color = face_color
         if self._update_properties:
-            index = self.selected_data
-            for i in index:
+            for i in self.selected_data:
                 self._data_view.update_face_color(i, face_color)
         self.events.face_color()
 
@@ -418,8 +415,7 @@ class Shapes(Layer):
 
         self._current_opacity = opacity
         if self._update_properties:
-            index = self.selected_data
-            for i in index:
+            for i in self.selected_data:
                 self._data_view.update_opacity(i, opacity)
         self.status = format_float(self.current_opacity)
         self.events.opacity()
@@ -456,13 +452,13 @@ class Shapes(Layer):
 
     @property
     def selected_data(self):
-        """list: list of currently selected shapes."""
+        """set: set of currently selected shapes."""
         return self._selected_data
 
     @selected_data.setter
     def selected_data(self, selected_data):
-        self._selected_data = selected_data
-        self._selected_box = self.interaction_box(selected_data)
+        self._selected_data = set(selected_data)
+        self._selected_box = self.interaction_box(self._selected_data)
 
         # Update properties based on selected shapes
         face_colors = list(
@@ -754,13 +750,13 @@ class Shapes(Layer):
     def _set_view_slice(self):
         """Set the view given the slicing indices."""
         if not self.dims.ndisplay == self._ndisplay_stored:
-            self.selected_data = []
+            self.selected_data = set()
             self._data_view.ndisplay = min(self.dims.ndim, self.dims.ndisplay)
             self._ndisplay_stored = copy(self.dims.ndisplay)
             self._clipboard = {}
 
         if not self.dims.order == self._display_order_stored:
-            self.selected_data = []
+            self.selected_data = set()
             self._data_view.update_dims_order(self.dims.order)
             self._display_order_stored = copy(self.dims.order)
             # Clear clipboard if dimensions swap
@@ -768,7 +764,7 @@ class Shapes(Layer):
 
         slice_key = np.array(self.dims.indices)[list(self.dims.not_displayed)]
         if not np.all(slice_key == self._data_view.slice_key):
-            self.selected_data = []
+            self.selected_data = set()
         self._data_view.slice_key = slice_key
 
     def interaction_box(self, index):
@@ -792,13 +788,13 @@ class Shapes(Layer):
             the box, and the last point is the location of the rotation handle
             that can be used to rotate the box
         """
-        if isinstance(index, (list, np.ndarray)):
+        if isinstance(index, (list, np.ndarray, set)):
             if len(index) == 0:
                 box = None
             elif len(index) == 1:
-                box = copy(self._data_view.shapes[index[0]]._box)
+                box = copy(self._data_view.shapes[list(index)[0]]._box)
             else:
-                indices = np.isin(self._data_view.displayed_index, index)
+                indices = np.isin(self._data_view.displayed_index, list(index))
                 box = create_box(self._data_view.displayed_vertices[indices])
         else:
             box = copy(self._data_view.shapes[index]._box)
@@ -835,7 +831,7 @@ class Shapes(Layer):
             self._value[0] is not None or len(self.selected_data) > 0
         ):
             if len(self.selected_data) > 0:
-                index = copy(self.selected_data)
+                index = list(self.selected_data)
                 if self._value[0] is not None:
                     if self._value[0] in index:
                         pass
@@ -904,7 +900,7 @@ class Shapes(Layer):
             ):
                 # If in one of these mode show the vertices of the shape itself
                 inds = np.isin(
-                    self._data_view.displayed_index, self.selected_data
+                    self._data_view.displayed_index, list(self.selected_data)
                 )
                 vertices = self._data_view.displayed_vertices[inds][:, ::-1]
                 # If currently adding path don't show box over last vertex
@@ -975,7 +971,7 @@ class Shapes(Layer):
         """Reset properties used in shape drawing."""
         index = copy(self._moving_value[0])
         self._is_moving = False
-        self.selected_data = []
+        self.selected_data = set()
         self._drag_start = None
         self._drag_box = None
         self._is_selecting = False
@@ -1033,10 +1029,11 @@ class Shapes(Layer):
 
     def remove_selected(self):
         """Remove any selected shapes."""
-        to_remove = sorted(self.selected_data, reverse=True)
-        for index in to_remove:
-            self._data_view.remove(index)
-        self.selected_data = []
+        index = list(self.selected_data)
+        to_remove = sorted(index, reverse=True)
+        for ind in to_remove:
+            self._data_view.remove(ind)
+        self.selected_data = set()
         self._finish_drawing()
 
     def _rotate_box(self, angle, center=[0, 0]):
@@ -1145,7 +1142,8 @@ class Shapes(Layer):
 
         # Check selected shapes
         value = None
-        if len(self.selected_data) > 0:
+        selected_index = list(self.selected_data)
+        if len(selected_index) > 0:
             if self._mode == Mode.SELECT:
                 # Check if inside vertex of interaction box or rotation handle
                 box = self._selected_box[Box.WITH_HANDLE]
@@ -1157,14 +1155,12 @@ class Shapes(Layer):
                 # Check if any matching vertices
                 matches = np.all(distances <= sizes, axis=1).nonzero()
                 if len(matches[0]) > 0:
-                    value = (self.selected_data[0], matches[0][-1])
+                    value = (selected_index[0], matches[0][-1])
             elif self._mode in (
                 [Mode.DIRECT, Mode.VERTEX_INSERT, Mode.VERTEX_REMOVE]
             ):
                 # Check if inside vertex of shape
-                inds = np.isin(
-                    self._data_view.displayed_index, self.selected_data
-                )
+                inds = np.isin(self._data_view.displayed_index, selected_index)
                 vertices = self._data_view.displayed_vertices[inds]
                 distances = abs(vertices - coord)
 
@@ -1240,7 +1236,7 @@ class Shapes(Layer):
                 shape.data = data
                 self._data_view.add(shape)
 
-            self.selected_data = list(
+            self.selected_data = set(
                 range(cur_shapes, cur_shapes + len(self._clipboard['data']))
             )
             self.move_to_front()

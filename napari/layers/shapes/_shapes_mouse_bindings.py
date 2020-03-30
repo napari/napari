@@ -32,9 +32,9 @@ def select(layer, event):
                 layer._selected_box = layer.interaction_box(shapes)
         elif layer._value[0] is not None:
             if layer._value[0] not in layer.selected_data:
-                layer.selected_data = [layer._value[0]]
+                layer.selected_data = {layer._value[0]}
         else:
-            layer.selected_data = []
+            layer.selected_data = set()
     layer._set_highlight()
     yield
 
@@ -49,9 +49,9 @@ def select(layer, event):
     shift = 'Shift' in event.modifiers
     if not layer._is_moving and not layer._is_selecting and not shift:
         if layer._value[0] is not None:
-            layer.selected_data = [layer._value[0]]
+            layer.selected_data = {layer._value[0]}
         else:
-            layer.selected_data = []
+            layer.selected_data = set()
     elif layer._is_selecting:
         layer.selected_data = layer._data_view.shapes_in_box(layer._drag_box)
         layer._is_selecting = False
@@ -109,8 +109,8 @@ def _add_line_rectangle_ellipse(layer, event, data, shape_type):
     # Start drawing rectangle / ellipse / line
     data_full = layer.expand_shape(data)
     layer.add(data_full, shape_type=shape_type)
-    layer.selected_data = [layer.nshapes - 1]
-    layer._value = (layer.selected_data[0], 4)
+    layer.selected_data = {layer.nshapes - 1}
+    layer._value = (layer.nshapes - 1, 4)
     layer._moving_value = copy(layer._value)
     layer.refresh()
     yield
@@ -136,8 +136,8 @@ def add_path_polygon(layer, event):
         data = np.array([coord, coord])
         data_full = layer.expand_shape(data)
         layer.add(data_full, shape_type='path')
-        layer.selected_data = [layer.nshapes - 1]
-        layer._value = (layer.selected_data[0], 1)
+        layer.selected_data = {layer.nshapes - 1}
+        layer._value = (layer.nshapes - 1, 1)
         layer._moving_value = copy(layer._value)
         layer._is_creating = True
         layer._set_highlight()

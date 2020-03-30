@@ -124,7 +124,7 @@ def paste(layer):
 def select_all(layer):
     """Select all shapes in the current view slice."""
     if layer._mode in (Mode.DIRECT, Mode.SELECT):
-        layer.selected_data = list(np.nonzero(layer._data_view._displayed)[0])
+        layer.selected_data = set(np.nonzero(layer._data_view._displayed)[0])
         layer._set_highlight()
 
 
