@@ -125,3 +125,15 @@ def test_update(viewer_factory):
     viewer.update(layer_update, update_period=0.01, num_updates=100)
     # the previous time.sleep() that used to be here has been replaced with
     # QtViewer.pool.waitForDone() in the closeEvent of the QtViewer.
+
+
+def test_changing_theme(viewer_factory):
+    """Test instantiating viewer."""
+    view, viewer = viewer_factory()
+    assert viewer.palette['folder'] == 'dark'
+
+    viewer.theme = 'light'
+    assert viewer.palette['folder'] == 'light'
+
+    with pytest.raises(ValueError):
+        viewer.theme = 'nonexistent_theme'
