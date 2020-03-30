@@ -10,6 +10,14 @@ class LayerGroup(Layer):
         self._name = name
         self._children = LayerList(iterable=iterable)
 
+    def traverse(self):
+        """Recursively traverse LayerGroup tree and yield each leaf node."""
+        for child in self:
+            if child._children is not None:
+                yield from child.traverse()
+            else:
+                yield child
+
     def _render(self):
         """Recursively return list of strings that can render ascii tree."""
         lines = []

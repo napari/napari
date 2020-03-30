@@ -179,6 +179,7 @@ class Layer(KeymapProvider, ABC):
         self._update_properties = True
         self._name = ''
         self._parent = None
+        self._children = None
         self.events = EmitterGroup(
             source=self,
             auto_connect=True,
