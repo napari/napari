@@ -65,27 +65,48 @@ def select(layer, event):
     layer._update_thumbnail()
 
 
-def add_line_rectangle_ellipse(layer, event):
-    """Add a line, rectangle or ellipse."""
+def add_line(layer, event):
+    """Add a line."""
     coord = [layer.coordinates[i] for i in layer.dims.displayed]
-
-    # on press
-    # Start drawing a rectangle / ellipse / line
     size = layer._vertex_size * layer.scale_factor / 4
     corner = np.array(coord)
-    if layer._mode == Mode.ADD_RECTANGLE:
-        data = np.array(
-            [corner, corner + [size, 0], corner + size, corner + [0, size]]
-        )
-        shape_type = 'rectangle'
-    elif layer._mode == Mode.ADD_ELLIPSE:
-        data = np.array(
-            [corner, corner + [size, 0], corner + size, corner + [0, size]]
-        )
-        shape_type = 'ellipse'
-    elif layer._mode == Mode.ADD_LINE:
-        data = np.array([corner, corner + size])
-        shape_type = 'line'
+    data = np.array([corner, corner + size])
+    yield from _add_line_rectangle_ellipse(
+        layer, event, data=data, shape_type='line'
+    )
+
+
+def add_ellipse(layer, event):
+    """Add an ellipse."""
+    coord = [layer.coordinates[i] for i in layer.dims.displayed]
+    size = layer._vertex_size * layer.scale_factor / 4
+    corner = np.array(coord)
+    data = np.array(
+        [corner, corner + [size, 0], corner + size, corner + [0, size]]
+    )
+    yield from _add_line_rectangle_ellipse(
+        layer, event, data=data, shape_type='ellipse'
+    )
+
+
+def add_rectangle(layer, event):
+    """Add an rectangle."""
+    coord = [layer.coordinates[i] for i in layer.dims.displayed]
+    size = layer._vertex_size * layer.scale_factor / 4
+    corner = np.array(coord)
+    data = np.array(
+        [corner, corner + [size, 0], corner + size, corner + [0, size]]
+    )
+    yield from _add_line_rectangle_ellipse(
+        layer, event, data=data, shape_type='rectangle'
+    )
+
+
+def _add_line_rectangle_ellipse(layer, event, data, shape_type):
+    """Helper function for adding a a line, rectangle or ellipse."""
+
+    # on press
+    # Start drawing rectangle / ellipse / line
     data_full = layer.expand_shape(data)
     layer.add(data_full, shape_type=shape_type)
     layer.selected_data = [layer.nshapes - 1]

@@ -13,7 +13,9 @@ from ._shapes_models import Rectangle, Ellipse, Polygon
 from ._shapes_mouse_bindings import (
     highlight,
     select,
-    add_line_rectangle_ellipse,
+    add_line,
+    add_ellipse,
+    add_rectangle,
     add_path_polygon,
     add_path_polygon_creating,
     vertex_insert,
@@ -567,8 +569,12 @@ class Shapes(Layer):
         elif old_mode == Mode.VERTEX_REMOVE:
             self.mouse_drag_callbacks.remove(vertex_remove)
             self.mouse_move_callbacks.remove(highlight)
-        elif old_mode in [Mode.ADD_RECTANGLE, Mode.ADD_ELLIPSE, Mode.ADD_LINE]:
-            self.mouse_drag_callbacks.remove(add_line_rectangle_ellipse)
+        elif old_mode == Mode.ADD_RECTANGLE:
+            self.mouse_drag_callbacks.remove(add_rectangle)
+        elif old_mode == Mode.ADD_ELLIPSE:
+            self.mouse_drag_callbacks.remove(add_ellipse)
+        elif old_mode == Mode.ADD_LINE:
+            self.mouse_drag_callbacks.remove(add_line)
         elif old_mode in [Mode.ADD_PATH, Mode.ADD_POLYGON]:
             self.mouse_drag_callbacks.remove(add_path_polygon)
             self.mouse_move_callbacks.remove(add_path_polygon_creating)
@@ -599,7 +605,12 @@ class Shapes(Layer):
             self.cursor = 'cross'
             self.interactive = False
             self.help = 'hold <space> to pan/zoom'
-            self.mouse_drag_callbacks.append(add_line_rectangle_ellipse)
+            if mode == Mode.ADD_RECTANGLE:
+                self.mouse_drag_callbacks.append(add_rectangle)
+            elif mode == Mode.ADD_ELLIPSE:
+                self.mouse_drag_callbacks.append(add_ellipse)
+            elif mode == Mode.ADD_LINE:
+                self.mouse_drag_callbacks.append(add_line)
         elif mode in [Mode.ADD_PATH, Mode.ADD_POLYGON]:
             self.cursor = 'cross'
             self.interactive = False
