@@ -195,12 +195,12 @@ class AddLayersMixin:
                         kwargs[key] = iter(colormaps.MAGENTA_GREEN)
                     else:
                         kwargs[key] = itertools.cycle(colormaps.CYMRGB)
-                elif key in (
+                elif key in {
                     'scale',
                     'translate',
                     'contrast_limits',
                     'metadata',
-                ):
+                }:
                     kwargs[key] = iter(
                         ensure_sequence_of_iterables(val, n_channels)
                     )
