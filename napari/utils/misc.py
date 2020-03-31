@@ -7,6 +7,7 @@ import inspect
 import itertools
 import numpy as np
 from typing import Type
+import collections.abc
 
 
 ROOT_DIR = osp.dirname(osp.dirname(__file__))
@@ -49,6 +50,22 @@ def is_iterable(arg, color=False):
             return True
     else:
         return True
+
+
+def is_sequence(arg):
+    if isinstance(arg, collections.abc.Sequence) and not isinstance(arg, str):
+        return True
+    return False
+
+
+def ensure_iterable_sequences(obj, length=None):
+    if is_sequence(obj):
+        if obj and is_sequence(obj[0]):
+            if length is not None and len(obj) != length:
+                raise ValueError(f"length of {obj} must equal {length}")
+            return obj
+        return itertools.repeat(obj)
+    return ensure_iterable(obj)
 
 
 def formatdoc(obj):

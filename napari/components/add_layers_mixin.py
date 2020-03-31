@@ -7,7 +7,7 @@ import numpy as np
 from .. import layers
 from ..plugins.io import read_data_with_plugins
 from ..utils import colormaps, io
-from ..utils.misc import ensure_iterable, is_iterable
+from ..utils.misc import ensure_iterable, ensure_iterable_sequences
 
 logger = getLogger(__name__)
 
@@ -49,6 +49,7 @@ class AddLayersMixin:
 
         if len(self.layers) == 1:
             self.reset_view()
+        return layer
 
     def add_image(
         self,
@@ -158,73 +159,68 @@ class AddLayersMixin:
         elif data is None:
             data = io.magic_imread(path)
 
+        # doing this here for IDE/console autocompletion in add_image function.
+        kwargs = {
+            'rgb': rgb,
+            'is_pyramid': is_pyramid,
+            'colormap': colormap,
+            'contrast_limits': contrast_limits,
+            'gamma': gamma,
+            'interpolation': interpolation,
+            'rendering': rendering,
+            'iso_threshold': iso_threshold,
+            'attenuation': attenuation,
+            'name': name,
+            'metadata': metadata,
+            'scale': scale,
+            'translate': translate,
+            'opacity': opacity,
+            'blending': blending,
+            'visible': visible,
+        }
+
         if channel_axis is None:
-            if colormap is None:
-                colormap = 'gray'
-            if blending is None:
-                blending = 'translucent'
-            layer = layers.Image(
-                data,
-                rgb=rgb,
-                is_pyramid=is_pyramid,
-                colormap=colormap,
-                contrast_limits=contrast_limits,
-                gamma=gamma,
-                interpolation=interpolation,
-                rendering=rendering,
-                iso_threshold=iso_threshold,
-                attenuation=attenuation,
-                name=name,
-                metadata=metadata,
-                scale=scale,
-                translate=translate,
-                opacity=opacity,
-                blending=blending,
-                visible=visible,
-            )
-            self.add_layer(layer)
-            return layer
+            kwargs['colormap'] = kwargs.get('colormap', 'gray')
+            kwargs['blending'] = kwargs.get('blending', 'translucent')
+            return self.add_layer(layers.Image(data, **kwargs))
         else:
-            if is_pyramid:
-                n_channels = data[0].shape[channel_axis]
-            else:
-                n_channels = data.shape[channel_axis]
+            n_channels = (data[0] if is_pyramid else data).shape[channel_axis]
+            kwargs['blending'] = kwargs.get('blending', 'additive')
 
-            name = ensure_iterable(name)
-
-            if blending is None:
-                blending = 'additive'
-
-            if colormap is None:
-                if n_channels < 3:
-                    colormap = colormaps.MAGENTA_GREEN
+            # turn the kwargs dict into a mapping of {key: iterator}
+            # so that we can use {k: next(v) for k, v in kwargs.items()} below
+            for key, val in kwargs.items():
+                if key in ('scale', 'translate', 'contrast_limits'):
+                    kwargs[key] = iter(
+                        ensure_iterable_sequences(val, n_channels)
+                    )
+                elif key == 'metadata':
+                    if val is None or isinstance(val, dict):
+                        kwargs[key] = itertools.repeat(metadata)
+                    elif (
+                        isinstance(val, list)
+                        and len(val) == n_channels
+                        and all(isinstance(m, dict) for m in val)
+                    ):
+                        kwargs[key] = iter(val)
+                    else:
+                        raise ValueError(
+                            "metadata must either be a dict, or a list of dicts "
+                            "with a length equal to the number of channels."
+                        )
+                elif key == 'colormap':
+                    if val is None:
+                        if n_channels < 3:
+                            kwargs[key] = iter(colormaps.MAGENTA_GREEN)
+                        else:
+                            kwargs[key] = itertools.cycle(colormaps.CYMRGB)
+                    else:
+                        kwargs[key] = iter(ensure_iterable(val))
                 else:
-                    colormap = itertools.cycle(colormaps.CYMRGB)
-            else:
-                colormap = ensure_iterable(colormap)
-
-            # If one pair of clim values is passed then need to iterate them to
-            # all layers.
-            if contrast_limits is not None and not is_iterable(
-                contrast_limits[0]
-            ):
-                contrast_limits = itertools.repeat(contrast_limits)
-            else:
-                contrast_limits = ensure_iterable(contrast_limits)
-
-            gamma = ensure_iterable(gamma)
-            visible = ensure_iterable(visible)
+                    kwargs[key] = iter(ensure_iterable(val))
 
             layer_list = []
-            zipped_args = zip(
-                range(n_channels),
-                colormap,
-                contrast_limits,
-                gamma,
-                name,
-                visible,
-            )
-            for i, cmap, clims, _gamma, name, visible in zipped_args:
+            for i in range(n_channels):
                 if is_pyramid:
                     image = [
                         np.take(data[j], i, axis=channel_axis)
@@ -232,23 +228,8 @@ class AddLayersMixin:
                     ]
                 else:
                     image = np.take(data, i, axis=channel_axis)
-                layer = layers.Image(
-                    image,
-                    rgb=rgb,
-                    colormap=cmap,
-                    contrast_limits=clims,
-                    gamma=_gamma,
-                    interpolation=interpolation,
-                    rendering=rendering,
-                    name=name,
-                    metadata=metadata,
-                    scale=scale,
-                    translate=translate,
-                    opacity=opacity,
-                    blending=blending,
-                    visible=visible,
-                )
-                self.add_layer(layer)
+                i_kwargs = {k: next(v) for k, v in kwargs.items()}
+                layer = self.add_layer(layers.Image(image, **i_kwargs))
                 layer_list.append(layer)
             return layer_list
 
