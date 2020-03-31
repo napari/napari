@@ -372,6 +372,16 @@ class AddLayersMixin:
         An image-like layer where every pixel contains an integer ID
         corresponding to the region it belongs to.
 
+        Using the viewer's label editing tools (painting, erasing) will
+        modify the input-array in-place.
+
+        To avoid this, pass a copy as follows:
+            layer = viewer.add_labels(data.copy())
+            # do some painting/editing
+
+        Get the modified labels as follows:
+            result = layer.data
+
         Parameters
         ----------
         data : array or list of array
