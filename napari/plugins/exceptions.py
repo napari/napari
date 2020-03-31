@@ -120,19 +120,17 @@ def format_exceptions(plugin_name: str, as_html: bool = False):
         '',
         f'{"napari version": >16}: {__version__}',
     ]
-    try:
-        err0 = _plugin_errors[0]
-        package_meta = fetch_module_metadata(err0.plugin_module)
-        if package_meta:
-            msg.extend(
-                [
-                    f'{"plugin name": >16}: {package_meta["name"]}',
-                    f'{"version": >16}: {package_meta["version"]}',
-                    f'{"module": >16}: {err0.plugin_module}',
-                ]
-            )
-    except Exception:
-        pass
+
+    err0 = _plugin_errors[0]
+    package_meta = fetch_module_metadata(err0.plugin_module)
+    if package_meta:
+        msg.extend(
+            [
+                f'{"plugin name": >16}: {package_meta["name"]}',
+                f'{"version": >16}: {package_meta["version"]}',
+                f'{"module": >16}: {err0.plugin_module}',
+            ]
+        )
     msg.append('')
 
     for n, err in enumerate(_plugin_errors):
