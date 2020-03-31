@@ -1138,7 +1138,7 @@ class Shapes(Layer):
         if self._is_moving:
             return self._moving_value
 
-        coord = [self.coordinates[i] for i in self.dims.displayed]
+        coord = self.displayed_coordinates
 
         # Check selected shapes
         value = None

@@ -41,8 +41,7 @@ def select(layer, event):
     # on move
     while event.type == 'mouse_move':
         # Drag any selected shapes
-        coord = [layer.coordinates[i] for i in layer.dims.displayed]
-        layer._move(coord)
+        layer._move(layer.displayed_coordinates)
         yield
 
     # on release
@@ -67,9 +66,8 @@ def select(layer, event):
 
 def add_line(layer, event):
     """Add a line."""
-    coord = [layer.coordinates[i] for i in layer.dims.displayed]
     size = layer._vertex_size * layer.scale_factor / 4
-    corner = np.array(coord)
+    corner = np.array(layer.displayed_coordinates)
     data = np.array([corner, corner + size])
     yield from _add_line_rectangle_ellipse(
         layer, event, data=data, shape_type='line'
@@ -78,9 +76,8 @@ def add_line(layer, event):
 
 def add_ellipse(layer, event):
     """Add an ellipse."""
-    coord = [layer.coordinates[i] for i in layer.dims.displayed]
     size = layer._vertex_size * layer.scale_factor / 4
-    corner = np.array(coord)
+    corner = np.array(layer.displayed_coordinates)
     data = np.array(
         [corner, corner + [size, 0], corner + size, corner + [0, size]]
     )
@@ -91,9 +88,8 @@ def add_ellipse(layer, event):
 
 def add_rectangle(layer, event):
     """Add an rectangle."""
-    coord = [layer.coordinates[i] for i in layer.dims.displayed]
     size = layer._vertex_size * layer.scale_factor / 4
-    corner = np.array(coord)
+    corner = np.array(layer.displayed_coordinates)
     data = np.array(
         [corner, corner + [size, 0], corner + size, corner + [0, size]]
     )
@@ -118,8 +114,7 @@ def _add_line_rectangle_ellipse(layer, event, data, shape_type):
     # on move
     while event.type == 'mouse_move':
         # Drag any selected shapes
-        coord = [layer.coordinates[i] for i in layer.dims.displayed]
-        layer._move(coord)
+        layer._move(layer.displayed_coordinates)
         yield
 
     # on release
@@ -128,7 +123,7 @@ def _add_line_rectangle_ellipse(layer, event, data, shape_type):
 
 def add_path_polygon(layer, event):
     """Add a path or polygon."""
-    coord = [layer.coordinates[i] for i in layer.dims.displayed]
+    coord = layer.displayed_coordinates
 
     # on press
     if layer._is_creating is False:
@@ -163,13 +158,12 @@ def add_path_polygon(layer, event):
 def add_path_polygon_creating(layer, event):
     """While a path or polygon move next vertex to be added."""
     if layer._is_creating:
-        coord = [layer.coordinates[i] for i in layer.dims.displayed]
-        layer._move(coord)
+        layer._move(layer.displayed_coordinates)
 
 
 def vertex_insert(layer, event):
     """Insert a vertex into a selected shape."""
-    coord = [layer.coordinates[i] for i in layer.dims.displayed]
+    coord = layer.displayed_coordinates
     if len(layer.selected_data) == 0:
         # If none selected return immediately
         return

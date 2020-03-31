@@ -1301,10 +1301,7 @@ class Points(Layer):
         # Display points if there are any in this slice
         if len(self._view_data) > 0:
             # Get the point sizes
-            distances = abs(
-                self._view_data
-                - [self.coordinates[d] for d in self.dims.displayed]
-            )
+            distances = abs(self._view_data - self.displayed_coordinates)
             in_slice_matches = np.all(
                 distances <= np.expand_dims(self._view_size, axis=1) / 2,
                 axis=1,
