@@ -13,6 +13,7 @@ def view_image(
     interpolation='nearest',
     rendering='mip',
     iso_threshold=0.5,
+    attenuation=0.5,
     name=None,
     metadata=None,
     scale=None,
@@ -25,6 +26,7 @@ def view_image(
     ndisplay=2,
     order=None,
     axis_labels=None,
+    show=True,
 ):
     """Create a viewer and add an image layer.
 
@@ -69,8 +71,13 @@ def view_image(
     interpolation : str
         Interpolation mode used by vispy. Must be one of our supported
         modes.
+    rendering : str
+        Rendering mode used by vispy. Must be one of our supported
+        modes.
     iso_threshold : float
         Threshold for isosurface.
+    attenuation : float
+        Attenuation rate for attenuated maximum intensity projection.
     name : str
         Name of the layer.
     metadata : dict
@@ -100,6 +107,8 @@ def view_image(
         ndisplay is 2 or 3.
     axis_labels : list of str
         Dimension names.
+    show : bool, optional
+        Whether to show the viewer after instantiation. by default True.
 
     Returns
     -------
@@ -107,7 +116,11 @@ def view_image(
         The newly-created viewer.
     """
     viewer = Viewer(
-        title=title, ndisplay=ndisplay, order=order, axis_labels=axis_labels
+        title=title,
+        ndisplay=ndisplay,
+        order=order,
+        axis_labels=axis_labels,
+        show=show,
     )
     viewer.add_image(
         data=data,
@@ -120,6 +133,7 @@ def view_image(
         interpolation=interpolation,
         rendering=rendering,
         iso_threshold=iso_threshold,
+        attenuation=attenuation,
         name=name,
         metadata=metadata,
         scale=scale,
@@ -132,14 +146,72 @@ def view_image(
     return viewer
 
 
+def view_path(
+    path,
+    *,
+    stack=False,
+    title='napari',
+    ndisplay=2,
+    order=None,
+    axis_labels=None,
+    show=True,
+):
+    """Create a viewer and add a layer whose type will be determined by path.
+
+    Parameters
+    ----------
+    path : str or list of str
+        A filepath, directory, or URL (or a list of any) to open.
+    stack : bool, optional
+        If a list of strings is passed and ``stack`` is ``True``, then the
+        entire list will be passed to plugins.  It is then up to individual
+        plugins to know how to handle a list of paths.  If ``stack`` is
+        ``False``, then the ``path`` list is broken up and passed to plugin
+        readers one by one.  by default False.
+    title : string, optional
+        The title of the viewer window. by default 'napari'
+    ndisplay : {2, 3}, optional
+        Number of displayed dimensions, by default 2
+    order : tuple of int, optional
+        Order in which dimensions are displayed where the last two or last
+        three dimensions correspond to row x column or plane x row x column if
+        ndisplay is 2 or 3. by default None
+    axis_labels : list of str, optional
+        Dimension names. by default None
+    show : bool, optional
+        Whether to show the viewer after instantiation. by default True.
+
+    Returns
+    -------
+    viewer : :class:`napari.Viewer`
+        The newly-created viewer.
+    """
+    viewer = Viewer(
+        title=title,
+        ndisplay=ndisplay,
+        order=order,
+        axis_labels=axis_labels,
+        show=show,
+    )
+    viewer.add_path(path=path, stack=stack)
+    return viewer
+
+
 def view_points(
     data=None,
     *,
+    properties=None,
     symbol='o',
     size=10,
     edge_width=1,
-    edge_color='black',
-    face_color='white',
+    edge_color="black",
+    edge_color_cycle=None,
+    edge_colormap='viridis',
+    edge_contrast_limits=None,
+    face_color="white",
+    face_color_cycle=None,
+    face_colormap='viridis',
+    face_contrast_limits=None,
     n_dimensional=False,
     name=None,
     metadata=None,
@@ -152,6 +224,7 @@ def view_points(
     ndisplay=2,
     order=None,
     axis_labels=None,
+    show=True,
 ):
     """Create a viewer and add a points layer.
 
@@ -159,6 +232,9 @@ def view_points(
     ----------
     data : array (N, D)
         Coordinates for N points in D dimensions.
+    properties : dict {str: array (N,)}, DataFrame
+        Properties for each point. Each property should be an array of length N,
+        where N is the number of points.
     symbol : str
         Symbol to be used for the point markers. Must be one of the
         following: arrow, clobber, cross, diamond, disc, hbar, ring,
@@ -169,10 +245,32 @@ def view_points(
         broadcastable to the same shape as the data.
     edge_width : float
         Width of the symbol edge in pixels.
-    edge_color : str
-        Color of the point marker border.
-    face_color : str
-        Color of the point marker body.
+    edge_color : str, array-like
+        Color of the point marker border. Numeric color values should be RGB(A).
+    edge_color_cycle : np.ndarray, list, cycle
+        Cycle of colors (provided as RGBA) to map to edge_color if a
+        categorical attribute is used to set face_color.
+    edge_colormap : str, vispy.color.colormap.Colormap
+        Colormap to set edge_color if a continuous attribute is used to set face_color.
+        See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
+    edge_contrast_limits : None, (float, float)
+        clims for mapping the property to a color map. These are the min and max value
+        of the specified property that are mapped to 0 and 1, respectively.
+        The default value is None. If set the none, the clims will be set to
+        (property.min(), property.max())
+    face_color : str, array-like
+        Color of the point marker body. Numeric color values should be RGB(A).
+    face_color_cycle : np.ndarray, list, cycle
+        Cycle of colors (provided as RGBA) to map to face_color if a
+        categorical attribute is used to set face_color.
+    face_colormap : str, vispy.color.colormap.Colormap
+        Colormap to set face_color if a continuous attribute is used to set face_color.
+        See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
+    face_contrast_limits : None, (float, float)
+        clims for mapping the property to a color map. These are the min and max value
+        of the specified property that are mapped to 0 and 1, respectively.
+        The default value is None. If set the none, the clims will be set to
+        (property.min(), property.max())
     n_dimensional : bool
         If True, renders points not just in central plane but also in all
         n-dimensions according to specified point marker size.
@@ -202,6 +300,8 @@ def view_points(
         ndisplay is 2 or 3.
     axis_labels : list of str
         Dimension names.
+    show : bool, optional
+        Whether to show the viewer after instantiation. by default True.
 
     Returns
     -------
@@ -214,15 +314,26 @@ def view_points(
     http://api.vispy.org/en/latest/visuals.html#vispy.visuals.MarkersVisual
     """
     viewer = Viewer(
-        title=title, ndisplay=ndisplay, order=order, axis_labels=axis_labels
+        title=title,
+        ndisplay=ndisplay,
+        order=order,
+        axis_labels=axis_labels,
+        show=show,
     )
     viewer.add_points(
         data=data,
+        properties=properties,
         symbol=symbol,
         size=size,
         edge_width=edge_width,
         edge_color=edge_color,
+        edge_color_cycle=edge_color_cycle,
+        edge_colormap=edge_colormap,
+        edge_contrast_limits=edge_contrast_limits,
         face_color=face_color,
+        face_color_cycle=face_color_cycle,
+        face_colormap=face_colormap,
+        face_contrast_limits=face_contrast_limits,
         n_dimensional=n_dimensional,
         name=name,
         metadata=metadata,
@@ -248,16 +359,27 @@ def view_labels(
     opacity=0.7,
     blending='translucent',
     visible=True,
+    path=None,
     title='napari',
     ndisplay=2,
     order=None,
     axis_labels=None,
-    path=None,
+    show=True,
 ):
     """Create a viewer and add a labels (or segmentation) layer.
 
     An image-like layer where every pixel contains an integer ID
     corresponding to the region it belongs to.
+
+    Using the viewer's label editing tools (painting, erasing) will
+    modify the input-array in-place.
+
+        To avoid this, pass a copy as follows:
+            viewer = napari.view_labels(data.copy(), name="sample")
+            # do some painting/editing
+
+        Get the painted labels as follows:
+            result = viewer.layers["sample"].data
 
     Parameters
     ----------
@@ -302,6 +424,8 @@ def view_labels(
         ndisplay is 2 or 3.
     axis_labels : list of str
         Dimension names.
+    show : bool, optional
+        Whether to show the viewer after instantiation. by default True.
 
     Returns
     -------
@@ -309,7 +433,11 @@ def view_labels(
         The newly-created viewer.
     """
     viewer = Viewer(
-        title=title, ndisplay=ndisplay, order=order, axis_labels=axis_labels
+        title=title,
+        ndisplay=ndisplay,
+        order=order,
+        axis_labels=axis_labels,
+        show=show,
     )
     viewer.add_labels(
         data=data,
@@ -347,6 +475,7 @@ def view_shapes(
     ndisplay=2,
     order=None,
     axis_labels=None,
+    show=True,
 ):
     """Create a viewer and add a shapes layer.
 
@@ -411,6 +540,8 @@ def view_shapes(
         ndisplay is 2 or 3.
     axis_labels : list of str
         Dimension names.
+    show : bool, optional
+        Whether to show the viewer after instantiation. by default True.
 
     Returns
     -------
@@ -418,7 +549,11 @@ def view_shapes(
         The newly-created viewer.
     """
     viewer = Viewer(
-        title=title, ndisplay=ndisplay, order=order, axis_labels=axis_labels
+        title=title,
+        ndisplay=ndisplay,
+        order=order,
+        axis_labels=axis_labels,
+        show=show,
     )
     viewer.add_shapes(
         data=data,
@@ -455,6 +590,7 @@ def view_surface(
     ndisplay=2,
     order=None,
     axis_labels=None,
+    show=True,
 ):
     """Create a viewer and add a surface layer.
 
@@ -463,8 +599,9 @@ def view_surface(
     data : 3-tuple of array
         The first element of the tuple is an (N, D) array of vertices of
         mesh triangles. The second is an (M, 3) array of int of indices
-        of the mesh triangles. The third element is the (N, ) array of
-        values used to color vertices.
+        of the mesh triangles. The third element is the (K0, ..., KL, N)
+        array of values used to color vertices where the additional L
+        dimensions are used to color the same mesh with different values.
     colormap : str, vispy.Color.Colormap, tuple, dict
         Colormap to use for luminance images. If a string must be the name
         of a supported colormap from vispy or matplotlib. If a tuple the
@@ -504,6 +641,8 @@ def view_surface(
         ndisplay is 2 or 3.
     axis_labels : list of str
         Dimension names.
+    show : bool, optional
+        Whether to show the viewer after instantiation. by default True.
 
     Returns
     -------
@@ -511,7 +650,11 @@ def view_surface(
         The newly-created viewer.
     """
     viewer = Viewer(
-        title=title, ndisplay=ndisplay, order=order, axis_labels=axis_labels
+        title=title,
+        ndisplay=ndisplay,
+        order=order,
+        axis_labels=axis_labels,
+        show=show,
     )
     viewer.add_surface(
         data,
@@ -546,6 +689,7 @@ def view_vectors(
     ndisplay=2,
     order=None,
     axis_labels=None,
+    show=True,
 ):
     """Create a viewer and add a vectors layer.
 
@@ -589,6 +733,8 @@ def view_vectors(
         ndisplay is 2 or 3.
     axis_labels : list of str
         Dimension names.
+    show : bool, optional
+        Whether to show the viewer after instantiation. by default True.
 
     Returns
     -------
@@ -596,7 +742,11 @@ def view_vectors(
         The newly-created viewer.
     """
     viewer = Viewer(
-        title=title, ndisplay=ndisplay, order=order, axis_labels=axis_labels
+        title=title,
+        ndisplay=ndisplay,
+        order=order,
+        axis_labels=axis_labels,
+        show=show,
     )
     viewer.add_vectors(
         data,

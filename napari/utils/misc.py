@@ -1,10 +1,15 @@
 """Miscellaneous utility functions.
 """
+import os.path as osp
 from enum import Enum, EnumMeta
 import re
 import inspect
 import itertools
 import numpy as np
+from typing import Type
+
+
+ROOT_DIR = osp.dirname(osp.dirname(__file__))
 
 
 def str_to_rgb(arg):
@@ -81,8 +86,16 @@ class StringEnumMeta(EnumMeta):
         """
         # simple value lookup
         if names is None:
-            value = value.lower()
-            return super().__call__(value)
+            if isinstance(value, str):
+                return super().__call__(value.lower())
+            elif isinstance(value, cls):
+                return value
+            else:
+                raise ValueError(
+                    f'{cls} may only be called with a `str`'
+                    f' or an instance of {cls}'
+                )
+
         # otherwise create new Enum class
         return cls._create_(
             value,
@@ -92,6 +105,9 @@ class StringEnumMeta(EnumMeta):
             type=type,
             start=start,
         )
+
+    def keys(self):
+        return list(map(str, self))
 
 
 class StringEnum(Enum, metaclass=StringEnumMeta):
@@ -162,3 +178,21 @@ class CallSignature(inspect.Signature):
 
 
 callsignature = CallSignature.from_callable
+
+
+def all_subclasses(cls: Type) -> set:
+    """Recursively find all subclasses of class ``cls``.
+
+    Parameters
+    ----------
+    cls : class
+        A python class (or anything that implements a __subclasses__ method).
+
+    Returns
+    -------
+    set
+        the set of all classes that are subclassed from ``cls``
+    """
+    return set(cls.__subclasses__()).union(
+        [s for c in cls.__subclasses__() for s in all_subclasses(c)]
+    )

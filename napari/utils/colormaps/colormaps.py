@@ -78,7 +78,7 @@ def _validate_rgb(colors, *, tolerance=0.0):
     return filtered_colors
 
 
-def _low_discrepancy_image(image, seed=0.5):
+def _low_discrepancy_image(image, seed=0.5, margin=1 / 256):
     """Generate a 1d low discrepancy sequence of coordinates.
 
     Parameters
@@ -87,6 +87,10 @@ def _low_discrepancy_image(image, seed=0.5):
         A set of labels or label image.
     seed : float
         The seed from which to start the quasirandom sequence.
+    margin : float
+        Values too close to 0 or 1 will get mapped to the edge of the colormap,
+        so we need to offset to a margin slightly inside those values. Since
+        the bin size is 1/256 by default, we offset by that amount.
 
     Returns
     -------
@@ -94,12 +98,13 @@ def _low_discrepancy_image(image, seed=0.5):
         The set of ``labels`` remapped to [0, 1] quasirandomly.
 
     """
-    phi = 1.6180339887498948482
-    image_out = (seed + image / phi) % 1
-    # Clipping slightly above 0 and below 1 is necessary to ensure that the
-    # labels do not get mapped to 0 which is represented by the background
-    # and is transparent
-    return np.clip(image_out, 0.00001, 1.0 - 0.00001)
+    phi_mod = 0.6180339887498948482
+    image_float = seed + image * phi_mod
+    # We now map the floats to the range [0 + margin, 1 - margin]
+    image_out = margin + (1 - 2 * margin) * (
+        image_float - np.floor(image_float)
+    )
+    return image_out
 
 
 def _low_discrepancy(dim, n, seed=0.5):

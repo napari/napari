@@ -5,14 +5,17 @@ wrap.
 # set vispy to use same backend as qtpy
 from qtpy import API_NAME
 from vispy import app
+import time
+
+# set vispy to use same backend as qtpy
+from skimage.io import imsave
 
 from .qt_about import QtAbout
 from .qt_preferences import PreferencesWindow
 from ..settings import SETTINGS, RESTORE_GEOMETRY
 from .qt_viewer_dock_widget import QtViewerDockWidget
-from ..resources import stylesheet
+from ..resources import get_stylesheet
 from .utils import qbytearray_to_str, str_to_qbytearray, is_qbyte
-
 
 app.use_app(API_NAME)
 del app
@@ -21,6 +24,7 @@ del app
 # these module-level imports have to come after `app.use_app(API)`
 # see discussion on #638
 from qtpy.QtWidgets import (  # noqa: E402
+    QApplication,
     QMainWindow,
     QWidget,
     QHBoxLayout,
@@ -29,7 +33,6 @@ from qtpy.QtWidgets import (  # noqa: E402
     QAction,
     QShortcut,
     QStatusBar,
-    QApplication,
 )
 from qtpy.QtCore import Qt  # noqa: E402
 from qtpy.QtGui import QKeySequence  # noqa: E402
@@ -47,15 +50,28 @@ class Window:
 
     Attributes
     ----------
+    file_menu : qtpy.QtWidgets.QMenu
+        File menu.
+    help_menu : qtpy.QtWidgets.QMenu
+        Help menu.
+    main_menu : qtpy.QtWidgets.QMainWindow.menuBar
+        Main menubar.
     qt_viewer : QtViewer
         Contained viewer widget.
+    view_menu : qtpy.QtWidgets.QMenu
+        View menu.
+    window_menu : qtpy.QtWidgets.QMenu
+        Window menu.
     """
+
+    raw_stylesheet = get_stylesheet()
 
     def __init__(self, qt_viewer, *, show=True):
 
         self.qt_viewer = qt_viewer
 
         self._qt_window = QMainWindow()
+        self._qt_window.setAttribute(Qt.WA_DeleteOnClose)
         self._qt_window.setUnifiedTitleAndToolBarOnMac(True)
         self._qt_center = QWidget(self._qt_window)
 
@@ -64,8 +80,6 @@ class Window:
         self._qt_center.setLayout(QHBoxLayout())
         self._status_bar = QStatusBar()
         self._qt_window.setStatusBar(self._status_bar)
-        self._qt_window.closeEvent = self.closeEvent
-        self.close = self._qt_window.close
 
         self._add_menubar()
 
@@ -81,20 +95,16 @@ class Window:
         self._qt_center.layout().addWidget(self.qt_viewer)
         self._qt_center.layout().setContentsMargins(4, 0, 4, 0)
 
-        self._update_palette(qt_viewer.viewer.palette)
+        self._update_palette()
 
-        if self.qt_viewer.console.shell is not None:
-            self._add_viewer_dock_widget(self.qt_viewer.dockConsole)
-
+        self._add_viewer_dock_widget(self.qt_viewer.dockConsole)
         self._add_viewer_dock_widget(self.qt_viewer.dockLayerControls)
         self._add_viewer_dock_widget(self.qt_viewer.dockLayerList)
 
         self.qt_viewer.viewer.events.status.connect(self._status_changed)
         self.qt_viewer.viewer.events.help.connect(self._help_changed)
         self.qt_viewer.viewer.events.title.connect(self._title_changed)
-        self.qt_viewer.viewer.events.palette.connect(
-            lambda event: self._update_palette(event.palette)
-        )
+        self.qt_viewer.viewer.events.palette.connect(self._update_palette)
 
         if show:
             self.show()
@@ -102,6 +112,7 @@ class Window:
             self.restoreState()
 
     def _add_menubar(self):
+        """Add menubar to napari app."""
         self.main_menu = self._qt_window.menuBar()
         # Menubar shortcuts are only active when the menubar is visible.
         # Therefore, we set a global shortcut not associated with the menubar
@@ -132,13 +143,19 @@ class Window:
             self._main_menu_shortcut.setEnabled(False)
 
     def _add_file_menu(self):
+        """Add 'File' menu to app menubar."""
         open_images = QAction('Open image(s)...', self._qt_window)
         open_images.setShortcut('Ctrl+O')
         open_images.setStatusTip('Open image file(s)')
         open_images.triggered.connect(self.qt_viewer._open_images)
 
+        open_stack = QAction('Open image series as stack...', self._qt_window)
+        open_stack.setShortcut('Ctrl+Alt+O')
+        open_stack.setStatusTip('Open image files')
+        open_stack.triggered.connect(self.qt_viewer._open_images_as_stack)
+
         open_folder = QAction('Open Folder...', self._qt_window)
-        open_folder.setShortcut('Ctrl-Shift-O')
+        open_folder.setShortcut('Ctrl+Shift+O')
         open_folder.setStatusTip(
             'Open a folder of image file(s) or a zarr file'
         )
@@ -148,20 +165,36 @@ class Window:
         open_preferences.setShortcut('Ctrl-,')
         open_preferences.triggered.connect(self.show_preferences)
 
+        screenshot = QAction('Screenshot', self._qt_window)
+        screenshot.setShortcut('Ctrl+Alt+S')
+        screenshot.setStatusTip(
+            'Save screenshot of current display, default .png'
+        )
+        screenshot.triggered.connect(self.qt_viewer._save_screenshot)
+
         self.file_menu = self.main_menu.addMenu('&File')
         self.file_menu.addAction(open_images)
+        self.file_menu.addAction(open_stack)
         self.file_menu.addAction(open_folder)
         self.file_menu.addAction(open_preferences)
+        self.file_menu.addAction(screenshot)
 
     def _add_view_menu(self):
+        """Add 'View' menu to app menubar."""
         toggle_visible = QAction('Toggle menubar visibility', self._qt_window)
         toggle_visible.setShortcut('Ctrl+M')
         toggle_visible.setStatusTip('Hide Menubar')
         toggle_visible.triggered.connect(self._toggle_menubar_visible)
+        toggle_theme = QAction('Toggle theme', self._qt_window)
+        toggle_theme.setShortcut('Ctrl+Shift+T')
+        toggle_theme.setStatusTip('Toggle theme')
+        toggle_theme.triggered.connect(self.qt_viewer.viewer._toggle_theme)
         self.view_menu = self.main_menu.addMenu('&View')
         self.view_menu.addAction(toggle_visible)
+        self.view_menu.addAction(toggle_theme)
 
     def _add_window_menu(self):
+        """Add 'Window' menu to app menubar."""
         exit_action = QAction("Close window", self._qt_window)
         exit_action.setShortcut("Ctrl+W")
         exit_action.setStatusTip('Close napari window')
@@ -170,6 +203,7 @@ class Window:
         self.window_menu.addAction(exit_action)
 
     def _add_help_menu(self):
+        """Add 'Help' menu to app menubar."""
         self.help_menu = self.main_menu.addMenu('&Help')
 
         about_action = QAction("napari info", self._qt_window)
@@ -180,14 +214,14 @@ class Window:
         )
         self.help_menu.addAction(about_action)
 
-        about_keybindings = QAction("keybindings", self._qt_window)
-        about_keybindings.setShortcut("Ctrl+Alt+/")
-        about_keybindings.setShortcutContext(Qt.ApplicationShortcut)
-        about_keybindings.setStatusTip('keybindings')
-        about_keybindings.triggered.connect(
-            self.qt_viewer.aboutKeybindings.toggle_visible
+        about_key_bindings = QAction("Show key bindings", self._qt_window)
+        about_key_bindings.setShortcut("Ctrl+Alt+/")
+        about_key_bindings.setShortcutContext(Qt.ApplicationShortcut)
+        about_key_bindings.setStatusTip('key_bindings')
+        about_key_bindings.triggered.connect(
+            self.qt_viewer.show_key_bindings_dialog
         )
-        self.help_menu.addAction(about_keybindings)
+        self.help_menu.addAction(about_key_bindings)
 
     def add_dock_widget(
         self,
@@ -293,9 +327,11 @@ class Window:
             self._qt_window.raise_()  # for macOS
             self._qt_window.activateWindow()  # for Windows
 
-    def _update_palette(self, palette):
+    def _update_palette(self, event=None):
+        """Update widget color palette."""
         # set window styles which don't use the primary stylesheet
         # FIXME: this is a problem with the stylesheet not using properties
+        palette = self.qt_viewer.viewer.palette
         self._status_bar.setStyleSheet(
             template(
                 'QStatusBar { background: {{ background }}; '
@@ -306,25 +342,45 @@ class Window:
         self._qt_center.setStyleSheet(
             template('QWidget { background: {{ background }}; }', **palette)
         )
-        self._qt_window.setStyleSheet(template(stylesheet, **palette))
+        self._qt_window.setStyleSheet(template(self.raw_stylesheet, **palette))
 
     def _status_changed(self, event):
         """Update status bar.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
         """
         self._status_bar.showMessage(event.text)
 
     def _title_changed(self, event):
         """Update window title.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
         """
         self._qt_window.setWindowTitle(event.text)
 
     def _help_changed(self, event):
         """Update help message on status bar.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
         """
         self._help.setText(event.text)
 
-    def screenshot(self):
+    def screenshot(self, path=None):
         """Take currently displayed viewer and convert to an image array.
+
+        Parameters
+        ----------
+        path : str
+            Filename for saving screenshot image.
 
         Returns
         -------
@@ -333,6 +389,8 @@ class Window:
             upper-left corner of the rendered region.
         """
         img = self._qt_window.grab().toImage()
+        if path is not None:
+            imsave(path, QImg2array(img))  # scikit-image imsave method
         return QImg2array(img)
 
     def show_preferences(self):
@@ -361,16 +419,22 @@ class Window:
                 geometry = str_to_qbytearray(geometry)
             self._qt_window.restoreGeometry(geometry)
 
-    def closeEvent(self, event):
-        # Forward close event to the console to trigger proper shutdown
-        self.qt_viewer.console.shutdown()
-        # if the viewer.QtDims object is playing an axis, we need to terminate the
-        # AnimationThread before close, otherwise it will cauyse a segFault or Abort trap.
-        # (calling stop() when no animation is occuring is also not a problem)
-        self.qt_viewer.dims.stop()
+    def close(self):
+        """Close the viewer window and cleanup sub-widgets."""
+        # on some versions of Darwin, exiting while fullscreen seems to tickle
+        # some bug deep in NSWindow.  This forces the fullscreen keybinding
+        # test to complete its draw cycle, then pop back out of fullscreen.
         state = qbytearray_to_str(self._qt_window.saveState())
         geometry = qbytearray_to_str(self._qt_window.saveGeometry())
         SETTINGS.setValue('mainWindow/state', state)
         SETTINGS.setValue('mainWindow/geometry', geometry)
         SETTINGS.sync()
-        event.accept()
+
+        if self._qt_window.isFullScreen():
+            self._qt_window.showNormal()
+            for i in range(8):
+                time.sleep(0.1)
+                QApplication.processEvents()
+        self.qt_viewer.close()
+        self._qt_window.close()
+        del self._qt_window

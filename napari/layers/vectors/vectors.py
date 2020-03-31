@@ -5,7 +5,7 @@ from copy import copy
 from ..base import Layer
 from ...utils.event import Event
 from ...utils.status_messages import format_float
-from .vector_utils import vectors_to_coordinates, generate_vector_meshes
+from ._vector_utils import vectors_to_coordinates, generate_vector_meshes
 from vispy.color import get_color_names, Color
 
 
@@ -93,6 +93,7 @@ class Vectors(Layer):
     ):
 
         super().__init__(
+            data,
             2,
             name=name,
             metadata=metadata,
@@ -147,6 +148,25 @@ class Vectors(Layer):
 
         self._update_dims()
         self.events.data()
+
+    def _get_state(self):
+        """Get dictionary of layer state.
+
+        Returns
+        -------
+        state : dict
+            Dictionary of layer state.
+        """
+        state = self._get_base_state()
+        state.update(
+            {
+                'length': self.length,
+                'edge_width': self.edge_width,
+                'edge_color': self.edge_color,
+                'data': self.data,
+            }
+        )
+        return state
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
