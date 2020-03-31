@@ -127,6 +127,10 @@ def test_signature(layer):
 
     code = inspect.getsource(method)
 
+    # Below, we test that somewhere in the source code of the method, a call to
+    # the corresponding Layer.__init__ method is made that has all of the same
+    # parameters.  add_image has a special implementation, and therefore
+    # requires a modified test.
     if name == 'Image':
         # it becomes very cumbersome to have to type out all of the
         # parameters in add_image for both single images, and all the iterables

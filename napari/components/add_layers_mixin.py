@@ -25,13 +25,18 @@ class AddLayersMixin:
     easier to read and make these methods easier to maintain.
     """
 
-    def add_layer(self, layer):
+    def add_layer(self, layer: layers.Layer) -> layers.Layer:
         """Add a layer to the viewer.
 
         Parameters
         ----------
-        layer : napari.layers.Layer
+        layer : :class:`napari.layers.Layer`
             Layer to add.
+
+        Returns
+        -------
+        layer : :class:`napari.layers.Layer` or list
+            The layer that was added (same as input).
         """
         layer.events.select.connect(self._update_active_layer)
         layer.events.deselect.connect(self._update_active_layer)
@@ -84,17 +89,24 @@ class AddLayersMixin:
             list and arrays are decreasing in shape then the data is treated as
             an image pyramid.
         channel_axis : int, optional
-            Axis to expand image along.
-        rgb : bool
+            Axis to expand image along.  If provided, each channel in the data
+            will be added as an individual image layer.  byIn channel_axis mode,
+            all other parameters MAY be provided as lists, and the Nth value
+            will be applied to the Nth channel in the data.  If a single value
+            is provided, it will be broadcast to all Layers.
+        rgb : bool or list
             Whether the image is rgb RGB or RGBA. If not specified by user and
             the last dimension of the data has length 3 or 4 it will be set as
             `True`. If `False` the image is interpreted as a luminance image.
-        is_pyramid : bool
+            If a list then must be same length as the axis that is being
+            expanded as channels.
+        is_pyramid : bool or list
             Whether the data is an image pyramid or not. Pyramid data is
             represented by a list of array like image data. If not specified by
             the user and if the data is a list of arrays that decrease in shape
             then it will be taken to be a pyramid. The first image in the list
-            should be the largest.
+            should be the largest. If a list then must be same length as the
+            axis that is being expanded as channels.
         colormap : str, vispy.Color.Colormap, tuple, dict, list
             Colormaps to use for luminance images. If a string must be the name
             of a supported colormap from vispy or matplotlib. If a tuple the
@@ -113,32 +125,44 @@ class AddLayersMixin:
         gamma : list, float
             Gamma correction for determining colormap linearity. Defaults to 1.
             If a list then must be same length as the axis that is being
-            expanded and then each entry in the list is applied to each image.
-        interpolation : str
+            expanded as channels.
+        interpolation : str or list
             Interpolation mode used by vispy. Must be one of our supported
-            modes.
-        rendering : str
+            modes. If a list then must be same length as the axis that is being
+            expanded as channels.
+        rendering : str or list
             Rendering mode used by vispy. Must be one of our supported
-            modes.
-        iso_threshold : float
-            Threshold for isosurface.
-        attenuation : float
-            Attenuation rate for attenuated maximum intensity projection.
+            modes. If a list then must be same length as the axis that is being
+            expanded as channels.
+        iso_threshold : float or list
+            Threshold for isosurface. If a list then must be same length as the
+            axis that is being expanded as channels.
+        attenuation : float or list
+            Attenuation rate for attenuated maximum intensity projection. If a
+            list then must be same length as the axis that is being expanded as
+            channels.
         name : str or list of str
             Name of the layer.  If a list then must be same length as the axis
             that is being expanded as channels.
-        metadata : dict
-            Layer metadata.
-        scale : tuple of float
-            Scale factors for the layer.
-        translate : tuple of float
-            Translation values for the layer.
-        opacity : float
-            Opacity of the layer visual, between 0.0 and 1.0.
-        blending : str
+        metadata : dict or list of dict
+            Layer metadata. If a list then must be a list of dicts with the
+            same length as the axis that is being expanded as channels.
+        scale : tuple of float or list
+            Scale factors for the layer. If a list then must be a list of
+            tuples of float with the same length as the axis that is being
+            expanded as channels.
+        translate : tuple of float or list
+            Translation values for the layer. If a list then must be a list of
+            tuples of float with the same length as the axis that is being
+            expanded as channels.
+        opacity : float or list
+            Opacity of the layer visual, between 0.0 and 1.0.  If a list then
+            must be same length as the axis that is being expanded as channels.
+        blending : str or list
             One of a list of preset blending modes that determines how RGB and
             alpha values of the layer visual get mixed. Allowed values are
-            {'opaque', 'translucent', and 'additive'}.
+            {'opaque', 'translucent', and 'additive'}. If a list then
+            must be same length as the axis that is being expanded as channels.
         visible : bool or list of bool
             Whether the layer visual is currently being displayed.
             If a list then must be same length as the axis that is
@@ -195,6 +219,11 @@ class AddLayersMixin:
                         kwargs[key] = iter(colormaps.MAGENTA_GREEN)
                     else:
                         kwargs[key] = itertools.cycle(colormaps.CYMRGB)
+                # these four arguments are *already* iterables in the
+                # single-channel case.  So, if they are provided, we need to
+                # make sure that they are a *sequence* of iterables for the
+                # multichannel case.  For example: if scale == (1, 2) and
+                # n_channels = 3, then scale should == [(1, 2), (1, 2), (1, 2)]
                 elif key in {
                     'scale',
                     'translate',

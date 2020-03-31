@@ -30,6 +30,7 @@ LIST_OF_DICTS = [DICT, DICT, DICT]
     ],
 )
 def test_sequence_of_iterables(input, expected):
+    """Test ensure_sequence_of_iterables returns a sequence of iterables."""
     zipped = zip(range(3), ensure_sequence_of_iterables(input), expected)
     for i, result, expectation in zipped:
         assert result == expectation
@@ -58,6 +59,7 @@ def test_sequence_of_iterables_raises():
     ],
 )
 def test_ensure_iterable(input, expected):
+    """Test test_ensure_iterable returns an iterable."""
     zipped = zip(range(3), ensure_iterable(input), expected)
     for i, result, expectation in zipped:
         assert result == expectation
