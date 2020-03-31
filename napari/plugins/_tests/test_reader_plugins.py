@@ -39,14 +39,17 @@ def test_iter_reader_plugins(plugin_manager):
     assert "napari_get_reader" in exception_string
 
 
-def test_builtin_reader_plugin(viewer_factory, builtin_plugin_manager):
+def test_builtin_reader_plugin(viewer_factory):
     """Test the builtin reader plugin reads a temporary file."""
+    from napari.plugins import plugin_manager
+
+    plugin_manager.hooks.napari_get_reader.bring_to_front(['builtins'])
+
     with NamedTemporaryFile(suffix='.tif', delete=False) as tmp:
         data = np.random.rand(20, 20)
         io.imsave(tmp.name, data)
         tmp.seek(0)
-
-        layer_data = read_data_with_plugins(tmp.name, builtin_plugin_manager)
+        layer_data = read_data_with_plugins(tmp.name)
 
         assert isinstance(layer_data, list)
         assert len(layer_data) == 1
@@ -59,8 +62,12 @@ def test_builtin_reader_plugin(viewer_factory, builtin_plugin_manager):
         assert np.allclose(viewer.layers[0].data, data)
 
 
-def test_builtin_reader_plugin_stacks(viewer_factory, builtin_plugin_manager):
+def test_builtin_reader_plugin_stacks(viewer_factory):
     """Test the builtin reader plugin reads multiple files as a stack."""
+    from napari.plugins import plugin_manager
+
+    plugin_manager.hooks.napari_get_reader.bring_to_front(['builtins'])
+
     data = np.random.rand(5, 20, 20)
     tmps = []
     for plane in data:
