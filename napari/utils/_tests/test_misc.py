@@ -1,7 +1,66 @@
 from enum import auto
 
 import pytest
-from napari.utils.misc import callsignature, StringEnum
+
+from napari.utils.misc import (
+    StringEnum,
+    callsignature,
+    ensure_sequence_of_iterables,
+    ensure_iterable,
+)
+
+ITERABLE = (0, 1, 2)
+NESTED_ITERABLE = [ITERABLE, ITERABLE, ITERABLE]
+DICT = {'a': 1, 'b': 3, 'c': 5}
+LIST_OF_DICTS = [DICT, DICT, DICT]
+
+
+@pytest.mark.parametrize(
+    'input, expected',
+    [
+        [ITERABLE, NESTED_ITERABLE],
+        [NESTED_ITERABLE, NESTED_ITERABLE],
+        [(ITERABLE, (2,), (3, 1, 6)), (ITERABLE, (2,), (3, 1, 6))],
+        [DICT, LIST_OF_DICTS],
+        [LIST_OF_DICTS, LIST_OF_DICTS],
+        [(ITERABLE, (2,), (3, 1, 6)), (ITERABLE, (2,), (3, 1, 6))],
+        [None, (None, None, None)],
+        # BEWARE: only the first element of a nested sequence is checked.
+        [((0, 1), None, None), ((0, 1), None, None)],
+    ],
+)
+def test_sequence_of_iterables(input, expected):
+    zipped = zip(range(3), ensure_sequence_of_iterables(input), expected)
+    for i, result, expectation in zipped:
+        assert result == expectation
+
+
+def test_sequence_of_iterables_raises():
+    with pytest.raises(ValueError):
+        # the length argument asserts a specific length
+        ensure_sequence_of_iterables(((0, 1),), length=4)
+
+    # BEWARE: only the first element of a nested sequence is checked.
+    with pytest.raises(AssertionError):
+        iterable = (None, (0, 1), (0, 2))
+        result = iter(ensure_sequence_of_iterables(iterable))
+        assert next(result) is None
+
+
+@pytest.mark.parametrize(
+    'input, expected',
+    [
+        [ITERABLE, ITERABLE],
+        [DICT, DICT],
+        [1, [1, 1, 1]],
+        ['foo', ['foo', 'foo', 'foo']],
+        [None, [None, None, None]],
+    ],
+)
+def test_ensure_iterable(input, expected):
+    zipped = zip(range(3), ensure_iterable(input), expected)
+    for i, result, expectation in zipped:
+        assert result == expectation
 
 
 def test_callsignature():

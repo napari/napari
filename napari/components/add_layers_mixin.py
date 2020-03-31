@@ -7,7 +7,7 @@ import numpy as np
 from .. import layers
 from ..plugins.io import read_data_with_plugins
 from ..utils import colormaps, io
-from ..utils.misc import ensure_iterable, ensure_iterable_sequences
+from ..utils.misc import ensure_iterable, ensure_sequence_of_iterables
 
 logger = getLogger(__name__)
 
@@ -180,42 +180,30 @@ class AddLayersMixin:
         }
 
         if channel_axis is None:
-            kwargs['colormap'] = kwargs.get('colormap', 'gray')
-            kwargs['blending'] = kwargs.get('blending', 'translucent')
+            kwargs['colormap'] = kwargs['colormap'] or 'gray'
+            kwargs['blending'] = kwargs['blending'] or 'translucent'
             return self.add_layer(layers.Image(data, **kwargs))
         else:
             n_channels = (data[0] if is_pyramid else data).shape[channel_axis]
-            kwargs['blending'] = kwargs.get('blending', 'additive')
+            kwargs['blending'] = kwargs['blending'] or 'additive'
 
             # turn the kwargs dict into a mapping of {key: iterator}
             # so that we can use {k: next(v) for k, v in kwargs.items()} below
             for key, val in kwargs.items():
-                if key in ('scale', 'translate', 'contrast_limits'):
+                if key == 'colormap' and val is None:
+                    if n_channels < 3:
+                        kwargs[key] = iter(colormaps.MAGENTA_GREEN)
+                    else:
+                        kwargs[key] = itertools.cycle(colormaps.CYMRGB)
+                elif key in (
+                    'scale',
+                    'translate',
+                    'contrast_limits',
+                    'metadata',
+                ):
                     kwargs[key] = iter(
-                        ensure_iterable_sequences(val, n_channels)
+                        ensure_sequence_of_iterables(val, n_channels)
                     )
-                elif key == 'metadata':
-                    if val is None or isinstance(val, dict):
-                        kwargs[key] = itertools.repeat(metadata)
-                    elif (
-                        isinstance(val, list)
-                        and len(val) == n_channels
-                        and all(isinstance(m, dict) for m in val)
-                    ):
-                        kwargs[key] = iter(val)
-                    else:
-                        raise ValueError(
-                            "metadata must either be a dict, or a list of dicts "
-                            "with a length equal to the number of channels."
-                        )
-                elif key == 'colormap':
-                    if val is None:
-                        if n_channels < 3:
-                            kwargs[key] = iter(colormaps.MAGENTA_GREEN)
-                        else:
-                            kwargs[key] = itertools.cycle(colormaps.CYMRGB)
-                    else:
-                        kwargs[key] = iter(ensure_iterable(val))
                 else:
                     kwargs[key] = iter(ensure_iterable(val))
 
