@@ -78,7 +78,7 @@ For more details on how to use `napari` checkout our [tutorials](https://napari.
 ## mission, values, and roadmap
 
 For more information about our plans for `napari` you can read our [mission and values statement](./docs/developers/MISSION_AND_VALUES.md), which includes more details on our vision for supporting a plugin ecosystem around napari. We also have
-a [roadmap](./docs/developers/ROADMAP_0_3.md) that captures current development priorities within the project
+a [roadmap](./docs/developers/ROADMAP_0_3.md) that captures current development priorities within the project.
 
 ## contributing
 
