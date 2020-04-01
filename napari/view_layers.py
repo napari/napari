@@ -371,6 +371,16 @@ def view_labels(
     An image-like layer where every pixel contains an integer ID
     corresponding to the region it belongs to.
 
+    Using the viewer's label editing tools (painting, erasing) will
+    modify the input-array in-place.
+
+        To avoid this, pass a copy as follows:
+            viewer = napari.view_labels(data.copy(), name="sample")
+            # do some painting/editing
+
+        Get the painted labels as follows:
+            result = viewer.layers["sample"].data
+
     Parameters
     ----------
     data : array or list of array

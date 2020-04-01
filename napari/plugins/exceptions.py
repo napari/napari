@@ -1,18 +1,17 @@
+import re
 import sys
 from collections import defaultdict
 from types import TracebackType
 from typing import (
+    Callable,
     DefaultDict,
     Dict,
+    Generator,
     List,
     Optional,
     Tuple,
     Type,
-    Callable,
-    Generator,
 )
-import re
-
 
 # This is a mapping of plugin_name -> PluginError instances
 # all PluginErrors get added to this in PluginError.__init__

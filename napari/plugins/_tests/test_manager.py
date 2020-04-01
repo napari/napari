@@ -5,7 +5,7 @@ import sys
 import pytest
 from pluggy import PluginValidationError
 
-from napari.plugins import NapariPluginManager, manager
+from napari.plugins import PluginManager, manager
 from napari.plugins.exceptions import format_exceptions
 
 
@@ -34,12 +34,12 @@ def test_invalid_plugin_raises(plugin_manager):
 def test_disable_autodiscover_with_env_var():
     """Test that plugin discovery can be disabled with env var"""
     os.environ["NAPARI_DISABLE_PLUGIN_AUTOLOAD"] = '1'
-    plugin_manager = NapariPluginManager()
+    plugin_manager = PluginManager()
     assert 'napari_test_plugin' not in plugin_manager._name2plugin
     del os.environ["NAPARI_DISABLE_PLUGIN_AUTOLOAD"]
 
     os.environ["NAPARI_DISABLE_NAMEPREFIX_PLUGINS"] = '1'
-    plugin_manager = NapariPluginManager()
+    plugin_manager = PluginManager()
     assert 'napari_test_plugin' not in plugin_manager._name2plugin
     del os.environ["NAPARI_DISABLE_NAMEPREFIX_PLUGINS"]
 
