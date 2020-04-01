@@ -82,7 +82,7 @@ def test_blocking_pyramid():
     layer = Image(data, is_pyramid=False)
     assert np.all(layer.data == data)
     assert layer.is_pyramid is False
-    assert layer._data_pyramid is None
+    assert not layer._data_pyramid
     assert layer.ndim == len(shape)
     assert layer.shape == shape
     assert layer.rgb is False
