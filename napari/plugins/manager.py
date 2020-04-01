@@ -217,7 +217,7 @@ class PluginManager(pluggy.PluginManager):
             before importing, and removed at the end. Any other "truthy" value
             will simply search the current sys.path.  by default True
         """
-        super().__init__("napari")
+        super().__init__(project_name)
 
         # project_name might not be napari if running tests
         if project_name == 'napari':
