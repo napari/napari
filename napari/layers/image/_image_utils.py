@@ -171,7 +171,7 @@ def get_pyramid_and_rgb(
             data_pyramid = []
     else:
         if currently_pyramid:
-            data = cast(ArrayLike, Sequence[ArrayLike])
+            data = cast(List[ArrayLike], data)
             data_pyramid = trim_pyramid(data)
             pyramid = True
         else:
