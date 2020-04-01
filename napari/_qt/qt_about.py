@@ -107,6 +107,7 @@ class QtCopyToClipboardButton(QPushButton):
 
     def __init__(self, text_edit):
         super().__init__()
+        self.setObjectName("QtCopyToClipboardButton")
         self.text_edit = text_edit
         self.setToolTip("Copy to clipboard")
         self.clicked.connect(self.copyToClipboard)

@@ -406,7 +406,6 @@ QtAbout > QTextEdit{
   padding: 2px;
 }
 
-
 /* ------------ Plugin Sorter ------------ */
 
 ImplementationListItem {
@@ -420,4 +419,9 @@ QtHookImplListWidget::item {
 
 QtHookImplListWidget {
   background-color: {{ console }};
+}
+
+/* for the error reporter */
+#pluginInfo {
+  color: text;
 }
