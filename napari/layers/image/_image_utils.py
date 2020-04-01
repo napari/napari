@@ -1,8 +1,10 @@
 import numpy as np
 from scipy import ndimage as ndi
+from typing import Tuple, List, Optional, Union, Sequence, cast
+from ...types import ArrayLike
 
 
-def guess_rgb(shape):
+def guess_rgb(shape: Sequence) -> bool:
     """If last dim is 3 or 4 assume image is rgb.
     """
     ndim = len(shape)
@@ -14,11 +16,11 @@ def guess_rgb(shape):
         return False
 
 
-def guess_pyramid(data):
+def guess_pyramid(data: Union[ArrayLike, Sequence]) -> bool:
     """If shape of arrays along first axis is strictly decreasing.
     """
     # If the data has ndim and is not one-dimensional then cannot be pyramid
-    if hasattr(data, 'ndim') and data.ndim > 1:
+    if getattr(data, 'ndim', 0) > 1:
         return False
 
     size = np.array([np.prod(d.shape, dtype=np.uint64) for d in data])
@@ -28,7 +30,7 @@ def guess_pyramid(data):
         return False
 
 
-def trim_pyramid(pyramid):
+def trim_pyramid(pyramid: List[ArrayLike]) -> List[ArrayLike]:
     """Trim very small arrays of top of pyramid.
 
     Parameters
@@ -48,7 +50,7 @@ def trim_pyramid(pyramid):
         return pyramid[:2]
 
 
-def should_be_pyramid(shape):
+def should_be_pyramid(shape: Tuple[int, ...]) -> ArrayLike:
     """Check if any data axes needs to be pyramidified
 
     Parameters
@@ -64,7 +66,7 @@ def should_be_pyramid(shape):
     return np.log2(shape) >= 13
 
 
-def fast_pyramid(data, downscale=2, max_layer=None):
+def fast_pyramid(data, downscale=2, max_layer=None) -> List[ArrayLike]:
     """Compute fast image pyramid.
 
     In the interest of speed this method subsamples, rather than downsamples,
@@ -99,7 +101,11 @@ def fast_pyramid(data, downscale=2, max_layer=None):
     return pyramid
 
 
-def get_pyramid_and_rgb(data, pyramid=None, rgb=None):
+def get_pyramid_and_rgb(
+    data: Union[ArrayLike, Sequence[ArrayLike]],
+    pyramid: Optional[bool] = None,
+    rgb: Optional[bool] = None,
+) -> Tuple[int, bool, bool, List[ArrayLike]]:
     """Check if data is or needs to be a pyramid and make one if needed.
 
     Parameters
@@ -121,9 +127,10 @@ def get_pyramid_and_rgb(data, pyramid=None, rgb=None):
         If data is rgb.
     pyramid : bool
         If data is a pyramid or a pyramid has been generated.
-    data_pyramid : list or None
-        If None then data is not and does not need to be a pyramid. Otherwise
-        is a list of arrays where each array is a level of the pyramid.
+    data_pyramid : list
+        If data is not and does not need to be a pyramid this will be an empty
+        list. Otherwise it is a list of arrays where each array is a level of
+        the pyramid.
     """
     # Determine if data currently is a pyramid
     currently_pyramid = guess_pyramid(data)
@@ -131,6 +138,7 @@ def get_pyramid_and_rgb(data, pyramid=None, rgb=None):
         shapes = [d.shape for d in data]
         init_shape = shapes[0]
     else:
+        data = cast(ArrayLike, data)
         init_shape = data.shape
 
     # Determine if rgb, and determine dimensionality
@@ -160,12 +168,14 @@ def get_pyramid_and_rgb(data, pyramid=None, rgb=None):
                 " data was passed"
             )
         else:
-            data_pyramid = None
+            data_pyramid = []
     else:
         if currently_pyramid:
+            data = cast(ArrayLike, Sequence[ArrayLike])
             data_pyramid = trim_pyramid(data)
             pyramid = True
         else:
+            data = cast(ArrayLike, data)
             # Guess if data should be pyramid or if a pyramid was requested
             if pyramid:
                 pyr_axes = [True] * ndim
@@ -185,7 +195,7 @@ def get_pyramid_and_rgb(data, pyramid=None, rgb=None):
                 )
                 data_pyramid = trim_pyramid(data_pyramid)
             else:
-                data_pyramid = None
+                data_pyramid = []
                 pyramid = False
 
     return ndim, rgb, pyramid, data_pyramid

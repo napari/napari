@@ -1,6 +1,6 @@
 from functools import wraps
 from typing import Any, Callable, Dict, List, Tuple, Union
-
+import vispy.color
 import numpy as np
 import dask.array as da
 
@@ -50,3 +50,11 @@ def image_reader_to_layerdata_reader(
         return [(result,)]
 
     return reader_function
+
+
+ValidColormapArg = Union[
+    vispy.color.Colormap,
+    str,
+    Tuple[str, vispy.color.Colormap],
+    Dict[str, vispy.color.Colormap],
+]

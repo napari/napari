@@ -1,4 +1,5 @@
 import numpy as np
+from typing import Tuple
 
 
 def increment_unnamed_colormap(name, names):
@@ -22,7 +23,7 @@ def increment_unnamed_colormap(name, names):
     return name
 
 
-def calc_data_range(data):
+def calc_data_range(data) -> Tuple[float, float]:
     """Calculate range of data values. If all values are equal return [0, 1].
 
     Parameters
@@ -32,7 +33,7 @@ def calc_data_range(data):
 
     Returns
     -------
-    values : list of float
+    values : 2-tuple of float
         Range of values.
 
     Notes
@@ -41,7 +42,7 @@ def calc_data_range(data):
     returned.
     """
     if data.dtype == np.uint8:
-        return [0, 255]
+        return (0, 255)
     if np.prod(data.shape) > 1e6:
         # If data is very large take the average of the top, bottom, and
         # middle slices
@@ -62,7 +63,7 @@ def calc_data_range(data):
     if min_val == max_val:
         min_val = 0
         max_val = 1
-    return [float(min_val), float(max_val)]
+    return float(min_val), float(max_val)
 
 
 def segment_normal(a, b, p=(0, 0, 1)):

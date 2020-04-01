@@ -1,18 +1,20 @@
 import types
 import warnings
 from base64 import b64encode
+from typing import List, Union, Optional, Tuple, Sequence, cast, Dict, Any
 from xml.etree.ElementTree import Element
 
 import numpy as np
 from imageio import imwrite
 from scipy import ndimage as ndi
 
+from ...types import ArrayLike, ValidColormapArg
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.event import Event
 from ...utils.status_messages import format_float
 from ..base import Layer
-from ..utils.layer_utils import calc_data_range
 from ..intensity_mixin import IntensityVisualizationMixin
+from ..utils.layer_utils import calc_data_range
 from ._image_constants import Interpolation, Rendering
 from ._image_utils import get_pyramid_and_rgb
 
@@ -137,24 +139,24 @@ class Image(IntensityVisualizationMixin, Layer):
 
     def __init__(
         self,
-        data,
+        data: Union[ArrayLike, List[ArrayLike]],
         *,
-        rgb=None,
-        is_pyramid=None,
-        colormap='gray',
-        contrast_limits=None,
-        gamma=1,
-        interpolation='nearest',
-        rendering='mip',
-        iso_threshold=0.5,
-        attenuation=0.5,
-        name=None,
-        metadata=None,
-        scale=None,
-        translate=None,
-        opacity=1,
-        blending='translucent',
-        visible=True,
+        rgb: Optional[bool] = None,
+        is_pyramid: Optional[bool] = None,
+        colormap: ValidColormapArg = 'gray',
+        contrast_limits: Optional[Tuple[float, float]] = None,
+        gamma: float = 1,
+        interpolation: str = 'nearest',
+        rendering: str = 'mip',
+        iso_threshold: float = 0.5,
+        attenuation: float = 0.5,
+        name: Optional[str] = None,
+        metadata: Optional[dict] = None,
+        scale: Optional[Sequence[float]] = None,
+        translate: Optional[Sequence[float]] = None,
+        opacity: float = 1,
+        blending: str = 'translucent',
+        visible: bool = True,
     ):
         if isinstance(data, types.GeneratorType):
             data = list(data)
@@ -188,10 +190,8 @@ class Image(IntensityVisualizationMixin, Layer):
         self._data = data
         self._data_pyramid = data_pyramid
         self._top_left = np.zeros(ndim, dtype=int)
-        if self.is_pyramid:
-            self._data_level = len(data_pyramid) - 1
-        else:
-            self._data_level = 0
+        # XXX: is it ok to let _data_level be -1 if not self.is_pyramid?
+        self._data_level = len(data_pyramid) - 1
 
         # Intitialize image views and thumbnails with zeros
         if self.rgb:
@@ -220,7 +220,7 @@ class Image(IntensityVisualizationMixin, Layer):
         # Trigger generation of view slice and thumbnail
         self._update_dims()
 
-    def _calc_data_range(self):
+    def _calc_data_range(self) -> Tuple[float, float]:
         if self.is_pyramid:
             input_data = self._data_pyramid[-1]
         else:
@@ -228,16 +228,19 @@ class Image(IntensityVisualizationMixin, Layer):
         return calc_data_range(input_data)
 
     @property
-    def dtype(self):
-        return self.data[0].dtype if self.is_pyramid else self.data.dtype
+    def dtype(self) -> np.dtype:
+        if self.is_pyramid:
+            return self.data[0].dtype
+        else:
+            return cast(ArrayLike, self.data).dtype
 
     @property
-    def data(self):
-        """array: Image data."""
+    def data(self) -> Union[ArrayLike, List[ArrayLike]]:
+        """array: Image data. Will be a list of arrays if self.is_pyramid"""
         return self._data
 
     @data.setter
-    def data(self, data):
+    def data(self, data: Union[ArrayLike, List[ArrayLike]]):
         ndim, rgb, is_pyramid, data_pyramid = get_pyramid_and_rgb(
             data, pyramid=self.is_pyramid, rgb=self.rgb
         )
@@ -249,27 +252,28 @@ class Image(IntensityVisualizationMixin, Layer):
         self._update_dims()
         self.events.data()
 
-    def _get_ndim(self):
+    def _get_ndim(self) -> int:
         """Determine number of dimensions of the layer."""
         return len(self.level_shapes[0])
 
-    def _get_extent(self):
+    def _get_extent(self) -> Tuple[Tuple[int, int], ...]:
+        """Tuple of ((0, dim_size)... for each dimension in data"""
         return tuple((0, m) for m in self.level_shapes[0])
 
     @property
-    def data_level(self):
-        """int: Current level of pyramid, or 0 if image."""
+    def data_level(self) -> int:
+        """int: Current level of pyramid, or -1 if image."""
         return self._data_level
 
     @data_level.setter
-    def data_level(self, level):
+    def data_level(self, level: int):
         if self._data_level == level:
             return
         self._data_level = level
         self.refresh()
 
     @property
-    def level_shapes(self):
+    def level_shapes(self) -> np.ndarray:
         """array: Shapes of each level of the pyramid or just of image."""
         if self.is_pyramid:
             if self.rgb:
@@ -277,55 +281,54 @@ class Image(IntensityVisualizationMixin, Layer):
             else:
                 shapes = [im.shape for im in self._data_pyramid]
         else:
-            if self.rgb:
-                shapes = [self.data.shape[:-1]]
-            else:
-                shapes = [self.data.shape]
+            data = cast(ArrayLike, self.data)
+            shapes = [data.shape[:-1]] if self.rgb else [data.shape]
+
         return np.array(shapes)
 
     @property
-    def level_downsamples(self):
+    def level_downsamples(self) -> np.ndarray:
         """list: Downsample factors for each level of the pyramid."""
         return np.divide(self.level_shapes[0], self.level_shapes)
 
     @property
-    def top_left(self):
+    def top_left(self) -> np.ndarray:
         """tuple: Location of top left canvas pixel in image."""
         return self._top_left
 
     @top_left.setter
-    def top_left(self, top_left):
+    def top_left(self, top_left: np.ndarray):
         if np.all(self._top_left == top_left):
             return
         self._top_left = top_left.astype(int)
         self.refresh()
 
     @property
-    def iso_threshold(self):
+    def iso_threshold(self) -> float:
         """float: threshold for isosurface."""
         return self._iso_threshold
 
     @iso_threshold.setter
-    def iso_threshold(self, value):
+    def iso_threshold(self, value: float):
         self.status = format_float(value)
         self._iso_threshold = value
         self._update_thumbnail()
         self.events.iso_threshold()
 
     @property
-    def attenuation(self):
+    def attenuation(self) -> float:
         """float: attenuation rate for attenuated_mip rendering."""
         return self._attenuation
 
     @attenuation.setter
-    def attenuation(self, value):
+    def attenuation(self, value: float):
         self.status = format_float(value)
         self._attenuation = value
         self._update_thumbnail()
         self.events.attenuation()
 
     @property
-    def interpolation(self):
+    def interpolation(self) -> str:
         """{
             'bessel', 'bicubic', 'bilinear', 'blackman', 'catrom', 'gaussian',
             'hamming', 'hanning', 'hermite', 'kaiser', 'lanczos', 'mitchell',
@@ -335,12 +338,12 @@ class Image(IntensityVisualizationMixin, Layer):
         return str(self._interpolation)
 
     @interpolation.setter
-    def interpolation(self, interpolation):
+    def interpolation(self, interpolation: str):
         self._interpolation = Interpolation(interpolation)
         self.events.interpolation()
 
     @property
-    def rendering(self):
+    def rendering(self) -> str:
         """Rendering: Rendering mode.
             Selects a preset rendering mode in vispy that determines how
             volume is displayed
@@ -361,11 +364,11 @@ class Image(IntensityVisualizationMixin, Layer):
         return str(self._rendering)
 
     @rendering.setter
-    def rendering(self, rendering):
+    def rendering(self, rendering: str):
         self._rendering = Rendering(rendering)
         self.events.rendering()
 
-    def _get_state(self):
+    def _get_state(self) -> Dict[str, Any]:
         """Get dictionary of layer state.
 
         Returns
@@ -390,7 +393,7 @@ class Image(IntensityVisualizationMixin, Layer):
         )
         return state
 
-    def _raw_to_displayed(self, raw):
+    def _raw_to_displayed(self, raw: np.ndarray) -> np.ndarray:
         """Determine displayed image from raw image.
 
         For normal image layers, just return the actual image.
@@ -408,7 +411,7 @@ class Image(IntensityVisualizationMixin, Layer):
         image = raw
         return image
 
-    def _set_view_slice(self):
+    def _set_view_slice(self) -> None:
         """Set the view given the indices to slice with."""
         not_disp = self.dims.not_displayed
 
@@ -507,7 +510,7 @@ class Image(IntensityVisualizationMixin, Layer):
             self.events.scale()
             self.events.translate()
 
-    def _update_thumbnail(self):
+    def _update_thumbnail(self) -> None:
         """Update thumbnail with current image data and colormap."""
         if self.dims.ndisplay == 3 and self.dims.ndim > 2:
             image = np.max(self._data_thumbnail, axis=0)
@@ -568,14 +571,18 @@ class Image(IntensityVisualizationMixin, Layer):
             colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 
-    def _get_value(self):
-        """Returns coordinates, values, and a string for a given mouse position
-        and set of indices.
+    def _get_value(self) -> Optional[Union[float, Tuple[int, float]]]:
+        """Return the value of the layer at the current ``self.coordinates``.
+
+        self.coordinates is set elsewhere, and usually reflects the current
+        mouse position and data index.
 
         Returns
         ----------
-        value : tuple
-            Value of the data at the coord.
+        value : float, (int, float), or None
+            Value of the data at the coord.  If a pyramid, returns a 2-tuple
+            (pyramid_data_level, value).  If self.coordinates is out-of-bounds
+            of the current shape, returns None.
         """
         coord = np.round(self.coordinates).astype(int)
         if self.rgb:
@@ -593,7 +600,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
         return value
 
-    def to_xml_list(self):
+    def to_xml_list(self) -> List[Element]:
         """Generates a list with a single xml element that defines the
         currently viewed image as a png according to the svg specification.
 
