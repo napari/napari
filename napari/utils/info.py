@@ -13,6 +13,7 @@ def sys_info(as_html=False):
     as_html : bool
         if True, info will be returned as HTML, suitable for a QTextEdit widget
     """
+    from napari.plugins import plugin_manager
 
     sys_version = sys.version.replace('\n', ' ')
     text = (
@@ -39,11 +40,11 @@ def sys_info(as_html=False):
         text += f"<b>Qt</b>: Import failed ({e})<br>"
 
     modules = (
-        ('vispy', 'VisPy'),
         ('numpy', 'NumPy'),
         ('scipy', 'SciPy'),
         ('skimage', 'scikit-image'),
         ('dask', 'Dask'),
+        ('vispy', 'VisPy'),
     )
 
     loaded = {}
@@ -62,6 +63,21 @@ def sys_info(as_html=False):
             ]
         ).replace("'", "")
         text += f'<br>{sys_info_text}'
+
+    plugins = []
+    for plugin in plugin_manager.get_plugins():
+        name = plugin_manager.get_name(plugin)
+        if name == 'builtins':
+            continue
+        # look for __version__ attr in the plugin module
+        version = getattr(plugin, '__version__', '')
+        if not version and '.' in plugin.__name__:
+            # if no version is found, look in the base module
+            root = sys.modules[plugin.__name__.split('.')[0]]
+            version = getattr(root, '__version__', '')
+        plugins.append(f'  - {name}' + (f': {version}' if version else ''))
+    text += '<br><br><b>Plugins</b>:'
+    text += ("<br>" + "<br>".join(sorted(plugins))) if plugins else '  None'
 
     if not as_html:
         text = (
