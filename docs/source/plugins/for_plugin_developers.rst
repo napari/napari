@@ -181,7 +181,7 @@ function's name) using the following syntax:
       ...
 
 (Monitor the `pluggy changelog
-<https://github.com/pytest-dev/pluggy/blob/master/CHANGELOG.rst>`_ for merging
+<https://github.com/pytest-dev/pluggy/blob/master/CHANGELOG.rst>`_ for release
 of PR #251.)
 
 .. _plugin-discover:
@@ -205,8 +205,9 @@ allow ``napari`` to query the PyPi API to search for potential plugins.
 Using package metadata
 ^^^^^^^^^^^^^^^^^^^^^^
 
-By providing a ``entry_points`` argument with the key ``napari.plugin`` to
-``setup()`` in ``setup.py``, plugins can register themselves for discovery.
+By providing an ``entry_points`` argument with the key ``napari.plugin`` to
+``setup()`` in ``setup.py``, plugins can register themselves for discovery
+(even if their names do not begin with "``napari_``").
 
 For example if you have a package named ``mypackage`` with a submodule
 ``napari_plugin`` where you have decorated one or more napari hook
