@@ -1,6 +1,7 @@
 from napari.components import LayerList
 from napari.layers import Image
 import numpy as np
+import pytest
 
 
 def test_empty_layers_list():
@@ -26,6 +27,10 @@ def test_adding_layer():
     layers = LayerList()
     layer = Image(np.random.random((10, 10)))
     layers.append(layer)
+
+    # LayerList should err if you add anything other than a layer
+    with pytest.raises(TypeError):
+        layers.append('something')
 
     assert len(layers) == 1
 

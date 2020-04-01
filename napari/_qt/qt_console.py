@@ -1,5 +1,6 @@
 import sys
 
+from qtpy.QtGui import QColor
 from ipykernel.connect import get_connection_file
 from ipykernel.inprocess.ipkernel import InProcessInteractiveShell
 from ipykernel.zmqshell import ZMQInteractiveShell
@@ -8,6 +9,7 @@ from IPython.terminal.interactiveshell import TerminalInteractiveShell
 from qtconsole.client import QtKernelClient
 from qtconsole.inprocess import QtInProcessKernelManager
 from qtconsole.rich_jupyter_widget import RichJupyterWidget
+from ..utils.misc import str_to_rgb
 
 """
 set default asyncio policy to be compatible with tornado
@@ -127,6 +129,22 @@ class QtConsole(RichJupyterWidget):
 
         # TODO: Try to get console from jupyter to run without a shift click
         # self.execute_on_complete_input = True
+
+    def _update_palette(self, palette, themed_stylesheet):
+        """Update the napari GUI theme.
+
+        Parameters
+        ----------
+        palette : dict of str: str
+            Color palette with which to style the viewer.
+            Property of napari.components.viewer_model.ViewerModel.
+        themed_stylesheet : str
+            Stylesheet that has already been themed with the current pallete.
+        """
+        self.style_sheet = themed_stylesheet
+        self.syntax_style = palette['syntax_style']
+        bracket_color = QColor(*str_to_rgb(palette['highlight']))
+        self._bracket_matcher.format.setBackground(bracket_color)
 
     def closeEvent(self, event):
         """Clean up the integrated console in napari."""

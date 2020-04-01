@@ -1,3 +1,8 @@
+from ._version import get_versions
+
+__version__ = get_versions()['version']
+del get_versions
+
 import os
 from distutils.version import StrictVersion
 from pathlib import Path
@@ -43,7 +48,11 @@ vispy_logger = logging.getLogger('vispy')
 vispy_logger.setLevel(logging.WARNING)
 
 from .viewer import Viewer
-from . import keybindings
+
+# Note that importing _viewer_key_bindings is needed as the Viewer gets
+# decorated with keybindings during that process, but it is not directly needed
+# by our users and so is deleted below
+from . import _viewer_key_bindings  # noqa: F401
 from .view_layers import (
     view_path,
     view_image,
@@ -68,3 +77,4 @@ from scipy import stats  # noqa: F401
 
 del _magicgui
 del stats
+del _viewer_key_bindings

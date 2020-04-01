@@ -5,7 +5,8 @@ import sys
 import pytest
 from pluggy import PluginValidationError
 
-from napari.plugins import NapariPluginManager, manager
+from napari.plugins import PluginManager, manager
+from napari.plugins.exceptions import format_exceptions
 
 
 def test_plugin_autodiscovery(plugin_manager):
@@ -33,12 +34,12 @@ def test_invalid_plugin_raises(plugin_manager):
 def test_disable_autodiscover_with_env_var():
     """Test that plugin discovery can be disabled with env var"""
     os.environ["NAPARI_DISABLE_PLUGIN_AUTOLOAD"] = '1'
-    plugin_manager = NapariPluginManager()
+    plugin_manager = PluginManager()
     assert 'napari_test_plugin' not in plugin_manager._name2plugin
     del os.environ["NAPARI_DISABLE_PLUGIN_AUTOLOAD"]
 
     os.environ["NAPARI_DISABLE_NAMEPREFIX_PLUGINS"] = '1'
-    plugin_manager = NapariPluginManager()
+    plugin_manager = PluginManager()
     assert 'napari_test_plugin' not in plugin_manager._name2plugin
     del os.environ["NAPARI_DISABLE_NAMEPREFIX_PLUGINS"]
 
@@ -89,5 +90,9 @@ def test_iter_plugins():
 def test_format_exceptions(plugin_manager):
     """Test that format_exceptions returns a string with traceback info."""
 
-    assert 'Traceback' in plugin_manager.format_exceptions('invalid')
-    assert not plugin_manager.format_exceptions('working')
+    # check both as_html=True and False
+    assert 'Traceback' in format_exceptions('invalid', as_html=False)
+    assert 'Traceback' in format_exceptions('invalid', as_html=True)
+
+    # formatting exceptions for a plugin that has not errored returns None.
+    assert not format_exceptions('working')

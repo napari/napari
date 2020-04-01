@@ -128,11 +128,9 @@ class VispyBaseLayer(ABC):
         self.node.update()
 
     def _on_scale_change(self, event=None):
-        scale = (
-            self.layer._transform_view.compose(self.layer._transform)
-            .set_slice(self.layer.dims.displayed)
-            .scale
-        )
+        scale = self.layer._transforms.simplified.set_slice(
+            self.layer.dims.displayed
+        ).scale
         # convert NumPy axis ordering to VisPy axis ordering
         self.scale = scale[::-1]
         if self.layer.is_pyramid:
@@ -140,13 +138,9 @@ class VispyBaseLayer(ABC):
         self.layer.position = self._transform_position(self._position)
 
     def _on_translate_change(self, event=None):
-        translate = (
-            self.layer._transform_grid.compose(
-                self.layer._transform_view.compose(self.layer._transform)
-            )
-            .set_slice(self.layer.dims.displayed)
-            .translate
-        )
+        translate = self.layer._transforms.simplified.set_slice(
+            self.layer.dims.displayed
+        ).translate
         # convert NumPy axis ordering to VisPy axis ordering
         self.translate = translate[::-1]
         self.layer.position = self._transform_position(self._position)
