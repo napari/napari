@@ -91,7 +91,7 @@ html_static_path = []
 
 # -- Extension configuration -------------------------------------------------
 
-# add_mdule_names = False avoids showing the full path to a function or class
+# add_module_names = False avoids showing the full path to a function or class
 # e.g.
 # napari.layers.points.keybindings.activate_add_mode(layer)
 # becomes
