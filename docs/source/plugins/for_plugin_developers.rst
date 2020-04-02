@@ -84,12 +84,13 @@ hook (our primary "reader plugin" hook) as an example.  It is defined as:
        ...
 
 Note that it takes a ``str`` or a ``list`` of ``str`` and either returns
-``None`` or a function.  From the docstring of the hook specification, we see
-that the implementation should return ``None`` if the path is of an
-unrecognized format, otherwise it should return a ``ReaderFunction``, which is
-a function that takes a ``str`` (the filepath to read) and returns a ``list``
-of ``LayerData``, where ``LayerData`` is any one of ``(data,)``, ``(data,
-meta)``, or ``(data, meta, layer_type)``.
+``None`` or a function.  From the :func:`docstring
+<napari.plugins.hook_specifications.napari_get_reader>` of the hook
+specification, we see that the implementation should return ``None`` if the
+path is of an unrecognized format, otherwise it should return a
+``ReaderFunction``, which is a function that takes a ``str`` (the filepath to
+read) and returns a ``list`` of ``LayerData``, where ``LayerData`` is any one
+of ``(data,)``, ``(data, meta)``, or ``(data, meta, layer_type)``.
 
 That seems like a bit of a mouthful!  But it's a precise (though flexible)
 contract that we can follow, and know that napari will handle the rest.
@@ -105,37 +106,33 @@ signature and returns a value with the expected return type.
 
 Here's an example hook implementation for
 :func:`~napari.plugins.hook_specifications.napari_get_reader` that enables
-napari to open an imaginary ``.ext`` filetype.
+napari to open a numpy binary file with a ``.npy`` extension (previously saved
+with :func:`numpy.save`)
 
 .. code-block:: python
 
-   from pluggy import HookimplMarker
+   import numpy as np
+   from napari.plugins import napari_hook_implementation
 
-   # we'll get to this line and the decorator below in just a minute
-   napari_hook_implementation = HookimplMarker("napari")
 
+   def npy_file_reader(path):
+      array = np.load(path)
+      # return it as a list of LayerData tuples,
+      # here with no optional metadata
+      return [(array,)]
+
+
+   # this line is explained below in "Decorating your function..."
    @napari_hook_implementation
    def napari_get_reader(path):
       # remember, path can be a list, so we check it's type first...
       # (this example plugin doesn't handle lists)
-      if isinstance(path, str) and path.endswith(".ext"):
+      if isinstance(path, str) and path.endswith(".npy"):
          # If we recognize the format, we return the actual reader function
-         return my_reader
+         return npy_file_reader
       # otherwise we return None.
       return None
 
-
-   def my_reader(path):
-      with open(path, 'rb') as file:
-         array = convert_bytes_to_numpy(data)
-      # return it as a list of LayerData
-      return [(array,)]
-
-.. note::
-
-  The seemingly excessive ``list``-of-``tuples`` return type here allows
-  plugins the flexibility of returning multiple layers, with optional
-  layer-construction arguments.
 
 .. _hookimpl-decorator:
 
@@ -146,9 +143,13 @@ In order to let ``napari`` know that one of your functions satisfies the API of
 one of the napari *hook specifications*, you must decorate your function with
 an instance of `pluggy.HookimplMarker
 <https://pluggy.readthedocs.io/en/latest/#marking-hooks>`_, initialized with
-the name ``"napari"``.  (This *does* mean that your plugin needs to depend on
-``pluggy``, but it's a very lightweight dependency that uses only standard lib
-python).
+the name ``"napari"``.  As a convenience, napari provides this decorator at
+``napari.plugins.napari_hook_implementation`` as shown in the example above.
+
+However, it's not required to import from or depend on napari *at all* when
+writing a plugin. You can construct your own ``napari_hook_implementation``
+decorator importing directly from ``pluggy`` (a very lightweight dependency
+that uses only standard lib python).
 
 .. code-block:: python
 
@@ -156,11 +157,13 @@ python).
 
    napari_hook_implementation = HookimplMarker("napari")
 
+Matching hook implementations to specifications
+"""""""""""""""""""""""""""""""""""""""""""""""
 
-Currently (as of March, 2020), the only way that napari knows *which* hook
+Currently (as of April, 2020), the only way that napari knows *which* hook
 specification your implementation matches is by looking at the *name* of your
-function.  So in the example above, it was critical that our hook
-implementation was literally named ``napar_get_reader``:
+decorated function.  So in the example above, it was **critical** that our hook
+implementation was literally named ``napari_get_reader``:
 
 
 .. code-block:: python
@@ -172,7 +175,8 @@ implementation was literally named ``napar_get_reader``:
 However, `a pull request has been merged at pluggy
 <https://github.com/pytest-dev/pluggy/pull/251>`_ that will enable you to mark
 *any* function as satisfying a napari hook specification (regardless of the
-function's name) using the following syntax:
+function's name) by providing the name of the target hook specification to the
+``specname`` argument in your implementation decorator:
 
 .. code-block:: python
 
@@ -184,13 +188,15 @@ function's name) using the following syntax:
 <https://github.com/pytest-dev/pluggy/blob/master/CHANGELOG.rst>`_ for release
 of PR #251.)
 
-.. _plugin-discover:
+.. _plugin-discovery:
 
 Step 3: Make your plugin discoverable
 -------------------------------------
 
 Packages and modules installed in the same environment as ``napari`` may make
-themselves "discoverable" to napari using one of two conventions:
+themselves "discoverable" to napari using one of two common conventions
+outlined in the `Python Packaging Authority guide
+<https://packaging.python.org/guides/creating-and-discovering-plugins/>`_.
 
 Using naming convention
 ^^^^^^^^^^^^^^^^^^^^^^^
@@ -201,6 +207,8 @@ the ``HookimplMarker("napari")`` decorator) in all top-level modules in
 
 One potential benefit of using discovery by naming convention is that it will
 allow ``napari`` to query the PyPi API to search for potential plugins.
+
+.. _entry-point-discovery:
 
 Using package metadata
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -255,20 +263,29 @@ Install cookiecutter and use the template as follows:
 
 .. code-block:: bash
 
-   $ pip install cookiecutter
-   $ cookiecutter https://github.com/napari/cookiecutter-napari-plugin
+   pip install cookiecutter
+   cookiecutter https://github.com/napari/cookiecutter-napari-plugin
 
 
-Example Plugin
---------------
+Example Plugins
+---------------
 
-For a small working plugin example, see the `napari-dv
+For a minimal working plugin example, see the `napari-dv
 <https://github.com/tlambert03/napari-dv>`_ plugin, which allows ``napari`` to
-read the ``.dv`` image file format.
+read the `Priism/MRC/Deltavision image file format
+<https://github.com/tlambert03/mrc>`_.
+
+For a more thorough plugin see `napari-aicsimageio
+<https://github.com/AllenCellModeling/napari-aicsimageio>`_, one of the first
+third-party plugins developed for napari.  This plugin takes advantage of
+:ref:`entry_point discovery <entry-point-discovery>` to offer multiple
+readers for both in-memory and lazy-loading of image files.
 
 Help
 ----
 
-If you run into trouble creating your plugin, don't hesitate to reach out for
-help in the `napari issue tracker
+If you run into trouble creating your plugin, please don't hesitate to reach
+out for help in the `Image.sc Forum <https://forum.image.sc/tag/napari>`_.
+Alternatively, if you find a bug or have a specific feature request for plugin
+support, please open an issue at our `github issue tracker
 <https://github.com/napari/napari/issues/new/choose>`_.
