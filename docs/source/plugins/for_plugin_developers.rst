@@ -93,7 +93,7 @@ read) and returns a ``list`` of ``LayerData``, where ``LayerData`` is any one
 of ``(data,)``, ``(data, meta)``, or ``(data, meta, layer_type)``.
 
 That seems like a bit of a mouthful!  But it's a precise (though flexible)
-contract that we can follow, and know that napari will handle the rest.
+contract that you can follow, and know that napari will handle the rest.
 
 
 Step 2: Write your hook implementation
