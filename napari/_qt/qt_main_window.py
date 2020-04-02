@@ -26,6 +26,7 @@ from qtpy.QtWidgets import (  # noqa: E402
     QAction,
     QShortcut,
     QStatusBar,
+    QMessageBox,
 )
 from qtpy.QtCore import Qt  # noqa: E402
 from qtpy.QtGui import QKeySequence  # noqa: E402
@@ -191,10 +192,18 @@ class Window:
 
     def _add_plugins_menu(self):
         """Add 'Plugins' menu to app menubar."""
+        self.plugins_menu = self.main_menu.addMenu('&Plugins')
+
+        list_plugins_action = QAction(
+            "List installed plugins...", self._qt_window
+        )
+        list_plugins_action.setStatusTip('List installed plugins')
+        list_plugins_action.triggered.connect(self._show_plugin_list)
+        self.plugins_menu.addAction(list_plugins_action)
+
         order_plugin_action = QAction("Plugin call order...", self._qt_window)
         order_plugin_action.setStatusTip('Change call order for plugins')
         order_plugin_action.triggered.connect(self._show_plugin_sorter)
-        self.plugins_menu = self.main_menu.addMenu('&Plugins')
         self.plugins_menu.addAction(order_plugin_action)
 
         report_plugin_action = QAction("Plugin errors...", self._qt_window)
@@ -203,6 +212,34 @@ class Window:
         )
         report_plugin_action.triggered.connect(self._show_plugin_err_reporter)
         self.plugins_menu.addAction(report_plugin_action)
+
+    def _show_plugin_list(self):
+        from ..plugins import plugin_manager
+
+        text_color = self.qt_viewer.viewer.palette.get('text', '#000')
+
+        text = 'Installed Plugins:<br><br>'
+
+        # grab name, version, and url from every installed plugin
+        plugins = []
+        for plugin_name in sorted(plugin_manager._name2plugin):
+            if plugin_name == 'builtins':
+                continue
+            meta = plugin_manager._plugin_meta.get(plugin_name, {})
+            version = meta.get('version')
+            version_string = f" - {version}" if version else ""
+            if meta.get('url'):
+                url = meta.get('url')
+                plugin_name = f"<a href='{url}' style='color:{text_color}'>{plugin_name}</a>"
+            plugins.append(f"{plugin_name}{version_string}")
+
+        text += "<br>".join(plugins) if plugins else ' None'
+
+        msg = QMessageBox(self._qt_window)
+        msg.setWindowTitle("Installed Plugins")
+        msg.setTextFormat(Qt.RichText)
+        msg.setText(text)
+        msg.exec_()
 
     def _show_plugin_sorter(self):
         """Show dialog that allows users to sort the call order of plugins."""

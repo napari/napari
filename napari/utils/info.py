@@ -65,17 +65,13 @@ def sys_info(as_html=False):
         text += f'<br>{sys_info_text}'
 
     plugins = []
-    for plugin in plugin_manager.get_plugins():
-        name = plugin_manager.get_name(plugin)
-        if name == 'builtins':
+    for plugin_name in plugin_manager._name2plugin:
+        if plugin_name == 'builtins':
             continue
-        # look for __version__ attr in the plugin module
-        version = getattr(plugin, '__version__', '')
-        if not version and '.' in plugin.__name__:
-            # if no version is found, look in the base module
-            root = sys.modules[plugin.__name__.split('.')[0]]
-            version = getattr(root, '__version__', '')
-        plugins.append(f'  - {name}' + (f': {version}' if version else ''))
+        meta = plugin_manager._plugin_meta.get(plugin_name, {})
+        version = meta.get('version')
+        version_string = f": {version}" if version else ""
+        plugins.append(f"  - {plugin_name}{version_string}")
     text += '<br><br><b>Plugins</b>:'
     text += ("<br>" + "<br>".join(sorted(plugins))) if plugins else '  None'
 

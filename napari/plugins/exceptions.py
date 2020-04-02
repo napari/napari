@@ -11,6 +11,7 @@ from typing import (
     Optional,
     Tuple,
     Type,
+    Union,
 )
 
 # This is a mapping of plugin_name -> PluginError instances
@@ -24,6 +25,7 @@ if sys.version_info >= (3, 8):
     from importlib import metadata as importlib_metadata
 else:
     import importlib_metadata
+Distribution = importlib_metadata.Distribution
 
 
 class PluginError(Exception):
@@ -242,7 +244,7 @@ def get_tb_formatter() -> Callable[[ExcInfoTuple, bool], str]:
     return format_exc_info
 
 
-def fetch_module_metadata(distname: str) -> Dict[str, str]:
+def fetch_module_metadata(dist: Union[Distribution, str]) -> Dict[str, str]:
     """Attempt to retrieve name, version, contact email & url for a package.
 
     Parameters
@@ -257,15 +259,21 @@ def fetch_module_metadata(distname: str) -> Dict[str, str]:
         A dict with keys 'name', 'version', 'email', and 'url'.
         Returns None of the distname cannot be found.
     """
-    try:
-        meta = importlib_metadata.metadata(distname)
-    except importlib_metadata.PackageNotFoundError:
-        return {}
+    if isinstance(dist, Distribution):
+        meta = dist.metadata
+    else:
+        try:
+            meta = importlib_metadata.metadata(dist)
+        except importlib_metadata.PackageNotFoundError:
+            return {}
     return {
-        'name': meta.get('Name'),
-        'version': meta.get('Version'),
-        'email': meta.get('Author-Email') or meta.get('Maintainer-Email'),
-        'url': meta.get('Home-page') or meta.get('Download-Url'),
+        'name': meta.get('Name', ''),
+        'version': meta.get('Version', ''),
+        'summary': meta.get('Summary', ''),
+        'url': meta.get('Home-page') or meta.get('Download-Url', ''),
+        'author': meta.get('Author', ''),
+        'email': meta.get('Author-Email') or meta.get('Maintainer-Email', ''),
+        'license': meta.get('License', ''),
     }
 
 
