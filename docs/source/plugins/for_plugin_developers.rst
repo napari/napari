@@ -277,7 +277,7 @@ read the `Priism/MRC/Deltavision image file format
 
 For a more thorough plugin see `napari-aicsimageio
 <https://github.com/AllenCellModeling/napari-aicsimageio>`_, one of the first
-third-party plugins developed for napari.  This plugin takes advantage of
+community plugins developed for napari.  This plugin takes advantage of
 :ref:`entry_point discovery <entry-point-discovery>` to offer multiple
 readers for both in-memory and lazy-loading of image files.
 
