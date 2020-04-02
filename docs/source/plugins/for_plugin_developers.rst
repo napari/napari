@@ -22,7 +22,7 @@ follows:
 codebase where we would like external developers to be able to extend
 functionality. For example, when a user tries to open a filepath in napari, we
 might want to enable plugins to extend the file formats that can be handled.  A
-*hook*, then, is basically just the exact place within napari where we
+*hook*, then, is the place within napari where we
 "promise" to call functions created by external developers.
 
 2. **Hook Specifications**:  We then create "*hook specifications*", which are
