@@ -7,7 +7,11 @@ import numpy as np
 from .. import layers
 from ..plugins.io import read_data_with_plugins
 from ..utils import colormaps, io
-from ..utils.misc import ensure_iterable, ensure_sequence_of_iterables
+from ..utils.misc import (
+    ensure_iterable,
+    ensure_sequence_of_iterables,
+    is_sequence,
+)
 
 logger = getLogger(__name__)
 
@@ -203,9 +207,21 @@ class AddLayersMixin:
             'visible': visible,
         }
 
+        # these arguments are *already* iterables in the single-channel case.
+        iterable_kwargs = {'scale', 'translate', 'contrast_limits', 'metadata'}
+
         if channel_axis is None:
             kwargs['colormap'] = kwargs['colormap'] or 'gray'
             kwargs['blending'] = kwargs['blending'] or 'translucent'
+            # Helpful message if someone tries to add mulit-channel kwargs,
+            # but forget the channel_axis arg
+            for k, v in kwargs.items():
+                if k not in iterable_kwargs and is_sequence(v):
+                    raise TypeError(
+                        f"Received sequence for argument '{k}', "
+                        "did you mean to specify a 'channel_axis'? "
+                    )
+
             return self.add_layer(layers.Image(data, **kwargs))
         else:
             n_channels = (data[0] if is_pyramid else data).shape[channel_axis]
@@ -219,17 +235,11 @@ class AddLayersMixin:
                         kwargs[key] = iter(colormaps.MAGENTA_GREEN)
                     else:
                         kwargs[key] = itertools.cycle(colormaps.CYMRGB)
-                # these four arguments are *already* iterables in the
-                # single-channel case.  So, if they are provided, we need to
-                # make sure that they are a *sequence* of iterables for the
-                # multichannel case.  For example: if scale == (1, 2) and
+
+                # make sure that iterable_kwargs are a *sequence* of iterables
+                # for the multichannel case.  For example: if scale == (1, 2) &
                 # n_channels = 3, then scale should == [(1, 2), (1, 2), (1, 2)]
-                elif key in {
-                    'scale',
-                    'translate',
-                    'contrast_limits',
-                    'metadata',
-                }:
+                elif key in iterable_kwargs:
                     kwargs[key] = iter(
                         ensure_sequence_of_iterables(val, n_channels)
                     )
