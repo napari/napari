@@ -11,7 +11,7 @@ and types of the arguments in the specification signature, as well as the
 expected return type.
 
 To allow for hook specifications to evolve over the lifetime of napari,
-hook implementations may accept *less* arguments then defined in the
+hook implementations may accept *fewer* arguments than defined in the
 specification. (This allows for extending existing hook arguments without
 breaking existing implementations). However, implementations must not require
 *more* arguments than defined in the spec.
