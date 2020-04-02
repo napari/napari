@@ -1,8 +1,10 @@
-from . import PluginError, log_plugin_error
-from . import plugin_manager as napari_plugin_manager
+from . import PluginError, plugin_manager as napari_plugin_manager
 from ._hook_callers import execute_hook
 from typing import Optional, Union, Sequence
 from ..types import LayerData
+from logging import getLogger
+
+logger = getLogger(__name__)
 
 
 def read_data_with_plugins(
@@ -16,7 +18,7 @@ def read_data_with_plugins(
     returned, or no readers are found.
 
     Exceptions will be caught and stored as PluginErrors
-    (in plugin_manager._exceptions)
+    (in plugins.PLUGIN_ERRORS)
 
     Parameters
     ----------
@@ -55,15 +57,16 @@ def read_data_with_plugins(
                 f"Error in plugin '{implementation.plugin_name}', "
                 "hook 'napari_get_reader'"
             )
+            # instantiating this PluginError stores it in
+            # plugins.exceptions.PLUGIN_ERRORS, where it can be retrieved later
             err = PluginError(
                 msg, implementation.plugin_name, implementation.plugin.__name__
             )
             err.__cause__ = exc  # like `raise PluginError() from exc`
-            # store the exception for later retrieval
-            plugin_manager._exceptions[implementation.plugin_name].append(err)
+
             skip_impls.append(implementation)  # don't try this impl again
             if implementation.plugin_name != 'builtins':
                 # If builtins doesn't work, they will get a "no reader" found
                 # error anyway, so it looks a bit weird to show them that the
                 # "builtin plugin" didn't work.
-                log_plugin_error(err)  # let the user know
+                logger.error(err.format_with_contact_info())

@@ -1,6 +1,6 @@
 from napari._qt.qt_mode_buttons import QtModePushButton, QtModeRadioButton
 from napari.layers import Points
-from napari.layers.points._constants import Mode
+from napari.layers.points._points_constants import Mode
 
 
 def test_radio_button(qtbot):
