@@ -3,6 +3,8 @@ import warnings
 
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
+from typing import Optional, Sequence, Callable, List, Dict, Tuple, Union
+from types import GeneratorType
 from xml.etree.ElementTree import Element, tostring
 import numpy as np
 from skimage import img_as_ubyte
@@ -109,15 +111,15 @@ class Layer(KeymapProvider, ABC):
     def __init__(
         self,
         data,
-        ndim,
+        ndim: int,
         *,
-        name=None,
-        metadata=None,
-        scale=None,
-        translate=None,
-        opacity=1,
-        blending='translucent',
-        visible=True,
+        name: Optional[str] = None,
+        metadata: Optional[dict] = None,
+        scale: Optional[Sequence[float]] = None,
+        translate: Optional[Sequence[float]] = None,
+        opacity: float = 1,
+        blending: str = 'translucent',
+        visible: bool = True,
     ):
         super().__init__()
 
@@ -209,30 +211,33 @@ class Layer(KeymapProvider, ABC):
         self.dims.events.order.connect(self._update_dims)
         self.dims.events.axis.connect(self.refresh)
 
-        self.mouse_move_callbacks = []
-        self.mouse_drag_callbacks = []
-        self._persisted_mouse_event = {}
-        self._mouse_drag_gen = {}
+        # XXX: did I get these right?
+        # function that can be used as a mouse callback for Layers or Viewer
+        CallBackType = Callable[[Layer, Event], Optional[GeneratorType]]
+        self.mouse_move_callbacks: List[CallBackType] = []
+        self.mouse_drag_callbacks: List[CallBackType] = []
+        self._persisted_mouse_event: Dict[GeneratorType, Event] = {}
+        self._mouse_drag_gen: Dict[CallBackType, GeneratorType] = {}
 
-    def __str__(self):
+    def __str__(self) -> str:
         """Return self.name."""
         return self.name
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         cls = type(self)
         return f"<{cls.__name__} layer {repr(self.name)} at {hex(id(self))}>"
 
     @classmethod
-    def _basename(cls):
+    def _basename(cls) -> str:
         return f'{cls.__name__}'
 
     @property
-    def name(self):
+    def name(self) -> str:
         """str: Unique name of the layer."""
         return self._name
 
     @name.setter
-    def name(self, name):
+    def name(self, name: str):
         if name == self.name:
             return
         if not name:
@@ -241,13 +246,13 @@ class Layer(KeymapProvider, ABC):
         self.events.name()
 
     @property
-    def opacity(self):
+    def opacity(self) -> float:
         """float: Opacity value between 0.0 and 1.0.
         """
         return self._opacity
 
     @opacity.setter
-    def opacity(self, opacity):
+    def opacity(self, opacity: float):
         if not 0.0 <= opacity <= 1.0:
             raise ValueError(
                 'opacity must be between 0.0 and 1.0; ' f'got {opacity}'
@@ -259,7 +264,7 @@ class Layer(KeymapProvider, ABC):
         self.events.opacity()
 
     @property
-    def blending(self):
+    def blending(self) -> str:
         """Blending mode: Determines how RGB and alpha values get mixed.
 
             Blending.OPAQUE
@@ -278,17 +283,17 @@ class Layer(KeymapProvider, ABC):
         return str(self._blending)
 
     @blending.setter
-    def blending(self, blending):
+    def blending(self, blending: str):
         self._blending = Blending(blending)
         self.events.blending()
 
     @property
-    def visible(self):
+    def visible(self) -> bool:
         """bool: Whether the visual is currently being displayed."""
         return self._visible
 
     @visible.setter
-    def visible(self, visibility):
+    def visible(self, visibility: bool):
         self._visible = visibility
         self.refresh()
         self.events.visible()
@@ -298,12 +303,12 @@ class Layer(KeymapProvider, ABC):
             self.editable = False
 
     @property
-    def editable(self):
+    def editable(self) -> bool:
         """bool: Whether the current layer data is editable from the viewer."""
         return self._editable
 
     @editable.setter
-    def editable(self, editable):
+    def editable(self, editable: bool):
         if self._editable == editable:
             return
         self._editable = editable
@@ -311,52 +316,73 @@ class Layer(KeymapProvider, ABC):
         self.events.editable()
 
     @property
-    def scale(self):
+    def scale(self) -> np.ndarray:
         """list: Anisotropy factors to scale data into world coordinates."""
         return self._transforms['data2world'].scale
 
     @scale.setter
-    def scale(self, scale):
+    def scale(self, scale: Sequence[float]):
         self._transforms['data2world'].scale = np.array(scale)
         self._update_dims()
         self.events.scale()
 
     @property
-    def translate(self):
+    def translate(self) -> np.ndarray:
         """list: Factors to shift the layer by in units of world coordinates."""
         return self._transforms['data2world'].translate
 
     @translate.setter
-    def translate(self, translate):
+    def translate(self, translate: Sequence[float]):
         self._transforms['data2world'].translate = np.array(translate)
         self._update_dims()
         self.events.translate()
 
     @property
-    def translate_grid(self):
+    def translate_grid(self) -> np.ndarray:
         """list: Factors to shift the layer by."""
         return self._transforms['world2grid'].translate
 
     @translate_grid.setter
-    def translate_grid(self, translate_grid):
+    def translate_grid(self, translate_grid: Sequence[float]):
         if np.all(self.translate_grid == translate_grid):
             return
         self._transforms['world2grid'].translate = np.array(translate_grid)
         self.events.translate()
 
     @property
-    def position(self):
-        """tuple of int: Cursor position in image of displayed dimensions."""
+    def position(
+        self,
+    ) -> Union[Tuple[float, float], Tuple[float, float, float]]:
+        """Return cursor position in image in image coordinates.
+
+        (0, 0) is the origin (top left pixel of the image as shown on the
+        canvas.  If the image is transposed, (0, 0), STILL corresponds to the
+        top left.
+
+        In
+
+        Returns
+        -------
+        2-tuple or 3-tuple of float
+            if ndisplay == 2, should return (row, column) coordinate of mouse
+            in image coordinates.  If ndisplay == 3, should return
+            (avg_slice, avg_row, avg_column), with the position averaged over
+        """
         return self._position
 
     @position.setter
-    def position(self, position):
-        if self._position == position:
+    def position(
+        self, position: Union[Tuple[float, float], Tuple[float, float, float]]
+    ):
+        """tuple of float: Cursor position in image of displayed dimensions."""
+        _position = tuple(position)  # just in case we don't receive a tuple
+        if self._position == _position:
             return
-        self._position = position
+        self._position = _position
+        print(self.position)
         self._update_coordinates()
 
-    def _update_dims(self, event=None):
+    def _update_dims(self, event: Optional[Event] = None):
         """Updates dims model, which is useful after data has been changed."""
         ndim = self._get_ndim()
         ndisplay = self.dims.ndisplay
@@ -388,13 +414,16 @@ class Layer(KeymapProvider, ABC):
         self.refresh()
         self._update_coordinates()
 
-    @property
+    # note: neither the @property, nor the requirement for a setter are
+    # actually imposed by @abstractmethod here.  It is up to subclasses
+    # to make them properties with setters.
+    @property  # type: ignore
     @abstractmethod
     def data(self):
         # user writes own docstring
         raise NotImplementedError()
 
-    @data.setter
+    @data.setter  # type: ignore
     @abstractmethod
     def data(self, data):
         raise NotImplementedError()
@@ -404,7 +433,8 @@ class Layer(KeymapProvider, ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def _get_ndim(self):
+    def _get_ndim(self) -> int:
+        """Return the number of dimensions of the layer."""
         raise NotImplementedError()
 
     def _set_editable(self, editable=None):
@@ -598,7 +628,7 @@ class Layer(KeymapProvider, ABC):
         """
         pass
 
-    def refresh(self, event=None):
+    def refresh(self, event: Optional[Event] = None):
         """Refresh all layer data based on current view slice.
         """
         if self.visible:
