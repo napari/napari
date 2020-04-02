@@ -45,9 +45,9 @@ except ImportError:
         return i
 
 
+GH = "https://github.com"
 GH_USER = 'napari'
 GH_REPO = 'napari'
-GH = "https://github.com"
 GH_TOKEN = os.environ.get('GH_TOKEN')
 if GH_TOKEN is None:
     raise RuntimeError(
@@ -162,29 +162,28 @@ highlights['Other Pull Request'] = other_pull_requests
 
 
 # Now generate the release notes
-announcement_title = f'Announcement: napari {args.version}'
+announcement_title = f'# Announcement: napari {args.version}'
 print(announcement_title)
-print('=' * len(announcement_title))
 
 print(
     f"""
-We're happy to announce the release of napari {args.version}!
-napari is a fast, interactive, multi-dimensional image viewer for Python.
-It's designed for browsing, annotating, and analyzing large multi-dimensional
-images. It's built on top of Qt (for the GUI), vispy (for performant GPU-based
-rendering), and the scientific Python stack (numpy, scipy).
+We're happy to announce the release of napari {args.version}! \
+napari is a fast, interactive, multi-dimensional image viewer for Python. \
+It's designed for browsing, annotating, and analyzing large multi-dimensional \
+images. It's built on top of Qt (for the GUI), vispy (for performant GPU-based \
+rendering), and the scientific Python stack (numpy, scipy).\
 """
 )
 
 print(
     """
-For more information, examples, and documentation, please visit our website:
+For more information, examples, and documentation, please visit our website: \
 https://github.com/napari/napari
 """
 )
 
 for section, pull_request_dicts in highlights.items():
-    print(f'{section}s\n{"*" * (len(section)+1)}')
+    print(f'## {section}s')
     if len(pull_request_dicts.items()) == 0:
         print()
     for number, pull_request_info in pull_request_dicts.items():
@@ -203,14 +202,12 @@ for section_name, contributor_set in contributors.items():
     if None in contributor_set:
         contributor_set.remove(None)
     committer_str = (
-        f'{len(contributor_set)} {section_name} added to this '
+        f'## {len(contributor_set)} {section_name} added to this '
         'release (alphabetical)'
     )
     print(committer_str)
-    print('-' * len(committer_str))
 
     for c in sorted(contributor_set, key=lambda x: users[x].lower()):
-        commit_link = f"<{GH}/{GH_USER}/{GH_REPO}/commits?author={c}>"
-        user_link = f"<{GH}/{c}>"
-        print(f"- `{users[c]} {commit_link}`_ - `@{c} {user_link}`_")
+        commit_link = f"{GH}/{GH_USER}/{GH_REPO}/commits?author={c}"
+        print(f"- [{users[c]}]({commit_link}) - @{c}")
     print()
