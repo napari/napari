@@ -8,6 +8,8 @@ import time
 from skimage.io import imsave
 
 from .qt_about import QtAbout
+from .qt_plugin_report import QtPluginErrReporter
+from .qt_plugin_list import QtPluginSorter
 from .qt_viewer_dock_widget import QtViewerDockWidget
 from ..resources import get_stylesheet
 
@@ -77,6 +79,7 @@ class Window:
         self._add_file_menu()
         self._add_view_menu()
         self._add_window_menu()
+        self._add_plugins_menu()
         self._add_help_menu()
 
         self._status_bar.showMessage('Ready')
@@ -185,6 +188,36 @@ class Window:
         exit_action.triggered.connect(self._qt_window.close)
         self.window_menu = self.main_menu.addMenu('&Window')
         self.window_menu.addAction(exit_action)
+
+    def _add_plugins_menu(self):
+        """Add 'Plugins' menu to app menubar."""
+        order_plugin_action = QAction("Plugin call order...", self._qt_window)
+        order_plugin_action.setStatusTip('Change call order for plugins')
+        order_plugin_action.triggered.connect(self._show_plugin_sorter)
+        self.plugins_menu = self.main_menu.addMenu('&Plugins')
+        self.plugins_menu.addAction(order_plugin_action)
+
+        report_plugin_action = QAction("Plugin errors...", self._qt_window)
+        report_plugin_action.setStatusTip(
+            'Review stack traces for plugin exceptions and notify developers'
+        )
+        report_plugin_action.triggered.connect(self._show_plugin_err_reporter)
+        self.plugins_menu.addAction(report_plugin_action)
+
+    def _show_plugin_sorter(self):
+        """Show dialog that allows users to sort the call order of plugins."""
+        plugin_sorter = QtPluginSorter(parent=self._qt_window)
+        dock_widget = self.add_dock_widget(
+            plugin_sorter, name='Plugin Sorter', area="right"
+        )
+        plugin_sorter.finished.connect(dock_widget.close)
+        plugin_sorter.finished.connect(plugin_sorter.deleteLater)
+        plugin_sorter.finished.connect(dock_widget.deleteLater)
+
+    def _show_plugin_err_reporter(self):
+        """Show dialog that allows users to review and report plugin errors."""
+        plugin_sorter = QtPluginErrReporter(parent=self._qt_window)
+        plugin_sorter.exec_()
 
     def _add_help_menu(self):
         """Add 'Help' menu to app menubar."""
