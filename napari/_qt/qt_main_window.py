@@ -219,6 +219,8 @@ class Window:
         from ..plugins import plugin_manager
 
         dialog = QDialog(self._qt_window)
+        dialog.setMaximumHeight(800)
+        dialog.setMaximumWidth(1280)
         layout = QVBoxLayout()
         title = QLabel("Installed Plugins")
         title.setObjectName("h2")
