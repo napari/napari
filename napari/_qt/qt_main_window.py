@@ -226,9 +226,16 @@ class Window:
         title = QLabel("Installed Plugins")
         title.setObjectName("h2")
         layout.addWidget(title)
-        table = QtDictTable(
+        # get metadata for successfully registered plugins
+        data = [
+            v
+            for k, v in plugin_manager._plugin_meta.items()
+            if k in plugin_manager._name2plugin
+        ]
+        # create a table for it
+        dialog.table = QtDictTable(
             self._qt_window,
-            list(plugin_manager._plugin_meta.values()),
+            data,
             headers=[
                 'plugin',
                 'package',
@@ -239,11 +246,13 @@ class Window:
             ],
             min_section_width=60,
         )
-        table.horizontalHeader().setObjectName('pluginTableHeader')
-        table.verticalHeader().setObjectName('pluginTableHeader')
-        table.setGridStyle(Qt.NoPen)
-        layout.addWidget(table)
+        dialog.table.horizontalHeader().setObjectName('pluginTableHeader')
+        dialog.table.verticalHeader().setObjectName('pluginTableHeader')
+        dialog.table.setGridStyle(Qt.NoPen)
+        layout.addWidget(dialog.table)
         dialog.setLayout(layout)
+        dialog.setAttribute(Qt.WA_DeleteOnClose)
+        self._plugin_list = dialog
         dialog.exec_()
 
     def _show_plugin_sorter(self):
