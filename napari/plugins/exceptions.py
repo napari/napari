@@ -127,7 +127,7 @@ def format_exceptions(plugin_name: str, as_html: bool = False):
     if package_meta:
         msg.extend(
             [
-                f'{"plugin name": >16}: {package_meta["name"]}',
+                f'{"package package": >16}: {package_meta["package"]}',
                 f'{"version": >16}: {package_meta["version"]}',
                 f'{"module": >16}: {err0.plugin_module}',
             ]
@@ -267,7 +267,7 @@ def fetch_module_metadata(dist: Union[Distribution, str]) -> Dict[str, str]:
         except importlib_metadata.PackageNotFoundError:
             return {}
     return {
-        'name': meta.get('Name', ''),
+        'package': meta.get('Name', ''),
         'version': meta.get('Version', ''),
         'summary': meta.get('Summary', ''),
         'url': meta.get('Home-page') or meta.get('Download-Url', ''),

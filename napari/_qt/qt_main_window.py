@@ -10,6 +10,7 @@ from skimage.io import imsave
 from .qt_about import QtAbout
 from .qt_plugin_report import QtPluginErrReporter
 from .qt_plugin_sorter import QtPluginSorter
+from .qt_dict_table import QtDictTable
 from .qt_viewer_dock_widget import QtViewerDockWidget
 from ..resources import get_stylesheet
 
@@ -21,12 +22,13 @@ from qtpy.QtWidgets import (  # noqa: E402
     QMainWindow,
     QWidget,
     QHBoxLayout,
+    QDialog,
     QDockWidget,
     QLabel,
     QAction,
     QShortcut,
     QStatusBar,
-    QMessageBox,
+    QVBoxLayout,
 )
 from qtpy.QtCore import Qt  # noqa: E402
 from qtpy.QtGui import QKeySequence  # noqa: E402
@@ -216,30 +218,30 @@ class Window:
     def _show_plugin_list(self):
         from ..plugins import plugin_manager
 
-        text_color = self.qt_viewer.viewer.palette.get('text', '#000')
-
-        text = 'Installed Plugins:<br><br>'
-
-        # grab name, version, and url from every installed plugin
-        plugins = []
-        for plugin_name in sorted(plugin_manager._name2plugin):
-            if plugin_name == 'builtins':
-                continue
-            meta = plugin_manager._plugin_meta.get(plugin_name, {})
-            version = meta.get('version')
-            version_string = f" - {version}" if version else ""
-            if meta.get('url'):
-                url = meta.get('url')
-                plugin_name = f"<a href='{url}' style='color:{text_color}'>{plugin_name}</a>"
-            plugins.append(f"{plugin_name}{version_string}")
-
-        text += "<br>".join(plugins) if plugins else ' None'
-
-        msg = QMessageBox(self._qt_window)
-        msg.setWindowTitle("Installed Plugins")
-        msg.setTextFormat(Qt.RichText)
-        msg.setText(text)
-        msg.exec_()
+        dialog = QDialog(self._qt_window)
+        layout = QVBoxLayout()
+        title = QLabel("Installed Plugins")
+        title.setObjectName("h2")
+        layout.addWidget(title)
+        table = QtDictTable(
+            self._qt_window,
+            plugin_manager._plugin_meta.values(),
+            headers=[
+                'plugin',
+                'package',
+                'version',
+                'url',
+                'author',
+                'license',
+            ],
+            min_section_width=60,
+        )
+        table.horizontalHeader().setObjectName('pluginTableHeader')
+        table.verticalHeader().setObjectName('pluginTableHeader')
+        table.setGridStyle(Qt.NoPen)
+        layout.addWidget(table)
+        dialog.setLayout(layout)
+        dialog.exec_()
 
     def _show_plugin_sorter(self):
         """Show dialog that allows users to sort the call order of plugins."""

@@ -425,3 +425,17 @@ QtHookImplListWidget {
 #pluginInfo {
   color: text;
 }
+
+#pluginTableHeader::section {
+    background-color: {{ background }};
+    border: none;
+    font-weight: bold;
+    font-size: 12px;
+    text-align: left;
+    qproperty-alignment: left;
+}
+
+#pluginTableHeader::section:horizontal {
+  border-right: 1px solid {{ foreground }};
+}
+

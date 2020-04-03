@@ -327,6 +327,7 @@ class PluginManager(pluggy.PluginManager):
             a PluginValidationError.)
         """
         if meta:
+            meta.update({'plugin': plugin_name})
             self._plugin_meta[plugin_name] = meta
         try:
             mod = importlib.import_module(module_name)
