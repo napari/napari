@@ -9,7 +9,7 @@ from skimage.io import imsave
 
 from .qt_about import QtAbout
 from .qt_plugin_report import QtPluginErrReporter
-from .qt_plugin_list import QtPluginSorter
+from .qt_plugin_sorter import QtPluginSorter
 from .qt_viewer_dock_widget import QtViewerDockWidget
 from ..resources import get_stylesheet
 
