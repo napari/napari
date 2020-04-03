@@ -20,7 +20,7 @@ from ..utils.interactions import (
 )
 from ..utils.key_bindings import components_to_key_combo
 
-from .utils import QImg2array, square_pixmap
+from .utils import square_pixmap
 from .qt_controls import QtControls
 from .qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .qt_viewer_dock_widget import QtViewerDockWidget
@@ -298,10 +298,10 @@ class QtViewer(QSplitter):
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
-        img = self.canvas.native.grabFramebuffer()
+        img = self.canvas.render()
         if path is not None:
-            imsave(path, QImg2array(img))  # scikit-image imsave method
-        return QImg2array(img)
+            imsave(path, img)  # scikit-image imsave method
+        return img
 
     def _save_screenshot(self):
         """Save screenshot of current display, default .png"""
