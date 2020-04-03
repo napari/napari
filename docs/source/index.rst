@@ -7,9 +7,12 @@
    :maxdepth: 1
    :hidden:
 
+   plugins/index
    api
    releases
-   Source <https://github.com/napari/napari>
+   developers
+   Home <https://napari.org>
+   Source Code <https://github.com/napari/napari>
 
 
 napari

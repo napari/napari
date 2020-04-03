@@ -6,10 +6,10 @@ from ...utils.misc import ensure_iterable
 from ...utils.status_messages import format_float
 from ..base import Layer
 from vispy.color import get_color_names
-from ._constants import Mode, Box, BACKSPACE, shape_classes, ShapeType
-from .shape_list import ShapeList
-from .shape_utils import create_box, point_to_lines
-from .shape_models import Rectangle, Ellipse, Line, Path, Polygon
+from ._shapes_constants import Mode, Box, BACKSPACE, shape_classes, ShapeType
+from ._shape_list import ShapeList
+from ._shapes_utils import create_box, point_to_lines
+from ._shapes_models import Rectangle, Ellipse, Line, Path, Polygon
 
 
 class Shapes(Layer):
@@ -221,6 +221,7 @@ class Shapes(Layer):
         # Don't pass on opacity value to base layer as it could be a list
         # and will get set bellow
         super().__init__(
+            data,
             ndim,
             name=name,
             metadata=metadata,
@@ -539,8 +540,7 @@ class Shapes(Layer):
 
     @mode.setter
     def mode(self, mode):
-        if isinstance(mode, str):
-            mode = Mode(mode)
+        mode = Mode(mode)
 
         if not self.editable:
             mode = Mode.PAN_ZOOM

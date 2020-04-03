@@ -52,6 +52,8 @@ Support
 - Disallow sphinx 2.4.0; bug fixed in 2.4.1 (#965)
 - Remove duplicated imports in setup.py (#969)
 - Fix viewer view_* func signature parity (#976)
+- Fix ability to test released distributions (#1002)
+- Fix recursive-include in manifest.in (#1003)
 
 11 authors added to this release [alphabetical by first name or login]
 ----------------------------------------------------------------------

@@ -1,4 +1,4 @@
-# release guide
+# Release Guide
 
 This guide documents `napari`'s release process.
 Currently, it only handles distribution, but as the project matures,

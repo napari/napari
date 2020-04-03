@@ -2,19 +2,22 @@
 Custom Qt widgets that serve as native objects that the public-facing elements
 wrap.
 """
-# set vispy to use same backend as qtpy
-import os
+import time
 
+# set vispy to use same backend as qtpy
 from skimage.io import imsave
 
 from .qt_about import QtAbout
+from .qt_plugin_report import QtPluginErrReporter
+from .qt_plugin_list import QtPluginSorter
 from .qt_viewer_dock_widget import QtViewerDockWidget
-from ..resources import resources_dir
+from ..resources import get_stylesheet
 
 # these "# noqa" comments are here to skip flake8 linting (E402),
 # these module-level imports have to come after `app.use_app(API)`
 # see discussion on #638
 from qtpy.QtWidgets import (  # noqa: E402
+    QApplication,
     QMainWindow,
     QWidget,
     QHBoxLayout,
@@ -23,7 +26,6 @@ from qtpy.QtWidgets import (  # noqa: E402
     QAction,
     QShortcut,
     QStatusBar,
-    QApplication,
 )
 from qtpy.QtCore import Qt  # noqa: E402
 from qtpy.QtGui import QKeySequence  # noqa: E402
@@ -41,18 +43,28 @@ class Window:
 
     Attributes
     ----------
+    file_menu : qtpy.QtWidgets.QMenu
+        File menu.
+    help_menu : qtpy.QtWidgets.QMenu
+        Help menu.
+    main_menu : qtpy.QtWidgets.QMainWindow.menuBar
+        Main menubar.
     qt_viewer : QtViewer
         Contained viewer widget.
+    view_menu : qtpy.QtWidgets.QMenu
+        View menu.
+    window_menu : qtpy.QtWidgets.QMenu
+        Window menu.
     """
 
-    with open(os.path.join(resources_dir, 'stylesheet.qss'), 'r') as f:
-        raw_stylesheet = f.read()
+    raw_stylesheet = get_stylesheet()
 
     def __init__(self, qt_viewer, *, show=True):
 
         self.qt_viewer = qt_viewer
 
         self._qt_window = QMainWindow()
+        self._qt_window.setAttribute(Qt.WA_DeleteOnClose)
         self._qt_window.setUnifiedTitleAndToolBarOnMac(True)
         self._qt_center = QWidget(self._qt_window)
 
@@ -61,14 +73,13 @@ class Window:
         self._qt_center.setLayout(QHBoxLayout())
         self._status_bar = QStatusBar()
         self._qt_window.setStatusBar(self._status_bar)
-        self._qt_window.closeEvent = self.closeEvent
-        self.close = self._qt_window.close
 
         self._add_menubar()
 
         self._add_file_menu()
         self._add_view_menu()
         self._add_window_menu()
+        self._add_plugins_menu()
         self._add_help_menu()
 
         self._status_bar.showMessage('Ready')
@@ -78,25 +89,22 @@ class Window:
         self._qt_center.layout().addWidget(self.qt_viewer)
         self._qt_center.layout().setContentsMargins(4, 0, 4, 0)
 
-        self._update_palette(qt_viewer.viewer.palette)
+        self._update_palette()
 
-        if self.qt_viewer.console.shell is not None:
-            self._add_viewer_dock_widget(self.qt_viewer.dockConsole)
-
+        self._add_viewer_dock_widget(self.qt_viewer.dockConsole)
         self._add_viewer_dock_widget(self.qt_viewer.dockLayerControls)
         self._add_viewer_dock_widget(self.qt_viewer.dockLayerList)
 
         self.qt_viewer.viewer.events.status.connect(self._status_changed)
         self.qt_viewer.viewer.events.help.connect(self._help_changed)
         self.qt_viewer.viewer.events.title.connect(self._title_changed)
-        self.qt_viewer.viewer.events.palette.connect(
-            lambda event: self._update_palette(event.palette)
-        )
+        self.qt_viewer.viewer.events.palette.connect(self._update_palette)
 
         if show:
             self.show()
 
     def _add_menubar(self):
+        """Add menubar to napari app."""
         self.main_menu = self._qt_window.menuBar()
         # Menubar shortcuts are only active when the menubar is visible.
         # Therefore, we set a global shortcut not associated with the menubar
@@ -127,10 +135,16 @@ class Window:
             self._main_menu_shortcut.setEnabled(False)
 
     def _add_file_menu(self):
+        """Add 'File' menu to app menubar."""
         open_images = QAction('Open image(s)...', self._qt_window)
         open_images.setShortcut('Ctrl+O')
         open_images.setStatusTip('Open image file(s)')
         open_images.triggered.connect(self.qt_viewer._open_images)
+
+        open_stack = QAction('Open image series as stack...', self._qt_window)
+        open_stack.setShortcut('Ctrl+Alt+O')
+        open_stack.setStatusTip('Open image files')
+        open_stack.triggered.connect(self.qt_viewer._open_images_as_stack)
 
         open_folder = QAction('Open Folder...', self._qt_window)
         open_folder.setShortcut('Ctrl+Shift+O')
@@ -148,10 +162,12 @@ class Window:
 
         self.file_menu = self.main_menu.addMenu('&File')
         self.file_menu.addAction(open_images)
+        self.file_menu.addAction(open_stack)
         self.file_menu.addAction(open_folder)
         self.file_menu.addAction(screenshot)
 
     def _add_view_menu(self):
+        """Add 'View' menu to app menubar."""
         toggle_visible = QAction('Toggle menubar visibility', self._qt_window)
         toggle_visible.setShortcut('Ctrl+M')
         toggle_visible.setStatusTip('Hide Menubar')
@@ -165,6 +181,7 @@ class Window:
         self.view_menu.addAction(toggle_theme)
 
     def _add_window_menu(self):
+        """Add 'Window' menu to app menubar."""
         exit_action = QAction("Close window", self._qt_window)
         exit_action.setShortcut("Ctrl+W")
         exit_action.setStatusTip('Close napari window')
@@ -172,7 +189,38 @@ class Window:
         self.window_menu = self.main_menu.addMenu('&Window')
         self.window_menu.addAction(exit_action)
 
+    def _add_plugins_menu(self):
+        """Add 'Plugins' menu to app menubar."""
+        order_plugin_action = QAction("Plugin call order...", self._qt_window)
+        order_plugin_action.setStatusTip('Change call order for plugins')
+        order_plugin_action.triggered.connect(self._show_plugin_sorter)
+        self.plugins_menu = self.main_menu.addMenu('&Plugins')
+        self.plugins_menu.addAction(order_plugin_action)
+
+        report_plugin_action = QAction("Plugin errors...", self._qt_window)
+        report_plugin_action.setStatusTip(
+            'Review stack traces for plugin exceptions and notify developers'
+        )
+        report_plugin_action.triggered.connect(self._show_plugin_err_reporter)
+        self.plugins_menu.addAction(report_plugin_action)
+
+    def _show_plugin_sorter(self):
+        """Show dialog that allows users to sort the call order of plugins."""
+        plugin_sorter = QtPluginSorter(parent=self._qt_window)
+        dock_widget = self.add_dock_widget(
+            plugin_sorter, name='Plugin Sorter', area="right"
+        )
+        plugin_sorter.finished.connect(dock_widget.close)
+        plugin_sorter.finished.connect(plugin_sorter.deleteLater)
+        plugin_sorter.finished.connect(dock_widget.deleteLater)
+
+    def _show_plugin_err_reporter(self):
+        """Show dialog that allows users to review and report plugin errors."""
+        plugin_sorter = QtPluginErrReporter(parent=self._qt_window)
+        plugin_sorter.exec_()
+
     def _add_help_menu(self):
+        """Add 'Help' menu to app menubar."""
         self.help_menu = self.main_menu.addMenu('&Help')
 
         about_action = QAction("napari info", self._qt_window)
@@ -183,14 +231,14 @@ class Window:
         )
         self.help_menu.addAction(about_action)
 
-        about_keybindings = QAction("keybindings", self._qt_window)
-        about_keybindings.setShortcut("Ctrl+Alt+/")
-        about_keybindings.setShortcutContext(Qt.ApplicationShortcut)
-        about_keybindings.setStatusTip('keybindings')
-        about_keybindings.triggered.connect(
-            self.qt_viewer.aboutKeybindings.toggle_visible
+        about_key_bindings = QAction("Show key bindings", self._qt_window)
+        about_key_bindings.setShortcut("Ctrl+Alt+/")
+        about_key_bindings.setShortcutContext(Qt.ApplicationShortcut)
+        about_key_bindings.setStatusTip('key_bindings')
+        about_key_bindings.triggered.connect(
+            self.qt_viewer.show_key_bindings_dialog
         )
-        self.help_menu.addAction(about_keybindings)
+        self.help_menu.addAction(about_key_bindings)
 
     def add_dock_widget(
         self,
@@ -296,9 +344,11 @@ class Window:
             self._qt_window.raise_()  # for macOS
             self._qt_window.activateWindow()  # for Windows
 
-    def _update_palette(self, palette):
+    def _update_palette(self, event=None):
+        """Update widget color palette."""
         # set window styles which don't use the primary stylesheet
         # FIXME: this is a problem with the stylesheet not using properties
+        palette = self.qt_viewer.viewer.palette
         self._status_bar.setStyleSheet(
             template(
                 'QStatusBar { background: {{ background }}; '
@@ -313,16 +363,31 @@ class Window:
 
     def _status_changed(self, event):
         """Update status bar.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
         """
         self._status_bar.showMessage(event.text)
 
     def _title_changed(self, event):
         """Update window title.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
         """
         self._qt_window.setWindowTitle(event.text)
 
     def _help_changed(self, event):
         """Update help message on status bar.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
         """
         self._help.setText(event.text)
 
@@ -345,11 +410,16 @@ class Window:
             imsave(path, QImg2array(img))  # scikit-image imsave method
         return QImg2array(img)
 
-    def closeEvent(self, event):
-        # Forward close event to the console to trigger proper shutdown
-        self.qt_viewer.console.shutdown()
-        # if the viewer.QtDims object is playing an axis, we need to terminate the
-        # AnimationThread before close, otherwise it will cauyse a segFault or Abort trap.
-        # (calling stop() when no animation is occuring is also not a problem)
-        self.qt_viewer.dims.stop()
-        event.accept()
+    def close(self):
+        """Close the viewer window and cleanup sub-widgets."""
+        # on some versions of Darwin, exiting while fullscreen seems to tickle
+        # some bug deep in NSWindow.  This forces the fullscreen keybinding
+        # test to complete its draw cycle, then pop back out of fullscreen.
+        if self._qt_window.isFullScreen():
+            self._qt_window.showNormal()
+            for i in range(8):
+                time.sleep(0.1)
+                QApplication.processEvents()
+        self.qt_viewer.close()
+        self._qt_window.close()
+        del self._qt_window

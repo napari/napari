@@ -5,7 +5,7 @@ import numpy as np
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.event import Event
 from ..base import Layer
-from ..layer_utils import calc_data_range
+from ..utils.layer_utils import calc_data_range
 from ..intensity_mixin import IntensityVisualizationMixin
 
 
@@ -112,6 +112,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         ndim = data[0].shape[1]
 
         super().__init__(
+            data,
             ndim,
             name=name,
             metadata=metadata,
