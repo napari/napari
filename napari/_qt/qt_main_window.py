@@ -228,7 +228,7 @@ class Window:
         layout.addWidget(title)
         table = QtDictTable(
             self._qt_window,
-            plugin_manager._plugin_meta.values(),
+            list(plugin_manager._plugin_meta.values()),
             headers=[
                 'plugin',
                 'package',
