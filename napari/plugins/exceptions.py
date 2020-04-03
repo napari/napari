@@ -249,14 +249,15 @@ def fetch_module_metadata(dist: Union[Distribution, str]) -> Dict[str, str]:
 
     Parameters
     ----------
-    distname : str
-        Name of a distribution.  Note: this must match the *name* of the
-        package in the METADATA file... not the name of the module.
+    distname : str or Distribution
+        Distribution object or name of a distribution.  If a string, it must
+        match the *name* of the package in the METADATA file... not the name of
+        the module.
 
     Returns
     -------
-    package_info : dict or None
-        A dict with keys 'name', 'version', 'email', and 'url'.
+    package_info : dict
+        A dict with metadata about the package
         Returns None of the distname cannot be found.
     """
     if isinstance(dist, Distribution):
