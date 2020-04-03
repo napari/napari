@@ -1,8 +1,9 @@
-from qtpy.QtWidgets import QTableWidget, QTableWidgetItem
-from qtpy.QtCore import Slot, QSize
-from typing import List, Dict, Optional
 import re
 import webbrowser
+from typing import List, Optional
+
+from qtpy.QtCore import QSize, Slot
+from qtpy.QtWidgets import QTableWidget, QTableWidgetItem
 
 email_pattern = re.compile(r"^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$")
 url_pattern = re.compile(
@@ -12,14 +13,43 @@ url_pattern = re.compile(
 
 
 class QtDictTable(QTableWidget):
+    """A QTableWidget subclass that makes a table from a list of dicts.
+
+    This will also make any cells that contain emails address or URLs
+    clickable to open the link in a browser/email client.
+
+    Parameters
+    ----------
+    parent : QWidget, optional
+        The parent widget, by default None
+    source : list of dict, optional
+        A list of dicts where each dict in the list is a row, and each key in
+        the dict is a header, by default None.  (call set_data later to add
+        data)
+    headers : list of str, optional
+        If provided, will be used in order as the headers of the table.  All
+        items in ``headers`` must be present in at least one of the dicts.
+        by default headers will be the set of all keys in all dicts in
+        ``source``
+    min_section_width : int, optional
+        If provided, sets a minimum width on the columns, by default None
+    max_section_width : int, optional
+        Sets a maximum width on the columns, by default 480
+
+    Raises
+    ------
+    ValueError
+        if ``source`` is not a list of dicts.
+    """
+
     def __init__(
         self,
         parent=None,
-        source=None,
+        source: List[dict] = None,
         *,
-        headers=None,
-        min_section_width=None,
-        max_section_width=480,
+        headers: List[str] = None,
+        min_section_width: Optional[int] = None,
+        max_section_width: int = 480,
     ):
         super().__init__(parent=parent)
         if min_section_width:
@@ -31,9 +61,11 @@ class QtDictTable(QTableWidget):
         self.cellDoubleClicked.connect(self._on_double_click)
         self.setMouseTracking(True)
 
-    def set_data(
-        self, data: List[Dict[str, str]], headers: Optional[List[str]] = None
-    ):
+    def set_data(self, data: List[dict], headers: Optional[List[str]] = None):
+        if not isinstance(data, list) or any(
+            not isinstance(i, dict) for i in data
+        ):
+            raise ValueError("'data' argument must be a list of dicts")
         nrows = len(data)
         _headers = sorted(set().union(*data))
         if headers:
@@ -48,9 +80,10 @@ class QtDictTable(QTableWidget):
         self.setColumnCount(len(_headers))
         for row, elem in enumerate(data):
             for key, value in elem.items():
-                if key not in _headers:
+                try:
+                    col = _headers.index(key)
+                except ValueError:
                     continue
-                col = _headers.index(key)
                 self.setItem(row, col, QTableWidgetItem(value))
 
         self.setHorizontalHeaderLabels(_headers)

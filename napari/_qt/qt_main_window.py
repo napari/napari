@@ -216,6 +216,7 @@ class Window:
         self.plugins_menu.addAction(report_plugin_action)
 
     def _show_plugin_list(self):
+        """Show dialog with a table of installed plugins and metadata."""
         from ..plugins import plugin_manager
 
         dialog = QDialog(self._qt_window)

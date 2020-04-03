@@ -450,7 +450,7 @@ def iter_plugin_modules(
     Yields
     -------
     plugin_info : tuple
-        (plugin_name, module_name)
+        (plugin_name, module_name, metadata)
     """
     seen_modules = set()
     if group and not os.environ.get("NAPARI_DISABLE_ENTRYPOINT_PLUGINS"):
