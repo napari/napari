@@ -15,6 +15,39 @@ def test_big_2D_image(viewer_factory):
         assert np.all(layer._transforms['tile2data'].scale == s)
 
 
+def test_really_big_2d_image(viewer_factory):
+    view, viewer = viewer_factory(show=True)
+
+    shape = (6898, 9946)
+    data = np.ones(shape)
+    _ = viewer.add_image(data)
+    screenshot = viewer.screenshot()
+
+    # Screenshot pixel coordinates to test (in format: row, column)
+    center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(np.int)
+    top_left_corner = [40, 36]
+    top_right_corner = [40, 763]
+    bottom_left_corner = [screenshot.shape[0] - 40, 36]
+    bottom_right_corner = [screenshot.shape[0] - 40, 763]
+
+    expected_value = np.array([255, 255, 255, 255])  # white pixel value
+    assert all(screenshot[center_coord[0], center_coord[1]] == expected_value)
+    assert all(
+        screenshot[top_left_corner[0], top_left_corner[1]] == expected_value
+    )
+    assert all(
+        screenshot[top_right_corner[0], top_right_corner[1]] == expected_value
+    )
+    assert all(
+        screenshot[bottom_left_corner[0], bottom_left_corner[1]]
+        == expected_value
+    )
+    assert all(
+        screenshot[bottom_right_corner[0], bottom_right_corner[1]]
+        == expected_value
+    )
+
+
 def test_big_3D_image(viewer_factory):
     """Test big 3D image with axis exceeding max texture size."""
     view, viewer = viewer_factory(ndisplay=3)
