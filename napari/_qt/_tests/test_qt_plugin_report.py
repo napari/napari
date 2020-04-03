@@ -11,7 +11,7 @@ def test_error_reporter(qtbot):
     qtbot.addWidget(report)
 
     # the null option plus the one we created
-    assert report.plugin_combo.count() == 2
+    assert report.plugin_combo.count() >= 2
 
     # the message should appear somewhere in the text area
     report.set_plugin('plugin_name')
