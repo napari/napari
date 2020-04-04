@@ -1,7 +1,9 @@
+import inspect
 import itertools
 from logging import getLogger
-from typing import List, Optional, Sequence, Union
 from os import fspath
+from typing import Any, Dict, List, Optional, Sequence, Union
+
 import numpy as np
 
 from .. import layers
@@ -754,7 +756,9 @@ class AddLayersMixin:
         return added
 
     def _add_layers_with_plugins(
-        self, path_or_paths: Union[str, Sequence[str]], kwargs: dict = None
+        self,
+        path_or_paths: Union[str, Sequence[str]],
+        kwargs: Optional[dict] = None,
     ) -> List[layers.Layer]:
         """Load a path or a list of paths into the viewer using plugins.
 
@@ -776,7 +780,6 @@ class AddLayersMixin:
         List[layers.Layer]
             A list of any layers that were added to the viewer.
         """
-        kwargs = kwargs or dict()
         layer_data = read_data_with_plugins(path_or_paths)
 
         if not layer_data:
@@ -796,14 +799,16 @@ class AddLayersMixin:
         for data in layer_data:
             # if user provided kwargs, use to override the plugin meta dict
             if kwargs:
+                layer_type = 'image' if len(data) < 3 else data[2]
+                valid_kwargs = prune_kwargs(kwargs, layer_type)
                 if len(data) == 1:
-                    data = (data[0], kwargs)
+                    data = (data[0], valid_kwargs)
                 elif len(data) > 1:
                     assert isinstance(
                         data[1], dict
                     ), '2nd item should be a dict'
                     # or should we update kwargs instead?
-                    data[1].update(kwargs)
+                    data[1].update(valid_kwargs)
             new = self._add_layer_from_data(*data)
             # some add_* methods return a List[Layer] others just a Layer
             # we want to always return a list
@@ -896,3 +901,12 @@ class AddLayersMixin:
                 raise exc
 
         return layer
+
+
+def prune_kwargs(kwargs: Dict[str, Any], layer_type: str):
+    """Return copy of ``kwargs`` with only keys valid for add_<layer_type>."""
+    add_method = getattr(AddLayersMixin, 'add_' + layer_type, None)
+    if not add_method:
+        raise ValueError(f"Invalid layer_type: {layer_type}")
+    valid_kwargs = set(inspect.signature(add_method).parameters)
+    return {k: v for k, v in kwargs.items() if k in valid_kwargs}
