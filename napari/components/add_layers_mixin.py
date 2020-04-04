@@ -710,7 +710,7 @@ class AddLayersMixin:
         return layer
 
     def add_path(
-        self, path: Union[str, Sequence[str]], stack: bool = False
+        self, path: Union[str, Sequence[str]], stack: bool = False, **kwargs
     ) -> List[layers.Layer]:
         """Add a path or list of paths to the viewer.
 
@@ -728,6 +728,9 @@ class AddLayersMixin:
             plugins to know how to handle a list of paths.  If ``stack`` is
             ``False``, then the ``path`` list is broken up and passed to plugin
             readers one by one.  by default False.
+        **kwargs
+            All other keyword arguments will be passed on to the respective
+            ``add_layer`` method.
 
         Returns
         -------
@@ -742,16 +745,16 @@ class AddLayersMixin:
             )
 
         if stack:
-            return self._add_layers_with_plugins(paths)
+            return self._add_layers_with_plugins(paths, kwargs)
 
         added: List[layers.Layer] = []  # for layers that get added
         for _path in paths:
-            added.extend(self._add_layers_with_plugins(_path))
+            added.extend(self._add_layers_with_plugins(_path, kwargs))
 
         return added
 
     def _add_layers_with_plugins(
-        self, path_or_paths: Union[str, Sequence[str]]
+        self, path_or_paths: Union[str, Sequence[str]], kwargs: dict = None
     ) -> List[layers.Layer]:
         """Load a path or a list of paths into the viewer using plugins.
 
@@ -764,12 +767,16 @@ class AddLayersMixin:
         path_or_paths : str or list of str
             A filepath, directory, or URL (or a list of any) to open. If a
             list, the assumption is that the list is to be treated as a stack.
+        kwargs : dict, optional
+            keyword arguments that will be used to overwrite any of those that
+            are returned in the meta dict from plugins.
 
         Returns
         -------
         List[layers.Layer]
             A list of any layers that were added to the viewer.
         """
+        kwargs = kwargs or dict()
         layer_data = read_data_with_plugins(path_or_paths)
 
         if not layer_data:
@@ -787,6 +794,9 @@ class AddLayersMixin:
         # add each layer to the viewer
         added: List[layers.Layer] = []  # for layers that get added
         for data in layer_data:
+            if kwargs and len(data) > 1:
+                assert isinstance(data[1], dict), '2nd item should be a dict'
+                data[1].update(kwargs)  # or should we update kwargs instead?
             new = self._add_layer_from_data(*data)
             # some add_* methods return a List[Layer] others just a Layer
             # we want to always return a list
