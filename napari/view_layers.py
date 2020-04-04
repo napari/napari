@@ -155,6 +155,7 @@ def view_path(
     order=None,
     axis_labels=None,
     show=True,
+    **kwargs,
 ):
     """Create a viewer and add a layer whose type will be determined by path.
 
@@ -180,6 +181,9 @@ def view_path(
         Dimension names. by default None
     show : bool, optional
         Whether to show the viewer after instantiation. by default True.
+    **kwargs
+        All other keyword arguments will be passed on to the respective
+        ``add_layer`` method.
 
     Returns
     -------
@@ -193,7 +197,7 @@ def view_path(
         axis_labels=axis_labels,
         show=show,
     )
-    viewer.add_path(path=path, stack=stack)
+    viewer.add_path(path=path, stack=stack, **kwargs)
     return viewer
 
 
