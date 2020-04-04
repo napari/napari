@@ -794,9 +794,16 @@ class AddLayersMixin:
         # add each layer to the viewer
         added: List[layers.Layer] = []  # for layers that get added
         for data in layer_data:
-            if kwargs and len(data) > 1:
-                assert isinstance(data[1], dict), '2nd item should be a dict'
-                data[1].update(kwargs)  # or should we update kwargs instead?
+            # if user provided kwargs, use to override the plugin meta dict
+            if kwargs:
+                if len(data) == 1:
+                    data = (data[0], kwargs)
+                elif len(data) > 1:
+                    assert isinstance(
+                        data[1], dict
+                    ), '2nd item should be a dict'
+                    # or should we update kwargs instead?
+                    data[1].update(kwargs)
             new = self._add_layer_from_data(*data)
             # some add_* methods return a List[Layer] others just a Layer
             # we want to always return a list
