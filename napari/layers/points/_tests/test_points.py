@@ -17,7 +17,8 @@ def test_empty_points():
 
 def test_empty_points_with_properties():
     """ Test instantiating an empty Points layer with properties
-        See: https://github.com/napari/napari/pull/1069
+
+    See: https://github.com/napari/napari/pull/1069
     """
     properties = {'label': np.empty(0)}
     default_properties = {'label': np.array(['label1'])}
@@ -35,7 +36,7 @@ def test_empty_points_with_properties_no_defaults():
     """ Test instantiating an empty Points layer with properties,
         but no defaults raises an error, as the defaults are required.
 
-        See: https://github.com/napari/napari/pull/1069
+    See: https://github.com/napari/napari/pull/1069
     """
     properties = {'label': np.empty(0)}
     with pytest.raises(ValueError):
@@ -44,7 +45,7 @@ def test_empty_points_with_properties_no_defaults():
 
 def test_empty_points_with_properties_bad_default_keys():
     """ Test instantiating a Points layer with mismatched
-        properties and default_properties raises a KeyError
+    properties and default_properties raises a KeyError
     """
     properties = {'label': np.empty(0)}
     default_properties = {'not_label': np.array([5])}
@@ -638,7 +639,8 @@ def test_edge_color_cycle():
 
 def test_add_edge_color_cycle_to_empty_layer():
     """ Test adding a point to an empty layer when edge color is a color cycle
-        See: https://github.com/napari/napari/pull/1069
+
+    See: https://github.com/napari/napari/pull/1069
     """
     annotations = {'point_type': np.empty(0)}
     default_properties = {'point_type': np.array(['A'])}
@@ -861,7 +863,7 @@ def test_face_color_cycle():
 
 def test_add_face_color_cycle_to_empty_layer():
     """ Test adding a point to an empty layer when face color is a color cycle
-        See: https://github.com/napari/napari/pull/1069
+    See: https://github.com/napari/napari/pull/1069
     """
     annotations = {'point_type': np.empty(0)}
     default_properties = {'point_type': np.array(['A'])}
