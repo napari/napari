@@ -224,6 +224,7 @@ class Window:
         dialog.setMaximumHeight(800)
         dialog.setMaximumWidth(1280)
         layout = QVBoxLayout()
+        # maybe someday add a search bar here?
         title = QLabel("Installed Plugins")
         title.setObjectName("h2")
         layout.addWidget(title)
