@@ -1,16 +1,20 @@
 import importlib
 import os
 import pkgutil
-import re
 import sys
 from logging import getLogger
-from typing import Generator, Optional, Tuple, Union, List
+from typing import Generator, Optional, Tuple, Union, List, Dict
 
 import pluggy
 from pluggy.hooks import HookImpl
 
 from . import _builtins, hook_specifications
-from .exceptions import PluginError, PluginImportError, PluginRegistrationError
+from .exceptions import (
+    PluginError,
+    PluginImportError,
+    PluginRegistrationError,
+    fetch_module_metadata,
+)
 
 logger = getLogger(__name__)
 
@@ -218,6 +222,10 @@ class PluginManager(pluggy.PluginManager):
             will simply search the current sys.path.  by default True
         """
         super().__init__(project_name)
+        # a dict to store package metadata for each plugin, will be populated
+        # during self._register_module
+        # possible keys for this dict will be set by fetch_module_metadata()
+        self._plugin_meta: Dict[str, Dict[str, str]] = dict()
 
         # project_name might not be napari if running tests
         if project_name == 'napari':
@@ -269,13 +277,13 @@ class PluginManager(pluggy.PluginManager):
             sys.path.insert(0, path)
 
         count = 0
-        for plugin_name, module_name in iter_plugin_modules(
+        for plugin_name, module_name, meta in iter_plugin_modules(
             prefix=self.PLUGIN_PREFIX, group=self.PLUGIN_ENTRYPOINT
         ):
             if self.get_plugin(plugin_name) or self.is_blocked(plugin_name):
                 continue
             try:
-                self._register_module(plugin_name, module_name)
+                self._register_module(plugin_name, module_name, meta)
                 count += 1
             except PluginError as exc:
                 logger.error(exc.format_with_contact_info())
@@ -296,7 +304,9 @@ class PluginManager(pluggy.PluginManager):
 
         return count
 
-    def _register_module(self, plugin_name: str, module_name: str):
+    def _register_module(
+        self, plugin_name: str, module_name: str, meta: Optional[dict] = None
+    ):
         """Try to register `module_name` as a plugin named `plugin_name`.
 
         Parameters
@@ -305,6 +315,8 @@ class PluginManager(pluggy.PluginManager):
             The name given to the plugin in the plugin manager.
         module_name : str
             The importable module name
+        meta : dict, optional
+            Metadata to be associated with ``plugin_name``.
 
         Raises
         ------
@@ -314,6 +326,9 @@ class PluginManager(pluggy.PluginManager):
             If an error is raised when trying to register the plugin (such as
             a PluginValidationError.)
         """
+        if meta:
+            meta.update({'plugin': plugin_name})
+            self._plugin_meta[plugin_name] = meta
         try:
             mod = importlib.import_module(module_name)
         except Exception as exc:
@@ -329,13 +344,17 @@ class PluginManager(pluggy.PluginManager):
 
 def entry_points_for(
     group: str,
-) -> Generator[importlib_metadata.EntryPoint, None, None]:
+) -> Generator[
+    Tuple[importlib_metadata.Distribution, importlib_metadata.EntryPoint],
+    None,
+    None,
+]:
     """Yield all entry_points matching "group", from any distribution.
 
     Distribution here refers more specifically to the information in the
     dist-info folder that usually accompanies an installed package.  If a
     package in the environment does *not* have a ``dist-info/entry_points.txt``
-    file, then in will not be discovered by this function.
+    file, then it will not be discovered by this function.
 
     Note: a single package may provide multiple entrypoints for a given group.
 
@@ -346,20 +365,22 @@ def entry_points_for(
 
     Yields
     -------
-    Generator[importlib_metadata.EntryPoint, None, None]
-        [description]
+    tuples
+        (Distribution, EntryPoint) objects for each matching EntryPoint
+        that matches the provided ``group`` string.
 
     Example
     -------
     >>> list(entry_points_for('napari.plugin'))
-    [EntryPoint(name='napari-reg', value='napari_reg', group='napari.plugin'),
-     EntryPoint(name='myplug', value='another.module', group='napari.plugin')]
-
+    [(<importlib.metadata.PathDistribution at 0x124f0fe80>,
+      EntryPoint(name='napari-reg',value='napari_reg',group='napari.plugin')),
+     (<importlib.metadata.PathDistribution at 0x1041485b0>,
+      EntryPoint(name='myplug',value='another.module',group='napari.plugin'))]
     """
     for dist in importlib_metadata.distributions():
         for ep in dist.entry_points:
             if ep.group == group:
-                yield ep
+                yield dist, ep
 
 
 def modules_starting_with(prefix: str) -> Generator[str, None, None]:
@@ -381,18 +402,9 @@ def modules_starting_with(prefix: str) -> Generator[str, None, None]:
             yield name
 
 
-# regex to parse importlib_metadata.EntryPoint.value strings
-# entry point format:  "name = module.with.periods:attr [extras]"
-entry_point_pattern = re.compile(
-    r'(?P<module>[\w.]+)\s*'
-    r'(:\s*(?P<attr>[\w.]+))?\s*'
-    r'(?P<extras>\[.*\])?\s*$'
-)
-
-
 def iter_plugin_modules(
     prefix: Optional[str] = None, group: Optional[str] = None
-) -> Generator[Tuple[str, str], None, None]:
+) -> Generator[Tuple[str, str, dict], None, None]:
     """Discover plugins using naming convention and/or entry points.
 
     This function makes sure that packages that *both* follow the naming
@@ -438,16 +450,16 @@ def iter_plugin_modules(
     Yields
     -------
     plugin_info : tuple
-        (plugin_name, module_name)
+        (plugin_name, module_name, metadata)
     """
     seen_modules = set()
     if group and not os.environ.get("NAPARI_DISABLE_ENTRYPOINT_PLUGINS"):
-        for ep in entry_points_for(group):
-            match = entry_point_pattern.match(ep.value)
+        for dist, ep in entry_points_for(group):
+            match = ep.pattern.match(ep.value)
             if match:
                 module = match.group('module')
                 seen_modules.add(module.split(".")[0])
-                yield ep.name, module
+                yield ep.name, module, fetch_module_metadata(dist)
     if prefix and not os.environ.get("NAPARI_DISABLE_NAMEPREFIX_PLUGINS"):
         for module in modules_starting_with(prefix):
             if module not in seen_modules:
@@ -455,4 +467,4 @@ def iter_plugin_modules(
                     name = importlib_metadata.metadata(module).get('Name')
                 except Exception:
                     name = None
-                yield name or module, module
+                yield name or module, module, fetch_module_metadata(module)

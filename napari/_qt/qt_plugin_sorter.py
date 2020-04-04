@@ -96,7 +96,7 @@ class QtHookImplementationListWidget(QListWidget):
     """A ListWidget to display & sort the call order of a hook implementation.
 
     This class will usually be instantiated by a
-    :class:`~napari._qt.qt_plugin_list.QtPluginSorter`.  Each item in the list
+    :class:`~napari._qt.qt_plugin_sorter.QtPluginSorter`.  Each item in the list
     will be rendered as a :class:`ImplementationListItem`.
 
     Parameters
