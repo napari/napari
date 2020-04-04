@@ -18,6 +18,7 @@ from ..resources import get_stylesheet
 # these module-level imports have to come after `app.use_app(API)`
 # see discussion on #638
 from qtpy.QtWidgets import (  # noqa: E402
+    QAbstractItemView,
     QApplication,
     QMainWindow,
     QWidget,
@@ -246,9 +247,12 @@ class Window:
             ],
             min_section_width=60,
         )
-        dialog.table.horizontalHeader().setObjectName('pluginTableHeader')
-        dialog.table.verticalHeader().setObjectName('pluginTableHeader')
+        dialog.table.setObjectName("pluginTable")
+        dialog.table.horizontalHeader().setObjectName("pluginTableHeader")
+        dialog.table.verticalHeader().setObjectName("pluginTableHeader")
         dialog.table.setGridStyle(Qt.NoPen)
+        # prevent editing of table
+        dialog.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
         layout.addWidget(dialog.table)
         dialog.setLayout(layout)
         dialog.setAttribute(Qt.WA_DeleteOnClose)
