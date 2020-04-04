@@ -797,7 +797,8 @@ class AddLayersMixin:
         # add each layer to the viewer
         added: List[layers.Layer] = []  # for layers that get added
         for data in layer_data:
-            # if user provided kwargs, use to override the plugin meta dict
+            # if user provided kwargs, use to override any meta dict values
+            # that were returned by the plugin
             if kwargs:
                 layer_type = 'image' if len(data) < 3 else data[2]
                 valid_kwargs = prune_kwargs(kwargs, layer_type)
@@ -809,6 +810,7 @@ class AddLayersMixin:
                     ), '2nd item should be a dict'
                     # or should we update kwargs instead?
                     data[1].update(valid_kwargs)
+            # actually add the layer
             new = self._add_layer_from_data(*data)
             # some add_* methods return a List[Layer] others just a Layer
             # we want to always return a list
@@ -903,10 +905,68 @@ class AddLayersMixin:
         return layer
 
 
-def prune_kwargs(kwargs: Dict[str, Any], layer_type: str):
-    """Return copy of ``kwargs`` with only keys valid for add_<layer_type>."""
+def prune_kwargs(kwargs: Dict[str, Any], layer_type: str) -> Dict[str, Any]:
+    """Return copy of ``kwargs`` with only keys valid for ``add_<layer_type>``
+
+    Keys may optionally begin with ``<layer_type>_`` (e.g. ``image_name``), in
+    which case they will be included if they match the current ``layer_type``,
+    but stripped to the primary kwargs (e.g. ``name``).
+
+    Parameters
+    ----------
+    kwargs : dict
+        A key: value mapping where some or all of the keys are parameter names
+        for the corresponding ``Viewer.add_<layer_type>`` method.  If any of
+        the keys begin with ``<layer_type>_``, then they will be included, with
+        the ``<layer_type>_`` prefix stripped from the key.
+    layer_type : str
+        The type of layer that is going to be added with these ``kwargs``.
+
+    Returns
+    -------
+    pruned_kwargs : dict
+        A key: value mapping where all of the keys are valid parameter names
+        for the corresponding ``Viewer.add_<layer_type>`` method.
+
+    Raises
+    ------
+    ValueError
+        If ``AddLayersMixin`` does not provide an ``add_<layer_type>`` method
+        for the provided ``layer_type``.
+
+    Examples
+    --------
+    >>> test_kwargs = {
+            'scale': (0.75, 1),
+            'image_blending': 'additive',
+            'points_blending': 'translucent',
+            'num_colors': 10,
+        }
+    >>> prune_kwargs(test_kwargs, 'image')
+    {'scale': (0.75, 1), 'blending': 'additive'}
+
+    >>> prune_kwargs(test_kwargs, 'points')
+    {'scale': (0.75, 1), 'blending': 'translucent'}
+
+    >>> # only labels has the ``num_colors`` argument
+    >>> prune_kwargs(test_kwargs, 'labels')
+    {'scale': (0.75, 1), 'num_colors': 10}
+    """
     add_method = getattr(AddLayersMixin, 'add_' + layer_type, None)
     if not add_method:
         raise ValueError(f"Invalid layer_type: {layer_type}")
-    valid_kwargs = set(inspect.signature(add_method).parameters)
-    return {k: v for k, v in kwargs.items() if k in valid_kwargs}
+
+    # get valid params for the corresponding add_<layer_type> method
+    valid_layer_kwargs = set(inspect.signature(add_method).parameters)
+
+    pruned_kwargs = {}
+    for key, val in kwargs.items():
+        if key in valid_layer_kwargs:
+            pruned_kwargs[key] = val
+    # iterating a second time to make sure that "<layer_type>_kwarg"
+    # takes precedence over bare "kwarg"
+    strlength = len(layer_type) + 1
+    for key, val in kwargs.items():
+        if key.startswith(layer_type + "_"):
+            pruned_kwargs[key[strlength:]] = val
+    return pruned_kwargs
