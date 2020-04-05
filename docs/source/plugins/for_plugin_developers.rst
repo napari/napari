@@ -52,7 +52,7 @@ plugin developers must decide which of the current *hook specifications*
 defined by napari that they would like to implement.
 
 For a complete list of *hook specifications* that developers can implement, see
-the :ref:`hook-specifications`.
+the :ref:`hook-specifications-reference`.
 
 A single plugin package may implement more than one *hook specification*, but
 may not declare more the one *hook implementation* for any given specification.

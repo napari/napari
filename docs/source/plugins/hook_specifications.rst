@@ -1,4 +1,4 @@
-.. _hook-specifications:
+.. _hook-specifications-reference:
 
 napari hook specification reference
 ===================================
