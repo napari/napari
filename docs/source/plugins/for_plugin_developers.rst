@@ -99,10 +99,10 @@ contract that you can follow, and know that napari will handle the rest.
 Step 2: Write your hook implementation
 --------------------------------------
 
-Once you have identified the :ref:`hook specification <hook-specifications>`
-that you want to implement, you have to create a *hook implementation*: a
-function that accepts the arguments specified by the hook specification
-signature and returns a value with the expected return type.
+Once you have identified the :ref:`hook specification
+<hook-specifications-reference>` that you want to implement, you have to create
+a *hook implementation*: a function that accepts the arguments specified by the
+hook specification signature and returns a value with the expected return type.
 
 Here's an example hook implementation for
 :func:`~napari.plugins.hook_specifications.napari_get_reader` that enables
