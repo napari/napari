@@ -31,7 +31,7 @@ Bugfixes
 - fix dimensions change when no layers (#603)
 - fix bracket highlighting (#606)
 - fix for data overwriting during 3D rendering of float32 array (#613)
-- fix `io.magic_imread()` in `__main__.py` (#626)
+- fix ``io.magic_imread()`` in ``__main__.py`` (#626)
 - Include LICENSE file in source distribution (#628)
 
 Deprecations

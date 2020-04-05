@@ -31,7 +31,7 @@ Improvements
 
 API Changes
 -----------
-- added the ability to pass viewer keyword arguments to our `view_*` methods (#584)
+- added the ability to pass viewer keyword arguments to our ``view_*`` methods (#584)
 - Allow add_points() to be called without an argument to create empty points layer (#594)
 
 

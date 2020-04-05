@@ -40,8 +40,8 @@ Bugfixes
 
 API Changes
 ***********
-- `edge_color` and `face_color` now refer to colors of all points and shapes
-  in layer, `current_edge_color` and `current_face_color` now refer to the
+- ``edge_color`` and ``face_color`` now refer to colors of all points and shapes
+  in layer, ``current_edge_color`` and ``current_face_color`` now refer to the
   colors currently selected in the GUI (#686)
 
 5 authors added to this release [alphabetical by first name or login]
