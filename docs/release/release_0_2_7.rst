@@ -61,7 +61,7 @@ Bugfixes
 - Bumpy vispy dependency to 0.6.4 (#807)
 - Set threshold for codecov failure (#806)
 - Rename util to utils in MANIFEST.in (#811)
-- Add ``requirements/release.txt`` with release dependencies (#809)
+- Add `requirements/release.txt` with release dependencies (#809)
 
 API Changes
 ***********

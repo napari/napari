@@ -23,9 +23,9 @@ Improvements
 - Allow 3D point selection via API (#907)
 - Add show param to Viewer (#961)
 - Make mouse drag attributes private in qt_layerlist (#974)
-- Rename ``viewer`` attribute on QtViewerDockWidget to ``qt_viewer`` (#975)
+- Rename `viewer` attribute on QtViewerDockWidget to `qt_viewer`(#975)
 - Allow LayerList to be initialized by passing in a list of layers (#979)
-- Rename ``object`` to ``item`` in list input arguments (#980)
+- Rename `object` to `item` in list input arguments (#980)
 - Add layers.events.changed event (#982)
 
 Bugfixes
@@ -51,7 +51,7 @@ Support
 - Fix docs version tag (#964)
 - Disallow sphinx 2.4.0; bug fixed in 2.4.1 (#965)
 - Remove duplicated imports in setup.py (#969)
-- Fix viewer ``view_*`` func signature parity (#976)
+- Fix viewer view_* func signature parity (#976)
 - Fix ability to test released distributions (#1002)
 - Fix recursive-include in manifest.in (#1003)
 

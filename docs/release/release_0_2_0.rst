@@ -13,21 +13,20 @@ https://github.com/napari/napari
 
 New Features
 ------------
-
-- **Improved UI**, unifying buttons from controls, icons for layers, and more
-  understandable dimensions sliders
+- **Improved UI**, unifying buttons from controls, icons for layers,
+  and more understandable dimensions sliders
 - Add support for **3D rendering** for all our layer types
-- Add a ``Surface`` layer to render already generated meshes. Support nD meshes
+- Add a `Surface` layer to render already generated meshes. Support nD meshes
   rendered in 2D or 3D.
-- Add ``viewer.add_multichannel`` method to rapidly add expand a multichannel
+- Add `viewer.add_multichannel` method to rapidly add expand a multichannel
   array along one particular axis with different colormaps (#528).
 - Add basic **undo / redo** functionality to the labels layer
 
 Deprecations
 ------------
-- Drop ``napari.view`` method. Replaced with ``napari.view_*`` methods in for all
+- Drop `napari.view` method. Replaced with `napari.view_*` methods in for all
   our layer types.
-- Drop ``Pyramid`` layer. Pyramid functionality now integrated into both the
+- Drop `Pyramid` layer. Pyramid functionality now integrated into both the
   labels and image layer.
 
 Pull Requests
@@ -90,9 +89,9 @@ Pull Requests
 - prevent selected label from being reduced below 0 (#512)
 - fix typos in release guidelines (#522)
 - clip rgba images (#524)
-- DOC: specify that IPython needs to be started with ``gui=qt`` (#525)
+- DOC: specify that IPython needs to be started with `gui=qt` (#525)
 - add multichannel (#528)
-- enable ``python -m napari`` (#529)
+- enable `python -m napari` (#529)
 - support 3D rendering shapes layer (#532)
 - add undo/redo to labels layer (#533)
 - unified layer ui (#536)

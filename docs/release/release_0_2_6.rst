@@ -14,7 +14,7 @@ https://github.com/napari/napari
 New Features
 ************
 - label axes with strings (#644)
-- interactive scripting with ``viewer.update`` (#650)
+- interactive scripting with `viewer.update`(#650)
 - add dock widget support (#695)
 - dockable console (#714)
 
