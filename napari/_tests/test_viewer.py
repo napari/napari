@@ -135,5 +135,58 @@ def test_changing_theme(viewer_factory):
     viewer.theme = 'light'
     assert viewer.palette['folder'] == 'light'
 
+
+    # Close the viewer
+    viewer.window.close()
+
     with pytest.raises(ValueError):
         viewer.theme = 'nonexistent_theme'
+        
+        
+def test_roll_traspose_update(qtbot):
+    """ Controlling that translation and rolling preserve correct sequence
+    of translate and scaling values.
+    """
+
+    def check_view_consistency(viewer, transf_dict):
+        """ Utility function for doing the checks.
+        """
+        # Get an handle on visual layer:
+        vis_lyr = viewer.window.qt_viewer.layer_to_visual[lyr1]
+
+        # Visual layer attributes should match expected from viewer dims:
+        for transf_name, transf in transf_dict.items():
+            disp_dims = viewer.dims.displayed  # dimensions displayed in 2D
+            vis_vals = getattr(vis_lyr, transf_name)[
+                1::-1
+            ]  # values of visual layer
+            correct_vals = transf[disp_dims]  # expected translate/scale values
+            assert (vis_vals == correct_vals).all()
+
+    viewer = Viewer()
+    view = viewer.window.qt_viewer
+    qtbot.addWidget(view)
+
+    block = np.random.randint(0, 255, (20, 30, 15, 35))
+    lyr1 = viewer.add_image(block)
+
+    # Set translations and scalings (match type of visual layer storing):
+    transf_dict = {
+        "translate": np.array([2, 5, 3, 2], dtype=np.float32),
+        "scale": np.array([0.1, 0.5, 0.3, 0.4], dtype=np.float32),
+    }
+    for k, val in transf_dict.items():
+        setattr(lyr1, k, val)
+
+    # Check consistency:
+    check_view_consistency(viewer, transf_dict)
+
+    # Roll dims and check again:
+    viewer.dims._roll()
+    check_view_consistency(viewer, transf_dict)
+
+    # Transpose and check again:
+    viewer.dims._transpose()
+    check_view_consistency(viewer, transf_dict)
+
+    viewer.window.close()

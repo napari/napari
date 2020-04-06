@@ -93,6 +93,9 @@ class VispyImageLayer(VispyBaseLayer):
                 self.node.set_data(data)
             else:
                 self.node.set_data(data, clim=self.layer.contrast_limits)
+
+        # Call to update order of translation values with new dims:
+        self._reset_base()
         self.node.update()
 
     def _on_interpolation_change(self, event=None):
