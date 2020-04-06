@@ -44,8 +44,6 @@ class Points(Layer):
     properties : dict {str: array (N,)}, DataFrame
         Properties for each point. Each property should be an array of length N,
         where N is the number of points.
-    default_properties : dict {str: array (N,)}
-        Default property values for each property in Points.properties
     symbol : str
         Symbol to be used for the point markers. Must be one of the
         following: arrow, clobber, cross, diamond, disc, hbar, ring,
@@ -211,7 +209,6 @@ class Points(Layer):
         data=None,
         *,
         properties=None,
-        default_properties=None,
         symbol='o',
         size=10,
         edge_width=1,
@@ -274,29 +271,17 @@ class Points(Layer):
 
         # Save the properties
         if properties is None:
-            properties = {}
-        elif not isinstance(properties, dict):
+            self._properties = {}
+        elif len(data) > 0:
             properties = dataframe_to_properties(properties)
-        self._properties = self._validate_properties(properties)
-
-        if default_properties is None:
-            default_properties = {}
-        elif not isinstance(default_properties, dict):
-            default_properties = dataframe_to_properties(default_properties)
-        self._default_properties = default_properties
-
-        if len(data) == 0 and self.properties and not default_properties:
-            raise ValueError(
-                'default_properties must be set for empty Points layers with colors that depend on properties'
-            )
-
-        if (
-            self._default_properties
-            and self.default_properties.keys() != self.properties.keys()
-        ):
-            raise KeyError(
-                'default_properties and properites should have the same keys'
-            )
+            self._properties = self._validate_properties(properties)
+            self.property_choices = {
+                k: np.unique(v) for k, v in properties.items()
+            }
+        elif len(data) == 0:
+            self.property_choices = properties
+            empty_properties = {k: np.empty(0) for k in properties}
+            self._properties = empty_properties
 
         # Save the point style params
         self.symbol = symbol
@@ -369,8 +354,7 @@ class Points(Layer):
             }
         elif len(data) == 0 and self.properties:
             self.current_properties = {
-                k: np.asarray([v[0]])
-                for k, v in self.default_properties.items()
+                k: np.asarray([v[0]]) for k, v in self.property_choices.items()
             }
             if self._edge_color_mode == ColorMode.DIRECT:
                 self._current_edge_color = transform_color_with_defaults(
@@ -569,15 +553,15 @@ class Points(Layer):
         self.events.current_properties()
 
     @property
-    def default_properties(self):
+    def property_choices(self):
         """dict {str: array (N,)}, DataFrame: default annotations"""
-        return self._default_properties
+        return self._property_choices
 
-    @default_properties.setter
-    def default_properties(self, default_properties: Dict[str, np.ndarray]):
-        if not isinstance(default_properties, dict):
-            default_properties = dataframe_to_properties(default_properties)
-        self._default_properties = default_properties
+    @property_choices.setter
+    def property_choices(self, property_choices: Dict[str, np.ndarray]):
+        if not isinstance(property_choices, dict):
+            property_choices = dataframe_to_properties(property_choices)
+        self._property_choices = property_choices
 
     def _validate_properties(self, properties: Dict[str, np.ndarray]):
         """Validates the type and size of the properties"""
@@ -1139,7 +1123,6 @@ class Points(Layer):
                 'edge_colormap': self.edge_colormap[0],
                 'edge_contrast_limits': self.edge_contrast_limits,
                 'properties': self.properties,
-                'default_properties': self.default_properties,
                 'n_dimensional': self.n_dimensional,
                 'size': self.size,
                 'data': self.data,

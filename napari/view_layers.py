@@ -201,7 +201,6 @@ def view_points(
     data=None,
     *,
     properties=None,
-    default_properties=None,
     symbol='o',
     size=10,
     edge_width=1,
@@ -236,8 +235,6 @@ def view_points(
     properties : dict {str: array (N,)}, DataFrame
         Properties for each point. Each property should be an array of length N,
         where N is the number of points.
-    default_properties : dict {str: array (N,)}
-        Default property values for each property in Points.properties
     symbol : str
         Symbol to be used for the point markers. Must be one of the
         following: arrow, clobber, cross, diamond, disc, hbar, ring,
@@ -326,7 +323,6 @@ def view_points(
     viewer.add_points(
         data=data,
         properties=properties,
-        default_properties=default_properties,
         symbol=symbol,
         size=size,
         edge_width=edge_width,
