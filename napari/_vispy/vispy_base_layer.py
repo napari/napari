@@ -3,6 +3,7 @@ from functools import lru_cache
 from vispy.app import Canvas
 from vispy.gloo import gl
 from vispy.visuals.transforms import STTransform
+import numpy as np
 
 
 class VispyBaseLayer(ABC):
@@ -93,6 +94,9 @@ class VispyBaseLayer(ABC):
 
     @scale.setter
     def scale(self, scale):
+        # Avoid useless update if nothing changed in the displayed dims:
+        if self.scale is not None and np.all(self.scale[:2] == scale[:2]):
+            return
         self._master_transform.scale = scale
 
     @property
@@ -102,6 +106,11 @@ class VispyBaseLayer(ABC):
 
     @translate.setter
     def translate(self, translate):
+        # Avoid useless update if nothing changed in the displayed dims:
+        if self.translate is not None and np.all(
+            self.translate[:2] == translate[:2]
+        ):
+            return
         self._master_transform.translate = translate
 
     @property

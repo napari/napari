@@ -135,24 +135,21 @@ def test_changing_theme(viewer_factory):
     viewer.theme = 'light'
     assert viewer.palette['folder'] == 'light'
 
-
-    # Close the viewer
-    viewer.window.close()
-
     with pytest.raises(ValueError):
         viewer.theme = 'nonexistent_theme'
-        
-        
-def test_roll_traspose_update(qtbot):
+
+
+@pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
+def test_roll_traspose_update(viewer_factory, layer_class, data, ndim):
     """ Controlling that translation and rolling preserve correct sequence
     of translate and scaling values.
     """
 
-    def check_view_consistency(viewer, transf_dict):
+    def check_view_consistency(layer, viewer, transf_dict):
         """ Utility function for doing the checks.
         """
         # Get an handle on visual layer:
-        vis_lyr = viewer.window.qt_viewer.layer_to_visual[lyr1]
+        vis_lyr = viewer.window.qt_viewer.layer_to_visual[layer]
 
         # Visual layer attributes should match expected from viewer dims:
         for transf_name, transf in transf_dict.items():
@@ -160,33 +157,34 @@ def test_roll_traspose_update(qtbot):
             vis_vals = getattr(vis_lyr, transf_name)[
                 1::-1
             ]  # values of visual layer
+
+            # If layer's a pyramid scale is multiplued by a factor 2:
+            if layer.is_pyramid and transf_name == "scale":
+                vis_vals /= 2
             correct_vals = transf[disp_dims]  # expected translate/scale values
             assert (vis_vals == correct_vals).all()
 
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
+    view, viewer = viewer_factory()
 
-    block = np.random.randint(0, 255, (20, 30, 15, 35))
-    lyr1 = viewer.add_image(block)
+    np.random.seed(0)
+
+    layer = add_layer_by_type(viewer, layer_class, data)
 
     # Set translations and scalings (match type of visual layer storing):
     transf_dict = {
-        "translate": np.array([2, 5, 3, 2], dtype=np.float32),
-        "scale": np.array([0.1, 0.5, 0.3, 0.4], dtype=np.float32),
+        "translate": np.random.randint(0, 10, ndim).astype(np.float32),
+        "scale": np.random.rand(ndim).astype(np.float32),
     }
     for k, val in transf_dict.items():
-        setattr(lyr1, k, val)
+        setattr(layer, k, val)
 
     # Check consistency:
-    check_view_consistency(viewer, transf_dict)
+    check_view_consistency(layer, viewer, transf_dict)
 
     # Roll dims and check again:
     viewer.dims._roll()
-    check_view_consistency(viewer, transf_dict)
+    check_view_consistency(layer, viewer, transf_dict)
 
     # Transpose and check again:
     viewer.dims._transpose()
-    check_view_consistency(viewer, transf_dict)
-
-    viewer.window.close()
+    check_view_consistency(layer, viewer, transf_dict)
