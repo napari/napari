@@ -133,7 +133,12 @@ class QtPluginErrReporter(QDialog):
             name of a plugin that has created an error this session.
         """
         if plugin not in PLUGIN_ERRORS:
-            raise ValueError("No errors reported for plugin '{plugin}'")
+            if plugin == self.NULL_OPTION:
+                self.plugin_meta.setText('')
+                self.text_area.setHtml('')
+                return
+            else:
+                raise ValueError(f"No errors reported for plugin '{plugin}'")
         self.plugin_combo.setCurrentText(plugin)
         self.github_button.hide()
         self.clipboard_button.hide()
