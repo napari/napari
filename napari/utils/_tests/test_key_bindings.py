@@ -3,8 +3,8 @@ import types
 
 import pytest
 
-from .. import keybindings
-from ..keybindings import (
+from .. import key_bindings
+from ..key_bindings import (
     _bind_keymap,
     bind_key,
     components_to_key_combo,
@@ -331,4 +331,4 @@ def test_bind_key_doc():
     doc = inspect.getdoc(bind_key)
     doc = doc.split('Notes\n-----\n')[-1]
 
-    assert doc == inspect.getdoc(keybindings)
+    assert doc == inspect.getdoc(key_bindings)

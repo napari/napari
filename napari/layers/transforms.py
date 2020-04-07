@@ -1,6 +1,7 @@
 import toolz as tz
 from typing import Sequence
 import numpy as np
+from ..utils.list import ListModel
 
 
 class Transform:
@@ -28,6 +29,17 @@ class Transform:
         """Transform input coordinates to output."""
         return self.func(coords)
 
+    @property
+    def inverse(self) -> 'Transform':
+        if self._inverse_func is not None:
+            return Transform(self._inverse_func, self.func)
+        else:
+            raise ValueError('Inverse function was not provided.')
+
+    def compose(self, transform: 'Transform') -> 'Transform':
+        """Return the composite of this transform and the provided one."""
+        raise ValueError('Transform composition rule not provided')
+
     def set_slice(self, axes: Sequence[int]) -> 'Transform':
         """Return a transform subset to the visible dimensions.
 
@@ -43,15 +55,15 @@ class Transform:
         """
         raise NotImplementedError('Cannot subset arbitrary transforms.')
 
-    def set_pad(self, axes: Sequence[int]) -> 'Transform':
+    def expand_dims(self, axes: Sequence[int]) -> 'Transform':
         """Return a transform with added axes for non-visible dimensions.
 
         Parameters
         ----------
         axes : Sequence[int]
-            Location of axes to pad the current transform with. Passing a list
-            allows padding to occur at specific locations and for set_pad to
-            be like an inverse to the set_slice method.
+            Location of axes to expand the current transform with. Passing a
+            list allows expanion to occur at specific locations and for
+            expand_dims to be like an inverse to the set_slice method.
 
         Returns
         -------
@@ -60,12 +72,67 @@ class Transform:
         """
         raise NotImplementedError('Cannot subset arbitrary transforms.')
 
+
+class TransformChain(ListModel, Transform):
+    def __init__(self, transforms=[]):
+        super().__init__(
+            basetype=Transform,
+            iterable=transforms,
+            lookup={str: lambda q, e: q == e.name},
+        )
+
+    def __call__(self, coords):
+        return tz.pipe(coords, *self)
+
+    def __newlike__(self, iterable):
+        return ListModel(self._basetype, iterable, self._lookup)
+
     @property
-    def inverse(self) -> 'Transform':
-        if self._inverse_func is not None:
-            return Transform(self._inverse_func, self.func)
+    def inverse(self) -> 'TransformChain':
+        """Return the inverse transform chain."""
+        return TransformChain([tf.inverse for tf in self[::-1]])
+
+    @property
+    def simplified(self) -> 'Transform':
+        """Return the composite of the transforms inside the transform chain."""
+        if len(self) == 0:
+            return None
+        if len(self) == 1:
+            return self[0]
         else:
-            raise ValueError('Inverse function was not provided.')
+            return tz.pipe(self[0], *[tf.compose for tf in self[1:]])
+
+    def set_slice(self, axes: Sequence[int]) -> 'TransformChain':
+        """Return a transform chain subset to the visible dimensions.
+
+        Parameters
+        ----------
+        axes : Sequence[int]
+            Axes to subset the current transform chain with.
+
+        Returns
+        -------
+        TransformChain
+            Resulting transform chain.
+        """
+        return TransformChain([tf.set_slice(axes) for tf in self])
+
+    def expand_dims(self, axes: Sequence[int]) -> 'Transform':
+        """Return a transform chain with added axes for non-visible dimensions.
+
+        Parameters
+        ----------
+        axes : Sequence[int]
+            Location of axes to expand the current transform with. Passing a
+            list allows expanion to occur at specific locations and for
+            expand_dims to be like an inverse to the set_slice method.
+
+        Returns
+        -------
+        TransformChain
+            Resulting transform chain.
+        """
+        return TransformChain([tf.expand_dims(axes) for tf in self])
 
 
 class ScaleTranslate(Transform):
@@ -110,6 +177,12 @@ class ScaleTranslate(Transform):
         """Return the inverse transform."""
         return ScaleTranslate(1 / self.scale, -1 / self.scale * self.translate)
 
+    def compose(self, transform: 'ScaleTranslate') -> 'ScaleTranslate':
+        """Return the composite of this transform and the provided one."""
+        scale = self.scale * transform.scale
+        translate = self.translate + self.scale * transform.translate
+        return ScaleTranslate(scale, translate)
+
     def set_slice(self, axes: Sequence[int]) -> 'ScaleTranslate':
         """Return a transform subset to the visible dimensions.
 
@@ -123,17 +196,19 @@ class ScaleTranslate(Transform):
         Transform
             Resulting transform.
         """
-        return ScaleTranslate(self.scale[axes], self.translate[axes])
+        return ScaleTranslate(
+            self.scale[axes], self.translate[axes], name=self.name
+        )
 
-    def set_pad(self, axes: Sequence[int]) -> 'ScaleTranslate':
+    def expand_dims(self, axes: Sequence[int]) -> 'ScaleTranslate':
         """Return a transform with added axes for non-visible dimensions.
 
         Parameters
         ----------
         axes : Sequence[int]
-            Location of axes to pad the current transform with. Passing a list
-            allows padding to occur at specific locations and for set_pad to
-            be like an inverse to the set_slice method.
+            Location of axes to expand the current transform with. Passing a
+            list allows expanion to occur at specific locations and for
+            expand_dims to be like an inverse to the set_slice method.
 
         Returns
         -------
@@ -146,10 +221,4 @@ class ScaleTranslate(Transform):
         scale[not_axes] = self.scale
         translate = np.zeros(n)
         translate[not_axes] = self.translate
-        return ScaleTranslate(scale, translate)
-
-    def compose(self, transform: 'ScaleTranslate') -> 'ScaleTranslate':
-        """Return the composite of this transform and the proivded one."""
-        scale = self.scale * transform.scale
-        translate = self.translate + self.scale * transform.translate
-        return ScaleTranslate(scale, translate)
+        return ScaleTranslate(scale, translate, name=self.name)

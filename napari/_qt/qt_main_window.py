@@ -8,6 +8,9 @@ import time
 from skimage.io import imsave
 
 from .qt_about import QtAbout
+from .qt_plugin_report import QtPluginErrReporter
+from .qt_plugin_sorter import QtPluginSorter
+from .qt_dict_table import QtDictTable
 from .qt_viewer_dock_widget import QtViewerDockWidget
 from ..resources import get_stylesheet
 
@@ -15,15 +18,18 @@ from ..resources import get_stylesheet
 # these module-level imports have to come after `app.use_app(API)`
 # see discussion on #638
 from qtpy.QtWidgets import (  # noqa: E402
+    QAbstractItemView,
     QApplication,
     QMainWindow,
     QWidget,
     QHBoxLayout,
+    QDialog,
     QDockWidget,
     QLabel,
     QAction,
     QShortcut,
     QStatusBar,
+    QVBoxLayout,
 )
 from qtpy.QtCore import Qt  # noqa: E402
 from qtpy.QtGui import QKeySequence  # noqa: E402
@@ -77,6 +83,7 @@ class Window:
         self._add_file_menu()
         self._add_view_menu()
         self._add_window_menu()
+        self._add_plugins_menu()
         self._add_help_menu()
 
         self._status_bar.showMessage('Ready')
@@ -86,20 +93,16 @@ class Window:
         self._qt_center.layout().addWidget(self.qt_viewer)
         self._qt_center.layout().setContentsMargins(4, 0, 4, 0)
 
-        self._update_palette(qt_viewer.viewer.palette)
+        self._update_palette()
 
-        if self.qt_viewer.console.shell is not None:
-            self._add_viewer_dock_widget(self.qt_viewer.dockConsole)
-
+        self._add_viewer_dock_widget(self.qt_viewer.dockConsole)
         self._add_viewer_dock_widget(self.qt_viewer.dockLayerControls)
         self._add_viewer_dock_widget(self.qt_viewer.dockLayerList)
 
         self.qt_viewer.viewer.events.status.connect(self._status_changed)
         self.qt_viewer.viewer.events.help.connect(self._help_changed)
         self.qt_viewer.viewer.events.title.connect(self._title_changed)
-        self.qt_viewer.viewer.events.palette.connect(
-            lambda event: self._update_palette(event.palette)
-        )
+        self.qt_viewer.viewer.events.palette.connect(self._update_palette)
 
         if show:
             self.show()
@@ -190,6 +193,88 @@ class Window:
         self.window_menu = self.main_menu.addMenu('&Window')
         self.window_menu.addAction(exit_action)
 
+    def _add_plugins_menu(self):
+        """Add 'Plugins' menu to app menubar."""
+        self.plugins_menu = self.main_menu.addMenu('&Plugins')
+
+        list_plugins_action = QAction(
+            "List installed plugins...", self._qt_window
+        )
+        list_plugins_action.setStatusTip('List installed plugins')
+        list_plugins_action.triggered.connect(self._show_plugin_list)
+        self.plugins_menu.addAction(list_plugins_action)
+
+        order_plugin_action = QAction("Plugin call order...", self._qt_window)
+        order_plugin_action.setStatusTip('Change call order for plugins')
+        order_plugin_action.triggered.connect(self._show_plugin_sorter)
+        self.plugins_menu.addAction(order_plugin_action)
+
+        report_plugin_action = QAction("Plugin errors...", self._qt_window)
+        report_plugin_action.setStatusTip(
+            'Review stack traces for plugin exceptions and notify developers'
+        )
+        report_plugin_action.triggered.connect(self._show_plugin_err_reporter)
+        self.plugins_menu.addAction(report_plugin_action)
+
+    def _show_plugin_list(self):
+        """Show dialog with a table of installed plugins and metadata."""
+        from ..plugins import plugin_manager
+
+        dialog = QDialog(self._qt_window)
+        dialog.setMaximumHeight(800)
+        dialog.setMaximumWidth(1280)
+        layout = QVBoxLayout()
+        # maybe someday add a search bar here?
+        title = QLabel("Installed Plugins")
+        title.setObjectName("h2")
+        layout.addWidget(title)
+        # get metadata for successfully registered plugins
+        data = [
+            v
+            for k, v in plugin_manager._plugin_meta.items()
+            if k in plugin_manager._name2plugin
+        ]
+        # create a table for it
+        dialog.table = QtDictTable(
+            self._qt_window,
+            data,
+            headers=[
+                'plugin',
+                'package',
+                'version',
+                'url',
+                'author',
+                'license',
+            ],
+            min_section_width=60,
+        )
+        dialog.table.setObjectName("pluginTable")
+        dialog.table.horizontalHeader().setObjectName("pluginTableHeader")
+        dialog.table.verticalHeader().setObjectName("pluginTableHeader")
+        dialog.table.setGridStyle(Qt.NoPen)
+        # prevent editing of table
+        dialog.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        layout.addWidget(dialog.table)
+        dialog.setLayout(layout)
+        dialog.setAttribute(Qt.WA_DeleteOnClose)
+        self._plugin_list = dialog
+        dialog.exec_()
+
+    def _show_plugin_sorter(self):
+        """Show dialog that allows users to sort the call order of plugins."""
+        plugin_sorter = QtPluginSorter(parent=self._qt_window)
+        dock_widget = self.add_dock_widget(
+            plugin_sorter, name='Plugin Sorter', area="right"
+        )
+        plugin_sorter.finished.connect(dock_widget.close)
+        plugin_sorter.finished.connect(plugin_sorter.deleteLater)
+        plugin_sorter.finished.connect(dock_widget.deleteLater)
+
+    def _show_plugin_err_reporter(self):
+        """Show dialog that allows users to review and report plugin errors."""
+        plugin_sorter = QtPluginErrReporter(parent=self._qt_window)
+        plugin_sorter.exec_()
+
     def _add_help_menu(self):
         """Add 'Help' menu to app menubar."""
         self.help_menu = self.main_menu.addMenu('&Help')
@@ -202,14 +287,14 @@ class Window:
         )
         self.help_menu.addAction(about_action)
 
-        about_keybindings = QAction("keybindings", self._qt_window)
-        about_keybindings.setShortcut("Ctrl+Alt+/")
-        about_keybindings.setShortcutContext(Qt.ApplicationShortcut)
-        about_keybindings.setStatusTip('keybindings')
-        about_keybindings.triggered.connect(
-            self.qt_viewer.show_keybindings_dialog
+        about_key_bindings = QAction("Show key bindings", self._qt_window)
+        about_key_bindings.setShortcut("Ctrl+Alt+/")
+        about_key_bindings.setShortcutContext(Qt.ApplicationShortcut)
+        about_key_bindings.setStatusTip('key_bindings')
+        about_key_bindings.triggered.connect(
+            self.qt_viewer.show_key_bindings_dialog
         )
-        self.help_menu.addAction(about_keybindings)
+        self.help_menu.addAction(about_key_bindings)
 
     def add_dock_widget(
         self,
@@ -315,16 +400,11 @@ class Window:
             self._qt_window.raise_()  # for macOS
             self._qt_window.activateWindow()  # for Windows
 
-    def _update_palette(self, palette):
-        """Update widget color palette.
-
-        Parameters
-        ----------
-        palette : qtpy.QtGui.QPalette
-            Color palette for each widget state (Active, Disabled, Inactive).
-        """
+    def _update_palette(self, event=None):
+        """Update widget color palette."""
         # set window styles which don't use the primary stylesheet
         # FIXME: this is a problem with the stylesheet not using properties
+        palette = self.qt_viewer.viewer.palette
         self._status_bar.setStyleSheet(
             template(
                 'QStatusBar { background: {{ background }}; '

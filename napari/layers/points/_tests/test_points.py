@@ -126,7 +126,7 @@ def test_selecting_points():
     data = 20 * np.random.random(shape)
     layer = Points(data)
     layer.mode = 'select'
-    data_to_select = [1, 2]
+    data_to_select = {1, 2}
     layer.selected_data = data_to_select
     assert layer.selected_data == data_to_select
 
@@ -135,7 +135,7 @@ def test_selecting_points():
     assert layer.selected_data == data_to_select
 
     # select different points while in 3D mode
-    other_data_to_select = [0]
+    other_data_to_select = {0}
     layer.selected_data = other_data_to_select
     assert layer.selected_data == other_data_to_select
 
@@ -151,7 +151,7 @@ def test_selecting_points():
 
     # add mode should clear the selection
     layer.mode = 'add'
-    assert layer.selected_data == []
+    assert layer.selected_data == set()
 
 
 def test_adding_points():
@@ -167,7 +167,7 @@ def test_adding_points():
     assert len(layer.data) == 11
     assert np.all(layer.data[10] == coord)
     # the added point should be selected
-    assert layer.selected_data == [10]
+    assert layer.selected_data == {10}
 
     # test adding multiple points
     coords = [[10, 10], [15, 15]]
@@ -201,7 +201,7 @@ def test_removing_selected_points():
     assert len(layer.data) == shape[0]
 
     # Select two points and remove them
-    layer.selected_data = [0, 3]
+    layer.selected_data = {0, 3}
     layer.remove_selected()
     assert len(layer.data) == shape[0] - 2
     assert len(layer.selected_data) == 0
@@ -209,7 +209,7 @@ def test_removing_selected_points():
     assert np.all(layer.data == data[keep])
 
     # Select another point and remove it
-    layer.selected_data = [4]
+    layer.selected_data = {4}
     layer.remove_selected()
     assert len(layer.data) == shape[0] - 3
 
@@ -349,14 +349,14 @@ def test_properties():
     assert layer.current_properties == current_prop
 
     # test removing points
-    layer.selected_data = [0, 1]
+    layer.selected_data = {0, 1}
     layer.remove_selected()
     remove_properties = properties['point_type'][2::]
     assert len(layer.properties['point_type']) == (shape[0] - 2)
     assert np.all(layer.properties['point_type'] == remove_properties)
 
     # test selection of properties
-    layer.selected_data = [0]
+    layer.selected_data = {0}
     selected_annotation = layer.current_properties['point_type']
     assert len(selected_annotation) == 1
     assert selected_annotation[0] == 'A'
@@ -367,7 +367,7 @@ def test_properties():
     assert np.all(layer.properties['point_type'] == add_annotations)
 
     # test copy/paste
-    layer.selected_data = [0, 1]
+    layer.selected_data = {0, 1}
     layer._copy_data()
     assert np.all(layer._clipboard['properties']['point_type'] == ['A', 'B'])
 
@@ -512,7 +512,7 @@ def test_edge_color_direct():
     np.testing.assert_allclose(colorarray, layer.edge_color)
 
     # Select data and change edge color of selection
-    layer.selected_data = [0, 1]
+    layer.selected_data = {0, 1}
     assert layer.current_edge_color == 'black'
     layer.current_edge_color = 'green'
     colorarray_green = transform_color(['green'] * len(layer.selected_data))
@@ -521,7 +521,7 @@ def test_edge_color_direct():
 
     # Add new point and test its color
     coord = [18, 18]
-    layer.selected_data = []
+    layer.selected_data = {}
     layer.current_edge_color = 'blue'
     layer.add(coord)
     colorarray = np.vstack([colorarray, transform_color('blue')])
@@ -553,7 +553,7 @@ def test_edge_color_direct():
     )
 
     # Check removing data adjusts colors correctly
-    layer.selected_data = [0, 2]
+    layer.selected_data = {0, 2}
     layer.remove_selected()
     assert len(layer.data) == shape[0] - 1
     assert len(layer.edge_color) == shape[0] - 1
@@ -594,7 +594,7 @@ def test_edge_color_cycle():
 
     # Add new point and test its color
     coord = [18, 18]
-    layer2.selected_data = [0]
+    layer2.selected_data = {0}
     layer2.add(coord)
     assert len(layer2.edge_color) == shape[0] + 1
     np.testing.assert_allclose(
@@ -603,7 +603,7 @@ def test_edge_color_cycle():
     )
 
     # Check removing data adjusts colors correctly
-    layer2.selected_data = [0, 2]
+    layer2.selected_data = {0, 2}
     layer2.remove_selected()
     assert len(layer2.data) == shape[0] - 1
     assert len(layer2.edge_color) == shape[0] - 1
@@ -690,7 +690,7 @@ def test_edge_color_colormap():
 
     # Add new point and test its color
     coord = [18, 18]
-    layer.selected_data = [0]
+    layer.selected_data = {0}
     layer.add(coord)
     assert len(layer.edge_color) == shape[0] + 1
     np.testing.assert_allclose(
@@ -704,7 +704,7 @@ def test_edge_color_colormap():
     assert layer.edge_colormap[1] == get_colormap(new_colormap)
 
     # Check removing data adjusts colors correctly
-    layer.selected_data = [0, 2]
+    layer.selected_data = {0, 2}
     layer.remove_selected()
     assert len(layer.data) == shape[0] - 1
     assert len(layer.edge_color) == shape[0] - 1
@@ -737,7 +737,7 @@ def test_face_color_direct():
     np.testing.assert_allclose(colorarray, layer.face_color)
 
     # Select data and change edge color of selection
-    layer.selected_data = [0, 1]
+    layer.selected_data = {0, 1}
     assert layer.current_face_color == 'white'
     layer.current_face_color = transform_color('green')
     colorarray_green = transform_color(['green'] * len(layer.selected_data))
@@ -746,7 +746,7 @@ def test_face_color_direct():
 
     # Add new point and test its color
     coord = [18, 18]
-    layer.selected_data = []
+    layer.selected_data = {}
     layer.current_face_color = 'blue'
     layer.add(coord)
     colorarray = np.vstack((colorarray, transform_color('blue')))
@@ -777,7 +777,7 @@ def test_face_color_direct():
     )
 
     # Check removing data adjusts colors correctly
-    layer.selected_data = [0, 2]
+    layer.selected_data = {0, 2}
     layer.remove_selected()
     assert len(layer.data) == shape[0] - 1
     assert len(layer.face_color) == shape[0] - 1
@@ -816,7 +816,7 @@ def test_face_color_cycle():
 
     # Add new point and test its color
     coord = [18, 18]
-    layer2.selected_data = [0]
+    layer2.selected_data = {0}
     layer2.add(coord)
     assert len(layer2.face_color) == shape[0] + 1
     np.testing.assert_allclose(
@@ -825,7 +825,7 @@ def test_face_color_cycle():
     )
 
     # Check removing data adjusts colors correctly
-    layer2.selected_data = [0, 2]
+    layer2.selected_data = {0, 2}
     layer2.remove_selected()
     assert len(layer2.data) == shape[0] - 1
     assert len(layer2.face_color) == shape[0] - 1
@@ -911,7 +911,7 @@ def test_face_color_colormap():
 
     # Add new point and test its color
     coord = [18, 18]
-    layer.selected_data = [0]
+    layer.selected_data = {0}
     layer.add(coord)
     assert len(layer.face_color) == shape[0] + 1
     np.testing.assert_allclose(
@@ -925,7 +925,7 @@ def test_face_color_colormap():
     assert layer.face_colormap[1] == get_colormap(new_colormap)
 
     # Check removing data adjusts colors correctly
-    layer.selected_data = [0, 2]
+    layer.selected_data = {0, 2}
     layer.remove_selected()
     assert len(layer.data) == shape[0] - 1
     assert len(layer.face_color) == shape[0] - 1
@@ -971,7 +971,7 @@ def test_size():
     assert np.all(layer.size[11] == [20, 20])
 
     # Select data and change size
-    layer.selected_data = [0, 1]
+    layer.selected_data = {0, 1}
     assert layer.current_size == 10
     layer.current_size = 16
     assert layer.size.shape == (12, 2)
@@ -979,7 +979,7 @@ def test_size():
     assert np.unique(layer.size[:2])[0] == 16
 
     # Select data and size changes
-    layer.selected_data = [11]
+    layer.selected_data = {11}
     assert layer.current_size == 20
 
     # Create new layer with new size data
@@ -1027,7 +1027,7 @@ def test_size_with_arrays():
     assert np.all(layer.size[10] == [13, 13])
 
     # Select data and change size
-    layer.selected_data = [0, 1]
+    layer.selected_data = {0, 1}
     assert layer.current_size == 5
     layer.current_size = 16
     assert layer.size.shape == (11, 2)
@@ -1035,7 +1035,7 @@ def test_size_with_arrays():
     assert np.unique(layer.size[:2])[0] == 16
 
     # Check removing data adjusts colors correctly
-    layer.selected_data = [0, 2]
+    layer.selected_data = {0, 2}
     layer.remove_selected()
     assert len(layer.data) == 9
     assert len(layer.size) == 9
@@ -1086,7 +1086,7 @@ def test_size_with_3D_arrays():
     assert np.all(layer.size[10] == [1, 13, 13])
 
     # Select data and change size
-    layer.selected_data = [0, 1]
+    layer.selected_data = {0, 1}
     assert layer.current_size == 5
     layer.current_size = 16
     assert layer.size.shape == (11, 3)
@@ -1108,7 +1108,7 @@ def test_size_with_3D_arrays():
     assert np.all(layer.size[10] == [0, 13, 13])
 
     # Select data and change size
-    layer.selected_data = [0, 1]
+    layer.selected_data = {0, 1}
     assert layer.current_size == 5
     layer.current_size = 16
     assert layer.size.shape == (11, 3)
@@ -1134,7 +1134,7 @@ def test_copy_and_paste():
     assert layer._clipboard == {}
 
     # Copying and pasting with two points selected adds to clipboard and data
-    layer.selected_data = [0, 1]
+    layer.selected_data = {0, 1}
     layer._copy_data()
     layer._paste_data()
     assert len(layer._clipboard.keys()) > 0
@@ -1148,7 +1148,7 @@ def test_copy_and_paste():
 
     # Unselecting everything and copying and pasting will empty the clipboard
     # and add no new data
-    layer.selected_data = []
+    layer.selected_data = {}
     layer._copy_data()
     layer._paste_data()
     assert layer._clipboard == {}
