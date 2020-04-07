@@ -182,6 +182,8 @@ class Points(Layer):
 
     Extended Summary
     ----------
+    _property_choices : dict {str: array (N,)}
+        Possible values for the properties in Points.properties
     _data_view : array (M, 2)
         2D coordinates of points in the currently viewed slice.
     _size_view : array (M, )
@@ -275,11 +277,11 @@ class Points(Layer):
         elif len(data) > 0:
             properties = dataframe_to_properties(properties)
             self._properties = self._validate_properties(properties)
-            self.property_choices = {
+            self._property_choices = {
                 k: np.unique(v) for k, v in properties.items()
             }
         elif len(data) == 0:
-            self.property_choices = properties
+            self._property_choices = properties
             empty_properties = {k: np.empty(0) for k in properties}
             self._properties = empty_properties
 
@@ -354,7 +356,8 @@ class Points(Layer):
             }
         elif len(data) == 0 and self.properties:
             self.current_properties = {
-                k: np.asarray([v[0]]) for k, v in self.property_choices.items()
+                k: np.asarray([v[0]])
+                for k, v in self._property_choices.items()
             }
             if self._edge_color_mode == ColorMode.DIRECT:
                 self._current_edge_color = transform_color_with_defaults(
@@ -551,17 +554,6 @@ class Points(Layer):
 
             self.refresh_colors()
         self.events.current_properties()
-
-    @property
-    def property_choices(self):
-        """dict {str: array (N,)}: possible values for the properties in Points.properties"""
-        return self._property_choices
-
-    @property_choices.setter
-    def property_choices(self, property_choices: Dict[str, np.ndarray]):
-        if not isinstance(property_choices, dict):
-            property_choices = dataframe_to_properties(property_choices)
-        self._property_choices = property_choices
 
     def _validate_properties(self, properties: Dict[str, np.ndarray]):
         """Validates the type and size of the properties"""
