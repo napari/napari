@@ -510,7 +510,7 @@ class Points(Layer):
 
     @property
     def properties(self):
-        """dict {str: array (N,)}, DataFrame: Annotations for each point"""
+        """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each point"""
         return self._properties
 
     @properties.setter
@@ -532,7 +532,7 @@ class Points(Layer):
 
     @property
     def current_properties(self):
-        """Dict[str: np.ndarray]: properties for the next added point."""
+        """dict{str: np.ndarray(N,)}: properties for the next added point."""
         return self._current_properties
 
     @current_properties.setter
@@ -554,7 +554,7 @@ class Points(Layer):
 
     @property
     def property_choices(self):
-        """dict {str: array (N,)}, DataFrame: default annotations"""
+        """dict {str: array (N,)}: possible values for the properties in Points.properties"""
         return self._property_choices
 
     @property_choices.setter
