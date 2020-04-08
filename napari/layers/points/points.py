@@ -282,7 +282,9 @@ class Points(Layer):
             }
         elif len(data) == 0:
             self._property_choices = properties
-            empty_properties = {k: np.empty(0) for k in properties}
+            empty_properties = {
+                k: np.empty(0, dtype=v.dtype) for k, v in properties.items()
+            }
             self._properties = empty_properties
 
         # Save the point style params

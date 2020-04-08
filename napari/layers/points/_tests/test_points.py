@@ -20,15 +20,24 @@ def test_empty_points_with_properties():
 
     See: https://github.com/napari/napari/pull/1069
     """
-    properties = {'label': np.array(['label1', 'label2'])}
+    properties = {
+        'label': np.array(['label1', 'label2']),
+        'cont_prop': np.array([0], dtype=np.float),
+    }
     pts = Points(properties=properties)
     current_props = {k: v[0] for k, v in properties.items()}
     np.testing.assert_equal(pts.current_properties, current_props)
 
+    # verify the property datatype is correct
+    assert pts.properties['cont_prop'].dtype == np.float
+
     # add two points and verify the default property was applied
     pts.add([10, 10])
     pts.add([20, 20])
-    props = {'label': np.array(['label1', 'label1'])}
+    props = {
+        'label': np.array(['label1', 'label1']),
+        'cont_prop': np.array([0, 0], dtype=np.float),
+    }
     np.testing.assert_equal(pts.properties, props)
 
 
