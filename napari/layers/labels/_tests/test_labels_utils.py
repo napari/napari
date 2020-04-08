@@ -1,6 +1,6 @@
 import numpy as np
 
-from napari.layers.labels.labels_utils import interpolate_coordinates
+from napari.layers.labels._labels_utils import interpolate_coordinates
 
 
 def test_interpolate_coordinates():

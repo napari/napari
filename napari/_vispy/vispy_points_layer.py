@@ -9,7 +9,7 @@ from ..utils.colormaps.standardize_color import transform_color
 
 class VispyPointsLayer(VispyBaseLayer):
     _highlight_color = (0, 0.6, 1)
-    _highlight_width = 5
+    _highlight_width = 2
 
     def __init__(self, layer):
         # Create a compound visual with the following four subvisuals:

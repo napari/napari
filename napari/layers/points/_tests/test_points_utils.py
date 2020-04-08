@@ -1,7 +1,7 @@
 import numpy as np
 import pandas as pd
 
-from napari.layers.points.points_utils import (
+from napari.layers.points._points_utils import (
     dataframe_to_properties,
     guess_continuous,
 )
