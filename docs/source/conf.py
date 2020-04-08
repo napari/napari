@@ -12,6 +12,7 @@
 #
 import os
 import sys
+import re
 import fileinput
 
 sys.path.insert(0, os.path.abspath('../..'))
@@ -44,6 +45,11 @@ def clean_release_notes():
             #         "rendering), and ",
             #     )
             # ):
+            line = re.sub(
+                r'#(\d+)',
+                r'`#\1 <https://github.com/napari/napari/issues/\1>`_',
+                line,
+            )
             print(line, end='')
 
 

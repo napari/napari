@@ -423,19 +423,23 @@ def iter_plugin_modules(
 
     Plugin packages may also provide multiple entry points, which will be
     registered as plugins of different names.  For instance, the following
-    setup.py entry would register two plugins under the names
-    "plugin_package.register" and "plugin_package.segment"
+    ``setup.py`` entry would register two plugins under the names
+    ``myplugin.register`` and ``myplugin.segment``
 
-    setup(
-        name="napari-plugin-package",
-        entry_points={
-            "napari.plugin": [
-                "plugin_package.register = napari_plugin_package.registration",
-                "plugin_package.segment = napari_plugin_package.segmentation"
-            ],
-        },
-        packages=find_packages(),
-    )
+    .. code-block:: python
+
+        import sys
+
+        setup(
+            name="napari-plugin",
+            entry_points={
+                "napari.plugin": [
+                    "myplugin.register = napari_plugin.registration",
+                    "myplugin.segment = napari_plugin.segmentation"
+                ],
+            },
+            packages=find_packages(),
+        )
 
 
     Parameters
