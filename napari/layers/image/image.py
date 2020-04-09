@@ -508,7 +508,15 @@ class Image(IntensityVisualizationMixin, Layer):
                 ).transpose(order)
         else:
             self._transforms['tile2data'].scale = np.ones(self.dims.ndim)
-            image = np.asarray(self.data[self.dims.indices]).transpose(order)
+
+            if self.dims.ndim > 2:
+                outer_idx = tuple(self.dims.indices[: self.dims.ndim - 3])
+                image = np.asarray(self.data[outer_idx])
+                image = image[tuple(self.dims.indices[-3:])]
+            else:
+                image = np.asarray(self.data[self.dims.indices])
+
+            image = image.transpose(order)
             thumbnail = image
 
         if self.rgb and image.dtype.kind == 'f':
