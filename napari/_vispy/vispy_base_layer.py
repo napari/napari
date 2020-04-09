@@ -177,32 +177,6 @@ class VispyBaseLayer(ABC):
         self._on_scale_change()
         self._on_translate_change()
 
-    def on_mouse_move(self, event):
-        """Called whenever mouse moves over canvas."""
-        if event.pos is None:
-            return
-        self._position = list(event.pos)
-        self.layer.position = self._transform_position(self._position)
-        self.layer.on_mouse_move(event)
-
-    def on_mouse_press(self, event):
-        """Called whenever mouse pressed in canvas.
-        """
-        if event.pos is None:
-            return
-        self._position = list(event.pos)
-        self.layer.position = self._transform_position(self._position)
-        self.layer.on_mouse_press(event)
-
-    def on_mouse_release(self, event):
-        """Called whenever mouse released in canvas.
-        """
-        if event.pos is None:
-            return
-        self._position = list(event.pos)
-        self.layer.position = self._transform_position(self._position)
-        self.layer.on_mouse_release(event)
-
     def on_draw(self, event):
         """Called whenever the canvas is drawn.
         """
