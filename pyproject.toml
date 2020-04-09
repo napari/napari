@@ -21,3 +21,41 @@ exclude = '''
   | napari/resources/qt.py
 )
 '''
+
+[build-system]
+requires = ["briefcase"]
+
+[tool.briefcase]
+project_name = "napari"
+bundle = "com.napari"
+version = "0.3.0"
+author = "napari"
+author_email = "napari@example.com"
+
+[tool.briefcase.app.napari]
+formal_name = "napari"
+description = "My first Briefcase App"
+requires = [
+  'dask[array]>=2.1.0',
+  'fsspec>=0.3.3',
+  'imageio>=2.5.0',
+  'Pillow<=7.0.0',
+  'PySide2',
+  'ipykernel>=5.1.1',
+  'numpy>=1.10.0',
+  'qtpy>=1.7.0',
+  'qtconsole>=4.5.1',
+  'jupyter-client<6.0.0',
+  'scipy>=1.2.0',
+  'scikit-image>=0.15.0',
+  'vispy>=0.6.4',
+  'IPython>=7.7.0',
+  'backcall>=0.1.0',
+  'PyOpenGL>=3.1.0',
+  'wrapt>=1.11.1',
+  'numpydoc>=0.9.2',
+  'pluggy>=0.13.0',
+  'pip',
+]
+sources = ['napari']
+icon = "resources/icon"
