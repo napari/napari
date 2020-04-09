@@ -619,6 +619,11 @@ class Layer(KeymapProvider, ABC):
         self._value = self.get_value()
         self.status = self.get_message()
 
+    @property
+    def displayed_coordinates(self):
+        """list: List of currently displayed coordinates."""
+        return [self.coordinates[i] for i in self.dims.displayed]
+
     def get_message(self):
         """Generate a status message based on the coordinates and value
 
