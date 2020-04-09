@@ -20,19 +20,20 @@ def select(layer, event):
     shift = 'Shift' in event.modifiers
     # on press
     layer._moving_value = copy(layer._value)
-    if layer._value[1] is None:
-        if shift and layer._value[0] is not None:
-            if layer._value[0] in layer.selected_data:
-                layer.selected_data.remove(layer._value[0])
+    shape_under_cursor, vertex_under_cursor = layer._value
+    if vertex_under_cursor is None:
+        if shift and shape_under_cursor is not None:
+            if shape_under_cursor in layer.selected_data:
+                layer.selected_data.remove(shape_under_cursor)
                 shapes = layer.selected_data
                 layer._selected_box = layer.interaction_box(shapes)
             else:
-                layer.selected_data.append(layer._value[0])
+                layer.selected_data.append(shape_under_cursor)
                 shapes = layer.selected_data
                 layer._selected_box = layer.interaction_box(shapes)
-        elif layer._value[0] is not None:
-            if layer._value[0] not in layer.selected_data:
-                layer.selected_data = {layer._value[0]}
+        elif shape_under_cursor is not None:
+            if shape_under_cursor not in layer.selected_data:
+                layer.selected_data = {shape_under_cursor}
         else:
             layer.selected_data = set()
     layer._set_highlight()
@@ -47,8 +48,8 @@ def select(layer, event):
     # on release
     shift = 'Shift' in event.modifiers
     if not layer._is_moving and not layer._is_selecting and not shift:
-        if layer._value[0] is not None:
-            layer.selected_data = {layer._value[0]}
+        if shape_under_cursor is not None:
+            layer.selected_data = {shape_under_cursor}
         else:
             layer.selected_data = set()
     elif layer._is_selecting:
@@ -162,14 +163,15 @@ def add_path_polygon_creating(layer, event):
 
 
 def vertex_insert(layer, event):
-    """Insert a vertex into a selected shape."""
-    coord = layer.displayed_coordinates
-    if len(layer.selected_data) == 0:
-        # If none selected return immediately
-        return
+    """Insert a vertex into a selected shape.
 
-    all_lines = np.empty((0, 2, 2))
-    all_lines_shape = np.empty((0, 2), dtype=int)
+    The vertex will get inserted in between the vertices of the closest edge
+    from all the edges in selected shapes. Vertices cannot be inserted into
+    Ellipses.
+    """
+    # Determine all the edges in currently selected shapes
+    all_edges = np.empty((0, 2, 2))
+    all_edges_shape = np.empty((0, 2), dtype=int)
     for index in layer.selected_data:
         shape_type = type(layer._data_view.shapes[index])
         if shape_type == Ellipse:
@@ -190,17 +192,20 @@ def vertex_insert(layer, event):
                 lines = np.array(
                     [[vertices[i], vertices[i + 1]] for i in range(n - 1)]
                 )
-            all_lines = np.append(all_lines, lines, axis=0)
+            all_edges = np.append(all_edges, lines, axis=0)
             indices = np.array(
                 [np.repeat(index, len(lines)), list(range(len(lines)))]
             ).T
-            all_lines_shape = np.append(all_lines_shape, indices, axis=0)
-    if len(all_lines) == 0:
-        # No appropriate shapes found
+            all_edges_shape = np.append(all_edges_shape, indices, axis=0)
+
+    if len(all_edges) == 0:
+        # No appropriate edges were found
         return
-    ind, loc = point_to_lines(coord, all_lines)
-    index = all_lines_shape[ind][0]
-    ind = all_lines_shape[ind][1] + 1
+
+    # Determine the closet edge to the current cursor coordinate
+    ind, loc = point_to_lines(layer.displayed_coordinates, all_edges)
+    index = all_edges_shape[ind][0]
+    ind = all_edges_shape[ind][1] + 1
     shape_type = type(layer._data_view.shapes[index])
     if shape_type == Line:
         # Adding vertex to line turns it into a path
@@ -214,13 +219,14 @@ def vertex_insert(layer, event):
     vertices = layer._data_view.displayed_vertices[
         layer._data_view.displayed_index == index
     ]
-    if closed is not True:
+    if not closed:
         if int(ind) == 1 and loc < 0:
             ind = 0
         elif int(ind) == len(vertices) - 1 and loc > 1:
             ind = ind + 1
 
-    vertices = np.insert(vertices, ind, [coord], axis=0)
+    # Insert new vertex at appropriate place in vertices of target shape
+    vertices = np.insert(vertices, ind, [layer.displayed_coordinates], axis=0)
     with layer.events.set_data.blocker():
         data_full = layer.expand_shape(vertices)
         layer._data_view.edit(index, data_full, new_type=new_type)
@@ -229,44 +235,54 @@ def vertex_insert(layer, event):
 
 
 def vertex_remove(layer, event):
-    """Remove a vertex from a selected shape."""
-    if layer._value[1] is not None:
-        # have clicked on a current vertex so remove
-        index = layer._value[0]
-        shape_type = type(layer._data_view.shapes[index])
-        if shape_type == Ellipse:
-            # Removing vertex from ellipse not implemented
-            return
-        vertices = layer._data_view.displayed_vertices[
-            layer._data_view.displayed_index == index
-        ]
-        if len(vertices) <= 2:
-            # If only 2 vertices present, remove whole shape
-            with layer.events.set_data.blocker():
-                if index in layer.selected_data:
-                    layer.selected_data.remove(index)
-                layer._data_view.remove(index)
-                shapes = layer.selected_data
-                layer._selected_box = layer.interaction_box(shapes)
-        elif shape_type == Polygon and len(vertices) == 3:
-            # If only 3 vertices of a polygon present remove
-            with layer.events.set_data.blocker():
-                if index in layer.selected_data:
-                    layer.selected_data.remove(index)
-                layer._data_view.remove(index)
-                shapes = layer.selected_data
-                layer._selected_box = layer.interaction_box(shapes)
+    """Remove a vertex from a selected shape.
+
+    If a vertex is clicked on remove it from the shape it is in. If this cause
+    the shape to shrink to a size that no longer is valid remove the whole
+    shape.
+    """
+    shape_under_cursor, vertex_under_cursor = layer._value
+    if vertex_under_cursor is None:
+        # No vertex was clicked on so return
+        return
+
+    # Have clicked on a current vertex so remove
+    shape_type = type(layer._data_view.shapes[shape_under_cursor])
+    if shape_type == Ellipse:
+        # Removing vertex from ellipse not implemented
+        return
+    vertices = layer._data_view.displayed_vertices[
+        layer._data_view.displayed_index == shape_under_cursor
+    ]
+    if len(vertices) <= 2:
+        # If only 2 vertices present, remove whole shape
+        with layer.events.set_data.blocker():
+            if shape_under_cursor in layer.selected_data:
+                layer.selected_data.remove(shape_under_cursor)
+            layer._data_view.remove(shape_under_cursor)
+            shapes = layer.selected_data
+            layer._selected_box = layer.interaction_box(shapes)
+    elif shape_type == Polygon and len(vertices) == 3:
+        # If only 3 vertices of a polygon present remove
+        with layer.events.set_data.blocker():
+            if shape_under_cursor in layer.selected_data:
+                layer.selected_data.remove(shape_under_cursor)
+            layer._data_view.remove(shape_under_cursor)
+            shapes = layer.selected_data
+            layer._selected_box = layer.interaction_box(shapes)
+    else:
+        if shape_type == Rectangle:
+            # Deleting vertex from a rectangle creates a polygon
+            new_type = Polygon
         else:
-            if shape_type == Rectangle:
-                # Deleting vertex from a rectangle creates a polygon
-                new_type = Polygon
-            else:
-                new_type = None
-            # Remove clicked on vertex
-            vertices = np.delete(vertices, layer._value[1], axis=0)
-            with layer.events.set_data.blocker():
-                data_full = layer.expand_shape(vertices)
-                layer._data_view.edit(index, data_full, new_type=new_type)
-                shapes = layer.selected_data
-                layer._selected_box = layer.interaction_box(shapes)
-        layer.refresh()
+            new_type = None
+        # Remove clicked on vertex
+        vertices = np.delete(vertices, vertex_under_cursor, axis=0)
+        with layer.events.set_data.blocker():
+            data_full = layer.expand_shape(vertices)
+            layer._data_view.edit(
+                shape_under_cursor, data_full, new_type=new_type
+            )
+            shapes = layer.selected_data
+            layer._selected_box = layer.interaction_box(shapes)
+    layer.refresh()
