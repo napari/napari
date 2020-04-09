@@ -98,6 +98,10 @@ def _multicall(
         teardowns = []
         try:
             for hook_impl in reversed(hook_impls):
+                # the `hook_impl.enabled` attribute is specific to napari
+                # it is not recognized or implemented by pluggy
+                if not getattr(hook_impl, 'enabled', True):
+                    continue
                 args: List[Any] = []
                 try:
                     args = [

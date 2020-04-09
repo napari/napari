@@ -1,7 +1,7 @@
 """
 This plugin registers fine, and passes hook_specification validation.
 But errors when the actual reader function is called.  This is used for testing
-the get_layer_data_from_plugins loop.
+the read_data_with_plugins loop.
 
 """
 import pluggy
