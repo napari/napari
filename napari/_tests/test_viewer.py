@@ -154,14 +154,21 @@ def test_roll_traspose_update(viewer_factory, layer_class, data, ndim):
         # Visual layer attributes should match expected from viewer dims:
         for transf_name, transf in transf_dict.items():
             disp_dims = viewer.dims.displayed  # dimensions displayed in 2D
-            vis_vals = getattr(vis_lyr, transf_name)[
-                1::-1
-            ]  # values of visual layer
+            # values of visual layer
+            vis_vals = getattr(vis_lyr, transf_name)[1::-1]
 
-            # If layer's a pyramid scale is multiplued by a factor 2:
-            if layer.is_pyramid and transf_name == "scale":
-                vis_vals /= 2
-            correct_vals = transf[disp_dims]  # expected translate/scale values
+            # The transform of the visual includes both values from the
+            # data2world transform and the tile2data transform and so any
+            # any additional scaling / translation from tile2data transform
+            # must be taken into account
+            transform = layer._transforms['tile2data'].set_slice(disp_dims)
+            tile_transf = getattr(transform, transf_name)
+            if transf_name == 'scale':
+                # expected scale values
+                correct_vals = np.multiply(transf[disp_dims], tile_transf)
+            else:
+                # expected translate values
+                correct_vals = np.add(transf[disp_dims], tile_transf)
             assert (vis_vals == correct_vals).all()
 
     view, viewer = viewer_factory()
@@ -172,8 +179,8 @@ def test_roll_traspose_update(viewer_factory, layer_class, data, ndim):
 
     # Set translations and scalings (match type of visual layer storing):
     transf_dict = {
-        "translate": np.random.randint(0, 10, ndim).astype(np.float32),
-        "scale": np.random.rand(ndim).astype(np.float32),
+        'translate': np.random.randint(0, 10, ndim).astype(np.float32),
+        'scale': np.random.rand(ndim).astype(np.float32),
     }
     for k, val in transf_dict.items():
         setattr(layer, k, val)

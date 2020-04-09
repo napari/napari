@@ -462,7 +462,7 @@ class Image(IntensityVisualizationMixin, Layer):
                     * self._transforms['tile2data'].scale
                 )
             else:
-                self._transforms['tile2data'].translate = [0] * self.ndim
+                self._transforms['tile2data'].translate = np.zeros(self.ndim)
 
             image = np.asarray(
                 self._data_pyramid[level][tuple(indices)]
