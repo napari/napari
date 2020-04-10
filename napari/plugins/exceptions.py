@@ -73,6 +73,14 @@ class PluginError(Exception):
         return (self.__class__, self, self.__traceback__)
 
 
+class PluginCallError(PluginError, ImportError):
+    """Raised when an error is raised when calling a plugin implementation."""
+
+    def __init__(self, plugin_name: str, plugin_module: str, msg=None):
+        msg = msg or f"Failure while calling plugin '{plugin_name}'"
+        super().__init__(msg, plugin_name, plugin_module)
+
+
 class PluginImportError(PluginError, ImportError):
     """Raised when a plugin fails to import."""
 

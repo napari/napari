@@ -3,7 +3,7 @@ import os
 import pkgutil
 import sys
 from logging import getLogger
-from typing import Generator, Optional, Tuple, Union, List, Dict
+from typing import Generator, Optional, Tuple, Union, List, Dict, Any
 
 import pluggy
 from pluggy.hooks import HookImpl
@@ -11,6 +11,7 @@ from pluggy.hooks import HookImpl
 from . import _builtins, hook_specifications
 from .exceptions import (
     PluginError,
+    PluginCallError,
     PluginImportError,
     PluginRegistrationError,
     fetch_module_metadata,
@@ -192,6 +193,36 @@ class _HookCaller(pluggy.hooks._HookCaller):
     def disable_plugin(self, plugin_name: str):
         """disable implementation for ``plugin_name``."""
         self._set_plugin_enabled(plugin_name, False)
+
+    def call_plugin(self, plugin_name: str, *args, **kwargs):
+        implementation = self.get_hookimpl_for_plugin(plugin_name)
+        if implementation.hookwrapper:
+            raise TypeError("Hook wrappers can not be called directly")
+
+        # pluggy only allows calling hooks with keyword arguments
+        if args:
+            raise TypeError("hook calling supports only keyword arguments")
+        _args: List[Any] = []
+        try:
+            _args = [kwargs[argname] for argname in implementation.argnames]
+        except KeyError:
+            for argname in implementation.argnames:
+                if argname not in kwargs:
+                    raise pluggy.HookCallError(
+                        f"hook call must provide argument {argname}"
+                    )
+
+        try:
+            return implementation.function(*_args)
+        except Exception as exc:
+            raise PluginCallError(
+                implementation.plugin_name,
+                implementation.plugin.__name__,
+                msg=(
+                    f"Error calling plugin '{implementation.plugin_name}', "
+                    f"hook '{str(implementation.function.__name__)}'"
+                ),
+            ) from exc
 
 
 pluggy.manager._HookCaller = _HookCaller

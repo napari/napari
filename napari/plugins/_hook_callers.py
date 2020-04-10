@@ -44,7 +44,7 @@ from typing import Optional, Sequence, Any, List, Tuple, Union
 
 from pluggy.callers import HookCallError, _raise_wrapfail, _Result
 from pluggy.hooks import HookImpl, _HookCaller
-from .exceptions import PluginError
+from .exceptions import PluginCallError
 
 
 # Vendored with slight modifications from pluggy.callers._multicall:
@@ -135,10 +135,10 @@ def _multicall(
                             f"Error in plugin '{hook_impl.plugin_name}', "
                             f"hook '{str(hook_impl.function.__name__)}'"
                         )
-                        err = PluginError(
-                            msg,
+                        err = PluginCallError(
                             hook_impl.plugin_name,
                             hook_impl.plugin.__name__,
+                            msg,
                         )
                         err.__cause__ = exc
                         # TODO: storing and retrieving these plugin errors is
