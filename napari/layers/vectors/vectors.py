@@ -140,6 +140,7 @@ class Vectors(Layer):
         self._displayed_stored = []
         self._view_vertices = []
         self._view_faces = []
+        self._view_indices = []
 
         # length attribute
         self._length = length
@@ -283,12 +284,25 @@ class Vectors(Layer):
     @property
     def _view_face_color(self) -> np.ndarray:
 
-        return np.repeat(self.edge_color, 2, axis=0)
+        if self.dims.ndisplay == 2:
+            face_color = np.repeat(
+                self.edge_color[self._view_indices], 2, axis=0
+            )
+        else:
+            face_color = np.repeat(
+                self.edge_color[self._view_indices], 4, axis=0
+            )
+        return face_color
 
     @property
     def _view_vertex_color(self) -> np.ndarray:
 
-        return np.repeat(self.edge_color, 4, axis=0)
+        if self.dims.ndisplay == 2:
+            vertex_color = np.repeat(self.edge_color, 4, axis=0)
+        elif self.dims.ndisplay == 3:
+            vertex_color = np.repeat(self.edge_color, 8, axis=0)
+
+        return vertex_color
 
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
@@ -311,10 +325,12 @@ class Vectors(Layer):
         if len(self.data) == 0:
             faces = []
             self._data_view = np.empty((0, 2, 2))
+            self._view_indices = []
         elif self.ndim > 2:
             data = self.data[:, 0, not_disp].astype('int')
             matches = np.all(data == indices[not_disp], axis=1)
             matches = np.where(matches)[0]
+            self._view_indices = matches
             self._data_view = self.data[np.ix_(matches, [0, 1], disp)]
             if len(matches) == 0:
                 faces = []
@@ -333,6 +349,7 @@ class Vectors(Layer):
         else:
             faces = self._mesh_triangles
             self._data_view = self.data[:, :, disp]
+            self._view_indices = np.arange(self.data.shape[0])
 
         if len(faces) == 0:
             self._view_vertices = []
