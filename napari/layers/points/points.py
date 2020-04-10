@@ -284,9 +284,12 @@ class Points(Layer):
                 k: np.unique(v) for k, v in properties.items()
             }
         elif len(data) == 0:
-            self._property_choices = properties
+            self._property_choices = {
+                k: np.asarray(v) for k, v in properties.items()
+            }
             empty_properties = {
-                k: np.empty(0, dtype=v.dtype) for k, v in properties.items()
+                k: np.empty(0, dtype=v.dtype)
+                for k, v in self._property_choices.items()
             }
             self._properties = empty_properties
 
@@ -562,11 +565,14 @@ class Points(Layer):
 
     def _validate_properties(self, properties: Dict[str, np.ndarray]):
         """Validates the type and size of the properties"""
-        for v in properties.values():
+        for k, v in properties.items():
             if len(v) != len(self.data):
                 raise ValueError(
                     'the number of properties must equal the number of points'
                 )
+            # ensure the property values are a numpy array
+            if type(v) != np.ndarray:
+                properties[k] = np.asarray(v)
 
         return properties
 

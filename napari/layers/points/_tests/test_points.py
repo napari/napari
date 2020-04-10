@@ -41,6 +41,30 @@ def test_empty_points_with_properties():
     np.testing.assert_equal(pts.properties, props)
 
 
+def test_empty_points_with_properties_list():
+    """ Test instantiating an empty Points layer with properties
+    stored in a list
+
+    See: https://github.com/napari/napari/pull/1069
+    """
+    properties = {
+        'label': ['label1', 'label2'],
+        'cont_prop': [0],
+    }
+    pts = Points(properties=properties)
+    current_props = {k: np.asarray(v[0]) for k, v in properties.items()}
+    np.testing.assert_equal(pts.current_properties, current_props)
+
+    # add two points and verify the default property was applied
+    pts.add([10, 10])
+    pts.add([20, 20])
+    props = {
+        'label': np.array(['label1', 'label1']),
+        'cont_prop': np.array([0, 0], dtype=np.float),
+    }
+    np.testing.assert_equal(pts.properties, props)
+
+
 def test_random_points():
     """Test instantiating Points layer with random 2D data."""
     shape = (10, 2)
@@ -423,6 +447,20 @@ def test_add_points_with_properties():
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     properties = {'point_type': np.array(['A', 'B'] * int((shape[0] / 2)))}
+    layer = Points(data, properties=copy(properties))
+
+    coord = [18, 18]
+    layer.add(coord)
+    new_prop = {'point_type': np.append(properties['point_type'], 'B')}
+    np.testing.assert_equal(layer.properties, new_prop)
+
+
+def test_add_points_with_properties_as_list():
+    # test adding points initialized with properties as list
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    properties = {'point_type': ['A', 'B'] * int((shape[0] / 2))}
     layer = Points(data, properties=copy(properties))
 
     coord = [18, 18]
