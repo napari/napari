@@ -33,7 +33,7 @@ Hook specifications are a feature of
 # imperative!
 
 import pluggy
-from typing import Optional, Union, List
+from typing import Optional, Union, List, Any
 from ..types import ReaderFunction, WriterFunction
 
 napari_hook_specification = pluggy.HookspecMarker("napari")
@@ -99,11 +99,9 @@ def napari_get_reader(path: Union[str, List[str]]) -> Optional[ReaderFunction]:
     """
 
 
-@napari_hook_specification(firstresult=True)
+@napari_hook_specification
 def napari_get_writer(
-    path: Union[str, List[str]],
-    layer_types: List[str],
-    extension: Optional[str],
+    path: str, layer_types: List[str], extension: Optional[str]
 ) -> Optional[WriterFunction]:
     """Return function capable of writing napari layer data into a `path`.
 
@@ -114,18 +112,12 @@ def napari_get_writer(
     that accepts the same filepath, a list of layer_data tuples:
     Union[Tuple[Any], Tuple[Any, Dict]], and optionally an extension.
 
-    Note: ``path`` may be either a str or a list of str, and implementations
-    should do their own checking for list or str, and handle each case as
-    desired.
-
     Parameters
     ----------
-    path : str or list of str
-        Path to file, directory, or resource (like a URL), or a list of paths.
+    path : str
+        Path to file, directory, or resource (like a URL).
     layer_types : list of str
         List of layer types that will be provided to the writer function.
-    extension : str, optional
-        Extension that will set the extension for the file being written.
 
     Returns
     -------
@@ -133,4 +125,105 @@ def napari_get_writer(
         A function that accepts the path, a list of layer_data (where
         layer_data is (data, meta, layer_type)). If unable to write to the
         path or write the layer_data, must return ``None`` (not False).
+    """
+
+
+@napari_hook_specification
+def napari_write_image(path: str, data: Any, meta: dict):
+    """Write image data and metadata into a path.
+
+    Parameters
+    ----------
+    path : str
+        Path to file, directory, or resource (like a URL).
+    data : array or list of array
+        Image data. Can be N dimensional. If the last dimension has length
+        3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a
+        list and arrays are decreasing in shape then the data is from an image
+        pyramid.
+    meta : dict
+        Image metadata.
+    """
+
+
+@napari_hook_specification
+def napari_write_labels(path: str, data: Any, meta: dict):
+    """Write labels data and metadata into a path.
+
+    Parameters
+    ----------
+    path : str
+        Path to file, directory, or resource (like a URL).
+    data : array or list of array
+        Integer valued label data. Can be N dimensional. Every pixel contains
+        an integer ID corresponding to the region it belongs to. The label 0 is
+        rendered as transparent. If a list and arrays are decreasing in shape
+        then the data is from an image pyramid.
+    meta : dict
+        Labels metadata.
+    """
+
+
+@napari_hook_specification
+def napari_write_points(path: str, data: Any, meta: dict):
+    """Write points data and metadata into a path.
+
+    Parameters
+    ----------
+    path : str
+        Path to file, directory, or resource (like a URL).
+    data : array (N, D)
+        Coordinates for N points in D dimensions.
+    meta : dict
+        Points metadata.
+    """
+
+
+@napari_hook_specification
+def napari_write_shapes(path: str, data: Any, meta: dict):
+    """Write shapes data and metadata into a path.
+
+    Parameters
+    ----------
+    path : str
+        Path to file, directory, or resource (like a URL).
+    data : list
+        List of shape data, where each element is an (N, D) array of the
+        N vertices of a shape in D dimensions.
+    meta : dict
+        Shapes metadata.
+    """
+
+
+@napari_hook_specification
+def napari_write_surface(path: str, data: Any, meta: dict):
+    """Write surface data and metadata into a path.
+
+    Parameters
+    ----------
+    path : str
+        Path to file, directory, or resource (like a URL).
+    data : 3-tuple of array
+        The first element of the tuple is an (N, D) array of vertices of
+        mesh triangles. The second is an (M, 3) array of int of indices
+        of the mesh triangles. The third element is the (K0, ..., KL, N)
+        array of values used to color vertices where the additional L
+        dimensions are used to color the same mesh with different values.
+    meta : dict
+        Surface metadata.
+    """
+
+
+@napari_hook_specification
+def napari_write_vectors(path: str, data: Any, meta: dict):
+    """Write vectors data and metadata into a path.
+
+    Parameters
+    ----------
+    path : str
+        Path to file, directory, or resource (like a URL).
+    data : (N, 2, D) array
+        The start point and projections of N vectors in D dimensions.
+    meta : dict
+        Vectors metadata.
     """
