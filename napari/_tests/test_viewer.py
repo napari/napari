@@ -7,6 +7,7 @@ from napari import Viewer
 from napari._tests.utils import (
     add_layer_by_type,
     check_viewer_functioning,
+    check_view_transform_consistency,
     layer_test_data,
 )
 
@@ -73,7 +74,7 @@ def test_add_layer(viewer_factory, layer_class, data, ndim, visible):
 
 
 def test_screenshot(viewer_factory):
-    "Test taking a screenshot"
+    """Test taking a screenshot."""
     view, viewer = viewer_factory()
 
     np.random.seed(0)
@@ -141,35 +142,7 @@ def test_changing_theme(viewer_factory):
 
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
 def test_roll_traspose_update(viewer_factory, layer_class, data, ndim):
-    """ Controlling that translation and rolling preserve correct sequence
-    of translate and scaling values.
-    """
-
-    def check_view_consistency(layer, viewer, transf_dict):
-        """ Utility function for doing the checks.
-        """
-        # Get an handle on visual layer:
-        vis_lyr = viewer.window.qt_viewer.layer_to_visual[layer]
-
-        # Visual layer attributes should match expected from viewer dims:
-        for transf_name, transf in transf_dict.items():
-            disp_dims = viewer.dims.displayed  # dimensions displayed in 2D
-            # values of visual layer
-            vis_vals = getattr(vis_lyr, transf_name)[1::-1]
-
-            # The transform of the visual includes both values from the
-            # data2world transform and the tile2data transform and so any
-            # any additional scaling / translation from tile2data transform
-            # must be taken into account
-            transform = layer._transforms['tile2data'].set_slice(disp_dims)
-            tile_transf = getattr(transform, transf_name)
-            if transf_name == 'scale':
-                # expected scale values
-                correct_vals = np.multiply(transf[disp_dims], tile_transf)
-            else:
-                # expected translate values
-                correct_vals = np.add(transf[disp_dims], tile_transf)
-            assert (vis_vals == correct_vals).all()
+    """Check that transpose and roll preserve correct transform sequence."""
 
     view, viewer = viewer_factory()
 
@@ -186,12 +159,12 @@ def test_roll_traspose_update(viewer_factory, layer_class, data, ndim):
         setattr(layer, k, val)
 
     # Check consistency:
-    check_view_consistency(layer, viewer, transf_dict)
+    check_view_transform_consistency(layer, viewer, transf_dict)
 
     # Roll dims and check again:
     viewer.dims._roll()
-    check_view_consistency(layer, viewer, transf_dict)
+    check_view_transform_consistency(layer, viewer, transf_dict)
 
     # Transpose and check again:
     viewer.dims._transpose()
-    check_view_consistency(layer, viewer, transf_dict)
+    check_view_transform_consistency(layer, viewer, transf_dict)
