@@ -1,7 +1,8 @@
-from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QLabel, QComboBox, QDoubleSpinBox, QFrame
+import numpy as np
+from qtpy.QtWidgets import QLabel, QDoubleSpinBox
 from .qt_base_layer import QtLayerControls
-from vispy.color import Color
+from ..qt_color_dialog import QColorSwatchEdit
+from ..utils import qt_signals_blocked
 
 
 class QtVectorsControls(QtLayerControls):
@@ -34,16 +35,16 @@ class QtVectorsControls(QtLayerControls):
 
         self.layer.events.edge_width.connect(self._on_width_change)
         self.layer.events.length.connect(self._on_len_change)
-        self.layer.events.edge_color.connect(self._on_edge_color_change)
+        self.layer.events.current_edge_color.connect(
+            self._on_edge_color_change
+        )
 
         # vector color adjustment and widget
-        edge_comboBox = QComboBox()
-        edge_comboBox.addItems(self.layer._colors)
-        edge_comboBox.activated[str].connect(self.change_edge_color)
-        self.edgeComboBox = edge_comboBox
-        self.edgeColorSwatch = QFrame()
-        self.edgeColorSwatch.setObjectName('swatch')
-        self.edgeColorSwatch.setToolTip('Edge color swatch')
+        self.edgeColorEdit = QColorSwatchEdit(
+            initial_color=self.layer.edge_color,
+            tooltip='click to set current edge color',
+        )
+        self.edgeColorEdit.color_changed.connect(self.change_edge_color)
         self._on_edge_color_change()
 
         # line width in pixels
@@ -73,22 +74,21 @@ class QtVectorsControls(QtLayerControls):
         self.grid_layout.addWidget(QLabel('blending:'), 3, 0)
         self.grid_layout.addWidget(self.blendComboBox, 3, 1, 1, 2)
         self.grid_layout.addWidget(QLabel('edge color:'), 4, 0)
-        self.grid_layout.addWidget(self.edgeComboBox, 4, 2)
-        self.grid_layout.addWidget(self.edgeColorSwatch, 4, 1)
+        self.grid_layout.addWidget(self.edgeColorEdit, 4, 1)
         self.grid_layout.setRowStretch(5, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
 
-    def change_edge_color(self, text):
+    def change_edge_color(self, color: np.ndarray):
         """Change edge color of vectors on the layer model.
 
         Parameters
         ----------
-        text : str
-            Edge color for vectors, color name or hex string.
-            Eg: 'white', 'red', 'blue', '#00ff00', etc.
+        color : np.ndarray
+            Edge color for vectors, in an RGBA array
         """
-        self.layer.edge_color = text
+        with self.layer.events.current_edge_color.blocker():
+            self.layer.current_edge_color = color
 
     def change_width(self, value):
         """Change edge line width of vectors on the layer model.
@@ -146,10 +146,6 @@ class QtVectorsControls(QtLayerControls):
         event : qtpy.QtCore.QEvent, optional.
             Event from the Qt context, by default None.
         """
-        with self.layer.events.edge_color.blocker():
-            index = self.edgeComboBox.findText(
-                self.layer.edge_color, Qt.MatchFixedString
-            )
-            self.edgeComboBox.setCurrentIndex(index)
-        color = Color(self.layer.edge_color).hex
-        self.edgeColorSwatch.setStyleSheet("background-color: " + color)
+        """Receive layer.current_edge_color() change event and update view."""
+        with qt_signals_blocked(self.edgeColorEdit):
+            self.edgeColorEdit.setColor(self.layer.current_edge_color)

@@ -3,10 +3,15 @@ from xml.etree.ElementTree import Element
 import numpy as np
 from copy import copy
 from ..base import Layer
+from ..utils.color_transformations import (
+    transform_color_with_defaults,
+    normalize_and_broadcast_colors,
+)
 from ...utils.event import Event
 from ...utils.status_messages import format_float
+from ...utils.colormaps.standardize_color import transform_color
 from ._vector_utils import vectors_to_coordinates, generate_vector_meshes
-from vispy.color import get_color_names, Color
+from vispy.color import Color
 
 
 class Vectors(Layer):
@@ -105,12 +110,27 @@ class Vectors(Layer):
         )
 
         # events for non-napari calculations
-        self.events.add(length=Event, edge_width=Event, edge_color=Event)
+        self.events.add(
+            length=Event,
+            edge_width=Event,
+            edge_color=Event,
+            current_edge_color=Event,
+        )
 
         # Save the vector style params
         self._edge_width = edge_width
-        self._edge_color = edge_color
-        self._colors = get_color_names()
+
+        transformed_color = transform_color_with_defaults(
+            num_entries=data.shape[0],
+            colors=edge_color,
+            elem_name="edge_color",
+            default="white",
+        )
+        self._edge_color = normalize_and_broadcast_colors(
+            data.shape[0], transformed_color
+        )
+
+        self._current_edge_color = self.edge_color[-1]
 
         self._mesh_vertices = np.empty((0, 2))
         self._mesh_triangles = np.empty((0, 3), dtype=np.uint32)
@@ -236,10 +256,39 @@ class Vectors(Layer):
 
     @edge_color.setter
     def edge_color(self, edge_color: str):
-        """str: edge color of all the vectors."""
-        self._edge_color = edge_color
+        """(1 x 4) np.ndarray: Array of RGBA edge colors (applied to all vectors)"""
+        transformed_color = transform_color_with_defaults(
+            num_entries=self.data.shape[0],
+            colors=edge_color,
+            elem_name="edge_color",
+            default="white",
+        )
+        self._edge_color = normalize_and_broadcast_colors(
+            self.data.shape[0], transformed_color
+        )
+        self._current_edge_color = self._edge_color[-1]
+        self.events.current_edge_color()
         self.events.edge_color()
-        self._update_thumbnail()
+
+    @property
+    def current_edge_color(self):
+        return self._current_edge_color
+
+    @current_edge_color.setter
+    def current_edge_color(self, edge_color: np.ndarray):
+        self._current_edge_color = transform_color(edge_color)
+        self.edge_color = self._current_edge_color
+        self.events.current_edge_color()
+
+    @property
+    def _view_face_color(self) -> np.ndarray:
+
+        return np.repeat(self.edge_color, 2, axis=0)
+
+    @property
+    def _view_vertex_color(self) -> np.ndarray:
+
+        return np.repeat(self.edge_color, 4, axis=0)
 
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
@@ -325,7 +374,7 @@ class Vectors(Layer):
         )
         colormapped = np.zeros(self._thumbnail_shape)
         colormapped[..., 3] = 1
-        col = Color(self.edge_color).rgba
+        col = self.current_edge_color
         for v in downsampled:
             start = v[0]
             stop = v[1]
