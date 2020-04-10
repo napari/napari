@@ -101,7 +101,7 @@ def napari_get_reader(path: Union[str, List[str]]) -> Optional[ReaderFunction]:
 
 @napari_hook_specification
 def napari_get_writer(
-    path: str, layer_types: List[str], extension: Optional[str]
+    path: str, layer_types: List[str]
 ) -> Optional[WriterFunction]:
     """Return function capable of writing napari layer data into a `path`.
 
