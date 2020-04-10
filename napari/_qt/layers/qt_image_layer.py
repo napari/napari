@@ -1,7 +1,12 @@
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QLabel, QComboBox, QSlider, QHBoxLayout
+from qtpy.QtWidgets import QComboBox, QHBoxLayout, QLabel, QSlider
+
+from ...layers.image._image_constants import (
+    Interpolation,
+    Interpolation3D,
+    Rendering,
+)
 from .qt_image_base_layer import QtBaseImageControls
-from ...layers.image._image_constants import Interpolation, Rendering
 
 
 class QtImageControls(QtBaseImageControls):
@@ -45,14 +50,8 @@ class QtImageControls(QtBaseImageControls):
         self.layer.events.attenuation.connect(self._on_attenuation_change)
         self.layer.dims.events.ndisplay.connect(self._on_ndisplay_change)
 
-        interp_comboBox = QComboBox(self)
-        interp_comboBox.addItems(Interpolation.keys())
-        index = interp_comboBox.findText(
-            self.layer.interpolation, Qt.MatchFixedString
-        )
-        interp_comboBox.setCurrentIndex(index)
-        interp_comboBox.activated[str].connect(self.changeInterpolation)
-        self.interpComboBox = interp_comboBox
+        self.interpComboBox = QComboBox(self)
+        self.interpComboBox.activated[str].connect(self.changeInterpolation)
         self.interpLabel = QLabel('interpolation:')
 
         renderComboBox = QComboBox(self)
@@ -103,10 +102,10 @@ class QtImageControls(QtBaseImageControls):
         self.grid_layout.addLayout(colormap_layout, 3, 1)
         self.grid_layout.addWidget(QLabel('blending:'), 4, 0)
         self.grid_layout.addWidget(self.blendComboBox, 4, 1)
-        self.grid_layout.addWidget(self.renderLabel, 5, 0)
-        self.grid_layout.addWidget(self.renderComboBox, 5, 1)
-        self.grid_layout.addWidget(self.interpLabel, 6, 0)
-        self.grid_layout.addWidget(self.interpComboBox, 6, 1)
+        self.grid_layout.addWidget(self.interpLabel, 5, 0)
+        self.grid_layout.addWidget(self.interpComboBox, 5, 1)
+        self.grid_layout.addWidget(self.renderLabel, 6, 0)
+        self.grid_layout.addWidget(self.renderComboBox, 6, 1)
         self.grid_layout.addWidget(self.isoThresholdLabel, 7, 0)
         self.grid_layout.addWidget(self.isoThresholdSlider, 7, 1)
         self.grid_layout.addWidget(self.attenuationLabel, 8, 0)
@@ -244,6 +243,17 @@ class QtImageControls(QtBaseImageControls):
             self.attenuationSlider.hide()
             self.attenuationLabel.hide()
 
+    def _update_interpolation_combo(self):
+        self.interpComboBox.clear()
+        interp_enum = (
+            Interpolation3D if self.layer.dims.ndisplay == 3 else Interpolation
+        )
+        self.interpComboBox.addItems(interp_enum.keys())
+        index = self.interpComboBox.findText(
+            self.layer.interpolation, Qt.MatchFixedString
+        )
+        self.interpComboBox.setCurrentIndex(index)
+
     def _on_ndisplay_change(self, event=None):
         """Toggle between 2D and 3D visualization modes.
 
@@ -252,6 +262,7 @@ class QtImageControls(QtBaseImageControls):
         event : qtpy.QtCore.QEvent, optional
             Event from the Qt context, default is None.
         """
+        self._update_interpolation_combo()
         if self.layer.dims.ndisplay == 2:
             self.isoThresholdSlider.hide()
             self.isoThresholdLabel.hide()
@@ -259,11 +270,7 @@ class QtImageControls(QtBaseImageControls):
             self.attenuationLabel.hide()
             self.renderComboBox.hide()
             self.renderLabel.hide()
-            self.interpComboBox.show()
-            self.interpLabel.show()
         else:
             self.renderComboBox.show()
             self.renderLabel.show()
-            self.interpComboBox.hide()
-            self.interpLabel.hide()
             self._toggle_rendering_parameter_visbility()
