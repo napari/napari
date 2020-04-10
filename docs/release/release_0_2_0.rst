@@ -14,20 +14,20 @@ https://github.com/napari/napari
 New Features
 ------------
 - **Improved UI**, unifying buttons from controls, icons for layers,
-and more understandable dimensions sliders
+  and more understandable dimensions sliders
 - Add support for **3D rendering** for all our layer types
 - Add a `Surface` layer to render already generated meshes. Support nD meshes
-rendered in 2D or 3D.
+  rendered in 2D or 3D.
 - Add `viewer.add_multichannel` method to rapidly add expand a multichannel
-array along one particular axis with different colormaps (#528).
+  array along one particular axis with different colormaps (#528).
 - Add basic **undo / redo** functionality to the labels layer
 
 Deprecations
 ------------
 - Drop `napari.view` method. Replaced with `napari.view_*` methods in for all
-our layer types.
+  our layer types.
 - Drop `Pyramid` layer. Pyramid functionality now integrated into both the
-labels and image layer.
+  labels and image layer.
 
 Pull Requests
 *************

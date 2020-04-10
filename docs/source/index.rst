@@ -7,6 +7,7 @@
    :maxdepth: 1
    :hidden:
 
+   plugins/index
    api
    releases
    developers
