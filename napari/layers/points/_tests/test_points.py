@@ -469,7 +469,24 @@ def test_add_points_with_properties_as_list():
     np.testing.assert_equal(layer.properties, new_prop)
 
 
-def test_annotations_errors():
+def test_updating_points_properties():
+    # test adding points initialized with properties
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    properties = {'point_type': np.array(['A', 'B'] * int((shape[0] / 2)))}
+    layer = Points(data, properties=copy(properties))
+
+    layer.mode = 'select'
+    layer.selected_data = [len(data) - 1]
+    layer.current_properties = {'point_type': np.array(['A'])}
+
+    updated_properties = properties
+    updated_properties['point_type'][-1] = 'A'
+    np.testing.assert_equal(layer.properties, updated_properties)
+
+
+def test_points_errors():
     shape = (3, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)

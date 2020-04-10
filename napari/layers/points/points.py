@@ -543,7 +543,7 @@ class Points(Layer):
 
     @property
     def current_properties(self):
-        """dict{str: np.ndarray(N,)}: properties for the next added point."""
+        """dict{str: np.ndarray(1,)}: properties for the next added point."""
         return self._current_properties
 
     @current_properties.setter
@@ -557,7 +557,7 @@ class Points(Layer):
         ):
             props = self.properties
             for k in props:
-                props[k][self.selected_data] = current_properties[k]
+                props[k][list(self.selected_data)] = current_properties[k]
             self.properties = props
 
             self.refresh_colors()
