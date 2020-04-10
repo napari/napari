@@ -68,16 +68,13 @@ def read_data_with_plugins(
                 # If builtins doesn't work, they will get a "no reader" found
                 # error anyway, so it looks a bit weird to show them that the
                 # "builtin plugin" didn't work.
-                log_plugin_error(err)  # let the user know
+                logger.error(err.format_with_contact_info())
 
 
 def write_data_with_plugins(
-    path: Union[str, Sequence[str]],
-    layer_data: LayerData,
-    extension: Optional[str],
-    plugin_manager=None,
+    path: str, layer_data: LayerData, plugin_manager=None,
 ):
-    """Iterate writer hooks and write data for the first non-None LayerData or None.
+    """Iterate writer hooks and write data with the first successful writer.
 
     This function returns as soon as the data has been written successfully,
     while catching any plugin exceptions, storing them for later retrievial,
@@ -90,43 +87,37 @@ def write_data_with_plugins(
     Parameters
     ----------
     path : str
-        The path (file, directory, url) to open.
+        The path (file, directory, url) to save.
+    layer_types : list of str
+        List of layer types that will be provided to the writer function.
     plugin_manager : pluggy.PluginManager, optional
         Instance of a pluggy PluginManager.  by default the main napari
         plugin_manager will be used.
-
-    Returns
-    -------
-    LayerData : list of tuples, or None
-        LayerData that can be passed to :func:`Viewer._add_layer_from_data()
-        <napari.components.add_layers_mixin.AddLayersMixin._add_layer_from_data>`.
-        ``LayerData`` is a list tuples, where each tuple is one of
-        ``(data,)``, ``(data, meta)``, or ``(data, meta, layer_type)`` .
-
-        If no reader plugins are (or they all error), returns ``None``
     """
+    layer_types = [single_layer_data[2] for single_layer_data in layer_data]
     plugin_manager = plugin_manager or napari_plugin_manager
     skip_impls = []
     while True:
-        (reader, implementation) = execute_hook(
-            plugin_manager.hook.napari_get_reader,
+        (writer, implementation) = execute_hook(
+            plugin_manager.hook.napari_get_writer,
             path=path,
+            layer_types=layer_types,
             return_impl=True,
             skip_impls=skip_impls,
         )
-        if not reader:
-            # we're all out of reader plugins
+        if not writer:
+            # we're all out of writer plugins
             return None
         try:
-            return reader(path)  # try to read the data.
+            return writer(path, layer_data)  # try to write the data.
         except Exception as exc:
-            # If execute_hook did return a reader, but the reader then failed
-            # while trying to read the path, we store the traceback for later
-            # retrieval, warn the user, and continue looking for readers
+            # If execute_hook did return a writer, but the writer then failed
+            # while trying to write the path, we store the traceback for later
+            # retrieval, warn the user, and continue looking for writers
             # (skipping this one)
             msg = (
                 f"Error in plugin '{implementation.plugin_name}', "
-                "hook 'napari_get_reader'"
+                "hook 'napari_get_writer'"
             )
             # instantiating this PluginError stores it in
             # plugins.exceptions.PLUGIN_ERRORS, where it can be retrieved later
@@ -137,7 +128,7 @@ def write_data_with_plugins(
 
             skip_impls.append(implementation)  # don't try this impl again
             if implementation.plugin_name != 'builtins':
-                # If builtins doesn't work, they will get a "no reader" found
+                # If builtins doesn't work, they will get a "no writer" found
                 # error anyway, so it looks a bit weird to show them that the
                 # "builtin plugin" didn't work.
                 logger.error(err.format_with_contact_info())
