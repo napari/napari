@@ -1,6 +1,6 @@
 from . import PluginError, plugin_manager as napari_plugin_manager
 from ._hook_callers import execute_hook
-from typing import Optional, Union, Sequence
+from typing import Optional, Union, Sequence, Any
 from ..types import LayerData
 from logging import getLogger
 
@@ -35,6 +35,7 @@ def read_data_with_plugins(
         <napari.components.add_layers_mixin.AddLayersMixin._add_layer_from_data>`.
         ``LayerData`` is a list tuples, where each tuple is one of
         ``(data,)``, ``(data, meta)``, or ``(data, meta, layer_type)`` .
+
         If no reader plugins are (or they all error), returns ``None``
     """
     plugin_manager = plugin_manager or napari_plugin_manager
@@ -78,7 +79,7 @@ def read_data_with_plugins(
 def write_data_with_plugins(
     path: str, layer_data: LayerData, plugin_manager=None,
 ):
-    """Iterate writer hooks and write data with the first successful writer.
+    """Iterate writer hooks and write data with first successful writer.
 
     This function returns as soon as the data has been written successfully,
     while catching any plugin exceptions, storing them for later retrievial,
@@ -137,3 +138,71 @@ def write_data_with_plugins(
                 # error anyway, so it looks a bit weird to show them that the
                 # "builtin plugin" didn't work.
                 logger.error(err.format_with_contact_info())
+
+
+def write_image_data_with_plugins(
+    path: str, data: Any, meta: dict, plugin_manager=None,
+):
+    """Iterate writer hooks and write image data with first successful writer.
+
+    This function returns as soon as the data has been written successfully,
+    while catching any plugin exceptions, storing them for later retrievial,
+    providing useful error messages, and relooping until either data is
+    writen, or no valid writers are found.
+
+    Exceptions will be caught and stored as PluginErrors
+    (in plugin_manager._exceptions)
+
+    Parameters
+    ----------
+    path : str
+        The path (file, directory, url) to save.
+    data : array or list of array
+        Image data. Can be N dimensional. If the last dimension has length
+        3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a
+        list and arrays are decreasing in shape then the data is from an image
+        pyramid.
+    meta : dict
+        Image metadata.
+    plugin_manager : pluggy.PluginManager, optional
+        Instance of a pluggy PluginManager.  by default the main napari
+        plugin_manager will be used.
+    """
+    plugin_manager = plugin_manager or napari_plugin_manager
+    skip_impls = []
+    while True:
+        _ = execute_hook(
+            plugin_manager.hook.napari_get_image_writer,
+            path=path,
+            data=data,
+            meta=meta,
+            return_impl=True,
+            skip_impls=skip_impls,
+        )
+        # if not writer:
+        #     # we're all out of writer plugins
+        #     return None
+        # try:
+        #     return writer(path, layer_data)  # try to write the data.
+        # except Exception as exc:
+        #     # If execute_hook did return a writer, but the writer then failed
+        #     # while trying to write the path, we store the traceback for later
+        #     # retrieval, warn the user, and continue looking for writers
+        #     # (skipping this one)
+        #     msg = (
+        #         f"Error in plugin '{implementation.plugin_name}', "
+        #         "hook 'napari_get_writer'"
+        #     )
+        #     # instantiating this PluginError stores it in
+        #     # plugins.exceptions.PLUGIN_ERRORS, where it can be retrieved later
+        #     err = PluginError(
+        #         msg, implementation.plugin_name, implementation.plugin.__name__
+        #     )
+        #     err.__cause__ = exc  # like `raise PluginError() from exc`
+        #
+        #     skip_impls.append(implementation)  # don't try this impl again
+        #     if implementation.plugin_name != 'builtins':
+        #         # If builtins doesn't work, they will get a "no writer" found
+        #         # error anyway, so it looks a bit weird to show them that the
+        #         # "builtin plugin" didn't work.
+        #         logger.error(err.format_with_contact_info())
