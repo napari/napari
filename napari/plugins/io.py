@@ -140,21 +140,18 @@ def write_data_with_plugins(
                 logger.error(err.format_with_contact_info())
 
 
-def write_image_data_with_plugins(
-    path: str, data: Any, meta: dict, plugin_manager=None,
+def write_image_with_plugin(
+    plugin_name: str, path: str, data: Any, meta: dict, plugin_manager=None,
 ):
-    """Iterate writer hooks and write image data with first successful writer.
-
-    This function returns as soon as the data has been written successfully,
-    while catching any plugin exceptions, storing them for later retrievial,
-    providing useful error messages, and relooping until either data is
-    writen, or no valid writers are found.
+    """Write image data with the writer from the chosen plugin.
 
     Exceptions will be caught and stored as PluginErrors
     (in plugin_manager._exceptions)
 
     Parameters
     ----------
+    plugin_name : str
+        Name of the plugin to write data with.
     path : str
         The path (file, directory, url) to save.
     data : array or list of array
@@ -169,40 +166,30 @@ def write_image_data_with_plugins(
         plugin_manager will be used.
     """
     plugin_manager = plugin_manager or napari_plugin_manager
-    skip_impls = []
-    while True:
-        _ = execute_hook(
-            plugin_manager.hook.napari_get_image_writer,
-            path=path,
-            data=data,
-            meta=meta,
-            return_impl=True,
-            skip_impls=skip_impls,
+
+    hook_caller = plugin_manager.hook.napari_write_image
+    implementation = hook_caller.get_hookimpl_for_plugin(plugin_name)
+    implementation.function(path, data, meta)
+    try:
+        return implementation.function(
+            path, data, meta
+        )  # try to write the data.
+    except Exception as exc:
+        # If writer failed while trying to write the path, we store the
+        # traceback for later retrieval and warn the user
+        msg = (
+            f"Error in plugin '{implementation.plugin_name}', "
+            "hook 'napari_write_image'"
         )
-        # if not writer:
-        #     # we're all out of writer plugins
-        #     return None
-        # try:
-        #     return writer(path, layer_data)  # try to write the data.
-        # except Exception as exc:
-        #     # If execute_hook did return a writer, but the writer then failed
-        #     # while trying to write the path, we store the traceback for later
-        #     # retrieval, warn the user, and continue looking for writers
-        #     # (skipping this one)
-        #     msg = (
-        #         f"Error in plugin '{implementation.plugin_name}', "
-        #         "hook 'napari_get_writer'"
-        #     )
-        #     # instantiating this PluginError stores it in
-        #     # plugins.exceptions.PLUGIN_ERRORS, where it can be retrieved later
-        #     err = PluginError(
-        #         msg, implementation.plugin_name, implementation.plugin.__name__
-        #     )
-        #     err.__cause__ = exc  # like `raise PluginError() from exc`
-        #
-        #     skip_impls.append(implementation)  # don't try this impl again
-        #     if implementation.plugin_name != 'builtins':
-        #         # If builtins doesn't work, they will get a "no writer" found
-        #         # error anyway, so it looks a bit weird to show them that the
-        #         # "builtin plugin" didn't work.
-        #         logger.error(err.format_with_contact_info())
+        # instantiating this PluginError stores it in
+        # plugins.exceptions.PLUGIN_ERRORS, where it can be retrieved later
+        err = PluginError(
+            msg, implementation.plugin_name, implementation.plugin.__name__
+        )
+        err.__cause__ = exc  # like `raise PluginError() from exc`
+
+        if implementation.plugin_name != 'builtins':
+            # If builtins doesn't work, they will get a "no writer" found
+            # error anyway, so it looks a bit weird to show them that the
+            # "builtin plugin" didn't work.
+            logger.error(err.format_with_contact_info())
