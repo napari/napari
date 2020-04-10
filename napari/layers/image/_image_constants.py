@@ -28,6 +28,19 @@ class Interpolation(StringEnum):
     SPLINE36 = auto()
 
 
+class Interpolation3D(StringEnum):
+    """INTERPOLATION: Vispy interpolation mode.
+
+    The spatial filters used for interpolation are from vispy's
+    spatial filters. The filters are built in the file below:
+
+    https://github.com/vispy/vispy/blob/master/vispy/glsl/build-spatial-filters.py
+    """
+
+    LINEAR = auto()
+    NEAREST = auto()
+
+
 class Rendering(StringEnum):
     """Rendering: Rendering mode for the layer.
 
