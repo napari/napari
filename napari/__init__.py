@@ -47,6 +47,7 @@ del app
 vispy_logger = logging.getLogger('vispy')
 vispy_logger.setLevel(logging.WARNING)
 
+from .utils import dask_monkeypatch  # must come before importing .viewer
 from .viewer import Viewer
 
 # Note that importing _viewer_key_bindings is needed as the Viewer gets
