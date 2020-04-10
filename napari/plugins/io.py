@@ -51,7 +51,7 @@ def read_data_with_plugins(
             # we're all out of reader plugins
             return None
         try:
-            return reader(path)  # try to read the data.
+            return reader(path)  # try to read data
         except Exception as exc:
             # If execute_hook did return a reader, but the reader then failed
             # while trying to read the path, we store the traceback for later
@@ -115,7 +115,7 @@ def write_data_with_plugins(
             # we're all out of writer plugins
             return None
         try:
-            return writer(path, layer_data)  # try to write the data.
+            return writer(path, layer_data)  # try to write data
         except Exception as exc:
             # If execute_hook did return a writer, but the writer then failed
             # while trying to write the path, we store the traceback for later
@@ -171,9 +171,7 @@ def write_image_with_plugin(
     implementation = hook_caller.get_hookimpl_for_plugin(plugin_name)
     implementation.function(path, data, meta)
     try:
-        return implementation.function(
-            path, data, meta
-        )  # try to write the data.
+        return implementation.function(path, data, meta)  # try to write data
     except Exception as exc:
         # If writer failed while trying to write the path, we store the
         # traceback for later retrieval and warn the user
