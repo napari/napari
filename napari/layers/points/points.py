@@ -186,7 +186,8 @@ class Points(Layer):
     Extended Summary
     ----------
     _property_choices : dict {str: array (N,)}
-        Possible values for the properties in Points.properties
+        Possible values for the properties in Points.properties.
+        If properties is not provided, it will be {} (empty dictionary).
     _view_data : array (M, 2)
         2D coordinates of points in the currently viewed slice.
     _view_size : array (M, )
@@ -277,6 +278,7 @@ class Points(Layer):
         # Save the properties
         if properties is None:
             self._properties = {}
+            self._property_choices = {}
         elif len(data) > 0:
             properties = dataframe_to_properties(properties)
             self._properties = self._validate_properties(properties)
