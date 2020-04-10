@@ -42,7 +42,6 @@ def sys_info(as_html=False):
     modules = (
         ('numpy', 'NumPy'),
         ('scipy', 'SciPy'),
-        ('skimage', 'scikit-image'),
         ('dask', 'Dask'),
         ('vispy', 'VisPy'),
     )

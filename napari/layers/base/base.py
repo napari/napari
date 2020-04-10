@@ -5,12 +5,12 @@ from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from xml.etree.ElementTree import Element, tostring
 import numpy as np
-from skimage import img_as_ubyte
 from ._base_constants import Blending
 
 from ...components import Dims
 from ...utils.event import EmitterGroup, Event
 from ...utils.key_bindings import KeymapProvider
+from ..utils.layer_utils import convert_to_uint8
 from ...utils.misc import ROOT_DIR
 from ...utils.naming import magic_name
 from ...utils.status_messages import status_format, format_float
@@ -452,7 +452,7 @@ class Layer(KeymapProvider, ABC):
         if thumbnail.dtype != np.uint8:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                thumbnail = img_as_ubyte(thumbnail)
+                thumbnail = convert_to_uint8(thumbnail)
 
         padding_needed = np.subtract(self._thumbnail_shape, thumbnail.shape)
         pad_amounts = [(p // 2, (p + 1) // 2) for p in padding_needed]

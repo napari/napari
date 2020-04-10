@@ -1,14 +1,84 @@
 import os
+import re
 
 from glob import glob
 from pathlib import Path
 
 import numpy as np
-from skimage import io
-from skimage.io.collection import alphanumeric_key
 
 from dask import delayed
 from dask import array as da
+
+
+def imsave(filename: str, data: np.ndarray):
+    """Custom implementation of imsave to avoid skimage dependency.
+
+    Parameters
+    ----------
+    filename : string
+        The path to write the file to.
+    data : np.ndarray
+        The image data.
+    """
+    ext = os.path.splitext(filename)[1]
+    if ext in [".tif", ".tiff"]:
+        import tifffile
+
+        tifffile.imsave(filename, data)
+    else:
+        import imageio
+
+        imageio.imsave(filename, data)
+
+
+def imread(filename: str) -> np.ndarray:
+    """Custom implementation of imread to avoid skimage dependency.
+
+    Parameters
+    ----------
+    filename : string
+        The path from which to read the image.
+
+    Returns
+    -------
+    data : np.ndarray
+        The image data.
+    """
+    ext = os.path.splitext(filename)[1]
+    if ext in [".tif", ".tiff", ".lsm"]:
+        import tifffile
+
+        return tifffile.imread(filename)
+    else:
+        import imageio
+
+        return imageio.imread(filename)
+
+
+def _alphanumeric_key(s):
+    """Convert string to list of strings and ints that gives intuitive sorting.
+
+    Parameters
+    ----------
+    s : string
+
+    Returns
+    -------
+    k : a list of strings and ints
+
+    Examples
+    --------
+    >>> _alphanumeric_key('z23a')
+    ['z', 23, 'a']
+    >>> filenames = ['f9.10.png', 'e10.png', 'f9.9.png', 'f10.10.png',
+    ...              'f10.9.png']
+    >>> sorted(filenames)
+    ['e10.png', 'f10.10.png', 'f10.9.png', 'f9.10.png', 'f9.9.png']
+    >>> sorted(filenames, key=_alphanumeric_key)
+    ['e10.png', 'f9.9.png', 'f9.10.png', 'f10.9.png', 'f10.10.png']
+    """
+    k = [int(c) if c.isdigit() else c for c in re.split('([0-9]+)', s)]
+    return k
 
 
 def magic_imread(filenames, *, use_dask=None, stack=True):
@@ -51,7 +121,7 @@ def magic_imread(filenames, *, use_dask=None, stack=True):
         # zarr files are folders, but should be read as 1 file
         if os.path.isdir(filename) and not ext == '.zarr':
             dir_contents = sorted(
-                glob(os.path.join(filename, '*.*')), key=alphanumeric_key
+                glob(os.path.join(filename, '*.*')), key=_alphanumeric_key
             )
             # remove subdirectories
             dir_contents_files = filter(
@@ -75,15 +145,15 @@ def magic_imread(filenames, *, use_dask=None, stack=True):
                 shape = zarr_shape
         else:
             if shape is None:
-                image = io.imread(filename)
+                image = imread(filename)
                 shape = image.shape
                 dtype = image.dtype
             if use_dask:
                 image = da.from_delayed(
-                    delayed(io.imread)(filename), shape=shape, dtype=dtype
+                    delayed(imread)(filename), shape=shape, dtype=dtype
                 )
             elif len(images) > 0:  # not read by shape clause
-                image = io.imread(filename)
+                image = imread(filename)
         images.append(image)
     if len(images) == 1:
         image = images[0]
