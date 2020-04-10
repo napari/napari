@@ -48,17 +48,11 @@ def imread(filename: str) -> np.ndarray:
     if ext in [".tif", ".tiff", ".lsm"]:
         import tifffile
 
-        image = tifffile.imread(filename)
+        return tifffile.imread(filename)
     else:
         import imageio
 
-        image = imageio.imread(filename)
-
-    if image.ndim > 2:
-        if image.shape[-1] not in (3, 4) and image.shape[-3] in (3, 4):
-            image = np.swapaxes(image, -1, -3)
-            image = np.swapaxes(image, -2, -3)
-    return image
+        return imageio.imread(filename)
 
 
 def _alphanumeric_key(s):
