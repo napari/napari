@@ -29,13 +29,7 @@ class Interpolation(StringEnum):
 
 
 class Interpolation3D(StringEnum):
-    """INTERPOLATION: Vispy interpolation mode.
-
-    The spatial filters used for interpolation are from vispy's
-    spatial filters. The filters are built in the file below:
-
-    https://github.com/vispy/vispy/blob/master/vispy/glsl/build-spatial-filters.py
-    """
+    """INTERPOLATION: Vispy interpolation mode for volume rendering."""
 
     LINEAR = auto()
     NEAREST = auto()
