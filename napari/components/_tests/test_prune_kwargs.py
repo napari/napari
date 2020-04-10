@@ -3,19 +3,14 @@ from napari.components.add_layers_mixin import prune_kwargs
 
 TEST_KWARGS = {
     'scale': (0.75, 1),
-    'vectors_scale': (1, 1, 1),
-    'image_blending': 'additive',
-    'points_blending': 'translucent',
+    'blending': 'translucent',
     'num_colors': 10,
     'edge_color': 'red',
     'z_index': 20,
     'edge_width': 2,
-    'shapes_edge_width': 10,
     'face_color': 'white',
     'is_pyramid': False,
     'name': 'name',
-    'image_name': 'image',
-    'points_name': 'points',
     'extra_kwarg': 'never_included',
 }
 
@@ -24,9 +19,9 @@ EXPECTATIONS = [
         'image',
         {
             'scale': (0.75, 1),
-            'blending': 'additive',
+            'blending': 'translucent',
             'is_pyramid': False,
-            'name': 'image',
+            'name': 'name',
         },
     ),
     (
@@ -36,6 +31,7 @@ EXPECTATIONS = [
             'num_colors': 10,
             'is_pyramid': False,
             'name': 'name',
+            'blending': 'translucent',
         },
     ),
     (
@@ -46,7 +42,7 @@ EXPECTATIONS = [
             'edge_color': 'red',
             'edge_width': 2,
             'face_color': 'white',
-            'name': 'points',
+            'name': 'name',
         },
     ),
     (
@@ -55,21 +51,26 @@ EXPECTATIONS = [
             'scale': (0.75, 1),
             'edge_color': 'red',
             'z_index': 20,
-            'edge_width': 10,
+            'edge_width': 2,
             'face_color': 'white',
             'name': 'name',
+            'blending': 'translucent',
         },
     ),
     (
         'vectors',
         {
-            'scale': (1, 1, 1),
+            'scale': (0.75, 1),
             'edge_color': 'red',
             'edge_width': 2,
             'name': 'name',
+            'blending': 'translucent',
         },
     ),
-    ('surface', {'scale': (0.75, 1), 'name': 'name'}),
+    (
+        'surface',
+        {'blending': 'translucent', 'scale': (0.75, 1), 'name': 'name'},
+    ),
     ('layer', {}),
     ('path', {}),
 ]

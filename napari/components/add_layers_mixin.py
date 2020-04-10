@@ -908,17 +908,11 @@ class AddLayersMixin:
 def prune_kwargs(kwargs: Dict[str, Any], layer_type: str) -> Dict[str, Any]:
     """Return copy of ``kwargs`` with only keys valid for ``add_<layer_type>``
 
-    Keys may optionally begin with ``<layer_type>_`` (e.g. ``image_name``), in
-    which case they will be included if they match the current ``layer_type``,
-    but stripped to the primary kwargs (e.g. ``name``).
-
     Parameters
     ----------
     kwargs : dict
         A key: value mapping where some or all of the keys are parameter names
-        for the corresponding ``Viewer.add_<layer_type>`` method.  If any of
-        the keys begin with ``<layer_type>_``, then they will be included, with
-        the ``<layer_type>_`` prefix stripped from the key.
+        for the corresponding ``Viewer.add_<layer_type>`` method.
     layer_type : str
         The type of layer that is going to be added with these ``kwargs``.
 
@@ -938,19 +932,15 @@ def prune_kwargs(kwargs: Dict[str, Any], layer_type: str) -> Dict[str, Any]:
     --------
     >>> test_kwargs = {
             'scale': (0.75, 1),
-            'image_blending': 'additive',
-            'points_blending': 'translucent',
+            'blending': 'additive',
             'num_colors': 10,
         }
     >>> prune_kwargs(test_kwargs, 'image')
     {'scale': (0.75, 1), 'blending': 'additive'}
 
-    >>> prune_kwargs(test_kwargs, 'points')
-    {'scale': (0.75, 1), 'blending': 'translucent'}
-
     >>> # only labels has the ``num_colors`` argument
     >>> prune_kwargs(test_kwargs, 'labels')
-    {'scale': (0.75, 1), 'num_colors': 10}
+    {'scale': (0.75, 1), 'blending': 'additive', 'num_colors': 10}
     """
     add_method = getattr(AddLayersMixin, 'add_' + layer_type, None)
     if not add_method:
@@ -958,15 +948,4 @@ def prune_kwargs(kwargs: Dict[str, Any], layer_type: str) -> Dict[str, Any]:
 
     # get valid params for the corresponding add_<layer_type> method
     valid_layer_kwargs = set(inspect.signature(add_method).parameters)
-
-    pruned_kwargs = {}
-    for key, val in kwargs.items():
-        if key in valid_layer_kwargs:
-            pruned_kwargs[key] = val
-    # iterating a second time to make sure that "<layer_type>_kwarg"
-    # takes precedence over bare "kwarg"
-    strlength = len(layer_type) + 1
-    for key, val in kwargs.items():
-        if key.startswith(layer_type + "_"):
-            pruned_kwargs[key[strlength:]] = val
-    return pruned_kwargs
+    return {k: v for k, v in kwargs.items() if k in valid_layer_kwargs}
