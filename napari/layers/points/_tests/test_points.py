@@ -65,6 +65,42 @@ def test_empty_points_with_properties_list():
     np.testing.assert_equal(pts.properties, props)
 
 
+def test_empty_layer_with_face_colorap():
+    """ Test creating an empty layer where the face color is a colormap
+    See: https://github.com/napari/napari/pull/1069
+    """
+    default_properties = {'point_type': np.array([1.5], dtype=np.float)}
+    layer = Points(
+        properties=default_properties,
+        face_color='point_type',
+        face_colormap='grays',
+    )
+
+    assert layer.face_color_mode == 'colormap'
+
+    # verify the current_face_color is correct
+    face_color = np.array([1, 1, 1, 1])
+    assert np.all(layer._current_face_color == face_color)
+
+
+def test_empty_layer_with_edge_colormap():
+    """ Test creating an empty layer where the face color is a colormap
+    See: https://github.com/napari/napari/pull/1069
+    """
+    default_properties = {'point_type': np.array([1.5], dtype=np.float)}
+    layer = Points(
+        properties=default_properties,
+        edge_color='point_type',
+        edge_colormap='grays',
+    )
+
+    assert layer.edge_color_mode == 'colormap'
+
+    # verify the current_face_color is correct
+    edge_color = np.array([1, 1, 1, 1])
+    assert np.all(layer._current_edge_color == edge_color)
+
+
 def test_random_points():
     """Test instantiating Points layer with random 2D data."""
     shape = (10, 2)
@@ -692,6 +728,10 @@ def test_add_edge_color_cycle_to_empty_layer():
         edge_color_cycle=color_cycle,
     )
 
+    # verify the current_edge_color is correct
+    edge_color = transform_color(color_cycle[0])
+    assert np.all(layer._current_edge_color == edge_color)
+
     # add a point
     layer.add([10, 10])
     props = {'point_type': np.array(['A'])}
@@ -912,6 +952,10 @@ def test_add_face_color_cycle_to_empty_layer():
         face_color='point_type',
         face_color_cycle=color_cycle,
     )
+
+    # verify the current_face_color is correct
+    face_color = transform_color(color_cycle[0])
+    assert np.all(layer._current_face_color == face_color)
 
     # add a point
     layer.add([10, 10])

@@ -337,7 +337,7 @@ class Points(Layer):
             self.edge_color_property = ''
             self.edge_color = edge_color
             if edge_color_cycle is None:
-                edge_color_cycle = DEFAULT_COLOR_CYCLE
+                edge_color_cycle = deepcopy(DEFAULT_COLOR_CYCLE)
             self.edge_color_cycle = edge_color_cycle
             self.edge_color_cycle_map = {}
             self.edge_colormap = edge_colormap
@@ -346,7 +346,7 @@ class Points(Layer):
             self._face_color_property = ''
             self.face_color = face_color
             if face_color_cycle is None:
-                face_color_cycle = DEFAULT_COLOR_CYCLE
+                face_color_cycle = deepcopy(DEFAULT_COLOR_CYCLE)
             self.face_color_cycle = face_color_cycle
             self.face_color_cycle_map = {}
             self.face_colormap = face_colormap
@@ -374,8 +374,24 @@ class Points(Layer):
                     elem_name="edge_color",
                     default="white",
                 )
-            else:
-                self._current_edge_color = np.array([0, 0, 0, 1])
+            elif self._edge_color_mode == ColorMode.CYCLE:
+                curr_edge_color = transform_color(next(self.edge_color_cycle))
+                prop_value = self._property_choices[self._edge_color_property][
+                    0
+                ]
+                self.edge_color_cycle_map[prop_value] = curr_edge_color
+                self._current_edge_color = curr_edge_color
+            elif self._edge_color_mode == ColorMode.COLORMAP:
+                prop_value = self._property_choices[self._edge_color_property][
+                    0
+                ]
+                curr_edge_color, _ = map_property(
+                    prop=prop_value,
+                    colormap=self.edge_colormap[1],
+                    contrast_limits=self._edge_contrast_limits,
+                )
+                self._current_edge_color = curr_edge_color
+
             if self._face_color_mode == ColorMode.DIRECT:
                 self._current_face_color = transform_color_with_defaults(
                     num_entries=1,
@@ -383,8 +399,23 @@ class Points(Layer):
                     elem_name="face_color",
                     default="white",
                 )
-            else:
-                self._current_face_color = np.array([1, 1, 1, 1])
+            elif self._face_color_mode == ColorMode.CYCLE:
+                curr_face_color = transform_color(next(self.face_color_cycle))
+                prop_value = self._property_choices[self._face_color_property][
+                    0
+                ]
+                self.face_color_cycle_map[prop_value] = curr_face_color
+                self._current_face_color = curr_face_color
+            elif self._face_color_mode == ColorMode.COLORMAP:
+                prop_value = self._property_choices[self._face_color_property][
+                    0
+                ]
+                curr_face_color, _ = map_property(
+                    prop=prop_value,
+                    colormap=self.face_colormap[1],
+                    contrast_limits=self._face_contrast_limits,
+                )
+                self._current_face_color = curr_face_color
         else:
             self._current_edge_color = self.edge_color[-1]
             self._current_face_color = self.face_color[-1]
@@ -1018,19 +1049,23 @@ class Points(Layer):
                 face_color_properties = self.properties[
                     self._face_color_property
                 ]
-                if update_color_mapping or self.face_contrast_limits is None:
-                    face_colors, contrast_limits = map_property(
-                        prop=face_color_properties,
-                        colormap=self.face_colormap[1],
-                    )
-                    self.face_contrast_limits = contrast_limits
+                if len(face_color_properties) > 0:
+                    if (
+                        update_color_mapping
+                        or self.face_contrast_limits is None
+                    ):
+                        face_colors, contrast_limits = map_property(
+                            prop=face_color_properties,
+                            colormap=self.face_colormap[1],
+                        )
+                        self.face_contrast_limits = contrast_limits
+                    else:
+                        face_colors, _ = map_property(
+                            prop=face_color_properties,
+                            colormap=self.face_colormap[1],
+                            contrast_limits=self.face_contrast_limits,
+                        )
                 else:
-                    face_colors, _ = map_property(
-                        prop=face_color_properties,
-                        colormap=self.face_colormap[1],
-                        contrast_limits=self.face_contrast_limits,
-                    )
-                if len(face_colors) == 0:
                     face_colors = np.empty((0, 4))
                 self._face_color = face_colors
 
@@ -1074,19 +1109,23 @@ class Points(Layer):
                 edge_color_properties = self.properties[
                     self._edge_color_property
                 ]
-                if update_color_mapping or self.edge_contrast_limits is None:
-                    edge_colors, contrast_limits = map_property(
-                        prop=edge_color_properties,
-                        colormap=self.edge_colormap[1],
-                    )
-                    self.edge_contrast_limits = contrast_limits
+                if len(edge_color_properties) > 0:
+                    if (
+                        update_color_mapping
+                        or self.edge_contrast_limits is None
+                    ):
+                        edge_colors, contrast_limits = map_property(
+                            prop=edge_color_properties,
+                            colormap=self.edge_colormap[1],
+                        )
+                        self.edge_contrast_limits = contrast_limits
+                    else:
+                        edge_colors, _ = map_property(
+                            prop=edge_color_properties,
+                            colormap=self.edge_colormap[1],
+                            contrast_limits=self.edge_contrast_limits,
+                        )
                 else:
-                    edge_colors, _ = map_property(
-                        prop=edge_color_properties,
-                        colormap=self.edge_colormap[1],
-                        contrast_limits=self.edge_contrast_limits,
-                    )
-                if len(edge_colors) == 0:
                     edge_colors = np.empty((0, 4))
                 self._edge_color = edge_colors
             self.events.face_color()
