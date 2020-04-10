@@ -457,6 +457,19 @@ def test_properties_dataframe():
     np.testing.assert_equal(layer.properties, properties)
 
 
+def test_properties_list():
+    """test if properties can be provided as a dict of lists"""
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    properties = {'point_type': ['A', 'B'] * int(shape[0] / 2)}
+    layer = Points(data, properties=properties)
+    np.testing.assert_equal(layer.properties, properties)
+
+    # verify the lists were converted to numpy arrays
+    assert type(layer.properties['point_type']) == np.ndarray
+
+
 def test_adding_annotations():
     shape = (10, 2)
     np.random.seed(0)
@@ -739,6 +752,16 @@ def test_add_edge_color_cycle_to_empty_layer():
     assert layer.properties == props
     np.testing.assert_allclose(layer.edge_color, edge_color)
 
+    # add a point with a new property
+    layer.selected_data = []
+    layer.current_properties = {'point_type': np.array(['B'])}
+    layer.add([12, 12])
+    new_color = np.array([0, 0, 1, 1])
+    edge_color = np.vstack((edge_color, new_color))
+    new_properties = {'point_type': np.array(['A', 'B'])}
+    np.testing.assert_allclose(layer.edge_color, edge_color)
+    np.testing.assert_equal(layer.properties, new_properties)
+
 
 def test_adding_value_edge_color_cycle():
     """ Test that adding values to properties used to set an edge color cycle
@@ -802,11 +825,6 @@ def test_edge_color_colormap():
         np.vstack((edge_color_array, transform_color('black'))),
     )
 
-    # change the colormap
-    new_colormap = 'viridis'
-    layer.edge_colormap = new_colormap
-    assert layer.edge_colormap[1] == get_colormap(new_colormap)
-
     # Check removing data adjusts colors correctly
     layer.selected_data = {0, 2}
     layer.remove_selected()
@@ -822,6 +840,16 @@ def test_edge_color_colormap():
             )
         ),
     )
+
+    # adjust the clims
+    layer.edge_contrast_limits = (0, 3)
+    layer.refresh_colors(update_color_mapping=False)
+    np.testing.assert_allclose(layer.edge_color[-2], [0.5, 0.5, 0.5, 1])
+
+    # change the colormap
+    new_colormap = 'viridis'
+    layer.edge_colormap = new_colormap
+    assert layer.edge_colormap[1] == get_colormap(new_colormap)
 
 
 def test_face_color_direct():
@@ -964,6 +992,16 @@ def test_add_face_color_cycle_to_empty_layer():
     assert layer.properties == props
     np.testing.assert_allclose(layer.face_color, face_color)
 
+    # add a point with a new property
+    layer.selected_data = []
+    layer.current_properties = {'point_type': np.array(['B'])}
+    layer.add([12, 12])
+    new_color = np.array([0, 0, 1, 1])
+    face_color = np.vstack((face_color, new_color))
+    new_properties = {'point_type': np.array(['A', 'B'])}
+    np.testing.assert_allclose(layer.face_color, face_color)
+    np.testing.assert_equal(layer.properties, new_properties)
+
 
 def test_adding_value_face_color_cycle():
     """ Test that adding values to properties used to set an face color cycle
@@ -1027,11 +1065,6 @@ def test_face_color_colormap():
         np.vstack((face_color_array, transform_color('black'))),
     )
 
-    # change the colormap
-    new_colormap = 'viridis'
-    layer.face_colormap = new_colormap
-    assert layer.face_colormap[1] == get_colormap(new_colormap)
-
     # Check removing data adjusts colors correctly
     layer.selected_data = {0, 2}
     layer.remove_selected()
@@ -1047,6 +1080,16 @@ def test_face_color_colormap():
             )
         ),
     )
+
+    # adjust the clims
+    layer.face_contrast_limits = (0, 3)
+    layer.refresh_colors(update_color_mapping=False)
+    np.testing.assert_allclose(layer.face_color[-2], [0.5, 0.5, 0.5, 1])
+
+    # change the colormap
+    new_colormap = 'viridis'
+    layer.face_colormap = new_colormap
+    assert layer.face_colormap[1] == get_colormap(new_colormap)
 
 
 def test_size():
