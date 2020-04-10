@@ -14,4 +14,4 @@ plugins.  For a guide on how to create a plugin, see
 understand how the napari plugin architecture is implemented, see
 :ref:`plugins-for-napari-developers`.  For a complete list of *hook
 specifications* that developers can implement, see the
-:ref:`hook-specifications`.
+:ref:`hook-specifications-reference`.

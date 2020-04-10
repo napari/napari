@@ -619,6 +619,11 @@ class Layer(KeymapProvider, ABC):
         self._value = self.get_value()
         self.status = self.get_message()
 
+    @property
+    def displayed_coordinates(self):
+        """list: List of currently displayed coordinates."""
+        return [self.coordinates[i] for i in self.dims.displayed]
+
     def get_message(self):
         """Generate a status message based on the coordinates and value
 
@@ -718,17 +723,3 @@ class Layer(KeymapProvider, ABC):
                 f.write(svg)
 
         return svg
-
-    def on_mouse_move(self, event):
-        """Called whenever mouse moves over canvas."""
-        return
-
-    def on_mouse_press(self, event):
-        """Called whenever mouse pressed in canvas.
-        """
-        return
-
-    def on_mouse_release(self, event):
-        """Called whenever mouse released in canvas.
-        """
-        return
