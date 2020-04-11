@@ -5,7 +5,6 @@ from vispy.color import Colormap
 import numpy as np
 from .vispy_base_layer import VispyBaseLayer
 from ..layers.image._image_constants import Rendering
-from ..layers import Image, Labels
 
 
 texture_dtypes = [
@@ -93,15 +92,14 @@ class VispyImageLayer(VispyBaseLayer):
                 self.node.set_data(data)
             else:
                 self.node.set_data(data, clim=self.layer.contrast_limits)
+
+        # Call to update order of translation values with new dims:
+        self._on_scale_change()
+        self._on_translate_change()
         self.node.update()
 
     def _on_interpolation_change(self, event=None):
-        if self.layer.dims.ndisplay == 3 and isinstance(self.layer, Labels):
-            self.node.interpolation = 'nearest'
-        elif self.layer.dims.ndisplay == 3 and isinstance(self.layer, Image):
-            self.node.interpolation = 'linear'
-        else:
-            self.node.interpolation = self.layer.interpolation
+        self.node.interpolation = self.layer.interpolation
 
     def _on_rendering_change(self, event=None):
         if self.layer.dims.ndisplay == 3:

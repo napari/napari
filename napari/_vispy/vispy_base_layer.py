@@ -96,7 +96,12 @@ class VispyBaseLayer(ABC):
 
     @scale.setter
     def scale(self, scale):
-        self._master_transform.scale = scale
+        # Avoid useless update if nothing changed in the displayed dims
+        # Note that the master_transform scale is always a 4-vector so pad
+        padded_scale = np.pad(scale, ((0, 4 - len(scale))), constant_values=1)
+        if self.scale is not None and np.all(self.scale == padded_scale):
+            return
+        self._master_transform.scale = padded_scale
 
     @property
     def translate(self):
@@ -105,7 +110,16 @@ class VispyBaseLayer(ABC):
 
     @translate.setter
     def translate(self, translate):
-        self._master_transform.translate = translate
+        # Avoid useless update if nothing changed in the displayed dims
+        # Note that the master_transform translate is always a 4-vector so pad
+        padded_translate = np.pad(
+            translate, ((0, 4 - len(translate))), constant_values=1
+        )
+        if self.translate is not None and np.all(
+            self.translate == padded_translate
+        ):
+            return
+        self._master_transform.translate = padded_translate
 
     @property
     def scale_factor(self):
