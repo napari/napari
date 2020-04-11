@@ -10,7 +10,7 @@ from .. import layers
 from ..plugins.io import (
     read_data_with_plugins,
     write_layer_with_plugin,
-    write_data_with_plugins,
+    write_layers_with_plugins,
 )
 from ..utils import colormaps, io
 from ..utils.misc import (
