@@ -140,8 +140,14 @@ def write_data_with_plugins(
                 logger.error(err.format_with_contact_info())
 
 
-def write_image_with_plugin(
-    plugin_name: str, path: str, data: Any, meta: dict, plugin_manager=None
+def write_layer_with_plugin(
+    plugin_name: str,
+    path: str,
+    *,
+    data: Any,
+    meta: dict,
+    layer_type: str,
+    plugin_manager=None,
 ):
     """Write image data with the writer from the chosen plugin.
 
@@ -154,18 +160,20 @@ def write_image_with_plugin(
         Name of the plugin to write data with.
     path : str
         The path (file, directory, url) to save.
-    data : array or list of array
-        Image data. Can be N dimensional. If the last dimension has length
-        3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a
-        list and arrays are decreasing in shape then the data is from an image
-        pyramid.
+    data : array, list of array, or tuple
+        Layer data.
     meta : dict
-        Image metadata.
+        Layer metadata.
+    layer_type : str
+        Layer type.
     plugin_manager : pluggy.PluginManager, optional
         Instance of a pluggy PluginManager.  by default the main napari
         plugin_manager will be used.
     """
     plugin_manager = plugin_manager or napari_plugin_manager
-    return plugin_manager.hook.napari_write_image.call_plugin(
+    hook_specification = getattr(
+        plugin_manager.hook, 'napari_write_' + layer_type
+    )
+    return hook_specification.call_plugin(
         plugin_name, path=path, data=data, meta=meta
     )

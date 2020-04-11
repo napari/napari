@@ -5,7 +5,11 @@ from os import fspath
 import numpy as np
 
 from .. import layers
-from ..plugins.io import read_data_with_plugins
+from ..plugins.io import (
+    read_data_with_plugins,
+    write_layer_with_plugin,
+    write_data_with_plugins,
+)
 from ..utils import colormaps, io
 from ..utils.misc import (
     ensure_iterable,
@@ -897,45 +901,43 @@ class AddLayersMixin:
 
         return layer
 
-    # def _save_layers_with_plugins(
-    #     self, path_or_paths: Union[str, Sequence[str]]
-    # ) -> List[layers.Layer]:
-    #     """Load a path or a list of paths into the viewer using plugins.
-    #
-    #     This function is mostly called from self.add_path, where the ``stack``
-    #     argument determines whether a list of strings is handed to plugins one
-    #     at a time, or en-masse.
-    #
-    #     Parameters
-    #     ----------
-    #     path_or_paths : str or list of str
-    #         A filepath, directory, or URL (or a list of any) to open. If a
-    #         list, the assumption is that the list is to be treated as a stack.
-    #
-    #     Returns
-    #     -------
-    #     List[layers.Layer]
-    #         A list of any layers that were added to the viewer.
-    #     """
-    #     layer_data = write_data_with_plugins(path_or_paths)
-    #
-    #     if not layer_data:
-    #         # if layer_data is empty, it means no plugin could read path
-    #         # we just want to provide some useful feedback, which includes
-    #         # whether or not paths were passed to plugins as a list.
-    #         if isinstance(path_or_paths, (tuple, list)):
-    #             path_repr = f"[{path_or_paths[0]}, ...] as stack"
-    #         else:
-    #             path_repr = path_or_paths
-    #         msg = f'No plugin found capable of reading {path_repr}.'
-    #         logger.error(msg)
-    #         return []
-    #
-    #     # add each layer to the viewer
-    #     added: List[layers.Layer] = []  # for layers that get added
-    #     for data in layer_data:
-    #         new = self._add_layer_from_data(*data)
-    #         # some add_* methods return a List[Layer] others just a Layer
-    #         # we want to always return a list
-    #         added.extend(new if isinstance(new, list) else [new])
-    #     return added
+    def _save_individual_layers_with_plugin(
+        self, plugin_name: str, path: str, layers: List[layers.Layer],
+    ):
+        """Save a list of layers to a path using the specified plugin.
+
+        Parameters
+        ----------
+        plugin_name : str
+            Name of the plugin to use for saving.
+        path : str
+            A filepath, directory, or URL (or a list of any) to open.
+        layers : List[layers.Layer]
+            List of layers to be saved.
+        """
+        for layer in layers:
+            write_layer_with_plugin(
+                plugin_name,
+                path,
+                data=layer.data,
+                meta=layer._get_state(),
+                layer_type=layer.__class__.__name__.lower(),
+            )
+
+    def _save_multiple_layers_with_plugins(
+        self, path: str, layers: List[layers.Layer],
+    ):
+        """Save a list of layers to a path.
+
+        Parameters
+        ----------
+        path : str
+            A filepath, directory, or URL (or a list of any) to open.
+        layers : List[layers.Layer]
+            List of layers to be saved.
+        """
+        layer_data = [
+            (layer.data, layer._get_state(), layer.__class__.__name__.lower(),)
+            for layer in layers
+        ]
+        write_data_with_plugins(path, layer_data)
