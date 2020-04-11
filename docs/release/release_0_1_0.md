@@ -16,7 +16,7 @@ For more information, examples, and documentation, please visit our website: htt
 - WIP: Labels layer (#175)
 - automate running/testing of examples (#176)
 - fix error with nD markers (#183)
--  fix sphinx-apidoc command on CONTRIBUTING.MD (#187)
+- fix sphinx-apidoc command on CONTRIBUTING.MD (#187)
 - Allow other array-like data (#188)
 - Add example using a Zarr array (#191)
 - readme updates (#192)
@@ -129,10 +129,9 @@ For more information, examples, and documentation, please visit our website: htt
 - [Kevin Yamauchi](https://github.com/napari/napari/commits?author=kevinyamauchi) - @kevinyamauchi
 - [Kira Evans](https://github.com/napari/napari/commits?author=kne42) - @kne42
 - [Loic Royer](https://github.com/napari/napari/commits?author=royerloic) - @royerloic
-- Mars Huang
+- [Mars Huang](https://github.com/napari/napari/commits?author=marshuang80) - @marshuang80
 - [Nicholas Sofroniew](https://github.com/napari/napari/commits?author=sofroniewn) - @sofroniewn
-- Pranathi Vemuri
-
+- [Pranathi Vemuri](https://github.com/napari/napari/commits?author=pranathivemuri) - @pranathivemuri
 
 ## 10 reviewers added to this release (alphabetical)
 - [Ahmet Can Solak](https://github.com/napari/napari/commits?author=AhmetCanSolak) - @AhmetCanSolak

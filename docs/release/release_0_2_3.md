@@ -27,7 +27,6 @@ For more information, examples, and documentation, please visit our website: htt
 - [Talley Lambert](https://github.com/napari/napari/commits?author=tlambert03) - @tlambert03
 - [Will Connell](https://github.com/napari/napari/commits?author=wconnell) - @wconnell
 
-
 ## 4 reviewers added to this release (alphabetical)
 - [Ahmet Can Solak](https://github.com/napari/napari/commits?author=AhmetCanSolak) - @AhmetCanSolak
 - [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - @jni

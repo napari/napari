@@ -44,11 +44,10 @@ For more information, examples, and documentation, please visit our website: htt
 - prevent selected label from being reduced below 0 (#512)
 
 ## 4 authors added to this release (alphabetical)
-- Christoph Gohlke
+- [Christoph Gohlke](https://github.com/napari/napari/commits?author=cgohlke) - @cgohlke
 - [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - @jni
 - [Kira Evans](https://github.com/napari/napari/commits?author=kne42) - @kne42
 - [Nicholas Sofroniew](https://github.com/napari/napari/commits?author=sofroniewn) - @sofroniewn
-
 
 ## 5 reviewers added to this release (alphabetical)
 - [Ahmet Can Solak](https://github.com/napari/napari/commits?author=AhmetCanSolak) - @AhmetCanSolak

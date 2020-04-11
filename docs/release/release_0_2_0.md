@@ -99,16 +99,16 @@ For more information, examples, and documentation, please visit our website: htt
 
 ## 11 authors added to this release (alphabetical)
 - [Ahmet Can Solak](https://github.com/napari/napari/commits?author=AhmetCanSolak) - @AhmetCanSolak
-- Alexandre de Siqueira
-- Ariel Rokem
-- Christoph Gohlke
+- [Alexandre de Siqueira](https://github.com/napari/napari/commits?author=alexdesiqueira) - @alexdesiqueira
+- [Ariel Rokem](https://github.com/napari/napari/commits?author=arokem) - @arokem
+- [Christoph Gohlke](https://github.com/napari/napari/commits?author=cgohlke) - @cgohlke
 - Jan Eglinger
 - [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - @jni
 - [Kira Evans](https://github.com/napari/napari/commits?author=kne42) - @kne42
-- Mars Huang
-- Matthias Bussonnier
+- [Mars Huang](https://github.com/napari/napari/commits?author=marshuang80) - @marshuang80
+- [Matthias Bussonnier](https://github.com/napari/napari/commits?author=Carreau) - @Carreau
 - [Nicholas Sofroniew](https://github.com/napari/napari/commits?author=sofroniewn) - @sofroniewn
-- Pranathi Vemuri
+- [Pranathi Vemuri](https://github.com/napari/napari/commits?author=pranathivemuri) - @pranathivemuri
 
 ## 6 reviewers added to this release (alphabetical)
 - [Ahmet Can Solak](https://github.com/napari/napari/commits?author=AhmetCanSolak) - @AhmetCanSolak
@@ -116,4 +116,4 @@ For more information, examples, and documentation, please visit our website: htt
 - [Kira Evans](https://github.com/napari/napari/commits?author=kne42) - @kne42
 - [Loic Royer](https://github.com/napari/napari/commits?author=royerloic) - @royerloic
 - [Nicholas Sofroniew](https://github.com/napari/napari/commits?author=sofroniewn) - @sofroniewn
-- Pranathi Vemuri
+- [Pranathi Vemuri](https://github.com/napari/napari/commits?author=pranathivemuri) - @pranathivemuri

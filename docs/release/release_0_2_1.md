@@ -32,7 +32,6 @@ For more information, examples, and documentation, please visit our website: htt
 - [Kira Evans](https://github.com/napari/napari/commits?author=kne42) - @kne42
 - [Nicholas Sofroniew](https://github.com/napari/napari/commits?author=sofroniewn) - @sofroniewn
 
-
 ## 4 reviewers added to this release (alphabetical)
 - [Ahmet Can Solak](https://github.com/napari/napari/commits?author=AhmetCanSolak) - @AhmetCanSolak
 - [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - @jni

@@ -20,7 +20,6 @@ For more information, examples, and documentation, please visit our website: htt
 - [Talley Lambert](https://github.com/napari/napari/commits?author=tlambert03) - @tlambert03
 - [Tony Tung](https://github.com/napari/napari/commits?author=ttung) - @ttung
 
-
 ## 3 reviewers added to this release (alphabetical)
 - [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - @jni
 - [Nicholas Sofroniew](https://github.com/napari/napari/commits?author=sofroniewn) - @sofroniewn

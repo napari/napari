@@ -60,7 +60,6 @@ For more information, examples, and documentation, please visit our website: htt
 - Refactor util.misc (#781)
 - Drop ndim keyword from labels layer (#773)
 
-
 ## 7 authors added to this release (alphabetical)
 - [Genevieve Buckley](https://github.com/napari/napari/commits?author=GenevieveBuckley) - @GenevieveBuckley
 - [Kevin Yamauchi](https://github.com/napari/napari/commits?author=kevinyamauchi) - @kevinyamauchi
@@ -69,7 +68,6 @@ For more information, examples, and documentation, please visit our website: htt
 - [Peter Boone](https://github.com/napari/napari/commits?author=boonepeter) - @boonepeter
 - [Shannon Axelrod](https://github.com/napari/napari/commits?author=shanaxel42) - @shanaxel42
 - [Talley Lambert](https://github.com/napari/napari/commits?author=tlambert03) - @tlambert03
-
 
 ## 7 reviewers added to this release (alphabetical)
 - [Ahmet Can Solak](https://github.com/napari/napari/commits?author=AhmetCanSolak) - @AhmetCanSolak
