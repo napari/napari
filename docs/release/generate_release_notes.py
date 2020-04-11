@@ -13,7 +13,7 @@ python /path/to/generate_release_notes.py v.14.2 v0.14.3 --version 0.14.3
 ```
 You should probably redirect the output with:
 ```
-python /path/to/generate_release_notes.py [args] | tee release_notes.rst
+python /path/to/generate_release_notes.py [args] | tee release_notes.md
 ```
 You'll require PyGitHub and tqdm, which you can install with:
 ```
@@ -125,7 +125,7 @@ highlights = OrderedDict()
 highlights['Highlight'] = {}
 highlights['New Feature'] = {}
 highlights['Improvement'] = {}
-highlights['Bugfix'] = {}
+highlights['Bug Fixe'] = {}
 highlights['API Change'] = {}
 highlights['Deprecation'] = {}
 highlights['Build Tool'] = {}

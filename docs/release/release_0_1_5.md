@@ -1,23 +1,14 @@
-Announcement: napari 0.1.5
-==========================
+# Announcement: napari 0.1.5
 
-We're happy to announce the release of napari v0.1.5!
-napari is a fast, interactive, multi-dimensional image viewer for Python.
-It's designed for browsing, annotating, and analyzing large multi-dimensional
-images. It's built on top of Qt (for the GUI), vispy (for performant GPU-base
-rendering), and the scientific Python stack (numpy, scipy).
+We're happy to announce the release of napari 0.1.5! napari is a fast, interactive, multi-dimensional image viewer for Python. It's designed for browsing, annotating, and analyzing large multi-dimensional images. It's built on top of Qt (for the GUI), vispy (for performant GPU-based rendering), and the scientific Python stack (numpy, scipy).
 
+For more information, examples, and documentation, please visit our website: https://github.com/napari/napari
 
-For more information, examples, and documentation, please visit our website:
-https://github.com/napari/napari
-
-New Features
-------------
+## New Features
 - Support for swappable dimensions
 - Support for 3D rendering for more layer types
 
-Pull Requests
-*******************
+## Pull Requests
 - Expose args for blending, visible, opacity (#434)
 - test add_* signatures and improve docstring testing (#439)
 - add qt console (#443)
@@ -52,18 +43,16 @@ Pull Requests
 - fix call signature to work with keyword-only arguments (#510)
 - prevent selected label from being reduced below 0 (#512)
 
-4 authors added to this release [alphabetical by first name or login]
----------------------------------------------------------------------
+## 4 authors added to this release (alphabetical)
 - Christoph Gohlke
-- Juan Nunez-Iglesias
-- Kira Evans
-- Nicholas Sofroniew
+- [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - @jni
+- [Kira Evans](https://github.com/napari/napari/commits?author=kne42) - @kne42
+- [Nicholas Sofroniew](https://github.com/napari/napari/commits?author=sofroniewn) - @sofroniewn
 
 
-5 reviewers added to this release [alphabetical by first name or login]
------------------------------------------------------------------------
-- Ahmet Can Solak
-- Juan Nunez-Iglesias
-- Kira Evans
-- Loic Royer
-- Nicholas Sofroniew
+## 5 reviewers added to this release (alphabetical)
+- [Ahmet Can Solak](https://github.com/napari/napari/commits?author=AhmetCanSolak) - @AhmetCanSolak
+- [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - @jni
+- [Kira Evans](https://github.com/napari/napari/commits?author=kne42) - @kne42
+- [Loic Royer](https://github.com/napari/napari/commits?author=royerloic) - @royerloic
+- [Nicholas Sofroniew](https://github.com/napari/napari/commits?author=sofroniewn) - @sofroniewn
