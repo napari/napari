@@ -3,8 +3,8 @@ from unittest import mock
 
 import numpy as np
 import pytest
-from skimage.io import imread
 
+from napari.utils.io import imread
 from napari._tests.utils import (
     add_layer_by_type,
     check_viewer_functioning,
@@ -18,6 +18,8 @@ def test_qt_viewer(viewer_factory):
 
     assert viewer.title == 'napari'
     assert view.viewer == viewer
+    # Check no console is present before it is requested
+    assert view._console is None
 
     assert len(viewer.layers) == 0
     assert view.layers.vbox_layout.count() == 2
@@ -25,6 +27,27 @@ def test_qt_viewer(viewer_factory):
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
+
+
+def test_qt_viewer_with_console(viewer_factory):
+    """Test instantiating console from viewer."""
+    view, viewer = viewer_factory()
+    # Check no console is present before it is requested
+    assert view._console is None
+    # Check console is created when requested
+    assert view.console is not None
+    assert view.dockConsole.widget == view.console
+
+
+def test_qt_viewer_toggle_console(viewer_factory):
+    """Test instantiating console from viewer."""
+    view, viewer = viewer_factory()
+    # Check no console is present before it is requested
+    assert view._console is None
+    # Check console has been created when it is supposed to be shown
+    view.toggle_console_visibility(None)
+    assert view._console is not None
+    assert view.dockConsole.widget == view.console
 
 
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)

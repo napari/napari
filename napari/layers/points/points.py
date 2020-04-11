@@ -11,7 +11,6 @@ from vispy.color.colormap import Colormap
 from ..base import Layer
 from ...utils.event import Event
 from ...utils.status_messages import format_float
-from ._constants import Symbol, SYMBOL_ALIAS, Mode, ColorMode
 from ...utils.colormaps.standardize_color import (
     transform_color,
     hex_to_name,
@@ -24,7 +23,11 @@ from ..utils.color_transformations import (
     normalize_and_broadcast_colors,
     ColorType,
 )
-from .points_utils import (
+from ._points_constants import Symbol, SYMBOL_ALIAS, Mode, ColorMode
+from ._points_mouse_bindings import add, select, highlight
+from ._points_utils import (
+    create_box,
+    points_to_squares,
     dataframe_to_properties,
     guess_continuous,
     map_property,
@@ -152,7 +155,7 @@ class Points(Layer):
     n_dimensional : bool
         If True, renders points not just in central plane but also in all
         n-dimensions according to specified point marker size.
-    selected_data : list
+    selected_data : set
         Integer indices of any selected points.
     mode : str
         Interactive mode. The normal, default mode is PAN_ZOOM, which
@@ -182,15 +185,15 @@ class Points(Layer):
 
     Extended Summary
     ----------
-    _data_view : array (M, 2)
+    _view_data : array (M, 2)
         2D coordinates of points in the currently viewed slice.
-    _size_view : array (M, )
+    _view_size : array (M, )
         Size of the point markers in the currently viewed slice.
     _indices_view : array (M, )
         Integer indices of the points in the currently viewed slice.
     _selected_view :
         Integer indices of selected points in the currently viewed slice within
-        the `_data_view` array.
+        the `_view_data` array.
     _selected_box : array (4, 2) or None
         Four corners of any box either around currently selected points or
         being created during a drag action. Starting in the top left and
@@ -290,9 +293,9 @@ class Points(Layer):
             self._current_size = 10
 
         # Indices of selected points
-        self._selected_data = []
-        self._selected_data_stored = []
-        self._selected_data_history = []
+        self._selected_data = set()
+        self._selected_data_stored = set()
+        self._selected_data_history = set()
         # Indices of selected points within the currently viewed slice
         self._selected_view = []
         # Index of hovered point
@@ -321,6 +324,7 @@ class Points(Layer):
             if edge_color_cycle is None:
                 edge_color_cycle = DEFAULT_COLOR_CYCLE
             self.edge_color_cycle = edge_color_cycle
+            self.edge_color_cycle_map = {}
             self.edge_colormap = edge_colormap
             self._edge_contrast_limits = edge_contrast_limits
 
@@ -329,6 +333,7 @@ class Points(Layer):
             if face_color_cycle is None:
                 face_color_cycle = DEFAULT_COLOR_CYCLE
             self.face_color_cycle = face_color_cycle
+            self.face_color_cycle_map = {}
             self.face_colormap = face_colormap
             self._face_contrast_limits = face_contrast_limits
 
@@ -448,7 +453,7 @@ class Points(Layer):
                 )
 
                 self.size = np.concatenate((self._size, size), axis=0)
-                self.selected_data = list(np.arange(cur_npoints, len(data)))
+                self.selected_data = set(np.arange(cur_npoints, len(data)))
 
         self._update_dims()
         self.events.data()
@@ -621,7 +626,7 @@ class Points(Layer):
             default="white",
         )
         if self._edge_color_mode == ColorMode.CYCLE:
-            self.refresh_colors()
+            self.refresh_colors(update_color_mapping=True)
 
     @property
     def edge_colormap(self):
@@ -672,7 +677,8 @@ class Points(Layer):
             and self._mode != Mode.ADD
         ):
             cur_colors: np.ndarray = self.edge_color
-            cur_colors[self.selected_data] = self._current_edge_color
+            index = list(self.selected_data)
+            cur_colors[index] = self._current_edge_color
             self.edge_color = cur_colors
         self.events.current_edge_color()
 
@@ -762,7 +768,7 @@ class Points(Layer):
             default="white",
         )
         if self._face_color_mode == ColorMode.CYCLE:
-            self.refresh_colors()
+            self.refresh_colors(update_color_mapping=True)
 
     @property
     def face_colormap(self):
@@ -813,7 +819,8 @@ class Points(Layer):
             and self._mode != Mode.ADD
         ):
             cur_colors: np.ndarray = self.face_color
-            cur_colors[self.selected_data] = self._current_face_color
+            index = list(self.selected_data)
+            cur_colors[index] = self._current_face_color
             self.face_color = cur_colors
 
         self.events.current_face_color()
@@ -861,7 +868,7 @@ class Points(Layer):
             self._face_color_mode = face_color_mode
             self.refresh_colors()
 
-    def refresh_colors(self, update_color_mapping: bool = True):
+    def refresh_colors(self, update_color_mapping: bool = False):
         """Calculate and update face and edge colors if using a cycle or color map
 
         Parameters
@@ -888,6 +895,22 @@ class Points(Layer):
                             self.face_color_cycle,
                         )
                     }
+
+                else:
+                    # add properties if they are not in the colormap
+                    # and update_color_mapping==False
+                    face_color_cycle_keys = [*self.face_color_cycle_map]
+                    props_in_map = np.in1d(
+                        face_color_properties, face_color_cycle_keys
+                    )
+                    if not np.all(props_in_map):
+                        props_to_add = np.unique(
+                            face_color_properties[np.logical_not(props_in_map)]
+                        )
+                        for prop in props_to_add:
+                            self.face_color_cycle_map[prop] = next(
+                                self.face_color_cycle
+                            )
                 face_colors = np.array(
                     [
                         self.face_color_cycle_map[x]
@@ -901,7 +924,7 @@ class Points(Layer):
                 face_color_properties = self.properties[
                     self._face_color_property
                 ]
-                if update_color_mapping:
+                if update_color_mapping or self.face_contrast_limits is None:
                     face_colors, contrast_limits = map_property(
                         prop=face_color_properties,
                         colormap=self.face_colormap[1],
@@ -927,6 +950,21 @@ class Points(Layer):
                             self.edge_color_cycle,
                         )
                     }
+                else:
+                    # add properties if they are not in the colormap
+                    # and update_color_mapping==False
+                    edge_color_cycle_keys = [*self.edge_color_cycle_map]
+                    props_in_map = np.in1d(
+                        edge_color_properties, edge_color_cycle_keys
+                    )
+                    if not np.all(props_in_map):
+                        props_to_add = np.unique(
+                            edge_color_properties[np.logical_not(props_in_map)]
+                        )
+                        for prop in props_to_add:
+                            self.edge_color_cycle_map[prop] = next(
+                                self.edge_color_cycle
+                            )
                 edge_colors = np.array(
                     [
                         self.edge_color_cycle_map[x]
@@ -938,7 +976,7 @@ class Points(Layer):
                 edge_color_properties = self.properties[
                     self._edge_color_property
                 ]
-                if update_color_mapping:
+                if update_color_mapping or self.edge_contrast_limits is None:
                     edge_colors, contrast_limits = map_property(
                         prop=edge_color_properties,
                         colormap=self.edge_colormap[1],
@@ -1000,12 +1038,12 @@ class Points(Layer):
 
     @property
     def selected_data(self):
-        """list: list of currently selected points."""
+        """set: set of currently selected points."""
         return self._selected_data
 
     @selected_data.setter
     def selected_data(self, selected_data):
-        self._selected_data = list(selected_data)
+        self._selected_data = set(selected_data)
         selected = []
         for c in self._selected_data:
             if c in self._indices_view:
@@ -1017,7 +1055,7 @@ class Points(Layer):
         if len(self._selected_data) == 0:
             self._set_highlight()
             return
-        index = self._selected_data
+        index = list(self._selected_data)
         edge_colors = np.unique(self.edge_color[index], axis=0)
         if len(edge_colors) == 1:
             edge_color = edge_colors[0]
@@ -1098,16 +1136,27 @@ class Points(Layer):
             return
         old_mode = self._mode
 
+        if old_mode == Mode.ADD:
+            self.mouse_drag_callbacks.remove(add)
+        elif old_mode == Mode.SELECT:
+            # add mouse drag and move callbacks
+            self.mouse_drag_callbacks.remove(select)
+            self.mouse_move_callbacks.remove(highlight)
+
         if mode == Mode.ADD:
             self.cursor = 'pointing'
             self.interactive = False
             self.help = 'hold <space> to pan/zoom'
-            self.selected_data = []
+            self.selected_data = set()
             self._set_highlight()
+            self.mouse_drag_callbacks.append(add)
         elif mode == Mode.SELECT:
             self.cursor = 'standard'
             self.interactive = False
             self.help = 'hold <space> to pan/zoom'
+            # add mouse drag and move callbacks
+            self.mouse_drag_callbacks.append(select)
+            self.mouse_move_callbacks.append(highlight)
         elif mode == Mode.PAN_ZOOM:
             self.cursor = 'standard'
             self.interactive = True
@@ -1116,7 +1165,7 @@ class Points(Layer):
             raise ValueError("Mode not recognized")
 
         if not (mode == Mode.SELECT and old_mode == Mode.SELECT):
-            self._selected_data_stored = []
+            self._selected_data_stored = set()
 
         self.status = str(mode)
         self._mode = mode
@@ -1252,10 +1301,7 @@ class Points(Layer):
         # Display points if there are any in this slice
         if len(self._view_data) > 0:
             # Get the point sizes
-            distances = abs(
-                self._view_data
-                - [self.coordinates[d] for d in self.dims.displayed]
-            )
+            distances = abs(self._view_data - self.displayed_coordinates)
             in_slice_matches = np.all(
                 distances <= np.expand_dims(self._view_size, axis=1) / 2,
                 axis=1,
@@ -1315,6 +1361,7 @@ class Points(Layer):
                     if (
                         self._value in self._indices_view
                         and self._mode == Mode.SELECT
+                        and not self._is_selecting
                     ):
                         hover_point = list(self._indices_view).index(
                             self._value
@@ -1329,6 +1376,7 @@ class Points(Layer):
                     if (
                         self._value in self._indices_view
                         and self._mode == Mode.SELECT
+                        and not self._is_selecting
                     ):
                         hover_point = list(self._indices_view).index(
                             self._value
@@ -1401,7 +1449,7 @@ class Points(Layer):
 
     def remove_selected(self):
         """Removes selected points if any."""
-        index = copy(self.selected_data)
+        index = list(self.selected_data)
         index.sort()
         if len(index) > 0:
             self._size = np.delete(self._size, index, axis=0)
@@ -1413,7 +1461,7 @@ class Points(Layer):
                 )
             if self._value in self.selected_data:
                 self._value = None
-            self.selected_data = []
+            self.selected_data = set()
             self.data = np.delete(self.data, index, axis=0)
 
     def _move(self, index, coord):
@@ -1427,6 +1475,7 @@ class Points(Layer):
             Coordinates to move points to
         """
         if len(index) > 0:
+            index = list(index)
             disp = list(self.dims.displayed)
             if self._drag_start is None:
                 center = self.data[np.ix_(index, disp)].mean(axis=0)
@@ -1475,7 +1524,7 @@ class Points(Layer):
             self._selected_view = list(
                 range(npoints, npoints + len(self._clipboard['data']))
             )
-            self._selected_data = list(
+            self._selected_data = set(
                 range(totpoints, totpoints + len(self._clipboard['data']))
             )
             self.refresh()
@@ -1483,14 +1532,14 @@ class Points(Layer):
     def _copy_data(self):
         """Copy selected points to clipboard."""
         if len(self.selected_data) > 0:
+            index = list(self.selected_data)
             self._clipboard = {
-                'data': deepcopy(self.data[self.selected_data]),
-                'edge_color': deepcopy(self.edge_color[self.selected_data]),
-                'face_color': deepcopy(self.face_color[self.selected_data]),
-                'size': deepcopy(self.size[self.selected_data]),
+                'data': deepcopy(self.data[index]),
+                'edge_color': deepcopy(self.edge_color[index]),
+                'face_color': deepcopy(self.face_color[index]),
+                'size': deepcopy(self.size[index]),
                 'properties': {
-                    k: deepcopy(v[self.selected_data])
-                    for k, v in self.properties.items()
+                    k: deepcopy(v[index]) for k, v in self.properties.items()
                 },
                 'indices': self.dims.indices,
             }
@@ -1532,139 +1581,3 @@ class Points(Layer):
             xml_list.append(element)
 
         return xml_list
-
-    def on_mouse_move(self, event):
-        """Called whenever mouse moves over canvas.
-        """
-        if self._mode == Mode.SELECT:
-            if event.is_dragging:
-                if len(self.selected_data) > 0:
-                    self._move(self.selected_data, self.coordinates)
-                else:
-                    self._is_selecting = True
-                    if self._drag_start is None:
-                        self._drag_start = [
-                            self.coordinates[d] for d in self.dims.displayed
-                        ]
-                    self._drag_box = np.array(
-                        [
-                            self._drag_start,
-                            [self.coordinates[d] for d in self.dims.displayed],
-                        ]
-                    )
-                    self._set_highlight()
-            else:
-                self._set_highlight()
-        else:
-            self._set_highlight()
-
-    def on_mouse_press(self, event):
-        """Called whenever mouse pressed in canvas.
-        """
-        shift = 'Shift' in event.modifiers
-
-        if self._mode == Mode.SELECT:
-            if shift and self._value is not None:
-                if self._value in self.selected_data:
-                    self.selected_data = [
-                        x for x in self.selected_data if x != self._value
-                    ]
-                else:
-                    self.selected_data += [self._value]
-            elif self._value is not None:
-                if self._value not in self.selected_data:
-                    self.selected_data = [self._value]
-            else:
-                self.selected_data = []
-            self._set_highlight()
-        elif self._mode == Mode.ADD:
-            self.add(self.coordinates)
-
-    def on_mouse_release(self, event):
-        """Called whenever mouse released in canvas.
-        """
-        self._drag_start = None
-        if self._is_selecting:
-            self._is_selecting = False
-            if len(self._view_data) > 0:
-                selection = points_in_box(
-                    self._drag_box, self._view_data, self._view_size
-                )
-                self.selected_data = self._indices_view[selection]
-            else:
-                self.selected_data = []
-            self._set_highlight(force=True)
-
-
-def create_box(data):
-    """Create the axis aligned interaction box of a list of points
-
-    Parameters
-    ----------
-    data : (N, 2) array
-        Points around which the interaction box is created
-
-    Returns
-    -------
-    box : (4, 2) array
-        Vertices of the interaction box
-    """
-    min_val = data.min(axis=0)
-    max_val = data.max(axis=0)
-    tl = np.array([min_val[0], min_val[1]])
-    tr = np.array([max_val[0], min_val[1]])
-    br = np.array([max_val[0], max_val[1]])
-    bl = np.array([min_val[0], max_val[1]])
-    box = np.array([tl, tr, br, bl])
-    return box
-
-
-def points_to_squares(points, sizes):
-    """Expand points to squares defined by their size
-
-    Parameters
-    ----------
-    points : (N, 2) array
-        Points to be turned into squares
-    sizes : (N,) array
-        Size of each point
-
-    Returns
-    -------
-    rect : (4N, 2) array
-        Vertices of the expanded points
-    """
-    rect = np.concatenate(
-        [
-            points + np.sqrt(2) / 2 * np.array([sizes, sizes]).T,
-            points + np.sqrt(2) / 2 * np.array([sizes, -sizes]).T,
-            points + np.sqrt(2) / 2 * np.array([-sizes, sizes]).T,
-            points + np.sqrt(2) / 2 * np.array([-sizes, -sizes]).T,
-        ],
-        axis=0,
-    )
-    return rect
-
-
-def points_in_box(corners, points, sizes):
-    """Determine which points are in an axis aligned box defined by the corners
-
-    Parameters
-    ----------
-    points : (N, 2) array
-        Points to be checked
-    sizes : (N,) array
-        Size of each point
-
-    Returns
-    -------
-    inside : list
-        Indices of points inside the box
-    """
-    box = create_box(corners)[[0, 2]]
-    rect = points_to_squares(points, sizes)
-    below_top = np.all(box[1] >= rect, axis=1)
-    above_bottom = np.all(rect >= box[0], axis=1)
-    inside = np.logical_and(below_top, above_bottom)
-    inside = np.unique(np.where(inside)[0] % len(points))
-    return list(inside)

@@ -6,3 +6,4 @@ pytest-ordering
 pytest-timeout
 xarray
 zarr
+scikit-image

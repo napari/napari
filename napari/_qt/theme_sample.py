@@ -40,15 +40,15 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from skimage.io import imsave
+from ..utils.io import imsave
 
 from .qt_range_slider import QHRangeSlider
-from ..resources import combine_stylesheets
+from ..resources import get_stylesheet
 from ..utils.theme import palettes, template
 
 from .utils import QImg2array
 
-raw_stylesheet = combine_stylesheets()
+raw_stylesheet = get_stylesheet()
 
 blurb = """
 <h3>Heading</h3>

@@ -1,16 +1,20 @@
 import importlib
 import os
 import pkgutil
-import re
 import sys
-from collections import defaultdict
 from logging import getLogger
-from traceback import format_exception
-from typing import DefaultDict, Dict, Generator, List, Optional, Tuple, Union
+from typing import Generator, Optional, Tuple, Union, List, Dict
 
 import pluggy
+from pluggy.hooks import HookImpl
 
 from . import _builtins, hook_specifications
+from .exceptions import (
+    PluginError,
+    PluginImportError,
+    PluginRegistrationError,
+    fetch_module_metadata,
+)
 
 logger = getLogger(__name__)
 
@@ -20,38 +24,188 @@ else:
     import importlib_metadata
 
 
-class PluginError(Exception):
-    def __init__(
-        self, message: str, plugin_name: str, plugin_module: str
-    ) -> None:
-        super().__init__(message)
-        self.plugin_name = plugin_name
-        self.plugin_module = plugin_module
+class _HookCaller(pluggy.hooks._HookCaller):
+    """Adding convenience methods to PluginManager.hook
+
+    In a pluggy plugin manager, the hook implementations registered for each
+    plugin are stored in ``_HookCaller`` objects that share the same name as
+    the corresponding hook specification; and each ``_HookCaller`` instance is
+    stored under the ``plugin_manager.hook`` namespace. For instance:
+    ``plugin_manager.hook.name_of_hook_specification``.
+    """
+
+    # just for type annotation.  These are the lists that store HookImpls
+    _wrappers: List[HookImpl]
+    _nonwrappers: List[HookImpl]
+
+    def get_hookimpl_for_plugin(self, plugin_name: str):
+        """Return hook implementation instance for ``plugin_name`` if found."""
+        try:
+            return next(
+                imp
+                for imp in self.get_hookimpls()
+                if imp.plugin_name == plugin_name
+            )
+        except StopIteration:
+            raise KeyError(
+                f"No implementation of {self.name} found "
+                f"for plugin {plugin_name}."
+            )
+
+    def index(self, value: Union[str, HookImpl]) -> int:
+        """Return index of plugin_name or a HookImpl in self._nonwrappers"""
+        if isinstance(value, HookImpl):
+            return self._nonwrappers.index(value)
+        elif isinstance(value, str):
+            plugin_names = [imp.plugin_name for imp in self._nonwrappers]
+            return plugin_names.index(value)
+        else:
+            raise TypeError(
+                "argument provided to index must either be the "
+                "(string) name of a plugin, or a HookImpl instance"
+            )
+
+    def bring_to_front(self, new_order: Union[List[str], List[HookImpl]]):
+        """Move items in ``new_order`` to the front of the call order.
+
+        By default, hook implementations are called in last-in-first-out order
+        of registration, and pluggy does not provide a built-in way to
+        rearrange the call order of hook implementations.
+
+        This function accepts a `_HookCaller` instance and the desired
+        ``new_order`` of the hook implementations (in the form of list of
+        plugin names, or a list of actual ``HookImpl`` instances) and reorders
+        the implementations in the hook caller accordingly.
+
+        NOTE: hook implementations are actually stored in *two* separate list
+        attributes in the hook caller: ``_HookCaller._wrappers`` and
+        ``_HookCaller._nonwrappers``, according to whether the corresponding
+        ``HookImpl`` instance was marked as a wrapper or not.  This method
+        *only* sorts _nonwrappers.
+        For more, see: https://pluggy.readthedocs.io/en/latest/#wrappers
+
+        Parameters
+        ----------
+        new_order :  list of str or list of ``HookImpl`` instances
+            The desired CALL ORDER of the hook implementations.  The list
+            does *not* need to include every hook implementation in
+            ``self.get_hookimpls()``, but those that are not included
+            will be left at the end of the call order.
+
+        Raises
+        ------
+        TypeError
+            If any item in ``new_order`` is neither a string (plugin_name) or a
+            ``HookImpl`` instance.
+        ValueError
+            If any item in ``new_order`` is neither the name of a plugin or a
+            ``HookImpl`` instance that is present in self._nonwrappers.
+        ValueError
+            If ``new_order`` argument has multiple entries for the same
+            implementation.
+
+        Examples
+        --------
+        Imagine you had a hook specification named ``print_plugin_name``, that
+        expected plugins to simply print their own name. An implementation
+        might look like:
+
+        >>> # hook implementation for ``plugin_1``
+        >>> @hook_implementation
+        ... def print_plugin_name():
+        ...     print("plugin_1")
+
+        If three different plugins provided hook implementations. An example
+        call for that hook might look like:
+
+        >>> plugin_manager.hook.print_plugin_name()
+        plugin_1
+        plugin_2
+        plugin_3
+
+        If you wanted to rearrange their call order, you could do this:
+
+        >>> new_order = ["plugin_2", "plugin_3", "plugin_1"]
+        >>> plugin_manager.hook.print_plugin_name.bring_to_front(new_order)
+        >>> plugin_manager.hook.print_plugin_name()
+        plugin_2
+        plugin_3
+        plugin_1
+
+        You can also just specify one or more item to move them to the front
+        of the call order:
+        >>> plugin_manager.hook.print_plugin_name.bring_to_front(["plugin_3"])
+        >>> plugin_manager.hook.print_plugin_name()
+        plugin_3
+        plugin_2
+        plugin_1
+        """
+        # make sure items in order are unique
+        if len(new_order) != len(set(new_order)):
+            raise ValueError("repeated item in order")
+
+        # make new lists for the rearranged _nonwrappers
+        # for details on the difference between wrappers and nonwrappers, see:
+        # https://pluggy.readthedocs.io/en/latest/#wrappers
+        _old_nonwrappers = self._nonwrappers.copy()
+        _new_nonwrappers: List[HookImpl] = []
+        indices = [self.index(elem) for elem in new_order]
+        for i in indices:
+            _new_nonwrappers.insert(0, _old_nonwrappers[i])
+
+        # remove items that have been pulled, leaving only items that
+        # were not specified in ``new_order`` argument
+        # do this rather than using .pop() above to avoid changing indices
+        for i in sorted(indices, reverse=True):
+            del _old_nonwrappers[i]
+
+        # if there are any hook_implementations left over, add them to the
+        # beginning of their respective lists
+        if _old_nonwrappers:
+            _new_nonwrappers = [x for x in _old_nonwrappers] + _new_nonwrappers
+
+        # update the _nonwrappers list with the reordered list
+        self._nonwrappers = _new_nonwrappers
+
+    def _set_plugin_enabled(self, plugin_name: str, enabled: bool):
+        """Enable or disable the hook implementation for a specific plugin.
+
+        Parameters
+        ----------
+        plugin_name : str
+            The name of a plugin implementing ``hook_spec``.
+        enabled : bool
+            Whether or not the implementation should be enabled.
+
+        Raises
+        ------
+        KeyError
+            If ``plugin_name`` has not provided a hook implementation for this
+            hook specification.
+        """
+        self.get_hookimpl_for_plugin(plugin_name).enabled = enabled
+
+    def enable_plugin(self, plugin_name: str):
+        """enable implementation for ``plugin_name``."""
+        self._set_plugin_enabled(plugin_name, True)
+
+    def disable_plugin(self, plugin_name: str):
+        """disable implementation for ``plugin_name``."""
+        self._set_plugin_enabled(plugin_name, False)
 
 
-class PluginImportError(PluginError, ImportError):
-    """Raised when a plugin fails to import."""
-
-    def __init__(self, plugin_name: str, plugin_module: str) -> None:
-        msg = f'Failed to import plugin: "{plugin_name}"'
-        super().__init__(msg, plugin_name, plugin_module)
+pluggy.manager._HookCaller = _HookCaller
 
 
-class PluginRegistrationError(PluginError):
-    """Raised when a plugin fails to register with pluggy."""
-
-    def __init__(self, plugin_name: str, plugin_module: str) -> None:
-        msg = f'Failed to register plugin: "{plugin_name}"'
-        super().__init__(msg, plugin_name, plugin_module)
-
-
-class NapariPluginManager(pluggy.PluginManager):
+class PluginManager(pluggy.PluginManager):
     PLUGIN_ENTRYPOINT = "napari.plugin"
     PLUGIN_PREFIX = "napari_"
 
     def __init__(
-        self, autodiscover: Optional[Union[bool, str]] = True
-    ) -> None:
+        self,
+        project_name: str = "napari",
+        autodiscover: Optional[Union[bool, str]] = True,
+    ):
         """pluggy.PluginManager subclass with napari-specific functionality
 
         In addition to the pluggy functionality, this subclass adds
@@ -59,32 +213,40 @@ class NapariPluginManager(pluggy.PluginManager):
 
         Parameters
         ----------
+        project_name : str, optional
+            Namespace for plugins managed by this manager. by default 'napari'.
         autodiscover : bool or str, optional
             Whether to autodiscover plugins by naming convention and setuptools
             entry_points.  If a string is provided, it is added to sys.path
             before importing, and removed at the end. Any other "truthy" value
             will simply search the current sys.path.  by default True
         """
-        super().__init__("napari")
-        # this dict is a mapping of plugin_name: List[raised_exception_objects]
-        # this will be used to retrieve traceback info on demand
-        self._exceptions: DefaultDict[str, List[PluginError]] = defaultdict(
-            list
-        )
+        super().__init__(project_name)
+        # a dict to store package metadata for each plugin, will be populated
+        # during self._register_module
+        # possible keys for this dict will be set by fetch_module_metadata()
+        self._plugin_meta: Dict[str, Dict[str, str]] = dict()
 
-        # define hook specifications and validators
-        self.add_hookspecs(hook_specifications)
+        # project_name might not be napari if running tests
+        if project_name == 'napari':
+            # define hook specifications and validators
+            self.add_hookspecs(hook_specifications)
 
-        # register our own built plugins
-        self.register(_builtins, name='builtins')
+            # register our own built plugins
+            self.register(_builtins, name='builtins')
 
-        # discover external plugins
-        if not os.environ.get("NAPARI_DISABLE_PLUGIN_AUTOLOAD"):
-            if autodiscover:
-                if isinstance(autodiscover, str):
-                    self.discover(autodiscover)
-                else:
-                    self.discover()
+            # discover external plugins
+            if not os.environ.get("NAPARI_DISABLE_PLUGIN_AUTOLOAD"):
+                if autodiscover:
+                    if isinstance(autodiscover, str):
+                        self.discover(autodiscover)
+                    else:
+                        self.discover()
+
+    @property
+    def hooks(self):
+        """An alias for PluginManager.hook"""
+        return self.hook
 
     def discover(self, path: Optional[str] = None) -> int:
         """Discover modules by both naming convention and entry_points
@@ -115,17 +277,16 @@ class NapariPluginManager(pluggy.PluginManager):
             sys.path.insert(0, path)
 
         count = 0
-        for plugin_name, module_name in iter_plugin_modules(
+        for plugin_name, module_name, meta in iter_plugin_modules(
             prefix=self.PLUGIN_PREFIX, group=self.PLUGIN_ENTRYPOINT
         ):
             if self.get_plugin(plugin_name) or self.is_blocked(plugin_name):
                 continue
             try:
-                self._register_module(plugin_name, module_name)
+                self._register_module(plugin_name, module_name, meta)
                 count += 1
             except PluginError as exc:
-                self._exceptions[plugin_name].append(exc)
-                log_plugin_error(exc)
+                logger.error(exc.format_with_contact_info())
                 self.unregister(name=plugin_name)
             except Exception as exc:
                 logger.error(
@@ -143,7 +304,9 @@ class NapariPluginManager(pluggy.PluginManager):
 
         return count
 
-    def _register_module(self, plugin_name: str, module_name: str) -> None:
+    def _register_module(
+        self, plugin_name: str, module_name: str, meta: Optional[dict] = None
+    ):
         """Try to register `module_name` as a plugin named `plugin_name`.
 
         Parameters
@@ -152,6 +315,8 @@ class NapariPluginManager(pluggy.PluginManager):
             The name given to the plugin in the plugin manager.
         module_name : str
             The importable module name
+        meta : dict, optional
+            Metadata to be associated with ``plugin_name``.
 
         Raises
         ------
@@ -161,6 +326,9 @@ class NapariPluginManager(pluggy.PluginManager):
             If an error is raised when trying to register the plugin (such as
             a PluginValidationError.)
         """
+        if meta:
+            meta.update({'plugin': plugin_name})
+            self._plugin_meta[plugin_name] = meta
         try:
             mod = importlib.import_module(module_name)
         except Exception as exc:
@@ -173,65 +341,20 @@ class NapariPluginManager(pluggy.PluginManager):
         except Exception as exc:
             raise PluginRegistrationError(plugin_name, module_name) from exc
 
-    def format_exceptions(self, plugin_name: str) -> str:
-        """Return formatted tracebacks for all exceptions raised by plugin.
-
-        Parameters
-        ----------
-        plugin_name : str
-            The name of a plugin for which to retrieve tracebacks
-
-        Returns
-        -------
-        str
-            A formatted string with traceback information for every exception
-            raised by ``plugin_name`` during this session.
-        """
-        from napari import __version__
-
-        if not self._exceptions.get(plugin_name):
-            return ''
-
-        _linewidth = 80
-        _pad = (_linewidth - len(plugin_name) - 18) // 2
-        msg = [
-            f'{"=" * _pad} Errors for plugin "{plugin_name}" {"=" * _pad}',
-            '',
-            f'{"napari version": >16}: {__version__}',
-        ]
-        try:
-            err0 = self._exceptions.get(plugin_name)[0]
-            package_meta = fetch_module_metadata(err0.plugin_module)
-            msg.extend(
-                [
-                    f'{"plugin name": >16}: {package_meta["name"]}',
-                    f'{"version": >16}: {package_meta["version"]}',
-                    f'{"module": >16}: {err0.plugin_module}',
-                ]
-            )
-        except Exception:
-            pass
-        msg += ['']
-
-        for n, err in enumerate(self._exceptions.get(plugin_name, [])):
-            _pad = _linewidth - len(str(err)) - 10
-            msg += ['', f'ERROR #{n + 1}:  {str(err)} {"-" * _pad}', '']
-            msg.extend(format_exception(err.__class__, err, err.__traceback__))
-
-        msg += ['=' * 80]
-
-        return "\n".join(msg)
-
 
 def entry_points_for(
     group: str,
-) -> Generator[importlib_metadata.EntryPoint, None, None]:
+) -> Generator[
+    Tuple[importlib_metadata.Distribution, importlib_metadata.EntryPoint],
+    None,
+    None,
+]:
     """Yield all entry_points matching "group", from any distribution.
 
     Distribution here refers more specifically to the information in the
     dist-info folder that usually accompanies an installed package.  If a
     package in the environment does *not* have a ``dist-info/entry_points.txt``
-    file, then in will not be discovered by this function.
+    file, then it will not be discovered by this function.
 
     Note: a single package may provide multiple entrypoints for a given group.
 
@@ -242,20 +365,22 @@ def entry_points_for(
 
     Yields
     -------
-    Generator[importlib_metadata.EntryPoint, None, None]
-        [description]
+    tuples
+        (Distribution, EntryPoint) objects for each matching EntryPoint
+        that matches the provided ``group`` string.
 
     Example
     -------
     >>> list(entry_points_for('napari.plugin'))
-    [EntryPoint(name='napari-reg', value='napari_reg', group='napari.plugin'),
-     EntryPoint(name='myplug', value='another.module', group='napari.plugin')]
-
+    [(<importlib.metadata.PathDistribution at 0x124f0fe80>,
+      EntryPoint(name='napari-reg',value='napari_reg',group='napari.plugin')),
+     (<importlib.metadata.PathDistribution at 0x1041485b0>,
+      EntryPoint(name='myplug',value='another.module',group='napari.plugin'))]
     """
     for dist in importlib_metadata.distributions():
         for ep in dist.entry_points:
             if ep.group == group:
-                yield ep
+                yield dist, ep
 
 
 def modules_starting_with(prefix: str) -> Generator[str, None, None]:
@@ -277,18 +402,9 @@ def modules_starting_with(prefix: str) -> Generator[str, None, None]:
             yield name
 
 
-# regex to parse importlib_metadata.EntryPoint.value strings
-# entry point format:  "name = module.with.periods:attr [extras]"
-entry_point_pattern = re.compile(
-    r'(?P<module>[\w.]+)\s*'
-    r'(:\s*(?P<attr>[\w.]+))?\s*'
-    r'(?P<extras>\[.*\])?\s*$'
-)
-
-
 def iter_plugin_modules(
     prefix: Optional[str] = None, group: Optional[str] = None
-) -> Generator[Tuple[str, str], None, None]:
+) -> Generator[Tuple[str, str, dict], None, None]:
     """Discover plugins using naming convention and/or entry points.
 
     This function makes sure that packages that *both* follow the naming
@@ -307,19 +423,23 @@ def iter_plugin_modules(
 
     Plugin packages may also provide multiple entry points, which will be
     registered as plugins of different names.  For instance, the following
-    setup.py entry would register two plugins under the names
-    "plugin_package.register" and "plugin_package.segment"
+    ``setup.py`` entry would register two plugins under the names
+    ``myplugin.register`` and ``myplugin.segment``
 
-    setup(
-        name="napari-plugin-package",
-        entry_points={
-            "napari.plugin": [
-                "plugin_package.register = napari_plugin_package.registration",
-                "plugin_package.segment = napari_plugin_package.segmentation"
-            ],
-        },
-        packages=find_packages(),
-    )
+    .. code-block:: python
+
+        import sys
+
+        setup(
+            name="napari-plugin",
+            entry_points={
+                "napari.plugin": [
+                    "myplugin.register = napari_plugin.registration",
+                    "myplugin.segment = napari_plugin.segmentation"
+                ],
+            },
+            packages=find_packages(),
+        )
 
 
     Parameters
@@ -334,14 +454,16 @@ def iter_plugin_modules(
     Yields
     -------
     plugin_info : tuple
-        (plugin_name, module_name)
+        (plugin_name, module_name, metadata)
     """
     seen_modules = set()
     if group and not os.environ.get("NAPARI_DISABLE_ENTRYPOINT_PLUGINS"):
-        for ep in entry_points_for(group):
-            module = entry_point_pattern.match(ep.value).group('module')
-            seen_modules.add(module.split(".")[0])
-            yield ep.name, module
+        for dist, ep in entry_points_for(group):
+            match = ep.pattern.match(ep.value)
+            if match:
+                module = match.group('module')
+                seen_modules.add(module.split(".")[0])
+                yield ep.name, module, fetch_module_metadata(dist)
     if prefix and not os.environ.get("NAPARI_DISABLE_NAMEPREFIX_PLUGINS"):
         for module in modules_starting_with(prefix):
             if module not in seen_modules:
@@ -349,54 +471,4 @@ def iter_plugin_modules(
                     name = importlib_metadata.metadata(module).get('Name')
                 except Exception:
                     name = None
-                yield name or module, module
-
-
-def fetch_module_metadata(distname: str) -> Optional[Dict[str, str]]:
-    """Attempt to retrieve name, version, contact email & url for a package.
-
-    Parameters
-    ----------
-    distname : str
-        Name of a distribution.  Note: this must match the *name* of the
-        package in the METADATA file... not the name of the module.
-
-    Returns
-    -------
-    package_info : dict or None
-        A dict with keys 'name', 'version', 'email', and 'url'.
-        Returns None of the distname cannot be found.
-    """
-    try:
-        meta = importlib_metadata.metadata(distname)
-    except importlib_metadata.PackageNotFoundError:
-        return None
-    return {
-        'name': meta.get('Name'),
-        'version': meta.get('Version'),
-        'email': meta.get('Author-Email') or meta.get('Maintainer-Email'),
-        'url': meta.get('Home-page') or meta.get('Download-Url'),
-    }
-
-
-def log_plugin_error(exc: PluginError) -> None:
-    """Log PluginError to logger, with helpful contact info if possible.
-
-    Parameters
-    ----------
-    exc : PluginError
-        An instance of a PluginError
-    """
-    from napari import __version__
-
-    msg = f'\nPluginError: {exc}'
-    if exc.__cause__:
-        cause = str(exc.__cause__).replace("\n", "\n" + " " * 13)
-        msg += f'\n  Cause was: {cause}'
-    contact = fetch_module_metadata(exc.plugin_module)
-    if contact:
-        msg += "\n  Please notify the plugin developer:\n"
-        extra = [f'{k: >11}: {v}' for k, v in contact.items()]
-        extra += [f'{"napari": >11}: v{__version__}']
-        msg += "\n".join(extra)
-    logger.error(msg)
+                yield name or module, module, fetch_module_metadata(module)

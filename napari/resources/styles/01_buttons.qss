@@ -2,7 +2,7 @@
 /* ----------------- Buttons -------------------- */
 
 QtDeleteButton {
-   image: url(":/icons/{{ folder }}/delete.svg");
+   image: url(":/themes/{{ folder }}/delete.svg");
    min-width : 28px;
    max-width : 28px;
    min-height : 28px;
@@ -20,31 +20,31 @@ QtViewerPushButton{
 }
 
 QtViewerPushButton[mode="new_points"] {
-  image: url(":/icons/{{ folder }}/new_points.svg");
+  image: url(":/themes/{{ folder }}/new_points.svg");
 }
 
 QtViewerPushButton[mode="new_shapes"] {
-  image: url(":/icons/{{ folder }}/new_shapes.svg");
+  image: url(":/themes/{{ folder }}/new_shapes.svg");
 }
 
 QtViewerPushButton[mode="new_labels"] {
-  image: url(":/icons/{{ folder }}/new_labels.svg");
+  image: url(":/themes/{{ folder }}/new_labels.svg");
 }
 
 QtViewerPushButton[mode="console"] {
-  image: url(":/icons/{{ folder }}/console.svg");
+  image: url(":/themes/{{ folder }}/console.svg");
 }
 
 QtViewerPushButton[mode="roll"] {
-  image: url(":/icons/{{ folder }}/roll.svg");
+  image: url(":/themes/{{ folder }}/roll.svg");
 }
 
 QtViewerPushButton[mode="transpose"] {
-  image: url(":/icons/{{ folder }}/transpose.svg");
+  image: url(":/themes/{{ folder }}/transpose.svg");
 }
 
 QtViewerPushButton[mode="home"] {
-  image: url(":/icons/{{ folder }}/home.svg");
+  image: url(":/themes/{{ folder }}/home.svg");
 }
 
 QtNDisplayButton {
@@ -68,11 +68,11 @@ QtNDisplayButton::indicator {
 }
 
 QtNDisplayButton::indicator:unchecked {
-  image: url(":/icons/{{ folder }}/3D.svg");
+  image: url(":/themes/{{ folder }}/3D.svg");
 }
 
 QtNDisplayButton::indicator:checked {
-  image: url(":/icons/{{ folder }}/2D.svg");
+  image: url(":/themes/{{ folder }}/2D.svg");
 }
 
 QtNDisplayButton::indicator:hover {
@@ -102,11 +102,11 @@ QtGridViewButton::indicator {
 }
 
 QtGridViewButton::indicator:unchecked {
-  image: url(":/icons/{{ folder }}/new_image.svg");
+  image: url(":/themes/{{ folder }}/square.svg");
 }
 
 QtGridViewButton::indicator:checked {
-  image: url(":/icons/{{ folder }}/grid.svg");
+  image: url(":/themes/{{ folder }}/grid.svg");
 }
 
 QtGridViewButton::indicator:hover {
@@ -144,80 +144,80 @@ QtModeRadioButton::indicator:unchecked:hover {
 }
 
 QtModeRadioButton[mode="zoom"]::indicator {
-  image: url(":/icons/{{ folder }}/zoom.svg");
+  image: url(":/themes/{{ folder }}/zoom.svg");
 }
 
 QtModeRadioButton[mode="select"]::indicator {
-  image: url(":/icons/{{ folder }}/select.svg");
+  image: url(":/themes/{{ folder }}/select.svg");
 }
 
 QtModeRadioButton[mode="direct"]::indicator {
-  image: url(":/icons/{{ folder }}/direct.svg");
+  image: url(":/themes/{{ folder }}/direct.svg");
 }
 
 QtModeRadioButton[mode="rectangle"]::indicator {
-  image: url(":/icons/{{ folder }}/rectangle.svg");
+  image: url(":/themes/{{ folder }}/rectangle.svg");
 }
 
 QtModeRadioButton[mode="ellipse"]::indicator {
-  image: url(":/icons/{{ folder }}/ellipse.svg");
+  image: url(":/themes/{{ folder }}/ellipse.svg");
   color: red;
 }
 
 QtModeRadioButton[mode="line"]::indicator {
-  image: url(":/icons/{{ folder }}/line.svg");
+  image: url(":/themes/{{ folder }}/line.svg");
 }
 
 QtModeRadioButton[mode="path"]::indicator {
-  image: url(":/icons/{{ folder }}/path.svg");
+  image: url(":/themes/{{ folder }}/path.svg");
 }
 
 QtModeRadioButton[mode="polygon"]::indicator {
-  image: url(":/icons/{{ folder }}/polygon.svg");
+  image: url(":/themes/{{ folder }}/polygon.svg");
 }
 
 QtModeRadioButton[mode="vertex_insert"]::indicator {
-  image: url(":/icons/{{ folder }}/vertex_insert.svg");
+  image: url(":/themes/{{ folder }}/vertex_insert.svg");
 }
 
 QtModeRadioButton[mode="vertex_remove"]::indicator {
-  image: url(":/icons/{{ folder }}/vertex_remove.svg");
+  image: url(":/themes/{{ folder }}/vertex_remove.svg");
 }
 
 QtModeRadioButton[mode="paint"]::indicator {
-  image: url(":/icons/{{ folder }}/paint.svg");
+  image: url(":/themes/{{ folder }}/paint.svg");
 }
 
 QtModeRadioButton[mode="fill"]::indicator {
-  image: url(":/icons/{{ folder }}/fill.svg");
+  image: url(":/themes/{{ folder }}/fill.svg");
 }
 
 QtModeRadioButton[mode="picker"]::indicator {
-  image: url(":/icons/{{ folder }}/picker.svg");
+  image: url(":/themes/{{ folder }}/picker.svg");
 }
 
 QtModeRadioButton[mode="pan_zoom"]::indicator {
-    image: url(":/icons/{{ folder }}/zoom.svg");
+    image: url(":/themes/{{ folder }}/zoom.svg");
 }
 
 QtModeRadioButton[mode="select_points"]::indicator {
-    image: url(":/icons/{{ folder }}/select.svg");
+    image: url(":/themes/{{ folder }}/select.svg");
 }
 
 QtModeRadioButton[mode="add_points"]::indicator {
-    image: url(":/icons/{{ folder }}/add.svg");
+    image: url(":/themes/{{ folder }}/add.svg");
 }
 
 QtModePushButton[mode="move_back"] {
-   image: url(":/icons/{{ folder }}/move_back.svg");
+   image: url(":/themes/{{ folder }}/move_back.svg");
 }
 
 QtModePushButton[mode="move_front"] {
-   image: url(":/icons/{{ folder }}/move_front.svg");
+   image: url(":/themes/{{ folder }}/move_front.svg");
 }
 
 QtModePushButton[mode="delete_shape"] {
-   image: url(":/icons/{{ folder }}/delete_shape.svg");
+   image: url(":/themes/{{ folder }}/delete_shape.svg");
 }
 
 QWidget[emphasized="true"] QtModePushButton[mode="delete_shape"]:pressed {
@@ -235,9 +235,11 @@ QtCopyToClipboardButton {
    min-height: 18px;
    max-height: 18px;
    border-radius: 3px;
-   image: url(":/icons/{{ folder }}/copy_to_clipboard.svg");
 }
 
+#QtCopyToClipboardButton {
+  image: url(":/themes/{{ folder }}/copy_to_clipboard.svg");
+}
 
 QtPlayButton {
   border-radius: 2px;
@@ -249,12 +251,12 @@ QtPlayButton {
 }
 
 QtPlayButton[reverse=True] {
-    image: url(":/icons/{{ folder }}/left_arrow.svg");
+    image: url(":/themes/{{ folder }}/left_arrow.svg");
 }
 
 QtPlayButton[reverse=False] {
   background: {{ foreground }};
-  image: url(":/icons/{{ folder }}/right_arrow.svg");
+  image: url(":/themes/{{ folder }}/right_arrow.svg");
 }
 
 QtPlayButton[reverse=True]:hover, QtPlayButton[reverse=False]:hover {
@@ -266,7 +268,7 @@ QtPlayButton[playing=True]:hover {
 }
 
 QtPlayButton[playing=True] {
-    image: url(":/icons/{{ folder }}/new_image.svg");
+    image: url(":/themes/{{ folder }}/square.svg");
     background-color: {{ warning }};
     height: 12px;
     width: 12px;

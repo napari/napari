@@ -1,9 +1,19 @@
 import itertools
+from logging import getLogger
+from typing import List, Optional, Sequence, Union
+from os import fspath
 import numpy as np
 
 from .. import layers
+from ..plugins.io import read_data_with_plugins
 from ..utils import colormaps, io
-from ..utils.misc import ensure_iterable, is_iterable
+from ..utils.misc import (
+    ensure_iterable,
+    ensure_sequence_of_iterables,
+    is_sequence,
+)
+
+logger = getLogger(__name__)
 
 
 class AddLayersMixin:
@@ -19,13 +29,18 @@ class AddLayersMixin:
     easier to read and make these methods easier to maintain.
     """
 
-    def add_layer(self, layer):
+    def add_layer(self, layer: layers.Layer) -> layers.Layer:
         """Add a layer to the viewer.
 
         Parameters
         ----------
-        layer : napari.layers.Layer
+        layer : :class:`napari.layers.Layer`
             Layer to add.
+
+        Returns
+        -------
+        layer : :class:`napari.layers.Layer` or list
+            The layer that was added (same as input).
         """
         layer.events.select.connect(self._update_active_layer)
         layer.events.deselect.connect(self._update_active_layer)
@@ -43,6 +58,7 @@ class AddLayersMixin:
 
         if len(self.layers) == 1:
             self.reset_view()
+        return layer
 
     def add_image(
         self,
@@ -66,7 +82,7 @@ class AddLayersMixin:
         blending=None,
         visible=True,
         path=None,
-    ):
+    ) -> Union[layers.Image, List[layers.Image]]:
         """Add an image layer to the layers list.
 
         Parameters
@@ -77,17 +93,24 @@ class AddLayersMixin:
             list and arrays are decreasing in shape then the data is treated as
             an image pyramid.
         channel_axis : int, optional
-            Axis to expand image along.
-        rgb : bool
+            Axis to expand image along.  If provided, each channel in the data
+            will be added as an individual image layer.  byIn channel_axis mode,
+            all other parameters MAY be provided as lists, and the Nth value
+            will be applied to the Nth channel in the data.  If a single value
+            is provided, it will be broadcast to all Layers.
+        rgb : bool or list
             Whether the image is rgb RGB or RGBA. If not specified by user and
             the last dimension of the data has length 3 or 4 it will be set as
             `True`. If `False` the image is interpreted as a luminance image.
-        is_pyramid : bool
+            If a list then must be same length as the axis that is being
+            expanded as channels.
+        is_pyramid : bool or list
             Whether the data is an image pyramid or not. Pyramid data is
             represented by a list of array like image data. If not specified by
             the user and if the data is a list of arrays that decrease in shape
             then it will be taken to be a pyramid. The first image in the list
-            should be the largest.
+            should be the largest. If a list then must be same length as the
+            axis that is being expanded as channels.
         colormap : str, vispy.Color.Colormap, tuple, dict, list
             Colormaps to use for luminance images. If a string must be the name
             of a supported colormap from vispy or matplotlib. If a tuple the
@@ -106,33 +129,48 @@ class AddLayersMixin:
         gamma : list, float
             Gamma correction for determining colormap linearity. Defaults to 1.
             If a list then must be same length as the axis that is being
-            expanded and then each entry in the list is applied to each image.
-        interpolation : str
+            expanded as channels.
+        interpolation : str or list
             Interpolation mode used by vispy. Must be one of our supported
-            modes.
-        rendering : str
+            modes. If a list then must be same length as the axis that is being
+            expanded as channels.
+        rendering : str or list
             Rendering mode used by vispy. Must be one of our supported
-            modes.
-        iso_threshold : float
-            Threshold for isosurface.
-        attenuation : float
-            Attenuation rate for attenuated maximum intensity projection.
-        name : str
-            Name of the layer.
-        metadata : dict
-            Layer metadata.
-        scale : tuple of float
-            Scale factors for the layer.
-        translate : tuple of float
-            Translation values for the layer.
-        opacity : float
-            Opacity of the layer visual, between 0.0 and 1.0.
-        blending : str
+            modes. If a list then must be same length as the axis that is being
+            expanded as channels.
+        iso_threshold : float or list
+            Threshold for isosurface. If a list then must be same length as the
+            axis that is being expanded as channels.
+        attenuation : float or list
+            Attenuation rate for attenuated maximum intensity projection. If a
+            list then must be same length as the axis that is being expanded as
+            channels.
+        name : str or list of str
+            Name of the layer.  If a list then must be same length as the axis
+            that is being expanded as channels.
+        metadata : dict or list of dict
+            Layer metadata. If a list then must be a list of dicts with the
+            same length as the axis that is being expanded as channels.
+        scale : tuple of float or list
+            Scale factors for the layer. If a list then must be a list of
+            tuples of float with the same length as the axis that is being
+            expanded as channels.
+        translate : tuple of float or list
+            Translation values for the layer. If a list then must be a list of
+            tuples of float with the same length as the axis that is being
+            expanded as channels.
+        opacity : float or list
+            Opacity of the layer visual, between 0.0 and 1.0.  If a list then
+            must be same length as the axis that is being expanded as channels.
+        blending : str or list
             One of a list of preset blending modes that determines how RGB and
             alpha values of the layer visual get mixed. Allowed values are
-            {'opaque', 'translucent', and 'additive'}.
-        visible : bool
+            {'opaque', 'translucent', and 'additive'}. If a list then
+            must be same length as the axis that is being expanded as channels.
+        visible : bool or list of bool
             Whether the layer visual is currently being displayed.
+            If a list then must be same length as the axis that is
+            being expanded as channels.
         path : str or list of str
             Path or list of paths to image data. Paths can be passed as strings
             or `pathlib.Path` instances.
@@ -149,67 +187,67 @@ class AddLayersMixin:
         elif data is None:
             data = io.magic_imread(path)
 
+        # doing this here for IDE/console autocompletion in add_image function.
+        kwargs = {
+            'rgb': rgb,
+            'is_pyramid': is_pyramid,
+            'colormap': colormap,
+            'contrast_limits': contrast_limits,
+            'gamma': gamma,
+            'interpolation': interpolation,
+            'rendering': rendering,
+            'iso_threshold': iso_threshold,
+            'attenuation': attenuation,
+            'name': name,
+            'metadata': metadata,
+            'scale': scale,
+            'translate': translate,
+            'opacity': opacity,
+            'blending': blending,
+            'visible': visible,
+        }
+
+        # these arguments are *already* iterables in the single-channel case.
+        iterable_kwargs = {'scale', 'translate', 'contrast_limits', 'metadata'}
+
         if channel_axis is None:
-            if colormap is None:
-                colormap = 'gray'
-            if blending is None:
-                blending = 'translucent'
-            layer = layers.Image(
-                data,
-                rgb=rgb,
-                is_pyramid=is_pyramid,
-                colormap=colormap,
-                contrast_limits=contrast_limits,
-                gamma=gamma,
-                interpolation=interpolation,
-                rendering=rendering,
-                iso_threshold=iso_threshold,
-                attenuation=attenuation,
-                name=name,
-                metadata=metadata,
-                scale=scale,
-                translate=translate,
-                opacity=opacity,
-                blending=blending,
-                visible=visible,
-            )
-            self.add_layer(layer)
-            return layer
+            kwargs['colormap'] = kwargs['colormap'] or 'gray'
+            kwargs['blending'] = kwargs['blending'] or 'translucent'
+            # Helpful message if someone tries to add mulit-channel kwargs,
+            # but forget the channel_axis arg
+            for k, v in kwargs.items():
+                if k not in iterable_kwargs and is_sequence(v):
+                    raise TypeError(
+                        f"Received sequence for argument '{k}', "
+                        "did you mean to specify a 'channel_axis'? "
+                    )
+
+            return self.add_layer(layers.Image(data, **kwargs))
         else:
-            if is_pyramid:
-                n_channels = data[0].shape[channel_axis]
-            else:
-                n_channels = data.shape[channel_axis]
+            n_channels = (data[0] if is_pyramid else data).shape[channel_axis]
+            kwargs['blending'] = kwargs['blending'] or 'additive'
 
-            name = ensure_iterable(name)
+            # turn the kwargs dict into a mapping of {key: iterator}
+            # so that we can use {k: next(v) for k, v in kwargs.items()} below
+            for key, val in kwargs.items():
+                if key == 'colormap' and val is None:
+                    if n_channels < 3:
+                        kwargs[key] = iter(colormaps.MAGENTA_GREEN)
+                    else:
+                        kwargs[key] = itertools.cycle(colormaps.CYMRGB)
 
-            if blending is None:
-                blending = 'additive'
-
-            if colormap is None:
-                if n_channels < 3:
-                    colormap = colormaps.MAGENTA_GREEN
+                # make sure that iterable_kwargs are a *sequence* of iterables
+                # for the multichannel case.  For example: if scale == (1, 2) &
+                # n_channels = 3, then scale should == [(1, 2), (1, 2), (1, 2)]
+                elif key in iterable_kwargs:
+                    kwargs[key] = iter(
+                        ensure_sequence_of_iterables(val, n_channels)
+                    )
                 else:
-                    colormap = itertools.cycle(colormaps.CYMRGB)
-            else:
-                colormap = ensure_iterable(colormap)
-
-            # If one pair of clim values is passed then need to iterate them to
-            # all layers.
-            if contrast_limits is not None and not is_iterable(
-                contrast_limits[0]
-            ):
-                contrast_limits = itertools.repeat(contrast_limits)
-            else:
-                contrast_limits = ensure_iterable(contrast_limits)
-
-            gamma = ensure_iterable(gamma)
+                    kwargs[key] = iter(ensure_iterable(val))
 
             layer_list = []
-            zipped_args = zip(
-                range(n_channels), colormap, contrast_limits, gamma, name
-            )
-            for i, cmap, clims, _gamma, name in zipped_args:
+            for i in range(n_channels):
                 if is_pyramid:
                     image = [
                         np.take(data[j], i, axis=channel_axis)
@@ -217,23 +255,8 @@ class AddLayersMixin:
                     ]
                 else:
                     image = np.take(data, i, axis=channel_axis)
-                layer = layers.Image(
-                    image,
-                    rgb=rgb,
-                    colormap=cmap,
-                    contrast_limits=clims,
-                    gamma=_gamma,
-                    interpolation=interpolation,
-                    rendering=rendering,
-                    name=name,
-                    metadata=metadata,
-                    scale=scale,
-                    translate=translate,
-                    opacity=opacity,
-                    blending=blending,
-                    visible=visible,
-                )
-                self.add_layer(layer)
+                i_kwargs = {k: next(v) for k, v in kwargs.items()}
+                layer = self.add_layer(layers.Image(image, **i_kwargs))
                 layer_list.append(layer)
             return layer_list
 
@@ -261,7 +284,7 @@ class AddLayersMixin:
         opacity=1,
         blending='translucent',
         visible=True,
-    ):
+    ) -> layers.Points:
         """Add a points layer to the layers list.
 
         Parameters
@@ -382,11 +405,21 @@ class AddLayersMixin:
         blending='translucent',
         visible=True,
         path=None,
-    ):
+    ) -> layers.Labels:
         """Add a labels (or segmentation) layer to the layers list.
 
         An image-like layer where every pixel contains an integer ID
         corresponding to the region it belongs to.
+
+        Using the viewer's label editing tools (painting, erasing) will
+        modify the input-array in-place.
+
+        To avoid this, pass a copy as follows:
+            layer = viewer.add_labels(data.copy())
+            # do some painting/editing
+
+        Get the modified labels as follows:
+            result = layer.data
 
         Parameters
         ----------
@@ -466,7 +499,7 @@ class AddLayersMixin:
         opacity=0.7,
         blending='translucent',
         visible=True,
-    ):
+    ) -> layers.Shapes:
         """Add a shapes layer to the layers list.
 
         Parameters
@@ -562,7 +595,7 @@ class AddLayersMixin:
         opacity=1,
         blending='translucent',
         visible=True,
-    ):
+    ) -> layers.Surface:
         """Add a surface layer to the layers list.
 
         Parameters
@@ -638,7 +671,7 @@ class AddLayersMixin:
         opacity=0.7,
         blending='translucent',
         visible=True,
-    ):
+    ) -> layers.Vectors:
         """Add a vectors layer to the layers list.
 
         Parameters
@@ -693,9 +726,93 @@ class AddLayersMixin:
         self.add_layer(layer)
         return layer
 
+    def add_path(
+        self, path: Union[str, Sequence[str]], stack: bool = False
+    ) -> List[layers.Layer]:
+        """Add a path or list of paths to the viewer.
+
+        A list of paths will be handed one-by-one to the napari_get_reader hook
+        if stack is False, otherwise the full list is passed to each plugin
+        hook.
+
+        Parameters
+        ----------
+        path : str or list of str
+            A filepath, directory, or URL (or a list of any) to open.
+        stack : bool, optional
+            If a list of strings is passed and ``stack`` is ``True``, then the
+            entire list will be passed to plugins.  It is then up to individual
+            plugins to know how to handle a list of paths.  If ``stack`` is
+            ``False``, then the ``path`` list is broken up and passed to plugin
+            readers one by one.  by default False.
+
+        Returns
+        -------
+        layers : list
+            A list of any layers that were added to the viewer.
+        """
+        paths = [path] if isinstance(path, str) else path
+        paths = [fspath(path) for path in paths]  # PathObjects -> str
+        if not isinstance(paths, (tuple, list)):
+            raise ValueError(
+                "'path' argument must be a string, list, or tuple"
+            )
+
+        if stack:
+            return self._add_layers_with_plugins(paths)
+
+        added: List[layers.Layer] = []  # for layers that get added
+        for _path in paths:
+            added.extend(self._add_layers_with_plugins(_path))
+
+        return added
+
+    def _add_layers_with_plugins(
+        self, path_or_paths: Union[str, Sequence[str]]
+    ) -> List[layers.Layer]:
+        """Load a path or a list of paths into the viewer using plugins.
+
+        This function is mostly called from self.add_path, where the ``stack``
+        argument determines whether a list of strings is handed to plugins one
+        at a time, or en-masse.
+
+        Parameters
+        ----------
+        path_or_paths : str or list of str
+            A filepath, directory, or URL (or a list of any) to open. If a
+            list, the assumption is that the list is to be treated as a stack.
+
+        Returns
+        -------
+        List[layers.Layer]
+            A list of any layers that were added to the viewer.
+        """
+        layer_data = read_data_with_plugins(path_or_paths)
+
+        if not layer_data:
+            # if layer_data is empty, it means no plugin could read path
+            # we just want to provide some useful feedback, which includes
+            # whether or not paths were passed to plugins as a list.
+            if isinstance(path_or_paths, (tuple, list)):
+                path_repr = f"[{path_or_paths[0]}, ...] as stack"
+            else:
+                path_repr = path_or_paths
+            msg = f'No plugin found capable of reading {path_repr}.'
+            logger.error(msg)
+            return []
+
+        # add each layer to the viewer
+        added: List[layers.Layer] = []  # for layers that get added
+        for data in layer_data:
+            new = self._add_layer_from_data(*data)
+            # some add_* methods return a List[Layer] others just a Layer
+            # we want to always return a list
+            added.extend(new if isinstance(new, list) else [new])
+        return added
+
     def _add_layer_from_data(
-        self, data, meta: dict = None, layer_type: str = 'image'
-    ):
+        self, data, meta: dict = None, layer_type: Optional[str] = None
+    ) -> Union[layers.Layer, List[layers.Layer]]:
         """Add arbitrary layer data to the viewer.
 
         Primarily intended for usage by reader plugin hooks.
@@ -711,7 +828,9 @@ class AddLayersMixin:
             not valid for the corresponding method.
         layer_type : str
             Type of layer to add.  MUST have a corresponding add_* method on
-            on the viewer instance.
+            on the viewer instance.  If not provided, the layer is assumed to
+            be "image", unless data.dtype is one of (np.int32, np.uint32,
+            np.int64, np.uint64), in which case it is assumed to be "labels".
 
         Raises
         ------
@@ -736,7 +855,20 @@ class AddLayersMixin:
 
         """
 
-        layer_type = layer_type.lower()
+        layer_type = (layer_type or '').lower()
+
+        # assumes that big integer type arrays are likely labels.
+        if not layer_type:
+            if hasattr(data, 'dtype') and data.dtype in (
+                np.int32,
+                np.uint32,
+                np.int64,
+                np.uint64,
+            ):
+                layer_type = 'labels'
+            else:
+                layer_type = 'image'
+
         if layer_type not in layers.NAMES:
             raise ValueError(
                 f"Unrecognized layer_type: '{layer_type}'. "
@@ -752,7 +884,7 @@ class AddLayersMixin:
             )
 
         try:
-            add_method(data, **(meta or {}))
+            layer = add_method(data, **(meta or {}))
         except TypeError as exc:
             if 'unexpected keyword argument' in str(exc):
                 bad_key = str(exc).split('keyword argument ')[-1]
@@ -760,3 +892,7 @@ class AddLayersMixin:
                     "_add_layer_from_data received an unexpected keyword "
                     f"argument ({bad_key}) for layer type {layer_type}"
                 ) from exc
+            else:
+                raise exc
+
+        return layer

@@ -146,6 +146,57 @@ def view_image(
     return viewer
 
 
+def view_path(
+    path,
+    *,
+    stack=False,
+    title='napari',
+    ndisplay=2,
+    order=None,
+    axis_labels=None,
+    show=True,
+):
+    """Create a viewer and add a layer whose type will be determined by path.
+
+    Parameters
+    ----------
+    path : str or list of str
+        A filepath, directory, or URL (or a list of any) to open.
+    stack : bool, optional
+        If a list of strings is passed and ``stack`` is ``True``, then the
+        entire list will be passed to plugins.  It is then up to individual
+        plugins to know how to handle a list of paths.  If ``stack`` is
+        ``False``, then the ``path`` list is broken up and passed to plugin
+        readers one by one.  by default False.
+    title : string, optional
+        The title of the viewer window. by default 'napari'
+    ndisplay : {2, 3}, optional
+        Number of displayed dimensions, by default 2
+    order : tuple of int, optional
+        Order in which dimensions are displayed where the last two or last
+        three dimensions correspond to row x column or plane x row x column if
+        ndisplay is 2 or 3. by default None
+    axis_labels : list of str, optional
+        Dimension names. by default None
+    show : bool, optional
+        Whether to show the viewer after instantiation. by default True.
+
+    Returns
+    -------
+    viewer : :class:`napari.Viewer`
+        The newly-created viewer.
+    """
+    viewer = Viewer(
+        title=title,
+        ndisplay=ndisplay,
+        order=order,
+        axis_labels=axis_labels,
+        show=show,
+    )
+    viewer.add_path(path=path, stack=stack)
+    return viewer
+
+
 def view_points(
     data=None,
     *,
@@ -319,6 +370,16 @@ def view_labels(
 
     An image-like layer where every pixel contains an integer ID
     corresponding to the region it belongs to.
+
+    Using the viewer's label editing tools (painting, erasing) will
+    modify the input-array in-place.
+
+        To avoid this, pass a copy as follows:
+            viewer = napari.view_labels(data.copy(), name="sample")
+            # do some painting/editing
+
+        Get the painted labels as follows:
+            result = viewer.layers["sample"].data
 
     Parameters
     ----------
