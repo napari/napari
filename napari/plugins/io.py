@@ -77,7 +77,7 @@ def read_data_with_plugins(
 
 
 def write_data_with_plugins(
-    path: str, layer_data: LayerData, plugin_manager=None,
+    path: str, layer_data: LayerData, plugin_manager=None
 ):
     """Iterate writer hooks and write data with first successful writer.
 
@@ -141,7 +141,7 @@ def write_data_with_plugins(
 
 
 def write_image_with_plugin(
-    plugin_name: str, path: str, data: Any, meta: dict, plugin_manager=None,
+    plugin_name: str, path: str, data: Any, meta: dict, plugin_manager=None
 ):
     """Write image data with the writer from the chosen plugin.
 
@@ -166,28 +166,6 @@ def write_image_with_plugin(
         plugin_manager will be used.
     """
     plugin_manager = plugin_manager or napari_plugin_manager
-
-    hook_caller = plugin_manager.hook.napari_write_image
-    implementation = hook_caller.get_hookimpl_for_plugin(plugin_name)
-    implementation.function(path, data, meta)
-    try:
-        return implementation.function(path, data, meta)  # try to write data
-    except Exception as exc:
-        # If writer failed while trying to write the path, we store the
-        # traceback for later retrieval and warn the user
-        msg = (
-            f"Error in plugin '{implementation.plugin_name}', "
-            "hook 'napari_write_image'"
-        )
-        # instantiating this PluginError stores it in
-        # plugins.exceptions.PLUGIN_ERRORS, where it can be retrieved later
-        err = PluginError(
-            msg, implementation.plugin_name, implementation.plugin.__name__
-        )
-        err.__cause__ = exc  # like `raise PluginError() from exc`
-
-        if implementation.plugin_name != 'builtins':
-            # If builtins doesn't work, they will get a "no writer" found
-            # error anyway, so it looks a bit weird to show them that the
-            # "builtin plugin" didn't work.
-            logger.error(err.format_with_contact_info())
+    return plugin_manager.hook.napari_write_image.call_plugin(
+        plugin_name, path=path, data=data, meta=meta
+    )
