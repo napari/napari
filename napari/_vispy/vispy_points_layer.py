@@ -79,6 +79,9 @@ class VispyPointsLayer(VispyBaseLayer):
             scaling=True,
         )
         self.node.update()
+        # Call to update order of translation values with new dims:
+        self._on_scale_change()
+        self._on_translate_change()
 
     def _on_highlight_change(self, event=None):
         if len(self.layer._highlight_index) > 0:
