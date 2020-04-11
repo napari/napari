@@ -8,7 +8,7 @@ from .. import layers
 from ..plugins.io import (
     read_data_with_plugins,
     write_layer_with_plugin,
-    write_data_with_plugins,
+    write_layers_with_plugins,
 )
 from ..utils import colormaps, io
 from ..utils.misc import (
@@ -916,13 +916,7 @@ class AddLayersMixin:
             List of layers to be saved.
         """
         for layer in layers:
-            write_layer_with_plugin(
-                plugin_name,
-                path,
-                data=layer.data,
-                meta=layer._get_state(),
-                layer_type=layer.__class__.__name__.lower(),
-            )
+            write_layer_with_plugin(plugin_name, path, layer)
 
     def _save_multiple_layers_with_plugins(
         self, path: str, layers: List[layers.Layer],
@@ -933,11 +927,7 @@ class AddLayersMixin:
         ----------
         path : str
             A filepath, directory, or URL (or a list of any) to open.
-        layers : List[layers.Layer]
+        layers : Listof napari.layers.Layer]
             List of layers to be saved.
         """
-        layer_data = [
-            (layer.data, layer._get_state(), layer.__class__.__name__.lower(),)
-            for layer in layers
-        ]
-        write_data_with_plugins(path, layer_data)
+        write_layers_with_plugins(path, layers)

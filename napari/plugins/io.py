@@ -1,7 +1,8 @@
 from . import PluginError, plugin_manager as napari_plugin_manager
 from ._hook_callers import execute_hook
-from typing import Optional, Union, Sequence, Any
+from typing import Optional, Union, Sequence, List
 from ..types import LayerData
+from ..layers import Layer
 from logging import getLogger
 
 logger = getLogger(__name__)
@@ -76,8 +77,8 @@ def read_data_with_plugins(
                 logger.error(err.format_with_contact_info())
 
 
-def write_data_with_plugins(
-    path: str, layer_data: LayerData, plugin_manager=None
+def write_layers_with_plugins(
+    path: str, layers: List[Layer], plugin_manager=None
 ):
     """Iterate writer hooks and write data with first successful writer.
 
@@ -92,15 +93,19 @@ def write_data_with_plugins(
     Parameters
     ----------
     path : str
-        The path (file, directory, url) to save.
-    layer_data : LayerData
-        ``LayerData`` is a list tuples, where each tuple is
-         ``(data, meta, layer_type)``.
+        The path (file, directory, url) to write.
+    layers : List of napari.layers.Layer
+        List of napari layers to write.
     plugin_manager : pluggy.PluginManager, optional
         Instance of a pluggy PluginManager.  by default the main napari
         plugin_manager will be used.
     """
-    layer_types = [single_layer_data[2] for single_layer_data in layer_data]
+    layer_data = [
+        (layer.data, layer._get_state(), layer.__class__.__name__.lower(),)
+        for layer in layers
+    ]
+    layer_types = [ld[2] for ld in layer_data]
+
     plugin_manager = plugin_manager or napari_plugin_manager
     skip_impls = []
     while True:
@@ -141,13 +146,7 @@ def write_data_with_plugins(
 
 
 def write_layer_with_plugin(
-    plugin_name: str,
-    path: str,
-    *,
-    data: Any,
-    meta: dict,
-    layer_type: str,
-    plugin_manager=None,
+    plugin_name: str, path: str, layer: Layer, plugin_manager=None,
 ):
     """Write image data with the writer from the chosen plugin.
 
@@ -159,21 +158,19 @@ def write_layer_with_plugin(
     plugin_name : str
         Name of the plugin to write data with.
     path : str
-        The path (file, directory, url) to save.
-    data : array, list of array, or tuple
-        Layer data.
-    meta : dict
-        Layer metadata.
-    layer_type : str
-        Layer type.
+        The path (file, directory, url) to write.
+    layer : napari.layers.Layer
+        Layer to be written out.
     plugin_manager : pluggy.PluginManager, optional
         Instance of a pluggy PluginManager.  by default the main napari
         plugin_manager will be used.
     """
+    layer_type = layer.__class__.__name__.lower()
+
     plugin_manager = plugin_manager or napari_plugin_manager
     hook_specification = getattr(
         plugin_manager.hook, 'napari_write_' + layer_type
     )
     return hook_specification.call_plugin(
-        plugin_name, path=path, data=data, meta=meta
+        plugin_name, path=path, data=layer.data, meta=layer._get_state()
     )
