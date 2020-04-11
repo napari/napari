@@ -102,7 +102,7 @@ For more information, examples, and documentation, please visit our website: htt
 - [Alexandre de Siqueira](https://github.com/napari/napari/commits?author=alexdesiqueira) - @alexdesiqueira
 - [Ariel Rokem](https://github.com/napari/napari/commits?author=arokem) - @arokem
 - [Christoph Gohlke](https://github.com/napari/napari/commits?author=cgohlke) - @cgohlke
-- Jan Eglinger
+- [Jan Eglinger](https://github.com/napari/napari/commits?author=imagejan) - @imagejan
 - [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - @jni
 - [Kira Evans](https://github.com/napari/napari/commits?author=kne42) - @kne42
 - [Mars Huang](https://github.com/napari/napari/commits?author=marshuang80) - @marshuang80

@@ -121,10 +121,10 @@ For more information, examples, and documentation, please visit our website: htt
 
 ## 12 authors added to this release (alphabetical)
 - [Ahmet Can Solak](https://github.com/napari/napari/commits?author=AhmetCanSolak) - @AhmetCanSolak
-- Bryant
-- Eric Perlman
-- jakirkham (jakirkham)
-- Jeremy Freeman
+- [Bryant Chhun](https://github.com/napari/napari/commits?author=bryantChhun) - @bryantChhun
+- [Eric Perlman](https://github.com/napari/napari/commits?author=perlman) - @perlman
+- [John Kirkham](https://github.com/napari/napari/commits?author=jakirkham) - @jakirkham
+- [Jeremy Freeman](https://github.com/napari/napari/commits?author=freeman-lab) - @freeman-lab
 - [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - @jni
 - [Kevin Yamauchi](https://github.com/napari/napari/commits?author=kevinyamauchi) - @kevinyamauchi
 - [Kira Evans](https://github.com/napari/napari/commits?author=kne42) - @kne42
@@ -135,9 +135,9 @@ For more information, examples, and documentation, please visit our website: htt
 
 ## 10 reviewers added to this release (alphabetical)
 - [Ahmet Can Solak](https://github.com/napari/napari/commits?author=AhmetCanSolak) - @AhmetCanSolak
-- Bryant
-- Charlotte Weaver
-- Jeremy Freeman
+- [Bryant Chhun](https://github.com/napari/napari/commits?author=bryantChhun) - @bryantChhun
+- [Charlotte Weaver](https://github.com/napari/napari/commits?author=csweaver) - @csweaver
+- [Jeremy Freeman](https://github.com/napari/napari/commits?author=freeman-lab) - @freeman-lab
 - [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - @jni
 - [Kevin Yamauchi](https://github.com/napari/napari/commits?author=kevinyamauchi) - @kevinyamauchi
 - [Kira Evans](https://github.com/napari/napari/commits?author=kne42) - @kne42
