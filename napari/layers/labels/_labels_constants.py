@@ -8,7 +8,7 @@ class Mode(StringEnum):
     """MODE: Interactive mode. The normal, default mode is PAN_ZOOM, which
     allows for normal interactivity with the canvas.
 
-    In PICKER mode the cursor functions like a color picker, setting the
+    In PICK mode the cursor functions like a color picker, setting the
     clicked on label to be the curent label. If the background is picked it
     will select the background label `0`.
 
@@ -26,7 +26,7 @@ class Mode(StringEnum):
     """
 
     PAN_ZOOM = auto()
-    PICKER = auto()
+    PICK = auto()
     PAINT = auto()
     FILL = auto()
 

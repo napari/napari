@@ -1,9 +1,12 @@
-from napari.plugins.io import read_data_with_plugins
-from tempfile import NamedTemporaryFile
-import numpy as np
-from skimage import io
 import os
 from pathlib import Path
+from tempfile import NamedTemporaryFile
+
+import numpy as np
+from napari.utils import io
+
+from napari.plugins.exceptions import PLUGIN_ERRORS, format_exceptions
+from napari.plugins.io import read_data_with_plugins
 
 
 def test_iter_reader_plugins(plugin_manager):
@@ -14,13 +17,12 @@ def test_iter_reader_plugins(plugin_manager):
     """
 
     # the plugin loads fine, so there should be no exceptions yet.
-    assert 'napari_bad_plugin2' not in plugin_manager._exceptions
+    assert 'napari_bad_plugin2' not in PLUGIN_ERRORS
 
-    # we want 'napari_bad_plugin2' to be the first plugin called.  But
-    # `napari_test_plugin` will be in line first... Until we can
-    # reorder the call-order of plugins, (#1023), this line serves to prevent
-    # that good plugin from running.
-    plugin_manager.set_blocked('napari_test_plugin')
+    # make sure 'napari_bad_plugin2' gets called first
+    plugin_manager.hooks.napari_get_reader.bring_to_front(
+        ['napari_bad_plugin2']
+    )
 
     # but when we try to read an image path, it will raise an IOError.
     # we want to catch and store that IOError, and then move on to give other
@@ -31,21 +33,24 @@ def test_iter_reader_plugins(plugin_manager):
     assert layer_data
 
     # but the exception from `bad_plugin2` should now be stored.
-    assert 'napari_bad_plugin2' in plugin_manager._exceptions
+    assert 'napari_bad_plugin2' in PLUGIN_ERRORS
     # we can print out a string that should have the explanation of the error.
-    exception_string = plugin_manager.format_exceptions('napari_bad_plugin2')
+    exception_string = format_exceptions('napari_bad_plugin2')
     assert 'IOError' in exception_string
     assert "napari_get_reader" in exception_string
 
 
-def test_builtin_reader_plugin(viewer_factory, builtin_plugin_manager):
+def test_builtin_reader_plugin(viewer_factory):
     """Test the builtin reader plugin reads a temporary file."""
+    from napari.plugins import plugin_manager
+
+    plugin_manager.hooks.napari_get_reader.bring_to_front(['builtins'])
+
     with NamedTemporaryFile(suffix='.tif', delete=False) as tmp:
         data = np.random.rand(20, 20)
         io.imsave(tmp.name, data)
         tmp.seek(0)
-
-        layer_data = read_data_with_plugins(tmp.name, builtin_plugin_manager)
+        layer_data = read_data_with_plugins(tmp.name)
 
         assert isinstance(layer_data, list)
         assert len(layer_data) == 1
@@ -58,8 +63,12 @@ def test_builtin_reader_plugin(viewer_factory, builtin_plugin_manager):
         assert np.allclose(viewer.layers[0].data, data)
 
 
-def test_builtin_reader_plugin_stacks(viewer_factory, builtin_plugin_manager):
+def test_builtin_reader_plugin_stacks(viewer_factory):
     """Test the builtin reader plugin reads multiple files as a stack."""
+    from napari.plugins import plugin_manager
+
+    plugin_manager.hooks.napari_get_reader.bring_to_front(['builtins'])
+
     data = np.random.rand(5, 20, 20)
     tmps = []
     for plane in data:

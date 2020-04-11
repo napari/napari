@@ -5,9 +5,12 @@ wrap.
 import time
 
 # set vispy to use same backend as qtpy
-from skimage.io import imsave
+from ..utils.io import imsave
 
 from .qt_about import QtAbout
+from .qt_plugin_report import QtPluginErrReporter
+from .qt_plugin_sorter import QtPluginSorter
+from .qt_dict_table import QtDictTable
 from .qt_viewer_dock_widget import QtViewerDockWidget
 from ..resources import get_stylesheet
 
@@ -15,15 +18,18 @@ from ..resources import get_stylesheet
 # these module-level imports have to come after `app.use_app(API)`
 # see discussion on #638
 from qtpy.QtWidgets import (  # noqa: E402
+    QAbstractItemView,
     QApplication,
     QMainWindow,
     QWidget,
     QHBoxLayout,
+    QDialog,
     QDockWidget,
     QLabel,
     QAction,
     QShortcut,
     QStatusBar,
+    QVBoxLayout,
 )
 from qtpy.QtCore import Qt  # noqa: E402
 from qtpy.QtGui import QKeySequence  # noqa: E402
@@ -77,6 +83,7 @@ class Window:
         self._add_file_menu()
         self._add_view_menu()
         self._add_window_menu()
+        self._add_plugins_menu()
         self._add_help_menu()
 
         self._status_bar.showMessage('Ready')
@@ -185,6 +192,88 @@ class Window:
         exit_action.triggered.connect(self._qt_window.close)
         self.window_menu = self.main_menu.addMenu('&Window')
         self.window_menu.addAction(exit_action)
+
+    def _add_plugins_menu(self):
+        """Add 'Plugins' menu to app menubar."""
+        self.plugins_menu = self.main_menu.addMenu('&Plugins')
+
+        list_plugins_action = QAction(
+            "List installed plugins...", self._qt_window
+        )
+        list_plugins_action.setStatusTip('List installed plugins')
+        list_plugins_action.triggered.connect(self._show_plugin_list)
+        self.plugins_menu.addAction(list_plugins_action)
+
+        order_plugin_action = QAction("Plugin call order...", self._qt_window)
+        order_plugin_action.setStatusTip('Change call order for plugins')
+        order_plugin_action.triggered.connect(self._show_plugin_sorter)
+        self.plugins_menu.addAction(order_plugin_action)
+
+        report_plugin_action = QAction("Plugin errors...", self._qt_window)
+        report_plugin_action.setStatusTip(
+            'Review stack traces for plugin exceptions and notify developers'
+        )
+        report_plugin_action.triggered.connect(self._show_plugin_err_reporter)
+        self.plugins_menu.addAction(report_plugin_action)
+
+    def _show_plugin_list(self):
+        """Show dialog with a table of installed plugins and metadata."""
+        from ..plugins import plugin_manager
+
+        dialog = QDialog(self._qt_window)
+        dialog.setMaximumHeight(800)
+        dialog.setMaximumWidth(1280)
+        layout = QVBoxLayout()
+        # maybe someday add a search bar here?
+        title = QLabel("Installed Plugins")
+        title.setObjectName("h2")
+        layout.addWidget(title)
+        # get metadata for successfully registered plugins
+        data = [
+            v
+            for k, v in plugin_manager._plugin_meta.items()
+            if k in plugin_manager._name2plugin
+        ]
+        # create a table for it
+        dialog.table = QtDictTable(
+            self._qt_window,
+            data,
+            headers=[
+                'plugin',
+                'package',
+                'version',
+                'url',
+                'author',
+                'license',
+            ],
+            min_section_width=60,
+        )
+        dialog.table.setObjectName("pluginTable")
+        dialog.table.horizontalHeader().setObjectName("pluginTableHeader")
+        dialog.table.verticalHeader().setObjectName("pluginTableHeader")
+        dialog.table.setGridStyle(Qt.NoPen)
+        # prevent editing of table
+        dialog.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        layout.addWidget(dialog.table)
+        dialog.setLayout(layout)
+        dialog.setAttribute(Qt.WA_DeleteOnClose)
+        self._plugin_list = dialog
+        dialog.exec_()
+
+    def _show_plugin_sorter(self):
+        """Show dialog that allows users to sort the call order of plugins."""
+        plugin_sorter = QtPluginSorter(parent=self._qt_window)
+        dock_widget = self.add_dock_widget(
+            plugin_sorter, name='Plugin Sorter', area="right"
+        )
+        plugin_sorter.finished.connect(dock_widget.close)
+        plugin_sorter.finished.connect(plugin_sorter.deleteLater)
+        plugin_sorter.finished.connect(dock_widget.deleteLater)
+
+    def _show_plugin_err_reporter(self):
+        """Show dialog that allows users to review and report plugin errors."""
+        plugin_sorter = QtPluginErrReporter(parent=self._qt_window)
+        plugin_sorter.exec_()
 
     def _add_help_menu(self):
         """Add 'Help' menu to app menubar."""

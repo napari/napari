@@ -1,5 +1,5 @@
 from .points import Points
-from ._constants import Mode
+from ._points_constants import Mode
 
 
 @Points.bind_key('Space')

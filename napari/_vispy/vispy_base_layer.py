@@ -263,32 +263,6 @@ class VispyBaseLayer(ABC):
 
         return np.array([top_left, bottom_right]).astype(int)
 
-    def on_mouse_move(self, event):
-        """Called whenever mouse moves over canvas."""
-        if event.pos is None:
-            return
-        self._position = list(event.pos)
-        self.layer.position = self._transform_position(self._position)
-        self.layer.on_mouse_move(event)
-
-    def on_mouse_press(self, event):
-        """Called whenever mouse pressed in canvas.
-        """
-        if event.pos is None:
-            return
-        self._position = list(event.pos)
-        self.layer.position = self._transform_position(self._position)
-        self.layer.on_mouse_press(event)
-
-    def on_mouse_release(self, event):
-        """Called whenever mouse released in canvas.
-        """
-        if event.pos is None:
-            return
-        self._position = list(event.pos)
-        self.layer.position = self._transform_position(self._position)
-        self.layer.on_mouse_release(event)
-
     def on_draw(self, event):
         """Called whenever the canvas is drawn, which happens whenever new
         data is sent to the canvas or the camera is moved.
