@@ -99,7 +99,7 @@ def napari_get_reader(path: Union[str, List[str]]) -> Optional[ReaderFunction]:
     """
 
 
-@napari_hook_specification
+@napari_hook_specification(firstresult=True)
 def napari_get_writer(
     path: str, layer_types: List[str]
 ) -> Optional[WriterFunction]:
@@ -128,8 +128,8 @@ def napari_get_writer(
     """
 
 
-@napari_hook_specification
-def napari_write_image(path: str, data: Any, meta: dict):
+@napari_hook_specification(firstresult=True)
+def napari_write_image(path: str, data: Any, meta: dict) -> bool:
     """Write image data and metadata into a path.
 
     Parameters
@@ -143,11 +143,15 @@ def napari_write_image(path: str, data: Any, meta: dict):
         pyramid.
     meta : dict
         Image metadata.
+
+    Returns
+    -------
+    bool : Return True if data is successfully written.
     """
 
 
-@napari_hook_specification
-def napari_write_labels(path: str, data: Any, meta: dict):
+@napari_hook_specification(firstresult=True)
+def napari_write_labels(path: str, data: Any, meta: dict) -> bool:
     """Write labels data and metadata into a path.
 
     Parameters
@@ -161,11 +165,15 @@ def napari_write_labels(path: str, data: Any, meta: dict):
         then the data is from an image pyramid.
     meta : dict
         Labels metadata.
+
+    Returns
+    -------
+    bool : Return True if data is successfully written.
     """
 
 
-@napari_hook_specification
-def napari_write_points(path: str, data: Any, meta: dict):
+@napari_hook_specification(firstresult=True)
+def napari_write_points(path: str, data: Any, meta: dict) -> bool:
     """Write points data and metadata into a path.
 
     Parameters
@@ -176,11 +184,15 @@ def napari_write_points(path: str, data: Any, meta: dict):
         Coordinates for N points in D dimensions.
     meta : dict
         Points metadata.
+
+    Returns
+    -------
+    bool : Return True if data is successfully written.
     """
 
 
-@napari_hook_specification
-def napari_write_shapes(path: str, data: Any, meta: dict):
+@napari_hook_specification(firstresult=True)
+def napari_write_shapes(path: str, data: Any, meta: dict) -> bool:
     """Write shapes data and metadata into a path.
 
     Parameters
@@ -192,11 +204,15 @@ def napari_write_shapes(path: str, data: Any, meta: dict):
         N vertices of a shape in D dimensions.
     meta : dict
         Shapes metadata.
+
+    Returns
+    -------
+    bool : Return True if data is successfully written.
     """
 
 
-@napari_hook_specification
-def napari_write_surface(path: str, data: Any, meta: dict):
+@napari_hook_specification(firstresult=True)
+def napari_write_surface(path: str, data: Any, meta: dict) -> bool:
     """Write surface data and metadata into a path.
 
     Parameters
@@ -211,11 +227,15 @@ def napari_write_surface(path: str, data: Any, meta: dict):
         dimensions are used to color the same mesh with different values.
     meta : dict
         Surface metadata.
+
+    Returns
+    -------
+    bool : Return True if data is successfully written.
     """
 
 
-@napari_hook_specification
-def napari_write_vectors(path: str, data: Any, meta: dict):
+@napari_hook_specification(firstresult=True)
+def napari_write_vectors(path: str, data: Any, meta: dict) -> bool:
     """Write vectors data and metadata into a path.
 
     Parameters
@@ -226,4 +246,8 @@ def napari_write_vectors(path: str, data: Any, meta: dict):
         The start point and projections of N vectors in D dimensions.
     meta : dict
         Vectors metadata.
+
+    Returns
+    -------
+    bool : Return True if data is successfully written.
     """
