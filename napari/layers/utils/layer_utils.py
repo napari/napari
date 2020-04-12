@@ -1,3 +1,5 @@
+from typing import Dict
+
 import numpy as np
 
 
@@ -151,3 +153,22 @@ def convert_to_uint8(data: np.ndarray) -> np.ndarray:
             return np.right_shift(
                 data, (data.dtype.itemsize - 1) * 8 - 1
             ).astype(out_dtype)
+
+
+def dataframe_to_properties(dataframe) -> Dict[str, np.ndarray]:
+    """Convert a dataframe to Points.properties formatted dictionary.
+
+    Parameters
+    ----------
+    dataframe : DataFrame
+        The dataframe object to be converted to a properties dictionary
+
+    Returns
+    -------
+    dict[str, np.ndarray]
+        A properties dictionary where the key is the property name and the value
+        is an ndarray with the property value for each point.
+    """
+
+    properties = {col: np.asarray(dataframe[col]) for col in dataframe}
+    return properties

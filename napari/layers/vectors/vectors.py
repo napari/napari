@@ -1,5 +1,7 @@
-from typing import Union
+from typing import Union, Dict
 from xml.etree.ElementTree import Element
+import warnings
+
 import numpy as np
 from copy import copy
 from ..base import Layer
@@ -7,6 +9,7 @@ from ..utils.color_transformations import (
     transform_color_with_defaults,
     normalize_and_broadcast_colors,
 )
+from ..utils.layer_utils import dataframe_to_properties
 from ...utils.event import Event
 from ...utils.status_messages import format_float
 from ...utils.colormaps.standardize_color import transform_color
@@ -26,6 +29,9 @@ class Vectors(Layer):
         D dimensions. An (N1, N2, ..., ND, D) array is interpreted as
         "image-like" data where there is a length D vector of the
         projections at each pixel.
+    properties : dict {str: array (N,)}, DataFrame
+        Properties for each vector. Each property should be an array of length N,
+        where N is the number of vectors.
     edge_width : float
         Width for all vectors in pixels.
     length : float
@@ -169,6 +175,32 @@ class Vectors(Layer):
 
         self._update_dims()
         self.events.data()
+
+    @property
+    def properties(self):
+        """dict {str: array (N,)}, DataFrame: Annotations for each point"""
+        return self._properties
+
+    @properties.setter
+    def properties(self, properties: Dict[str, np.ndarray]):
+        if not isinstance(properties, dict):
+            properties = dataframe_to_properties(properties)
+        self._properties = self._validate_properties(properties)
+        if self._face_color_property and (
+            self._face_color_property not in self._properties
+        ):
+            self._face_color_property = ''
+            warnings.warn('property used for face_color dropped')
+
+    def _validate_properties(self, properties: Dict[str, np.ndarray]):
+        """Validates the type and size of the properties"""
+        for v in properties.values():
+            if len(v) != len(self.data):
+                raise ValueError(
+                    'the number of properties must equal the number of points'
+                )
+
+        return properties
 
     def _get_state(self):
         """Get dictionary of layer state.

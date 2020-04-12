@@ -1,4 +1,4 @@
-from typing import Dict, Tuple, Union
+from typing import Tuple, Union
 
 import numpy as np
 from vispy.color.colormap import Colormap
@@ -79,25 +79,6 @@ def points_in_box(corners, points, sizes):
     # Determine indices of points which have at least one corner inside box
     inside = np.unique(point_corners_in_box % len(points))
     return list(inside)
-
-
-def dataframe_to_properties(dataframe) -> Dict[str, np.ndarray]:
-    """Convert a dataframe to Points.properties formatted dictionary.
-
-    Parameters
-    ----------
-    dataframe : DataFrame
-        The dataframe object to be converted to a properties dictionary
-
-    Returns
-    -------
-    dict[str, np.ndarray]
-        A properties dictionary where the key is the property name and the value
-        is an ndarray with the property value for each point.
-    """
-
-    properties = {col: np.asarray(dataframe[col]) for col in dataframe}
-    return properties
 
 
 def guess_continuous(property: np.ndarray) -> bool:
