@@ -7,6 +7,7 @@ from napari import Viewer
 from napari._tests.utils import (
     add_layer_by_type,
     check_viewer_functioning,
+    check_view_transform_consistency,
     layer_test_data,
 )
 
@@ -73,7 +74,7 @@ def test_add_layer(viewer_factory, layer_class, data, ndim, visible):
 
 
 def test_screenshot(viewer_factory):
-    "Test taking a screenshot"
+    """Test taking a screenshot."""
     view, viewer = viewer_factory()
 
     np.random.seed(0)
@@ -137,3 +138,33 @@ def test_changing_theme(viewer_factory):
 
     with pytest.raises(ValueError):
         viewer.theme = 'nonexistent_theme'
+
+
+@pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
+def test_roll_traspose_update(viewer_factory, layer_class, data, ndim):
+    """Check that transpose and roll preserve correct transform sequence."""
+
+    view, viewer = viewer_factory()
+
+    np.random.seed(0)
+
+    layer = add_layer_by_type(viewer, layer_class, data)
+
+    # Set translations and scalings (match type of visual layer storing):
+    transf_dict = {
+        'translate': np.random.randint(0, 10, ndim).astype(np.float32),
+        'scale': np.random.rand(ndim).astype(np.float32),
+    }
+    for k, val in transf_dict.items():
+        setattr(layer, k, val)
+
+    # Check consistency:
+    check_view_transform_consistency(layer, viewer, transf_dict)
+
+    # Roll dims and check again:
+    viewer.dims._roll()
+    check_view_transform_consistency(layer, viewer, transf_dict)
+
+    # Transpose and check again:
+    viewer.dims._transpose()
+    check_view_transform_consistency(layer, viewer, transf_dict)
