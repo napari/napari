@@ -3,6 +3,7 @@ from functools import lru_cache
 from vispy.app import Canvas
 from vispy.gloo import gl
 from vispy.visuals.transforms import STTransform
+import numpy as np
 
 
 class VispyBaseLayer(ABC):
@@ -93,7 +94,12 @@ class VispyBaseLayer(ABC):
 
     @scale.setter
     def scale(self, scale):
-        self._master_transform.scale = scale
+        # Avoid useless update if nothing changed in the displayed dims
+        # Note that the master_transform scale is always a 4-vector so pad
+        padded_scale = np.pad(scale, ((0, 4 - len(scale))), constant_values=1)
+        if self.scale is not None and np.all(self.scale == padded_scale):
+            return
+        self._master_transform.scale = padded_scale
 
     @property
     def translate(self):
@@ -102,7 +108,16 @@ class VispyBaseLayer(ABC):
 
     @translate.setter
     def translate(self, translate):
-        self._master_transform.translate = translate
+        # Avoid useless update if nothing changed in the displayed dims
+        # Note that the master_transform translate is always a 4-vector so pad
+        padded_translate = np.pad(
+            translate, ((0, 4 - len(translate))), constant_values=1
+        )
+        if self.translate is not None and np.all(
+            self.translate == padded_translate
+        ):
+            return
+        self._master_transform.translate = padded_translate
 
     @property
     def scale_factor(self):
@@ -176,32 +191,6 @@ class VispyBaseLayer(ABC):
         self._on_blending_change()
         self._on_scale_change()
         self._on_translate_change()
-
-    def on_mouse_move(self, event):
-        """Called whenever mouse moves over canvas."""
-        if event.pos is None:
-            return
-        self._position = list(event.pos)
-        self.layer.position = self._transform_position(self._position)
-        self.layer.on_mouse_move(event)
-
-    def on_mouse_press(self, event):
-        """Called whenever mouse pressed in canvas.
-        """
-        if event.pos is None:
-            return
-        self._position = list(event.pos)
-        self.layer.position = self._transform_position(self._position)
-        self.layer.on_mouse_press(event)
-
-    def on_mouse_release(self, event):
-        """Called whenever mouse released in canvas.
-        """
-        if event.pos is None:
-            return
-        self._position = list(event.pos)
-        self.layer.position = self._transform_position(self._position)
-        self.layer.on_mouse_release(event)
 
     def on_draw(self, event):
         """Called whenever the canvas is drawn.

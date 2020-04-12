@@ -5,7 +5,7 @@ wrap.
 import time
 
 # set vispy to use same backend as qtpy
-from skimage.io import imsave
+from ..utils.io import imsave
 
 from .qt_about import QtAbout
 from .qt_plugin_report import QtPluginErrReporter
