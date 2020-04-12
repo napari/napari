@@ -1,3 +1,4 @@
+import os
 from . import PluginError, plugin_manager as napari_plugin_manager
 from ._hook_callers import execute_hook
 from typing import Optional, Union, Sequence, List
@@ -219,3 +220,44 @@ def write_single_layer_with_plugin(
         return hook_specification.call_plugin(
             plugin_name, path=path, data=layer.data, meta=layer._get_state()
         )
+
+
+def write_layer_data_with_plugins(
+    path: str, layer_data: List[LayerData], plugin_manager=None
+):
+    """Write layer data out into a folder one layer at a time.
+
+    Call `napari_write_<layer>` for each layer using the `layer.name` variable
+    to modify the path such that the layers are written to unique files in the
+    folder.
+
+    Parameters
+    ----------
+    path : str
+        path to file/directory
+    layer_data : list of napari.types.LayerData
+        List of layer_data, where layer_data is (data, meta, layer_type).
+    plugin_manager : pluggy.PluginManager, optional
+        Instance of a pluggy PluginManager.  by default the main napari
+        plugin_manager will be used.
+
+    Returns
+    -------
+    bool
+        Return True if data is successfully written.
+    """
+    plugin_manager = plugin_manager or napari_plugin_manager
+
+    # Loop through data for each layer
+    for ld in layer_data:
+        # Get hook specification according to layer type
+        hook_specification = getattr(
+            plugin_manager.hook, 'napari_write_' + ld[2]
+        )
+        # Create full path using name of layer
+        full_path = os.path.join(path, ld[0]['name'])
+
+        # Write out data using first plugin found for this hook spec
+        hook_specification(path=full_path, data=ld[0], meta=ld[1])
+
+    return True
