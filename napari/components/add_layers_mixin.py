@@ -7,8 +7,8 @@ import numpy as np
 from .. import layers
 from ..plugins.io import (
     read_data_with_plugins,
-    write_layer_with_plugin,
-    write_layers_with_plugins,
+    write_single_layer_with_plugin,
+    write_multiple_layers_with_plugin,
 )
 from ..utils import colormaps, io
 from ..utils.misc import (
@@ -901,33 +901,97 @@ class AddLayersMixin:
 
         return layer
 
-    def _save_individual_layers_with_plugin(
-        self, plugin_name: str, path: str, layers: List[layers.Layer],
+    def _save_layers(
+        self,
+        path: str,
+        layers: List[layers.Layer],
+        plugin_name: Optional[str] = None,
     ):
-        """Save a list of layers to a path using the specified plugin.
+        """Save list of layers to a path using writer plugins.
+
+        If no `plugin_name` is provided and only one layer is passed, then we
+        just directly call ``plugin_manager.hook.napari_write_<layer>()`` which
+        will loop through implementations and stop when the first one returns a
+        non-None result. The order in which implementations are called can be
+        changed with the implementation sorter/disabler.
+
+        If no `plugin_name` is provided and multple layers are passed, then we
+        call ``plugin_manager.hook.napari_get_writer()`` which loops through
+        plugins to find the first one that knows how to handle the combination
+        of layers and is able to write the file. If no plugins offer
+        `napari_get_writer` for that combination of layers then the default
+        `napari_get_writer` will create a folder and call
+        `napari_write_<layer>` for each layer using the `layer.name` variable
+        to modify the path such that the layers are written to unique files in
+        the folder.
+
+        If a `plugin_name` is provided and a single layer is passed, then
+        we call the `napari_write_<layer_type>` for that plugin, and if it
+        fails we error.
+
+        If a `plugin_name` is provided and multple layers are passed, then
+        we call we call `napari_get_writer` for that plugin, and if it
+        doesn’t return a WriterFunction we error, otherwise we call it and if
+        that fails if it we error.
 
         Parameters
         ----------
-        plugin_name : str
-            Name of the plugin to use for saving.
         path : str
             A filepath, directory, or URL (or a list of any) to open.
         layers : List[layers.Layer]
-            List of layers to be saved.
+            List of layers to be saved. If only a single layer is passed then
+            we use the hook specification corresponding to its layer type,
+            `napari_write_<layer_type>`. If multiple layers are passed then we
+            use the `napari_get_writer` hook specification.
+        plugin_name : str, optional
+            Name of the plugin to use for saving. If None then all plugins
+            corresponding to appropriate hook specification will be loop
+            through to find the first one that can save the data.
         """
-        for layer in layers:
-            write_layer_with_plugin(plugin_name, path, layer)
+        if len(layers) == 0:
+            return
+        elif len(layers) == 1:
+            write_single_layer_with_plugin(path, layers[0], plugin_name)
+        else:
+            write_multiple_layers_with_plugin(path, layers, plugin_name)
 
-    def _save_multiple_layers_with_plugins(
-        self, path: str, layers: List[layers.Layer],
-    ):
-        """Save a list of layers to a path.
+    def save_selected(self, path: str, plugin_name: Optional[str] = None):
+        """Save the selected layers to a path using writer plugins.
+
+        If no `plugin_name` is provided and only one layer is selected, then we
+        just directly call ``plugin_manager.hook.napari_write_<layer>()`` which
+        will loop through implementations and stop when the first one returns a
+        non-None result. The order in which implementations are called can be
+        changed with the implementation sorter/disabler.
+
+        If no `plugin_name` is provided and multple layers are selected, then
+        we call ``plugin_manager.hook.napari_get_writer()`` which loops through
+        plugins to find the first one that knows how to handle the combination
+        of layers and is able to write the file. If no plugins offer
+        `napari_get_writer` for that combination of layers then the default
+        `napari_get_writer` will create a folder and call
+        `napari_write_<layer>` for each layer using the `layer.name` variable
+        to modify the path such that the layers are written to unique files in
+        the folder.
+
+        If a `plugin_name` is provided and a single layer is selected, then
+        we call the `napari_write_<layer_type>` for that plugin, and if it
+        fails we error.
+
+        If a `plugin_name` is provided and multple layers are selected, then
+        we call we call `napari_get_writer` for that plugin, and if it
+        doesn’t return a WriterFunction we error, otherwise we call it and if
+        that fails if it we error.
 
         Parameters
         ----------
         path : str
             A filepath, directory, or URL (or a list of any) to open.
-        layers : Listof napari.layers.Layer]
-            List of layers to be saved.
+        plugin_name : str, optional
+            Name of the plugin to use for saving. If None then all plugins
+            corresponding to appropriate hook specification will be loop
+            through to find the first one that can save the data.
         """
-        write_layers_with_plugins(path, layers)
+        self._save_layers(
+            path=path, layers=self.layers.selected, plugin_name=plugin_name
+        )
