@@ -1,4 +1,5 @@
-from typing import Union, Dict
+from itertools import cycle
+from typing import Union, Dict, Tuple
 from xml.etree.ElementTree import Element
 import warnings
 
@@ -8,6 +9,7 @@ from ..base import Layer
 from ._vectors_constants import ColorMode, DEFAULT_COLOR_CYCLE
 from ..utils.color_transformations import (
     transform_color_with_defaults,
+    transform_color_cycle,
     normalize_and_broadcast_colors,
 )
 from ..utils.layer_utils import (
@@ -19,7 +21,8 @@ from ...utils.event import Event
 from ...utils.status_messages import format_float
 from ...utils.colormaps.standardize_color import transform_color
 from ._vector_utils import vectors_to_coordinates, generate_vector_meshes
-from vispy.color import Color
+from vispy.color import Color, get_colormap
+from vispy.color.colormap import Colormap
 
 
 class Vectors(Layer):
@@ -205,10 +208,6 @@ class Vectors(Layer):
         # set the current_* properties
         if len(data) > 0:
             self._current_edge_color = self.edge_color[-1]
-            self._current_face_color = self.face_color[-1]
-            self.current_properties = {
-                k: np.asarray([v[-1]]) for k, v in self.properties.items()
-            }
         elif len(data) == 0 and self.properties:
             if self._edge_color_mode == ColorMode.DIRECT:
                 self._current_edge_color = transform_color_with_defaults(
@@ -503,6 +502,60 @@ class Vectors(Layer):
             raise ValueError(
                 'face_color should be the name of a color, an array of colors, or the name of an property'
             )
+
+    @property
+    def edge_color_cycle(self):
+        """Union[list, np.ndarray, cycle] :  Color cycle for edge_color.
+        Can be a list of colors or a cycle of colors
+
+        """
+        return self._edge_color_cycle
+
+    @edge_color_cycle.setter
+    def edge_color_cycle(
+        self, edge_color_cycle: Union[list, np.ndarray, cycle]
+    ):
+        self._edge_color_cycle = transform_color_cycle(
+            color_cycle=edge_color_cycle,
+            elem_name="edge_color_cycle",
+            default="white",
+        )
+        if self._edge_color_mode == ColorMode.CYCLE:
+            self.refresh_colors(update_color_mapping=True)
+
+    @property
+    def edge_colormap(self):
+        """Return the colormap to be applied to a property to get the edge color.
+
+        Returns
+        -------
+        colormap_name : str
+            The name of the current colormap.
+        colormap : vispy.color.Colormap
+            The vispy colormap object.
+        """
+        return self._edge_colormap_name, self._edge_colormap
+
+    @edge_colormap.setter
+    def edge_colormap(self, colormap: Union[str, Colormap]):
+        self._edge_colormap = get_colormap(colormap)
+        if isinstance(colormap, str):
+            self._edge_colormap_name = colormap
+        else:
+            self._edge_colormap_name = 'unknown_colormap'
+
+    @property
+    def edge_contrast_limits(self):
+        """ None, (float, float): contrast limits for mapping
+        the edge_color colormap property to 0 and 1
+        """
+        return self._edge_contrast_limits
+
+    @edge_contrast_limits.setter
+    def edge_contrast_limits(
+        self, contrast_limits: Union[None, Tuple[float, float]]
+    ):
+        self._edge_contrast_limits = contrast_limits
 
     @property
     def current_edge_color(self):
