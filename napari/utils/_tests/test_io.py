@@ -1,6 +1,6 @@
 import os
+import csv
 from pathlib import Path
-
 import numpy as np
 from dask import array as da
 from skimage.data import data_dir
@@ -161,3 +161,21 @@ def test_zarr_pyramid():
         # the context manager. Alternatively, we could convert to NumPy here.
         for images, images_in in zip(pyramid, pyramid_in):
             np.testing.assert_array_equal(images, images_in)
+
+
+def test_write_csv(tmpdir):
+    expected_filename = os.path.join(tmpdir, 'test.csv')
+    column_names = ['column_1', 'column_2', 'column_3']
+    expected_data = np.random.random((5, len(column_names)))
+    io.write_csv(expected_filename, expected_data, column_names=column_names)
+    assert os.path.exists(expected_filename)
+    with open(expected_filename) as output_csv:
+        csv.reader(output_csv, delimiter=',')
+        for row_index, row in enumerate(output_csv):
+            if row_index == 0:
+                assert row == "column_1,column_2,column_3\n"
+            else:
+                output_row_data = [float(i) for i in row.split(',')]
+                assert np.allclose(
+                    np.array(output_row_data), expected_data[row_index - 1]
+                )

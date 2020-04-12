@@ -1,7 +1,7 @@
 """
 Internal napari hook implementations to be registered by the plugin manager
 """
-# import os
+import os
 from typing import List, Union, Any
 
 from pluggy import HookimplMarker
@@ -12,7 +12,7 @@ from ..types import (
     #    WriterFunction,
     #    LayerData,
 )
-from ..utils.io import magic_imread, imsave
+from ..utils.io import magic_imread, imsave, write_csv
 
 # from . import plugin_manager as napari_plugin_manager
 
@@ -43,8 +43,57 @@ def napari_get_reader(path: Union[str, List[str]]) -> ReaderFunction:
 @napari_hook_implementation(trylast=True)
 def napari_write_image(path: str, data: Any, meta: dict) -> bool:
     """Our internal fallback image writer at the end of the plugin chain.
+
+    Parameters
+    ----------
+    path : str
+        Path to file, directory, or resource (like a URL).
+    data : array or list of array
+        Image data. Can be N dimensional. If the last dimension has length
+        3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a
+        list and arrays are decreasing in shape then the data is from an image
+        pyramid.
+    meta : dict
+        Image metadata.
+
+    Returns
+    -------
+    bool : Return True if data is successfully written.
     """
     imsave(path, data)
+    return True
+
+
+@napari_hook_implementation(trylast=True)
+def napari_write_points(path: str, data: Any, meta: dict) -> bool:
+    """Our internal fallback points writer at the end of the plugin chain.
+
+    Append `.csv` extension to the filename if it is not already there.
+
+    Parameters
+    ----------
+    path : str
+        Path to file, directory, or resource (like a URL).
+    data : array (N, D)
+        Coordinates for N points in D dimensions.
+    meta : dict
+        Points metadata.
+
+    Returns
+    -------
+    bool : Return True if data is successfully written.
+    """
+    ext = os.path.splitext(path)[1]
+    if ext != '.csv':
+        path = path + '.csv'
+
+    # construct table from data
+    table = []
+    for row in data:
+        table.append(list(row))
+
+    # write table to csv file
+    write_csv(path, table)
     return True
 
 
