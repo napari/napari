@@ -28,10 +28,12 @@ from ._points_mouse_bindings import add, select, highlight
 from ._points_utils import (
     create_box,
     points_to_squares,
+)
+from ..utils.layer_utils import (
+    dataframe_to_properties,
     guess_continuous,
     map_property,
 )
-from ..utils.layer_utils import dataframe_to_properties
 
 DEFAULT_COLOR_CYCLE = cycle(np.array([[1, 0, 1, 1], [0, 1, 0, 1]]))
 

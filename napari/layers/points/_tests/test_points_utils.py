@@ -1,8 +1,10 @@
 import numpy as np
 import pandas as pd
 
-from napari.layers.points._points_utils import guess_continuous
-from napari.layers.utils.layer_utils import dataframe_to_properties
+from napari.layers.utils.layer_utils import (
+    dataframe_to_properties,
+    guess_continuous,
+)
 
 
 def test_dataframe_to_properties():
