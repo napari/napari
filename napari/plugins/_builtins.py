@@ -10,9 +10,10 @@ from ..types import (
     ReaderFunction,
     image_reader_to_layerdata_reader,
     WriterFunction,
+    LayerData,
 )
 from ..utils.io import magic_imread
-from .io import write_layer_data_with_plugins
+from . import plugin_manager as napari_plugin_manager
 
 
 napari_hook_implementation = HookimplMarker("napari")
@@ -59,3 +60,37 @@ def napari_get_writer(path: str, layer_types: List[str]) -> WriterFunction:
     """
     os.mkdirs(path)
     return write_layer_data_with_plugins
+
+
+def write_layer_data_with_plugins(path: str, layer_data: List[LayerData]):
+    """Write layer data out into a folder one layer at a time.
+
+    Call `napari_write_<layer>` for each layer using the `layer.name` variable
+    to modify the path such that the layers are written to unique files in the
+    folder.
+
+    Parameters
+    ----------
+    path : str
+        path to file/directory
+    layer_data : list of napari.types.LayerData
+        List of layer_data, where layer_data is (data, meta, layer_type).
+
+    Returns
+    -------
+    bool
+        Return True if data is successfully written.
+    """
+    # Loop through data for each layer
+    for ld in layer_data:
+        # Get hook specification according to layer type
+        hook_specification = getattr(
+            napari_plugin_manager.hook, 'napari_write_' + ld[2]
+        )
+        # Create full path using name of layer
+        full_path = os.path.join(path, ld[0]['name'])
+
+        # Write out data using first plugin found for this hook spec
+        hook_specification(path=full_path, data=ld[0], meta=ld[1])
+
+    return True
