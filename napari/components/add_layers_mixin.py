@@ -9,8 +9,8 @@ import numpy as np
 from .. import layers
 from ..plugins.io import (
     read_data_with_plugins,
-    write_layer_with_plugin,
-    write_layers_with_plugins,
+    write_single_layer_with_plugin,
+    write_multiple_layers_with_plugin,
 )
 from ..utils import colormaps, io
 from ..utils.misc import (
