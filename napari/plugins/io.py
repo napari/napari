@@ -1,4 +1,3 @@
-import os
 from . import PluginError, plugin_manager as napari_plugin_manager
 from ._hook_callers import execute_hook
 from typing import Optional, Union, Sequence, List
@@ -222,21 +221,52 @@ def write_single_layer_with_plugin(
         )
 
 
-def write_layer_data_with_plugins(
-    path: str, layer_data: List[LayerData], plugin_manager=None
+def write_layers_with_plugins(
+    path: str,
+    layers: Union[List[Layer], Layer],
+    plugin_name: Optional[str] = None,
+    plugin_manager: Optional[str] = None,
 ):
-    """Write layer data out into a folder one layer at a time.
+    """Write list of layers of individual layer to a path using writer plugins.
 
-    Call `napari_write_<layer>` for each layer using the `layer.name` variable
-    to modify the path such that the layers are written to unique files in the
-    folder.
+    If no `plugin_name` is provided and only one layer is passed, then we
+    just directly call ``plugin_manager.hook.napari_write_<layer>()`` which
+    will loop through implementations and stop when the first one returns a
+    non-None result. The order in which implementations are called can be
+    changed with the implementation sorter/disabler.
+
+    If no `plugin_name` is provided and multple layers are passed, then we
+    call ``plugin_manager.hook.napari_get_writer()`` which loops through
+    plugins to find the first one that knows how to handle the combination
+    of layers and is able to write the file. If no plugins offer
+    `napari_get_writer` for that combination of layers then the default
+    `napari_get_writer` will create a folder and call
+    `napari_write_<layer>` for each layer using the `layer.name` variable
+    to modify the path such that the layers are written to unique files in
+    the folder.
+
+    If a `plugin_name` is provided and a single layer is passed, then
+    we call the `napari_write_<layer_type>` for that plugin, and if it
+    fails we error.
+
+    If a `plugin_name` is provided and multple layers are passed, then
+    we call we call `napari_get_writer` for that plugin, and if it
+    doesn’t return a WriterFunction we error, otherwise we call it and if
+    that fails if it we error.
 
     Parameters
     ----------
     path : str
-        path to file/directory
-    layer_data : list of napari.types.LayerData
-        List of layer_data, where layer_data is (data, meta, layer_type).
+        A filepath, directory, or URL (or a list of any) to open.
+    layers : List[layers.Layer]
+        List of layers to be saved. If only a single layer is passed then
+        we use the hook specification corresponding to its layer type,
+        `napari_write_<layer_type>`. If multiple layers are passed then we
+        use the `napari_get_writer` hook specification.
+    plugin_name : str, optional
+        Name of the plugin to use for saving. If None then all plugins
+        corresponding to appropriate hook specification will be loop
+        through to find the first one that can save the data.
     plugin_manager : pluggy.PluginManager, optional
         Instance of a pluggy PluginManager.  by default the main napari
         plugin_manager will be used.
@@ -246,18 +276,11 @@ def write_layer_data_with_plugins(
     bool
         Return True if data is successfully written.
     """
-    plugin_manager = plugin_manager or napari_plugin_manager
-
-    # Loop through data for each layer
-    for ld in layer_data:
-        # Get hook specification according to layer type
-        hook_specification = getattr(
-            plugin_manager.hook, 'napari_write_' + ld[2]
-        )
-        # Create full path using name of layer
-        full_path = os.path.join(path, ld[0]['name'])
-
-        # Write out data using first plugin found for this hook spec
-        hook_specification(path=full_path, data=ld[0], meta=ld[1])
-
-    return True
+    if isinstance(layers, list):
+        if len(layers) > 1:
+            return write_multiple_layers_with_plugin(path, layers, plugin_name)
+        elif len(layers) == 1:
+            layers = layers[0]
+    if isinstance(layers, Layer):
+        return write_single_layer_with_plugin(path, layers, plugin_name)
+    return False
