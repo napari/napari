@@ -24,7 +24,7 @@ LayerData = Union[Tuple[Any], Tuple[Any, Dict], Tuple[Any, Dict, str]]
 
 PathLike = Union[str, List[str]]
 ReaderFunction = Callable[[PathLike], List[LayerData]]
-WriterFunction = Callable[[PathLike, List[LayerData]], None]
+WriterFunction = Callable[[PathLike, List[LayerData]], bool]
 
 
 def image_reader_to_layerdata_reader(
