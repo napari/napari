@@ -900,7 +900,12 @@ class AddLayersMixin:
 
         return layer
 
-    def save_selected(self, path: str, plugin_name: Optional[str] = None):
+    def save_layers(
+        self,
+        path: str,
+        selected: bool = True,
+        plugin_name: Optional[str] = None,
+    ):
         """Save the selected layers to a path using writer plugins.
 
         If no `plugin_name` is provided and only one layer is selected, then we
@@ -932,11 +937,18 @@ class AddLayersMixin:
         ----------
         path : str
             A filepath, directory, or URL (or a list of any) to open.
+        selected : bool
+            Optional flag to only save selected layers. True by default.
         plugin_name : str, optional
             Name of the plugin to use for saving. If None then all plugins
             corresponding to appropriate hook specification will be loop
             through to find the first one that can save the data.
         """
+        if selected:
+            layers = self.layers.selected
+        else:
+            layers = list(self.layers)
+
         write_layers_with_plugins(
-            path=path, layers=self.layers.selected, plugin_name=plugin_name
+            path=path, layers=layers, plugin_name=plugin_name
         )
