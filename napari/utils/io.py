@@ -1,4 +1,5 @@
 import os
+import csv
 import re
 
 from glob import glob
@@ -207,3 +208,27 @@ def read_zarr_dataset(path):
     else:
         raise ValueError(f"Not a zarr dataset or group: {path}")
     return image, shape
+
+
+def write_csv(filename, data, column_names=None):
+    """Write a csv file.
+
+    Append `.csv` extension to the filename if it is not already there.
+
+    Parameters
+    ----------
+    filename : str
+        Filename for saving csv.
+    data : list or ndarray
+        Table values, contained in a list of lists or an ndarray.
+    column_names : list, optional
+        List of column names for table data.
+    """
+    with open(filename, mode='w') as csvfile:
+        writer = csv.writer(
+            csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL
+        )
+        if column_names is not None:
+            writer.writerow(column_names)
+        for row in data:
+            writer.writerow(row)
