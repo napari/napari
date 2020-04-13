@@ -13,7 +13,7 @@ def sys_info(as_html=False):
     as_html : bool
         if True, info will be returned as HTML, suitable for a QTextEdit widget
     """
-    from napari.plugins import plugin_manager
+    from napari.plugins import get_plugin_manager
 
     sys_version = sys.version.replace('\n', ' ')
     text = (
@@ -63,6 +63,7 @@ def sys_info(as_html=False):
         ).replace("'", "")
         text += f'<br>{sys_info_text}'
 
+    plugin_manager = get_plugin_manager()
     plugins = []
     for plugin_name in plugin_manager._name2plugin:
         if plugin_name == 'builtins':
