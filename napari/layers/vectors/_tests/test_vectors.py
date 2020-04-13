@@ -60,8 +60,7 @@ def test_empty_vectors_with_properties():
 
 
 def test_empty_layer_with_edge_colormap():
-    """ Test creating an empty layer where the face color is a colormap
-    See: https://github.com/napari/napari/pull/1069
+    """ Test creating an empty layer where the edge color is a colormap
     """
     shape = (0, 2, 2)
     data = np.empty(shape)
@@ -74,10 +73,6 @@ def test_empty_layer_with_edge_colormap():
     )
 
     assert layer.edge_color_mode == 'colormap'
-
-    # verify the current_face_color is correct
-    edge_color = np.array([1, 1, 1, 1])
-    assert np.all(layer._current_edge_color == edge_color)
 
 
 def test_random_3D_vectors():

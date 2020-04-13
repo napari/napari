@@ -19,7 +19,6 @@ from ..utils.layer_utils import (
 )
 from ...utils.event import Event
 from ...utils.status_messages import format_float
-from ...utils.colormaps.standardize_color import transform_color
 from ._vector_utils import vectors_to_coordinates, generate_vector_meshes
 from vispy.color import get_colormap
 from vispy.color.colormap import Colormap
@@ -161,7 +160,6 @@ class Vectors(Layer):
             edge_width=Event,
             edge_color=Event,
             edge_color_mode=Event,
-            current_edge_color=Event,
         )
 
         self.visible = False
@@ -196,6 +194,7 @@ class Vectors(Layer):
 
         with self.block_update_properties():
             self._edge_color_property = ''
+            self._edge_color_mode = ColorMode.DIRECT
             self.edge_color = edge_color
             if edge_color_cycle is None:
                 edge_color_cycle = DEFAULT_COLOR_CYCLE
@@ -205,42 +204,6 @@ class Vectors(Layer):
             self._edge_contrast_limits = edge_contrast_limits
 
         self.refresh_colors()
-
-        # set the current_* properties
-        if len(data) > 0:
-            self._current_edge_color = self.edge_color[-1]
-        elif len(data) == 0 and self.properties:
-            if self._edge_color_mode == ColorMode.DIRECT:
-                self._current_edge_color = transform_color_with_defaults(
-                    num_entries=1,
-                    colors=edge_color,
-                    elem_name="edge_color",
-                    default="white",
-                )
-            elif self._edge_color_mode == ColorMode.CYCLE:
-                curr_edge_color = transform_color(next(self.edge_color_cycle))
-                prop_value = self._property_choices[self._edge_color_property][
-                    0
-                ]
-                self.edge_color_cycle_map[prop_value] = curr_edge_color
-                self._current_edge_color = curr_edge_color
-            elif self._edge_color_mode == ColorMode.COLORMAP:
-                prop_value = self._property_choices[self._edge_color_property][
-                    0
-                ]
-                curr_edge_color, _ = map_property(
-                    prop=prop_value,
-                    colormap=self.edge_colormap[1],
-                    contrast_limits=self._edge_contrast_limits,
-                )
-                self._current_edge_color = curr_edge_color
-
-        else:
-            self._current_edge_color = self.edge_color[-1]
-            self.current_properties = {}
-
-        # self._mesh_vertices = np.empty((0, 2))
-        # self._mesh_triangles = np.empty((0, 3), dtype=np.uint32)
 
         # Data containing vectors in the currently viewed slice
         self._data_view = np.empty((0, 2, 2))
@@ -394,11 +357,16 @@ class Vectors(Layer):
         """(1 x 4) np.ndarray: Array of RGBA edge colors (applied to all vectors)"""
         # if the provided face color is a string, first check if it is a key in the properties.
         # otherwise, assume it is the name of a color
+
+        old_mode = self._edge_color_mode
+
         if self._is_color_mapped(edge_color):
             if guess_continuous(self.properties[edge_color]):
-                self._edge_color_mode = ColorMode.COLORMAP
+                new_mode = ColorMode.COLORMAP
+                self._edge_color_mode = new_mode
             else:
-                self._edge_color_mode = ColorMode.CYCLE
+                new_mode = ColorMode.CYCLE
+                self._edge_color_mode = new_mode
             self._edge_color_property = edge_color
             self.refresh_colors()
 
@@ -412,13 +380,16 @@ class Vectors(Layer):
             self._edge_color = normalize_and_broadcast_colors(
                 len(self.data), transformed_color
             )
-            self._edge_color_mode = ColorMode.DIRECT
+            new_mode = ColorMode.DIRECT
+            self._edge_color_mode = new_mode
             self._edge_color_property = ''
 
             self.events.edge_color()
 
             if self.visible:
                 self._update_thumbnail()
+        if new_mode != old_mode:
+            self.events.edge_color_mode()
 
     def refresh_colors(self, update_color_mapping: bool = False):
         """Calculate and update edge colors if using a cycle or color map
@@ -509,7 +480,7 @@ class Vectors(Layer):
             return False
         else:
             raise ValueError(
-                'face_color should be the name of a color, an array of colors, or the name of an property'
+                'edge_color should be the name of a color, an array of colors, or the name of an property'
             )
 
     @property
@@ -610,16 +581,6 @@ class Vectors(Layer):
         self, contrast_limits: Union[None, Tuple[float, float]]
     ):
         self._edge_contrast_limits = contrast_limits
-
-    @property
-    def current_edge_color(self):
-        return self._current_edge_color
-
-    @current_edge_color.setter
-    def current_edge_color(self, edge_color: np.ndarray):
-        self._current_edge_color = transform_color(edge_color)
-        self.edge_color = self._current_edge_color
-        self.events.current_edge_color()
 
     @property
     def _view_face_color(self) -> np.ndarray:

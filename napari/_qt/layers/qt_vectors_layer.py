@@ -37,15 +37,10 @@ class QtVectorsControls(QtLayerControls):
 
         self.layer.events.edge_width.connect(self._on_width_change)
         self.layer.events.length.connect(self._on_len_change)
-        self.layer.events.current_edge_color.connect(
-            self._on_edge_color_change
-        )
         self.layer.events.edge_color_mode.connect(
             self._on_edge_color_mode_change
         )
-        self.layer.events.edge_color.connect(
-            self._on_edge_color_property_change
-        )
+        self.layer.events.edge_color.connect(self._on_edge_color_change)
 
         color_properties = self._get_property_values()
         color_prop_box = QComboBox(self)
@@ -58,7 +53,7 @@ class QtVectorsControls(QtLayerControls):
             initial_color=self.layer.edge_color,
             tooltip='click to set current edge color',
         )
-        self.edgeColorEdit.color_changed.connect(self.change_edge_color)
+        self.edgeColorEdit.color_changed.connect(self.change_edge_color_direct)
         self.edge_color_label = QLabel('edge color:')
         self._on_edge_color_change()
 
@@ -138,7 +133,7 @@ class QtVectorsControls(QtLayerControls):
                 self.layer.edge_color_mode = old_mode
                 raise
 
-    def change_edge_color(self, color: np.ndarray):
+    def change_edge_color_direct(self, color: np.ndarray):
         """Change edge color of vectors on the layer model.
 
         Parameters
@@ -146,8 +141,7 @@ class QtVectorsControls(QtLayerControls):
         color : np.ndarray
             Edge color for vectors, in an RGBA array
         """
-        with self.layer.events.current_edge_color.blocker():
-            self.layer.current_edge_color = color
+        self.layer.edge_color = color
 
     def change_width(self, value):
         """Change edge line width of vectors on the layer model.
@@ -240,17 +234,6 @@ class QtVectorsControls(QtLayerControls):
         with self.layer.events.edge_width.blocker():
             self.widthSpinBox.setValue(self.layer.edge_width)
 
-    def _on_edge_color_change(self, event=None):
-        """"Receive layer model edge color change event & update color swatch.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context, by default None.
-        """
-        with qt_signals_blocked(self.edgeColorEdit):
-            self.edgeColorEdit.setColor(self.layer.current_edge_color)
-
     def _on_edge_color_mode_change(self, event=None):
         """"Receive layer model edge color mode change event & update dropdown.
 
@@ -268,15 +251,22 @@ class QtVectorsControls(QtLayerControls):
 
             self._update_edge_color_gui(mode)
 
-    def _on_edge_color_property_change(self, event=None):
-        """"Receive layer model edge color property change event & update dropdown.
+    def _on_edge_color_change(self, event=None):
+        """"Receive layer model edge color  change event & update dropdown.
 
         Parameters
         ----------
         event : qtpy.QtCore.QEvent, optional.
             Event from the Qt context, by default None.
         """
-        with qt_signals_blocked(self.color_prop_box):
-            prop = self.layer._edge_color_property
-            index = self.color_prop_box.findText(prop, Qt.MatchFixedString)
-            self.color_prop_box.setCurrentIndex(index)
+        if self.layer._edge_color_mode == ColorMode.DIRECT:
+            with qt_signals_blocked(self.edgeColorEdit):
+                self.edgeColorEdit.setColor(self.layer.edge_color[0])
+        elif self.layer._edge_color_mode in (
+            ColorMode.CYCLE,
+            ColorMode.COLORMAP,
+        ):
+            with qt_signals_blocked(self.color_prop_box):
+                prop = self.layer._edge_color_property
+                index = self.color_prop_box.findText(prop, Qt.MatchFixedString)
+                self.color_prop_box.setCurrentIndex(index)
