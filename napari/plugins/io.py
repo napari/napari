@@ -1,4 +1,4 @@
-from . import PluginError, get_plugin_manager
+from . import PluginError, plugin_manager as napari_plugin_manager
 from typing import Optional, Union, Sequence, List
 from ..types import LayerData
 from ..layers import Layer
@@ -8,7 +8,7 @@ logger = getLogger(__name__)
 
 
 def read_data_with_plugins(
-    path: Union[str, Sequence[str]]
+    path: Union[str, Sequence[str]], plugin_manager=None
 ) -> Optional[LayerData]:
     """Iterate reader hooks and return first non-None LayerData or None.
 
@@ -24,6 +24,9 @@ def read_data_with_plugins(
     ----------
     path : str
         The path (file, directory, url) to open.
+    plugin_manager : pluggy.PluginManager, optional
+        Instance of a pluggy PluginManager.  by default the main napari
+        plugin_manager will be used.
 
     Returns
     -------
@@ -35,7 +38,7 @@ def read_data_with_plugins(
 
         If no reader plugins are (or they all error), returns ``None``
     """
-    plugin_manager = get_plugin_manager()
+    plugin_manager = plugin_manager or napari_plugin_manager
     skip_impls = []
     while True:
         (reader, implementation) = plugin_manager.hook.napari_get_reader(
@@ -74,6 +77,7 @@ def write_layers_with_plugins(
     path: str,
     layers: Union[List[Layer], Layer],
     plugin_name: Optional[str] = None,
+    plugin_manager=None,
 ):
     """Write list of layers of individual layer to a path using writer plugins.
 
@@ -115,6 +119,9 @@ def write_layers_with_plugins(
         Name of the plugin to use for saving. If None then all plugins
         corresponding to appropriate hook specification will be looped
         through to find the first one that can save the data.
+    plugin_manager : pluggy.PluginManager, optional
+        Instance of a pluggy PluginManager.  by default the main napari
+        plugin_manager will be used.
 
     Returns
     -------
@@ -124,17 +131,22 @@ def write_layers_with_plugins(
     if isinstance(layers, list):
         if len(layers) > 1:
             return _write_multiple_layers_with_plugins(
-                path, layers, plugin_name
+                path, layers, plugin_name, plugin_manager
             )
         elif len(layers) == 1:
             layers = layers[0]
     if isinstance(layers, Layer):
-        return _write_single_layer_with_plugins(path, layers, plugin_name)
+        return _write_single_layer_with_plugins(
+            path, layers, plugin_name, plugin_manager
+        )
     return False
 
 
 def _write_multiple_layers_with_plugins(
-    path: str, layers: List[Layer], plugin_name: Optional[str] = None
+    path: str,
+    layers: List[Layer],
+    plugin_name: Optional[str] = None,
+    plugin_manager=None,
 ):
     """Write data from multiple layers data with a plugin.
 
@@ -159,6 +171,9 @@ def _write_multiple_layers_with_plugins(
         The path (file, directory, url) to write.
     layers : List of napari.layers.Layer
         List of napari layers to write.
+    plugin_manager : pluggy.PluginManager, optional
+        Instance of a pluggy PluginManager.  by default the main napari
+        plugin_manager will be used.
     """
     layer_data = [
         (layer.data, layer._get_state(), layer.__class__.__name__.lower())
@@ -166,7 +181,7 @@ def _write_multiple_layers_with_plugins(
     ]
     layer_types = [ld[2] for ld in layer_data]
 
-    plugin_manager = get_plugin_manager()
+    plugin_manager = plugin_manager or napari_plugin_manager
 
     if plugin_name is None:
         # Loop through all plugins using first successful one
@@ -217,7 +232,10 @@ def _write_multiple_layers_with_plugins(
 
 
 def _write_single_layer_with_plugins(
-    path: str, layer: Layer, plugin_name: Optional[str] = None
+    path: str,
+    layer: Layer,
+    plugin_name: Optional[str] = None,
+    plugin_manager=None,
 ):
     """Write single layer data with a plugin.
 
@@ -243,11 +261,15 @@ def _write_single_layer_with_plugins(
         Name of the plugin to write data with. If None then all plugins
         corresponding to appropriate hook specification will be looped
         through to find the first one that can write the data.
+    plugin_manager : pluggy.PluginManager, optional
+        Instance of a pluggy PluginManager.  by default the main napari
+        plugin_manager will be used.
     """
     layer_type = layer.__class__.__name__.lower()
 
+    plugin_manager = plugin_manager or napari_plugin_manager
     hook_specification = getattr(
-        get_plugin_manager().hook, 'napari_write_' + layer_type
+        plugin_manager.hook, 'napari_write_' + layer_type
     )
 
     # Call the hook_specification

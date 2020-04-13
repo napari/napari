@@ -26,17 +26,6 @@ else:
 
 pluggy.manager._HookCaller = _HookCaller
 
-# the main plugin manager instance for the `napari` plugin namespace.
-_plugin_manager = None
-
-
-# TODO: ask Juan if there's a better pattern than this for getting a lazy singleton
-def get_plugin_manager():
-    global _plugin_manager
-    if _plugin_manager is None:
-        _plugin_manager = PluginManager()
-    return _plugin_manager
-
 
 class PluginManager(pluggy.PluginManager):
     PLUGIN_ENTRYPOINT = "napari.plugin"

@@ -1,7 +1,7 @@
 import pytest
 import os
 import sys
-from napari.plugins import get_plugin_manager
+from napari.plugins import PluginManager
 import napari.plugins._builtins
 
 
@@ -9,8 +9,9 @@ import napari.plugins._builtins
 def plugin_manager():
     """PluginManager fixture that loads some test plugins"""
     fixture_path = os.path.join(os.path.dirname(__file__), 'fixtures')
-    plugin_manager = get_plugin_manager()
-    plugin_manager.discover(fixture_path)
+    plugin_manager = PluginManager(
+        project_name='napari', autodiscover=fixture_path
+    )
     assert fixture_path not in sys.path, 'discover path leaked into sys.path'
     return plugin_manager
 
