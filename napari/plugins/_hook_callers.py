@@ -17,6 +17,11 @@ This module is here as a patch because:
    chain fails.
 
 3. we want to sometimes go directly to calling a specific hook implementation.
+
+NOTE: A version of the code here was submitted to pluggy as PR #253:
+https://github.com/pytest-dev/pluggy/pull/253
+We *may* want to consider removing some of this code if that merges, but we
+will probably just wish to maintain our internal hook looping logic.
 """
 import sys
 import warnings
