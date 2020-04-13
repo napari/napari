@@ -1,0 +1,61 @@
+on:
+  push:
+    # Sequence of patterns matched against refs/tags
+    tags:
+      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+
+name: Create Release
+
+jobs:
+  build:
+    name: Create Release
+    runs-on: ubuntu-latest
+    if: github.repository == 'napari/napari'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@master
+      - name: Install Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.7
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+      - name: Build Distribution
+        run: |
+          pip install wheel
+          python setup.py sdist bdist_wheel
+      - name: Find Release Notes
+        run: |
+          TAG="${GITHUB_REF/refs\/tags\/v/}"  # clean tag
+          VER="${TAG/rc*/}"  # remove pre-release identifier
+          RELEASE_FILEPATH=docs/release/release_${VER//./_}.rst
+          # https://help.github.com/en/actions/reference/workflow-commands-for-github-actions
+          echo "::set-env name=tag::$TAG"
+          echo "::set-env name=release_filepath::$RELEASE_FILEPATH"
+      - name: Create Release
+        id: create_release
+        uses: jbolda/create-release@v1.1.0  # switch to actions/create-release@latest once PR merged
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: ${{ env.tag }}
+          bodyFromFile: ${{ env.release_filepath }}
+          draft: false
+          prerelease: ${{ contains(github.ref, 'rc') }}
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}  # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps 
+          asset_path: ./dist/napari-${{ env.tag }}.tar.gz
+          asset_name: napari-${{ env.tag }}.tar.gz
+          asset_content_type: application/gzip
+      - name: Publish PyPI Package
+        uses: pypa/gh-action-pypi-publish@master
+        with:
+          user: __token__
+          password: ${{ secrets.pypi_password }}
