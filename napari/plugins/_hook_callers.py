@@ -299,7 +299,8 @@ class _HookCaller(_PluggyHookCaller):
             del _old_nonwrappers[i]
 
         # if there are any hook_implementations left over, add them to the
-        # beginning of their respective lists
+        # beginning of their respective lists (because at call time, these
+        # lists are called in reverse order)
         if _old_nonwrappers:
             _new_nonwrappers = [x for x in _old_nonwrappers] + _new_nonwrappers
 
