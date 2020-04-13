@@ -43,6 +43,9 @@ class QtVectorsControls(QtLayerControls):
         self.layer.events.edge_color_mode.connect(
             self._on_edge_color_mode_change
         )
+        self.layer.events.edge_color.connect(
+            self._on_edge_color_property_change
+        )
 
         color_properties = self._get_property_values()
         color_prop_box = QComboBox(self)
@@ -189,6 +192,7 @@ class QtVectorsControls(QtLayerControls):
                 )
                 self.edgeColorEdit.setHidden(True)
                 self.color_prop_box.setHidden(False)
+                self.edge_color_label.setText('edge color property:')
         elif mode == 'direct':
             if self.grid_layout.indexOf(self.edgeColorEdit) == -1:
                 self.grid_layout.replaceWidget(
@@ -196,6 +200,7 @@ class QtVectorsControls(QtLayerControls):
                 )
                 self.edgeColorEdit.setHidden(False)
                 self.color_prop_box.setHidden(True)
+                self.edge_color_label.setText('edge color:')
 
     def _get_property_values(self):
         """Get the current property values from the Vectors layer
@@ -243,18 +248,17 @@ class QtVectorsControls(QtLayerControls):
         event : qtpy.QtCore.QEvent, optional.
             Event from the Qt context, by default None.
         """
-        """Receive layer.current_edge_color() change event and update view."""
         with qt_signals_blocked(self.edgeColorEdit):
             self.edgeColorEdit.setColor(self.layer.current_edge_color)
 
     def _on_edge_color_mode_change(self, event=None):
         """"Receive layer model edge color mode change event & update dropdown.
 
-                Parameters
-                ----------
-                event : qtpy.QtCore.QEvent, optional.
-                    Event from the Qt context, by default None.
-                """
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional.
+            Event from the Qt context, by default None.
+        """
         with qt_signals_blocked(self.color_mode_comboBox):
             mode = self.layer.edge_color_mode
             index = self.color_mode_comboBox.findText(
@@ -263,3 +267,16 @@ class QtVectorsControls(QtLayerControls):
             self.color_mode_comboBox.setCurrentIndex(index)
 
             self._update_edge_color_gui(mode)
+
+    def _on_edge_color_property_change(self, event=None):
+        """"Receive layer model edge color property change event & update dropdown.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional.
+            Event from the Qt context, by default None.
+        """
+        with qt_signals_blocked(self.color_prop_box):
+            prop = self.layer._edge_color_property
+            index = self.color_prop_box.findText(prop, Qt.MatchFixedString)
+            self.color_prop_box.setCurrentIndex(index)
