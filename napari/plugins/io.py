@@ -1,5 +1,4 @@
 from . import PluginError, plugin_manager as napari_plugin_manager
-from ._hook_callers import execute_hook
 from typing import Optional, Union, Sequence, List
 from ..types import LayerData
 from ..layers import Layer
@@ -42,11 +41,8 @@ def read_data_with_plugins(
     plugin_manager = plugin_manager or napari_plugin_manager
     skip_impls = []
     while True:
-        (reader, implementation) = execute_hook(
-            plugin_manager.hook.napari_get_reader,
-            path=path,
-            return_impl=True,
-            skip_impls=skip_impls,
+        (reader, implementation) = plugin_manager.hook.napari_get_reader(
+            path=path, _return_impl=True, _skip_impls=skip_impls
         )
         if not reader:
             # we're all out of reader plugins
@@ -54,7 +50,7 @@ def read_data_with_plugins(
         try:
             return reader(path)  # try to read data
         except Exception as exc:
-            # If execute_hook did return a reader, but the reader then failed
+            # If the hook did return a reader, but the reader then failed
             # while trying to read the path, we store the traceback for later
             # retrieval, warn the user, and continue looking for readers
             # (skipping this one)
@@ -111,7 +107,7 @@ def write_multiple_layers_with_plugin(
         plugin_manager will be used.
     """
     layer_data = [
-        (layer.data, layer._get_state(), layer.__class__.__name__.lower(),)
+        (layer.data, layer._get_state(), layer.__class__.__name__.lower())
         for layer in layers
     ]
     layer_types = [ld[2] for ld in layer_data]
@@ -122,12 +118,11 @@ def write_multiple_layers_with_plugin(
         # Loop through all plugins using first successful one
         skip_impls = []
         while True:
-            (writer, implementation) = execute_hook(
-                plugin_manager.hook.napari_get_writer,
+            (writer, implementation) = plugin_manager.hook.napari_get_writer(
                 path=path,
                 layer_types=layer_types,
-                return_impl=True,
-                skip_impls=skip_impls,
+                _return_impl=True,
+                _skip_impls=skip_impls,
             )
             if not writer:
                 # we're all out of writer plugins
@@ -135,7 +130,7 @@ def write_multiple_layers_with_plugin(
             try:
                 return writer(path, layer_data)  # try to write data
             except Exception as exc:
-                # If execute_hook did return a writer, but the writer then
+                # If the hook did return a writer, but the writer then
                 # failed while trying to write the path, we store the traceback
                 # for later retrieval, warn the user, and continue looking for
                 # writers (skipping this one)
