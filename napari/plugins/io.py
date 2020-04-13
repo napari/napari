@@ -123,15 +123,17 @@ def write_layers_with_plugins(
     """
     if isinstance(layers, list):
         if len(layers) > 1:
-            return _write_multiple_layers(path, layers, plugin_name)
+            return _write_multiple_layers_with_plugins(
+                path, layers, plugin_name
+            )
         elif len(layers) == 1:
             layers = layers[0]
     if isinstance(layers, Layer):
-        return _write_single_layer(path, layers, plugin_name)
+        return _write_single_layer_with_plugins(path, layers, plugin_name)
     return False
 
 
-def _write_multiple_layers(
+def _write_multiple_layers_with_plugins(
     path: str, layers: List[Layer], plugin_name: Optional[str] = None
 ):
     """Write data from multiple layers data with a plugin.
@@ -214,7 +216,7 @@ def _write_multiple_layers(
             writer(path, layer_data)  # try to write data
 
 
-def _write_single_layer(
+def _write_single_layer_with_plugins(
     path: str, layer: Layer, plugin_name: Optional[str] = None
 ):
     """Write single layer data with a plugin.
@@ -248,17 +250,10 @@ def _write_single_layer(
         get_plugin_manager().hook, 'napari_write_' + layer_type
     )
 
-    if plugin_name is None:
-        # Loop through all plugins with hook_specification using first
-        # successful one
-        return hook_specification(
-            path=path, data=layer.data, meta=layer._get_state()
-        )
-    else:
-        # Call hook_specification from named plugin
-        return hook_specification(
-            _plugin=plugin_name,
-            path=path,
-            data=layer.data,
-            meta=layer._get_state(),
-        )
+    # Call the hook_specification
+    return hook_specification(
+        _plugin=plugin_name,
+        path=path,
+        data=layer.data,
+        meta=layer._get_state(),
+    )
