@@ -1,11 +1,14 @@
 import numpy as np
+import pandas as pd
 import pytest
 from dask import array as da
 
-from napari.layers.utils.layer_utils import (
+from ..layer_utils import (
     calc_data_range,
     increment_unnamed_colormap,
     segment_normal,
+    dataframe_to_properties,
+    guess_continuous,
 )
 
 
@@ -102,3 +105,21 @@ def test_increment_unnamed_colormap():
     # test that named colormaps are not incremented
     named_colormap = 'perfect_colormap'
     assert increment_unnamed_colormap(named_colormap, names) == named_colormap
+
+
+def test_dataframe_to_properties():
+    properties = {'point_type': np.array(['A', 'B'] * 5)}
+    properties_df = pd.DataFrame(properties)
+    converted_properties = dataframe_to_properties(properties_df)
+    np.testing.assert_equal(converted_properties, properties)
+
+
+def test_guess_continuous():
+    continuous_annotation = np.array([1, 2, 3], dtype=np.float32)
+    assert guess_continuous(continuous_annotation)
+
+    categorical_annotation_1 = np.array([True, False], dtype=np.bool)
+    assert not guess_continuous(categorical_annotation_1)
+
+    categorical_annotation_2 = np.array([1, 2, 3], dtype=np.int)
+    assert not guess_continuous(categorical_annotation_2)
