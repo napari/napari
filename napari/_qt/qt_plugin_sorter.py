@@ -19,7 +19,8 @@ from qtpy.QtWidgets import (
 )
 
 from ..plugins import plugin_manager as napari_plugin_manager
-from ..plugins.manager import HookImpl, PluginManager, _HookCaller
+from ..plugins.manager import PluginManager, _HookCaller
+from pluggy.hooks import HookImpl
 from .utils import drag_with_pixmap
 
 

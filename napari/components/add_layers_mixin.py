@@ -5,10 +5,7 @@ from os import fspath
 import numpy as np
 
 from .. import layers
-from ..plugins.io import (
-    read_data_with_plugins,
-    write_layers_with_plugins,
-)
+from ..plugins.io import read_data_with_plugins, write_layers_with_plugins
 from ..utils import colormaps, io
 from ..utils.misc import (
     ensure_iterable,

@@ -2,7 +2,6 @@ import sys
 
 from pluggy import HookimplMarker
 
-from ._hook_callers import execute_hook
 from .exceptions import PluginError, PluginImportError, PluginRegistrationError
 from .manager import PluginManager
 
@@ -21,5 +20,4 @@ __all__ = [
     "PluginError",
     "PluginImportError",
     "PluginRegistrationError",
-    "execute_hook",
 ]
