@@ -160,6 +160,7 @@ class Vectors(Layer):
             length=Event,
             edge_width=Event,
             edge_color=Event,
+            edge_color_mode=Event,
             current_edge_color=Event,
         )
 
@@ -194,7 +195,7 @@ class Vectors(Layer):
             self._properties = empty_properties
 
         with self.block_update_properties():
-            self.edge_color_property = ''
+            self._edge_color_property = ''
             self.edge_color = edge_color
             if edge_color_cycle is None:
                 edge_color_cycle = DEFAULT_COLOR_CYCLE
@@ -416,6 +417,9 @@ class Vectors(Layer):
 
             self.events.edge_color()
 
+            if self.visible:
+                self._update_thumbnail()
+
     def refresh_colors(self, update_color_mapping: bool = False):
         """Calculate and update edge colors if using a cycle or color map
 
@@ -491,6 +495,8 @@ class Vectors(Layer):
                     edge_colors = np.empty((0, 4))
                 self._edge_color = edge_colors
             self.events.edge_color()
+            if self.visible:
+                self._update_thumbnail()
 
     def _is_color_mapped(self, color):
         """ determines if the new color argument is for directly setting or cycle/colormap"""
@@ -528,13 +534,15 @@ class Vectors(Layer):
             if self._edge_color_property == '':
                 if self.properties:
                     self._edge_color_property = next(iter(self.properties))
-                    warnings.warn(
-                        'Edge color was not set, setting to: %s'
-                        % self._face_color_property
+                    warning_msg = (
+                        'edge_color_property was not set, setting to: %s'
+                        % self._edge_color_property
                     )
+                    warnings.warn(warning_msg, RuntimeWarning)
                 else:
                     raise ValueError(
-                        'There must be a valid Points.properties to use ColorMode.Cycle'
+                        'There must valid properties to use %s color mode'
+                        % str(edge_color_mode)
                     )
             # ColorMode.COLORMAP can only be applied to numeric properties
             if (edge_color_mode == ColorMode.COLORMAP) and not issubclass(
@@ -547,6 +555,7 @@ class Vectors(Layer):
 
             self._edge_color_mode = edge_color_mode
             self.refresh_colors()
+        self.events.edge_color_mode()
 
     @property
     def edge_color_cycle(self):

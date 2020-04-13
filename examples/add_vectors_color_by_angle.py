@@ -19,7 +19,7 @@ with napari.gui_qt():
     layer = viewer.add_image(data.camera(), name='photographer')
 
     # sample vector coord-like data
-    n = 200
+    n = 300
     pos = np.zeros((n, 2, 2), dtype=np.float32)
     phi_space = np.linspace(0, 4 * np.pi, n)
     radius_space = np.linspace(0, 100, n)
@@ -33,7 +33,12 @@ with napari.gui_qt():
     pos[:, 1, 1] = 2 * radius_space * np.sin(phi_space)
 
     # make the angle property, range 0-2pi
-    properties = {'angle': np.mod(phi_space, 2 * np.pi)}
+    angle = np.mod(phi_space, 2 * np.pi)
+    pos_angle = angle > np.pi
+    properties = {
+        'angle': angle,
+        'pos_angle':pos_angle,
+    }
 
     # add the vectors
-    layer = viewer.add_vectors(pos, edge_width=3, properties=properties, edge_color='angle', edge_colormap='husl')
+    layer = viewer.add_vectors(pos, edge_width=3, properties=properties, edge_color='red', edge_colormap='husl')
