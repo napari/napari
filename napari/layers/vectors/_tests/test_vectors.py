@@ -1,6 +1,10 @@
 import numpy as np
 from xml.etree.ElementTree import Element
+
+from vispy.color import get_colormap
+
 from napari.layers import Vectors
+from napari.utils.colormaps.standardize_color import transform_color
 
 
 # Set random seed for testing
@@ -40,6 +44,40 @@ def test_empty_vectors():
     assert layer.data.shape == shape
     assert layer.ndim == shape[2]
     assert layer._data_view.shape[2] == 2
+
+
+def test_empty_vectors_with_properties():
+    """Test instantiating Vectors layer with empty coordinate-like 2D data."""
+    shape = (0, 2, 2)
+    data = np.empty(shape)
+    properties = {'angle': np.array([0.5], dtype=np.float)}
+    layer = Vectors(data, properties=properties)
+    assert np.all(layer.data == data)
+    assert layer.data.shape == shape
+    assert layer.ndim == shape[2]
+    assert layer._data_view.shape[2] == 2
+    np.testing.assert_equal(layer._property_choices, properties)
+
+
+def test_empty_layer_with_edge_colormap():
+    """ Test creating an empty layer where the face color is a colormap
+    See: https://github.com/napari/napari/pull/1069
+    """
+    shape = (0, 2, 2)
+    data = np.empty(shape)
+    default_properties = {'angle': np.array([1.5], dtype=np.float)}
+    layer = Vectors(
+        data=data,
+        properties=default_properties,
+        edge_color='angle',
+        edge_colormap='grays',
+    )
+
+    assert layer.edge_color_mode == 'colormap'
+
+    # verify the current_face_color is correct
+    edge_color = np.array([1, 1, 1, 1])
+    assert np.all(layer._current_edge_color == edge_color)
 
 
 def test_random_3D_vectors():
@@ -204,6 +242,57 @@ def test_edge_color_direct():
     edge_colors = np.random.random((data.shape[0], 4))
     layer.edge_color = edge_colors
     np.testing.assert_allclose(layer.edge_color, edge_colors)
+
+
+def test_edge_color_cycle():
+    """Test creating Vectors where edge color is set by a color cycle"""
+    np.random.seed(0)
+    shape = (10, 2, 2)
+    data = np.random.random(shape)
+    data[:, 0, :] = 20 * data[:, 0, :]
+    properties = {'vector_type': np.array(['A', 'B'] * int((shape[0] / 2)))}
+    color_cycle = ['red', 'blue']
+    layer = Vectors(
+        data,
+        properties=properties,
+        edge_color='vector_type',
+        edge_color_cycle=color_cycle,
+    )
+    np.testing.assert_equal(layer.properties, properties)
+    edge_color_array = transform_color(color_cycle * int((shape[0] / 2)))
+    assert np.all(layer.edge_color == edge_color_array)
+
+
+def test_edge_color_colormap():
+    """Test creating Vectors where edge color is set by a colormap """
+    shape = (10, 2)
+    shape = (10, 2, 2)
+    data = np.random.random(shape)
+    data[:, 0, :] = 20 * data[:, 0, :]
+    properties = {'angle': np.array([0, 1.5] * int((shape[0] / 2)))}
+    layer = Vectors(
+        data, properties=properties, edge_color='angle', edge_colormap='gray',
+    )
+    assert layer.properties == properties
+    assert layer.edge_color_mode == 'colormap'
+    edge_color_array = transform_color(
+        ['black', 'white'] * int((shape[0] / 2))
+    )
+    assert np.all(layer.edge_color == edge_color_array)
+
+    # change the color cycle - edge_color should not change
+    layer.edge_color_cycle = ['red', 'blue']
+    assert np.all(layer.edge_color == edge_color_array)
+
+    # adjust the clims
+    layer.edge_contrast_limits = (0, 3)
+    layer.refresh_colors(update_color_mapping=False)
+    np.testing.assert_allclose(layer.edge_color[-1], [0.5, 0.5, 0.5, 1])
+
+    # change the colormap
+    new_colormap = 'viridis'
+    layer.edge_colormap = new_colormap
+    assert layer.edge_colormap[1] == get_colormap(new_colormap)
 
 
 def test_length():
