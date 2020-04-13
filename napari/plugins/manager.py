@@ -27,6 +27,30 @@ else:
 pluggy.manager._HookCaller = _HookCaller
 
 
+class _HookRelay:
+    """Hook holder object for storing _HookCaller instances.
+
+    This object triggers (lazy) discovery of plugins as follows:  When a plugin
+    hook is accessed (e.g. plugin_manager.hook.napari_get_reader), if
+    ``self._needs_discovery`` is True, then it will trigger autodiscovery on
+    the parent plugin_manager. Note that ``PluginManager.__init__`` sets
+    ``self.hook._needs_discovery = True`` *after* hook_specifications and
+    builtins have been discovered, but before external plugins are loaded.
+    """
+
+    _needs_discovery = False
+
+    def __init__(self, manager: 'PluginManager'):
+        self._manager = manager
+
+    def __getattribute__(self, name):
+        if name not in ('_needs_discovery', '_manager'):
+            if self._needs_discovery:
+                self._needs_discovery = False
+                self._manager.discover()
+        return object.__getattribute__(self, name)
+
+
 class PluginManager(pluggy.PluginManager):
     PLUGIN_ENTRYPOINT = "napari.plugin"
     PLUGIN_PREFIX = "napari_"
@@ -34,7 +58,7 @@ class PluginManager(pluggy.PluginManager):
     def __init__(
         self,
         project_name: str = "napari",
-        autodiscover: Optional[Union[bool, str]] = True,
+        autodiscover: Union[bool, str] = False,
     ):
         """pluggy.PluginManager subclass with napari-specific functionality
 
@@ -52,6 +76,7 @@ class PluginManager(pluggy.PluginManager):
             will simply search the current sys.path.  by default True
         """
         super().__init__(project_name)
+        self.hook = _HookRelay(self)
         # a dict to store package metadata for each plugin, will be populated
         # during self._register_module
         # possible keys for this dict will be set by fetch_module_metadata()
@@ -61,17 +86,16 @@ class PluginManager(pluggy.PluginManager):
         if project_name == 'napari':
             # define hook specifications and validators
             self.add_hookspecs(hook_specifications)
-
-            # register our own built plugins
+            # register our own builtin plugins
             self.register(_builtins, name='builtins')
 
-            # discover external plugins
-            if not os.environ.get("NAPARI_DISABLE_PLUGIN_AUTOLOAD"):
-                if autodiscover:
-                    if isinstance(autodiscover, str):
-                        self.discover(autodiscover)
-                    else:
-                        self.discover()
+        self.hook._needs_discovery = True
+        # discover external plugins
+        if autodiscover:
+            if isinstance(autodiscover, str):
+                self.discover(autodiscover)
+            else:
+                self.discover()
 
     @property
     def hooks(self):
@@ -103,6 +127,19 @@ class PluginManager(pluggy.PluginManager):
         count : int
             The number of plugin modules successfully loaded.
         """
+        if path is None:
+            self.hook._needs_discovery = False
+
+        # allow debugging escape hatch
+        if os.environ.get("NAPARI_DISABLE_PLUGINS"):
+            import warnings
+
+            warnings.warn(
+                'Plugin discovery disabled due to '
+                'environmental variable "NAPARI_DISABLE_PLUGINS"'
+            )
+            return 0
+
         if path:
             sys.path.insert(0, path)
 
