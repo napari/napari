@@ -137,13 +137,14 @@ def write_layer_data_with_plugins(path: str, layer_data: List[LayerData]):
     bool
         Return True if data is successfully written.
     """
-    from . import plugin_manager as napari_plugin_manager
+    from . import get_plugin_manager
 
+    plugin_manager = get_plugin_manager()
     # Loop through data for each layer
     for ld in layer_data:
         # Get hook specification according to layer type
         hook_specification = getattr(
-            napari_plugin_manager.hook, 'napari_write_' + ld[2]
+            plugin_manager.hook, 'napari_write_' + ld[2]
         )
         # Create full path using name of layer
         full_path = os.path.join(path, ld[0]['name'])

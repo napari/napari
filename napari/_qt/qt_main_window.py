@@ -241,8 +241,9 @@ class Window:
 
     def _show_plugin_list(self):
         """Show dialog with a table of installed plugins and metadata."""
-        from ..plugins import plugin_manager
+        from ..plugins import get_plugin_manager
 
+        plugin_manager = get_plugin_manager()
         dialog = QDialog(self._qt_window)
         dialog.setMaximumHeight(800)
         dialog.setMaximumWidth(1280)
