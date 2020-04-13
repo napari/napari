@@ -3,7 +3,7 @@ import pandas as pd
 import pytest
 from dask import array as da
 
-from ..layer_utils import (
+from napari.layers.utils.layer_utils import (
     calc_data_range,
     increment_unnamed_colormap,
     segment_normal,
