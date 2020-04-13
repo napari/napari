@@ -71,8 +71,7 @@ class LayerList(ListModel):
 
     @property
     def selected(self):
-        """List: List of selected layers.
-        """
+        """List of selected layers."""
         return [layer for layer in self if layer.selected]
 
     def move_selected(self, index, insert):

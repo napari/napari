@@ -2,6 +2,7 @@
 Internal napari hook implementations to be registered by the plugin manager
 """
 import os
+import numpy as np
 from typing import List, Union, Any
 
 from pluggy import HookimplMarker
@@ -47,10 +48,9 @@ def napari_write_image(path: str, data: Any, meta: dict) -> bool:
     path : str
         Path to file, directory, or resource (like a URL).
     data : array or list of array
-        Image data. Can be N dimensional. If the last dimension has length
-        3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a
-        list and arrays are decreasing in shape then the data is from an image
-        pyramid.
+        Image data. Can be N dimensional. If meta['rgb'] is `True` then the
+        data should be interpreted as RGB or RGBA. If meta['is_pyramid'] is
+        True, then the data should be interpreted as an image pyramid.
     meta : dict
         Image metadata.
 
@@ -82,16 +82,30 @@ def napari_write_points(path: str, data: Any, meta: dict) -> bool:
     bool : Return True if data is successfully written.
     """
     ext = os.path.splitext(path)[1]
-    if ext != '.csv':
+    if ext == '':
         path = path + '.csv'
+    elif ext != '.csv':
+        raise ValueError('If an extension if provided then it must be `.csv`')
 
     # construct table from data
-    table = []
-    for row in data:
-        table.append(list(row))
+    column_names = ['axis-' + str(n) for n in range(data.shape[1])]
+    if bool(meta['properties']):
+        column_names += meta['properties'].keys()
+        prop_table = np.concatenate(
+            [np.expand_dims(p, axis=1) for p in meta['properties'].values()],
+            axis=1,
+        )
+        table = np.concatenate([data, prop_table], axis=1)
+    else:
+        table = data
+
+    # add index of each point
+    column_names = ['index'] + column_names
+    indices = np.expand_dims(list(range(data.shape[0])), axis=1)
+    table = np.concatenate([indices, table], axis=1)
 
     # write table to csv file
-    write_csv(path, table)
+    write_csv(path, table, column_names)
     return True
 
 

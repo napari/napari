@@ -905,13 +905,13 @@ class AddLayersMixin:
     ):
         """Save all or only selected layers to a path using writer plugins.
 
-        If no `plugin_name` is provided and only one layer is targted, then we
-        just directly call ``plugin_manager.hook.napari_write_<layer>()`` which
-        will loop through implementations and stop when the first one returns a
-        non-None result. The order in which implementations are called can be
-        changed with the implementation sorter/disabler.
+        If a `plugin_name` is not provided and only one layer is targeted, then
+        we just directly call ``plugin_manager.hook.napari_write_<layer>()``
+        which will loop through implementations and stop when the first one
+        returns a non-None result. The order in which implementations are
+        called can be changed with the implementation sorter/disabler.
 
-        If no `plugin_name` is provided and multple layers are targted, then
+        If `plugin_name` is not provided and multiple layers are targeted, then
         we call ``plugin_manager.hook.napari_get_writer()`` which loops through
         plugins to find the first one that knows how to handle the combination
         of layers and is able to write the file. If no plugins offer
@@ -921,11 +921,11 @@ class AddLayersMixin:
         to modify the path such that the layers are written to unique files in
         the folder.
 
-        If a `plugin_name` is provided and a single layer is targted, then
+        If a `plugin_name` is provided and a single layer is targeted, then
         we call the `napari_write_<layer_type>` for that plugin, and if it
         fails we error.
 
-        If a `plugin_name` is provided and multple layers are targted, then
+        If a `plugin_name` is provided and multiple layers are targeted, then
         we call we call `napari_get_writer` for that plugin, and if it
         doesn’t return a WriterFunction we error, otherwise we call it and if
         that fails if it we error.
@@ -938,7 +938,7 @@ class AddLayersMixin:
             Optional flag to only save selected layers. True by default.
         plugin_name : str, optional
             Name of the plugin to use for saving. If None then all plugins
-            corresponding to appropriate hook specification will be loop
+            corresponding to appropriate hook specification will be looped
             through to find the first one that can save the data.
         """
         if selected:
