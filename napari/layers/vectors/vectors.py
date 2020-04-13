@@ -705,12 +705,16 @@ class Vectors(Layer):
         ).astype(int)[-2:]
         zoom_factor = np.divide(self._thumbnail_shape[:2], shape).min()
 
-        vectors = copy(self._data_view[:, :, -2:])
-        if len(vectors) > self._max_vectors_thumbnail:
-            inds = np.random.randint(
-                0, len(vectors), self._max_vectors_thumbnail
+        # vectors = copy(self._data_view[:, :, -2:])
+        if self._data_view.shape[0] > self._max_vectors_thumbnail:
+            thumbnail_indices = np.random.randint(
+                0, self._data_view.shape[0], self._max_vectors_thumbnail
             )
-            vectors = vectors[inds]
+            vectors = copy(self._data_view[thumbnail_indices, :, -2:])
+            thumbnail_color_indices = self._view_indices[thumbnail_indices]
+        else:
+            vectors = copy(self._data_view[:, :, -2:])
+            thumbnail_color_indices = self._view_indices
         vectors[:, 1, :] = vectors[:, 0, :] + vectors[:, 1, :] * self.length
         downsampled = (vectors - offset) * zoom_factor
         downsampled = np.clip(
@@ -718,15 +722,15 @@ class Vectors(Layer):
         )
         colormapped = np.zeros(self._thumbnail_shape)
         colormapped[..., 3] = 1
-        col = self.current_edge_color
-        for v in downsampled:
+        edge_colors = self.edge_color[thumbnail_color_indices]
+        for v, ec in zip(downsampled, edge_colors):
             start = v[0]
             stop = v[1]
             step = int(np.ceil(np.max(abs(stop - start))))
             x_vals = np.linspace(start[0], stop[0], step)
             y_vals = np.linspace(start[1], stop[1], step)
             for x, y in zip(x_vals, y_vals):
-                colormapped[int(x), int(y), :] = col
+                colormapped[int(x), int(y), :] = ec
         colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 

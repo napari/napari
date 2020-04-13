@@ -234,6 +234,20 @@ def test_thumbnail():
     assert layer.thumbnail.shape == layer._thumbnail_shape
 
 
+def test_big_thumbail():
+    """Test the image thumbnail with n_vectors > _max_vectors_thumbnail"""
+    np.random.seed(0)
+    n_vectors = int(1.5 * Vectors._max_vectors_thumbnail)
+    data = np.random.random((n_vectors, 2, 2))
+    data[:, 0, :] = 18 * data[:, 0, :] + 1
+    data[0, :, :] = [0, 0]
+    data[-1, 0, :] = [20, 20]
+    data[-1, 1, :] = [0, 0]
+    layer = Vectors(data)
+    layer._update_thumbnail()
+    assert layer.thumbnail.shape == layer._thumbnail_shape
+
+
 def test_value():
     """Test getting the value of the data at the current coordinates."""
     np.random.seed(0)
