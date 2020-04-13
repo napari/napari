@@ -114,8 +114,13 @@ def napari_get_writer(path: str, layer_types: List[str]) -> WriterFunction:
         function that accepts the path and a list of layer_data (where
         layer_data is (data, meta, layer_type)) and writes each layer.
     """
-    os.mkdirs(path)
-    return write_layer_data_with_plugins
+    if os.path.exists(path):
+        # If something exists at the current path return None
+        return None
+    else:
+        # Try and make directory based on current path
+        os.makedirs(path)
+        return write_layer_data_with_plugins
 
 
 def write_layer_data_with_plugins(path: str, layer_data: List[LayerData]):
@@ -147,7 +152,7 @@ def write_layer_data_with_plugins(path: str, layer_data: List[LayerData]):
             plugin_manager.hook, 'napari_write_' + ld[2]
         )
         # Create full path using name of layer
-        full_path = os.path.join(path, ld[0]['name'])
+        full_path = os.path.join(path, ld[1]['name'])
 
         # Write out data using first plugin found for this hook spec
         hook_specification(path=full_path, data=ld[0], meta=ld[1])
