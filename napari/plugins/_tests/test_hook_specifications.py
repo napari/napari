@@ -57,7 +57,7 @@ def test_annotation_on_hook_specification(name, func):
             for forbidden in ('_plugin', '_skip_impls', '_return_impl'):
                 assert (
                     param.name != forbidden
-                ), f'Must not name hook_specification argument "{forbidden}"!'
+                ), f'Must not name hook_specification argument "{forbidden}".'
             assert param.annotation is not param.empty, (
                 f"in hook specification '{name}', parameter '{param}' "
                 "has no type annotation"
