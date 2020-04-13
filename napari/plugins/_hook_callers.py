@@ -177,7 +177,7 @@ class _HookCaller(_PluggyHookCaller):
     _wrappers: List[HookImpl]
     _nonwrappers: List[HookImpl]
 
-    def get_hookimpl_for_plugin(self, plugin_name: str):
+    def get_plugin_hook_implementation(self, plugin_name: str):
         """Return hook implementation instance for ``plugin_name`` if found."""
         try:
             return next(
