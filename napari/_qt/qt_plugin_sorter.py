@@ -18,8 +18,8 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ..plugins import get_plugin_manager
-from ..plugins.manager import _HookCaller
+from ..plugins import plugin_manager as napari_plugin_manager
+from ..plugins.manager import PluginManager, _HookCaller
 from pluggy.hooks import HookImpl
 from .utils import drag_with_pixmap
 
@@ -214,6 +214,9 @@ class QtPluginSorter(QDialog):
 
     Parameters
     ----------
+    plugin_manager : PluginManager, optional
+        An instance of a PluginManager. by default, the main
+        :class:`~napari.plugins.manager.PluginManager` instance
     parent : QWidget, optional
         Optional parent widget, by default None
     initial_hook : str, optional
@@ -239,13 +242,16 @@ class QtPluginSorter(QDialog):
 
     def __init__(
         self,
+        plugin_manager: Optional[PluginManager] = None,
         *,
         parent: Optional[QWidget] = None,
         initial_hook: Optional[str] = None,
         firstresult_only: bool = True,
     ):
+        plugin_manager = plugin_manager or napari_plugin_manager
         super().__init__(parent)
         self.setWindowModality(Qt.NonModal)
+        self.plugin_manager = plugin_manager
         self.layout = QVBoxLayout()
         self.setLayout(self.layout)
         self.hook_combo_box = QComboBox()
@@ -253,7 +259,7 @@ class QtPluginSorter(QDialog):
 
         # populate comboBox with all of the hooks known by the plugin manager
         hooks = []
-        for name, hook_caller in vars(get_plugin_manager().hooks).items():
+        for name, hook_caller in vars(plugin_manager.hooks).items():
             if firstresult_only:
                 # if the firstresult_only option is set
                 # we only want to include hook_specifications that declare the
@@ -297,5 +303,5 @@ class QtPluginSorter(QDialog):
         if hook == self.NULL_OPTION:
             hook_caller = None
         else:
-            hook_caller = getattr(get_plugin_manager().hooks, hook)
+            hook_caller = getattr(self.plugin_manager.hooks, hook)
         self.hook_list.set_hook_caller(hook_caller)

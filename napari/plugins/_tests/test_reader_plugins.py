@@ -27,7 +27,7 @@ def test_iter_reader_plugins(plugin_manager):
     # but when we try to read an image path, it will raise an IOError.
     # we want to catch and store that IOError, and then move on to give other
     # plugins chance to return layer_data
-    layer_data = read_data_with_plugins('image.ext')
+    layer_data = read_data_with_plugins('image.ext', plugin_manager)
 
     # the good plugins (like "napari_test_plugin") should return layer_data
     assert layer_data
@@ -42,9 +42,8 @@ def test_iter_reader_plugins(plugin_manager):
 
 def test_builtin_reader_plugin(viewer_factory):
     """Test the builtin reader plugin reads a temporary file."""
-    from napari.plugins import get_plugin_manager
+    from napari.plugins import plugin_manager
 
-    plugin_manager = get_plugin_manager()
     plugin_manager.hooks.napari_get_reader.bring_to_front(['builtins'])
 
     with NamedTemporaryFile(suffix='.tif', delete=False) as tmp:
@@ -66,9 +65,8 @@ def test_builtin_reader_plugin(viewer_factory):
 
 def test_builtin_reader_plugin_stacks(viewer_factory):
     """Test the builtin reader plugin reads multiple files as a stack."""
-    from napari.plugins import get_plugin_manager
+    from napari.plugins import plugin_manager
 
-    plugin_manager = get_plugin_manager()
     plugin_manager.hooks.napari_get_reader.bring_to_front(['builtins'])
 
     data = np.random.rand(5, 20, 20)
@@ -93,5 +91,5 @@ def test_builtin_reader_plugin_stacks(viewer_factory):
 
 def test_nonsense_path_is_ok(plugin_manager):
     """Test that a path with no readers doesn't throw an exception."""
-    layer_data = read_data_with_plugins('image.NONsense')
+    layer_data = read_data_with_plugins('image.NONsense', plugin_manager)
     assert not layer_data
