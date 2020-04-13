@@ -369,7 +369,11 @@ class _HookCaller(_PluggyHookCaller):
             raise TypeError("hook calling supports only keyword arguments")
         assert not self.is_historic()
         if self.spec and self.spec.argnames:
-            notincall = set(self.spec.argnames) - set(kwargs.keys())
+            notincall = (
+                set(self.spec.argnames)
+                - set(["__multicall__"])
+                - set(kwargs.keys())
+            )
             if notincall:
                 warnings.warn(
                     "Argument(s) {} which are declared in the hookspec "
