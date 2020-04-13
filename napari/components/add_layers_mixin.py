@@ -903,15 +903,15 @@ class AddLayersMixin:
         selected: bool = True,
         plugin_name: Optional[str] = None,
     ):
-        """Save the selected layers to a path using writer plugins.
+        """Save all or only selected layers to a path using writer plugins.
 
-        If no `plugin_name` is provided and only one layer is selected, then we
+        If no `plugin_name` is provided and only one layer is targted, then we
         just directly call ``plugin_manager.hook.napari_write_<layer>()`` which
         will loop through implementations and stop when the first one returns a
         non-None result. The order in which implementations are called can be
         changed with the implementation sorter/disabler.
 
-        If no `plugin_name` is provided and multple layers are selected, then
+        If no `plugin_name` is provided and multple layers are targted, then
         we call ``plugin_manager.hook.napari_get_writer()`` which loops through
         plugins to find the first one that knows how to handle the combination
         of layers and is able to write the file. If no plugins offer
@@ -921,11 +921,11 @@ class AddLayersMixin:
         to modify the path such that the layers are written to unique files in
         the folder.
 
-        If a `plugin_name` is provided and a single layer is selected, then
+        If a `plugin_name` is provided and a single layer is targted, then
         we call the `napari_write_<layer_type>` for that plugin, and if it
         fails we error.
 
-        If a `plugin_name` is provided and multple layers are selected, then
+        If a `plugin_name` is provided and multple layers are targted, then
         we call we call `napari_get_writer` for that plugin, and if it
         doesn’t return a WriterFunction we error, otherwise we call it and if
         that fails if it we error.

@@ -70,7 +70,68 @@ def read_data_with_plugins(
                 logger.error(err.format_with_contact_info())
 
 
-def write_multiple_layers_with_plugin(
+def write_layers_with_plugins(
+    path: str,
+    layers: Union[List[Layer], Layer],
+    plugin_name: Optional[str] = None,
+):
+    """Write list of layers of individual layer to a path using writer plugins.
+
+    If no `plugin_name` is provided and only one layer is passed, then we
+    just directly call ``plugin_manager.hook.napari_write_<layer>()`` which
+    will loop through implementations and stop when the first one returns a
+    non-None result. The order in which implementations are called can be
+    changed with the implementation sorter/disabler.
+
+    If no `plugin_name` is provided and multple layers are passed, then we
+    call ``plugin_manager.hook.napari_get_writer()`` which loops through
+    plugins to find the first one that knows how to handle the combination
+    of layers and is able to write the file. If no plugins offer
+    `napari_get_writer` for that combination of layers then the default
+    `napari_get_writer` will create a folder and call
+    `napari_write_<layer>` for each layer using the `layer.name` variable
+    to modify the path such that the layers are written to unique files in
+    the folder.
+
+    If a `plugin_name` is provided and a single layer is passed, then
+    we call the `napari_write_<layer_type>` for that plugin, and if it
+    fails we error.
+
+    If a `plugin_name` is provided and multple layers are passed, then
+    we call we call `napari_get_writer` for that plugin, and if it
+    doesn’t return a WriterFunction we error, otherwise we call it and if
+    that fails if it we error.
+
+    Parameters
+    ----------
+    path : str
+        A filepath, directory, or URL (or a list of any) to open.
+    layers : List[layers.Layer]
+        List of layers to be saved. If only a single layer is passed then
+        we use the hook specification corresponding to its layer type,
+        `napari_write_<layer_type>`. If multiple layers are passed then we
+        use the `napari_get_writer` hook specification.
+    plugin_name : str, optional
+        Name of the plugin to use for saving. If None then all plugins
+        corresponding to appropriate hook specification will be loop
+        through to find the first one that can save the data.
+
+    Returns
+    -------
+    bool
+        Return True if data is successfully written.
+    """
+    if isinstance(layers, list):
+        if len(layers) > 1:
+            return _write_multiple_layers(path, layers, plugin_name)
+        elif len(layers) == 1:
+            layers = layers[0]
+    if isinstance(layers, Layer):
+        return _write_single_layer(path, layers, plugin_name)
+    return False
+
+
+def _write_multiple_layers(
     path: str, layers: List[Layer], plugin_name: Optional[str] = None
 ):
     """Write data from multiple layers data with a plugin.
@@ -153,7 +214,7 @@ def write_multiple_layers_with_plugin(
             writer(path, layer_data)  # try to write data
 
 
-def write_single_layer_with_plugin(
+def _write_single_layer(
     path: str, layer: Layer, plugin_name: Optional[str] = None
 ):
     """Write single layer data with a plugin.
@@ -198,64 +259,3 @@ def write_single_layer_with_plugin(
         return hook_specification.call_plugin(
             plugin_name, path=path, data=layer.data, meta=layer._get_state()
         )
-
-
-def write_layers_with_plugins(
-    path: str,
-    layers: Union[List[Layer], Layer],
-    plugin_name: Optional[str] = None,
-):
-    """Write list of layers of individual layer to a path using writer plugins.
-
-    If no `plugin_name` is provided and only one layer is passed, then we
-    just directly call ``plugin_manager.hook.napari_write_<layer>()`` which
-    will loop through implementations and stop when the first one returns a
-    non-None result. The order in which implementations are called can be
-    changed with the implementation sorter/disabler.
-
-    If no `plugin_name` is provided and multple layers are passed, then we
-    call ``plugin_manager.hook.napari_get_writer()`` which loops through
-    plugins to find the first one that knows how to handle the combination
-    of layers and is able to write the file. If no plugins offer
-    `napari_get_writer` for that combination of layers then the default
-    `napari_get_writer` will create a folder and call
-    `napari_write_<layer>` for each layer using the `layer.name` variable
-    to modify the path such that the layers are written to unique files in
-    the folder.
-
-    If a `plugin_name` is provided and a single layer is passed, then
-    we call the `napari_write_<layer_type>` for that plugin, and if it
-    fails we error.
-
-    If a `plugin_name` is provided and multple layers are passed, then
-    we call we call `napari_get_writer` for that plugin, and if it
-    doesn’t return a WriterFunction we error, otherwise we call it and if
-    that fails if it we error.
-
-    Parameters
-    ----------
-    path : str
-        A filepath, directory, or URL (or a list of any) to open.
-    layers : List[layers.Layer]
-        List of layers to be saved. If only a single layer is passed then
-        we use the hook specification corresponding to its layer type,
-        `napari_write_<layer_type>`. If multiple layers are passed then we
-        use the `napari_get_writer` hook specification.
-    plugin_name : str, optional
-        Name of the plugin to use for saving. If None then all plugins
-        corresponding to appropriate hook specification will be loop
-        through to find the first one that can save the data.
-
-    Returns
-    -------
-    bool
-        Return True if data is successfully written.
-    """
-    if isinstance(layers, list):
-        if len(layers) > 1:
-            return write_multiple_layers_with_plugin(path, layers, plugin_name)
-        elif len(layers) == 1:
-            layers = layers[0]
-    if isinstance(layers, Layer):
-        return write_single_layer_with_plugin(path, layers, plugin_name)
-    return False
