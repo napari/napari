@@ -178,19 +178,32 @@ def test_edge_width():
     assert layer.edge_width == 3
 
 
-def test_edge_color():
+def test_edge_color_direct():
     """Test setting edge color."""
     np.random.seed(0)
     data = np.random.random((10, 2, 2))
     data[:, 0, :] = 20 * data[:, 0, :]
     layer = Vectors(data)
-    assert layer.edge_color == 'red'
+    np.testing.assert_allclose(
+        layer.edge_color, np.repeat([[1, 0, 0, 1]], data.shape[0], axis=0)
+    )
 
-    layer.edge_color = 'blue'
-    assert layer.edge_color == 'blue'
+    # set edge color as an RGB array
+    layer.edge_color = [0, 0, 1]
+    np.testing.assert_allclose(
+        layer.edge_color, np.repeat([[0, 0, 1, 1]], data.shape[0], axis=0)
+    )
 
-    layer = Vectors(data, edge_color='green')
-    assert layer.edge_color == 'green'
+    # set edge color as an RGBA array
+    layer.edge_color = [0, 1, 0, 0.5]
+    np.testing.assert_allclose(
+        layer.edge_color, np.repeat([[0, 1, 0, 0.5]], data.shape[0], axis=0)
+    )
+
+    # set all edge colors directly
+    edge_colors = np.random.random((data.shape[0], 4))
+    layer.edge_color = edge_colors
+    np.testing.assert_allclose(layer.edge_color, edge_colors)
 
 
 def test_length():

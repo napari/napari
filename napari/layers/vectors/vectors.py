@@ -21,7 +21,7 @@ from ...utils.event import Event
 from ...utils.status_messages import format_float
 from ...utils.colormaps.standardize_color import transform_color
 from ._vector_utils import vectors_to_coordinates, generate_vector_meshes
-from vispy.color import Color, get_colormap
+from vispy.color import get_colormap
 from vispy.color.colormap import Colormap
 
 
@@ -131,7 +131,7 @@ class Vectors(Layer):
         edge_width=1,
         edge_color='red',
         edge_color_cycle=None,
-        edge_colormap=None,
+        edge_colormap='viridis',
         edge_contrast_limits=None,
         length=1,
         name=None,
@@ -248,8 +248,8 @@ class Vectors(Layer):
         self._view_faces = []
         self._view_indices = []
 
-        # now that everything is set up, make the layer visible
-        self.visible = True
+        # now that everything is set up, make the layer visible (if set to visible)
+        self.visible = visible
 
     @property
     def data(self) -> np.ndarray:
@@ -313,6 +313,9 @@ class Vectors(Layer):
                 'length': self.length,
                 'edge_width': self.edge_width,
                 'edge_color': self.edge_color,
+                'edge_color_cycle': self.edge_color_cycle,
+                'edge_colormap': self.edge_colormap[0],
+                'edge_contrast_limits': self.edge_contrast_limits,
                 'data': self.data,
                 'properties': self.properties,
             }
@@ -408,7 +411,7 @@ class Vectors(Layer):
             self._edge_color = normalize_and_broadcast_colors(
                 len(self.data), transformed_color
             )
-            self.edge_color_mode = ColorMode.DIRECT
+            self._edge_color_mode = ColorMode.DIRECT
             self._edge_color_property = ''
 
             self.events.edge_color()
@@ -504,6 +507,48 @@ class Vectors(Layer):
             )
 
     @property
+    def edge_color_mode(self):
+        """str: Edge color setting mode
+
+        DIRECT (default mode) allows each point to be set arbitrarily
+
+        CYCLE allows the color to be set via a color cycle over an attribute
+
+        COLORMAP allows color to be set via a color map over an attribute
+        """
+        return str(self._edge_color_mode)
+
+    @edge_color_mode.setter
+    def edge_color_mode(self, edge_color_mode: Union[str, ColorMode]):
+        edge_color_mode = ColorMode(edge_color_mode)
+
+        if edge_color_mode == ColorMode.DIRECT:
+            self._edge_color_mode = edge_color_mode
+        elif edge_color_mode in (ColorMode.CYCLE, ColorMode.COLORMAP):
+            if self._edge_color_property == '':
+                if self.properties:
+                    self._edge_color_property = next(iter(self.properties))
+                    warnings.warn(
+                        'Edge color was not set, setting to: %s'
+                        % self._face_color_property
+                    )
+                else:
+                    raise ValueError(
+                        'There must be a valid Points.properties to use ColorMode.Cycle'
+                    )
+            # ColorMode.COLORMAP can only be applied to numeric properties
+            if (edge_color_mode == ColorMode.COLORMAP) and not issubclass(
+                self.properties[self._edge_color_property].dtype.type,
+                np.number,
+            ):
+                raise TypeError(
+                    'selected property must be numeric to use ColorMode.COLORMAP'
+                )
+
+            self._edge_color_mode = edge_color_mode
+            self.refresh_colors()
+
+    @property
     def edge_color_cycle(self):
         """Union[list, np.ndarray, cycle] :  Color cycle for edge_color.
         Can be a list of colors or a cycle of colors
@@ -571,7 +616,7 @@ class Vectors(Layer):
     def _view_face_color(self) -> np.ndarray:
 
         face_color = np.repeat(self.edge_color[self._view_indices], 2, axis=0)
-        if self.dims.ndisplay == 3:
+        if self.dims.ndisplay == 3 and self.ndim > 2:
             face_color = np.vstack([face_color, face_color])
 
         return face_color
@@ -697,17 +742,18 @@ class Vectors(Layer):
         xml_list = []
 
         width = str(self.edge_width)
-        edge_color = (255 * Color(self.edge_color).rgba).astype(np.int)
-        stroke = f'rgb{tuple(edge_color[:3])}'
-        opacity = str(self.opacity)
-        props = {'stroke': stroke, 'stroke-width': width, 'opacity': opacity}
+        edge_color = self.edge_color[self._view_indices, :3]
 
-        for v in self._data_view:
+        opacity = str(self.opacity)
+        props = {'stroke-width': width, 'opacity': opacity}
+
+        for v, ec in zip(self._data_view, edge_color):
             x1 = str(v[0, -2])
             y1 = str(v[0, -1])
             x2 = str(v[0, -2] + self.length * v[1, -2])
             y2 = str(v[0, -1] + self.length * v[1, -1])
-
+            stroke = f'rgb{tuple(ec)}'
+            props['stroke'] = stroke
             element = Element('line', x1=y1, y1=x1, x2=y2, y2=x2, **props)
             xml_list.append(element)
 
