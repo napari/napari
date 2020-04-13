@@ -9,7 +9,7 @@ from ..utils.colormaps.standardize_color import transform_color
 
 class VispyPointsLayer(VispyBaseLayer):
     _highlight_color = (0, 0.6, 1)
-    _highlight_width = 5
+    _highlight_width = 2
 
     def __init__(self, layer):
         # Create a compound visual with the following four subvisuals:
@@ -50,9 +50,9 @@ class VispyPointsLayer(VispyBaseLayer):
             self._on_display_change()
             self._on_highlight_change()
 
-        if len(self.layer._data_view) > 0:
-            edge_color = self.layer.edge_color[self.layer._indices_view]
-            face_color = self.layer.face_color[self.layer._indices_view]
+        if len(self.layer._indices_view) > 0:
+            edge_color = self.layer._view_edge_color
+            face_color = self.layer._view_face_color
         else:
             edge_color = np.array([[0.0, 0.0, 0.0, 1.0]], dtype=np.float32)
             face_color = np.array([[1.0, 1.0, 1.0, 1.0]], dtype=np.float32)
@@ -60,12 +60,12 @@ class VispyPointsLayer(VispyBaseLayer):
         # Set vispy data, noting that the order of the points needs to be
         # reversed to make the most recently added point appear on top
         # and the rows / columns need to be switch for vispys x / y ordering
-        if len(self.layer._data_view) == 0:
+        if len(self.layer._indices_view) == 0:
             data = np.zeros((1, self.layer.dims.ndisplay))
             size = [0]
         else:
-            data = self.layer._data_view
-            size = self.layer._size_view
+            data = self.layer._view_data
+            size = self.layer._view_size
 
         set_data = self.node._subvisuals[0].set_data
 
@@ -79,14 +79,17 @@ class VispyPointsLayer(VispyBaseLayer):
             scaling=True,
         )
         self.node.update()
+        # Call to update order of translation values with new dims:
+        self._on_scale_change()
+        self._on_translate_change()
 
     def _on_highlight_change(self, event=None):
         if len(self.layer._highlight_index) > 0:
             # Color the hovered or selected points
-            data = self.layer._data_view[self.layer._highlight_index]
+            data = self.layer._view_data[self.layer._highlight_index]
             if data.ndim == 1:
                 data = np.expand_dims(data, axis=0)
-            size = self.layer._size_view[self.layer._highlight_index]
+            size = self.layer._view_size[self.layer._highlight_index]
         else:
             data = np.zeros((1, self.layer.dims.ndisplay))
             size = 0

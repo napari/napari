@@ -1,18 +1,23 @@
+import os
 import warnings
+
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from xml.etree.ElementTree import Element, tostring
 import numpy as np
-from skimage import img_as_ubyte
-from ._constants import Blending
+from ._base_constants import Blending
 
 from ...components import Dims
 from ...utils.event import EmitterGroup, Event
-from ...utils.keybindings import KeymapMixin
+from ...utils.key_bindings import KeymapProvider
+from ..utils.layer_utils import convert_to_uint8
+from ...utils.misc import ROOT_DIR
+from ...utils.naming import magic_name
 from ...utils.status_messages import status_format, format_float
+from ..transforms import ScaleTranslate, TransformChain
 
 
-class Layer(KeymapMixin, ABC):
+class Layer(KeymapProvider, ABC):
     """Base layer class.
 
     Parameters
@@ -103,6 +108,7 @@ class Layer(KeymapMixin, ABC):
 
     def __init__(
         self,
+        data,
         ndim,
         *,
         name=None,
@@ -114,6 +120,9 @@ class Layer(KeymapMixin, ABC):
         visible=True,
     ):
         super().__init__()
+
+        if name is None and data is not None and os.getenv('MAGICNAME'):
+            name = magic_name(data, path_prefix=ROOT_DIR)
 
         self.metadata = metadata or {}
         self._opacity = opacity
@@ -130,17 +139,36 @@ class Layer(KeymapMixin, ABC):
         self.scale_factor = 1
 
         self.dims = Dims(ndim)
+
         if scale is None:
-            self._scale = [1] * ndim
-        else:  # covers list and array-like inputs
-            self._scale = list(scale)
+            scale = [1] * ndim
         if translate is None:
-            self._translate = [0] * ndim
-        else:  # covers list and array-like inputs
-            self._translate = list(translate)
-        self._scale_view = np.ones(ndim)
-        self._translate_view = np.zeros(ndim)
-        self._translate_grid = np.zeros(ndim)
+            translate = [0] * ndim
+
+        # Create a transform chain consisting of three transforms:
+        # 1. `tile2data`: An initial transform only needed displaying tiles
+        #   of an image. It maps pixels of the tile into the coordinate space
+        #   of the full resolution data and can usually be represented by a
+        #   scale factor and a translation. A common use case is viewing part
+        #   of lower resolution level of an image pyramid, another is using a
+        #   downsampled version of an image when the full image size is larger
+        #   than the maximum allowed texture size of your graphics card.
+        # 2. `data2world`: The main transform mapping data to a world-like
+        #   coordinate.
+        # 3. `world2grid`: An additional transform mapping world-coordinates
+        #   into a grid for looking at layers side-by-side.
+        self._transforms = TransformChain(
+            [
+                ScaleTranslate(
+                    np.ones(ndim), np.zeros(ndim), name='tile2data'
+                ),
+                ScaleTranslate(scale, translate, name='data2world'),
+                ScaleTranslate(
+                    np.ones(ndim), np.zeros(ndim), name='world2grid'
+                ),
+            ]
+        )
+
         self.coordinates = (0,) * ndim
         self._position = (0,) * self.dims.ndisplay
         self.is_pyramid = False
@@ -251,10 +279,7 @@ class Layer(KeymapMixin, ABC):
 
     @blending.setter
     def blending(self, blending):
-        if isinstance(blending, str):
-            blending = Blending(blending)
-
-        self._blending = blending
+        self._blending = Blending(blending)
         self.events.blending()
 
     @property
@@ -287,35 +312,36 @@ class Layer(KeymapMixin, ABC):
 
     @property
     def scale(self):
-        """list: Anisotropy factors to scale the layer by."""
-        return self._scale
+        """list: Anisotropy factors to scale data into world coordinates."""
+        return self._transforms['data2world'].scale
 
     @scale.setter
     def scale(self, scale):
-        self._scale = scale
+        self._transforms['data2world'].scale = np.array(scale)
         self._update_dims()
         self.events.scale()
 
     @property
     def translate(self):
-        """list: Factors to shift the layer by."""
-        return self._translate
+        """list: Factors to shift the layer by in units of world coordinates."""
+        return self._transforms['data2world'].translate
 
     @translate.setter
     def translate(self, translate):
-        self._translate = translate
+        self._transforms['data2world'].translate = np.array(translate)
+        self._update_dims()
         self.events.translate()
 
     @property
     def translate_grid(self):
         """list: Factors to shift the layer by."""
-        return self._translate_grid
+        return self._transforms['world2grid'].translate
 
     @translate_grid.setter
     def translate_grid(self, translate_grid):
-        if np.all(self._translate_grid == translate_grid):
+        if np.all(self.translate_grid == translate_grid):
             return
-        self._translate_grid = translate_grid
+        self._transforms['world2grid'].translate = np.array(translate_grid)
         self.events.translate()
 
     @property
@@ -344,35 +370,14 @@ class Layer(KeymapMixin, ABC):
             self._position = (0,) * (ndisplay - len(self.position)) + tuple(
                 self.position
             )
-        if len(self.scale) > ndim:
-            self._scale = self._scale[-ndim:]
-        elif len(self.scale) < ndim:
-            self._scale = (1,) * (ndim - len(self.scale)) + tuple(self.scale)
-        if len(self.translate) > ndim:
-            self._translate = self._translate[-ndim:]
-        elif len(self.translate) < ndim:
-            self._translate = (0,) * (ndim - len(self.translate)) + tuple(
-                self.translate
-            )
-        if len(self._scale_view) > ndim:
-            self._scale_view = self._scale_view[-ndim:]
-        elif len(self._scale_view) < ndim:
-            self._scale_view = (1,) * (ndim - len(self._scale_view)) + tuple(
-                self._scale_view
-            )
-        if len(self._translate_view) > ndim:
-            self._translate_view = self._translate_view[-ndim:]
-        elif len(self._translate_view) < ndim:
-            self._translate_view = (0,) * (
-                ndim - len(self._translate_view)
-            ) + tuple(self._translate_view)
 
-        if len(self._translate_grid) > ndim:
-            self._translate_grid = self._translate_grid[-ndim:]
-        elif len(self._translate_grid) < ndim:
-            self._translate_grid = (0,) * (
-                ndim - len(self._translate_grid)
-            ) + tuple(self._translate_grid)
+        old_ndim = self.dims.ndim
+        if old_ndim > ndim:
+            keep_axes = range(old_ndim - ndim, old_ndim)
+            self._transforms = self._transforms.set_slice(keep_axes)
+        elif old_ndim < ndim:
+            new_axes = range(ndim - old_ndim)
+            self._transforms = self._transforms.expand_dims(new_axes)
 
         self.dims.ndim = ndim
 
@@ -447,7 +452,7 @@ class Layer(KeymapMixin, ABC):
         if thumbnail.dtype != np.uint8:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                thumbnail = img_as_ubyte(thumbnail)
+                thumbnail = convert_to_uint8(thumbnail)
 
         padding_needed = np.subtract(self._thumbnail_shape, thumbnail.shape)
         pad_amounts = [(p // 2, (p + 1) // 2) for p in padding_needed]
@@ -614,6 +619,11 @@ class Layer(KeymapMixin, ABC):
         self._value = self.get_value()
         self.status = self.get_message()
 
+    @property
+    def displayed_coordinates(self):
+        """list: List of currently displayed coordinates."""
+        return [self.coordinates[i] for i in self.dims.displayed]
+
     def get_message(self):
         """Generate a status message based on the coordinates and value
 
@@ -622,12 +632,8 @@ class Layer(KeymapMixin, ABC):
         msg : string
             String containing a message that can be used as a status update.
         """
-        full_scale = np.multiply(self.scale, self._scale_view)
-        full_translate = np.add(self.translate, self._translate_view)
-
-        full_coord = np.round(
-            np.multiply(self.coordinates, full_scale) + full_translate
-        ).astype(int)
+        coordinates = self._transforms.simplified(self.coordinates)
+        full_coord = np.round(coordinates).astype(int)
 
         msg = f'{self.name} {full_coord}'
 
@@ -717,17 +723,3 @@ class Layer(KeymapMixin, ABC):
                 f.write(svg)
 
         return svg
-
-    def on_mouse_move(self, event):
-        """Called whenever mouse moves over canvas."""
-        return
-
-    def on_mouse_press(self, event):
-        """Called whenever mouse pressed in canvas.
-        """
-        return
-
-    def on_mouse_release(self, event):
-        """Called whenever mouse released in canvas.
-        """
-        return

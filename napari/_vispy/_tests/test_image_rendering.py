@@ -1,12 +1,9 @@
 import numpy as np
-from napari import Viewer
 
 
-def test_image_rendering(qtbot):
+def test_image_rendering(viewer_factory):
     """Test 3D image with different rendering."""
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
+    view, viewer = viewer_factory()
 
     data = np.random.random((20, 20, 20))
     layer = viewer.add_image(data)
@@ -32,6 +29,3 @@ def test_image_rendering(qtbot):
     # Change rendering property
     layer.rendering = 'additive'
     assert layer.rendering == 'additive'
-
-    # Close the viewer
-    viewer.window.close()

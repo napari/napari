@@ -43,10 +43,10 @@ with napari.gui_qt():
     # bind a function to toggle the good_point annotation of the selected points
     @viewer.bind_key('t')
     def toggle_point_annotation(viewer):
-        selected_points = points_layer.selected_data
+        selected_points = list(points_layer.selected_data)
         if len(selected_points) > 0:
             good_point = points_layer.properties['good_point']
-            good_point[selected_points] = ~good_point[selected_points]
+            good_point[list(selected_points)] = ~good_point[list(selected_points)]
             points_layer.properties['good_point'] = good_point
 
             # we need to manually refresh since we did not use the Points.properties setter

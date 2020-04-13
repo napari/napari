@@ -1,4 +1,5 @@
-# Abstract
+# Governance Model
+## Abstract
 
 The purpose of this document is to formalize the governance process used by the
 `napari` project, to clarify how decisions are made and how the various
@@ -10,14 +11,14 @@ participate in the decision making process. This document describes how that
 participation takes place, how to find consensus, and how deadlocks are
 resolved.
 
-# Roles And Responsibilities
+## Roles And Responsibilities
 
-## The Community
+### The Community
 
 The napari community consists of anyone using or working with the project
 in any way.
 
-## Contributors
+### Contributors
 
 A community member can become a contributor by interacting directly with the
 project in concrete ways, such as:
@@ -42,7 +43,7 @@ can directly help to shape its future.
 
 Contributors are encouraged to read the [contributing guide](CONTRIBUTING.md).
 
-## Core developers
+### Core developers
 
 Core developers are community members that have demonstrated continued
 commitment to the project through ongoing contributions. They
@@ -58,7 +59,7 @@ developers are expected to review code contributions while adhering to the
 by any existing core developer, and for details on that process see our core
 developer guide.
 
-## Steering Council
+### Steering Council
 
 The Steering Council (SC) members are core developers who have additional
 responsibilities to ensure the smooth running of the project. SC members are
@@ -96,7 +97,7 @@ be postponed until the new member has joined and another vote can be held.
 The napari steering council may be contacted at `napari-steering-council@googlegroups.com`.
 Or via the [@napari/steering-council](https://github.com/orgs/napari/teams/steering-council) GitHub team.
 
-# Decision Making Process
+## Decision Making Process
 
 Decisions about the future of the project are made through discussion with all
 members of the community. All non-sensitive project management discussion takes

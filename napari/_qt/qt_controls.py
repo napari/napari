@@ -3,9 +3,27 @@ from .layers import create_qt_controls
 
 
 class QtControls(QStackedWidget):
+    """Container widget for QtLayerControl widgets.
+
+    Parameters
+    ----------
+    viewer : napari.components.ViewerModel
+        Napari viewer containing the rendered scene, layers, and controls.
+
+    Attributes
+    ----------
+    empty_widget : qtpy.QtWidgets.QFrame
+        Empty placeholder frame for when no layer is selected.
+    viewer : napari.components.ViewerModel
+        Napari viewer containing the rendered scene, layers, and controls.
+    widgets : dict
+        Dictionary of key value pairs matching layer with its widget controls.
+        widgets[layer] = controls
+    """
+
     def __init__(self, viewer):
         super().__init__()
-
+        self.setProperty("emphasized", True)
         self.viewer = viewer
 
         self.setMouseTracking(True)
