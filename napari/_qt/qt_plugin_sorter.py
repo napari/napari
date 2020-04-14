@@ -259,7 +259,7 @@ class QtPluginSorter(QDialog):
 
         # populate comboBox with all of the hooks known by the plugin manager
         hooks = []
-        for name, hook_caller in vars(plugin_manager.hooks).items():
+        for name, hook_caller in plugin_manager.hooks.items():
             if firstresult_only:
                 # if the firstresult_only option is set
                 # we only want to include hook_specifications that declare the
