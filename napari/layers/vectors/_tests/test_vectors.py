@@ -22,7 +22,7 @@ def test_random_vectors():
     assert np.all(layer.data == data)
     assert layer.data.shape == shape
     assert layer.ndim == shape[2]
-    assert layer._data_view.shape[2] == 2
+    assert layer._view_data.shape[2] == 2
 
 
 def test_random_vectors_image():
@@ -33,7 +33,7 @@ def test_random_vectors_image():
     layer = Vectors(data)
     assert layer.data.shape == (20 * 10, 2, 2)
     assert layer.ndim == 2
-    assert layer._data_view.shape[2] == 2
+    assert layer._view_data.shape[2] == 2
 
 
 def test_empty_vectors():
@@ -44,7 +44,7 @@ def test_empty_vectors():
     assert np.all(layer.data == data)
     assert layer.data.shape == shape
     assert layer.ndim == shape[2]
-    assert layer._data_view.shape[2] == 2
+    assert layer._view_data.shape[2] == 2
 
 
 def test_empty_vectors_with_properties():
@@ -56,7 +56,7 @@ def test_empty_vectors_with_properties():
     assert np.all(layer.data == data)
     assert layer.data.shape == shape
     assert layer.ndim == shape[2]
-    assert layer._data_view.shape[2] == 2
+    assert layer._view_data.shape[2] == 2
     np.testing.assert_equal(layer._property_choices, properties)
 
 
@@ -107,7 +107,7 @@ def test_random_3D_vectors():
     assert np.all(layer.data == data)
     assert layer.data.shape == shape
     assert layer.ndim == shape[2]
-    assert layer._data_view.shape[2] == 2
+    assert layer._view_data.shape[2] == 2
 
 
 def test_random_3D_vectors_image():
@@ -118,7 +118,7 @@ def test_random_3D_vectors_image():
     layer = Vectors(data)
     assert layer.data.shape == (12 * 20 * 10, 2, 3)
     assert layer.ndim == 3
-    assert layer._data_view.shape[2] == 2
+    assert layer._view_data.shape[2] == 2
 
 
 def test_empty_3D_vectors():
@@ -129,7 +129,7 @@ def test_empty_3D_vectors():
     assert np.all(layer.data == data)
     assert layer.data.shape == shape
     assert layer.ndim == shape[2]
-    assert layer._data_view.shape[2] == 2
+    assert layer._view_data.shape[2] == 2
 
 
 def test_properties_dataframe():
@@ -197,7 +197,7 @@ def test_changing_data():
     assert np.all(layer.data == data_b)
     assert layer.data.shape == shape_b
     assert layer.ndim == shape_b[2]
-    assert layer._data_view.shape[2] == 2
+    assert layer._view_data.shape[2] == 2
 
 
 def test_name():

@@ -100,9 +100,18 @@ class Vectors(Layer):
 
     Extended Summary
     ----------
-    _data_view : (M, 2, 2) array
+    _view_data : (M, 2, 2) array
         The start point and projections of N vectors in 2D for vectors whose
         start point is in the currently viewed slice.
+    _view_face_color : (M, 4) np.ndarray
+        colors for the M in view vectors
+    _view_indices : (1, M) array
+        indices for the M in view vectors
+    _view_vertices : (4M, 2) or (8M, 2) np.ndarray
+        the corner points for the M in view faces. Shape is (4M, 2) for 2D and (8M, 2) for 3D.
+    _view_faces : (2M, 3) or (4M, 3) np.ndarray
+        indices of the _mesh_vertices that form the faces of the M in view vectors.
+        Shape is (2M, 2) for 2D and (4M, 2) for 3D.
     _property_choices : dict {str: array (N,)}
         Possible values for the properties in Vectors.properties.
         If properties is not provided, it will be {} (empty dictionary).
@@ -206,7 +215,7 @@ class Vectors(Layer):
         self.refresh_colors()
 
         # Data containing vectors in the currently viewed slice
-        self._data_view = np.empty((0, 2, 2))
+        self._view_data = np.empty((0, 2, 2))
         self._displayed_stored = []
         self._view_vertices = []
         self._view_faces = []
@@ -583,7 +592,7 @@ class Vectors(Layer):
 
     @property
     def _view_face_color(self) -> np.ndarray:
-
+        """" (Mx4) np.ndarray : colors for the M in view vectors"""
         face_color = np.repeat(self.edge_color[self._view_indices], 2, axis=0)
         if self.dims.ndisplay == 3 and self.ndim > 2:
             face_color = np.vstack([face_color, face_color])
@@ -610,14 +619,14 @@ class Vectors(Layer):
 
         if len(self.data) == 0:
             faces = []
-            self._data_view = np.empty((0, 2, 2))
+            self._view_data = np.empty((0, 2, 2))
             self._view_indices = []
         elif self.ndim > 2:
             data = self.data[:, 0, not_disp].astype('int')
             matches = np.all(data == indices[not_disp], axis=1)
             matches = np.where(matches)[0]
             self._view_indices = matches
-            self._data_view = self.data[np.ix_(matches, [0, 1], disp)]
+            self._view_data = self.data[np.ix_(matches, [0, 1], disp)]
             if len(matches) == 0:
                 faces = []
             else:
@@ -634,7 +643,7 @@ class Vectors(Layer):
                 faces = self._mesh_triangles[keep_inds]
         else:
             faces = self._mesh_triangles
-            self._data_view = self.data[:, :, disp]
+            self._view_data = self.data[:, :, disp]
             self._view_indices = np.arange(self.data.shape[0])
 
         if len(faces) == 0:
@@ -665,14 +674,14 @@ class Vectors(Layer):
         zoom_factor = np.divide(self._thumbnail_shape[:2], shape).min()
 
         # vectors = copy(self._data_view[:, :, -2:])
-        if self._data_view.shape[0] > self._max_vectors_thumbnail:
+        if self._view_data.shape[0] > self._max_vectors_thumbnail:
             thumbnail_indices = np.random.randint(
-                0, self._data_view.shape[0], self._max_vectors_thumbnail
+                0, self._view_data.shape[0], self._max_vectors_thumbnail
             )
-            vectors = copy(self._data_view[thumbnail_indices, :, -2:])
+            vectors = copy(self._view_data[thumbnail_indices, :, -2:])
             thumbnail_color_indices = self._view_indices[thumbnail_indices]
         else:
-            vectors = copy(self._data_view[:, :, -2:])
+            vectors = copy(self._view_data[:, :, -2:])
             thumbnail_color_indices = self._view_indices
         vectors[:, 1, :] = vectors[:, 0, :] + vectors[:, 1, :] * self.length
         downsampled = (vectors - offset) * zoom_factor
@@ -710,7 +719,7 @@ class Vectors(Layer):
         opacity = str(self.opacity)
         props = {'stroke-width': width, 'opacity': opacity}
 
-        for v, ec in zip(self._data_view, edge_color):
+        for v, ec in zip(self._view_data, edge_color):
             x1 = str(v[0, -2])
             y1 = str(v[0, -1])
             x2 = str(v[0, -2] + self.length * v[1, -2])
