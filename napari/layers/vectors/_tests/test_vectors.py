@@ -139,9 +139,9 @@ def test_properties_dataframe():
     shape = (10, 2, 2)
     data = np.random.random(shape)
     data[:, 0, :] = 20 * data[:, 0, :]
-    properties = {'point_type': np.array(['A', 'B'] * int(shape[0] / 2))}
+    properties = {'vector_type': np.array(['A', 'B'] * int(shape[0] / 2))}
     properties_df = pd.DataFrame(properties)
-    properties_df = properties_df.astype(properties['point_type'].dtype)
+    properties_df = properties_df.astype(properties['vector_type'].dtype)
     layer = Vectors(data, properties=properties_df)
     np.testing.assert_equal(layer.properties, properties)
 
