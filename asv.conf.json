@@ -40,6 +40,10 @@
     // should be written to.
     "html_dir": ".asv/html",
 
+    // The directory (relative to the current directory) where the benchamrks
+    // are stored
+    "benchmark_dir": "napari/benchmarks",
+
     // The number of characters to retain in the commit hashes.
     "hash_length": 8,
 

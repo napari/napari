@@ -13,12 +13,16 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from .utils import qt_signals_blocked
+
 
 class QtViewerDockWidget(QDockWidget):
     """Wrap a QWidget in a QDockWidget and forward viewer events
 
     Parameters
     ----------
+    qt_viewer : QtViewer
+        The QtViewer instance that this dock widget will belong to.
     widget : QWidget
         `widget` that will be added as QDockWidget's main widget.
     name : str
@@ -36,7 +40,7 @@ class QtViewerDockWidget(QDockWidget):
 
     def __init__(
         self,
-        viewer,
+        qt_viewer,
         widget: QWidget,
         *,
         name: str = '',
@@ -44,7 +48,7 @@ class QtViewerDockWidget(QDockWidget):
         allowed_areas: Optional[List[str]] = None,
         shortcut=None,
     ):
-        self.viewer = viewer
+        self.qt_viewer = qt_viewer
         super().__init__(name)
         self.name = name
 
@@ -75,8 +79,7 @@ class QtViewerDockWidget(QDockWidget):
         self.setMinimumWidth(50)
         self.setObjectName(name)
 
-        self.setWidget(widget)
-        widget.setParent(self)
+        self.widget = widget
         self._features = self.features()
         self.dockLocationChanged.connect(self._set_title_orientation)
 
@@ -84,6 +87,17 @@ class QtViewerDockWidget(QDockWidget):
         self.title = QtCustomTitleBar(self)
         self.setTitleBarWidget(self.title)
         self.visibilityChanged.connect(self._on_visibility_changed)
+
+    @property
+    def widget(self):
+        """QWidget: widget that will be added as QDockWidget's main widget."""
+        return self._widget
+
+    @widget.setter
+    def widget(self, widget):
+        self.setWidget(widget)
+        widget.setParent(self)
+        self._widget = widget
 
     def setFeatures(self, features):
         super().setFeatures(features)
@@ -93,7 +107,7 @@ class QtViewerDockWidget(QDockWidget):
         # if you subclass QtViewerDockWidget and override the keyPressEvent
         # method, be sure to call super().keyPressEvent(event) at the end of
         # your method to pass uncaught key-combinations to the viewer.
-        return self.viewer.keyPressEvent(event)
+        return self.qt_viewer.keyPressEvent(event)
 
     def _set_title_orientation(self, area):
         if area in (Qt.LeftDockWidgetArea, Qt.RightDockWidgetArea):
@@ -115,13 +129,16 @@ class QtViewerDockWidget(QDockWidget):
                 )
         return self.size().height() > self.size().width()
 
-    def _on_visibility_changed(self):
-        self.blockSignals(True)
-        self.setTitleBarWidget(None)
-        if not self.isFloating():
-            self.title = QtCustomTitleBar(self, vertical=not self.is_vertical)
-            self.setTitleBarWidget(self.title)
-        self.blockSignals(False)
+    def _on_visibility_changed(self, visible):
+        if not visible:
+            return
+        with qt_signals_blocked(self):
+            self.setTitleBarWidget(None)
+            if not self.isFloating():
+                self.title = QtCustomTitleBar(
+                    self, vertical=not self.is_vertical
+                )
+                self.setTitleBarWidget(self.title)
 
 
 class QtCustomTitleBar(QLabel):
