@@ -17,10 +17,18 @@ class QtVectorsControls(QtLayerControls):
 
     Attributes
     ----------
+    edge_color_label : qtpy.QtWidgets.QLabel
+        Label for edgeColorSwatch
     edgeColorSwatch : qtpy.QtWidgets.QFrame
         Color swatch showing display color of vectors.
     edgeComboBox : qtpy.QtWidgets.QComboBox
         Dropdown widget to select display color for vectors.
+    color_mode_comboBox : qtpy.QtWidgets.QComboBox
+        Dropdown widget to select edge_color_mode for the vectors.
+    color_prop_box : qtpy.QtWidgets.QComboBox
+        Dropdown widget to select _edge_color_property for the vectors.
+    edge_prop_label : qtpy.QtWidgets.QLabel
+        Label for color_prop_box
     grid_layout : qtpy.QtWidgets.QGridLayout
         Layout of Qt widget controls for the layer.
     layer : napari.layers.Vectors
@@ -42,6 +50,7 @@ class QtVectorsControls(QtLayerControls):
         )
         self.layer.events.edge_color.connect(self._on_edge_color_change)
 
+        # dropdown to select the property for mapping edge_color
         color_properties = self._get_property_values()
         color_prop_box = QComboBox(self)
         color_prop_box.activated[str].connect(self.change_edge_color_property)
@@ -49,7 +58,7 @@ class QtVectorsControls(QtLayerControls):
         self.color_prop_box = color_prop_box
         self.edge_prop_label = QLabel('edge property:')
 
-        # vector color adjustment and widget
+        # vector direct color mode adjustment and widget
         self.edgeColorEdit = QColorSwatchEdit(
             initial_color=self.layer.edge_color,
             tooltip='click to set current edge color',
@@ -58,6 +67,7 @@ class QtVectorsControls(QtLayerControls):
         self.edge_color_label = QLabel('edge color:')
         self._on_edge_color_change()
 
+        # dropdown to select the edge color mode
         colorModeComboBox = QComboBox(self)
         colorModeComboBox.addItems(ColorMode.keys())
         colorModeComboBox.activated[str].connect(self.change_edge_color_mode)
@@ -114,6 +124,8 @@ class QtVectorsControls(QtLayerControls):
             self.layer.edge_color = property
             self.layer.edge_color_mode = mode
         except TypeError:
+            # if the selected property is the wrong type for the current color mode
+            # the color mode will be changed to the appropriate type, so we must update
             self._on_edge_color_mode_change()
             raise
 
@@ -129,10 +141,10 @@ class QtVectorsControls(QtLayerControls):
         with self.layer.events.edge_color_mode.blocker():
             try:
                 self.layer.edge_color_mode = mode
-
                 self._update_edge_color_gui(mode)
 
             except ValueError:
+                # if the color mode was invalid, revert to the old mode
                 self.layer.edge_color_mode = old_mode
                 raise
 
