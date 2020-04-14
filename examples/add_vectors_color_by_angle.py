@@ -1,9 +1,6 @@
 """
-This example generates an image of vectors
-Vector data is an array of shape (N, 4)
-Each vector position is defined by an (x, y, x-proj, y-proj) element
-    where x and y are the center points
-    where x-proj and y-proj are the vector projections at each center
+This example generates a set of vectors in a spiral pattern.
+The color of the vectors is mapped to their 'angle' property.
 
 """
 
@@ -34,11 +31,18 @@ with napari.gui_qt():
 
     # make the angle property, range 0-2pi
     angle = np.mod(phi_space, 2 * np.pi)
+
+    # create a property that is true for all angles  > pi
     pos_angle = angle > np.pi
+
+    # create the properties dictionary.
     properties = {
         'angle': angle,
         'pos_angle':pos_angle,
     }
 
     # add the vectors
-    layer = viewer.add_vectors(pos, edge_width=3, properties=properties, edge_color='red', edge_colormap='husl')
+    layer = viewer.add_vectors(pos, edge_width=3, properties=properties, edge_color='angle', edge_colormap='husl')
+
+    # set the edge color mode to colormap
+    layer.edge_color_mode = 'colormap'
