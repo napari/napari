@@ -153,7 +153,7 @@ def test_properties_dataframe():
 
 
 def test_adding_properties():
-    """test if properties can be provided as a DataFrame"""
+    """test adding properties to a Vectors layer"""
     shape = (10, 2)
     np.random.seed(0)
     shape = (10, 2, 2)
@@ -168,6 +168,14 @@ def test_adding_properties():
     # add properties
     layer.properties = properties
     np.testing.assert_equal(layer.properties, properties)
+
+    # removing a property that was the _edge_color_property should give a warning
+    layer._edge_color_property = 'vector_type'
+    properties_2 = {
+        'not_vector_type': np.array(['A', 'B'] * int(shape[0] / 2))
+    }
+    with pytest.warns(UserWarning):
+        layer.properties = properties_2
 
     # adding properties with the wrong length should raise an exception
     bad_properties = {'vector_type': np.array(['A'])}
