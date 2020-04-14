@@ -591,16 +591,6 @@ class Vectors(Layer):
 
         return face_color
 
-    @property
-    def _view_vertex_color(self) -> np.ndarray:
-
-        if self.dims.ndisplay == 2:
-            vertex_color = np.repeat(self.edge_color, 4, axis=0)
-        elif self.dims.ndisplay == 3:
-            vertex_color = np.repeat(self.edge_color, 8, axis=0)
-
-        return vertex_color
-
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
 
