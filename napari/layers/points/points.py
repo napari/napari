@@ -985,8 +985,29 @@ class Points(Layer):
     def refresh_colors(self, update_color_mapping: bool = False):
         """Calculate and update face and edge colors if using a cycle or color map
 
+                Parameters
+                ----------
+                update_color_mapping : bool
+                    If set to True, the function will recalculate the color cycle map
+                    or colormap (whichever is being used). If set to False, the function
+                    will use the current color cycle map or color map. For example, if you
+                    are adding/modifying points and want them to be colored with the same
+                    mapping as the other points (i.e., the new points shouldn't affect
+                    the color cycle map or colormap), set update_color_mapping=False.
+                    Default value is False.
+        """
+
+        self.refresh_color('face', update_color_mapping)
+        self.refresh_color('edge', update_color_mapping)
+
+    def refresh_color(self, attribute, update_color_mapping: bool = False):
+        """Calculate and update face or edge colors if using a cycle or color map
+
         Parameters
         ----------
+        attribute : str
+            The name of the attribute to set the color of.
+            Should be 'edge' for edge_color or 'face' for face_color.
         update_color_mapping : bool
             If set to True, the function will recalculate the color cycle map
             or colormap (whichever is being used). If set to False, the function
@@ -997,130 +1018,86 @@ class Points(Layer):
             Default value is False.
         """
         if self._update_properties:
-            if self._face_color_mode == ColorMode.CYCLE:
-                face_color_properties = self.properties[
-                    self._face_color_property
-                ]
+            color_mode = getattr(self, '_%s_color_mode' % attribute)
+            if color_mode == ColorMode.CYCLE:
+                color_property = getattr(
+                    self, '_%s_color_property' % attribute
+                )
+                color_properties = self.properties[color_property]
                 if update_color_mapping:
-                    self.face_color_cycle_map = {
+                    color_cycle = getattr(self, '%s_color_cycle' % attribute)
+                    color_cycle_map = {
                         k: c
                         for k, c in zip(
-                            np.unique(face_color_properties),
-                            self.face_color_cycle,
+                            np.unique(color_properties), color_cycle,
                         )
                     }
+                    setattr(
+                        self, '%s_color_cycle_map' % attribute, color_cycle_map
+                    )
 
                 else:
                     # add properties if they are not in the colormap
                     # and update_color_mapping==False
-                    face_color_cycle_keys = [*self.face_color_cycle_map]
-                    props_in_map = np.in1d(
-                        face_color_properties, face_color_cycle_keys
+                    color_cycle_map = getattr(
+                        self, '%s_color_cycle_map' % attribute
                     )
+                    color_cycle_keys = [*color_cycle_map]
+                    props_in_map = np.in1d(color_properties, color_cycle_keys)
                     if not np.all(props_in_map):
                         props_to_add = np.unique(
-                            face_color_properties[np.logical_not(props_in_map)]
+                            color_properties[np.logical_not(props_in_map)]
+                        )
+                        color_cycle = getattr(
+                            self, '%s_color_cycle' % attribute
                         )
                         for prop in props_to_add:
-                            self.face_color_cycle_map[prop] = next(
-                                self.face_color_cycle
-                            )
-                face_colors = np.array(
-                    [
-                        self.face_color_cycle_map[x]
-                        for x in face_color_properties
-                    ]
+                            color_cycle_map[prop] = next(color_cycle)
+                        setattr(
+                            self,
+                            '%s_color_cycle_map' % attribute,
+                            color_cycle_map,
+                        )
+                colors = np.array(
+                    [color_cycle_map[x] for x in color_properties]
                 )
-                if len(face_colors) == 0:
-                    face_colors = np.empty((0, 4))
-                self._face_color = face_colors
+                if len(colors) == 0:
+                    colors = np.empty((0, 4))
+                setattr(self, '_%s_color' % attribute, colors)
 
-                self.events.face_color()
-            elif self._face_color_mode == ColorMode.COLORMAP:
-                face_color_properties = self.properties[
-                    self._face_color_property
-                ]
-                if len(face_color_properties) > 0:
-                    if (
-                        update_color_mapping
-                        or self.face_contrast_limits is None
-                    ):
-                        face_colors, contrast_limits = map_property(
-                            prop=face_color_properties,
-                            colormap=self.face_colormap[1],
-                        )
-                        self.face_contrast_limits = contrast_limits
-                    else:
-                        face_colors, _ = map_property(
-                            prop=face_color_properties,
-                            colormap=self.face_colormap[1],
-                            contrast_limits=self.face_contrast_limits,
-                        )
-                else:
-                    face_colors = np.empty((0, 4))
-                self._face_color = face_colors
-
-            if self._edge_color_mode == ColorMode.CYCLE:
-                edge_color_properties = self.properties[
-                    self._edge_color_property
-                ]
-                if update_color_mapping:
-                    self.edge_color_cycle_map = {
-                        k: c
-                        for k, c in zip(
-                            np.unique(edge_color_properties),
-                            self.edge_color_cycle,
-                        )
-                    }
-                else:
-                    # add properties if they are not in the colormap
-                    # and update_color_mapping==False
-                    edge_color_cycle_keys = [*self.edge_color_cycle_map]
-                    props_in_map = np.in1d(
-                        edge_color_properties, edge_color_cycle_keys
+            elif color_mode == ColorMode.COLORMAP:
+                color_property = getattr(
+                    self, '_%s_color_property' % attribute
+                )
+                color_properties = self.properties[color_property]
+                if len(color_properties) > 0:
+                    contrast_limits = getattr(
+                        self, '%s_contrast_limits' % attribute
                     )
-                    if not np.all(props_in_map):
-                        props_to_add = np.unique(
-                            edge_color_properties[np.logical_not(props_in_map)]
+                    colormap = getattr(self, '%s_colormap' % attribute)
+                    if update_color_mapping or contrast_limits is None:
+
+                        colors, contrast_limits = map_property(
+                            prop=color_properties, colormap=colormap[1],
                         )
-                        for prop in props_to_add:
-                            self.edge_color_cycle_map[prop] = next(
-                                self.edge_color_cycle
-                            )
-                edge_colors = np.array(
-                    [
-                        self.edge_color_cycle_map[x]
-                        for x in edge_color_properties
-                    ]
-                )
-                if len(edge_colors) == 0:
-                    edge_colors = np.empty((0, 4))
-                self._edge_color = edge_colors
-            elif self._edge_color_mode == ColorMode.COLORMAP:
-                edge_color_properties = self.properties[
-                    self._edge_color_property
-                ]
-                if len(edge_color_properties) > 0:
-                    if (
-                        update_color_mapping
-                        or self.edge_contrast_limits is None
-                    ):
-                        edge_colors, contrast_limits = map_property(
-                            prop=edge_color_properties,
-                            colormap=self.edge_colormap[1],
+                        setattr(
+                            self,
+                            '%s_contrast_limits' % attribute,
+                            contrast_limits,
                         )
-                        self.edge_contrast_limits = contrast_limits
                     else:
-                        edge_colors, _ = map_property(
-                            prop=edge_color_properties,
-                            colormap=self.edge_colormap[1],
-                            contrast_limits=self.edge_contrast_limits,
+
+                        colors, _ = map_property(
+                            prop=color_properties,
+                            colormap=colormap[1],
+                            contrast_limits=contrast_limits,
                         )
                 else:
-                    edge_colors = np.empty((0, 4))
-                self._edge_color = edge_colors
-            self.events.face_color()
-            self.events.edge_color()
+                    colors = np.empty((0, 4))
+                setattr(self, '_%s_color' % attribute, colors)
+
+            color_event = getattr(self.events, '%s_color' % attribute)
+            color_event()
 
     def _is_color_mapped(self, color):
         """ determines if the new color argument is for directly setting or cycle/colormap"""
