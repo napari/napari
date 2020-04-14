@@ -2,6 +2,7 @@
 Internal napari hook implementations to be registered by the plugin manager
 """
 import os
+import shutil
 from typing import Any, List, Optional, Union
 
 import numpy as np
@@ -57,6 +58,9 @@ def napari_write_image(path: str, data: Any, meta: dict) -> bool:
     -------
     bool : Return True if data is successfully written.
     """
+    ext = os.path.splitext(path)[1]
+    path += '.tif' if not ext else ''
+    raise ValueError()
     imsave(path, data)
     return True
 
@@ -129,11 +133,7 @@ def napari_get_writer(
         function that accepts the path and a list of layer_data (where
         layer_data is (data, meta, layer_type)) and writes each layer.
     """
-    if os.path.exists(path):
-        # If something exists at the current path return None
-        return None
-    else:
-        return write_layer_data_with_plugins
+    return write_layer_data_with_plugins
 
 
 def write_layer_data_with_plugins(
@@ -157,22 +157,25 @@ def write_layer_data_with_plugins(
     bool
         Return True if data is successfully written.
     """
-    from . import plugin_manager as napari_plugin_manager
+    from . import plugin_manager
 
     # Try and make directory based on current path
     os.makedirs(path)
 
-    # Loop through data for each layer
-    for layer_data_tuple in layer_data:
-        data, meta, layer_type = layer_data_tuple
-        # Get hook specification according to layer type
-        hook_specification = getattr(
-            napari_plugin_manager.hook, f'napari_write_{layer_type}'
-        )
-        # Create full path using name of layer
-        full_path = os.path.join(path, meta['name'])
-
-        # Write out data using first plugin found for this hook spec
-        hook_specification(path=full_path, data=data, meta=meta)
+    try:
+        # Loop through data for each layer
+        for layer_data_tuple in layer_data:
+            data, meta, layer_type = layer_data_tuple
+            # Get hook caller according to layer type
+            hook_caller = getattr(
+                plugin_manager.hook, f'napari_write_{layer_type}'
+            )
+            # Create full path using name of layer
+            full_path = os.path.join(path, meta['name'])
+            # Write out data using first plugin found for this hook spec
+            hook_caller(path=full_path, data=data, meta=meta)
+    except Exception as exc:
+        shutil.rmtree(path, ignore_errors=False)
+        raise exc
 
     return True
