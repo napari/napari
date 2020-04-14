@@ -798,33 +798,7 @@ class Points(Layer):
 
     @edge_color_mode.setter
     def edge_color_mode(self, edge_color_mode: Union[str, ColorMode]):
-        edge_color_mode = ColorMode(edge_color_mode)
-
-        if edge_color_mode == ColorMode.DIRECT:
-            self._edge_color_mode = edge_color_mode
-        elif edge_color_mode in (ColorMode.CYCLE, ColorMode.COLORMAP):
-            if self._edge_color_property == '':
-                if self.properties:
-                    self._edge_color_property = next(iter(self.properties))
-                    warnings.warn(
-                        'Edge color was not set, setting to: %s'
-                        % self._face_color_property
-                    )
-                else:
-                    raise ValueError(
-                        'There must be a valid Points.properties to use ColorMode.Cycle'
-                    )
-            # ColorMode.COLORMAP can only be applied to numeric properties
-            if (edge_color_mode == ColorMode.COLORMAP) and not issubclass(
-                self.properties[self._edge_color_property].dtype.type,
-                np.number,
-            ):
-                raise TypeError(
-                    'selected property must be numeric to use ColorMode.COLORMAP'
-                )
-
-            self._edge_color_mode = edge_color_mode
-            self.refresh_colors()
+        self._set_color(edge_color_mode, 'edge')
 
     @property
     def face_color(self):
@@ -919,36 +893,58 @@ class Points(Layer):
 
     @face_color_mode.setter
     def face_color_mode(self, face_color_mode):
-        face_color_mode = ColorMode(face_color_mode)
+        self._set_color_mode(face_color_mode, 'face')
 
-        if face_color_mode == ColorMode.DIRECT:
-            self._face_color_mode = face_color_mode
-        elif face_color_mode in (ColorMode.CYCLE, ColorMode.COLORMAP):
-            if self._face_color_property == '':
+    def _set_color_mode(
+        self, color_mode: Union[ColorMode, str], attribute: str
+    ):
+        """ Set the face_color_mode or edge_color_mode property
+
+        Paramters:
+        ----------
+        color_mode : str, ColorMode
+            The value for setting edge or face_color_mode. If color_mode is a string,
+            it should be one of: 'direct', 'cycle', or 'colormap'
+        attribute : str
+            The name of the attribute to set the color of.
+            Should be 'edge' for edge_colo_moder or 'face' for face_color_mode.
+
+        """
+        color_mode = ColorMode(color_mode)
+
+        if color_mode == ColorMode.DIRECT:
+            setattr(self, '_%s_color_mode' % attribute, color_mode)
+        elif color_mode in (ColorMode.CYCLE, ColorMode.COLORMAP):
+            color_property = getattr(self, '_%s_color_property' % attribute)
+            if color_property == '':
                 if self.properties:
-                    self._face_color_property = next(iter(self.properties))
+                    setattr(
+                        self,
+                        '_%s_color_property' % attribute,
+                        next(iter(self.properties)),
+                    )
                     warnings.warn(
-                        'Face color was not set, setting to: %s'
-                        % self._face_color_property
+                        '_%s_color_property was not set, setting to: %s'
+                        % (attribute, self._face_color_property)
                     )
                 else:
                     raise ValueError(
                         'There must be a valid Points.properties to use %s'
-                        % face_color_mode
+                        % color_mode
                     )
 
             # ColorMode.COLORMAP can only be applied to numeric properties
-            if (face_color_mode == ColorMode.COLORMAP) and not issubclass(
-                self.properties[self._face_color_property].dtype.type,
-                np.number,
+            color_property = getattr(self, '_%s_color_property' % attribute)
+            if (color_mode == ColorMode.COLORMAP) and not issubclass(
+                self.properties[color_property].dtype.type, np.number,
             ):
                 raise TypeError(
                     'selected property must be numeric to use ColorMode.COLORMAP'
                 )
-            self._face_color_mode = face_color_mode
+            setattr(self, '_%s_color_mode', color_mode)
             self.refresh_colors()
 
-    def _set_color(self, color, attribute):
+    def _set_color(self, color: ColorType, attribute: str):
         """ Set the face_color or edge_color property
 
         Paramters:
