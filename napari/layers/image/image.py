@@ -4,7 +4,6 @@ from base64 import b64encode
 from xml.etree.ElementTree import Element
 
 import numpy as np
-from imageio import imwrite
 from scipy import ndimage as ndi
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS
@@ -13,7 +12,7 @@ from ...utils.status_messages import format_float
 from ..base import Layer
 from ..utils.layer_utils import calc_data_range
 from ..intensity_mixin import IntensityVisualizationMixin
-from ._image_constants import Interpolation, Rendering
+from ._image_constants import Interpolation, Interpolation3D, Rendering
 from ._image_utils import get_pyramid_and_rgb
 
 
@@ -214,6 +213,14 @@ class Image(IntensityVisualizationMixin, Layer):
         self._contrast_limits = tuple(self.contrast_limits_range)
         self.colormap = colormap
         self.contrast_limits = self._contrast_limits
+        self._interpolation = {
+            2: Interpolation.NEAREST,
+            3: (
+                Interpolation3D.NEAREST
+                if self.__class__.__name__ == 'Labels'
+                else Interpolation3D.LINEAR
+            ),
+        }
         self.interpolation = interpolation
         self.rendering = rendering
 
@@ -326,42 +333,69 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @property
     def interpolation(self):
-        """{
-            'bessel', 'bicubic', 'bilinear', 'blackman', 'catrom', 'gaussian',
-            'hamming', 'hanning', 'hermite', 'kaiser', 'lanczos', 'mitchell',
-            'nearest', 'spline16', 'spline36'
-            }: Equipped interpolation method's name.
+        """Return current interpolation mode.
+
+        Selects a preset interpolation mode in vispy that determines how volume
+        is displayed.  Makes use of the two Texture2D interpolation methods and
+        the available interpolation methods defined in
+        vispy/gloo/glsl/misc/spatial_filters.frag
+
+        Options include:
+        'bessel', 'bicubic', 'bilinear', 'blackman', 'catrom', 'gaussian',
+        'hamming', 'hanning', 'hermite', 'kaiser', 'lanczos', 'mitchell',
+        'nearest', 'spline16', 'spline36'
+
+        Returns
+        -------
+        str
+            The current interpolation mode
         """
-        return str(self._interpolation)
+        return str(self._interpolation[self.dims.ndisplay])
 
     @interpolation.setter
     def interpolation(self, interpolation):
-        self._interpolation = Interpolation(interpolation)
+        """Set current interpolation mode."""
+        if self.dims.ndisplay == 3:
+            self._interpolation[self.dims.ndisplay] = Interpolation3D(
+                interpolation
+            )
+        else:
+            self._interpolation[self.dims.ndisplay] = Interpolation(
+                interpolation
+            )
         self.events.interpolation()
 
     @property
     def rendering(self):
-        """Rendering: Rendering mode.
-            Selects a preset rendering mode in vispy that determines how
-            volume is displayed
-            * translucent: voxel colors are blended along the view ray until
-              the result is opaque.
-            * mip: maxiumum intensity projection. Cast a ray and display the
-              maximum value that was encountered.
-            * additive: voxel colors are added along the view ray until
-              the result is saturated.
-            * iso: isosurface. Cast a ray until a certain threshold is
-              encountered. At that location, lighning calculations are
-              performed to give the visual appearance of a surface.
-            * attenuated_mip: attenuated maxiumum intensity projection. Cast a
-              ray and attenuate values based on integral of encountered values,
-              display the maximum value that was encountered after attenuation.
-              This will make nearer objects appear more prominent.
+        """Return current rendering mode.
+
+        Selects a preset rendering mode in vispy that determines how
+        volume is displayed.  Options include:
+
+        * ``translucent``: voxel colors are blended along the view ray until
+          the result is opaque.
+        * ``mip``: maxiumum intensity projection. Cast a ray and display the
+          maximum value that was encountered.
+        * ``additive``: voxel colors are added along the view ray until the
+          result is saturated.
+        * ``iso``: isosurface. Cast a ray until a certain threshold is
+          encountered. At that location, lighning calculations are performed to
+          give the visual appearance of a surface.
+        * ``attenuated_mip``: attenuated maxiumum intensity projection. Cast a
+          ray and attenuate values based on integral of encountered values,
+          display the maximum value that was encountered after attenuation.
+          This will make nearer objects appear more prominent.
+
+        Returns
+        -------
+        str
+            The current rendering mode
         """
         return str(self._rendering)
 
     @rendering.setter
     def rendering(self, rendering):
+        """Set current rendering mode."""
         self._rendering = Rendering(rendering)
         self.events.rendering()
 
@@ -462,7 +496,7 @@ class Image(IntensityVisualizationMixin, Layer):
                     * self._transforms['tile2data'].scale
                 )
             else:
-                self._transforms['tile2data'].translate = [0] * self.ndim
+                self._transforms['tile2data'].translate = np.zeros(self.ndim)
 
             image = np.asarray(
                 self._data_pyramid[level][tuple(indices)]
@@ -603,6 +637,9 @@ class Image(IntensityVisualizationMixin, Layer):
             List of a single xml element specifying the currently viewed image
             as a png according to the svg specification.
         """
+        # we delay this import to minimize import time at launch
+        from imageio import imwrite
+
         if self.dims.ndisplay == 3:
             image = np.max(self._data_thumbnail, axis=0)
         else:

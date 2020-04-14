@@ -3,8 +3,8 @@ from unittest import mock
 
 import numpy as np
 import pytest
-from skimage.io import imread
 
+from napari.utils.io import imread
 from napari._tests.utils import (
     add_layer_by_type,
     check_viewer_functioning,

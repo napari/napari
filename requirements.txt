@@ -1,3 +1,1 @@
 -r requirements/default.txt
--r requirements/development.txt
--r requirements/test.txt

@@ -4,7 +4,7 @@ from qtpy.QtCore import QCoreApplication, Qt, QSize
 from qtpy.QtWidgets import QWidget, QVBoxLayout, QFileDialog, QSplitter
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtCore import QThreadPool
-from skimage.io import imsave
+from ..utils.io import imsave
 from vispy.scene import SceneCanvas, PanZoomCamera, ArcballCamera
 from vispy.visuals.transforms import ChainTransform
 
@@ -459,8 +459,10 @@ class QtViewer(QSplitter):
 
         layer = self.viewer.active_layer
         if layer is not None:
-            # Line bellow needed until layer mouse callbacks are refactored
-            self.layer_to_visual[layer].on_mouse_press(event)
+            # update cursor position in visual and layer
+            visual = self.layer_to_visual[layer]
+            visual._position = list(event.pos)
+            layer.position = visual._transform_position(visual._position)
             mouse_press_callbacks(layer, event)
 
     def on_mouse_move(self, event):
@@ -478,8 +480,10 @@ class QtViewer(QSplitter):
 
         layer = self.viewer.active_layer
         if layer is not None:
-            # Line bellow needed until layer mouse callbacks are refactored
-            self.layer_to_visual[layer].on_mouse_move(event)
+            # update cursor position in visual and layer
+            visual = self.layer_to_visual[layer]
+            visual._position = list(event.pos)
+            layer.position = visual._transform_position(visual._position)
             mouse_move_callbacks(layer, event)
 
     def on_mouse_release(self, event):
@@ -490,12 +494,17 @@ class QtViewer(QSplitter):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
+        if event.pos is None:
+            return
+
         mouse_release_callbacks(self.viewer, event)
 
         layer = self.viewer.active_layer
         if layer is not None:
-            # Line bellow needed until layer mouse callbacks are refactored
-            self.layer_to_visual[layer].on_mouse_release(event)
+            # update cursor position in visual and layer
+            visual = self.layer_to_visual[layer]
+            visual._position = list(event.pos)
+            layer.position = visual._transform_position(visual._position)
             mouse_release_callbacks(layer, event)
 
     def on_key_press(self, event):

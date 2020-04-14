@@ -105,3 +105,49 @@ def segment_normal(a, b, p=(0, 0, 1)):
     unit_norm = normal / norm
 
     return unit_norm
+
+
+def convert_to_uint8(data: np.ndarray) -> np.ndarray:
+    """
+    Convert array content to uint8.
+
+    If all negative values are changed on 0.
+
+    If values are integer and bellow 256 it is simple casting otherwise maximum value for this data type is picked
+    and values are scaled by 255/maximum type value.
+
+    Binary images ar converted to [0,255] images.
+
+    float images are multiply by 255 and then casted to uint8.
+
+    Based on skimage.util.dtype.convert but limited to output type uint8
+    """
+    out_dtype = np.dtype(np.uint8)
+    out_max = np.iinfo(out_dtype).max
+    if data.dtype == out_dtype:
+        return data
+    in_kind = data.dtype.kind
+    if in_kind == "b":
+        return data.astype(out_dtype) * 255
+    if in_kind == "f":
+        image_out = np.multiply(data, out_max, dtype=data.dtype)
+        np.rint(image_out, out=image_out)
+        np.clip(image_out, 0, out_max, out=image_out)
+        return image_out.astype(out_dtype)
+
+    if in_kind in "ui":
+        if in_kind == "u":
+            if data.max() < out_max:
+                return data.astype(out_dtype)
+            return np.right_shift(data, (data.dtype.itemsize - 1) * 8).astype(
+                out_dtype
+            )
+        else:
+            np.maximum(data, 0, out=data, dtype=data.dtype)
+            if data.dtype == np.int8:
+                return (data * 2).astype(np.uint8)
+            if data.max() < out_max:
+                return data.astype(out_dtype)
+            return np.right_shift(
+                data, (data.dtype.itemsize - 1) * 8 - 1
+            ).astype(out_dtype)

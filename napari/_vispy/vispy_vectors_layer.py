@@ -30,3 +30,6 @@ class VispyVectorsLayer(VispyBaseLayer):
             vertices=vertices, faces=faces, color=self.layer.edge_color
         )
         self.node.update()
+        # Call to update order of translation values with new dims:
+        self._on_scale_change()
+        self._on_translate_change()

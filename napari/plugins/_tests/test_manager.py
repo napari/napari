@@ -50,7 +50,11 @@ def test_iter_plugins():
     sys.path.append(fixture_path)
 
     # Search by entry_point group only
-    assert set(manager.iter_plugin_modules(group='napari.plugin')).issuperset(
+    _hits = set(
+        item[:2] for item in manager.iter_plugin_modules(group='napari.plugin')
+    )
+
+    assert _hits.issuperset(
         {
             ('unimportable', 'unimportable_plugin'),
             ('invalid', 'invalid_plugin'),
@@ -59,7 +63,11 @@ def test_iter_plugins():
     )
 
     # Search by name_convention only
-    assert set(manager.iter_plugin_modules(prefix='napari_')).issuperset(
+    _hits = set(
+        item[:2] for item in manager.iter_plugin_modules(prefix='napari_')
+    )
+
+    assert _hits.issuperset(
         {
             ('napari_bad_plugin', 'napari_bad_plugin'),
             ('napari_invalid_plugin', 'napari_invalid_plugin'),
@@ -71,9 +79,14 @@ def test_iter_plugins():
     # Search by BOTH name_convention and entry_point...
     # note that the plugin name for plugin "working" is taken from the
     # entry_point, and not from the module name...
-    assert set(
-        manager.iter_plugin_modules(prefix='napari', group='napari.plugin')
-    ).issuperset(
+    _hits = set(
+        item[:2]
+        for item in manager.iter_plugin_modules(
+            prefix='napari', group='napari.plugin'
+        )
+    )
+
+    assert _hits.issuperset(
         {
             ('unimportable', 'unimportable_plugin'),
             ('invalid', 'invalid_plugin'),

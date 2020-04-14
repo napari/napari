@@ -15,6 +15,92 @@ def test_empty_points():
     assert pts.data.shape == (0, 2)
 
 
+def test_empty_points_with_properties():
+    """ Test instantiating an empty Points layer with properties
+
+    See: https://github.com/napari/napari/pull/1069
+    """
+    properties = {
+        'label': np.array(['label1', 'label2']),
+        'cont_prop': np.array([0], dtype=np.float),
+    }
+    pts = Points(properties=properties)
+    current_props = {k: v[0] for k, v in properties.items()}
+    np.testing.assert_equal(pts.current_properties, current_props)
+
+    # verify the property datatype is correct
+    assert pts.properties['cont_prop'].dtype == np.float
+
+    # add two points and verify the default property was applied
+    pts.add([10, 10])
+    pts.add([20, 20])
+    props = {
+        'label': np.array(['label1', 'label1']),
+        'cont_prop': np.array([0, 0], dtype=np.float),
+    }
+    np.testing.assert_equal(pts.properties, props)
+
+
+def test_empty_points_with_properties_list():
+    """ Test instantiating an empty Points layer with properties
+    stored in a list
+
+    See: https://github.com/napari/napari/pull/1069
+    """
+    properties = {
+        'label': ['label1', 'label2'],
+        'cont_prop': [0],
+    }
+    pts = Points(properties=properties)
+    current_props = {k: np.asarray(v[0]) for k, v in properties.items()}
+    np.testing.assert_equal(pts.current_properties, current_props)
+
+    # add two points and verify the default property was applied
+    pts.add([10, 10])
+    pts.add([20, 20])
+    props = {
+        'label': np.array(['label1', 'label1']),
+        'cont_prop': np.array([0, 0], dtype=np.float),
+    }
+    np.testing.assert_equal(pts.properties, props)
+
+
+def test_empty_layer_with_face_colorap():
+    """ Test creating an empty layer where the face color is a colormap
+    See: https://github.com/napari/napari/pull/1069
+    """
+    default_properties = {'point_type': np.array([1.5], dtype=np.float)}
+    layer = Points(
+        properties=default_properties,
+        face_color='point_type',
+        face_colormap='grays',
+    )
+
+    assert layer.face_color_mode == 'colormap'
+
+    # verify the current_face_color is correct
+    face_color = np.array([1, 1, 1, 1])
+    assert np.all(layer._current_face_color == face_color)
+
+
+def test_empty_layer_with_edge_colormap():
+    """ Test creating an empty layer where the face color is a colormap
+    See: https://github.com/napari/napari/pull/1069
+    """
+    default_properties = {'point_type': np.array([1.5], dtype=np.float)}
+    layer = Points(
+        properties=default_properties,
+        edge_color='point_type',
+        edge_colormap='grays',
+    )
+
+    assert layer.edge_color_mode == 'colormap'
+
+    # verify the current_face_color is correct
+    edge_color = np.array([1, 1, 1, 1])
+    assert np.all(layer._current_edge_color == edge_color)
+
+
 def test_random_points():
     """Test instantiating Points layer with random 2D data."""
     shape = (10, 2)
@@ -371,6 +457,19 @@ def test_properties_dataframe():
     np.testing.assert_equal(layer.properties, properties)
 
 
+def test_properties_list():
+    """test if properties can be provided as a dict of lists"""
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    properties = {'point_type': ['A', 'B'] * int(shape[0] / 2)}
+    layer = Points(data, properties=properties)
+    np.testing.assert_equal(layer.properties, properties)
+
+    # verify the lists were converted to numpy arrays
+    assert type(layer.properties['point_type']) == np.ndarray
+
+
 def test_adding_annotations():
     shape = (10, 2)
     np.random.seed(0)
@@ -405,7 +504,38 @@ def test_add_points_with_properties():
     np.testing.assert_equal(layer.properties, new_prop)
 
 
-def test_annotations_errors():
+def test_add_points_with_properties_as_list():
+    # test adding points initialized with properties as list
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    properties = {'point_type': ['A', 'B'] * int((shape[0] / 2))}
+    layer = Points(data, properties=copy(properties))
+
+    coord = [18, 18]
+    layer.add(coord)
+    new_prop = {'point_type': np.append(properties['point_type'], 'B')}
+    np.testing.assert_equal(layer.properties, new_prop)
+
+
+def test_updating_points_properties():
+    # test adding points initialized with properties
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    properties = {'point_type': np.array(['A', 'B'] * int((shape[0] / 2)))}
+    layer = Points(data, properties=copy(properties))
+
+    layer.mode = 'select'
+    layer.selected_data = [len(data) - 1]
+    layer.current_properties = {'point_type': np.array(['A'])}
+
+    updated_properties = properties
+    updated_properties['point_type'][-1] = 'A'
+    np.testing.assert_equal(layer.properties, updated_properties)
+
+
+def test_points_errors():
     shape = (3, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
@@ -598,6 +728,41 @@ def test_edge_color_cycle():
     )
 
 
+def test_add_edge_color_cycle_to_empty_layer():
+    """ Test adding a point to an empty layer when edge color is a color cycle
+
+    See: https://github.com/napari/napari/pull/1069
+    """
+    default_properties = {'point_type': np.array(['A'])}
+    color_cycle = ['red', 'blue']
+    layer = Points(
+        properties=default_properties,
+        edge_color='point_type',
+        edge_color_cycle=color_cycle,
+    )
+
+    # verify the current_edge_color is correct
+    edge_color = transform_color(color_cycle[0])
+    assert np.all(layer._current_edge_color == edge_color)
+
+    # add a point
+    layer.add([10, 10])
+    props = {'point_type': np.array(['A'])}
+    edge_color = np.array([[1, 0, 0, 1]])
+    assert layer.properties == props
+    np.testing.assert_allclose(layer.edge_color, edge_color)
+
+    # add a point with a new property
+    layer.selected_data = []
+    layer.current_properties = {'point_type': np.array(['B'])}
+    layer.add([12, 12])
+    new_color = np.array([0, 0, 1, 1])
+    edge_color = np.vstack((edge_color, new_color))
+    new_properties = {'point_type': np.array(['A', 'B'])}
+    np.testing.assert_allclose(layer.edge_color, edge_color)
+    np.testing.assert_equal(layer.properties, new_properties)
+
+
 def test_adding_value_edge_color_cycle():
     """ Test that adding values to properties used to set an edge color cycle
     and then calling Points.refresh_colors() performs the update and adds the
@@ -660,11 +825,6 @@ def test_edge_color_colormap():
         np.vstack((edge_color_array, transform_color('black'))),
     )
 
-    # change the colormap
-    new_colormap = 'viridis'
-    layer.edge_colormap = new_colormap
-    assert layer.edge_colormap[1] == get_colormap(new_colormap)
-
     # Check removing data adjusts colors correctly
     layer.selected_data = {0, 2}
     layer.remove_selected()
@@ -680,6 +840,16 @@ def test_edge_color_colormap():
             )
         ),
     )
+
+    # adjust the clims
+    layer.edge_contrast_limits = (0, 3)
+    layer.refresh_colors(update_color_mapping=False)
+    np.testing.assert_allclose(layer.edge_color[-2], [0.5, 0.5, 0.5, 1])
+
+    # change the colormap
+    new_colormap = 'viridis'
+    layer.edge_colormap = new_colormap
+    assert layer.edge_colormap[1] == get_colormap(new_colormap)
 
 
 def test_face_color_direct():
@@ -799,6 +969,40 @@ def test_face_color_cycle():
     )
 
 
+def test_add_face_color_cycle_to_empty_layer():
+    """ Test adding a point to an empty layer when face color is a color cycle
+    See: https://github.com/napari/napari/pull/1069
+    """
+    default_properties = {'point_type': np.array(['A'])}
+    color_cycle = ['red', 'blue']
+    layer = Points(
+        properties=default_properties,
+        face_color='point_type',
+        face_color_cycle=color_cycle,
+    )
+
+    # verify the current_face_color is correct
+    face_color = transform_color(color_cycle[0])
+    assert np.all(layer._current_face_color == face_color)
+
+    # add a point
+    layer.add([10, 10])
+    props = {'point_type': np.array(['A'])}
+    face_color = np.array([[1, 0, 0, 1]])
+    assert layer.properties == props
+    np.testing.assert_allclose(layer.face_color, face_color)
+
+    # add a point with a new property
+    layer.selected_data = []
+    layer.current_properties = {'point_type': np.array(['B'])}
+    layer.add([12, 12])
+    new_color = np.array([0, 0, 1, 1])
+    face_color = np.vstack((face_color, new_color))
+    new_properties = {'point_type': np.array(['A', 'B'])}
+    np.testing.assert_allclose(layer.face_color, face_color)
+    np.testing.assert_equal(layer.properties, new_properties)
+
+
 def test_adding_value_face_color_cycle():
     """ Test that adding values to properties used to set an face color cycle
     and then calling Points.refresh_colors() performs the update and adds the
@@ -861,11 +1065,6 @@ def test_face_color_colormap():
         np.vstack((face_color_array, transform_color('black'))),
     )
 
-    # change the colormap
-    new_colormap = 'viridis'
-    layer.face_colormap = new_colormap
-    assert layer.face_colormap[1] == get_colormap(new_colormap)
-
     # Check removing data adjusts colors correctly
     layer.selected_data = {0, 2}
     layer.remove_selected()
@@ -881,6 +1080,16 @@ def test_face_color_colormap():
             )
         ),
     )
+
+    # adjust the clims
+    layer.face_contrast_limits = (0, 3)
+    layer.refresh_colors(update_color_mapping=False)
+    np.testing.assert_allclose(layer.face_color[-2], [0.5, 0.5, 0.5, 1])
+
+    # change the colormap
+    new_colormap = 'viridis'
+    layer.face_colormap = new_colormap
+    assert layer.face_colormap[1] == get_colormap(new_colormap)
 
 
 def test_size():
