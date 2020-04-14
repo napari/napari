@@ -441,6 +441,15 @@ class Layer(KeymapProvider, ABC):
         raise NotImplementedError()
 
     @property
+    def _type_string(self):
+        return self.__class__.__name__.lower()
+
+    def as_layer_data_tuple(self):
+        state = self._get_state()
+        state.pop('data', None)
+        return self.data, state, self._type_string
+
+    @property
     def thumbnail(self):
         """array: Integer array of thumbnail for the layer"""
         return self._thumbnail

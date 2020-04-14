@@ -177,7 +177,7 @@ class _HookCaller(_PluggyHookCaller):
     _wrappers: List[HookImpl]
     _nonwrappers: List[HookImpl]
 
-    def get_plugin_hook_implementation(self, plugin_name: str):
+    def get_plugin_implementation(self, plugin_name: str):
         """Return hook implementation instance for ``plugin_name`` if found."""
         try:
             return next(
@@ -324,7 +324,7 @@ class _HookCaller(_PluggyHookCaller):
             If ``plugin_name`` has not provided a hook implementation for this
             hook specification.
         """
-        self.get_plugin_hook_implementation(plugin_name).enabled = enabled
+        self.get_plugin_implementation(plugin_name).enabled = enabled
 
     def enable_plugin(self, plugin_name: str):
         """enable implementation for ``plugin_name``."""
@@ -363,7 +363,7 @@ class _HookCaller(_PluggyHookCaller):
         PluginCallError
             If an exception is raised when calling the plugin
         """
-        implementation = self.get_plugin_hook_implementation(plugin_name)
+        implementation = self.get_plugin_implementation(plugin_name)
         if implementation.hookwrapper:
             raise TypeError("Hook wrappers can not be called directly")
 

@@ -179,10 +179,7 @@ def _write_multiple_layers_with_plugins(
         Instance of a napari PluginManager.  by default the main napari
         plugin_manager will be used.
     """
-    layer_data = [
-        (layer.data, layer._get_state(), layer.__class__.__name__.lower())
-        for layer in layers
-    ]
+    layer_data = [layer.as_layer_data_tuple() for layer in layers]
     layer_types = [ld[2] for ld in layer_data]
     path = abspath_or_url(path)
     if plugin_name is None:
@@ -267,10 +264,8 @@ def _write_single_layer_with_plugins(
         Instance of a napari PluginManager.  by default the main napari
         plugin_manager will be used.
     """
-    layer_type = layer.__class__.__name__.lower()
-
     hook_specification = getattr(
-        plugin_manager.hook, 'napari_write_' + layer_type
+        plugin_manager.hook, f'napari_write_{layer._type_string}'
     )
 
     # Call the hook_specification
