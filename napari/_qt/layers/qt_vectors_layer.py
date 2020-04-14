@@ -47,6 +47,7 @@ class QtVectorsControls(QtLayerControls):
         color_prop_box.activated[str].connect(self.change_edge_color_property)
         color_prop_box.addItems(color_properties)
         self.color_prop_box = color_prop_box
+        self.edge_prop_label = QLabel('edge property:')
 
         # vector color adjustment and widget
         self.edgeColorEdit = QColorSwatchEdit(
@@ -93,7 +94,9 @@ class QtVectorsControls(QtLayerControls):
         self.grid_layout.addWidget(self.color_mode_comboBox, 4, 1, 1, 2)
         self.grid_layout.addWidget(self.edge_color_label, 5, 0)
         self.grid_layout.addWidget(self.edgeColorEdit, 5, 1, 1, 2)
-        self.grid_layout.setRowStretch(6, 1)
+        self.grid_layout.addWidget(self.edge_prop_label, 6, 0)
+        self.grid_layout.addWidget(self.color_prop_box, 6, 1, 1, 2)
+        self.grid_layout.setRowStretch(7, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
 
@@ -180,21 +183,16 @@ class QtVectorsControls(QtLayerControls):
             Should be: 'direct', 'cycle', 'colormap'
         """
         if mode in ('cycle', 'colormap'):
-            if self.grid_layout.indexOf(self.color_prop_box) == -1:
-                self.grid_layout.replaceWidget(
-                    self.edgeColorEdit, self.color_prop_box
-                )
-                self.edgeColorEdit.setHidden(True)
-                self.color_prop_box.setHidden(False)
-                self.edge_color_label.setText('edge color property:')
+            self.edgeColorEdit.setHidden(True)
+            self.edge_color_label.setHidden(True)
+            self.color_prop_box.setHidden(False)
+            self.edge_prop_label.setHidden(False)
+
         elif mode == 'direct':
-            if self.grid_layout.indexOf(self.edgeColorEdit) == -1:
-                self.grid_layout.replaceWidget(
-                    self.color_prop_box, self.edgeColorEdit
-                )
-                self.edgeColorEdit.setHidden(False)
-                self.color_prop_box.setHidden(True)
-                self.edge_color_label.setText('edge color:')
+            self.edgeColorEdit.setHidden(False)
+            self.edge_color_label.setHidden(False)
+            self.color_prop_box.setHidden(True)
+            self.edge_prop_label.setHidden(True)
 
     def _get_property_values(self):
         """Get the current property values from the Vectors layer
