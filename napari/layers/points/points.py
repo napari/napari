@@ -336,7 +336,7 @@ class Points(Layer):
         self._clipboard = {}
 
         with self.block_update_properties():
-            self.edge_color_property = ''
+            self._edge_color_property = ''
             self.edge_color = edge_color
             if edge_color_cycle is None:
                 edge_color_cycle = deepcopy(DEFAULT_COLOR_CYCLE)
@@ -708,30 +708,7 @@ class Points(Layer):
 
     @edge_color.setter
     def edge_color(self, edge_color):
-        # if the provided face color is a string, first check if it is a key in the properties.
-        # otherwise, assume it is the name of a color
-        if self._is_color_mapped(edge_color):
-            if guess_continuous(self.properties[edge_color]):
-                self._edge_color_mode = ColorMode.COLORMAP
-            else:
-                self._edge_color_mode = ColorMode.CYCLE
-            self._edge_color_property = edge_color
-            self.refresh_colors()
-
-        else:
-            transformed_color = transform_color_with_defaults(
-                num_entries=len(self.data),
-                colors=edge_color,
-                elem_name="edge_color",
-                default="white",
-            )
-            self._edge_color = normalize_and_broadcast_colors(
-                len(self.data), transformed_color
-            )
-            self.edge_color_mode = ColorMode.DIRECT
-            self._edge_color_property = ''
-
-            self.events.edge_color()
+        self._set_color(edge_color, 'edge')
 
     @property
     def edge_color_cycle(self):
@@ -856,29 +833,7 @@ class Points(Layer):
 
     @face_color.setter
     def face_color(self, face_color):
-        # if the provided face color is a string, first check if it is a key in the properties.
-        # otherwise, assume it is the name of a color
-        if self._is_color_mapped(face_color):
-            if guess_continuous(self.properties[face_color]):
-                self._face_color_mode = ColorMode.COLORMAP
-            else:
-                self._face_color_mode = ColorMode.CYCLE
-            self._face_color_property = face_color
-            self.refresh_colors()
-
-        else:
-            transformed_color = transform_color_with_defaults(
-                num_entries=len(self.data),
-                colors=face_color,
-                elem_name="face_color",
-                default="white",
-            )
-            self._face_color = normalize_and_broadcast_colors(
-                len(self.data), transformed_color
-            )
-            self.face_color_mode = ColorMode.DIRECT
-
-            self.events.face_color()
+        self._set_color(face_color, 'face')
 
     @property
     def face_color_cycle(self):
@@ -992,6 +947,44 @@ class Points(Layer):
                 )
             self._face_color_mode = face_color_mode
             self.refresh_colors()
+
+    def _set_color(self, color, attribute):
+        """ Set the face_color or edge_color property
+
+        Paramters:
+        ----------
+        color : (N, 4) array or str
+            The value for setting edge or face_color
+        attribute : str
+            The name of the attribute to set the color of.
+            Should be 'edge' for edge_color or 'face' for face_color.
+
+        """
+        # if the provided color is a string, first check if it is a key in the properties.
+        # otherwise, assume it is the name of a color
+        if self._is_color_mapped(color):
+            if guess_continuous(self.properties[color]):
+                setattr(self, '_%s_color_mode' % attribute, ColorMode.COLORMAP)
+            else:
+                setattr(self, '_%s_color_mode' % attribute, ColorMode.CYCLE)
+            setattr(self, '_%s_color_property' % attribute, color)
+            self.refresh_colors()
+
+        else:
+            transformed_color = transform_color_with_defaults(
+                num_entries=len(self.data),
+                colors=color,
+                elem_name="face_color",
+                default="white",
+            )
+            colors = normalize_and_broadcast_colors(
+                len(self.data), transformed_color
+            )
+            setattr(self, '_%s_color' % attribute, colors)
+            setattr(self, '_%s_color_mode' % attribute, ColorMode.DIRECT)
+
+            color_event = getattr(self.events, '%s_color' % attribute)
+            color_event()
 
     def refresh_colors(self, update_color_mapping: bool = False):
         """Calculate and update face and edge colors if using a cycle or color map
