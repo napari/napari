@@ -12,6 +12,12 @@ You will also need the additional `release` dependencies in `requirements/releas
 > [`MANIFEST.in`](../MANIFEST.in) determines which non-Python files are included.
 > Make sure to check that all necessary ones are listed before beginning the release process.
 
+The `napari/napari` repository must have a PyPI API token as a GitHub secret.
+This likely has been done already, but if it has not, follow
+[this guide](https://pypi.org/help/#apitoken) to gain a token and
+[this guide](https://help.github.com/en/actions/automating-your-workflow-with-github-actions/creating-and-using-encrypted-secrets)
+to add it as a secret.
+
 ## determining the version
 
 The version of `napari` is automatically determined by [`versioneer`](https://github.com/warner/python-versioneer)
@@ -56,10 +62,10 @@ Thus, you'll need to tag the [reference](https://git-scm.com/book/en/v2/Git-Inte
 ## tagging the new release candidate
 
 First we will generate a release candidate, which will contain the letters `rc`.
-Using release candidates allows us to test releases on PyPi without using up the actual
+Using release candidates allows us to test releases on PyPI without using up the actual
 release number.
 
-You should include a basic message with the tag `"Version X.Y.Zrc1"`:
+You can tag the current source code as a release candidate with:
 ```bash
 $ git tag vX.Y.Zrc1 master
 ```

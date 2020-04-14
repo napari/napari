@@ -36,7 +36,7 @@ jobs:
           echo "::set-env name=release_filepath::$RELEASE_FILEPATH"
       - name: Create Release
         id: create_release
-        uses: jbolda/create-release@v1.1.0  # switch to actions/create-release@latest once PR merged
+        uses: jbolda/create-release@v1.1.0  # switch to actions/create-release@latest once actions/create-release#50 merged
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
         with:
