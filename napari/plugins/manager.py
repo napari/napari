@@ -38,17 +38,22 @@ class _HookRelay:
     builtins have been discovered, but before external plugins are loaded.
     """
 
-    _needs_discovery = False
-
     def __init__(self, manager: 'PluginManager'):
         self._manager = manager
+        self._needs_discovery = False
 
     def __getattribute__(self, name):
+        """Trigger manager plugin discovery when accessing hook first time."""
         if name not in ('_needs_discovery', '_manager'):
             if self._needs_discovery:
-                self._needs_discovery = False
                 self._manager.discover()
         return object.__getattribute__(self, name)
+
+    def items(self):
+        """Iterate through hookcallers, removing private attributes."""
+        return [
+            (k, val) for k, val in vars(self).items() if not k.startswith("_")
+        ]
 
 
 class PluginManager(pluggy.PluginManager):
