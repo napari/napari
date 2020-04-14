@@ -1,8 +1,11 @@
-from . import PluginError, plugin_manager as napari_plugin_manager
-from typing import Optional, Union, Sequence, List
-from ..types import LayerData
-from ..layers import Layer
 from logging import getLogger
+from typing import List, Optional, Sequence, Union
+
+from ..layers import Layer
+from ..types import LayerData
+from ..utils.misc import abspath_or_url
+from . import PluginError
+from . import plugin_manager as napari_plugin_manager
 
 logger = getLogger(__name__)
 
@@ -179,7 +182,7 @@ def _write_multiple_layers_with_plugins(
         for layer in layers
     ]
     layer_types = [ld[2] for ld in layer_data]
-
+    path = abspath_or_url(path)
     if plugin_name is None:
         # Loop through all plugins using first successful one
         skip_impls = []
@@ -271,7 +274,7 @@ def _write_single_layer_with_plugins(
     # Call the hook_specification
     return hook_specification(
         _plugin=plugin_name,
-        path=path,
+        path=abspath_or_url(path),
         data=layer.data,
         meta=layer._get_state(),
     )
