@@ -58,7 +58,7 @@ def read_data_with_plugins(
             # (skipping this one)
             msg = (
                 f"Error in plugin '{implementation.plugin_name}', "
-                "hook 'napari_get_reader'"
+                f"hook 'napari_get_reader': {exc}"
             )
             # instantiating this PluginError stores it in
             # plugins.exceptions.PLUGIN_ERRORS, where it can be retrieved later
@@ -181,53 +181,39 @@ def _write_multiple_layers_with_plugins(
     """
     layer_data = [layer.as_layer_data_tuple() for layer in layers]
     layer_types = [ld[2] for ld in layer_data]
-    path = abspath_or_url(path)
-    if plugin_name is None:
-        # Loop through all plugins using first successful one
-        skip_impls = []
-        while True:
-            (writer, implementation) = plugin_manager.hook.napari_get_writer(
-                path=path,
-                layer_types=layer_types,
-                _return_impl=True,
-                _skip_impls=skip_impls,
-            )
-            if not writer:
-                # we're all out of writer plugins
-                return None
-            try:
-                return writer(path, layer_data)  # try to write data
-            except Exception as exc:
-                # If the hook did return a writer, but the writer then
-                # failed while trying to write the path, we store the traceback
-                # for later retrieval, warn the user, and continue looking for
-                # writers (skipping this one)
-                msg = (
-                    f"Error in plugin '{implementation.plugin_name}', "
-                    "hook 'napari_get_writer'"
-                )
-                # instantiating this PluginError stores it in
-                # plugins.exceptions.PLUGIN_ERRORS, where it can be retrieved
-                # later
-                err = PluginError(
-                    msg,
-                    implementation.plugin_name,
-                    implementation.plugin.__name__,
-                )
-                err.__cause__ = exc  # like ``raise PluginError() from exc``
 
-                skip_impls.append(implementation)  # don't try this impl again
-                if implementation.plugin_name != 'builtins':
-                    # If builtins doesn't work, they will get a "no writer"
-                    # found error anyway, so it looks a bit weird to show them
-                    # that the "builtin plugin" didn't work.
-                    logger.error(err.format_with_contact_info())
+    hook_caller = plugin_manager.hook.napari_get_writer
+    if plugin_name:
+        # if plugin has been specified we just directly call napari_get_writer
+        # with that plugin_name.
+        implementation = hook_caller.get_plugin_implementation(plugin_name)
+        writer_function = hook_caller(
+            _plugin=plugin_name, path=path, layer_types=layer_types
+        )
+    else:
+        (writer_function, implementation) = hook_caller(
+            path=path, layer_types=layer_types, _return_impl=True
+        )
+
+    if not callable(writer_function):
+        if plugin_name:
+            msg = f'Requested plugin "{plugin_name}" is not capable'
         else:
-            # Call napari_get_writer from named plugin
-            writer = plugin_manager.hook.napari_get_writer(
-                _plugin=plugin_name, path=path, layer_types=layer_types
-            )
-            writer(path, layer_data)  # try to write data
+            msg = 'Unable to find plugin capable'
+        msg += f' of writing this combination of layer types: {layer_types}'
+        raise ValueError(msg)
+
+    try:
+        return writer_function(abspath_or_url(path), layer_data)
+    except Exception as exc:
+        raise PluginError(
+            (
+                f"Error in plugin '{implementation.plugin_name}', "
+                f"hook 'napari_get_writer': {exc}"
+            ),
+            implementation.plugin_name,
+            implementation.plugin.__name__,
+        ) from exc
 
 
 def _write_single_layer_with_plugins(

@@ -117,6 +117,8 @@ def _multicall(
                     try:
                         res = hook_impl.function(*args)
                     except Exception as exc:
+                        # creating a PluginCallError will store it for later
+                        # in plugins.exceptions.PLUGIN_ERRORS
                         msg = (
                             f"Error in plugin '{hook_impl.plugin_name}', "
                             f"hook '{str(hook_impl.function.__name__)}'"
@@ -127,9 +129,9 @@ def _multicall(
                             msg,
                         )
                         err.__cause__ = exc
-                        # TODO: storing and retrieving these plugin errors is
-                        # being addressed in #1024:
-                        # https://github.com/napari/napari/pull/1024
+                        # but if it was a firstresult == True hook, raise now.
+                        if firstresult:
+                            raise err
 
                     if res is not None:
                         results.append(res)
