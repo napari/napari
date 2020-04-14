@@ -1,11 +1,12 @@
-import numpy as np
 from xml.etree.ElementTree import Element
 
+import numpy as np
+import pandas as pd
+import pytest
 from vispy.color import get_colormap
 
 from napari.layers import Vectors
 from napari.utils.colormaps.standardize_color import transform_color
-
 
 # Set random seed for testing
 np.random.seed(0)
@@ -74,6 +75,27 @@ def test_empty_layer_with_edge_colormap():
 
     assert layer.edge_color_mode == 'colormap'
 
+    # edge_color should remain empty when refreshing colors
+    layer.refresh_colors()
+    np.testing.assert_equal(layer.edge_color, np.empty((0, 4)))
+
+
+def test_empty_layer_with_edge_color_cycle():
+    """ Test creating an empty layer where the edge color is a color cycle
+    """
+    shape = (0, 2, 2)
+    data = np.empty(shape)
+    default_properties = {'vector_type': np.array(['A'])}
+    layer = Vectors(
+        data=data, properties=default_properties, edge_color='vector_type',
+    )
+
+    assert layer.edge_color_mode == 'cycle'
+
+    # edge_color should remain empty when refreshing colors
+    layer.refresh_colors()
+    np.testing.assert_equal(layer.edge_color, np.empty((0, 4)))
+
 
 def test_random_3D_vectors():
     """Test instantiating Vectors layer with random coordinate-like 3D data."""
@@ -108,6 +130,43 @@ def test_empty_3D_vectors():
     assert layer.data.shape == shape
     assert layer.ndim == shape[2]
     assert layer._data_view.shape[2] == 2
+
+
+def test_properties_dataframe():
+    """test if properties can be provided as a DataFrame"""
+    shape = (10, 2)
+    np.random.seed(0)
+    shape = (10, 2, 2)
+    data = np.random.random(shape)
+    data[:, 0, :] = 20 * data[:, 0, :]
+    properties = {'point_type': np.array(['A', 'B'] * int(shape[0] / 2))}
+    properties_df = pd.DataFrame(properties)
+    properties_df = properties_df.astype(properties['point_type'].dtype)
+    layer = Vectors(data, properties=properties_df)
+    np.testing.assert_equal(layer.properties, properties)
+
+
+def test_adding_properties():
+    """test if properties can be provided as a DataFrame"""
+    shape = (10, 2)
+    np.random.seed(0)
+    shape = (10, 2, 2)
+    data = np.random.random(shape)
+    data[:, 0, :] = 20 * data[:, 0, :]
+    properties = {'vector_type': np.array(['A', 'B'] * int(shape[0] / 2))}
+    layer = Vectors(data)
+
+    # properties should start empty
+    assert layer.properties == {}
+
+    # add properties
+    layer.properties = properties
+    np.testing.assert_equal(layer.properties, properties)
+
+    # adding properties with the wrong length should raise an exception
+    bad_properties = {'vector_type': np.array(['A'])}
+    with pytest.raises(ValueError):
+        layer.properties = bad_properties
 
 
 def test_changing_data():
@@ -211,6 +270,18 @@ def test_edge_width():
     assert layer.edge_width == 3
 
 
+def test_invalid_edge_color():
+    """Test providing an invalid edge color raises an exception"""
+    np.random.seed(0)
+    shape = (10, 2, 2)
+    data = np.random.random(shape)
+    data[:, 0, :] = 20 * data[:, 0, :]
+    layer = Vectors(data)
+
+    with pytest.raises(ValueError):
+        layer.edge_color = 5
+
+
 def test_edge_color_direct():
     """Test setting edge color."""
     np.random.seed(0)
@@ -288,6 +359,79 @@ def test_edge_color_colormap():
     new_colormap = 'viridis'
     layer.edge_colormap = new_colormap
     assert layer.edge_colormap[1] == get_colormap(new_colormap)
+
+
+def test_edge_color_map_non_numeric_property():
+    """Test setting edge_color as a color map of a
+    non-numeric property raises an error
+    """
+    np.random.seed(0)
+    shape = (10, 2, 2)
+    data = np.random.random(shape)
+    data[:, 0, :] = 20 * data[:, 0, :]
+    properties = {'vector_type': np.array(['A', 'B'] * int((shape[0] / 2)))}
+    color_cycle = ['red', 'blue']
+    initial_color = [0, 1, 0, 1]
+    layer = Vectors(
+        data,
+        properties=properties,
+        edge_color=initial_color,
+        edge_color_cycle=color_cycle,
+        edge_colormap='gray',
+    )
+    # layer should start out in direct edge color mode with all green vectors
+    assert layer.edge_color_mode == 'direct'
+    np.testing.assert_allclose(
+        layer.edge_color, np.repeat([initial_color], shape[0], axis=0)
+    )
+
+    # switching to colormap mode should raise an error because the 'vector_type' is non-numeric
+    layer.edge_color = 'vector_type'
+    with pytest.raises(TypeError):
+        layer.edge_color_mode = 'colormap'
+
+
+def test_switching_edge_color_mode():
+    """Test transitioning between all color modes"""
+    np.random.seed(0)
+    shape = (10, 2, 2)
+    data = np.random.random(shape)
+    data[:, 0, :] = 20 * data[:, 0, :]
+    properties = {
+        'magnitude': np.arange(shape[0]),
+        'vector_type': np.array(['A', 'B'] * int((shape[0] / 2))),
+    }
+    color_cycle = ['red', 'blue']
+    initial_color = [0, 1, 0, 1]
+    layer = Vectors(
+        data,
+        properties=properties,
+        edge_color=initial_color,
+        edge_color_cycle=color_cycle,
+        edge_colormap='gray',
+    )
+    # layer should start out in direct edge color mode with all green vectors
+    assert layer.edge_color_mode == 'direct'
+    np.testing.assert_allclose(
+        layer.edge_color, np.repeat([initial_color], shape[0], axis=0)
+    )
+
+    # there should not be an edge_color_property
+    assert layer._edge_color_property == ''
+
+    # transitioning to colormap should raise a warning
+    # because there isn't an edge color property yet and
+    # the first property in Vectors.properties is being automatically selected
+    with pytest.warns(RuntimeWarning):
+        layer.edge_color_mode = 'colormap'
+    assert layer._edge_color_property == next(iter(properties))
+    np.testing.assert_allclose(layer.edge_color[-1], [1, 1, 1, 1])
+
+    # switch to color cycle
+    layer.edge_color_mode = 'cycle'
+    layer.edge_color = 'vector_type'
+    edge_color_array = transform_color(color_cycle * int((shape[0] / 2)))
+    assert np.all(layer.edge_color == edge_color_array)
 
 
 def test_length():
