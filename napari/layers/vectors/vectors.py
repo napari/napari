@@ -104,7 +104,7 @@ class Vectors(Layer):
         The start point and projections of N vectors in 2D for vectors whose
         start point is in the currently viewed slice.
     _property_choices : dict {str: array (N,)}
-        Possible values for the properties in Points.properties.
+        Possible values for the properties in Vectors.properties.
         If properties is not provided, it will be {} (empty dictionary).
     _mesh_vertices : (4N, 2) array
         The four corner points for the mesh representation of each vector as as
@@ -217,12 +217,11 @@ class Vectors(Layer):
 
     @property
     def data(self) -> np.ndarray:
+        """(N, 2, D) array: start point and projections of vectors."""
         return self._data
 
     @data.setter
     def data(self, vectors: np.ndarray):
-        """(N, 2, D) array: start point and projections of vectors."""
-
         self._data = vectors_to_coordinates(vectors)
 
         vertices, triangles = generate_vector_meshes(
@@ -306,11 +305,11 @@ class Vectors(Layer):
 
     @property
     def edge_width(self) -> Union[int, float]:
+        """float: Width for all vectors in pixels."""
         return self._edge_width
 
     @edge_width.setter
     def edge_width(self, edge_width: Union[int, float]):
-        """float: Width for all vectors in pixels."""
         self._edge_width = edge_width
 
         vertices, triangles = generate_vector_meshes(
@@ -328,11 +327,11 @@ class Vectors(Layer):
 
     @property
     def length(self) -> Union[int, float]:
+        """float: Multiplicative factor for length of all vectors."""
         return self._length
 
     @length.setter
     def length(self, length: Union[int, float]):
-        """float: Multiplicative factor for length of all vectors."""
         self._length = length
 
         vertices, triangles = generate_vector_meshes(
@@ -350,16 +349,16 @@ class Vectors(Layer):
 
     @property
     def edge_color(self) -> str:
+        """(1 x 4) np.ndarray: Array of RGBA edge colors (applied to all vectors)"""
         return self._edge_color
 
     @edge_color.setter
     def edge_color(self, edge_color: str):
-        """(1 x 4) np.ndarray: Array of RGBA edge colors (applied to all vectors)"""
-        # if the provided face color is a string, first check if it is a key in the properties.
-        # otherwise, assume it is the name of a color
-
+        # save the old mode, we will emit an event if the mode has changed
         old_mode = self._edge_color_mode
 
+        # if the provided face color is a string, first check if it is a key in the properties.
+        # otherwise, assume it is the name of a color
         if self._is_color_mapped(edge_color):
             if guess_continuous(self.properties[edge_color]):
                 new_mode = ColorMode.COLORMAP
@@ -400,8 +399,8 @@ class Vectors(Layer):
             If set to True, the function will recalculate the color cycle map
             or colormap (whichever is being used). If set to False, the function
             will use the current color cycle map or color map. For example, if you
-            are adding/modifying points and want them to be colored with the same
-            mapping as the other points (i.e., the new points shouldn't affect
+            are adding/modifying vectors and want them to be colored with the same
+            mapping as the other vectors (i.e., the new vectors shouldn't affect
             the color cycle map or colormap), set update_color_mapping=False.
             Default value is False.
         """
@@ -487,7 +486,7 @@ class Vectors(Layer):
     def edge_color_mode(self):
         """str: Edge color setting mode
 
-        DIRECT (default mode) allows each point to be set arbitrarily
+        DIRECT (default mode) allows each vector to be set arbitrarily
 
         CYCLE allows the color to be set via a color cycle over an attribute
 
@@ -530,7 +529,7 @@ class Vectors(Layer):
 
     @property
     def edge_color_cycle(self):
-        """Union[list, np.ndarray, cycle] :  Color cycle for edge_color.
+        """list, np.ndarray, cycle :  Color cycle for edge_color.
         Can be a list of colors or a cycle of colors
 
         """
@@ -646,7 +645,7 @@ class Vectors(Layer):
             self._view_faces = faces
 
     def _update_thumbnail(self):
-        """Update thumbnail with current points and colors."""
+        """Update thumbnail with current vectors and colors."""
         # calculate min vals for the vertices and pad with 0.5
         # the offset is needed to ensure that the top left corner of the
         # vectors corresponds to the top left corner of the thumbnail
