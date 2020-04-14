@@ -711,10 +711,10 @@ class AddLayersMixin:
         self.add_layer(layer)
         return layer
 
-    def add_path(
+    def open_path(
         self, path: Union[str, Sequence[str]], stack: bool = False, **kwargs
     ) -> List[layers.Layer]:
-        """Add a path or list of paths to the viewer.
+        """Open a path or list of paths with plugins, and add layers to viewer.
 
         A list of paths will be handed one-by-one to the napari_get_reader hook
         if stack is False, otherwise the full list is passed to each plugin
@@ -762,7 +762,7 @@ class AddLayersMixin:
     ) -> List[layers.Layer]:
         """Load a path or a list of paths into the viewer using plugins.
 
-        This function is mostly called from self.add_path, where the ``stack``
+        This function is mostly called from self.open_path, where the ``stack``
         argument determines whether a list of strings is handed to plugins one
         at a time, or en-masse.
 
