@@ -33,7 +33,7 @@ from pluggy.hooks import HookImpl, _HookCaller as _PluggyHookCaller
 from .exceptions import PluginCallError
 
 
-# Vendored with slight modifications from pluggy.callers._multicall:
+# Vendored with modifications from pluggy.callers._multicall:
 # https://github.com/pytest-dev/pluggy/blob/master/src/pluggy/callers.py#L157
 def _multicall(
     hook_impls: Sequence[HookImpl],
@@ -287,10 +287,11 @@ class _HookCaller(_PluggyHookCaller):
         # for details on the difference between wrappers and nonwrappers, see:
         # https://pluggy.readthedocs.io/en/latest/#wrappers
         _old_nonwrappers = self._nonwrappers.copy()
+        _new_nonwrappers: List[HookImpl] = []
         indices = [self.index(elem) for elem in new_order]
-        _new_nonwrappers: List[HookImpl] = [
-            _old_nonwrappers[i] for i in indices
-        ]
+        for i in indices:
+            # inserting because they get called in reverse order.
+            _new_nonwrappers.insert(0, _old_nonwrappers[i])
 
         # remove items that have been pulled, leaving only items that
         # were not specified in ``new_order`` argument
@@ -323,7 +324,7 @@ class _HookCaller(_PluggyHookCaller):
             If ``plugin_name`` has not provided a hook implementation for this
             hook specification.
         """
-        self.get_hookimpl_for_plugin(plugin_name).enabled = enabled
+        self.get_plugin_hook_implementation(plugin_name).enabled = enabled
 
     def enable_plugin(self, plugin_name: str):
         """enable implementation for ``plugin_name``."""
@@ -334,7 +335,35 @@ class _HookCaller(_PluggyHookCaller):
         self._set_plugin_enabled(plugin_name, False)
 
     def _call_plugin(self, plugin_name: str, *args, **kwargs):
-        implementation = self.get_hookimpl_for_plugin(plugin_name)
+        """Call the hook implementation for a specific plugin
+
+        Note: this method is not intended to be called directly. Instead, just
+        call the instance directly, specifing the ``_plugin`` argument.
+        See the ``__call__`` method below.
+
+        Parameters
+        ----------
+        plugin_name : str
+            Name of the plugin
+
+        Returns
+        -------
+        Any
+            Result of implementation call provided by plugin
+
+        Raises
+        ------
+        TypeError
+            If the implementation is a hook wrapper (cannot be called directly)
+        TypeError
+            If positional arguments are provided
+        HookCallError
+            If one of the required arguments in the hook specification is not
+            present in ``kwargs``.
+        PluginCallError
+            If an exception is raised when calling the plugin
+        """
+        implementation = self.get_plugin_hook_implementation(plugin_name)
         if implementation.hookwrapper:
             raise TypeError("Hook wrappers can not be called directly")
 
@@ -342,6 +371,8 @@ class _HookCaller(_PluggyHookCaller):
         if args:
             raise TypeError("hook calling supports only keyword arguments")
         _args: List[Any] = []
+        # this converts kwargs into positional arguments in the correct order
+        # for the hookspec
         try:
             _args = [kwargs[argname] for argname in implementation.argnames]
         except KeyError:
@@ -365,14 +396,58 @@ class _HookCaller(_PluggyHookCaller):
 
     def __call__(
         self,
-        *args,
+        *,
         _skip_impls: Optional[Sequence[HookImpl]] = None,
         _return_impl: bool = False,
         _plugin: Optional[str] = None,
         **kwargs,
     ):
-        if args:
-            raise TypeError("hook calling supports only keyword arguments")
+        """Call hook implementation(s) for this spec and return result(s).
+
+        This is the primary way to call plugin hook implementations.
+
+        Note: Parameters are prefaced by underscores to reduce potential
+        conflicts with argument names in hook specifications.  There is a test
+        in ``test_hook_specifications.test_annotation_on_hook_specification``
+        to ensure that these argument names are never used in one of our
+        hookspecs.
+
+        Parameters
+        ----------
+        _skip_impls : Sequence[HookImpl], optional
+            A list of HookImpl instances that should be *skipped* when calling
+            hook implementations, by default None
+        _return_impl : bool, optional
+            If ``True`` results are returned as 2-tuples ``(result, HookImpl)``
+            so that it is clear which implementation provided the result. (This
+            can be particularly useful when ``firstresult==True`` is used on
+            the hook specification). by default False.  This argument is
+            ignored when ``_plugin`` is provided.
+        _plugin : str, optional
+            The name of a specific plugin to use.  By default all
+            implementations will be called (though if ``firstresult==True``,
+            only the first non-None result will be returned).
+        **kwargs
+            keys should match the names of arguments in the corresponding hook
+            specification, values will be passed as arguments to the hook
+            implementations.
+
+        Returns
+        -------
+        Any
+            The return type depends a lot on the calling arguments:
+
+            - If no special (underscore) arguments are provided, results will
+              be returned in a ``list``, unless the hookspec was declared with
+              ``firstresult==True``, in which case a single result will be
+              returned.
+            - If ``_return_impl`` is ``True``, will return a list of 2-tuples
+              ``(result, HookImpl)``, unless the hookspec was declared with
+              ``firstresult==True``, in which case a single 2-tuple will be
+              returned.
+            - If ``_plugin`` is provided, will return the single result from
+              the specified plugin
+        """
         assert not self.is_historic()
         if self.spec and self.spec.argnames:
             notincall = (
@@ -390,6 +465,7 @@ class _HookCaller(_PluggyHookCaller):
                 )
 
         if _plugin:
+            # if a plugin name is specified, just call it directly
             return self._call_plugin(_plugin, **kwargs)
 
         skip_impls = _skip_impls or []
@@ -397,11 +473,11 @@ class _HookCaller(_PluggyHookCaller):
             imp for imp in self.get_hookimpls() if imp not in skip_impls
         ]
         firstresult = self.spec.opts.get("firstresult") if self.spec else False
+        # the heavy lifting of looping through hook implementations, catching
+        # errors and gathering results is handled by the _multicall function.
         return _multicall(
             hookimpls,
             kwargs,
             _return_impl=_return_impl,
             firstresult=firstresult,
         )
-
-        return self._hookexec(self, self.get_hookimpls(), kwargs)
