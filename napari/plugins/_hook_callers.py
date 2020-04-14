@@ -287,10 +287,10 @@ class _HookCaller(_PluggyHookCaller):
         # for details on the difference between wrappers and nonwrappers, see:
         # https://pluggy.readthedocs.io/en/latest/#wrappers
         _old_nonwrappers = self._nonwrappers.copy()
-        _new_nonwrappers: List[HookImpl] = []
         indices = [self.index(elem) for elem in new_order]
-        for i in indices:
-            _new_nonwrappers.insert(0, _old_nonwrappers[i])
+        _new_nonwrappers: List[HookImpl] = [
+            _old_nonwrappers[i] for i in indices
+        ]
 
         # remove items that have been pulled, leaving only items that
         # were not specified in ``new_order`` argument
