@@ -447,6 +447,7 @@ def test_properties():
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
 def test_adding_properties(attribute):
+    """Test adding properties to an existing layer"""
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
@@ -456,6 +457,16 @@ def test_adding_properties(attribute):
     properties = {'point_type': np.array(['A', 'B'] * int(shape[0] / 2))}
     layer.properties = properties
     np.testing.assert_equal(layer.properties, properties)
+
+    # add properties as a dataframe
+    properties_df = pd.DataFrame(properties)
+    layer.properties = properties_df
+    np.testing.assert_equal(layer.properties, properties)
+
+    # add properties as a dictionary with list values
+    properties_list = {'point_type': ['A', 'B'] * int(shape[0] / 2)}
+    layer.properties = properties_list
+    assert isinstance(layer.properties['point_type'], np.ndarray)
 
     # removing a property that was the _edge_color_property should give a warning
     setattr(layer, '_%s_color_property' % attribute, 'vector_type')
@@ -679,6 +690,31 @@ def test_switch_color_mode(attribute):
     setattr(layer, '%s_color_mode' % attribute, 'direct')
     new_edge_color = getattr(layer, '%s_color' % attribute)
     np.testing.assert_allclose(new_edge_color, color)
+
+
+@pytest.mark.parametrize("attribute", ['edge', 'face'])
+def test_colormap_without_properties(attribute):
+    """Setting the colormode to colormap should raise an exception"""
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+
+    with pytest.raises(ValueError):
+        setattr(layer, '%s_color_mode' % attribute, 'colormap')
+
+
+@pytest.mark.parametrize("attribute", ['edge', 'face'])
+def test_colormap_with_categorical_properties(attribute):
+    """Setting the colormode to colormap should raise an exception"""
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    properties = {'point_type': np.array(['A', 'B'] * int((shape[0] / 2)))}
+    layer = Points(data, properties=properties)
+
+    with pytest.raises(TypeError):
+        setattr(layer, '%s_color_mode' % attribute, 'colormap')
 
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
