@@ -369,55 +369,8 @@ class Points(Layer):
                 k: np.asarray([v[0]])
                 for k, v in self._property_choices.items()
             }
-            if self._edge_color_mode == ColorMode.DIRECT:
-                self._current_edge_color = transform_color_with_defaults(
-                    num_entries=1,
-                    colors=edge_color,
-                    elem_name="edge_color",
-                    default="white",
-                )
-            elif self._edge_color_mode == ColorMode.CYCLE:
-                curr_edge_color = transform_color(next(self.edge_color_cycle))
-                prop_value = self._property_choices[self._edge_color_property][
-                    0
-                ]
-                self.edge_color_cycle_map[prop_value] = curr_edge_color
-                self._current_edge_color = curr_edge_color
-            elif self._edge_color_mode == ColorMode.COLORMAP:
-                prop_value = self._property_choices[self._edge_color_property][
-                    0
-                ]
-                curr_edge_color, _ = map_property(
-                    prop=prop_value,
-                    colormap=self.edge_colormap[1],
-                    contrast_limits=self._edge_contrast_limits,
-                )
-                self._current_edge_color = curr_edge_color
-
-            if self._face_color_mode == ColorMode.DIRECT:
-                self._current_face_color = transform_color_with_defaults(
-                    num_entries=1,
-                    colors=face_color,
-                    elem_name="face_color",
-                    default="white",
-                )
-            elif self._face_color_mode == ColorMode.CYCLE:
-                curr_face_color = transform_color(next(self.face_color_cycle))
-                prop_value = self._property_choices[self._face_color_property][
-                    0
-                ]
-                self.face_color_cycle_map[prop_value] = curr_face_color
-                self._current_face_color = curr_face_color
-            elif self._face_color_mode == ColorMode.COLORMAP:
-                prop_value = self._property_choices[self._face_color_property][
-                    0
-                ]
-                curr_face_color, _ = map_property(
-                    prop=prop_value,
-                    colormap=self.face_colormap[1],
-                    contrast_limits=self._face_contrast_limits,
-                )
-                self._current_face_color = curr_face_color
+            self._initialize_current_color_for_empty_layer(edge_color, 'edge')
+            self._initialize_current_color_for_empty_layer(face_color, 'face')
         else:
             self._current_edge_color = self.edge_color[-1]
             self._current_face_color = self.face_color[-1]
@@ -425,6 +378,52 @@ class Points(Layer):
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
+
+    def _initialize_current_color_for_empty_layer(
+        self, color: ColorType, attribute: str
+    ):
+        """Initialize the current_edge_color or current_face_color
+        property for the case when you are starting with an empty layer
+
+        Parameters:
+        -----------
+        color : (N, 4) array or str
+            The value for setting edge or face_color
+        attribute : str
+            The name of the attribute to set the color of.
+            Should be 'edge' for edge_color or 'face' for face_color.
+        """
+        color_mode = getattr(self, '_%s_color_mode' % attribute)
+        if color_mode == ColorMode.DIRECT:
+            curr_color = transform_color_with_defaults(
+                num_entries=1,
+                colors=color,
+                elem_name='%s_color' % attribute,
+                default="white",
+            )
+
+        elif color_mode == ColorMode.CYCLE:
+            color_cycle = getattr(self, '%s_color_cycle' % attribute)
+            curr_color = transform_color(next(color_cycle))
+
+            # add the new color cycle mapping
+            color_property = getattr(self, '_%s_color_property' % attribute)
+            prop_value = self._property_choices[color_property][0]
+            color_cycle_map = getattr(self, '%s_color_cycle_map' % attribute)
+            color_cycle_map[prop_value] = curr_color
+            setattr(self, '%s_color_cycle_map' % attribute, color_cycle_map)
+
+        elif color_mode == ColorMode.COLORMAP:
+            color_property = getattr(self, '_%s_color_property' % attribute)
+            prop_value = self._property_choices[color_property][0]
+            colormap = getattr(self, '%s_colormap' % attribute)
+            contrast_limits = getattr(self, '_%s_contrast_limits' % attribute)
+            curr_color, _ = map_property(
+                prop=prop_value,
+                colormap=colormap[1],
+                contrast_limits=contrast_limits,
+            )
+        setattr(self, '_current_%s_color' % attribute, curr_color)
 
     @property
     def data(self) -> np.ndarray:
