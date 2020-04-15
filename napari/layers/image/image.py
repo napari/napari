@@ -186,11 +186,11 @@ class Image(IntensityVisualizationMixin, Layer):
         self._data = data
         self._data_pyramid = data_pyramid
         self._corner_pixels = np.zeros((2, ndim), dtype=int)
-        self._corner_pixels[1] = 1
         if self.is_pyramid:
             self._data_level = len(data_pyramid) - 1
         else:
             self._data_level = 0
+        self._corner_pixels[1] = self.level_shapes[self._data_level]
 
         # Intitialize image views and thumbnails with zeros
         if self.rgb:
@@ -482,7 +482,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
             for d in self.dims.displayed:
                 indices[d] = slice(
-                    self.corner_pixels[0, d], self.corner_pixels[1, d], 1,
+                    self.corner_pixels[0, d], self.corner_pixels[1, d] + 1, 1,
                 )
             self._transforms['tile2data'].translate = (
                 self.corner_pixels[0]

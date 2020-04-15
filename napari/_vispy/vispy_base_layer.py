@@ -148,7 +148,8 @@ class VispyBaseLayer(ABC):
         # convert NumPy axis ordering to VisPy axis ordering
         self.scale = scale[::-1]
         if self.layer.is_pyramid:
-            self.layer.corner_pixels, size = self.find_extrema()
+            corner_pixels, _ = self.find_coordinates_of_corners_of_canvas()
+            self.layer.corner_pixels = corner_pixels
         self.layer.position = self._transform_position(self._position)
 
     def _on_translate_change(self, event=None):
@@ -226,8 +227,8 @@ class VispyBaseLayer(ABC):
 
         return level
 
-    def find_extrema(self):
-        """Finds the extreme pixels of the canvas in data.
+    def find_coordinates_of_corners_of_canvas(self):
+        """Find location of the corners of canvas in data coordinates.
 
         Depends on the current pan and zoom position.
 
@@ -254,9 +255,7 @@ class VispyBaseLayer(ABC):
         bottom_right = np.zeros(self.layer.ndim)
         for d, tl, br in zip(self.layer.dims.displayed, tl_raw, br_raw):
             top_left[d] = tl
-            # take an extra pixel from the bottom right to prevent artifacts
-            # at the bottom and right edges of the canvas
-            bottom_right[d] = br + 1
+            bottom_right[d] = br
 
         # Clip according to the max data of the level shape
         top_left = np.clip(
@@ -283,7 +282,7 @@ class VispyBaseLayer(ABC):
         """
         self.layer.scale_factor = self.scale_factor
         if self.layer.is_pyramid:
-            corner_pixels, size = self.find_extrema()
+            corner_pixels, size = self.find_coordinates_of_corners_of_canvas()
             data_level = self.compute_data_level(size)
 
             if data_level != self.layer.data_level:
