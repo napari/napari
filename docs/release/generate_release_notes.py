@@ -122,13 +122,13 @@ authors.discard("azure-pipelines-bot")
 
 highlights = OrderedDict()
 
-highlights['Highlight'] = {}
-highlights['New Feature'] = {}
-highlights['Improvement'] = {}
-highlights['Bug Fixe'] = {}
-highlights['API Change'] = {}
-highlights['Deprecation'] = {}
-highlights['Build Tool'] = {}
+highlights['Highlights'] = {}
+highlights['New Features'] = {}
+highlights['Improvements'] = {}
+highlights['Bug Fixes'] = {}
+highlights['API Changes'] = {}
+highlights['Deprecations'] = {}
+highlights['Build Tools'] = {}
 other_pull_requests = {}
 
 for pull in tqdm(
@@ -158,7 +158,7 @@ for pull in tqdm(
 
 
 # add Other PRs to the ordered dict to make doc generation easier.
-highlights['Other Pull Request'] = other_pull_requests
+highlights['Other Pull Requests'] = other_pull_requests
 
 
 # Now generate the release notes
@@ -183,7 +183,7 @@ https://github.com/napari/napari
 )
 
 for section, pull_request_dicts in highlights.items():
-    print(f'## {section}s')
+    print(f'## {section}')
     if len(pull_request_dicts.items()) == 0:
         print()
     for number, pull_request_info in pull_request_dicts.items():
