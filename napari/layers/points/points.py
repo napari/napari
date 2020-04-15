@@ -473,84 +473,65 @@ class Points(Layer):
                     )
 
                 # add new edge colors
-                if self._edge_color_mode == ColorMode.DIRECT:
-                    new_edge_colors = np.tile(
-                        self._current_edge_color, (adding, 1)
-                    )
-                elif self._edge_color_mode == ColorMode.CYCLE:
-                    edge_color_property = self.current_properties[
-                        self._edge_color_property
-                    ][0]
-
-                    # check if the new edge color property is in the cycle map
-                    # and add it if it is not
-                    edge_color_cycle_keys = [*self.edge_color_cycle_map]
-                    if edge_color_property not in edge_color_cycle_keys:
-                        self.edge_color_cycle_map[edge_color_property] = next(
-                            self.edge_color_cycle
-                        )
-
-                    new_edge_colors = np.tile(
-                        self.edge_color_cycle_map[edge_color_property],
-                        (adding, 1),
-                    )
-                elif self._edge_color_mode == ColorMode.COLORMAP:
-                    edge_color_property_value = self.current_properties[
-                        self._edge_color_property
-                    ][0]
-
-                    ec, _ = map_property(
-                        prop=edge_color_property_value,
-                        colormap=self.edge_colormap[1],
-                        contrast_limits=self._edge_contrast_limits,
-                    )
-                    new_edge_colors = np.tile(ec, (adding, 1))
-                self._edge_color = np.vstack(
-                    (self.edge_color, new_edge_colors)
-                )
+                self._add_point_color(adding, 'edge')
 
                 # add new face colors
-                if self._face_color_mode == ColorMode.DIRECT:
-                    new_face_colors = np.tile(
-                        self._current_face_color, (adding, 1)
-                    )
-                elif self._face_color_mode == ColorMode.CYCLE:
-                    face_color_property = self.current_properties[
-                        self._face_color_property
-                    ][0]
-
-                    # check if the new edge color property is in the cycle map
-                    # and add it if it is not
-                    face_color_cycle_keys = [*self.face_color_cycle_map]
-                    if face_color_property not in face_color_cycle_keys:
-                        self.face_color_cycle_map[face_color_property] = next(
-                            self.face_color_cycle
-                        )
-
-                    new_face_colors = np.tile(
-                        self.face_color_cycle_map[face_color_property],
-                        (adding, 1),
-                    )
-                elif self._face_color_mode == ColorMode.COLORMAP:
-                    face_color_property_value = self.current_properties[
-                        self._face_color_property
-                    ][0]
-
-                    fc, _ = map_property(
-                        prop=face_color_property_value,
-                        colormap=self.face_colormap[1],
-                        contrast_limits=self._face_contrast_limits,
-                    )
-                    new_face_colors = np.tile(fc, (adding, 1))
-                self._face_color = np.vstack(
-                    (self.face_color, new_face_colors)
-                )
+                self._add_point_color(adding, 'face')
 
                 self.size = np.concatenate((self._size, size), axis=0)
                 self.selected_data = set(np.arange(cur_npoints, len(data)))
 
         self._update_dims()
         self.events.data()
+
+    def _add_point_color(self, adding: int, attribute: str):
+        """Add the edge or face colors for new points
+
+        Parameters:
+        ----------
+        adding : int
+            the number of points that were added
+            (and thus the number of color entries to add)
+        attribute : str
+            The name of the attribute to set the color of.
+            Should be 'edge' for edge_colo_moder or 'face' for face_color_mode.
+        """
+        color_mode = getattr(self, '_%s_color_mode' % attribute)
+        if color_mode == ColorMode.DIRECT:
+            current_face_color = getattr(self, '_current_%s_color' % attribute)
+            new_colors = np.tile(current_face_color, (adding, 1))
+        elif color_mode == ColorMode.CYCLE:
+            property_name = getattr(self, '_%s_color_property' % attribute)
+            color_property_value = self.current_properties[property_name][0]
+
+            # check if the new color property is in the cycle map
+            # and add it if it is not
+            color_cycle_map = getattr(self, '%s_color_cycle_map' % attribute)
+            color_cycle_keys = [*color_cycle_map]
+            if color_property_value not in color_cycle_keys:
+                color_cycle = getattr(self, '%s_color_cycle' % attribute)
+                color_cycle_map[color_property_value] = next(color_cycle)
+                setattr(
+                    self, '%s_color_cycle_map' % attribute, color_cycle_map
+                )
+
+            new_colors = np.tile(
+                color_cycle_map[color_property_value], (adding, 1),
+            )
+        elif color_mode == ColorMode.COLORMAP:
+            property_name = getattr(self, '_%s_color_property' % attribute)
+            color_property_value = self.current_properties[property_name][0]
+            colormap = getattr(self, '%s_colormap' % attribute)
+            contrast_limits = getattr(self, '_%s_contrast_limits' % attribute)
+
+            fc, _ = map_property(
+                prop=color_property_value,
+                colormap=colormap[1],
+                contrast_limits=contrast_limits,
+            )
+            new_colors = np.tile(fc, (adding, 1))
+        colors = getattr(self, '%s_color' % attribute)
+        setattr(self, '_%s_color' % attribute, np.vstack((colors, new_colors)))
 
     @property
     def properties(self):
@@ -908,7 +889,6 @@ class Points(Layer):
         attribute : str
             The name of the attribute to set the color of.
             Should be 'edge' for edge_colo_moder or 'face' for face_color_mode.
-
         """
         color_mode = ColorMode(color_mode)
 
@@ -954,7 +934,6 @@ class Points(Layer):
         attribute : str
             The name of the attribute to set the color of.
             Should be 'edge' for edge_color or 'face' for face_color.
-
         """
         # if the provided color is a string, first check if it is a key in the properties.
         # otherwise, assume it is the name of a color
@@ -985,22 +964,22 @@ class Points(Layer):
     def refresh_colors(self, update_color_mapping: bool = False):
         """Calculate and update face and edge colors if using a cycle or color map
 
-                Parameters
-                ----------
-                update_color_mapping : bool
-                    If set to True, the function will recalculate the color cycle map
-                    or colormap (whichever is being used). If set to False, the function
-                    will use the current color cycle map or color map. For example, if you
-                    are adding/modifying points and want them to be colored with the same
-                    mapping as the other points (i.e., the new points shouldn't affect
-                    the color cycle map or colormap), set update_color_mapping=False.
-                    Default value is False.
+        Parameters
+        ----------
+        update_color_mapping : bool
+            If set to True, the function will recalculate the color cycle map
+            or colormap (whichever is being used). If set to False, the function
+            will use the current color cycle map or color map. For example, if you
+            are adding/modifying points and want them to be colored with the same
+            mapping as the other points (i.e., the new points shouldn't affect
+            the color cycle map or colormap), set update_color_mapping=False.
+            Default value is False.
         """
 
-        self.refresh_color('face', update_color_mapping)
-        self.refresh_color('edge', update_color_mapping)
+        self._refresh_color('face', update_color_mapping)
+        self._refresh_color('edge', update_color_mapping)
 
-    def refresh_color(self, attribute, update_color_mapping: bool = False):
+    def _refresh_color(self, attribute, update_color_mapping: bool = False):
         """Calculate and update face or edge colors if using a cycle or color map
 
         Parameters
