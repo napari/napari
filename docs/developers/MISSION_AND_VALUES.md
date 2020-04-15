@@ -62,7 +62,9 @@ a welcoming place for all.
 
 ## Our vision for plugins
 
-As noted above, napari aims to support a plugin ecosystem for scientific image analysis. Right now there has been little development of the plugin infrastructure (though see [#263](https://github.com/napari/napari/pull/263)), and this section will likely be significantly updated over the coming months as more work is done there, but we lay out here some of our motivation and vision for the plugin ecosystem.
+As noted above, napari aims to support a plugin ecosystem for scientific image analysis. We have recently taken some of the first steps towards adopting the [pluggy](https://pluggy.readthedocs.io/en/latest/) plugin management framework within napari for this purpose. See [#936](https://github.com/napari/napari/issues/936) and linked issues for details. Pluggy is already widely used within the Python community, in particular by the [pytest](https://docs.pytest.org/en/latest/index.html) testing framework, allowing us to benefit from years of development and community support.
+
+We will be adding more dedicated documentation around plugins shortly, and this section will likely continue to be significantly updated over the coming months as more work is done, but we will lay out here some of our motivation and vision for the plugin ecosystem.
 
 Image analysis is heterogenous and often highly specialized within different domains of science. napari alone will not try to meet all the image analysis needs of the scientific community, but instead try to be a foundational visualization tool that provides access to domain specific analysis through community developed plugins.
 
