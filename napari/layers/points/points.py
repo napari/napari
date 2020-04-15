@@ -880,7 +880,7 @@ class Points(Layer):
     ):
         """ Set the face_color_mode or edge_color_mode property
 
-        Paramters:
+        Parameters
         ----------
         color_mode : str, ColorMode
             The value for setting edge or face_color_mode. If color_mode is a string,
@@ -926,7 +926,7 @@ class Points(Layer):
     def _set_color(self, color: ColorType, attribute: str):
         """ Set the face_color or edge_color property
 
-        Paramters:
+        Parameters
         ----------
         color : (N, 4) array or str
             The value for setting edge or face_color
