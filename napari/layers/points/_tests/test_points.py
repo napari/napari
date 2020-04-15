@@ -445,6 +445,27 @@ def test_properties():
     assert np.all(layer.properties['point_type'] == paste_annotations)
 
 
+@pytest.mark.parametrize("attribute", ['edge', 'face'])
+def test_adding_properties(attribute):
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+
+    # add properties
+    properties = {'point_type': np.array(['A', 'B'] * int(shape[0] / 2))}
+    layer.properties = properties
+    np.testing.assert_equal(layer.properties, properties)
+
+    # removing a property that was the _edge_color_property should give a warning
+    setattr(layer, '_%s_color_property' % attribute, 'vector_type')
+    properties_2 = {
+        'not_vector_type': np.array(['A', 'B'] * int(shape[0] / 2))
+    }
+    with pytest.warns(UserWarning):
+        layer.properties = properties_2
+
+
 def test_properties_dataframe():
     """test if properties can be provided as a DataFrame"""
     shape = (10, 2)
@@ -608,6 +629,75 @@ def test_n_dimensional():
     assert layer.n_dimensional is True
 
 
+@pytest.mark.parametrize("attribute", ['edge', 'face'])
+def test_switch_color_mode(attribute):
+    """Test switching between color modes"""
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    properties = {'point_type': np.array([0, 1.5] * int((shape[0] / 2)))}
+    initial_color = [1, 0, 0, 1]
+    color_cycle = ['red', 'blue']
+    color_kwarg = '%s_color' % attribute
+    colormap_kwarg = '%s_colormap' % attribute
+    color_cycle_kwarg = '%s_color_cycle' % attribute
+    args = {
+        color_kwarg: initial_color,
+        colormap_kwarg: 'gray',
+        color_cycle_kwarg: color_cycle,
+    }
+    layer = Points(data, properties=properties, **args,)
+
+    layer_color_mode = getattr(layer, '%s_color_mode' % attribute)
+    layer_color = getattr(layer, '%s_color' % attribute)
+    assert layer_color_mode == 'direct'
+    np.testing.assert_allclose(
+        layer_color, np.repeat([initial_color], shape[0], axis=0)
+    )
+
+    # there should not be an edge_color_property
+    color_property = getattr(layer, '_%s_color_property' % attribute)
+    assert color_property == ''
+
+    # transitioning to colormap should raise a warning
+    # because there isn't an edge color property yet and
+    # the first property in Vectors.properties is being automatically selected
+    with pytest.warns(UserWarning):
+        setattr(layer, '%s_color_mode' % attribute, 'colormap')
+    color_property = getattr(layer, '_%s_color_property' % attribute)
+    assert color_property == next(iter(properties))
+    layer_color = getattr(layer, '%s_color' % attribute)
+    np.testing.assert_allclose(layer_color[-1], [1, 1, 1, 1])
+
+    # switch to color cycle
+    setattr(layer, '%s_color_mode' % attribute, 'cycle')
+    color = getattr(layer, '%s_color' % attribute)
+    layer_color = transform_color(color_cycle * int((shape[0] / 2)))
+    np.testing.assert_allclose(color, layer_color)
+
+    # switch back to direct, edge_colors shouldn't change
+    setattr(layer, '%s_color_mode' % attribute, 'direct')
+    new_edge_color = getattr(layer, '%s_color' % attribute)
+    np.testing.assert_allclose(new_edge_color, color)
+
+
+@pytest.mark.parametrize("attribute", ['edge', 'face'])
+def test_add_colormap(attribute):
+    """Test  directly adding a vispy Colormap object"""
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    annotations = {'point_type': np.array([0, 1.5] * int((shape[0] / 2)))}
+    color_kwarg = '%s_color' % attribute
+    colormap_kwarg = '%s_colormap' % attribute
+    args = {color_kwarg: 'point_type', colormap_kwarg: 'viridis'}
+    layer = Points(data, properties=annotations, **args,)
+
+    setattr(layer, '%s_colormap' % attribute, get_colormap('gray'))
+    layer_colormap = getattr(layer, '%s_colormap' % attribute)
+    assert layer_colormap[0] == 'unknown_colormap'
+
+
 def test_edge_color_direct():
     """Test setting edge color."""
     shape = (10, 2)
@@ -726,6 +816,9 @@ def test_edge_color_cycle():
             (edge_color_array[1], edge_color_array[3:], transform_color('red'))
         ),
     )
+
+    # refresh colors
+    layer.refresh_colors(update_color_mapping=True)
 
 
 def test_add_edge_color_cycle_to_empty_layer():
@@ -967,6 +1060,9 @@ def test_face_color_cycle():
             (face_color_array[1], face_color_array[3:], transform_color('red'))
         ),
     )
+
+    # refresh colors
+    layer.refresh_colors(update_color_mapping=True)
 
 
 def test_add_face_color_cycle_to_empty_layer():

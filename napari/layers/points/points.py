@@ -920,7 +920,7 @@ class Points(Layer):
                 raise TypeError(
                     'selected property must be numeric to use ColorMode.COLORMAP'
                 )
-            setattr(self, '_%s_color_mode', color_mode)
+            setattr(self, '_%s_color_mode' % attribute, color_mode)
             self.refresh_colors()
 
     def _set_color(self, color: ColorType, attribute: str):
