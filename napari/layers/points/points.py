@@ -778,7 +778,7 @@ class Points(Layer):
 
     @edge_color_mode.setter
     def edge_color_mode(self, edge_color_mode: Union[str, ColorMode]):
-        self._set_color(edge_color_mode, 'edge')
+        self._set_color_mode(edge_color_mode, 'edge')
 
     @property
     def face_color(self):
