@@ -516,7 +516,9 @@ def test_properties_list():
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    properties = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
+    properties = {
+        'point_type': list(_make_cycled_properties(['A', 'B'], shape[0]))
+    }
     layer = Points(data, properties=properties)
     np.testing.assert_equal(layer.properties, properties)
 
