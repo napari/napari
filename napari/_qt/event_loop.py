@@ -22,17 +22,20 @@ def gui_qt(*, startup_logo=False):
     IPython with the Qt GUI event loop enabled by default by using
     ``ipython --gui=qt``.
     """
+    had_app = True
     app = QApplication.instance()
     if not app:
+        had_app = False
         # if this is the first time the Qt app is being instantiated, we set
         # the name, so that we know whether to raise_ in Window.show()
         app = QApplication(sys.argv)
         app.setApplicationName('napari')
-    if startup_logo:
-        logopath = join(dirname(__file__), '..', 'resources', 'logo.png')
-        splash_widget = QSplashScreen(QPixmap(logopath).scaled(400, 400))
-        splash_widget.show()
-    yield
-    if startup_logo:
-        splash_widget.close()
-    app.exec_()
+        if startup_logo:
+            logopath = join(dirname(__file__), '..', 'resources', 'logo.png')
+            splash_widget = QSplashScreen(QPixmap(logopath).scaled(400, 400))
+            splash_widget.show()
+    yield app
+    if not had_app:
+        if startup_logo:
+            splash_widget.close()
+        app.exec_()
