@@ -672,7 +672,13 @@ def test_switch_color_mode(attribute):
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    properties = {'point_type': _make_cycled_properties([0, 1.5], shape[0])}
+    # create a continuous property with a known value in the last element
+    continuous_prop = np.random.random((shape[0],))
+    continuous_prop[-1] = 1
+    properties = {
+        'point_truthiness': continuous_prop,
+        'point_type': _make_cycled_properties(['A', 'B'], shape[0]),
+    }
     initial_color = [1, 0, 0, 1]
     color_cycle = ['red', 'blue']
     color_kwarg = f'{attribute}_color'
@@ -698,7 +704,7 @@ def test_switch_color_mode(attribute):
 
     # transitioning to colormap should raise a warning
     # because there isn't an edge color property yet and
-    # the first property in Vectors.properties is being automatically selected
+    # the first property in points.properties is being automatically selected
     with pytest.warns(UserWarning):
         setattr(layer, f'{attribute}_color_mode', 'colormap')
     color_property = getattr(layer, f'_{attribute}_color_property')
@@ -708,6 +714,7 @@ def test_switch_color_mode(attribute):
 
     # switch to color cycle
     setattr(layer, f'{attribute}_color_mode', 'cycle')
+    setattr(layer, f'{attribute}_color', 'point_type')
     color = getattr(layer, f'{attribute}_color')
     layer_color = transform_color(color_cycle * int((shape[0] / 2)))
     np.testing.assert_allclose(color, layer_color)
