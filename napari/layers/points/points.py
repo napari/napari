@@ -483,7 +483,7 @@ class Points(Layer):
         self.events.data()
 
     def _add_point_color(self, adding: int, attribute: str):
-        """Add the edge or face colors for new points
+        """Add the edge or face colors for new points.
 
         Parameters:
         ----------
