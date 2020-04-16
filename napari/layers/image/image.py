@@ -291,7 +291,7 @@ class Image(IntensityVisualizationMixin, Layer):
         return np.array(shapes)
 
     @property
-    def level_downsamples(self):
+    def downsample_factors(self):
         """list: Downsample factors for each level of the pyramid."""
         return np.divide(self.level_shapes[0], self.level_shapes)
 
@@ -465,11 +465,9 @@ class Image(IntensityVisualizationMixin, Layer):
             level = self.data_level
             indices = np.array(self.dims.indices)
             downsampled_indices = (
-                indices[not_disp] / self.level_downsamples[level, not_disp]
+                indices[not_disp] / self.downsample_factors[level, not_disp]
             )
-            downsampled_indices = np.round(
-                downsampled_indices.astype(float)
-            ).astype(int)
+            downsampled_indices = np.round(downsampled_indices).astype(int)
             downsampled_indices = np.clip(
                 downsampled_indices, 0, self.level_shapes[level, not_disp] - 1
             )
@@ -477,7 +475,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
             scale = np.ones(self.ndim)
             for d in self.dims.displayed:
-                scale[d] = self.level_downsamples[self.data_level][d]
+                scale[d] = self.downsample_factors[self.data_level][d]
             self._transforms['tile2data'].scale = scale
 
             for d in self.dims.displayed:
@@ -494,40 +492,35 @@ class Image(IntensityVisualizationMixin, Layer):
                 self._data_pyramid[level][tuple(indices)]
             ).transpose(order)
 
-            if np.product(image.shape) == 0:
-                image = np.zeros((1, 1))
-
             # Slice thumbnail
             indices = np.array(self.dims.indices)
             downsampled_indices = (
-                indices[not_disp] / self.level_downsamples[-1, not_disp]
+                indices[not_disp] / self.downsample_factors[-1, not_disp]
             )
-            downsampled_indices = np.round(
-                downsampled_indices.astype(float)
-            ).astype(int)
+            downsampled_indices = np.round(downsampled_indices).astype(int)
             downsampled_indices = np.clip(
                 downsampled_indices, 0, self.level_shapes[-1, not_disp] - 1
             )
             indices[not_disp] = downsampled_indices
-            thumbnail = np.asarray(
+            thumbnail_source = np.asarray(
                 self._data_pyramid[-1][tuple(indices)]
             ).transpose(order)
         else:
             self._transforms['tile2data'].scale = np.ones(self.dims.ndim)
             image = np.asarray(self.data[self.dims.indices]).transpose(order)
-            thumbnail = image
+            thumbnail_source = image
 
         if self.rgb and image.dtype.kind == 'f':
             self._data_raw = np.clip(image, 0, 1)
             self._data_view = self._raw_to_displayed(self._data_raw)
             self._data_thumbnail = self._raw_to_displayed(
-                np.clip(thumbnail, 0, 1)
+                np.clip(thumbnail_source, 0, 1)
             )
 
         else:
             self._data_raw = image
             self._data_view = self._raw_to_displayed(self._data_raw)
-            self._data_thumbnail = self._raw_to_displayed(thumbnail)
+            self._data_thumbnail = self._raw_to_displayed(thumbnail_source)
 
         if self.is_pyramid:
             self.events.scale()

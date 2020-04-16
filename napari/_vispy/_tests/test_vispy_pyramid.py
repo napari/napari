@@ -1,30 +1,6 @@
 import numpy as np
 
 
-# def test_corner_value():
-#     """Test getting the value of the data at the new position."""
-#     shapes = [(40, 20), (20, 10), (10, 5)]
-#     np.random.seed(0)
-#     data = [np.random.random(s) for s in shapes]
-#     layer = Image(data, is_pyramid=True)
-#     value = layer.get_value()
-#     target_position = (39, 19)
-#     target_level = 0
-#     layer.data_level = target_level
-#     layer._corner_pixels[1] = shapes[target_level] #update requested view
-#     layer.refresh()
-#
-#     # Test position at corner of image
-#     layer.position = target_position
-#     value = layer.get_value()
-#     np.testing.assert_allclose(value, (target_level, data[target_level][target_position]))
-#
-#     # Test position at outside image
-#     layer.position = (40, 20)
-#     value = layer.get_value()
-#     assert value[1] is None
-
-
 def test_pyramid(viewer_factory):
     """Test rendering of pyramid data."""
     view, viewer = viewer_factory(show=True)
@@ -32,7 +8,7 @@ def test_pyramid(viewer_factory):
     shapes = [(4000, 2000), (2000, 1000), (1000, 500), (500, 250)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    _ = viewer.add_image(data, is_pyramid=True)
+    _ = viewer.add_image(data, is_pyramid=True, contrast_limits=[0, 1])
     layer = viewer.layers[0]
 
     # Set canvas size to target amount
@@ -66,9 +42,8 @@ def test_pyramid_screenshot(viewer_factory):
     view, viewer = viewer_factory(show=True)
 
     shapes = [(4000, 2000), (2000, 1000), (1000, 500), (500, 250)]
-    np.random.seed(0)
     data = [np.ones(s) for s in shapes]
-    _ = viewer.add_image(data, is_pyramid=True)
+    _ = viewer.add_image(data, is_pyramid=True, contrast_limits=[0, 1])
 
     # Set canvas size to target amount
     view.view.canvas.size = (800, 600)
@@ -93,9 +68,8 @@ def test_pyramid_screenshot_zoomed(viewer_factory):
     view, viewer = viewer_factory(show=True)
 
     shapes = [(4000, 2000), (2000, 1000), (1000, 500), (500, 250)]
-    np.random.seed(0)
     data = [np.ones(s) for s in shapes]
-    _ = viewer.add_image(data, is_pyramid=True)
+    _ = viewer.add_image(data, is_pyramid=True, contrast_limits=[0, 1])
 
     # Set canvas size to target amount
     view.view.canvas.size = (800, 600)
@@ -125,8 +99,8 @@ def test_image_screenshot_zoomed(viewer_factory):
     """Test rendering of image data with screenshot after zoom."""
     view, viewer = viewer_factory(show=True)
 
-    np.random.seed(0)
-    _ = viewer.add_image(np.ones((4000, 2000)), is_pyramid=True)
+    data = np.ones((4000, 2000))
+    _ = viewer.add_image(data, is_pyramid=True, contrast_limits=[0, 1])
 
     # Set canvas size to target amount
     view.view.canvas.size = (800, 600)
