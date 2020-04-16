@@ -60,7 +60,6 @@ def napari_write_image(path: str, data: Any, meta: dict) -> bool:
     """
     ext = os.path.splitext(path)[1]
     path += '.tif' if not ext else ''
-    raise ValueError()
     imsave(path, data)
     return True
 

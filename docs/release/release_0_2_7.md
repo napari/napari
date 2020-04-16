@@ -1,18 +1,10 @@
-Announcement: napari 0.2.7
-==========================
+# Announcement: napari 0.2.7
 
-We're happy to announce the release of napari 0.2.7!
-napari is a fast, interactive, multi-dimensional image viewer for Python.
-It's designed for browsing, annotating, and analyzing large multi-dimensional
-images. It's built on top of Qt (for the GUI), vispy (for performant GPU-based
-rendering), and the scientific Python stack (numpy, scipy).
+We're happy to announce the release of napari 0.2.7! napari is a fast, interactive, multi-dimensional image viewer for Python. It's designed for browsing, annotating, and analyzing large multi-dimensional images. It's built on top of Qt (for the GUI), vispy (for performant GPU-based rendering), and the scientific Python stack (numpy, scipy).
 
+For more information, examples, and documentation, please visit our website: https://github.com/napari/napari
 
-For more information, examples, and documentation, please visit our website:
-https://github.com/napari/napari
-
-Highlights
-**********
+## Highlights
 - Play button for animating axes now in the GUI
 - Threshold slider for much improved isosurface rendering
 - Dockable widgets (!)
@@ -21,12 +13,10 @@ Highlights
 - Adopted a Governance model with a mission and values statement
 - Added a new Core Dev guide
 
-New Features
-************
+## New Features
 - Add governance model, mission and values, core dev guide (#655)
 
-Improvements
-************
+## Improvements
 - Iso-surface threshold slider (#712)
 - Add play button to GUI (#726)
 - Make layers list dockable (#727)
@@ -44,8 +34,7 @@ Improvements
 - Add blocked_signals context manager (#797)
 - Better selected menu header background color (#813)
 
-Bugfixes
-********
+## Bug Fixes
 - Fix StringEnum setting and errors (#757)
 - scale argument now accepts array-like input (#765)
 - fix set_fps type to float (#767)
@@ -63,8 +52,7 @@ Bugfixes
 - Rename util to utils in MANIFEST.in (#811)
 - Add `requirements/release.txt` with release dependencies (#809)
 
-API Changes
-***********
+## API Changes
 - Rename util to utils across repo (#808)
 - Move Labels utility functions to labels_util.py (#770)
 - Move Image layer utility functions to image_utils.py (#775)
@@ -72,24 +60,20 @@ API Changes
 - Refactor util.misc (#781)
 - Drop ndim keyword from labels layer (#773)
 
+## 7 authors added to this release (alphabetical)
+- [Genevieve Buckley](https://github.com/napari/napari/commits?author=GenevieveBuckley) - @GenevieveBuckley
+- [Kevin Yamauchi](https://github.com/napari/napari/commits?author=kevinyamauchi) - @kevinyamauchi
+- [Kira Evans](https://github.com/napari/napari/commits?author=kne42) - @kne42
+- [Nicholas Sofroniew](https://github.com/napari/napari/commits?author=sofroniewn) - @sofroniewn
+- [Peter Boone](https://github.com/napari/napari/commits?author=boonepeter) - @boonepeter
+- [Shannon Axelrod](https://github.com/napari/napari/commits?author=shanaxel42) - @shanaxel42
+- [Talley Lambert](https://github.com/napari/napari/commits?author=tlambert03) - @tlambert03
 
-7 authors added to this release [alphabetical by first name or login]
----------------------------------------------------------------------
-- Genevieve Buckley
-- Kevin Yamauchi
-- Kira Evans
-- Nicholas Sofroniew
-- Peter Boone
-- Shannon Axelrod
-- Talley Lambert
-
-
-7 reviewers added to this release [alphabetical by first name or login]
------------------------------------------------------------------------
-- Ahmet Can Solak
-- Juan Nunez-Iglesias
-- Kevin Yamauchi
-- Kira Evans
-- Nicholas Sofroniew
-- Shannon Axelrod
-- Talley Lambert
+## 7 reviewers added to this release (alphabetical)
+- [Ahmet Can Solak](https://github.com/napari/napari/commits?author=AhmetCanSolak) - @AhmetCanSolak
+- [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - @jni
+- [Kevin Yamauchi](https://github.com/napari/napari/commits?author=kevinyamauchi) - @kevinyamauchi
+- [Kira Evans](https://github.com/napari/napari/commits?author=kne42) - @kne42
+- [Nicholas Sofroniew](https://github.com/napari/napari/commits?author=sofroniewn) - @sofroniewn
+- [Shannon Axelrod](https://github.com/napari/napari/commits?author=shanaxel42) - @shanaxel42
+- [Talley Lambert](https://github.com/napari/napari/commits?author=tlambert03) - @tlambert03
