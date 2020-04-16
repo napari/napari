@@ -67,10 +67,7 @@ def test_empty_points_with_properties_list():
 
     See: https://github.com/napari/napari/pull/1069
     """
-    properties = {
-        'label': ['label1', 'label2'],
-        'cont_prop': [0],
-    }
+    properties = {'label': ['label1', 'label2'], 'cont_prop': [0]}
     pts = Points(properties=properties)
     current_props = {k: np.asarray(v[0]) for k, v in properties.items()}
     np.testing.assert_equal(pts.current_properties, current_props)
