@@ -259,7 +259,7 @@ class VispyBaseLayer(ABC):
                 corner_pixels,
                 requested_shape,
             ) = self.find_coordinates_of_canvas_corners()
-            size_threshold = self.node.canvas.size[::-1]
+            size_threshold = self.node.canvas.size
             downsample_factors = self.layer.downsample_factors[
                 :, self.layer.dims.displayed
             ]

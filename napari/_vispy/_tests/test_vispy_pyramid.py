@@ -5,7 +5,7 @@ def test_pyramid(viewer_factory):
     """Test rendering of pyramid data."""
     view, viewer = viewer_factory(show=True)
 
-    shapes = [(4000, 2000), (2000, 1000), (1000, 500), (500, 250)]
+    shapes = [(4000, 3000), (2000, 1500), (1000, 750), (500, 375)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     _ = viewer.add_image(data, is_pyramid=True, contrast_limits=[0, 1])
@@ -14,25 +14,27 @@ def test_pyramid(viewer_factory):
     # Set canvas size to target amount
     view.view.canvas.size = (800, 600)
 
-    # Check that current level is top level of pyramid
-    assert layer.data_level == 3
+    # Check that current level is first large enough to fill the canvas with
+    # a greater than one pixel depth
+    assert layer.data_level == 2
+
     # Check that full field of view is currently requested
     np.testing.assert_allclose(
-        layer.corner_pixels, np.array([[0, 0], np.subtract(shapes[3], 1)])
+        layer.corner_pixels, np.array([[0, 0], np.subtract(shapes[2], 1)])
     )
 
     # Test value at top left corner of image
     layer.position = (0, 0)
     value = layer.get_value()
-    np.testing.assert_allclose(value, (3, data[3][(0, 0)]))
+    np.testing.assert_allclose(value, (2, data[2][(0, 0)]))
 
     # Test value at bottom right corner of image
-    layer.position = (499, 249)
+    layer.position = (999, 749)
     value = layer.get_value()
-    np.testing.assert_allclose(value, (3, data[3][(499, 249)]))
+    np.testing.assert_allclose(value, (2, data[2][(999, 749)]))
 
     # Test value outside image
-    layer.position = (500, 250)
+    layer.position = (1000, 750)
     value = layer.get_value()
     assert value[1] is None
 
@@ -41,7 +43,7 @@ def test_pyramid_screenshot(viewer_factory):
     """Test rendering of pyramid data with screenshot."""
     view, viewer = viewer_factory(show=True)
 
-    shapes = [(4000, 2000), (2000, 1000), (1000, 500), (500, 250)]
+    shapes = [(4000, 3000), (2000, 1500), (1000, 750), (500, 375)]
     data = [np.ones(s) for s in shapes]
     _ = viewer.add_image(data, is_pyramid=True, contrast_limits=[0, 1])
 
@@ -67,7 +69,7 @@ def test_pyramid_screenshot_zoomed(viewer_factory):
     """Test rendering of pyramid data with screenshot after zoom."""
     view, viewer = viewer_factory(show=True)
 
-    shapes = [(4000, 2000), (2000, 1000), (1000, 500), (500, 250)]
+    shapes = [(4000, 3000), (2000, 1500), (1000, 750), (500, 375)]
     data = [np.ones(s) for s in shapes]
     _ = viewer.add_image(data, is_pyramid=True, contrast_limits=[0, 1])
 
@@ -75,8 +77,8 @@ def test_pyramid_screenshot_zoomed(viewer_factory):
     view.view.canvas.size = (800, 600)
 
     # Set zoom of camera to show highest resolution tile
-    view.view.camera.rect = [1000, 1000, 100, 200]
-    view.on_draw(None)
+    view.view.camera.rect = [1000, 1000, 200, 150]
+    list(view.layer_to_visual.values())[0].on_draw(None)
 
     # Check that current level is bottom level of pyramid
     assert viewer.layers[0].data_level == 0
@@ -99,15 +101,15 @@ def test_image_screenshot_zoomed(viewer_factory):
     """Test rendering of image data with screenshot after zoom."""
     view, viewer = viewer_factory(show=True)
 
-    data = np.ones((4000, 2000))
+    data = np.ones((4000, 3000))
     _ = viewer.add_image(data, is_pyramid=True, contrast_limits=[0, 1])
 
     # Set canvas size to target amount
     view.view.canvas.size = (800, 600)
 
     # Set zoom of camera to show highest resolution tile
-    view.view.camera.rect = [1000, 1000, 100, 200]
-    view.on_draw(None)
+    view.view.camera.rect = [1000, 1000, 200, 150]
+    list(view.layer_to_visual.values())[0].on_draw(None)
 
     screenshot = viewer.screenshot()
     center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(np.int)
