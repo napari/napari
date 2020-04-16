@@ -543,13 +543,17 @@ class Points(Layer):
             self._face_color_property not in self._properties
         ):
             self._face_color_property = ''
-            warnings.warn('property used for face_color dropped')
+            warnings.warn(
+                'property used for face_color dropped', RuntimeWarning
+            )
 
         if self._edge_color_property and (
             self._edge_color_property not in self._properties
         ):
             self._edge_color_property = ''
-            warnings.warn('property used for edge_color dropped')
+            warnings.warn(
+                'property used for edge_color dropped', RuntimeWarning
+            )
 
     @property
     def current_properties(self):
