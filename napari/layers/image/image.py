@@ -467,7 +467,9 @@ class Image(IntensityVisualizationMixin, Layer):
             downsampled_indices = (
                 indices[not_disp] / self.downsample_factors[level, not_disp]
             )
-            downsampled_indices = np.round(downsampled_indices).astype(int)
+            downsampled_indices = np.round(
+                downsampled_indices.astype(float)
+            ).astype(int)
             downsampled_indices = np.clip(
                 downsampled_indices, 0, self.level_shapes[level, not_disp] - 1
             )
@@ -497,7 +499,9 @@ class Image(IntensityVisualizationMixin, Layer):
             downsampled_indices = (
                 indices[not_disp] / self.downsample_factors[-1, not_disp]
             )
-            downsampled_indices = np.round(downsampled_indices).astype(int)
+            downsampled_indices = np.round(
+                downsampled_indices.astype(float)
+            ).astype(int)
             downsampled_indices = np.clip(
                 downsampled_indices, 0, self.level_shapes[-1, not_disp] - 1
             )
