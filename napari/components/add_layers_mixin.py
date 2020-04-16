@@ -925,30 +925,37 @@ class AddLayersMixin:
     ):
         """Save all or only selected layers to a path using writer plugins.
 
-        If a `plugin_name` is not provided and only one layer is targeted, then
-        we just directly call ``plugin_manager.hook.napari_write_<layer>()``
-        which will loop through implementations and stop when the first one
-        returns a non-None result. The order in which implementations are
-        called can be changed with the implementation sorter/disabler.
+        If ``plugin_name`` is not provided and only one layer is targeted, then
+        we just directly call ``napari_write_<layer_type>`` hook specification
+        (see :ref:`single layer writer hookspecs
+        <write-single-layer-hookspecs>`) which will loop through
+        implementations and stop when the first one returns a non-``None``
+        result. The order in which implementations are called can be changed
+        with the Plugin sorter in the GUI or with the corresponding hook's
+        :meth:`~napari.plugins._hook_callers._HookCaller.bring_to_front`
+        method.
 
-        If `plugin_name` is not provided and multiple layers are targeted, then
-        we call ``plugin_manager.hook.napari_get_writer()`` which loops through
-        plugins to find the first one that knows how to handle the combination
-        of layers and is able to write the file. If no plugins offer
-        `napari_get_writer` for that combination of layers then the default
-        `napari_get_writer` will create a folder and call
-        `napari_write_<layer>` for each layer using the `layer.name` variable
-        to modify the path such that the layers are written to unique files in
-        the folder.
+        If ``plugin_name`` is not provided and multiple layers are targeted,
+        then we call
+        :meth:`~napari.plugins.hook_specifications.napari_get_writer` which
+        loops through plugins to find the first one that knows how to handle
+        the combination of layers and is able to write the file. If no plugins
+        offer :meth:`~napari.plugins.hook_specifications.napari_get_writer` for
+        that combination of layers then the default
+        :meth:`~napari.plugins.hook_specifications.napari_get_writer` will
+        create a folder and call ``napari_write_<layer_type>`` for each layer
+        using the ``Layer.name`` variable to modify the path such that the
+        layers are written to unique files in the folder.
 
-        If a `plugin_name` is provided and a single layer is targeted, then
-        we call the `napari_write_<layer_type>` for that plugin, and if it
-        fails we error.
+        If ``plugin_name`` is provided and a single layer is targeted, then we
+        call the ``napari_write_<layer_type>`` for that plugin, and if it fails
+        we error.
 
-        If a `plugin_name` is provided and multiple layers are targeted, then
-        we call we call `napari_get_writer` for that plugin, and if it
-        doesn’t return a WriterFunction we error, otherwise we call it and if
-        that fails if it we error.
+        If ``plugin_name`` is provided and multiple layers are targeted, then
+        we call we call
+        :meth:`~napari.plugins.hook_specifications.napari_get_writer` for
+        that plugin, and if it doesn’t return a ``WriterFunction`` we error,
+        otherwise we call it and if that fails if it we error.
 
         Parameters
         ----------

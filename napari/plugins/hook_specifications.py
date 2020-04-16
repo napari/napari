@@ -16,13 +16,12 @@ specification. (This allows for extending existing hook arguments without
 breaking existing implementations). However, implementations must not require
 *more* arguments than defined in the spec.
 
-Hook specifications are a feature of
-`pluggy <https://pluggy.readthedocs.io/en/latest/#specs>`_.
-
 .. NOTE::
-    in the `pluggy documentation <https://pluggy.readthedocs.io/en/latest/>`_,
-    hook specification marker instances are named ``hookspec`` by convention,
-    and hook implementation marker instances are named ``hookimpl``.  The
+    Hook specifications are a feature borrowed from `pluggy
+    <https://pluggy.readthedocs.io/en/latest/#specs>`_. In the `pluggy
+    documentation <https://pluggy.readthedocs.io/en/latest/>`_, hook
+    specification marker instances are named ``hookspec`` by convention, and
+    hook implementation marker instances are named ``hookimpl``.  The
     convention in napari is to name them more explicity:
     ``napari_hook_specification`` and ``napari_hook_implementation``,
     respectively.
@@ -56,13 +55,13 @@ def napari_get_reader(path: Union[str, List[str]]) -> Optional[ReaderFunction]:
     :func:`~napari.plugins.io.read_data_with_plugins` function.
 
     It will also be called on ``File -> Open...`` or when a user drops a file
-    or folder onto the viewer. This function must execute *quickly*, and should
-    return ``None`` if the filepath is of an unrecognized format for this
-    reader plugin.  If ``path`` is determined to be recognized format, this
-    function should return a *new* function that accepts the same filepath (or
-    list of paths), and returns a list of ``LayerData`` tuples, where each
+    or folder onto the viewer. This function must execute **quickly**, and
+    should return ``None`` if the filepath is of an unrecognized format for
+    this reader plugin.  If ``path`` is determined to be recognized format,
+    this function should return a *new* function that accepts the same filepath
+    (or list of paths), and returns a list of ``LayerData`` tuples, where each
     tuple is a 1-, 2-, or 3-tuple of ``(data,)``, ``(data, meta)``, or ``(data,
-    meta, layer_type)`` .
+    meta, layer_type)``.
 
     ``napari`` will then use each tuple in the returned list to generate a new
     layer in the viewer using the :func:`Viewer._add_layer_from_data()
@@ -103,28 +102,51 @@ def napari_get_reader(path: Union[str, List[str]]) -> Optional[ReaderFunction]:
 def napari_get_writer(
     path: str, layer_types: List[str]
 ) -> Optional[WriterFunction]:
-    """Return function capable of writing napari layer data into a `path`.
+    """Return function capable of writing napari layer data to ``path``.
 
-    This function will be called on File -> Save.... This function must execute
-    QUICKLY, and should return ``None`` if the filepath is of an unrecognized
-    format for the reader plugin or the layer types are not recognized. If the
-    filepath is a recognized format, this function should return a callable
-    that accepts the same filepath, a list of layer_data tuples:
-    Union[Tuple[Any], Tuple[Any, Dict]], and optionally an extension.
+    This function will be called whenever the user attempts to save multiple
+    layers (e.g. via ``File -> Save Layers``, or
+    :meth:`~napari.components.add_layers_mixin.AddLayersMixin.save_layers`).
+    This function must execute **quickly**, and should return ``None`` if
+    ``path`` has an unrecognized extension for the reader plugin or the list of
+    layer types are incompatible with what the plugin can write. If ``path`` is
+    a recognized format, this function should return a *function* that accepts
+    the same ``path``, and a list of tuples containing the data for each layer
+    being saved in the form of ``(Layer.data, Layer._get_state(),
+    Layer._type_string)``
+
+    .. important::
+
+        It is up to plugins to inspect and obey any extension in ``path``
+        (and return ``None`` if it is an unsupported extension).
+
+    An example function signature for a ``WriterFunction`` that might be
+    returned by this hook specification is as follows:
+
+    .. code-block:: python
+
+        def writer_function(
+            path: str, layer_data: List[Tuple[Any, Dict, str]]
+        ) -> bool:
+            ...
 
     Parameters
     ----------
     path : str
-        Path to file, directory, or resource (like a URL).
+        Path to file, directory, or resource (like a URL).  Any extensions in
+        the path should be examined and obeyed.  (i.e. if the plugin is
+        incapable of returning a requested extension, it should return
+        ``None``).
     layer_types : list of str
-        List of layer types that will be provided to the writer function.
+        List of layer types (e.g. "image", "labels") that will be provided to
+        the writer function.
 
     Returns
     -------
     Callable or None
         A function that accepts the path, a list of layer_data (where
-        layer_data is (data, meta, layer_type)). If unable to write to the
-        path or write the layer_data, must return ``None`` (not False).
+        layer_data is ``(data, meta, layer_type)``). If unable to write to the
+        path or write the layer_data, must return ``None`` (not ``False``).
     """
 
 
@@ -137,7 +159,7 @@ def napari_write_image(path: str, data: Any, meta: dict) -> bool:
     path : str
         Path to file, directory, or resource (like a URL).
     data : array or list of array
-        Image data. Can be N dimensional. If meta['rgb'] is `True` then the
+        Image data. Can be N dimensional. If meta['rgb'] is ``True`` then the
         data should be interpreted as RGB or RGBA. If meta['is_pyramid'] is
         True, then the data should be interpreted as an image pyramid.
     meta : dict
@@ -145,7 +167,8 @@ def napari_write_image(path: str, data: Any, meta: dict) -> bool:
 
     Returns
     -------
-    bool : Return True if data is successfully written.
+    successful : bool
+        Return ``True`` if data is successfully written.
     """
 
 
@@ -167,7 +190,8 @@ def napari_write_labels(path: str, data: Any, meta: dict) -> bool:
 
     Returns
     -------
-    bool : Return True if data is successfully written.
+    successful : bool
+        Return ``True`` if data is successfully written.
     """
 
 
@@ -186,7 +210,8 @@ def napari_write_points(path: str, data: Any, meta: dict) -> bool:
 
     Returns
     -------
-    bool : Return True if data is successfully written.
+    successful : bool
+        Return ``True`` if data is successfully written.
     """
 
 
@@ -206,7 +231,8 @@ def napari_write_shapes(path: str, data: Any, meta: dict) -> bool:
 
     Returns
     -------
-    bool : Return True if data is successfully written.
+    successful : bool
+        Return ``True`` if data is successfully written.
     """
 
 
@@ -229,7 +255,8 @@ def napari_write_surface(path: str, data: Any, meta: dict) -> bool:
 
     Returns
     -------
-    bool : Return True if data is successfully written.
+    successful : bool
+        Return ``True`` if data is successfully written.
     """
 
 
@@ -248,5 +275,6 @@ def napari_write_vectors(path: str, data: Any, meta: dict) -> bool:
 
     Returns
     -------
-    bool : Return True if data is successfully written.
+    successful : bool
+        Return ``True`` if data is successfully written.
     """
