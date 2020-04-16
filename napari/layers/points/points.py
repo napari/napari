@@ -382,14 +382,13 @@ class Points(Layer):
     def _initialize_current_color_for_empty_layer(
         self, color: ColorType, attribute: str
     ):
-        """Initialize the current_edge_color or current_face_color
-        property for the case when you are starting with an empty layer
+        """Initialize current_{edge,face}_color when starting with empty layer.
 
         Parameters:
         -----------
         color : (N, 4) array or str
             The value for setting edge or face_color
-        attribute : str
+        attribute : str in {'edge', 'face'}
             The name of the attribute to set the color of.
             Should be 'edge' for edge_color or 'face' for face_color.
         """
@@ -491,7 +490,7 @@ class Points(Layer):
         adding : int
             the number of points that were added
             (and thus the number of color entries to add)
-        attribute : str
+        attribute : str in {'edge', 'face'}
             The name of the attribute to set the color of.
             Should be 'edge' for edge_colo_moder or 'face' for face_color_mode.
         """
