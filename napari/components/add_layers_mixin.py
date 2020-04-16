@@ -822,10 +822,6 @@ class AddLayersMixin:
                 if len(data) == 1:
                     data = (data[0], valid_kwargs)
                 elif len(data) > 1:
-                    assert isinstance(
-                        data[1], dict
-                    ), '2nd item should be a dict'
-                    # or should we update kwargs instead?
                     data[1].update(valid_kwargs)
             # actually add the layer
             new = self._add_layer_from_data(*data)
