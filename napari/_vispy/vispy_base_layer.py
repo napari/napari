@@ -53,9 +53,6 @@ class VispyBaseLayer(ABC):
         self.MAX_TEXTURE_SIZE_3D = MAX_TEXTURE_SIZE_3D
 
         self._position = (0,) * self.layer.dims.ndisplay
-        # Use rounding factor to prevent repeated triggering of requesting
-        # of new pyramid tiles for small camera movements
-        self._rounding = 50
 
         self.layer.events.refresh.connect(lambda e: self.node.update())
         self.layer.events.set_data.connect(self._on_data_change)
@@ -151,7 +148,9 @@ class VispyBaseLayer(ABC):
         # convert NumPy axis ordering to VisPy axis ordering
         self.scale = scale[::-1]
         if self.layer.is_pyramid:
-            corner_pixels, _ = self.find_coordinates_of_canvas_corners()
+            corner_pixels, _ = self.find_coordinates_of_canvas_corners(
+                rounding_factor=50
+            )
             self.layer.corner_pixels = corner_pixels
         self.layer.position = self._transform_position(self._position)
 
@@ -193,13 +192,25 @@ class VispyBaseLayer(ABC):
         self._on_scale_change()
         self._on_translate_change()
 
-    def find_coordinates_of_canvas_corners(self):
+    def find_coordinates_of_canvas_corners(self, rounding_factor=None):
         """Find location of the corners of canvas in data coordinates.
 
         This method should only be used during 2D image viewing. The result
         depends on the current pan and zoom position. Note that the returned
         coordinates have been clipped to be inside the data to reflect the
         actual amount of data that would be needed to cover canvas.
+
+        Parameters
+        ----------
+        rounding_factor : int, optional
+            Use a rounding factor to prevent repeated triggering of requesting
+            of new pyramid tiles for small camera movements. The rounding
+            factor is in pixel until of the currently viewed tile. Floor and
+            ceil rounding operations are used appropriately to ensure that the
+            rounded requested field always exceeds the needed field to fill the
+            canvas. There is a tradeoff between larger rounding factors causing
+            less frequent updates and tile fetches, but bigger tiles. A factor
+            of around 50 gives good results empically.
 
         Returns
         ----------
@@ -220,10 +231,15 @@ class VispyBaseLayer(ABC):
             tl_raw = [0] * nd
             br_raw = [1] * nd
 
-        # Perform rounding to prevent repeated triggering of requesting
-        # of new pyramid tiles for small camera movements
-        tl_raw = self._rounding * np.floor(np.divide(tl_raw, self._rounding))
-        br_raw = self._rounding * np.ceil(np.divide(br_raw, self._rounding))
+        if rounding_factor is not None:
+            # Perform rounding to prevent repeated triggering of requesting
+            # of new pyramid tiles for small camera movements
+            tl_raw = rounding_factor * np.floor(
+                np.divide(tl_raw, rounding_factor)
+            )
+            br_raw = rounding_factor * np.ceil(
+                np.divide(br_raw, rounding_factor)
+            )
 
         top_left = np.zeros(self.layer.ndim)
         bottom_right = np.zeros(self.layer.ndim)
@@ -258,7 +274,7 @@ class VispyBaseLayer(ABC):
             (
                 corner_pixels,
                 requested_shape,
-            ) = self.find_coordinates_of_canvas_corners()
+            ) = self.find_coordinates_of_canvas_corners(rounding_factor=50)
             size_threshold = self.node.canvas.size
             downsample_factors = self.layer.downsample_factors[
                 :, self.layer.dims.displayed
