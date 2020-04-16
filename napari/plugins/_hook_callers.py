@@ -120,8 +120,8 @@ def _multicall(
                         # creating a PluginCallError will store it for later
                         # in plugins.exceptions.PLUGIN_ERRORS
                         msg = (
-                            f"Error in plugin '{hook_impl.plugin_name}', "
-                            f"hook '{str(hook_impl.function.__name__)}'"
+                            f"Error in plugin '{hook_impl.plugin_name}', hook "
+                            f"'{str(hook_impl.function.__name__)}': {str(exc)}"
                         )
                         err = PluginCallError(
                             hook_impl.plugin_name,

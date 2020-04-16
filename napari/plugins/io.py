@@ -112,7 +112,7 @@ def write_layers_with_plugins(
     Parameters
     ----------
     path : str
-        A filepath, directory, or URL (or a list of any) to open.
+        A filepath, directory, or URL to open.
     layers : List[layers.Layer]
         List of layers to be saved. If only a single layer is passed then
         we use the hook specification corresponding to its layer type,
