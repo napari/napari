@@ -886,7 +886,7 @@ class Points(Layer):
         color_mode : str, ColorMode
             The value for setting edge or face_color_mode. If color_mode is a string,
             it should be one of: 'direct', 'cycle', or 'colormap'
-        attribute : str
+        attribute : str in {'edge', 'face'}
             The name of the attribute to set the color of.
             Should be 'edge' for edge_colo_moder or 'face' for face_color_mode.
         """
@@ -930,7 +930,7 @@ class Points(Layer):
         ----------
         color : (N, 4) array or str
             The value for setting edge or face_color
-        attribute : str
+        attribute : str in {'edge', 'face'}
             The name of the attribute to set the color of.
             Should be 'edge' for edge_color or 'face' for face_color.
         """
@@ -983,7 +983,7 @@ class Points(Layer):
 
         Parameters
         ----------
-        attribute : str
+        attribute : str  in {'edge', 'face'}
             The name of the attribute to set the color of.
             Should be 'edge' for edge_color or 'face' for face_color.
         update_color_mapping : bool
