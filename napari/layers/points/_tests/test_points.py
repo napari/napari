@@ -469,7 +469,7 @@ def test_adding_properties(attribute):
     assert isinstance(layer.properties['point_type'], np.ndarray)
 
     # removing a property that was the _edge_color_property should give a warning
-    setattr(layer, '_%s_color_property' % attribute, 'vector_type')
+    setattr(layer, f'_{attribute}_color_property', 'vector_type')
     properties_2 = {
         'not_vector_type': np.array(['A', 'B'] * int(shape[0] / 2))
     }
@@ -649,9 +649,9 @@ def test_switch_color_mode(attribute):
     properties = {'point_type': np.array([0, 1.5] * int((shape[0] / 2)))}
     initial_color = [1, 0, 0, 1]
     color_cycle = ['red', 'blue']
-    color_kwarg = '%s_color' % attribute
-    colormap_kwarg = '%s_colormap' % attribute
-    color_cycle_kwarg = '%s_color_cycle' % attribute
+    color_kwarg = f'{attribute}_color'
+    colormap_kwarg = f'{attribute}_colormap'
+    color_cycle_kwarg = f'{attribute}_color_cycle'
     args = {
         color_kwarg: initial_color,
         colormap_kwarg: 'gray',
@@ -659,36 +659,36 @@ def test_switch_color_mode(attribute):
     }
     layer = Points(data, properties=properties, **args,)
 
-    layer_color_mode = getattr(layer, '%s_color_mode' % attribute)
-    layer_color = getattr(layer, '%s_color' % attribute)
+    layer_color_mode = getattr(layer, f'{attribute}_color_mode')
+    layer_color = getattr(layer, f'{attribute}_color')
     assert layer_color_mode == 'direct'
     np.testing.assert_allclose(
         layer_color, np.repeat([initial_color], shape[0], axis=0)
     )
 
     # there should not be an edge_color_property
-    color_property = getattr(layer, '_%s_color_property' % attribute)
+    color_property = getattr(layer, f'_{attribute}_color_property')
     assert color_property == ''
 
     # transitioning to colormap should raise a warning
     # because there isn't an edge color property yet and
     # the first property in Vectors.properties is being automatically selected
     with pytest.warns(UserWarning):
-        setattr(layer, '%s_color_mode' % attribute, 'colormap')
-    color_property = getattr(layer, '_%s_color_property' % attribute)
+        setattr(layer, f'{attribute}_color_mode', 'colormap')
+    color_property = getattr(layer, f'_{attribute}_color_property')
     assert color_property == next(iter(properties))
-    layer_color = getattr(layer, '%s_color' % attribute)
+    layer_color = getattr(layer, f'{attribute}_color')
     np.testing.assert_allclose(layer_color[-1], [1, 1, 1, 1])
 
     # switch to color cycle
-    setattr(layer, '%s_color_mode' % attribute, 'cycle')
-    color = getattr(layer, '%s_color' % attribute)
+    setattr(layer, f'{attribute}_color_mode', 'cycle')
+    color = getattr(layer, f'{attribute}_color')
     layer_color = transform_color(color_cycle * int((shape[0] / 2)))
     np.testing.assert_allclose(color, layer_color)
 
     # switch back to direct, edge_colors shouldn't change
-    setattr(layer, '%s_color_mode' % attribute, 'direct')
-    new_edge_color = getattr(layer, '%s_color' % attribute)
+    setattr(layer, f'{attribute}_color_mode', 'direct')
+    new_edge_color = getattr(layer, f'{attribute}_color')
     np.testing.assert_allclose(new_edge_color, color)
 
 
@@ -701,7 +701,7 @@ def test_colormap_without_properties(attribute):
     layer = Points(data)
 
     with pytest.raises(ValueError):
-        setattr(layer, '%s_color_mode' % attribute, 'colormap')
+        setattr(layer, f'{attribute}_color_mode', 'colormap')
 
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
@@ -714,7 +714,7 @@ def test_colormap_with_categorical_properties(attribute):
     layer = Points(data, properties=properties)
 
     with pytest.raises(TypeError):
-        setattr(layer, '%s_color_mode' % attribute, 'colormap')
+        setattr(layer, f'{attribute}_color_mode', 'colormap')
 
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
@@ -724,13 +724,13 @@ def test_add_colormap(attribute):
     np.random.seed(0)
     data = 20 * np.random.random(shape)
     annotations = {'point_type': np.array([0, 1.5] * int((shape[0] / 2)))}
-    color_kwarg = '%s_color' % attribute
-    colormap_kwarg = '%s_colormap' % attribute
+    color_kwarg = f'{attribute}_color'
+    colormap_kwarg = f'{attribute}_colormap'
     args = {color_kwarg: 'point_type', colormap_kwarg: 'viridis'}
     layer = Points(data, properties=annotations, **args,)
 
-    setattr(layer, '%s_colormap' % attribute, get_colormap('gray'))
-    layer_colormap = getattr(layer, '%s_colormap' % attribute)
+    setattr(layer, f'{attribute}_colormap', get_colormap('gray'))
+    layer_colormap = getattr(layer, f'{attribute}_colormap')
     assert layer_colormap[0] == 'unknown_colormap'
 
 

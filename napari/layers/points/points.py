@@ -392,37 +392,37 @@ class Points(Layer):
             The name of the attribute to set the color of.
             Should be 'edge' for edge_color or 'face' for face_color.
         """
-        color_mode = getattr(self, '_%s_color_mode' % attribute)
+        color_mode = getattr(self, f'_{attribute}_color_mode')
         if color_mode == ColorMode.DIRECT:
             curr_color = transform_color_with_defaults(
                 num_entries=1,
                 colors=color,
-                elem_name='%s_color' % attribute,
+                elem_name=f'{attribute}_color',
                 default="white",
             )
 
         elif color_mode == ColorMode.CYCLE:
-            color_cycle = getattr(self, '%s_color_cycle' % attribute)
+            color_cycle = getattr(self, f'{attribute}_color_cycle')
             curr_color = transform_color(next(color_cycle))
 
             # add the new color cycle mapping
-            color_property = getattr(self, '_%s_color_property' % attribute)
+            color_property = getattr(self, f'_{attribute}_color_property')
             prop_value = self._property_choices[color_property][0]
-            color_cycle_map = getattr(self, '%s_color_cycle_map' % attribute)
+            color_cycle_map = getattr(self, f'{attribute}_color_cycle_map')
             color_cycle_map[prop_value] = curr_color
-            setattr(self, '%s_color_cycle_map' % attribute, color_cycle_map)
+            setattr(self, f'{attribute}_color_cycle_map', color_cycle_map)
 
         elif color_mode == ColorMode.COLORMAP:
-            color_property = getattr(self, '_%s_color_property' % attribute)
+            color_property = getattr(self, f'_{attribute}_color_property')
             prop_value = self._property_choices[color_property][0]
-            colormap = getattr(self, '%s_colormap' % attribute)
-            contrast_limits = getattr(self, '_%s_contrast_limits' % attribute)
+            colormap = getattr(self, f'{attribute}_colormap')
+            contrast_limits = getattr(self, f'_{attribute}_contrast_limits')
             curr_color, _ = map_property(
                 prop=prop_value,
                 colormap=colormap[1],
                 contrast_limits=contrast_limits,
             )
-        setattr(self, '_current_%s_color' % attribute, curr_color)
+        setattr(self, f'_current_{attribute}_color', curr_color)
 
     @property
     def data(self) -> np.ndarray:
@@ -494,33 +494,31 @@ class Points(Layer):
             The name of the attribute to set the color of.
             Should be 'edge' for edge_colo_moder or 'face' for face_color_mode.
         """
-        color_mode = getattr(self, '_%s_color_mode' % attribute)
+        color_mode = getattr(self, f'_{attribute}_color_mode')
         if color_mode == ColorMode.DIRECT:
-            current_face_color = getattr(self, '_current_%s_color' % attribute)
+            current_face_color = getattr(self, f'_current_{attribute}_color')
             new_colors = np.tile(current_face_color, (adding, 1))
         elif color_mode == ColorMode.CYCLE:
-            property_name = getattr(self, '_%s_color_property' % attribute)
+            property_name = getattr(self, f'_{attribute}_color_property')
             color_property_value = self.current_properties[property_name][0]
 
             # check if the new color property is in the cycle map
             # and add it if it is not
-            color_cycle_map = getattr(self, '%s_color_cycle_map' % attribute)
+            color_cycle_map = getattr(self, f'{attribute}_color_cycle_map')
             color_cycle_keys = [*color_cycle_map]
             if color_property_value not in color_cycle_keys:
-                color_cycle = getattr(self, '%s_color_cycle' % attribute)
+                color_cycle = getattr(self, f'{attribute}_color_cycle')
                 color_cycle_map[color_property_value] = next(color_cycle)
-                setattr(
-                    self, '%s_color_cycle_map' % attribute, color_cycle_map
-                )
+                setattr(self, f'{attribute}_color_cycle_map', color_cycle_map)
 
             new_colors = np.tile(
                 color_cycle_map[color_property_value], (adding, 1),
             )
         elif color_mode == ColorMode.COLORMAP:
-            property_name = getattr(self, '_%s_color_property' % attribute)
+            property_name = getattr(self, f'_{attribute}_color_property')
             color_property_value = self.current_properties[property_name][0]
-            colormap = getattr(self, '%s_colormap' % attribute)
-            contrast_limits = getattr(self, '_%s_contrast_limits' % attribute)
+            colormap = getattr(self, f'{attribute}_colormap')
+            contrast_limits = getattr(self, f'_{attribute}_contrast_limits')
 
             fc, _ = map_property(
                 prop=color_property_value,
@@ -528,8 +526,8 @@ class Points(Layer):
                 contrast_limits=contrast_limits,
             )
             new_colors = np.tile(fc, (adding, 1))
-        colors = getattr(self, '%s_color' % attribute)
-        setattr(self, '_%s_color' % attribute, np.vstack((colors, new_colors)))
+        colors = getattr(self, f'{attribute}_color')
+        setattr(self, f'_{attribute}_color', np.vstack((colors, new_colors)))
 
     @property
     def properties(self):
@@ -891,35 +889,34 @@ class Points(Layer):
         color_mode = ColorMode(color_mode)
 
         if color_mode == ColorMode.DIRECT:
-            setattr(self, '_%s_color_mode' % attribute, color_mode)
+            setattr(self, f'_{attribute}_color_mode', color_mode)
         elif color_mode in (ColorMode.CYCLE, ColorMode.COLORMAP):
-            color_property = getattr(self, '_%s_color_property' % attribute)
+            color_property = getattr(self, f'_{attribute}_color_property')
             if color_property == '':
                 if self.properties:
+                    new_color_property = next(iter(self.properties))
                     setattr(
                         self,
-                        '_%s_color_property' % attribute,
-                        next(iter(self.properties)),
+                        f'_{attribute}_color_property',
+                        new_color_property,
                     )
                     warnings.warn(
-                        '_%s_color_property was not set, setting to: %s'
-                        % (attribute, self._face_color_property)
+                        '_{attribute}_color_property was not set, setting to: {new_color_property}'
                     )
                 else:
                     raise ValueError(
-                        'There must be a valid Points.properties to use %s'
-                        % color_mode
+                        'There must be a valid Points.properties to use {color_mode}'
                     )
 
             # ColorMode.COLORMAP can only be applied to numeric properties
-            color_property = getattr(self, '_%s_color_property' % attribute)
+            color_property = getattr(self, f'_{attribute}_color_property')
             if (color_mode == ColorMode.COLORMAP) and not issubclass(
                 self.properties[color_property].dtype.type, np.number,
             ):
                 raise TypeError(
                     'selected property must be numeric to use ColorMode.COLORMAP'
                 )
-            setattr(self, '_%s_color_mode' % attribute, color_mode)
+            setattr(self, f'_{attribute}_color_mode', color_mode)
             self.refresh_colors()
 
     def _set_color(self, color: ColorType, attribute: str):
@@ -937,10 +934,10 @@ class Points(Layer):
         # otherwise, assume it is the name of a color
         if self._is_color_mapped(color):
             if guess_continuous(self.properties[color]):
-                setattr(self, '_%s_color_mode' % attribute, ColorMode.COLORMAP)
+                setattr(self, f'_{attribute}_color_mode', ColorMode.COLORMAP)
             else:
-                setattr(self, '_%s_color_mode' % attribute, ColorMode.CYCLE)
-            setattr(self, '_%s_color_property' % attribute, color)
+                setattr(self, f'_{attribute}_color_mode', ColorMode.CYCLE)
+            setattr(self, f'_{attribute}_color_property', color)
             self.refresh_colors()
 
         else:
@@ -953,10 +950,10 @@ class Points(Layer):
             colors = normalize_and_broadcast_colors(
                 len(self.data), transformed_color
             )
-            setattr(self, '_%s_color' % attribute, colors)
-            setattr(self, '_%s_color_mode' % attribute, ColorMode.DIRECT)
+            setattr(self, f'_{attribute}_color', colors)
+            setattr(self, f'_{attribute}_color_mode', ColorMode.DIRECT)
 
-            color_event = getattr(self.events, '%s_color' % attribute)
+            color_event = getattr(self.events, f'{attribute}_color')
             color_event()
 
     def refresh_colors(self, update_color_mapping: bool = False):
@@ -995,14 +992,12 @@ class Points(Layer):
             Default value is False.
         """
         if self._update_properties:
-            color_mode = getattr(self, '_%s_color_mode' % attribute)
+            color_mode = getattr(self, f'_{attribute}_color_mode')
             if color_mode == ColorMode.CYCLE:
-                color_property = getattr(
-                    self, '_%s_color_property' % attribute
-                )
+                color_property = getattr(self, f'_{attribute}_color_property')
                 color_properties = self.properties[color_property]
                 if update_color_mapping:
-                    color_cycle = getattr(self, '%s_color_cycle' % attribute)
+                    color_cycle = getattr(self, f'{attribute}_color_cycle')
                     color_cycle_map = {
                         k: c
                         for k, c in zip(
@@ -1010,14 +1005,14 @@ class Points(Layer):
                         )
                     }
                     setattr(
-                        self, '%s_color_cycle_map' % attribute, color_cycle_map
+                        self, f'{attribute}_color_cycle_map', color_cycle_map
                     )
 
                 else:
                     # add properties if they are not in the colormap
                     # and update_color_mapping==False
                     color_cycle_map = getattr(
-                        self, '%s_color_cycle_map' % attribute
+                        self, f'{attribute}_color_cycle_map'
                     )
                     color_cycle_keys = [*color_cycle_map]
                     props_in_map = np.in1d(color_properties, color_cycle_keys)
@@ -1025,14 +1020,12 @@ class Points(Layer):
                         props_to_add = np.unique(
                             color_properties[np.logical_not(props_in_map)]
                         )
-                        color_cycle = getattr(
-                            self, '%s_color_cycle' % attribute
-                        )
+                        color_cycle = getattr(self, f'{attribute}_color_cycle')
                         for prop in props_to_add:
                             color_cycle_map[prop] = next(color_cycle)
                         setattr(
                             self,
-                            '%s_color_cycle_map' % attribute,
+                            f'{attribute}_color_cycle_map',
                             color_cycle_map,
                         )
                 colors = np.array(
@@ -1040,18 +1033,16 @@ class Points(Layer):
                 )
                 if len(colors) == 0:
                     colors = np.empty((0, 4))
-                setattr(self, '_%s_color' % attribute, colors)
+                setattr(self, f'_{attribute}_color', colors)
 
             elif color_mode == ColorMode.COLORMAP:
-                color_property = getattr(
-                    self, '_%s_color_property' % attribute
-                )
+                color_property = getattr(self, f'_{attribute}_color_property')
                 color_properties = self.properties[color_property]
                 if len(color_properties) > 0:
                     contrast_limits = getattr(
-                        self, '%s_contrast_limits' % attribute
+                        self, f'{attribute}_contrast_limits'
                     )
-                    colormap = getattr(self, '%s_colormap' % attribute)
+                    colormap = getattr(self, f'{attribute}_colormap')
                     if update_color_mapping or contrast_limits is None:
 
                         colors, contrast_limits = map_property(
@@ -1059,7 +1050,7 @@ class Points(Layer):
                         )
                         setattr(
                             self,
-                            '%s_contrast_limits' % attribute,
+                            f'{attribute}_contrast_limits',
                             contrast_limits,
                         )
                     else:
@@ -1071,9 +1062,9 @@ class Points(Layer):
                         )
                 else:
                     colors = np.empty((0, 4))
-                setattr(self, '_%s_color' % attribute, colors)
+                setattr(self, f'_{attribute}_color', colors)
 
-            color_event = getattr(self.events, '%s_color' % attribute)
+            color_event = getattr(self.events, f'{attribute}_color')
             color_event()
 
     def _is_color_mapped(self, color):
