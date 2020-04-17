@@ -205,12 +205,12 @@ class VispyBaseLayer(ABC):
         rounding_factor : int, optional
             Use a rounding factor to prevent repeated triggering of requesting
             of new pyramid tiles for small camera movements. The rounding
-            factor is in pixel until of the currently viewed tile. Floor and
+            factor is in pixel units of the currently viewed tile. Floor and
             ceil rounding operations are used appropriately to ensure that the
             rounded requested field always exceeds the needed field to fill the
             canvas. There is a tradeoff between larger rounding factors causing
             less frequent updates and tile fetches, but bigger tiles. A factor
-            of around 50 gives good results empically.
+            of around 50 gives good results empirically.
 
         Returns
         ----------
@@ -327,8 +327,11 @@ def compute_pyramid_level(
 ):
     """Computed desired level of the pyramid given requested field of view.
 
-    The level of the pyramid should be the highest resolution such that
-    the requested shape is above the shape threshold.
+    The level of the pyramid should be the lowest resolution such that
+    the requested shape is above the shape threshold. By passing a shape
+    threshold corresponding to the shape of the canvas on the screen this
+    ensures that we have at least one data pixel per screen pixel, but no
+    more than we need.
 
     Parameters
     ----------
@@ -341,7 +344,7 @@ def compute_pyramid_level(
         for each level of the pyramid.
 
     Returns
-    ----------
+    -------
     level : int
         Level of the pyramid to be viewing.
     """
