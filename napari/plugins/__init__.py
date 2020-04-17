@@ -1,5 +1,7 @@
 import sys
 
+from napari_plugins import napari_hook_implementation
+
 from .exceptions import PluginError, PluginImportError, PluginRegistrationError
 from .manager import PluginManager
 
@@ -12,4 +14,5 @@ __all__ = [
     "PluginError",
     "PluginImportError",
     "PluginRegistrationError",
+    "napari_hook_implementation",
 ]
