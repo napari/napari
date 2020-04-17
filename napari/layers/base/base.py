@@ -3,7 +3,6 @@ import warnings
 
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from typing import Optional
 from xml.etree.ElementTree import Element, tostring
 import numpy as np
 from ._base_constants import Blending
@@ -448,15 +447,6 @@ class Layer(KeymapProvider, ABC):
         raise NotImplementedError()
 
     @property
-    def _type_string(self):
-        return self.__class__.__name__.lower()
-
-    def as_layer_data_tuple(self):
-        state = self._get_state()
-        state.pop('data', None)
-        return self.data, state, self._type_string
-
-    @property
     def thumbnail(self):
         """array: Integer array of thumbnail for the layer"""
         return self._thumbnail
@@ -707,24 +697,6 @@ class Layer(KeymapProvider, ABC):
                 # it's either a grayscale or rgb image (scalar or list)
                 msg += f': {status_format(value)}'
         return msg
-
-    def save(self, path: str, plugin: Optional[str] = None):
-        """Save this layer to ``path`` with default (or specified) plugin.
-
-        Parameters
-        ----------
-        path : str
-            A filepath, directory, or URL to open.  Extensions may be used to
-            specify output format (provided a plugin is avaiable for the
-            requested format).
-        plugin : str, optional
-            Name of the plugin to use for saving. If ``None`` then all plugins
-            corresponding to appropriate hook specification will be looped
-            through to find the first one that can save the data.
-        """
-        from ...plugins.io import write_layers_with_plugins
-
-        write_layers_with_plugins(path=path, layers=[self], plugin_name=plugin)
 
     def to_xml_list(self):
         """Generates a list of xml elements for the layer.

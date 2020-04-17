@@ -69,11 +69,6 @@ class LayerList(ListModel):
         layer = event.source
         layer.name = self._coerce_name(layer.name, layer)
 
-    @property
-    def selected(self):
-        """List of selected layers."""
-        return [layer for layer in self if layer.selected]
-
     def move_selected(self, index, insert):
         """Reorder list by moving the item at index and inserting it
         at the insert index. If additional items are selected these will

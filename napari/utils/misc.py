@@ -188,12 +188,6 @@ def camel_to_snake(name):
     return camel_to_snake_pattern.sub(r'\1_\2', name).lower()
 
 
-def abspath_or_url(path):
-    if path.startswith(('http:', 'https:', 'ftp:', 'file:')):
-        return path
-    return osp.abspath(osp.expanduser(path))
-
-
 class CallDefault(inspect.Parameter):
     def __str__(self):
         """wrap defaults"""
