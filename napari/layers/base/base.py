@@ -664,6 +664,7 @@ class Layer(KeymapProvider, ABC):
             # further updates including recalculation of the corner_pixels
             # for the new level
             self.data_level = data_level
+            self.refresh()
         elif not np.all(self.corner_pixels == corner_pixels):
             self.refresh()
 

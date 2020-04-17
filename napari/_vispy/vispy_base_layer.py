@@ -147,14 +147,8 @@ class VispyBaseLayer(ABC):
         ).scale
         # convert NumPy axis ordering to VisPy axis ordering
         self.scale = scale[::-1]
-        old_corner_pixels = self.layer.corner_pixels
         self.layer.corner_pixels = self.coordinates_of_canvas_corners()
         self.layer.position = self._transform_position(self._position)
-        if self.layer.is_pyramid and self.node.canvas is not None:
-            self.layer._update_pyramid(
-                corner_pixels=old_corner_pixels,
-                shape_threshold=self.node.canvas.size,
-            )
 
     def _on_translate_change(self, event=None):
         translate = self.layer._transforms.simplified.set_slice(
