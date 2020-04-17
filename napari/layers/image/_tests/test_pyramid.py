@@ -355,7 +355,34 @@ def test_value():
     # Note that here, because the shapes of the pyramid are all very small
     # data that will be rendered will only ever come from the bottom two
     # levels of the pyramid.
-    assert value == (1, data[1][0, 0])
+    assert layer.data_level == 1
+    np.testing.assert_allclose(value, (1, data[1][0, 0]))
+
+
+def test_corner_value():
+    """Test getting the value of the data at the new position."""
+    shapes = [(40, 20), (20, 10), (10, 5)]
+    np.random.seed(0)
+    data = [np.random.random(s) for s in shapes]
+    layer = Image(data, is_pyramid=True)
+    value = layer.get_value()
+    target_position = (39, 19)
+    target_level = 0
+    layer.data_level = target_level
+    layer.corner_pixels[1] = shapes[target_level]  # update requested view
+    layer.refresh()
+
+    # Test position at corner of image
+    layer.position = target_position
+    value = layer.get_value()
+    np.testing.assert_allclose(
+        value, (target_level, data[target_level][target_position])
+    )
+
+    # Test position at outside image
+    layer.position = (40, 20)
+    value = layer.get_value()
+    assert value[1] is None
 
 
 def test_message():

@@ -1,9 +1,9 @@
 from abc import ABC, abstractmethod
 from functools import lru_cache
+import numpy as np
 from vispy.app import Canvas
 from vispy.gloo import gl
 from vispy.visuals.transforms import STTransform
-import numpy as np
 
 
 class VispyBaseLayer(ABC):
@@ -53,7 +53,6 @@ class VispyBaseLayer(ABC):
         self.MAX_TEXTURE_SIZE_3D = MAX_TEXTURE_SIZE_3D
 
         self._position = (0,) * self.layer.dims.ndisplay
-        self.camera = None
 
         self.layer.events.refresh.connect(lambda e: self.node.update())
         self.layer.events.set_data.connect(self._on_data_change)
@@ -148,8 +147,7 @@ class VispyBaseLayer(ABC):
         ).scale
         # convert NumPy axis ordering to VisPy axis ordering
         self.scale = scale[::-1]
-        if self.layer.is_pyramid:
-            self.layer.top_left = self.find_top_left()
+        self.layer.corner_pixels = self.coordinates_of_canvas_corners()
         self.layer.position = self._transform_position(self._position)
 
     def _on_translate_change(self, event=None):
@@ -158,6 +156,7 @@ class VispyBaseLayer(ABC):
         ).translate
         # convert NumPy axis ordering to VisPy axis ordering
         self.translate = translate[::-1]
+        self.layer.corner_pixels = self.coordinates_of_canvas_corners()
         self.layer.position = self._transform_position(self._position)
 
     def _transform_position(self, position):
@@ -173,16 +172,14 @@ class VispyBaseLayer(ABC):
         coords : tuple
             Coordinates of cursor in image space for displayed dimensions only
         """
+        nd = self.layer.dims.ndisplay
         if self.node.canvas is not None:
             transform = self.node.canvas.scene.node_transform(self.node)
             # Map and offset position so that pixel center is at 0
-            mapped_position = (
-                transform.map(list(position))[: len(self.layer.dims.displayed)]
-                - 0.5
-            )
+            mapped_position = transform.map(list(position))[:nd] - 0.5
             coords = tuple(mapped_position[::-1])
         else:
-            coords = (0,) * len(self.layer.dims.displayed)
+            coords = (0,) * nd
         return coords
 
     def _reset_base(self):
@@ -192,10 +189,52 @@ class VispyBaseLayer(ABC):
         self._on_scale_change()
         self._on_translate_change()
 
+    def coordinates_of_canvas_corners(self):
+        """Find location of the corners of canvas in data coordinates.
+
+        This method should only be used during 2D image viewing. The result
+        depends on the current pan and zoom position.
+
+        Returns
+        ----------
+        corner_pixels : array
+            Coordinates of top left and bottom right canvas pixel in the data.
+        """
+        nd = self.layer.dims.ndisplay
+        # Find image coordinate of top left canvas pixel
+        if self.node.canvas is not None:
+            offset = self.translate[:nd] / self.scale[:nd]
+            tl_raw = np.floor(self._transform_position([0, 0]) + offset[::-1])
+            br_raw = np.ceil(
+                self._transform_position(self.node.canvas.size) + offset[::-1]
+            )
+        else:
+            tl_raw = [0] * nd
+            br_raw = [1] * nd
+
+        top_left = np.zeros(self.layer.ndim)
+        bottom_right = np.zeros(self.layer.ndim)
+        for d, tl, br in zip(self.layer.dims.displayed, tl_raw, br_raw):
+            top_left[d] = tl
+            bottom_right[d] = br
+
+        return np.array([top_left, bottom_right]).astype(int)
+
     def on_draw(self, event):
         """Called whenever the canvas is drawn.
+
+        This is triggered from vispy whenever new data is sent to the canvas or
+        the camera is moved and is connected in the `QtViewer`.
         """
         self.layer.scale_factor = self.scale_factor
+        old_corner_pixels = self.layer.corner_pixels
+        self.layer.corner_pixels = self.coordinates_of_canvas_corners()
+
+        if self.layer.is_pyramid and self.node.canvas is not None:
+            self.layer._update_pyramid(
+                corner_pixels=old_corner_pixels,
+                shape_threshold=self.node.canvas.size,
+            )
 
 
 @lru_cache()
