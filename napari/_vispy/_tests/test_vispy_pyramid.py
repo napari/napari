@@ -1,5 +1,5 @@
 import numpy as np
-import os
+import sys
 import pytest
 
 
@@ -42,7 +42,7 @@ def test_pyramid(viewer_factory):
 
 
 @pytest.mark.skipif(
-    os.sys.platform.startswith('win'),
+    sys.platform.startswith('win'),
     reason='Screenshot tests are not supported on napari windows CI.',
 )
 def test_pyramid_screenshot(viewer_factory):
@@ -72,7 +72,7 @@ def test_pyramid_screenshot(viewer_factory):
 
 
 @pytest.mark.skipif(
-    os.sys.platform.startswith('win'),
+    sys.platform.startswith('win'),
     reason='Screenshot tests are not supported on napari windows CI.',
 )
 def test_pyramid_screenshot_zoomed(viewer_factory):
@@ -108,7 +108,7 @@ def test_pyramid_screenshot_zoomed(viewer_factory):
 
 
 @pytest.mark.skipif(
-    os.sys.platform.startswith('win'),
+    sys.platform.startswith('win'),
     reason='Screenshot tests are not supported on napari windows CI.',
 )
 def test_image_screenshot_zoomed(viewer_factory):
