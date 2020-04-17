@@ -1,4 +1,6 @@
 import numpy as np
+import os
+import pytest
 
 
 def test_pyramid(viewer_factory):
@@ -39,6 +41,10 @@ def test_pyramid(viewer_factory):
     assert value[1] is None
 
 
+@pytest.mark.skipif(
+    os.sys.platform.startswith('win'),
+    reason='Screenshot tests are not supported on napari windows CI.',
+)
 def test_pyramid_screenshot(viewer_factory):
     """Test rendering of pyramid data with screenshot."""
     view, viewer = viewer_factory(show=True)
@@ -65,6 +71,10 @@ def test_pyramid_screenshot(viewer_factory):
     )
 
 
+@pytest.mark.skipif(
+    os.sys.platform.startswith('win'),
+    reason='Screenshot tests are not supported on napari windows CI.',
+)
 def test_pyramid_screenshot_zoomed(viewer_factory):
     """Test rendering of pyramid data with screenshot after zoom."""
     view, viewer = viewer_factory(show=True)
@@ -97,6 +107,10 @@ def test_pyramid_screenshot_zoomed(viewer_factory):
     )
 
 
+@pytest.mark.skipif(
+    os.sys.platform.startswith('win'),
+    reason='Screenshot tests are not supported on napari windows CI.',
+)
 def test_image_screenshot_zoomed(viewer_factory):
     """Test rendering of image data with screenshot after zoom."""
     view, viewer = viewer_factory(show=True)
