@@ -508,7 +508,9 @@ class Points(Layer):
             color_cycle_keys = [*color_cycle_map]
             if color_property_value not in color_cycle_keys:
                 color_cycle = getattr(self, f'{attribute}_color_cycle')
-                color_cycle_map[color_property_value] = next(color_cycle)
+                color_cycle_map[color_property_value] = transform_color(
+                    next(color_cycle)
+                )
                 setattr(self, f'{attribute}_color_cycle_map', color_cycle_map)
 
             new_colors = np.tile(
@@ -1003,7 +1005,7 @@ class Points(Layer):
                 if update_color_mapping:
                     color_cycle = getattr(self, f'{attribute}_color_cycle')
                     color_cycle_map = {
-                        k: c
+                        k: transform_color(c)
                         for k, c in zip(
                             np.unique(color_properties), color_cycle,
                         )
@@ -1026,7 +1028,9 @@ class Points(Layer):
                         )
                         color_cycle = getattr(self, f'{attribute}_color_cycle')
                         for prop in props_to_add:
-                            color_cycle_map[prop] = next(color_cycle)
+                            color_cycle_map[prop] = np.squeeze(
+                                transform_color(next(color_cycle))
+                            )
                         setattr(
                             self,
                             f'{attribute}_color_cycle_map',

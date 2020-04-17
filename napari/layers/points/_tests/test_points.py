@@ -818,112 +818,129 @@ def test_color_direct(attribute: str):
     )
 
 
-def test_edge_color_cycle():
+color_cycle_str = ['red', 'blue']
+color_cycle_rgb = [[1, 0, 0], [0, 0, 1]]
+color_cycle_rgba = [[1, 0, 0, 1], [0, 0, 1, 1]]
+
+
+@pytest.mark.parametrize("attribute", ['edge', 'face'])
+@pytest.mark.parametrize(
+    "color_cycle",
+    [
+        color_cycle_str,
+        color_cycle_rgb,
+        color_cycle_rgba,
+        cycle(color_cycle_str),
+        cycle(color_cycle_rgb),
+        cycle(color_cycle_rgba),
+    ],
+)
+def test_color_cycle(attribute, color_cycle):
+    """Test settimg edge/face color with a color cycle list"""
     # create Points using list color cycle
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    annotations = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
-    color_cycle = ['red', 'blue']
-    layer = Points(
-        data,
-        properties=annotations,
-        edge_color='point_type',
-        edge_color_cycle=color_cycle,
-    )
-    assert layer.properties == annotations
-    edge_color_array = transform_color(color_cycle * int((shape[0] / 2)))
-    assert np.all(layer.edge_color == edge_color_array)
+    properties = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
+    points_kwargs = {
+        'properties': properties,
+        f'{attribute}_color': 'point_type',
+        f'{attribute}_color_cycle': color_cycle,
+    }
+    layer = Points(data, **points_kwargs)
 
-    # create Points using color array color cycle
-    color_cycle_array = transform_color(color_cycle)
-    layer2 = Points(
-        data,
-        properties=annotations,
-        edge_color='point_type',
-        edge_color_cycle=color_cycle_array,
+    assert layer.properties == properties
+    color_array = transform_color(
+        list(islice(cycle(color_cycle), 0, shape[0]))
     )
-    assert np.all(layer2.edge_color == edge_color_array)
+    layer_color = getattr(layer, f'{attribute}_color')
+    np.testing.assert_allclose(layer_color, color_array)
 
     # Add new point and test its color
     coord = [18, 18]
-    layer2.selected_data = {0}
-    layer2.add(coord)
-    assert len(layer2.edge_color) == shape[0] + 1
+    layer.selected_data = {0}
+    layer.add(coord)
+    layer_color = getattr(layer, f'{attribute}_color')
+    assert len(layer_color) == shape[0] + 1
     np.testing.assert_allclose(
-        layer2.edge_color,
-        np.vstack((edge_color_array, transform_color('red'))),
+        layer_color, np.vstack((color_array, transform_color('red'))),
     )
 
     # Check removing data adjusts colors correctly
-    layer2.selected_data = {0, 2}
-    layer2.remove_selected()
-    assert len(layer2.data) == shape[0] - 1
-    assert len(layer2.edge_color) == shape[0] - 1
+    layer.selected_data = {0, 2}
+    layer.remove_selected()
+    assert len(layer.data) == shape[0] - 1
+
+    layer_color = getattr(layer, f'{attribute}_color')
+    assert len(layer_color) == shape[0] - 1
     np.testing.assert_allclose(
-        layer2.edge_color,
-        np.vstack(
-            (edge_color_array[1], edge_color_array[3:], transform_color('red'))
-        ),
+        layer_color,
+        np.vstack((color_array[1], color_array[3:], transform_color('red'))),
     )
 
     # refresh colors
     layer.refresh_colors(update_color_mapping=True)
 
 
-def test_add_edge_color_cycle_to_empty_layer():
-    """ Test adding a point to an empty layer when edge color is a color cycle
+@pytest.mark.parametrize("attribute", ['edge', 'face'])
+def test_add_color_cycle_to_empty_layer(attribute):
+    """ Test adding a point to an empty layer when edge/face color is a color cycle
 
     See: https://github.com/napari/napari/pull/1069
     """
     default_properties = {'point_type': np.array(['A'])}
     color_cycle = ['red', 'blue']
-    layer = Points(
-        properties=default_properties,
-        edge_color='point_type',
-        edge_color_cycle=color_cycle,
-    )
+    points_kwargs = {
+        'properties': default_properties,
+        f'{attribute}_color': 'point_type',
+        f'{attribute}_color_cycle': color_cycle,
+    }
+    layer = Points(**points_kwargs)
 
     # verify the current_edge_color is correct
-    edge_color = transform_color(color_cycle[0])
-    assert np.all(layer._current_edge_color == edge_color)
+    expected_color = transform_color(color_cycle[0])
+    current_color = getattr(layer, f'_current_{attribute}_color')
+    np.testing.assert_allclose(current_color, expected_color)
 
     # add a point
     layer.add([10, 10])
     props = {'point_type': np.array(['A'])}
-    edge_color = np.array([[1, 0, 0, 1]])
-    assert layer.properties == props
-    np.testing.assert_allclose(layer.edge_color, edge_color)
+    expected_color = np.array([[1, 0, 0, 1]])
+    np.testing.assert_equal(layer.properties, props)
+    attribute_color = getattr(layer, f'{attribute}_color')
+    np.testing.assert_allclose(attribute_color, expected_color)
 
     # add a point with a new property
     layer.selected_data = []
     layer.current_properties = {'point_type': np.array(['B'])}
     layer.add([12, 12])
     new_color = np.array([0, 0, 1, 1])
-    edge_color = np.vstack((edge_color, new_color))
+    expected_color = np.vstack((expected_color, new_color))
     new_properties = {'point_type': np.array(['A', 'B'])}
-    np.testing.assert_allclose(layer.edge_color, edge_color)
+    attribute_color = getattr(layer, f'{attribute}_color')
+    np.testing.assert_allclose(attribute_color, expected_color)
     np.testing.assert_equal(layer.properties, new_properties)
 
 
-def test_adding_value_edge_color_cycle():
-    """ Test that adding values to properties used to set an edge color cycle
+@pytest.mark.parametrize("attribute", ['edge', 'face'])
+def test_adding_value_color_cycle(attribute):
+    """ Test that adding values to properties used to set a color cycle
     and then calling Points.refresh_colors() performs the update and adds the
-    new value to the edge_color_cycle_map.
+    new value to the face/edge_color_cycle_map.
 
     See: https://github.com/napari/napari/issues/988
     """
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    annotations = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
+    properties = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
     color_cycle = ['red', 'blue']
-    layer = Points(
-        data,
-        properties=annotations,
-        edge_color='point_type',
-        edge_color_cycle=color_cycle,
-    )
+    points_kwargs = {
+        'properties': properties,
+        f'{attribute}_color': 'point_type',
+        f'{attribute}_color_cycle': color_cycle,
+    }
+    layer = Points(data, **points_kwargs)
 
     # make point 0 point_type C
     point_types = layer.properties['point_type']
@@ -931,8 +948,9 @@ def test_adding_value_edge_color_cycle():
     layer.properties['point_type'] = point_types
     layer.refresh_colors(update_color_mapping=False)
 
-    edge_color_map_keys = [*layer.edge_color_cycle_map]
-    assert 'C' in edge_color_map_keys
+    color_cycle_map = getattr(layer, f'{attribute}_color_cycle_map')
+    color_map_keys = [*color_cycle_map]
+    assert 'C' in color_map_keys
 
 
 def test_edge_color_colormap():
@@ -993,122 +1011,6 @@ def test_edge_color_colormap():
     new_colormap = 'viridis'
     layer.edge_colormap = new_colormap
     assert layer.edge_colormap[1] == get_colormap(new_colormap)
-
-
-def test_face_color_cycle():
-    # create Points using list color cycle
-    shape = (10, 2)
-    np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    annotations = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
-    color_cycle = ['red', 'blue']
-    layer = Points(
-        data,
-        properties=annotations,
-        face_color='point_type',
-        face_color_cycle=color_cycle,
-    )
-    assert layer.properties == annotations
-    face_color_array = transform_color(color_cycle * int((shape[0] / 2)))
-    assert np.all(layer.face_color == face_color_array)
-
-    # create Points using color array color cycle
-    color_cycle_array = transform_color(color_cycle)
-    layer2 = Points(
-        data,
-        properties=annotations,
-        face_color='point_type',
-        face_color_cycle=color_cycle_array,
-    )
-    assert np.all(layer2.face_color == face_color_array)
-
-    # Add new point and test its color
-    coord = [18, 18]
-    layer2.selected_data = {0}
-    layer2.add(coord)
-    assert len(layer2.face_color) == shape[0] + 1
-    np.testing.assert_allclose(
-        layer2.face_color,
-        np.vstack((face_color_array, transform_color('red'))),
-    )
-
-    # Check removing data adjusts colors correctly
-    layer2.selected_data = {0, 2}
-    layer2.remove_selected()
-    assert len(layer2.data) == shape[0] - 1
-    assert len(layer2.face_color) == shape[0] - 1
-    np.testing.assert_allclose(
-        layer2.face_color,
-        np.vstack(
-            (face_color_array[1], face_color_array[3:], transform_color('red'))
-        ),
-    )
-
-    # refresh colors
-    layer.refresh_colors(update_color_mapping=True)
-
-
-def test_add_face_color_cycle_to_empty_layer():
-    """ Test adding a point to an empty layer when face color is a color cycle
-    See: https://github.com/napari/napari/pull/1069
-    """
-    default_properties = {'point_type': np.array(['A'])}
-    color_cycle = ['red', 'blue']
-    layer = Points(
-        properties=default_properties,
-        face_color='point_type',
-        face_color_cycle=color_cycle,
-    )
-
-    # verify the current_face_color is correct
-    face_color = transform_color(color_cycle[0])
-    assert np.all(layer._current_face_color == face_color)
-
-    # add a point
-    layer.add([10, 10])
-    props = {'point_type': np.array(['A'])}
-    face_color = np.array([[1, 0, 0, 1]])
-    assert layer.properties == props
-    np.testing.assert_allclose(layer.face_color, face_color)
-
-    # add a point with a new property
-    layer.selected_data = []
-    layer.current_properties = {'point_type': np.array(['B'])}
-    layer.add([12, 12])
-    new_color = np.array([0, 0, 1, 1])
-    face_color = np.vstack((face_color, new_color))
-    new_properties = {'point_type': np.array(['A', 'B'])}
-    np.testing.assert_allclose(layer.face_color, face_color)
-    np.testing.assert_equal(layer.properties, new_properties)
-
-
-def test_adding_value_face_color_cycle():
-    """ Test that adding values to properties used to set an face color cycle
-    and then calling Points.refresh_colors() performs the update and adds the
-    new value to the face_color_cycle_map.
-
-    See: https://github.com/napari/napari/issues/988
-    """
-    shape = (10, 2)
-    np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    annotations = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
-    color_cycle = ['red', 'blue']
-    layer = Points(
-        data,
-        properties=annotations,
-        face_color='point_type',
-        face_color_cycle=color_cycle,
-    )
-
-    # make point 0 point_type C
-    point_types = layer.properties['point_type']
-    point_types[0] = 'C'
-    layer.properties['point_type'] = point_types
-    layer.refresh_colors(update_color_mapping=False)
-
-    face_color_map_keys = [*layer.face_color_cycle_map]
-    assert 'C' in face_color_map_keys
 
 
 def test_face_color_colormap():
