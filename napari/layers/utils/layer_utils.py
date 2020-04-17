@@ -156,7 +156,6 @@ def convert_to_uint8(data: np.ndarray) -> np.ndarray:
             ).astype(out_dtype)
 
 
-
 def dataframe_to_properties(dataframe) -> Dict[str, np.ndarray]:
     """Convert a dataframe to Points.properties formatted dictionary.
 
@@ -214,6 +213,7 @@ def map_property(
     mapped_properties = colormap.map(normalized_properties)
 
     return mapped_properties, contrast_limits
+
 
 def compute_pyramid_level(
     requested_shape, shape_threshold, downsample_factors
