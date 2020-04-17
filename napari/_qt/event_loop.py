@@ -34,9 +34,9 @@ def gui_qt(*, startup_logo=False):
             splash_widget = QSplashScreen(QPixmap(logopath).scaled(400, 400))
             splash_widget.show()
     yield app
-    # the application already existed before this function was called, there's
-    # no need to start it again.  By avoiding unnecessary calls to app.exec_
-    # we avoid blocking.
+    # if the application already existed before this function was called,
+    # there's no need to start it again.  By avoiding unnecessary calls to
+    # ``app.exec_``, we avoid blocking.
     if app.applicationName() == 'napari':
         if splash_widget and startup_logo:
             splash_widget.close()
