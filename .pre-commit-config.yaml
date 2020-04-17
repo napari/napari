@@ -4,32 +4,6 @@ repos:
     hooks:
     - id: black
       pass_filenames: true
-      args: [
-        '--target-version', 'py36',
-        '--target-version', 'py37',
-        '--target-version', 'py38',
-        '--skip-string-normalization',
-        '--line-length', '79',
-        '--exclude', '''
-        (
-          /(
-              \.eggs
-            | \.git
-            | \.hg
-            | \.mypy_cache
-            | \.tox
-            | \.venv
-            | _build
-            | buck-out
-            | build
-            | dist
-            | examples
-            | vendored
-          )/
-          | napari/resources/qt.py
-        )
-        '''
-      ]
 -   repo: https://gitlab.com/pycqa/flake8
     rev: 3.7.9
     hooks:
