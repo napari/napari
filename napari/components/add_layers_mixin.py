@@ -1,7 +1,9 @@
+import inspect
 import itertools
 from logging import getLogger
-from typing import List, Optional, Sequence, Union
 from os import fspath
+from typing import Any, Dict, List, Optional, Sequence, Union
+
 import numpy as np
 
 from .. import layers
@@ -748,10 +750,10 @@ class AddLayersMixin:
         self.add_layer(layer)
         return layer
 
-    def add_path(
-        self, path: Union[str, Sequence[str]], stack: bool = False
+    def open_path(
+        self, path: Union[str, Sequence[str]], stack: bool = False, **kwargs
     ) -> List[layers.Layer]:
-        """Add a path or list of paths to the viewer.
+        """Open a path or list of paths with plugins, and add layers to viewer.
 
         A list of paths will be handed one-by-one to the napari_get_reader hook
         if stack is False, otherwise the full list is passed to each plugin
@@ -767,6 +769,9 @@ class AddLayersMixin:
             plugins to know how to handle a list of paths.  If ``stack`` is
             ``False``, then the ``path`` list is broken up and passed to plugin
             readers one by one.  by default False.
+        **kwargs
+            All other keyword arguments will be passed on to the respective
+            ``add_layer`` method.
 
         Returns
         -------
@@ -781,20 +786,22 @@ class AddLayersMixin:
             )
 
         if stack:
-            return self._add_layers_with_plugins(paths)
+            return self._add_layers_with_plugins(paths, kwargs)
 
         added: List[layers.Layer] = []  # for layers that get added
         for _path in paths:
-            added.extend(self._add_layers_with_plugins(_path))
+            added.extend(self._add_layers_with_plugins(_path, kwargs))
 
         return added
 
     def _add_layers_with_plugins(
-        self, path_or_paths: Union[str, Sequence[str]]
+        self,
+        path_or_paths: Union[str, Sequence[str]],
+        kwargs: Optional[dict] = None,
     ) -> List[layers.Layer]:
         """Load a path or a list of paths into the viewer using plugins.
 
-        This function is mostly called from self.add_path, where the ``stack``
+        This function is mostly called from self.open_path, where the ``stack``
         argument determines whether a list of strings is handed to plugins one
         at a time, or en-masse.
 
@@ -803,6 +810,9 @@ class AddLayersMixin:
         path_or_paths : str or list of str
             A filepath, directory, or URL (or a list of any) to open. If a
             list, the assumption is that the list is to be treated as a stack.
+        kwargs : dict, optional
+            keyword arguments that will be used to overwrite any of those that
+            are returned in the meta dict from plugins.
 
         Returns
         -------
@@ -826,6 +836,16 @@ class AddLayersMixin:
         # add each layer to the viewer
         added: List[layers.Layer] = []  # for layers that get added
         for data in layer_data:
+            # if user provided kwargs, use to override any meta dict values
+            # that were returned by the plugin
+            if kwargs:
+                layer_type = 'image' if len(data) < 3 else data[2]
+                valid_kwargs = prune_kwargs(kwargs, layer_type)
+                if len(data) == 1:
+                    data = (data[0], valid_kwargs)
+                elif len(data) > 1:
+                    data[1].update(valid_kwargs)
+            # actually add the layer
             new = self._add_layer_from_data(*data)
             # some add_* methods return a List[Layer] others just a Layer
             # we want to always return a list
@@ -918,3 +938,49 @@ class AddLayersMixin:
                 raise exc
 
         return layer
+
+
+def prune_kwargs(kwargs: Dict[str, Any], layer_type: str) -> Dict[str, Any]:
+    """Return copy of ``kwargs`` with only keys valid for ``add_<layer_type>``
+
+    Parameters
+    ----------
+    kwargs : dict
+        A key: value mapping where some or all of the keys are parameter names
+        for the corresponding ``Viewer.add_<layer_type>`` method.
+    layer_type : str
+        The type of layer that is going to be added with these ``kwargs``.
+
+    Returns
+    -------
+    pruned_kwargs : dict
+        A key: value mapping where all of the keys are valid parameter names
+        for the corresponding ``Viewer.add_<layer_type>`` method.
+
+    Raises
+    ------
+    ValueError
+        If ``AddLayersMixin`` does not provide an ``add_<layer_type>`` method
+        for the provided ``layer_type``.
+
+    Examples
+    --------
+    >>> test_kwargs = {
+            'scale': (0.75, 1),
+            'blending': 'additive',
+            'num_colors': 10,
+        }
+    >>> prune_kwargs(test_kwargs, 'image')
+    {'scale': (0.75, 1), 'blending': 'additive'}
+
+    >>> # only labels has the ``num_colors`` argument
+    >>> prune_kwargs(test_kwargs, 'labels')
+    {'scale': (0.75, 1), 'blending': 'additive', 'num_colors': 10}
+    """
+    add_method = getattr(AddLayersMixin, 'add_' + layer_type, None)
+    if not add_method:
+        raise ValueError(f"Invalid layer_type: {layer_type}")
+
+    # get valid params for the corresponding add_<layer_type> method
+    valid_layer_kwargs = set(inspect.signature(add_method).parameters)
+    return {k: v for k, v in kwargs.items() if k in valid_layer_kwargs}

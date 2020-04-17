@@ -146,7 +146,6 @@ class QtViewer(QSplitter):
         self.canvas.connect(self.on_mouse_release)
         self.canvas.connect(self.on_key_press)
         self.canvas.connect(self.on_key_release)
-        self.canvas.connect(self.on_draw)
 
         self.view = self.canvas.central_widget.add_view()
         self._update_camera()
@@ -228,9 +227,9 @@ class QtViewer(QSplitter):
         layers = event.source
         layer = event.item
         vispy_layer = create_vispy_visual(layer)
-        vispy_layer.camera = self.view.camera
         vispy_layer.node.parent = self.view.scene
         vispy_layer.order = len(layers)
+        self.canvas.connect(vispy_layer.on_draw)
         self.layer_to_visual[layer] = vispy_layer
 
     def _remove_layer(self, event):
@@ -329,7 +328,7 @@ class QtViewer(QSplitter):
             directory=self._last_visited_dir,  # home dir by default
         )
         if (filenames != []) and (filenames is not None):
-            self.viewer.add_path(filenames)
+            self.viewer.open_path(filenames)
 
     def _open_images_as_stack(self):
         """Add image files as a stack, from the menubar."""
@@ -339,7 +338,7 @@ class QtViewer(QSplitter):
             directory=self._last_visited_dir,  # home dir by default
         )
         if (filenames != []) and (filenames is not None):
-            self.viewer.add_path(filenames, stack=True)
+            self.viewer.open_path(filenames, stack=True)
 
     def _open_folder(self):
         """Add a folder of files from the menubar."""
@@ -349,7 +348,7 @@ class QtViewer(QSplitter):
             directory=self._last_visited_dir,  # home dir by default
         )
         if folder not in {'', None}:
-            self.viewer.add_path([folder])
+            self.viewer.open_path([folder])
 
     def _on_interactive(self, event):
         """Link interactive attributes of view and viewer.
@@ -539,17 +538,6 @@ class QtViewer(QSplitter):
         combo = components_to_key_combo(event.key.name, event.modifiers)
         self.viewer.release_key(combo)
 
-    def on_draw(self, event):
-        """Called whenever drawn in canvas. Called for all layers, not just top
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
-        """
-        for visual in self.layer_to_visual.values():
-            visual.on_draw(event)
-
     def keyPressEvent(self, event):
         """Called whenever a key is pressed.
 
@@ -604,7 +592,7 @@ class QtViewer(QSplitter):
                 filenames.append(url.toLocalFile())
             else:
                 filenames.append(url.toString())
-        self.viewer.add_path(filenames, stack=bool(shift_down))
+        self.viewer.open_path(filenames, stack=bool(shift_down))
 
     def closeEvent(self, event):
         """Clear pool of worker threads and close.

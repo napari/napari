@@ -1,4 +1,5 @@
 from copy import copy
+from itertools import cycle, islice
 from xml.etree.ElementTree import Element
 
 import numpy as np
@@ -8,6 +9,25 @@ from vispy.color import get_colormap
 
 from napari.layers import Points
 from napari.utils.colormaps.standardize_color import transform_color
+
+
+def _make_cycled_properties(values, length):
+    """Helper function to make property values
+
+    Parameters:
+    -----------
+    values :
+        The values to be cycled.
+    length : int
+        The length of the resulting property array
+
+    Returns:
+    --------
+    cycled_properties : np.ndarray
+        The property array comprising the cycled values.
+    """
+    cycled_properties = np.array(list(islice(cycle(values), 0, length)))
+    return cycled_properties
 
 
 def test_empty_points():
@@ -47,10 +67,7 @@ def test_empty_points_with_properties_list():
 
     See: https://github.com/napari/napari/pull/1069
     """
-    properties = {
-        'label': ['label1', 'label2'],
-        'cont_prop': [0],
-    }
+    properties = {'label': ['label1', 'label2'], 'cont_prop': [0]}
     pts = Points(properties=properties)
     current_props = {k: np.asarray(v[0]) for k, v in properties.items()}
     np.testing.assert_equal(pts.current_properties, current_props)
@@ -445,12 +462,46 @@ def test_properties():
     assert np.all(layer.properties['point_type'] == paste_annotations)
 
 
+@pytest.mark.parametrize("attribute", ['edge', 'face'])
+def test_adding_properties(attribute):
+    """Test adding properties to an existing layer"""
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+
+    # add properties
+    properties = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
+    layer.properties = properties
+    np.testing.assert_equal(layer.properties, properties)
+
+    # add properties as a dataframe
+    properties_df = pd.DataFrame(properties)
+    layer.properties = properties_df
+    np.testing.assert_equal(layer.properties, properties)
+
+    # add properties as a dictionary with list values
+    properties_list = {
+        'point_type': list(_make_cycled_properties(['A', 'B'], shape[0]))
+    }
+    layer.properties = properties_list
+    assert isinstance(layer.properties['point_type'], np.ndarray)
+
+    # removing a property that was the _edge_color_property should give a warning
+    setattr(layer, f'_{attribute}_color_property', 'vector_type')
+    properties_2 = {
+        'not_vector_type': _make_cycled_properties(['A', 'B'], shape[0])
+    }
+    with pytest.warns(RuntimeWarning):
+        layer.properties = properties_2
+
+
 def test_properties_dataframe():
     """test if properties can be provided as a DataFrame"""
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    properties = {'point_type': np.array(['A', 'B'] * int(shape[0] / 2))}
+    properties = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
     properties_df = pd.DataFrame(properties)
     properties_df = properties_df.astype(properties['point_type'].dtype)
     layer = Points(data, properties=properties_df)
@@ -462,7 +513,9 @@ def test_properties_list():
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    properties = {'point_type': ['A', 'B'] * int(shape[0] / 2)}
+    properties = {
+        'point_type': list(_make_cycled_properties(['A', 'B'], shape[0]))
+    }
     layer = Points(data, properties=properties)
     np.testing.assert_equal(layer.properties, properties)
 
@@ -474,7 +527,7 @@ def test_adding_annotations():
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    properties = {'point_type': np.array(['A', 'B'] * int((shape[0] / 2)))}
+    properties = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
     layer = Points(data)
     assert layer.properties == {}
 
@@ -484,7 +537,7 @@ def test_adding_annotations():
 
     # change properties
     new_annotations = {
-        'other_type': np.array(['C', 'D'] * int((shape[0] / 2)))
+        'other_type': _make_cycled_properties(['C', 'D'], shape[0])
     }
     layer.properties = copy(new_annotations)
     assert layer.properties == new_annotations
@@ -495,7 +548,7 @@ def test_add_points_with_properties():
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    properties = {'point_type': np.array(['A', 'B'] * int((shape[0] / 2)))}
+    properties = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
     layer = Points(data, properties=copy(properties))
 
     coord = [18, 18]
@@ -509,7 +562,9 @@ def test_add_points_with_properties_as_list():
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    properties = {'point_type': ['A', 'B'] * int((shape[0] / 2))}
+    properties = {
+        'point_type': list(_make_cycled_properties(['A', 'B'], shape[0]))
+    }
     layer = Points(data, properties=copy(properties))
 
     coord = [18, 18]
@@ -523,7 +578,7 @@ def test_updating_points_properties():
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    properties = {'point_type': np.array(['A', 'B'] * int((shape[0] / 2)))}
+    properties = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
     layer = Points(data, properties=copy(properties))
 
     layer.mode = 'select'
@@ -550,7 +605,7 @@ def test_is_color_mapped():
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    annotations = {'point_type': np.array(['A', 'B'] * int((shape[0] / 2)))}
+    annotations = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
     layer = Points(data, properties=annotations)
 
     # giving the name of an annotation should return True
@@ -606,6 +661,107 @@ def test_n_dimensional():
 
     layer = Points(data, n_dimensional=True)
     assert layer.n_dimensional is True
+
+
+@pytest.mark.parametrize("attribute", ['edge', 'face'])
+def test_switch_color_mode(attribute):
+    """Test switching between color modes"""
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    # create a continuous property with a known value in the last element
+    continuous_prop = np.random.random((shape[0],))
+    continuous_prop[-1] = 1
+    properties = {
+        'point_truthiness': continuous_prop,
+        'point_type': _make_cycled_properties(['A', 'B'], shape[0]),
+    }
+    initial_color = [1, 0, 0, 1]
+    color_cycle = ['red', 'blue']
+    color_kwarg = f'{attribute}_color'
+    colormap_kwarg = f'{attribute}_colormap'
+    color_cycle_kwarg = f'{attribute}_color_cycle'
+    args = {
+        color_kwarg: initial_color,
+        colormap_kwarg: 'gray',
+        color_cycle_kwarg: color_cycle,
+    }
+    layer = Points(data, properties=properties, **args,)
+
+    layer_color_mode = getattr(layer, f'{attribute}_color_mode')
+    layer_color = getattr(layer, f'{attribute}_color')
+    assert layer_color_mode == 'direct'
+    np.testing.assert_allclose(
+        layer_color, np.repeat([initial_color], shape[0], axis=0)
+    )
+
+    # there should not be an edge_color_property
+    color_property = getattr(layer, f'_{attribute}_color_property')
+    assert color_property == ''
+
+    # transitioning to colormap should raise a warning
+    # because there isn't an edge color property yet and
+    # the first property in points.properties is being automatically selected
+    with pytest.warns(UserWarning):
+        setattr(layer, f'{attribute}_color_mode', 'colormap')
+    color_property = getattr(layer, f'_{attribute}_color_property')
+    assert color_property == next(iter(properties))
+    layer_color = getattr(layer, f'{attribute}_color')
+    np.testing.assert_allclose(layer_color[-1], [1, 1, 1, 1])
+
+    # switch to color cycle
+    setattr(layer, f'{attribute}_color_mode', 'cycle')
+    setattr(layer, f'{attribute}_color', 'point_type')
+    color = getattr(layer, f'{attribute}_color')
+    layer_color = transform_color(color_cycle * int((shape[0] / 2)))
+    np.testing.assert_allclose(color, layer_color)
+
+    # switch back to direct, edge_colors shouldn't change
+    setattr(layer, f'{attribute}_color_mode', 'direct')
+    new_edge_color = getattr(layer, f'{attribute}_color')
+    np.testing.assert_allclose(new_edge_color, color)
+
+
+@pytest.mark.parametrize("attribute", ['edge', 'face'])
+def test_colormap_without_properties(attribute):
+    """Setting the colormode to colormap should raise an exception"""
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data)
+
+    with pytest.raises(ValueError):
+        setattr(layer, f'{attribute}_color_mode', 'colormap')
+
+
+@pytest.mark.parametrize("attribute", ['edge', 'face'])
+def test_colormap_with_categorical_properties(attribute):
+    """Setting the colormode to colormap should raise an exception"""
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    properties = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
+    layer = Points(data, properties=properties)
+
+    with pytest.raises(TypeError):
+        setattr(layer, f'{attribute}_color_mode', 'colormap')
+
+
+@pytest.mark.parametrize("attribute", ['edge', 'face'])
+def test_add_colormap(attribute):
+    """Test  directly adding a vispy Colormap object"""
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    annotations = {'point_type': _make_cycled_properties([0, 1.5], shape[0])}
+    color_kwarg = f'{attribute}_color'
+    colormap_kwarg = f'{attribute}_colormap'
+    args = {color_kwarg: 'point_type', colormap_kwarg: 'viridis'}
+    layer = Points(data, properties=annotations, **args,)
+
+    setattr(layer, f'{attribute}_colormap', get_colormap('gray'))
+    layer_colormap = getattr(layer, f'{attribute}_colormap')
+    assert layer_colormap[0] == 'unknown_colormap'
 
 
 def test_edge_color_direct():
@@ -683,7 +839,7 @@ def test_edge_color_cycle():
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    annotations = {'point_type': np.array(['A', 'B'] * int((shape[0] / 2)))}
+    annotations = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
     color_cycle = ['red', 'blue']
     layer = Points(
         data,
@@ -726,6 +882,9 @@ def test_edge_color_cycle():
             (edge_color_array[1], edge_color_array[3:], transform_color('red'))
         ),
     )
+
+    # refresh colors
+    layer.refresh_colors(update_color_mapping=True)
 
 
 def test_add_edge_color_cycle_to_empty_layer():
@@ -773,7 +932,7 @@ def test_adding_value_edge_color_cycle():
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    annotations = {'point_type': np.array(['A', 'B'] * int((shape[0] / 2)))}
+    annotations = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
     color_cycle = ['red', 'blue']
     layer = Points(
         data,
@@ -797,7 +956,7 @@ def test_edge_color_colormap():
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    annotations = {'point_type': np.array([0, 1.5] * int((shape[0] / 2)))}
+    annotations = {'point_type': _make_cycled_properties([0, 1.5], shape[0])}
     layer = Points(
         data,
         properties=annotations,
@@ -924,7 +1083,7 @@ def test_face_color_cycle():
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    annotations = {'point_type': np.array(['A', 'B'] * int((shape[0] / 2)))}
+    annotations = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
     color_cycle = ['red', 'blue']
     layer = Points(
         data,
@@ -967,6 +1126,9 @@ def test_face_color_cycle():
             (face_color_array[1], face_color_array[3:], transform_color('red'))
         ),
     )
+
+    # refresh colors
+    layer.refresh_colors(update_color_mapping=True)
 
 
 def test_add_face_color_cycle_to_empty_layer():
@@ -1013,7 +1175,7 @@ def test_adding_value_face_color_cycle():
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    annotations = {'point_type': np.array(['A', 'B'] * int((shape[0] / 2)))}
+    annotations = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
     color_cycle = ['red', 'blue']
     layer = Points(
         data,
@@ -1037,7 +1199,7 @@ def test_face_color_colormap():
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    annotations = {'point_type': np.array([0, 1.5] * int((shape[0] / 2)))}
+    annotations = {'point_type': _make_cycled_properties([0, 1.5], shape[0])}
     layer = Points(
         data,
         properties=annotations,

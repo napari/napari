@@ -51,8 +51,8 @@ def napari_get_reader(path: Union[str, List[str]]) -> Optional[ReaderFunction]:
     This is the primary "**reader plugin**" function.  It accepts a path or
     list of paths, and returns a list of data to be added to the ``Viewer``.
 
-    The main place this hook is used is in :func:`Viewer.add_path()
-    <napari.components.add_layers_mixin.AddLayersMixin.add_path>`, via the
+    The main place this hook is used is in :func:`Viewer.open_path()
+    <napari.components.add_layers_mixin.AddLayersMixin.open_path>`, via the
     :func:`~napari.plugins.io.read_data_with_plugins` function.
 
     It will also be called on ``File -> Open...`` or when a user drops a file

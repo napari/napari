@@ -1,23 +1,12 @@
-Announcement: napari 0.1.0
-==========================
+# Announcement: napari 0.1.0
 
-We're happy to announce the release of napari v0.1.0!
-napari is a fast, interactive, multi-dimensional image viewer for Python.
-It's designed for browsing, annotating, and analyzing large multi-dimensional
-images. It's built on top of Qt (for the GUI), vispy (for performant GPU-base
-rendering), and the scientific Python stack (numpy, scipy).
+We're happy to announce the release of napari 0.1.0! napari is a fast, interactive, multi-dimensional image viewer for Python. It's designed for browsing, annotating, and analyzing large multi-dimensional images. It's built on top of Qt (for the GUI), vispy (for performant GPU-based rendering), and the scientific Python stack (numpy, scipy).
 
-This is our first minor release, timed for the 2019 SciPy Conference in Austin.
-It marks our transition from pre-alpha to alpha, and establishes a reasonable
-API for adding images, shapes, and other basic layer types to an interactive
-viewer. It supports launching a viewer with python scripting or from Jupyter
-notebooks.
+This is our first minor release, timed for the 2019 SciPy Conference in Austin. It marks our transition from pre-alpha to alpha, and establishes a reasonable API for adding images, shapes, and other basic layer types to an interactive viewer. It supports launching a viewer with python scripting or from Jupyter notebooks.
 
-For more information, examples, and documentation, please visit our website:
-https://github.com/napari/napari
+For more information, examples, and documentation, please visit our website: https://github.com/napari/napari
 
-Pull Requests
-*******************
+## Pull Requests
 - Add shapes (#100)
 - Vectors Layer (#129)
 - setup css basics (#167)
@@ -27,7 +16,7 @@ Pull Requests
 - WIP: Labels layer (#175)
 - automate running/testing of examples (#176)
 - fix error with nD markers (#183)
--  fix sphinx-apidoc command on CONTRIBUTING.MD (#187)
+- fix sphinx-apidoc command on CONTRIBUTING.MD (#187)
 - Allow other array-like data (#188)
 - Add example using a Zarr array (#191)
 - readme updates (#192)
@@ -130,31 +119,28 @@ Pull Requests
 - add viewer model tests (#401)
 - update readme for alpha release (#402)
 
-12 authors added to this release [alphabetical by first name or login]
-----------------------------------------------------------------------
-- Ahmet Can Solak
-- Bryant
-- Eric Perlman
-- jakirkham (jakirkham)
-- Jeremy Freeman
-- Juan Nunez-Iglesias
-- kevinyamauchi (kevinyamauchi)
-- Kira Evans
-- Loic Royer
-- Mars Huang
-- Nicholas Sofroniew
-- Pranathi Vemuri
+## 12 authors added to this release (alphabetical)
+- [Ahmet Can Solak](https://github.com/napari/napari/commits?author=AhmetCanSolak) - @AhmetCanSolak
+- [Bryant Chhun](https://github.com/napari/napari/commits?author=bryantChhun) - @bryantChhun
+- [Eric Perlman](https://github.com/napari/napari/commits?author=perlman) - @perlman
+- [John Kirkham](https://github.com/napari/napari/commits?author=jakirkham) - @jakirkham
+- [Jeremy Freeman](https://github.com/napari/napari/commits?author=freeman-lab) - @freeman-lab
+- [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - @jni
+- [Kevin Yamauchi](https://github.com/napari/napari/commits?author=kevinyamauchi) - @kevinyamauchi
+- [Kira Evans](https://github.com/napari/napari/commits?author=kne42) - @kne42
+- [Loic Royer](https://github.com/napari/napari/commits?author=royerloic) - @royerloic
+- [Mars Huang](https://github.com/napari/napari/commits?author=marshuang80) - @marshuang80
+- [Nicholas Sofroniew](https://github.com/napari/napari/commits?author=sofroniewn) - @sofroniewn
+- [Pranathi Vemuri](https://github.com/napari/napari/commits?author=pranathivemuri) - @pranathivemuri
 
-
-10 reviewers added to this release [alphabetical by first name or login]
-------------------------------------------------------------------------
-- Ahmet Can Solak
-- Bryant
-- Charlotte Weaver
-- Jeremy Freeman
-- Juan Nunez-Iglesias
-- kevinyamauchi
-- Kira Evans
-- Loic Royer
-- Nicholas Sofroniew
-- Shannon Axelrod
+## 10 reviewers added to this release (alphabetical)
+- [Ahmet Can Solak](https://github.com/napari/napari/commits?author=AhmetCanSolak) - @AhmetCanSolak
+- [Bryant Chhun](https://github.com/napari/napari/commits?author=bryantChhun) - @bryantChhun
+- [Charlotte Weaver](https://github.com/napari/napari/commits?author=csweaver) - @csweaver
+- [Jeremy Freeman](https://github.com/napari/napari/commits?author=freeman-lab) - @freeman-lab
+- [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - @jni
+- [Kevin Yamauchi](https://github.com/napari/napari/commits?author=kevinyamauchi) - @kevinyamauchi
+- [Kira Evans](https://github.com/napari/napari/commits?author=kne42) - @kne42
+- [Loic Royer](https://github.com/napari/napari/commits?author=royerloic) - @royerloic
+- [Nicholas Sofroniew](https://github.com/napari/napari/commits?author=sofroniewn) - @sofroniewn
+- [Shannon Axelrod](https://github.com/napari/napari/commits?author=shanaxel42) - @shanaxel42

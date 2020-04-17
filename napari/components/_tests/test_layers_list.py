@@ -393,3 +393,34 @@ def test_move_selected():
         False,
         False,
     ]
+
+
+def test_toggle_visibility():
+    """
+    Test toggling layer visibility
+    """
+    layers = LayerList()
+    layer_a = Image(np.random.random((10, 10)))
+    layer_b = Image(np.random.random((15, 15)))
+    layer_c = Image(np.random.random((15, 15)))
+    layer_d = Image(np.random.random((15, 15)))
+    layers.append(layer_a)
+    layers.append(layer_b)
+    layers.append(layer_c)
+    layers.append(layer_d)
+
+    layers[0].visible = False
+    layers[1].visible = True
+    layers[2].visible = False
+    layers[3].visible = True
+
+    layers.select_all()
+    layers[0].selected = False
+
+    layers.toggle_selected_visibility()
+
+    assert [l.visible for l in layers] == [False, False, True, False]
+
+    layers.toggle_selected_visibility()
+
+    assert [l.visible for l in layers] == [False, True, False, True]

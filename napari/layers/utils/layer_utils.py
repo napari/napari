@@ -156,6 +156,7 @@ def convert_to_uint8(data: np.ndarray) -> np.ndarray:
             ).astype(out_dtype)
 
 
+
 def dataframe_to_properties(dataframe) -> Dict[str, np.ndarray]:
     """Convert a dataframe to Points.properties formatted dictionary.
 
@@ -213,3 +214,40 @@ def map_property(
     mapped_properties = colormap.map(normalized_properties)
 
     return mapped_properties, contrast_limits
+
+def compute_pyramid_level(
+    requested_shape, shape_threshold, downsample_factors
+):
+    """Computed desired level of the pyramid given requested field of view.
+
+    The level of the pyramid should be the lowest resolution such that
+    the requested shape is above the shape threshold. By passing a shape
+    threshold corresponding to the shape of the canvas on the screen this
+    ensures that we have at least one data pixel per screen pixel, but no
+    more than we need.
+
+    Parameters
+    ----------
+    requested_shape : tuple
+        Requested shape of field of view in data coordinates
+    shape_threshold : tuple
+        Maximum size of a displayed tile in pixels.
+    downsample_factors : list of tuple
+        Downsampling factors for each level of the pyramid. Must be increasing
+        for each level of the pyramid.
+
+    Returns
+    -------
+    level : int
+        Level of the pyramid to be viewing.
+    """
+    # Scale shape by downsample factors
+    scaled_shape = requested_shape / downsample_factors
+
+    # Find the highest resolution level allowed
+    locations = np.argwhere(np.all(scaled_shape > shape_threshold, axis=1))
+    if len(locations) > 0:
+        level = locations[-1][0]
+    else:
+        level = 0
+    return level
