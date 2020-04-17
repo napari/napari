@@ -173,3 +173,9 @@ class LayerList(ListModel):
                 self[selected[0] - 1].selected = True
         elif len(self) > 0:
             self[0].selected = True
+
+    def toggle_selected_visibility(self):
+        """Toggle visibility of selected layers"""
+        for layer in self:
+            if layer.selected:
+                layer.visible = not layer.visible
