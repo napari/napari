@@ -4,9 +4,7 @@ But errors when the actual reader function is called.  This is used for testing
 the read_data_with_plugins loop.
 
 """
-import pluggy
-
-napari_hook_implementation = pluggy.HookimplMarker("napari")
+from napari_plugins import napari_hook_implementation
 
 
 def reader_function(path):

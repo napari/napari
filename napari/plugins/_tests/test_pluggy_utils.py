@@ -1,10 +1,11 @@
 import pytest
+from napari_plugins import HookimplMarker
+from pluggy import HookspecMarker
 
-import pluggy
 from napari.plugins.manager import PluginManager
 
-dummy_hook_implementation = pluggy.HookimplMarker("dummy")
-dummy_hook_specification = pluggy.HookspecMarker("dummy")
+dummy_hook_implementation = HookimplMarker("dummy")
+dummy_hook_specification = HookspecMarker("dummy")
 
 
 class MySpec:
