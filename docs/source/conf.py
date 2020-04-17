@@ -27,30 +27,33 @@ author = 'napari contributors'
 
 release = __version__
 version = __version__
+CONFDIR = os.path.dirname(__file__)
 
 
 def clean_release_notes():
-    dirname = os.path.join(os.path.dirname(__file__), 'release')
-    for rel in os.listdir(dirname):
+
+    release_rst = """Release Notes
+=============
+
+.. toctree::
+   :maxdepth: 1
+   :glob:
+
+"""
+    dirname = os.path.join(CONFDIR, 'release')
+    for rel in sorted(
+        os.listdir(dirname), key=lambda s: list(map(int, re.findall('\d+', s)))
+    ):
         for line in fileinput.input(os.path.join(dirname, rel), inplace=True):
-            if line.startswith("Announcement: napari"):
-                line = line.replace("Announcement: ", "")
-            # uncomment to remove the standard announcement paragraph.
-            # if not line.startswith(
-            #     (
-            #         "We're happy",
-            #         'napari is a fast',
-            #         "It's designed for",
-            #         "images. It's built",
-            #         "rendering), and ",
-            #     )
-            # ):
             line = re.sub(
                 r'#(\d+)',
-                r'`#\1 <https://github.com/napari/napari/issues/\1>`_',
+                r'[#\1](<https://github.com/napari/napari/issues/\1>)',
                 line,
             )
             print(line, end='')
+        release_rst += '   release/' + rel.replace('.md', '\n')
+    with open(os.path.join(CONFDIR, 'releases.rst'), 'w') as f:
+        f.write(release_rst)
 
 
 clean_release_notes()
@@ -66,6 +69,7 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.viewcode',
     'sphinx.ext.intersphinx',
+    'recommonmark',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
