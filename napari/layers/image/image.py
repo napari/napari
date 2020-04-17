@@ -132,7 +132,6 @@ class Image(IntensityVisualizationMixin, Layer):
     """
 
     _colormaps = AVAILABLE_COLORMAPS
-    _max_tile_shape = 1600
 
     def __init__(
         self,
@@ -186,11 +185,11 @@ class Image(IntensityVisualizationMixin, Layer):
         self.rgb = rgb
         self._data = data
         self._data_pyramid = data_pyramid
-        self._top_left = np.zeros(ndim, dtype=int)
         if self.is_pyramid:
             self._data_level = len(data_pyramid) - 1
         else:
             self._data_level = 0
+        self.corner_pixels[1] = self.level_shapes[self._data_level]
 
         # Intitialize image views and thumbnails with zeros
         if self.rgb:
@@ -291,21 +290,9 @@ class Image(IntensityVisualizationMixin, Layer):
         return np.array(shapes)
 
     @property
-    def level_downsamples(self):
+    def downsample_factors(self):
         """list: Downsample factors for each level of the pyramid."""
         return np.divide(self.level_shapes[0], self.level_shapes)
-
-    @property
-    def top_left(self):
-        """tuple: Location of top left canvas pixel in image."""
-        return self._top_left
-
-    @top_left.setter
-    def top_left(self, top_left):
-        if np.all(self._top_left == top_left):
-            return
-        self._top_left = top_left.astype(int)
-        self.refresh()
 
     @property
     def iso_threshold(self):
@@ -465,7 +452,7 @@ class Image(IntensityVisualizationMixin, Layer):
             level = self.data_level
             indices = np.array(self.dims.indices)
             downsampled_indices = (
-                indices[not_disp] / self.level_downsamples[level, not_disp]
+                indices[not_disp] / self.downsample_factors[level, not_disp]
             )
             downsampled_indices = np.round(
                 downsampled_indices.astype(float)
@@ -475,67 +462,62 @@ class Image(IntensityVisualizationMixin, Layer):
             )
             indices[not_disp] = downsampled_indices
 
-            disp_shape = self.level_shapes[level, self.dims.displayed]
             scale = np.ones(self.ndim)
             for d in self.dims.displayed:
-                scale[d] = self.level_downsamples[self.data_level][d]
+                scale[d] = self.downsample_factors[self.data_level][d]
             self._transforms['tile2data'].scale = scale
 
-            if np.any(disp_shape > self._max_tile_shape):
-                for d in self.dims.displayed:
-                    indices[d] = slice(
-                        self._top_left[d],
-                        self._top_left[d] + self._max_tile_shape,
-                        1,
-                    )
-                # Note that top left marks the location of top left canvas
-                # pixel in data coordinates
-                self._transforms['tile2data'].translate = (
-                    self._top_left
-                    * self._transforms['data2world'].scale
-                    * self._transforms['tile2data'].scale
+            corner_pixels = np.clip(
+                self.corner_pixels,
+                0,
+                np.subtract(self.level_shapes[self.data_level], 1),
+            )
+
+            for d in self.dims.displayed:
+                indices[d] = slice(
+                    corner_pixels[0, d], corner_pixels[1, d] + 1, 1,
                 )
-            else:
-                self._transforms['tile2data'].translate = np.zeros(self.ndim)
+            self._transforms['tile2data'].translate = (
+                corner_pixels[0]
+                * self._transforms['data2world'].scale
+                * self._transforms['tile2data'].scale
+            )
 
             image = np.asarray(
                 self._data_pyramid[level][tuple(indices)]
             ).transpose(order)
 
-            if level == len(self._data_pyramid) - 1:
-                thumbnail = image
-            else:
-                # Slice thumbnail
-                indices = np.array(self.dims.indices)
-                downsampled_indices = (
-                    indices[not_disp] / self.level_downsamples[-1, not_disp]
-                )
-                downsampled_indices = np.round(
-                    downsampled_indices.astype(float)
-                ).astype(int)
-                downsampled_indices = np.clip(
-                    downsampled_indices, 0, self.level_shapes[-1, not_disp] - 1
-                )
-                indices[not_disp] = downsampled_indices
-                thumbnail = np.asarray(
-                    self._data_pyramid[-1][tuple(indices)]
-                ).transpose(order)
+            # Slice thumbnail
+            indices = np.array(self.dims.indices)
+            downsampled_indices = (
+                indices[not_disp] / self.downsample_factors[-1, not_disp]
+            )
+            downsampled_indices = np.round(
+                downsampled_indices.astype(float)
+            ).astype(int)
+            downsampled_indices = np.clip(
+                downsampled_indices, 0, self.level_shapes[-1, not_disp] - 1
+            )
+            indices[not_disp] = downsampled_indices
+            thumbnail_source = np.asarray(
+                self._data_pyramid[-1][tuple(indices)]
+            ).transpose(order)
         else:
             self._transforms['tile2data'].scale = np.ones(self.dims.ndim)
             image = np.asarray(self.data[self.dims.indices]).transpose(order)
-            thumbnail = image
+            thumbnail_source = image
 
         if self.rgb and image.dtype.kind == 'f':
             self._data_raw = np.clip(image, 0, 1)
             self._data_view = self._raw_to_displayed(self._data_raw)
             self._data_thumbnail = self._raw_to_displayed(
-                np.clip(thumbnail, 0, 1)
+                np.clip(thumbnail_source, 0, 1)
             )
 
         else:
             self._data_raw = image
             self._data_view = self._raw_to_displayed(self._data_raw)
-            self._data_thumbnail = self._raw_to_displayed(thumbnail)
+            self._data_thumbnail = self._raw_to_displayed(thumbnail_source)
 
         if self.is_pyramid:
             self.events.scale()
