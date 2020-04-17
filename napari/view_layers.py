@@ -21,7 +21,6 @@ def view_image(
     opacity=1,
     blending=None,
     visible=True,
-    path=None,
     title='napari',
     ndisplay=2,
     order=None,
@@ -94,9 +93,6 @@ def view_image(
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
-    path : str or list of str
-        Path or list of paths to image data. Paths can be passed as strings
-        or `pathlib.Path` instances.
     title : string
         The title of the viewer window.
     ndisplay : {2, 3}
@@ -141,7 +137,6 @@ def view_image(
         opacity=opacity,
         blending=blending,
         visible=visible,
-        path=path,
     )
     return viewer
 
@@ -363,7 +358,6 @@ def view_labels(
     opacity=0.7,
     blending='translucent',
     visible=True,
-    path=None,
     title='napari',
     ndisplay=2,
     order=None,
@@ -415,9 +409,6 @@ def view_labels(
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
-    path : str or list of str
-        Path or list of paths to image data. Paths can be passed as strings
-        or `pathlib.Path` instances.
     title : string
         The title of the viewer window.
     ndisplay : {2, 3}
@@ -455,7 +446,6 @@ def view_labels(
         opacity=opacity,
         blending=blending,
         visible=visible,
-        path=path,
     )
     return viewer
 

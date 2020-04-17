@@ -8,7 +8,7 @@ import numpy as np
 
 from .. import layers
 from ..plugins.io import read_data_with_plugins
-from ..utils import colormaps, io
+from ..utils import colormaps
 from ..utils.misc import (
     ensure_iterable,
     ensure_sequence_of_iterables,
@@ -83,7 +83,6 @@ class AddLayersMixin:
         opacity=1,
         blending=None,
         visible=True,
-        path=None,
     ) -> Union[layers.Image, List[layers.Image]]:
         """Add an image layer to the layers list.
 
@@ -173,21 +172,12 @@ class AddLayersMixin:
             Whether the layer visual is currently being displayed.
             If a list then must be same length as the axis that is
             being expanded as channels.
-        path : str or list of str
-            Path or list of paths to image data. Paths can be passed as strings
-            or `pathlib.Path` instances.
 
         Returns
         -------
         layer : :class:`napari.layers.Image` or list
             The newly-created image layer or list of image layers.
         """
-        if data is None and path is None:
-            raise ValueError("One of either data or path must be provided")
-        elif data is not None and path is not None:
-            raise ValueError("Only one of data or path can be provided")
-        elif data is None:
-            data = io.magic_imread(path)
 
         # doing this here for IDE/console autocompletion in add_image function.
         kwargs = {
@@ -406,7 +396,6 @@ class AddLayersMixin:
         opacity=0.7,
         blending='translucent',
         visible=True,
-        path=None,
     ) -> layers.Labels:
         """Add a labels (or segmentation) layer to the layers list.
 
@@ -453,22 +442,12 @@ class AddLayersMixin:
             {'opaque', 'translucent', and 'additive'}.
         visible : bool
             Whether the layer visual is currently being displayed.
-        path : str or list of str
-            Path or list of paths to image data. Paths can be passed as strings
-            or `pathlib.Path` instances.
 
         Returns
         -------
         layer : :class:`napari.layers.Labels`
             The newly-created labels layer.
         """
-        if data is None and path is None:
-            raise ValueError("One of either data or path must be provided")
-        elif data is not None and path is not None:
-            raise ValueError("Only one of data or path can be provided")
-        elif data is None:
-            data = io.magic_imread(path)
-
         layer = layers.Labels(
             data,
             is_pyramid=is_pyramid,
@@ -729,7 +708,12 @@ class AddLayersMixin:
         return layer
 
     def open_path(
-        self, path: Union[str, Sequence[str]], stack: bool = False, **kwargs
+        self,
+        path: Union[str, Sequence[str]],
+        stack: bool = False,
+        layer_type: Optional[str] = None,
+        plugin: Optional[str] = None,
+        **kwargs,
     ) -> List[layers.Layer]:
         """Open a path or list of paths with plugins, and add layers to viewer.
 
@@ -747,6 +731,14 @@ class AddLayersMixin:
             plugins to know how to handle a list of paths.  If ``stack`` is
             ``False``, then the ``path`` list is broken up and passed to plugin
             readers one by one.  by default False.
+        plugin : str, optional
+            Name of a plugin to use.  If provided, will force ``path`` to be
+            read with the specified ``plugin``.  If the requested plugin cannot
+            read ``path``, an execption will be raised.
+        layer_type : str, optional
+            If provided, will force data read from ``path`` to be passed to the
+            corresponding ``add_<layer_type>`` method (along with any
+            additional) ``kwargs`` provided to this function.
         **kwargs
             All other keyword arguments will be passed on to the respective
             ``add_layer`` method.
