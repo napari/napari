@@ -10,7 +10,7 @@ from ._base_constants import Blending
 from ...components import Dims
 from ...utils.event import EmitterGroup, Event
 from ...utils.key_bindings import KeymapProvider
-from ..utils.layer_utils import convert_to_uint8
+from ..utils.layer_utils import convert_to_uint8, compute_pyramid_level
 from ...utils.misc import ROOT_DIR
 from ...utils.naming import magic_name
 from ...utils.status_messages import status_format, format_float
@@ -69,8 +69,12 @@ class Layer(KeymapProvider, ABC):
     z_index : int
         Depth of the layer visual relative to other visuals in the scenecanvas.
     coordinates : tuple of float
-        Coordinates of the cursor in the image space of each layer. The length
+        Coordinates of the cursor in the data space of each layer. The length
         of the tuple is equal to the number of dimensions of the layer.
+    corner_pixels : array
+        Coordinates of the top-left and bottom-right canvas pixels in the data
+        space of each layer. The length of the tuple is equal to the number of
+        dimensions of the layer.
     position : 2-tuple of int
         Cursor position in the image space of only the displayed dimensions.
     shape : tuple of int
@@ -94,6 +98,7 @@ class Layer(KeymapProvider, ABC):
     scale_factor : float
         Conversion factor from canvas coordinates to image coordinates, which
         depends on the current zoom level.
+
 
     Notes
     -----
@@ -171,6 +176,7 @@ class Layer(KeymapProvider, ABC):
 
         self.coordinates = (0,) * ndim
         self._position = (0,) * self.dims.ndisplay
+        self.corner_pixels = np.zeros((2, ndim), dtype=int)
         self.is_pyramid = False
         self._editable = True
 
@@ -618,6 +624,48 @@ class Layer(KeymapProvider, ABC):
         self.coordinates = tuple(coords)
         self._value = self.get_value()
         self.status = self.get_message()
+
+    def _update_pyramid(self, corner_pixels, shape_threshold):
+        """Refresh layer pyramid if new resolution level or tile is required.
+
+        Parameters
+        ----------
+        corner_pixels : array
+            Coordinates of the top-left and bottom-right canvas pixels in the
+            data space of each layer. The length of the tuple is equal to the
+            number of dimensions of the layer. If different from the current
+            layer corner_pixels the layer needs refreshing.
+        requested_shape : tuple
+            Requested shape of field of view in data coordinates
+        """
+
+        # Clip corner pixels inside data shape
+        new_corner_pixels = np.clip(
+            self.corner_pixels,
+            0,
+            np.subtract(self.level_shapes[self.data_level], 1),
+        )
+
+        # Scale to full resolution of the data
+        requested_shape = (
+            new_corner_pixels[1] - new_corner_pixels[0]
+        ) * self.downsample_factors[self.data_level]
+
+        downsample_factors = self.downsample_factors[:, self.dims.displayed]
+
+        data_level = compute_pyramid_level(
+            requested_shape[self.dims.displayed],
+            shape_threshold,
+            downsample_factors,
+        )
+
+        if data_level != self.data_level:
+            # Set the data level, which will trigger a layer refresh and
+            # further updates including recalculation of the corner_pixels
+            # for the new level
+            self.data_level = data_level
+        elif not np.all(self.corner_pixels == corner_pixels):
+            self.refresh()
 
     @property
     def displayed_coordinates(self):

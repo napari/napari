@@ -13,15 +13,15 @@ def test_pyramid(viewer_factory):
 
     # Set canvas size to target amount
     view.view.canvas.size = (800, 600)
+    list(view.layer_to_visual.values())[0].on_draw(None)
 
     # Check that current level is first large enough to fill the canvas with
     # a greater than one pixel depth
     assert layer.data_level == 2
 
     # Check that full field of view is currently requested
-    np.testing.assert_allclose(
-        layer.corner_pixels, np.array([[0, 0], np.subtract(shapes[2], 1)])
-    )
+    assert np.all(layer.corner_pixels[0] <= [0, 0])
+    assert np.all(layer.corner_pixels[1] >= np.subtract(shapes[2], 1))
 
     # Test value at top left corner of image
     layer.position = (0, 0)

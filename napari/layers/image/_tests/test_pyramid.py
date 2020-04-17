@@ -369,7 +369,7 @@ def test_corner_value():
     target_position = (39, 19)
     target_level = 0
     layer.data_level = target_level
-    layer._corner_pixels[1] = shapes[target_level]  # update requested view
+    layer.corner_pixels[1] = shapes[target_level]  # update requested view
     layer.refresh()
 
     # Test position at corner of image

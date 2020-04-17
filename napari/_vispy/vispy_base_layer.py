@@ -147,12 +147,14 @@ class VispyBaseLayer(ABC):
         ).scale
         # convert NumPy axis ordering to VisPy axis ordering
         self.scale = scale[::-1]
-        if self.layer.is_pyramid:
-            corner_pixels, _ = self.find_coordinates_of_canvas_corners(
-                rounding_factor=50
-            )
-            self.layer.corner_pixels = corner_pixels
+        old_corner_pixels = self.layer.corner_pixels
+        self.layer.corner_pixels = self.coordinates_of_canvas_corners()
         self.layer.position = self._transform_position(self._position)
+        if self.layer.is_pyramid and self.node.canvas is not None:
+            self.layer._update_pyramid(
+                corner_pixels=old_corner_pixels,
+                shape_threshold=self.node.canvas.size,
+            )
 
     def _on_translate_change(self, event=None):
         translate = self.layer._transforms.simplified.set_slice(
@@ -160,6 +162,7 @@ class VispyBaseLayer(ABC):
         ).translate
         # convert NumPy axis ordering to VisPy axis ordering
         self.translate = translate[::-1]
+        self.layer.corner_pixels = self.coordinates_of_canvas_corners()
         self.layer.position = self._transform_position(self._position)
 
     def _transform_position(self, position):
@@ -192,32 +195,16 @@ class VispyBaseLayer(ABC):
         self._on_scale_change()
         self._on_translate_change()
 
-    def find_coordinates_of_canvas_corners(self, rounding_factor=None):
+    def coordinates_of_canvas_corners(self):
         """Find location of the corners of canvas in data coordinates.
 
         This method should only be used during 2D image viewing. The result
-        depends on the current pan and zoom position. Note that the returned
-        coordinates have been clipped to be inside the data to reflect the
-        actual amount of data that would be needed to cover canvas.
-
-        Parameters
-        ----------
-        rounding_factor : int, optional
-            Use a rounding factor to prevent repeated triggering of requesting
-            of new pyramid tiles for small camera movements. The rounding
-            factor is in pixel units of the currently viewed tile. Floor and
-            ceil rounding operations are used appropriately to ensure that the
-            rounded requested field always exceeds the needed field to fill the
-            canvas. There is a tradeoff between larger rounding factors causing
-            less frequent updates and tile fetches, but bigger tiles. A factor
-            of around 50 gives good results empirically.
+        depends on the current pan and zoom position.
 
         Returns
         ----------
         corner_pixels : array
             Coordinates of top left and bottom right canvas pixel in the data.
-        requested_shape : array
-            Shape of requested tile in data coordinates.
         """
         nd = self.layer.dims.ndisplay
         # Find image coordinate of top left canvas pixel
@@ -231,37 +218,13 @@ class VispyBaseLayer(ABC):
             tl_raw = [0] * nd
             br_raw = [1] * nd
 
-        if rounding_factor is not None:
-            # Perform rounding to prevent repeated triggering of requesting
-            # of new pyramid tiles for small camera movements
-            tl_raw = rounding_factor * np.floor(
-                np.divide(tl_raw, rounding_factor)
-            )
-            br_raw = rounding_factor * np.ceil(
-                np.divide(br_raw, rounding_factor)
-            )
-
         top_left = np.zeros(self.layer.ndim)
         bottom_right = np.zeros(self.layer.ndim)
         for d, tl, br in zip(self.layer.dims.displayed, tl_raw, br_raw):
             top_left[d] = tl
             bottom_right[d] = br
 
-        corner_pixels = np.array([top_left, bottom_right]).astype(int)
-
-        # Clip according to the max data of the level shape
-        corner_pixels = np.clip(
-            corner_pixels,
-            0,
-            np.subtract(self.layer.level_shapes[self.layer.data_level], 1),
-        )
-
-        # Scale to full resolution of the data
-        requested_shape = (
-            corner_pixels[1] - corner_pixels[0]
-        ) * self.layer.downsample_factors[self.layer.data_level]
-
-        return corner_pixels, requested_shape
+        return np.array([top_left, bottom_right]).astype(int)
 
     def on_draw(self, event):
         """Called whenever the canvas is drawn.
@@ -270,28 +233,14 @@ class VispyBaseLayer(ABC):
         the camera is moved and is connected in the `QtViewer`.
         """
         self.layer.scale_factor = self.scale_factor
-        if self.layer.is_pyramid:
-            (
-                corner_pixels,
-                requested_shape,
-            ) = self.find_coordinates_of_canvas_corners(rounding_factor=50)
-            size_threshold = self.node.canvas.size
-            downsample_factors = self.layer.downsample_factors[
-                :, self.layer.dims.displayed
-            ]
-            data_level = compute_pyramid_level(
-                requested_shape[self.layer.dims.displayed],
-                size_threshold,
-                downsample_factors,
-            )
+        old_corner_pixels = self.layer.corner_pixels
+        self.layer.corner_pixels = self.coordinates_of_canvas_corners()
 
-            if data_level != self.layer.data_level:
-                # Set the data level, which will trigger further updates
-                # including recalculation of the corner_pixels for the new
-                # level
-                self.layer.data_level = data_level
-            else:
-                self.layer.corner_pixels = corner_pixels
+        if self.layer.is_pyramid and self.node.canvas is not None:
+            self.layer._update_pyramid(
+                corner_pixels=old_corner_pixels,
+                shape_threshold=self.node.canvas.size,
+            )
 
 
 @lru_cache()
@@ -320,41 +269,3 @@ def get_max_texture_sizes():
     MAX_TEXTURE_SIZE_3D = 2048
 
     return MAX_TEXTURE_SIZE_2D, MAX_TEXTURE_SIZE_3D
-
-
-def compute_pyramid_level(
-    requested_shape, shape_threshold, downsample_factors
-):
-    """Computed desired level of the pyramid given requested field of view.
-
-    The level of the pyramid should be the lowest resolution such that
-    the requested shape is above the shape threshold. By passing a shape
-    threshold corresponding to the shape of the canvas on the screen this
-    ensures that we have at least one data pixel per screen pixel, but no
-    more than we need.
-
-    Parameters
-    ----------
-    requested_shape : tuple
-        Requested shape of field of view in data coordinates
-    shape_threshold : tuple
-        Maximum size of a displayed tile in pixels.
-    downsample_factors : list of tuple
-        Downsampling factors for each level of the pyramid. Must be increasing
-        for each level of the pyramid.
-
-    Returns
-    -------
-    level : int
-        Level of the pyramid to be viewing.
-    """
-    # Scale shape by downsample factors
-    scaled_shape = requested_shape / downsample_factors
-
-    # Find the highest resolution level allowed
-    locations = np.argwhere(np.all(scaled_shape > shape_threshold, axis=1))
-    if len(locations) > 0:
-        level = locations[-1][0]
-    else:
-        level = 0
-    return level
