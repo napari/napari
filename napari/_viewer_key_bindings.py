@@ -142,7 +142,7 @@ def play(viewer):
         viewer.window.qt_viewer.dims.play(axis)
 
 
-@Viewer.bind_key('Control-H')
+@Viewer.bind_key('V')
 def toggle_selected_visibility(viewer):
     """Toggle visibility of selected layers"""
     viewer.layers.toggle_selected_visibility()
