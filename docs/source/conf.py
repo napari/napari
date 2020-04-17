@@ -42,7 +42,9 @@ def clean_release_notes():
 """
     dirname = os.path.join(CONFDIR, 'release')
     for rel in sorted(
-        os.listdir(dirname), key=lambda s: list(map(int, re.findall('\d+', s)))
+        os.listdir(dirname),
+        key=lambda s: list(map(int, re.findall(r'\d+', s))),
+        reverse=True,
     ):
         for line in fileinput.input(os.path.join(dirname, rel), inplace=True):
             line = re.sub(
