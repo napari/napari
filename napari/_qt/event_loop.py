@@ -22,10 +22,9 @@ def gui_qt(*, startup_logo=False):
     IPython with the Qt GUI event loop enabled by default by using
     ``ipython --gui=qt``.
     """
-    had_app = True
+    splash_widget = None
     app = QApplication.instance()
     if not app:
-        had_app = False
         # if this is the first time the Qt app is being instantiated, we set
         # the name, so that we know whether to raise_ in Window.show()
         app = QApplication(sys.argv)
@@ -35,7 +34,10 @@ def gui_qt(*, startup_logo=False):
             splash_widget = QSplashScreen(QPixmap(logopath).scaled(400, 400))
             splash_widget.show()
     yield app
-    if not had_app:
-        if startup_logo:
+    # the application already existed before this function was called, there's
+    # no need to start it again.  By avoiding unnecessary calls to app.exec_
+    # we avoid blocking.
+    if app.applicationName() == 'napari':
+        if splash_widget and startup_logo:
             splash_widget.close()
         app.exec_()
