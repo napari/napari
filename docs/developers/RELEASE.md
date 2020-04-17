@@ -17,20 +17,19 @@ Thus, you'll need to tag the [reference](https://git-scm.com/book/en/v2/Git-Inte
 
 ## generating release notes
 
-1. Review and cleanup ``docs/release/release_dev.txt``. This may be empty if it has not been
+1. Review and cleanup ``docs/release/release_dev.md``. This may be empty if it has not been
    updated during work on the last release.
 
 2. Make a list of merges, contributors, and reviewers by running
-   ``python docs/release/generate_release_notes.py -h`` and following that file's usage. For minor or major releases generate the list to include everything since the last minor or major release.
-   For other releases generate the list to include
-   everything since the last release for which there
+   ``python docs/release/generate_release_notes.py -h`` and following that file's usage.
+   For each release generate the list to include everything since the last release for which there
    are release notes (which should just be the last release). For example making the release notes
-   for the `0.2.0` release can be done as follows:
+   for the `0.2.1` release can be done as follows:
    ```
-   python docs/release/generate_release_notes.py v0.1.0 master --version 0.2.0 | tee docs/release/release_0_2_0.rst
+   python docs/release/generate_release_notes.py v0.2.0 master --version 0.2.1 | tee docs/release/release_0_2_1.md
    ```
 
-3. Paste this list at the end of the ``release_dev.txt``.
+3. Paste this list at the end of the ``release_dev.md``.
 
 4. Scan the PR titles for highlights, deprecations, API changes,
    and bugfixes, and mention these in the relevant sections of the notes.
@@ -38,13 +37,13 @@ Thus, you'll need to tag the [reference](https://git-scm.com/book/en/v2/Git-Inte
    the affected functions, elaborating on the changes and their
    consequences. If possible, organize semantically close PRs in groups.
 
-5. Make sure the file name is of the form ``doc/release/release_<major>_<minor>_<release>.txt``.
+5. Make sure the file name is of the form ``doc/release/release_<major>_<minor>_<release>.md``.
 
-6. Copy ``doc/release/release_template.txt`` to
-   ``doc/release/release_dev.txt`` for the next release.
+6. Copy ``doc/release/release_template.md`` to
+   ``doc/release/release_dev.md`` for the next release.
 
-7. Copy relevant deprecations from ``release_<major>_<minor>_<release>.txt``
-   to ``release_dev.txt``.
+7. Copy relevant deprecations from ``release_<major>_<minor>_<release>.md``
+   to ``release_dev.md``.
 
 8. Make and merge a PR with these release notes before moving onto the next steps.
 
