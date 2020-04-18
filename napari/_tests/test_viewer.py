@@ -174,15 +174,15 @@ def test_deleting_layer(viewer_factory):
     """Test adding and then deleting a layer."""
     view, viewer = viewer_factory()
     assert len(viewer.layers) == 0
-    view.canvas.events.draw()
+    view.canvas.events.draw(region=None)
 
     # Add layer
     data = np.random.random((15, 10, 5))
     layer = viewer.add_image(data)
     assert len(viewer.layers) == 1
-    view.canvas.events.draw()
+    view.canvas.events.draw(region=None)
 
     # Remove layer
     viewer.layers.remove(layer)
     assert len(viewer.layers) == 0
-    view.canvas.events.draw()
+    view.canvas.events.draw(region=None)
