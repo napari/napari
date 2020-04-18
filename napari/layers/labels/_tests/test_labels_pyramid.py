@@ -56,8 +56,8 @@ def test_create_random_pyramid():
     assert np.all(layer.data == data)
     assert layer.is_pyramid is True
     assert layer.editable is False
-    assert layer._data_pyramid[0].shape == shape
-    assert layer._data_pyramid[1].shape == (shape[0] / 2, shape[1])
+    assert layer.data[0].shape == shape
+    assert layer.data[1].shape == (shape[0] / 2, shape[1])
     assert layer.ndim == len(shape)
     assert layer.shape == shape
     assert layer.rgb is False
