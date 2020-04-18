@@ -953,124 +953,66 @@ def test_adding_value_color_cycle(attribute):
     assert 'C' in color_map_keys
 
 
-def test_edge_color_colormap():
-    # create Points using with face_color colormap
+@pytest.mark.parametrize("attribute", ['edge', 'face'])
+def test_color_colormap(attribute):
+    """Test setting edge/face color with a colormap"""
+    # create Points using with a colormap
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    annotations = {'point_type': _make_cycled_properties([0, 1.5], shape[0])}
-    layer = Points(
-        data,
-        properties=annotations,
-        edge_color='point_type',
-        edge_colormap='gray',
-    )
-    assert layer.properties == annotations
-    assert layer.edge_color_mode == 'colormap'
-    edge_color_array = transform_color(
-        ['black', 'white'] * int((shape[0] / 2))
-    )
-    assert np.all(layer.edge_color == edge_color_array)
+    properties = {'point_type': _make_cycled_properties([0, 1.5], shape[0])}
+    points_kwargs = {
+        'properties': properties,
+        f'{attribute}_color': 'point_type',
+        f'{attribute}_colormap': 'gray',
+    }
+    layer = Points(data, **points_kwargs)
+    assert layer.properties == properties
+    color_mode = getattr(layer, f'{attribute}_color_mode')
+    assert color_mode == 'colormap'
+    color_array = transform_color(['black', 'white'] * int((shape[0] / 2)))
+    attribute_color = getattr(layer, f'{attribute}_color')
+    assert np.all(attribute_color == color_array)
 
     # change the color cycle - face_color should not change
-    layer.edge_color_cycle = ['red', 'blue']
-    assert np.all(layer.edge_color == edge_color_array)
+    setattr(layer, f'{attribute}_color_cycle', ['red', 'blue'])
+    attribute_color = getattr(layer, f'{attribute}_color')
+    assert np.all(attribute_color == color_array)
 
     # Add new point and test its color
     coord = [18, 18]
     layer.selected_data = {0}
     layer.add(coord)
-    assert len(layer.edge_color) == shape[0] + 1
+    attribute_color = getattr(layer, f'{attribute}_color')
+    assert len(attribute_color) == shape[0] + 1
     np.testing.assert_allclose(
-        layer.edge_color,
-        np.vstack((edge_color_array, transform_color('black'))),
+        attribute_color, np.vstack((color_array, transform_color('black'))),
     )
 
     # Check removing data adjusts colors correctly
     layer.selected_data = {0, 2}
     layer.remove_selected()
     assert len(layer.data) == shape[0] - 1
-    assert len(layer.edge_color) == shape[0] - 1
+    attribute_color = getattr(layer, f'{attribute}_color')
+    assert len(attribute_color) == shape[0] - 1
     np.testing.assert_allclose(
-        layer.edge_color,
+        attribute_color,
         np.vstack(
-            (
-                edge_color_array[1],
-                edge_color_array[3:],
-                transform_color('black'),
-            )
+            (color_array[1], color_array[3:], transform_color('black'),)
         ),
     )
 
     # adjust the clims
-    layer.edge_contrast_limits = (0, 3)
+    setattr(layer, f'{attribute}_contrast_limits', (0, 3))
     layer.refresh_colors(update_color_mapping=False)
-    np.testing.assert_allclose(layer.edge_color[-2], [0.5, 0.5, 0.5, 1])
+    attribute_color = getattr(layer, f'{attribute}_color')
+    np.testing.assert_allclose(attribute_color[-2], [0.5, 0.5, 0.5, 1])
 
     # change the colormap
     new_colormap = 'viridis'
-    layer.edge_colormap = new_colormap
-    assert layer.edge_colormap[1] == get_colormap(new_colormap)
-
-
-def test_face_color_colormap():
-    # create Points using with face_color colormap
-    shape = (10, 2)
-    np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    annotations = {'point_type': _make_cycled_properties([0, 1.5], shape[0])}
-    layer = Points(
-        data,
-        properties=annotations,
-        face_color='point_type',
-        face_colormap='gray',
-    )
-    assert layer.properties == annotations
-    assert layer.face_color_mode == 'colormap'
-    face_color_array = transform_color(
-        ['black', 'white'] * int((shape[0] / 2))
-    )
-    assert np.all(layer.face_color == face_color_array)
-
-    # change the color cycle - face_color should not change
-    layer.face_color_cycle = ['red', 'blue']
-    assert np.all(layer.face_color == face_color_array)
-
-    # Add new point and test its color
-    coord = [18, 18]
-    layer.selected_data = {0}
-    layer.add(coord)
-    assert len(layer.face_color) == shape[0] + 1
-    np.testing.assert_allclose(
-        layer.face_color,
-        np.vstack((face_color_array, transform_color('black'))),
-    )
-
-    # Check removing data adjusts colors correctly
-    layer.selected_data = {0, 2}
-    layer.remove_selected()
-    assert len(layer.data) == shape[0] - 1
-    assert len(layer.face_color) == shape[0] - 1
-    np.testing.assert_allclose(
-        layer.face_color,
-        np.vstack(
-            (
-                face_color_array[1],
-                face_color_array[3:],
-                transform_color('black'),
-            )
-        ),
-    )
-
-    # adjust the clims
-    layer.face_contrast_limits = (0, 3)
-    layer.refresh_colors(update_color_mapping=False)
-    np.testing.assert_allclose(layer.face_color[-2], [0.5, 0.5, 0.5, 1])
-
-    # change the colormap
-    new_colormap = 'viridis'
-    layer.face_colormap = new_colormap
-    assert layer.face_colormap[1] == get_colormap(new_colormap)
+    setattr(layer, f'{attribute}_colormap', new_colormap)
+    attribute_colormap = getattr(layer, f'{attribute}_colormap')
+    assert attribute_colormap[1] == get_colormap(new_colormap)
 
 
 def test_size():
