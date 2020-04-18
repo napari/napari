@@ -202,9 +202,11 @@ class Image(IntensityVisualizationMixin, Layer):
         self._data = data
         if self.is_pyramid:
             self._data_level = len(self.data) - 1
-            big_levels = [
-                np.any(np.greater_equal(p.shape, 2 ** 6 - 1)) for p in data
-            ]
+            # Determine which level of the pyramid to use for the thumbnail
+            # Pick the smallest level with at least one axis >= 64. This is
+            # done to prevent the thumbnail from being from one of the very
+            # low resolution layers and so containting being very blurred
+            big_levels = [np.any(np.greater_equal(p.shape, 64)) for p in data]
             if np.any(big_levels):
                 self._thumbnail_level = np.where(big_levels)[0][-1]
             else:
