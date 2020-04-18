@@ -19,10 +19,7 @@ def guess_rgb(shape):
     ndim = len(shape)
     last_dim = shape[-1]
 
-    if ndim > 2 and last_dim < 5:
-        return True
-    else:
-        return False
+    return ndim > 2 and last_dim < 5
 
 
 def guess_pyramid(data):
