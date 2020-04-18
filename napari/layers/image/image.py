@@ -499,8 +499,8 @@ class Image(IntensityVisualizationMixin, Layer):
                 * self._transforms['tile2data'].scale
             )
 
-            image = np.asarray(self.data[level][tuple(indices)]).transpose(
-                order
+            image = np.transpose(
+                np.asarray(self.data[level][tuple(indices)]), order
             )
 
             # Slice thumbnail
