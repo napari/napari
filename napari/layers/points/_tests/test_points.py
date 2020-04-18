@@ -423,13 +423,17 @@ def test_symbol():
     assert layer.symbol == 'star'
 
 
-def test_properties():
+properties_array = {'point_type': _make_cycled_properties(['A', 'B'], 10)}
+properties_list = {'point_type': list(_make_cycled_properties(['A', 'B'], 10))}
+
+
+@pytest.mark.parametrize("properties", [properties_array, properties_list])
+def test_properties(properties):
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    properties = {'point_type': np.array(['A', 'B'] * int(shape[0] / 2))}
     layer = Points(data, properties=copy(properties))
-    assert layer.properties == properties
+    np.testing.assert_equal(layer.properties, properties)
 
     current_prop = {'point_type': np.array(['B'])}
     assert layer.current_properties == current_prop
@@ -447,7 +451,7 @@ def test_properties():
     assert len(selected_annotation) == 1
     assert selected_annotation[0] == 'A'
 
-    # test adding properties
+    # test adding points with properties
     layer.add([10, 10])
     add_annotations = np.concatenate((remove_properties, ['A']), axis=0)
     assert np.all(layer.properties['point_type'] == add_annotations)
@@ -487,7 +491,7 @@ def test_adding_properties(attribute):
     layer.properties = properties_list
     assert isinstance(layer.properties['point_type'], np.ndarray)
 
-    # removing a property that was the _edge_color_property should give a warning
+    # removing a property that was the _*_color_property should give a warning
     setattr(layer, f'_{attribute}_color_property', 'vector_type')
     properties_2 = {
         'not_vector_type': _make_cycled_properties(['A', 'B'], shape[0])
@@ -497,7 +501,7 @@ def test_adding_properties(attribute):
 
 
 def test_properties_dataframe():
-    """test if properties can be provided as a DataFrame"""
+    """Test if properties can be provided as a DataFrame"""
     shape = (10, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
@@ -506,55 +510,6 @@ def test_properties_dataframe():
     properties_df = properties_df.astype(properties['point_type'].dtype)
     layer = Points(data, properties=properties_df)
     np.testing.assert_equal(layer.properties, properties)
-
-
-def test_properties_list():
-    """test if properties can be provided as a dict of lists"""
-    shape = (10, 2)
-    np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    properties = {
-        'point_type': list(_make_cycled_properties(['A', 'B'], shape[0]))
-    }
-    layer = Points(data, properties=properties)
-    np.testing.assert_equal(layer.properties, properties)
-
-    # verify the lists were converted to numpy arrays
-    assert type(layer.properties['point_type']) == np.ndarray
-
-
-def test_adding_annotations():
-    shape = (10, 2)
-    np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    properties = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
-    layer = Points(data)
-    assert layer.properties == {}
-
-    # add properties
-    layer.properties = copy(properties)
-    assert layer.properties == properties
-
-    # change properties
-    new_annotations = {
-        'other_type': _make_cycled_properties(['C', 'D'], shape[0])
-    }
-    layer.properties = copy(new_annotations)
-    assert layer.properties == new_annotations
-
-
-def test_add_points_with_properties():
-    # test adding points initialized with properties
-    shape = (10, 2)
-    np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    properties = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
-    layer = Points(data, properties=copy(properties))
-
-    coord = [18, 18]
-    layer.add(coord)
-    new_prop = {'point_type': np.append(properties['point_type'], 'B')}
-    np.testing.assert_equal(layer.properties, new_prop)
 
 
 def test_add_points_with_properties_as_list():
