@@ -475,7 +475,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
             for d in self.dims.displayed:
                 indices[d] = slice(
-                    corner_pixels[0, d], corner_pixels[1, d] + 1, 1,
+                    corner_pixels[0, d], corner_pixels[1, d] + 1, 1
                 )
             self._transforms['tile2data'].translate = (
                 corner_pixels[0]
