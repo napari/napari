@@ -1011,12 +1011,6 @@ def test_size():
     layer.selected_data = {11}
     assert layer.current_size == 20
 
-    # Create new layer with new size data
-    layer = Points(data, size=15)
-    assert layer.current_size == 15
-    assert layer.size.shape == shape
-    assert np.unique(layer.size)[0] == 15
-
 
 def test_size_with_arrays():
     """Test setting size with arrays."""
@@ -1032,6 +1026,16 @@ def test_size_with_arrays():
     sizes = [5, 5]
     layer.size = sizes
     assert np.all(layer.size[0] == sizes)
+
+    # Test broadcasting of transposed sizes
+    sizes = np.random.randint(low=1, high=5, size=shape[::-1])
+    layer.size = sizes
+    np.testing.assert_equal(layer.size, sizes.T)
+
+    # Un-broadcastable array should raise an exception
+    bad_sizes = np.random.randint(low=1, high=5, size=(3, 8))
+    with pytest.raises(ValueError):
+        layer.size = bad_sizes
 
     # Create new layer with new size array data
     sizes = 5 * np.random.random(shape)
