@@ -1186,8 +1186,6 @@ class Points(Layer):
         else:
             data = self._view_data[index]
             size = self._view_size[index]
-            if data.ndim == 1:
-                data = np.expand_dims(data, axis=0)
             data = points_to_squares(data, size)
             box = create_box(data)
 
