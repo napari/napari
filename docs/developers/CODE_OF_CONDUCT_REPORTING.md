@@ -1,4 +1,5 @@
-# Code of Conduct - How to follow up on a report
+# Handling Code of Conduct Reports
+
 This is the manual followed by napari's Code of Conduct Committee. It’s used when we respond to an issue to make sure we’re consistent and fair.
 
 Enforcing the Code of Conduct impacts our community today and for the future. It’s an action that we do not take lightly. When reviewing enforcement measures, the Code of Conduct Committee will keep the following values and guidelines in mind:
@@ -32,9 +33,11 @@ Enforcing the Code of Conduct impacts our community today and for the future. It
 * The mediator will engage with all the parties and seek a resolution that is satisfactory to all. Upon completion, the mediator will provide a report (vetted by all parties to the process) to the Committee, with recommendations on further steps. The Committee will then evaluate these results (whether satisfactory resolution was achieved or not) and decide on any additional action deemed necessary.
 
 ## How the committee will respond to reports
+
 When the committee (or a committee member) receives a report, they will first determine whether the report is about a clear and severe breach (as defined below). If so, immediate action needs to be taken in addition to the regular report handling process.
 
 ### Clear and severe breach actions
+
 We know that it is painfully common for internet communication to start at or devolve into obvious and flagrant abuse. We will deal quickly with clear and severe breaches like personal threats, violent, sexist or racist language.
 
 When a member of the Code of Conduct committee becomes aware of a clear and severe breach, they will do the following:
@@ -48,6 +51,7 @@ When a member of the Code of Conduct committee becomes aware of a clear and seve
 * The Code of Conduct Committee will formally review and sign off on all cases where this mechanism has been applied to make sure it is not being used to control ordinary heated disagreement.
 
 ### Report handling
+
 When a report is sent to the committee they will immediately reply to the reporter to confirm receipt. This reply must be sent within 72 hours, and the group should strive to respond much quicker than that.
 
 If a report doesn’t contain enough information, the committee will obtain all relevant data before acting. The committee is empowered to act on the Steering Council’s behalf in contacting any individuals involved to get a more complete account of events.
@@ -69,6 +73,7 @@ It is important to retain an archive of all activities of this committee to ensu
 The Code of Conduct Committee should aim to have a resolution agreed upon within two weeks. In the event that a resolution can’t be determined in that time, the committee will respond to the reporter(s) with an update and projected timeline for resolution.
 
 ## Resolutions
+
 The committee must agree on a resolution by consensus. If the group cannot reach consensus and deadlocks for over a week, the group will turn the matter over to the Steering Council for resolution.
 
 Possible responses may include:
@@ -100,4 +105,5 @@ Finally, the committee will make a report to the napari core team in the event o
 The committee will never publicly discuss the issue; all public statements will be made by the chair of the Code of Conduct Committee.
 
 ## Conflicts of Interest
+
 In the event of any conflict of interest, a committee member must immediately notify the other members, and recuse themselves if necessary.
