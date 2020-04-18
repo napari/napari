@@ -1,9 +1,7 @@
 """
 Example plugin for testing plugin discovery and loading
 """
-import pluggy
-
-napari_hook_implementation = pluggy.HookimplMarker("napari")
+from napari_plugins import napari_hook_implementation
 
 
 def reader_function(path):
