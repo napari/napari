@@ -1,11 +1,9 @@
 repos:
 -   repo: https://github.com/python/black
-    rev: stable
+    rev: 19.10b0
     hooks:
     - id: black
-      # force black to run on whole repo & keep settings from pyproject.toml
-      pass_filenames: false
-      args: [.]
+      pass_filenames: true
 -   repo: https://gitlab.com/pycqa/flake8
     rev: 3.7.9
     hooks:

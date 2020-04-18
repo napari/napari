@@ -514,7 +514,7 @@ class Points(Layer):
                 setattr(self, f'{attribute}_color_cycle_map', color_cycle_map)
 
             new_colors = np.tile(
-                color_cycle_map[color_property_value], (adding, 1),
+                color_cycle_map[color_property_value], (adding, 1)
             )
         elif color_mode == ColorMode.COLORMAP:
             property_name = getattr(self, f'_{attribute}_color_property')
@@ -917,7 +917,7 @@ class Points(Layer):
             # ColorMode.COLORMAP can only be applied to numeric properties
             color_property = getattr(self, f'_{attribute}_color_property')
             if (color_mode == ColorMode.COLORMAP) and not issubclass(
-                self.properties[color_property].dtype.type, np.number,
+                self.properties[color_property].dtype.type, np.number
             ):
                 raise TypeError(
                     'selected property must be numeric to use ColorMode.COLORMAP'
@@ -1007,7 +1007,7 @@ class Points(Layer):
                     color_cycle_map = {
                         k: transform_color(c)
                         for k, c in zip(
-                            np.unique(color_properties), color_cycle,
+                            np.unique(color_properties), color_cycle
                         )
                     }
                     setattr(
@@ -1054,7 +1054,7 @@ class Points(Layer):
                     if update_color_mapping or contrast_limits is None:
 
                         colors, contrast_limits = map_property(
-                            prop=color_properties, colormap=colormap[1],
+                            prop=color_properties, colormap=colormap[1]
                         )
                         setattr(
                             self,
