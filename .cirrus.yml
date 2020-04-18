@@ -23,7 +23,7 @@ lint_task:
     - flake8 napari
 
 requirements_task:
-  name: Check if all requirements are listed
+  name: Check Requirements
   install_script:
     - python -m pip install --retries 3 --upgrade "pip<19.3"
     - pip install pip_check_reqs
