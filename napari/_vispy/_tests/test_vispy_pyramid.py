@@ -116,7 +116,7 @@ def test_image_screenshot_zoomed(viewer_factory):
     view, viewer = viewer_factory(show=True)
 
     data = np.ones((4000, 3000))
-    _ = viewer.add_image(data, is_pyramid=True, contrast_limits=[0, 1])
+    _ = viewer.add_image(data, is_pyramid=False, contrast_limits=[0, 1])
 
     # Set canvas size to target amount
     view.view.canvas.size = (800, 600)

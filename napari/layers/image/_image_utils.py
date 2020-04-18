@@ -46,6 +46,6 @@ def guess_pyramid(data):
 
     size = np.array([np.prod(d.shape, dtype=np.uint64) for d in data])
     if len(size) > 1:
-        return np.all(size[:-1] > size[1:])
+        return bool(np.all(size[:-1] > size[1:]))
     else:
         return False
