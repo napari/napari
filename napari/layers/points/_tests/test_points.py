@@ -686,7 +686,7 @@ def test_switch_color_mode(attribute):
         colormap_kwarg: 'gray',
         color_cycle_kwarg: color_cycle,
     }
-    layer = Points(data, properties=properties, **args,)
+    layer = Points(data, properties=properties, **args)
 
     layer_color_mode = getattr(layer, f'{attribute}_color_mode')
     layer_color = getattr(layer, f'{attribute}_color')
@@ -757,7 +757,7 @@ def test_add_colormap(attribute):
     color_kwarg = f'{attribute}_color'
     colormap_kwarg = f'{attribute}_colormap'
     args = {color_kwarg: 'point_type', colormap_kwarg: 'viridis'}
-    layer = Points(data, properties=annotations, **args,)
+    layer = Points(data, properties=annotations, **args)
 
     setattr(layer, f'{attribute}_colormap', get_colormap('gray'))
     layer_colormap = getattr(layer, f'{attribute}_colormap')
