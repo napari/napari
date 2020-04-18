@@ -8,6 +8,7 @@ import pytest
 from vispy.color import get_colormap
 
 from napari.layers import Points
+from napari.layers.points._points_utils import points_to_squares
 from napari.utils.colormaps.standardize_color import transform_color
 
 
@@ -341,6 +342,9 @@ def test_changing_modes():
     layer.mode = 'pan_zoom'
     assert layer.mode == 'pan_zoom'
     assert layer.interactive is True
+
+    with pytest.raises(ValueError):
+        layer.mode = 'not_a_mode'
 
 
 def test_name():
@@ -1293,6 +1297,11 @@ def test_view_size():
     layer.n_dimensional = True
     assert len(layer._view_size) == 3
 
+    # test a slice with no points
+    layer.n_dimensional = False
+    layer.dims.set_point(0, 2)
+    assert np.all(layer._view_size == [])
+
 
 def test_view_colors():
     coords = [[0, 1, 1], [0, 2, 2], [1, 3, 3], [3, 3, 3]]
@@ -1318,3 +1327,21 @@ def test_view_colors():
     layer.dims.set_point(0, 2)
     assert len(layer._view_face_color) == 0
     assert len(layer._view_edge_color) == 0
+
+
+def test_interaction_box():
+    """Test the boxes calculated for selected points"""
+    data = [[3, 3]]
+    size = 2
+    layer = Points(data, size=size)
+
+    # get a box with no points selected
+    index = []
+    box = layer.interaction_box(index)
+    assert box is None
+
+    # get a box with a point selected
+    index = [0]
+    expected_box = points_to_squares(data, size)
+    box = layer.interaction_box(index)
+    np.all([np.isin(p, expected_box) for p in box])
