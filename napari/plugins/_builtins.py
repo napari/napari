@@ -85,7 +85,8 @@ def napari_write_points(path: str, data: Any, meta: dict) -> bool:
     if ext == '':
         path = path + '.csv'
     elif ext != '.csv':
-        raise ValueError('If an extension is provided then it must be `.csv`')
+        # If an extension is provided then it must be `.csv`
+        return False
 
     # construct table from data
     column_names = ['axis-' + str(n) for n in range(data.shape[1])]
