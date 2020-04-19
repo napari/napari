@@ -157,10 +157,13 @@ def write_layer_data_with_plugins(
     """
     from . import plugin_manager
 
+    # remember whether
+    exists = os.path.isdir(path)
     # Try and make directory based on current path if it doesn't exist
-    if not os.path.isdir(path):
+    if not exists:
         os.makedirs(path)
 
+    attempted = []
     try:
         # Loop through data for each layer
         for layer_data_tuple in layer_data:
@@ -172,9 +175,22 @@ def write_layer_data_with_plugins(
             # Create full path using name of layer
             full_path = os.path.join(path, meta['name'])
             # Write out data using first plugin found for this hook spec
+            attempted.append(full_path)
             hook_caller(path=full_path, data=data, meta=meta)
     except Exception as exc:
-        shutil.rmtree(path, ignore_errors=False)
+        # If an exception was raised, cleanup before raising it
+        # if we created the folder, we can just erase it and its contents
+        if not exists:
+            shutil.rmtree(path, ignore_errors=False)
+        # otherwise we only delete the things that we created
+        else:
+            for path in attempted:
+                if not os.path.exists(path):
+                    continue
+                if os.path.isdir(path):
+                    shutil.rmtree(path, ignore_errors=False)
+                else:
+                    os.remove(path)
         raise exc
 
     return True
