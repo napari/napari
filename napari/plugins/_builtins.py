@@ -156,8 +156,9 @@ def write_layer_data_with_plugins(
     """
     from . import plugin_manager
 
-    # Try and make directory based on current path
-    os.makedirs(path)
+    # Try and make directory based on current path if it doesn't exist
+    if not os.path.isdir(path):
+        os.makedirs(path)
 
     try:
         # Loop through data for each layer
