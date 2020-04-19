@@ -125,12 +125,13 @@ class VispyBaseLayer(ABC):
 
     @property
     def scale_factor(self):
-        """float: Conversion factor from canvas coordinates to image
-        coordinates, which depends on the current zoom level.
+        """float: Conversion factor from canvas pixels to data coordinates.
         """
-        transform = self.node.canvas.scene.node_transform(self.node)
-        scale_factor = transform.map([1, 1])[0] - transform.map([0, 0])[0]
-        return scale_factor
+        if self.node.canvas is not None:
+            transform = self.node.canvas.scene.node_transform(self.node)
+            return transform.map([1, 1])[0] - transform.map([0, 0])[0]
+        else:
+            return 1
 
     @abstractmethod
     def _on_data_change(self, event=None):
@@ -182,10 +183,9 @@ class VispyBaseLayer(ABC):
             transform = self.node.canvas.scene.node_transform(self.node)
             # Map and offset position so that pixel center is at 0
             mapped_position = transform.map(list(position))[:nd] - 0.5
-            coords = tuple(mapped_position[::-1])
+            return tuple(mapped_position[::-1])
         else:
-            coords = (0,) * nd
-        return coords
+            return (0,) * nd
 
     def _reset_base(self):
         self._on_visible_change()

@@ -242,9 +242,10 @@ class QtViewer(QSplitter):
         """
         layer = event.item
         vispy_layer = self.layer_to_visual[layer]
+        self.canvas.events.draw.disconnect(vispy_layer.on_draw)
         vispy_layer.node.transforms = ChainTransform()
         vispy_layer.node.parent = None
-        del self.layer_to_visual[layer]
+        del vispy_layer
 
     def _reorder_layers(self, event):
         """When the list is reordered, propagate changes to draw order.
