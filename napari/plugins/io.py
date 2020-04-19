@@ -6,7 +6,7 @@ from pluggy.hooks import HookImpl
 from ..layers import Layer
 from ..types import LayerData
 from ..utils.misc import abspath_or_url
-from . import PluginError
+from .exceptions import PluginCallError
 from . import plugin_manager as napari_plugin_manager
 
 logger = getLogger(__name__)
@@ -56,24 +56,10 @@ def read_data_with_plugins(
         try:
             return reader(path)  # try to read data
         except Exception as exc:
-            # If the hook did return a reader, but the reader then failed
-            # while trying to read the path, we store the traceback for later
-            # retrieval, warn the user, and continue looking for readers
-            # (skipping this one)
-            hook_implementation = result.implementation
-            plugin_name = hook_implementation.plugin_name
-            plugin_module = hook_implementation.plugin.__name__
-            msg = (
-                f"Error in plugin '{plugin_name}', "
-                f"hook 'napari_get_reader': {exc}"
-            )
-            # instantiating this PluginError stores it in
-            # plugins.exceptions.PLUGIN_ERRORS, where it can be retrieved later
-            err = PluginError(msg, plugin_name, plugin_module)
-            err.__cause__ = exc  # like ``raise PluginError() from exc``
-
-            skip_impls.append(hook_implementation)  # don't try this impl again
-            if plugin_name != 'builtins':
+            err = PluginCallError(result.implementation, cause=exc)
+            # don't try this impl again
+            skip_impls.append(result.implementation)
+            if result.implementation != 'builtins':
                 # If builtins doesn't work, they will get a "no reader" found
                 # error anyway, so it looks a bit weird to show them that the
                 # "builtin plugin" didn't work.
@@ -196,9 +182,11 @@ def _write_multiple_layers_with_plugins(
             _plugin=plugin_name, path=path, layer_types=layer_types
         )
     else:
-        (writer_function, implementation) = hook_caller(
+        result = hook_caller.call_with_result_obj(
             path=path, layer_types=layer_types, _return_impl=True
         )
+        writer_function = result.result
+        implementation = result.implementation
 
     if not callable(writer_function):
         if plugin_name:
@@ -211,14 +199,7 @@ def _write_multiple_layers_with_plugins(
     try:
         return writer_function(abspath_or_url(path), layer_data)
     except Exception as exc:
-        raise PluginError(
-            (
-                f"Error in plugin '{implementation.plugin_name}', "
-                f"hook 'napari_get_writer': {exc}"
-            ),
-            implementation.plugin_name,
-            implementation.plugin.__name__,
-        ) from exc
+        raise PluginCallError(implementation) from exc
 
 
 def _write_single_layer_with_plugins(

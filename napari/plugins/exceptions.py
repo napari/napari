@@ -79,10 +79,9 @@ class PluginCallError(PluginError):
     def __init__(self, hook_implementation, msg=None, cause=None):
         plugin_name = hook_implementation.plugin_name
         plugin_module = hook_implementation.plugin.__name__
-        specname = getattr(
-            hook_implementation,
-            'specname',
-            hook_implementation.function.__name__,
+        specname = (
+            getattr(hook_implementation, 'specname')
+            or hook_implementation.function.__name__
         )
 
         if not msg:

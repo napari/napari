@@ -43,7 +43,7 @@ class _HookRelay:
         self._manager = manager
         self._needs_discovery = False
 
-    def __getattribute__(self, name):
+    def __getattribute__(self, name) -> _HookCaller:
         """Trigger manager plugin discovery when accessing hook first time."""
         if name not in ('_needs_discovery', '_manager'):
             if self._needs_discovery:
