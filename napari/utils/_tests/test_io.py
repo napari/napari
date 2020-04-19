@@ -167,8 +167,12 @@ def test_write_csv(tmpdir):
     expected_filename = os.path.join(tmpdir, 'test.csv')
     column_names = ['column_1', 'column_2', 'column_3']
     expected_data = np.random.random((5, len(column_names)))
+
+    # Write csv file
     io.write_csv(expected_filename, expected_data, column_names=column_names)
     assert os.path.exists(expected_filename)
+
+    # Check csv file is as expected
     with open(expected_filename) as output_csv:
         csv.reader(output_csv, delimiter=',')
         for row_index, row in enumerate(output_csv):
@@ -176,6 +180,21 @@ def test_write_csv(tmpdir):
                 assert row == "column_1,column_2,column_3\n"
             else:
                 output_row_data = [float(i) for i in row.split(',')]
-                assert np.allclose(
+                np.testing.assert_allclose(
                     np.array(output_row_data), expected_data[row_index - 1]
                 )
+
+
+def test_read_csv(tmpdir):
+    expected_filename = os.path.join(tmpdir, 'test.csv')
+    column_names = ['column_1', 'column_2', 'column_3']
+    expected_data = np.random.random((5, len(column_names)))
+
+    # Write csv file
+    io.write_csv(expected_filename, expected_data, column_names=column_names)
+    assert os.path.exists(expected_filename)
+
+    # Read csv file
+    read_data, read_column_names = io.read_csv(expected_filename)
+    np.testing.assert_allclose(expected_data, read_data)
+    assert column_names == read_column_names

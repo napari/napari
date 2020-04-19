@@ -213,8 +213,6 @@ def read_zarr_dataset(path):
 def write_csv(filename, data, column_names=None):
     """Write a csv file.
 
-    Append `.csv` extension to the filename if it is not already there.
-
     Parameters
     ----------
     filename : str
@@ -232,3 +230,29 @@ def write_csv(filename, data, column_names=None):
             writer.writerow(column_names)
         for row in data:
             writer.writerow(row)
+
+
+def read_csv(filename):
+    """Read a csv file.
+
+    Parameters
+    ----------
+    filename : str
+        Filename for saving csv.
+
+    Returns
+    -------
+    data : array
+        Table values, contained in an array.
+    column_names : list
+        List of column names for table data.
+    """
+    with open(filename) as output_csv:
+        csv.reader(output_csv, delimiter=',')
+        output_data = []
+        for row_index, row in enumerate(output_csv):
+            if row_index == 0:
+                column_names = [str(i) for i in row.strip('\n').split(',')]
+            else:
+                output_data.append([float(i) for i in row.split(',')])
+        return np.array(output_data), column_names
