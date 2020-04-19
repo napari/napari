@@ -3,6 +3,7 @@ import os
 import pkgutil
 import sys
 from logging import getLogger
+from types import ModuleType
 from typing import Dict, Generator, Optional, Tuple, Union
 
 import pluggy
@@ -212,6 +213,67 @@ class PluginManager(pluggy.PluginManager):
             self.register(mod, name=plugin_name)
         except Exception as exc:
             raise PluginRegistrationError(plugin_name, module_name) from exc
+
+    def register(self, plugin: ModuleType, name=None):
+        """Register a plugin and return its canonical name or ``None``.
+
+        Parameters
+        ----------
+        plugin : ModuleType
+            The module to register
+        name : str, optional
+            Optional name for plugin, by default ``get_canonical_name(plugin)``
+
+        Returns
+        -------
+        str or None
+            canonical plugin name, or ``None`` if the name is blocked from
+            registering.
+
+        Raises
+        ------
+        ValueError
+            if the plugin is already registered.
+        """
+        plugin_name = name or self.get_canonical_name(plugin)
+
+        if (
+            plugin_name in self._name2plugin
+            or plugin in self._plugin2hookcallers
+        ):
+            if self._name2plugin.get(plugin_name, -1) is None:
+                # blocked plugin, return None to indicate no registration
+                return
+            raise ValueError(
+                "Plugin already registered: %s=%s\n%s"
+                % (plugin_name, plugin, self._name2plugin)
+            )
+
+        # XXX if an error happens we should make sure no state has been
+        # changed at point of return
+        self._name2plugin[plugin_name] = plugin
+
+        # register matching hook implementations of the plugin
+        self._plugin2hookcallers[plugin] = hookcallers = []
+        for name in dir(plugin):
+            hookimpl_opts = self.parse_hookimpl_opts(plugin, name)
+            if hookimpl_opts is not None:
+                pluggy.hooks.normalize_hookimpl_opts(hookimpl_opts)
+                method = getattr(plugin, name)
+                hookimpl = pluggy.manager.HookImpl(
+                    plugin, plugin_name, method, hookimpl_opts
+                )
+                name = hookimpl_opts.get("specname") or name
+                hook = getattr(self.hook, name, None)
+                if hook is None:
+                    hook = _HookCaller(name, self._hookexec)
+                    setattr(self.hook, name, hook)
+                elif hook.has_spec():
+                    self._verify_hook(hook, hookimpl)
+                    hook._maybe_apply_history(hookimpl)
+                hook._add_hookimpl(hookimpl)
+                hookcallers.append(hook)
+        return plugin_name
 
 
 def entry_points_for(

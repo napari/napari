@@ -14,20 +14,21 @@ Begin by installing [airspeed velocity](https://asv.readthedocs.io/en/stable/)
 in your development environment. Prior to installation, be sure to activate your
 development environment, then if using ``venv`` you may install the requirement with:
 
-```
+```bash
 source napari-dev/bin/activate
 pip install asv
 ```
+
 If you are using conda, then the command:
 
-```
+```bash
 conda activate napari-dev
 conda install asv
 ```
 
 is more appropriate. Once installed, it is useful to run the command:
 
-```
+```bash
 asv machine
 ```
 
@@ -81,7 +82,7 @@ more about the features of `asv`, please refer to the official
 Prior to running the true benchmark, it is often worthwhile to test that the
 code is free of typos. To do so, you may use the command:
 
-```
+```bash
 asv dev -b TransformSuite
 ```
 
@@ -97,7 +98,7 @@ features. The command ``asv run -E existing`` will specify that you wish to run
 the benchmark in your existing environment. This will save a significant amount
 of time since building napari can be a time consuming task:
 
-```
+```bash
 asv run -E existing -b TransformSuite
 ```
 
@@ -107,7 +108,7 @@ Often, the goal of a PR is to compare the results of the modifications in terms
 speed to a snapshot of the code that is in the master branch of the
 ``napari`` repository. The command ``asv continuous`` is of help here:
 
-```
+```bash
 asv continuous master -b TransformSuite
 ```
 
@@ -117,7 +118,7 @@ and the code in the master branch.
 
 The output may look something like:
 
-```
+```bash
 $ asv continuous master -b TransformSuite
 · Creating environments
 · Discovering benchmarks
@@ -130,16 +131,18 @@ $ asv continuous master -b TransformSuite
 
 BENCHMARKS NOT SIGNIFICANTLY CHANGED.
 ```
+
 In this case, the differences between HEAD and master are not significant
 enough for airspeed velocity to report.
 
 ## profiling
+
 The airspeed velocity tool also supports code profiling using [`cProfile`](https://docs.python.org/3/library/profile.html#module-cProfile). For detailed instructions on how to use the profiling functionality see the
 [asv profiling documentation](https://asv.readthedocs.io/en/stable/using.html#running-a-benchmark-in-the-profiler).
 
 To profile a particular benchmark in napari you can run
 
-```
+```bash
 asv profile benchmark_qt_viewer.QtViewerSuite.time_create_viewer -g snakeviz --python=same
 ```
 
@@ -148,15 +151,18 @@ and `time_create_viewer` is the test method.
 
 To profile a particular parameterized benchmark you can run
 
-```
+```bash
 asv profile "benchmark_image_layer.Image2DSuite.time_create_layer\(512\)" -g snakeviz --python=same
 ```
+
 where `benchmark_image_layer` is the file name, `Image2DSuite` is the test suite class name,
 and `time_to_create_layer` is the test method and `512` is a valid parameter input to the test method.
 
 Note that we in both these cases we have sent the output of the profiling to [snakeviz](http://jiffyclub.github.io/snakeviz/)
 which you can pip install with
-```
+
+```bash
 pip install snakeviz
 ```
+
 and we use `--python=same` to profile against our current python environment.

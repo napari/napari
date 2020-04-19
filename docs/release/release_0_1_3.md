@@ -1,13 +1,20 @@
-# Announcement: napari 0.1.3
+# napari 0.1.3
 
-We're happy to announce the release of napari 0.1.3! napari is a fast, interactive, multi-dimensional image viewer for Python. It's designed for browsing, annotating, and analyzing large multi-dimensional images. It's built on top of Qt (for the GUI), vispy (for performant GPU-based rendering), and the scientific Python stack (numpy, scipy).
+We're happy to announce the release of napari 0.1.3! napari is a fast,
+interactive, multi-dimensional image viewer for Python. It's designed for
+browsing, annotating, and analyzing large multi-dimensional images. It's built
+on top of Qt (for the GUI), vispy (for performant GPU-based rendering), and the
+scientific Python stack (numpy, scipy).
 
-For more information, examples, and documentation, please visit our website: https://github.com/napari/napari
+For more information, examples, and documentation, please visit our website:
+https://github.com/napari/napari
 
 ## New Features
+
 - Support for volumetric rendering of images
 
 ## Pull Requests
+
 - Tutorials (#395)
 - fix import in cli (#403)
 - 3D volume viewer - volume layer (#405)
@@ -33,6 +40,7 @@ For more information, examples, and documentation, please visit our website: htt
 - fix dims mixing (#438)
 
 ## 6 authors added to this release (alphabetical)
+
 - [Ahmet Can Solak](https://github.com/napari/napari/commits?author=AhmetCanSolak) - @AhmetCanSolak
 - [Alexandre de Siqueira](https://github.com/napari/napari/commits?author=alexdesiqueira) - @alexdesiqueira
 - [Mars Huang](https://github.com/napari/napari/commits?author=marshuang80) - @marshuang80
@@ -41,6 +49,7 @@ For more information, examples, and documentation, please visit our website: htt
 - [Pranathi Vemuri](https://github.com/napari/napari/commits?author=pranathivemuri) - @pranathivemuri
 
 ## 4 reviewers added to this release (alphabetical)
+
 - [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - @jni
 - [Kira Evans](https://github.com/napari/napari/commits?author=kne42) - @kne42
 - [Nicholas Sofroniew](https://github.com/napari/napari/commits?author=sofroniewn) - @sofroniewn

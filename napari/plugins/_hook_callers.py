@@ -27,10 +27,106 @@ import sys
 import warnings
 from typing import Any, List, Optional, Sequence, Tuple, Union
 
-from pluggy.callers import HookCallError, _raise_wrapfail, _Result
-from pluggy.hooks import HookImpl, _HookCaller as _PluggyHookCaller
+from pluggy.callers import HookCallError, _raise_wrapfail
+from pluggy.hooks import HookImpl
+from pluggy.hooks import _HookCaller as _PluggyHookCaller
 
+from ..types import ExcInfo
 from .exceptions import PluginCallError
+
+
+class HookResult:
+    """A class to store/modify results from a _multicall hook loop.
+
+    Modified from pluggy.callers._Result.
+    Results are accessed in ``.result`` property, which will also raise
+    any exceptions that occured during the hook loop.
+
+    Parameters
+    ----------
+    results : List[Tuple[Any, HookImpl]]
+        A list of (result, HookImpl) tuples, with the result and HookImpl
+        object responsible for each result collected during a _multicall loop.
+    excinfo : tuple
+        The output of sys.exc_info() if raised during the multicall loop.
+    firstresult : bool, optional
+        Whether the hookspec had ``firstresult == True``, by default False.
+        If True, self._result, and self.implementation will be single values,
+        otherwise they will be lists.
+    plugin_errors : list
+        A list of any :class:`napari.plugins.exceptions.PluginCallError`
+        instances that were created during the multicall loop.
+
+    Attributes
+    ----------
+    result : list or any
+        The result (if ``firstresult``) or results from the hook call.  The
+        result property will raise any errors in ``excinfo`` when accessed.
+    implementation : list or any
+        The HookImpl instance (if ``firstresult``) or instances that were
+        responsible for each result in ``result``.
+    is_firstresult : bool
+        Whether this HookResult came from a ``firstresult`` multicall.
+    """
+
+    def __init__(
+        self,
+        result: List[Tuple[Any, HookImpl]],
+        excinfo: Optional[ExcInfo],
+        firstresult: bool = False,
+        plugin_errors: Optional[List[PluginCallError]] = None,
+    ):
+        self._result = []
+        self.implementation = []
+        if result:
+            self._result, self.implementation = tuple(zip(*result))
+            self._result = list(self._result)
+            if firstresult and self._result:
+                self._result = self._result[0]
+                self.implementation = self.implementation[0]
+
+        self._excinfo = excinfo
+        self.is_firstresult = firstresult
+        self.plugin_errors = plugin_errors
+        # str with name of hookwrapper that override result
+        self._modified_by: Optional[str] = None
+
+    @classmethod
+    def from_call(cls, func):
+        """Used when hookcall monitoring is enabled.
+
+        https://pluggy.readthedocs.io/en/latest/#call-monitoring
+        """
+        raise NotImplementedError
+
+    def force_result(self, result: Any):
+        """Force the result(s) to ``result``.
+
+        This may be used by hookwrappers to alter this result object.
+
+        If the hook was marked as a ``firstresult`` a single value should
+        be set otherwise set a (modified) list of results. Any exceptions
+        found during invocation will be deleted.
+        """
+        import inspect
+
+        self._result = result
+        self._excinfo = None
+        self._modified_by = inspect.stack()[1].function
+
+    @property
+    def result(self) -> Union[Any, List[Any]]:
+        """Return the result(s) for this hook call.
+
+        If the hook was marked as a ``firstresult`` only a single value
+        will be returned otherwise a list of results.
+        """
+        __tracebackhide__ = True
+        if self._excinfo is not None:
+            _type, value, traceback = self._excinfo
+            if value:
+                raise value.with_traceback(traceback)
+        return self._result
 
 
 # Vendored with modifications from pluggy.callers._multicall:
@@ -38,9 +134,8 @@ from .exceptions import PluginCallError
 def _multicall(
     hook_impls: Sequence[HookImpl],
     caller_kwargs: dict,
-    _return_impl: bool = False,
     firstresult: bool = False,
-) -> Union[Any, List[Any], Tuple[Any, HookImpl], List[Tuple[Any, HookImpl]]]:
+) -> HookResult:
     """Loop through ``hook_impls`` with ``**caller_kwargs`` and return results.
 
     Parameters
@@ -51,35 +146,28 @@ def _multicall(
         Keyword:value pairs to pass to each ``hook_impl.function``.  Every
         key in the dict must be present in the ``argnames`` property for each
         ``hook_impl`` in ``hook_impls``.
-    return_impl : bool, optional
-        If ``True``, results are returned as a 2-tuple of ``(result,
-        hook_impl)`` where ``hook_impl`` is the implementation responsible for
-        returning the result.
     firstresult : bool, optional
         If ``True``, return the first non-null result found, otherwise, return
         a list of results from all hook implementations, by default False
 
     Returns
     -------
-    Any or Tuple[Any, HookImpl] or List[Any] or List[Tuple[Any, HookImpl]]
-        The result(s) retrieved from the hook implementations.
-        If ``firstresult` is ``True``, then this function will return the first
-        non-None result found when looping through ``hook_impls``.  Otherwise,
-        a list of results will be returned.
-        If ``return_impl`` is True, then results will be returned as a 2-tuple
-        of ``(result, hook_impl)``, where ``hook_impl`` is the implementation
-        responsible for returning the result.
+    outcome : HookResult
+        A :class:`HookResult` object that contains the results returned by
+        plugins along with other metadata about the call.
 
     Raises
     ------
     HookCallError
         If one or more of the keys in ``caller_kwargs`` is not present in one
         of the ``hook_impl.argnames``.
+    PluginCallError
+        If ``firstresult == True`` and a plugin raises an Exception.
     """
     __tracebackhide__ = True
     results = []
-    impl_hits = []
-    excinfo = None
+    errors: List[PluginCallError] = []
+    excinfo: Optional[ExcInfo] = None
     try:  # run impl and wrapper setup functions in a loop
         teardowns = []
         try:
@@ -119,33 +207,27 @@ def _multicall(
                     except Exception as exc:
                         # creating a PluginCallError will store it for later
                         # in plugins.exceptions.PLUGIN_ERRORS
-                        msg = (
-                            f"Error in plugin '{hook_impl.plugin_name}', hook "
-                            f"'{str(hook_impl.function.__name__)}': {str(exc)}"
-                        )
-                        err = PluginCallError(
-                            hook_impl.plugin_name,
-                            hook_impl.plugin.__name__,
-                            msg,
-                        )
-                        err.__cause__ = exc
-                        # but if it was a firstresult == True hook, raise now.
+                        errors.append(PluginCallError(hook_impl, cause=exc))
+                        # if it was a `firstresult` hook, break and raise now.
                         if firstresult:
-                            raise err
+                            break
 
                     if res is not None:
-                        results.append(res)
-                        if _return_impl:
-                            impl_hits.append(hook_impl)
+                        results.append((res, hook_impl))
                         if firstresult:  # halt further impl calls
                             break
         except BaseException:
             excinfo = sys.exc_info()
     finally:
-        if firstresult:  # first result hooks return a single value
-            outcome = _Result(results[0] if results else None, excinfo)
-        else:
-            outcome = _Result(results, excinfo)
+        if firstresult and errors:
+            raise errors[-1]
+
+        outcome = HookResult(
+            results,
+            excinfo=excinfo,
+            firstresult=firstresult,
+            plugin_errors=errors,
+        )
 
         # run all wrapper post-yield blocks
         for gen in reversed(teardowns):
@@ -155,14 +237,7 @@ def _multicall(
             except StopIteration:
                 pass
 
-        if _return_impl:
-            if firstresult:
-                return (
-                    outcome.get_result(),
-                    impl_hits[0] if impl_hits else None,
-                )
-            return list(zip(outcome.get_result(), impl_hits))
-        return outcome.get_result()
+        return outcome
 
 
 class _HookCaller(_PluggyHookCaller):
@@ -178,6 +253,10 @@ class _HookCaller(_PluggyHookCaller):
     # just for type annotation.  These are the lists that store HookImpls
     _wrappers: List[HookImpl]
     _nonwrappers: List[HookImpl]
+
+    @property
+    def is_firstresult(self):
+        return self.spec.opts.get("firstresult") if self.spec else False
 
     def get_plugin_implementation(self, plugin_name: str):
         """Return hook implementation instance for ``plugin_name`` if found."""
@@ -365,6 +444,7 @@ class _HookCaller(_PluggyHookCaller):
         PluginCallError
             If an exception is raised when calling the plugin
         """
+        self._check_call_kwargs(kwargs)
         implementation = self.get_plugin_implementation(plugin_name)
         if implementation.hookwrapper:
             raise TypeError("Hook wrappers can not be called directly")
@@ -387,23 +467,57 @@ class _HookCaller(_PluggyHookCaller):
         try:
             return implementation.function(*_args)
         except Exception as exc:
-            raise PluginCallError(
-                implementation.plugin_name,
-                implementation.plugin.__name__,
-                msg=(
-                    f"Error calling plugin '{implementation.plugin_name}', "
-                    f"hook '{str(implementation.function.__name__)}'"
-                ),
-            ) from exc
+            raise PluginCallError(implementation) from exc
+
+    def call_with_result_obj(
+        self, *, _skip_impls: Sequence[HookImpl] = list(), **kwargs
+    ) -> HookResult:
+        """Call hook implementation(s) for this spec and return HookResult.
+
+        The :class:`HookResult` object carries the result (in its ``result``
+        property) but also additional information about the hook call, such
+        as the implementation that returned each result and any call errors.
+
+        Parameters
+        ----------
+        _skip_impls : Sequence[HookImpl], optional
+            A list of HookImpl instances that should be *skipped* when calling
+            hook implementations, by default None
+        **kwargs
+            keys should match the names of arguments in the corresponding hook
+            specification, values will be passed as arguments to the hook
+            implementations.
+
+        Returns
+        -------
+        result : HookResult
+            A :class:`HookResult` object that contains the results returned by
+            plugins along with other metadata about the call.
+
+        Raises
+        ------
+        HookCallError
+            If one or more of the keys in ``kwargs`` is not present in
+            one of the ``hook_impl.argnames``.
+        PluginCallError
+            If ``firstresult == True`` and a plugin raises an Exception.
+        """
+        self._check_call_kwargs(kwargs)
+        # the heavy lifting of looping through hook implementations, catching
+        # errors and gathering results is handled by the _multicall function.
+        return _multicall(
+            [imp for imp in self.get_hookimpls() if imp not in _skip_impls],
+            kwargs,
+            firstresult=self.is_firstresult,
+        )
 
     def __call__(
         self,
         *,
-        _skip_impls: Optional[Sequence[HookImpl]] = None,
-        _return_impl: bool = False,
         _plugin: Optional[str] = None,
+        _skip_impls: Sequence[HookImpl] = list(),
         **kwargs,
-    ):
+    ) -> Union[Any, List[Any]]:
         """Call hook implementation(s) for this spec and return result(s).
 
         This is the primary way to call plugin hook implementations.
@@ -416,41 +530,59 @@ class _HookCaller(_PluggyHookCaller):
 
         Parameters
         ----------
-        _skip_impls : Sequence[HookImpl], optional
-            A list of HookImpl instances that should be *skipped* when calling
-            hook implementations, by default None
-        _return_impl : bool, optional
-            If ``True`` results are returned as 2-tuples ``(result, HookImpl)``
-            so that it is clear which implementation provided the result. (This
-            can be particularly useful when ``firstresult==True`` is used on
-            the hook specification). by default False.  This argument is
-            ignored when ``_plugin`` is provided.
         _plugin : str, optional
             The name of a specific plugin to use.  By default all
             implementations will be called (though if ``firstresult==True``,
             only the first non-None result will be returned).
+        _skip_impls : Sequence[HookImpl], optional
+            A list of HookImpl instances that should be *skipped* when calling
+            hook implementations, by default None
         **kwargs
             keys should match the names of arguments in the corresponding hook
             specification, values will be passed as arguments to the hook
             implementations.
 
+        Raises
+        ------
+        HookCallError
+            If one or more of the keys in ``kwargs`` is not present in one of
+            the ``hook_impl.argnames``.
+        PluginCallError
+            If ``firstresult == True`` and a plugin raises an Exception.
+
         Returns
         -------
-        Any
-            The return type depends a lot on the calling arguments:
+        result
+            If the hookspec was declared with ``firstresult==True``, a single
+            result will be returned. Otherwise will return a list of results
+            from all hook implementations for this hook caller.
 
-            - If no special (underscore) arguments are provided, results will
-              be returned in a ``list``, unless the hookspec was declared with
-              ``firstresult==True``, in which case a single result will be
-              returned.
-            - If ``_return_impl`` is ``True``, will return a list of 2-tuples
-              ``(result, HookImpl)``, unless the hookspec was declared with
-              ``firstresult==True``, in which case a single 2-tuple will be
-              returned.
-            - If ``_plugin`` is provided, will return the single result from
-              the specified plugin
+            If ``_plugin`` is provided, will return the single result from the
+            specified plugin.
         """
-        assert not self.is_historic()
+        if _plugin:
+            # if a plugin name is specified, just call it directly
+            return self._call_plugin(_plugin, **kwargs)
+
+        result = self.call_with_result_obj(_skip_impls=_skip_impls, **kwargs)
+        return result.result
+
+    def _check_call_kwargs(self, kwargs):
+        """Warn if any keys in the hookspec are not present in this call.
+
+        It's possible to add arguments to hook specifications (as they evolve).
+        Here we just emit a warning if there are arguments in the hookspec that
+        were not specified in this call, which may mean the call could be
+        updated.
+        """
+        # "historic" hooks can be called with ``call_historic()`` *before*
+        # having been registered.  However they must be called with
+        # self.call_historic().
+        # https://pluggy.readthedocs.io/en/latest/index.html#historic-hooks
+        assert (
+            not self.is_historic()
+        ), 'Historic hooks must be called with `call_historic()`'
+
         if self.spec and self.spec.argnames:
             notincall = (
                 set(self.spec.argnames)
@@ -465,21 +597,3 @@ class _HookCaller(_PluggyHookCaller):
                     ),
                     stacklevel=2,
                 )
-
-        if _plugin:
-            # if a plugin name is specified, just call it directly
-            return self._call_plugin(_plugin, **kwargs)
-
-        skip_impls = _skip_impls or []
-        hookimpls = [
-            imp for imp in self.get_hookimpls() if imp not in skip_impls
-        ]
-        firstresult = self.spec.opts.get("firstresult") if self.spec else False
-        # the heavy lifting of looping through hook implementations, catching
-        # errors and gathering results is handled by the _multicall function.
-        return _multicall(
-            hookimpls,
-            kwargs,
-            _return_impl=_return_impl,
-            firstresult=firstresult,
-        )

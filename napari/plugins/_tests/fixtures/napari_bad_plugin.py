@@ -1,10 +1,8 @@
 """
 Test plugin that is technically correct, but would cause performance problems
 """
-import pluggy
+from napari_plugins import napari_hook_implementation
 import time
-
-napari_hook_implementation = pluggy.HookimplMarker("napari")
 
 
 def reader_function(path):

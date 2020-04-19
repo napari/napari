@@ -54,7 +54,7 @@ def test_annotation_on_hook_specification(name, func):
     sig = inspect.signature(func)
     if sig.parameters:
         for param in sig.parameters.values():
-            for forbidden in ('_plugin', '_skip_impls', '_return_impl'):
+            for forbidden in ('_plugin', '_skip_impls', '_return_result_obj'):
                 assert (
                     param.name != forbidden
                 ), f'Must not name hook_specification argument "{forbidden}".'

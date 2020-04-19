@@ -32,7 +32,7 @@ from qtpy.QtWidgets import (  # noqa: E402
     QVBoxLayout,
 )
 from qtpy.QtCore import Qt  # noqa: E402
-from qtpy.QtGui import QKeySequence  # noqa: E402
+from qtpy.QtGui import QKeySequence, QIcon  # noqa: E402
 from .utils import QImg2array  # noqa: E402
 from ..utils.theme import template  # noqa: E402
 
@@ -164,11 +164,34 @@ class Window:
         )
         screenshot.triggered.connect(self.qt_viewer._save_screenshot)
 
+        # OS X will rename this to Quit and put it in the app menu.
+        exitAction = QAction('Exit', self._qt_window)
+        exitAction.setShortcut('Ctrl+Q')
+        exitAction.setMenuRole(QAction.QuitRole)
+
+        def handle_exit():
+            # if the event loop was started in gui_qt() then the app will be
+            # named 'napari'. Since the Qapp was started by us, just close it.
+            if QApplication.applicationName() == 'napari':
+                QApplication.closeAllWindows()
+                QApplication.quit()
+            # otherwise, something else created the QApp before us (such as
+            # %gui qt IPython magic).  If we quit the app in this case, then
+            # *later* attemps to instantiate a napari viewer won't work until
+            # the event loop is restarted with app.exec_().  So rather than
+            # quit just close all the windows (and clear our app icon).
+            else:
+                QApplication.setWindowIcon(QIcon())
+                self.close()
+
+        exitAction.triggered.connect(handle_exit)
+
         self.file_menu = self.main_menu.addMenu('&File')
         self.file_menu.addAction(open_images)
         self.file_menu.addAction(open_stack)
         self.file_menu.addAction(open_folder)
         self.file_menu.addAction(screenshot)
+        self.file_menu.addAction(exitAction)
 
     def _add_view_menu(self):
         """Add 'View' menu to app menubar."""

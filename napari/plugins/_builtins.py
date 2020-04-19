@@ -6,7 +6,7 @@ import shutil
 from typing import Any, List, Optional, Union
 
 import numpy as np
-from pluggy import HookimplMarker
+from napari_plugins import napari_hook_implementation
 
 from ..types import (
     FullLayerData,
@@ -15,8 +15,6 @@ from ..types import (
     image_reader_to_layerdata_reader,
 )
 from ..utils.io import imsave, magic_imread, write_csv
-
-napari_hook_implementation = HookimplMarker("napari")
 
 
 @napari_hook_implementation(trylast=True)

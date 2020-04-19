@@ -38,7 +38,6 @@ napari aims to be the **multi-dimensional image viewer for Python** and to **pro
 
 - **ensuring correctness**. We strive for complete test coverage of both the code and GUI, with all code reviewed by a core developer before being included in the repository.
 
-
 ## Our values
 
 - We are **inclusive**. We welcome and mentor newcomers who are making their first contribution and strive to grow our most dedicated contributors into [core developers](CORE_DEV_GUIDE.md). We have a [Code of Conduct](CODE_OF_CONDUCT.md) to make napari
@@ -73,4 +72,5 @@ We want to make it as easy as possible for developers to build plugins for napar
 As noted above, we'll be beginning to actively work on the plugin infrastructure over coming months and would love to get the input of the community. You can follow and contribute to our discussions and progress using the [`plugin` label on our repository](https://github.com/napari/napari/labels/plugins).
 
 ## Acknowledgements
+
 We share a lot of our mission and values with the `scikit-image` project with whom we share founding members, and acknowledge the influence of their [mission and values statement](https://scikit-image.org/docs/dev/values.html) on this document.

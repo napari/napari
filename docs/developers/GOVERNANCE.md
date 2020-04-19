@@ -1,4 +1,5 @@
 # Governance Model
+
 ## Abstract
 
 The purpose of this document is to formalize the governance process used by the
@@ -80,11 +81,9 @@ The steering council is currently fixed in size to three members. This number ma
 the future, but will always be an odd number to ensure a simple majority vote outcome
 is always possible. The initial steering council of napari consists of
 
-* [Juan Nunez-Iglesias](https://github.com/jni)
-
-* [Loic Royer](https://github.com/royerloic)
-
-* [Nicholas Sofroniew](https://github.com/sofroniewn)
+- [Juan Nunez-Iglesias](https://github.com/jni)
+- [Loic Royer](https://github.com/royerloic)
+- [Nicholas Sofroniew](https://github.com/sofroniewn)
 
 The SC membership is revisited every January. SC members who do
 not actively engage with the SC duties are expected to resign. New members are

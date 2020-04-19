@@ -1,5 +1,6 @@
 from functools import wraps
-from typing import Any, Callable, Dict, List, Tuple, Union
+from typing import Any, Callable, Dict, List, Tuple, Union, Type
+from types import TracebackType
 
 import numpy as np
 import dask.array as da
@@ -26,6 +27,11 @@ LayerData = Union[Tuple[Any], Tuple[Any, Dict], FullLayerData]
 PathLike = Union[str, List[str]]
 ReaderFunction = Callable[[PathLike], List[LayerData]]
 WriterFunction = Callable[[str, List[FullLayerData]], bool]
+
+ExcInfo = Union[
+    Tuple[Type[BaseException], BaseException, TracebackType],
+    Tuple[None, None, None],
+]
 
 
 def image_reader_to_layerdata_reader(
