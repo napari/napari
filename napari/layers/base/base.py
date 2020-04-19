@@ -721,10 +721,15 @@ class Layer(KeymapProvider, ABC):
             Name of the plugin to use for saving. If ``None`` then all plugins
             corresponding to appropriate hook specification will be looped
             through to find the first one that can save the data.
-        """
-        from ...plugins.io import write_layers_with_plugins
 
-        write_layers_with_plugins(path=path, layers=[self], plugin_name=plugin)
+        Returns
+        -------
+        bool
+            Return True if data is successfully written.
+        """
+        from ...plugins.io import save_layers
+
+        return save_layers(path, [self], plugin_name=plugin)
 
     def to_xml_list(self):
         """Generates a list of xml elements for the layer.

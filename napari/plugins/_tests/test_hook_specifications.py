@@ -79,19 +79,3 @@ def test_docs_match_signature(name, func):
         "not match the parameters listed in the docstring:\n"
         f"{sig_params} != {doc_params}"
     )
-
-    # # we know the parameters names match, now check that their types match...
-    # # but only emit a warning if not
-    # for doc_param in docs.get('Parameters'):
-    #     sig_param = sig.parameters.get(doc_param.name)
-    #     type_name = getattr(sig_param.annotation, '_name', None)
-    #     type_name = type_name or getattr(sig_param.annotation, '__name__', None)
-    #     if doc_param.type != type_name:
-    #         msg = (
-    #             f'The type ({type_name}) for parameter '
-    #             f'"{sig_param.name}" in hook specification "{name}" does not '
-    #             'match the type specified in the docstring '
-    #             f'({doc_param.type})'
-    #         )
-    #         import warnings
-    #         warnings.warn(msg)

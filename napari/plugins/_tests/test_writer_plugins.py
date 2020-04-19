@@ -5,8 +5,8 @@ import pytest
 
 from napari.layers import Image, Points
 from napari.plugins._builtins import write_layer_data_with_plugins
-from napari.plugins.io import write_layers_with_plugins
 from napari.plugins.exceptions import PluginCallError
+from napari.plugins.io import save_layers
 from napari.utils import io
 
 
@@ -20,7 +20,7 @@ def test_builtin_write_image(tmpdir):
     assert not os.path.isfile(path)
 
     # Write data
-    write_layers_with_plugins(path, layer, plugin_name='builtins')
+    save_layers(path, [layer], plugin='builtins')
 
     # Check file now exists
     assert os.path.isfile(path)
@@ -42,7 +42,7 @@ def test_builtin_write_points(tmpdir):
     assert not os.path.isfile(path)
 
     # Write data
-    write_layers_with_plugins(path, layer, plugin_name='builtins')
+    save_layers(path, [layer], plugin='builtins')
 
     # Check file now exists
     assert os.path.isfile(path)
@@ -69,7 +69,7 @@ def test_builtin_get_writer(tmpdir):
     assert not os.path.isfile(os.path.join(tmpdir, 'points.csv'))
 
     # Write data
-    write_layers_with_plugins(tmpdir, [img, pts], plugin_name='builtins')
+    save_layers(tmpdir, [img, pts], plugin_name='builtins')
 
     # Check folder and files exist
     assert os.path.isdir(tmpdir)
