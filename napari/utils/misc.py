@@ -1,6 +1,6 @@
 """Miscellaneous utility functions.
 """
-import os.path as osp
+from os import path, fspath
 from enum import Enum, EnumMeta
 import re
 import inspect
@@ -10,7 +10,7 @@ from typing import Type, Optional
 import collections.abc
 
 
-ROOT_DIR = osp.dirname(osp.dirname(__file__))
+ROOT_DIR = path.dirname(path.dirname(__file__))
 
 
 def str_to_rgb(arg):
@@ -188,10 +188,11 @@ def camel_to_snake(name):
     return camel_to_snake_pattern.sub(r'\1_\2', name).lower()
 
 
-def abspath_or_url(path):
-    if path.startswith(('http:', 'https:', 'ftp:', 'file:')):
-        return path
-    return osp.abspath(osp.expanduser(path))
+def abspath_or_url(relpath):
+    relpath = fspath(relpath)
+    if relpath.startswith(('http:', 'https:', 'ftp:', 'file:')):
+        return relpath
+    return path.abspath(path.expanduser(relpath))
 
 
 class CallDefault(inspect.Parameter):

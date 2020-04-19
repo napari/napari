@@ -1,6 +1,5 @@
 import os
 import numpy as np
-import pytest
 
 from napari.utils import io
 from napari.plugins.io import write_layers_with_plugins
@@ -56,7 +55,6 @@ def test_builtin_write_points(viewer_factory, tmpdir):
     assert column_names == ['index', 'axis-0', 'axis-1']
 
 
-@pytest.mark.skip(reason="currently failing")
 def test_builtin_get_writer(viewer_factory, tmpdir):
     """Test the builtin writer plugin writes layers to a folder."""
     viewer = Viewer()

@@ -174,6 +174,7 @@ def _write_multiple_layers_with_plugins(
     layer_types = [ld[2] for ld in layer_data]
 
     hook_caller = plugin_manager.hook.napari_get_writer
+    path = abspath_or_url(path)
     if plugin_name:
         # if plugin has been specified we just directly call napari_get_writer
         # with that plugin_name.
@@ -199,7 +200,7 @@ def _write_multiple_layers_with_plugins(
     try:
         return writer_function(abspath_or_url(path), layer_data)
     except Exception as exc:
-        raise PluginCallError(implementation) from exc
+        raise PluginCallError(implementation, cause=exc)
 
 
 def _write_single_layer_with_plugins(
