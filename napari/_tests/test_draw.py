@@ -1,8 +1,12 @@
 import numpy as np
 import pytest
+import sys
 
 
-@pytest.mark.skip(reason="currently fails on CI due to canvas error on draw")
+@pytest.mark.skipif(
+    sys.platform.startswith('win') or sys.platform.startswith('linux'),
+    reason='Currently fails on certain CI due to error on canvas draw.',
+)
 def test_canvas_drawing(viewer_factory):
     """Test drawing before and after adding and then deleting a layer."""
     view, viewer = viewer_factory()
