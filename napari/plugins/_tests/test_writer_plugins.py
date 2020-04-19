@@ -69,7 +69,7 @@ def test_builtin_get_writer(tmpdir):
     assert not os.path.isfile(os.path.join(tmpdir, 'points.csv'))
 
     # Write data
-    save_layers(tmpdir, [img, pts], plugin_name='builtins')
+    save_layers(tmpdir, [img, pts], plugin='builtins')
 
     # Check folder and files exist
     assert os.path.isdir(tmpdir)
