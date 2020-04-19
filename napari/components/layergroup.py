@@ -10,14 +10,6 @@ class LayerGroup(Layer):
         self._name = name
         self._children = LayerList(iterable=iterable)
 
-    def traverse(self):
-        """Recursively traverse LayerGroup tree and yield each leaf node."""
-        for child in self:
-            if child._children is not None:
-                yield from child.traverse()
-            else:
-                yield child
-
     def _render(self):
         """Recursively return list of strings that can render ascii tree."""
         lines = []
@@ -70,6 +62,20 @@ class LayerGroup(Layer):
         for child in self._children:
             yield child
 
+    def traverse(self):
+        "Recursively traverse all nodes and leaves of the LayerGroup."
+        yield self
+        for child in self._children:
+            yield from child.__iter__()
+
+    def traverse_leaf(self):
+        """Recursively traverse LayerGroup tree and yield each leaf node."""
+        for child in self:
+            if child._children is not None:
+                yield from child.traverse()
+            else:
+                yield child
+
     def __getitem__(self, idx):
         return self._children.__getitem__(idx)
 
@@ -77,6 +83,7 @@ class LayerGroup(Layer):
         return self._children.__setitem__(idx, value)
 
     def append(self, item):
+        item._parent = self
         return self._children.append(item)
 
     def _get_extent(self, *args, **kwargs):
@@ -95,7 +102,7 @@ class LayerGroup(Layer):
         raise NotImplementedError
 
     def _update_thumbnail(self, *args, **kwargs):
-        raise NotImplementedError
+        pass
 
     @property
     def data(self):
