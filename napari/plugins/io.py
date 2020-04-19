@@ -69,7 +69,7 @@ def read_data_with_plugins(
 def save_layers(
     path: str, layers: List[Layer], *, plugin: Optional[str] = None,
 ):
-    """Write list of layers of individual layer to a path using writer plugins.
+    """Write list of layers or individual layer to a path using writer plugins.
 
     If ``plugin`` is not provided and only one layer is passed, then we
     just directly call ``plugin_manager.hook.napari_write_<layer>()`` which
