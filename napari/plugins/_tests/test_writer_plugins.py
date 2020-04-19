@@ -36,14 +36,17 @@ def test_builtin_write_points(tmpdir):
     """Test the builtin writer plugin writes a points layer."""
     layer = Points(np.random.rand(20, 2), name='points')
 
-    path = os.path.join(tmpdir, 'points_file.csv')
-
-    # Check file does not exist
+    # the builtin write_points requires csv extension
+    path = os.path.join(tmpdir, 'points_file.xyz')
+    save_layers(path, [layer], plugin='builtins')
+    # Check file now exists
     assert not os.path.isfile(path)
 
+    path = os.path.join(tmpdir, 'points_file.csv')
+    # Check file does not exist
+    assert not os.path.isfile(path)
     # Write data
     save_layers(path, [layer], plugin='builtins')
-
     # Check file now exists
     assert os.path.isfile(path)
 
