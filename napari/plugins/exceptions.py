@@ -73,6 +73,28 @@ class PluginError(Exception):
         return (self.__class__, self, self.__traceback__)
 
 
+class PluginCallError(PluginError):
+    """Raised when an error is raised when calling a plugin implementation."""
+
+    def __init__(self, hook_implementation, msg=None, cause=None):
+        plugin_name = hook_implementation.plugin_name
+        plugin_module = hook_implementation.plugin.__name__
+        specname = getattr(
+            hook_implementation,
+            'specname',
+            hook_implementation.function.__name__,
+        )
+
+        if not msg:
+            msg = f"Error in plugin '{plugin_name}', hook '{specname}'"
+            if cause:
+                msg += f": {str(cause)}"
+
+        super().__init__(msg, plugin_name, plugin_module)
+        if cause:
+            self.__cause__ = cause
+
+
 class PluginImportError(PluginError, ImportError):
     """Raised when a plugin fails to import."""
 

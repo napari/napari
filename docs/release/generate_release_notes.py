@@ -162,28 +162,28 @@ highlights['Other Pull Requests'] = other_pull_requests
 
 
 # Now generate the release notes
-announcement_title = f'# Announcement: napari {args.version}'
-print(announcement_title)
+title = f'# napari {args.version}'
+print(title)
 
 print(
     f"""
-We're happy to announce the release of napari {args.version}! \
-napari is a fast, interactive, multi-dimensional image viewer for Python. \
-It's designed for browsing, annotating, and analyzing large multi-dimensional \
-images. It's built on top of Qt (for the GUI), vispy (for performant GPU-based \
-rendering), and the scientific Python stack (numpy, scipy).\
+We're happy to announce the release of napari {args.version}!
+napari is a fast, interactive, multi-dimensional image viewer for Python.
+It's designed for browsing, annotating, and analyzing large multi-dimensional
+images. It's built on top of Qt (for the GUI), vispy (for performant GPU-based
+rendering), and the scientific Python stack (numpy, scipy).
 """
 )
 
 print(
     """
-For more information, examples, and documentation, please visit our website: \
+For more information, examples, and documentation, please visit our website:
 https://github.com/napari/napari
 """
 )
 
 for section, pull_request_dicts in highlights.items():
-    print(f'## {section}')
+    print(f'## {section}\n')
     if len(pull_request_dicts.items()) == 0:
         print()
     for number, pull_request_info in pull_request_dicts.items():
@@ -206,6 +206,7 @@ for section_name, contributor_set in contributors.items():
         'release (alphabetical)'
     )
     print(committer_str)
+    print()
 
     for c in sorted(contributor_set, key=lambda x: users[x].lower()):
         commit_link = f"{GH}/{GH_USER}/{GH_REPO}/commits?author={c}"

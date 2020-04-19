@@ -3,12 +3,10 @@ Internal napari hook implementations to be registered by the plugin manager
 """
 from typing import List, Union
 
-from pluggy import HookimplMarker
+from napari_plugins import napari_hook_implementation
 
 from ..types import ReaderFunction, image_reader_to_layerdata_reader
 from ..utils.io import magic_imread
-
-napari_hook_implementation = HookimplMarker("napari")
 
 
 @napari_hook_implementation(trylast=True)

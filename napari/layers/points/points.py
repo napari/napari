@@ -28,11 +28,12 @@ from ._points_mouse_bindings import add, select, highlight
 from ._points_utils import (
     create_box,
     points_to_squares,
+)
+from ..utils.layer_utils import (
     dataframe_to_properties,
     guess_continuous,
     map_property,
 )
-
 
 DEFAULT_COLOR_CYCLE = cycle(np.array([[1, 0, 1, 1], [0, 1, 0, 1]]))
 
@@ -508,11 +509,13 @@ class Points(Layer):
             color_cycle_keys = [*color_cycle_map]
             if color_property_value not in color_cycle_keys:
                 color_cycle = getattr(self, f'{attribute}_color_cycle')
-                color_cycle_map[color_property_value] = next(color_cycle)
+                color_cycle_map[color_property_value] = transform_color(
+                    next(color_cycle)
+                )
                 setattr(self, f'{attribute}_color_cycle_map', color_cycle_map)
 
             new_colors = np.tile(
-                color_cycle_map[color_property_value], (adding, 1),
+                color_cycle_map[color_property_value], (adding, 1)
             )
         elif color_mode == ColorMode.COLORMAP:
             property_name = getattr(self, f'_{attribute}_color_property')
@@ -915,7 +918,7 @@ class Points(Layer):
             # ColorMode.COLORMAP can only be applied to numeric properties
             color_property = getattr(self, f'_{attribute}_color_property')
             if (color_mode == ColorMode.COLORMAP) and not issubclass(
-                self.properties[color_property].dtype.type, np.number,
+                self.properties[color_property].dtype.type, np.number
             ):
                 raise TypeError(
                     'selected property must be numeric to use ColorMode.COLORMAP'
@@ -1003,9 +1006,9 @@ class Points(Layer):
                 if update_color_mapping:
                     color_cycle = getattr(self, f'{attribute}_color_cycle')
                     color_cycle_map = {
-                        k: c
+                        k: transform_color(c)
                         for k, c in zip(
-                            np.unique(color_properties), color_cycle,
+                            np.unique(color_properties), color_cycle
                         )
                     }
                     setattr(
@@ -1026,7 +1029,9 @@ class Points(Layer):
                         )
                         color_cycle = getattr(self, f'{attribute}_color_cycle')
                         for prop in props_to_add:
-                            color_cycle_map[prop] = next(color_cycle)
+                            color_cycle_map[prop] = np.squeeze(
+                                transform_color(next(color_cycle))
+                            )
                         setattr(
                             self,
                             f'{attribute}_color_cycle_map',
@@ -1050,7 +1055,7 @@ class Points(Layer):
                     if update_color_mapping or contrast_limits is None:
 
                         colors, contrast_limits = map_property(
-                            prop=color_properties, colormap=colormap[1],
+                            prop=color_properties, colormap=colormap[1]
                         )
                         setattr(
                             self,
@@ -1182,8 +1187,6 @@ class Points(Layer):
         else:
             data = self._view_data[index]
             size = self._view_size[index]
-            if data.ndim == 1:
-                data = np.expand_dims(data, axis=0)
             data = points_to_squares(data, size)
             box = create_box(data)
 

@@ -1,14 +1,17 @@
-from . import PluginError, plugin_manager as napari_plugin_manager
-from ._hook_callers import execute_hook
-from typing import Optional, Union, Sequence
-from ..types import LayerData
 from logging import getLogger
+from typing import Optional, Sequence, Union, List
+
+from pluggy.hooks import HookImpl
+
+from ..types import LayerData
+from . import PluginError
+from . import plugin_manager as napari_plugin_manager
 
 logger = getLogger(__name__)
 
 
 def read_data_with_plugins(
-    path: Union[str, Sequence[str]], plugin_manager=None
+    path: Union[str, Sequence[str]], plugin_manager=napari_plugin_manager
 ) -> Optional[LayerData]:
     """Iterate reader hooks and return first non-None LayerData or None.
 
@@ -18,14 +21,14 @@ def read_data_with_plugins(
     returned, or no readers are found.
 
     Exceptions will be caught and stored as PluginErrors
-    (in plugins.PLUGIN_ERRORS)
+    (in plugins.exceptions.PLUGIN_ERRORS)
 
     Parameters
     ----------
     path : str
         The path (file, directory, url) to open
-    plugin_manager : pluggy.PluginManager, optional
-        Instance of a pluggy PluginManager.  by default the main napari
+    plugin_manager : plugins.PluginManager, optional
+        Instance of a napari PluginManager.  by default the main napari
         plugin_manager will be used.
 
     Returns
@@ -38,38 +41,37 @@ def read_data_with_plugins(
 
         If no reader plugins are (or they all error), returns ``None``
     """
-    plugin_manager = plugin_manager or napari_plugin_manager
-    skip_impls = []
+    hook_caller = plugin_manager.hook.napari_get_reader
+    skip_impls: List[HookImpl] = []
     while True:
-        (reader, implementation) = execute_hook(
-            plugin_manager.hook.napari_get_reader,
-            path=path,
-            return_impl=True,
-            skip_impls=skip_impls,
+        result = hook_caller.call_with_result_obj(
+            path=path, _skip_impls=skip_impls
         )
+        reader = result.result  # will raise exceptions if any occured
         if not reader:
             # we're all out of reader plugins
             return None
         try:
-            return reader(path)  # try to read the data.
+            return reader(path)  # try to read data
         except Exception as exc:
-            # If execute_hook did return a reader, but the reader then failed
+            # If the hook did return a reader, but the reader then failed
             # while trying to read the path, we store the traceback for later
             # retrieval, warn the user, and continue looking for readers
             # (skipping this one)
+            hook_implementation = result.implementation
+            plugin_name = hook_implementation.plugin_name
+            plugin_module = hook_implementation.plugin.__name__
             msg = (
-                f"Error in plugin '{implementation.plugin_name}', "
-                "hook 'napari_get_reader'"
+                f"Error in plugin '{plugin_name}', "
+                f"hook 'napari_get_reader': {exc}"
             )
             # instantiating this PluginError stores it in
             # plugins.exceptions.PLUGIN_ERRORS, where it can be retrieved later
-            err = PluginError(
-                msg, implementation.plugin_name, implementation.plugin.__name__
-            )
-            err.__cause__ = exc  # like `raise PluginError() from exc`
+            err = PluginError(msg, plugin_name, plugin_module)
+            err.__cause__ = exc  # like ``raise PluginError() from exc``
 
-            skip_impls.append(implementation)  # don't try this impl again
-            if implementation.plugin_name != 'builtins':
+            skip_impls.append(hook_implementation)  # don't try this impl again
+            if plugin_name != 'builtins':
                 # If builtins doesn't work, they will get a "no reader" found
                 # error anyway, so it looks a bit weird to show them that the
                 # "builtin plugin" didn't work.

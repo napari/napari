@@ -24,39 +24,27 @@ The version of `napari` is automatically determined by [`versioneer`](https://gi
 from the latest [`git` tag](https://git-scm.com/book/en/v2/Git-Basics-Tagging) beginning with `v`.
 Thus, you'll need to tag the [reference](https://git-scm.com/book/en/v2/Git-Internals-Git-References) with the new version number. It is likely something like `X.Y.Z`. Before making a release though we need to generate the release notes.
 
-
 ## generating release notes
 
-1. Review and cleanup ``docs/release/release_dev.md``. This may be empty if it has not been
-   updated during work on the last release.
-
-2. Make a list of merges, contributors, and reviewers by running
+1. Make a list of merges, contributors, and reviewers by running
    ``python docs/release/generate_release_notes.py -h`` and following that file's usage.
    For each release generate the list to include everything since the last release for which there
    are release notes (which should just be the last release). For example making the release notes
    for the `0.2.1` release can be done as follows:
-   ```
+
+   ```bash
    python docs/release/generate_release_notes.py v0.2.0 master --version 0.2.1 | tee docs/release/release_0_2_1.md
    ```
 
-3. Paste this list at the end of the ``release_dev.md``.
-
-4. Scan the PR titles for highlights, deprecations, API changes,
+2. Scan the PR titles for highlights, deprecations, API changes,
    and bugfixes, and mention these in the relevant sections of the notes.
    Try to present the information in an expressive way by mentioning
    the affected functions, elaborating on the changes and their
    consequences. If possible, organize semantically close PRs in groups.
 
-5. Make sure the file name is of the form ``doc/release/release_<major>_<minor>_<release>.md``.
+3. Make sure the file name is of the form ``doc/release/release_<major>_<minor>_<release>.md``.
 
-6. Copy ``doc/release/release_template.md`` to
-   ``doc/release/release_dev.md`` for the next release.
-
-7. Copy relevant deprecations from ``release_<major>_<minor>_<release>.md``
-   to ``release_dev.md``.
-
-8. Make and merge a PR with these release notes before moving onto the next steps.
-
+4. Make and merge a PR with these release notes before moving onto the next steps.
 
 ## tagging the new release candidate
 
@@ -65,13 +53,15 @@ Using release candidates allows us to test releases on PyPI without using up the
 release number.
 
 You can tag the current source code as a release candidate with:
+
 ```bash
-$ git tag vX.Y.Zrc1 master
+git tag vX.Y.Zrc1 master
 ```
 
 If the tag is meant for a previous version of master, simply reference the specific commit:
+
 ```bash
-$ git tag vX.Y.Zrc1 abcde42
+git tag vX.Y.Zrc1 abcde42
 ```
 
 Note here how we are using `rc` for release candidate to create a version of our release we can test
@@ -83,13 +73,15 @@ You can read more on tagging [here](https://git-scm.com/book/en/v2/Git-Basics-Ta
 
 Our CI automatically makes a release, copying the release notes to the tag and uploading the distribution to PyPI.
 You can trigger this by pushing the new tag to `napari/napari`:
+
 ```bash
-$ git push upstream --tags
+git push upstream --tags
 ```
 
 The release candidate can then be tested with
+
 ```bash
-$ pip install --pre napari
+pip install --pre napari
 ```
 
 It is recommended that the release candidate is tested in a virtual environment in order to isolate dependencies.
@@ -100,9 +92,11 @@ incrementing the number after `rc` on tag (e.g. `vX.Y.Zrc2`).
 Once you are satisfied with the release candidate it is time to generate the actual release.
 
 ## generating the actual release
+
 To generate the actual release you will now repeat the processes above but now dropping the `rc`.
 For example:
+
 ```bash
-$ git tag vX.Y.Z master
-$ git push upstream --tags
+git tag vX.Y.Z master
+git push upstream --tags
 ```

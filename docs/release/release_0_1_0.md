@@ -1,12 +1,22 @@
-# Announcement: napari 0.1.0
+# napari 0.1.0
 
-We're happy to announce the release of napari 0.1.0! napari is a fast, interactive, multi-dimensional image viewer for Python. It's designed for browsing, annotating, and analyzing large multi-dimensional images. It's built on top of Qt (for the GUI), vispy (for performant GPU-based rendering), and the scientific Python stack (numpy, scipy).
+We're happy to announce the release of napari 0.1.0! napari is a fast,
+interactive, multi-dimensional image viewer for Python. It's designed for
+browsing, annotating, and analyzing large multi-dimensional images. It's built
+on top of Qt (for the GUI), vispy (for performant GPU-based rendering), and the
+scientific Python stack (numpy, scipy).
 
-This is our first minor release, timed for the 2019 SciPy Conference in Austin. It marks our transition from pre-alpha to alpha, and establishes a reasonable API for adding images, shapes, and other basic layer types to an interactive viewer. It supports launching a viewer with python scripting or from Jupyter notebooks.
+This is our first minor release, timed for the 2019 SciPy Conference in Austin.
+It marks our transition from pre-alpha to alpha, and establishes a reasonable
+API for adding images, shapes, and other basic layer types to an interactive
+viewer. It supports launching a viewer with python scripting or from Jupyter
+notebooks.
 
-For more information, examples, and documentation, please visit our website: https://github.com/napari/napari
+For more information, examples, and documentation, please visit our website:
+https://github.com/napari/napari
 
 ## Pull Requests
+
 - Add shapes (#100)
 - Vectors Layer (#129)
 - setup css basics (#167)
@@ -120,6 +130,7 @@ For more information, examples, and documentation, please visit our website: htt
 - update readme for alpha release (#402)
 
 ## 12 authors added to this release (alphabetical)
+
 - [Ahmet Can Solak](https://github.com/napari/napari/commits?author=AhmetCanSolak) - @AhmetCanSolak
 - [Bryant Chhun](https://github.com/napari/napari/commits?author=bryantChhun) - @bryantChhun
 - [Eric Perlman](https://github.com/napari/napari/commits?author=perlman) - @perlman
@@ -134,6 +145,7 @@ For more information, examples, and documentation, please visit our website: htt
 - [Pranathi Vemuri](https://github.com/napari/napari/commits?author=pranathivemuri) - @pranathivemuri
 
 ## 10 reviewers added to this release (alphabetical)
+
 - [Ahmet Can Solak](https://github.com/napari/napari/commits?author=AhmetCanSolak) - @AhmetCanSolak
 - [Bryant Chhun](https://github.com/napari/napari/commits?author=bryantChhun) - @bryantChhun
 - [Charlotte Weaver](https://github.com/napari/napari/commits?author=csweaver) - @csweaver

@@ -1,10 +1,11 @@
 import pytest
+from napari_plugins import HookimplMarker
+from pluggy import HookspecMarker
 
-import pluggy
 from napari.plugins.manager import PluginManager
 
-dummy_hook_implementation = pluggy.HookimplMarker("dummy")
-dummy_hook_specification = pluggy.HookspecMarker("dummy")
+dummy_hook_implementation = HookimplMarker("dummy")
+dummy_hook_specification = HookspecMarker("dummy")
 
 
 class MySpec:
@@ -81,7 +82,7 @@ def test_reordering_hook_caller(dummy_plugin_manager, order, expected_result):
     assert hook_caller() == START_ORDER
 
     # try again using HookImpl INSTANCES instead of plugin names
-    instances = [hook_caller.get_hookimpl_for_plugin(i) for i in order]
+    instances = [hook_caller.get_plugin_implementation(i) for i in order]
     hook_caller.bring_to_front(instances)
     assert hook_caller() == expected_result
 

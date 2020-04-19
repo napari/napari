@@ -68,6 +68,7 @@ instance/
 docs/source/api/
 docs/source/developers/
 docs/source/release/
+docs/source/releases.rst
 docs/build/
 
 # PyBuilder
