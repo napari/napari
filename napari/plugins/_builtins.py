@@ -15,6 +15,7 @@ from ..types import (
     image_reader_to_layerdata_reader,
 )
 from ..utils.io import imsave, magic_imread, write_csv
+from ..utils.misc import abspath_or_url
 
 
 @napari_hook_implementation(trylast=True)
@@ -135,7 +136,7 @@ def napari_get_writer(
 
 
 def write_layer_data_with_plugins(
-    path: str, layer_data: List[FullLayerData]
+    path: str, layer_data: List[FullLayerData], plugin_manager=None
 ) -> bool:
     """Write layer data out into a folder one layer at a time.
 
@@ -155,42 +156,38 @@ def write_layer_data_with_plugins(
     bool
         Return True if data is successfully written.
     """
-    from . import plugin_manager
+    from tempfile import TemporaryDirectory
 
-    # remember whether
-    exists = os.path.isdir(path)
+    if not plugin_manager:
+        from . import plugin_manager as napari_plugin_manager
+
+        plugin_manager = napari_plugin_manager
+
+    # remember whether it was there to begin with
+    already_existed = os.path.exists(path)
     # Try and make directory based on current path if it doesn't exist
-    if not exists:
+    if not already_existed:
         os.makedirs(path)
 
-    attempted = []
     try:
-        # Loop through data for each layer
-        for layer_data_tuple in layer_data:
-            data, meta, layer_type = layer_data_tuple
-            # Get hook caller according to layer type
-            hook_caller = getattr(
-                plugin_manager.hook, f'napari_write_{layer_type}'
-            )
-            # Create full path using name of layer
-            full_path = os.path.join(path, meta['name'])
-            # Write out data using first plugin found for this hook spec
-            attempted.append(full_path)
-            hook_caller(path=full_path, data=data, meta=meta)
+        # build in a temporary directory and then move afterwards,
+        # it makes cleanup easier if an exception is raised inside.
+        with TemporaryDirectory(dir=path) as tmp:
+            # Loop through data for each layer
+            for layer_data_tuple in layer_data:
+                data, meta, layer_type = layer_data_tuple
+                # Get hook caller according to layer type
+                hook_caller = getattr(
+                    plugin_manager.hook, f'napari_write_{layer_type}'
+                )
+                # Create full path using name of layer
+                full_path = abspath_or_url(os.path.join(tmp, meta['name']))
+                # Write out data using first plugin found for this hook spec
+                hook_caller(path=full_path, data=data, meta=meta)
+            for fname in os.listdir(tmp):
+                shutil.move(os.path.join(tmp, fname), path)
     except Exception as exc:
-        # If an exception was raised, cleanup before raising it
-        # if we created the folder, we can just erase it and its contents
-        if not exists:
-            shutil.rmtree(path, ignore_errors=False)
-        # otherwise we only delete the things that we created
-        else:
-            for path in attempted:
-                if not os.path.exists(path):
-                    continue
-                if os.path.isdir(path):
-                    shutil.rmtree(path, ignore_errors=False)
-                else:
-                    os.remove(path)
+        if not already_existed:
+            shutil.rmtree(path, ignore_errors=True)
         raise exc
-
     return True
