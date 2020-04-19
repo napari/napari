@@ -2,7 +2,7 @@ import os
 import numpy as np
 
 from napari.utils import io
-from napari.plugins.io import write_layers_with_plugins
+from napari.plugins.io import save_layers
 from napari.components import ViewerModel as Viewer
 
 
@@ -17,7 +17,7 @@ def test_builtin_write_image(viewer_factory, tmpdir):
     assert not os.path.isfile(path)
 
     # Write data
-    write_layers_with_plugins(path, layer, plugin_name='builtins')
+    save_layers(path, [layer], plugin='builtins')
 
     # Check file now exists
     assert os.path.isfile(path)
@@ -40,7 +40,7 @@ def test_builtin_write_points(viewer_factory, tmpdir):
     assert not os.path.isfile(path)
 
     # Write data
-    write_layers_with_plugins(path, layer, plugin_name='builtins')
+    save_layers(path, [layer], plugin='builtins')
 
     # Check file now exists
     assert os.path.isfile(path)
@@ -67,7 +67,7 @@ def test_builtin_get_writer(viewer_factory, tmpdir):
     assert not os.path.isfile(os.path.join(tmpdir, 'points.csv'))
 
     # Write data
-    write_layers_with_plugins(tmpdir, viewer.layers, plugin_name='builtins')
+    save_layers(tmpdir, viewer.layers, plugin='builtins')
 
     # Check folder and files exist
     assert os.path.isdir(tmpdir)
