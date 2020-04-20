@@ -729,7 +729,7 @@ class Layer(KeymapProvider, ABC):
         """
         from ...plugins.io import save_layers
 
-        return save_layers(path, [self], plugin_name=plugin)
+        return save_layers(path, [self], plugin=plugin)
 
     def to_xml_list(self):
         """Generates a list of xml elements for the layer.
