@@ -3,12 +3,9 @@ import os
 import pytest
 from napari.plugins.exceptions import PluginCallError
 from napari.plugins._builtins import napari_get_writer
-from napari.plugins._tests.fixtures.layer_data import (  # noqa: F401
-    layer_data_and_types,
-)
 
 
-def test_get_writer(tmpdir, layer_data_and_types):  # noqa: F811
+def test_get_writer(tmpdir, layer_data_and_types):
     """Test writing layers data."""
     # make individual write layer builtin plugins get called first
     from napari.plugins import plugin_manager
@@ -42,7 +39,7 @@ def test_get_writer(tmpdir, layer_data_and_types):  # noqa: F811
     assert set(os.listdir(tmpdir)) == set(['layers_folder'])
 
 
-def test_get_writer_bad_plugin(tmpdir, layer_data_and_types):  # noqa: F811
+def test_get_writer_bad_plugin(tmpdir, layer_data_and_types):
     """Test writing layers data."""
     # make individual write layer builtin plugins get called first
     from napari.plugins import plugin_manager
