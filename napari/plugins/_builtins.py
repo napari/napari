@@ -141,11 +141,21 @@ def napari_get_writer(
         function that accepts the path and a list of layer_data (where
         layer_data is (data, meta, layer_type)) and writes each layer.
     """
-    return write_layer_data_with_plugins
+
+    def writer(path: str, layer_data: List[FullLayerData]):
+        write_layer_data_with_plugins(
+            path=path, layer_data=layer_data, plugin_name='builtins'
+        )
+
+    return writer
 
 
 def write_layer_data_with_plugins(
-    path: str, layer_data: List[FullLayerData], plugin_manager=None
+    path: str,
+    layer_data: List[FullLayerData],
+    *,
+    plugin_name: Optional[str] = None,
+    plugin_manager=None,
 ) -> bool:
     """Write layer data out into a folder one layer at a time.
 
@@ -159,6 +169,13 @@ def write_layer_data_with_plugins(
         path to file/directory
     layer_data : list of napari.types.LayerData
         List of layer_data, where layer_data is (data, meta, layer_type).
+    plugin_name : str, optional
+        Name of the plugin to use for saving. If None then all plugins
+        corresponding to appropriate hook specification will be looped
+        through to find the first one that can save the data.
+    plugin_manager : plugins.PluginManager, optional
+        Instance of a napari PluginManager.  by default the main napari
+        plugin_manager will be used.
 
     Returns
     -------
@@ -192,7 +209,10 @@ def write_layer_data_with_plugins(
                 # Create full path using name of layer
                 full_path = abspath_or_url(os.path.join(tmp, meta['name']))
                 # Write out data using first plugin found for this hook spec
-                hook_caller(path=full_path, data=data, meta=meta)
+                # or named plugin if provided
+                hook_caller(
+                    _plugin=plugin_name, path=full_path, data=data, meta=meta
+                )
             for fname in os.listdir(tmp):
                 shutil.move(os.path.join(tmp, fname), path)
     except Exception as exc:
