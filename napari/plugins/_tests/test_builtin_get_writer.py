@@ -1,3 +1,4 @@
+import importlib
 import os
 import numpy as np
 import pytest
@@ -57,18 +58,17 @@ def test_get_writer(tmpdir, layer_data_and_types):
     assert set(os.listdir(tmpdir)) == set(['layers_folder'])
 
 
-def test_get_writer_bad_plugin(
-    tmpdir, layer_data_and_types, temporary_hookimpl
-):
+def test_get_writer_bad_plugin(tmpdir, layer_data_and_types):
     """Test writing layers data."""
     # make individual write layer builtin plugins get called first
     from napari.plugins import plugin_manager
 
     plugin_manager.hooks.napari_write_image.bring_to_front(['builtins'])
-
-    # Define bad points writer
-    def bad_write_points(path, data, meta):
-        raise ValueError("shoot!")
+    bad = importlib.import_module('napari_bad_plugin')
+    plugin_manager.register(bad)
+    plugin_manager.hooks.napari_write_points.bring_to_front(
+        ['napari_bad_plugin']
+    )
 
     layer_data, layer_types, filenames = layer_data_and_types
 
@@ -82,9 +82,8 @@ def test_get_writer_bad_plugin(
     assert not os.path.isdir(path)
 
     # Write data
-    with temporary_hookimpl(bad_write_points, 'napari_write_points'):
-        with pytest.raises(PluginCallError):
-            writer(path, layer_data)
+    with pytest.raises(PluginCallError):
+        writer(path, layer_data)
 
     print(os.listdir(tmpdir))
     print(os.listdir(path))
