@@ -3,9 +3,6 @@ import numpy as np
 import pytest
 from napari.components import LayerList
 from napari.layers import Image
-from napari.plugins._tests.fixtures.layer_data import (  # noqa: F401
-    layer_data_and_types,
-)
 
 
 def test_empty_layers_list():
@@ -430,7 +427,7 @@ def test_toggle_visibility():
     assert [l.visible for l in layers] == [False, True, False, True]
 
 
-def test_layers_save(tmpdir, layer_data_and_types):  # noqa: F811
+def test_layers_save(tmpdir, layer_data_and_types):
     """Test saving all layer data."""
     # make individual write layer builtin plugins get called first
     from napari.plugins import plugin_manager
@@ -461,9 +458,7 @@ def test_layers_save(tmpdir, layer_data_and_types):  # noqa: F811
     assert set(os.listdir(tmpdir)) == set(['layers_folder'])
 
 
-def test_layers_save_none_seleteced(
-    tmpdir, layer_data_and_types  # noqa: F811
-):
+def test_layers_save_none_seleteced(tmpdir, layer_data_and_types):
     """Test saving all layer data."""
     list_of_layers, _, _, filenames = layer_data_and_types
     layers = LayerList(list_of_layers)
@@ -488,7 +483,7 @@ def test_layers_save_none_seleteced(
     assert set(os.listdir(tmpdir)) == set('')
 
 
-def test_layers_save_seleteced(tmpdir, layer_data_and_types):  # noqa: F811
+def test_layers_save_seleteced(tmpdir, layer_data_and_types):
     """Test saving all layer data."""
     # make individual write layer builtin plugins get called first
     from napari.plugins import plugin_manager
