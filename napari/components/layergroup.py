@@ -111,14 +111,3 @@ class LayerGroup(Layer):
     @data.setter
     def data(self):
         raise NotImplementedError
-
-    @property
-    def visible(self):
-        """bool: Whether the visual is currently being displayed."""
-        return self._visible
-
-    @visible.setter
-    def visible(self, visibility):
-        self._visible = visibility
-        for child in self:
-            child.visible = visibility
