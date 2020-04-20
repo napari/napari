@@ -64,11 +64,10 @@ def test_get_writer_bad_plugin(tmpdir, layer_data_and_types):
     from napari.plugins import plugin_manager
 
     plugin_manager.hooks.napari_write_image.bring_to_front(['builtins'])
-    bad = importlib.import_module('napari_bad_plugin')
+    bad_plugin_path = 'napari.plugins._tests.fixtures.napari_bad_plugin'
+    bad = importlib.import_module(bad_plugin_path)
     plugin_manager.register(bad)
-    plugin_manager.hooks.napari_write_points.bring_to_front(
-        ['napari_bad_plugin']
-    )
+    plugin_manager.hooks.napari_write_points.bring_to_front([bad_plugin_path])
 
     layer_data, layer_types, filenames = layer_data_and_types
 
@@ -85,8 +84,6 @@ def test_get_writer_bad_plugin(tmpdir, layer_data_and_types):
     with pytest.raises(PluginCallError):
         writer(path, layer_data)
 
-    print(os.listdir(tmpdir))
-    print(os.listdir(path))
     # Check folder still does not exist
     assert not os.path.isdir(path)
 
