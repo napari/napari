@@ -520,5 +520,5 @@ def test_layers_save_seleteced(tmpdir, layer_data_and_types):  # noqa: F811
     assert not os.path.isfile(os.path.join(path, filenames[1]))
 
     # Check no additional files exist
-    assert set(os.listdir(path)) == set(filenames[[0, 2]])
+    assert set(os.listdir(path)) == set([filenames[0], filenames[2]])
     assert set(os.listdir(tmpdir)) == set(['layers_folder'])
