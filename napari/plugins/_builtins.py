@@ -140,6 +140,10 @@ def napari_get_writer(
         function that accepts the path and a list of layer_data (where
         layer_data is (data, meta, layer_type)) and writes each layer.
     """
+    # normally, a plugin would do some logic here to decide whether it supports
+    # the ``path`` extension and layer_types.  But because this is our builtin
+    # "last resort" implementation, we just immediately hand back the writer
+    # function, and let it throw an exception if it fails.
     return write_layer_data_with_plugins
 
 
