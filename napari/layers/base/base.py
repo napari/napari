@@ -224,6 +224,9 @@ class Layer(KeymapProvider, ABC):
         cls = type(self)
         return f"<{cls.__name__} layer {repr(self.name)} at {hex(id(self))}>"
 
+    def __iter__(self):
+        yield self
+
     @classmethod
     def _basename(cls):
         return f'{cls.__name__}'
