@@ -469,8 +469,9 @@ def test_layers_save_none_seleteced(tmpdir, layer_data_and_types):
     # Check file does not exist
     assert not os.path.isdir(path)
 
-    # Write data
-    layers.save(path, selected=True, plugin='builtins')
+    # Write data (will get a warning that nothing is selected)
+    with pytest.warns(UserWarning):
+        layers.save(path, selected=True, plugin='builtins')
 
     # Check folder still does not exist
     assert not os.path.isdir(path)
