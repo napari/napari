@@ -14,7 +14,7 @@ from ..types import (
     WriterFunction,
     image_reader_to_layerdata_reader,
 )
-from ..utils.io import imsave, magic_imread, write_csv
+from ..utils.io import imsave, magic_imread, write_csv, imsave_extensions
 from ..utils.misc import abspath_or_url
 
 
@@ -58,9 +58,15 @@ def napari_write_image(path: str, data: Any, meta: dict) -> bool:
     bool : Return True if data is successfully written.
     """
     ext = os.path.splitext(path)[1]
-    path += '.tif' if not ext else ''
-    imsave(path, data)
-    return True
+    if not ext:
+        path += '.tif'
+        ext = '.tif'
+
+    if ext in imsave_extensions():
+        imsave(path, data)
+        return True
+    else:
+        return False
 
 
 @napari_hook_implementation(trylast=True)
@@ -89,13 +95,16 @@ def napari_write_points(path: str, data: Any, meta: dict) -> bool:
         # If an extension is provided then it must be `.csv`
         return False
 
+    if 'properties' in meta:
+        properties = meta['properties']
+    else:
+        properties = {}
     # construct table from data
     column_names = ['axis-' + str(n) for n in range(data.shape[1])]
-    if bool(meta['properties']):
-        column_names += meta['properties'].keys()
+    if bool(properties):
+        column_names += properties.keys()
         prop_table = np.concatenate(
-            [np.expand_dims(p, axis=1) for p in meta['properties'].values()],
-            axis=1,
+            [np.expand_dims(p, axis=1) for p in properties.values()], axis=1,
         )
         table = np.concatenate([data, prop_table], axis=1)
     else:

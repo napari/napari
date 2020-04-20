@@ -32,6 +32,19 @@ def imsave(filename: str, data: np.ndarray):
         imageio.imsave(filename, data)
 
 
+def imsave_extensions():
+    """Valid extensions of files that imsave can write to.
+
+    Returns
+    ----------
+    tuple
+        Valid extensions of files that imsave can write to.
+    """
+    import imageio
+
+    return tuple(set(x for f in imageio.formats for x in f.extensions))
+
+
 def imread(filename: str) -> np.ndarray:
     """Custom implementation of imread to avoid skimage dependency.
 
