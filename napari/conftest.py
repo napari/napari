@@ -128,6 +128,6 @@ def layer_data_and_types():
     ]
     extensions = ['.tif', '.tif', '.csv', '.csv']
     layer_data = [l.as_layer_data_tuple() for l in layers]
-    layer_types = [ld[2] for ld in layer_data]
+    layer_types = [layer._type_string for layer in layers]
     filenames = [l.name + e for l, e in zip(layers, extensions)]
     return layers, layer_data, layer_types, filenames
