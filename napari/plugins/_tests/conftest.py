@@ -5,7 +5,7 @@ from contextlib import contextmanager
 import pytest
 from naplugi import HookImpl, HookimplMarker, PluginManager
 
-import napari.plugins._builtins
+from napari.plugins import hook_specifications, _builtins
 
 
 @pytest.fixture
@@ -15,6 +15,8 @@ def plugin_manager():
     plugin_manager = PluginManager(
         project_name='napari', autodiscover=fixture_path
     )
+    plugin_manager.add_hookspecs(hook_specifications)
+    plugin_manager.register(_builtins, name='builtins')
     assert fixture_path not in sys.path, 'discover path leaked into sys.path'
     return plugin_manager
 
@@ -22,9 +24,9 @@ def plugin_manager():
 @pytest.fixture
 def builtin_plugin_manager(plugin_manager):
     for mod in plugin_manager.get_plugins():
-        if mod != napari.plugins._builtins:
+        if mod != _builtins:
             plugin_manager.unregister(mod)
-    assert plugin_manager.get_plugins() == set([napari.plugins._builtins])
+    assert plugin_manager.get_plugins() == set([_builtins])
     return plugin_manager
 
 
