@@ -19,8 +19,7 @@ from qtpy.QtWidgets import (
 )
 
 from ..plugins import plugin_manager as napari_plugin_manager
-from ..plugins.manager import PluginManager, _HookCaller
-from pluggy.hooks import HookImpl
+from naplugi import HookImpl, HookCaller, PluginManager
 from .utils import drag_with_pixmap
 
 
@@ -104,14 +103,14 @@ class QtHookImplementationListWidget(QListWidget):
     ----------
     parent : QWidget, optional
         Optional parent widget, by default None
-    hook : pluggy.manager._HookCaller, optional
-        The pluggy ``_HookCaller`` for which to show implementations.
+    hook : pluggy.manager.HookCaller, optional
+        The pluggy ``HookCaller`` for which to show implementations.
         by default None (i.e. no hooks shown)
 
     Attributes
     ----------
-    hook_caller : pluggy.manager._HookCaller or None
-        The current ``_HookCaller`` instance being shown in the list.
+    hook_caller : pluggy.manager.HookCaller or None
+        The current ``HookCaller`` instance being shown in the list.
     """
 
     order_changed = Signal(list)  # emitted when the user changes the order.
@@ -119,7 +118,7 @@ class QtHookImplementationListWidget(QListWidget):
     def __init__(
         self,
         parent: Optional[QWidget] = None,
-        hook_caller: Optional[_HookCaller] = None,
+        hook_caller: Optional[HookCaller] = None,
     ):
         super().__init__(parent)
         self.setDefaultDropAction(Qt.MoveAction)
@@ -133,16 +132,16 @@ class QtHookImplementationListWidget(QListWidget):
             QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding
         )
         self.order_changed.connect(self.permute_hook)
-        self.hook_caller: Optional[_HookCaller] = None
+        self.hook_caller: Optional[HookCaller] = None
         self.set_hook_caller(hook_caller)
 
-    def set_hook_caller(self, hook_caller: Optional[_HookCaller]):
+    def set_hook_caller(self, hook_caller: Optional[HookCaller]):
         """Set the list widget to show hook implementations for ``hook_caller``.
 
         Parameters
         ----------
-        hook : pluggy.manager._HookCaller, optional
-            A pluggy ``_HookCaller`` to show implementations for. by default
+        hook : pluggy.manager.HookCaller, optional
+            A pluggy ``HookCaller`` to show implementations for. by default
             None (i.e. no hooks shown)
         """
         self.clear()

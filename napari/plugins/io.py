@@ -1,12 +1,11 @@
 from logging import getLogger
 from typing import List, Optional, Sequence, Union
 
-from pluggy.hooks import HookImpl
+from naplugi import HookImpl, PluginCallError
 
 from ..layers import Layer
 from ..types import LayerData
 from ..utils.misc import abspath_or_url
-from .exceptions import PluginCallError
 from . import plugin_manager as napari_plugin_manager
 
 logger = getLogger(__name__)

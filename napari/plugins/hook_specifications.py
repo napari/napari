@@ -31,11 +31,11 @@ breaking existing implementations). However, implementations must not require
 # developers, so comprehensive documentation with complete type annotations is
 # imperative!
 
-import pluggy
+from naplugi import HookspecMarker
 from typing import Optional, Union, List, Any
 from ..types import ReaderFunction, WriterFunction
 
-napari_hook_specification = pluggy.HookspecMarker("napari")
+napari_hook_specification = HookspecMarker("napari")
 
 
 # -------------------------------------------------------------------------- #

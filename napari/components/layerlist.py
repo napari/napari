@@ -202,7 +202,7 @@ class LayerList(ListModel):
         implementations and stop when the first one returns a non-``None``
         result. The order in which implementations are called can be changed
         with the Plugin sorter in the GUI or with the corresponding hook's
-        :meth:`~napari.plugins._hook_callers._HookCaller.bring_to_front`
+        :meth:`~napari.plugins._hook_callers.HookCaller.bring_to_front`
         method.
 
         If ``plugin`` is not provided and multiple layers are targeted,

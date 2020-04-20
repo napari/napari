@@ -1,9 +1,14 @@
 import pytest
-from pluggy import HookCallError, HookspecMarker, PluginValidationError
-from pluggy.hooks import HookImpl
 
-from napari.plugins import _hook_callers, PluginManager
-from napari_plugins import HookimplMarker
+from naplugi import (
+    HookCallError,
+    HookImpl,
+    HookimplMarker,
+    HookspecMarker,
+    PluginManager,
+    PluginValidationError,
+    callers,
+)
 
 example_hookspec = HookspecMarker("example")
 example_implementation = HookimplMarker("example")
@@ -11,7 +16,7 @@ example_implementation = HookimplMarker("example")
 
 def multicall(methods, kwargs, firstresult=False):
     """utility function to execute the hook implementations loop"""
-    caller = _hook_callers._multicall
+    caller = callers._multicall
     hookfuncs = []
     for method in methods:
         f = HookImpl(None, "<temp>", method, method.example_impl)

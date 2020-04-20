@@ -153,7 +153,7 @@ that uses only standard lib python).
 
 .. code-block:: python
 
-   from pluggy import HookimplMarker
+   from naplugi import HookimplMarker
 
    napari_hook_implementation = HookimplMarker("napari")
 

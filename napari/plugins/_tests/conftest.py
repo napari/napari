@@ -3,10 +3,9 @@ import sys
 from contextlib import contextmanager
 
 import pytest
-from pluggy.hooks import HookImpl, HookimplMarker
+from naplugi import HookImpl, HookimplMarker, PluginManager
 
 import napari.plugins._builtins
-from napari.plugins import PluginManager
 
 
 @pytest.fixture
