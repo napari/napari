@@ -14,8 +14,3 @@ def napari_get_reader(path):
     time.sleep(1)  # this is too long!!
     if path.endswith('ext'):
         return reader_function
-
-
-@napari_hook_implementation
-def napari_write_points(path, data, meta):
-    raise ValueError("Doesn't Work!")

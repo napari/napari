@@ -106,7 +106,7 @@ def napari_get_writer(
 
     This function will be called whenever the user attempts to save multiple
     layers (e.g. via ``File -> Save Layers``, or
-    :meth:`~napari.components.add_layers_mixin.AddLayersMixin.save_layers`).
+    :func:`~napari.plugins.io.save_layers`).
     This function must execute **quickly**, and should return ``None`` if
     ``path`` has an unrecognized extension for the reader plugin or the list of
     layer types are incompatible with what the plugin can write. If ``path`` is

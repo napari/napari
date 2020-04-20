@@ -1,21 +1,21 @@
 import os
 import warnings
-
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from typing import Optional
 from xml.etree.ElementTree import Element, tostring
+
 import numpy as np
-from ._base_constants import Blending
 
 from ...components import Dims
 from ...utils.event import EmitterGroup, Event
 from ...utils.key_bindings import KeymapProvider
-from ..utils.layer_utils import convert_to_uint8, compute_pyramid_level
 from ...utils.misc import ROOT_DIR
 from ...utils.naming import magic_name
-from ...utils.status_messages import status_format, format_float
+from ...utils.status_messages import format_float, status_format
 from ..transforms import ScaleTranslate, TransformChain
+from ..utils.layer_utils import compute_pyramid_level, convert_to_uint8
+from ._base_constants import Blending
 
 
 class Layer(KeymapProvider, ABC):

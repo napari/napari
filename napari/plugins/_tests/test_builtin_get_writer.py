@@ -1,79 +1,69 @@
-import importlib
 import os
+
 import pytest
-from napari.plugins.exceptions import PluginCallError
+
 from napari.plugins._builtins import napari_get_writer
-from napari.plugins._tests.fixtures.layer_data import (  # noqa: F401
-    layer_data_and_types,
-)
+from napari.plugins.exceptions import PluginCallError
 
 
-def test_get_writer(tmpdir, layer_data_and_types):  # noqa: F811
+def test_get_writer(plugin_manager, tmpdir, layer_data_and_types):
     """Test writing layers data."""
-    # make individual write layer builtin plugins get called first
-    from napari.plugins import plugin_manager
-
-    plugin_manager.hooks.napari_write_image.bring_to_front(['builtins'])
-    plugin_manager.hooks.napari_write_points.bring_to_front(['builtins'])
-
     _, layer_data, layer_types, filenames = layer_data_and_types
-
     path = os.path.join(tmpdir, 'layers_folder')
 
     writer = napari_get_writer(path, layer_types)
-
-    assert writer is not None
-
-    # Check folder does not exist
-    assert not os.path.isdir(path)
-
     # Write data
-    assert writer(path, layer_data)
+    assert writer(path, layer_data, plugin_manager=plugin_manager)
 
-    # Check folder now exists
+    # Check folder and files exist
     assert os.path.isdir(path)
-
-    # Check individual files now exist
     for f in filenames:
         assert os.path.isfile(os.path.join(path, f))
 
-    # Check no additional files exist
     assert set(os.listdir(path)) == set(filenames)
     assert set(os.listdir(tmpdir)) == set(['layers_folder'])
 
 
-def test_get_writer_bad_plugin(tmpdir, layer_data_and_types):  # noqa: F811
-    """Test writing layers data."""
-    # make individual write layer builtin plugins get called first
-    from napari.plugins import plugin_manager
+def test_get_writer_bad_plugin(
+    plugin_manager, temporary_hookimpl, tmpdir, layer_data_and_types
+):
+    """Test cleanup when get_writer has an exception."""
 
-    plugin_manager.hooks.napari_write_image.bring_to_front(['builtins'])
-    bad_plugin_path = 'napari.plugins._tests.fixtures.napari_bad_plugin'
-    bad = importlib.import_module(bad_plugin_path)
-    plugin_manager.register(bad)
-    plugin_manager.hooks.napari_write_points.bring_to_front([bad_plugin_path])
+    def bad_write_points(path, data, meta):
+        raise ValueError("shoot!")
 
     _, layer_data, layer_types, filenames = layer_data_and_types
 
-    path = os.path.join(tmpdir, 'layers_folder')
+    # this time we try writing directly to the tmpdir (which already exists)
+    writer = napari_get_writer(tmpdir, layer_types)
+    # call writer with a bad hook implementation inserted
+    with temporary_hookimpl(bad_write_points, 'napari_write_points'):
+        with pytest.raises(PluginCallError):
+            writer(
+                tmpdir,
+                layer_data,
+                plugin_name=None,
+                plugin_manager=plugin_manager,
+            )
 
-    writer = napari_get_writer(path, layer_types)
-
-    assert writer is not None
-
-    # Check folder does not exist
-    assert not os.path.isdir(path)
-
-    # Write data
-    with pytest.raises(PluginCallError):
-        writer(path, layer_data)
-
-    # Check folder still does not exist
-    assert not os.path.isdir(path)
-
-    # Check individual files still do not exist
+    # should have deleted all new files, but not the tmpdir
+    assert os.path.isdir(tmpdir)
     for f in filenames:
-        assert not os.path.isfile(os.path.join(path, f))
+        assert not os.path.isfile(os.path.join(tmpdir, f))
 
-    # Check no additional files exist
-    assert set(os.listdir(tmpdir)) == set('')
+    # now try writing to a nested folder inside of tmpdir
+    path = os.path.join(tmpdir, 'layers_folder')
+    writer = napari_get_writer(path, layer_types)
+    # call writer with a bad hook implementation inserted
+    with temporary_hookimpl(bad_write_points, 'napari_write_points'):
+        with pytest.raises(PluginCallError):
+            writer(
+                tmpdir,
+                layer_data,
+                plugin_name=None,
+                plugin_manager=plugin_manager,
+            )
+
+    # should have deleted the new nested folder, but not the tmpdir
+    assert os.path.isdir(tmpdir)
+    assert not os.path.exists(path)

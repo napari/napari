@@ -1,10 +1,12 @@
-import pytest
 import os
 import sys
-from napari.plugins import PluginManager
-from pluggy.hooks import HookImpl, HookimplMarker
-import napari.plugins._builtins
 from contextlib import contextmanager
+
+import pytest
+from pluggy.hooks import HookImpl, HookimplMarker
+
+import napari.plugins._builtins
+from napari.plugins import PluginManager
 
 
 @pytest.fixture
@@ -29,11 +31,28 @@ def builtin_plugin_manager(plugin_manager):
 
 @pytest.fixture
 def temporary_hookimpl(plugin_manager):
+    """A fixture that can be used to insert a HookImpl in the hook call loop.
+
+    Example
+    -------
+
+    .. code-block: python
+
+        def bad_write_points(path, data, meta):
+            raise ValueError("shoot!")
+
+        with temporary_hookimpl(bad_write_points, 'napari_write_points'):
+            with pytest.raises(PluginCallError):
+                writer(tmpdir, layer_data, plugin_manager)
+    """
+
     @contextmanager
-    def inner(func, specname):
+    def inner(
+        func, specname, tryfirst=True, trylast=None, plugin_name="<temp>"
+    ):
         caller = getattr(plugin_manager.hook, specname)
-        HookimplMarker('napari')(tryfirst=True)(func)
-        impl = HookImpl(None, "<temp>", func, func.napari_impl)
+        HookimplMarker('napari')(tryfirst=tryfirst, trylast=trylast)(func)
+        impl = HookImpl(None, plugin_name, func, func.napari_impl)
         caller._add_hookimpl(impl)
         try:
             yield

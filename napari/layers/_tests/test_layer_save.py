@@ -1,11 +1,8 @@
 import os
 import numpy as np
-from napari.plugins._tests.fixtures.layer_data import (  # noqa: F401
-    layer_writer_and_data,
-)
 
 
-def test_layer_save(tmpdir, layer_writer_and_data):  # noqa: F811
+def test_layer_save(tmpdir, layer_writer_and_data):
     """Test saving layer data."""
     writer, layer_data, extension, reader, Layer = layer_writer_and_data
     layer = Layer(layer_data[0], **layer_data[1])

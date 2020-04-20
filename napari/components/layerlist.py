@@ -247,10 +247,7 @@ class LayerList(ListModel):
         """
         from ..plugins.io import save_layers
 
-        if selected:
-            layers = self.selected
-        else:
-            layers = list(self)
+        layers = self.selected if selected else list(self)
 
         if not layers:
             import warnings

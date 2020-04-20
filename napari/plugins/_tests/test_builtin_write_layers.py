@@ -1,13 +1,8 @@
 import os
 import numpy as np
-from napari.plugins._tests.fixtures.layer_data import (  # noqa: F401
-    layer_writer_and_data,
-)
 
 
-def test_write_layer_with_round_trip(
-    tmpdir, layer_writer_and_data  # noqa: F811
-):
+def test_write_layer_with_round_trip(tmpdir, layer_writer_and_data):
     """Test writing layer data from napari layer_data tuple."""
     writer, layer_data, extension, reader, Layer = layer_writer_and_data
     path = os.path.join(tmpdir, 'layer_file' + extension)
@@ -39,7 +34,7 @@ def test_write_layer_with_round_trip(
     assert layer_data[2] == read_layer_data[2]
 
 
-def test_write_layer_no_extension(tmpdir, layer_writer_and_data):  # noqa: F811
+def test_write_layer_no_extension(tmpdir, layer_writer_and_data):
     """Test writing layer data with no extension."""
     writer, layer_data, extension, _, _ = layer_writer_and_data
     path = os.path.join(tmpdir, 'layer_file')
@@ -54,9 +49,7 @@ def test_write_layer_no_extension(tmpdir, layer_writer_and_data):  # noqa: F811
     assert os.path.isfile(path + extension)
 
 
-def test_no_write_layer_bad_extension(
-    tmpdir, layer_writer_and_data  # noqa: F811
-):
+def test_no_write_layer_bad_extension(tmpdir, layer_writer_and_data):
     """Test not writing layer data with a bad extension."""
     writer, layer_data, _, _, _ = layer_writer_and_data
     path = os.path.join(tmpdir, 'layer_file.bad_extension')
@@ -71,7 +64,7 @@ def test_no_write_layer_bad_extension(
     assert not os.path.isfile(path)
 
 
-def test_write_layer_no_metadata(tmpdir, layer_writer_and_data):  # noqa: F811
+def test_write_layer_no_metadata(tmpdir, layer_writer_and_data):
     """Test writing layer data with no metadata."""
     writer, layer_data, extension, _, _ = layer_writer_and_data
     path = os.path.join(tmpdir, 'layer_file' + extension)
