@@ -27,6 +27,8 @@ def test_get_writer(plugin_manager, tmpdir, layer_data_and_types):
 def test_get_writer_bad_plugin(
     plugin_manager, temporary_hookimpl, tmpdir, layer_data_and_types
 ):
+    """Test cleanup when get_writer has an exception."""
+
     def bad_write_points(path, data, meta):
         raise ValueError("shoot!")
 
