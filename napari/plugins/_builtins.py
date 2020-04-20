@@ -47,9 +47,9 @@ def napari_write_image(path: str, data: Any, meta: dict) -> bool:
     path : str
         Path to file, directory, or resource (like a URL).
     data : array or list of array
-        Image data. Can be N dimensional. If meta['rgb'] is `True` then the
-        data should be interpreted as RGB or RGBA. If meta['is_pyramid'] is
-        True, then the data should be interpreted as an image pyramid.
+        Image data. Can be N dimensional. If meta['rgb'] is ``True`` then the
+        data should be interpreted as RGB or RGBA. If ``meta['is_pyramid']`` is
+        ``True``, then the data should be interpreted as an image pyramid.
     meta : dict
         Image metadata.
 
@@ -72,7 +72,7 @@ def napari_write_image(path: str, data: Any, meta: dict) -> bool:
 def napari_write_points(path: str, data: Any, meta: dict) -> bool:
     """Our internal fallback points writer at the end of the plugin chain.
 
-    Append `.csv` extension to the filename if it is not already there.
+    Append ``.csv`` extension to the filename if it is not already there.
 
     Parameters
     ----------
@@ -125,9 +125,10 @@ def napari_get_writer(
 ) -> Optional[WriterFunction]:
     """Our internal fallback file writer at the end of the writer plugin chain.
 
-    This will create a new folder from the path and call `napari_write_<layer>`
-    for each layer using the `layer.name` variable to modify the path such that
-    the layers are written to unique files in the folder.
+    This will create a new folder from the path and call
+    ``napari_write_<layer>`` for each layer using the ``layer.name`` variable
+    to modify the path such that the layers are written to unique files in the
+    folder.
 
     Parameters
     ----------
@@ -138,7 +139,7 @@ def napari_get_writer(
     -------
     callable
         function that accepts the path and a list of layer_data (where
-        layer_data is (data, meta, layer_type)) and writes each layer.
+        layer_data is ``(data, meta, layer_type)``) and writes each layer.
     """
     # normally, a plugin would do some logic here to decide whether it supports
     # the ``path`` extension and layer_types.  But because this is our builtin
@@ -152,16 +153,16 @@ def write_layer_data_with_plugins(
 ) -> bool:
     """Write layer data out into a folder one layer at a time.
 
-    Call `napari_write_<layer>` for each layer using the `layer.name` variable
-    to modify the path such that the layers are written to unique files in the
-    folder.
+    Call ``napari_write_<layer>`` for each layer using the ``layer.name``
+    variable to modify the path such that the layers are written to unique
+    files in the folder.
 
     Parameters
     ----------
     path : str
         path to file/directory
     layer_data : list of napari.types.LayerData
-        List of layer_data, where layer_data is (data, meta, layer_type).
+        List of layer_data, where layer_data is ``(data, meta, layer_type)``.
 
     Returns
     -------
