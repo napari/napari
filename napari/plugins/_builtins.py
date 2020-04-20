@@ -65,8 +65,7 @@ def napari_write_image(path: str, data: Any, meta: dict) -> bool:
     if ext in imsave_extensions():
         imsave(path, data)
         return True
-    else:
-        return False
+    return False
 
 
 @napari_hook_implementation(trylast=True)
