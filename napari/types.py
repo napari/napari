@@ -26,7 +26,7 @@ LayerData = Union[Tuple[Any], Tuple[Any, Dict], FullLayerData]
 
 PathLike = Union[str, List[str]]
 ReaderFunction = Callable[[PathLike], List[LayerData]]
-WriterFunction = Callable[[str, List[FullLayerData]], bool]
+WriterFunction = Callable[[str, List[FullLayerData]], List[str]]
 
 ExcInfo = Union[
     Tuple[Type[BaseException], BaseException, TracebackType],

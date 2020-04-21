@@ -39,7 +39,7 @@ def napari_get_reader(path: Union[str, List[str]]) -> ReaderFunction:
 
 
 @napari_hook_implementation(trylast=True)
-def napari_write_image(path: str, data: Any, meta: dict) -> bool:
+def napari_write_image(path: str, data: Any, meta: dict) -> Optional[str]:
     """Our internal fallback image writer at the end of the plugin chain.
 
     Parameters
@@ -64,12 +64,11 @@ def napari_write_image(path: str, data: Any, meta: dict) -> bool:
 
     if ext in imsave_extensions():
         imsave(path, data)
-        return True
-    return False
+        return path
 
 
 @napari_hook_implementation(trylast=True)
-def napari_write_points(path: str, data: Any, meta: dict) -> bool:
+def napari_write_points(path: str, data: Any, meta: dict) -> Optional[str]:
     """Our internal fallback points writer at the end of the plugin chain.
 
     Append ``.csv`` extension to the filename if it is not already there.
@@ -92,7 +91,7 @@ def napari_write_points(path: str, data: Any, meta: dict) -> bool:
         path = path + '.csv'
     elif ext != '.csv':
         # If an extension is provided then it must be `.csv`
-        return False
+        return
 
     if 'properties' in meta:
         properties = meta['properties']
@@ -116,7 +115,7 @@ def napari_write_points(path: str, data: Any, meta: dict) -> bool:
 
     # write table to csv file
     write_csv(path, table, column_names)
-    return True
+    return path
 
 
 @napari_hook_implementation(trylast=True)
@@ -154,7 +153,7 @@ def write_layer_data_with_plugins(
     *,
     plugin_name: Optional[str] = 'builtins',
     plugin_manager=None,
-) -> bool:
+) -> List[str]:
     """Write layer data out into a folder one layer at a time.
 
     Call ``napari_write_<layer>`` for each layer using the ``layer.name``
@@ -206,6 +205,7 @@ def write_layer_data_with_plugins(
     if not already_existed:
         os.makedirs(path)
 
+    written: List[str] = []  # the files that were actually written
     try:
         # build in a temporary directory and then move afterwards,
         # it makes cleanup easier if an exception is raised inside.
@@ -221,13 +221,14 @@ def write_layer_data_with_plugins(
                 full_path = abspath_or_url(os.path.join(tmp, meta['name']))
                 # Write out data using first plugin found for this hook spec
                 # or named plugin if provided
-                hook_caller(
+                outpath = hook_caller(
                     _plugin=plugin_name, path=full_path, data=data, meta=meta
                 )
+                written.append(outpath)
             for fname in os.listdir(tmp):
                 shutil.move(os.path.join(tmp, fname), path)
     except Exception as exc:
         if not already_existed:
             shutil.rmtree(path, ignore_errors=True)
         raise exc
-    return True
+    return written
