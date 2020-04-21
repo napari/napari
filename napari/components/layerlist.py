@@ -195,13 +195,13 @@ class LayerList(ListModel):
     ):
         """Save all or only selected layers to a path using writer plugins.
 
-        If ``plugin`` is not provided and only one layer is targeted, then
-        we just directly call ``napari_write_<layer_type>`` hook specification
-        (see :ref:`single layer writer hookspecs
-        <write-single-layer-hookspecs>`) which will loop through
-        implementations and stop when the first one returns a non-``None``
-        result. The order in which implementations are called can be changed
-        with the Plugin sorter in the GUI or with the corresponding hook's
+        If ``plugin`` is not provided and only one layer is targeted, then we
+        directly call the corresponding``napari_write_<layer_type>`` hook (see
+        :ref:`single layer writer hookspecs <write-single-layer-hookspecs>`)
+        which will loop through implementations and stop when the first one
+        returns a non-``None`` result. The order in which implementations are
+        called can be changed with the Plugin sorter in the GUI or with the
+        corresponding hook's
         :meth:`~napari.plugins._hook_callers._HookCaller.bring_to_front`
         method.
 
