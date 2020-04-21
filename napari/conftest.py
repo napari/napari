@@ -66,6 +66,24 @@ def viewer_factory(qtbot, request):
 
 @pytest.fixture(params=['image', 'points', 'points-with-properties'])
 def layer_writer_and_data(request):
+    """Fixture that supplies layer io utilities for tests.
+
+    Parameters
+    ----------
+    request : _pytest.fixtures.SubRequest
+        The pytest request object
+
+    Returns
+    -------
+    tuple
+        ``(writer, layer_data, extension, reader, Layer)``
+
+        - writer: a function that can write layerdata to a path
+        - layer_data: the layerdata tuple for this layer
+        - extension: an appropriate extension for this layer type
+        - reader: a function that can read this layer type from a path.
+        - Layer: the Layer itself
+    """
     if request.param == 'image':
         data = np.random.rand(20, 20)
         Layer = Image

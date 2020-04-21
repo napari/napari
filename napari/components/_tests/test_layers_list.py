@@ -427,6 +427,7 @@ def test_toggle_visibility():
     assert [l.visible for l in layers] == [False, True, False, True]
 
 
+# the layer_data_and_types fixture is defined in napari/conftest.py
 def test_layers_save(tmpdir, layer_data_and_types):
     """Test saving all layer data."""
     list_of_layers, _, _, filenames = layer_data_and_types
@@ -452,6 +453,7 @@ def test_layers_save(tmpdir, layer_data_and_types):
     assert set(os.listdir(tmpdir)) == set(['layers_folder'])
 
 
+# the layer_data_and_types fixture is defined in napari/conftest.py
 def test_layers_save_none_selected(tmpdir, layer_data_and_types):
     """Test saving all layer data."""
     list_of_layers, _, _, filenames = layer_data_and_types
@@ -478,6 +480,7 @@ def test_layers_save_none_selected(tmpdir, layer_data_and_types):
     assert set(os.listdir(tmpdir)) == set('')
 
 
+# the layer_data_and_types fixture is defined in napari/conftest.py
 def test_layers_save_seleteced(tmpdir, layer_data_and_types):
     """Test saving all layer data."""
     list_of_layers, _, _, filenames = layer_data_and_types

@@ -2,6 +2,7 @@ import os
 import numpy as np
 
 
+# the layer_writer_and_data fixture is defined in napari/conftest.py
 def test_layer_save(tmpdir, layer_writer_and_data):
     """Test saving layer data."""
     writer, layer_data, extension, reader, Layer = layer_writer_and_data

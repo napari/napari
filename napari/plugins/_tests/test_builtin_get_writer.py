@@ -6,6 +6,8 @@ from napari.plugins._builtins import napari_get_writer
 from napari.plugins.exceptions import PluginCallError
 
 
+# the layer_data_and_types fixture is defined in napari/conftest.py
+# the plugin_manager fixture is defined in napari/plugins/_tests/conftest.py
 def test_get_writer(plugin_manager, tmpdir, layer_data_and_types):
     """Test writing layers data."""
     _, layer_data, layer_types, filenames = layer_data_and_types
@@ -24,6 +26,8 @@ def test_get_writer(plugin_manager, tmpdir, layer_data_and_types):
     assert set(os.listdir(tmpdir)) == set(['layers_folder'])
 
 
+# the layer_data_and_types fixture is defined in napari/conftest.py
+# the plugin_manager fixture is defined in napari/plugins/_tests/conftest.py
 def test_get_writer_bad_plugin(
     plugin_manager, temporary_hookimpl, tmpdir, layer_data_and_types
 ):
