@@ -81,10 +81,11 @@ class HookResult:
         if result:
             self._result, self.implementation = tuple(zip(*result))
             self._result = list(self._result)
-            if firstresult and self._result:
-                self._result = self._result[0]
-                self.implementation = self.implementation[0]
-
+        if firstresult and self._result:
+            self._result = self._result[0]
+            self.implementation = self.implementation[0]
+        else:
+            self._result, self.implementation = None, None
         self._excinfo = excinfo
         self.is_firstresult = firstresult
         self.plugin_errors = plugin_errors

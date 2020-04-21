@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 from ..layers import Layer
 from ..utils.naming import inc_name_count
 from ..utils.list import ListModel
@@ -192,7 +192,7 @@ class LayerList(ListModel):
         *,
         selected: bool = False,
         plugin: Optional[str] = None,
-    ):
+    ) -> List[str]:
         """Save all or only selected layers to a path using writer plugins.
 
         If ``plugin`` is not provided and only one layer is targeted, then we
@@ -242,8 +242,8 @@ class LayerList(ListModel):
 
         Returns
         -------
-        bool
-            Return True if data is successfully written.
+        list of str
+            File paths of any files that were written.
         """
         from ..plugins.io import save_layers
 
@@ -253,6 +253,6 @@ class LayerList(ListModel):
             import warnings
 
             warnings.warn(f"No layers {'selected' if selected else 'to save'}")
-            return
+            return []
 
         return save_layers(path, layers, plugin=plugin)

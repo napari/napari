@@ -68,7 +68,7 @@ def read_data_with_plugins(
 
 def save_layers(
     path: str, layers: List[Layer], *, plugin: Optional[str] = None,
-):
+) -> List[str]:
     """Write list of layers or individual layer to a path using writer plugins.
 
     If ``plugin`` is not provided and only one layer is passed, then we
@@ -113,19 +113,19 @@ def save_layers(
 
     Returns
     -------
-    bool
-        Return True if data is successfully written.
+    list of str
+        File paths of any files that were written.
     """
     if len(layers) > 1:
         return _write_multiple_layers_with_plugins(
             path, layers, plugin_name=plugin
         )
-    elif len(layers) == 1:
-        return _write_single_layer_with_plugins(
+    if len(layers) == 1:
+        written = _write_single_layer_with_plugins(
             path, layers[0], plugin_name=plugin
         )
-    else:
-        return False
+        return [written] if written else []
+    return []
 
 
 def _write_multiple_layers_with_plugins(
@@ -134,7 +134,7 @@ def _write_multiple_layers_with_plugins(
     *,
     plugin_name: Optional[str] = None,
     plugin_manager=napari_plugin_manager,
-):
+) -> List[str]:
     """Write data from multiple layers data with a plugin.
 
     If a ``plugin_name`` is not provided we loops through plugins to find the
@@ -202,7 +202,7 @@ def _write_single_layer_with_plugins(
     *,
     plugin_name: Optional[str] = None,
     plugin_manager=napari_plugin_manager,
-):
+) -> Optional[str]:
     """Write single layer data with a plugin.
 
     If ``plugin_name`` is not provided then we just directly call
