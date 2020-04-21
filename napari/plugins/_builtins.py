@@ -97,6 +97,7 @@ def napari_write_points(path: str, data: Any, meta: dict) -> Optional[str]:
         properties = meta['properties']
     else:
         properties = {}
+    # TODO: we need to change this to the axis names once we get access to them
     # construct table from data
     column_names = ['axis-' + str(n) for n in range(data.shape[1])]
     if bool(properties):

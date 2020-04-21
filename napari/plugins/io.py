@@ -72,7 +72,7 @@ def save_layers(
     """Write list of layers or individual layer to a path using writer plugins.
 
     If ``plugin`` is not provided and only one layer is passed, then we
-    just directly call ``plugin_manager.hook.napari_write_<layer>()`` which
+    directly call ``plugin_manager.hook.napari_write_<layer>()`` which
     will loop through implementations and stop when the first one returns a
     non-None result. The order in which implementations are called can be
     changed with the hook ``bring_to_front`` method, for instance:
