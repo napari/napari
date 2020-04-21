@@ -137,7 +137,7 @@ def _write_multiple_layers_with_plugins(
 ) -> List[str]:
     """Write data from multiple layers data with a plugin.
 
-    If a ``plugin_name`` is not provided we loops through plugins to find the
+    If a ``plugin_name`` is not provided we loop through plugins to find the
     first one that knows how to handle the combination of layers and is able to
     write the file. If no plugins offer ``napari_get_writer`` for that
     combination of layers then the default ``napari_get_writer`` will create a
