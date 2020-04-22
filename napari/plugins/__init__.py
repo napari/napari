@@ -1,9 +1,6 @@
 import sys
 
-from napari_plugins import napari_hook_implementation
-
-from .exceptions import PluginError, PluginImportError, PluginRegistrationError
-from naplugi import PluginManager
+from naplugi import PluginManager, napari_hook_implementation
 from . import hook_specifications
 from . import _builtins
 
@@ -19,8 +16,5 @@ with plugin_manager.discovery_blocked():
 __all__ = [
     "PluginManager",
     "plugin_manager",
-    "PluginError",
-    "PluginImportError",
-    "PluginRegistrationError",
     "napari_hook_implementation",
 ]

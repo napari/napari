@@ -252,17 +252,13 @@ class Window:
         title.setObjectName("h2")
         layout.addWidget(title)
         # get metadata for successfully registered plugins
-        data = [
-            v
-            for k, v in plugin_manager._plugin_meta.items()
-            if k in plugin_manager._name2plugin
-        ]
+        data = [p.standard_meta for p in plugin_manager.plugins.values()]
         # create a table for it
         dialog.table = QtDictTable(
             self._qt_window,
             data,
             headers=[
-                'plugin',
+                'plugin_name',
                 'package',
                 'version',
                 'url',

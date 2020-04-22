@@ -95,6 +95,7 @@ class QtDictTable(QTableWidget):
         self.setColumnCount(len(_headers))
         for row, elem in enumerate(data):
             for key, value in elem.items():
+                value = value or ''
                 try:
                     col = _headers.index(key)
                 except ValueError:

@@ -16,11 +16,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ..plugins.exceptions import (
-    PLUGIN_ERRORS,
-    fetch_module_metadata,
-    format_exceptions,
-)
+from ..plugins.exceptions import format_exceptions
 
 
 class QtPluginErrReporter(QDialog):
@@ -61,6 +57,9 @@ class QtPluginErrReporter(QDialog):
         initial_plugin: Optional[str] = None,
     ) -> None:
         super().__init__(parent)
+        from ..plugins import plugin_manager
+
+        self.plugin_manager = plugin_manager
 
         self.setWindowTitle('Recorded Plugin Exceptions')
         self.setWindowModality(Qt.NonModal)
@@ -76,7 +75,8 @@ class QtPluginErrReporter(QDialog):
         # Create plugin dropdown menu
         self.plugin_combo = QComboBox()
         self.plugin_combo.addItem(self.NULL_OPTION)
-        self.plugin_combo.addItems(list(sorted(set(PLUGIN_ERRORS))))
+        bad_plugins = [e.plugin_name for e in plugin_manager.get_errors()]
+        self.plugin_combo.addItems(list(sorted(set(bad_plugins))))
         self.plugin_combo.currentTextChanged.connect(self.set_plugin)
         self.plugin_combo.setCurrentText(self.NULL_OPTION)
 
@@ -132,7 +132,7 @@ class QtPluginErrReporter(QDialog):
         plugin : str
             name of a plugin that has created an error this session.
         """
-        if plugin not in PLUGIN_ERRORS:
+        if not self.plugin_manager.get_errors(plugin):
             if plugin == self.NULL_OPTION:
                 self.plugin_meta.setText('')
                 self.text_area.setHtml('')
@@ -154,8 +154,8 @@ class QtPluginErrReporter(QDialog):
         self.clipboard_button.show()
 
         # set metadata and outbound links/buttons
-        err0 = PLUGIN_ERRORS[plugin][0]
-        meta = fetch_module_metadata(err0.plugin_module)
+        err0 = self.plugin_manager.get_errors(plugin)[0]
+        meta = err0.plugin.standard_meta if err0.plugin else None
         meta_text = ''
         if not meta:
             self.plugin_meta.setText(meta_text)
