@@ -5,7 +5,6 @@ from tempfile import NamedTemporaryFile
 import numpy as np
 from napari.utils import io
 
-from napari.plugins.exceptions import PLUGIN_ERRORS, format_exceptions
 from napari.plugins.io import read_data_with_plugins
 
 
@@ -17,7 +16,7 @@ def test_iter_reader_plugins(plugin_manager):
     """
 
     # the plugin loads fine, so there should be no exceptions yet.
-    assert 'napari_bad_plugin2' not in PLUGIN_ERRORS
+    assert not plugin_manager.get_errors('napari_bad_plugin2')
 
     # make sure 'napari_bad_plugin2' gets called first
     plugin_manager.hooks.napari_get_reader.bring_to_front(
@@ -33,11 +32,11 @@ def test_iter_reader_plugins(plugin_manager):
     assert layer_data
 
     # but the exception from `bad_plugin2` should now be stored.
-    assert 'napari_bad_plugin2' in PLUGIN_ERRORS
-    # we can print out a string that should have the explanation of the error.
-    exception_string = format_exceptions('napari_bad_plugin2')
-    assert 'IOError' in exception_string
-    assert "napari_get_reader" in exception_string
+    assert plugin_manager.get_errors('napari_bad_plugin2')
+    # # we can print out a string that should have the explanation of the error.
+    # exception_string = format_exceptions('napari_bad_plugin2')
+    # assert 'IOError' in exception_string
+    # assert "napari_get_reader" in exception_string
 
 
 def test_builtin_reader_plugin(viewer_factory):

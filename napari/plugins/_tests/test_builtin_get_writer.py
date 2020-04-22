@@ -3,7 +3,7 @@ import os
 import pytest
 
 from napari.plugins._builtins import napari_get_writer
-from napari.plugins.exceptions import PluginCallError
+from naplugi import PluginCallError
 
 
 def test_get_writer(plugin_manager, tmpdir, layer_data_and_types):

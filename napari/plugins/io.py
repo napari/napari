@@ -55,14 +55,16 @@ def read_data_with_plugins(
         try:
             return reader(path)  # try to read data
         except Exception as exc:
-            err = PluginCallError(result.implementation, cause=exc)
+            err = PluginCallError(
+                result.implementation, cause=exc, manager=plugin_manager
+            )
             # don't try this impl again
             skip_impls.append(result.implementation)
             if result.implementation != 'builtins':
                 # If builtins doesn't work, they will get a "no reader" found
                 # error anyway, so it looks a bit weird to show them that the
                 # "builtin plugin" didn't work.
-                logger.error(err.format_with_contact_info())
+                err.log(logger=logger)
 
 
 def save_layers(
@@ -192,7 +194,9 @@ def _write_multiple_layers_with_plugins(
     try:
         return writer_function(abspath_or_url(path), layer_data)
     except Exception as exc:
-        raise PluginCallError(implementation, cause=exc)
+        raise PluginCallError(
+            implementation, cause=exc, manager=plugin_manager
+        )
 
 
 def _write_single_layer_with_plugins(

@@ -19,7 +19,7 @@ def multicall(methods, kwargs, firstresult=False):
     caller = callers._multicall
     hookfuncs = []
     for method in methods:
-        f = HookImpl(None, "<temp>", method, method.example_impl)
+        f = HookImpl(method, **method.example_impl)
         hookfuncs.append(f)
     # our _multicall function returns our own HookResult object.
     # so to make these pluggy tests pass, we have to access .result to mimic
@@ -210,9 +210,7 @@ def addmeth(hook_caller):
             example_implementation(
                 tryfirst=tryfirst, trylast=trylast, hookwrapper=hookwrapper
             )(func)
-            hook_caller._add_hookimpl(
-                HookImpl(None, "<temp>", func, func.example_impl)
-            )
+            hook_caller._add_hookimpl(HookImpl(func, **func.example_impl))
             return func
 
         return wrap
@@ -414,7 +412,7 @@ def test_hookrelay_registry(example_plugin_manager):
     out = hook.hello(arg=3)
     assert out == [4]
     assert not hasattr(hook, "world")
-    example_plugin_manager.unregister(plugin)
+    example_plugin_manager.unregister(module=plugin)
     assert hook.hello(arg=3) == []
 
 

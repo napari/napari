@@ -13,10 +13,13 @@ def plugin_manager():
     """PluginManager fixture that loads some test plugins"""
     fixture_path = os.path.join(os.path.dirname(__file__), 'fixtures')
     plugin_manager = PluginManager(
-        project_name='napari', autodiscover=fixture_path
+        'napari',
+        discover_entrypoint='napari.plugin',
+        discover_prefix='napari_',
     )
     plugin_manager.add_hookspecs(hook_specifications)
     plugin_manager.register(_builtins, name='builtins')
+    plugin_manager.discover(fixture_path)
     assert fixture_path not in sys.path, 'discover path leaked into sys.path'
     return plugin_manager
 
@@ -48,12 +51,10 @@ def temporary_hookimpl(plugin_manager):
     """
 
     @contextmanager
-    def inner(
-        func, specname, tryfirst=True, trylast=None, plugin_name="<temp>"
-    ):
+    def inner(func, specname, tryfirst=True, trylast=None):
         caller = getattr(plugin_manager.hook, specname)
         HookimplMarker('napari')(tryfirst=tryfirst, trylast=trylast)(func)
-        impl = HookImpl(None, plugin_name, func, func.napari_impl)
+        impl = HookImpl(func, **func.napari_impl)
         caller._add_hookimpl(impl)
         try:
             yield
