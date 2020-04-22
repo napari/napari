@@ -55,7 +55,9 @@ def napari_write_image(path: str, data: Any, meta: dict) -> Optional[str]:
 
     Returns
     -------
-    bool : Return True if data is successfully written.
+    path : str or None
+        If data is successfully written, return the ``path`` that was written.
+        Otherwise, if nothing was done, return ``None``.
     """
     ext = os.path.splitext(path)[1]
     if not ext:
@@ -84,7 +86,9 @@ def napari_write_points(path: str, data: Any, meta: dict) -> Optional[str]:
 
     Returns
     -------
-    bool : Return True if data is successfully written.
+    path : str or None
+        If data is successfully written, return the ``path`` that was written.
+        Otherwise, if nothing was done, return ``None``.
     """
     ext = os.path.splitext(path)[1]
     if ext == '':
@@ -183,15 +187,14 @@ def write_layer_data_with_plugins(
         corresponding to appropriate hook specification will be looped
         through to find the first one that can save the data. By default,
         only builtin napari implementations are used.
-    plugins.
     plugin_manager : plugins.PluginManager, optional
         Instance of a napari PluginManager.  by default the main napari
         plugin_manager will be used.
 
     Returns
     -------
-    bool
-        Return True if data is successfully written.
+    list of str
+        A list of any filepaths that were written.
     """
     from tempfile import TemporaryDirectory
 
