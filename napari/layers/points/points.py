@@ -1,4 +1,4 @@
-from typing import Union, Dict, Tuple
+from typing import Union, Dict, Tuple, List
 from xml.etree.ElementTree import Element
 from copy import copy, deepcopy
 from itertools import cycle
@@ -533,7 +533,7 @@ class Points(Layer):
         setattr(self, f'_{attribute}_color', np.vstack((colors, new_colors)))
 
     @property
-    def properties(self):
+    def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each point"""
         return self._properties
 
@@ -559,7 +559,7 @@ class Points(Layer):
             )
 
     @property
-    def current_properties(self):
+    def current_properties(self) -> Dict[str, np.ndarray]:
         """dict{str: np.ndarray(1,)}: properties for the next added point."""
         return self._current_properties
 
@@ -580,7 +580,9 @@ class Points(Layer):
             self.refresh_colors()
         self.events.current_properties()
 
-    def _validate_properties(self, properties: Dict[str, np.ndarray]):
+    def _validate_properties(
+        self, properties: Dict[str, np.ndarray]
+    ) -> Dict[str, np.ndarray]:
         """Validates the type and size of the properties"""
         for k, v in properties.items():
             if len(v) != len(self.data):
@@ -593,11 +595,11 @@ class Points(Layer):
 
         return properties
 
-    def _get_ndim(self):
+    def _get_ndim(self) -> int:
         """Determine number of dimensions of the layer."""
         return self.data.shape[1]
 
-    def _get_extent(self):
+    def _get_extent(self) -> List[Tuple[int, int, int]]:
         """Determine ranges for slicing given by (min, max, step)."""
         if len(self.data) == 0:
             maxs = np.ones(self.data.shape[1], dtype=int)
@@ -686,7 +688,7 @@ class Points(Layer):
         self.events.edge_width()
 
     @property
-    def edge_color(self):
+    def edge_color(self) -> np.ndarray:
         """(N x 4) np.ndarray: Array of RGBA edge colors for each point"""
         return self._edge_color
 
@@ -695,7 +697,7 @@ class Points(Layer):
         self._set_color(edge_color, 'edge')
 
     @property
-    def edge_color_cycle(self):
+    def edge_color_cycle(self) -> np.ndarray:
         """Union[list, np.ndarray] :  Color cycle for edge_color.
         Can be a list of colors defined by name, RGB or RGBA
 
@@ -707,7 +709,7 @@ class Points(Layer):
         self._set_color_cycle(edge_color_cycle, 'edge')
 
     @property
-    def edge_colormap(self):
+    def edge_colormap(self) -> Tuple[str, Colormap]:
         """Return the colormap to be applied to a property to get the edge color.
 
         Returns
@@ -728,7 +730,7 @@ class Points(Layer):
             self._edge_colormap_name = 'unknown_colormap'
 
     @property
-    def edge_contrast_limits(self):
+    def edge_contrast_limits(self) -> Tuple[float, float]:
         """ None, (float, float): contrast limits for mapping
         the edge_color colormap property to 0 and 1
         """
@@ -761,7 +763,7 @@ class Points(Layer):
         self.events.current_edge_color()
 
     @property
-    def edge_color_mode(self):
+    def edge_color_mode(self) -> str:
         """str: Edge color setting mode
 
         DIRECT (default mode) allows each point to be set arbitrarily
@@ -777,7 +779,7 @@ class Points(Layer):
         self._set_color_mode(edge_color_mode, 'edge')
 
     @property
-    def face_color(self):
+    def face_color(self) -> np.ndarray:
         """(N x 4) np.ndarray: Array of RGBA face colors for each point"""
         return self._face_color
 
@@ -786,7 +788,7 @@ class Points(Layer):
         self._set_color(face_color, 'face')
 
     @property
-    def face_color_cycle(self):
+    def face_color_cycle(self) -> np.ndarray:
         """Union[np.ndarray, cycle]:  Color cycle for face_color
         Can be a list of colors defined by name, RGB or RGBA
         """
@@ -797,7 +799,7 @@ class Points(Layer):
         self._set_color_cycle(face_color_cycle, 'face')
 
     @property
-    def face_colormap(self):
+    def face_colormap(self) -> Tuple[str, Colormap]:
         """Return the colormap to be applied to a property to get the edge color.
 
         Returns
@@ -818,7 +820,7 @@ class Points(Layer):
             self._face_colormap_name = 'unknown_colormap'
 
     @property
-    def face_contrast_limits(self):
+    def face_contrast_limits(self) -> Union[None, Tuple[float, float]]:
         """None, (float, float) : clims for mapping the face_color
         colormap property to 0 and 1
         """
@@ -852,7 +854,7 @@ class Points(Layer):
         self.events.current_face_color()
 
     @property
-    def face_color_mode(self):
+    def face_color_mode(self) -> str:
         """str: Face color setting mode
 
         DIRECT (default mode) allows each point to be set arbitrarily
@@ -1132,7 +1134,7 @@ class Points(Layer):
         return state
 
     @property
-    def selected_data(self):
+    def selected_data(self) -> set:
         """set: set of currently selected points."""
         return self._selected_data
 
@@ -1180,7 +1182,7 @@ class Points(Layer):
                 self.current_properties = properties
         self._set_highlight()
 
-    def interaction_box(self, index):
+    def interaction_box(self, index) -> np.ndarray:
         """Create the interaction box around a list of points in view.
 
         Parameters
@@ -1205,7 +1207,7 @@ class Points(Layer):
         return box
 
     @property
-    def mode(self):
+    def mode(self) -> str:
         """str: Interactive mode
 
         Interactive mode. The normal, default mode is PAN_ZOOM, which
@@ -1268,7 +1270,7 @@ class Points(Layer):
         self.events.mode(mode=mode)
 
     @property
-    def _view_data(self):
+    def _view_data(self) -> np.ndarray:
         """Get the coords of the points in view
 
         Returns
@@ -1287,7 +1289,7 @@ class Points(Layer):
         return data
 
     @property
-    def _view_size(self):
+    def _view_size(self) -> np.ndarray:
         """Get the sizes of the points in view
 
        Returns
@@ -1344,7 +1346,9 @@ class Points(Layer):
         if not self.editable:
             self.mode = Mode.PAN_ZOOM
 
-    def _slice_data(self, dims_indices):
+    def _slice_data(
+        self, dims_indices
+    ) -> Tuple[List[int], Union[float, np.ndarray]]:
         """Determines the slice of points given the indices.
 
         Parameters
@@ -1384,7 +1388,7 @@ class Points(Layer):
         else:
             return [], []
 
-    def _get_value(self):
+    def _get_value(self) -> Union[None, int]:
         """Determine if points at current coordinates.
 
         Returns
