@@ -72,20 +72,20 @@ def transform_color_cycle(
 
     Returns
     -------
-    transformed : cycle
+    transformed_color_cycle : cycle
         cycle of Nx4 numpy arrays with a dtype of np.float32
-    transformed_color_cycle: np.ndarray
-        colors transformed to RGBA
+    transformed_colors : np.ndarray
+        input array of colors transformed to RGBA
     """
-    transformed_color_cycle = transform_color_with_defaults(
+    transformed_colors = transform_color_with_defaults(
         num_entries=len(color_cycle),
         colors=color_cycle,
         elem_name=elem_name,
         default=default,
     )
-    transformed = cycle(transformed_color_cycle)
+    transformed_color_cycle = cycle(transformed_colors)
 
-    return transformed, transformed_color_cycle
+    return transformed_color_cycle, transformed_colors
 
 
 def normalize_and_broadcast_colors(
