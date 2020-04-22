@@ -308,9 +308,9 @@ class AddLayersMixin:
             Width of the symbol edge in pixels.
         edge_color : str, array-like
             Color of the point marker border. Numeric color values should be RGB(A).
-        edge_color_cycle : np.ndarray, list, cycle
-            Cycle of colors (provided as RGBA) to map to edge_color if a
-            categorical attribute is used to set face_color.
+        edge_color_cycle : np.ndarray, list
+            Cycle of colors (provided as string name, RGB, or RGBA) to map to edge_color if a
+            categorical attribute is used color the vectors.
         edge_colormap : str, vispy.color.colormap.Colormap
             Colormap to set edge_color if a continuous attribute is used to set face_color.
             See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
@@ -321,9 +321,9 @@ class AddLayersMixin:
             (property.min(), property.max())
         face_color : str, array-like
             Color of the point marker body. Numeric color values should be RGB(A).
-        face_color_cycle : np.ndarray, list, cycle
-            Cycle of colors (provided as RGBA) to map to face_color if a
-            categorical attribute is used to set face_color.
+        face_color_cycle : np.ndarray, list
+            Cycle of colors (provided as string name, RGB, or RGBA) to map to face_color if a
+            categorical attribute is used color the vectors.
         face_colormap : str, vispy.color.colormap.Colormap
             Colormap to set face_color if a continuous attribute is used to set face_color.
             See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
@@ -697,8 +697,8 @@ class AddLayersMixin:
              Multiplicative factor on projections for length of all vectors.
         edge_color : str
             Color of all of the vectors.
-        edge_color_cycle : np.ndarray, list, cycle
-            Cycle of colors (provided as RGBA) to map to edge_color if a
+        edge_color_cycle : np.ndarray, list
+            Cycle of colors (provided as string name, RGB, or RGBA) to map to edge_color if a
             categorical attribute is used color the vectors.
         edge_colormap : str, vispy.color.colormap.Colormap
             Colormap to set vector color if a continuous attribute is used to set edge_color.

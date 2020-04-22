@@ -1,4 +1,3 @@
-from itertools import cycle
 from typing import Union, Dict, Tuple
 from xml.etree.ElementTree import Element
 import warnings
@@ -45,8 +44,8 @@ class Vectors(Layer):
          Multiplicative factor on projections for length of all vectors.
     edge_color : str
         Color of all of the vectors.
-    edge_color_cycle : np.ndarray, list, cycle
-        Cycle of colors (provided as RGBA) to map to edge_color if a
+    edge_color_cycle : np.ndarray, list
+        Cycle of colors (provided as string name, RGB, or RGBA) to map to edge_color if a
         categorical attribute is used color the vectors.
     edge_colormap : str, vispy.color.colormap.Colormap
         Colormap to set vector color if a continuous attribute is used to set edge_color.
@@ -86,8 +85,8 @@ class Vectors(Layer):
          Multiplicative factor on projections for length of all vectors.
     edge_color : str
         Color of all of the vectors.
-    edge_color_cycle : np.ndarray, list, cycle
-        Cycle of colors (provided as RGBA) to map to edge_color if a
+    edge_color_cycle : np.ndarray, list
+        Cycle of colors (provided as string name, RGB, or RGBA) to map to edge_color if a
         categorical attribute is used color the vectors.
     edge_colormap : str, vispy.color.colormap.Colormap
         Colormap to set vector color if a continuous attribute is used to set edge_color.
@@ -423,7 +422,7 @@ class Vectors(Layer):
                         k: c
                         for k, c in zip(
                             np.unique(edge_color_properties),
-                            self.edge_color_cycle,
+                            self._edge_color_cycle,
                         )
                     }
                 else:
@@ -439,7 +438,7 @@ class Vectors(Layer):
                         )
                         for prop in props_to_add:
                             self.edge_color_cycle_map[prop] = next(
-                                self.edge_color_cycle
+                                self._edge_color_cycle
                             )
                 edge_colors = np.array(
                     [
@@ -538,21 +537,20 @@ class Vectors(Layer):
 
     @property
     def edge_color_cycle(self):
-        """list, np.ndarray, cycle :  Color cycle for edge_color.
-        Can be a list of colors or a cycle of colors
-
+        """list, np.ndarray :  Color cycle for edge_color.
+        Can be a list of colors defined by name, RGB or RGBA
         """
-        return self._edge_color_cycle
+        return self._edge_color_cycle_values
 
     @edge_color_cycle.setter
-    def edge_color_cycle(
-        self, edge_color_cycle: Union[list, np.ndarray, cycle]
-    ):
-        self._edge_color_cycle = transform_color_cycle(
+    def edge_color_cycle(self, edge_color_cycle: Union[list, np.ndarray]):
+        transformed_color_cycle, transformed_colors = transform_color_cycle(
             color_cycle=edge_color_cycle,
-            elem_name="edge_color_cycle",
+            elem_name='edge_color_cycle',
             default="white",
         )
+        self._edge_color_cycle_values = transformed_colors
+        self._edge_color_cycle = transformed_color_cycle
         if self._edge_color_mode == ColorMode.CYCLE:
             self.refresh_colors(update_color_mapping=True)
 
