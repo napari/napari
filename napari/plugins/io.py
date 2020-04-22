@@ -145,10 +145,9 @@ def _write_multiple_layers_with_plugins(
     ``layer.name`` variable to modify the path such that the layers are written
     to unique files in the folder.
 
-    If a ``plugin_name`` is provided, then we call we call
-    ``napari_get_writer`` for that plugin, and if it doesn’t return a
-    WriterFunction we error, otherwise we call it and if that fails if it we
-    error.
+    If a ``plugin_name`` is provided, then call ``napari_get_writer`` for that
+    plugin. If it doesn’t return a ``WriterFunction`` we error, otherwise we
+    call it and if that fails if it we error.
 
     Exceptions will be caught and stored as PluginErrors
     (in plugins.exceptions.PLUGIN_ERRORS)
@@ -160,7 +159,7 @@ def _write_multiple_layers_with_plugins(
     layers : List of napari.layers.Layer
         List of napari layers to write.
     plugin_manager : plugins.PluginManager, optional
-        Instance of a napari PluginManager.  by default the main napari
+        Instance of a PluginManager.  by default the main napari
         plugin_manager will be used.
     """
     layer_data = [layer.as_layer_data_tuple() for layer in layers]

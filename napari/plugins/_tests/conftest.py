@@ -51,6 +51,8 @@ def temporary_hookimpl(plugin_manager):
         func, specname, tryfirst=True, trylast=None, plugin_name="<temp>"
     ):
         caller = getattr(plugin_manager.hook, specname)
+        # HookimplMarker creates a decorator.
+        # And when we call it on func it just sets an attribute on func
         HookimplMarker('napari')(tryfirst=tryfirst, trylast=trylast)(func)
         impl = HookImpl(None, plugin_name, func, func.napari_impl)
         caller._add_hookimpl(impl)
