@@ -158,9 +158,18 @@ def _write_multiple_layers_with_plugins(
         The path (file, directory, url) to write.
     layers : List of napari.layers.Layer
         List of napari layers to write.
+    plugin_name: str, optional
+        If provided, force the plugin manager to use the ``napari_get_writer``
+        from the requested ``plugin_name``.  If none is available, or if it is
+        incapable of handling the layers, this function will fail.
     plugin_manager : plugins.PluginManager, optional
         Instance of a PluginManager.  by default the main napari
         plugin_manager will be used.
+
+    Returns
+    -------
+    list of str
+        A list of filenames, if any, that were written.
     """
     layer_data = [layer.as_layer_data_tuple() for layer in layers]
     layer_types = [ld[2] for ld in layer_data]
@@ -229,6 +238,12 @@ def _write_single_layer_with_plugins(
     plugin_manager : plugins.PluginManager, optional
         Instance of a napari PluginManager.  by default the main napari
         plugin_manager will be used.
+
+    Returns
+    -------
+    path : str or None
+        If data is successfully written, return the ``path`` that was written.
+        Otherwise, if nothing was done, return ``None``.
     """
     hook_specification = getattr(
         plugin_manager.hook, f'napari_write_{layer._type_string}'
