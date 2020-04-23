@@ -7,9 +7,6 @@ from naplugi import PluginManager
 from napari.plugins import hook_specifications, _builtins
 
 
-pytest_plugins = "naplugi.testsupport"
-
-
 @pytest.fixture
 def plugin_manager():
     """PluginManager fixture that loads some test plugins"""

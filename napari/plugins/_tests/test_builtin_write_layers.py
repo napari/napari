@@ -2,6 +2,7 @@ import os
 import numpy as np
 
 
+# the layer_writer_and_data fixture is defined in napari/conftest.py
 def test_write_layer_with_round_trip(tmpdir, layer_writer_and_data):
     """Test writing layer data from napari layer_data tuple."""
     writer, layer_data, extension, reader, Layer = layer_writer_and_data
@@ -34,6 +35,7 @@ def test_write_layer_with_round_trip(tmpdir, layer_writer_and_data):
     assert layer_data[2] == read_layer_data[2]
 
 
+# the layer_writer_and_data fixture is defined in napari/conftest.py
 def test_write_layer_no_extension(tmpdir, layer_writer_and_data):
     """Test writing layer data with no extension."""
     writer, layer_data, extension, _, _ = layer_writer_and_data
@@ -49,6 +51,7 @@ def test_write_layer_no_extension(tmpdir, layer_writer_and_data):
     assert os.path.isfile(path + extension)
 
 
+# the layer_writer_and_data fixture is defined in napari/conftest.py
 def test_no_write_layer_bad_extension(tmpdir, layer_writer_and_data):
     """Test not writing layer data with a bad extension."""
     writer, layer_data, _, _, _ = layer_writer_and_data
@@ -64,6 +67,7 @@ def test_no_write_layer_bad_extension(tmpdir, layer_writer_and_data):
     assert not os.path.isfile(path)
 
 
+# the layer_writer_and_data fixture is defined in napari/conftest.py
 def test_write_layer_no_metadata(tmpdir, layer_writer_and_data):
     """Test writing layer data with no metadata."""
     writer, layer_data, extension, _, _ = layer_writer_and_data

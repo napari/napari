@@ -113,7 +113,8 @@ def napari_get_writer(
     a recognized format, this function should return a *function* that accepts
     the same ``path``, and a list of tuples containing the data for each layer
     being saved in the form of ``(Layer.data, Layer._get_state(),
-    Layer._type_string)``
+    Layer._type_string)``. The writer function should return a list of strings
+    (the actual filepath(s) that were written).
 
     .. important::
 
@@ -127,7 +128,7 @@ def napari_get_writer(
 
         def writer_function(
             path: str, layer_data: List[Tuple[Any, Dict, str]]
-        ) -> bool:
+        ) -> List[str]:
             ...
 
     Parameters
@@ -151,8 +152,13 @@ def napari_get_writer(
 
 
 @napari_hook_specification(firstresult=True)
-def napari_write_image(path: str, data: Any, meta: dict) -> bool:
+def napari_write_image(path: str, data: Any, meta: dict) -> Optional[str]:
     """Write image data and metadata into a path.
+
+    It is the responsibility of the implementation to check any extension on
+    ``path`` and return ``None`` if it is an unsupported extension.  If
+    ``path`` has no extension, implementations may append their preferred
+    extension.
 
     Parameters
     ----------
@@ -167,14 +173,20 @@ def napari_write_image(path: str, data: Any, meta: dict) -> bool:
 
     Returns
     -------
-    successful : bool
-        Return ``True`` if data is successfully written.
+    path : str or None
+        If data is successfully written, return the ``path`` that was written.
+        Otherwise, if nothing was done, return ``None``.
     """
 
 
 @napari_hook_specification(firstresult=True)
-def napari_write_labels(path: str, data: Any, meta: dict) -> bool:
+def napari_write_labels(path: str, data: Any, meta: dict) -> Optional[str]:
     """Write labels data and metadata into a path.
+
+    It is the responsibility of the implementation to check any extension on
+    ``path`` and return ``None`` if it is an unsupported extension.  If
+    ``path`` has no extension, implementations may append their preferred
+    extension.
 
     Parameters
     ----------
@@ -190,14 +202,20 @@ def napari_write_labels(path: str, data: Any, meta: dict) -> bool:
 
     Returns
     -------
-    successful : bool
-        Return ``True`` if data is successfully written.
+    path : str or None
+        If data is successfully written, return the ``path`` that was written.
+        Otherwise, if nothing was done, return ``None``.
     """
 
 
 @napari_hook_specification(firstresult=True)
-def napari_write_points(path: str, data: Any, meta: dict) -> bool:
+def napari_write_points(path: str, data: Any, meta: dict) -> Optional[str]:
     """Write points data and metadata into a path.
+
+    It is the responsibility of the implementation to check any extension on
+    ``path`` and return ``None`` if it is an unsupported extension.  If
+    ``path`` has no extension, implementations may append their preferred
+    extension.
 
     Parameters
     ----------
@@ -210,14 +228,20 @@ def napari_write_points(path: str, data: Any, meta: dict) -> bool:
 
     Returns
     -------
-    successful : bool
-        Return ``True`` if data is successfully written.
+    path : str or None
+        If data is successfully written, return the ``path`` that was written.
+        Otherwise, if nothing was done, return ``None``.
     """
 
 
 @napari_hook_specification(firstresult=True)
-def napari_write_shapes(path: str, data: Any, meta: dict) -> bool:
+def napari_write_shapes(path: str, data: Any, meta: dict) -> Optional[str]:
     """Write shapes data and metadata into a path.
+
+    It is the responsibility of the implementation to check any extension on
+    ``path`` and return ``None`` if it is an unsupported extension.  If
+    ``path`` has no extension, implementations may append their preferred
+    extension.
 
     Parameters
     ----------
@@ -231,14 +255,20 @@ def napari_write_shapes(path: str, data: Any, meta: dict) -> bool:
 
     Returns
     -------
-    successful : bool
-        Return ``True`` if data is successfully written.
+    path : str or None
+        If data is successfully written, return the ``path`` that was written.
+        Otherwise, if nothing was done, return ``None``.
     """
 
 
 @napari_hook_specification(firstresult=True)
-def napari_write_surface(path: str, data: Any, meta: dict) -> bool:
+def napari_write_surface(path: str, data: Any, meta: dict) -> Optional[str]:
     """Write surface data and metadata into a path.
+
+    It is the responsibility of the implementation to check any extension on
+    ``path`` and return ``None`` if it is an unsupported extension.  If
+    ``path`` has no extension, implementations may append their preferred
+    extension.
 
     Parameters
     ----------
@@ -255,14 +285,20 @@ def napari_write_surface(path: str, data: Any, meta: dict) -> bool:
 
     Returns
     -------
-    successful : bool
-        Return ``True`` if data is successfully written.
+    path : str or None
+        If data is successfully written, return the ``path`` that was written.
+        Otherwise, if nothing was done, return ``None``.
     """
 
 
 @napari_hook_specification(firstresult=True)
-def napari_write_vectors(path: str, data: Any, meta: dict) -> bool:
+def napari_write_vectors(path: str, data: Any, meta: dict) -> Optional[str]:
     """Write vectors data and metadata into a path.
+
+    It is the responsibility of the implementation to check any extension on
+    ``path`` and return ``None`` if it is an unsupported extension.  If
+    ``path`` has no extension, implementations may append their preferred
+    extension.
 
     Parameters
     ----------
@@ -275,6 +311,7 @@ def napari_write_vectors(path: str, data: Any, meta: dict) -> bool:
 
     Returns
     -------
-    successful : bool
-        Return ``True`` if data is successfully written.
+    path : str or None
+        If data is successfully written, return the ``path`` that was written.
+        Otherwise, if nothing was done, return ``None``.
     """

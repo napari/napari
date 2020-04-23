@@ -427,14 +427,9 @@ def test_toggle_visibility():
     assert [l.visible for l in layers] == [False, True, False, True]
 
 
+# the layer_data_and_types fixture is defined in napari/conftest.py
 def test_layers_save(tmpdir, layer_data_and_types):
     """Test saving all layer data."""
-    # make individual write layer builtin plugins get called first
-    from napari.plugins import plugin_manager
-
-    plugin_manager.hooks.napari_write_image.bring_to_front(['builtins'])
-    plugin_manager.hooks.napari_write_points.bring_to_front(['builtins'])
-
     list_of_layers, _, _, filenames = layer_data_and_types
     layers = LayerList(list_of_layers)
 
@@ -458,7 +453,8 @@ def test_layers_save(tmpdir, layer_data_and_types):
     assert set(os.listdir(tmpdir)) == set(['layers_folder'])
 
 
-def test_layers_save_none_seleteced(tmpdir, layer_data_and_types):
+# the layer_data_and_types fixture is defined in napari/conftest.py
+def test_layers_save_none_selected(tmpdir, layer_data_and_types):
     """Test saving all layer data."""
     list_of_layers, _, _, filenames = layer_data_and_types
     layers = LayerList(list_of_layers)
@@ -484,14 +480,9 @@ def test_layers_save_none_seleteced(tmpdir, layer_data_and_types):
     assert set(os.listdir(tmpdir)) == set('')
 
 
+# the layer_data_and_types fixture is defined in napari/conftest.py
 def test_layers_save_seleteced(tmpdir, layer_data_and_types):
     """Test saving all layer data."""
-    # make individual write layer builtin plugins get called first
-    from napari.plugins import plugin_manager
-
-    plugin_manager.hooks.napari_write_image.bring_to_front(['builtins'])
-    plugin_manager.hooks.napari_write_points.bring_to_front(['builtins'])
-
     list_of_layers, _, _, filenames = layer_data_and_types
     layers = LayerList(list_of_layers)
     layers.unselect_all()

@@ -1,5 +1,4 @@
 from enum import auto
-from itertools import cycle
 import numpy as np
 from ...utils.misc import StringEnum
 
@@ -20,4 +19,4 @@ class ColorMode(StringEnum):
     COLORMAP = auto()
 
 
-DEFAULT_COLOR_CYCLE = cycle(np.array([[1, 0, 1, 1], [0, 1, 0, 1]]))
+DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])

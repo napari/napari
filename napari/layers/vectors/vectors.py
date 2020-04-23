@@ -1,5 +1,4 @@
-from itertools import cycle
-from typing import Union, Dict, Tuple
+from typing import Union, Dict, Tuple, List
 from xml.etree.ElementTree import Element
 import warnings
 
@@ -45,8 +44,8 @@ class Vectors(Layer):
          Multiplicative factor on projections for length of all vectors.
     edge_color : str
         Color of all of the vectors.
-    edge_color_cycle : np.ndarray, list, cycle
-        Cycle of colors (provided as RGBA) to map to edge_color if a
+    edge_color_cycle : np.ndarray, list
+        Cycle of colors (provided as string name, RGB, or RGBA) to map to edge_color if a
         categorical attribute is used color the vectors.
     edge_colormap : str, vispy.color.colormap.Colormap
         Colormap to set vector color if a continuous attribute is used to set edge_color.
@@ -86,8 +85,8 @@ class Vectors(Layer):
          Multiplicative factor on projections for length of all vectors.
     edge_color : str
         Color of all of the vectors.
-    edge_color_cycle : np.ndarray, list, cycle
-        Cycle of colors (provided as RGBA) to map to edge_color if a
+    edge_color_cycle : np.ndarray, list
+        Cycle of colors (provided as string name, RGB, or RGBA) to map to edge_color if a
         categorical attribute is used color the vectors.
     edge_colormap : str, vispy.color.colormap.Colormap
         Colormap to set vector color if a continuous attribute is used to set edge_color.
@@ -246,7 +245,7 @@ class Vectors(Layer):
         self.events.data()
 
     @property
-    def properties(self):
+    def properties(self) -> Dict[str, np.ndarray]:
         """dict {str: array (N,)}, DataFrame: Annotations for each point"""
         return self._properties
 
@@ -261,7 +260,9 @@ class Vectors(Layer):
             self._edge_color_property = ''
             warnings.warn('property used for edge_color dropped')
 
-    def _validate_properties(self, properties: Dict[str, np.ndarray]):
+    def _validate_properties(
+        self, properties: Dict[str, np.ndarray]
+    ) -> Dict[str, np.ndarray]:
         """Validates the type and size of the properties"""
         for v in properties.values():
             if len(v) != len(self.data):
@@ -294,11 +295,11 @@ class Vectors(Layer):
         )
         return state
 
-    def _get_ndim(self):
+    def _get_ndim(self) -> int:
         """Determine number of dimensions of the layer."""
         return self.data.shape[2]
 
-    def _get_extent(self):
+    def _get_extent(self) -> List[Tuple[int, int, int]]:
         """Determine ranges for slicing given by (min, max, step)."""
         if len(self.data) == 0:
             maxs = np.ones(self.data.shape[2], dtype=int)
@@ -357,7 +358,7 @@ class Vectors(Layer):
         self.status = format_float(self.length)
 
     @property
-    def edge_color(self) -> str:
+    def edge_color(self) -> np.ndarray:
         """(1 x 4) np.ndarray: Array of RGBA edge colors (applied to all vectors)"""
         return self._edge_color
 
@@ -423,7 +424,7 @@ class Vectors(Layer):
                         k: c
                         for k, c in zip(
                             np.unique(edge_color_properties),
-                            self.edge_color_cycle,
+                            self._edge_color_cycle,
                         )
                     }
                 else:
@@ -439,7 +440,7 @@ class Vectors(Layer):
                         )
                         for prop in props_to_add:
                             self.edge_color_cycle_map[prop] = next(
-                                self.edge_color_cycle
+                                self._edge_color_cycle
                             )
                 edge_colors = np.array(
                     [
@@ -477,7 +478,7 @@ class Vectors(Layer):
             if self.visible:
                 self._update_thumbnail()
 
-    def _is_color_mapped(self, color):
+    def _is_color_mapped(self, color) -> bool:
         """ determines if the new color argument is for directly setting or cycle/colormap"""
         if isinstance(color, str):
             if color in self.properties:
@@ -492,7 +493,7 @@ class Vectors(Layer):
             )
 
     @property
-    def edge_color_mode(self):
+    def edge_color_mode(self) -> ColorMode:
         """str: Edge color setting mode
 
         DIRECT (default mode) allows each vector to be set arbitrarily
@@ -537,27 +538,26 @@ class Vectors(Layer):
         self.events.edge_color_mode()
 
     @property
-    def edge_color_cycle(self):
-        """list, np.ndarray, cycle :  Color cycle for edge_color.
-        Can be a list of colors or a cycle of colors
-
+    def edge_color_cycle(self) -> np.ndarray:
+        """list, np.ndarray :  Color cycle for edge_color.
+        Can be a list of colors defined by name, RGB or RGBA
         """
-        return self._edge_color_cycle
+        return self._edge_color_cycle_values
 
     @edge_color_cycle.setter
-    def edge_color_cycle(
-        self, edge_color_cycle: Union[list, np.ndarray, cycle]
-    ):
-        self._edge_color_cycle = transform_color_cycle(
+    def edge_color_cycle(self, edge_color_cycle: Union[list, np.ndarray]):
+        transformed_color_cycle, transformed_colors = transform_color_cycle(
             color_cycle=edge_color_cycle,
-            elem_name="edge_color_cycle",
+            elem_name='edge_color_cycle',
             default="white",
         )
+        self._edge_color_cycle_values = transformed_colors
+        self._edge_color_cycle = transformed_color_cycle
         if self._edge_color_mode == ColorMode.CYCLE:
             self.refresh_colors(update_color_mapping=True)
 
     @property
-    def edge_colormap(self):
+    def edge_colormap(self) -> Tuple[str, Colormap]:
         """Return the colormap to be applied to a property to get the edge color.
 
         Returns
@@ -578,7 +578,7 @@ class Vectors(Layer):
             self._edge_colormap_name = 'unknown_colormap'
 
     @property
-    def edge_contrast_limits(self):
+    def edge_contrast_limits(self) -> Tuple[float, float]:
         """ None, (float, float): contrast limits for mapping
         the edge_color colormap property to 0 and 1
         """
@@ -731,7 +731,7 @@ class Vectors(Layer):
 
         return xml_list
 
-    def _get_value(self):
+    def _get_value(self) -> None:
         """Returns coordinates, values, and a string for a given mouse position
         and set of indices.
 

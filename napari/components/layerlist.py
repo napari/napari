@@ -1,4 +1,4 @@
-from typing import Optional
+from typing import Optional, List
 from ..layers import Layer
 from ..utils.naming import inc_name_count
 from ..utils.list import ListModel
@@ -192,17 +192,17 @@ class LayerList(ListModel):
         *,
         selected: bool = False,
         plugin: Optional[str] = None,
-    ):
+    ) -> List[str]:
         """Save all or only selected layers to a path using writer plugins.
 
-        If ``plugin`` is not provided and only one layer is targeted, then
-        we just directly call ``napari_write_<layer_type>`` hook specification
-        (see :ref:`single layer writer hookspecs
-        <write-single-layer-hookspecs>`) which will loop through
-        implementations and stop when the first one returns a non-``None``
-        result. The order in which implementations are called can be changed
-        with the Plugin sorter in the GUI or with the corresponding hook's
-        :meth:`~napari.plugins._hook_callers.HookCaller.bring_to_front`
+        If ``plugin`` is not provided and only one layer is targeted, then we
+        directly call the corresponding``napari_write_<layer_type>`` hook (see
+        :ref:`single layer writer hookspecs <write-single-layer-hookspecs>`)
+        which will loop through implementations and stop when the first one
+        returns a non-``None`` result. The order in which implementations are
+        called can be changed with the Plugin sorter in the GUI or with the
+        corresponding hook's
+        :meth:`~napari.plugins._hook_callers._HookCaller.bring_to_front`
         method.
 
         If ``plugin`` is not provided and multiple layers are targeted,
@@ -242,8 +242,8 @@ class LayerList(ListModel):
 
         Returns
         -------
-        bool
-            Return True if data is successfully written.
+        list of str
+            File paths of any files that were written.
         """
         from ..plugins.io import save_layers
 
@@ -253,6 +253,6 @@ class LayerList(ListModel):
             import warnings
 
             warnings.warn(f"No layers {'selected' if selected else 'to save'}")
-            return
+            return []
 
         return save_layers(path, layers, plugin=plugin)

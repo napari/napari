@@ -31,7 +31,9 @@ def test_get_writer_succeeds(
 
     # Write data
     assert writer == write_layer_data_with_plugins
-    assert writer(path, layer_data, plugin_manager=test_plugin_manager)
+    assert writer(
+        path, layer_data, plugin_name=None, plugin_manager=test_plugin_manager
+    )
 
     # Check folder and files exist
     assert os.path.isdir(path)
@@ -42,6 +44,8 @@ def test_get_writer_succeeds(
     assert set(os.listdir(tmpdir)) == set(['layers_folder'])
 
 
+# the layer_data_and_types fixture is defined in napari/conftest.py
+# the plugin_manager fixture is defined in napari/plugins/_tests/conftest.py
 def test_get_writer_bad_plugin(
     test_plugin_manager, temporary_hookimpl, tmpdir, layer_data_and_types
 ):
@@ -60,7 +64,12 @@ def test_get_writer_bad_plugin(
     # call writer with a bad hook implementation inserted
     with temporary_hookimpl(bad_write_points, 'napari_write_points'):
         with pytest.raises(PluginCallError):
-            writer(tmpdir, layer_data, test_plugin_manager)
+            writer(
+                tmpdir,
+                layer_data,
+                plugin_name=None,
+                plugin_manager=test_plugin_manager,
+            )
 
     # should have deleted all new files, but not the tmpdir
     assert os.path.isdir(tmpdir)
@@ -73,7 +82,12 @@ def test_get_writer_bad_plugin(
     # call writer with a bad hook implementation inserted
     with temporary_hookimpl(bad_write_points, 'napari_write_points'):
         with pytest.raises(PluginCallError):
-            writer(path, layer_data, test_plugin_manager)
+            writer(
+                tmpdir,
+                layer_data,
+                plugin_name=None,
+                plugin_manager=test_plugin_manager,
+            )
 
     # should have deleted the new nested folder, but not the tmpdir
     assert os.path.isdir(tmpdir)

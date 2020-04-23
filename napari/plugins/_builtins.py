@@ -39,7 +39,7 @@ def napari_get_reader(path: Union[str, List[str]]) -> ReaderFunction:
 
 
 @napari_hook_implementation(trylast=True)
-def napari_write_image(path: str, data: Any, meta: dict) -> bool:
+def napari_write_image(path: str, data: Any, meta: dict) -> Optional[str]:
     """Our internal fallback image writer at the end of the plugin chain.
 
     Parameters
@@ -55,7 +55,9 @@ def napari_write_image(path: str, data: Any, meta: dict) -> bool:
 
     Returns
     -------
-    bool : Return True if data is successfully written.
+    path : str or None
+        If data is successfully written, return the ``path`` that was written.
+        Otherwise, if nothing was done, return ``None``.
     """
     ext = os.path.splitext(path)[1]
     if not ext:
@@ -64,12 +66,11 @@ def napari_write_image(path: str, data: Any, meta: dict) -> bool:
 
     if ext in imsave_extensions():
         imsave(path, data)
-        return True
-    return False
+        return path
 
 
 @napari_hook_implementation(trylast=True)
-def napari_write_points(path: str, data: Any, meta: dict) -> bool:
+def napari_write_points(path: str, data: Any, meta: dict) -> Optional[str]:
     """Our internal fallback points writer at the end of the plugin chain.
 
     Append ``.csv`` extension to the filename if it is not already there.
@@ -85,19 +86,22 @@ def napari_write_points(path: str, data: Any, meta: dict) -> bool:
 
     Returns
     -------
-    bool : Return True if data is successfully written.
+    path : str or None
+        If data is successfully written, return the ``path`` that was written.
+        Otherwise, if nothing was done, return ``None``.
     """
     ext = os.path.splitext(path)[1]
     if ext == '':
         path = path + '.csv'
     elif ext != '.csv':
         # If an extension is provided then it must be `.csv`
-        return False
+        return
 
     if 'properties' in meta:
         properties = meta['properties']
     else:
         properties = {}
+    # TODO: we need to change this to the axis names once we get access to them
     # construct table from data
     column_names = ['axis-' + str(n) for n in range(data.shape[1])]
     if bool(properties):
@@ -116,7 +120,7 @@ def napari_write_points(path: str, data: Any, meta: dict) -> bool:
 
     # write table to csv file
     write_csv(path, table, column_names)
-    return True
+    return path
 
 
 @napari_hook_implementation(trylast=True)
@@ -128,7 +132,7 @@ def napari_get_writer(
     This will create a new folder from the path and call
     ``napari_write_<layer>`` for each layer using the ``layer.name`` variable
     to modify the path such that the layers are written to unique files in the
-    folder.
+    folder. It will use the default builtin writer for each layer type.
 
     Parameters
     ----------
@@ -149,13 +153,28 @@ def napari_get_writer(
 
 
 def write_layer_data_with_plugins(
-    path: str, layer_data: List[FullLayerData], plugin_manager=None
-) -> bool:
+    path: str,
+    layer_data: List[FullLayerData],
+    *,
+    plugin_name: Optional[str] = 'builtins',
+    plugin_manager=None,
+) -> List[str]:
     """Write layer data out into a folder one layer at a time.
 
     Call ``napari_write_<layer>`` for each layer using the ``layer.name``
     variable to modify the path such that the layers are written to unique
     files in the folder.
+
+    If ``plugin_name`` is ``None`` then we just directly call
+    ``plugin_manager.hook.napari_write_<layer>()`` which will loop through
+    implementations and stop when the first one returns a non-None result. The
+    order in which implementations are called can be changed with the
+    implementation sorter/disabler.
+
+    If ``plugin_name`` is provided, then we call the
+    ``napari_write_<layer_type>`` for that plugin, and if it fails we error.
+    By default, we restrict this function to using only napari ``builtins``
+    plugins.
 
     Parameters
     ----------
@@ -163,11 +182,19 @@ def write_layer_data_with_plugins(
         path to file/directory
     layer_data : list of napari.types.LayerData
         List of layer_data, where layer_data is ``(data, meta, layer_type)``.
+    plugin_name : str, optional
+        Name of the plugin to use for saving. If None then all plugins
+        corresponding to appropriate hook specification will be looped
+        through to find the first one that can save the data. By default,
+        only builtin napari implementations are used.
+    plugin_manager : plugins.PluginManager, optional
+        Instance of a napari PluginManager.  by default the main napari
+        plugin_manager will be used.
 
     Returns
     -------
-    bool
-        Return True if data is successfully written.
+    list of str
+        A list of any filepaths that were written.
     """
     from tempfile import TemporaryDirectory
 
@@ -182,6 +209,7 @@ def write_layer_data_with_plugins(
     if not already_existed:
         os.makedirs(path)
 
+    written: List[str] = []  # the files that were actually written
     try:
         # build in a temporary directory and then move afterwards,
         # it makes cleanup easier if an exception is raised inside.
@@ -196,11 +224,15 @@ def write_layer_data_with_plugins(
                 # Create full path using name of layer
                 full_path = abspath_or_url(os.path.join(tmp, meta['name']))
                 # Write out data using first plugin found for this hook spec
-                hook_caller(path=full_path, data=data, meta=meta)
+                # or named plugin if provided
+                outpath = hook_caller(
+                    _plugin=plugin_name, path=full_path, data=data, meta=meta
+                )
+                written.append(outpath)
             for fname in os.listdir(tmp):
                 shutil.move(os.path.join(tmp, fname), path)
     except Exception as exc:
         if not already_existed:
             shutil.rmtree(path, ignore_errors=True)
         raise exc
-    return True
+    return written

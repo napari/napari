@@ -69,11 +69,11 @@ def read_data_with_plugins(
 
 def save_layers(
     path: str, layers: List[Layer], *, plugin: Optional[str] = None,
-):
+) -> List[str]:
     """Write list of layers or individual layer to a path using writer plugins.
 
     If ``plugin`` is not provided and only one layer is passed, then we
-    just directly call ``plugin_manager.hook.napari_write_<layer>()`` which
+    directly call ``plugin_manager.hook.napari_write_<layer>()`` which
     will loop through implementations and stop when the first one returns a
     non-None result. The order in which implementations are called can be
     changed with the hook ``bring_to_front`` method, for instance:
@@ -114,19 +114,19 @@ def save_layers(
 
     Returns
     -------
-    bool
-        Return True if data is successfully written.
+    list of str
+        File paths of any files that were written.
     """
     if len(layers) > 1:
         return _write_multiple_layers_with_plugins(
             path, layers, plugin_name=plugin
         )
-    elif len(layers) == 1:
-        return _write_single_layer_with_plugins(
+    if len(layers) == 1:
+        written = _write_single_layer_with_plugins(
             path, layers[0], plugin_name=plugin
         )
-    else:
-        return False
+        return [written] if written else []
+    return []
 
 
 def _write_multiple_layers_with_plugins(
@@ -135,10 +135,10 @@ def _write_multiple_layers_with_plugins(
     *,
     plugin_name: Optional[str] = None,
     plugin_manager=napari_plugin_manager,
-):
+) -> List[str]:
     """Write data from multiple layers data with a plugin.
 
-    If a ``plugin_name`` is not provided we loops through plugins to find the
+    If a ``plugin_name`` is not provided we loop through plugins to find the
     first one that knows how to handle the combination of layers and is able to
     write the file. If no plugins offer ``napari_get_writer`` for that
     combination of layers then the default ``napari_get_writer`` will create a
@@ -146,10 +146,9 @@ def _write_multiple_layers_with_plugins(
     ``layer.name`` variable to modify the path such that the layers are written
     to unique files in the folder.
 
-    If a ``plugin_name`` is provided, then we call we call
-    ``napari_get_writer`` for that plugin, and if it doesn’t return a
-    WriterFunction we error, otherwise we call it and if that fails if it we
-    error.
+    If a ``plugin_name`` is provided, then call ``napari_get_writer`` for that
+    plugin. If it doesn’t return a ``WriterFunction`` we error, otherwise we
+    call it and if that fails if it we error.
 
     Exceptions will be caught and stored as PluginErrors
     (in plugins.exceptions.PLUGIN_ERRORS)
@@ -160,9 +159,18 @@ def _write_multiple_layers_with_plugins(
         The path (file, directory, url) to write.
     layers : List of napari.layers.Layer
         List of napari layers to write.
+    plugin_name: str, optional
+        If provided, force the plugin manager to use the ``napari_get_writer``
+        from the requested ``plugin_name``.  If none is available, or if it is
+        incapable of handling the layers, this function will fail.
     plugin_manager : plugins.PluginManager, optional
-        Instance of a napari PluginManager.  by default the main napari
+        Instance of a PluginManager.  by default the main napari
         plugin_manager will be used.
+
+    Returns
+    -------
+    list of str
+        A list of filenames, if any, that were written.
     """
     layer_data = [layer.as_layer_data_tuple() for layer in layers]
     layer_types = [ld[2] for ld in layer_data]
@@ -205,7 +213,7 @@ def _write_single_layer_with_plugins(
     *,
     plugin_name: Optional[str] = None,
     plugin_manager=napari_plugin_manager,
-):
+) -> Optional[str]:
     """Write single layer data with a plugin.
 
     If ``plugin_name`` is not provided then we just directly call
@@ -233,6 +241,12 @@ def _write_single_layer_with_plugins(
     plugin_manager : plugins.PluginManager, optional
         Instance of a napari PluginManager.  by default the main napari
         plugin_manager will be used.
+
+    Returns
+    -------
+    path : str or None
+        If data is successfully written, return the ``path`` that was written.
+        Otherwise, if nothing was done, return ``None``.
     """
     hook_specification = getattr(
         plugin_manager.hook, f'napari_write_{layer._type_string}'

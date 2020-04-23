@@ -2,7 +2,7 @@ import os
 import warnings
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from typing import Optional
+from typing import Optional, List
 from xml.etree.ElementTree import Element, tostring
 
 import numpy as np
@@ -708,7 +708,7 @@ class Layer(KeymapProvider, ABC):
                 msg += f': {status_format(value)}'
         return msg
 
-    def save(self, path: str, plugin: Optional[str] = None):
+    def save(self, path: str, plugin: Optional[str] = None) -> List[str]:
         """Save this layer to ``path`` with default (or specified) plugin.
 
         Parameters
@@ -724,8 +724,8 @@ class Layer(KeymapProvider, ABC):
 
         Returns
         -------
-        bool
-            Return True if data is successfully written.
+        list of str
+            File paths of any files that were written.
         """
         from ...plugins.io import save_layers
 
