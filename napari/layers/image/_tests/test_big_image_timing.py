@@ -25,7 +25,6 @@ def test_timing_fast_big_dask_is_pyramid_specified(data):
     assert layer.data.shape == data.shape
 
 
-@pytest.mark.skip(reason="currently fails as we try and generate pyramid")
 @pytest.mark.timeout(2)
 @pytest.mark.parametrize('data', [data_dask, data_zarr])
 def test_timing_fast_big_dask_contrast_limits_specified(data):
@@ -33,7 +32,6 @@ def test_timing_fast_big_dask_contrast_limits_specified(data):
     assert layer.data.shape == data.shape
 
 
-@pytest.mark.skip(reason="currently fails as we try and generate pyramid")
 @pytest.mark.timeout(2)
 @pytest.mark.parametrize('data', [data_dask, data_zarr])
 def test_timing_fast_big_dask_nothing_specified(data):
