@@ -784,18 +784,10 @@ color_cycle_rgba = [[1, 0, 0, 1], [0, 0, 1, 1]]
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
 @pytest.mark.parametrize(
-    "color_cycle",
-    [
-        color_cycle_str,
-        color_cycle_rgb,
-        color_cycle_rgba,
-        cycle(color_cycle_str),
-        cycle(color_cycle_rgb),
-        cycle(color_cycle_rgba),
-    ],
+    "color_cycle", [color_cycle_str, color_cycle_rgb, color_cycle_rgba],
 )
 def test_color_cycle(attribute, color_cycle):
-    """Test settimg edge/face color with a color cycle list"""
+    """Test setting edge/face color with a color cycle list"""
     # create Points using list color cycle
     shape = (10, 2)
     np.random.seed(0)
