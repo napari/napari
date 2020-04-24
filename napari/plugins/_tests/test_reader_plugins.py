@@ -58,7 +58,7 @@ def test_builtin_reader_plugin(viewer_factory):
         assert np.allclose(data, layer_data[0][0])
 
         view, viewer = viewer_factory()
-        viewer.open_path(tmp.name)
+        viewer.open(tmp.name)
 
         assert np.allclose(viewer.layers[0].data, data)
 
@@ -78,11 +78,11 @@ def test_builtin_reader_plugin_stacks(viewer_factory):
         tmps.append(tmp)
 
     _, viewer = viewer_factory()
-    # open_path should take both strings and Path object, so we make one of the
+    # open should take both strings and Path object, so we make one of the
     # pathnames a Path object
     names = [tmp.name for tmp in tmps]
     names[0] = Path(names[0])
-    viewer.open_path(names, stack=True)
+    viewer.open(names, stack=True)
     assert np.allclose(viewer.layers[0].data, data)
     for tmp in tmps:
         tmp.close()

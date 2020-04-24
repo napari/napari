@@ -192,7 +192,7 @@ def view_path(
         axis_labels=axis_labels,
         show=show,
     )
-    viewer.open_path(path=path, stack=stack, **kwargs)
+    viewer.open(path=path, stack=stack, **kwargs)
     return viewer
 
 
