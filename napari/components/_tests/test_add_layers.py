@@ -43,15 +43,15 @@ def test_plugin_returns_nothing():
     "napari.components.add_layers_mixin.read_data_with_plugins",
     MagicMock(return_value=[(img,)]),
 )
-def test_open_path():
+def test_viewer_open():
     """Test that a plugin to returning nothing adds nothing to the Viewer."""
-    v = ViewerModel()
-    assert len(v.layers) == 0
-    v.open_path('mock_path')
-    assert len(v.layers) == 1
+    viewer = ViewerModel()
+    assert len(viewer.layers) == 0
+    viewer.open('mock_path')
+    assert len(viewer.layers) == 1
 
-    v.open_path('mock_path', stack=True)
-    assert len(v.layers) == 2
+    viewer.open('mock_path', stack=True)
+    assert len(viewer.layers) == 2
 
 
 @pytest.mark.parametrize("layer_data, kwargs", plugin_returns)

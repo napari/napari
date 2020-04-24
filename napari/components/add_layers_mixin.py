@@ -729,12 +729,12 @@ class AddLayersMixin:
         self.add_layer(layer)
         return layer
 
-    def open_path(
+    def open(
         self,
         path: Union[str, Sequence[str]],
         stack: bool = False,
-        layer_type: Optional[str] = None,
         plugin: Optional[str] = None,
+        layer_type: Optional[str] = None,
         **kwargs,
     ) -> List[layers.Layer]:
         """Open a path or list of paths with plugins, and add layers to viewer.
@@ -760,7 +760,9 @@ class AddLayersMixin:
         layer_type : str, optional
             If provided, will force data read from ``path`` to be passed to the
             corresponding ``add_<layer_type>`` method (along with any
-            additional) ``kwargs`` provided to this function.
+            additional) ``kwargs`` provided to this function.  This *may*
+            result in exceptions if the data returned from the path is not
+            compatible with the layer_type.
         **kwargs
             All other keyword arguments will be passed on to the respective
             ``add_layer`` method.
@@ -778,11 +780,17 @@ class AddLayersMixin:
             )
 
         if stack:
-            return self._add_layers_with_plugins(paths, kwargs)
+            return self._add_layers_with_plugins(
+                paths, kwargs, plugin=plugin, layer_type=layer_type
+            )
 
         added: List[layers.Layer] = []  # for layers that get added
         for _path in paths:
-            added.extend(self._add_layers_with_plugins(_path, kwargs))
+            added.extend(
+                self._add_layers_with_plugins(
+                    _path, kwargs, plugin=plugin, layer_type=layer_type
+                )
+            )
 
         return added
 
@@ -790,6 +798,8 @@ class AddLayersMixin:
         self,
         path_or_paths: Union[str, Sequence[str]],
         kwargs: Optional[dict] = None,
+        plugin: Optional[str] = None,
+        layer_type: Optional[str] = None,
     ) -> List[layers.Layer]:
         """Load a path or a list of paths into the viewer using plugins.
 
@@ -805,13 +815,23 @@ class AddLayersMixin:
         kwargs : dict, optional
             keyword arguments that will be used to overwrite any of those that
             are returned in the meta dict from plugins.
+        plugin : str, optional
+            Name of a plugin to use.  If provided, will force ``path`` to be
+            read with the specified ``plugin``.  If the requested plugin cannot
+            read ``path``, an execption will be raised.
+        layer_type : str, optional
+            If provided, will force data read from ``path`` to be passed to the
+            corresponding ``add_<layer_type>`` method (along with any
+            additional) ``kwargs`` provided to this function.  This *may*
+            result in exceptions if the data returned from the path is not
+            compatible with the layer_type.
 
         Returns
         -------
         List[layers.Layer]
             A list of any layers that were added to the viewer.
         """
-        layer_data = read_data_with_plugins(path_or_paths)
+        layer_data = read_data_with_plugins(path_or_paths, plugin=plugin)
 
         if not layer_data:
             # if layer_data is empty, it means no plugin could read path
@@ -828,10 +848,18 @@ class AddLayersMixin:
         # add each layer to the viewer
         added: List[layers.Layer] = []  # for layers that get added
         for data in layer_data:
+            # normalize layerdata and override layer_type if necessary
+            if len(data) == 1:
+                data = (data[0], {})
+            if len(data) == 2:
+                data = (data[0], data[1], 'image')
+            if layer_type is not None:
+                data = (data[0], data[1], layer_type)
+            else:
+                layer_type = data[2]
             # if user provided kwargs, use to override any meta dict values
             # that were returned by the plugin
             if kwargs:
-                layer_type = 'image' if len(data) < 3 else data[2]
                 valid_kwargs = prune_kwargs(kwargs, layer_type)
                 if len(data) == 1:
                     data = (data[0], valid_kwargs)
