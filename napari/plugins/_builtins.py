@@ -104,19 +104,18 @@ def napari_write_points(path: str, data: Any, meta: dict) -> Optional[str]:
     # TODO: we need to change this to the axis names once we get access to them
     # construct table from data
     column_names = ['axis-' + str(n) for n in range(data.shape[1])]
-    if bool(properties):
+    if properties:
         column_names += properties.keys()
-        prop_table = np.concatenate(
-            [np.expand_dims(p, axis=1) for p in properties.values()], axis=1,
-        )
-        table = np.concatenate([data, prop_table], axis=1)
+        prop_table = [
+            np.expand_dims(col, axis=1) for col in properties.values()
+        ]
     else:
-        table = data
+        prop_table = []
 
     # add index of each point
     column_names = ['index'] + column_names
     indices = np.expand_dims(list(range(data.shape[0])), axis=1)
-    table = np.concatenate([indices, table], axis=1)
+    table = np.concatenate([indices, data] + prop_table, axis=1)
 
     # write table to csv file
     write_csv(path, table, column_names)
