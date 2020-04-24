@@ -298,9 +298,9 @@ class AddLayersMixin:
             Width of the symbol edge in pixels.
         edge_color : str, array-like
             Color of the point marker border. Numeric color values should be RGB(A).
-        edge_color_cycle : np.ndarray, list, cycle
-            Cycle of colors (provided as RGBA) to map to edge_color if a
-            categorical attribute is used to set face_color.
+        edge_color_cycle : np.ndarray, list
+            Cycle of colors (provided as string name, RGB, or RGBA) to map to edge_color if a
+            categorical attribute is used color the vectors.
         edge_colormap : str, vispy.color.colormap.Colormap
             Colormap to set edge_color if a continuous attribute is used to set face_color.
             See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
@@ -311,9 +311,9 @@ class AddLayersMixin:
             (property.min(), property.max())
         face_color : str, array-like
             Color of the point marker body. Numeric color values should be RGB(A).
-        face_color_cycle : np.ndarray, list, cycle
-            Cycle of colors (provided as RGBA) to map to face_color if a
-            categorical attribute is used to set face_color.
+        face_color_cycle : np.ndarray, list
+            Cycle of colors (provided as string name, RGB, or RGBA) to map to face_color if a
+            categorical attribute is used color the vectors.
         face_colormap : str, vispy.color.colormap.Colormap
             Colormap to set face_color if a continuous attribute is used to set face_color.
             See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
@@ -642,8 +642,12 @@ class AddLayersMixin:
         self,
         data,
         *,
+        properties=None,
         edge_width=1,
         edge_color='red',
+        edge_color_cycle=None,
+        edge_colormap='viridis',
+        edge_contrast_limits=None,
         length=1,
         name=None,
         metadata=None,
@@ -663,12 +667,26 @@ class AddLayersMixin:
             D dimensions. An (N1, N2, ..., ND, D) array is interpreted as
             "image-like" data where there is a length D vector of the
             projections at each pixel.
+        properties : dict {str: array (N,)}, DataFrame
+            Properties for each vector. Each property should be an array of length N,
+            where N is the number of vectors.
         edge_width : float
             Width for all vectors in pixels.
         length : float
              Multiplicative factor on projections for length of all vectors.
         edge_color : str
-            Edge color of all the vectors.
+            Color of all of the vectors.
+        edge_color_cycle : np.ndarray, list
+            Cycle of colors (provided as string name, RGB, or RGBA) to map to edge_color if a
+            categorical attribute is used color the vectors.
+        edge_colormap : str, vispy.color.colormap.Colormap
+            Colormap to set vector color if a continuous attribute is used to set edge_color.
+            See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
+        edge_contrast_limits : None, (float, float)
+            clims for mapping the property to a color map. These are the min and max value
+            of the specified property that are mapped to 0 and 1, respectively.
+            The default value is None. If set the none, the clims will be set to
+            (property.min(), property.max())
         name : str
             Name of the layer.
         metadata : dict
@@ -693,8 +711,12 @@ class AddLayersMixin:
         """
         layer = layers.Vectors(
             data,
+            properties=properties,
             edge_width=edge_width,
             edge_color=edge_color,
+            edge_color_cycle=edge_color_cycle,
+            edge_colormap=edge_colormap,
+            edge_contrast_limits=edge_contrast_limits,
             length=length,
             name=name,
             metadata=metadata,

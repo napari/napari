@@ -146,7 +146,6 @@ class QtViewer(QSplitter):
         self.canvas.connect(self.on_mouse_release)
         self.canvas.connect(self.on_key_press)
         self.canvas.connect(self.on_key_release)
-        self.canvas.connect(self.on_draw)
 
         self.view = self.canvas.central_widget.add_view()
         self._update_camera()
@@ -228,9 +227,9 @@ class QtViewer(QSplitter):
         layers = event.source
         layer = event.item
         vispy_layer = create_vispy_visual(layer)
-        vispy_layer.camera = self.view.camera
         vispy_layer.node.parent = self.view.scene
         vispy_layer.order = len(layers)
+        self.canvas.connect(vispy_layer.on_draw)
         self.layer_to_visual[layer] = vispy_layer
 
     def _remove_layer(self, event):
@@ -243,9 +242,10 @@ class QtViewer(QSplitter):
         """
         layer = event.item
         vispy_layer = self.layer_to_visual[layer]
+        self.canvas.events.draw.disconnect(vispy_layer.on_draw)
         vispy_layer.node.transforms = ChainTransform()
         vispy_layer.node.parent = None
-        del self.layer_to_visual[layer]
+        del vispy_layer
 
     def _reorder_layers(self, event):
         """When the list is reordered, propagate changes to draw order.
@@ -538,17 +538,6 @@ class QtViewer(QSplitter):
         """
         combo = components_to_key_combo(event.key.name, event.modifiers)
         self.viewer.release_key(combo)
-
-    def on_draw(self, event):
-        """Called whenever drawn in canvas. Called for all layers, not just top
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
-        """
-        for visual in self.layer_to_visual.values():
-            visual.on_draw(event)
 
     def keyPressEvent(self, event):
         """Called whenever a key is pressed.

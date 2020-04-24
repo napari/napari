@@ -13,7 +13,7 @@ from ..base import Layer
 from ..utils.layer_utils import calc_data_range
 from ..intensity_mixin import IntensityVisualizationMixin
 from ._image_constants import Interpolation, Interpolation3D, Rendering
-from ._image_utils import get_pyramid_and_rgb
+from ._image_utils import guess_rgb, guess_pyramid
 
 
 # Mixin must come before Layer
@@ -80,7 +80,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
     Attributes
     ----------
-    data : array
+    data : array or list of array
         Image data. Can be N dimensional. If the last dimension has length
         3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a list
         and arrays are decreaing in shape then the data is treated as an
@@ -132,7 +132,6 @@ class Image(IntensityVisualizationMixin, Layer):
     """
 
     _colormaps = AVAILABLE_COLORMAPS
-    _max_tile_shape = 1600
 
     def __init__(
         self,
@@ -158,9 +157,25 @@ class Image(IntensityVisualizationMixin, Layer):
         if isinstance(data, types.GeneratorType):
             data = list(data)
 
-        ndim, rgb, is_pyramid, data_pyramid = get_pyramid_and_rgb(
-            data, pyramid=is_pyramid, rgb=rgb
-        )
+        # Determine if data is a pyramid
+        if is_pyramid is None:
+            is_pyramid = guess_pyramid(data)
+
+        # Determine initial shape
+        if is_pyramid:
+            init_shape = data[0].shape
+        else:
+            init_shape = data.shape
+
+        # Determine if rgb
+        if rgb is None:
+            rgb = guess_rgb(init_shape)
+
+        # Determine dimensionality of the data
+        if rgb:
+            ndim = len(init_shape) - 1
+        else:
+            ndim = len(init_shape)
 
         super().__init__(
             data,
@@ -185,12 +200,23 @@ class Image(IntensityVisualizationMixin, Layer):
         self.is_pyramid = is_pyramid
         self.rgb = rgb
         self._data = data
-        self._data_pyramid = data_pyramid
-        self._top_left = np.zeros(ndim, dtype=int)
         if self.is_pyramid:
-            self._data_level = len(data_pyramid) - 1
+            self._data_level = len(self.data) - 1
+            # Determine which level of the pyramid to use for the thumbnail.
+            # Pick the smallest level with at least one axis >= 64. This is
+            # done to prevent the thumbnail from being from one of the very
+            # low resolution layers and therefore being very blurred.
+            big_enough_levels = [
+                np.any(np.greater_equal(p.shape, 64)) for p in data
+            ]
+            if np.any(big_enough_levels):
+                self._thumbnail_level = np.where(big_enough_levels)[0][-1]
+            else:
+                self._thumbnail_level = 0
         else:
             self._data_level = 0
+            self._thumbnail_level = 0
+        self.corner_pixels[1] = self.level_shapes[self._data_level]
 
         # Intitialize image views and thumbnails with zeros
         if self.rgb:
@@ -229,7 +255,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
     def _calc_data_range(self):
         if self.is_pyramid:
-            input_data = self._data_pyramid[-1]
+            input_data = self.data[-1]
         else:
             input_data = self.data
         return calc_data_range(input_data)
@@ -245,14 +271,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @data.setter
     def data(self, data):
-        ndim, rgb, is_pyramid, data_pyramid = get_pyramid_and_rgb(
-            data, pyramid=self.is_pyramid, rgb=self.rgb
-        )
-        self.is_pyramid = is_pyramid
-        self.rgb = rgb
         self._data = data
-        self._data_pyramid = data_pyramid
-
         self._update_dims()
         self.events.data()
 
@@ -280,9 +299,9 @@ class Image(IntensityVisualizationMixin, Layer):
         """array: Shapes of each level of the pyramid or just of image."""
         if self.is_pyramid:
             if self.rgb:
-                shapes = [im.shape[:-1] for im in self._data_pyramid]
+                shapes = [im.shape[:-1] for im in self.data]
             else:
-                shapes = [im.shape for im in self._data_pyramid]
+                shapes = [im.shape for im in self.data]
         else:
             if self.rgb:
                 shapes = [self.data.shape[:-1]]
@@ -291,21 +310,9 @@ class Image(IntensityVisualizationMixin, Layer):
         return np.array(shapes)
 
     @property
-    def level_downsamples(self):
+    def downsample_factors(self):
         """list: Downsample factors for each level of the pyramid."""
         return np.divide(self.level_shapes[0], self.level_shapes)
-
-    @property
-    def top_left(self):
-        """tuple: Location of top left canvas pixel in image."""
-        return self._top_left
-
-    @top_left.setter
-    def top_left(self, top_left):
-        if np.all(self._top_left == top_left):
-            return
-        self._top_left = top_left.astype(int)
-        self.refresh()
 
     @property
     def iso_threshold(self):
@@ -459,13 +466,13 @@ class Image(IntensityVisualizationMixin, Layer):
         if self.is_pyramid:
             # If 3d redering just show lowest level of pyramid
             if self.dims.ndisplay == 3:
-                self.data_level = len(self._data_pyramid) - 1
+                self.data_level = len(self.data) - 1
 
             # Slice currently viewed level
             level = self.data_level
             indices = np.array(self.dims.indices)
             downsampled_indices = (
-                indices[not_disp] / self.level_downsamples[level, not_disp]
+                indices[not_disp] / self.downsample_factors[level, not_disp]
             )
             downsampled_indices = np.round(
                 downsampled_indices.astype(float)
@@ -475,67 +482,65 @@ class Image(IntensityVisualizationMixin, Layer):
             )
             indices[not_disp] = downsampled_indices
 
-            disp_shape = self.level_shapes[level, self.dims.displayed]
             scale = np.ones(self.ndim)
             for d in self.dims.displayed:
-                scale[d] = self.level_downsamples[self.data_level][d]
+                scale[d] = self.downsample_factors[self.data_level][d]
             self._transforms['tile2data'].scale = scale
 
-            if np.any(disp_shape > self._max_tile_shape):
-                for d in self.dims.displayed:
-                    indices[d] = slice(
-                        self._top_left[d],
-                        self._top_left[d] + self._max_tile_shape,
-                        1,
-                    )
-                # Note that top left marks the location of top left canvas
-                # pixel in data coordinates
-                self._transforms['tile2data'].translate = (
-                    self._top_left
-                    * self._transforms['data2world'].scale
-                    * self._transforms['tile2data'].scale
-                )
-            else:
-                self._transforms['tile2data'].translate = np.zeros(self.ndim)
+            corner_pixels = np.clip(
+                self.corner_pixels,
+                0,
+                np.subtract(self.level_shapes[self.data_level], 1),
+            )
 
-            image = np.asarray(
-                self._data_pyramid[level][tuple(indices)]
+            for d in self.dims.displayed:
+                indices[d] = slice(
+                    corner_pixels[0, d], corner_pixels[1, d] + 1, 1
+                )
+            self._transforms['tile2data'].translate = (
+                corner_pixels[0]
+                * self._transforms['data2world'].scale
+                * self._transforms['tile2data'].scale
+            )
+
+            image = np.transpose(
+                np.asarray(self.data[level][tuple(indices)]), order
+            )
+
+            # Slice thumbnail
+            indices = np.array(self.dims.indices)
+            downsampled_indices = (
+                indices[not_disp]
+                / self.downsample_factors[self._thumbnail_level, not_disp]
+            )
+            downsampled_indices = np.round(
+                downsampled_indices.astype(float)
+            ).astype(int)
+            downsampled_indices = np.clip(
+                downsampled_indices,
+                0,
+                self.level_shapes[self._thumbnail_level, not_disp] - 1,
+            )
+            indices[not_disp] = downsampled_indices
+            thumbnail_source = np.asarray(
+                self.data[self._thumbnail_level][tuple(indices)]
             ).transpose(order)
-
-            if level == len(self._data_pyramid) - 1:
-                thumbnail = image
-            else:
-                # Slice thumbnail
-                indices = np.array(self.dims.indices)
-                downsampled_indices = (
-                    indices[not_disp] / self.level_downsamples[-1, not_disp]
-                )
-                downsampled_indices = np.round(
-                    downsampled_indices.astype(float)
-                ).astype(int)
-                downsampled_indices = np.clip(
-                    downsampled_indices, 0, self.level_shapes[-1, not_disp] - 1
-                )
-                indices[not_disp] = downsampled_indices
-                thumbnail = np.asarray(
-                    self._data_pyramid[-1][tuple(indices)]
-                ).transpose(order)
         else:
             self._transforms['tile2data'].scale = np.ones(self.dims.ndim)
             image = np.asarray(self.data[self.dims.indices]).transpose(order)
-            thumbnail = image
+            thumbnail_source = image
 
         if self.rgb and image.dtype.kind == 'f':
             self._data_raw = np.clip(image, 0, 1)
             self._data_view = self._raw_to_displayed(self._data_raw)
             self._data_thumbnail = self._raw_to_displayed(
-                np.clip(thumbnail, 0, 1)
+                np.clip(thumbnail_source, 0, 1)
             )
 
         else:
             self._data_raw = image
             self._data_view = self._raw_to_displayed(self._data_raw)
-            self._data_thumbnail = self._raw_to_displayed(thumbnail)
+            self._data_thumbnail = self._raw_to_displayed(thumbnail_source)
 
         if self.is_pyramid:
             self.events.scale()

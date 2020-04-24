@@ -1,4 +1,6 @@
-# Roadmap for 0.3 series of releases - April 2020.
+# Roadmap
+
+## For 0.3.* series of releases - April 2020
 
 The napari roadmap captures current development priorities within the project and should serve as a guide for napari core developers, to encourage and inspire contributors, and to provide insights to external developers who are interested in building for the napari ecosystem. For more details on what this document is and is not, see the [about this document section](#about-this-document).
 
@@ -50,7 +52,7 @@ Once the above goals are met, we will develop napari's capabilities for image pr
 
 We’re also planning or working on the following more advanced features, which will likely be prioritized in future roadmaps:
 
-- General support for undo / redo functionality [#474](https://github.com/napari/napari/issues/299), a history feature, and macro generation. 
+- General support for undo / redo functionality [#474](https://github.com/napari/napari/issues/299), a history feature, and macro generation.
 
 - Complete serialization of the viewer [#851](https://github.com/napari/napari/pull/851) to enable sharing the entire viewer state. This feature will be supported after `writer plugins` have been added.
 
@@ -60,7 +62,7 @@ We’re also planning or working on the following more advanced features, which 
 
 - Linked 1D plots such as histograms, timeseries, or z-profiles [#823](https://github.com/napari/napari/pull/823) and [#675](https://github.com/napari/napari/pull/675).
 
-- Support for using napari with remote computation (i.e. a remote jupyter notebook [#495](https://github.com/napari/napari/issues/495)). 
+- Support for using napari with remote computation (i.e. a remote jupyter notebook [#495](https://github.com/napari/napari/issues/495)).
 
 - Functional or interactive plugins that allow for analysis of data or add elements to the GUI.
 

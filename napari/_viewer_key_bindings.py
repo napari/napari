@@ -140,3 +140,9 @@ def play(viewer):
     else:
         axis = viewer.window.qt_viewer.dims.last_used or 0
         viewer.window.qt_viewer.dims.play(axis)
+
+
+@Viewer.bind_key('V')
+def toggle_selected_visibility(viewer):
+    """Toggle visibility of selected layers"""
+    viewer.layers.toggle_selected_visibility()

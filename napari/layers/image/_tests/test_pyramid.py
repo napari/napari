@@ -3,7 +3,6 @@ from skimage.transform import pyramid_gaussian
 from xml.etree.ElementTree import Element
 from vispy.color import Colormap
 from napari.layers import Image
-import pytest
 
 
 def test_random_pyramid():
@@ -14,7 +13,6 @@ def test_random_pyramid():
     layer = Image(data, is_pyramid=True)
     assert layer.data == data
     assert layer.is_pyramid is True
-    assert len(layer._data_pyramid) > 0
     assert layer.ndim == len(shapes[0])
     assert layer.shape == shapes[0]
     assert layer.rgb is False
@@ -29,20 +27,10 @@ def test_infer_pyramid():
     layer = Image(data)
     assert layer.data == data
     assert layer.is_pyramid is True
-    assert len(layer._data_pyramid) > 0
     assert layer.ndim == len(shapes[0])
     assert layer.shape == shapes[0]
     assert layer.rgb is False
     assert layer._data_view.ndim == 2
-
-
-def test_error_pyramid():
-    """Test error on forcing non pyramid."""
-    shapes = [(40, 20), (20, 10), (10, 5)]
-    np.random.seed(0)
-    data = [np.random.random(s) for s in shapes]
-    with pytest.raises(ValueError):
-        Image(data, is_pyramid=False)
 
 
 def test_infer_tuple_pyramid():
@@ -59,21 +47,6 @@ def test_infer_tuple_pyramid():
     assert layer._data_view.ndim == 2
 
 
-def test_forcing_pyramid():
-    """Test instantiating Image layer forcing 2D pyramid data."""
-    shape = (40, 20)
-    np.random.seed(0)
-    data = np.random.random(shape)
-    layer = Image(data, is_pyramid=True)
-    assert np.all(layer.data == data)
-    assert layer.is_pyramid is True
-    assert len(layer._data_pyramid) > 0
-    assert layer.ndim == len(shape)
-    assert layer.shape == shape
-    assert layer.rgb is False
-    assert layer._data_view.ndim == 2
-
-
 def test_blocking_pyramid():
     """Test instantiating Image layer blocking 2D pyramid data."""
     shape = (40, 20)
@@ -82,7 +55,6 @@ def test_blocking_pyramid():
     layer = Image(data, is_pyramid=False)
     assert np.all(layer.data == data)
     assert layer.is_pyramid is False
-    assert layer._data_pyramid is None
     assert layer.ndim == len(shape)
     assert layer.shape == shape
     assert layer.rgb is False
@@ -352,10 +324,34 @@ def test_value():
     layer = Image(data, is_pyramid=True)
     value = layer.get_value()
     assert layer.coordinates == (0, 0)
-    # Note that here, because the shapes of the pyramid are all very small
-    # data that will be rendered will only ever come from the bottom two
-    # levels of the pyramid.
-    assert value == (1, data[1][0, 0])
+    assert layer.data_level == 2
+    np.testing.assert_allclose(value, (2, data[2][0, 0]))
+
+
+def test_corner_value():
+    """Test getting the value of the data at the new position."""
+    shapes = [(40, 20), (20, 10), (10, 5)]
+    np.random.seed(0)
+    data = [np.random.random(s) for s in shapes]
+    layer = Image(data, is_pyramid=True)
+    value = layer.get_value()
+    target_position = (39, 19)
+    target_level = 0
+    layer.data_level = target_level
+    layer.corner_pixels[1] = shapes[target_level]  # update requested view
+    layer.refresh()
+
+    # Test position at corner of image
+    layer.position = target_position
+    value = layer.get_value()
+    np.testing.assert_allclose(
+        value, (target_level, data[target_level][target_position])
+    )
+
+    # Test position at outside image
+    layer.position = (40, 20)
+    value = layer.get_value()
+    assert value[1] is None
 
 
 def test_message():
@@ -390,17 +386,11 @@ def test_xml_list():
     assert type(xml[0]) == Element
 
 
-def test_create_random_pyramid():
+def test_not_create_random_pyramid():
     """Test instantiating Image layer with random 2D data."""
     shape = (20_000, 20)
     np.random.seed(0)
     data = np.random.random(shape)
     layer = Image(data)
     assert np.all(layer.data == data)
-    assert layer.is_pyramid is True
-    assert layer._data_pyramid[0].shape == shape
-    assert layer._data_pyramid[1].shape == (shape[0] / 2, shape[1])
-    assert layer.ndim == len(shape)
-    assert layer.shape == shape
-    assert layer.rgb is False
-    assert layer._data_view.ndim == 2
+    assert layer.is_pyramid is False

@@ -45,20 +45,3 @@ def test_3D_pyramid():
     assert layer.shape == shapes[0]
     assert layer.rgb is False
     assert layer._data_view.ndim == 2
-
-
-def test_create_random_pyramid():
-    """Test instantiating Labels layer with random 2D data."""
-    shape = (20_000, 20)
-    np.random.seed(0)
-    data = np.random.randint(20, size=shape)
-    layer = Labels(data)
-    assert np.all(layer.data == data)
-    assert layer.is_pyramid is True
-    assert layer.editable is False
-    assert layer._data_pyramid[0].shape == shape
-    assert layer._data_pyramid[1].shape == (shape[0] / 2, shape[1])
-    assert layer.ndim == len(shape)
-    assert layer.shape == shape
-    assert layer.rgb is False
-    assert layer._data_view.ndim == 2
