@@ -4,6 +4,7 @@ import re
 
 from glob import glob
 from pathlib import Path
+from typing import Union, List, Optional, Tuple
 
 import numpy as np
 
@@ -223,7 +224,11 @@ def read_zarr_dataset(path):
     return image, shape
 
 
-def write_csv(filename, data, column_names=None):
+def write_csv(
+    filename: str,
+    data: Union[List, np.ndarray],
+    column_names: Optional[List[str]] = None,
+):
     """Write a csv file.
 
     Parameters
@@ -235,9 +240,9 @@ def write_csv(filename, data, column_names=None):
     column_names : list, optional
         List of column names for table data.
     """
-    with open(filename, mode='w') as csvfile:
+    with open(filename, mode='w', newline='') as csvfile:
         writer = csv.writer(
-            csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL
+            csvfile, delimiter=',', quotechar='"', quoting=csv.QUOTE_MINIMAL,
         )
         if column_names is not None:
             writer.writerow(column_names)
@@ -245,7 +250,7 @@ def write_csv(filename, data, column_names=None):
             writer.writerow(row)
 
 
-def read_csv(filename):
+def read_csv(filename: str) -> Tuple[np.array, List[str]]:
     """Read a csv file.
 
     Parameters
@@ -260,12 +265,12 @@ def read_csv(filename):
     column_names : list
         List of column names for table data.
     """
-    with open(filename) as output_csv:
-        csv.reader(output_csv, delimiter=',')
+    with open(filename, newline='') as csvfile:
+        reader = csv.reader(csvfile, delimiter=',')
         output_data = []
-        for row_index, row in enumerate(output_csv):
+        for row_index, row in enumerate(reader):
             if row_index == 0:
-                column_names = [str(i) for i in row.strip('\n').split(',')]
+                column_names = [str(i) for i in row]
             else:
-                output_data.append([float(i) for i in row.split(',')])
+                output_data.append([float(i) for i in row])
         return np.array(output_data), column_names
