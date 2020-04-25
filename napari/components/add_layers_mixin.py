@@ -384,7 +384,7 @@ class AddLayersMixin:
 
     def add_labels(
         self,
-        data=None,
+        data,
         *,
         is_pyramid=None,
         num_colors=50,

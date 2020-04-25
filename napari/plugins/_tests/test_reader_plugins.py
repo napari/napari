@@ -27,7 +27,9 @@ def test_iter_reader_plugins(plugin_manager):
     # but when we try to read an image path, it will raise an IOError.
     # we want to catch and store that IOError, and then move on to give other
     # plugins chance to return layer_data
-    layer_data = read_data_with_plugins('image.ext', plugin_manager)
+    layer_data = read_data_with_plugins(
+        'image.ext', plugin_manager=plugin_manager
+    )
 
     # the good plugins (like "napari_test_plugin") should return layer_data
     assert layer_data
@@ -91,5 +93,7 @@ def test_builtin_reader_plugin_stacks(viewer_factory):
 
 def test_nonsense_path_is_ok(plugin_manager):
     """Test that a path with no readers doesn't throw an exception."""
-    layer_data = read_data_with_plugins('image.NONsense', plugin_manager)
+    layer_data = read_data_with_plugins(
+        'image.NONsense', plugin_manager=plugin_manager
+    )
     assert not layer_data
