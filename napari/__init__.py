@@ -48,6 +48,7 @@ vispy_logger = logging.getLogger('vispy')
 vispy_logger.setLevel(logging.WARNING)
 
 from .viewer import Viewer
+from .plugins.io import save_layers
 
 # Note that importing _viewer_key_bindings is needed as the Viewer gets
 # decorated with keybindings during that process, but it is not directly needed

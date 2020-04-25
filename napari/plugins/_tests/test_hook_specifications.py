@@ -1,5 +1,4 @@
 import inspect
-import warnings
 
 import pytest
 from numpydoc.docscrape import FunctionDoc
@@ -80,18 +79,3 @@ def test_docs_match_signature(name, func):
         "not match the parameters listed in the docstring:\n"
         f"{sig_params} != {doc_params}"
     )
-
-    # we know the parameters names match, now check that their types match...
-    # but only emit a warning if not
-    for doc_param in docs.get('Parameters'):
-        sig_param = sig.parameters.get(doc_param.name)
-        name = getattr(sig_param.annotation, '_name', None)
-        name = name or getattr(sig_param.annotation, '__name__', None)
-        if doc_param.type != name:
-            msg = (
-                f'The type ({name}) for parameter '
-                f'"{sig_param.name}" in hook specification "{name}" does not '
-                'match the type specified in the docstring '
-                f'({doc_param.type})'
-            )
-            warnings.warn(msg)

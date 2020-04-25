@@ -26,11 +26,12 @@ will probably just wish to maintain our internal hook looping logic.
 import sys
 import warnings
 from typing import Any, List, Optional, Sequence, Tuple, Union
-from ..types import ExcInfo
 
 from pluggy.callers import HookCallError, _raise_wrapfail
-from pluggy.hooks import HookImpl, _HookCaller as _PluggyHookCaller
+from pluggy.hooks import HookImpl
+from pluggy.hooks import _HookCaller as _PluggyHookCaller
 
+from ..types import ExcInfo
 from .exceptions import PluginCallError
 
 
@@ -83,7 +84,6 @@ class HookResult:
             if firstresult and self._result:
                 self._result = self._result[0]
                 self.implementation = self.implementation[0]
-
         self._excinfo = excinfo
         self.is_firstresult = firstresult
         self.plugin_errors = plugin_errors
