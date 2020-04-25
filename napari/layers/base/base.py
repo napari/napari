@@ -14,7 +14,7 @@ from ...utils.misc import ROOT_DIR
 from ...utils.naming import magic_name
 from ...utils.status_messages import format_float, status_format
 from ..transforms import ScaleTranslate, TransformChain
-from ..utils.layer_utils import compute_pyramid_level, convert_to_uint8
+from ..utils.layer_utils import compute_multiscale_level, convert_to_uint8
 from ._base_constants import Blending
 
 
@@ -39,7 +39,10 @@ class Layer(KeymapProvider, ABC):
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
-
+    is_multiscale : bool
+        Whether the data is multiscale or not. Multiscale data is
+        represented by a list of data objects and should go from largest to
+        smallest.
 
     Attributes
     ----------
@@ -67,6 +70,10 @@ class Layer(KeymapProvider, ABC):
         Scale factors for the layer.
     translate : tuple of float
         Translation values for the layer.
+    is_multiscale : bool
+        Whether the data is multiscale or not. Multiscale data is
+        represented by a list of data objects and should go from largest to
+        smallest.
     z_index : int
         Depth of the layer visual relative to other visuals in the scenecanvas.
     coordinates : tuple of float
@@ -124,6 +131,7 @@ class Layer(KeymapProvider, ABC):
         opacity=1,
         blending='translucent',
         visible=True,
+        is_multiscale=False,
     ):
         super().__init__()
 
@@ -143,6 +151,7 @@ class Layer(KeymapProvider, ABC):
         self._interactive = True
         self._value = None
         self.scale_factor = 1
+        self.is_multiscale = is_multiscale
 
         self.dims = Dims(ndim)
 
@@ -156,7 +165,7 @@ class Layer(KeymapProvider, ABC):
         #   of an image. It maps pixels of the tile into the coordinate space
         #   of the full resolution data and can usually be represented by a
         #   scale factor and a translation. A common use case is viewing part
-        #   of lower resolution level of an image pyramid, another is using a
+        #   of lower resolution level of an image multiscale, another is using a
         #   downsampled version of an image when the full image size is larger
         #   than the maximum allowed texture size of your graphics card.
         # 2. `data2world`: The main transform mapping data to a world-like
@@ -178,7 +187,6 @@ class Layer(KeymapProvider, ABC):
         self.coordinates = (0,) * ndim
         self._position = (0,) * self.dims.ndisplay
         self.corner_pixels = np.zeros((2, ndim), dtype=int)
-        self.is_pyramid = False
         self._editable = True
 
         self._thumbnail_shape = (32, 32, 4)
@@ -635,8 +643,8 @@ class Layer(KeymapProvider, ABC):
         self._value = self.get_value()
         self.status = self.get_message()
 
-    def _update_pyramid(self, corner_pixels, shape_threshold):
-        """Refresh layer pyramid if new resolution level or tile is required.
+    def _update_multiscale(self, corner_pixels, shape_threshold):
+        """Refresh layer multiscale if new resolution level or tile is required.
 
         Parameters
         ----------
@@ -663,7 +671,7 @@ class Layer(KeymapProvider, ABC):
 
         downsample_factors = self.downsample_factors[:, self.dims.displayed]
 
-        data_level = compute_pyramid_level(
+        data_level = compute_multiscale_level(
             requested_shape[self.dims.displayed],
             shape_threshold,
             downsample_factors,
@@ -699,7 +707,7 @@ class Layer(KeymapProvider, ABC):
         value = self._value
         if value is not None:
             if isinstance(value, tuple) and value != (None, None):
-                # it's a pyramid -> value = (data_level, value)
+                # it's a multiscale -> value = (data_level, value)
                 msg += f': {status_format(value[0])}'
                 if value[1] is not None:
                     msg += f', {status_format(value[1])}'

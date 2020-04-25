@@ -3,14 +3,14 @@ import sys
 import pytest
 
 
-def test_pyramid(viewer_factory):
-    """Test rendering of pyramid data."""
+def test_multiscale(viewer_factory):
+    """Test rendering of multiscale data."""
     view, viewer = viewer_factory(show=True)
 
     shapes = [(4000, 3000), (2000, 1500), (1000, 750), (500, 375)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    _ = viewer.add_image(data, is_pyramid=True, contrast_limits=[0, 1])
+    _ = viewer.add_image(data, is_multiscale=True, contrast_limits=[0, 1])
     layer = viewer.layers[0]
 
     # Set canvas size to target amount
@@ -45,13 +45,13 @@ def test_pyramid(viewer_factory):
     sys.platform.startswith('win'),
     reason='Screenshot tests are not supported on napari windows CI.',
 )
-def test_pyramid_screenshot(viewer_factory):
-    """Test rendering of pyramid data with screenshot."""
+def test_multiscale_screenshot(viewer_factory):
+    """Test rendering of multiscale data with screenshot."""
     view, viewer = viewer_factory(show=True)
 
     shapes = [(4000, 3000), (2000, 1500), (1000, 750), (500, 375)]
     data = [np.ones(s) for s in shapes]
-    _ = viewer.add_image(data, is_pyramid=True, contrast_limits=[0, 1])
+    _ = viewer.add_image(data, is_multiscale=True, contrast_limits=[0, 1])
 
     # Set canvas size to target amount
     view.view.canvas.size = (800, 600)
@@ -75,13 +75,13 @@ def test_pyramid_screenshot(viewer_factory):
     sys.platform.startswith('win'),
     reason='Screenshot tests are not supported on napari windows CI.',
 )
-def test_pyramid_screenshot_zoomed(viewer_factory):
-    """Test rendering of pyramid data with screenshot after zoom."""
+def test_multiscale_screenshot_zoomed(viewer_factory):
+    """Test rendering of multiscale data with screenshot after zoom."""
     view, viewer = viewer_factory(show=True)
 
     shapes = [(4000, 3000), (2000, 1500), (1000, 750), (500, 375)]
     data = [np.ones(s) for s in shapes]
-    _ = viewer.add_image(data, is_pyramid=True, contrast_limits=[0, 1])
+    _ = viewer.add_image(data, is_multiscale=True, contrast_limits=[0, 1])
 
     # Set canvas size to target amount
     view.view.canvas.size = (800, 600)
@@ -90,7 +90,7 @@ def test_pyramid_screenshot_zoomed(viewer_factory):
     view.view.camera.rect = [1000, 1000, 200, 150]
     list(view.layer_to_visual.values())[0].on_draw(None)
 
-    # Check that current level is bottom level of pyramid
+    # Check that current level is bottom level of multiscale
     assert viewer.layers[0].data_level == 0
 
     screenshot = viewer.screenshot()
@@ -116,7 +116,7 @@ def test_image_screenshot_zoomed(viewer_factory):
     view, viewer = viewer_factory(show=True)
 
     data = np.ones((4000, 3000))
-    _ = viewer.add_image(data, is_pyramid=False, contrast_limits=[0, 1])
+    _ = viewer.add_image(data, is_multiscale=False, contrast_limits=[0, 1])
 
     # Set canvas size to target amount
     view.view.canvas.size = (800, 600)

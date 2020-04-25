@@ -3,7 +3,7 @@ import numpy as np
 import pytest
 from skimage.transform import pyramid_gaussian
 from napari.layers.image._image_utils import (
-    guess_pyramid,
+    guess_multiscale,
     guess_rgb,
 )
 
@@ -27,44 +27,44 @@ def test_guess_rgb():
     assert guess_rgb(shape)
 
 
-def test_guess_pyramid():
+def test_guess_multiscale():
     data = np.random.random((10, 15))
-    assert not guess_pyramid(data)
+    assert not guess_multiscale(data)
 
     data = np.random.random((10, 15, 6))
-    assert not guess_pyramid(data)
+    assert not guess_multiscale(data)
 
     data = [np.random.random((10, 15, 6))]
-    assert not guess_pyramid(data)
+    assert not guess_multiscale(data)
 
     data = [np.random.random((10, 15, 6)), np.random.random((10, 15, 6))]
-    assert not guess_pyramid(data)
+    assert not guess_multiscale(data)
 
     data = [np.random.random((10, 15, 6)), np.random.random((5, 7, 3))]
-    assert guess_pyramid(data)
+    assert guess_multiscale(data)
 
     data = [np.random.random((10, 15, 6)), np.random.random((10, 7, 3))]
-    assert guess_pyramid(data)
+    assert guess_multiscale(data)
 
     data = tuple(data)
-    assert guess_pyramid(data)
+    assert guess_multiscale(data)
 
     data = tuple(
         pyramid_gaussian(np.random.random((10, 15)), multichannel=False)
     )
-    assert guess_pyramid(data)
+    assert guess_multiscale(data)
 
     data = np.asarray(
         tuple(pyramid_gaussian(np.random.random((10, 15)), multichannel=False))
     )
-    assert guess_pyramid(data)
+    assert guess_multiscale(data)
 
     # Check for integer overflow with big data
     s = 8192
     data = [da.ones((s,) * 3), da.ones((s // 2,) * 3), da.ones((s // 4,) * 3)]
-    assert guess_pyramid(data)
+    assert guess_multiscale(data)
 
 
 @pytest.mark.timeout(2)
-def test_timing_is_pyramid_big():
-    assert not guess_pyramid(data_dask)
+def test_timing_is_multiscale_big():
+    assert not guess_multiscale(data_dask)

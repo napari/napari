@@ -13,7 +13,7 @@ from ..base import Layer
 from ..utils.layer_utils import calc_data_range
 from ..intensity_mixin import IntensityVisualizationMixin
 from ._image_constants import Interpolation, Interpolation3D, Rendering
-from ._image_utils import guess_rgb, guess_pyramid
+from ._image_utils import guess_rgb, guess_multiscale
 
 
 # Mixin must come before Layer
@@ -26,17 +26,11 @@ class Image(IntensityVisualizationMixin, Layer):
         Image data. Can be N dimensional. If the last dimension has length
         3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a
         list and arrays are decreasing in shape then the data is treated as
-        an image pyramid.
+        an image multiscale.
     rgb : bool
         Whether the image is rgb RGB or RGBA. If not specified by user and
         the last dimension of the data has length 3 or 4 it will be set as
         `True`. If `False` the image is interpreted as a luminance image.
-    is_pyramid : bool
-        Whether the data is an image pyramid or not. Pyramid data is
-        represented by a list of array like image data. If not specified by
-        the user and if the data is a list of arrays that decrease in shape
-        then it will be taken to be a pyramid. The first image in the list
-        should be the largest.
     colormap : str, vispy.Color.Colormap, tuple, dict
         Colormap to use for luminance images. If a string must be the name
         of a supported colormap from vispy or matplotlib. If a tuple the
@@ -76,7 +70,12 @@ class Image(IntensityVisualizationMixin, Layer):
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
-
+    is_multiscale : bool
+        Whether the data is a multiscale image or not. Multiscale data is
+        represented by a list of array like image data. If not specified by
+        the user and if the data is a list of arrays that decrease in shape
+        then it will be taken to be multiscale. The first image in the list
+        should be the largest.
 
     Attributes
     ----------
@@ -84,7 +83,7 @@ class Image(IntensityVisualizationMixin, Layer):
         Image data. Can be N dimensional. If the last dimension has length
         3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a list
         and arrays are decreaing in shape then the data is treated as an
-        image pyramid.
+        image multiscale.
     metadata : dict
         Image metadata.
     rgb : bool
@@ -92,8 +91,8 @@ class Image(IntensityVisualizationMixin, Layer):
         specified by user and the last dimension of the data has length 3 or 4
         it will be set as `True`. If `False` the image is interpreted as a
         luminance image.
-    is_pyramid : bool
-        Whether the data is an image pyramid or not. Pyramid data is
+    is_multiscale : bool
+        Whether the data is a multiscale image or not. Multiscale data is
         represented by a list of array like image data. The first image in the
         list should be the largest.
     colormap : 2-tuple of str, vispy.color.Colormap
@@ -138,7 +137,6 @@ class Image(IntensityVisualizationMixin, Layer):
         data,
         *,
         rgb=None,
-        is_pyramid=None,
         colormap='gray',
         contrast_limits=None,
         gamma=1,
@@ -153,16 +151,17 @@ class Image(IntensityVisualizationMixin, Layer):
         opacity=1,
         blending='translucent',
         visible=True,
+        is_multiscale=None,
     ):
         if isinstance(data, types.GeneratorType):
             data = list(data)
 
-        # Determine if data is a pyramid
-        if is_pyramid is None:
-            is_pyramid = guess_pyramid(data)
+        # Determine if data is a multiscale
+        if is_multiscale is None:
+            is_multiscale = guess_multiscale(data)
 
         # Determine initial shape
-        if is_pyramid:
+        if is_multiscale:
             init_shape = data[0].shape
         else:
             init_shape = data.shape
@@ -187,6 +186,7 @@ class Image(IntensityVisualizationMixin, Layer):
             opacity=opacity,
             blending=blending,
             visible=visible,
+            is_multiscale=is_multiscale,
         )
 
         self.events.add(
@@ -197,12 +197,11 @@ class Image(IntensityVisualizationMixin, Layer):
         )
 
         # Set data
-        self.is_pyramid = is_pyramid
         self.rgb = rgb
         self._data = data
-        if self.is_pyramid:
+        if self.is_multiscale:
             self._data_level = len(self.data) - 1
-            # Determine which level of the pyramid to use for the thumbnail.
+            # Determine which level of the multiscale to use for the thumbnail.
             # Pick the smallest level with at least one axis >= 64. This is
             # done to prevent the thumbnail from being from one of the very
             # low resolution layers and therefore being very blurred.
@@ -254,7 +253,7 @@ class Image(IntensityVisualizationMixin, Layer):
         self._update_dims()
 
     def _calc_data_range(self):
-        if self.is_pyramid:
+        if self.is_multiscale:
             input_data = self.data[-1]
         else:
             input_data = self.data
@@ -262,7 +261,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @property
     def dtype(self):
-        return self.data[0].dtype if self.is_pyramid else self.data.dtype
+        return self.data[0].dtype if self.is_multiscale else self.data.dtype
 
     @property
     def data(self):
@@ -284,7 +283,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @property
     def data_level(self):
-        """int: Current level of pyramid, or 0 if image."""
+        """int: Current level of multiscale, or 0 if image."""
         return self._data_level
 
     @data_level.setter
@@ -296,8 +295,8 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @property
     def level_shapes(self):
-        """array: Shapes of each level of the pyramid or just of image."""
-        if self.is_pyramid:
+        """array: Shapes of each level of the multiscale or just of image."""
+        if self.is_multiscale:
             if self.rgb:
                 shapes = [im.shape[:-1] for im in self.data]
             else:
@@ -311,7 +310,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @property
     def downsample_factors(self):
-        """list: Downsample factors for each level of the pyramid."""
+        """list: Downsample factors for each level of the multiscale."""
         return np.divide(self.level_shapes[0], self.level_shapes)
 
     @property
@@ -418,7 +417,7 @@ class Image(IntensityVisualizationMixin, Layer):
         state.update(
             {
                 'rgb': self.rgb,
-                'is_pyramid': self.is_pyramid,
+                'is_multiscale': self.is_multiscale,
                 'colormap': self.colormap[0],
                 'contrast_limits': self.contrast_limits,
                 'interpolation': self.interpolation,
@@ -463,8 +462,8 @@ class Image(IntensityVisualizationMixin, Layer):
         else:
             order = self.dims.displayed_order
 
-        if self.is_pyramid:
-            # If 3d redering just show lowest level of pyramid
+        if self.is_multiscale:
+            # If 3d redering just show lowest level of multiscale
             if self.dims.ndisplay == 3:
                 self.data_level = len(self.data) - 1
 
@@ -542,7 +541,7 @@ class Image(IntensityVisualizationMixin, Layer):
             self._data_view = self._raw_to_displayed(self._data_raw)
             self._data_thumbnail = self._raw_to_displayed(thumbnail_source)
 
-        if self.is_pyramid:
+        if self.is_multiscale:
             self.events.scale()
             self.events.translate()
 
@@ -627,7 +626,7 @@ class Image(IntensityVisualizationMixin, Layer):
         else:
             value = None
 
-        if self.is_pyramid:
+        if self.is_multiscale:
             value = (self.data_level, value)
 
         return value

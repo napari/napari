@@ -6,7 +6,6 @@ def view_image(
     *,
     channel_axis=None,
     rgb=None,
-    is_pyramid=None,
     colormap=None,
     contrast_limits=None,
     gamma=1,
@@ -21,6 +20,7 @@ def view_image(
     opacity=1,
     blending=None,
     visible=True,
+    is_multiscale=None,
     path=None,
     title='napari',
     ndisplay=2,
@@ -36,19 +36,13 @@ def view_image(
         Image data. Can be N dimensional. If the last dimension has length
         3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a
         list and arrays are decreasing in shape then the data is treated as
-        an image pyramid.
+        an image multiscale.
     channel_axis : int, optional
         Axis to expand image along.
     rgb : bool
         Whether the image is rgb RGB or RGBA. If not specified by user and
         the last dimension of the data has length 3 or 4 it will be set as
         `True`. If `False` the image is interpreted as a luminance image.
-    is_pyramid : bool
-        Whether the data is an image pyramid or not. Pyramid data is
-        represented by a list of array like image data. If not specified by
-        the user and if the data is a list of arrays that decrease in shape
-        then it will be taken to be a pyramid. The first image in the list
-        should be the largest.
     colormap : str, vispy.Color.Colormap, tuple, dict, list
         Colormaps to use for luminance images. If a string must be the name
         of a supported colormap from vispy or matplotlib. If a tuple the
@@ -94,6 +88,12 @@ def view_image(
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
+    is_multiscale : bool
+        Whether the data is a multiscale image or not. Multiscale data is
+        represented by a list of array like image data. If not specified by
+        the user and if the data is a list of arrays that decrease in shape
+        then it will be taken to be multiscale. The first image in the list
+        should be the largest.
     path : str or list of str
         Path or list of paths to image data. Paths can be passed as strings
         or `pathlib.Path` instances.
@@ -126,7 +126,7 @@ def view_image(
         data=data,
         channel_axis=channel_axis,
         rgb=rgb,
-        is_pyramid=is_pyramid,
+        is_multiscale=is_multiscale,
         colormap=colormap,
         contrast_limits=contrast_limits,
         gamma=gamma,
@@ -353,7 +353,6 @@ def view_points(
 def view_labels(
     data=None,
     *,
-    is_pyramid=None,
     num_colors=50,
     seed=0.5,
     name=None,
@@ -363,6 +362,7 @@ def view_labels(
     opacity=0.7,
     blending='translucent',
     visible=True,
+    is_multiscale=None,
     path=None,
     title='napari',
     ndisplay=2,
@@ -388,13 +388,7 @@ def view_labels(
     Parameters
     ----------
     data : array or list of array
-        Labels data as an array or pyramid.
-    is_pyramid : bool
-        Whether the data is an image pyramid or not. Pyramid data is
-        represented by a list of array like image data. If not specified by
-        the user and if the data is a list of arrays that decrease in shape
-        then it will be taken to be a pyramid. The first image in the list
-        should be the largest.
+        Labels data as an array or multiscale.
     num_colors : int
         Number of unique colors to use in colormap.
     seed : float
@@ -415,6 +409,12 @@ def view_labels(
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
+    is_multiscale : bool
+        Whether the data is a multiscale image or not. Multiscale data is
+        represented by a list of array like image data. If not specified by
+        the user and if the data is a list of arrays that decrease in shape
+        then it will be taken to be multiscale. The first image in the list
+        should be the largest.
     path : str or list of str
         Path or list of paths to image data. Paths can be passed as strings
         or `pathlib.Path` instances.
@@ -445,7 +445,7 @@ def view_labels(
     )
     viewer.add_labels(
         data=data,
-        is_pyramid=is_pyramid,
+        is_multiscale=is_multiscale,
         num_colors=num_colors,
         seed=seed,
         name=name,

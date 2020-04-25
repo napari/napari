@@ -117,25 +117,25 @@ def test_add_zarr():
 
 
 @pytest.mark.skipif(not zarr_available, reason='zarr not installed')
-def test_zarr_pyramid():
+def test_zarr_multiscale():
     viewer = ViewerModel()
-    pyramid = [
+    multiscale = [
         np.random.random((20, 20)),
         np.random.random((10, 10)),
         np.random.random((5, 5)),
     ]
     with TemporaryDirectory(suffix='.zarr') as fout:
         root = zarr.open_group(fout, 'a')
-        for i in range(len(pyramid)):
+        for i in range(len(multiscale)):
             shape = 20 // 2 ** i
             z = root.create_dataset(str(i), shape=(shape,) * 2)
-            z[:] = pyramid[i]
-        viewer.add_image(path=[fout], is_pyramid=True)
+            z[:] = multiscale[i]
+        viewer.add_image(path=[fout], is_multiscale=True)
         assert len(viewer.layers) == 1
-        assert len(pyramid) == len(viewer.layers[0].data)
+        assert len(multiscale) == len(viewer.layers[0].data)
         # Note: due to lazy loading, the next line needs to happen within
         # the context manager. Alternatively, we could convert to NumPy here.
-        for images, images_in in zip(pyramid, viewer.layers[0].data):
+        for images, images_in in zip(multiscale, viewer.layers[0].data):
             np.testing.assert_array_equal(images, images_in)
 
 
