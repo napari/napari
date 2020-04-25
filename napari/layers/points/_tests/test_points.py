@@ -1,7 +1,5 @@
 from copy import copy
 from itertools import cycle, islice
-from xml.etree.ElementTree import Element
-
 import numpy as np
 import pandas as pd
 import pytest
@@ -1241,18 +1239,6 @@ def test_thumbnail_with_n_points_greater_than_max():
     bigger_layer_3d.dims.ndisplay = 3
     bigger_layer_3d._update_thumbnail()
     assert bigger_layer_3d.thumbnail.shape == bigger_layer_3d._thumbnail_shape
-
-
-def test_xml_list():
-    """Test the xml generation."""
-    shape = (10, 2)
-    np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    layer = Points(data)
-    xml = layer.to_xml_list()
-    assert type(xml) == list
-    assert len(xml) == shape[0]
-    assert np.all([type(x) == Element for x in xml])
 
 
 def test_view_data():

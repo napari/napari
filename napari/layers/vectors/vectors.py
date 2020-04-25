@@ -1,5 +1,4 @@
 from typing import Union, Dict, Tuple, List
-from xml.etree.ElementTree import Element
 import warnings
 
 import numpy as np
@@ -701,35 +700,6 @@ class Vectors(Layer):
                 colormapped[int(x), int(y), :] = ec
         colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
-
-    def to_xml_list(self):
-        """Convert vectors to a list of svg xml elements.
-
-        Returns
-        ----------
-        xml : list
-            List of xml elements defining each vector as a line according to
-            the svg specification.
-        """
-        xml_list = []
-
-        width = str(self.edge_width)
-        edge_color = self.edge_color[self._view_indices, :3]
-
-        opacity = str(self.opacity)
-        props = {'stroke-width': width, 'opacity': opacity}
-
-        for v, ec in zip(self._view_data, edge_color):
-            x1 = str(v[0, -2])
-            y1 = str(v[0, -1])
-            x2 = str(v[0, -2] + self.length * v[1, -2])
-            y2 = str(v[0, -1] + self.length * v[1, -1])
-            stroke = f'rgb{tuple(ec)}'
-            props['stroke'] = stroke
-            element = Element('line', x1=y1, y1=x1, x2=y2, y2=x2, **props)
-            xml_list.append(element)
-
-        return xml_list
 
     def _get_value(self) -> None:
         """Returns coordinates, values, and a string for a given mouse position

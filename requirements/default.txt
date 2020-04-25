@@ -1,4 +1,5 @@
 napari-plugins>=0.1.0
+napari-svg>=0.0.5
 dask[array]>=2.1.0
 fsspec>=0.3.3
 imageio>=2.5.0

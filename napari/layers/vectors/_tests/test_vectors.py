@@ -1,5 +1,3 @@
-from xml.etree.ElementTree import Element
-
 import numpy as np
 import pandas as pd
 import pytest
@@ -536,15 +534,3 @@ def test_message():
     layer = Vectors(data)
     msg = layer.get_message()
     assert type(msg) == str
-
-
-def test_xml_list():
-    """Test the xml generation."""
-    np.random.seed(0)
-    data = np.random.random((10, 2, 2))
-    data[:, 0, :] = 20 * data[:, 0, :]
-    layer = Vectors(data)
-    xml = layer.to_xml_list()
-    assert type(xml) == list
-    assert len(xml) == 10
-    assert np.all([type(x) == Element for x in xml])

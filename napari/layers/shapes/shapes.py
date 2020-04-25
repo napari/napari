@@ -1422,19 +1422,6 @@ class Shapes(Layer):
                 self._drag_box = np.array([self._drag_start, coord])
                 self._set_highlight()
 
-    def to_xml_list(self):
-        """Convert the shapes to a list of svg xml elements.
-
-        Z ordering of the shapes will be taken into account.
-
-        Returns
-        ----------
-        xml : list
-            List of xml elements defining each shape according to the
-            svg specification
-        """
-        return self._data_view.to_xml_list()
-
     def to_masks(self, mask_shape=None):
         """Return an array of binary masks, one for each shape.
 
