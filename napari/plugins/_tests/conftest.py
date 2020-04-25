@@ -13,7 +13,7 @@ def plugin_manager():
     fixture_path = os.path.join(os.path.dirname(__file__), 'fixtures')
     plugin_manager = PluginManager(
         'napari',
-        discover_entrypoint='napari.plugin',
+        discover_entry_point='napari.plugin',
         discover_prefix='napari_',
     )
     plugin_manager.add_hookspecs(hook_specifications)
