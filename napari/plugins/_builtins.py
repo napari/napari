@@ -6,7 +6,7 @@ import shutil
 from typing import Any, List, Optional, Union
 
 import numpy as np
-from napari_plugins import napari_hook_implementation
+from naplugi import napari_hook_implementation
 
 from ..types import (
     FullLayerData,
