@@ -2,7 +2,7 @@ napari-plugins>=0.1.0
 dask[array]>=2.1.0
 fsspec>=0.3.3
 imageio>=2.5.0
-Pillow!=7.1.*  # not a direct dependency, but 7.1.0 and 7.1.1 broke imageio
+Pillow!=7.1.0,!=7.1.1  # not a direct dependency, but 7.1.0 and 7.1.1 broke imageio
 ipykernel>=5.1.1
 numpy>=1.10.0
 qtpy>=1.7.0
