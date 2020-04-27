@@ -162,9 +162,9 @@ class VispyImageLayer(VispyBaseLayer):
             Data that now fits inside texture.
         """
         if np.any(np.greater(data.shape, MAX_TEXTURE_SIZE)):
-            if self.layer.is_pyramid:
+            if self.layer.multiscale:
                 raise ValueError(
-                    f"Shape of individual tiles in pyramid {data.shape} "
+                    f"Shape of individual tiles in multiscale {data.shape} "
                     f"cannot exceed GL_MAX_TEXTURE_SIZE "
                     f"{MAX_TEXTURE_SIZE}. Rendering is currently in "
                     f"{self.layer.dims.ndisplay}D mode."

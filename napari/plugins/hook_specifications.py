@@ -16,6 +16,10 @@ specification. (This allows for extending existing hook arguments without
 breaking existing implementations). However, implementations must not require
 *more* arguments than defined in the spec.
 
+For more general background on the plugin hook calling mechanism, see the
+`napari-plugin-manager documentation
+<https://napari-plugin-engine.readthedocs.io/en/latest/>`_.
+
 .. NOTE::
     Hook specifications are a feature borrowed from `pluggy
     <https://pluggy.readthedocs.io/en/latest/#specs>`_. In the `pluggy
@@ -31,11 +35,9 @@ breaking existing implementations). However, implementations must not require
 # developers, so comprehensive documentation with complete type annotations is
 # imperative!
 
-import pluggy
+from napari_plugin_engine import napari_hook_specification
 from typing import Optional, Union, List, Any
 from ..types import ReaderFunction, WriterFunction
-
-napari_hook_specification = pluggy.HookspecMarker("napari")
 
 
 # -------------------------------------------------------------------------- #
@@ -166,8 +168,8 @@ def napari_write_image(path: str, data: Any, meta: dict) -> Optional[str]:
         Path to file, directory, or resource (like a URL).
     data : array or list of array
         Image data. Can be N dimensional. If meta['rgb'] is ``True`` then the
-        data should be interpreted as RGB or RGBA. If meta['is_pyramid'] is
-        True, then the data should be interpreted as an image pyramid.
+        data should be interpreted as RGB or RGBA. If meta['multiscale'] is
+        True, then the data should be interpreted as a multiscale image.
     meta : dict
         Image metadata.
 
@@ -196,7 +198,7 @@ def napari_write_labels(path: str, data: Any, meta: dict) -> Optional[str]:
         Integer valued label data. Can be N dimensional. Every pixel contains
         an integer ID corresponding to the region it belongs to. The label 0 is
         rendered as transparent. If a list and arrays are decreasing in shape
-        then the data is from an image pyramid.
+        then the data is from a multiscale image.
     meta : dict
         Labels metadata.
 

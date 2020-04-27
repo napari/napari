@@ -240,7 +240,7 @@ def read_zarr_dataset(path):
     --------
     path : str
         Path to directory ending in '.zarr'. Path can contain either an array
-        or a group of arrays in the case of pyramid data.
+        or a group of arrays in the case of multiscale data.
     Returns
     -------
     image : array-like
@@ -253,7 +253,7 @@ def read_zarr_dataset(path):
         image = da.from_zarr(path)
         shape = image.shape
     elif os.path.exists(os.path.join(path, '.zgroup')):
-        # else load zarr all arrays inside file, useful for pyramid data
+        # else load zarr all arrays inside file, useful for multiscale data
         image = []
         for subpath in sorted(os.listdir(path)):
             if not subpath.startswith('.'):

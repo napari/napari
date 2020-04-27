@@ -239,9 +239,10 @@ class Window:
         report_plugin_action.triggered.connect(self._show_plugin_err_reporter)
         self.plugins_menu.addAction(report_plugin_action)
 
-    def _show_plugin_list(self):
+    def _show_plugin_list(self, plugin_manager=None):
         """Show dialog with a table of installed plugins and metadata."""
-        from ..plugins import plugin_manager
+        if not plugin_manager:
+            from ..plugins import plugin_manager
 
         dialog = QDialog(self._qt_window)
         dialog.setMaximumHeight(800)
@@ -252,17 +253,15 @@ class Window:
         title.setObjectName("h2")
         layout.addWidget(title)
         # get metadata for successfully registered plugins
-        data = [
-            v
-            for k, v in plugin_manager._plugin_meta.items()
-            if k in plugin_manager._name2plugin
-        ]
+        plugin_manager.discover()
+        data = plugin_manager.list_plugin_metadata()
+        data = list(filter(lambda x: x['plugin_name'] != 'builtins', data))
         # create a table for it
         dialog.table = QtDictTable(
             self._qt_window,
             data,
             headers=[
-                'plugin',
+                'plugin_name',
                 'package',
                 'version',
                 'url',
