@@ -262,6 +262,9 @@ def all_subclasses(cls: Type) -> set:
     )
 
 
+_have_warned_psutil = False
+
+
 def resize_dask_cache(nbytes: int = None):
     """Create or resize the dask cache for opportunistic caching.
 
@@ -292,11 +295,14 @@ def resize_dask_cache(nbytes: int = None):
         except ImportError:
             import warnings
 
-            warnings.warn(
-                'Could not import psutil to get available memory for caching. '
-                'Run "pip install psutil" to automatically detect memory. '
-                'Or resize cache manually with napari.utils.resize_dask_cache'
-            )
+            if not utils.misc._have_warned_psutil:
+                warnings.warn(
+                    'Could not import psutil to get available memory for '
+                    'caching. Run "pip install psutil" to automatically detect'
+                    ' memory. Or resize cache manually with '
+                    'napari.utils.resize_dask_cache'
+                )
+                utils.misc._have_warned_psutil = True
             nbytes = 32e9
 
     if not hasattr(utils, 'dask_cache'):
