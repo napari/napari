@@ -194,7 +194,7 @@ QLabel#Image {
   image: url(":/themes/{{ folder }}/new_image.svg");
 }
 
-QLabel#Pyramid {
+QLabel#Multiscale {
   image: url(":/themes/{{ folder }}/new_image.svg");
 }
 

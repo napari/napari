@@ -168,8 +168,8 @@ def napari_write_image(path: str, data: Any, meta: dict) -> Optional[str]:
         Path to file, directory, or resource (like a URL).
     data : array or list of array
         Image data. Can be N dimensional. If meta['rgb'] is ``True`` then the
-        data should be interpreted as RGB or RGBA. If meta['is_pyramid'] is
-        True, then the data should be interpreted as an image pyramid.
+        data should be interpreted as RGB or RGBA. If meta['multiscale'] is
+        True, then the data should be interpreted as a multiscale image.
     meta : dict
         Image metadata.
 
@@ -198,7 +198,7 @@ def napari_write_labels(path: str, data: Any, meta: dict) -> Optional[str]:
         Integer valued label data. Can be N dimensional. Every pixel contains
         an integer ID corresponding to the region it belongs to. The label 0 is
         rendered as transparent. If a list and arrays are decreasing in shape
-        then the data is from an image pyramid.
+        then the data is from a multiscale image.
     meta : dict
         Labels metadata.
 

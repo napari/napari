@@ -68,7 +68,6 @@ class AddLayersMixin:
         *,
         channel_axis=None,
         rgb=None,
-        is_pyramid=None,
         colormap=None,
         contrast_limits=None,
         gamma=1,
@@ -83,6 +82,7 @@ class AddLayersMixin:
         opacity=1,
         blending=None,
         visible=True,
+        multiscale=None,
         path=None,
     ) -> Union[layers.Image, List[layers.Image]]:
         """Add an image layer to the layers list.
@@ -93,7 +93,7 @@ class AddLayersMixin:
             Image data. Can be N dimensional. If the last dimension has length
             3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a
             list and arrays are decreasing in shape then the data is treated as
-            an image pyramid.
+            a multiscale image.
         channel_axis : int, optional
             Axis to expand image along.  If provided, each channel in the data
             will be added as an individual image layer.  byIn channel_axis mode,
@@ -106,13 +106,6 @@ class AddLayersMixin:
             `True`. If `False` the image is interpreted as a luminance image.
             If a list then must be same length as the axis that is being
             expanded as channels.
-        is_pyramid : bool or list
-            Whether the data is an image pyramid or not. Pyramid data is
-            represented by a list of array like image data. If not specified by
-            the user and if the data is a list of arrays that decrease in shape
-            then it will be taken to be a pyramid. The first image in the list
-            should be the largest. If a list then must be same length as the
-            axis that is being expanded as channels.
         colormap : str, vispy.Color.Colormap, tuple, dict, list
             Colormaps to use for luminance images. If a string must be the name
             of a supported colormap from vispy or matplotlib. If a tuple the
@@ -173,6 +166,12 @@ class AddLayersMixin:
             Whether the layer visual is currently being displayed.
             If a list then must be same length as the axis that is
             being expanded as channels.
+        multiscale : bool
+            Whether the data is a multiscale image or not. Multiscale data is
+            represented by a list of array like image data. If not specified by
+            the user and if the data is a list of arrays that decrease in shape
+            then it will be taken to be multiscale. The first image in the list
+            should be the largest.
         path : str or list of str
             Path or list of paths to image data. Paths can be passed as strings
             or `pathlib.Path` instances.
@@ -192,7 +191,6 @@ class AddLayersMixin:
         # doing this here for IDE/console autocompletion in add_image function.
         kwargs = {
             'rgb': rgb,
-            'is_pyramid': is_pyramid,
             'colormap': colormap,
             'contrast_limits': contrast_limits,
             'gamma': gamma,
@@ -207,6 +205,7 @@ class AddLayersMixin:
             'opacity': opacity,
             'blending': blending,
             'visible': visible,
+            'multiscale': multiscale,
         }
 
         # these arguments are *already* iterables in the single-channel case.
@@ -226,7 +225,7 @@ class AddLayersMixin:
 
             return self.add_layer(layers.Image(data, **kwargs))
         else:
-            n_channels = (data[0] if is_pyramid else data).shape[channel_axis]
+            n_channels = (data[0] if multiscale else data).shape[channel_axis]
             kwargs['blending'] = kwargs['blending'] or 'additive'
 
             # turn the kwargs dict into a mapping of {key: iterator}
@@ -250,7 +249,7 @@ class AddLayersMixin:
 
             layer_list = []
             for i in range(n_channels):
-                if is_pyramid:
+                if multiscale:
                     image = [
                         np.take(data[j], i, axis=channel_axis)
                         for j in range(len(data))
@@ -396,7 +395,6 @@ class AddLayersMixin:
         self,
         data=None,
         *,
-        is_pyramid=None,
         num_colors=50,
         seed=0.5,
         name=None,
@@ -406,6 +404,7 @@ class AddLayersMixin:
         opacity=0.7,
         blending='translucent',
         visible=True,
+        multiscale=None,
         path=None,
     ) -> layers.Labels:
         """Add a labels (or segmentation) layer to the layers list.
@@ -426,13 +425,7 @@ class AddLayersMixin:
         Parameters
         ----------
         data : array or list of array
-            Labels data as an array or pyramid.
-        is_pyramid : bool
-            Whether the data is an image pyramid or not. Pyramid data is
-            represented by a list of array like image data. If not specified by
-            the user and if the data is a list of arrays that decrease in shape
-            then it will be taken to be a pyramid. The first image in the list
-            should be the largest.
+            Labels data as an array or multiscale.
         num_colors : int
             Number of unique colors to use in colormap.
         seed : float
@@ -453,6 +446,12 @@ class AddLayersMixin:
             {'opaque', 'translucent', and 'additive'}.
         visible : bool
             Whether the layer visual is currently being displayed.
+        multiscale : bool
+            Whether the data is a multiscale image or not. Multiscale data is
+            represented by a list of array like image data. If not specified by
+            the user and if the data is a list of arrays that decrease in shape
+            then it will be taken to be multiscale. The first image in the list
+            should be the largest.
         path : str or list of str
             Path or list of paths to image data. Paths can be passed as strings
             or `pathlib.Path` instances.
@@ -471,7 +470,6 @@ class AddLayersMixin:
 
         layer = layers.Labels(
             data,
-            is_pyramid=is_pyramid,
             num_colors=num_colors,
             seed=seed,
             name=name,
@@ -481,6 +479,7 @@ class AddLayersMixin:
             opacity=opacity,
             blending=blending,
             visible=visible,
+            multiscale=multiscale,
         )
         self.add_layer(layer)
         return layer

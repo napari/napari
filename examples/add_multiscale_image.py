@@ -1,5 +1,5 @@
 """
-Displays an image pyramid
+Displays a multiscale image
 """
 
 from skimage import data
@@ -10,13 +10,13 @@ import napari
 import numpy as np
 
 
-# create pyramid from astronaut image
+# create multiscale from astronaut image
 base = np.tile(data.astronaut(), (8, 8, 1))
-pyramid = list(
+multiscale = list(
     pyramid_gaussian(base, downscale=2, max_layer=4, multichannel=True)
 )
-print('pyramid level shapes: ', [p.shape[:2] for p in pyramid])
+print('multiscale level shapes: ', [p.shape[:2] for p in multiscale])
 
 with napari.gui_qt():
-    # add image pyramid
-    napari.view_image(pyramid, is_pyramid=True)
+    # add image multiscale
+    napari.view_image(multiscale, multiscale=True)
