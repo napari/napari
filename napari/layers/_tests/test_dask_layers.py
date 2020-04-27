@@ -42,3 +42,7 @@ def test_list_of_dask_arrays_creates_cache():
     # adding a dask array will turn on the cache, and turn off task fusion.
     assert isinstance(utils.dask_cache, dask.cache.Cache)
     assert not dask.config.get("optimization.fuse.active")
+
+    # cleanup
+    dask.config.set({"optimization.fuse.active": True})
+    utils.dask_cache = None
