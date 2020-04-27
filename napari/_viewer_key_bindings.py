@@ -75,6 +75,7 @@ def focus_axes_down(viewer):
 
 
 @Viewer.bind_key('Control-Backspace')
+@Viewer.bind_key('Control-Delete')
 def remove_selected(viewer):
     """Remove selected layers."""
     viewer.layers.remove_selected()
@@ -87,6 +88,7 @@ def select_all(viewer):
 
 
 @Viewer.bind_key('Control-Shift-Backspace')
+@Viewer.bind_key('Control-Shift-Delete')
 def remove_all_layers(viewer):
     """Remove all layers."""
     viewer.layers.select_all()

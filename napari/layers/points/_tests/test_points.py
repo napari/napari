@@ -262,6 +262,10 @@ def test_adding_points():
     assert len(layer.data) == 13
     assert np.all(layer.data[11:, :] == coords)
 
+    # test that the last added points can be deleted
+    layer.remove_selected()
+    np.testing.assert_equal(layer.data, np.vstack((data, coord)))
+
 
 def test_adding_points_to_empty():
     """Test adding Points data to empty."""
