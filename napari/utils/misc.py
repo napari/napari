@@ -260,3 +260,47 @@ def all_subclasses(cls: Type) -> set:
     return set(cls.__subclasses__()).union(
         [s for c in cls.__subclasses__() for s in all_subclasses(c)]
     )
+
+
+def resize_dask_cache(nbytes: int = None):
+    """Create or resize the dask cache for opportunistic caching.
+
+    The cache object is an instance of a :class`cachey.Cache`, and is made
+    available at :attr:`napari.utils.dask_cache`.
+
+    See `Dask oportunistic caching
+    <https://docs.dask.org/en/latest/caching.html>`_
+
+    Parameters
+    ----------
+    nbytes : int, optional
+        The desired size of the cache, in bytes, by default, napari wil attempt
+        to import ``psutil`` and use 80% of the available memory.  Otherwise it
+        will emit a warning and use 32GB.
+    """
+
+    from dask.cache import Cache
+    from napari import utils
+
+    if not nbytes:
+
+        try:
+            import psutil
+
+            # availalble RAM
+            nbytes = psutil.virtual_memory().available * 0.8
+        except ImportError:
+            import warnings
+
+            warnings.warn(
+                'Could not import psutil to get available memory for caching. '
+                'Run "pip install psutil" to automatically detect memory. '
+                'Or resize cache manually with napari.utils.resize_dask_cache'
+            )
+            nbytes = 32e9
+
+    if not hasattr(utils, 'dask_cache'):
+        utils.dask_cache = Cache(nbytes)
+        utils.dask_cache.register()
+    else:
+        utils.dask_cache.cache.resize(nbytes)

@@ -1,5 +1,6 @@
 napari-plugins>=0.1.0
 dask[array]>=2.1.0
+cachey>=0.2.1  # for dask opportunistic caching
 fsspec>=0.3.3
 imageio>=2.5.0
 Pillow!=7.1.0,!=7.1.1  # not a direct dependency, but 7.1.0 and 7.1.1 broke imageio
