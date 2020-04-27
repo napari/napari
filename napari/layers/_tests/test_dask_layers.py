@@ -1,6 +1,7 @@
 import pytest
 from napari.layers import Image
 import dask.array as da
+import numpy as np
 import dask
 from napari import utils
 
@@ -9,12 +10,18 @@ def test_dask_array_creates_cache():
     """Test that adding a dask array creates a dask cache and turns of fusion.
     """
     # by default we have no dask_cache and task fusion is active
-    utils.dask_cache = None
+    assert utils.dask_cache is None
     assert dask.config.get("optimization.fuse.active")
-    _ = Image(da.ones((100, 100)))
+
+    def mock_set_view_slice():
+        assert not dask.config.get("optimization.fuse.active")
+
+    layer = Image(da.ones((100, 100)))
+    layer._set_view_slice = mock_set_view_slice
+    layer.set_view_slice()
     # adding a dask array will turn on the cache, and turn off task fusion.
     assert isinstance(utils.dask_cache, dask.cache.Cache)
-    assert not dask.config.get("optimization.fuse.active")
+    assert dask.config.get("optimization.fuse.active")
 
     # if the dask version is too low to remove task fusion, emit a warning
     _dask_ver = dask.__version__
@@ -29,20 +36,24 @@ def test_dask_array_creates_cache():
     utils.resize_dask_cache(1000)
     assert utils.dask_cache.cache.total_bytes <= 1000
 
-    # cleanup
-    dask.config.set({"optimization.fuse.active": True})
-    utils.dask_cache = None
+    # This should only affect dask arrays, and not numpy data
+    def mock_set_view_slice2():
+        assert dask.config.get("optimization.fuse.active")
+
+    layer2 = Image(np.ones((100, 100)))
+    layer2._set_view_slice = mock_set_view_slice2
+    layer2.set_view_slice()
+
     dask.__version__ = _dask_ver
+    utils.dask_cache = None
 
 
 def test_list_of_dask_arrays_creates_cache():
     """Test that adding a list of dask array also creates a dask cache."""
+    assert utils.dask_cache is None
     assert dask.config.get("optimization.fuse.active")
     _ = Image([da.ones((100, 100)), da.ones((20, 20))])
-    # adding a dask array will turn on the cache, and turn off task fusion.
     assert isinstance(utils.dask_cache, dask.cache.Cache)
-    assert not dask.config.get("optimization.fuse.active")
-
+    assert dask.config.get("optimization.fuse.active")
     # cleanup
-    dask.config.set({"optimization.fuse.active": True})
     utils.dask_cache = None

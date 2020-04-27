@@ -6,6 +6,7 @@ from typing import Optional, List
 from xml.etree.ElementTree import Element, tostring
 
 import numpy as np
+import dask
 import dask.array as da
 
 from ...components import Dims
@@ -133,6 +134,7 @@ class Layer(KeymapProvider, ABC):
         if name is None and data is not None and os.getenv('MAGICNAME'):
             name = magic_name(data, path_prefix=ROOT_DIR)
 
+        self._is_dask_data = False
         # if we have a dask array, setup some sane defaults for optimized
         # indexing and opportunistic caching.
         if data is not None and (
@@ -142,10 +144,10 @@ class Layer(KeymapProvider, ABC):
                 and any(isinstance(i, da.Array) for i in data)
             )
         ):
-            import dask
             from ...utils.misc import resize_dask_cache
 
-            dask.config.set({"optimization.fuse.active": False})
+            self._is_dask_data = True
+
             resize_dask_cache()
             dask_version = tuple(map(int, dask.__version__.split(".")))
             if dask_version < (2, 15, 0) and not Layer._have_warned_dask:
@@ -599,6 +601,13 @@ class Layer(KeymapProvider, ABC):
         self.events.cursor_size(cursor_size=cursor_size)
         self._cursor_size = cursor_size
 
+    def set_view_slice(self):
+        if self._is_dask_data:
+            with dask.config.set({"optimization.fuse.active": False}):
+                self._set_view_slice()
+        else:
+            self._set_view_slice()
+
     @abstractmethod
     def _set_view_slice(self):
         raise NotImplementedError()
@@ -644,7 +653,7 @@ class Layer(KeymapProvider, ABC):
         """Refresh all layer data based on current view slice.
         """
         if self.visible:
-            self._set_view_slice()
+            self.set_view_slice()
             self.events.set_data()
             self._update_thumbnail()
             self._update_coordinates()
