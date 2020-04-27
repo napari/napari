@@ -1,12 +1,11 @@
 from logging import getLogger
 from typing import List, Optional, Sequence, Union
 
-from pluggy.hooks import HookImpl
+from napari_plugin_engine import HookImplementation, PluginCallError
 
 from ..layers import Layer
 from ..types import LayerData
 from ..utils.misc import abspath_or_url
-from .exceptions import PluginCallError
 from . import plugin_manager as napari_plugin_manager
 
 logger = getLogger(__name__)
@@ -44,7 +43,7 @@ def read_data_with_plugins(
         If no reader plugins are (or they all error), returns ``None``
     """
     hook_caller = plugin_manager.hook.napari_get_reader
-    skip_impls: List[HookImpl] = []
+    skip_impls: List[HookImplementation] = []
     while True:
         result = hook_caller.call_with_result_obj(
             path=path, _skip_impls=skip_impls
@@ -63,7 +62,7 @@ def read_data_with_plugins(
                 # If builtins doesn't work, they will get a "no reader" found
                 # error anyway, so it looks a bit weird to show them that the
                 # "builtin plugin" didn't work.
-                logger.error(err.format_with_contact_info())
+                err.log(logger=logger)
 
 
 def save_layers(
@@ -201,7 +200,9 @@ def _write_multiple_layers_with_plugins(
     try:
         return writer_function(abspath_or_url(path), layer_data)
     except Exception as exc:
-        raise PluginCallError(implementation, cause=exc)
+        raise PluginCallError(
+            implementation, cause=exc, manager=plugin_manager
+        )
 
 
 def _write_single_layer_with_plugins(
