@@ -19,8 +19,7 @@ from qtpy.QtWidgets import (
 )
 
 from ..plugins import plugin_manager as napari_plugin_manager
-from ..plugins.manager import PluginManager, _HookCaller
-from pluggy.hooks import HookImpl
+from napari_plugin_engine import HookImplementation, HookCaller, PluginManager
 from .utils import drag_with_pixmap
 
 
@@ -74,9 +73,6 @@ class ImplementationListItem(QFrame):
 
     def _set_enabled(self, state: Union[bool, int]):
         """Set the enabled state of this hook implementation to ``state``."""
-        # "hook_implementation.enabled" is NOT a pluggy attribute...
-        # we are adding that to allow skipping of hook_implementations.
-        # see plugins.io.read_data_with_plugins() for an example
         self.item.hook_implementation.enabled = bool(state)
         self.opacity.setOpacity(1 if state else 0.5)
 
@@ -104,14 +100,14 @@ class QtHookImplementationListWidget(QListWidget):
     ----------
     parent : QWidget, optional
         Optional parent widget, by default None
-    hook : pluggy.manager._HookCaller, optional
-        The pluggy ``_HookCaller`` for which to show implementations.
-        by default None (i.e. no hooks shown)
+    hook : HookCaller, optional
+        The ``HookCaller`` for which to show implementations. by default None
+        (i.e. no hooks shown)
 
     Attributes
     ----------
-    hook_caller : pluggy.manager._HookCaller or None
-        The current ``_HookCaller`` instance being shown in the list.
+    hook_caller : HookCaller or None
+        The current ``HookCaller`` instance being shown in the list.
     """
 
     order_changed = Signal(list)  # emitted when the user changes the order.
@@ -119,7 +115,7 @@ class QtHookImplementationListWidget(QListWidget):
     def __init__(
         self,
         parent: Optional[QWidget] = None,
-        hook_caller: Optional[_HookCaller] = None,
+        hook_caller: Optional[HookCaller] = None,
     ):
         super().__init__(parent)
         self.setDefaultDropAction(Qt.MoveAction)
@@ -133,17 +129,17 @@ class QtHookImplementationListWidget(QListWidget):
             QSizePolicy.MinimumExpanding, QSizePolicy.MinimumExpanding
         )
         self.order_changed.connect(self.permute_hook)
-        self.hook_caller: Optional[_HookCaller] = None
+        self.hook_caller: Optional[HookCaller] = None
         self.set_hook_caller(hook_caller)
 
-    def set_hook_caller(self, hook_caller: Optional[_HookCaller]):
+    def set_hook_caller(self, hook_caller: Optional[HookCaller]):
         """Set the list widget to show hook implementations for ``hook_caller``.
 
         Parameters
         ----------
-        hook : pluggy.manager._HookCaller, optional
-            A pluggy ``_HookCaller`` to show implementations for. by default
-            None (i.e. no hooks shown)
+        hook : HookCaller, optional
+            A ``HookCaller`` for which to show implementations. by default None
+            (i.e. no hooks shown)
         """
         self.clear()
         self.hook_caller = hook_caller
@@ -156,12 +152,14 @@ class QtHookImplementationListWidget(QListWidget):
         for hook_implementation in reversed(hook_caller._nonwrappers):
             self.append_hook_implementation(hook_implementation)
 
-    def append_hook_implementation(self, hook_implementation: HookImpl):
+    def append_hook_implementation(
+        self, hook_implementation: HookImplementation
+    ):
         """Add a list item for ``hook_implementation`` with a custom widget.
 
         Parameters
         ----------
-        hook_implementation : pluggy.HookImpl
+        hook_implementation : HookImplementation
             The hook implementation object to add to the list.
         """
         item = QListWidgetItem(parent=self)
@@ -189,7 +187,7 @@ class QtHookImplementationListWidget(QListWidget):
         drag.exec_(supportedActions, Qt.MoveAction)
 
     @Slot(list)
-    def permute_hook(self, order: List[HookImpl]):
+    def permute_hook(self, order: List[HookImplementation]):
         """Rearrage the call order of the hooks for the current hook impl.
 
         Parameters
@@ -242,13 +240,12 @@ class QtPluginSorter(QDialog):
 
     def __init__(
         self,
-        plugin_manager: Optional[PluginManager] = None,
+        plugin_manager: PluginManager = napari_plugin_manager,
         *,
         parent: Optional[QWidget] = None,
         initial_hook: Optional[str] = None,
         firstresult_only: bool = True,
     ):
-        plugin_manager = plugin_manager or napari_plugin_manager
         super().__init__(parent)
         self.setWindowModality(Qt.NonModal)
         self.plugin_manager = plugin_manager

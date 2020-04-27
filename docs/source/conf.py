@@ -92,6 +92,10 @@ source_parsers = {'.md': 'recommonmark.parser.CommonMarkParser'}
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
     'numpy': ('http://docs.scipy.org/doc/numpy/', None),
+    'napari_plugin_engine': (
+        'https://napari-plugin-engine.readthedocs.io/en/latest/',
+        'https://napari-plugin-engine.readthedocs.io/en/latest/objects.inv',
+    ),
     # 'scipy': ('http://docs.scipy.org/doc/scipy/reference/', None),
 }
 
