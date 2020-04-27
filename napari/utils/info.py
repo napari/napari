@@ -63,11 +63,12 @@ def sys_info(as_html=False):
         ).replace("'", "")
         text += f'<br>{sys_info_text}'
 
+    plugin_manager.discover()
     plugin_strings = []
-    for plugin_name, plugin in plugin_manager.plugins.items():
+    for meta in plugin_manager.list_plugin_metadata():
+        plugin_name = meta.get('plugin_name')
         if plugin_name == 'builtins':
             continue
-        meta = plugin.standard_meta
         version = meta.get('version')
         version_string = f": {version}" if version else ""
         plugin_strings.append(f"  - {plugin_name}{version_string}")

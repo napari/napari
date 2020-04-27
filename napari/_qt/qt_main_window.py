@@ -253,6 +253,7 @@ class Window:
         title.setObjectName("h2")
         layout.addWidget(title)
         # get metadata for successfully registered plugins
+        plugin_manager.discover()
         data = plugin_manager.list_plugin_metadata()
         data = list(filter(lambda x: x['plugin_name'] != 'builtins', data))
         # create a table for it
