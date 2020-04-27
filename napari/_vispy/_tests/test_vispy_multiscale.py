@@ -10,7 +10,7 @@ def test_multiscale(viewer_factory):
     shapes = [(4000, 3000), (2000, 1500), (1000, 750), (500, 375)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    _ = viewer.add_image(data, is_multiscale=True, contrast_limits=[0, 1])
+    _ = viewer.add_image(data, multiscale=True, contrast_limits=[0, 1])
     layer = viewer.layers[0]
 
     # Set canvas size to target amount
@@ -51,7 +51,7 @@ def test_multiscale_screenshot(viewer_factory):
 
     shapes = [(4000, 3000), (2000, 1500), (1000, 750), (500, 375)]
     data = [np.ones(s) for s in shapes]
-    _ = viewer.add_image(data, is_multiscale=True, contrast_limits=[0, 1])
+    _ = viewer.add_image(data, multiscale=True, contrast_limits=[0, 1])
 
     # Set canvas size to target amount
     view.view.canvas.size = (800, 600)
@@ -81,7 +81,7 @@ def test_multiscale_screenshot_zoomed(viewer_factory):
 
     shapes = [(4000, 3000), (2000, 1500), (1000, 750), (500, 375)]
     data = [np.ones(s) for s in shapes]
-    _ = viewer.add_image(data, is_multiscale=True, contrast_limits=[0, 1])
+    _ = viewer.add_image(data, multiscale=True, contrast_limits=[0, 1])
 
     # Set canvas size to target amount
     view.view.canvas.size = (800, 600)
@@ -116,7 +116,7 @@ def test_image_screenshot_zoomed(viewer_factory):
     view, viewer = viewer_factory(show=True)
 
     data = np.ones((4000, 3000))
-    _ = viewer.add_image(data, is_multiscale=False, contrast_limits=[0, 1])
+    _ = viewer.add_image(data, multiscale=False, contrast_limits=[0, 1])
 
     # Set canvas size to target amount
     view.view.canvas.size = (800, 600)

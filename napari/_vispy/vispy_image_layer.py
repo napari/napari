@@ -162,7 +162,7 @@ class VispyImageLayer(VispyBaseLayer):
             Data that now fits inside texture.
         """
         if np.any(np.greater(data.shape, MAX_TEXTURE_SIZE)):
-            if self.layer.is_multiscale:
+            if self.layer.multiscale:
                 raise ValueError(
                     f"Shape of individual tiles in multiscale {data.shape} "
                     f"cannot exceed GL_MAX_TEXTURE_SIZE "

@@ -20,7 +20,7 @@ def view_image(
     opacity=1,
     blending=None,
     visible=True,
-    is_multiscale=None,
+    multiscale=None,
     path=None,
     title='napari',
     ndisplay=2,
@@ -88,7 +88,7 @@ def view_image(
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
-    is_multiscale : bool
+    multiscale : bool
         Whether the data is a multiscale image or not. Multiscale data is
         represented by a list of array like image data. If not specified by
         the user and if the data is a list of arrays that decrease in shape
@@ -126,7 +126,7 @@ def view_image(
         data=data,
         channel_axis=channel_axis,
         rgb=rgb,
-        is_multiscale=is_multiscale,
+        multiscale=multiscale,
         colormap=colormap,
         contrast_limits=contrast_limits,
         gamma=gamma,
@@ -362,7 +362,7 @@ def view_labels(
     opacity=0.7,
     blending='translucent',
     visible=True,
-    is_multiscale=None,
+    multiscale=None,
     path=None,
     title='napari',
     ndisplay=2,
@@ -409,7 +409,7 @@ def view_labels(
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
-    is_multiscale : bool
+    multiscale : bool
         Whether the data is a multiscale image or not. Multiscale data is
         represented by a list of array like image data. If not specified by
         the user and if the data is a list of arrays that decrease in shape
@@ -445,7 +445,7 @@ def view_labels(
     )
     viewer.add_labels(
         data=data,
-        is_multiscale=is_multiscale,
+        multiscale=multiscale,
         num_colors=num_colors,
         seed=seed,
         name=name,

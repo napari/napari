@@ -42,7 +42,7 @@ class Labels(Image):
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
-    is_multiscale : bool
+    multiscale : bool
         Whether the data is a multiscale image or not. Multiscale data is
         represented by a list of array like image data. If not specified by
         the user and if the data is a list of arrays that decrease in shape
@@ -55,7 +55,7 @@ class Labels(Image):
         Integer valued label data. Can be N dimensional. Every pixel contains
         an integer ID corresponding to the region it belongs to. The label 0 is
         rendered as transparent.
-    is_multiscale : bool
+    multiscale : bool
         Whether the data is a multiscale image or not. Multiscale data is
         represented by a list of array like image data. The first image in the
         list should be the largest.
@@ -120,7 +120,7 @@ class Labels(Image):
         opacity=0.7,
         blending='translucent',
         visible=True,
-        is_multiscale=None,
+        multiscale=None,
     ):
 
         self._seed = seed
@@ -141,7 +141,7 @@ class Labels(Image):
             opacity=opacity,
             blending=blending,
             visible=visible,
-            is_multiscale=is_multiscale,
+            multiscale=multiscale,
         )
 
         self.events.add(
@@ -247,7 +247,7 @@ class Labels(Image):
         state = self._get_base_state()
         state.update(
             {
-                'is_multiscale': self.is_multiscale,
+                'multiscale': self.multiscale,
                 'num_colors': self.num_colors,
                 'seed': self.seed,
                 'data': self.data,
@@ -344,7 +344,7 @@ class Labels(Image):
     def _set_editable(self, editable=None):
         """Set editable mode based on layer properties."""
         if editable is None:
-            if self.is_multiscale or self.dims.ndisplay == 3:
+            if self.multiscale or self.dims.ndisplay == 3:
                 self.editable = False
             else:
                 self.editable = True

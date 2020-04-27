@@ -39,7 +39,7 @@ class Layer(KeymapProvider, ABC):
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
-    is_multiscale : bool
+    multiscale : bool
         Whether the data is multiscale or not. Multiscale data is
         represented by a list of data objects and should go from largest to
         smallest.
@@ -70,7 +70,7 @@ class Layer(KeymapProvider, ABC):
         Scale factors for the layer.
     translate : tuple of float
         Translation values for the layer.
-    is_multiscale : bool
+    multiscale : bool
         Whether the data is multiscale or not. Multiscale data is
         represented by a list of data objects and should go from largest to
         smallest.
@@ -131,7 +131,7 @@ class Layer(KeymapProvider, ABC):
         opacity=1,
         blending='translucent',
         visible=True,
-        is_multiscale=False,
+        multiscale=False,
     ):
         super().__init__()
 
@@ -151,7 +151,7 @@ class Layer(KeymapProvider, ABC):
         self._interactive = True
         self._value = None
         self.scale_factor = 1
-        self.is_multiscale = is_multiscale
+        self.multiscale = multiscale
 
         self.dims = Dims(ndim)
 

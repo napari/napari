@@ -70,7 +70,7 @@ class Image(IntensityVisualizationMixin, Layer):
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
-    is_multiscale : bool
+    multiscale : bool
         Whether the data is a multiscale image or not. Multiscale data is
         represented by a list of array like image data. If not specified by
         the user and if the data is a list of arrays that decrease in shape
@@ -91,7 +91,7 @@ class Image(IntensityVisualizationMixin, Layer):
         specified by user and the last dimension of the data has length 3 or 4
         it will be set as `True`. If `False` the image is interpreted as a
         luminance image.
-    is_multiscale : bool
+    multiscale : bool
         Whether the data is a multiscale image or not. Multiscale data is
         represented by a list of array like image data. The first image in the
         list should be the largest.
@@ -151,17 +151,17 @@ class Image(IntensityVisualizationMixin, Layer):
         opacity=1,
         blending='translucent',
         visible=True,
-        is_multiscale=None,
+        multiscale=None,
     ):
         if isinstance(data, types.GeneratorType):
             data = list(data)
 
         # Determine if data is a multiscale
-        if is_multiscale is None:
-            is_multiscale = guess_multiscale(data)
+        if multiscale is None:
+            multiscale = guess_multiscale(data)
 
         # Determine initial shape
-        if is_multiscale:
+        if multiscale:
             init_shape = data[0].shape
         else:
             init_shape = data.shape
@@ -186,7 +186,7 @@ class Image(IntensityVisualizationMixin, Layer):
             opacity=opacity,
             blending=blending,
             visible=visible,
-            is_multiscale=is_multiscale,
+            multiscale=multiscale,
         )
 
         self.events.add(
@@ -199,7 +199,7 @@ class Image(IntensityVisualizationMixin, Layer):
         # Set data
         self.rgb = rgb
         self._data = data
-        if self.is_multiscale:
+        if self.multiscale:
             self._data_level = len(self.data) - 1
             # Determine which level of the multiscale to use for the thumbnail.
             # Pick the smallest level with at least one axis >= 64. This is
@@ -253,7 +253,7 @@ class Image(IntensityVisualizationMixin, Layer):
         self._update_dims()
 
     def _calc_data_range(self):
-        if self.is_multiscale:
+        if self.multiscale:
             input_data = self.data[-1]
         else:
             input_data = self.data
@@ -261,7 +261,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @property
     def dtype(self):
-        return self.data[0].dtype if self.is_multiscale else self.data.dtype
+        return self.data[0].dtype if self.multiscale else self.data.dtype
 
     @property
     def data(self):
@@ -296,7 +296,7 @@ class Image(IntensityVisualizationMixin, Layer):
     @property
     def level_shapes(self):
         """array: Shapes of each level of the multiscale or just of image."""
-        if self.is_multiscale:
+        if self.multiscale:
             if self.rgb:
                 shapes = [im.shape[:-1] for im in self.data]
             else:
@@ -417,7 +417,7 @@ class Image(IntensityVisualizationMixin, Layer):
         state.update(
             {
                 'rgb': self.rgb,
-                'is_multiscale': self.is_multiscale,
+                'multiscale': self.multiscale,
                 'colormap': self.colormap[0],
                 'contrast_limits': self.contrast_limits,
                 'interpolation': self.interpolation,
@@ -462,7 +462,7 @@ class Image(IntensityVisualizationMixin, Layer):
         else:
             order = self.dims.displayed_order
 
-        if self.is_multiscale:
+        if self.multiscale:
             # If 3d redering just show lowest level of multiscale
             if self.dims.ndisplay == 3:
                 self.data_level = len(self.data) - 1
@@ -541,7 +541,7 @@ class Image(IntensityVisualizationMixin, Layer):
             self._data_view = self._raw_to_displayed(self._data_raw)
             self._data_thumbnail = self._raw_to_displayed(thumbnail_source)
 
-        if self.is_multiscale:
+        if self.multiscale:
             self.events.scale()
             self.events.translate()
 
@@ -626,7 +626,7 @@ class Image(IntensityVisualizationMixin, Layer):
         else:
             value = None
 
-        if self.is_multiscale:
+        if self.multiscale:
             value = (self.data_level, value)
 
         return value

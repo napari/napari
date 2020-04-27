@@ -9,7 +9,7 @@ TEST_KWARGS = {
     'z_index': 20,
     'edge_width': 2,
     'face_color': 'white',
-    'is_multiscale': False,
+    'multiscale': False,
     'name': 'name',
     'extra_kwarg': 'never_included',
 }
@@ -20,7 +20,7 @@ EXPECTATIONS = [
         {
             'scale': (0.75, 1),
             'blending': 'translucent',
-            'is_multiscale': False,
+            'multiscale': False,
             'name': 'name',
         },
     ),
@@ -29,7 +29,7 @@ EXPECTATIONS = [
         {
             'scale': (0.75, 1),
             'num_colors': 10,
-            'is_multiscale': False,
+            'multiscale': False,
             'name': 'name',
             'blending': 'translucent',
         },

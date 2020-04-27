@@ -7,9 +7,9 @@ def test_random_multiscale():
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
     data = [np.random.randint(20, size=s) for s in shapes]
-    layer = Labels(data, is_multiscale=True)
+    layer = Labels(data, multiscale=True)
     assert layer.data == data
-    assert layer.is_multiscale is True
+    assert layer.multiscale is True
     assert layer.editable is False
     assert layer.ndim == len(shapes[0])
     assert layer.shape == shapes[0]
@@ -24,7 +24,7 @@ def test_infer_multiscale():
     data = [np.random.randint(20, size=s) for s in shapes]
     layer = Labels(data)
     assert layer.data == data
-    assert layer.is_multiscale is True
+    assert layer.multiscale is True
     assert layer.editable is False
     assert layer.ndim == len(shapes[0])
     assert layer.shape == shapes[0]
@@ -37,9 +37,9 @@ def test_3D_multiscale():
     shapes = [(8, 40, 20), (4, 20, 10), (2, 10, 5)]
     np.random.seed(0)
     data = [np.random.randint(20, size=s) for s in shapes]
-    layer = Labels(data, is_multiscale=True)
+    layer = Labels(data, multiscale=True)
     assert layer.data == data
-    assert layer.is_multiscale is True
+    assert layer.multiscale is True
     assert layer.editable is False
     assert layer.ndim == len(shapes[0])
     assert layer.shape == shapes[0]

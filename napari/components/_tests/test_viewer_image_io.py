@@ -130,7 +130,7 @@ def test_zarr_multiscale():
             shape = 20 // 2 ** i
             z = root.create_dataset(str(i), shape=(shape,) * 2)
             z[:] = multiscale[i]
-        viewer.add_image(path=[fout], is_multiscale=True)
+        viewer.add_image(path=[fout], multiscale=True)
         assert len(viewer.layers) == 1
         assert len(multiscale) == len(viewer.layers[0].data)
         # Note: due to lazy loading, the next line needs to happen within

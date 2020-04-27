@@ -10,9 +10,9 @@ def test_random_multiscale():
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    layer = Image(data, is_multiscale=True)
+    layer = Image(data, multiscale=True)
     assert layer.data == data
-    assert layer.is_multiscale is True
+    assert layer.multiscale is True
     assert layer.ndim == len(shapes[0])
     assert layer.shape == shapes[0]
     assert layer.rgb is False
@@ -26,7 +26,7 @@ def test_infer_multiscale():
     data = [np.random.random(s) for s in shapes]
     layer = Image(data)
     assert layer.data == data
-    assert layer.is_multiscale is True
+    assert layer.multiscale is True
     assert layer.ndim == len(shapes[0])
     assert layer.shape == shapes[0]
     assert layer.rgb is False
@@ -40,7 +40,7 @@ def test_infer_tuple_multiscale():
     data = tuple(np.random.random(s) for s in shapes)
     layer = Image(data)
     assert layer.data == data
-    assert layer.is_multiscale is True
+    assert layer.multiscale is True
     assert layer.ndim == len(shapes[0])
     assert layer.shape == shapes[0]
     assert layer.rgb is False
@@ -52,9 +52,9 @@ def test_blocking_multiscale():
     shape = (40, 20)
     np.random.seed(0)
     data = np.random.random(shape)
-    layer = Image(data, is_multiscale=False)
+    layer = Image(data, multiscale=False)
     assert np.all(layer.data == data)
-    assert layer.is_multiscale is False
+    assert layer.multiscale is False
     assert layer.ndim == len(shape)
     assert layer.shape == shape
     assert layer.rgb is False
@@ -69,7 +69,7 @@ def test_multiscale_tuple():
     data = tuple(pyramid_gaussian(img, multichannel=False))
     layer = Image(data)
     assert layer.data == data
-    assert layer.is_multiscale is True
+    assert layer.multiscale is True
     assert layer.ndim == len(shape)
     assert layer.shape == shape
     assert layer.rgb is False
@@ -81,7 +81,7 @@ def test_3D_multiscale():
     shapes = [(8, 40, 20), (4, 20, 10), (2, 10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    layer = Image(data, is_multiscale=True)
+    layer = Image(data, multiscale=True)
     assert layer.data == data
     assert layer.ndim == len(shapes[0])
     assert layer.shape == shapes[0]
@@ -94,7 +94,7 @@ def test_non_uniform_3D_multiscale():
     shapes = [(8, 40, 20), (8, 20, 10), (8, 10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    layer = Image(data, is_multiscale=True)
+    layer = Image(data, multiscale=True)
     assert layer.data == data
     assert layer.ndim == len(shapes[0])
     assert layer.shape == shapes[0]
@@ -107,7 +107,7 @@ def test_rgb_multiscale():
     shapes = [(40, 20, 3), (20, 10, 3), (10, 5, 3)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    layer = Image(data, is_multiscale=True)
+    layer = Image(data, multiscale=True)
     assert layer.data == data
     assert layer.ndim == len(shapes[0]) - 1
     assert layer.shape == shapes[0][:-1]
@@ -120,7 +120,7 @@ def test_3D_rgb_multiscale():
     shapes = [(8, 40, 20, 3), (4, 20, 10, 3), (2, 10, 5, 3)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    layer = Image(data, is_multiscale=True)
+    layer = Image(data, multiscale=True)
     assert layer.data == data
     assert layer.ndim == len(shapes[0]) - 1
     assert layer.shape == shapes[0][:-1]
@@ -133,7 +133,7 @@ def test_non_rgb_image():
     shapes = [(40, 20, 3), (20, 10, 3), (10, 5, 3)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    layer = Image(data, is_multiscale=True, rgb=False)
+    layer = Image(data, multiscale=True, rgb=False)
     assert layer.data == data
     assert layer.ndim == len(shapes[0])
     assert layer.shape == shapes[0]
@@ -145,10 +145,10 @@ def test_name():
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    layer = Image(data, is_multiscale=True)
+    layer = Image(data, multiscale=True)
     assert layer.name == 'Image'
 
-    layer = Image(data, is_multiscale=True, name='random')
+    layer = Image(data, multiscale=True, name='random')
     assert layer.name == 'random'
 
     layer.name = 'img'
@@ -160,13 +160,13 @@ def test_visiblity():
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    layer = Image(data, is_multiscale=True)
+    layer = Image(data, multiscale=True)
     assert layer.visible is True
 
     layer.visible = False
     assert layer.visible is False
 
-    layer = Image(data, is_multiscale=True, visible=False)
+    layer = Image(data, multiscale=True, visible=False)
     assert layer.visible is False
 
     layer.visible = True
@@ -178,13 +178,13 @@ def test_opacity():
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    layer = Image(data, is_multiscale=True)
+    layer = Image(data, multiscale=True)
     assert layer.opacity == 1.0
 
     layer.opacity = 0.5
     assert layer.opacity == 0.5
 
-    layer = Image(data, is_multiscale=True, opacity=0.6)
+    layer = Image(data, multiscale=True, opacity=0.6)
     assert layer.opacity == 0.6
 
     layer.opacity = 0.3
@@ -196,13 +196,13 @@ def test_blending():
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    layer = Image(data, is_multiscale=True)
+    layer = Image(data, multiscale=True)
     assert layer.blending == 'translucent'
 
     layer.blending = 'additive'
     assert layer.blending == 'additive'
 
-    layer = Image(data, is_multiscale=True, blending='additive')
+    layer = Image(data, multiscale=True, blending='additive')
     assert layer.blending == 'additive'
 
     layer.blending = 'opaque'
@@ -214,10 +214,10 @@ def test_interpolation():
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    layer = Image(data, is_multiscale=True)
+    layer = Image(data, multiscale=True)
     assert layer.interpolation == 'nearest'
 
-    layer = Image(data, is_multiscale=True, interpolation='bicubic')
+    layer = Image(data, multiscale=True, interpolation='bicubic')
     assert layer.interpolation == 'bicubic'
 
     layer.interpolation = 'bilinear'
@@ -229,7 +229,7 @@ def test_colormaps():
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    layer = Image(data, is_multiscale=True)
+    layer = Image(data, multiscale=True)
     assert layer.colormap[0] == 'gray'
     assert type(layer.colormap[1]) == Colormap
 
@@ -247,17 +247,17 @@ def test_colormaps():
     assert layer.colormap[0] == 'new'
     assert layer.colormap[1] == cmap
 
-    layer = Image(data, is_multiscale=True, colormap='magma')
+    layer = Image(data, multiscale=True, colormap='magma')
     assert layer.colormap[0] == 'magma'
     assert type(layer.colormap[1]) == Colormap
 
     cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.3, 0.7, 0.2, 1.0]])
-    layer = Image(data, is_multiscale=True, colormap=('custom', cmap))
+    layer = Image(data, multiscale=True, colormap=('custom', cmap))
     assert layer.colormap[0] == 'custom'
     assert layer.colormap[1] == cmap
 
     cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.7, 0.2, 0.6, 1.0]])
-    layer = Image(data, is_multiscale=True, colormap={'new': cmap})
+    layer = Image(data, multiscale=True, colormap={'new': cmap})
     assert layer.colormap[0] == 'new'
     assert layer.colormap[1] == cmap
 
@@ -267,7 +267,7 @@ def test_contrast_limits():
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    layer = Image(data, is_multiscale=True)
+    layer = Image(data, multiscale=True)
     assert layer.contrast_limits[0] >= 0
     assert layer.contrast_limits[1] <= 1
     assert layer.contrast_limits[0] < layer.contrast_limits[1]
@@ -280,7 +280,7 @@ def test_contrast_limits():
     assert layer._contrast_limits_range == contrast_limits
 
     # Set contrast_limits as keyword argument
-    layer = Image(data, is_multiscale=True, contrast_limits=contrast_limits)
+    layer = Image(data, multiscale=True, contrast_limits=contrast_limits)
     assert layer.contrast_limits == contrast_limits
     assert layer._contrast_limits_range == contrast_limits
 
@@ -290,7 +290,7 @@ def test_contrast_limits_range():
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    layer = Image(data, is_multiscale=True)
+    layer = Image(data, multiscale=True)
     assert layer._contrast_limits_range[0] >= 0
     assert layer._contrast_limits_range[1] <= 1
     assert layer._contrast_limits_range[0] < layer._contrast_limits_range[1]
@@ -299,7 +299,7 @@ def test_contrast_limits_range():
     # contrast_limits defaults to [0, 1]
     shapes = [(40, 20), (20, 10), (10, 5)]
     data = [np.zeros(s) for s in shapes]
-    layer = Image(data, is_multiscale=True)
+    layer = Image(data, multiscale=True)
     assert layer._contrast_limits_range == [0, 1]
     assert layer.contrast_limits == [0.0, 1.0]
 
@@ -309,10 +309,10 @@ def test_metadata():
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    layer = Image(data, is_multiscale=True)
+    layer = Image(data, multiscale=True)
     assert layer.metadata == {}
 
-    layer = Image(data, is_multiscale=True, metadata={'unit': 'cm'})
+    layer = Image(data, multiscale=True, metadata={'unit': 'cm'})
     assert layer.metadata == {'unit': 'cm'}
 
 
@@ -321,7 +321,7 @@ def test_value():
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    layer = Image(data, is_multiscale=True)
+    layer = Image(data, multiscale=True)
     value = layer.get_value()
     assert layer.coordinates == (0, 0)
     assert layer.data_level == 2
@@ -333,7 +333,7 @@ def test_corner_value():
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    layer = Image(data, is_multiscale=True)
+    layer = Image(data, multiscale=True)
     value = layer.get_value()
     target_position = (39, 19)
     target_level = 0
@@ -359,7 +359,7 @@ def test_message():
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    layer = Image(data, is_multiscale=True)
+    layer = Image(data, multiscale=True)
     msg = layer.get_message()
     assert type(msg) == str
 
@@ -369,7 +369,7 @@ def test_thumbnail():
     shapes = [(40, 40), (20, 20), (10, 10)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    layer = Image(data, is_multiscale=True)
+    layer = Image(data, multiscale=True)
     layer._update_thumbnail()
     assert layer.thumbnail.shape == layer._thumbnail_shape
 
@@ -379,7 +379,7 @@ def test_xml_list():
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    layer = Image(data, is_multiscale=True)
+    layer = Image(data, multiscale=True)
     xml = layer.to_xml_list()
     assert type(xml) == list
     assert len(xml) == 1
@@ -393,4 +393,4 @@ def test_not_create_random_multiscale():
     data = np.random.random(shape)
     layer = Image(data)
     assert np.all(layer.data == data)
-    assert layer.is_multiscale is False
+    assert layer.multiscale is False

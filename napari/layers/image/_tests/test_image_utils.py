@@ -66,5 +66,5 @@ def test_guess_multiscale():
 
 
 @pytest.mark.timeout(2)
-def test_timing_is_multiscale_big():
+def test_timing_multiscale_big():
     assert not guess_multiscale(data_dask)

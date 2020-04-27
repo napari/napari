@@ -82,7 +82,7 @@ class AddLayersMixin:
         opacity=1,
         blending=None,
         visible=True,
-        is_multiscale=None,
+        multiscale=None,
         path=None,
     ) -> Union[layers.Image, List[layers.Image]]:
         """Add an image layer to the layers list.
@@ -166,7 +166,7 @@ class AddLayersMixin:
             Whether the layer visual is currently being displayed.
             If a list then must be same length as the axis that is
             being expanded as channels.
-        is_multiscale : bool
+        multiscale : bool
             Whether the data is a multiscale image or not. Multiscale data is
             represented by a list of array like image data. If not specified by
             the user and if the data is a list of arrays that decrease in shape
@@ -205,7 +205,7 @@ class AddLayersMixin:
             'opacity': opacity,
             'blending': blending,
             'visible': visible,
-            'is_multiscale': is_multiscale,
+            'multiscale': multiscale,
         }
 
         # these arguments are *already* iterables in the single-channel case.
@@ -225,9 +225,7 @@ class AddLayersMixin:
 
             return self.add_layer(layers.Image(data, **kwargs))
         else:
-            n_channels = (data[0] if is_multiscale else data).shape[
-                channel_axis
-            ]
+            n_channels = (data[0] if multiscale else data).shape[channel_axis]
             kwargs['blending'] = kwargs['blending'] or 'additive'
 
             # turn the kwargs dict into a mapping of {key: iterator}
@@ -251,7 +249,7 @@ class AddLayersMixin:
 
             layer_list = []
             for i in range(n_channels):
-                if is_multiscale:
+                if multiscale:
                     image = [
                         np.take(data[j], i, axis=channel_axis)
                         for j in range(len(data))
@@ -406,7 +404,7 @@ class AddLayersMixin:
         opacity=0.7,
         blending='translucent',
         visible=True,
-        is_multiscale=None,
+        multiscale=None,
         path=None,
     ) -> layers.Labels:
         """Add a labels (or segmentation) layer to the layers list.
@@ -448,7 +446,7 @@ class AddLayersMixin:
             {'opaque', 'translucent', and 'additive'}.
         visible : bool
             Whether the layer visual is currently being displayed.
-        is_multiscale : bool
+        multiscale : bool
             Whether the data is a multiscale image or not. Multiscale data is
             represented by a list of array like image data. If not specified by
             the user and if the data is a list of arrays that decrease in shape
@@ -481,7 +479,7 @@ class AddLayersMixin:
             opacity=opacity,
             blending=blending,
             visible=visible,
-            is_multiscale=is_multiscale,
+            multiscale=multiscale,
         )
         self.add_layer(layer)
         return layer

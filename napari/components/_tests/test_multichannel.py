@@ -111,7 +111,7 @@ def test_multichannel_multiscale():
     shapes = [(40, 20, 4), (20, 10, 4), (10, 5, 4)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    viewer.add_image(data, channel_axis=-1, is_multiscale=True)
+    viewer.add_image(data, channel_axis=-1, multiscale=True)
     assert len(viewer.layers) == data[0].shape[-1]
     for i in range(data[0].shape[-1]):
         assert np.all(
