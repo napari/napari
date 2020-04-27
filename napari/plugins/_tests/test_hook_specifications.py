@@ -6,7 +6,7 @@ from numpydoc.docscrape import FunctionDoc
 from napari.plugins import hook_specifications
 
 # 1. we first create a hook specification decorator:
-#    ``napari_hook_specification = pluggy.HookspecMarker("napari")``
+#    ``napari_hook_specification = napari_plugin_engine.HookspecMarker("napari")``
 # 2. when it decorates a function, that function object gets a new attribute
 #    called "napari_spec"
 # 3. that attribute is what makes specifications discoverable when you run

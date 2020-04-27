@@ -1,6 +1,6 @@
 import sys
 
-from napari_plugin_engine import PluginManager, napari_hook_implementation
+from napari_plugin_engine import PluginManager
 from . import hook_specifications
 from . import _builtins
 
@@ -16,5 +16,4 @@ with plugin_manager.discovery_blocked():
 __all__ = [
     "PluginManager",
     "plugin_manager",
-    "napari_hook_implementation",
 ]

@@ -136,8 +136,8 @@ with :func:`numpy.save`)
 
 .. _hookimpl-decorator:
 
-Decorating your function with ``pluggy.HookimplMarker``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Decorating your function with ``HookimplMarker``
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In order to let ``napari`` know that one of your functions satisfies the API of
 one of the napari *hook specifications*, you must decorate your function with
@@ -148,9 +148,9 @@ decorator at ``napari_plugin_engine.napari_hook_implementation`` as shown in
 the example above.
 
 However, it's not required to import from or depend on napari *at all* when
-writing a plugin. You can construct your own ``napari_hook_implementation``
-decorator importing directly from ``pluggy`` (a very lightweight dependency
-that uses only standard lib python).
+writing a plugin. You can import a ``napari_hook_implementation`` decorator
+directly from ``napari_plugin_engine`` (a very lightweight dependency that uses
+only standard lib python).
 
 .. code-block:: python
 
@@ -160,10 +160,11 @@ that uses only standard lib python).
 Matching hook implementations to specifications
 """""""""""""""""""""""""""""""""""""""""""""""
 
-Currently (as of April, 2020), the only way that napari knows *which* hook
-specification your implementation matches is by looking at the *name* of your
-decorated function.  So in the example above, it was **critical** that our hook
-implementation was literally named ``napari_get_reader``:
+By default, ``napari`` matches your implementation to one of our hook
+specifications by looking at the *name* of your decorated function.  So in the
+example above, because hook implementation was literally
+named ``napari_get_reader``, it gets interpreted as an implementation for the
+hook specification of the same name.
 
 
 .. code-block:: python
@@ -172,21 +173,16 @@ implementation was literally named ``napari_get_reader``:
    def napari_get_reader(path: str):
       ...
 
-However, `a pull request has been merged at pluggy
-<https://github.com/pytest-dev/pluggy/pull/251>`_ that will enable you to mark
-*any* function as satisfying a napari hook specification (regardless of the
-function's name) by providing the name of the target hook specification to the
-``specname`` argument in your implementation decorator:
+However, you may also mark *any* function as satisfying a particular napari
+hook specification (regardless of the function's name) by providing the name of
+the target hook specification to the ``specname`` argument in your
+implementation decorator:
 
 .. code-block:: python
 
    @napari_hook_implementation(specname="napari_get_reader")
    def whatever_name_you_want(path: str):
       ...
-
-(Monitor the `pluggy changelog
-<https://github.com/pytest-dev/pluggy/blob/master/CHANGELOG.rst>`_ for release
-of PR #251.)
 
 .. _plugin-discovery:
 

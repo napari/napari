@@ -73,9 +73,6 @@ class ImplementationListItem(QFrame):
 
     def _set_enabled(self, state: Union[bool, int]):
         """Set the enabled state of this hook implementation to ``state``."""
-        # "hook_implementation.enabled" is NOT a pluggy attribute...
-        # we are adding that to allow skipping of hook_implementations.
-        # see plugins.io.read_data_with_plugins() for an example
         self.item.hook_implementation.enabled = bool(state)
         self.opacity.setOpacity(1 if state else 0.5)
 
@@ -103,13 +100,13 @@ class QtHookImplementationListWidget(QListWidget):
     ----------
     parent : QWidget, optional
         Optional parent widget, by default None
-    hook : pluggy.manager.HookCaller, optional
-        The pluggy ``HookCaller`` for which to show implementations.
-        by default None (i.e. no hooks shown)
+    hook : HookCaller, optional
+        The ``HookCaller`` for which to show implementations. by default None
+        (i.e. no hooks shown)
 
     Attributes
     ----------
-    hook_caller : pluggy.manager.HookCaller or None
+    hook_caller : HookCaller or None
         The current ``HookCaller`` instance being shown in the list.
     """
 
@@ -140,9 +137,9 @@ class QtHookImplementationListWidget(QListWidget):
 
         Parameters
         ----------
-        hook : pluggy.manager.HookCaller, optional
-            A pluggy ``HookCaller`` to show implementations for. by default
-            None (i.e. no hooks shown)
+        hook : HookCaller, optional
+            A ``HookCaller`` for which to show implementations. by default None
+            (i.e. no hooks shown)
         """
         self.clear()
         self.hook_caller = hook_caller
@@ -160,7 +157,7 @@ class QtHookImplementationListWidget(QListWidget):
 
         Parameters
         ----------
-        hook_implementation : pluggy.HookImpl
+        hook_implementation : HookImpl
             The hook implementation object to add to the list.
         """
         item = QListWidgetItem(parent=self)
@@ -241,13 +238,12 @@ class QtPluginSorter(QDialog):
 
     def __init__(
         self,
-        plugin_manager: Optional[PluginManager] = None,
+        plugin_manager: PluginManager = napari_plugin_manager,
         *,
         parent: Optional[QWidget] = None,
         initial_hook: Optional[str] = None,
         firstresult_only: bool = True,
     ):
-        plugin_manager = plugin_manager or napari_plugin_manager
         super().__init__(parent)
         self.setWindowModality(Qt.NonModal)
         self.plugin_manager = plugin_manager

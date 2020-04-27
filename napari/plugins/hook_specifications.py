@@ -16,6 +16,10 @@ specification. (This allows for extending existing hook arguments without
 breaking existing implementations). However, implementations must not require
 *more* arguments than defined in the spec.
 
+For more general background on the plugin hook calling mechanism, see the
+`napari-plugin-manager documentation
+<https://napari-plugin-engine.readthedocs.io/en/latest/>`_.
+
 .. NOTE::
     Hook specifications are a feature borrowed from `pluggy
     <https://pluggy.readthedocs.io/en/latest/#specs>`_. In the `pluggy
