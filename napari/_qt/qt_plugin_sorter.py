@@ -19,7 +19,7 @@ from qtpy.QtWidgets import (
 )
 
 from ..plugins import plugin_manager as napari_plugin_manager
-from napari_plugin_engine import HookImpl, HookCaller, PluginManager
+from napari_plugin_engine import HookImplementation, HookCaller, PluginManager
 from .utils import drag_with_pixmap
 
 
@@ -152,12 +152,14 @@ class QtHookImplementationListWidget(QListWidget):
         for hook_implementation in reversed(hook_caller._nonwrappers):
             self.append_hook_implementation(hook_implementation)
 
-    def append_hook_implementation(self, hook_implementation: HookImpl):
+    def append_hook_implementation(
+        self, hook_implementation: HookImplementation
+    ):
         """Add a list item for ``hook_implementation`` with a custom widget.
 
         Parameters
         ----------
-        hook_implementation : HookImpl
+        hook_implementation : HookImplementation
             The hook implementation object to add to the list.
         """
         item = QListWidgetItem(parent=self)
@@ -185,7 +187,7 @@ class QtHookImplementationListWidget(QListWidget):
         drag.exec_(supportedActions, Qt.MoveAction)
 
     @Slot(list)
-    def permute_hook(self, order: List[HookImpl]):
+    def permute_hook(self, order: List[HookImplementation]):
         """Rearrage the call order of the hooks for the current hook impl.
 
         Parameters

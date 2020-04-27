@@ -1,7 +1,7 @@
 from logging import getLogger
 from typing import List, Optional, Sequence, Union
 
-from napari_plugin_engine import HookImpl, PluginCallError
+from napari_plugin_engine import HookImplementation, PluginCallError
 
 from ..layers import Layer
 from ..types import LayerData
@@ -43,7 +43,7 @@ def read_data_with_plugins(
         If no reader plugins are (or they all error), returns ``None``
     """
     hook_caller = plugin_manager.hook.napari_get_reader
-    skip_impls: List[HookImpl] = []
+    skip_impls: List[HookImplementation] = []
     while True:
         result = hook_caller.call_with_result_obj(
             path=path, _skip_impls=skip_impls

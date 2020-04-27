@@ -413,11 +413,11 @@ ImplementationListItem {
   border-radius: 2px;
 }
 
-QtHookImplListWidget::item {
+QtHookImplementationListWidget::item {
   background: transparent;
 }
 
-QtHookImplListWidget {
+QtHookImplementationListWidget {
   background-color: {{ console }};
 }
 

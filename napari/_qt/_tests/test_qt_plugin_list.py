@@ -4,9 +4,9 @@ from napari_plugin_engine.manager import temp_path_additions
 
 
 GOOD_PLUGIN = """
-from napari_plugin_engine import HookimplMarker
+from napari_plugin_engine import HookImplementationMarker
 
-@HookimplMarker("test")
+@HookImplementationMarker("test")
 def napari_get_reader(path):
     return True
 """

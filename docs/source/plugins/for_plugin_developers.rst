@@ -136,12 +136,12 @@ with :func:`numpy.save`)
 
 .. _hookimpl-decorator:
 
-Decorating your function with ``HookimplMarker``
+Decorating your function with ``HookImplementationMarker``
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In order to let ``napari`` know that one of your functions satisfies the API of
 one of the napari *hook specifications*, you must decorate your function with
-an instance of `napari_plugin_engine.HookimplMarker
+an instance of `napari_plugin_engine.HookImplementationMarker
 <https://napari-plugin-engine.readthedocs.io/en/latest/usage.html#plugins-write-hook-implementations>`_,
 initialized with the name ``"napari"``.  As a convenience, napari provides this
 decorator at ``napari_plugin_engine.napari_hook_implementation`` as shown in
@@ -198,7 +198,7 @@ Using naming convention
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 ``napari`` will look for *hook implementations* (i.e. functions decorated with
-the ``HookimplMarker("napari")`` decorator) in all top-level modules in
+the ``HookImplementationMarker("napari")`` decorator) in all top-level modules in
 ``sys.path`` that begin with the name ``napari_`` (e.g. "``napari_myplugin``").
 
 One potential benefit of using discovery by naming convention is that it will
@@ -228,7 +228,7 @@ implementations, then if you include in ``setup.py``:
    )
 
 ... then napari will search the ``mypackage.napari_plugin`` module for
-functions decorated with the ``HookimplMarker("napari")`` decorator and
+functions decorated with the ``HookImplementationMarker("napari")`` decorator and
 register them the plugin name ``"plugin_name"``.
 
 One benefit of using this approach is that if you already have an existing
