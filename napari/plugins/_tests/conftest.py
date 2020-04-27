@@ -2,7 +2,7 @@ import os
 import sys
 
 import pytest
-from naplugi import PluginManager
+from napari_plugin_engine import PluginManager
 
 from napari.plugins import hook_specifications, _builtins
 

@@ -1,6 +1,6 @@
 import sys
 
-from naplugi import PluginManager, napari_hook_implementation
+from napari_plugin_engine import PluginManager, napari_hook_implementation
 from . import hook_specifications
 from . import _builtins
 

@@ -1,7 +1,7 @@
 import re
 import sys
 from typing import Callable, Dict, Generator
-from naplugi import PluginError
+from napari_plugin_engine import PluginError
 from ..types import ExcInfo
 
 if sys.version_info >= (3, 8):

@@ -87,7 +87,7 @@ class QtDictTable(QTableWidget):
             for h in headers:
                 if h not in _headers:
                     raise ValueError(
-                        f"Argument 'headers' got item {h}, which was "
+                        f"Argument 'headers' got item '{h}', which was "
                         "not found in any of the items in 'data'"
                     )
             _headers = headers

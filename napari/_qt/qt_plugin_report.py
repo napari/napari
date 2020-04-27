@@ -17,6 +17,7 @@ from qtpy.QtWidgets import (
 )
 
 from ..plugins.exceptions import format_exceptions
+from napari_plugin_engine import PluginManager
 
 
 class QtPluginErrReporter(QDialog):
@@ -52,12 +53,14 @@ class QtPluginErrReporter(QDialog):
 
     def __init__(
         self,
-        parent: Optional[QWidget] = None,
+        plugin_manager: Optional[PluginManager] = None,
         *,
+        parent: Optional[QWidget] = None,
         initial_plugin: Optional[str] = None,
     ) -> None:
         super().__init__(parent)
-        from ..plugins import plugin_manager
+        if not plugin_manager:
+            from ..plugins import plugin_manager
 
         self.plugin_manager = plugin_manager
 
@@ -132,7 +135,7 @@ class QtPluginErrReporter(QDialog):
         plugin : str
             name of a plugin that has created an error this session.
         """
-        if not self.plugin_manager.get_errors(plugin):
+        if not self.plugin_manager.get_errors(plugin_name=plugin):
             if plugin == self.NULL_OPTION:
                 self.plugin_meta.setText('')
                 self.text_area.setHtml('')
@@ -154,7 +157,7 @@ class QtPluginErrReporter(QDialog):
         self.clipboard_button.show()
 
         # set metadata and outbound links/buttons
-        err0 = self.plugin_manager.get_errors(plugin)[0]
+        err0 = self.plugin_manager.get_errors(plugin_name=plugin)[0]
         meta = err0.plugin.standard_meta if err0.plugin else None
         meta_text = ''
         if not meta:

@@ -1,7 +1,7 @@
 from logging import getLogger
 from typing import List, Optional, Sequence, Union
 
-from naplugi import HookImpl, PluginCallError
+from napari_plugin_engine import HookImpl, PluginCallError
 
 from ..layers import Layer
 from ..types import LayerData
@@ -55,9 +55,7 @@ def read_data_with_plugins(
         try:
             return reader(path)  # try to read data
         except Exception as exc:
-            err = PluginCallError(
-                result.implementation, cause=exc, manager=plugin_manager
-            )
+            err = PluginCallError(result.implementation, cause=exc)
             # don't try this impl again
             skip_impls.append(result.implementation)
             if result.implementation != 'builtins':

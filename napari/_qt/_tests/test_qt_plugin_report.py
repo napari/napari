@@ -1,17 +1,13 @@
 from napari._qt.qt_plugin_report import QtPluginErrReporter
-from naplugi import PluginError
+from napari_plugin_engine import PluginError
 import pytest
 
 
-def test_error_reporter(qtbot):
+def test_error_reporter(qtbot, test_plugin_manager):
     """test that QtPluginErrReporter shows any instantiated PluginErrors."""
-    from napari.plugins import plugin_manager
-
     error_message = 'my special error'
-    _ = PluginError(
-        error_message, plugin_name='plugin_name', manager=plugin_manager
-    )
-    report = QtPluginErrReporter()
+    _ = PluginError(error_message, plugin_name='plugin_name')
+    report = QtPluginErrReporter(plugin_manager=test_plugin_manager)
     qtbot.addWidget(report)
 
     # the null option plus the one we created

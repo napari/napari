@@ -31,11 +31,9 @@ breaking existing implementations). However, implementations must not require
 # developers, so comprehensive documentation with complete type annotations is
 # imperative!
 
-from naplugi import HookspecMarker
+from napari_plugin_engine import napari_hook_specification
 from typing import Optional, Union, List, Any
 from ..types import ReaderFunction, WriterFunction
-
-napari_hook_specification = HookspecMarker("napari")
 
 
 # -------------------------------------------------------------------------- #

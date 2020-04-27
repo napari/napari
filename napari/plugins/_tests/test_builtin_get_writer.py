@@ -8,7 +8,7 @@ from napari.plugins._builtins import (
     napari_write_points,
     write_layer_data_with_plugins,
 )
-from naplugi import PluginCallError
+from napari_plugin_engine import PluginCallError
 from napari.plugins import hook_specifications
 
 

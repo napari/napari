@@ -112,7 +112,7 @@ with :func:`numpy.save`)
 .. code-block:: python
 
    import numpy as np
-   from napari.plugins import napari_hook_implementation
+   from napari_plugin_engine import napari_hook_implementation
 
 
    def npy_file_reader(path):
@@ -141,10 +141,11 @@ Decorating your function with ``pluggy.HookimplMarker``
 
 In order to let ``napari`` know that one of your functions satisfies the API of
 one of the napari *hook specifications*, you must decorate your function with
-an instance of `pluggy.HookimplMarker
-<https://pluggy.readthedocs.io/en/latest/#marking-hooks>`_, initialized with
-the name ``"napari"``.  As a convenience, napari provides this decorator at
-``napari.plugins.napari_hook_implementation`` as shown in the example above.
+an instance of `napari_plugin_engine.HookimplMarker
+<https://napari-plugin-engine.readthedocs.io/en/latest/usage.html#plugins-write-hook-implementations>`_,
+initialized with the name ``"napari"``.  As a convenience, napari provides this
+decorator at ``napari_plugin_engine.napari_hook_implementation`` as shown in
+the example above.
 
 However, it's not required to import from or depend on napari *at all* when
 writing a plugin. You can construct your own ``napari_hook_implementation``
@@ -153,9 +154,8 @@ that uses only standard lib python).
 
 .. code-block:: python
 
-   from naplugi import HookimplMarker
+   from napari_plugin_engine import napari_hook_implementation
 
-   napari_hook_implementation = HookimplMarker("napari")
 
 Matching hook implementations to specifications
 """""""""""""""""""""""""""""""""""""""""""""""
