@@ -49,7 +49,7 @@ def napari_write_image(path: str, data: Any, meta: dict) -> Optional[str]:
     data : array or list of array
         Image data. Can be N dimensional. If meta['rgb'] is ``True`` then the
         data should be interpreted as RGB or RGBA. If ``meta['multiscale']`` is
-        ``True``, then the data should be interpreted as an image multiscale.
+        ``True``, then the data should be interpreted as a multiscale image.
     meta : dict
         Image metadata.
 

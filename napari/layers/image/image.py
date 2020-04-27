@@ -26,7 +26,7 @@ class Image(IntensityVisualizationMixin, Layer):
         Image data. Can be N dimensional. If the last dimension has length
         3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a
         list and arrays are decreasing in shape then the data is treated as
-        an image multiscale.
+        a multiscale image.
     rgb : bool
         Whether the image is rgb RGB or RGBA. If not specified by user and
         the last dimension of the data has length 3 or 4 it will be set as
@@ -82,8 +82,8 @@ class Image(IntensityVisualizationMixin, Layer):
     data : array or list of array
         Image data. Can be N dimensional. If the last dimension has length
         3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a list
-        and arrays are decreaing in shape then the data is treated as an
-        image multiscale.
+        and arrays are decreaing in shape then the data is treated as a
+        multiscale image.
     metadata : dict
         Image metadata.
     rgb : bool

@@ -23,7 +23,7 @@ def guess_rgb(shape):
 
 
 def guess_multiscale(data):
-    """Guess if the passed data is a multiscale of not.
+    """Guess if the passed data is multiscale of not.
 
     If shape of arrays along first axis is strictly decreasing.
 

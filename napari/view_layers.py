@@ -36,7 +36,7 @@ def view_image(
         Image data. Can be N dimensional. If the last dimension has length
         3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a
         list and arrays are decreasing in shape then the data is treated as
-        an image multiscale.
+        a multiscale image.
     channel_axis : int, optional
         Axis to expand image along.
     rgb : bool
