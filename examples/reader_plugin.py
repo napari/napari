@@ -1,5 +1,5 @@
 """Barebones reader plugin example, using imageio.imread"""
-from napari_plugins import napari_hook_implementation
+from napari_plugin_engine import napari_hook_implementation
 from imageio import formats, imread
 
 

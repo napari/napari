@@ -22,8 +22,8 @@ def guess_rgb(shape):
     return ndim > 2 and last_dim < 5
 
 
-def guess_pyramid(data):
-    """Guess if the passed data is a pyramid of not.
+def guess_multiscale(data):
+    """Guess if the passed data is multiscale of not.
 
     If shape of arrays along first axis is strictly decreasing.
 
@@ -35,9 +35,9 @@ def guess_pyramid(data):
     Returns
     -------
     bool
-        If data is pyramid or not.
+        If data is multiscale or not.
     """
-    # If the data has ndim and is not one-dimensional then cannot be pyramid
+    # If the data has ndim and is not one-dimensional then cannot be multiscale
     if hasattr(data, 'ndim') and data.ndim > 1:
         return False
 

@@ -194,7 +194,7 @@ QLabel#Image {
   image: url(":/themes/{{ folder }}/new_image.svg");
 }
 
-QLabel#Pyramid {
+QLabel#Multiscale {
   image: url(":/themes/{{ folder }}/new_image.svg");
 }
 
@@ -413,11 +413,11 @@ ImplementationListItem {
   border-radius: 2px;
 }
 
-QtHookImplListWidget::item {
+QtHookImplementationListWidget::item {
   background: transparent;
 }
 
-QtHookImplListWidget {
+QtHookImplementationListWidget {
   background-color: {{ console }};
 }
 
