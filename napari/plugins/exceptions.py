@@ -1,7 +1,7 @@
 import re
 import sys
 from typing import Callable, Dict, Generator
-from napari_plugin_engine import PluginError
+from napari_plugin_engine import PluginError, standard_metadata
 from ..types import ExcInfo
 
 if sys.version_info >= (3, 8):
@@ -45,8 +45,8 @@ def format_exceptions(plugin_name: str, as_html: bool = False):
     ]
 
     err0 = _plugin_errors[0]
-    if err0.plugin and err0.plugin.standard_meta:
-        package_meta = err0.plugin.standard_meta
+    if err0.plugin:
+        package_meta = standard_metadata(err0.plugin)
         if package_meta:
             msg.extend(
                 [
