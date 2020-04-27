@@ -305,7 +305,7 @@ def resize_dask_cache(nbytes: int = None):
                 utils.misc._have_warned_psutil = True
             nbytes = 32e9
 
-    if not hasattr(utils, 'dask_cache'):
+    if not utils.dask_cache:
         utils.dask_cache = Cache(nbytes)
         utils.dask_cache.register()
     else:

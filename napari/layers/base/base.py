@@ -135,7 +135,13 @@ class Layer(KeymapProvider, ABC):
 
         # if we have a dask array, setup some sane defaults for optimized
         # indexing and opportunistic caching.
-        if data is not None and isinstance(data, da.Array):
+        if data is not None and (
+            isinstance(data, da.Array)
+            or (
+                isinstance(data, (list, tuple))
+                and any(isinstance(i, da.Array) for i in data)
+            )
+        ):
             import dask
             from ...utils.misc import resize_dask_cache
 
