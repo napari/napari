@@ -1,20 +1,21 @@
 import os
 import warnings
-
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
+from typing import Optional, List
 from xml.etree.ElementTree import Element, tostring
+
 import numpy as np
-from ._base_constants import Blending
 
 from ...components import Dims
 from ...utils.event import EmitterGroup, Event
 from ...utils.key_bindings import KeymapProvider
-from ..utils.layer_utils import convert_to_uint8, compute_pyramid_level
 from ...utils.misc import ROOT_DIR
 from ...utils.naming import magic_name
-from ...utils.status_messages import status_format, format_float
+from ...utils.status_messages import format_float, status_format
 from ..transforms import ScaleTranslate, TransformChain
+from ..utils.layer_utils import compute_multiscale_level, convert_to_uint8
+from ._base_constants import Blending
 
 
 class Layer(KeymapProvider, ABC):
@@ -38,7 +39,10 @@ class Layer(KeymapProvider, ABC):
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
-
+    multiscale : bool
+        Whether the data is multiscale or not. Multiscale data is
+        represented by a list of data objects and should go from largest to
+        smallest.
 
     Attributes
     ----------
@@ -66,6 +70,10 @@ class Layer(KeymapProvider, ABC):
         Scale factors for the layer.
     translate : tuple of float
         Translation values for the layer.
+    multiscale : bool
+        Whether the data is multiscale or not. Multiscale data is
+        represented by a list of data objects and should go from largest to
+        smallest.
     z_index : int
         Depth of the layer visual relative to other visuals in the scenecanvas.
     coordinates : tuple of float
@@ -123,6 +131,7 @@ class Layer(KeymapProvider, ABC):
         opacity=1,
         blending='translucent',
         visible=True,
+        multiscale=False,
     ):
         super().__init__()
 
@@ -142,6 +151,7 @@ class Layer(KeymapProvider, ABC):
         self._interactive = True
         self._value = None
         self.scale_factor = 1
+        self.multiscale = multiscale
 
         self.dims = Dims(ndim)
 
@@ -155,7 +165,7 @@ class Layer(KeymapProvider, ABC):
         #   of an image. It maps pixels of the tile into the coordinate space
         #   of the full resolution data and can usually be represented by a
         #   scale factor and a translation. A common use case is viewing part
-        #   of lower resolution level of an image pyramid, another is using a
+        #   of lower resolution level of a multiscale image, another is using a
         #   downsampled version of an image when the full image size is larger
         #   than the maximum allowed texture size of your graphics card.
         # 2. `data2world`: The main transform mapping data to a world-like
@@ -177,7 +187,6 @@ class Layer(KeymapProvider, ABC):
         self.coordinates = (0,) * ndim
         self._position = (0,) * self.dims.ndisplay
         self.corner_pixels = np.zeros((2, ndim), dtype=int)
-        self.is_pyramid = False
         self._editable = True
 
         self._thumbnail_shape = (32, 32, 4)
@@ -447,6 +456,15 @@ class Layer(KeymapProvider, ABC):
         raise NotImplementedError()
 
     @property
+    def _type_string(self):
+        return self.__class__.__name__.lower()
+
+    def as_layer_data_tuple(self):
+        state = self._get_state()
+        state.pop('data', None)
+        return self.data, state, self._type_string
+
+    @property
     def thumbnail(self):
         """array: Integer array of thumbnail for the layer"""
         return self._thumbnail
@@ -625,8 +643,8 @@ class Layer(KeymapProvider, ABC):
         self._value = self.get_value()
         self.status = self.get_message()
 
-    def _update_pyramid(self, corner_pixels, shape_threshold):
-        """Refresh layer pyramid if new resolution level or tile is required.
+    def _update_multiscale(self, corner_pixels, shape_threshold):
+        """Refresh layer multiscale if new resolution level or tile is required.
 
         Parameters
         ----------
@@ -653,7 +671,7 @@ class Layer(KeymapProvider, ABC):
 
         downsample_factors = self.downsample_factors[:, self.dims.displayed]
 
-        data_level = compute_pyramid_level(
+        data_level = compute_multiscale_level(
             requested_shape[self.dims.displayed],
             shape_threshold,
             downsample_factors,
@@ -689,7 +707,7 @@ class Layer(KeymapProvider, ABC):
         value = self._value
         if value is not None:
             if isinstance(value, tuple) and value != (None, None):
-                # it's a pyramid -> value = (data_level, value)
+                # it's a multiscale -> value = (data_level, value)
                 msg += f': {status_format(value[0])}'
                 if value[1] is not None:
                     msg += f', {status_format(value[1])}'
@@ -697,6 +715,29 @@ class Layer(KeymapProvider, ABC):
                 # it's either a grayscale or rgb image (scalar or list)
                 msg += f': {status_format(value)}'
         return msg
+
+    def save(self, path: str, plugin: Optional[str] = None) -> List[str]:
+        """Save this layer to ``path`` with default (or specified) plugin.
+
+        Parameters
+        ----------
+        path : str
+            A filepath, directory, or URL to open.  Extensions may be used to
+            specify output format (provided a plugin is avaiable for the
+            requested format).
+        plugin : str, optional
+            Name of the plugin to use for saving. If ``None`` then all plugins
+            corresponding to appropriate hook specification will be looped
+            through to find the first one that can save the data.
+
+        Returns
+        -------
+        list of str
+            File paths of any files that were written.
+        """
+        from ...plugins.io import save_layers
+
+        return save_layers(path, [self], plugin=plugin)
 
     def to_xml_list(self):
         """Generates a list of xml elements for the layer.

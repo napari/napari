@@ -235,8 +235,8 @@ class VispyBaseLayer(ABC):
         old_corner_pixels = self.layer.corner_pixels
         self.layer.corner_pixels = self.coordinates_of_canvas_corners()
 
-        if self.layer.is_pyramid and self.node.canvas is not None:
-            self.layer._update_pyramid(
+        if self.layer.multiscale and self.node.canvas is not None:
+            self.layer._update_multiscale(
                 corner_pixels=old_corner_pixels,
                 shape_threshold=self.node.canvas.size,
             )

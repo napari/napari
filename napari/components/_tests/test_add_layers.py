@@ -24,7 +24,7 @@ def test_add_layers_with_plugins(layer_datum):
     ):
         v = ViewerModel()
         v._add_layers_with_plugins('mock_path')
-        layertypes = [l.__class__.__name__.lower() for l in v.layers]
+        layertypes = [l._type_string for l in v.layers]
         assert layertypes == [layer_datum[2]]
 
 

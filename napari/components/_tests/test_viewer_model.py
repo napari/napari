@@ -39,13 +39,13 @@ def test_add_volume():
     assert viewer.dims.ndim == 3
 
 
-def test_add_pyramid():
-    """Test adding image pyramid."""
+def test_add_multiscale():
+    """Test adding image multiscale."""
     viewer = ViewerModel()
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    viewer.add_image(data, is_pyramid=True)
+    viewer.add_image(data, multiscale=True)
     assert len(viewer.layers) == 1
     assert np.all(viewer.layers[0].data == data)
     assert viewer.dims.ndim == 2
@@ -338,7 +338,7 @@ def test_add_layer_from_data(data):
     # make sure a layer of the correct type got added
     assert len(viewer.layers) == 1
     expected_layer_type = data[2] if len(data) > 2 else 'image'
-    assert viewer.layers[0].__class__.__name__.lower() == expected_layer_type
+    assert viewer.layers[0]._type_string == expected_layer_type
 
 
 def test_add_layer_from_data_raises():

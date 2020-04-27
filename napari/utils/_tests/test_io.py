@@ -1,6 +1,6 @@
 import os
+import csv
 from pathlib import Path
-
 import numpy as np
 from dask import array as da
 from skimage.data import data_dir
@@ -143,21 +143,58 @@ def test_zarr():
 
 
 @pytest.mark.skipif(not zarr_available, reason='zarr not installed')
-def test_zarr_pyramid():
-    pyramid = [
+def test_zarr_multiscale():
+    multiscale = [
         np.random.random((20, 20)),
         np.random.random((10, 10)),
         np.random.random((5, 5)),
     ]
     with TemporaryDirectory(suffix='.zarr') as fout:
         root = zarr.open_group(fout, 'a')
-        for i in range(len(pyramid)):
+        for i in range(len(multiscale)):
             shape = 20 // 2 ** i
             z = root.create_dataset(str(i), shape=(shape,) * 2)
-            z[:] = pyramid[i]
-        pyramid_in = io.magic_imread([fout])
-        assert len(pyramid) == len(pyramid_in)
+            z[:] = multiscale[i]
+        multiscale_in = io.magic_imread([fout])
+        assert len(multiscale) == len(multiscale_in)
         # Note: due to lazy loading, the next line needs to happen within
         # the context manager. Alternatively, we could convert to NumPy here.
-        for images, images_in in zip(pyramid, pyramid_in):
+        for images, images_in in zip(multiscale, multiscale_in):
             np.testing.assert_array_equal(images, images_in)
+
+
+def test_write_csv(tmpdir):
+    expected_filename = os.path.join(tmpdir, 'test.csv')
+    column_names = ['column_1', 'column_2', 'column_3']
+    expected_data = np.random.random((5, len(column_names)))
+
+    # Write csv file
+    io.write_csv(expected_filename, expected_data, column_names=column_names)
+    assert os.path.exists(expected_filename)
+
+    # Check csv file is as expected
+    with open(expected_filename) as output_csv:
+        csv.reader(output_csv, delimiter=',')
+        for row_index, row in enumerate(output_csv):
+            if row_index == 0:
+                assert row == "column_1,column_2,column_3\n"
+            else:
+                output_row_data = [float(i) for i in row.split(',')]
+                np.testing.assert_allclose(
+                    np.array(output_row_data), expected_data[row_index - 1]
+                )
+
+
+def test_read_csv(tmpdir):
+    expected_filename = os.path.join(tmpdir, 'test.csv')
+    column_names = ['column_1', 'column_2', 'column_3']
+    expected_data = np.random.random((5, len(column_names)))
+
+    # Write csv file
+    io.write_csv(expected_filename, expected_data, column_names=column_names)
+    assert os.path.exists(expected_filename)
+
+    # Read csv file
+    read_data, read_column_names = io.read_csv(expected_filename)
+    np.testing.assert_allclose(expected_data, read_data)
+    assert column_names == read_column_names

@@ -5,16 +5,16 @@ from tempfile import NamedTemporaryFile
 import numpy as np
 from napari.utils import io
 
-from napari.plugins.exceptions import PLUGIN_ERRORS, format_exceptions
 from napari.plugins.io import read_data_with_plugins
 
 
-def test_iter_reader_plugins(plugin_manager):
+def test_iter_reader_plugins():
     """Test safe iteration through reader plugins even with errors.
 
     `napari_bad_plugin2` is a plugin that loads fine but throws an error during
     file-reading.  this tests that we can gracefully handle that.
     """
+    from napari.plugins import plugin_manager
 
     # the plugin loads fine, so there should be no exceptions yet.
     assert 'napari_bad_plugin2' not in PLUGIN_ERRORS

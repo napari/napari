@@ -21,10 +21,12 @@ else:
 
 # layer data may be: (data,) (data, meta), or (data, meta, layer_type)
 # using "Any" for the data type until ArrayLike is more mature.
-LayerData = Union[Tuple[Any], Tuple[Any, Dict], Tuple[Any, Dict, str]]
+FullLayerData = Tuple[Any, Dict, str]
+LayerData = Union[Tuple[Any], Tuple[Any, Dict], FullLayerData]
 
 PathLike = Union[str, List[str]]
 ReaderFunction = Callable[[PathLike], List[LayerData]]
+WriterFunction = Callable[[str, List[FullLayerData]], List[str]]
 
 ExcInfo = Union[
     Tuple[Type[BaseException], BaseException, TracebackType],
