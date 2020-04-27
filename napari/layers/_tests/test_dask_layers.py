@@ -16,7 +16,7 @@ def test_dask_array_creates_cache():
     assert isinstance(utils.dask_cache, dask.cache.Cache)
     assert not dask.config.get("optimization.fuse.active")
 
-    # if the dask version is too low to take remove task fusion, emit a warning
+    # if the dask version is too low to remove task fusion, emit a warning
     _dask_ver = dask.__version__
     dask.__version__ = '2.14.0'
     with pytest.warns(UserWarning) as record:
