@@ -7,8 +7,8 @@ creating a napari plugin
 ========================
 
 This document explains how to extend napari functionality by writing a plugin
-that can be installed with ``pip`` and autodetected by napari.  For in-depth
-information on how plugins are used internally in napari, see
+that can be installed with ``pip`` and autodetected by napari.  For more
+information on how plugins are implementated internally in napari, see
 :ref:`plugins-for-napari-developers`.
 
 
@@ -33,13 +33,13 @@ that we promise to call somewhere in the napari codebase.
 3. **Hook Implementations**: Plugin developers then write functions ("*hook
 implementations*") and mark that function as meeting the requirements of a
 specific *hook specification* offered by napari (using a decorator as
-:ref:`described below <hookimpl-decorator>`).
+:ref:`described below <hookimplementation-decorator>`).
 
-4. **Plugin discovery**: Using :ref:`one of two methods <hookimpl-decorator>`,
-plugins that are installed in the same python environment as napari can make
-themselves known to napari. ``napari`` will then scan plugin modules for *hook
-implementations* that will then be called at the appropriate time place during
-the execution of ``napari``.
+4. **Plugin discovery**: Using :ref:`one of two methods
+<hookimplementation-decorator>`, plugins that are installed in the same python
+environment as napari can make themselves known to napari. ``napari`` will then
+scan plugin modules for *hook implementations* that will then be called at the
+appropriate time place during the execution of ``napari``.
 
 
 Step 1: Choose a hook specification to implement
@@ -134,15 +134,14 @@ with :func:`numpy.save`)
       return None
 
 
-.. _hookimpl-decorator:
+.. _hookimplementation-decorator:
 
 Decorating your function with ``HookImplementationMarker``
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 In order to let ``napari`` know that one of your functions satisfies the API of
 one of the napari *hook specifications*, you must decorate your function with
-an instance of `napari_plugin_engine.HookImplementationMarker
-<https://napari-plugin-engine.readthedocs.io/en/latest/usage.html#plugins-write-hook-implementations>`_,
+an instance of :class:`~napari_plugin_engine.HookImplementationMarker`,
 initialized with the name ``"napari"``.  As a convenience, napari provides this
 decorator at ``napari_plugin_engine.napari_hook_implementation`` as shown in
 the example above.
@@ -198,8 +197,9 @@ Using naming convention
 ^^^^^^^^^^^^^^^^^^^^^^^
 
 ``napari`` will look for *hook implementations* (i.e. functions decorated with
-the ``HookImplementationMarker("napari")`` decorator) in all top-level modules in
-``sys.path`` that begin with the name ``napari_`` (e.g. "``napari_myplugin``").
+the ``HookImplementationMarker("napari")`` decorator) in all top-level modules
+in ``sys.path`` that begin with the name ``napari_`` (e.g.
+"``napari_myplugin``").
 
 One potential benefit of using discovery by naming convention is that it will
 allow ``napari`` to query the PyPi API to search for potential plugins.
@@ -228,8 +228,8 @@ implementations, then if you include in ``setup.py``:
    )
 
 ... then napari will search the ``mypackage.napari_plugin`` module for
-functions decorated with the ``HookImplementationMarker("napari")`` decorator and
-register them the plugin name ``"plugin_name"``.
+functions decorated with the ``HookImplementationMarker("napari")`` decorator
+and register them the plugin name ``"plugin_name"``.
 
 One benefit of using this approach is that if you already have an existing
 pip-installable package, you can extend support for ``napari`` without having
