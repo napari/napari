@@ -48,14 +48,60 @@ allow users to get help with any issues they might have using napari.
 
 ### IO plugins
 
+napari is now extensible to open and save to a wide variety of file formats,
+both local and remote. Currently, the same file formats as before are available
+to read (TIFF, most image file formats supported by imageio, and zarr).
+However, we can now *write* to all these formats, read and write point
+annotations in .csv format, and we also have the ability for anyone to create
+packages for napari to read and write in any other formats. You can read about
+our plugin architecture [here](and https://napari.org/docs/plugins/index.html).
+
+Want to drag and drop your favorite file format into napari? See [this
+guide](https://napari.org/docs/plugins/for_plugin_developers.html) to
+understand how to write your own plugin, and see Jackson Maxfield's
+[napari-aicsimageio](https://github.com/AllenCellModeling/napari-aicsimageio)
+plugin for an example plugin!
+
+Many thanks to Talley Lambert for driving this effort!
 
 ### Dockable widgets and magicgui
 
+Another brainchild of Talley is our dockable widget architecture, which allows
+you to pop out the napari UI elements from the main window, enabling, for
+example, those on multi-monitor setups to have the toolbars on one monitor and
+the main window in full-screen on another.
+
+Even better, we have released a side package called `magicgui` to allow you to
+create your own dockable widgets with which to interact with napari. We are
+still working on standard models of interaction here (see our
+[roadmap](https://napari.org/docs/developers/ROADMAP_0_3.html)), but you should
+be able to get started creating useful user interfaces right now. [This
+image.sc
+post](https://forum.image.sc/t/integration-of-napari-module-subclass-plugin/36018/2)
+by Talley provides a good overview of how to create interaction with napari
+right now, and [this GitHub
+answer](https://github.com/napari/napari/issues/1165#issuecomment-618013894)
+for how to embed a matplotlib plot within napari.
 
 ### Multiscale image handling
 
+napari is now much better at handling large datasets. Viewing a large dataset
+will no longer trigger automatic — but very slow, and often unnecessary —
+generation of an image pyramid. Instead, we direct users to our [tutorial on
+how to generate your own pyramid]().
+
+If you submit an image pyramid, napari will automatically detect it as such. To
+turn off automatic detection, you can now pass the `multiscale=True/False`
+parameter to `add_image`. In the future, we aim to add multiscale capabilities
+to all our layers.
 
 ### Points with properties
+
+Points are no longer generic coordinates floating in space! Each point can have
+its own personality and character! Specifically, each point can have an
+arbitrary number of properties, and attributes such as size, face color, and
+edge color can be determined by those properties. This makes it easier to
+annotate multiple types of points in an image, such as different cell types.
 
 ### API changes and improvements
 
