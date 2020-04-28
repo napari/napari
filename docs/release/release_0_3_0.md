@@ -17,6 +17,50 @@ https://napari.org
 
 ## Highlights
 
+### Community and governance
+
+After the 0.2.5 release, which was our first publicly-announced release, we
+worked to rapidly turn napari into a mature library in the scientific Python
+ecosystem. We added a [code of
+conduct](https://napari.org/docs/developers/CODE_OF_CONDUCT.html), a [mission
+and values
+document](https://napari.org/docs/developers/MISSION_AND_VALUES.html), and
+adopted a [community governance
+model](https://napari.org/docs/developers/GOVERNANCE.html) (based on
+scikit-image's, and since adopted with modifications by zarr). These are
+accessible from our [developer resources
+page](https://napari.org/docs/developers.html), together with a [public
+roadmap](https://napari.org/docs/developers/ROADMAP_0_3.html) explaining
+where the core team will devote effort in the coming months.
+
+We are still overwhelmed by the community response to napari and we hope that
+the above documents will continue to encourage potential users to join our
+community. We continue to welcome contributions of all kinds and encourage
+you to get in touch with us if you don't see your most wanted feature in our
+roadmap, or as an issue in our [issue
+tracker](https://github.com/napari/napari/issues).
+
+### Getting in touch
+
+We have also created a [Zulip chat room](https://napari.zulipchat.com) and
+worked with the [image.sc forum](https://image.sc) (use the "napari" tag) to
+allow users to get help with any issues they might have using napari.
+
+### IO plugins
+
+
+### Dockable widgets and magicgui
+
+
+### Multiscale image handling
+
+
+### Points with properties
+
+### API changes and improvements
+
+- magic name guessing
+
 
 ## New Features
 - Hook up reader plugins (#937)
