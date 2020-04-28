@@ -199,7 +199,7 @@ with napari.gui_qt():
 
 
 ## Breaking API Changes
-- Allow add_path() to accept any layer-specific kwarg and rename to open_path() (#1111)
+- Allow add_path() to accept any layer-specific kwarg and rename to open() (#1111)
 - Remove path arg from add_image and add_labels (#1149)
 - Drop pyramid autogeneration (#1159)
 - Replace pyramid with multiscale (#1170)
