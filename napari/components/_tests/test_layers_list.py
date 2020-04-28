@@ -435,7 +435,7 @@ def test_layers_save(tmpdir, layer_data_and_types):
 
     path = os.path.join(tmpdir, 'layers_folder')
 
-    # Check file does not exist
+    # Check folder does not exist
     assert not os.path.isdir(path)
 
     # Write data
@@ -462,7 +462,7 @@ def test_layers_save_none_selected(tmpdir, layer_data_and_types):
 
     path = os.path.join(tmpdir, 'layers_folder')
 
-    # Check file does not exist
+    # Check folder does not exist
     assert not os.path.isdir(path)
 
     # Write data (will get a warning that nothing is selected)
@@ -491,7 +491,7 @@ def test_layers_save_seleteced(tmpdir, layer_data_and_types):
 
     path = os.path.join(tmpdir, 'layers_folder')
 
-    # Check file does not exist
+    # Check folder does not exist
     assert not os.path.isdir(path)
 
     # Write data
@@ -509,3 +509,18 @@ def test_layers_save_seleteced(tmpdir, layer_data_and_types):
     # Check no additional files exist
     assert set(os.listdir(path)) == set([filenames[0], filenames[2]])
     assert set(os.listdir(tmpdir)) == set(['layers_folder'])
+
+
+# the layers fixture is defined in napari/conftest.py
+def test_layers_save_svg(tmpdir, layers):
+    """Test saving all layer data to an svg."""
+    path = os.path.join(tmpdir, 'layers_file.svg')
+
+    # Check file does not exist
+    assert not os.path.isfile(path)
+
+    # Write data
+    layers.save(path, plugin='svg')
+
+    # Check file now exists
+    assert os.path.isfile(path)

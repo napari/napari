@@ -6,7 +6,8 @@ import pytest
 from qtpy.QtWidgets import QApplication
 
 from napari import Viewer
-from napari.layers import Image, Points
+from napari.layers import Image, Labels, Points, Shapes, Vectors
+from napari.components import LayerList
 from napari.plugins._builtins import napari_write_image, napari_write_points
 from napari.utils import io
 
@@ -162,3 +163,76 @@ def layer_data_and_types():
     layer_types = [layer._type_string for layer in layers]
     filenames = [l.name + e for l, e in zip(layers, extensions)]
     return layers, layer_data, layer_types, filenames
+
+
+@pytest.fixture(
+    params=[
+        'image',
+        'labels',
+        'points',
+        'shapes',
+        'shapes-rectangles',
+        'vectors',
+    ]
+)
+def layer(request):
+    """Parameterized fixture that supplies a layer for testing.
+
+    Parameters
+    ----------
+    request : _pytest.fixtures.SubRequest
+        The pytest request object
+
+    Returns
+    -------
+    napari.layers.Layer
+        The desired napari Layer.
+    """
+    np.random.seed(0)
+    if request.param == 'image':
+        data = np.random.rand(20, 20)
+        return Image(data)
+    elif request.param == 'labels':
+        data = np.random.randint(10, size=(20, 20))
+        return Labels(data)
+    elif request.param == 'points':
+        data = np.random.rand(20, 2)
+        return Points(data)
+    elif request.param == 'shapes':
+        data = [
+            np.random.rand(2, 2),
+            np.random.rand(2, 2),
+            np.random.rand(6, 2),
+            np.random.rand(6, 2),
+            np.random.rand(2, 2),
+        ]
+        shape_type = ['ellipse', 'line', 'path', 'polygon', 'rectangle']
+        return Shapes(data, shape_type=shape_type)
+    elif request.param == 'shapes-rectangles':
+        data = np.random.rand(7, 4, 2)
+        return Shapes(data)
+    elif request.param == 'vectors':
+        data = np.random.rand(20, 2, 2)
+        return Vectors(data)
+    else:
+        return None
+
+
+@pytest.fixture()
+def layers():
+    """Fixture that supplies a layers list for testing.
+
+    Returns
+    -------
+    napari.components.LayerList
+        The desired napari LayerList.
+    """
+    np.random.seed(0)
+    list_of_layers = [
+        Image(np.random.rand(20, 20)),
+        Labels(np.random.randint(10, size=(20, 2))),
+        Points(np.random.rand(20, 2)),
+        Shapes(np.random.rand(10, 2, 2)),
+        Vectors(np.random.rand(10, 2, 2)),
+    ]
+    return LayerList(list_of_layers)

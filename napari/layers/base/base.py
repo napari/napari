@@ -3,8 +3,6 @@ import warnings
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from typing import Optional, List
-from xml.etree.ElementTree import Element, tostring
-
 import numpy as np
 
 from ...components import Dims
@@ -738,78 +736,3 @@ class Layer(KeymapProvider, ABC):
         from ...plugins.io import save_layers
 
         return save_layers(path, [self], plugin=plugin)
-
-    def to_xml_list(self):
-        """Generates a list of xml elements for the layer.
-
-        Returns
-        ----------
-        xml : list of xml.etree.ElementTree.Element
-            List of a single xml element specifying the currently viewed image
-            as a png according to the svg specification.
-        """
-        return []
-
-    def to_svg(self, file=None, canvas_shape=None):
-        """Convert the current layer state to an SVG.
-
-        Parameters
-        ----------
-        file : path-like object, optional
-            An object representing a file system path. A path-like object is
-            either a str or bytes object representing a path, or an object
-            implementing the `os.PathLike` protocol. If passed the svg will be
-            written to this file
-        canvas_shape : 4-tuple, optional
-            View box of SVG canvas to be generated specified as `min-x`,
-            `min-y`, `width` and `height`. If not specified, calculated
-            from the last two dimensions of the layer.
-
-        Returns
-        ----------
-        svg : string
-            SVG representation of the layer.
-        """
-
-        if canvas_shape is None:
-            min_shape = [r[0] for r in self.dims.range[-2:]]
-            max_shape = [r[1] for r in self.dims.range[-2:]]
-            shape = np.subtract(max_shape, min_shape)
-        else:
-            shape = canvas_shape[2:]
-            min_shape = canvas_shape[:2]
-
-        props = {
-            'xmlns': 'http://www.w3.org/2000/svg',
-            'xmlns:xlink': 'http://www.w3.org/1999/xlink',
-        }
-
-        xml = Element(
-            'svg',
-            height=f'{shape[0]}',
-            width=f'{shape[1]}',
-            version='1.1',
-            **props,
-        )
-
-        transform = f'translate({-min_shape[1]} {-min_shape[0]})'
-        xml_transform = Element('g', transform=transform)
-
-        xml_list = self.to_xml_list()
-        for x in xml_list:
-            xml_transform.append(x)
-        xml.append(xml_transform)
-
-        svg = (
-            '<?xml version=\"1.0\" standalone=\"no\"?>\n'
-            + '<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\"\n'
-            + '\"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n'
-            + tostring(xml, encoding='unicode', method='xml')
-        )
-
-        if file:
-            # Save svg to file
-            with open(file, 'w') as f:
-                f.write(svg)
-
-        return svg

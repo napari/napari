@@ -1,8 +1,5 @@
 import types
 import warnings
-from base64 import b64encode
-from xml.etree.ElementTree import Element
-
 import numpy as np
 from scipy import ndimage as ndi
 
@@ -630,40 +627,3 @@ class Image(IntensityVisualizationMixin, Layer):
             value = (self.data_level, value)
 
         return value
-
-    def to_xml_list(self):
-        """Generates a list with a single xml element that defines the
-        currently viewed image as a png according to the svg specification.
-
-        Returns
-        ----------
-        xml : list of xml.etree.ElementTree.Element
-            List of a single xml element specifying the currently viewed image
-            as a png according to the svg specification.
-        """
-        # we delay this import to minimize import time at launch
-        from imageio import imwrite
-
-        if self.dims.ndisplay == 3:
-            image = np.max(self._data_thumbnail, axis=0)
-        else:
-            image = self._data_thumbnail
-        image = np.clip(
-            image, self.contrast_limits[0], self.contrast_limits[1]
-        )
-        image = image - self.contrast_limits[0]
-        color_range = self.contrast_limits[1] - self.contrast_limits[0]
-        if color_range != 0:
-            image = image / color_range
-        mapped_image = self.colormap[1][image.ravel()]
-        mapped_image = mapped_image.RGBA.reshape(image.shape + (4,))
-        image_str = imwrite('<bytes>', mapped_image, format='png')
-        image_str = "data:image/png;base64," + str(b64encode(image_str))[2:-1]
-        props = {'xlink:href': image_str}
-        width = str(self.shape[self.dims.displayed[1]])
-        height = str(self.shape[self.dims.displayed[0]])
-        opacity = str(self.opacity)
-        xml = Element(
-            'image', width=width, height=height, opacity=opacity, **props
-        )
-        return [xml]

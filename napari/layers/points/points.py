@@ -1,5 +1,4 @@
 from typing import Union, Dict, Tuple, List
-from xml.etree.ElementTree import Element
 from copy import copy, deepcopy
 from itertools import cycle
 import warnings
@@ -1643,39 +1642,3 @@ class Points(Layer):
             }
         else:
             self._clipboard = {}
-
-    def to_xml_list(self):
-        """Convert the points to a list of xml elements according to the svg
-        specification. Z ordering of the points will be taken into account.
-        Each point is represented by a circle. Support for other symbols is
-        not yet implemented.
-
-        Returns
-        ----------
-        xml : list
-            List of xml elements defining each point according to the
-            svg specification
-        """
-        xml_list = []
-        width = str(self.edge_width)
-        opacity = str(self.opacity)
-        props = {'stroke-width': width, 'opacity': opacity}
-
-        for i, d, s in zip(
-            self._indices_view, self._view_data, self._view_size
-        ):
-            d = d[::-1]
-            cx = str(d[0])
-            cy = str(d[1])
-            r = str(s / 2)
-            face_color = (255 * self.face_color[i]).astype(np.int)
-            fill = f'rgb{tuple(face_color[:3])}'
-            edge_color = (255 * self.edge_color[i]).astype(np.int)
-            stroke = f'rgb{tuple(edge_color[:3])}'
-
-            element = Element(
-                'circle', cx=cx, cy=cy, r=r, stroke=stroke, fill=fill, **props
-            )
-            xml_list.append(element)
-
-        return xml_list

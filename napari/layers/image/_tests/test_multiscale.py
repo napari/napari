@@ -1,6 +1,5 @@
 import numpy as np
 from skimage.transform import pyramid_gaussian
-from xml.etree.ElementTree import Element
 from vispy.color import Colormap
 from napari.layers import Image
 
@@ -372,18 +371,6 @@ def test_thumbnail():
     layer = Image(data, multiscale=True)
     layer._update_thumbnail()
     assert layer.thumbnail.shape == layer._thumbnail_shape
-
-
-def test_xml_list():
-    """Test the xml generation."""
-    shapes = [(40, 20), (20, 10), (10, 5)]
-    np.random.seed(0)
-    data = [np.random.random(s) for s in shapes]
-    layer = Image(data, multiscale=True)
-    xml = layer.to_xml_list()
-    assert type(xml) == list
-    assert len(xml) == 1
-    assert type(xml[0]) == Element
 
 
 def test_not_create_random_multiscale():

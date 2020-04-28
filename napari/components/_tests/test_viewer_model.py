@@ -277,36 +277,6 @@ def test_grid():
     assert viewer.grid_stride == -2
 
 
-def test_svg():
-    "Test generating svg"
-    viewer = ViewerModel()
-
-    np.random.seed(0)
-    # Add image
-    data = np.random.random((10, 15))
-    viewer.add_image(data)
-
-    # Add labels
-    data = np.random.randint(20, size=(10, 15))
-    viewer.add_labels(data)
-
-    # Add points
-    data = 20 * np.random.random((10, 2))
-    viewer.add_points(data)
-
-    # Add vectors
-    data = 20 * np.random.random((10, 2, 2))
-    viewer.add_vectors(data)
-
-    # Add shapes
-    data = 20 * np.random.random((10, 4, 2))
-    viewer.add_shapes(data)
-
-    # Generate svg
-    svg = viewer.to_svg()
-    assert type(svg) == str
-
-
 def test_add_remove_layer_dims_change():
     """Test dims change appropriately when adding and removing layers."""
     np.random.seed(0)
