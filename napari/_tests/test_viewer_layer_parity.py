@@ -111,12 +111,6 @@ def test_signature(layer):
     class_parameters = dict(inspect.signature(layer.__init__).parameters)
     method_parameters = dict(inspect.signature(method).parameters)
 
-    # Remove path and data parameters from viewer method if path exists
-    if 'path' in method_parameters:
-        del method_parameters['path']
-        del method_parameters['data']
-        del class_parameters['data']
-
     fail_msg = f"signatures don't match for class {name}"
     if name == 'Image':
         # If Image just test that class params appear in method
