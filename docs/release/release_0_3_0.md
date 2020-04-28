@@ -105,8 +105,37 @@ annotate multiple types of points in an image, such as different cell types.
 
 ### API changes and improvements
 
-- magic name guessing
+We are taking the opportunity of this major release to update a few APIs. We
+hope that the number of users impacted by these changes will be small. In each
+case, we provide an equivalent API for the same functionality.
 
+- `viewer.add_path` has been renamed `viewer.open` and gains the ability to read
+  to any layer type.
+- `add_image(path=...)` and `add_labels(path=...)` have been removed. Users
+  should use `viewer.open(...)` instead.
+- image pyramids are no longer automatically generated when a dataset is large.
+  This should not affect API compatibility but might affect performance. For
+  most users, this should result in faster startup for large images.
+- `add_image(..., is_pyramid=False)` is now `add_image(..., multiscale=False)`.
+  This will allow us to use a consistent keyword argument when we add
+  multiscale support for other layer types.
+- `layer.to_svg()` has been removed. This functionality is now implemented with
+  `viewer.save('path/to/layer.svg', layer)`.
+
+### And one more thing...
+
+Thanks to the ever-creative Kira Evans, napari will now populate layer names
+based on the name of the variables being visualized:
+
+```python
+import napari
+from skimage import data
+
+camera = data.camera()
+with napari.gui_qt():
+    viewer = napari.view_image(camera)
+    print(viewer.layers[0].name)  # prints "camera"!
+```
 
 ## New Features
 - Hook up reader plugins (#937)
