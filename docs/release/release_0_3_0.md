@@ -81,7 +81,7 @@ post](https://forum.image.sc/t/integration-of-napari-module-subclass-plugin/3601
 by Talley provides a good overview of how to create interaction with napari
 right now, and [this GitHub
 answer](https://github.com/napari/napari/issues/1165#issuecomment-618013894)
-for how to embed a matplotlib plot within napari.
+explains how to embed a matplotlib plot within napari.
 
 ### Multiscale image handling
 
