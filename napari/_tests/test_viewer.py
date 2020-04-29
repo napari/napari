@@ -61,6 +61,16 @@ def test_no_qt_loop():
         _ = Viewer()
 
 
+def test_3d_image_pyramid(viewer_factory):
+    view, viewer = viewer_factory()
+    data = [np.random.random((128,) * 3), np.random.random((64,) * 3)]
+    viewer.add_image(data)
+    # check that this doesn't crash
+    viewer.dims.ndisplay = 3
+    viewer.layers[0].refresh()
+    check_viewer_functioning(viewer, view=view, data=data, ndim=3)
+
+
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
 @pytest.mark.parametrize('visible', [True, False])
 def test_add_layer(viewer_factory, layer_class, data, ndim, visible):
