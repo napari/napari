@@ -284,6 +284,16 @@ class QtViewer(QSplitter):
                 self.view.camera.viewbox_key_event = viewbox_key_event
                 self.viewer.reset_view()
 
+    def _save_layers(self, selected=False):
+        """Save screenshot of current display, default .png"""
+        filename, _ = QFileDialog.getSaveFileName(
+            parent=self,
+            caption=f'Save {"selected" if selected else "all"} layers',
+            directory=self._last_visited_dir,  # home dir by default
+        )
+        if filename:
+            self.viewer.layers.save(filename, selected=selected)
+
     def screenshot(self, path=None):
         """Take currently displayed screen and convert to an image array.
 
