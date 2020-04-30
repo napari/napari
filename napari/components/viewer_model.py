@@ -29,8 +29,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
 
     Attributes
     ----------
-    window : Window
-        Parent window.
     layers : LayerList
         List of contained layers.
     dims : Dimensions
@@ -167,10 +165,10 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         return self._help
 
     @help.setter
-    def help(self, help):
-        if help == self.help:
+    def help(self, help_text):
+        if help_text == self.help:
             return
-        self._help = help
+        self._help = help_text
         self.events.help(text=self._help)
 
     @property
@@ -417,9 +415,9 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
 
         min_shape = []
         max_shape = []
-        for min, max, step in self._calc_layers_ranges():
-            min_shape.append(min)
-            max_shape.append(max)
+        for min_val, max_val, step in self._calc_layers_ranges():
+            min_shape.append(min_val)
+            max_shape.append(max_val)
         if len(min_shape) == 0:
             min_shape = [0] * self.dims.ndim
             max_shape = [1] * self.dims.ndim
@@ -522,8 +520,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             Layer that is to be moved.
         position : 2-tuple of int
             New position of layer in grid.
-        size : 2-tuple of int
-            Size of the grid that is being used.
         """
         scene_size, corner = self._scene_shape()
         translate_2d = np.multiply(scene_size[-2:], position)

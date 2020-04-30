@@ -1,12 +1,15 @@
 import inspect
 import itertools
+from abc import ABC, abstractmethod
 import os
 from functools import lru_cache
 from logging import getLogger
-from typing import Any, Dict, List, Optional, Sequence, Set, Union
+from typing import Any, Dict, List, Optional, Sequence, Union, TypeVar
+from ..utils.colormaps import ensure_colormap_tuple
 
 import numpy as np
 
+from . import Dims
 from .. import layers
 from ..layers.image._image_utils import guess_labels, guess_multiscale
 from ..plugins.io import read_data_with_plugins
@@ -21,8 +24,14 @@ from ..utils.misc import (
 
 logger = getLogger(__name__)
 
+LayerType = TypeVar("LayerType", bound=layers.Layer)
 
-class AddLayersMixin:
+
+class ArrayInterface(ABC):
+    pass
+
+
+class AddLayersMixin(ABC):
     """A mixin that adds add_* methods for adding layers to the ViewerModel.
 
     Each method corresponds to adding one or more layers to the viewer.
@@ -35,7 +44,12 @@ class AddLayersMixin:
     easier to read and make these methods easier to maintain.
     """
 
-    def add_layer(self, layer: layers.Layer) -> layers.Layer:
+    def __init__(self):
+        super().__init__()
+        self.layers = []
+        self.dims = Dims()
+
+    def add_layer(self, layer: LayerType) -> LayerType:
         """Add a layer to the viewer.
 
         Parameters
@@ -256,7 +270,7 @@ class AddLayersMixin:
                 else:
                     kwargs[key] = iter(ensure_iterable(val))
 
-            layer_list = []
+            layer_list: List[layers.Image] = []
             for i in range(n_channels):
                 if multiscale:
                     image = [
@@ -266,8 +280,9 @@ class AddLayersMixin:
                 else:
                     image = np.take(data, i, axis=channel_axis)
                 i_kwargs = {k: next(v) for k, v in kwargs.items()}
-                layer = self.add_layer(layers.Image(image, **i_kwargs))
-                layer_list.append(layer)
+                layer_list.append(
+                    self.add_layer(layers.Image(image, **i_kwargs))
+                )
             return layer_list
 
     def add_points(
@@ -397,8 +412,7 @@ class AddLayersMixin:
             blending=blending,
             visible=visible,
         )
-        self.add_layer(layer)
-        return layer
+        return self.add_layer(layer)
 
     def add_labels(
         self,
@@ -913,6 +927,7 @@ class AddLayersMixin:
         A typical use case might be to upack a tuple of layer data with a
         specified layer_type.
 
+        >>> import napari
         >>> viewer = napari.Viewer()
         >>> data = (
         ...     np.random.random((10, 2)) * 20,
@@ -956,6 +971,42 @@ class AddLayersMixin:
                 raise exc
 
         return layer
+
+    @abstractmethod
+    def _update_active_layer(self, event):
+        pass
+
+    @abstractmethod
+    def _update_status(self, event):
+        pass
+
+    @abstractmethod
+    def _update_help(self, event):
+        pass
+
+    @abstractmethod
+    def _update_interactive(self, event):
+        pass
+
+    @abstractmethod
+    def _update_cursor(self, event):
+        pass
+
+    @abstractmethod
+    def _update_cursor_size(self, event):
+        pass
+
+    @abstractmethod
+    def _on_layers_change(self, event):
+        pass
+
+    @abstractmethod
+    def _update_layers(self, event=None, layers=None):
+        pass
+
+    @abstractmethod
+    def reset_view(self, event=None):
+        pass
 
 
 @lru_cache(maxsize=1)

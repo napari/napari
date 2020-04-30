@@ -689,6 +689,12 @@ class EmitterGroup(EventEmitter):
         """
         self.add(**{name: emitter})
 
+    def __getattr__(self, item):
+        """To hide warning about unresolved references for dynamic fields"""
+        if item in self._emitters:
+            return self._emitters[item]
+        raise AttributeError
+
     def add(self, auto_connect=None, **kwargs):
         """ Add one or more EventEmitter instances to this emitter group.
         Each keyword argument may be specified as either an EventEmitter
