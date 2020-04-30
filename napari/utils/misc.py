@@ -8,10 +8,11 @@ import warnings
 from contextlib import contextmanager
 from enum import Enum, EnumMeta
 from os import fspath, path
-from typing import Optional, Type, ContextManager
+from typing import ContextManager, Optional, Type
 
 import dask
 import dask.array as da
+import dask.cache
 import numpy as np
 
 ROOT_DIR = path.dirname(path.dirname(__file__))
@@ -266,7 +267,9 @@ def all_subclasses(cls: Type) -> set:
     )
 
 
-def resize_dask_cache(nbytes: int = None):
+def resize_dask_cache(
+    nbytes: Optional[int] = None, mem_fraction: float = 0.5
+) -> dask.cache.Cache:
     """Create or resize the dask cache for opportunistic caching.
 
     The cache object is an instance of a :class`cachey.Cache`, and is made
@@ -278,45 +281,102 @@ def resize_dask_cache(nbytes: int = None):
     Parameters
     ----------
     nbytes : int, optional
-        The desired size of the cache, in bytes, by default, napari wil attempt
-        to import ``psutil`` and use 80% of the available memory.  Otherwise it
-        will emit a warning and use 32GB.
+        The desired size of the cache, in bytes.  If ``None``, the cache size
+        will autodetermined as fraction of the total memory in the system,
+        using ``mem_fraction``.  If ``nbytes`` is 0. The cache is turned off.
+        by default, cache size is autodetermined using ``mem_fraction``.
+    mem_fraction : float, optional
+        The fraction (from 0 to 1) of total memory to use for the dask cache.
+
+    Returns
+    -------
+    dask_cache : dask.cache.Cache
+        An instance of a Dask Cache
+
+    Example
+    -------
+    >>> from napari.utils import resize_dask_cache
+    >>> cache = resize_dask_cache()  # use 50% of total memory by default
+
+    >>> # dask.Cache wraps cachey.Cache
+    >>> assert isinstance(cache.cache, cachey.Cache)
+
+    >>> # useful attributes
+    >>> cache.cache.available_bytes  # full size of cache
+    >>> cache.cache.total_bytes   # currently used bytes
     """
 
-    from dask.cache import Cache
-    from napari import utils
+    from napari.utils import dask_cache
+    import psutil
 
-    if not nbytes:
+    if nbytes is None:
+        # availalble RAM
+        nbytes = psutil.virtual_memory().total * mem_fraction
 
+    dask_cache.cache.resize(nbytes)
+    if nbytes == 0:
+        # turn off caching
         try:
-            import psutil
-
-            # availalble RAM
-            nbytes = psutil.virtual_memory().available * 0.8
-        except ImportError:
-
-            warnings.warn(
-                'Could not import psutil to get available memory for '
-                'caching. Run "pip install psutil" to automatically detect'
-                ' memory. Or resize cache manually with '
-                'napari.utils.resize_dask_cache'
-            )
-            nbytes = 32e9
-
-    if not utils.dask_cache:
-        utils.dask_cache = Cache(nbytes)
-        utils.dask_cache.register()
+            dask_cache.unregister()
+        # if the cache is already unregistered, it raises a KeyError
+        except KeyError:
+            pass
     else:
-        utils.dask_cache.cache.resize(nbytes)
+        dask_cache.register()
+
+    return dask_cache
+
+
+def _is_dask_data(data) -> bool:
+    """Return True if data is a dask array or a list/tuple of dask arrays."""
+    return isinstance(data, da.Array) or (
+        isinstance(data, (list, tuple))
+        and any(isinstance(i, da.Array) for i in data)
+    )
 
 
 def configure_dask(data) -> ContextManager[dict]:
-    # If it's not a dask array or a list of dask arrays, return False
-    if isinstance(data, da.Array) or (
-        isinstance(data, (list, tuple))
-        and any(isinstance(i, da.Array) for i in data)
-    ):
+    """Spin up cache and return context manager that optimizes Dask indexing.
 
+    This function determines whether data is a dask array or list of dask
+    arrays and prepares some optimizations if so.
+
+    When a delayed dask array is given to napari, there are couple things that
+    need to be done to optimize performance.  First, opportunistic caching
+    needs to be turned on, such that we don't recompute (or "re-read") data
+    that has already been computed or read.  Second, Dask task fusion must be
+    turned off to prevent napari from triggering new io on data that has
+    already been read from disk. For example, with a 4D timelapse of 3D stacks,
+    napari may actually *re-read* the entire 3D tiff file every time the Z
+    plane index is changed.  Turning of Dask task fusion with
+    ``optimization.fuse.active == False`` prevents this.
+
+    For background and napari context, see these threads:
+        https://github.com/napari/napari/issues/718
+        https://github.com/napari/napari/pull/1124
+        https://github.com/dask/dask/pull/6084
+
+    For details on Dask task fusion, see
+        https://docs.dask.org/en/latest/optimize.html
+
+    Parameters
+    ----------
+    data : Any
+        data, as passed to a Layer.__init__ method.
+
+    Returns
+    -------
+    ContextManager
+        A context manager that can be used to optimize dask indexing
+
+    Example
+    -------
+    >>> data = dask.array.ones((10,10,10))
+    >>> optimized_slicing = configure_dask(data)
+    >>> with optimized_slicing():
+    ...    data[0, 2].compute()
+    """
+    if _is_dask_data(data):
         resize_dask_cache()  # creates one if it doesn't exist
         dask_version = tuple(map(int, dask.__version__.split(".")))
         if dask_version < (2, 15, 0):
