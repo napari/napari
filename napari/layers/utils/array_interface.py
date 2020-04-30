@@ -1,5 +1,5 @@
 import sys
-from typing import Tuple, Union
+from typing import Tuple, Union, Type
 
 import numpy as np
 
@@ -9,21 +9,37 @@ else:
     from typing import Protocol
 
 
-class ArrayInterface(Protocol):
-    def __getitem__(self, item) -> Union['ArrayInterface', int, float, bool]:
+class SupportsShape(Protocol):
+    shape: Tuple[int, ...]
+
+
+class Is2D(Protocol):
+    shape: Tuple[int, int]
+
+
+class SupportsLen(Protocol):
+    def __len__(self, item) -> int:
         ...
 
-    def __len__(self) -> int:
-        ...
 
-    @property
-    def shape(self) -> Tuple[int, ...]:
-        return (0,)
+class HasDtype(Protocol):
+    dtype: Type[np.uint8]
 
-    @property
-    def dtype(self) -> type:
-        return np.uint8
 
+class HasNdim(Protocol):
     @property
     def ndim(self) -> int:
         return 0
+
+
+class BaseArrayInterface(SupportsLen, HasDtype, HasNdim, Protocol):
+    def __getitem__(self, item) -> Union['ArrayInterface', int, float, bool]:
+        ...
+
+
+class ArrayInterface(BaseArrayInterface, SupportsShape, Protocol):
+    ...
+
+
+class Array2DInterface(BaseArrayInterface, Is2D):
+    ...
