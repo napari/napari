@@ -2,15 +2,14 @@ import os
 import warnings
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from typing import Optional, List
+from typing import List, Optional
+
 import numpy as np
-import dask
-import dask.array as da
 
 from ...components import Dims
 from ...utils.event import EmitterGroup, Event
 from ...utils.key_bindings import KeymapProvider
-from ...utils.misc import ROOT_DIR
+from ...utils.misc import ROOT_DIR, configure_dask
 from ...utils.naming import magic_name
 from ...utils.status_messages import format_float, status_format
 from ..transforms import ScaleTranslate, TransformChain
@@ -140,30 +139,7 @@ class Layer(KeymapProvider, ABC):
         if name is None and data is not None and os.getenv('MAGICNAME'):
             name = magic_name(data, path_prefix=ROOT_DIR)
 
-        self._is_dask_data = False
-        # if we have a dask array, setup some sane defaults for optimized
-        # indexing and opportunistic caching.
-        if data is not None and (
-            isinstance(data, da.Array)
-            or (
-                isinstance(data, (list, tuple))
-                and any(isinstance(i, da.Array) for i in data)
-            )
-        ):
-            from ...utils.misc import resize_dask_cache
-
-            self._is_dask_data = True
-
-            resize_dask_cache()
-            dask_version = tuple(map(int, dask.__version__.split(".")))
-            if dask_version < (2, 15, 0) and not Layer._have_warned_dask:
-                warnings.warn(
-                    'For best performance with Dask arrays in napari, please '
-                    'upgrade Dask to v2.15.0 or later. Current version is '
-                    f'{dask.__version__}'
-                )
-                Layer._have_warned_dask = True
-
+        self.dask_optimized_slicing = configure_dask(data)
         self.metadata = metadata or {}
         self._opacity = opacity
         self._blending = Blending(blending)
@@ -608,10 +584,7 @@ class Layer(KeymapProvider, ABC):
         self._cursor_size = cursor_size
 
     def set_view_slice(self):
-        if self._is_dask_data:
-            with dask.config.set({"optimization.fuse.active": False}):
-                self._set_view_slice()
-        else:
+        with self.dask_optimized_slicing():
             self._set_view_slice()
 
     @abstractmethod

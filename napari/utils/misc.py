@@ -1,14 +1,18 @@
 """Miscellaneous utility functions.
 """
-from os import path, fspath
-from enum import Enum, EnumMeta
-import re
+import collections.abc
 import inspect
 import itertools
-import numpy as np
-from typing import Type, Optional
-import collections.abc
+import re
+import warnings
+from contextlib import contextmanager
+from enum import Enum, EnumMeta
+from os import fspath, path
+from typing import Optional, Type, ContextManager
 
+import dask
+import dask.array as da
+import numpy as np
 
 ROOT_DIR = path.dirname(path.dirname(__file__))
 
@@ -262,9 +266,6 @@ def all_subclasses(cls: Type) -> set:
     )
 
 
-_have_warned_psutil = False
-
-
 def resize_dask_cache(nbytes: int = None):
     """Create or resize the dask cache for opportunistic caching.
 
@@ -293,16 +294,13 @@ def resize_dask_cache(nbytes: int = None):
             # availalble RAM
             nbytes = psutil.virtual_memory().available * 0.8
         except ImportError:
-            import warnings
 
-            if not utils.misc._have_warned_psutil:
-                warnings.warn(
-                    'Could not import psutil to get available memory for '
-                    'caching. Run "pip install psutil" to automatically detect'
-                    ' memory. Or resize cache manually with '
-                    'napari.utils.resize_dask_cache'
-                )
-                utils.misc._have_warned_psutil = True
+            warnings.warn(
+                'Could not import psutil to get available memory for '
+                'caching. Run "pip install psutil" to automatically detect'
+                ' memory. Or resize cache manually with '
+                'napari.utils.resize_dask_cache'
+            )
             nbytes = 32e9
 
     if not utils.dask_cache:
@@ -310,3 +308,31 @@ def resize_dask_cache(nbytes: int = None):
         utils.dask_cache.register()
     else:
         utils.dask_cache.cache.resize(nbytes)
+
+
+def configure_dask(data) -> ContextManager[dict]:
+    # If it's not a dask array or a list of dask arrays, return False
+    if isinstance(data, da.Array) or (
+        isinstance(data, (list, tuple))
+        and any(isinstance(i, da.Array) for i in data)
+    ):
+
+        resize_dask_cache()  # creates one if it doesn't exist
+        dask_version = tuple(map(int, dask.__version__.split(".")))
+        if dask_version < (2, 15, 0):
+            warnings.warn(
+                'For best performance with Dask arrays in napari, please '
+                'upgrade Dask to v2.15.0 or later. Current version is '
+                f'{dask.__version__}'
+            )
+
+        def dask_optimized_slicing(*args, **kwds):
+            with dask.config.set({"optimization.fuse.active": False}) as cfg:
+                yield cfg
+
+    else:
+
+        def dask_optimized_slicing(*args, **kwds):
+            yield 1
+
+    return contextmanager(dask_optimized_slicing)
