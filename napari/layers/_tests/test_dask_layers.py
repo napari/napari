@@ -82,7 +82,7 @@ def delayed_dask_stack():
 def test_dask_optimized_slicing(delayed_dask_stack, monkeypatch):
     """Test that dask_configure reduces compute with dask stacks."""
 
-    # add it to the viewer, making sure to pass multiscale and clims
+    # add dask stack to the viewer, making sure to pass multiscale and clims
     v = viewer.ViewerModel()
     dask_stack = delayed_dask_stack['stack']
     v.add_image(dask_stack, multiscale=False, contrast_limits=(0, 1))
@@ -110,9 +110,9 @@ def test_dask_optimized_slicing(delayed_dask_stack, monkeypatch):
 
 def test_dask_unoptimized_slicing(delayed_dask_stack, monkeypatch):
     """Prove that the dask_configure function works with a counterexample."""
-    # make sure we are not caching for this test
-    if utils.dask_cache:
-        utils.dask_cache.unregister()
+    # make sure we are not caching for this test, which also tests that we
+    # can turn off caching
+    utils.resize_dask_cache(0)
 
     # mock the dask_configure function to return a no-op.
     def mock_dask_config(data):
@@ -124,6 +124,7 @@ def test_dask_unoptimized_slicing(delayed_dask_stack, monkeypatch):
 
     monkeypatch.setattr(layers.base.base, 'configure_dask', mock_dask_config)
 
+    # add dask stack to viewer.
     v = viewer.ViewerModel()
     dask_stack = delayed_dask_stack['stack']
     v.add_image(dask_stack, multiscale=False, contrast_limits=(0, 1))
