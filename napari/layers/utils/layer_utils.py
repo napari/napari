@@ -1,15 +1,16 @@
 from typing import Dict, Union, Tuple
 
 import numpy as np
+from napari.layers.utils.array_interface import ArrayInterface
 from vispy.color import Colormap
 
 
-def calc_data_range(data):
+def calc_data_range(data: ArrayInterface):
     """Calculate range of data values. If all values are equal return [0, 1].
 
     Parameters
     -------
-    data : array
+    data : ArrayInterface
         Data to calculate range of values over.
 
     Returns
@@ -189,7 +190,7 @@ def map_property(
     if contrast_limits is None:
         contrast_limits = (prop.min(), prop.max())
     normalized_properties = np.interp(prop, contrast_limits, (0, 1))
-    mapped_properties = colormap.map(normalized_properties)
+    mapped_properties = np.array(colormap.map(normalized_properties))
 
     return mapped_properties, contrast_limits
 
@@ -221,7 +222,7 @@ def compute_multiscale_level(
         Level of the multiscale to be viewing.
     """
     # Scale shape by downsample factors
-    scaled_shape = requested_shape / downsample_factors
+    scaled_shape = np.array(requested_shape) / np.array(downsample_factors)
 
     # Find the highest resolution level allowed
     locations = np.argwhere(np.all(scaled_shape > shape_threshold, axis=1))

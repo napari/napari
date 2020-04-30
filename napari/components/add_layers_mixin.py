@@ -9,6 +9,7 @@ from ..utils.colormaps import ensure_colormap_tuple
 
 import numpy as np
 
+from napari.layers.utils.array_interface import ArrayInterface
 from . import Dims
 from .. import layers
 from ..layers.image._image_utils import guess_labels, guess_multiscale
@@ -25,10 +26,6 @@ from ..utils.misc import (
 logger = getLogger(__name__)
 
 LayerType = TypeVar("LayerType", bound=layers.Layer)
-
-
-class ArrayInterface(ABC):
-    pass
 
 
 class AddLayersMixin(ABC):
@@ -82,7 +79,7 @@ class AddLayersMixin(ABC):
 
     def add_image(
         self,
-        data=None,
+        data: Union[ArrayInterface, List[ArrayInterface]],
         *,
         channel_axis=None,
         rgb=None,
@@ -106,7 +103,7 @@ class AddLayersMixin(ABC):
 
         Parameters
         ----------
-        data : np.ndarray or list of np.ndarray
+        data : ArrayInterface or list of ArrayInterface
             Image data. Can be N dimensional. If the last dimension has length
             3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a
             list and arrays are decreasing in shape then the data is treated as

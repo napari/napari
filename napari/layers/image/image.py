@@ -1,6 +1,9 @@
 import types
 import warnings
+from typing import Union, List
+
 import numpy as np
+from napari.layers.utils.array_interface import ArrayInterface
 from scipy import ndimage as ndi
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS
@@ -19,7 +22,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
     Parameters
     ----------
-    data : np.ndarray or list of np.ndarray
+    data : napari.layers.utils.array_interface.ArrayInterface or list of napari.layers.utils.array_interface.ArrayInterface
         Image data. Can be N dimensional. If the last dimension has length
         3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a
         list and arrays are decreasing in shape then the data is treated as
@@ -131,7 +134,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
     def __init__(
         self,
-        data,
+        data: Union[ArrayInterface, List[ArrayInterface]],
         *,
         rgb=None,
         colormap='gray',
