@@ -4,6 +4,8 @@ wrap.
 """
 import time
 
+import napari.config
+
 # set vispy to use same backend as qtpy
 from ..utils.io import imsave
 
@@ -31,10 +33,33 @@ from qtpy.QtWidgets import (  # noqa: E402
     QStatusBar,
     QVBoxLayout,
 )
-from qtpy.QtCore import Qt  # noqa: E402
+from qtpy.QtCore import Qt, QTimer  # noqa: E402
 from qtpy.QtGui import QKeySequence, QIcon  # noqa: E402
 from .utils import QImg2array  # noqa: E402
 from ..utils.theme import template  # noqa: E402
+
+
+class NapariMainWindow(QMainWindow):
+    open_windows = []
+    pref_sycn_timer = QTimer()
+    pref_sycn_timer.timeout.connect(napari.config.sync)
+
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.settings_sync_interval = 2000
+
+        if not NapariMainWindow.pref_sycn_timer.isActive():
+            NapariMainWindow.pref_sycn_timer.start(self.settings_sync_interval)
+
+        NapariMainWindow.open_windows.append(self)
+
+    def closeEvent(self, event):
+        NapariMainWindow.open_windows.remove(self)
+        if (
+            not NapariMainWindow.open_windows
+            and NapariMainWindow.pref_sycn_timer.isActive()
+        ):
+            NapariMainWindow.pref_sycn_timer.stop()
 
 
 class Window:
@@ -67,7 +92,7 @@ class Window:
 
         self.qt_viewer = qt_viewer
 
-        self._qt_window = QMainWindow()
+        self._qt_window = NapariMainWindow()
         self._qt_window.setAttribute(Qt.WA_DeleteOnClose)
         self._qt_window.setUnifiedTitleAndToolBarOnMac(True)
         self._qt_center = QWidget(self._qt_window)
@@ -103,7 +128,6 @@ class Window:
         self.qt_viewer.viewer.events.help.connect(self._help_changed)
         self.qt_viewer.viewer.events.title.connect(self._title_changed)
         self.qt_viewer.viewer.events.palette.connect(self._update_palette)
-
         if show:
             self.show()
 
