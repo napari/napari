@@ -1,12 +1,17 @@
 import numpy as np
 import dask.array as da
 from napari.components import ViewerModel
-from napari.utils.colormaps import colormaps
+from napari.utils.colormaps import colormaps, ensure_colormap_tuple
 from napari.utils.misc import ensure_sequence_of_iterables, ensure_iterable
 import pytest
 
 base_colormaps = colormaps.CYMRGB
 two_colormaps = colormaps.MAGENTA_GREEN
+green_cmap = colormaps.simple_colormaps['green']
+red_cmap = colormaps.simple_colormaps['red']
+fire = colormaps.AVAILABLE_COLORMAPS['fire']
+cmap_tuple = ("my_colormap", colormaps.Colormap(['g', 'm', 'y']))
+cmap_dict = {"your_colormap": colormaps.Colormap(['g', 'r', 'y'])}
 
 MULTI_TUPLES = [[0.3, 0.7], [0.1, 0.9], [0.3, 0.9], [0.4, 0.9], [0.2, 0.9]]
 
@@ -35,7 +40,12 @@ multi_channel_test_data = [
     ((), {'visible': [True, False, False, True, True]}),
     # Test adding multichannel image with custom colormaps.
     ((), {'colormap': 'gray'}),
+    ((), {'colormap': green_cmap}),
+    ((), {'colormap': cmap_tuple}),
+    ((), {'colormap': cmap_dict}),
     ((), {'colormap': ['gray', 'blue', 'red', 'green', 'yellow']}),
+    ((), {'colormap': [green_cmap, red_cmap, fire, fire, green_cmap]}),
+    ((), {'colormap': [green_cmap, 'gray', cmap_tuple, fire, cmap_dict]}),
     ((), {'scale': MULTI_TUPLES}),
     ((), {'translate': MULTI_TUPLES}),
     ((), {'blending': 'translucent'}),
@@ -49,15 +59,20 @@ ids = [
     'two_channel',
     'specified_multichannel',
     'split_RGB',
-    'multi_RGB',
+    'list_RGB',
     'names',
     'contrast_limits_broadcast',
-    'contrast_limits_multi',
+    'contrast_limits_list',
     'gamma_broadcast',
-    'gamma_multi',
+    'gamma_list',
     'visibility',
-    'colormap_broadcast',
-    'colormap_multi',
+    'colormap_string_broadcast',
+    'colormap_cmap_broadcast',
+    'colormap_tuple_broadcast',
+    'colormap_dict_broadcast',
+    'colormap_string_list',
+    'colormap_cmap_list',
+    'colormap_variable_list',
     'scale',
     'translate',
     'blending',
@@ -94,6 +109,12 @@ def test_multichannel(shape, kwargs):
             # broadcast expections
             if key in {'scale', 'translate', 'contrast_limits', 'metadata'}:
                 expectation = ensure_sequence_of_iterables(expectation)
+            elif key == 'colormap' and expectation is not None:
+                if isinstance(expectation, list):
+                    exp = [ensure_colormap_tuple(c)[0] for c in expectation]
+                else:
+                    exp, _ = ensure_colormap_tuple(expectation)
+                expectation = ensure_iterable(exp)
             else:
                 expectation = ensure_iterable(expectation)
             expectation = [v for i, v in zip(range(i + 1), expectation)]
