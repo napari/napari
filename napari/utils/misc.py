@@ -270,10 +270,11 @@ def all_subclasses(cls: Type) -> set:
 def resize_dask_cache(
     nbytes: Optional[int] = None, mem_fraction: float = 0.5
 ) -> dask.cache.Cache:
-    """Create or resize the dask cache for opportunistic caching.
+    """Create or resize the dask cache used for opportunistic caching.
 
-    The cache object is an instance of a :class`cachey.Cache`, and is made
-    available at :attr:`napari.utils.dask_cache`.
+    The cache object is an instance of a :class:`dask.cache.Cache`, (which
+    wraps a :class:`cachey.Cache`), and is made available at
+    :attr:`napari.utils.dask_cache`.
 
     See `Dask oportunistic caching
     <https://docs.dask.org/en/latest/caching.html>`_
@@ -342,27 +343,33 @@ def configure_dask(data) -> ContextManager[dict]:
     arrays and prepares some optimizations if so.
 
     When a delayed dask array is given to napari, there are couple things that
-    need to be done to optimize performance.  First, opportunistic caching
-    needs to be turned on, such that we don't recompute (or "re-read") data
-    that has already been computed or read.  Second, Dask task fusion must be
-    turned off to prevent napari from triggering new io on data that has
-    already been read from disk. For example, with a 4D timelapse of 3D stacks,
-    napari may actually *re-read* the entire 3D tiff file every time the Z
-    plane index is changed.  Turning of Dask task fusion with
-    ``optimization.fuse.active == False`` prevents this.
+    need to be done to optimize performance.
 
-    For background and napari context, see these threads:
-        https://github.com/napari/napari/issues/718
-        https://github.com/napari/napari/pull/1124
-        https://github.com/dask/dask/pull/6084
+    1. Opportunistic caching needs to be enabled, such that we don't recompute
+       (or "re-read") data that has already been computed or read.
 
-    For details on Dask task fusion, see
-        https://docs.dask.org/en/latest/optimize.html
+    2. Dask task fusion must be turned off to prevent napari from triggering
+       new io on data that has already been read from disk. For example, with a
+       4D timelapse of 3D stacks, napari may actually *re-read* the entire 3D
+       tiff file every time the Z plane index is changed. Turning of Dask task
+       fusion with ``optimization.fuse.active == False`` prevents this.
+
+       .. note::
+
+          Turning off task fusion requires Dask version 2.15.0 or later.
+
+    For background and context, see `napari/napari#718
+    <https://github.com/napari/napari/issues/718>`_, `napari/napari#1124
+    <https://github.com/napari/napari/pull/1124>`_, and `dask/dask#6084
+    <https://github.com/dask/dask/pull/6084>`_.
+
+    For details on Dask task fusion, see the documentation on `Dask
+    Optimization <https://docs.dask.org/en/latest/optimize.html>`_.
 
     Parameters
     ----------
     data : Any
-        data, as passed to a Layer.__init__ method.
+        data, as passed to a ``Layer.__init__`` method.
 
     Returns
     -------
