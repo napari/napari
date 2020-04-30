@@ -52,8 +52,8 @@ If you have questions about contributing to napari you can get in touch with the
 
 ### IO plugins
 
-napari now supports opening and saving in a wide variety of file formats,
-both local and remote, through an extensible plugin architecture. The same file formats as before are available
+Contributors can now easily extend napari to open and save in a variety of file formats,
+both local and remote, through our plugin architecture. The same file formats as before are available
 to read (TIFF, most image file formats supported by imageio, and zarr).
 However, we can now *write* to all these formats, read and write point
 annotations in .csv format. Additionally, we have made it possible for anyone to create
@@ -118,7 +118,8 @@ case, we provide an equivalent API for the same functionality.
 - `viewer.add_path` has been renamed `viewer.open` and gains the ability to read
   to any layer type.
 - `add_image(path=...)` and `add_labels(path=...)` have been removed. Users
-  should use `viewer.open(...)` instead.
+  should use `viewer.open(...)` instead with the `layer_type` parameter to
+  force the added data to be a particular layer type.
 - Image pyramids are no longer automatically generated when a dataset is large.
   This should not affect API compatibility but might affect performance. For
   most users, this should result in faster startup for large images.
