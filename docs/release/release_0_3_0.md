@@ -62,7 +62,7 @@ our plugin architecture [here](https://napari.org/docs/plugins/index.html).
 
 Want to drag and drop your favorite file format into napari and have it load automatically? See [this
 guide](https://napari.org/docs/plugins/for_plugin_developers.html) to
-understand how to write your own plugin, and see Jackson Maxfield's
+understand how to write your own plugin, and see Jackson Brown's
 [napari-aicsimageio](https://github.com/AllenCellModeling/napari-aicsimageio)
 plugin for an exemplar plugin!
 
@@ -182,7 +182,7 @@ with napari.gui_qt():
 - Color cycles properties return array (#1163)
 - Allow last added point to be deleted with backspace keybinding (#1164)
 - Extract plugin code to napari-plugin-engine (#1169)
-
+- Warn when nothing saved (#1188)
 
 ## Bug Fixes
 - Refactor cleanup, prevent leaked widgets, add viewer.close method (#1014)
@@ -203,6 +203,8 @@ with napari.gui_qt():
 - Fix add_points_with_properties example (#1126)
 - Use mode='constant' in numpy.pad usage (#1150)
 - Fix canvas none after layer deletion (#1158)
+- Prevent crash when viewing 3D pyramids (#1179)
+- Add ensure_colormap utility function to standardize colormap getting/setting (#1180)
 - Fix small plugin error report bug (#1181)
 
 
@@ -238,6 +240,8 @@ with napari.gui_qt():
 - Rename requirements test (#1160)
 - Update Pillow dependency pin (#1172)
 - Update napari-svg to 0.1.1 (#1182)
+- Update manifest.in for plugin code removal (#1187)
+- Fix pip-missing-reqs step (#1189)
 
 
 ## 13 authors added to this release (alphabetical)
