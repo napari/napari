@@ -314,7 +314,8 @@ def resize_dask_cache(
         # availalble RAM
         nbytes = psutil.virtual_memory().total * mem_fraction
 
-    dask_cache.cache.resize(nbytes)
+    if nbytes != dask_cache.cache.available_bytes:
+        dask_cache.cache.resize(nbytes)
     if nbytes == 0:
         # turn off caching
         try:
