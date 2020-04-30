@@ -33,9 +33,9 @@ page](https://napari.org/docs/developers.html), together with a [public
 roadmap](https://napari.org/docs/developers/ROADMAP_0_3.html) explaining
 where the core team will devote effort in the coming months.
 
-We are still overwhelmed by the community response to napari and we hope that
+We are still humbled by the enthusiasm of the community response to napari and we hope that
 the above documents will continue to encourage potential users to join our
-community. We continue to welcome contributions of all kinds and encourage
+community. We welcome contributions of all kinds and encourage
 you to get in touch with us if you don't see your most wanted feature in our
 roadmap, or as an issue in our [issue
 tracker](https://github.com/napari/napari/issues).
@@ -48,19 +48,19 @@ allow users to get help with any issues they might have using napari.
 
 ### IO plugins
 
-napari is now extensible to open and save to a wide variety of file formats,
-both local and remote. Currently, the same file formats as before are available
+napari now supports opening and saving in a wide variety of file formats,
+both local and remote, through an extensible plugin architecture. The same file formats as before are available
 to read (TIFF, most image file formats supported by imageio, and zarr).
 However, we can now *write* to all these formats, read and write point
-annotations in .csv format, and we also have the ability for anyone to create
-packages for napari to read and write in any other formats. You can read about
-our plugin architecture [here](and https://napari.org/docs/plugins/index.html).
+annotations in .csv format. Additionally, we have made it possible for anyone to create
+packages for napari to read and write in any other formats through plugins. You can read about
+our plugin architecture [here](https://napari.org/docs/plugins/index.html).
 
-Want to drag and drop your favorite file format into napari? See [this
+Want to drag and drop your favorite file format into napari and have it load automatically? See [this
 guide](https://napari.org/docs/plugins/for_plugin_developers.html) to
 understand how to write your own plugin, and see Jackson Maxfield's
 [napari-aicsimageio](https://github.com/AllenCellModeling/napari-aicsimageio)
-plugin for an example plugin!
+plugin for an exemplar plugin!
 
 Many thanks to Talley Lambert for driving this effort!
 
@@ -71,8 +71,8 @@ you to pop out the napari UI elements from the main window, enabling, for
 example, those on multi-monitor setups to have the toolbars on one monitor and
 the main window in full-screen on another.
 
-Even better, we have released a side package called `magicgui` to allow you to
-create your own dockable widgets with which to interact with napari. We are
+Even better, we have released a side package called [magicgui](https://github.com/napari/magicgui) to allow you to
+create your own dockable widgets with which to interact with napari without writing GUI code. We are
 still working on standard models of interaction here (see our
 [roadmap](https://napari.org/docs/developers/ROADMAP_0_3.html)), but you should
 be able to get started creating useful user interfaces right now. [This
@@ -88,20 +88,22 @@ explains how to embed a matplotlib plot within napari.
 napari is now much better at handling large datasets. Viewing a large dataset
 will no longer trigger automatic — but very slow, and often unnecessary —
 generation of an image pyramid. Instead, we direct users to our [tutorial on
-how to generate your own pyramid]().
+how to generate your own pyramid](https://scikit-image.org/docs/dev/auto_examples/transform/plot_pyramid.html) from `scikit-image`.
 
 If you submit an image pyramid, napari will automatically detect it as such. To
 turn off automatic detection, you can now pass the `multiscale=True/False`
-parameter to `add_image`. In the future, we aim to add multiscale capabilities
+parameter to `add_image`. This replaces the `is_pyramid` parameter which has now been removed. In the future, we aim to add multiscale capabilities
 to all our layers.
+
+We have also fixed the bug where too small a tile was shown to file the entire canvas.
 
 ### Points with properties
 
 Points are no longer generic coordinates floating in space! Each point can have
-its own personality and character! Specifically, each point can have an
+its own personality and character :-). Specifically, each point can have an
 arbitrary number of properties, and attributes such as size, face color, and
 edge color can be determined by those properties. This makes it easier to
-annotate multiple types of points in an image, such as different cell types.
+annotate multiple types of points in an image, such as different cell types. To assign properties to points you can pass a dictionary as the `properties` parameter to `add_points`.
 
 ### API changes and improvements
 
@@ -113,14 +115,14 @@ case, we provide an equivalent API for the same functionality.
   to any layer type.
 - `add_image(path=...)` and `add_labels(path=...)` have been removed. Users
   should use `viewer.open(...)` instead.
-- image pyramids are no longer automatically generated when a dataset is large.
+- Image pyramids are no longer automatically generated when a dataset is large.
   This should not affect API compatibility but might affect performance. For
   most users, this should result in faster startup for large images.
 - `add_image(..., is_pyramid=False)` is now `add_image(..., multiscale=False)`.
   This will allow us to use a consistent keyword argument when we add
   multiscale support for other layer types.
 - `layer.to_svg()` has been removed. This functionality is now implemented with
-  `viewer.save('path/to/layer.svg', layer)`.
+  `viewer.save('path/to/layer.svg', layer, plugin='svg')` through our plugin architecture.
 
 ### And one more thing...
 
@@ -196,6 +198,7 @@ with napari.gui_qt():
 - Fix add_points_with_properties example (#1126)
 - Use mode='constant' in numpy.pad usage (#1150)
 - Fix canvas none after layer deletion (#1158)
+- Fix small plugin error report bug (#1181)
 
 
 ## Breaking API Changes
@@ -229,6 +232,7 @@ with napari.gui_qt():
 - Change release notes source file to use .md ext (#1156)
 - Rename requirements test (#1160)
 - Update Pillow dependency pin (#1172)
+- Update napari-svg to 0.1.1 (#1182)
 
 
 ## 13 authors added to this release (alphabetical)
