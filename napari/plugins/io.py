@@ -12,7 +12,9 @@ logger = getLogger(__name__)
 
 
 def read_data_with_plugins(
-    path: Union[str, Sequence[str]], plugin_manager=napari_plugin_manager
+    path: Union[str, Sequence[str]],
+    plugin: Optional[str] = None,
+    plugin_manager=napari_plugin_manager,
 ) -> Optional[LayerData]:
     """Iterate reader hooks and return first non-None LayerData or None.
 
@@ -28,6 +30,10 @@ def read_data_with_plugins(
     ----------
     path : str
         The path (file, directory, url) to open
+    plugin : str, optional
+        Name of a plugin to use.  If provided, will force ``path`` to be read
+        with the specified ``plugin``.  If the requested plugin cannot read
+        ``path``, a PluginCallError will be raised.
     plugin_manager : plugins.PluginManager, optional
         Instance of a napari PluginManager.  by default the main napari
         plugin_manager will be used.
@@ -41,8 +47,18 @@ def read_data_with_plugins(
         ``(data,)``, ``(data, meta)``, or ``(data, meta, layer_type)`` .
 
         If no reader plugins are (or they all error), returns ``None``
+
+    Raises
+    ------
+    PluginCallError
+        If ``plugin`` is specified but raises an Exception while reading.
     """
     hook_caller = plugin_manager.hook.napari_get_reader
+
+    if plugin:
+        reader = hook_caller._call_plugin(plugin, path=path)
+        return reader(path)
+
     skip_impls: List[HookImplementation] = []
     while True:
         result = hook_caller.call_with_result_obj(

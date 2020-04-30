@@ -21,7 +21,6 @@ def view_image(
     blending=None,
     visible=True,
     multiscale=None,
-    path=None,
     title='napari',
     ndisplay=2,
     order=None,
@@ -94,9 +93,6 @@ def view_image(
         the user and if the data is a list of arrays that decrease in shape
         then it will be taken to be multiscale. The first image in the list
         should be the largest.
-    path : str or list of str
-        Path or list of paths to image data. Paths can be passed as strings
-        or `pathlib.Path` instances.
     title : string
         The title of the viewer window.
     ndisplay : {2, 3}
@@ -141,7 +137,6 @@ def view_image(
         opacity=opacity,
         blending=blending,
         visible=visible,
-        path=path,
     )
     return viewer
 
@@ -197,7 +192,7 @@ def view_path(
         axis_labels=axis_labels,
         show=show,
     )
-    viewer.open_path(path=path, stack=stack, **kwargs)
+    viewer.open(path=path, stack=stack, **kwargs)
     return viewer
 
 
@@ -363,7 +358,6 @@ def view_labels(
     blending='translucent',
     visible=True,
     multiscale=None,
-    path=None,
     title='napari',
     ndisplay=2,
     order=None,
@@ -415,9 +409,6 @@ def view_labels(
         the user and if the data is a list of arrays that decrease in shape
         then it will be taken to be multiscale. The first image in the list
         should be the largest.
-    path : str or list of str
-        Path or list of paths to image data. Paths can be passed as strings
-        or `pathlib.Path` instances.
     title : string
         The title of the viewer window.
     ndisplay : {2, 3}
@@ -455,7 +446,6 @@ def view_labels(
         opacity=opacity,
         blending=blending,
         visible=visible,
-        path=path,
     )
     return viewer
 

@@ -1,5 +1,4 @@
 import numpy as np
-from xml.etree.ElementTree import Element
 from .shape import Shape
 from .._shapes_utils import create_box
 
@@ -92,22 +91,3 @@ class Line(Shape):
                 np.max(data_not_displayed, axis=0),
             ]
         ).astype('int')
-
-    def to_xml(self):
-        """Generates an xml element that defintes the shape according to the
-        svg specification.
-
-        Returns
-        ----------
-        element : xml.etree.ElementTree.Element
-            xml element specifying the shape according to svg.
-        """
-        data = self.data[:, self.dims_displayed]
-        x1 = str(data[0, 0])
-        y1 = str(data[0, 1])
-        x2 = str(data[1, 0])
-        y2 = str(data[1, 1])
-
-        element = Element('line', x1=y1, y1=x1, x2=y2, y2=x2, **self.svg_props)
-
-        return element

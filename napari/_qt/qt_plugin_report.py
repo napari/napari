@@ -17,7 +17,7 @@ from qtpy.QtWidgets import (
 )
 
 from ..plugins.exceptions import format_exceptions
-from napari_plugin_engine import PluginManager
+from napari_plugin_engine import PluginManager, standard_metadata
 
 
 class QtPluginErrReporter(QDialog):
@@ -158,11 +158,7 @@ class QtPluginErrReporter(QDialog):
 
         # set metadata and outbound links/buttons
         err0 = self.plugin_manager.get_errors(plugin)[0]
-        meta = (
-            self.plugin_manager.get_standard_metadata(err0.plugin)
-            if err0.plugin
-            else None
-        )
+        meta = standard_metadata(err0.plugin) if err0.plugin else None
         meta_text = ''
         if not meta:
             self.plugin_meta.setText(meta_text)

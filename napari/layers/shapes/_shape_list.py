@@ -845,22 +845,3 @@ class ShapeList:
                 colors[mask, :] = col
 
         return colors
-
-    def to_xml_list(self):
-        """Convert the shapes to a list of xml elements according to the svg
-        specification. Z ordering of the shapes will be taken into account.
-
-        Returns
-        ----------
-        xml : list
-            List of xml elements defining each shape according to the
-            svg specification
-        """
-
-        xml = [
-            self.shapes[ind].to_xml()
-            for ind in self._z_order[::-1]
-            if self._displayed[ind]
-        ]
-
-        return xml
