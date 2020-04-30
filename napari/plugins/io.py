@@ -1,3 +1,4 @@
+import warnings
 from logging import getLogger
 from typing import List, Optional, Sequence, Union
 
@@ -132,15 +133,27 @@ def save_layers(
         File paths of any files that were written.
     """
     if len(layers) > 1:
-        return _write_multiple_layers_with_plugins(
+        written = _write_multiple_layers_with_plugins(
             path, layers, plugin_name=plugin
         )
-    if len(layers) == 1:
+    elif len(layers) == 1:
         written = _write_single_layer_with_plugins(
             path, layers[0], plugin_name=plugin
         )
-        return [written] if written else []
-    return []
+        written = [written] if written else []
+    else:
+        written = []
+
+    if not written:
+        # if written is empty, it means no plugin could write the
+        # path/layers combination
+        # we just want to provide some useful feedback
+        warnings.warn(
+            'No data written! There may be no plugins '
+            f'capable of writing these {len(layers)} layers to {path}.'
+        )
+
+    return written
 
 
 def _write_multiple_layers_with_plugins(
@@ -216,9 +229,7 @@ def _write_multiple_layers_with_plugins(
     try:
         return writer_function(abspath_or_url(path), layer_data)
     except Exception as exc:
-        raise PluginCallError(
-            implementation, cause=exc, manager=plugin_manager
-        )
+        raise PluginCallError(implementation, cause=exc)
 
 
 def _write_single_layer_with_plugins(
