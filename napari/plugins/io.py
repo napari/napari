@@ -141,6 +141,8 @@ def save_layers(
             path, layers[0], plugin_name=plugin
         )
         written = [written] if written else []
+    else:
+        written = []
 
     if not written:
         # if written is empty, it means no plugin could write the
@@ -148,7 +150,7 @@ def save_layers(
         # we just want to provide some useful feedback
         warnings.warn(
             'No data written! There may be no plugins '
-            f'capable of writing these layers to {path}.'
+            f'capable of writing these {len(layers)} layers to {path}.'
         )
 
     return written
