@@ -1,4 +1,3 @@
-import os
 import warnings
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
@@ -133,7 +132,7 @@ class Layer(KeymapProvider, ABC):
     ):
         super().__init__()
 
-        if name is None and data is not None and os.getenv('MAGICNAME'):
+        if name is None and data is not None:
             name = magic_name(data, path_prefix=ROOT_DIR)
 
         self.metadata = metadata or {}
