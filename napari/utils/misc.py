@@ -400,6 +400,6 @@ def configure_dask(data) -> ContextManager[dict]:
     else:
 
         def dask_optimized_slicing(*args, **kwds):
-            yield 1
+            yield {}
 
     return contextmanager(dask_optimized_slicing)
