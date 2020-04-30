@@ -118,8 +118,6 @@ class Layer(KeymapProvider, ABC):
         * `_basename()`: base/default name of the layer
     """
 
-    _have_warned_dask = False
-
     def __init__(
         self,
         data,
