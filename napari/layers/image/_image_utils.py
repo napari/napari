@@ -8,7 +8,7 @@ def guess_rgb(shape):
 
     Parameters
     ----------
-    shape : list of int
+    shape : list of int or tuple of int
         Shape of the data that should be checked.
 
     Returns
@@ -32,7 +32,7 @@ def guess_multiscale(data):
 
     Parameters
     ----------
-    data : array or list of array
+    data : np.ndarray or list of np.ndarray
         Data that should be checked.
 
     Returns

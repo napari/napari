@@ -68,7 +68,7 @@ def napari_write_image(path: str, data: Any, meta: dict) -> Optional[str]:
     ----------
     path : str
         Path to file, directory, or resource (like a URL).
-    data : array or list of array
+    data : np.ndarray or list of np.ndarray
         Image data. Can be N dimensional. If meta['rgb'] is ``True`` then the
         data should be interpreted as RGB or RGBA. If ``meta['multiscale']`` is
         ``True``, then the data should be interpreted as a multiscale image.
@@ -126,7 +126,7 @@ def napari_write_points(path: str, data: Any, meta: dict) -> Optional[str]:
     ----------
     path : str
         Path to file, directory, or resource (like a URL).
-    data : array (N, D)
+    data : np.ndarray (N, D)
         Coordinates for N points in D dimensions.
     meta : dict
         Points metadata.

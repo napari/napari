@@ -44,9 +44,9 @@ class Points(Layer):
 
     Parameters
     ----------
-    data : array (N, D)
+    data : np.ndarray (N, D)
         Coordinates for N points in D dimensions.
-    properties : dict {str: array (N,)}, DataFrame
+    properties : dict {str: np.ndarray (N,)}, DataFrame
         Properties for each point. Each property should be an array of length N,
         where N is the number of points.
     symbol : str
@@ -107,14 +107,14 @@ class Points(Layer):
 
     Attributes
     ----------
-    data : array (N, D)
+    data : np.ndarray (N, D)
         Coordinates for N points in D dimensions.
-    properties : dict {str: array (N,)}
+    properties : dict {str: np.ndarray (N,)}
         Annotations for each point. Each property should be an array of length N,
         where N is the number of points.
     symbol : str
         Symbol used for all point markers.
-    size : array (N, D)
+    size : np.ndarray (N, D)
         Array of sizes for each point in each dimension. Must have the same
         shape as the layer `data`.
     edge_width : float
@@ -187,19 +187,19 @@ class Points(Layer):
 
     Extended Summary
     ----------
-    _property_choices : dict {str: array (N,)}
+    _property_choices : dict {str: np.ndarray (N,)}
         Possible values for the properties in Points.properties.
         If properties is not provided, it will be {} (empty dictionary).
-    _view_data : array (M, 2)
+    _view_data : np.ndarray (M, 2)
         2D coordinates of points in the currently viewed slice.
-    _view_size : array (M, )
+    _view_size : np.ndarray (M, )
         Size of the point markers in the currently viewed slice.
-    _indices_view : array (M, )
+    _indices_view : np.ndarray (M, )
         Integer indices of the points in the currently viewed slice.
     _selected_view :
         Integer indices of selected points in the currently viewed slice within
         the `_view_data` array.
-    _selected_box : array (4, 2) or None
+    _selected_box : np.ndarray (4, 2) or None
         Four corners of any box either around currently selected points or
         being created during a drag action. Starting in the top left and
         going clockwise.

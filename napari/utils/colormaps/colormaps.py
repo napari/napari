@@ -50,7 +50,7 @@ def _validate_rgb(colors, *, tolerance=0.0):
 
     Parameters
     ----------
-    colors : array of float, shape (N, 3)
+    colors : np.ndarray of float, shape (N, 3)
         Input colors in RGB space.
 
     Other Parameters
@@ -61,7 +61,7 @@ def _validate_rgb(colors, *, tolerance=0.0):
 
     Returns
     -------
-    filtered_colors : array of float, shape (M, 3), M <= N
+    filtered_colors : np.ndarray of float, shape (M, 3), M <= N
         The subset of colors that are in valid RGB space.
 
     Examples
@@ -87,7 +87,7 @@ def _low_discrepancy_image(image, seed=0.5, margin=1 / 256):
 
     Parameters
     ----------
-    labels : array of int
+    labels : np.ndarray of int
         A set of labels or label image.
     seed : float
         The seed from which to start the quasirandom sequence.
@@ -98,7 +98,7 @@ def _low_discrepancy_image(image, seed=0.5, margin=1 / 256):
 
     Returns
     -------
-    image_out : array of float
+    image_out : np.ndarray of float
         The set of ``labels`` remapped to [0, 1] quasirandomly.
 
     """
@@ -125,7 +125,7 @@ def _low_discrepancy(dim, n, seed=0.5):
 
     Returns
     -------
-    pts : array of float, shape (n, dim)
+    pts : np.ndarray of float, shape (n, dim)
         The sampled points.
 
     References
@@ -160,7 +160,7 @@ def _color_random(n, *, colorspace='lab', tolerance=0.0, seed=0.5):
 
     Returns
     -------
-    rgb : array of float, shape (n, 3)
+    rgb : np.ndarray of float, shape (n, 3)
         RGB colors chosen uniformly at random from given colorspace.
     """
     factor = 6  # about 1/5 of random LUV tuples are inside the space

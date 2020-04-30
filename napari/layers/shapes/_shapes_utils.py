@@ -854,9 +854,9 @@ def path_to_mask(mask_shape, vertices):
 
     Parameters
     ----------
-    mask_shape : array (2,)
+    mask_shape : np.ndarray (2,)
         Shape of mask to be generated.
-    vertices : array (N, 2)
+    vertices : np.ndarray (N, 2)
         Vertices of the path.
 
     Returns

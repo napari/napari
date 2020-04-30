@@ -31,7 +31,7 @@ def view_image(
 
     Parameters
     ----------
-    data : array or list of array
+    data : np.ndarray or list of np.ndarray
         Image data. Can be N dimensional. If the last dimension has length
         3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a
         list and arrays are decreasing in shape then the data is treated as
@@ -243,9 +243,9 @@ def view_points(
 
     Parameters
     ----------
-    data : array (N, D)
+    data : np.ndarray (N, D)
         Coordinates for N points in D dimensions.
-    properties : dict {str: array (N,)}, DataFrame
+    properties : dict {str: np.ndarray (N,)}, DataFrame
         Properties for each point. Each property should be an array of length N,
         where N is the number of points.
     symbol : str
@@ -395,7 +395,7 @@ def view_labels(
 
     Parameters
     ----------
-    data : array or list of array
+    data : np.ndarray or list of np.ndarray
         Labels data as an array or multiscale.
     num_colors : int
         Number of unique colors to use in colormap.
@@ -707,13 +707,13 @@ def view_vectors(
 
     Parameters
     ----------
-    data : (N, 2, D) or (N1, N2, ..., ND, D) array
+    data : (N, 2, D) or (N1, N2, ..., ND, D) np.ndarray
         An (N, 2, D) array is interpreted as "coordinate-like" data and a
         list of N vectors with start point and projections of the vector in
         D dimensions. An (N1, N2, ..., ND, D) array is interpreted as
         "image-like" data where there is a length D vector of the
         projections at each pixel.
-    properties : dict {str: array (N,)}, DataFrame
+    properties : dict {str: np.ndarray (N,)}, DataFrame
         Properties for each vector. Each property should be an array of length N,
         where N is the number of vectors.
     edge_width : float

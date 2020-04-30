@@ -30,13 +30,13 @@ class Vectors(Layer):
 
     Parameters
     ----------
-    data : (N, 2, D) or (N1, N2, ..., ND, D) array
+    data : (N, 2, D) or (N1, N2, ..., ND, D) np.ndarray
         An (N, 2, D) array is interpreted as "coordinate-like" data and a
         list of N vectors with start point and projections of the vector in
         D dimensions. An (N1, N2, ..., ND, D) array is interpreted as
         "image-like" data where there is a length D vector of the
         projections at each pixel.
-    properties : dict {str: array (N,)}, DataFrame
+    properties : dict {str: np.ndarray (N,)}, DataFrame
         Properties for each vector. Each property should be an array of length N,
         where N is the number of vectors.
     edge_width : float
@@ -77,7 +77,7 @@ class Vectors(Layer):
     ----------
     data : (N, 2, D) array
         The start point and projections of N vectors in D dimensions.
-    properties : dict {str: array (N,)}, DataFrame
+    properties : dict {str: np.ndarray (N,)}, DataFrame
         Properties for each vector. Each property should be an array of length N,
         where N is the number of vectors.
     edge_width : float
@@ -112,7 +112,7 @@ class Vectors(Layer):
     _view_faces : (2M, 3) or (4M, 3) np.ndarray
         indices of the _mesh_vertices that form the faces of the M in view vectors.
         Shape is (2M, 2) for 2D and (4M, 2) for 3D.
-    _property_choices : dict {str: array (N,)}
+    _property_choices : dict {str: np.ndarray (N,)}
         Possible values for the properties in Vectors.properties.
         If properties is not provided, it will be {} (empty dictionary).
     _mesh_vertices : (4N, 2) array
@@ -247,7 +247,7 @@ class Vectors(Layer):
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
-        """dict {str: array (N,)}, DataFrame: Annotations for each point"""
+        """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each point"""
         return self._properties
 
     @properties.setter
