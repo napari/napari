@@ -4,8 +4,10 @@ from itertools import cycle
 import warnings
 
 import numpy as np
-from vispy.color import get_colormap
 from vispy.color.colormap import Colormap
+
+from ...utils.colormaps import ensure_colormap_tuple
+from ...types import ValidColormapArg
 
 from ..base import Layer
 from ...utils.event import Event
@@ -721,12 +723,10 @@ class Points(Layer):
         return self._edge_colormap_name, self._edge_colormap
 
     @edge_colormap.setter
-    def edge_colormap(self, colormap: Union[str, Colormap]):
-        self._edge_colormap = get_colormap(colormap)
-        if isinstance(colormap, str):
-            self._edge_colormap_name = colormap
-        else:
-            self._edge_colormap_name = 'unknown_colormap'
+    def edge_colormap(self, colormap: ValidColormapArg):
+        name, cmap = ensure_colormap_tuple(colormap)
+        self._edge_colormap_name = name
+        self._edge_colormap = cmap
 
     @property
     def edge_contrast_limits(self) -> Tuple[float, float]:
@@ -811,12 +811,10 @@ class Points(Layer):
         return self._face_colormap_name, self._face_colormap
 
     @face_colormap.setter
-    def face_colormap(self, colormap: Union[str, Colormap]):
-        self._face_colormap = get_colormap(colormap)
-        if isinstance(colormap, str):
-            self._face_colormap_name = colormap
-        else:
-            self._face_colormap_name = 'unknown_colormap'
+    def face_colormap(self, colormap: ValidColormapArg):
+        name, cmap = ensure_colormap_tuple(colormap)
+        self._face_colormap_name = name
+        self._face_colormap = cmap
 
     @property
     def face_contrast_limits(self) -> Union[None, Tuple[float, float]]:

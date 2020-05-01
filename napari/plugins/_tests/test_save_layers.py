@@ -1,4 +1,7 @@
 import os
+
+import pytest
+
 from napari.plugins.io import save_layers
 
 
@@ -18,6 +21,15 @@ def test_save_layer_single_named_plugin(tmpdir, layer_data_and_types):
 
         # Check file now exists
         assert os.path.isfile(path)
+
+
+# the layer_data_and_types fixture is defined in napari/conftest.py
+def test_save_layer_no_results(tmpdir):
+    """Test no layers is not an error, and warns on no results."""
+
+    with pytest.warns(UserWarning):
+        result = save_layers('no_layers', [], plugin='builtins')
+        assert result == []
 
 
 # the layer_data_and_types fixture is defined in napari/conftest.py

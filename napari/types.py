@@ -1,9 +1,10 @@
 from functools import wraps
-from typing import Any, Callable, Dict, List, Tuple, Union, Type
 from types import TracebackType
+from typing import Any, Callable, Dict, List, Tuple, Type, Union
 
-import numpy as np
 import dask.array as da
+import numpy as np
+import vispy.color
 
 try:
     import zarr
@@ -58,3 +59,11 @@ def image_reader_to_layerdata_reader(
         return [(result,)]
 
     return reader_function
+
+
+ValidColormapArg = Union[
+    str,
+    vispy.color.Colormap,
+    Tuple[str, vispy.color.Colormap],
+    Dict[str, vispy.color.Colormap],
+]

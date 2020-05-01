@@ -55,11 +55,3 @@ def test_builtin_reader_plugin_stacks(viewer_factory):
     for tmp in tmps:
         tmp.close()
         os.unlink(tmp.name)
-
-
-def test_nonsense_path_is_ok(plugin_manager):
-    """Test that a path with no readers doesn't throw an exception."""
-    layer_data = read_data_with_plugins(
-        'image.NONsense', plugin_manager=plugin_manager
-    )
-    assert not layer_data

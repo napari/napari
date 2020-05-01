@@ -41,6 +41,23 @@ def test_multiscale(viewer_factory):
     assert value[1] is None
 
 
+def test_3D_multiscale_image(viewer_factory):
+    """Test rendering of 3D multiscale image uses lowest resolution."""
+    view, viewer = viewer_factory(show=True)
+
+    data = [np.random.random((128,) * 3), np.random.random((64,) * 3)]
+    viewer.add_image(data)
+
+    # Check that this doesn't crash.
+    viewer.dims.ndisplay = 3
+
+    # Check lowest resolution is used
+    assert viewer.layers[0].data_level == 1
+
+    # Note that draw command must be explicitly triggered in our tests
+    list(view.layer_to_visual.values())[0].on_draw(None)
+
+
 @pytest.mark.skipif(
     sys.platform.startswith('win'),
     reason='Screenshot tests are not supported on napari windows CI.',

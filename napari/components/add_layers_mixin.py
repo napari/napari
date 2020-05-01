@@ -3,6 +3,7 @@ import itertools
 from logging import getLogger
 from os import fspath
 from typing import Any, Dict, List, Optional, Sequence, Union
+from ..utils.colormaps import ensure_colormap_tuple
 
 import numpy as np
 
@@ -95,7 +96,7 @@ class AddLayersMixin:
             a multiscale image.
         channel_axis : int, optional
             Axis to expand image along.  If provided, each channel in the data
-            will be added as an individual image layer.  byIn channel_axis mode,
+            will be added as an individual image layer.  In channel_axis mode,
             all other parameters MAY be provided as lists, and the Nth value
             will be applied to the Nth channel in the data.  If a single value
             is provided, it will be broadcast to all Layers.
@@ -177,6 +178,16 @@ class AddLayersMixin:
         layer : :class:`napari.layers.Image` or list
             The newly-created image layer or list of image layers.
         """
+
+        if colormap is not None:
+            # standardize colormap argument(s) to strings, and make sure they
+            # are in AVAILABLE_COLORMAPS.  This will raise one of many various
+            # errors if the colormap argument is invalid.  See
+            # ensure_colormap_tuple for details
+            if isinstance(colormap, list):
+                colormap = [ensure_colormap_tuple(c)[0] for c in colormap]
+            else:
+                colormap, _ = ensure_colormap_tuple(colormap)
 
         # doing this here for IDE/console autocompletion in add_image function.
         kwargs = {
