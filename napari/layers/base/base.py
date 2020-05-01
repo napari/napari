@@ -2,13 +2,14 @@ import os
 import warnings
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from typing import Optional, List
+from typing import List, Optional
+
 import numpy as np
 
 from ...components import Dims
 from ...utils.event import EmitterGroup, Event
 from ...utils.key_bindings import KeymapProvider
-from ...utils.misc import ROOT_DIR
+from ...utils.misc import ROOT_DIR, configure_dask
 from ...utils.naming import magic_name
 from ...utils.status_messages import format_float, status_format
 from ..transforms import ScaleTranslate, TransformChain
@@ -136,6 +137,7 @@ class Layer(KeymapProvider, ABC):
         if name is None and data is not None and os.getenv('MAGICNAME'):
             name = magic_name(data, path_prefix=ROOT_DIR)
 
+        self.dask_optimized_slicing = configure_dask(data)
         self.metadata = metadata or {}
         self._opacity = opacity
         self._blending = Blending(blending)
@@ -579,6 +581,10 @@ class Layer(KeymapProvider, ABC):
         self.events.cursor_size(cursor_size=cursor_size)
         self._cursor_size = cursor_size
 
+    def set_view_slice(self):
+        with self.dask_optimized_slicing():
+            self._set_view_slice()
+
     @abstractmethod
     def _set_view_slice(self):
         raise NotImplementedError()
@@ -624,7 +630,7 @@ class Layer(KeymapProvider, ABC):
         """Refresh all layer data based on current view slice.
         """
         if self.visible:
-            self._set_view_slice()
+            self.set_view_slice()
             self.events.set_data()
             self._update_thumbnail()
             self._update_coordinates()
