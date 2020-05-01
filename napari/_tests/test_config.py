@@ -55,15 +55,6 @@ def tmpfile(extension="", dir=None):
                     os.remove(filename)
 
 
-def assert_config_equal(config, value):
-    _dirty = config.pop("_dirty", None)
-    try:
-        assert config == value
-    finally:
-        if _dirty is not None:
-            config['_dirty'] = _dirty
-
-
 def test_canonical_name():
     c = {"foo-bar": 1, "fizz_buzz": 2}
     assert canonical_name("foo-bar", c) == "foo-bar"
@@ -192,7 +183,7 @@ def test_env():
     }
 
     res = collect_env(env)
-    assert_config_equal(res, expected)
+    assert res == expected
 
 
 def test_collect():
@@ -210,14 +201,14 @@ def test_collect():
                 yaml.dump(b, f)
 
             config = collect([fn1, fn2], env=env)
-            assert_config_equal(config, expected)
+            assert config == expected
 
 
 def test_collect_env_none():
     os.environ["NAPARI_FOO"] = "bar"
     try:
         config = collect([])
-        assert_config_equal(config, {"foo": "bar"})
+        assert config == {"foo": "bar"}
     finally:
         del os.environ["NAPARI_FOO"]
 
@@ -370,7 +361,7 @@ def test_rename():
     aliases = {"foo_bar": "foo.bar"}
     config = {"foo-bar": 123}
     rename(aliases, config=config)
-    assert_config_equal(config, {"foo": {"bar": 123}})
+    assert config == {"foo": {"bar": 123}}
 
 
 def test_refresh():
@@ -378,13 +369,13 @@ def test_refresh():
     config = {}
 
     update_defaults({"a": 1}, config=config, defaults=defaults)
-    assert_config_equal(config, {"a": 1})
+    assert config == {"a": 1}
 
     refresh(paths=[], env={"NAPARI_B": "2"}, config=config, defaults=defaults)
-    assert_config_equal(config, {"a": 1, "b": 2})
+    assert config == {"a": 1, "b": 2}
 
     refresh(paths=[], env={"NAPARI_C": "3"}, config=config, defaults=defaults)
-    assert_config_equal(config, {"a": 1, "c": 3})
+    assert config == {"a": 1, "c": 3}
 
 
 @pytest.mark.parametrize(

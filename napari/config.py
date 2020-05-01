@@ -57,8 +57,6 @@ config_lock = threading.Lock()
 
 defaults = []
 
-dirty = False
-
 
 def canonical_name(k, config):
     """Return the canonical name for a key.
@@ -214,7 +212,7 @@ def collect_env(env=None):
                 d[varname] = value
 
     result = {}
-    set(d, config=result)
+    set(d, config=result, clean=True)
 
     return result
 
@@ -288,6 +286,10 @@ class set(object):
     ----------
     arg : mapping or None, optional
         A mapping of configuration key-value pairs to set.
+    clean : bool
+        By default, the key `_dirty` is added to the config dict so that the
+        :func:`sync` function knows to update the yaml file on disk.
+        If ``clean == True``, will not add the key `_dirty` to the config dict.
     **kwargs :
         Additional key-value pairs to set. If ``arg`` is provided, values set
         in ``arg`` will be applied before those in ``kwargs``.
@@ -317,7 +319,9 @@ class set(object):
     napari.config.get
     """
 
-    def __init__(self, arg=None, config=config, lock=config_lock, **kwargs):
+    def __init__(
+        self, arg=None, config=config, lock=config_lock, clean=False, **kwargs
+    ):
         with lock:
             self.config = config
             self._record = []
@@ -331,6 +335,8 @@ class set(object):
                     key = key.replace("__", ".")
                     key = check_deprecations(key)
                     self._assign(key.split("."), value, config)
+
+        if not clean:
             config['_dirty'] = True
 
     def __enter__(self):
@@ -488,10 +494,14 @@ def get(key, default=no_default, config=config):
     return result
 
 
-def pop(key, default=no_default, config=config):
+def pop(key, default=no_default, config=config, clean=False):
     """Pop elements from global config.
 
     Use '.' for nested access
+
+    By default, the key `_dirty` is added to the config dict so that the
+    :func:`sync` function knows to update the yaml file on disk.
+    If ``clean == True``, will not add the key `_dirty` to the config dict.
 
     Examples
     --------
@@ -517,7 +527,8 @@ def pop(key, default=no_default, config=config):
         try:
             if i == len(keys) - 1:
                 result = result.pop(k)
-                config['_dirty'] = True
+                if not clean:
+                    config['_dirty'] = True
             else:
                 result = result[k]
         except (TypeError, IndexError, KeyError):
@@ -544,7 +555,7 @@ def rename(aliases, config=config):
     for k in old:
         del config[canonical_name(k, config)]  # TODO: support nested keys
 
-    set(new, config=config)
+    set(new, config=config, clean=True)
 
 
 def update_defaults(new, config=config, defaults=defaults):
@@ -664,6 +675,7 @@ def sync(config=config, destination=None, lock=config_lock):
 
 
 refresh()
+
 
 if yaml:
     # read in the default settings from this directory
