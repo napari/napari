@@ -144,6 +144,18 @@ with napari.gui_qt():
     print(viewer.layers[0].name)  # prints "camera"!
 ```
 
+In Python 3.8, the name will even be visible if you are using the assignment
+expression a.k.a. the walrus operator:
+
+```python
+import napari
+from skimage import data
+
+with napari.gui_qt():
+    viewer = napari.view_image(camera := data.camera())
+    print(viewer.layers[0].name)  # prints "camera"!
+```
+
 ## New Features
 - Hook up reader plugins (#937)
 - Support for magicgui (#981)
