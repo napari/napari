@@ -514,6 +514,7 @@ def test_two_way_sync(tmp_path):
     # with conflicts, values from the current config will override the yaml.
     with open(dest, 'w') as f:
         f.write("abc:\n  x: 123\nb: 15\nanswer: 42")
+        time.sleep(0.1)
 
     set({'abc.x': 55, 'foo': 'bar'}, config=d)
     assert sync(d, destination=dest)
