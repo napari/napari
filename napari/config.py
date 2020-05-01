@@ -331,7 +331,7 @@ class set(object):
                     key = key.replace("__", ".")
                     key = check_deprecations(key)
                     self._assign(key.split("."), value, config)
-            config['__dirty__'] = True
+            config['_dirty'] = True
 
     def __enter__(self):
         return self.config
@@ -517,7 +517,7 @@ def pop(key, default=no_default, config=config):
         try:
             if i == len(keys) - 1:
                 result = result.pop(k)
-                config['__dirty__'] = True
+                config['_dirty'] = True
             else:
                 result = result[k]
         except (TypeError, IndexError, KeyError):
@@ -647,9 +647,8 @@ def check_deprecations(key: str, deprecations: dict = deprecations):
 
 
 def sync(config=config, destination=None, lock=config_lock):
-    out = config.copy()
-    dirty = out.pop('__dirty__', None)
-    if dirty is False:
+    dirty = config.pop('_dirty', None)
+    if not dirty:
         return
 
     if destination is None:
@@ -661,15 +660,10 @@ def sync(config=config, destination=None, lock=config_lock):
     with lock:
         # TODO: should we also read from the file and merge new keys?
         with open(destination, 'w') as f:
-            yaml.safe_dump(out, f)
-
-    if dirty is not None:
-        config['__dirty__'] = False
+            yaml.safe_dump(config, f)
 
 
 refresh()
-config['__dirty__'] = False
-
 
 if yaml:
     # read in the default settings from this directory
