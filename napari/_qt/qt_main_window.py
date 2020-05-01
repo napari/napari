@@ -40,6 +40,9 @@ from ..utils.theme import template  # noqa: E402
 
 
 class NapariMainWindow(QMainWindow):
+    """MainWindow, tracks open windows and can do things when last is closed.
+    """
+
     open_windows = []
     pref_sycn_timer = QTimer()
     pref_sycn_timer.timeout.connect(napari.config.sync)
