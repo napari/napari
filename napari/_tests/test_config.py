@@ -133,7 +133,7 @@ def no_read_permissions(path):
 
 
 @pytest.mark.skipif(
-    sys.platform == "win32", reason="Can't make writeonly file on windows"
+    sys.platform in ("win32", "linux"), reason="Can't make writeonly file"
 )
 @pytest.mark.parametrize("kind", ["directory", "file"])
 def test_collect_yaml_permission_errors(tmpdir, kind):
