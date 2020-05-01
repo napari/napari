@@ -162,7 +162,6 @@ def update(old: dict, new: dict, priority="new") -> dict:
     --------
     napari.config.merge
     """
-    print('update', old, new, priority)
     for k, v in new.items():
         k = canonical_name(k, old)
 
@@ -193,11 +192,9 @@ def merge(*dicts: dict) -> dict:
     --------
     napari.config.update
     """
-    print('merge')
     result: dict = {}
     for d in dicts:
         update(result, d)
-    print('done merging')
     return result
 
 
@@ -208,10 +205,8 @@ def collect_yaml(paths: List[str] = paths) -> List[dict]:
     files, and then parses each file.
     """
     # Find all paths
-    print("collect_yaml ...")
     file_paths = []
     for path in paths:
-        print("  ", path)
         if os.path.exists(path):
             if os.path.isdir(path):
                 try:
@@ -230,7 +225,6 @@ def collect_yaml(paths: List[str] = paths) -> List[dict]:
                     pass
             else:
                 file_paths.append(path)
-        print('paths', file_paths)
     configs = []
 
     # Parse yaml files
@@ -539,7 +533,6 @@ def refresh(config: dict = config, defaults: List[dict] = defaults, **kwargs):
     napari.config.collect: for parameters
     napari.config.update_defaults
     """
-    print("call refresh", config, defaults, kwargs)
     config.clear()
 
     for d in defaults:
@@ -659,7 +652,6 @@ def update_defaults(
     2. Updates the global config with the new configurationm, prioritizing
        older values over newer ones
     """
-    print("update_defaults")
     defaults.append(new)
     update(config, new, priority="old")
 
