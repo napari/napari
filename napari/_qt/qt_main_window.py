@@ -6,6 +6,8 @@ import time
 
 import napari.config
 
+from typing import List
+
 # set vispy to use same backend as qtpy
 from ..utils.io import imsave
 
@@ -43,7 +45,7 @@ class NapariMainWindow(QMainWindow):
     """MainWindow, tracks open windows and can do things when last is closed.
     """
 
-    open_windows = []
+    open_windows: List[QMainWindow] = []
     pref_sycn_timer = QTimer()
     pref_sycn_timer.timeout.connect(napari.config.sync)
 

@@ -1,14 +1,15 @@
 import os
+import shutil
 import stat
 import sys
-import shutil
 import tempfile
 from collections import OrderedDict
 from contextlib import contextmanager
 
 import pytest
+import yaml
 
-import napari.config  # noqa
+import napari.config
 from napari.config import (
     canonical_name,
     collect,
@@ -19,14 +20,15 @@ from napari.config import (
     expand_environment_variables,
     get,
     merge,
+    pop,
     refresh,
     rename,
     set,
+    sync,
     update,
     update_defaults,
 )
-
-yaml = pytest.importorskip("yaml")
+from napari.layers.image._image_constants import Interpolation
 
 
 @contextmanager
@@ -221,6 +223,21 @@ def test_get():
     assert get("y.b", 123, config=d) == 123
     with pytest.raises(KeyError):
         get("y.b", config=d)
+
+
+def test_pop():
+    d = {"x": 1, "y": {"a": 2, "b": 3}}
+
+    assert pop("y.a", config=d, clean=True) == 2
+    assert d == {"x": 1, "y": {"b": 3}}
+    assert pop("x", config=d, clean=True) == 1
+    assert d == {"y": {"b": 3}}
+    assert pop("y.c", 123, config=d, clean=True) == 123
+    assert pop("y", config=d) == {"b": 3}
+    assert d == {"_dirty": True}
+
+    with pytest.raises(KeyError):
+        pop("z", config=d)
 
 
 def test_ensure_file(tmpdir):
@@ -440,51 +457,111 @@ def test_merge_None_to_dict():
     }
 
 
+def test_deprecations():
+    napari.config.deprecations['old_key'] = 'new.key'
+    with pytest.warns(Warning) as info:
+        with napari.config.set(old_key=123):
+            assert napari.config.get("new.key") == 123
+
+    assert "new.key" in str(info[0].message)
+
+
 def test_core_file():
-    assert "temporary-directory" in napari.config.config
+    """Test for default keys on our napari.yaml file."""
+    # assert "temporary-directory" in napari.config.config
 
 
-# def test_schema():
-#     jsonschema = pytest.importorskip("jsonschema")
+def test_sync(tmp_path):
+    """Test that we can sync napari.config to a yaml file"""
+    dest = tmp_path / 'dest.yaml'
+    assert not os.path.isfile(dest)
 
-#     config_fn = os.path.join(os.path.dirname(__file__), "..", "napari.yaml")
-#     schema_fn = os.path.join(os.path.dirname(__file__), "..", "napari-schema.yaml")
+    d = {}
+    set({"abc.x": 123, 'b': 'hi'}, config=d)
+    assert sync(d, destination=dest)
+    assert os.path.isfile(dest)
 
-#     with open(config_fn) as f:
-#         config = yaml.safe_load(f)
+    # make sure the yaml file matches the config
+    with open(dest) as f:
+        assert yaml.safe_load(f) == {'abc': {'x': 123}, 'b': 'hi'}
 
-#     with open(schema_fn) as f:
-#         schema = yaml.safe_load(f)
+    # change the config and confirm it hasn't changed on disk
+    set(b=10, config=d)
+    with open(dest) as f:
+        assert yaml.safe_load(f) == {'abc': {'x': 123}, 'b': 'hi'}
 
-#     jsonschema.validate(config, schema)
+    # sync the config and make sure b has updated on disk
+    assert sync(d, destination=dest)
+    with open(dest) as f:
+        assert yaml.safe_load(f) == {'abc': {'x': 123}, 'b': 10}
+
+    # calling sync again should do nothing
+    assert not sync(d, destination=dest)
 
 
-# def test_schema_is_complete():
-#     config_fn = os.path.join(os.path.dirname(__file__), "..", "napari.yaml")
-#     schema_fn = os.path.join(os.path.dirname(__file__), "..", "napari-schema.yaml")
+def test_two_way_sync(tmp_path):
+    """Test that syncing goes both ways, with preference to the config"""
+    dest = tmp_path / 'dest.yaml'
+    assert not os.path.isfile(dest)
 
-#     with open(config_fn) as f:
-#         config = yaml.safe_load(f)
+    d = {}
+    set({"abc.x": 123, 'b': 10}, config=d)
+    assert sync(d, destination=dest)
+    assert os.path.isfile(dest)
 
-#     with open(schema_fn) as f:
-#         schema = yaml.safe_load(f)
+    # we can change both the config and the yaml file,
+    # with conflicts, values from the current config will override the yaml.
+    with open(dest, 'w') as f:
+        f.write("abc:\n  x: 123\nb: 15\nanswer: 42")
 
-#     def test_matches(c, s):
-#         for k, v in c.items():
-#             if list(c) != list(s["properties"]):
-#                 raise ValueError(
-#                     "\nThe dask.yaml and dask-schema.yaml files are not in sync.\n"
-#                     "This usually happens when we add a new configuration value,\n"
-#                     "but don't add the schema of that value to the dask-schema.yaml file\n"
-#                     "Please modify these files to include the missing values: \n\n"
-#                     "    dask.yaml:        {}\n"
-#                     "    dask-schema.yaml: {}\n\n"
-#                     "Examples in these files should be a good start, \n"
-#                     "even if you are not familiar with the jsonschema spec".format(
-#                         sorted(c), sorted(s["properties"])
-#                     )
-#                 )
-#             if isinstance(v, dict):
-#                 test_matches(c[k], s["properties"][k])
+    set({'abc.x': 55, 'foo': 'bar'}, config=d)
+    assert sync(d, destination=dest)
 
-#     test_matches(config, schema)
+    # note that b: 15 in the yaml file is not used because the config also
+    # changed
+    expected = {'abc': {'x': 55}, 'b': 10, 'foo': 'bar', 'answer': 42}
+    conf = d.copy()
+    conf.pop('_last_synced', None)
+    assert conf == expected
+    with open(dest, 'r') as f:
+        assert yaml.safe_load(f) == expected
+
+
+def test_yaml_overrides_clean_config(tmp_path):
+    dest = tmp_path / 'dest.yaml'
+    assert not os.path.isfile(dest)
+
+    d = {}
+    set({"abc.x": 123, 'b': 10}, config=d)
+    assert sync(d, destination=dest)
+    assert os.path.isfile(dest)
+
+    # confirm that we are synced and there is nothing to do.
+    assert not sync(d, destination=dest)
+
+    # if the config has NOT changed when we sync with a modified yaml
+    # the modified yaml will override the current config.
+    with open(dest, 'w') as f:
+        f.write("answer: 42")
+
+    assert sync(d, destination=dest)
+    conf = d.copy()
+    conf.pop('_last_synced', None)
+    assert conf == {'answer': 42}
+
+
+def test_sync_with_serialization_errors(tmp_path, caplog):
+    dest = tmp_path / 'dest.yaml'
+    d = {}
+    set(
+        {'b': 10, 'i': Interpolation.NEAREST, 'strange': object()}, config=d,
+    )
+    sync(d, destination=dest)
+
+    assert len(caplog.records) == 1
+    record = caplog.records[0]
+    assert "Error serializing object" in record.message
+    assert record.levelname == "ERROR"
+
+    with open(dest, 'r') as f:
+        assert f.read() == "b: 10\ni: nearest\nstrange: <unserializeable>\n"

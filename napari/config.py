@@ -22,17 +22,30 @@ docker images.
 """
 import ast
 import builtins
-from collections.abc import Mapping
+import logging
 import os
 import sys
 import threading
+import time
 import warnings
+from collections.abc import Mapping
+from types import TracebackType
+from typing import (
+    Any,
+    Dict,
+    Iterable,
+    List,
+    Optional,
+    Sequence,
+    Tuple,
+    Type,
+    TypeVar,
+    Union,
+)
 
-try:
-    import yaml
-except ImportError:
-    yaml = None
+import yaml
 
+from .utils.misc import StringEnum
 
 no_default = "__no_default__"
 
@@ -51,14 +64,15 @@ else:
     PATH = os.path.join(os.path.expanduser("~"), ".config", "napari")
 
 
-global_config = config = {}
+config: Dict[str, Any] = {}
+global_config = config
 
 config_lock = threading.Lock()
 
-defaults = []
+defaults: List[dict] = []
 
 
-def canonical_name(k, config):
+def canonical_name(k: str, config: Mapping) -> str:
     """Return the canonical name for a key.
 
     Handles user choice of '-' or '_' conventions by standardizing on whichever
@@ -81,7 +95,7 @@ def canonical_name(k, config):
     return k
 
 
-def update(old, new, priority="new"):
+def update(old: dict, new: dict, priority="new") -> dict:
     """Update a nested dictionary with values from another.
 
     This is like dict.update except that it smoothly merges nested values
@@ -116,7 +130,7 @@ def update(old, new, priority="new"):
         if isinstance(v, Mapping):
             if k not in old or old[k] is None:
                 old[k] = {}
-            update(old[k], v, priority=priority)
+            update(old[k], v, priority=priority)  # type: ignore
         else:
             if priority == "new" or k not in old:
                 old[k] = v
@@ -124,7 +138,7 @@ def update(old, new, priority="new"):
     return old
 
 
-def merge(*dicts):
+def merge(*dicts: dict) -> dict:
     """Update a sequence of nested dictionaries.
 
     This prefers the values in the latter dictionaries to those in the former
@@ -140,13 +154,13 @@ def merge(*dicts):
     --------
     napari.config.update
     """
-    result = {}
+    result: dict = {}
     for d in dicts:
         update(result, d)
     return result
 
 
-def collect_yaml(paths=paths):
+def collect_yaml(paths: List[str] = paths) -> List[dict]:
     """Collect configuration from yaml files.
 
     This searches through a list of paths, expands to find all yaml or json
@@ -189,7 +203,7 @@ def collect_yaml(paths=paths):
     return configs
 
 
-def collect_env(env=None):
+def collect_env(env: Optional[Union[dict, os._Environ]] = None) -> dict:
     """Collect config from environment variables.
 
     This grabs environment variables of the form "NAPARI_FOO__BAR_BAZ=123" and
@@ -211,13 +225,13 @@ def collect_env(env=None):
             except (SyntaxError, ValueError):
                 d[varname] = value
 
-    result = {}
+    result: dict = {}
     set(d, config=result, clean=True)
 
     return result
 
 
-def ensure_file(source, destination=None, comment=True):
+def ensure_file(source: str, destination: Optional[str] = None, comment=True):
     """Copy file to default location if it does not already exist.
 
     This tries to move a default configuration file to a default location if if
@@ -279,7 +293,7 @@ def ensure_file(source, destination=None, comment=True):
         pass
 
 
-class set(object):
+class set:
     """Temporarily set configuration values within a context manager.
 
     Parameters
@@ -320,16 +334,30 @@ class set(object):
     """
 
     def __init__(
-        self, arg=None, config=config, lock=config_lock, clean=False, **kwargs
+        self,
+        arg: Optional[dict] = None,
+        config: dict = config,
+        lock: threading.Lock = config_lock,
+        clean: bool = False,
+        **kwargs,
     ):
         with lock:
             self.config = config
-            self._record = []
+            self._record: List[Tuple[str, Tuple[str, ...], Any]] = []
 
             if arg is not None:
-                for key, value in arg.items():
-                    key = check_deprecations(key)
-                    self._assign(key.split("."), value, config)
+                try:
+                    for key, value in arg.items():
+                        key = check_deprecations(key)
+                        self._assign(key.split("."), value, config)
+                except AttributeError:
+                    if not isinstance(arg, dict):
+                        raise TypeError(
+                            "First argument to config.set() must be a dict"
+                        )
+                    else:
+                        raise
+
             if kwargs:
                 for key, value in kwargs.items():
                     key = key.replace("__", ".")
@@ -339,10 +367,15 @@ class set(object):
         if not clean:
             config['_dirty'] = True
 
-    def __enter__(self):
+    def __enter__(self) -> dict:
         return self.config
 
-    def __exit__(self, type, value, traceback):
+    def __exit__(
+        self,
+        type: Type[Exception],
+        value: Exception,
+        traceback: Optional[TracebackType],
+    ):
         for op, path, value in reversed(self._record):
             d = self.config
             if op == "replace":
@@ -358,7 +391,14 @@ class set(object):
                 else:
                     d.pop(path[-1], None)
 
-    def _assign(self, keys, value, d, path=(), record=True):
+    def _assign(
+        self,
+        keys: Sequence[str],
+        value: Any,
+        d: dict,
+        path: Tuple[str, ...] = (),
+        record: bool = True,
+    ):
         """Assign value into a nested configuration dictionary
 
         Parameters
@@ -385,6 +425,11 @@ class set(object):
                 else:
                     self._record.append(("insert", path, None))
             d[key] = value
+
+            # might be worth emitting a warning here if we know the value
+            # cannot be serialized
+            # yaml.dump(value, Dumper=ConfigDumper)
+
         else:
             if key not in d:
                 if record:
@@ -395,7 +440,9 @@ class set(object):
             self._assign(keys[1:], value, d[key], path, record=record)
 
 
-def collect(paths=paths, env=None):
+def collect(
+    paths: List = paths, env: Optional[Union[dict, os._Environ]] = None
+) -> dict:
     """
     Collect configuration from paths and environment variables
 
@@ -427,7 +474,7 @@ def collect(paths=paths, env=None):
     return merge(*configs)
 
 
-def refresh(config=config, defaults=defaults, **kwargs):
+def refresh(config: dict = config, defaults: List[dict] = defaults, **kwargs):
     """
     Update configuration by re-reading yaml files and env variables
 
@@ -459,7 +506,7 @@ def refresh(config=config, defaults=defaults, **kwargs):
     update(config, collect(**kwargs))
 
 
-def get(key, default=no_default, config=config):
+def get(key: str, default=no_default, config: dict = config) -> Any:
     """Get elements from global config.
 
     Use '.' for nested access
@@ -494,7 +541,7 @@ def get(key, default=no_default, config=config):
     return result
 
 
-def pop(key, default=no_default, config=config, clean=False):
+def pop(key: str, default=no_default, config: dict = config, clean=False):
     """Pop elements from global config.
 
     Use '.' for nested access
@@ -539,7 +586,7 @@ def pop(key, default=no_default, config=config, clean=False):
     return result
 
 
-def rename(aliases, config=config):
+def rename(aliases: dict, config: dict = config):
     """Rename old keys to new keys.
 
     This helps migrate older configuration versions over time
@@ -558,7 +605,9 @@ def rename(aliases, config=config):
     set(new, config=config, clean=True)
 
 
-def update_defaults(new, config=config, defaults=defaults):
+def update_defaults(
+    new: dict, config: dict = config, defaults: List[dict] = defaults
+):
     """Add a new set of defaults to the configuration.
 
     It does two things:
@@ -571,7 +620,10 @@ def update_defaults(new, config=config, defaults=defaults):
     update(config, new, priority="old")
 
 
-def expand_environment_variables(config):
+T = TypeVar("T", Mapping, Iterable, str)
+
+
+def expand_environment_variables(config: T) -> T:
     """Expand environment variables in a nested config dictionary.
 
     This function will recursively search through any nested dictionaries
@@ -601,14 +653,12 @@ def expand_environment_variables(config):
         return config
 
 
-deprecations = {
-    "fuse_ave_width": "optimization.fuse.ave-width",
-    "fuse_max_height": "optimization.fuse.max-height",
-    "fuse_max_width": "optimization.fuse.max-width",
-    "fuse_subgraphs": "optimization.fuse.subgraphs",
-    "fuse_rename_keys": "optimization.fuse.rename-keys",
-    "fuse_max_depth_new_edges": "optimization.fuse.max-depth-new-edges",
-}
+#: This dict is used to mark deprecated config keys.
+#:
+#: The keys of ``deprecations`` are deprecated config values, and the values
+#: are the new namespace for the key.  This deprecations are checked when new
+#: keys are added to the config in set()
+deprecations: Dict[str, str] = {}
 
 
 def check_deprecations(key: str, deprecations: dict = deprecations):
@@ -657,24 +707,127 @@ def check_deprecations(key: str, deprecations: dict = deprecations):
         return key
 
 
-def sync(config=config, destination=None, lock=config_lock):
-    dirty = config.pop('_dirty', None)
-    if not dirty:
-        return
+class ConfigDumper(yaml.SafeDumper):
+    """Dumper that prevents yaml aliases, and logs bad objects without error.
+    """
 
+    def ignore_aliases(self, data):
+        return True
+
+    def represent_undefined(self, data):
+        logging.error("Error serializing object: %r", data)
+        return self.represent_str('<unserializeable>')
+
+    def coerce_to_str(self, data) -> yaml.nodes.ScalarNode:
+        return self.represent_str(str(data))
+
+
+ConfigDumper.add_multi_representer(StringEnum, ConfigDumper.coerce_to_str)
+ConfigDumper.add_multi_representer(None, ConfigDumper.represent_undefined)
+
+
+def sync(
+    config: dict = config,
+    destination: str = None,
+    prefer_config=True,
+    lock: threading.Lock = config_lock,
+) -> bool:
+    """Synchronize config with a yaml file on disk.
+
+    This function is intended to be run periodically in the background of an
+    event loop.  It looks for a special ``_dirty`` in the config to know
+    whether it has changed since the last time this function was called (and
+    pops that key when this function runs).  It also looks for a
+    ``_last_synced`` key, which should contain a float value corresponding to
+    the last time this function was called; if the modification time of the
+    destination file is greater than ``_last_synced``, it is assumed that the
+    yaml on disk has changed.
+
+    Parameters
+    ----------
+    config : dict, optional
+        The config to sync to disk, by default use the global config
+    destination : str, optional
+        Filename or directory to sync to, by default will sync to
+        ``config.PATH/_session.yaml``
+    prefer_config : bool
+        In the case of conflict bewteen the disk yaml and the config, this
+        argument determines which value will be used. By default (``True``),
+        the value from the config dict will override the yaml value.
+    lock : , optional
+        [description], by default config_lock
+
+    Returns
+    -------
+    synced : bool
+        Whether a sync occurred.
+    """
+    # resolve destination file
     if destination is None:
         destination = PATH
-
     if os.path.isdir(destination):
-        destination = os.path.join(destination, 'last_session.yaml')
+        destination = os.path.join(destination, '_session.yaml')
+    assert os.fspath(destination).endswith(
+        ".yaml"
+    ), "Only YAML is currently supported"
 
-    with lock:
-        # TODO: should we also read from the file and merge new keys?
+    # check whether the config dict has changed since the last sync (i.e. has
+    # the key "_dirty") or whether the file on disk has been modified since
+    # last sync (i.e. has modified date greater than the key "_last_synced")
+    config_is_dirty = config.pop('_dirty', None)
+    dest_is_dirty = False
+    if os.path.exists(destination):
+        last_modified = os.path.getmtime(destination)
+        # if it has never been synced before, set _last_synced to 0 (= "never")
+        last_synced = config.get('_last_synced', 0)
+        if last_modified > last_synced:
+            dest_is_dirty = True
+    else:
+        config_is_dirty = True
+
+    # if nothing has happened, return
+    if not (config_is_dirty or dest_is_dirty):
+        return False
+
+    with lock:  # aquire file lock on yaml file
+        if dest_is_dirty:  # yaml file has changed since last sync
+            with open(destination, 'r') as f:
+                yaml_config = yaml.safe_load(f) or {}
+        else:
+            yaml_config = {}
+        if config_is_dirty:  # config has changed since last sync
+            # merge prefers values in the later arguments, over the earlier
+            # so if new keys have shown up on disk, we use them, otherwise
+            # we overwrite the disk values with the current config
+            priority = "old" if prefer_config else "new"
+            update(config, yaml_config, priority=priority)
+        elif yaml_config:
+            # if config is not dirty, but the outputfile IS dirty, we overwrite
+            # the the config with the new values from disk.
+            config.clear()
+            update(config, yaml_config)
+
+        # write the merged config to disk
         with open(destination, 'w') as f:
-            yaml.safe_dump(config, f)
+            out = config.copy()
+            out.pop('_last_synced', None)
+            if out:
+                try:
+                    yaml.dump(out, f, Dumper=ConfigDumper)
+                except yaml.YAMLError as exc:
+                    msg = f"Failed to write session config to disk: {exc}"
+                    raise type(exc)(msg)
+
+            else:  # instead of writing "{}" to file, write "# empty"
+                f.write("# empty")
+
+    # update the config with the time of last modification
+    config['_last_synced'] = os.path.getmtime(destination)
+    return True
 
 
 refresh()
+set(_last_synced=time.time(), clean=True)
 
 
 if yaml:
@@ -683,7 +836,7 @@ if yaml:
     ensure_file(source=fn)
 
     with open(fn) as f:
-        _defaults = yaml.safe_load(f)
+        _defaults = yaml.safe_load(f) or {}
 
     update_defaults(_defaults)
     del fn, _defaults
