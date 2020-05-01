@@ -3,6 +3,7 @@ import shutil
 import stat
 import sys
 import tempfile
+import time
 from collections import OrderedDict
 from contextlib import contextmanager
 
@@ -543,6 +544,8 @@ def test_yaml_overrides_clean_config(tmp_path):
     # the modified yaml will override the current config.
     with open(dest, 'w') as f:
         f.write("answer: 42")
+        # necessary to cause change in file modification time on linux
+        time.sleep(0.05)
 
     assert sync(d, destination=dest)
     conf = d.copy()
