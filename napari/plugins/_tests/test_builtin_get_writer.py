@@ -12,6 +12,7 @@ from napari_plugin_engine import PluginCallError
 from napari.plugins import hook_specifications
 
 
+# test_plugin_manager fixture is provided by napari_plugin_engine._testsupport
 def test_get_writer_succeeds(
     test_plugin_manager, tmpdir, layer_data_and_types, add_implementation
 ):
@@ -45,7 +46,7 @@ def test_get_writer_succeeds(
 
 
 # the layer_data_and_types fixture is defined in napari/conftest.py
-# the plugin_manager fixture is defined in napari/plugins/_tests/conftest.py
+# test_plugin_manager fixture is provided by napari_plugin_engine._testsupport
 def test_get_writer_bad_plugin(
     test_plugin_manager, temporary_hookimpl, tmpdir, layer_data_and_types
 ):

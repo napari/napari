@@ -1,25 +1,27 @@
-from typing import Union, Dict, Tuple, List
 import warnings
+from copy import copy
+from typing import Dict, List, Tuple, Union
 
 import numpy as np
-from copy import copy
+from vispy.color.colormap import Colormap
+
+from ...types import ValidColormapArg
+from ...utils.colormaps import ensure_colormap_tuple
+from ...utils.event import Event
+from ...utils.status_messages import format_float
 from ..base import Layer
-from ._vectors_constants import ColorMode, DEFAULT_COLOR_CYCLE
 from ..utils.color_transformations import (
-    transform_color_with_defaults,
-    transform_color_cycle,
     normalize_and_broadcast_colors,
+    transform_color_cycle,
+    transform_color_with_defaults,
 )
 from ..utils.layer_utils import (
     dataframe_to_properties,
     guess_continuous,
     map_property,
 )
-from ...utils.event import Event
-from ...utils.status_messages import format_float
-from ._vector_utils import vectors_to_coordinates, generate_vector_meshes
-from vispy.color import get_colormap
-from vispy.color.colormap import Colormap
+from ._vector_utils import generate_vector_meshes, vectors_to_coordinates
+from ._vectors_constants import DEFAULT_COLOR_CYCLE, ColorMode
 
 
 class Vectors(Layer):
@@ -569,12 +571,10 @@ class Vectors(Layer):
         return self._edge_colormap_name, self._edge_colormap
 
     @edge_colormap.setter
-    def edge_colormap(self, colormap: Union[str, Colormap]):
-        self._edge_colormap = get_colormap(colormap)
-        if isinstance(colormap, str):
-            self._edge_colormap_name = colormap
-        else:
-            self._edge_colormap_name = 'unknown_colormap'
+    def edge_colormap(self, colormap: ValidColormapArg):
+        name, cmap = ensure_colormap_tuple(colormap)
+        self._edge_colormap_name = name
+        self._edge_colormap = cmap
 
     @property
     def edge_contrast_limits(self) -> Tuple[float, float]:
