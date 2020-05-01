@@ -19,6 +19,44 @@ Configuration is specified in one of the following ways:
 This combination makes it easy to specify configuration in a variety of
 settings ranging from personal workstations, to IT-mandated configuration, to
 docker images.
+
+Loading
+-------
+
+When this module is imported, this sequence of events happens:
+
+1. the config is cleared and ``refresh()`` is called
+2. ``refresh()`` updates the empty config with values from dicts in the
+   `config.defaults` list (currently empty)
+3. ``refresh()`` then updates the config by calling ``collect()`` ...
+   a. ``collect()`` gathers settings from various places:
+      - ``collect_yaml()`` looks for *any* `.yaml` files in the
+         ``config.paths`` list.  Notably, this includes
+         ``~/.config/napari/napari.yaml`` and anything else in there.
+      - ``collec_env()`` then looks for any environment variables that begin
+         with ``NAPARI_``
+   b. finally, ``collect()`` calls `merge()` on all of those discovered dicts,
+      to yield one merged result and returns it to the ``refresh()`` function
+      (by default, dicts discovered later in the process take priority).
+4. back in the ``refresh()`` function, that final merged result is used to
+   update the global config dict.
+5. At that point, the ``napari.yaml`` in the repo is read, if one doesn't
+   already exist, a file is created at ``~/.config/napari/napari.yaml`` (with
+   ``ensure_file()``) that is an exact copy of the repo ``napari.yaml`` but
+   with everything commented out, as a way to show users what they can change.
+6. finally, ``update_defaults()`` is called using the settings in the
+   `napari.yaml` file, which merges the configs again, but gives priority to
+   already existing values in the config (i.e. ones that were overwritten by
+   the user or the environement)
+
+Writing
+-------
+
+To write settings to disk, the :func:`sync` function is used.  This
+synchronizes the current ``config`` dict to a file at
+``join(config.PATH, 'napari.yaml')``.  If that file has changed since the last
+sync, it also reads new values from that file into the config.  If *both*
+the file and the config have changed, it prioritizes values in the config.
 """
 import ast
 import builtins
@@ -124,6 +162,7 @@ def update(old: dict, new: dict, priority="new") -> dict:
     --------
     napari.config.merge
     """
+    print('update', old, new, priority)
     for k, v in new.items():
         k = canonical_name(k, old)
 
@@ -154,9 +193,11 @@ def merge(*dicts: dict) -> dict:
     --------
     napari.config.update
     """
+    print('merge')
     result: dict = {}
     for d in dicts:
         update(result, d)
+    print('done merging')
     return result
 
 
@@ -167,8 +208,10 @@ def collect_yaml(paths: List[str] = paths) -> List[dict]:
     files, and then parses each file.
     """
     # Find all paths
+    print("collect_yaml ...")
     file_paths = []
     for path in paths:
+        print("  ", path)
         if os.path.exists(path):
             if os.path.isdir(path):
                 try:
@@ -187,7 +230,7 @@ def collect_yaml(paths: List[str] = paths) -> List[dict]:
                     pass
             else:
                 file_paths.append(path)
-
+        print('paths', file_paths)
     configs = []
 
     # Parse yaml files
@@ -464,11 +507,9 @@ def collect(
     """
     if env is None:
         env = os.environ
+
     configs = []
-
-    if yaml:
-        configs.extend(collect_yaml(paths=paths))
-
+    configs.extend(collect_yaml(paths=paths))
     configs.append(collect_env(env=env))
 
     return merge(*configs)
@@ -498,6 +539,7 @@ def refresh(config: dict = config, defaults: List[dict] = defaults, **kwargs):
     napari.config.collect: for parameters
     napari.config.update_defaults
     """
+    print("call refresh", config, defaults, kwargs)
     config.clear()
 
     for d in defaults:
@@ -612,10 +654,12 @@ def update_defaults(
 
     It does two things:
 
-    1.  Add the defaults to a global collection to be used by refresh later
-    2.  Updates the global config with the new configuration
-        prioritizing older values over newer ones
+    1. Add the defaults to a global ``defaults`` collection to be used by
+       refresh later
+    2. Updates the global config with the new configurationm, prioritizing
+       older values over newer ones
     """
+    print("update_defaults")
     defaults.append(new)
     update(config, new, priority="old")
 
@@ -827,16 +871,15 @@ def sync(
 
 
 refresh()
+
+# read in the default settings from this directory
+fn = os.path.join(os.path.dirname(__file__), "napari.yaml")
+ensure_file(source=fn)
+
+with open(fn) as f:
+    _defaults = yaml.safe_load(f) or {}
+
+update_defaults(_defaults)
+del fn, _defaults
+
 set(_last_synced=time.time(), clean=True)
-
-
-if yaml:
-    # read in the default settings from this directory
-    fn = os.path.join(os.path.dirname(__file__), "napari.yaml")
-    ensure_file(source=fn)
-
-    with open(fn) as f:
-        _defaults = yaml.safe_load(f) or {}
-
-    update_defaults(_defaults)
-    del fn, _defaults
