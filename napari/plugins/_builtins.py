@@ -123,6 +123,78 @@ def napari_write_points(path: str, data: Any, meta: dict) -> Optional[str]:
 
 
 @napari_hook_implementation(trylast=True)
+def napari_write_shapes(path: str, data: Any, meta: dict) -> Optional[str]:
+    """Our internal fallback points writer at the end of the plugin chain.
+
+    Append ``.csv`` extension to the filename if it is not already there.
+
+    Parameters
+    ----------
+    path : str
+        Path to file, directory, or resource (like a URL).
+    data : list of array (N, D)
+        List of coordinates for shapes, each with for N vertices in D
+        dimensions.
+    meta : dict
+        Points metadata.
+
+    Returns
+    -------
+    path : str or None
+        If data is successfully written, return the ``path`` that was written.
+        Otherwise, if nothing was done, return ``None``.
+    """
+    ext = os.path.splitext(path)[1]
+    if ext == '':
+        path = path + '.csv'
+    elif ext != '.csv':
+        # If an extension is provided then it must be `.csv`
+        return
+
+    if 'shape_type' in meta:
+        shape_type = meta['shape_type']
+    else:
+        shape_type = ['rectangle'] * len(data)
+
+    # No data passed so nothing written
+    if len(data) == 0:
+        return
+
+    # TODO: we need to change this to the axis names once we get access to them
+    # construct table from data
+    n_dimensions = max([s.shape[1] for s in data])
+    column_names = ['axis-' + str(n) for n in range(n_dimensions)]
+
+    # add shape id and vertex id of each vertex
+    column_names = ['index', 'shape-type', 'vertex-index'] + column_names
+
+    # concatenate shape data into 2D array
+    len_shapes = [s.shape[0] for s in data]
+    all_data = np.concatenate(data)
+    all_idx = np.expand_dims(
+        np.concatenate([np.repeat(i, s) for i, s in enumerate(len_shapes)]),
+        axis=1,
+    )
+    all_types = np.expand_dims(
+        np.concatenate(
+            [np.repeat(shape_type[i], s) for i, s in enumerate(len_shapes)]
+        ),
+        axis=1,
+    )
+    all_vert_idx = np.expand_dims(
+        np.concatenate([np.arange(s) for s in len_shapes]), axis=1
+    )
+
+    table = np.concatenate(
+        [all_idx, all_types, all_vert_idx, all_data], axis=1
+    )
+
+    # write table to csv file
+    write_csv(path, table, column_names)
+    return path
+
+
+@napari_hook_implementation(trylast=True)
 def napari_get_writer(
     path: str, layer_types: List[str]
 ) -> Optional[WriterFunction]:

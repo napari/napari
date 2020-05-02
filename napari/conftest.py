@@ -8,7 +8,11 @@ from qtpy.QtWidgets import QApplication
 from napari import Viewer
 from napari.layers import Image, Labels, Points, Shapes, Vectors
 from napari.components import LayerList
-from napari.plugins._builtins import napari_write_image, napari_write_points
+from napari.plugins._builtins import (
+    napari_write_image,
+    napari_write_points,
+    napari_write_shapes,
+)
 from napari.utils import io
 
 
@@ -65,7 +69,7 @@ def viewer_factory(qtbot, request):
         viewer.close()
 
 
-@pytest.fixture(params=['image', 'points', 'points-with-properties'])
+@pytest.fixture(params=['image', 'points', 'points-with-properties', 'shapes'])
 def layer_writer_and_data(request):
     """Fixture that supplies layer io utilities for tests.
 
@@ -105,30 +109,29 @@ def layer_writer_and_data(request):
         layer = Points(data)
         writer = napari_write_points
         extension = '.csv'
-
-        def reader(path):
-            return (
-                io.read_csv(path)[0][:, 1:3],
-                {},  # metadata
-            )
-
+        reader = io.read_points_csv
     elif request.param == 'points-with-properties':
         data = np.random.rand(20, 2)
         Layer = Points
         layer = Points(data, properties={'values': np.random.rand(20)})
         writer = napari_write_points
         extension = '.csv'
-
-        def reader(path):
-            return (
-                io.read_csv(path)[0][:, 1:3],
-                {
-                    'properties': {
-                        io.read_csv(path)[1][3]: io.read_csv(path)[0][:, 3]
-                    }
-                },
-            )
-
+        reader = io.read_points_csv
+    elif request.param == 'shapes':
+        np.random.seed(0)
+        data = [
+            np.random.rand(2, 2),
+            np.random.rand(2, 2),
+            np.random.rand(6, 2),
+            np.random.rand(6, 2),
+            np.random.rand(2, 2),
+        ]
+        shape_type = ['ellipse', 'line', 'path', 'polygon', 'rectangle']
+        Layer = Shapes
+        layer = Shapes(data, shape_type=shape_type)
+        writer = napari_write_shapes
+        extension = '.csv'
+        reader = io.read_shapes_csv
     else:
         return None, None, None, None, None
 

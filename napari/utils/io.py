@@ -312,5 +312,85 @@ def read_csv(filename: str) -> Tuple[np.array, List[str]]:
             if row_index == 0:
                 column_names = [str(i) for i in row]
             else:
-                output_data.append([float(i) for i in row])
+                output_data.append([i for i in row])
         return np.array(output_data), column_names
+
+
+def read_points_csv(filename: str) -> Tuple[np.array, dict]:
+    """Read a points csv file written by the napari builtin.
+
+    Parameters
+    ----------
+    filename : str
+        Filename for saving csv.
+
+    Returns
+    -------
+    data : array
+        Points data.
+    meta : dict
+        Points metadata.
+    """
+    table, column_names = read_csv(filename)
+
+    if column_names[0] != 'index':
+        raise ValueError('Points csv not recognized')
+
+    data_axes = [cn.startswith('axis-') for cn in column_names]
+    data = np.array(table[:, data_axes]).astype('float')
+
+    # Add properties to metadata if provided
+    prop_axes = np.logical_not(data_axes)
+    prop_axes[0] = False
+    meta = {}
+    if np.any(prop_axes):
+        meta['properties'] = {}
+        for ind in np.nonzero(prop_axes)[0]:
+            values = table[:, ind]
+            try:
+                values = np.array(values).astype('float')
+            except ValueError:
+                pass
+            meta['properties'][column_names[ind]] = values
+
+    return data, meta
+
+
+def read_shapes_csv(filename: str) -> Tuple[np.array, dict]:
+    """Read a shapes csv file written by the napari builtin.
+
+    Parameters
+    ----------
+    filename : str
+        Filename for saving csv.
+
+    Returns
+    -------
+    data : list of array
+        Shapes data.
+    meta : dict
+        Shapes metadata.
+    """
+    table, column_names = read_csv(filename)
+
+    if column_names[:3] != ['index', 'shape-type', 'vertex-index']:
+        raise ValueError('Shapes csv not recognized')
+
+    data_axes = [cn.startswith('axis-') for cn in column_names]
+    raw_data = np.array(table[:, data_axes]).astype('float')
+
+    inds = np.array(table[:, 0]).astype('int')
+    n_shapes = max(inds) + 1
+    # Determine when shape id changes
+    transitions = list((np.diff(inds)).nonzero()[0] + 1)
+    shape_boundaries = [0] + transitions + [len(table)]
+    if n_shapes != len(shape_boundaries) - 1:
+        raise ValueError('Expected number of shapes not found')
+
+    data = []
+    shape_type = []
+    for ind_a, ind_b in zip(shape_boundaries[:-1], shape_boundaries[1:]):
+        data.append(raw_data[ind_a:ind_b])
+        shape_type.append(table[ind_a, 1])
+
+    return data, {'shape_type': shape_type}
