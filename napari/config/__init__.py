@@ -83,11 +83,9 @@ from typing import (
 
 import yaml
 
-from .utils.misc import StringEnum
+from ..utils.misc import StringEnum
 
-no_default = "__no_default__"
-
-
+#: a list of paths that get searched for .yaml files in :func:`collect_yaml`
 paths = [
     os.getenv("NAPARI_ROOT_CONFIG", "/etc/napari"),
     os.path.join(sys.prefix, "etc", "napari"),
@@ -95,19 +93,27 @@ paths = [
     os.path.join(os.path.expanduser("~"), ".napari"),
 ]
 
+#: The primary directory for user config files
+#:
+#: Defaults to ~/.config/napari
+#: May be set with the environment variable "NAPARI_CONFIG"
+PATH = os.path.join(os.path.expanduser("~"), ".config", "napari")
 if "NAPARI_CONFIG" in os.environ:
     PATH = os.environ["NAPARI_CONFIG"]
     paths.append(PATH)
-else:
-    PATH = os.path.join(os.path.expanduser("~"), ".config", "napari")
 
-
+#: the main global config dict
 config: Dict[str, Any] = {}
-global_config = config
 
 config_lock = threading.Lock()
 
+#: A list of config dicts that downstream libraries may use to register defaults
+#:
+#: see :func:`update_defaults` and
+#: https://docs.dask.org/en/latest/configuration.html#downstream-libraries
 defaults: List[dict] = []
+
+no_default = "__no_default__"
 
 
 def canonical_name(k: str, config: Mapping) -> str:
@@ -263,7 +269,7 @@ def collect_env(env: Optional[Union[dict, os._Environ]] = None) -> dict:
                 d[varname] = value
 
     result: dict = {}
-    set(d, config=result, clean=True)
+    _set(d, config=result, clean=True)
 
     return result
 
@@ -289,6 +295,8 @@ def ensure_file(source: str, destination: Optional[str] = None, comment=True):
         Whether or not to comment out the config file when copying.
     """
     if destination is None:
+        from . import PATH
+
         destination = PATH
 
     # destination is a file and already exists, never overwrite
@@ -330,7 +338,7 @@ def ensure_file(source: str, destination: Optional[str] = None, comment=True):
         pass
 
 
-class set:
+class _set:
     """Temporarily set configuration values within a context manager.
 
     Parameters
@@ -637,13 +645,16 @@ def rename(aliases: dict, config: dict = config):
     for k in old:
         del config[canonical_name(k, config)]  # TODO: support nested keys
 
-    set(new, config=config, clean=True)
+    _set(new, config=config, clean=True)
 
 
 def update_defaults(
     new: dict, config: dict = config, defaults: List[dict] = defaults
 ):
     """Add a new set of defaults to the configuration.
+
+    Used internally, but also intended for use by downstream libraries. See:
+    https://docs.dask.org/en/latest/configuration.html#downstream-libraries
 
     It does two things:
 
@@ -872,6 +883,7 @@ with open(fn) as f:
     _defaults = yaml.safe_load(f) or {}
 
 update_defaults(_defaults)
-del fn, _defaults
+_set(_last_synced=time.time(), clean=True)
 
-set(_last_synced=time.time(), clean=True)
+set = _set
+del fn, _defaults
