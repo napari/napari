@@ -825,7 +825,11 @@ class SyncStatus:
                 except KeyError:
                     pass
             else:
-                self._last_synced[str(obj)] = os.path.getmtime(obj)
+                self._last_synced[str(obj)] = (
+                    os.path.getmtime(obj)
+                    if os.path.exists(obj)
+                    else time.time()
+                )
 
     def is_dirty(self, path_or_config: Union[dict, PathLike] = None) -> bool:
         """Return true if path_or_config object has changed since last sync."""
