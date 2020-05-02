@@ -206,13 +206,13 @@ def test_get():
 def test_pop():
     d = {"x": 1, "y": {"a": 2, "b": 3}}
 
-    assert config.pop("y.a", config=d, clean=True) == 2
+    assert config.pop("y.a", config=d) == 2
     assert d == {"x": 1, "y": {"b": 3}}
-    assert config.pop("x", config=d, clean=True) == 1
+    assert config.pop("x", config=d) == 1
     assert d == {"y": {"b": 3}}
-    assert config.pop("y.c", 123, config=d, clean=True) == 123
+    assert config.pop("y.c", 123, config=d) == 123
     assert config.pop("y", config=d) == {"b": 3}
-    assert d == {"_dirty": True}
+    assert d == {}
 
     with pytest.raises(KeyError):
         config.pop("z", config=d)
@@ -529,11 +529,8 @@ def test_yaml_overrides_clean_config(tmp_path):
         f.write("answer: 42")
         # necessary to cause change in file modification time on linux
         time.sleep(0.05)
-
     assert config.sync(d, destination=dest)
-    conf = d.copy()
-    conf.pop('_last_synced', None)
-    assert conf == {'answer': 42}
+    assert d == {'answer': 42}
 
 
 def test_sync_with_serialization_errors(tmp_path, caplog):
@@ -551,3 +548,13 @@ def test_sync_with_serialization_errors(tmp_path, caplog):
 
     with open(dest, 'r') as f:
         assert f.read() == "b: 10\ni: nearest\nstrange: <unserializeable>\n"
+
+
+def test_sync_without_sync_status(tmp_path, caplog):
+    dest = tmp_path / 'dest.yaml'
+    d = {}
+    config.set({"abc.x": 123, 'b': 10}, config=d)
+    assert config.sync(d, destination=dest)
+    assert os.path.isfile(dest)
+    assert not config.sync(d, destination=dest)
+    assert not config.sync(d, destination=dest, sync_status=None)
