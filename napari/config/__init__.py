@@ -216,16 +216,12 @@ def collect_yaml(paths: List[str] = paths) -> List[dict]:
         if os.path.exists(path):
             if os.path.isdir(path):
                 try:
-                    file_paths.extend(
-                        sorted(
-                            [
-                                os.path.join(path, p)
-                                for p in os.listdir(path)
-                                if os.path.splitext(p)[1].lower()
-                                in (".json", ".yaml", ".yml")
-                            ]
-                        )
-                    )
+                    for fname in sorted(os.listdir(path)):
+                        base, ext = os.path.splitext(fname)
+                        if base.startswith("_"):
+                            continue
+                        if ext.lower() in (".json", ".yaml", ".yml"):
+                            file_paths.append(os.path.join(path, fname))
                 except OSError:
                     # Ignore permission errors
                     pass

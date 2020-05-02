@@ -80,6 +80,23 @@ def test_collect_yaml_dir(tmp_path):
     assert conf == expected
 
 
+def test_collect_yaml_with_private(tmp_path):
+    """collect_yaml should ignore files starting with underscore"""
+    a = {"x": 1, "y": {"a": 1}}
+    b = {"x": 2, "z": 3, "y": {"b": 2}}
+
+    fn1 = tmp_path / "a.yaml"
+    fn2 = tmp_path / "_b.yaml"
+
+    with open(fn1, "w") as f:
+        yaml.dump(a, f)
+    with open(fn2, "w") as f:
+        yaml.dump(b, f)
+
+    conf = config.merge(*config.collect_yaml(paths=[tmp_path]))
+    assert conf == a
+
+
 @contextmanager
 def no_read_permissions(path):
     perm_orig = stat.S_IMODE(os.stat(path).st_mode)
