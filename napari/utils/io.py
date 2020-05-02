@@ -333,7 +333,7 @@ def read_points_csv(filename: str) -> Tuple[np.array, dict]:
     """
     table, column_names = read_csv(filename)
 
-    if column_names[0] != 'index':
+    if column_names[:2] != ['index', 'axis-0']:
         raise ValueError('Points csv not recognized')
 
     data_axes = [cn.startswith('axis-') for cn in column_names]
@@ -373,7 +373,7 @@ def read_shapes_csv(filename: str) -> Tuple[np.array, dict]:
     """
     table, column_names = read_csv(filename)
 
-    if column_names[:3] != ['index', 'shape-type', 'vertex-index']:
+    if column_names[:4] != ['index', 'shape-type', 'vertex-index', 'axis-0']:
         raise ValueError('Shapes csv not recognized')
 
     data_axes = [cn.startswith('axis-') for cn in column_names]
