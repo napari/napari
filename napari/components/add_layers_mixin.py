@@ -8,6 +8,7 @@ from ..utils.colormaps import ensure_colormap_tuple
 import numpy as np
 
 from .. import layers
+from ..layers.image._image_utils import guess_multiscale
 from ..plugins.io import read_data_with_plugins
 from ..utils import colormaps
 from ..utils.misc import (
@@ -226,6 +227,9 @@ class AddLayersMixin:
 
             return self.add_layer(layers.Image(data, **kwargs))
         else:
+            # Determine if data is a multiscale
+            if multiscale is None:
+                multiscale = guess_multiscale(data)
             n_channels = (data[0] if multiscale else data).shape[channel_axis]
             kwargs['blending'] = kwargs['blending'] or 'additive'
 
