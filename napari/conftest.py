@@ -98,10 +98,7 @@ def layer_writer_and_data(request):
         extension = '.tif'
 
         def reader(path):
-            return (
-                io.imread(path),
-                {},  # metadata
-            )
+            return (io.imread(path), {}, 'image')  # metadata
 
     elif request.param == 'points':
         data = np.random.rand(20, 2)

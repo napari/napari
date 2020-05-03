@@ -200,3 +200,14 @@ def test_read_csv(tmpdir):
     np.testing.assert_allclose(expected_data, read_data)
 
     assert column_names == read_column_names
+
+
+def test_guess_layer_type_from_column_names():
+    points_names = ['index', 'axis-0', 'axis-1']
+    assert io.guess_layer_type_from_column_names(points_names) == 'points'
+
+    shapes_names = ['index', 'shape-type', 'vertex-index', 'axis-0', 'axis-1']
+    assert io.guess_layer_type_from_column_names(shapes_names) == 'shapes'
+
+    bad_names = ['no-index', 'axis-0', 'axis-1']
+    assert io.guess_layer_type_from_column_names(bad_names) is None

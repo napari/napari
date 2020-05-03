@@ -18,7 +18,7 @@ def test_write_layer_with_round_trip(tmpdir, layer_writer_and_data):
     assert os.path.isfile(path)
 
     # Read data
-    read_data, read_meta = reader(path)
+    read_data, read_meta, layer_type = reader(path)
 
     # Compare read data to original data on layer
     if type(read_data) is list:

@@ -5,6 +5,7 @@ import re
 from glob import glob
 from pathlib import Path
 from typing import Union, List, Optional, Tuple
+from ..types import FullLayerData
 
 import numpy as np
 
@@ -290,13 +291,59 @@ def write_csv(
             writer.writerow(row)
 
 
+def csv_to_layer_data(filename: str) -> List[FullLayerData]:
+    """Return layer data from a csv.
+
+    Parameters
+    ----------
+    filename : str
+        Filename for reading csv.
+
+    Returns
+    -------
+    list of napari.types.FullLayerData or None
+        Layer full layer data or None.
+    """
+    # If extension is not csv then cannot read file
+    if not filename.endswith('.csv'):
+        return None
+
+    gen = iter_csv(filename)
+    column_names = next(gen)
+    layer_type = guess_layer_type_from_column_names(column_names)
+    if layer_type:
+        print('asdf')
+        print(csv_reader_functions[layer_type])
+        return [csv_reader_functions[layer_type](filename)]
+    else:
+        return None
+
+
+def iter_csv(filename: str):
+    """Iteratively read lines from a csv file.
+
+    Parameters
+    ----------
+    filename : str
+        Filename for reading csv.
+
+    Returns
+    -------
+    generator
+        Generator for reading lines from a csv
+    """
+    with open(filename, newline='') as csvfile:
+        reader = csv.reader(csvfile, delimiter=',')
+        yield from reader
+
+
 def read_csv(filename: str) -> Tuple[np.array, List[str]]:
     """Read a csv file.
 
     Parameters
     ----------
     filename : str
-        Filename for saving csv.
+        Filename for reading csv.
 
     Returns
     -------
@@ -305,24 +352,38 @@ def read_csv(filename: str) -> Tuple[np.array, List[str]]:
     column_names : list
         List of column names for table data.
     """
-    with open(filename, newline='') as csvfile:
-        reader = csv.reader(csvfile, delimiter=',')
-        output_data = []
-        for row_index, row in enumerate(reader):
-            if row_index == 0:
-                column_names = [str(i) for i in row]
-            else:
-                output_data.append([i for i in row])
-        return np.array(output_data), column_names
+    column_names, *data = iter_csv(filename)
+    return np.array(data), column_names
 
 
-def read_points_csv(filename: str) -> Tuple[np.array, dict]:
+def guess_layer_type_from_column_names(column_names):
+    """Guess layer type based on column names from a csv file.
+
+    Parameters
+    ----------
+    column_names : list of str
+        List of the column names from the csv.
+
+    Returns
+    -------
+    str or None
+        Layer type if recognized, otherwise None.
+    """
+    if column_names[:2] == ['index', 'axis-0']:
+        return 'points'
+    elif column_names[:4] == ['index', 'shape-type', 'vertex-index', 'axis-0']:
+        return 'shapes'
+    else:
+        return None
+
+
+def read_points_csv(filename: str) -> FullLayerData:
     """Read a points csv file written by the napari builtin.
 
     Parameters
     ----------
     filename : str
-        Filename for saving csv.
+        Filename for reading csv.
 
     Returns
     -------
@@ -330,11 +391,17 @@ def read_points_csv(filename: str) -> Tuple[np.array, dict]:
         Points data.
     meta : dict
         Points metadata.
+    layer_type : str
+        Points layer type.
     """
-    table, column_names = read_csv(filename)
+    gen = iter_csv(filename)
+    column_names = next(gen)
 
-    if column_names[:2] != ['index', 'axis-0']:
+    layer_type = guess_layer_type_from_column_names(column_names)
+    if layer_type != 'points':
         raise ValueError('Points csv not recognized')
+
+    table = np.array(list(gen))
 
     data_axes = [cn.startswith('axis-') for cn in column_names]
     data = np.array(table[:, data_axes]).astype('float')
@@ -353,16 +420,16 @@ def read_points_csv(filename: str) -> Tuple[np.array, dict]:
                 pass
             meta['properties'][column_names[ind]] = values
 
-    return data, meta
+    return data, meta, 'points'
 
 
-def read_shapes_csv(filename: str) -> Tuple[np.array, dict]:
+def read_shapes_csv(filename: str) -> FullLayerData:
     """Read a shapes csv file written by the napari builtin.
 
     Parameters
     ----------
     filename : str
-        Filename for saving csv.
+        Filename for reading csv.
 
     Returns
     -------
@@ -370,11 +437,17 @@ def read_shapes_csv(filename: str) -> Tuple[np.array, dict]:
         Shapes data.
     meta : dict
         Shapes metadata.
+    layer_type : str
+        Shapes layer type.
     """
-    table, column_names = read_csv(filename)
+    gen = iter_csv(filename)
+    column_names = next(gen)
 
-    if column_names[:4] != ['index', 'shape-type', 'vertex-index', 'axis-0']:
+    layer_type = guess_layer_type_from_column_names(column_names)
+    if layer_type != 'shapes':
         raise ValueError('Shapes csv not recognized')
+
+    table = np.array(list(gen))
 
     data_axes = [cn.startswith('axis-') for cn in column_names]
     raw_data = np.array(table[:, data_axes]).astype('float')
@@ -393,4 +466,7 @@ def read_shapes_csv(filename: str) -> Tuple[np.array, dict]:
         data.append(raw_data[ind_a:ind_b])
         shape_type.append(table[ind_a, 1])
 
-    return data, {'shape_type': shape_type}
+    return data, {'shape_type': shape_type}, 'shapes'
+
+
+csv_reader_functions = {'points': read_points_csv, 'shapes': read_shapes_csv}
