@@ -4,7 +4,7 @@ import re
 
 from glob import glob
 from pathlib import Path
-from typing import Union, List, Optional, Tuple
+from typing import Union, List, Optional, Tuple, Generator
 from ..types import FullLayerData
 
 import numpy as np
@@ -304,22 +304,17 @@ def csv_to_layer_data(filename: str) -> List[FullLayerData]:
     list of napari.types.FullLayerData or None
         Layer full layer data or None.
     """
-    # If extension is not csv then cannot read file
-    if not filename.endswith('.csv'):
-        return None
 
     gen = iter_csv(filename)
     column_names = next(gen)
     layer_type = guess_layer_type_from_column_names(column_names)
-    if layer_type:
-        print('asdf')
-        print(csv_reader_functions[layer_type])
+    if layer_type in csv_reader_functions:
         return [csv_reader_functions[layer_type](filename)]
     else:
-        return None
+        return []
 
 
-def iter_csv(filename: str):
+def iter_csv(filename: str) -> Generator[List[str], None, None]:
     """Iteratively read lines from a csv file.
 
     Parameters
@@ -327,10 +322,10 @@ def iter_csv(filename: str):
     filename : str
         Filename for reading csv.
 
-    Returns
-    -------
-    generator
-        Generator for reading lines from a csv
+    Yields
+    ------
+    list of str
+        List of strings for each line in the csv file
     """
     with open(filename, newline='') as csvfile:
         reader = csv.reader(csvfile, delimiter=',')
@@ -356,7 +351,7 @@ def read_csv(filename: str) -> Tuple[np.array, List[str]]:
     return np.array(data), column_names
 
 
-def guess_layer_type_from_column_names(column_names):
+def guess_layer_type_from_column_names(column_names: List[str]) -> Optional[str]:
     """Guess layer type based on column names from a csv file.
 
     Parameters
@@ -387,12 +382,8 @@ def read_points_csv(filename: str) -> FullLayerData:
 
     Returns
     -------
-    data : array
-        Points data.
-    meta : dict
-        Points metadata.
-    layer_type : str
-        Points layer type.
+    layer_data : tuple
+        3-tuple ``(array, dict, str)`` (points data, metadata, 'points')
     """
     gen = iter_csv(filename)
     column_names = next(gen)
@@ -433,12 +424,9 @@ def read_shapes_csv(filename: str) -> FullLayerData:
 
     Returns
     -------
-    data : list of array
-        Shapes data.
-    meta : dict
-        Shapes metadata.
-    layer_type : str
-        Shapes layer type.
+```suggestion
+    layer_data : tuple
+        3-tuple ``(array, dict, str)`` (points data, metadata, 'shapes')
     """
     gen = iter_csv(filename)
     column_names = next(gen)
