@@ -8,7 +8,7 @@ import warnings
 from contextlib import contextmanager
 from enum import Enum, EnumMeta
 from os import fspath, path
-from typing import ContextManager, Optional, Type
+from typing import ContextManager, Optional, Type, TypeVar, Sequence
 
 import dask
 import dask.array as da
@@ -193,11 +193,36 @@ def camel_to_snake(name):
     return camel_to_snake_pattern.sub(r'\1_\2', name).lower()
 
 
-def abspath_or_url(relpath):
-    relpath = fspath(relpath)
-    if relpath.startswith(('http:', 'https:', 'ftp:', 'file:')):
-        return relpath
-    return path.abspath(path.expanduser(relpath))
+T = TypeVar('T', str, Sequence[str])
+
+
+def abspath_or_url(relpath: T) -> T:
+    """Utility function that normalizes paths or a sequence thereof.
+
+    Expands user directory and converts relpaths to abspaths... but ignores
+    URLS that begin with "http", "ftp", or "file".
+
+    Parameters
+    ----------
+    relpath : str or list or tuple
+        A path, or list or tuple of paths.
+
+    Returns
+    -------
+    abspath : str or list or tuple
+        An absolute path, or list or tuple of absolute paths (same type as
+        input).
+    """
+    if isinstance(relpath, (tuple, list)):
+        return type(relpath)(abspath_or_url(p) for p in relpath)
+
+    if isinstance(relpath, str):
+        relpath = fspath(relpath)
+        if relpath.startswith(('http:', 'https:', 'ftp:', 'file:')):
+            return relpath
+        return path.abspath(path.expanduser(relpath))
+
+    raise TypeError("Argument must be a string or sequence of strings")
 
 
 class CallDefault(inspect.Parameter):
