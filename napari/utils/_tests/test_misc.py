@@ -1,5 +1,6 @@
 from enum import auto
 from os.path import expanduser, abspath
+from pathlib import Path
 
 import pytest
 
@@ -180,6 +181,8 @@ def test_abspath_or_url():
     assert abspath_or_url('file://something') == 'file://something'
     assert abspath_or_url(('a', '~')) == (abspath('a'), expanduser('~'))
     assert abspath_or_url(['a', '~']) == [abspath('a'), expanduser('~')]
+
+    assert abspath_or_url(('a', Path('~'))) == (abspath('a'), expanduser('~'))
 
     with pytest.raises(TypeError):
         abspath_or_url({'a', '~'})

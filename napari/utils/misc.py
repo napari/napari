@@ -7,7 +7,7 @@ import re
 import warnings
 from contextlib import contextmanager
 from enum import Enum, EnumMeta
-from os import fspath, path
+from os import fspath, path, PathLike
 from typing import ContextManager, Optional, Type, TypeVar, Sequence
 
 import dask
@@ -216,13 +216,13 @@ def abspath_or_url(relpath: T) -> T:
     if isinstance(relpath, (tuple, list)):
         return type(relpath)(abspath_or_url(p) for p in relpath)
 
-    if isinstance(relpath, str):
+    if isinstance(relpath, (str, PathLike)):
         relpath = fspath(relpath)
         if relpath.startswith(('http:', 'https:', 'ftp:', 'file:')):
             return relpath
         return path.abspath(path.expanduser(relpath))
 
-    raise TypeError("Argument must be a string or sequence of strings")
+    raise TypeError("Argument must be a string, PathLike, or sequence thereof")
 
 
 class CallDefault(inspect.Parameter):
