@@ -351,7 +351,9 @@ def read_csv(filename: str) -> Tuple[np.array, List[str]]:
     return np.array(data), column_names
 
 
-def guess_layer_type_from_column_names(column_names: List[str]) -> Optional[str]:
+def guess_layer_type_from_column_names(
+    column_names: List[str],
+) -> Optional[str]:
     """Guess layer type based on column names from a csv file.
 
     Parameters
@@ -364,9 +366,14 @@ def guess_layer_type_from_column_names(column_names: List[str]) -> Optional[str]
     str or None
         Layer type if recognized, otherwise None.
     """
-    if column_names[:2] == ['index', 'axis-0']:
+    if len(column_names) >= 2 and column_names[:2] == ['index', 'axis-0']:
         return 'points'
-    elif column_names[:4] == ['index', 'shape-type', 'vertex-index', 'axis-0']:
+    elif len(column_names) >= 4 and column_names[:4] == [
+        'index',
+        'shape-type',
+        'vertex-index',
+        'axis-0',
+    ]:
         return 'shapes'
     else:
         return None
