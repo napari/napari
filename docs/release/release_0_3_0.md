@@ -182,6 +182,7 @@ with napari.gui_qt():
 - Color cycles properties return array (#1163)
 - Allow last added point to be deleted with backspace keybinding (#1164)
 - Extract plugin code to napari-plugin-engine (#1169)
+- Turn caching on and fusion off when adding a dask array (#1173)
 - Warn when nothing saved (#1188)
 
 ## Bug Fixes
