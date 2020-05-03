@@ -1,5 +1,5 @@
 from enum import auto
-from os.path import expanduser, abspath
+from os.path import expanduser, abspath, sep
 from pathlib import Path
 
 import pytest
@@ -172,9 +172,10 @@ def test_string_enum():
 
 
 def test_abspath_or_url():
-    assert abspath_or_url('~/something') == expanduser('~/something')
+    relpath = "~" + sep + "something"
+    assert abspath_or_url(relpath) == expanduser(relpath)
     assert abspath_or_url('something') == abspath('something')
-    assert abspath_or_url('/something') == '/something'
+    assert abspath_or_url(sep + 'something') == abspath(sep + 'something')
     assert abspath_or_url('https://something') == 'https://something'
     assert abspath_or_url('http://something') == 'http://something'
     assert abspath_or_url('ftp://something') == 'ftp://something'
