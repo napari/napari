@@ -138,7 +138,7 @@ class QtPluginErrReporter(QDialog):
         """
         try:
             self.github_button.clicked.disconnect()
-        except RuntimeError:
+        except (RuntimeError, TypeError):
             pass
         if not self.plugin_manager.get_errors(plugin):
             if not plugin or plugin == self.NULL_OPTION:

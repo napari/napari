@@ -1,9 +1,12 @@
-from napari_plugin_engine import PluginError
-from napari.plugins import exceptions
 import sys
+
 import pytest
 
+from napari.plugins import exceptions
+from napari_plugin_engine import PluginError
 
+
+# monkeypatch fixture is from pytest
 @pytest.mark.parametrize('as_html', (True, False), ids=['as_html', 'as_text'])
 @pytest.mark.parametrize('cgitb', (True, False), ids=['cgitb', 'ipython'])
 def test_format_exceptions(cgitb, as_html, monkeypatch):

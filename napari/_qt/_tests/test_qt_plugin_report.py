@@ -1,12 +1,16 @@
-from napari._qt import qt_plugin_report
-from qtpy.QtCore import Qt
-from qtpy.QtGui import QGuiApplication
-from napari_plugin_engine import PluginError
-import pytest
 import webbrowser
 
+import pytest
+from qtpy.QtCore import Qt
+from qtpy.QtGui import QGuiApplication
 
+from napari._qt import qt_plugin_report
+from napari_plugin_engine import PluginError
+
+
+# qtbot fixture comes from pytest-qt
 # test_plugin_manager fixture is provided by napari_plugin_engine._testsupport
+# monkeypatch fixture is from pytest
 def test_error_reporter(qtbot, test_plugin_manager, monkeypatch):
     """test that QtPluginErrReporter shows any instantiated PluginErrors."""
 
