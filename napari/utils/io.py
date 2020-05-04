@@ -405,8 +405,7 @@ def read_points_csv(filename: str) -> FullLayerData:
     data = np.array(table[:, data_axes]).astype('float')
 
     # Add properties to metadata if provided
-    prop_axes = np.logical_not(data_axes)
-    prop_axes[0] = False
+    prop_axes = [cn.startswith('property-') for cn in column_names]
     meta = {}
     if np.any(prop_axes):
         meta['properties'] = {}
@@ -416,7 +415,7 @@ def read_points_csv(filename: str) -> FullLayerData:
                 values = np.array(values).astype('float')
             except ValueError:
                 pass
-            meta['properties'][column_names[ind]] = values
+            meta['properties'][column_names[ind][9:]] = values
 
     return data, meta, 'points'
 
