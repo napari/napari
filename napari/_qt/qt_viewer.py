@@ -285,7 +285,14 @@ class QtViewer(QSplitter):
                 self.viewer.reset_view()
 
     def _save_layers(self, selected=False):
-        """Save screenshot of current display, default .png"""
+        """Save layers (all or selected) to disk, using ``LayerList.save()``.
+
+        Parameters
+        ----------
+        selected : bool
+            If True, only layers that are selected in the viewer will be saved.
+            By default, all layers are saved.
+        """
         filename, _ = QFileDialog.getSaveFileName(
             parent=self,
             caption=f'Save {"selected" if selected else "all"} layers',
