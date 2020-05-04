@@ -8,7 +8,7 @@ from ..utils.colormaps import ensure_colormap_tuple
 import numpy as np
 
 from .. import layers
-from ..layers.image._image_utils import guess_multiscale
+from ..layers.image._image_utils import guess_multiscale, guess_labels
 from ..plugins.io import read_data_with_plugins
 from ..utils import colormaps
 from ..utils.misc import (
@@ -866,7 +866,7 @@ class AddLayersMixin:
             if len(data) == 1:
                 data = (data[0], {})
             if len(data) == 2:
-                data = (data[0], data[1], 'image')
+                data = (data[0], data[1], guess_labels(data[0]))
             if layer_type is not None:
                 data = (data[0], data[1], layer_type)
             else:
@@ -935,15 +935,7 @@ class AddLayersMixin:
 
         # assumes that big integer type arrays are likely labels.
         if not layer_type:
-            if hasattr(data, 'dtype') and data.dtype in (
-                np.int32,
-                np.uint32,
-                np.int64,
-                np.uint64,
-            ):
-                layer_type = 'labels'
-            else:
-                layer_type = 'image'
+            layer_type = guess_labels(data)
 
         if layer_type not in layers.NAMES:
             raise ValueError(
