@@ -195,6 +195,8 @@ with napari.gui_qt():
 - Allow last added point to be deleted with backspace keybinding (#1164)
 - Extract plugin code to napari-plugin-engine (#1169)
 - Turn caching on and fusion off when adding a dask array (#1173)
+- Save all/selected layers Qt dialogs (#1185)
+- Magic layer name guessing is always on (#1186)
 - Warn when nothing saved (#1188)
 
 ## Bug Fixes
@@ -219,7 +221,10 @@ with napari.gui_qt():
 - Prevent crash when viewing 3D pyramids (#1179)
 - Add ensure_colormap utility function to standardize colormap getting/setting (#1180)
 - Fix small plugin error report bug (#1181)
-
+- Fix multichannel implicit multiscale (#1192)
+- Fix singleton dims display after toggle (#1196)
+- Normalize paths handed to reader plugins (#1195)
+- Fix resize axis labels on show (#1197)
 
 ## Breaking API Changes
 - Allow add_path() to accept any layer-specific kwarg and rename to open() (#1111)
