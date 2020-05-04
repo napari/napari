@@ -138,8 +138,7 @@ def napari_write_points(path: str, data: Any, meta: dict) -> Optional[str]:
     # construct table from data
     column_names = ['axis-' + str(n) for n in range(data.shape[1])]
     if properties:
-        prop_names = ['property-' + p for p in properties.keys()]
-        column_names += prop_names
+        column_names += properties.keys()
         prop_table = [
             np.expand_dims(col, axis=1) for col in properties.values()
         ]
