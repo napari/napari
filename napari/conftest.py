@@ -1,4 +1,5 @@
 import warnings
+from functools import partial
 from typing import List
 
 import numpy as np
@@ -119,14 +120,14 @@ def layer_writer_and_data(request):
         layer = Points(data)
         writer = napari_write_points
         extension = '.csv'
-        reader = io.read_points_csv
+        reader = partial(io.csv_to_layer_data, require_type='points')
     elif request.param == 'points-with-properties':
         data = np.random.rand(20, 2)
         Layer = Points
         layer = Points(data, properties={'values': np.random.rand(20)})
         writer = napari_write_points
         extension = '.csv'
-        reader = io.read_points_csv
+        reader = partial(io.csv_to_layer_data, require_type='points')
     elif request.param == 'shapes':
         np.random.seed(0)
         data = [
@@ -141,7 +142,7 @@ def layer_writer_and_data(request):
         layer = Shapes(data, shape_type=shape_type)
         writer = napari_write_shapes
         extension = '.csv'
-        reader = io.read_shapes_csv
+        reader = partial(io.csv_to_layer_data, require_type='shapes')
     else:
         return None, None, None, None, None
 

@@ -9,6 +9,7 @@ import numpy as np
 from napari_plugin_engine import napari_hook_implementation
 
 from ..types import (
+    LayerData,
     FullLayerData,
     ReaderFunction,
     WriterFunction,
@@ -19,9 +20,22 @@ from ..utils.io import (
     magic_imread,
     write_csv,
     imsave_extensions,
-    read_csv_layer_data,
+    csv_to_layer_data,
 )
 from ..utils.misc import abspath_or_url
+
+
+def csv_reader_function(path: Union[str, List[str]]) -> List[LayerData]:
+    if isinstance(path, list):
+        out: List[LayerData] = []
+        for p in path:
+            layer_data = csv_to_layer_data(p, require_type=None)
+            if layer_data:
+                out.append(layer_data)
+        return out
+    else:
+        layer_data = csv_to_layer_data(path, require_type=None)
+        return [layer_data] if layer_data else []
 
 
 @napari_hook_implementation(trylast=True)
@@ -42,7 +56,7 @@ def napari_get_reader(path: Union[str, List[str]]) -> ReaderFunction:
         function that returns layer_data to be handed to viewer._add_layer_data
     """
     if isinstance(path, str) and path.endswith('.csv'):
-        return read_csv_layer_data
+        return csv_reader_function
     return image_reader_to_layerdata_reader(magic_imread)
 
 
