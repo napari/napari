@@ -444,9 +444,12 @@ def _points_csv_to_layerdata(
         for ind in np.nonzero(prop_axes)[0]:
             values = table[:, ind]
             try:
-                values = np.array(values).astype('float')
+                values = np.array(values).astype('int')
             except ValueError:
-                pass
+                try:
+                    values = np.array(values).astype('float')
+                except ValueError:
+                    pass
             meta['properties'][column_names[ind]] = values
 
     return data, meta, 'points'
