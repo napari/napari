@@ -198,6 +198,7 @@ with napari.gui_qt():
 - Save all/selected layers Qt dialogs (#1185)
 - Magic layer name guessing is always on (#1186)
 - Warn when nothing saved (#1188)
+- Bump svg-dep, add builtin write_labels (#1200)
 
 ## Bug Fixes
 - Refactor cleanup, prevent leaked widgets, add viewer.close method (#1014)

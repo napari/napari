@@ -168,10 +168,3 @@ def test_roll_traspose_update(viewer_factory, layer_class, data, ndim):
     # Transpose and check again:
     viewer.dims._transpose()
     check_view_transform_consistency(layer, viewer, transf_dict)
-
-
-def test_magic_name(viewer_factory):
-    _, viewer = viewer_factory()
-    random = np.random.random((512, 512))
-    viewer.add_image(random)
-    assert viewer.layers[0].name == 'random'
