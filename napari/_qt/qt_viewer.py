@@ -290,7 +290,7 @@ class QtViewer(QSplitter):
                 self.view.camera.viewbox_key_event = viewbox_key_event
                 self.viewer.reset_view()
 
-    def _save_layers(self, selected=False):
+    def _save_layers_dialog(self, selected=False):
         """Save layers (all or selected) to disk, using ``LayerList.save()``.
 
         Parameters
@@ -338,7 +338,7 @@ class QtViewer(QSplitter):
             imsave(path, QImg2array(img))  # scikit-image imsave method
         return QImg2array(img)
 
-    def _save_screenshot(self):
+    def _screenshot_dialog(self):
         """Save screenshot of current display, default .png"""
         filename, _ = QFileDialog.getSaveFileName(
             parent=self,
@@ -348,7 +348,7 @@ class QtViewer(QSplitter):
             # jpg and jpeg not included as they don't support an alpha channel
         )
         if (filename != '') and (filename is not None):
-            # double check that an appropriate extension has been added as the filter
+            # double check that an appropriate extension has been added as the
             # filter option does not always add an extension on linux and windows
             # see https://bugreports.qt.io/browse/QTBUG-27186
             image_extensions = ('.bmp', '.gif', '.png', '.tif', '.tiff')
@@ -356,27 +356,27 @@ class QtViewer(QSplitter):
                 filename = filename + '.png'
             self.screenshot(path=filename)
 
-    def _open_images(self):
-        """Add image files from the menubar."""
+    def _open_files_dialog(self):
+        """Add files from the menubar."""
         filenames, _ = QFileDialog.getOpenFileNames(
             parent=self,
-            caption='Select image(s)...',
+            caption='Select file(s)...',
             directory=self._last_visited_dir,  # home dir by default
         )
         if (filenames != []) and (filenames is not None):
             self.viewer.open(filenames)
 
-    def _open_images_as_stack(self):
-        """Add image files as a stack, from the menubar."""
+    def _open_files_dialog_as_stack_dialog(self):
+        """Add files as a stack, from the menubar."""
         filenames, _ = QFileDialog.getOpenFileNames(
             parent=self,
-            caption='Select images...',
+            caption='Select files...',
             directory=self._last_visited_dir,  # home dir by default
         )
         if (filenames != []) and (filenames is not None):
             self.viewer.open(filenames, stack=True)
 
-    def _open_folder(self):
+    def _open_folder_dialog(self):
         """Add a folder of files from the menubar."""
         folder = QFileDialog.getExistingDirectory(
             parent=self,
