@@ -292,7 +292,7 @@ def write_csv(
             writer.writerow(row)
 
 
-def csv_to_layer_data(filename: str) -> List[FullLayerData]:
+def read_csv_layer_data(filename: str) -> List[FullLayerData]:
     """Return layer data from a csv.
 
     Parameters
@@ -308,6 +308,7 @@ def csv_to_layer_data(filename: str) -> List[FullLayerData]:
 
     gen = iter_csv(filename)
     column_names = next(gen)
+    gen.close()
     layer_type = guess_layer_type_from_column_names(column_names)
     if layer_type in csv_reader_functions:
         return [csv_reader_functions[layer_type](filename)]
@@ -401,6 +402,7 @@ def read_points_csv(filename: str) -> FullLayerData:
         raise ValueError('Points csv not recognized')
 
     table = np.array(list(gen))
+    gen.close()
 
     data_axes = [cn.startswith('axis-') for cn in column_names]
     data = np.array(table[:, data_axes]).astype('float')
@@ -444,6 +446,7 @@ def read_shapes_csv(filename: str) -> FullLayerData:
         raise ValueError('Shapes csv not recognized')
 
     table = np.array(list(gen))
+    gen.close()
 
     data_axes = [cn.startswith('axis-') for cn in column_names]
     raw_data = np.array(table[:, data_axes]).astype('float')

@@ -19,7 +19,7 @@ from ..utils.io import (
     magic_imread,
     write_csv,
     imsave_extensions,
-    csv_to_layer_data,
+    read_csv_layer_data,
 )
 from ..utils.misc import abspath_or_url
 
@@ -42,7 +42,7 @@ def napari_get_reader(path: Union[str, List[str]]) -> ReaderFunction:
         function that returns layer_data to be handed to viewer._add_layer_data
     """
     if isinstance(path, str) and path.endswith('.csv'):
-        return csv_to_layer_data
+        return read_csv_layer_data
     return image_reader_to_layerdata_reader(magic_imread)
 
 
