@@ -7,6 +7,7 @@ import time
 # set vispy to use same backend as qtpy
 from ..utils.io import imsave
 
+from .qt_viewer import QtViewer
 from .qt_about import QtAbout
 from .qt_plugin_report import QtPluginErrReporter
 from .qt_plugin_sorter import QtPluginSorter
@@ -63,7 +64,7 @@ class Window:
 
     raw_stylesheet = get_stylesheet()
 
-    def __init__(self, qt_viewer, *, show=True):
+    def __init__(self, qt_viewer: QtViewer, *, show: bool = True):
 
         self.qt_viewer = qt_viewer
 
@@ -157,7 +158,23 @@ class Window:
         )
         open_folder.triggered.connect(self.qt_viewer._open_folder)
 
-        screenshot = QAction('Screenshot', self._qt_window)
+        save_selected_layers = QAction(
+            'Save selected layer(s)...', self._qt_window
+        )
+        save_selected_layers.setShortcut('Ctrl+S')
+        save_selected_layers.setStatusTip('Save selected layers')
+        save_selected_layers.triggered.connect(
+            lambda: self.qt_viewer._save_layers(selected=True)
+        )
+
+        save_all_layers = QAction('Save all layers...', self._qt_window)
+        save_all_layers.setShortcut('Ctrl+Shift+S')
+        save_all_layers.setStatusTip('Save all layers')
+        save_all_layers.triggered.connect(
+            lambda: self.qt_viewer._save_layers(selected=False)
+        )
+
+        screenshot = QAction('Save Screenshot', self._qt_window)
         screenshot.setShortcut('Ctrl+Alt+S')
         screenshot.setStatusTip(
             'Save screenshot of current display, default .png'
@@ -190,7 +207,11 @@ class Window:
         self.file_menu.addAction(open_images)
         self.file_menu.addAction(open_stack)
         self.file_menu.addAction(open_folder)
+        self.file_menu.addSeparator()
+        self.file_menu.addAction(save_selected_layers)
+        self.file_menu.addAction(save_all_layers)
         self.file_menu.addAction(screenshot)
+        self.file_menu.addSeparator()
         self.file_menu.addAction(exitAction)
 
     def _add_view_menu(self):
