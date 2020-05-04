@@ -404,14 +404,17 @@ def csv_to_layer_data(
         valid data format.
     """
     try:
-        table, column_names, _type = read_csv(path, require_type=require_type)
+        # pass at least require "any" here so that we don't bother reading the
+        # full dataset if it's not going to yield valid layer_data.
+        _require = require_type or 'any'
+        table, column_names, _type = read_csv(path, require_type=_require)
     except ValueError:
         if not require_type:
             return None
         raise
     if _type in csv_reader_functions:
         return csv_reader_functions[_type](table, column_names)
-    return None
+    return None  # only reachable if it is a valid layer type without a reader
 
 
 def _points_csv_to_layerdata(
