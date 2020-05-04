@@ -8,7 +8,11 @@ from qtpy.QtWidgets import QApplication
 from napari import Viewer
 from napari.layers import Image, Labels, Points, Shapes, Vectors
 from napari.components import LayerList
-from napari.plugins._builtins import napari_write_image, napari_write_points
+from napari.plugins._builtins import (
+    napari_write_image,
+    napari_write_labels,
+    napari_write_points,
+)
 from napari.utils import io
 
 
@@ -65,7 +69,7 @@ def viewer_factory(qtbot, request):
         viewer.close()
 
 
-@pytest.fixture(params=['image', 'points', 'points-with-properties'])
+@pytest.fixture(params=['image', 'labels', 'points', 'points-with-properties'])
 def layer_writer_and_data(request):
     """Fixture that supplies layer io utilities for tests.
 
@@ -91,6 +95,19 @@ def layer_writer_and_data(request):
         Layer = Image
         layer = Image(data)
         writer = napari_write_image
+        extension = '.tif'
+
+        def reader(path):
+            return (
+                io.imread(path),
+                {},  # metadata
+            )
+
+    elif request.param == 'labels':
+        data = np.random.randint(0, 16000, (32, 32), 'uint64')
+        Layer = Labels
+        layer = Labels(data)
+        writer = napari_write_labels
         extension = '.tif'
 
         def reader(path):
