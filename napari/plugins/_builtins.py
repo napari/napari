@@ -90,7 +90,7 @@ def napari_write_labels(path: str, data: Any, meta: dict) -> Optional[str]:
         If data is successfully written, return the ``path`` that was written.
         Otherwise, if nothing was done, return ``None``.
     """
-    return napari_write_image(path, data, meta)
+    return napari_write_image(path, np.asarray(data, dtype='uint32'), meta)
 
 
 @napari_hook_implementation(trylast=True)
