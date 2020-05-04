@@ -4,27 +4,6 @@ import numpy as np
 from vispy.color import Colormap
 
 
-def increment_unnamed_colormap(name, names):
-    """Increment name for unnamed colormap.
-
-    Parameters
-    ----------
-    name : str
-        Name of colormap to be incremented.
-    names : List[str]
-        Names of existing colormaps.
-
-    Returns
-    -------
-    name : str
-        Name of colormap after incrementing.
-    """
-    if name == '[unnamed colormap]':
-        past_names = [n for n in names if n.startswith('[unnamed colormap')]
-        name = f'[unnamed colormap {len(past_names)}]'
-    return name
-
-
 def calc_data_range(data):
     """Calculate range of data values. If all values are equal return [0, 1].
 

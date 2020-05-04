@@ -483,21 +483,22 @@ class Image(IntensityVisualizationMixin, Layer):
                 scale[d] = self.downsample_factors[self.data_level][d]
             self._transforms['tile2data'].scale = scale
 
-            corner_pixels = np.clip(
-                self.corner_pixels,
-                0,
-                np.subtract(self.level_shapes[self.data_level], 1),
-            )
-
-            for d in self.dims.displayed:
-                indices[d] = slice(
-                    corner_pixels[0, d], corner_pixels[1, d] + 1, 1
+            if self.dims.ndisplay == 2:
+                corner_pixels = np.clip(
+                    self.corner_pixels,
+                    0,
+                    np.subtract(self.level_shapes[self.data_level], 1),
                 )
-            self._transforms['tile2data'].translate = (
-                corner_pixels[0]
-                * self._transforms['data2world'].scale
-                * self._transforms['tile2data'].scale
-            )
+
+                for d in self.dims.displayed:
+                    indices[d] = slice(
+                        corner_pixels[0, d], corner_pixels[1, d] + 1, 1
+                    )
+                self._transforms['tile2data'].translate = (
+                    corner_pixels[0]
+                    * self._transforms['data2world'].scale
+                    * self._transforms['tile2data'].scale
+                )
 
             image = np.transpose(
                 np.asarray(self.data[level][tuple(indices)]), order
