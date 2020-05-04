@@ -342,7 +342,7 @@ class QtViewer(QSplitter):
         """Save screenshot of current display, default .png"""
         filename, _ = QFileDialog.getSaveFileName(
             parent=self,
-            caption='',
+            caption='Save screenshot',
             directory=self._last_visited_dir,  # home dir by default
             filter="Image files (*.png *.bmp *.gif *.tif *.tiff)",  # first one used by default
             # jpg and jpeg not included as they don't support an alpha channel
