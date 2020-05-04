@@ -199,6 +199,7 @@ with napari.gui_qt():
 - Magic layer name guessing is always on (#1186)
 - Warn when nothing saved (#1188)
 - Bump svg-dep, add builtin write_labels (#1200)
+- Change screenshot hotkey and open menubar names (#1201)
 
 ## Bug Fixes
 - Refactor cleanup, prevent leaked widgets, add viewer.close method (#1014)
@@ -223,8 +224,9 @@ with napari.gui_qt():
 - Add ensure_colormap utility function to standardize colormap getting/setting (#1180)
 - Fix small plugin error report bug (#1181)
 - Fix multichannel implicit multiscale (#1192)
-- Fix singleton dims display after toggle (#1196)
+- One more plugin error reporting fix (#1194)
 - Normalize paths handed to reader plugins (#1195)
+- Fix singleton dims display after toggle (#1196)
 - Fix resize axis labels on show (#1197)
 
 ## Breaking API Changes
