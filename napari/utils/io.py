@@ -306,9 +306,10 @@ def read_csv_layer_data(filename: str) -> List[FullLayerData]:
         Layer full layer data or None.
     """
 
-    gen = iter_csv(filename)
-    column_names = next(gen)
-    gen.close()
+    with open(filename, newline='') as csvfile:
+        reader = csv.reader(csvfile, delimiter=',')
+        column_names = next(reader)
+
     layer_type = guess_layer_type_from_column_names(column_names)
     if layer_type in csv_reader_functions:
         return [csv_reader_functions[layer_type](filename)]
