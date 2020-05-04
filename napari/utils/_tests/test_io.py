@@ -195,7 +195,7 @@ def test_read_csv(tmpdir):
     assert os.path.exists(expected_filename)
 
     # Read csv file
-    read_data, read_column_names = io.read_csv(expected_filename)
+    read_data, read_column_names, _ = io.read_csv(expected_filename)
     read_data = np.array(read_data).astype('float')
     np.testing.assert_allclose(expected_data, read_data)
 
