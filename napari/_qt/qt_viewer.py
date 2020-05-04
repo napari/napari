@@ -356,21 +356,21 @@ class QtViewer(QSplitter):
                 filename = filename + '.png'
             self.screenshot(path=filename)
 
-    def _open_images(self):
-        """Add image files from the menubar."""
+    def _open_files(self):
+        """Add files from the menubar."""
         filenames, _ = QFileDialog.getOpenFileNames(
             parent=self,
-            caption='Select image(s)...',
+            caption='Select file(s)...',
             directory=self._last_visited_dir,  # home dir by default
         )
         if (filenames != []) and (filenames is not None):
             self.viewer.open(filenames)
 
-    def _open_images_as_stack(self):
-        """Add image files as a stack, from the menubar."""
+    def _open_files_as_stack(self):
+        """Add files as a stack, from the menubar."""
         filenames, _ = QFileDialog.getOpenFileNames(
             parent=self,
-            caption='Select images...',
+            caption='Select files...',
             directory=self._last_visited_dir,  # home dir by default
         )
         if (filenames != []) and (filenames is not None):

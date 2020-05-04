@@ -31,6 +31,7 @@ from qtpy.QtWidgets import (  # noqa: E402
     QShortcut,
     QStatusBar,
     QVBoxLayout,
+    QFileDialog,
 )
 from qtpy.QtCore import Qt  # noqa: E402
 from qtpy.QtGui import QKeySequence, QIcon  # noqa: E402
@@ -141,21 +142,19 @@ class Window:
 
     def _add_file_menu(self):
         """Add 'File' menu to app menubar."""
-        open_images = QAction('Open image(s)...', self._qt_window)
+        open_images = QAction('Open file(s)...', self._qt_window)
         open_images.setShortcut('Ctrl+O')
-        open_images.setStatusTip('Open image file(s)')
-        open_images.triggered.connect(self.qt_viewer._open_images)
+        open_images.setStatusTip('Open file(s)')
+        open_images.triggered.connect(self.qt_viewer._open_files)
 
-        open_stack = QAction('Open image series as stack...', self._qt_window)
+        open_stack = QAction('Open files as stack...', self._qt_window)
         open_stack.setShortcut('Ctrl+Alt+O')
-        open_stack.setStatusTip('Open image files')
-        open_stack.triggered.connect(self.qt_viewer._open_images_as_stack)
+        open_stack.setStatusTip('Open files')
+        open_stack.triggered.connect(self.qt_viewer._open_files_as_stack)
 
-        open_folder = QAction('Open Folder...', self._qt_window)
+        open_folder = QAction('Open folder...', self._qt_window)
         open_folder.setShortcut('Ctrl+Shift+O')
-        open_folder.setStatusTip(
-            'Open a folder of image file(s) or a zarr file'
-        )
+        open_folder.setStatusTip('Open a folder')
         open_folder.triggered.connect(self.qt_viewer._open_folder)
 
         save_selected_layers = QAction(
@@ -174,12 +173,21 @@ class Window:
             lambda: self.qt_viewer._save_layers(selected=False)
         )
 
-        screenshot = QAction('Save Screenshot', self._qt_window)
-        screenshot.setShortcut('Ctrl+Alt+S')
+        screenshot = QAction('Save screenshot...', self._qt_window)
+        screenshot.setShortcut('Alt+S')
         screenshot.setStatusTip(
             'Save screenshot of current display, default .png'
         )
         screenshot.triggered.connect(self.qt_viewer._save_screenshot)
+
+        screenshot_wv = QAction(
+            'Save screenshot with viewer...', self._qt_window
+        )
+        screenshot_wv.setShortcut('Alt+Shift+S')
+        screenshot_wv.setStatusTip(
+            'Save screenshot of current display with the viewer, default .png'
+        )
+        screenshot_wv.triggered.connect(self._save_screenshot)
 
         # OS X will rename this to Quit and put it in the app menu.
         exitAction = QAction('Exit', self._qt_window)
@@ -211,6 +219,7 @@ class Window:
         self.file_menu.addAction(save_selected_layers)
         self.file_menu.addAction(save_all_layers)
         self.file_menu.addAction(screenshot)
+        self.file_menu.addAction(screenshot_wv)
         self.file_menu.addSeparator()
         self.file_menu.addAction(exitAction)
 
@@ -491,6 +500,24 @@ class Window:
             Event from the Qt context.
         """
         self._help.setText(event.text)
+
+    def _save_screenshot(self):
+        """Save screenshot of current display with viewer, default .png"""
+        filename, _ = QFileDialog.getSaveFileName(
+            parent=self.qt_viewer,
+            caption='Save screenshot with viewer',
+            directory=self.qt_viewer._last_visited_dir,  # home dir by default
+            filter="Image files (*.png *.bmp *.gif *.tif *.tiff)",  # first one used by default
+            # jpg and jpeg not included as they don't support an alpha channel
+        )
+        if (filename != '') and (filename is not None):
+            # double check that an appropriate extension has been added as the filter
+            # filter option does not always add an extension on linux and windows
+            # see https://bugreports.qt.io/browse/QTBUG-27186
+            image_extensions = ('.bmp', '.gif', '.png', '.tif', '.tiff')
+            if not filename.endswith(image_extensions):
+                filename = filename + '.png'
+            self.screenshot(path=filename)
 
     def screenshot(self, path=None):
         """Take currently displayed viewer and convert to an image array.
