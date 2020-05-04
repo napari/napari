@@ -136,18 +136,6 @@ class QtPluginErrReporter(QDialog):
         plugin : str
             name of a plugin that has created an error this session.
         """
-        try:
-            self.github_button.clicked.disconnect()
-        except (RuntimeError, TypeError):
-            pass
-        if not self.plugin_manager.get_errors(plugin):
-            if not plugin or plugin == self.NULL_OPTION:
-                self.plugin_meta.setText('')
-                self.text_area.setHtml('')
-                return
-            else:
-                raise ValueError(f"No errors reported for plugin '{plugin}'")
-        self.plugin_combo.setCurrentText(plugin)
         self.github_button.hide()
         self.clipboard_button.hide()
         try:
@@ -156,6 +144,15 @@ class QtPluginErrReporter(QDialog):
         # PySide2 raises runtimeError, PyQt5 raises TypeError
         except (RuntimeError, TypeError):
             pass
+
+        if not plugin or (plugin == self.NULL_OPTION):
+            self.plugin_meta.setText('')
+            self.text_area.setHtml('')
+            return
+
+        if not self.plugin_manager.get_errors(plugin):
+            raise ValueError(f"No errors reported for plugin '{plugin}'")
+        self.plugin_combo.setCurrentText(plugin)
 
         err_string = format_exceptions(plugin, as_html=True)
         self.text_area.setHtml(err_string)
