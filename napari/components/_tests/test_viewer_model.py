@@ -3,6 +3,7 @@ import pytest
 
 from napari.components import ViewerModel
 from napari._tests.utils import good_layer_data
+from napari.utils.colormaps import colormaps
 
 
 def test_viewer_model():
@@ -26,6 +27,42 @@ def test_add_image():
     assert len(viewer.layers) == 1
     assert np.all(viewer.layers[0].data == data)
     assert viewer.dims.ndim == 2
+
+
+def test_add_image_colormap_variants():
+    """Test adding image with all valid colormap argument types."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    data = np.random.random((10, 15))
+    # as string
+    assert viewer.add_image(data, colormap='green')
+
+    # as string that is valid, but not a default colormap
+    assert viewer.add_image(data, colormap='cubehelix')
+
+    # as tuple
+    cmap_tuple = ("my_colormap", colormaps.Colormap(['g', 'm', 'y']))
+    assert viewer.add_image(data, colormap=cmap_tuple)
+
+    # as dict
+    cmap_dict = {"your_colormap": colormaps.Colormap(['g', 'r', 'y'])}
+    assert viewer.add_image(data, colormap=cmap_dict)
+
+    # as Colormap instance
+    fire = colormaps.AVAILABLE_COLORMAPS['fire']
+    assert viewer.add_image(data, colormap=fire)
+
+    # string values must be known colormap types
+    with pytest.raises(KeyError) as err:
+        viewer.add_image(data, colormap='nonsense')
+
+    assert 'Colormap "nonsense" not found' in str(err.value)
+
+    # lists are only valid with channel_axis
+    with pytest.raises(TypeError) as err:
+        viewer.add_image(data, colormap=['green', 'red'])
+
+    assert "did you mean to specify a 'channel_axis'" in str(err.value)
 
 
 def test_add_volume():

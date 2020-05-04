@@ -3,6 +3,7 @@ from napari_plugin_engine import PluginError
 import pytest
 
 
+# test_plugin_manager fixture is provided by napari_plugin_engine._testsupport
 def test_error_reporter(qtbot, test_plugin_manager):
     """test that QtPluginErrReporter shows any instantiated PluginErrors."""
     error_message = 'my special error'

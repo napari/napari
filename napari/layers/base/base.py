@@ -2,13 +2,14 @@ import os
 import warnings
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from typing import Optional, List
+from typing import List, Optional
+
 import numpy as np
 
 from ...components import Dims
 from ...utils.event import EmitterGroup, Event
 from ...utils.key_bindings import KeymapProvider
-from ...utils.misc import ROOT_DIR
+from ...utils.misc import ROOT_DIR, configure_dask
 from ...utils.naming import magic_name
 from ...utils.status_messages import format_float, status_format
 from ..transforms import ScaleTranslate, TransformChain
@@ -136,6 +137,7 @@ class Layer(KeymapProvider, ABC):
         if name is None and data is not None and os.getenv('MAGICNAME'):
             name = magic_name(data, path_prefix=ROOT_DIR)
 
+        self.dask_optimized_slicing = configure_dask(data)
         self.metadata = metadata or {}
         self._opacity = opacity
         self._blending = Blending(blending)
@@ -579,6 +581,10 @@ class Layer(KeymapProvider, ABC):
         self.events.cursor_size(cursor_size=cursor_size)
         self._cursor_size = cursor_size
 
+    def set_view_slice(self):
+        with self.dask_optimized_slicing():
+            self._set_view_slice()
+
     @abstractmethod
     def _set_view_slice(self):
         raise NotImplementedError()
@@ -624,7 +630,7 @@ class Layer(KeymapProvider, ABC):
         """Refresh all layer data based on current view slice.
         """
         if self.visible:
-            self._set_view_slice()
+            self.set_view_slice()
             self.events.set_data()
             self._update_thumbnail()
             self._update_coordinates()
@@ -651,29 +657,34 @@ class Layer(KeymapProvider, ABC):
             data space of each layer. The length of the tuple is equal to the
             number of dimensions of the layer. If different from the current
             layer corner_pixels the layer needs refreshing.
-        requested_shape : tuple
+        shape_threshold : tuple
             Requested shape of field of view in data coordinates
         """
 
-        # Clip corner pixels inside data shape
-        new_corner_pixels = np.clip(
-            self.corner_pixels,
-            0,
-            np.subtract(self.level_shapes[self.data_level], 1),
-        )
+        if len(self.dims.displayed) == 3:
+            data_level = corner_pixels.shape[1] - 1
+        else:
+            # Clip corner pixels inside data shape
+            new_corner_pixels = np.clip(
+                self.corner_pixels,
+                0,
+                np.subtract(self.level_shapes[self.data_level], 1),
+            )
 
-        # Scale to full resolution of the data
-        requested_shape = (
-            new_corner_pixels[1] - new_corner_pixels[0]
-        ) * self.downsample_factors[self.data_level]
+            # Scale to full resolution of the data
+            requested_shape = (
+                new_corner_pixels[1] - new_corner_pixels[0]
+            ) * self.downsample_factors[self.data_level]
 
-        downsample_factors = self.downsample_factors[:, self.dims.displayed]
+            downsample_factors = self.downsample_factors[
+                :, self.dims.displayed
+            ]
 
-        data_level = compute_multiscale_level(
-            requested_shape[self.dims.displayed],
-            shape_threshold,
-            downsample_factors,
-        )
+            data_level = compute_multiscale_level(
+                requested_shape[self.dims.displayed],
+                shape_threshold,
+                downsample_factors,
+            )
 
         if data_level != self.data_level:
             # Set the data level, which will trigger a layer refresh and

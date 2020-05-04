@@ -430,6 +430,8 @@ class Window:
         """Resize, show, and bring forward the window."""
         self._qt_window.resize(self._qt_window.layout().sizeHint())
         self._qt_window.show()
+        # Resize axis labels now that window is shown
+        self.qt_viewer.dims._resize_axis_labels()
 
         # We want to call Window._qt_window.raise_() in every case *except*
         # when instantiating a viewer within a gui_qt() context for the
