@@ -1,7 +1,13 @@
 from pathlib import Path
 
 from qtpy.QtCore import QCoreApplication, Qt, QSize
-from qtpy.QtWidgets import QWidget, QVBoxLayout, QFileDialog, QSplitter
+from qtpy.QtWidgets import (
+    QWidget,
+    QVBoxLayout,
+    QFileDialog,
+    QSplitter,
+    QMessageBox,
+)
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtCore import QThreadPool
 from ..utils.io import imsave
@@ -293,6 +299,18 @@ class QtViewer(QSplitter):
             If True, only layers that are selected in the viewer will be saved.
             By default, all layers are saved.
         """
+        msg = ''
+        if not len(self.viewer.layers):
+            msg = "There are no layers in the viewer to save"
+        elif selected and not len(self.viewer.layers.selected):
+            msg = (
+                'Please select one or more layers to save,'
+                '\nor use "Save all layers..."'
+            )
+        if msg:
+            QMessageBox.warning(self, "Nothing to save", msg, QMessageBox.Ok)
+            return
+
         filename, _ = QFileDialog.getSaveFileName(
             parent=self,
             caption=f'Save {"selected" if selected else "all"} layers',
