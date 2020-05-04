@@ -248,7 +248,7 @@ def test_csv_to_layer_data_raises(tmp_path):
     """Test various exception raising circumstances with csv_to_layer_data."""
     temp = tmp_path / 'points.csv'
 
-    # test that points data is detected with require_type = points, any, None
+    # test that points data is detected with require_type == points, any, None
     # but raises for other shape types.
     data = [['index', 'axis-0', 'axis-1']]
     data.extend(np.random.random((3, 3)).tolist())
@@ -260,8 +260,8 @@ def test_csv_to_layer_data_raises(tmp_path):
     with pytest.raises(ValueError):
         io.csv_to_layer_data(temp, require_type='shapes')
 
-    # test that unrecognized data is detected with require_type = None
-    # but raises for specific shape types or "any"
+    # test that unrecognized data simply returns None when require_type==None
+    # but raises for specific shape types or require_type=="any"
     data = [['some', 'random', 'header']]
     data.extend(np.random.random((3, 3)).tolist())
     with open(temp, mode='w', newline='') as csvfile:
