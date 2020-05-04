@@ -70,7 +70,9 @@ def viewer_factory(qtbot, request):
         viewer.close()
 
 
-@pytest.fixture(params=['image', 'labels', 'points', 'points-with-properties', 'shapes'])
+@pytest.fixture(
+    params=['image', 'labels', 'points', 'points-with-properties', 'shapes']
+)
 def layer_writer_and_data(request):
     """Fixture that supplies layer io utilities for tests.
 
@@ -109,7 +111,7 @@ def layer_writer_and_data(request):
         extension = '.tif'
 
         def reader(path):
-            return (io.imread(path), {}, 'labels')   # metadata
+            return (io.imread(path), {}, 'labels')  # metadata
 
     elif request.param == 'points':
         data = np.random.rand(20, 2)
