@@ -109,3 +109,19 @@ def test_save_layer_multiple_no_named_plugin(tmpdir, layer_data_and_types):
     # Check no additional files exist
     assert set(os.listdir(path)) == set(filenames)
     assert set(os.listdir(tmpdir)) == set(['layers_folder'])
+
+
+def test_default_save_order():
+    from napari.plugins import plugin_manager
+
+    write_image = plugin_manager.hook.napari_write_image
+    implementations = [i.plugin_name for i in write_image.get_hookimpls()]
+    assert implementations.index('svg') < implementations.index('builtins')
+
+    write_labels = plugin_manager.hook.napari_write_labels
+    implementations = [i.plugin_name for i in write_labels.get_hookimpls()]
+    assert implementations.index('svg') < implementations.index('builtins')
+
+    get_writer = plugin_manager.hook.napari_get_writer
+    implementations = [i.plugin_name for i in get_writer.get_hookimpls()]
+    assert implementations.index('svg') < implementations.index('builtins')

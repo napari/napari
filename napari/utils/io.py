@@ -1,16 +1,16 @@
-import os
 import csv
+import os
 import re
-
 from glob import glob
 from pathlib import Path
-from typing import Union, List, Optional, Tuple, Generator
+from typing import Generator, List, Optional, Tuple, Union
 from ..types import FullLayerData
 
 import numpy as np
-
-from dask import delayed
 from dask import array as da
+from dask import delayed
+
+from ..utils.misc import abspath_or_url
 
 
 def imsave(filename: str, data: np.ndarray):
@@ -100,6 +100,7 @@ def imread(filename: str) -> np.ndarray:
     data : np.ndarray
         The image data.
     """
+    filename = abspath_or_url(filename)
     ext = os.path.splitext(filename)[1]
     if ext in [".tif", ".tiff", ".lsm"]:
         import tifffile

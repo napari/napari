@@ -78,6 +78,31 @@ def napari_write_image(path: str, data: Any, meta: dict) -> Optional[str]:
 
 
 @napari_hook_implementation(trylast=True)
+def napari_write_labels(path: str, data: Any, meta: dict) -> Optional[str]:
+    """Our internal fallback labels writer at the end of the plugin chain.
+
+    Parameters
+    ----------
+    path : str
+        Path to file, directory, or resource (like a URL).
+    data : array or list of array
+        Image data. Can be N dimensional. If meta['rgb'] is ``True`` then the
+        data should be interpreted as RGB or RGBA. If ``meta['multiscale']`` is
+        ``True``, then the data should be interpreted as a multiscale image.
+    meta : dict
+        Image metadata.
+
+    Returns
+    -------
+    path : str or None
+        If data is successfully written, return the ``path`` that was written.
+        Otherwise, if nothing was done, return ``None``.
+    """
+    dtype = data.dtype if data.dtype.itemsize >= 4 else np.uint32
+    return napari_write_image(path, np.asarray(data, dtype=dtype), meta)
+
+
+@napari_hook_implementation(trylast=True)
 def napari_write_points(path: str, data: Any, meta: dict) -> Optional[str]:
     """Our internal fallback points writer at the end of the plugin chain.
 

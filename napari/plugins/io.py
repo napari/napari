@@ -60,6 +60,7 @@ def read_data_with_plugins(
         reader = hook_caller._call_plugin(plugin, path=path)
         return reader(path)
 
+    path = abspath_or_url(path)
     skip_impls: List[HookImplementation] = []
     while True:
         result = hook_caller.call_with_result_obj(
@@ -137,10 +138,10 @@ def save_layers(
             path, layers, plugin_name=plugin
         )
     elif len(layers) == 1:
-        written = _write_single_layer_with_plugins(
+        _written = _write_single_layer_with_plugins(
             path, layers[0], plugin_name=plugin
         )
-        written = [written] if written else []
+        written = [_written] if _written else []
     else:
         written = []
 

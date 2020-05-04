@@ -46,3 +46,17 @@ def guess_multiscale(data):
         return bool(np.all(size[:-1] > size[1:]))
     else:
         return False
+
+
+def guess_labels(data):
+    """Guess if array contains labels data."""
+
+    if hasattr(data, 'dtype') and data.dtype in (
+        np.int32,
+        np.uint32,
+        np.int64,
+        np.uint64,
+    ):
+        return 'labels'
+
+    return 'image'
