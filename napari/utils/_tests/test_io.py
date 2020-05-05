@@ -195,6 +195,84 @@ def test_read_csv(tmpdir):
     assert os.path.exists(expected_filename)
 
     # Read csv file
-    read_data, read_column_names = io.read_csv(expected_filename)
+    read_data, read_column_names, _ = io.read_csv(expected_filename)
+    read_data = np.array(read_data).astype('float')
     np.testing.assert_allclose(expected_data, read_data)
+
     assert column_names == read_column_names
+
+
+def test_guess_layer_type_from_column_names():
+    points_names = ['index', 'axis-0', 'axis-1']
+    assert io.guess_layer_type_from_column_names(points_names) == 'points'
+
+    shapes_names = ['index', 'shape-type', 'vertex-index', 'axis-0', 'axis-1']
+    assert io.guess_layer_type_from_column_names(shapes_names) == 'shapes'
+
+    also_points_names = ['no-index', 'axis-0', 'axis-1']
+    assert io.guess_layer_type_from_column_names(also_points_names) == 'points'
+
+    bad_names = ['no-index', 'no-axis-0', 'axis-1']
+    assert io.guess_layer_type_from_column_names(bad_names) is None
+
+
+def test_read_csv_raises(tmp_path):
+    """Test various exception raising circumstances with read_csv."""
+    temp = tmp_path / 'points.csv'
+
+    # test that points data is detected with require_type = None, any, points
+    # but raises for other shape types.
+    data = [['index', 'axis-0', 'axis-1']]
+    data.extend(np.random.random((3, 3)).tolist())
+    with open(temp, mode='w', newline='') as csvfile:
+        csv.writer(csvfile).writerows(data)
+    assert io.read_csv(temp, require_type=None)[2] == 'points'
+    assert io.read_csv(temp, require_type='any')[2] == 'points'
+    assert io.read_csv(temp, require_type='points')[2] == 'points'
+    with pytest.raises(ValueError):
+        io.read_csv(temp, require_type='shapes')
+
+    # test that unrecognized data is detected with require_type = None
+    # but raises for specific shape types or "any"
+    data = [['some', 'random', 'header']]
+    data.extend(np.random.random((3, 3)).tolist())
+    with open(temp, mode='w', newline='') as csvfile:
+        csv.writer(csvfile).writerows(data)
+    assert io.read_csv(temp, require_type=None)[2] is None
+    with pytest.raises(ValueError):
+        assert io.read_csv(temp, require_type='any')
+    with pytest.raises(ValueError):
+        assert io.read_csv(temp, require_type='points')
+    with pytest.raises(ValueError):
+        io.read_csv(temp, require_type='shapes')
+
+
+def test_csv_to_layer_data_raises(tmp_path):
+    """Test various exception raising circumstances with csv_to_layer_data."""
+    temp = tmp_path / 'points.csv'
+
+    # test that points data is detected with require_type == points, any, None
+    # but raises for other shape types.
+    data = [['index', 'axis-0', 'axis-1']]
+    data.extend(np.random.random((3, 3)).tolist())
+    with open(temp, mode='w', newline='') as csvfile:
+        csv.writer(csvfile).writerows(data)
+    assert io.csv_to_layer_data(temp, require_type=None)[2] == 'points'
+    assert io.csv_to_layer_data(temp, require_type='any')[2] == 'points'
+    assert io.csv_to_layer_data(temp, require_type='points')[2] == 'points'
+    with pytest.raises(ValueError):
+        io.csv_to_layer_data(temp, require_type='shapes')
+
+    # test that unrecognized data simply returns None when require_type==None
+    # but raises for specific shape types or require_type=="any"
+    data = [['some', 'random', 'header']]
+    data.extend(np.random.random((3, 3)).tolist())
+    with open(temp, mode='w', newline='') as csvfile:
+        csv.writer(csvfile).writerows(data)
+    assert io.csv_to_layer_data(temp, require_type=None) is None
+    with pytest.raises(ValueError):
+        assert io.csv_to_layer_data(temp, require_type='any')
+    with pytest.raises(ValueError):
+        assert io.csv_to_layer_data(temp, require_type='points')
+    with pytest.raises(ValueError):
+        io.csv_to_layer_data(temp, require_type='shapes')
