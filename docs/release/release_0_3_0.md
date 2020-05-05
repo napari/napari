@@ -46,10 +46,8 @@ We joined the [image.sc forum](https://forum.image.sc) and actively monitor it (
 tag](https://forum.image.sc/tags/napari)) to
 help users with any issues they might have using napari and have discussions about exciting ways to use napari. If you're new to napari and getting started this is the first place you should go for help.
 
-If you've found a napari bug or have a specific feature request we'd love to hear from you in our [GitHub issues](https://github.com/napari/napari/issues).
-
-
-If you have questions about contributing to napari you can get in touch with the developer team in our [Zulip chat room](https://napari.zulipchat.com). We try and use the chat room mainly for scheduling and coordination and prefer to keep all user help on [image.sc](https://forum.image.sc/tag/napari) and development discussion on [GitHub](https://github.com/napari/napari) to make it easier for people coming new to the project or participating asynchronously to discover and contribute to those conversations.
+If you've found a napari bug or have a specific feature request, please let us
+know in our [GitHub issues](https://github.com/napari/napari/issues).
 
 ### IO plugins
 
