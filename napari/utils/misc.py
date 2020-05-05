@@ -7,13 +7,15 @@ import re
 import warnings
 from contextlib import contextmanager
 from enum import Enum, EnumMeta
-from os import fspath, path, PathLike
-from typing import ContextManager, Optional, Type, TypeVar, Sequence
+from os import PathLike, fspath, path
+from typing import ContextManager, Optional, Sequence, Type, TypeVar
 
 import dask
 import dask.array as da
-import dask.cache
 import numpy as np
+from dask.cache import Cache
+
+from .. import utils
 
 ROOT_DIR = path.dirname(path.dirname(__file__))
 
@@ -313,8 +315,6 @@ def create_dask_cache(nbytes=None, mem_fraction=0.5):
         [description]
     """
     import psutil
-    from napari import utils
-    from dask.cache import Cache
 
     if nbytes is None:
         nbytes = psutil.virtual_memory().total * mem_fraction
@@ -328,10 +328,10 @@ def create_dask_cache(nbytes=None, mem_fraction=0.5):
 
 def resize_dask_cache(
     nbytes: Optional[int] = None, mem_fraction: float = None
-) -> dask.cache.Cache:
+) -> Cache:
     """Create or resize the dask cache used for opportunistic caching.
 
-    The cache object is an instance of a :class:`dask.cache.Cache`, (which
+    The cache object is an instance of a :class:`Cache`, (which
     wraps a :class:`cachey.Cache`), and is made available at
     :attr:`napari.utils.dask_cache`.
 
@@ -350,7 +350,7 @@ def resize_dask_cache(
 
     Returns
     -------
-    dask_cache : dask.cache.Cache
+    dask_cache : Cache
         An instance of a Dask Cache
 
     Example
@@ -366,8 +366,6 @@ def resize_dask_cache(
     >>> cache.cache.total_bytes   # currently used bytes
     """
 
-    from dask.cache import Cache
-    from napari import utils
     import psutil
 
     if nbytes is None and mem_fraction is not None:
