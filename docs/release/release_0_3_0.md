@@ -61,9 +61,10 @@ our plugin architecture [here](https://napari.org/docs/plugins/index.html).
 
 Want to drag and drop your favorite file format into napari and have it load automatically? See [this
 guide](https://napari.org/docs/plugins/for_plugin_developers.html) to
-understand how to write your own plugin, and see Jackson Brown's
+understand how to write your own plugin, see Jackson Brown's
 [napari-aicsimageio](https://github.com/AllenCellModeling/napari-aicsimageio)
-plugin for an exemplar plugin!
+for an exemplar plugin, and get started with Talley's [cookiecutter
+napari plugin](https://github.com/napari/cookiecutter-napari-plugin)!
 
 Many thanks to Talley Lambert for driving this effort!
 
