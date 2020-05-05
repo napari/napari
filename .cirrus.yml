@@ -85,24 +85,25 @@ linux_task:
 mac_task:
   auto_cancellation: true
 
-  matrix:
-    # not a pull request: run full suite
-    - only_if: $CIRRUS_PR == ""
-      env:
-        matrix:
-          PY_VER: "3.6"
-          PY_VER: "3.7"
-          PY_VER: "3.8"
-    # is a pull request, only run python 3.8
-    - only_if: $CIRRUS_PR != ""
-      env:
-        PY_VER: "3.8"
+  # matrix:
+  #   # not a pull request: run full suite
+  #   - only_if: $CIRRUS_PR == ""
+  #     env:
+  #       matrix:
+  #         PY_VER: "3.6"
+  #         PY_VER: "3.7"
+  #         PY_VER: "3.8"
+  #   # is a pull request, only run python 3.8
+  #   - only_if: $CIRRUS_PR != ""
+  #     env:
+  #       PY_VER: "3.8"
 
   name: macos ${PY_VER}
   osx_instance:
     image: catalina-xcode
   env:
     PATH: $HOME/conda/bin:$PATH
+    PY_VER: "3.8"
   conda_script:
     - curl -L https://repo.continuum.io/miniconda/Miniconda3-latest-MacOSX-x86_64.sh > install.sh
     - bash install.sh -b -p $HOME/conda
@@ -134,18 +135,18 @@ mac_task:
 win_task:
   auto_cancellation: true
 
-  matrix:
-    # not a pull request: run full suite
-    - only_if: $CIRRUS_PR == ""
-      env:
-        matrix:
-          PY_VER: "3.6"
-          PY_VER: "3.7"
-          PY_VER: "3.8"
-    # is a pull request, only run python 3.8
-    - only_if: $CIRRUS_PR != ""
-      env:
-        PY_VER: "3.8"
+  # matrix:
+  #   # not a pull request: run full suite
+  #   - only_if: $CIRRUS_PR == ""
+  #     env:
+  #       matrix:
+  #         PY_VER: "3.6"
+  #         PY_VER: "3.7"
+  #         PY_VER: "3.8"
+  #   # is a pull request, only run python 3.8
+  #   - only_if: $CIRRUS_PR != ""
+  #     env:
+  #       PY_VER: "3.8"
 
   name: windows ${PY_VER}
   windows_container:
@@ -160,6 +161,7 @@ win_task:
     # https://github.com/vispy/vispy/blob/v0.5.3/appveyor.yml#L44
     VISPY_GL_LIB: $CIRRUS_WORKING_DIR\opengl32.dll
     PYTHON_ARCH: 64
+    PY_VER: "3.8"
   
   system_script:
     # install OpenSSL
