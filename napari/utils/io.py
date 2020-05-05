@@ -307,17 +307,13 @@ def guess_layer_type_from_column_names(
     str or None
         Layer type if recognized, otherwise None.
     """
-    if (
-        len(column_names) >= 2 and column_names[:2] == ['index', 'axis-0']
-    ) or column_names[0] == 'axis-0':
-        return 'points'
-    elif len(column_names) >= 4 and column_names[:4] == [
-        'index',
-        'shape-type',
-        'vertex-index',
-        'axis-0',
-    ]:
+
+    if set(
+        ['index', 'shape-type', 'vertex-index', 'axis-0', 'axis-1']
+    ).issubset(column_names):
         return 'shapes'
+    elif set(['axis-0', 'axis-1']).issubset(column_names):
+        return 'points'
     else:
         return None
 
@@ -442,7 +438,8 @@ def _points_csv_to_layerdata(
 
     # Add properties to metadata if provided
     prop_axes = np.logical_not(data_axes)
-    prop_axes[0] = False
+    if column_names[0] == 'index':
+        prop_axes[0] = False
     meta = {}
     if np.any(prop_axes):
         meta['properties'] = {}
