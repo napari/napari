@@ -198,6 +198,7 @@ with napari.gui_qt():
 - Save all/selected layers Qt dialogs (#1185)
 - Magic layer name guessing is always on (#1186)
 - Warn when nothing saved (#1188)
+- Add builtin shapes writer and reader (#1193)
 - Bump svg-dep, add builtin write_labels (#1200)
 - Change screenshot hotkey and open menubar names (#1201)
 
