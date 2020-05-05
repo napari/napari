@@ -42,8 +42,9 @@ tracker](https://github.com/napari/napari/issues).
 
 ### Getting in touch
 
-We actively use the [image.sc forum](https://forum.image.sc/tag/napari) (under the "napari" tag) to
-help with any issues they might have using napari and have discussions about exciting ways to use napari. If you're new to napari and getting started this is the first place you should go for help.
+We joined the [image.sc forum](https://forum.image.sc) and actively monitor it ([under the "napari"
+tag](https://forum.image.sc/tags/napari)) to
+help users with any issues they might have using napari and have discussions about exciting ways to use napari. If you're new to napari and getting started this is the first place you should go for help.
 
 If you've found a napari bug or have a specific feature request we'd love to hear from you in our [GitHub issues](https://github.com/napari/napari/issues).
 
