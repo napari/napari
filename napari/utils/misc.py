@@ -292,8 +292,42 @@ def all_subclasses(cls: Type) -> set:
     )
 
 
+def create_dask_cache(nbytes=None, mem_fraction=0.5):
+    """Create a dask cache at utils.dask_cache if one doesn't already exist.
+
+    Parameters
+    ----------
+    nbytes : int, optional
+        The desired size of the cache, in bytes.  If ``None``, the cache size
+        will autodetermined as fraction of the total memory in the system,
+        using ``mem_fraction``.  If ``nbytes`` is 0, cache object will be
+        created, but not caching will occur. by default, cache size is
+        autodetermined using ``mem_fraction``.
+    mem_fraction : float, optional
+        The fraction (from 0 to 1) of total memory to use for the dask cache.
+        by default, 50% of total memory is used.
+
+    Returns
+    -------
+    [type]
+        [description]
+    """
+    import psutil
+    from napari import utils
+    from dask.cache import Cache
+
+    if nbytes is None:
+        nbytes = psutil.virtual_memory().total * mem_fraction
+    if not (
+        hasattr(utils, 'dask_cache') and isinstance(utils.dask_cache, Cache)
+    ):
+        utils.dask_cache = Cache(nbytes)
+        utils.dask_cache.register()
+    return utils.dask_cache
+
+
 def resize_dask_cache(
-    nbytes: Optional[int] = None, mem_fraction: float = 0.5
+    nbytes: Optional[int] = None, mem_fraction: float = None
 ) -> dask.cache.Cache:
     """Create or resize the dask cache used for opportunistic caching.
 
@@ -332,26 +366,31 @@ def resize_dask_cache(
     >>> cache.cache.total_bytes   # currently used bytes
     """
 
-    from napari.utils import dask_cache
+    from dask.cache import Cache
+    from napari import utils
     import psutil
 
-    if nbytes is None:
-        # availalble RAM
+    if nbytes is None and mem_fraction is not None:
         nbytes = psutil.virtual_memory().total * mem_fraction
 
-    if nbytes != dask_cache.cache.available_bytes:
-        dask_cache.cache.resize(nbytes)
-    if nbytes == 0:
-        # turn off caching
-        try:
-            dask_cache.unregister()
-        # if the cache is already unregistered, it raises a KeyError
-        except KeyError:
-            pass
-    else:
-        dask_cache.register()
+    # if we don't have a cache already, create one.  If neither nbytes nor
+    # mem_fraction was provided, it will use the default size as determined in
+    # create_cache.
+    if not (
+        hasattr(utils, 'dask_cache') and isinstance(utils.dask_cache, Cache)
+    ):
+        return create_dask_cache(nbytes)
+    else:  # we already have a cache
+        # if the cache has already been registered, then calling
+        # resize_dask_cache() without supplying either mem_fraction or nbytes
+        # is a no-op:
+        if (
+            nbytes is not None
+            and nbytes != utils.dask_cache.cache.available_bytes
+        ):
+            utils.dask_cache.cache.resize(nbytes)
 
-    return dask_cache
+    return utils.dask_cache
 
 
 def _is_dask_data(data) -> bool:
@@ -410,7 +449,7 @@ def configure_dask(data) -> ContextManager[dict]:
     ...    data[0, 2].compute()
     """
     if _is_dask_data(data):
-        resize_dask_cache()  # creates one if it doesn't exist
+        create_dask_cache()  # creates one if it doesn't exist
         dask_version = tuple(map(int, dask.__version__.split(".")))
         if dask_version < (2, 15, 0):
             warnings.warn(
