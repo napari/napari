@@ -307,7 +307,9 @@ def guess_layer_type_from_column_names(
     str or None
         Layer type if recognized, otherwise None.
     """
-    if len(column_names) >= 2 and column_names[:2] == ['index', 'axis-0']:
+    if (
+        len(column_names) >= 2 and column_names[:2] == ['index', 'axis-0']
+    ) or column_names[0] == 'axis-0':
         return 'points'
     elif len(column_names) >= 4 and column_names[:4] == [
         'index',
