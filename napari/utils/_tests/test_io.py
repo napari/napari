@@ -209,7 +209,10 @@ def test_guess_layer_type_from_column_names():
     shapes_names = ['index', 'shape-type', 'vertex-index', 'axis-0', 'axis-1']
     assert io.guess_layer_type_from_column_names(shapes_names) == 'shapes'
 
-    bad_names = ['no-index', 'axis-0', 'axis-1']
+    also_points_names = ['no-index', 'axis-0', 'axis-1']
+    assert io.guess_layer_type_from_column_names(also_points_names) == 'points'
+
+    bad_names = ['no-index', 'no-axis-0', 'axis-1']
     assert io.guess_layer_type_from_column_names(bad_names) is None
 
 
