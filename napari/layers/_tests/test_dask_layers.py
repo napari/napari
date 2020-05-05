@@ -7,22 +7,24 @@ import pytest
 
 from napari import layers, utils, viewer
 
+dask_version = tuple(map(int, dask.__version__.split(".")))
+
 
 def test_dask_array_creates_cache():
     """Test that adding a dask array creates a dask cache and turns of fusion.
     """
     # by default we have no dask_cache and task fusion is active
-    assert dask.config.get("optimization.fuse.active")
+    original = dask.config.get("optimization.fuse.active", None)
 
     def mock_set_view_slice():
-        assert not dask.config.get("optimization.fuse.active")
+        assert dask.config.get("optimization.fuse.active") is False
 
     layer = layers.Image(da.ones((100, 100)))
     layer._set_view_slice = mock_set_view_slice
     layer.set_view_slice()
     # adding a dask array will turn on the cache, and turn off task fusion.
     assert isinstance(utils.dask_cache, dask.cache.Cache)
-    assert dask.config.get("optimization.fuse.active")
+    assert dask.config.get("optimization.fuse.active", None) == original
 
     # if the dask version is too low to remove task fusion, emit a warning
     _dask_ver = dask.__version__
@@ -40,7 +42,7 @@ def test_dask_array_creates_cache():
 
     # This should only affect dask arrays, and not numpy data
     def mock_set_view_slice2():
-        assert dask.config.get("optimization.fuse.active")
+        assert dask.config.get("optimization.fuse.active", None) == original
 
     layer2 = layers.Image(np.ones((100, 100)))
     layer2._set_view_slice = mock_set_view_slice2
@@ -49,10 +51,10 @@ def test_dask_array_creates_cache():
 
 def test_list_of_dask_arrays_creates_cache():
     """Test that adding a list of dask array also creates a dask cache."""
-    assert dask.config.get("optimization.fuse.active")
+    original = dask.config.get("optimization.fuse.active", None)
     _ = layers.Image([da.ones((100, 100)), da.ones((20, 20))])
     assert isinstance(utils.dask_cache, dask.cache.Cache)
-    assert dask.config.get("optimization.fuse.active")
+    assert dask.config.get("optimization.fuse.active", None) == original
 
 
 @pytest.fixture
@@ -79,6 +81,9 @@ def delayed_dask_stack():
     return output
 
 
+@pytest.mark.skipif(
+    dask_version < (2, 15, 0), reason="requires dask 2.15.0 or higher"
+)
 def test_dask_optimized_slicing(delayed_dask_stack, monkeypatch):
     """Test that dask_configure reduces compute with dask stacks."""
 
@@ -108,6 +113,9 @@ def test_dask_optimized_slicing(delayed_dask_stack, monkeypatch):
     assert delayed_dask_stack['calls'] == 4
 
 
+@pytest.mark.skipif(
+    dask_version < (2, 15, 0), reason="requires dask 2.15.0 or higher"
+)
 def test_dask_unoptimized_slicing(delayed_dask_stack, monkeypatch):
     """Prove that the dask_configure function works with a counterexample."""
     # make sure we are not caching for this test, which also tests that we
