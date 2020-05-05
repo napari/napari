@@ -115,11 +115,12 @@ We are taking the opportunity of this major release to update a few APIs. We
 hope that the number of users impacted by these changes will be small. In each
 case, we provide an equivalent API for the same functionality.
 
-- `viewer.add_path` has been renamed `viewer.open` and gains the ability to read
+- `viewer.add_path` has been renamed `viewer.open` and gained the ability to read
   to any layer type.
 - `add_image(path=...)` and `add_labels(path=...)` have been removed. Users
   should use `viewer.open(...)` instead with the `layer_type` parameter to
-  force the added data to be a particular layer type.
+  force the added data to be a particular layer type, e.g.
+  `layer_type='image'` or `layer_type='labels'`.
 - Image pyramids are no longer automatically generated when a dataset is large.
   This should not affect API compatibility but might affect performance. For
   most users, this should result in faster startup for large images.
