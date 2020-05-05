@@ -30,41 +30,44 @@ model](https://napari.org/docs/developers/GOVERNANCE.html) (based on
 scikit-image's, and since adopted with modifications by zarr). These are
 accessible from our [developer resources
 page](https://napari.org/docs/developers.html), together with a [public
-roadmap](https://napari.org/docs/developers/ROADMAP_0_3.html) explaining
-where the core team will devote effort in the coming months.
+roadmap](https://napari.org/docs/developers/ROADMAP_0_3.html) explaining where
+the core team will devote effort in the coming months.
 
-We are still humbled by the enthusiasm of the community response to napari and we hope that
-the above documents will continue to encourage potential users to join our
-community. We welcome contributions of all kinds and encourage
-you to get in touch with us if you don't see your most wanted feature in our
-roadmap, or as an issue in our [issue
-tracker](https://github.com/napari/napari/issues).
+We are still humbled by the enthusiasm of the community response to napari and
+we hope that the above documents will continue to encourage potential users to
+join our community. We welcome contributions of all kinds and encourage you to
+get in touch with us if you don't see your most wanted feature in our roadmap,
+or as an issue in our [issue tracker](https://github.com/napari/napari/issues).
 
 ### Getting in touch
 
-We joined the [image.sc forum](https://forum.image.sc) and actively monitor it ([under the "napari"
-tag](https://forum.image.sc/tags/napari)) to
-help users with any issues they might have using napari and have discussions about exciting ways to use napari. If you're new to napari and getting started this is the first place you should go for help.
+We joined the [image.sc forum](https://forum.image.sc) and actively monitor it
+([under the "napari" tag](https://forum.image.sc/tags/napari)) to help users
+with any issues they might have using napari and have discussions about
+exciting ways to use napari. If you're new to napari and getting started this
+is the first place you should go for help.
 
 If you've found a napari bug or have a specific feature request, please let us
 know in our [GitHub issues](https://github.com/napari/napari/issues).
 
 ### IO plugins
 
-Contributors can now easily extend napari to open and save in a variety of file formats,
-both local and remote, through our plugin architecture. The same file formats as before are available
-to read (TIFF, most image file formats supported by imageio, and zarr).
-However, we can now *write* to all these formats, read and write point
-annotations in .csv format. Additionally, we have made it possible for anyone to create
-packages for napari to read and write in any other formats through plugins. You can read about
-our plugin architecture [here](https://napari.org/docs/plugins/index.html).
+Contributors can now easily extend napari to open and save in a variety of file
+formats, both local and remote, through our plugin architecture. The same file
+formats as before are available to read (TIFF, most image file formats
+supported by imageio, and zarr).  However, we can now *write* to all these
+formats, and read and write point and shape annotations in .csv format.
+Additionally, we have made it possible for anyone to create packages for napari
+to read and write in any other formats through plugins. You can read about our
+plugin architecture [here](https://napari.org/docs/plugins/index.html).
 
-Want to drag and drop your favorite file format into napari and have it load automatically? See [this
+Want to drag and drop your favorite file format into napari and have it load
+automatically? See [this
 guide](https://napari.org/docs/plugins/for_plugin_developers.html) to
 understand how to write your own plugin, see Jackson Brown's
 [napari-aicsimageio](https://github.com/AllenCellModeling/napari-aicsimageio)
-for an exemplar plugin, and get started with Talley's [cookiecutter
-napari plugin](https://github.com/napari/cookiecutter-napari-plugin)!
+for an exemplar plugin, and get started with Talley's [cookiecutter napari
+plugin](https://github.com/napari/cookiecutter-napari-plugin)!
 
 Many thanks to Talley Lambert for driving this effort!
 
@@ -75,9 +78,10 @@ you to pop out the napari UI elements from the main window, enabling, for
 example, those on multi-monitor setups to have the toolbars on one monitor and
 the main window in full-screen on another.
 
-Even better, we have released a side package called [magicgui](https://github.com/napari/magicgui) to allow you to
-create your own dockable widgets with which to interact with napari without writing GUI code. We are
-still working on standard models of interaction here (see our
+Even better, we have released a side package called
+[magicgui](https://github.com/napari/magicgui) to allow you to create your own
+dockable widgets with which to interact with napari without writing GUI code.
+We are still working on standard models of interaction here (see our
 [roadmap](https://napari.org/docs/developers/ROADMAP_0_3.html)), but you should
 be able to get started creating useful user interfaces right now. [This
 image.sc
@@ -92,14 +96,20 @@ explains how to embed a matplotlib plot within napari.
 napari is now much better at handling large datasets. Viewing a large dataset
 will no longer trigger automatic — but very slow, and often unnecessary —
 generation of an image pyramid. Instead, we direct users to our [tutorial on
-how to generate your own pyramid](https://scikit-image.org/docs/dev/auto_examples/transform/plot_pyramid.html) from `scikit-image`.
+how to generate your own
+pyramid](https://scikit-image.org/docs/dev/auto_examples/transform/plot_pyramid.html)
+from `scikit-image`. For large arrays, users may want to look at the
+[`dask.array.coarsen`
+documentation](https://docs.dask.org/en/latest/array-api.html#dask.array.coarsen)
 
 If you submit an image pyramid, napari will automatically detect it as such. To
 turn off automatic detection, you can now pass the `multiscale=True/False`
-parameter to `add_image`. This replaces the `is_pyramid` parameter which has now been removed. In the future, we aim to add multiscale capabilities
-to all our layers.
+parameter to `add_image`. This replaces the `is_pyramid` parameter which has
+now been removed. In the future, we aim to add multiscale capabilities to all
+our layers.
 
-We have also fixed the bug where too small a tile was shown to file the entire canvas.
+We have also fixed the bug where too small a tile was shown to fill the entire
+canvas.
 
 ### Points with properties
 
@@ -107,7 +117,9 @@ Points are no longer generic coordinates floating in space! Each point can have
 its own personality and character :-). Specifically, each point can have an
 arbitrary number of properties, and attributes such as size, face color, and
 edge color can be determined by those properties. This makes it easier to
-annotate multiple types of points in an image, such as different cell types. To assign properties to points you can pass a dictionary as the `properties` parameter to `add_points`.
+annotate multiple types of points in an image, such as different cell types. To
+assign properties to points you can pass a dictionary as the `properties`
+parameter to `add_points`.
 
 ### API changes and improvements
 
@@ -115,8 +127,8 @@ We are taking the opportunity of this major release to update a few APIs. We
 hope that the number of users impacted by these changes will be small. In each
 case, we provide an equivalent API for the same functionality.
 
-- `viewer.add_path` has been renamed `viewer.open` and gained the ability to read
-  to any layer type.
+- `viewer.add_path` has been renamed `viewer.open` and gained the ability to
+  read to any layer type.
 - `add_image(path=...)` and `add_labels(path=...)` have been removed. Users
   should use `viewer.open(...)` instead with the `layer_type` parameter to
   force the added data to be a particular layer type, e.g.
@@ -128,7 +140,8 @@ case, we provide an equivalent API for the same functionality.
   This will allow us to use a consistent keyword argument when we add
   multiscale support for other layer types.
 - `layer.to_svg()` has been removed. This functionality is now implemented with
-  `viewer.save('path/to/layer.svg', layer, plugin='svg')` through our plugin architecture.
+  `viewer.save('path/to/layer.svg', layer, plugin='svg')` through our plugin
+  architecture.
 
 ### And one more thing...
 
