@@ -1,10 +1,10 @@
 from contextlib import contextmanager
-from functools import lru_cache
+from functools import lru_cache, wraps
 from typing import Type
 
 import numpy as np
 from qtpy import API_NAME
-from qtpy.QtCore import QObject, QSize, Qt, QThread
+from qtpy.QtCore import QObject, QSize, Qt, QThread, Signal, Slot
 from qtpy.QtGui import QCursor, QDrag, QImage, QPainter, QPixmap
 from qtpy.QtWidgets import QGraphicsOpacityEffect, QListWidget
 
@@ -196,3 +196,89 @@ def drag_with_pixmap(list_widget: QListWidget) -> QDrag:
     drag.setPixmap(pixmap)
     drag.setHotSpot(list_widget.viewport().mapFromGlobal(QCursor.pos()))
     return drag
+
+
+class GeneratorWorker(QObject):
+    """QObject that wraps a long-running generator function.
+
+    Parameters
+    ----------
+    func : callable
+        The function being wrapped.  Must return a generator
+    *args, **kwargs: passed to func
+
+    """
+
+    started = Signal()
+    yielded = Signal(object)
+    returned = Signal(object)  # perhaps combine with finished?
+    errored = Signal(object)
+    finished = Signal()
+
+    def __init__(self, func, *args, **kwargs):
+        super().__init__()
+        self.gen = func(*args, **kwargs)
+        self._incoming = None
+        self._abort = False
+        self.init = next(self.gen)
+        if isinstance(self.init, dict):
+            self.__dict__.update(**self.init)
+
+    @Slot()
+    def work(self):
+        self.started.emit()
+        while True:
+            if self._abort:
+                self.returned.emit('Aborted')
+                break
+            try:
+                self.yielded.emit(self.gen.send(self._next_value()))
+            except StopIteration as exc:
+                self.returned.emit(exc.value)
+                break
+            except Exception as exc:
+                self.errored.emit(exc)
+                break
+        self.finished.emit()
+
+    def send(self, value):
+        self._incoming = value
+
+    def abort(self):
+        self._abort = True
+
+    def _next_value(self):
+        out = None
+        if self._incoming is not None:
+            out = self._incoming
+            self._incoming = None
+        return out
+
+
+def qthreaded(func):
+    """Decorator that decorates a generator and puts it in a QThread.
+
+    Parameters
+    ----------
+    func : callable
+        Function that returns a generator
+
+    Returns
+    -------
+    callable
+        function that creates a worker, puts it in a new thread and returns
+        a two-tuple (worker, thread)
+    """
+    import inspect
+
+    if not inspect.isgeneratorfunction(func):
+        raise ValueError(
+            f'{func} is not a generator function and cannot '
+            'be decorated with "@qthreaded"'
+        )
+
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        return new_worker_qthread(GeneratorWorker, func, *args, **kwargs)
+
+    return wrapper
