@@ -27,8 +27,13 @@ def gui_qt(*, startup_logo=False):
     """
     if platform.system() == "Windows" and not getattr(sys, 'frozen', False):
         import ctypes
-        napari_app_id = 'napari.napari.viewer.' + str(__version__)  # arbitrary string
-        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(napari_app_id)
+
+        napari_app_id = 'napari.napari.viewer.' + str(
+            __version__
+        )  # arbitrary string
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+            napari_app_id
+        )
 
     splash_widget = None
     app = QApplication.instance()
