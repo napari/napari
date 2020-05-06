@@ -45,7 +45,11 @@ def QImg2array(img):
 
 
 def new_worker_qthread(
-    Worker: Type[QObject], *args, start=False, connections=None, **kwargs
+    Worker: Type[QObject],
+    *args,
+    start_thread=False,
+    connections=None,
+    **kwargs,
 ):
     """This is a convenience method to start a worker in a Qthread
 
@@ -61,9 +65,9 @@ def new_worker_qthread(
     Worker : QObject
         QObject type that implements a work() method.  The Worker should also
         emit a finished signal when the work is done.
-    start : bool
-        If True, worker will be started immediately, otherwise, you must
-        manually start the worker.
+    start_thread : bool
+        If True, thread will be started immediately, otherwise, thread must
+        be manually started with thread.start().
     connections: dict, optional
         Optional dictionary of {signal: function} to connect to the new worker.
         for instance:  connections = {'incremented': myfunc} will result in:
@@ -94,7 +98,7 @@ def new_worker_qthread(
     >>> worker, thread = new_worker_qthread(
     ...     Worker,
     ...     'argument',
-    ...     start=True,
+    ...     start_thread=True,
     ...     connections={'increment': print},
     ... )
 
@@ -119,7 +123,7 @@ def new_worker_qthread(
     if connections:
         [getattr(worker, key).connect(val) for key, val in connections.items()]
 
-    if start:
+    if start_thread:
         thread.start()  # sometimes need to connect stuff before starting
     return worker, thread
 

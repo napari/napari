@@ -73,7 +73,7 @@ if __name__ == "__main__":
     # the decorated function now returns a GeneratorWorker object, and the
     # Qthread in which it's running.
     # (optionally pass start=False to prevent immediate running)
-    worker, thread = two_way_communication_with_args(0, 8, start=False)
+    worker, thread = two_way_communication_with_args(0, 8, start_thread=False)
 
     # it provides 5 signals: {started, yielded, returned, errored, finished}
     worker.yielded.connect(lambda x: status.setText(f"worker yielded {x}"))
