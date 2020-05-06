@@ -48,7 +48,7 @@ def two_way_communication_with_args(start, end):
     # if you yield a dict, they will be added as attributes to the worker
     yield {'start_val': start, 'end_val': end, 'some_other_val': 'hi'}
 
-    # do computationally intensitve work here
+    # do computationally intensive work here
     i = start
     while i <= end:
         time.sleep(0.5)
