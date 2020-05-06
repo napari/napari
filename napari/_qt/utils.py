@@ -1,3 +1,4 @@
+import inspect
 from contextlib import contextmanager
 from functools import lru_cache, wraps
 from typing import Type
@@ -259,6 +260,17 @@ class GeneratorWorker(QObject):
         return out
 
 
+def as_generatorfunction(func):
+    """Turns a regular function (single return) into a generator function."""
+
+    @wraps(func)
+    def genwrapper(*args, **kwargs):
+        yield
+        return func(*args, **kwargs)
+
+    return genwrapper
+
+
 def qthreaded(func):
     """Decorator that decorates a generator and puts it in a QThread.
 
@@ -273,16 +285,14 @@ def qthreaded(func):
         function that creates a worker, puts it in a new thread and returns
         a two-tuple (worker, thread)
     """
-    import inspect
 
-    if not inspect.isgeneratorfunction(func):
-        raise ValueError(
-            f'{func} is not a generator function and cannot '
-            'be decorated with "@qthreaded"'
-        )
+    if inspect.isgeneratorfunction(func):
+        _func = func
+    else:
+        _func = as_generatorfunction(func)
 
-    @wraps(func)
+    @wraps(_func)
     def wrapper(*args, **kwargs):
-        return new_worker_qthread(GeneratorWorker, func, *args, **kwargs)
+        return new_worker_qthread(GeneratorWorker, _func, *args, **kwargs)
 
     return wrapper

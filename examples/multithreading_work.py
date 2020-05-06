@@ -14,9 +14,8 @@ from napari._qt.utils import qthreaded
 @qthreaded
 def simplest_function():
     """Just a long running function, most like viewer.update."""
-    yield
     time.sleep(5)  # long function
-    return
+    return 1
 
 
 @qthreaded
@@ -79,6 +78,7 @@ if __name__ == "__main__":
     worker.yielded.connect(lambda x: status.setText(f"worker yielded {x}"))
     worker.returned.connect(lambda x: status.setText(f"worker returned {x}"))
     worker.errored.connect(lambda x: status.setText(f"worker errored {x}"))
+    worker.started.connect(lambda: status.setText(f"worker started..."))
 
     # if you chose to pass start=False, you can start the thread manually
     start = QPushButton("start", window)
