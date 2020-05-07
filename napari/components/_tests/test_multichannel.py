@@ -99,7 +99,9 @@ def test_multichannel(shape, kwargs):
         assert np.all(viewer.layers[i].data == data.take(i, axis=channel_axis))
         # make sure colors have been assigned properly
         if 'colormap' not in kwargs:
-            if n_channels < 3:
+            if n_channels == 1:
+                assert viewer.layers[i].colormap[0] == 'gray'
+            elif n_channels == 2:
                 assert viewer.layers[i].colormap[0] == two_colormaps[i]
             else:
                 assert viewer.layers[i].colormap[0] == base_colormaps[i]
