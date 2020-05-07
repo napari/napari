@@ -10,18 +10,19 @@ from typing import Any, Dict, List
 from . import __version__, gui_qt, view_path
 from .utils import citation_text, sys_info
 
-# prevent unrelated INFO logs when doing "napari --info"
-logging.basicConfig(level=logging.WARNING)
-
 
 class InfoAction(argparse.Action):
     def __call__(self, *args, **kwargs):
+        # prevent unrelated INFO logs when doing "napari --info"
+        logging.basicConfig(level=logging.WARNING)
         print(sys_info())
         sys.exit()
 
 
 class CitationAction(argparse.Action):
     def __call__(self, *args, **kwargs):
+        # prevent unrelated INFO logs when doing "napari --citation"
+        logging.basicConfig(level=logging.WARNING)
         print(citation_text)
         sys.exit()
 
@@ -126,6 +127,7 @@ def main():
     args, unknown = parser.parse_known_args()
     kwargs = validate_unknown_args(unknown)
 
+    # parse -v flags and set the appropriate logging level
     levels = [logging.WARNING, logging.INFO, logging.DEBUG]
     level = levels[min(2, args.verbose)]  # prevent index error
     logging.basicConfig(
@@ -135,6 +137,7 @@ def main():
     )
 
     if args.plugin:
+        # make sure plugin is only used when files are specified
         if not args.images:
             sys.exit(
                 "error: The '--plugin' argument is only valid "
