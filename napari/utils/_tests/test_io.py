@@ -95,6 +95,12 @@ def test_multi_png_no_stack(two_pngs):
     assert all(a.shape == (512, 512) for a in images)
 
 
+def test_no_files_raises(tmp_path, two_pngs):
+    with pytest.raises(ValueError) as e:
+        io.magic_imread(tmp_path)
+    assert "No files found in" in str(e.value)
+
+
 def test_irregular_images(irregular_images):
     image_files = irregular_images
     # Ideally, this would work "magically" with dask and irregular images,
