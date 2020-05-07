@@ -112,7 +112,7 @@ def test_add_zarr():
     with TemporaryDirectory(suffix='.zarr') as fout:
         z = zarr.open(fout, 'a', shape=image.shape)
         z[:] = image
-        viewer.open([fout])
+        viewer.open([fout], plugin='builtins')
         assert len(viewer.layers) == 1
         # Note: due to lazy loading, the next line needs to happen within
         # the context manager. Alternatively, we could convert to NumPy here.
@@ -133,7 +133,7 @@ def test_zarr_multiscale():
             shape = 20 // 2 ** i
             z = root.create_dataset(str(i), shape=(shape,) * 2)
             z[:] = multiscale[i]
-        viewer.open(fout, multiscale=True)
+        viewer.open(fout, multiscale=True, plugin='builtins')
         assert len(viewer.layers) == 1
         assert len(multiscale) == len(viewer.layers[0].data)
         # Note: due to lazy loading, the next line needs to happen within
