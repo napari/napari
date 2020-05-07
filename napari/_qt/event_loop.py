@@ -1,12 +1,9 @@
-import platform
 import sys
 from contextlib import contextmanager
 from os.path import dirname, join
 
 from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import QApplication, QSplashScreen
-
-from napari import __version__
 
 
 @contextmanager
@@ -25,16 +22,6 @@ def gui_qt(*, startup_logo=False):
     IPython with the Qt GUI event loop enabled by default by using
     ``ipython --gui=qt``.
     """
-    if platform.system() == "Windows" and not getattr(sys, 'frozen', False):
-        import ctypes
-
-        napari_app_id = 'napari.napari.viewer.' + str(
-            __version__
-        )  # arbitrary string
-        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
-            napari_app_id
-        )
-
     splash_widget = None
     app = QApplication.instance()
     if not app:

@@ -1,3 +1,5 @@
+import platform
+import sys
 from os.path import dirname, join
 
 from qtpy.QtGui import QIcon
@@ -7,6 +9,7 @@ from ._qt.qt_update_ui import QtUpdateUI
 from ._qt.qt_main_window import Window
 from ._qt.qt_viewer import QtViewer
 from .components import ViewerModel
+from . import __version__
 
 
 class Viewer(ViewerModel):
@@ -26,6 +29,10 @@ class Viewer(ViewerModel):
         Dimension names. by default they are labeled with sequential numbers
     show : bool, optional
         Whether to show the viewer after instantiation. by default True.
+    icon_bugfix: bool
+        If use bugfix to show proper icon when running as script on Windows.
+        May want to disable when embed napari as viewer in own application
+
     """
 
     def __init__(
@@ -35,6 +42,7 @@ class Viewer(ViewerModel):
         order=None,
         axis_labels=None,
         show=True,
+        icon_bugfix=True,
     ):
         # instance() returns the singleton instance if it exists, or None
         app = QApplication.instance()
@@ -66,6 +74,19 @@ class Viewer(ViewerModel):
         )
         qt_viewer = QtViewer(self)
         self.window = Window(qt_viewer, show=show)
+        if (
+            icon_bugfix
+            and platform.system() == "Windows"
+            and not getattr(sys, 'frozen', False)
+        ):
+            import ctypes
+
+            napari_app_id = 'napari.napari.viewer.' + str(
+                __version__
+            )  # arbitrary string
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+                napari_app_id
+            )
 
     def update_console(self, variables):
         """Update console's namespace with desired variables.
