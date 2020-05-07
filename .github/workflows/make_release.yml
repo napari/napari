@@ -24,8 +24,7 @@ jobs:
           pip install -r requirements.txt
       - name: Build Distribution
         run: |
-          pip install wheel
-          python setup.py sdist bdist_wheel
+          python setup.py sdist
       - name: Find Release Notes
         id: release_notes
         run: |
