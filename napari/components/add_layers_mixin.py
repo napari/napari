@@ -237,7 +237,9 @@ class AddLayersMixin:
             # so that we can use {k: next(v) for k, v in kwargs.items()} below
             for key, val in kwargs.items():
                 if key == 'colormap' and val is None:
-                    if n_channels < 3:
+                    if n_channels == 1:
+                        kwargs[key] = iter(['gray'])
+                    elif n_channels == 2:
                         kwargs[key] = iter(colormaps.MAGENTA_GREEN)
                     else:
                         kwargs[key] = itertools.cycle(colormaps.CYMRGB)

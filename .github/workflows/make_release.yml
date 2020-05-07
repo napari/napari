@@ -24,8 +24,7 @@ jobs:
           pip install -r requirements.txt
       - name: Build Distribution
         run: |
-          pip install wheel
-          python setup.py sdist bdist_wheel
+          python setup.py sdist
       - name: Find Release Notes
         id: release_notes
         run: |
@@ -35,7 +34,7 @@ jobs:
           # https://github.community/t5/GitHub-Actions/set-output-Truncates-Multiline-Strings/m-p/38372/highlight/true#M3322
           RELEASE_NOTES="${RELEASE_NOTES//'%'/'%25'}"
           RELEASE_NOTES="${RELEASE_NOTES//$'\n'/'%0A'}"
-          RELEASE_NOTES="${RELEASE_NOTES//$'\r'/'%0D'}" 
+          RELEASE_NOTES="${RELEASE_NOTES//$'\r'/'%0D'}"
           # https://help.github.com/en/actions/reference/workflow-commands-for-github-actions
           echo "::set-env name=tag::$TAG"
           echo "::set-output name=contents::$RELEASE_NOTES"
