@@ -7,8 +7,8 @@ import pytest
 from qtpy.QtWidgets import QApplication
 
 from napari import Viewer
-from napari.layers import Image, Labels, Points, Shapes, Vectors
 from napari.components import LayerList
+from napari.layers import Image, Labels, Points, Shapes, Vectors
 from napari.plugins._builtins import (
     napari_write_image,
     napari_write_labels,
@@ -16,6 +16,23 @@ from napari.plugins._builtins import (
     napari_write_shapes,
 )
 from napari.utils import io
+
+try:
+    from skimage.data import image_fetcher
+except ImportError:
+    from skimage.data import data_dir
+    import os
+
+    class image_fetcher:
+        def fetch(data_name):
+            if data_name.startswith("data/"):
+                data_name = data_name[5:]
+            path = os.path.join(data_dir, data_name)
+            if not os.path.exists(path):
+                raise ValueError(
+                    f"Legacy skimage image_fetcher cannot find file: {path}"
+                )
+            return path
 
 
 def pytest_addoption(parser):
@@ -250,3 +267,28 @@ def layers():
         Vectors(np.random.rand(10, 2, 2)),
     ]
     return LayerList(list_of_layers)
+
+
+@pytest.fixture
+def two_pngs():
+    return [image_fetcher.fetch(f'data/{n}.png') for n in ('moon', 'camera')]
+
+
+@pytest.fixture
+def rgb_png():
+    return [image_fetcher.fetch('data/astronaut.png')]
+
+
+@pytest.fixture
+def single_png():
+    return [image_fetcher.fetch('data/camera.png')]
+
+
+@pytest.fixture
+def irregular_images():
+    return [image_fetcher.fetch(f'data/{n}.png') for n in ('camera', 'coins')]
+
+
+@pytest.fixture
+def single_tiff():
+    return [image_fetcher.fetch('data/multipage.tif')]

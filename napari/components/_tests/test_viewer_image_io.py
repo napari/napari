@@ -1,7 +1,5 @@
-import os
 import numpy as np
 from dask import array as da
-from skimage.data import data_dir
 from tempfile import TemporaryDirectory
 import pytest
 from napari.components import ViewerModel
@@ -15,38 +13,8 @@ except ImportError:
     zarr_available = False
 
 
-@pytest.fixture
-def two_pngs():
-    image_files = [
-        os.path.join(data_dir, fn) for fn in ['moon.png', 'camera.png']
-    ]
-    return image_files
-
-
-@pytest.fixture
-def rgb_png():
-    image_files = [os.path.join(data_dir, fn) for fn in ['astronaut.png']]
-    return image_files
-
-
-@pytest.fixture
-def single_png():
-    image_files = [os.path.join(data_dir, fn) for fn in ['camera.png']]
-    return image_files
-
-
-@pytest.fixture
-def irregular_images():
-    image_files = [
-        os.path.join(data_dir, fn) for fn in ['camera.png', 'coins.png']
-    ]
-    return image_files
-
-
-@pytest.fixture
-def single_tiff():
-    image_files = [os.path.join(data_dir, 'multipage.tif')]
-    return image_files
+# the following fixtures are defined in napari/conftest.py
+# single_png, two_pngs, irregular_images, single_tiff, rgb_png
 
 
 def test_add_single_png_defaults(single_png):
