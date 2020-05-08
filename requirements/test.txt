@@ -6,4 +6,4 @@ pytest-ordering
 pytest-timeout
 xarray
 zarr
-scikit-image
+scikit-image==0.16.2
