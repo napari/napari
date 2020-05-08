@@ -63,17 +63,6 @@ class Viewer(ViewerModel):
             )
             raise RuntimeError(message)
 
-        logopath = join(dirname(__file__), 'resources', 'logo.png')
-        app.setWindowIcon(QIcon(logopath))
-
-        super().__init__(
-            title=title,
-            ndisplay=ndisplay,
-            order=order,
-            axis_labels=axis_labels,
-        )
-        qt_viewer = QtViewer(self)
-        self.window = Window(qt_viewer, show=show)
         if (
             icon_bugfix
             and platform.system() == "Windows"
@@ -87,6 +76,18 @@ class Viewer(ViewerModel):
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
                 napari_app_id
             )
+
+        logopath = join(dirname(__file__), 'resources', 'logo.png')
+        app.setWindowIcon(QIcon(logopath))
+
+        super().__init__(
+            title=title,
+            ndisplay=ndisplay,
+            order=order,
+            axis_labels=axis_labels,
+        )
+        qt_viewer = QtViewer(self)
+        self.window = Window(qt_viewer, show=show)
 
     def update_console(self, variables):
         """Update console's namespace with desired variables.
