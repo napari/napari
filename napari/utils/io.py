@@ -191,6 +191,11 @@ def magic_imread(filenames, *, use_dask=None, stack=True):
     if use_dask is None:
         use_dask = len(filenames_expanded) > 1
 
+    if not filenames_expanded:
+        raise ValueError(
+            f"No files found in {filenames} after removing subdirectories"
+        )
+
     # then, read in images
     images = []
     shape = None
@@ -230,6 +235,8 @@ def magic_imread(filenames, *, use_dask=None, stack=True):
                             'different shapes.'
                         )
                         raise ValueError(msg) from e
+                    else:
+                        raise e
         else:
             image = images  # return a list
     return image
