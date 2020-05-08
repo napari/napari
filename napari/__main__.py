@@ -27,20 +27,6 @@ class CitationAction(argparse.Action):
         sys.exit()
 
 
-def get_valid_kwargs():
-    """Get a set of valid argument names for add_* methods."""
-    from .components.add_layers_mixin import AddLayersMixin
-    import inspect
-
-    valid = set()
-    for meth in dir(AddLayersMixin):
-        if not meth.startswith('add_'):
-            continue
-        params = inspect.signature(getattr(AddLayersMixin, meth)).parameters
-        valid.update(set(params) - {'self', 'kwargs'})
-    return valid
-
-
 def validate_unknown_args(unknown: List[str]) -> Dict[str, Any]:
     """Convert a list of strings into a dict of valid kwargs for add_* methods.
 
@@ -58,14 +44,17 @@ def validate_unknown_args(unknown: List[str]) -> Dict[str, Any]:
         {key: val} dict suitable for the viewer.add_* methods where ``val``
         is a ``literal_eval`` result, or string.
     """
+    from .components.add_layers_mixin import valid_add_kwargs
+
     out: Dict[str, Any] = dict()
-    valid = get_valid_kwargs()
+    valid = set.union(*valid_add_kwargs().values())
     for i, arg in enumerate(unknown):
         if not arg.startswith("--"):
             continue
         if "=" in arg:
             sys.exit(f"error: '=' in argument {arg}. (Use space instead)")
-        if arg[2:] not in valid:
+        key = arg[2:].replace("-", "_")
+        if key not in valid:
             sys.exit(f"error: unrecognized arguments: {arg}")
         try:
             next_arg = unknown[i + 1]
@@ -73,19 +62,24 @@ def validate_unknown_args(unknown: List[str]) -> Dict[str, Any]:
                 raise IndexError()
         except IndexError:
             sys.exit(f"error: argument {arg} expected one argument")
-            get_valid_kwargs
         try:
             val = literal_eval(next_arg)
         except Exception:
             val = next_arg
-        out[arg[2:]] = val
+        out[key] = val
     return out
 
 
 def main():
     parser = argparse.ArgumentParser(usage=__doc__)
     parser.add_argument('images', nargs='*', help='Images to view.')
-    parser.add_argument('-v', '--verbose', action='count', default=0)
+    parser.add_argument(
+        '-v',
+        '--verbose',
+        action='count',
+        default=0,
+        help="increase output verbosity",
+    )
     parser.add_argument(
         '--version', action='version', version=f'napari version {__version__}',
     )
@@ -108,20 +102,6 @@ def main():
         '--stack',
         action='store_true',
         help='Concatenate multiple input files into a single stack.',
-    )
-    parser.add_argument(
-        '-r',
-        '--rgb',
-        help='Treat images as RGB.',
-        action='store_true',
-        default=None,
-    )
-    parser.add_argument(
-        '-g',
-        '--grayscale',
-        dest='rgb',
-        action='store_false',
-        help='interpret all dimensions in the image as spatial',
     )
 
     args, unknown = parser.parse_known_args()
