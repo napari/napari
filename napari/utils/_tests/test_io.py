@@ -3,7 +3,6 @@ import csv
 from pathlib import Path
 import numpy as np
 from dask import array as da
-from skimage.data import data_dir
 from tempfile import TemporaryDirectory
 from napari.utils import io
 import pytest
@@ -17,32 +16,8 @@ except ImportError:
     zarr_available = False
 
 
-@pytest.fixture
-def single_png():
-    image_files = [os.path.join(data_dir, fn) for fn in ['camera.png']]
-    return image_files
-
-
-@pytest.fixture
-def two_pngs():
-    image_files = [
-        os.path.join(data_dir, fn) for fn in ['moon.png', 'camera.png']
-    ]
-    return image_files
-
-
-@pytest.fixture
-def irregular_images():
-    image_files = [
-        os.path.join(data_dir, fn) for fn in ['camera.png', 'coins.png']
-    ]
-    return image_files
-
-
-@pytest.fixture
-def single_tiff():
-    image_files = [os.path.join(data_dir, 'multipage.tif')]
-    return image_files
+# the following fixtures are defined in napari/conftest.py
+# single_png, two_pngs, irregular_images, single_tiff
 
 
 def test_single_png_defaults(single_png):
@@ -93,6 +68,12 @@ def test_multi_png_no_stack(two_pngs):
     assert isinstance(images, list)
     assert len(images) == 2
     assert all(a.shape == (512, 512) for a in images)
+
+
+def test_no_files_raises(tmp_path, two_pngs):
+    with pytest.raises(ValueError) as e:
+        io.magic_imread(tmp_path)
+    assert "No files found in" in str(e.value)
 
 
 def test_irregular_images(irregular_images):

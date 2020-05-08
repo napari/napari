@@ -48,6 +48,9 @@ def test_dask_array_creates_cache():
     layer2._set_view_slice = mock_set_view_slice2
     layer2.set_view_slice()
 
+    # clean up cache
+    utils.dask_cache = None
+
 
 def test_list_of_dask_arrays_creates_cache():
     """Test that adding a list of dask array also creates a dask cache."""
@@ -121,6 +124,7 @@ def test_dask_unoptimized_slicing(delayed_dask_stack, monkeypatch):
     # make sure we are not caching for this test, which also tests that we
     # can turn off caching
     utils.resize_dask_cache(0)
+    assert utils.dask_cache.cache.available_bytes == 0
 
     # mock the dask_configure function to return a no-op.
     def mock_dask_config(data):
@@ -157,3 +161,66 @@ def test_dask_unoptimized_slicing(delayed_dask_stack, monkeypatch):
     v.dims.set_point(0, 3)
     # all told, we have 2x as many calls as the optimized version above.
     assert delayed_dask_stack['calls'] == 8
+
+
+def test_dask_cache_resizing(delayed_dask_stack):
+    """Test that we can spin up, resize, and spin down the cache."""
+    # add dask stack to the viewer, making sure to pass multiscale and clims
+    utils.dask_cache = None
+
+    v = viewer.ViewerModel()
+    dask_stack = delayed_dask_stack['stack']
+
+    # adding a new stack should spin up a cache
+    v.add_image(dask_stack, multiscale=False, contrast_limits=(0, 1))
+    assert utils.dask_cache.cache.available_bytes > 0
+    # make sure the cache actually has been populated
+    assert len(utils.dask_cache.cache.heap.heap) > 0
+
+    # we can resize that cache back to 0 bytes
+    utils.resize_dask_cache(0)
+    assert utils.dask_cache.cache.available_bytes == 0
+
+    # adding a 2nd stack should not adjust the cache size once created
+    v.add_image(dask_stack, multiscale=False, contrast_limits=(0, 1))
+    assert utils.dask_cache.cache.available_bytes == 0
+    # and the cache will remain empty regardless of what we do
+    for i in range(3):
+        v.dims.set_point(1, i)
+    assert len(utils.dask_cache.cache.heap.heap) == 0
+
+    # but we can always spin it up again
+    utils.resize_dask_cache(1e4)
+    assert utils.dask_cache.cache.available_bytes == 1e4
+    # and adding a new image doesn't change the size
+    v.add_image(dask_stack, multiscale=False, contrast_limits=(0, 1))
+    assert utils.dask_cache.cache.available_bytes == 1e4
+    # but the cache heap is getting populated again
+    for i in range(3):
+        v.dims.set_point(0, i)
+    assert len(utils.dask_cache.cache.heap.heap) > 0
+
+    # however, if the dask_cache attribute is deleted entirely (or set to None)
+    # we will have no memory of it ever having been created.
+    # and adding a new stack will spin up a cache
+    del utils.dask_cache
+    v.add_image(dask_stack, multiscale=False, contrast_limits=(0, 1))
+    assert utils.dask_cache.cache.available_bytes > 0
+
+
+def test_prevent_dask_cache(delayed_dask_stack):
+    """Test that pre-emptively setting cache to zero keeps it off"""
+    # the del is not required, it just shows that prior state of the cache
+    # does not matter... calling resize_dask_cache(0) will permanently disable
+    del utils.dask_cache
+    utils.resize_dask_cache(0)
+
+    v = viewer.ViewerModel()
+    dask_stack = delayed_dask_stack['stack']
+    # adding a new stack will not increase the cache size
+    v.add_image(dask_stack, multiscale=False, contrast_limits=(0, 1))
+    assert utils.dask_cache.cache.available_bytes == 0
+    # and the cache will not be populated
+    for i in range(3):
+        v.dims.set_point(0, i)
+    assert len(utils.dask_cache.cache.heap.heap) == 0
