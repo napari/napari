@@ -1,16 +1,17 @@
 import inspect
 import itertools
+import os
 from logging import getLogger
-from os import fspath
 from typing import Any, Dict, List, Optional, Sequence, Union
-from ..utils.colormaps import ensure_colormap_tuple
 
 import numpy as np
 
 from .. import layers
-from ..layers.image._image_utils import guess_multiscale, guess_labels
+from ..layers.image._image_utils import guess_labels, guess_multiscale
 from ..plugins.io import read_data_with_plugins
+from ..types import FullLayerData, LayerData
 from ..utils import colormaps
+from ..utils.colormaps import ensure_colormap_tuple
 from ..utils.misc import (
     ensure_iterable,
     ensure_sequence_of_iterables,
@@ -473,7 +474,7 @@ class AddLayersMixin:
             scale=scale,
             translate=translate,
             opacity=opacity,
-            blending=blending,
+            blending=blending,  # FIXME: or 'translucent'
             visible=visible,
             multiscale=multiscale,
         )
@@ -789,7 +790,7 @@ class AddLayersMixin:
             A list of any layers that were added to the viewer.
         """
         paths = [path] if isinstance(path, str) else path
-        paths = [fspath(path) for path in paths]  # PathObjects -> str
+        paths = [os.fspath(path) for path in paths]  # PathObjects -> str
         if not isinstance(paths, (tuple, list)):
             raise ValueError(
                 "'path' argument must be a string, list, or tuple"
@@ -856,33 +857,31 @@ class AddLayersMixin:
             if isinstance(path_or_paths, (tuple, list)):
                 path_repr = f"[{path_or_paths[0]}, ...] as stack"
             else:
-                path_repr = path_or_paths
+                path_repr = repr(path_or_paths)
             msg = f'No plugin found capable of reading {path_repr}.'
             logger.error(msg)
             return []
 
+        # glean layer names from filename
+        if isinstance(path_or_paths, str):
+            filenames = itertools.repeat(path_or_paths)
+        elif is_sequence(path_or_paths):
+            if len(path_or_paths) == len(layer_data):
+                filenames = iter(path_or_paths)
+            else:
+                # what do we do if a list of paths have been returned as
+                # a list of layer data without a 1:1 relatinoship?
+                filenames = itertools.repeat(path_or_paths[0])
+
         # add each layer to the viewer
         added: List[layers.Layer] = []  # for layers that get added
-        for data in layer_data:
-            # normalize layerdata and override layer_type if necessary
-            if len(data) == 1:
-                data = (data[0], {})
-            if len(data) == 2:
-                data = (data[0], data[1], guess_labels(data[0]))
-            if layer_type is not None:
-                data = (data[0], data[1], layer_type)
-            else:
-                layer_type = data[2]
-            # if user provided kwargs, use to override any meta dict values
-            # that were returned by the plugin
-            if kwargs:
-                valid_kwargs = prune_kwargs(kwargs, layer_type)
-                if len(data) == 1:
-                    data = (data[0], valid_kwargs)
-                elif len(data) > 1:
-                    data[1].update(valid_kwargs)
+        for data, filename in zip(layer_data, filenames):
+            basename, ext = os.path.splitext(os.path.basename(filename))
+            _data = _unify_data_and_user_kwargs(
+                data, kwargs, layer_type, fallback_name=basename[:15]
+            )
             # actually add the layer
-            new = self._add_layer_from_data(*data)
+            new = self._add_layer_from_data(*_data)
             # some add_* methods return a List[Layer] others just a Layer
             # we want to always return a list
             added.extend(new if isinstance(new, list) else [new])
@@ -966,6 +965,91 @@ class AddLayersMixin:
                 raise exc
 
         return layer
+
+
+def _normalize_layer_data(data: LayerData) -> FullLayerData:
+    """Accepts any layerdata tuple, and returns a fully qualified tuple.
+
+    Parameters
+    ----------
+    data : LayerData
+        1-, 2-, or 3-tuple with (data, meta, layer_type).
+
+    Returns
+    -------
+    FullLayerData
+        3-tuple with (data, meta, layer_type)
+
+    Raises
+    ------
+    ValueError
+        If data has len < 1 or len > 3, or if the second item in ``data`` is
+        not a ``dict``, or the third item is not a valid layer_type ``str``
+    """
+    if not isinstance(data, tuple) and 0 < len(data) < 4:
+        raise ValueError("LayerData must be a 1-, 2-, or 3-tuple")
+    _data = list(data)
+    if len(_data) > 1:
+        if not isinstance(_data[1], dict):
+            raise ValueError(
+                "The second item in a LayerData tuple must be a dict"
+            )
+    else:
+        _data.append(dict())
+    if len(_data) > 2:
+        if _data[2] not in layers.NAMES:
+            raise ValueError(
+                "The third item in a LayerData tuple must be one of: "
+                f"{layers.NAMES!r}."
+            )
+    else:
+        _data.append(guess_labels(_data[0]))
+    return tuple(_data)  # type: ignore
+
+
+def _unify_data_and_user_kwargs(
+    data: LayerData,
+    kwargs: Optional[dict] = None,
+    layer_type: Optional[str] = None,
+    fallback_name: str = None,
+) -> FullLayerData:
+    """Merge data returned from plugins with options specified by user.
+
+    Parameters
+    ----------
+    data : LayerData
+        1-, 2-, or 3-tuple with (data, meta, layer_type) returned from plugin.
+    kwargs : dict, optional
+        User-supplied keyword arguments, to override those in ``meta`` supplied
+        by plugins.
+    layer_type : str, optional
+        A user-supplied layer_type string, to override the ``layer_type``
+        declared by the plugin.
+    fallback_name : str, optional
+        A name for the layer, to override any name in ``meta`` supplied by the
+        plugin.
+
+    Returns
+    -------
+    FullLayerData
+        Fully qualified LayerData tuple with user-provided overrides.
+    """
+    _data, _meta, _type = _normalize_layer_data(data)
+
+    if layer_type is not None:
+        # the user has explicitly requested this be a certain layer type
+        # strip any kwargs from the plugin that are no longer relevant
+        _meta = prune_kwargs(_meta, layer_type)
+        _type = layer_type
+
+    if kwargs:
+        # if user provided kwargs, use to override any meta dict values
+        # that were returned by the plugin.
+        _meta.update(prune_kwargs(kwargs, _type))
+
+    if ('name' not in _meta) and fallback_name:
+        _meta['name'] = fallback_name
+    return (_data, _meta, _type)
 
 
 def prune_kwargs(kwargs: Dict[str, Any], layer_type: str) -> Dict[str, Any]:
