@@ -20,7 +20,7 @@ def read_data_with_plugins(
     path: Union[str, Sequence[str]],
     plugin: Optional[str] = None,
     plugin_manager: PluginManager = napari_plugin_manager,
-) -> Tuple[Optional[LayerData], List[PluginCallError]]:
+) -> Tuple[List[LayerData], List[PluginCallError]]:
     """Iterate reader hooks and return first non-None LayerData or None.
 
     This function returns as soon as the path has been read successfully,
@@ -81,7 +81,7 @@ def read_data_with_plugins(
         reader = result.result  # will raise exceptions if any occured
         if not reader:
             # we're all out of reader plugins
-            return None, errors
+            return [], errors
         try:
             data = reader(path)  # try to read data
             if data:
@@ -92,7 +92,7 @@ def read_data_with_plugins(
             err.log(logger=logger)
             errors.append(err)
         skip_impls.append(result.implementation)
-    return None, errors
+    return [], errors
 
 
 def save_layers(
