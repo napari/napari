@@ -850,15 +850,17 @@ class AddLayersMixin:
         """
         layer_data = read_data_with_plugins(path_or_paths, plugin=plugin)
 
-        # glean layer names from filename
+        # glean layer names from filename. These will be used as *fallback*
+        # names, if the plugin does not return a name kwarg in their meta dict.
         if isinstance(path_or_paths, str):
             filenames = itertools.repeat(path_or_paths)
         elif is_sequence(path_or_paths):
             if len(path_or_paths) == len(layer_data):
                 filenames = iter(path_or_paths)
             else:
-                # what do we do if a list of paths have been returned as
-                # a list of layer data without a 1:1 relatinoship?
+                # hard to say what to do if a list of paths have been returned
+                # as a list of layer data without a 1:1 relationship.
+                # here we just use the first name...
                 filenames = itertools.repeat(path_or_paths[0])
 
         # add each layer to the viewer
@@ -866,7 +868,7 @@ class AddLayersMixin:
         for data, filename in zip(layer_data, filenames):
             basename, ext = os.path.splitext(os.path.basename(filename))
             _data = _unify_data_and_user_kwargs(
-                data, kwargs, layer_type, fallback_name=basename[:15]
+                data, kwargs, layer_type, fallback_name=basename
             )
             # actually add the layer
             new = self._add_layer_from_data(*_data)
@@ -1003,6 +1005,19 @@ def _unify_data_and_user_kwargs(
 ) -> FullLayerData:
     """Merge data returned from plugins with options specified by user.
 
+    If ``data == (_data, _meta, _type)``.  Then:
+
+    - ``kwargs`` will be used to update ``_meta``
+    - ``layer_type`` will replace ``_type`` and, if provided, ``_meta`` keys
+        will be pruned to layer_type-appropriate kwargs
+    - ``fallback_name`` is used if ``not _meta.get('name')``
+
+    .. note:
+
+        If a user specified both layer_type and additional keyword arguments
+        to viewer.open(), it is their responsibility to make sure the kwargs
+        match the layer_type.
+
     Parameters
     ----------
     data : LayerData
@@ -1024,18 +1039,25 @@ def _unify_data_and_user_kwargs(
     """
     _data, _meta, _type = _normalize_layer_data(data)
 
-    if layer_type is not None:
+    if layer_type:
         # the user has explicitly requested this be a certain layer type
         # strip any kwargs from the plugin that are no longer relevant
         _meta = prune_kwargs(_meta, layer_type)
         _type = layer_type
 
     if kwargs:
-        # if user provided kwargs, use to override any meta dict values
-        # that were returned by the plugin.
-        _meta.update(prune_kwargs(kwargs, _type))
+        # if user provided kwargs, use to override any meta dict values that
+        # were returned by the plugin. We only prune kwargs if the user did
+        # *not* specify the layer_type. This means that if a user specified
+        # both layer_type and additional keyword arguments to viewer.open(),
+        # it is their responsibility to make sure the kwargs match the
+        # layer_type.
+        _meta.update(prune_kwargs(kwargs, _type) if not layer_type else kwargs)
 
-    if ('name' not in _meta) and fallback_name:
+    if not _meta.get('name') and fallback_name:
+        # trim to reasonable length
+        if len(fallback_name) > 16:
+            fallback_name = fallback_name[:14] + '...'
         _meta['name'] = fallback_name
     return (_data, _meta, _type)
 
