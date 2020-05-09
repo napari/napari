@@ -858,9 +858,9 @@ class AddLayersMixin:
             if len(path_or_paths) == len(layer_data):
                 filenames = iter(path_or_paths)
             else:
-                # hard to say what to do if a list of paths have been returned
-                # as a list of layer data without a 1:1 relationship.
-                # here we just use the first name...
+                # if a list of paths has been returned as a list of layer data
+                # without a 1:1 relationship between the two lists we just use
+                # iterate over the first name
                 filenames = itertools.repeat(path_or_paths[0])
 
         # add each layer to the viewer
