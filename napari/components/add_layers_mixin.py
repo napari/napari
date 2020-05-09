@@ -474,7 +474,7 @@ class AddLayersMixin:
             scale=scale,
             translate=translate,
             opacity=opacity,
-            blending=blending,  # FIXME: or 'translucent'
+            blending=blending,
             visible=visible,
             multiscale=multiscale,
         )
