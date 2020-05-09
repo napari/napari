@@ -1,6 +1,6 @@
 import warnings
 from logging import getLogger
-from typing import List, Optional, Sequence, Union, Tuple
+from typing import List, Optional, Sequence, Union
 
 from napari_plugin_engine import (
     HookImplementation,
@@ -20,7 +20,7 @@ def read_data_with_plugins(
     path: Union[str, Sequence[str]],
     plugin: Optional[str] = None,
     plugin_manager: PluginManager = napari_plugin_manager,
-) -> Tuple[List[LayerData], List[PluginCallError]]:
+) -> List[LayerData]:
     """Iterate reader hooks and return first non-None LayerData or None.
 
     This function returns as soon as the path has been read successfully,
@@ -59,7 +59,6 @@ def read_data_with_plugins(
         If ``plugin`` is specified but raises an Exception while reading.
     """
     hook_caller = plugin_manager.hook.napari_get_reader
-    errors: List[PluginCallError] = []
 
     if plugin:
         if plugin not in plugin_manager.plugins:
@@ -70,10 +69,12 @@ def read_data_with_plugins(
         reader = hook_caller._call_plugin(plugin, path=path)
         if not callable(reader):
             raise ValueError(f'Plugin {plugin!r} does not support file {path}')
-        return reader(path), errors
+        return reader(path) or []
 
+    errors: List[PluginCallError] = []
     path = abspath_or_url(path)
     skip_impls: List[HookImplementation] = []
+    layer_data: List[LayerData] = []
     while True:
         result = hook_caller.call_with_result_obj(
             path=path, _skip_impls=skip_impls
@@ -81,18 +82,37 @@ def read_data_with_plugins(
         reader = result.result  # will raise exceptions if any occured
         if not reader:
             # we're all out of reader plugins
-            return [], errors
+            break
         try:
-            data = reader(path)  # try to read data
-            if data:
-                return data, errors
+            layer_data = reader(path)  # try to read data
+            if layer_data:
+                break
         except Exception as exc:
             err = PluginCallError(result.implementation, cause=exc)
             # don't try this impl again
             err.log(logger=logger)
             errors.append(err)
         skip_impls.append(result.implementation)
-    return [], errors
+
+    if not layer_data:
+        # if layer_data is empty, it means no plugin could read path
+        # we just want to provide some useful feedback, which includes
+        # whether or not paths were passed to plugins as a list.
+        if isinstance(path, (tuple, list)):
+            path_repr = f"[{path[0]}, ...] as stack"
+        else:
+            path_repr = repr(path)
+        msg = f'No plugin found capable of reading {path_repr}.'
+        logger.warn(msg)
+
+    if errors:
+        names = set([repr(e.plugin_name) for e in errors])
+        err_msg = f"({len(errors)}) error{'s' if len(errors) > 1 else ''} "
+        err_msg += f"occured in plugins: {', '.join(names)}. "
+        err_msg += 'See full error logs in "Plugins → Plugin Errors..."'
+        logger.error(err_msg)
+
+    return layer_data
 
 
 def save_layers(

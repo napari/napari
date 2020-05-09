@@ -847,24 +847,7 @@ class AddLayersMixin:
         List[layers.Layer]
             A list of any layers that were added to the viewer.
         """
-        layer_data, errs = read_data_with_plugins(path_or_paths, plugin=plugin)
-
-        if not layer_data:
-            # if layer_data is empty, it means no plugin could read path
-            # we just want to provide some useful feedback, which includes
-            # whether or not paths were passed to plugins as a list.
-            if isinstance(path_or_paths, (tuple, list)):
-                path_repr = f"[{path_or_paths[0]}, ...] as stack"
-            else:
-                path_repr = path_or_paths
-            msg = f'No plugin found capable of reading {path_repr}.'
-            if errs:
-                names = set([repr(e.plugin_name) for e in errs])
-                msg += f"\n({len(errs)}) error{'s' if len(errs) > 1 else ''} "
-                msg += f"occured in: {', '.join(names)}."
-                msg += f' See full error logs in "Plugins → Plugin Errors..."'
-            logger.error(msg)
-            return []
+        layer_data = read_data_with_plugins(path_or_paths, plugin=plugin)
 
         # add each layer to the viewer
         added: List[layers.Layer] = []  # for layers that get added

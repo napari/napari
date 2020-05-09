@@ -15,7 +15,7 @@ def test_builtin_reader_plugin(viewer_factory):
         data = np.random.rand(20, 20)
         io.imsave(tmp.name, data)
         tmp.seek(0)
-        layer_data, _ = read_data_with_plugins(tmp.name)
+        layer_data = read_data_with_plugins(tmp.name)
 
         assert isinstance(layer_data, list)
         assert len(layer_data) == 1
@@ -36,7 +36,7 @@ def test_builtin_reader_plugin_csv(viewer_factory, tmpdir):
     data = table[:, 1:]
     # Write csv file
     io.write_csv(tmp, table, column_names=column_names)
-    layer_data, _ = read_data_with_plugins(tmp)
+    layer_data = read_data_with_plugins(tmp)
 
     assert isinstance(layer_data, list)
     assert len(layer_data) == 1

@@ -20,7 +20,7 @@ def test_add_layers_with_plugins(layer_datum):
     """Test that add_layers_with_plugins adds the expected layer types."""
     with patch(
         "napari.components.add_layers_mixin.read_data_with_plugins",
-        MagicMock(return_value=([layer_datum], [])),
+        MagicMock(return_value=[layer_datum]),
     ):
         v = ViewerModel()
         v._add_layers_with_plugins('mock_path')
@@ -30,7 +30,7 @@ def test_add_layers_with_plugins(layer_datum):
 
 @patch(
     "napari.components.add_layers_mixin.read_data_with_plugins",
-    MagicMock(return_value=(None, [])),
+    MagicMock(return_value=[]),
 )
 def test_plugin_returns_nothing():
     """Test that a plugin to returning nothing adds nothing to the Viewer."""
@@ -41,7 +41,7 @@ def test_plugin_returns_nothing():
 
 @patch(
     "napari.components.add_layers_mixin.read_data_with_plugins",
-    MagicMock(return_value=([(img,)], [])),
+    MagicMock(return_value=[(img,)]),
 )
 def test_viewer_open():
     """Test that a plugin to returning nothing adds nothing to the Viewer."""
@@ -62,7 +62,7 @@ def test_add_layers_with_plugins_and_kwargs(layer_data, kwargs):
     """
     with patch(
         "napari.components.add_layers_mixin.read_data_with_plugins",
-        MagicMock(return_value=(layer_data, [])),
+        MagicMock(return_value=layer_data),
     ):
         v = ViewerModel()
         v._add_layers_with_plugins('mock_path', kwargs=kwargs)
