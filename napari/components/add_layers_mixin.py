@@ -850,18 +850,6 @@ class AddLayersMixin:
         """
         layer_data = read_data_with_plugins(path_or_paths, plugin=plugin)
 
-        if not layer_data:
-            # if layer_data is empty, it means no plugin could read path
-            # we just want to provide some useful feedback, which includes
-            # whether or not paths were passed to plugins as a list.
-            if isinstance(path_or_paths, (tuple, list)):
-                path_repr = f"[{path_or_paths[0]}, ...] as stack"
-            else:
-                path_repr = repr(path_or_paths)
-            msg = f'No plugin found capable of reading {path_repr}.'
-            logger.error(msg)
-            return []
-
         # glean layer names from filename
         if isinstance(path_or_paths, str):
             filenames = itertools.repeat(path_or_paths)

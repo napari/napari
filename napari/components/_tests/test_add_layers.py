@@ -30,7 +30,7 @@ def test_add_layers_with_plugins(layer_datum):
 
 @patch(
     "napari.components.add_layers_mixin.read_data_with_plugins",
-    MagicMock(return_value=None),
+    MagicMock(return_value=[]),
 )
 def test_plugin_returns_nothing():
     """Test that a plugin to returning nothing adds nothing to the Viewer."""

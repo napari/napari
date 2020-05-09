@@ -2,7 +2,11 @@ import warnings
 from logging import getLogger
 from typing import List, Optional, Sequence, Union
 
-from napari_plugin_engine import HookImplementation, PluginCallError
+from napari_plugin_engine import (
+    HookImplementation,
+    PluginCallError,
+    PluginManager,
+)
 
 from ..layers import Layer
 from ..types import LayerData
@@ -15,8 +19,8 @@ logger = getLogger(__name__)
 def read_data_with_plugins(
     path: Union[str, Sequence[str]],
     plugin: Optional[str] = None,
-    plugin_manager=napari_plugin_manager,
-) -> Optional[LayerData]:
+    plugin_manager: PluginManager = napari_plugin_manager,
+) -> List[LayerData]:
     """Iterate reader hooks and return first non-None LayerData or None.
 
     This function returns as soon as the path has been read successfully,
@@ -57,11 +61,20 @@ def read_data_with_plugins(
     hook_caller = plugin_manager.hook.napari_get_reader
 
     if plugin:
+        if plugin not in plugin_manager.plugins:
+            raise ValueError(
+                f"There is no registered plugin named {plugin!r}.\n"
+                f"Plugin names include: {set(plugin_manager.plugins)!r}"
+            )
         reader = hook_caller._call_plugin(plugin, path=path)
-        return reader(path)
+        if not callable(reader):
+            raise ValueError(f'Plugin {plugin!r} does not support file {path}')
+        return reader(path) or []
 
+    errors: List[PluginCallError] = []
     path = abspath_or_url(path)
     skip_impls: List[HookImplementation] = []
+    layer_data: List[LayerData] = []
     while True:
         result = hook_caller.call_with_result_obj(
             path=path, _skip_impls=skip_impls
@@ -69,18 +82,38 @@ def read_data_with_plugins(
         reader = result.result  # will raise exceptions if any occured
         if not reader:
             # we're all out of reader plugins
-            return None
+            break
         try:
-            return reader(path)  # try to read data
+            layer_data = reader(path)  # try to read data
+            if layer_data:
+                break
         except Exception as exc:
+            # collect the error and log it, but don't raise it.
             err = PluginCallError(result.implementation, cause=exc)
-            # don't try this impl again
-            skip_impls.append(result.implementation)
-            if result.implementation != 'builtins':
-                # If builtins doesn't work, they will get a "no reader" found
-                # error anyway, so it looks a bit weird to show them that the
-                # "builtin plugin" didn't work.
-                err.log(logger=logger)
+            err.log(logger=logger)
+            errors.append(err)
+        # don't try this impl again
+        skip_impls.append(result.implementation)
+
+    if not layer_data:
+        # if layer_data is empty, it means no plugin could read path
+        # we just want to provide some useful feedback, which includes
+        # whether or not paths were passed to plugins as a list.
+        if isinstance(path, (tuple, list)):
+            path_repr = f"[{path[0]}, ...] as stack"
+        else:
+            path_repr = repr(path)
+        msg = f'No plugin found capable of reading {path_repr}.'
+        logger.warn(msg)
+
+    if errors:
+        names = set([repr(e.plugin_name) for e in errors])
+        err_msg = f"({len(errors)}) error{'s' if len(errors) > 1 else ''} "
+        err_msg += f"occured in plugins: {', '.join(names)}. "
+        err_msg += 'See full error logs in "Plugins → Plugin Errors..."'
+        logger.error(err_msg)
+
+    return layer_data
 
 
 def save_layers(
@@ -208,6 +241,11 @@ def _write_multiple_layers_with_plugins(
     if plugin_name:
         # if plugin has been specified we just directly call napari_get_writer
         # with that plugin_name.
+        if plugin_name not in plugin_manager.plugins:
+            raise ValueError(
+                f"There is no registered plugin named {plugin_name!r}.\n"
+                f"Plugin names include: {set(plugin_manager.plugins)!r}"
+            )
         implementation = hook_caller.get_plugin_implementation(plugin_name)
         writer_function = hook_caller(
             _plugin=plugin_name, path=path, layer_types=layer_types
@@ -277,6 +315,12 @@ def _write_single_layer_with_plugins(
     hook_specification = getattr(
         plugin_manager.hook, f'napari_write_{layer._type_string}'
     )
+
+    if plugin_name and (plugin_name not in plugin_manager.plugins):
+        raise ValueError(
+            f"There is no registered plugin named {plugin_name!r}.\n"
+            f"Plugin names include: {set(plugin_manager.plugins)!r}"
+        )
 
     # Call the hook_specification
     return hook_specification(
