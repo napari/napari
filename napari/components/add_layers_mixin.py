@@ -859,7 +859,7 @@ class AddLayersMixin:
                 filenames = iter(path_or_paths)
             else:
                 # if a list of paths has been returned as a list of layer data
-                # without a 1:1 relationship between the two lists we just use
+                # without a 1:1 relationship between the two lists we just
                 # iterate over the first name
                 filenames = itertools.repeat(path_or_paths[0])
 
