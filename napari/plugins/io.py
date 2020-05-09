@@ -88,10 +88,11 @@ def read_data_with_plugins(
             if layer_data:
                 break
         except Exception as exc:
+            # collect the error and log it, but don't raise it.
             err = PluginCallError(result.implementation, cause=exc)
-            # don't try this impl again
             err.log(logger=logger)
             errors.append(err)
+        # don't try this impl again
         skip_impls.append(result.implementation)
 
     if not layer_data:
