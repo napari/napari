@@ -859,8 +859,8 @@ class AddLayersMixin:
                 filenames = iter(path_or_paths)
             else:
                 # if a list of paths has been returned as a list of layer data
-                # without a 1:1 relationship between the two lists we just
-                # iterate over the first name
+                # without a 1:1 relationship between the two lists we iterate
+                # over the first name
                 filenames = itertools.repeat(path_or_paths[0])
 
         # add each layer to the viewer
@@ -872,7 +872,7 @@ class AddLayersMixin:
             )
             # actually add the layer
             new = self._add_layer_from_data(*_data)
-            # some add_* methods return a List[Layer] others just a Layer
+            # some add_* methods return a List[Layer], others just a Layer
             # we want to always return a list
             added.extend(new if isinstance(new, list) else [new])
         return added
