@@ -105,7 +105,7 @@ def main():
     )
 
     args, unknown = parser.parse_known_args()
-    kwargs = validate_unknown_args(unknown)
+    kwargs = validate_unknown_args(unknown) if unknown else {}
 
     # parse -v flags and set the appropriate logging level
     levels = [logging.WARNING, logging.INFO, logging.DEBUG]
