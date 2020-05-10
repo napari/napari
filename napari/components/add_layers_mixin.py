@@ -1055,9 +1055,6 @@ def _unify_data_and_user_kwargs(
         _meta.update(prune_kwargs(kwargs, _type) if not layer_type else kwargs)
 
     if not _meta.get('name') and fallback_name:
-        # trim to reasonable length
-        if len(fallback_name) > 16:
-            fallback_name = fallback_name[:14] + '...'
         _meta['name'] = fallback_name
     return (_data, _meta, _type)
 
