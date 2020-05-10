@@ -62,9 +62,10 @@ def read_data_with_plugins(
 
     if plugin:
         if plugin not in plugin_manager.plugins:
+            names = {i.plugin_name for i in hook_caller.get_hookimpls()}
             raise ValueError(
-                f"There is no registered plugin named {plugin!r}.\n"
-                f"Plugin names include: {set(plugin_manager.plugins)!r}"
+                f"There is no registered plugin named '{plugin}'.\n"
+                f"Names of plugins offering readers are: {names}"
             )
         reader = hook_caller._call_plugin(plugin, path=path)
         if not callable(reader):
@@ -242,9 +243,10 @@ def _write_multiple_layers_with_plugins(
         # if plugin has been specified we just directly call napari_get_writer
         # with that plugin_name.
         if plugin_name not in plugin_manager.plugins:
+            names = {i.plugin_name for i in hook_caller.get_hookimpls()}
             raise ValueError(
-                f"There is no registered plugin named {plugin_name!r}.\n"
-                f"Plugin names include: {set(plugin_manager.plugins)!r}"
+                f"There is no registered plugin named '{plugin_name}'.\n"
+                f"Names of plugins offering readers are: {names}"
             )
         implementation = hook_caller.get_plugin_implementation(plugin_name)
         writer_function = hook_caller(
@@ -312,18 +314,20 @@ def _write_single_layer_with_plugins(
         If data is successfully written, return the ``path`` that was written.
         Otherwise, if nothing was done, return ``None``.
     """
-    hook_specification = getattr(
+    hook_caller = getattr(
         plugin_manager.hook, f'napari_write_{layer._type_string}'
     )
 
     if plugin_name and (plugin_name not in plugin_manager.plugins):
+        names = {i.plugin_name for i in hook_caller.get_hookimpls()}
         raise ValueError(
-            f"There is no registered plugin named {plugin_name!r}.\n"
-            f"Plugin names include: {set(plugin_manager.plugins)!r}"
+            f"There is no registered plugin named '{plugin_name}'.\n"
+            "Plugins capable of writing layer._type_string layers"
+            f"are: {names}"
         )
 
-    # Call the hook_specification
-    return hook_specification(
+    # Call the hook_caller
+    return hook_caller(
         _plugin=plugin_name,
         path=abspath_or_url(path),
         data=layer.data,
