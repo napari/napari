@@ -1,6 +1,15 @@
 import numpy as np
 from copy import copy, deepcopy
 
+from ..utils.color_transformations import (
+    normalize_and_broadcast_colors,
+    transform_color_with_defaults,
+)
+from ...utils.colormaps.standardize_color import (
+    transform_color,
+    hex_to_name,
+    rgb_to_hex,
+)
 from ...utils.event import Event
 from ...utils.misc import ensure_iterable
 from ...utils.status_messages import format_float
@@ -247,6 +256,8 @@ class Shapes(Layer):
             edge_width=Event,
             edge_color=Event,
             face_color=Event,
+            current_edge_color=Event,
+            current_face_color=Event,
             highlight=Event,
         )
 
@@ -263,14 +274,14 @@ class Shapes(Layer):
             self._current_edge_width = 1
 
         if type(edge_color) is str:
-            self._current_edge_color = edge_color
+            self._current_edge_color = transform_color(edge_color)
         else:
-            self._current_edge_color = 'black'
+            self._current_edge_color = np.array([0, 0, 0, 1])
 
         if type(face_color) is str:
-            self._current_face_color = face_color
+            self._current_face_color = transform_color(face_color)
         else:
-            self._current_face_color = 'white'
+            self._current_face_color = np.array([1, 1, 1, 1])
 
         if np.isscalar(opacity):
             self._current_opacity = opacity
@@ -378,28 +389,32 @@ class Shapes(Layer):
     @property
     def current_edge_color(self):
         """str: color of shape edges including lines and paths."""
-        return self._current_edge_color
+        hex_ = rgb_to_hex(self._current_edge_color)[0]
+        return hex_to_name.get(hex_, hex_)
 
     @current_edge_color.setter
     def current_edge_color(self, edge_color):
-        self._current_edge_color = edge_color
+        self._current_edge_color = transform_color(edge_color)
         if self._update_properties:
             for i in self.selected_data:
                 self._data_view.update_edge_color(i, edge_color)
         self.events.edge_color()
+        self.events.current_face_color()
 
     @property
     def current_face_color(self):
         """str: color of shape faces."""
-        return self._current_face_color
+        hex_ = rgb_to_hex(self._current_face_color)[0]
+        return hex_to_name.get(hex_, hex_)
 
     @current_face_color.setter
     def current_face_color(self, face_color):
-        self._current_face_color = face_color
+        self._current_face_color = transform_color(face_color)
         if self._update_properties:
             for i in self.selected_data:
                 self._data_view.update_face_color(i, face_color)
         self.events.face_color()
+        self.events.current_face_color()
 
     @property
     def current_opacity(self):
@@ -713,13 +728,33 @@ class Shapes(Layer):
                 # If a single array for a shape has been passed turn into list
                 data = [data]
 
+            # transform the colors
+            transformed_ec = transform_color_with_defaults(
+                num_entries=len(data),
+                colors=edge_color,
+                elem_name="edge_color",
+                default="white",
+            )
+            transformed_edge_color = normalize_and_broadcast_colors(
+                len(data), transformed_ec
+            )
+            transformed_fc = transform_color_with_defaults(
+                num_entries=len(data),
+                colors=face_color,
+                elem_name="face_color",
+                default="white",
+            )
+            transformed_face_color = normalize_and_broadcast_colors(
+                len(data), transformed_fc
+            )
+
             # Turn input arguments into iterables
             shape_inputs = zip(
                 data,
                 ensure_iterable(shape_type),
                 ensure_iterable(edge_width),
-                ensure_iterable(edge_color, color=True),
-                ensure_iterable(face_color, color=True),
+                transformed_edge_color,
+                transformed_face_color,
                 ensure_iterable(opacity),
                 ensure_iterable(z_index),
             )

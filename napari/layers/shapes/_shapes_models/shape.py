@@ -1,7 +1,8 @@
 from abc import ABC, abstractmethod
 import numpy as np
 from copy import copy
-from vispy.color import Color
+
+from ....utils.colormaps.standardize_color import rgb_to_hex
 from .._shapes_utils import (
     triangulate_edge,
     triangulate_face,
@@ -215,12 +216,8 @@ class Shape(ABC):
 
     @edge_color.setter
     def edge_color(self, edge_color):
-        self._edge_color = Color(edge_color)
-        if type(edge_color) is str:
-            self._edge_color_name = edge_color
-        else:
-            rgb = tuple([int(255 * x) for x in self._edge_color.rgba[:3]])
-            self._edge_color_name = '#%02x%02x%02x' % rgb
+        self._edge_color = edge_color
+        self._edge_color_name = rgb_to_hex(edge_color)[0]
 
     @property
     def face_color(self):
@@ -230,12 +227,8 @@ class Shape(ABC):
 
     @face_color.setter
     def face_color(self, face_color):
-        self._face_color = Color(face_color)
-        if type(face_color) is str:
-            self._face_color_name = face_color
-        else:
-            rgb = tuple([int(255 * x) for x in self._face_color.rgba[:3]])
-            self._face_color_name = '#%02x%02x%02x' % rgb
+        self._face_color = face_color
+        self._face_color_name = rgb_to_hex(face_color)[0]
 
     @property
     def opacity(self):
