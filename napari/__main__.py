@@ -4,11 +4,11 @@ napari command line viewer.
 import argparse
 import logging
 import sys
-import textwrap
 from ast import literal_eval
+from textwrap import wrap
 from typing import Any, Dict, List
 
-from . import __version__, gui_qt, view_path
+from . import __version__, gui_qt, layers, view_path
 from .components.add_layers_mixin import valid_add_kwargs
 from .utils import citation_text, sys_info
 
@@ -76,14 +76,13 @@ def main():
     for layer_type, keys in valid_add_kwargs().items():
         kwarg_options.append(f"  {layer_type.title()}:")
         keys = {k.replace('_', '-') for k in keys}
-        kwarg_options.extend(
-            [f"    {l}" for l in textwrap.wrap(", ".join(sorted(keys)))]
-        )
+        lines = wrap(", ".join(sorted(keys)), break_on_hyphens=False)
+        kwarg_options.extend([f"    {line}" for line in lines])
 
     parser = argparse.ArgumentParser(
         usage=__doc__,
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="optional layer-type specific arguments (precede with '--'):\n"
+        epilog="optional layer-type-specific arguments (precede with '--'):\n"
         + "\n".join(kwarg_options),
     )
     parser.add_argument('images', nargs='*', help='image(s) to view.')
@@ -117,6 +116,15 @@ def main():
     parser.add_argument(
         '--plugin', help='specify plugin name when opening a file',
     )
+    parser.add_argument(
+        '--layer-type',
+        metavar="TYPE",
+        choices=set(layers.NAMES),
+        help=(
+            'force file to be interpreted as a specific layer type. '
+            f'one of {set(layers.NAMES)}'
+        ),
+    )
 
     args, unknown = parser.parse_known_args()
     kwargs = validate_unknown_args(unknown) if unknown else {}
@@ -143,7 +151,13 @@ def main():
         sys.argv.remove('--plugin')
 
     with gui_qt(startup_logo=True):
-        view_path(args.images, stack=args.stack, plugin=args.plugin, **kwargs)
+        view_path(
+            args.images,
+            stack=args.stack,
+            plugin=args.plugin,
+            layer_type=args.layer_type,
+            **kwargs,
+        )
 
 
 if __name__ == '__main__':
