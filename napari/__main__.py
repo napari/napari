@@ -4,10 +4,12 @@ napari command line viewer.
 import argparse
 import logging
 import sys
+import textwrap
 from ast import literal_eval
 from typing import Any, Dict, List
 
 from . import __version__, gui_qt, view_path
+from .components.add_layers_mixin import valid_add_kwargs
 from .utils import citation_text, sys_info
 
 
@@ -44,7 +46,6 @@ def validate_unknown_args(unknown: List[str]) -> Dict[str, Any]:
         {key: val} dict suitable for the viewer.add_* methods where ``val``
         is a ``literal_eval`` result, or string.
     """
-    from .components.add_layers_mixin import valid_add_kwargs
 
     out: Dict[str, Any] = dict()
     valid = set.union(*valid_add_kwargs().values())
@@ -71,8 +72,21 @@ def validate_unknown_args(unknown: List[str]) -> Dict[str, Any]:
 
 
 def main():
-    parser = argparse.ArgumentParser(usage=__doc__)
-    parser.add_argument('images', nargs='*', help='Images to view.')
+    kwarg_options = []
+    for layer_type, keys in valid_add_kwargs().items():
+        kwarg_options.append(f"  {layer_type.title()}:")
+        keys = {k.replace('_', '-') for k in keys}
+        kwarg_options.extend(
+            [f"    {l}" for l in textwrap.wrap(", ".join(sorted(keys)))]
+        )
+
+    parser = argparse.ArgumentParser(
+        usage=__doc__,
+        formatter_class=argparse.RawDescriptionHelpFormatter,
+        epilog="optional layer-type specific arguments (precede with '--'):\n"
+        + "\n".join(kwarg_options),
+    )
+    parser.add_argument('images', nargs='*', help='image(s) to view.')
     parser.add_argument(
         '-v',
         '--verbose',
@@ -82,9 +96,6 @@ def main():
     )
     parser.add_argument(
         '--version', action='version', version=f'napari version {__version__}',
-    )
-    parser.add_argument(
-        '--plugin', help='specify plugin name when opening a file',
     )
     parser.add_argument(
         '--info',
@@ -101,7 +112,10 @@ def main():
     parser.add_argument(
         '--stack',
         action='store_true',
-        help='Concatenate multiple input files into a single stack.',
+        help='concatenate multiple input files into a single stack.',
+    )
+    parser.add_argument(
+        '--plugin', help='specify plugin name when opening a file',
     )
 
     args, unknown = parser.parse_known_args()
