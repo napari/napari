@@ -74,7 +74,7 @@ def read_data_with_plugins(
     errors: List[PluginCallError] = []
     path = abspath_or_url(path)
     skip_impls: List[HookImplementation] = []
-    layer_data: List[LayerData] = []
+    layer_data = None
     while True:
         result = hook_caller.call_with_result_obj(
             path=path, _skip_impls=skip_impls
@@ -113,7 +113,7 @@ def read_data_with_plugins(
         err_msg += 'See full error logs in "Plugins → Plugin Errors..."'
         logger.error(err_msg)
 
-    return layer_data
+    return layer_data or []
 
 
 def save_layers(
