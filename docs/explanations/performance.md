@@ -115,3 +115,15 @@ Performance is never "done" for several reasons:
 * New file formats are invented or become more common.
 * New data types or sizes become more common.
 
+## New Features
+
+1. New features should be evaluated on their objective and subjective
+   performance.
+1. New features should be tested on a variety of data types and sizes, including
+   the largest data sets that are supported.
+1. It's easy to create features that do not "scale" well to large datasets.
+   Either the feature should scale well, or the limitations of the feature
+   should be well documented. It can be hard to impossible to "add performance
+   in later".
+1. Existing features should be tested both automatically and manually for
+   performance. Well meaning new features can slow down existing features.
