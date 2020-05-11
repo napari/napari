@@ -8,11 +8,12 @@ There are two main types of performance:
 
 **Objective Performance**
 * How long operations take when timed with a stopwatch.
-* Most (but not all) times will vary based on the data.
+* Most times will vary based on the data being viewed.
 
 **Subjective Performance**
 * The user’s experience as it relates to performance.
 * Is the user’s experience pleasant or frustrating?
+* Does napari "seem fast"?
 
 Both types of performance are important. No amount of slickness can make up for
 an application that is fundamentally too slow. And even a relatively fast
@@ -58,13 +59,13 @@ Napari should strive to have these properties:
 
 **Responsive**
 * Two cases:
-  * The full operation happens right away 
+  * The full operation happens right away.
   * The interface clearly indicates the input was received and the operation was
     started.
 * The UI should never seem dead, the user should never be left wondering if
   napari has crashed.
-* For click or keypress events the ideal response is 100ms.
-* For drag events or animations the ideal refresh is 60Hz which is 16.7ms per
+* For click or keypress events the **ideal response is 100ms**.
+* For drag events or animations the **ideal refresh is 60Hz** which is 16.7ms per
   frame.
 
 **Interruptible**
@@ -105,7 +106,7 @@ Performance is never "done" for several reasons:
 
 **Scope Changes**
 
-* New types of users adopt napari and have new needs.
+* New types of users adopt napari and have new use cases.
 * Existing users change their usage over time, e.g more remote viewing.
 * New file formats are invented or become more common.
 * New data types or sizes become more common.
@@ -114,6 +115,12 @@ Performance is never "done" for several reasons:
 
 * New features should be evaluated on their objective subjective and performance before merging to master.
 * New features should be tested on a variety of data types and sizes, including the largest data sets that are supported.
-* Test for regressions since new features can easily slow down existing features.
-* The feature should scale to large datasets, or the performance limitations of the feature should be well documented.
+* Test widely for regressions since new features can easily slow down existing features.
+* The new feature should scale to large datasets, or the performance limitations of the feature should be well documented.
 * It can be hard to impossible to "add performance in later".
+
+## Conclusion
+
+Achieving and maintaining performance requires an extreme amount of effort
+and diligence, but the payoff is felt in every minute usage, if users are
+delighted and able to productively do their work.
