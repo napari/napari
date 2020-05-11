@@ -20,6 +20,8 @@ application can feel clunky or frustrating if not designed well.
 
 ## Objective Performance
 
+How to keep napari objectively fast:
+
 **Focus On Real Use Cases**
 
 * Focus on cases that matter to lots of people.
@@ -69,25 +71,25 @@ Napari should strive to have these properties:
 
 **Interruptible**
 * Modeless operations are best. They can interrupted by simply performing some
-  other action. For example is imagery is loading in the background, you can
+  other action. For example if imagery is loading in the background you can
   interrupt it just by navigating to somewhere else.
 * Modal operations that disable the UI should have a cancel button when possible
   unless they are very short.
 * The user should never feel “trapped”.
 
 **Progressive**
-* Show intermediate results as they become available, instead of showing nothing
+* Show intermediate results as they become available instead of showing nothing
   until the full result is ready.
 * Sometimes progressive results are better even if they slow things down a bit,
   which is not necessarily intuitive.
 
 **Informative**
 * Clearly show what controls are enabled or disabled.
-* If progressive display is not possible, show progress bars.
-* Show an busy animation as the last resort, never look totally locked up.
+* If progressive display is not possible, show a progress bar.
+* Show a busy animation as the last resort, never look totally locked up.
 * Show time estimates for super long operations.
 * Let power users see timings, bandwidth, FPS, etc.
-* Revealing internal state lets users appreciate why its taking time.
+* Revealing internal state that explains why it's taking time is helpful.
 
 ## Performance Is Never Done
 
@@ -99,24 +101,24 @@ Performance is never "done" for several reasons:
   before merging to master.
 * New features should be tested on a variety of data types and sizes, including the largest data sets that are supported.
 * The new feature should scale to large datasets, or the performance limitations of the feature should be well documented.
-* It can be hard to impossible to "add performance in later" so the best time to
-  make changes is when the feature is being added.
+* It can be hard to impossible to "add performance in later". The best time to
+  ensure the new feature performs well is when the feature is first added.
 
 **Regressions** 
 
-* New features can slow down existing features.
+* We must be on guard for new features slowing down existing features.
 * New versions of dependencies can slow things down.
 * New hardware generally helps performance but not always.
 
 **Scope Changes**
 
-* New types of users adopt napari and have new use cases.
-* Existing users change their usage over time, e.g more remote viewing.
-* New file formats are invented or become more common.
-* New data types or sizes become more common.
+* As new types of users adopt napari they will have new use cases.
+* Existing users will change their usage over time, e.g more remote viewing.
+* New file formats will be invented or become more common.
+* New data types or sizes will become more common.
 
 ## Conclusion
 
 Achieving and maintaining performance requires an extreme amount of effort
-and diligence, but the payoff is felt in every minute of usage. Delighted
-and productive users are happy users.
+and diligence, but the payoff is felt in every minute of usage and it 
+will result is delighted an productive users.
