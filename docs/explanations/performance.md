@@ -12,8 +12,7 @@ There are two main types of performance:
 
 **Subjective Performance**
 * The user’s experience as it relates to performance.
-* Is the user’s experience pleasant or frustrating?
-* Does napari "seem fast"?
+* Is the user’s experience pleasant or frustrating? Does napari "seem fast"?
 
 Both types of performance are important. No amount of slickness can make up for
 an application that is fundamentally too slow. And even a relatively fast
@@ -33,9 +32,9 @@ application can feel clunky or frustrating if not designed well.
 * Build timers into the software that always run.
 * If not always visible, power users and developers should be able to toggle them on.
 * This gives people an ambient awareness of how long things take.
-* Allows users to report concrete performance numbers.
-  *  “it seemed slow” becomes “it ran at 10Hz”.
-  *  “it took a long time” becomes “it took 2 minutes and 30 seconds”.
+* Allows users to report concrete performance numbers:
+  *  *it seemed slow* becomes *it ran at 10Hz*.
+  *  *it took a long time* becomes *it took 2 minutes and 30 seconds*.
 * Teaches users how different hardware impacts performance.
 
 **Performance System Tests**
@@ -69,9 +68,9 @@ Napari should strive to have these properties:
   frame.
 
 **Interruptible**
-* Modeless operations can be interrupted by simply performing some other action.
-  If imagery is loading in the background, you can interrupt it just by
-  navigating to somewhere else.
+* Modeless operations are best. They can interrupted by simply performing some
+  other action. For example is imagery is loading in the background, you can
+  interrupt it just by navigating to somewhere else.
 * Modal operations that disable the UI should have a cancel button when possible
   unless they are very short.
 * The user should never feel “trapped”.
@@ -85,8 +84,8 @@ Napari should strive to have these properties:
 **Informative**
 * Clearly show what controls are enabled or disabled.
 * If progressive display is not possible, show progress bars.
-* Show time estimates for super long operations.
 * Show an busy animation as the last resort, never look totally locked up.
+* Show time estimates for super long operations.
 * Let power users see timings, bandwidth, FPS, etc.
 
 ## Performance Is Never Done
@@ -95,8 +94,11 @@ Performance is never "done" for several reasons:
 
 **New Features**
 
-* Every new feature must be evaluated for performance.
-* Often new features work great on small datasets, but fall apart on large ones that the developer never tested.
+* New features should be evaluated on their objective subjective and performance before merging to master.
+* New features should be tested on a variety of data types and sizes, including the largest data sets that are supported.
+* Test widely for regressions since new features can easily slow down existing features.
+* The new feature should scale to large datasets, or the performance limitations of the feature should be well documented.
+* It can be hard to impossible to "add performance in later".
 
 **Regressions** 
 
@@ -110,14 +112,6 @@ Performance is never "done" for several reasons:
 * Existing users change their usage over time, e.g more remote viewing.
 * New file formats are invented or become more common.
 * New data types or sizes become more common.
-
-## New Features
-
-* New features should be evaluated on their objective subjective and performance before merging to master.
-* New features should be tested on a variety of data types and sizes, including the largest data sets that are supported.
-* Test widely for regressions since new features can easily slow down existing features.
-* The new feature should scale to large datasets, or the performance limitations of the feature should be well documented.
-* It can be hard to impossible to "add performance in later".
 
 ## Conclusion
 
