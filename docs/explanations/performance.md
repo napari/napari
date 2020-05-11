@@ -43,8 +43,8 @@ application can feel clunky or frustrating if not designed well.
 
 **Performance Unit Tests**
 * Time one small operation to monitor for regressions.
-* Interesting to see how different hardware performs.
 * Napari has some of these today as "benchmarks".
+* Interesting to see how different hardware performs as time goes on.
 
 **Run All Tests Every Merge**
 * Save results to a database or somewhere.
@@ -61,11 +61,11 @@ Napari should strive to have these properties:
   * The full operation happens right away.
   * The interface clearly indicates the input was received and the operation was
     started.
-* The UI should never seem dead, the user should never be left wondering if
-  napari has crashed.
 * For click or keypress events the **ideal response is 100ms**.
 * For drag events or animations the **ideal refresh is 60Hz** which is 16.7ms per
   frame.
+* The UI should never seem dead, the user should never be left wondering if
+  napari has crashed.
 
 **Interruptible**
 * Modeless operations are best. They can interrupted by simply performing some
@@ -87,6 +87,7 @@ Napari should strive to have these properties:
 * Show an busy animation as the last resort, never look totally locked up.
 * Show time estimates for super long operations.
 * Let power users see timings, bandwidth, FPS, etc.
+* Revealing internal state lets users appreciate why its taking time.
 
 ## Performance Is Never Done
 
@@ -94,11 +95,12 @@ Performance is never "done" for several reasons:
 
 **New Features**
 
-* New features should be evaluated on their objective subjective and performance before merging to master.
+* The objective and subjective performance of new features should be scrutinized
+  before merging to master.
 * New features should be tested on a variety of data types and sizes, including the largest data sets that are supported.
-* Test widely for regressions since new features can easily slow down existing features.
 * The new feature should scale to large datasets, or the performance limitations of the feature should be well documented.
-* It can be hard to impossible to "add performance in later".
+* It can be hard to impossible to "add performance in later" so the best time to
+  make changes is when the feature is being added.
 
 **Regressions** 
 
@@ -116,5 +118,5 @@ Performance is never "done" for several reasons:
 ## Conclusion
 
 Achieving and maintaining performance requires an extreme amount of effort
-and diligence, but the payoff is felt in every minute usage, if users are
-delighted and able to productively do their work.
+and diligence, but the payoff is felt in every minute of usage. Delighted
+and productive users are happy users.
