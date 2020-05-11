@@ -22,20 +22,19 @@ application can feel clunky or frustrating if not designed well.
 
 **Focus On Real Use Cases**
 
+* Focus on cases that matter to lots of people.
 * It’s easy to waste time optimizing things no one cares about or no one will
   notice.
-* Focus on cases that matter to lots of people.
 * If a dataset is unreasonable or out of scope or fringe, don’t waste time
   trying to make it run fast.
 
 **Always Be Timing**
 * Build timers into the software that always run.
-* At least power users and developers
-  should be able to see them.
-* This gives people an “ambient awareness” of how long things take.
+* If not always visible, power users and developers should be able to toggle them on.
+* This gives people an ambient awareness of how long things take.
 * Allows users to report concrete performance numbers.
-  *  From “it seemed slow” to “it ran at 10Hz”.
-  *  From “it took a long time” to “it took 2 minutes and 30 seconds”.
+  *  “it seemed slow” becomes “it ran at 10Hz”.
+  *  “it took a long time” becomes “it took 2 minutes and 30 seconds”.
 * Teaches users how different hardware impacts performance.
 
 **Performance System Tests**
@@ -58,7 +57,10 @@ application can feel clunky or frustrating if not designed well.
 Napari should strive to have these properties:
 
 **Responsive**
-* The full operation happens right away or the interface clearly indicates the input was received and the operation was started.
+* Two cases:
+  * The full operation happens right away 
+  * The interface clearly indicates the input was received and the operation was
+    started.
 * The UI should never seem dead, the user should never be left wondering if
   napari has crashed.
 * For click or keypress events the ideal response is 100ms.
@@ -83,7 +85,7 @@ Napari should strive to have these properties:
 * Clearly show what controls are enabled or disabled.
 * If progressive display is not possible, show progress bars.
 * Show time estimates for super long operations.
-* Show a “busy” animation as the last resort, never look totally locked up.
+* Show an busy animation as the last resort, never look totally locked up.
 * Let power users see timings, bandwidth, FPS, etc.
 
 ## Performance Is Never Done
@@ -108,11 +110,10 @@ Performance is never "done" for several reasons:
 * New file formats are invented or become more common.
 * New data types or sizes become more common.
 
-## News Features
+## New Features
 
-* New features should be evaluated on their objective and subjective and performance before merging to master.
+* New features should be evaluated on their objective subjective and performance before merging to master.
 * New features should be tested on a variety of data types and sizes, including the largest data sets that are supported.
-* New features can easily slow down existing features.
-* It's easy to create features that do not scale well to large datasets. Either the feature should scale, or the performance limitations of the feature should be well documented.
+* Test for regressions since new features can easily slow down existing features.
+* The feature should scale to large datasets, or the performance limitations of the feature should be well documented.
 * It can be hard to impossible to "add performance in later".
-
