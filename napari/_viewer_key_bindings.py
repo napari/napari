@@ -74,6 +74,7 @@ def focus_axes_down(viewer):
     viewer.window.qt_viewer.dims.focus_down()
 
 
+@Viewer.bind_key('Backspace')
 @Viewer.bind_key('Control-Backspace')
 @Viewer.bind_key('Control-Delete')
 def remove_selected(viewer):
