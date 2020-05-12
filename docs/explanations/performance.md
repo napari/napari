@@ -33,16 +33,16 @@ How to keep napari objectively fast:
 * Focus on cases that matter to lots of people.
 * It’s easy to waste time optimizing things no one cares about or no one will
   notice.
-* If a dataset is unreasonable or out of scope or fringe, don’t waste time
-  trying to make it run fast.
+* If a dataset is unreasonable or out of scope or fringe, don’t spend too
+  many resources trying to make it run fast.
 
 **Always Be Timing**
 * Build timers into the software that always run.
 * If not always visible, power users and developers should be able to toggle them on.
 * This gives people an ambient awareness of how long things take.
 * Allows users to report concrete performance numbers:
-  *  *it seemed slow* &#8594; *it ran at 10Hz*.
-  *  *it took a long time* &#8594; *it took 2 minutes and 30 seconds*.
+  *  *it seemed slow* → *it ran at 10Hz*.
+  *  *it took a long time* → *it took 2 minutes and 30 seconds*.
 * Teaches users how different hardware impacts performance.
 
 **Performance System Tests**
