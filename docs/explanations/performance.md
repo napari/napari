@@ -1,8 +1,14 @@
 # Napari Performance
 
-Performance is a core feature of napari. Performance is a concern for every
-feature that napari implements. Without adequate performance users will migrate
-to other visualization tools, even if napari has impressive functionality.
+With offline analysis tools performance dictates how long the user has to wait
+for a result, however with an interactive tool like napari performance is even
+more critical. Therefore performance is a core feature of napari. 
+
+Inadequate performance will leave the user frustrated and discouraged and they
+will migrate to other tools or simply give up on interactive exploration all
+together. In contrast excellent performance will create a joyful experience that
+encourages longer and more intensive exploration of data yielding better
+scientific results.
 
 There are two main types of performance:
 
