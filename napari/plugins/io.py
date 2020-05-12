@@ -246,7 +246,7 @@ def _write_multiple_layers_with_plugins(
             names = {i.plugin_name for i in hook_caller.get_hookimpls()}
             raise ValueError(
                 f"There is no registered plugin named '{plugin_name}'.\n"
-                f"Names of plugins offering readers are: {names}"
+                f"Names of plugins offering writers are: {names}"
             )
         implementation = hook_caller.get_plugin_implementation(plugin_name)
         writer_function = hook_caller(
