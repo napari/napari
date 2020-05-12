@@ -67,7 +67,7 @@ How to keep napari objectively fast:
 Napari should strive to have these properties:
 
 **Responsive**
-* Two cases:
+* React to input one of two ways:
   * The full operation happens right away.
   * The interface clearly indicates the input was received and the operation was
     started.
