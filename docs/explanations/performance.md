@@ -35,8 +35,8 @@ How to keep napari objectively fast:
 * If not always visible, power users and developers should be able to toggle them on.
 * This gives people an ambient awareness of how long things take.
 * Allows users to report concrete performance numbers:
-  *  *it seemed slow* &#8594; *it ran at 10Hz*.
-  *  *it took a long time* &#8594; *it took 2 minutes and 30 seconds*.
+  *  *it seemed slow* → *it ran at 10Hz*.
+  *  *it took a long time* → *it took 2 minutes and 30 seconds*.
 * Teaches users how different hardware impacts performance.
 
 **Performance System Tests**
