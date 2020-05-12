@@ -55,9 +55,10 @@ How to keep napari objectively fast:
 * Time one small operation to monitor for regressions.
 * Napari has some of these today as "benchmarks".
 * Interesting to see how different hardware performs as time goes on.
+* We 
 
 **Run All Tests Every Merge**
-* Save results to a database or somewhere.
+* Save results to a database maybe using [ASV](https://asv.readthedocs.io/en/stable/index.html).
 * Catch a regression right when it happens and not weeks or
   months later.
 * See how new features run on large datasets no one tested.
