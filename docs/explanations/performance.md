@@ -121,12 +121,12 @@ Performance is never "done" for several reasons:
 **Scope Changes**
 
 * As new types of users adopt napari they will have new use cases.
-* Existing users will change their usage over time, e.g. more remote viewing.
+* Existing users will change their usage over time such as more remote viewing.
 * New file formats will be invented or become more common.
 * New data types or sizes will become more common.
 
 ## Conclusion
 
 Achieving and maintaining performance requires an extreme amount of effort and
-diligence, but the payoff is felt in every minute of usage. The end result is
-delighted and productive users.
+diligence, but the payoff will be felt in every minute of usage. The end result
+is delighted and productive users.
