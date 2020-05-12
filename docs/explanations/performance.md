@@ -44,7 +44,8 @@ How to keep napari objectively fast:
   *  *it seemed slow* → *it ran at 10Hz*.
   *  *it took a long time* → *it took 2 minutes and 30 seconds*.
 * Teaches users how different hardware impacts performance.
-  * For example HDD vs. SSD vs. network file systems.
+  * For example seek times with SSD are radically faster than HDD.
+  * Also helps notice the impact of local vs. networked file systems.
 
 **Performance System Tests**
 * Create automatic tests that time specific operations in specific known datasets.
