@@ -27,8 +27,8 @@ How to keep napari objectively fast:
 * Focus on cases that matter to lots of people.
 * It’s easy to waste time optimizing things no one cares about or no one will
   notice.
-* If a dataset is unreasonable or out of scope or fringe, don’t waste time
-  trying to make it run fast.
+* If a dataset is unreasonable or out of scope or fringe, don’t spend too
+  many resources trying to make it run fast.
 
 **Always Be Timing**
 * Build timers into the software that always run.
