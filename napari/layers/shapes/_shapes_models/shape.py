@@ -212,7 +212,7 @@ class Shape(ABC):
     def edge_color(self):
         """Color, ColorArray: color of edges
         """
-        return self._edge_color
+        return copy(self._edge_color)
 
     @edge_color.setter
     def edge_color(self, edge_color):
@@ -223,7 +223,7 @@ class Shape(ABC):
     def face_color(self):
         """Color, ColorArray: color of faces
         """
-        return self._face_color
+        return copy(self._face_color)
 
     @face_color.setter
     def face_color(self, face_color):
