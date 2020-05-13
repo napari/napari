@@ -69,6 +69,7 @@ def create_connected_widget():
     # Qthread in which it's running.
     # (optionally pass start=False to prevent immediate running)
     worker = two_way_communication_with_args(0, 40, start_thread=False)
+    w.play_btn.clicked.connect(worker.start)
 
     # it provides signals like {started, yielded, returned, errored, finished}
     worker.yielded.connect(lambda x: w.status.setText(f"worker yielded {x}"))
@@ -78,7 +79,6 @@ def create_connected_widget():
     worker.aborted.connect(lambda: w.status.setText("worker aborted"))
 
     # if you chose to pass start=False, you can start the thread manually
-    w.play_btn.clicked.connect(worker.start)
     worker.finished.connect(lambda: w.play_btn.setDisabled(True))
     worker.finished.connect(lambda: w.play_btn.setText("Done"))
 

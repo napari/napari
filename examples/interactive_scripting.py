@@ -1,6 +1,6 @@
 import numpy as np
 import napari
-from napari._qt.threading import worker_factory
+from napari._qt.threading import thread_worker
 import time
 
 
@@ -10,6 +10,7 @@ with napari.gui_qt():
     viewer = napari.Viewer()
     layer = viewer.add_image(data)
 
+    @thread_worker
     def layer_update(*, update_period, num_updates):
         yield
         # number of times to update
@@ -24,4 +25,4 @@ with napari.gui_qt():
                 layer.data = dat
             yield
 
-    worker_factory(layer_update, update_period=0.05, num_updates=100)
+    layer_update(update_period=0.05, num_updates=100)
