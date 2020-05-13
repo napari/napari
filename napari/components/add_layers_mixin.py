@@ -1,8 +1,9 @@
+import inspect
 import itertools
 from functools import lru_cache
 from logging import getLogger
 from os import fspath
-from typing import Any, Dict, List, Optional, Sequence, Union, Set
+from typing import Any, Dict, List, Optional, Sequence, Set, Union
 
 import numpy as np
 
@@ -958,8 +959,7 @@ class AddLayersMixin:
 
 @lru_cache(maxsize=1)
 def valid_add_kwargs() -> Dict[str, Set[str]]:
-    import inspect
-
+    """Return a dict where keys are layer types & values are valid kwargs."""
     valid = dict()
     for meth in dir(AddLayersMixin):
         if not meth.startswith('add_') or meth[4:] == 'layer':

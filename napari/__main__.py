@@ -52,22 +52,29 @@ def validate_unknown_args(unknown: List[str]) -> Dict[str, Any]:
     for i, arg in enumerate(unknown):
         if not arg.startswith("--"):
             continue
+
         if "=" in arg:
-            sys.exit(f"error: '=' in argument {arg}. (Use space instead)")
-        key = arg.lstrip('-').replace("-", "_")
+            key, value = arg.split("=", maxsplit=1)
+        else:
+            key = arg
+        key = key.lstrip('-').replace("-", "_")
+
         if key not in valid:
             sys.exit(f"error: unrecognized arguments: {arg}")
+
+        if "=" not in arg:
+            try:
+                value = unknown[i + 1]
+                if value.startswith("--"):
+                    raise IndexError()
+            except IndexError:
+                sys.exit(f"error: argument {arg} expected one argument")
         try:
-            next_arg = unknown[i + 1]
-            if next_arg.startswith("--"):
-                raise IndexError()
-        except IndexError:
-            sys.exit(f"error: argument {arg} expected one argument")
-        try:
-            val = literal_eval(next_arg)
+            value = literal_eval(value)
         except Exception:
-            val = next_arg
-        out[key] = val
+            value = value
+
+        out[key] = value
     return out
 
 
@@ -127,6 +134,11 @@ def main():
     )
 
     args, unknown = parser.parse_known_args()
+    # this is a hack to allow using "=" as a key=value separator while also
+    # allowing nargs='*' on the "images" argument...
+    for idx, item in enumerate(reversed(args.images)):
+        if item.startswith("--"):
+            unknown.append(args.images.pop(len(args.images) - idx - 1))
     kwargs = validate_unknown_args(unknown) if unknown else {}
 
     # parse -v flags and set the appropriate logging level
