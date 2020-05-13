@@ -54,7 +54,7 @@ def validate_unknown_args(unknown: List[str]) -> Dict[str, Any]:
             continue
         if "=" in arg:
             sys.exit(f"error: '=' in argument {arg}. (Use space instead)")
-        key = arg[2:].replace("-", "_")
+        key = arg.lstrip('-').replace("-", "_")
         if key not in valid:
             sys.exit(f"error: unrecognized arguments: {arg}")
         try:
