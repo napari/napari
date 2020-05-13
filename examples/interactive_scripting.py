@@ -1,5 +1,6 @@
 import numpy as np
 import napari
+from napari._qt.threading import worker_factory
 import time
 
 
@@ -10,7 +11,7 @@ with napari.gui_qt():
     layer = viewer.add_image(data)
 
     def layer_update(*, update_period, num_updates):
-
+        yield
         # number of times to update
         for k in range(num_updates):
             time.sleep(update_period)
@@ -21,5 +22,6 @@ with napari.gui_qt():
             # check that data layer is properly assigned and not blocked?
             while layer.data.all() != dat.all():
                 layer.data = dat
+            yield
 
-    viewer.update(layer_update, update_period=0.05, num_updates=100)
+    worker_factory(layer_update, update_period=0.05, num_updates=100)

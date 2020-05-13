@@ -3,9 +3,9 @@ from os.path import dirname, join
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import QApplication
 
-from ._qt.qt_update_ui import QtUpdateUI
 from ._qt.qt_main_window import Window
 from ._qt.qt_viewer import QtViewer
+from ._qt.threading import wait_for_workers_to_quit, worker_factory
 from .components import ViewerModel
 
 
@@ -58,6 +58,8 @@ class Viewer(ViewerModel):
         logopath = join(dirname(__file__), 'resources', 'logo.png')
         app.setWindowIcon(QIcon(logopath))
 
+        app.aboutToQuit.connect(wait_for_workers_to_quit)
+
         super().__init__(
             title=title,
             ndisplay=ndisplay,
@@ -109,9 +111,14 @@ class Viewer(ViewerModel):
         return image
 
     def update(self, func, *args, **kwargs):
-        t = QtUpdateUI(func, *args, **kwargs)
-        self.window.qt_viewer.pool.start(t)
-        return self.window.qt_viewer.pool  # returns threadpool object
+        import warnings
+
+        warnings.warn(
+            "Viewer.update() is deprecated, use "
+            "worker_factory(func, *args, **kwargs) instead",
+            DeprecationWarning,
+        )
+        return worker_factory(func, *args, start_thread=True, **kwargs)
 
     def show(self):
         """Resize, show, and raise the viewer window."""

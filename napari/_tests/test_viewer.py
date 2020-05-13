@@ -123,9 +123,8 @@ def test_update(viewer_factory):
 
             assert layer.data.all() == dat.all()
 
-    viewer.update(layer_update, update_period=0.01, num_updates=100)
-    # the previous time.sleep() that used to be here has been replaced with
-    # QtViewer.pool.waitForDone() in the closeEvent of the QtViewer.
+    with pytest.warns(DeprecationWarning):
+        viewer.update(layer_update, update_period=0.01, num_updates=100)
 
 
 def test_changing_theme(viewer_factory):
