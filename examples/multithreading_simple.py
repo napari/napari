@@ -17,6 +17,7 @@ def create_widget():
     widget.status = QLabel('ready...')
     layout.addWidget(widget.status)
     widget.show()
+    return widget
 
 
 if __name__ == "__main__":
