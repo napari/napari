@@ -1,8 +1,9 @@
 import inspect
 import itertools
 import os
+from functools import lru_cache
 from logging import getLogger
-from typing import Any, Dict, List, Optional, Sequence, Union
+from typing import Any, Dict, List, Optional, Sequence, Set, Union
 
 import numpy as np
 
@@ -957,6 +958,18 @@ class AddLayersMixin:
         return layer
 
 
+@lru_cache(maxsize=1)
+def valid_add_kwargs() -> Dict[str, Set[str]]:
+    """Return a dict where keys are layer types & values are valid kwargs."""
+    valid = dict()
+    for meth in dir(AddLayersMixin):
+        if not meth.startswith('add_') or meth[4:] == 'layer':
+            continue
+        params = inspect.signature(getattr(AddLayersMixin, meth)).parameters
+        valid[meth[4:]] = set(params) - {'self', 'kwargs'}
+    return valid
+
+
 def _normalize_layer_data(data: LayerData) -> FullLayerData:
     """Accepts any layerdata tuple, and returns a fully qualified tuple.
 
@@ -1097,9 +1110,9 @@ def prune_kwargs(kwargs: Dict[str, Any], layer_type: str) -> Dict[str, Any]:
     {'scale': (0.75, 1), 'blending': 'additive', 'num_colors': 10}
     """
     add_method = getattr(AddLayersMixin, 'add_' + layer_type, None)
-    if not add_method:
+    if not add_method or layer_type == 'layer':
         raise ValueError(f"Invalid layer_type: {layer_type}")
 
     # get valid params for the corresponding add_<layer_type> method
-    valid_layer_kwargs = set(inspect.signature(add_method).parameters)
-    return {k: v for k, v in kwargs.items() if k in valid_layer_kwargs}
+    valid = valid_add_kwargs()[layer_type]
+    return {k: v for k, v in kwargs.items() if k in valid}
