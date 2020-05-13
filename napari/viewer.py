@@ -35,6 +35,8 @@ class Viewer(ViewerModel):
 
     """
 
+    napari_app_id = 'napari.napari.viewer.' + str(__version__)
+
     def __init__(
         self,
         title='napari',
@@ -42,7 +44,6 @@ class Viewer(ViewerModel):
         order=None,
         axis_labels=None,
         show=True,
-        icon_bugfix=True,
     ):
         # instance() returns the singleton instance if it exists, or None
         app = QApplication.instance()
@@ -63,18 +64,13 @@ class Viewer(ViewerModel):
             )
             raise RuntimeError(message)
 
-        if (
-            icon_bugfix
-            and platform.system() == "Windows"
-            and not getattr(sys, 'frozen', False)
+        if platform.system() == "Windows" and not getattr(
+            sys, 'frozen', False
         ):
             import ctypes
 
-            napari_app_id = 'napari.napari.viewer.' + str(
-                __version__
-            )  # arbitrary string
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
-                napari_app_id
+                self.napari_app_id
             )
 
         logopath = join(dirname(__file__), 'resources', 'logo.png')
