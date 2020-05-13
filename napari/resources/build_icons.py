@@ -6,7 +6,7 @@ for styling svg elements using qss
 import os
 import re
 import shutil
-from subprocess import check_call, CalledProcessError
+from subprocess import check_call
 from typing import Dict, List, Tuple
 
 from ..utils.theme import palettes as _palettes
@@ -167,10 +167,24 @@ def build_pyqt_resources(out_path: str, overwrite: bool = False) -> str:
     )
 
     # then convert it to a python file
-    try:
-        check_call(['pyrcc5', '-o', out_path, qrc_path])
-    except (FileNotFoundError, CalledProcessError):
-        check_call(['pyside2-rcc', '-o', out_path, qrc_path])
+    # this looks a little funny, but rather than pick the exact binary to try
+    # once, we use this try/catch loop because
+    # 1. we always want to use pyrcc5 if it's available, regardless of API
+    # 2. it will sometimes, (if not always) be named pyrcc5.bat on windows...
+    # 3. only then do we try pyside2-rcc
+    # see https://github.com/napari/napari/issues/1221 for background
+    for binary in ('pyrcc5.bat', 'pyrcc5', 'pyside2-rcc'):
+        try:
+            check_call([binary, '-o', out_path, qrc_path])
+        except FileNotFoundError:
+            continue
+        break
+    else:
+        raise FileNotFoundError(
+            "Unable to find an executable to build Qt resources (icons).\n"
+            "Tried: 'pyrcc5.bat', 'pyrcc5', 'pyside2-rcc'.\n"
+            "Please open issue at https://github.com/napari/napari/issues/."
+        )
 
     # make sure we import from qtpy
     with open(out_path, "rt") as fin:

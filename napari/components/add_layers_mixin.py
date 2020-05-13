@@ -229,7 +229,7 @@ class AddLayersMixin:
         else:
             # Determine if data is a multiscale
             if multiscale is None:
-                multiscale = guess_multiscale(data)
+                multiscale, data = guess_multiscale(data)
             n_channels = (data[0] if multiscale else data).shape[channel_axis]
             kwargs['blending'] = kwargs['blending'] or 'additive'
 
@@ -848,18 +848,6 @@ class AddLayersMixin:
             A list of any layers that were added to the viewer.
         """
         layer_data = read_data_with_plugins(path_or_paths, plugin=plugin)
-
-        if not layer_data:
-            # if layer_data is empty, it means no plugin could read path
-            # we just want to provide some useful feedback, which includes
-            # whether or not paths were passed to plugins as a list.
-            if isinstance(path_or_paths, (tuple, list)):
-                path_repr = f"[{path_or_paths[0]}, ...] as stack"
-            else:
-                path_repr = path_or_paths
-            msg = f'No plugin found capable of reading {path_repr}.'
-            logger.error(msg)
-            return []
 
         # add each layer to the viewer
         added: List[layers.Layer] = []  # for layers that get added

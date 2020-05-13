@@ -29,42 +29,59 @@ def test_guess_rgb():
 
 def test_guess_multiscale():
     data = np.random.random((10, 15))
-    assert not guess_multiscale(data)
+    assert not guess_multiscale(data)[0]
 
     data = np.random.random((10, 15, 6))
-    assert not guess_multiscale(data)
+    assert not guess_multiscale(data)[0]
 
     data = [np.random.random((10, 15, 6))]
-    assert not guess_multiscale(data)
-
-    data = [np.random.random((10, 15, 6)), np.random.random((10, 15, 6))]
-    assert not guess_multiscale(data)
+    assert not guess_multiscale(data)[0]
 
     data = [np.random.random((10, 15, 6)), np.random.random((5, 7, 3))]
-    assert guess_multiscale(data)
+    assert guess_multiscale(data)[0]
 
     data = [np.random.random((10, 15, 6)), np.random.random((10, 7, 3))]
-    assert guess_multiscale(data)
+    assert guess_multiscale(data)[0]
 
     data = tuple(data)
-    assert guess_multiscale(data)
+    assert guess_multiscale(data)[0]
 
     data = tuple(
         pyramid_gaussian(np.random.random((10, 15)), multichannel=False)
     )
-    assert guess_multiscale(data)
+    assert guess_multiscale(data)[0]
 
     data = np.asarray(
         tuple(pyramid_gaussian(np.random.random((10, 15)), multichannel=False))
     )
-    assert guess_multiscale(data)
+    assert guess_multiscale(data)[0]
 
     # Check for integer overflow with big data
     s = 8192
     data = [da.ones((s,) * 3), da.ones((s // 2,) * 3), da.ones((s // 4,) * 3)]
-    assert guess_multiscale(data)
+    assert guess_multiscale(data)[0]
+
+
+def test_guess_multiscale_strip_single_scale():
+    data = [np.empty((10, 10))]
+    guess, data_out = guess_multiscale(data)
+    assert data_out is data[0]
+    assert guess is False
+
+
+def test_guess_multiscale_non_array_list():
+    """Check that non-decreasing list input raises ValueError"""
+    data = [np.empty((10, 15, 6)),] * 2  # noqa: E231
+    with pytest.raises(ValueError):
+        _, _ = guess_multiscale(data)
+
+
+def test_guess_multiscale_incorrect_order():
+    data = [np.empty((10, 15)), np.empty((5, 6)), np.empty((20, 15))]
+    with pytest.raises(ValueError):
+        _, _ = guess_multiscale(data)
 
 
 @pytest.mark.timeout(2)
 def test_timing_multiscale_big():
-    assert not guess_multiscale(data_dask)
+    assert not guess_multiscale(data_dask)[0]
