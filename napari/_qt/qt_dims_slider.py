@@ -22,7 +22,7 @@ from ..utils.event import Event
 from ._constants import LoopMode
 from .qt_modal import QtPopup
 from .qt_scrollbar import ModifiedScrollBar
-from .utils import new_worker_qthread
+from .threading import new_worker_qthread
 
 
 class QtDimSliderWidget(QWidget):
