@@ -33,13 +33,6 @@ class WorkerBase(QRunnable, QObject):
         QObject.__init__(self)
         self._abort_requested = False
 
-    @Slot()
-    def run(self):
-        self.started.emit()
-        self._running = True
-        self.work()
-        self.finished.emit()
-
     def quit(self) -> None:
         """Send a message to abort the worker."""
         self._abort_requested = True
@@ -53,6 +46,23 @@ class WorkerBase(QRunnable, QObject):
     def is_running(self) -> bool:
         """Whether the worker has been started"""
         return self._running
+
+    @Slot()
+    def run(self):
+        """Start the worker.
+
+        **This** is the function that actually gets called when calling
+        :func:`start_worker(worker)`.  It simply wraps the :meth:`work` method,
+        and emits a few signals.  Subclasses should NOT override this method
+        (except with good reason), and instead should implement :meth:`work`.
+        """
+        self.started.emit()
+        self._running = True
+        try:
+            self.work()
+        except Exception as exc:
+            self.errored.emit(exc)
+        self.finished.emit()
 
     def work(self):
         """Main method to execute the worker.
@@ -122,8 +132,9 @@ class Worker(WorkerBase):
         self.__dict__.update(**first_yield)
 
     def work(self) -> None:
-        """Core loop that calls the runnable.
-
+        """Core loop that calls the original function.  Enters a continual
+        loop, yielding and returning from the original function.  Checks for
+        various events (quit, pause, resume, etc...)
         """
         while True:
             if self.abort_requested:
@@ -148,9 +159,6 @@ class Worker(WorkerBase):
                 self.post_yield_hook()
             except StopIteration as exc:
                 self.returned.emit(exc.value)
-                break
-            except Exception as exc:
-                self.errored.emit(exc)
                 break
 
     def send(self, value: Any):
@@ -222,7 +230,16 @@ class ProgressWorker(Worker):
         self._counter = -1
 
 
-#: A set of Workers
+############################################################################
+
+# public API
+
+# For now, the next three functions simply wrap the QThreadPool API, and allow
+# us to track and cleanup all workers that were started with ``start_worker``,
+# provided that ``wait_for_workers_to_quit`` is called at shutdown.
+# In the future, this could wrap any API, or a pure python threadpool.
+
+#: A set of Workers.  Do not add directly, use ``start_worker``.`
 _WORKERS: Set[WorkerBase] = set()
 
 
@@ -252,6 +269,9 @@ def start_worker(worker: WorkerBase) -> None:
 def wait_for_workers_to_quit(msecs: int = -1) -> bool:
     """Ask all workers to quit, and wait up to `msec` for quit.
 
+    Attempts to clean up all running workers.  (It is assumed that they have a
+    ``quit()`` method, which they will if ``start_worker`` was used.)
+
     Parameters
     ----------
     msecs : int, optional
@@ -272,6 +292,11 @@ def wait_for_workers_to_quit(msecs: int = -1) -> bool:
 def active_thread_count() -> int:
     """Return the number of active threads in the global ThreadPool."""
     return QThreadPool.globalInstance().activeThreadCount()
+
+
+#############################################################################
+
+# convenience functions for creating Worker instances
 
 
 def worker_factory(
@@ -413,7 +438,6 @@ def thread_worker(
 
 
 ############################################################################
-
 
 # This is a variant on the above pattern, it uses QThread instead of Qrunnable
 # see https://doc.qt.io/qt-5/threads-technologies.html#comparison-of-solutions
