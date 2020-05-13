@@ -310,7 +310,7 @@ def active_thread_count() -> int:
 
 def worker_factory(
     *args,
-    start_thread: bool = True,
+    start_thread: bool = True,  # TODO: Get opinions on best default value
     connections: Dict[str, Callable] = None,
     worker_class: Type[WorkerBase] = Worker,
     **kwargs,

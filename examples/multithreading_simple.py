@@ -10,29 +10,35 @@ def long_running_function():
     return 'finished!'
 
 
-if __name__ == "__main__":
-    app = QApplication([])
-
+def create_widget():
     widget = QWidget()
     layout = QHBoxLayout()
     widget.setLayout(layout)
+    widget.status = QLabel('ready...')
+    layout.addWidget(widget.status)
+    widget.show()
 
-    status = QLabel('ready...')
-    layout.addWidget(status)
 
+if __name__ == "__main__":
+    app = QApplication([])
+    wdg = create_widget()
+
+    # call decorated function
     worker = long_running_function(start_thread=False)
+
     # Note that signals/slots are best connected *before* starting the worker.
-    worker.started.connect(lambda: status.setText("worker is running..."))
-    worker.returned.connect(lambda x: status.setText(f"worker returned {x!r}"))
+    worker.started.connect(lambda: wdg.status.setText("worker is running..."))
+    worker.returned.connect(
+        lambda x: wdg.status.setText(f"worker returned {x}")
+    )
     worker.start()
 
-    # # The above syntax is equivalent to this:
+    # # The above syntax is equivalent to:
     # worker = long_running_function(
     #     connections={
-    #         'started': lambda: status.setText("worker is running..."),
-    #         'returned': lambda x: status.setText(f"worker returned {x!r}"),
+    #         'started': lambda: wdg.status.setText("worker is running..."),
+    #         'returned': lambda x: wdg.status.setText(f"worker returned {x!r}"),
     #     }
     # )
 
-    widget.show()
     app.exec_()
