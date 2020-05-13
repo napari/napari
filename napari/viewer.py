@@ -29,10 +29,6 @@ class Viewer(ViewerModel):
         Dimension names. by default they are labeled with sequential numbers
     show : bool, optional
         Whether to show the viewer after instantiation. by default True.
-    icon_bugfix: bool
-        If use bugfix to show proper icon when running as script on Windows.
-        May want to disable when embed napari as viewer in own application
-
     """
 
     napari_app_id = 'napari.napari.viewer.' + str(__version__)
