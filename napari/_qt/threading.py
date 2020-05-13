@@ -266,6 +266,15 @@ def start_worker(worker: WorkerBase) -> None:
     QThreadPool.globalInstance().start(worker)
 
 
+def set_max_thread_count(num: int):
+    """Set the maximum number of threads used by the thread pool.
+
+    Note: The thread pool will always use at least 1 thread, even if
+    maxThreadCount limit is zero or negative.
+    """
+    QThreadPool.globalInstance().setMaxThreadCount(num)
+
+
 def wait_for_workers_to_quit(msecs: int = -1) -> bool:
     """Ask all workers to quit, and wait up to `msec` for quit.
 
