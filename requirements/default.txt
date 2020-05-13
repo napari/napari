@@ -7,7 +7,6 @@ ipykernel>=5.1.1
 numpy>=1.10.0
 qtpy>=1.7.0
 qtconsole>=4.5.1
-jupyter-client<6.0.0  # not a direct dependency; remove once fixed
 scipy>=1.2.0
 vispy>=0.6.4
 IPython>=7.7.0

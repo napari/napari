@@ -230,7 +230,7 @@ class AddLayersMixin:
         else:
             # Determine if data is a multiscale
             if multiscale is None:
-                multiscale = guess_multiscale(data)
+                multiscale, data = guess_multiscale(data)
             n_channels = (data[0] if multiscale else data).shape[channel_axis]
             kwargs['blending'] = kwargs['blending'] or 'additive'
 
