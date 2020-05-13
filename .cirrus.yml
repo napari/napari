@@ -194,6 +194,27 @@ win_task:
 
   test_script: pytest -v -o qt_no_exception_capture=1
 
+pyqt_task:
+  auto_cancellation: true
+
+  name: pyqt_test_instalation
+
+  container:
+    image: python:3.7-slim
+
+  install_script:
+    - apt-get update
+    - apt-get install -y build-essential
+    - pip install --retries 3 -U pip setuptools
+    - pip install --retries 3 -r requirements/development.txt
+    - python setup.py sdist
+    - pip install PyQt5 numpy
+    - pip install dist/napari*.tar.gz
+
+  test_script:
+    - python -c "ff=open('test.py', 'w');ff.write('import sys\ntry:\n\timport PySide2\n\tsys.exit(1)\nexcept ImportError:\n\tpass\n');ff.close()"
+    - python test.py
+
 codecov_task:
   auto_cancellation: true
   name: Coverage & Requirements
