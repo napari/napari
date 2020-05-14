@@ -115,7 +115,7 @@ class Worker(WorkerBase):
         if inspect.isgeneratorfunction(func):
             self._gen = func(*args, **kwargs)
         else:
-            self._gen = as_generatorfunction(func)(*args, **kwargs)
+            self._gen = as_generator_function(func)(*args, **kwargs)
 
         self._incoming_value = None
         self._pause_requested = False
