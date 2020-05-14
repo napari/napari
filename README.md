@@ -75,9 +75,10 @@ You can extend **napari** using custom shortcuts, key bindings, and mouse functi
 
 For more details on how to use `napari` checkout our [tutorials](https://napari.org/tutorials/). These are still a work in progress, but we'll be updating them regularly.
 
-## mission and values
+## mission, values, and roadmap
 
-For more information about our plans for `napari` you can read our [mission and values statement](./docs/developers/MISSION_AND_VALUES.md), which includes more details on our vision for supporting a plugin ecosystem around napari.
+For more information about our plans for `napari` you can read our [mission and values statement](./docs/developers/MISSION_AND_VALUES.md), which includes more details on our vision for supporting a plugin ecosystem around napari. We also have
+a [roadmap](./docs/developers/ROADMAP_0_3.md) that captures current development priorities within the project.
 
 ## contributing
 

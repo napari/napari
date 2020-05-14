@@ -1,25 +1,19 @@
 import sys
 
-from pluggy import HookimplMarker
-
-from ._hook_callers import execute_hook
-from .exceptions import PluginError, PluginImportError, PluginRegistrationError
-from .manager import NapariPluginManager, log_plugin_error
-
-# Marker to be imported and used in plugins (and for own implementations)
-# Note: plugins may also just import pluggy directly and make their own
-# napari_hook_implementation.
-napari_hook_implementation = HookimplMarker("napari")
+from napari_plugin_engine import PluginManager
+from . import hook_specifications
+from . import _builtins
 
 # the main plugin manager instance for the `napari` plugin namespace.
-plugin_manager = NapariPluginManager()
+plugin_manager = PluginManager(
+    'napari', discover_entry_point='napari.plugin', discover_prefix='napari_'
+)
+with plugin_manager.discovery_blocked():
+    plugin_manager.add_hookspecs(hook_specifications)
+    plugin_manager.register(_builtins, name='builtins')
+
 
 __all__ = [
-    "NapariPluginManager",
+    "PluginManager",
     "plugin_manager",
-    "PluginError",
-    "PluginRegistrationError",
-    "PluginImportError",
-    "execute_hook",
-    "log_plugin_error",
 ]

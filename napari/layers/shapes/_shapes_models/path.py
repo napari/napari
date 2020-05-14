@@ -1,5 +1,4 @@
 import numpy as np
-from xml.etree.ElementTree import Element
 from .shape import Shape
 from .._shapes_utils import create_box
 
@@ -92,22 +91,3 @@ class Path(Shape):
                 np.max(data_not_displayed, axis=0),
             ]
         ).astype('int')
-
-    def to_xml(self):
-        """Generates an xml element that defintes the shape according to the
-        svg specification.
-
-        Returns
-        ----------
-        element : xml.etree.ElementTree.Element
-            xml element specifying the shape according to svg.
-        """
-        data = self.data[:, self.dims_displayed]
-        points = ' '.join([f'{d[1]},{d[0]}' for d in data])
-
-        props = self.svg_props
-        props['fill'] = 'none'
-
-        element = Element('polyline', points=points, **props)
-
-        return element

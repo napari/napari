@@ -1,20 +1,19 @@
-import os
 import warnings
-
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from xml.etree.ElementTree import Element, tostring
+from typing import List, Optional
+
 import numpy as np
-from skimage import img_as_ubyte
-from ._base_constants import Blending
 
 from ...components import Dims
 from ...utils.event import EmitterGroup, Event
 from ...utils.key_bindings import KeymapProvider
-from ...utils.misc import ROOT_DIR
+from ...utils.misc import ROOT_DIR, configure_dask
 from ...utils.naming import magic_name
-from ...utils.status_messages import status_format, format_float
+from ...utils.status_messages import format_float, status_format
 from ..transforms import ScaleTranslate, TransformChain
+from ..utils.layer_utils import compute_multiscale_level, convert_to_uint8
+from ._base_constants import Blending
 
 
 class Layer(KeymapProvider, ABC):
@@ -38,7 +37,10 @@ class Layer(KeymapProvider, ABC):
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
-
+    multiscale : bool
+        Whether the data is multiscale or not. Multiscale data is
+        represented by a list of data objects and should go from largest to
+        smallest.
 
     Attributes
     ----------
@@ -66,11 +68,19 @@ class Layer(KeymapProvider, ABC):
         Scale factors for the layer.
     translate : tuple of float
         Translation values for the layer.
+    multiscale : bool
+        Whether the data is multiscale or not. Multiscale data is
+        represented by a list of data objects and should go from largest to
+        smallest.
     z_index : int
         Depth of the layer visual relative to other visuals in the scenecanvas.
     coordinates : tuple of float
-        Coordinates of the cursor in the image space of each layer. The length
+        Coordinates of the cursor in the data space of each layer. The length
         of the tuple is equal to the number of dimensions of the layer.
+    corner_pixels : array
+        Coordinates of the top-left and bottom-right canvas pixels in the data
+        space of each layer. The length of the tuple is equal to the number of
+        dimensions of the layer.
     position : 2-tuple of int
         Cursor position in the image space of only the displayed dimensions.
     shape : tuple of int
@@ -95,6 +105,7 @@ class Layer(KeymapProvider, ABC):
         Conversion factor from canvas coordinates to image coordinates, which
         depends on the current zoom level.
 
+
     Notes
     -----
     Must define the following:
@@ -118,12 +129,14 @@ class Layer(KeymapProvider, ABC):
         opacity=1,
         blending='translucent',
         visible=True,
+        multiscale=False,
     ):
         super().__init__()
 
-        if name is None and data is not None and os.getenv('MAGICNAME'):
+        if name is None and data is not None:
             name = magic_name(data, path_prefix=ROOT_DIR)
 
+        self.dask_optimized_slicing = configure_dask(data)
         self.metadata = metadata or {}
         self._opacity = opacity
         self._blending = Blending(blending)
@@ -137,6 +150,7 @@ class Layer(KeymapProvider, ABC):
         self._interactive = True
         self._value = None
         self.scale_factor = 1
+        self.multiscale = multiscale
 
         self.dims = Dims(ndim)
 
@@ -150,7 +164,7 @@ class Layer(KeymapProvider, ABC):
         #   of an image. It maps pixels of the tile into the coordinate space
         #   of the full resolution data and can usually be represented by a
         #   scale factor and a translation. A common use case is viewing part
-        #   of lower resolution level of an image pyramid, another is using a
+        #   of lower resolution level of a multiscale image, another is using a
         #   downsampled version of an image when the full image size is larger
         #   than the maximum allowed texture size of your graphics card.
         # 2. `data2world`: The main transform mapping data to a world-like
@@ -171,7 +185,7 @@ class Layer(KeymapProvider, ABC):
 
         self.coordinates = (0,) * ndim
         self._position = (0,) * self.dims.ndisplay
-        self.is_pyramid = False
+        self.corner_pixels = np.zeros((2, ndim), dtype=int)
         self._editable = True
 
         self._thumbnail_shape = (32, 32, 4)
@@ -454,6 +468,15 @@ class Layer(KeymapProvider, ABC):
         raise NotImplementedError()
 
     @property
+    def _type_string(self):
+        return self.__class__.__name__.lower()
+
+    def as_layer_data_tuple(self):
+        state = self._get_state()
+        state.pop('data', None)
+        return self.data, state, self._type_string
+
+    @property
     def thumbnail(self):
         """array: Integer array of thumbnail for the layer"""
         return self._thumbnail
@@ -465,7 +488,7 @@ class Layer(KeymapProvider, ABC):
         if thumbnail.dtype != np.uint8:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                thumbnail = img_as_ubyte(thumbnail)
+                thumbnail = convert_to_uint8(thumbnail)
 
         padding_needed = np.subtract(self._thumbnail_shape, thumbnail.shape)
         pad_amounts = [(p // 2, (p + 1) // 2) for p in padding_needed]
@@ -570,6 +593,10 @@ class Layer(KeymapProvider, ABC):
         self.events.cursor_size(cursor_size=cursor_size)
         self._cursor_size = cursor_size
 
+    def set_view_slice(self):
+        with self.dask_optimized_slicing():
+            self._set_view_slice()
+
     @abstractmethod
     def _set_view_slice(self):
         raise NotImplementedError()
@@ -615,7 +642,7 @@ class Layer(KeymapProvider, ABC):
         """Refresh all layer data based on current view slice.
         """
         if self.visible:
-            self._set_view_slice()
+            self.set_view_slice()
             self.events.set_data()
             self._update_thumbnail()
             self._update_coordinates()
@@ -631,6 +658,59 @@ class Layer(KeymapProvider, ABC):
         self.coordinates = tuple(coords)
         self._value = self.get_value()
         self.status = self.get_message()
+
+    def _update_multiscale(self, corner_pixels, shape_threshold):
+        """Refresh layer multiscale if new resolution level or tile is required.
+
+        Parameters
+        ----------
+        corner_pixels : array
+            Coordinates of the top-left and bottom-right canvas pixels in the
+            data space of each layer. The length of the tuple is equal to the
+            number of dimensions of the layer. If different from the current
+            layer corner_pixels the layer needs refreshing.
+        shape_threshold : tuple
+            Requested shape of field of view in data coordinates
+        """
+
+        if len(self.dims.displayed) == 3:
+            data_level = corner_pixels.shape[1] - 1
+        else:
+            # Clip corner pixels inside data shape
+            new_corner_pixels = np.clip(
+                self.corner_pixels,
+                0,
+                np.subtract(self.level_shapes[self.data_level], 1),
+            )
+
+            # Scale to full resolution of the data
+            requested_shape = (
+                new_corner_pixels[1] - new_corner_pixels[0]
+            ) * self.downsample_factors[self.data_level]
+
+            downsample_factors = self.downsample_factors[
+                :, self.dims.displayed
+            ]
+
+            data_level = compute_multiscale_level(
+                requested_shape[self.dims.displayed],
+                shape_threshold,
+                downsample_factors,
+            )
+
+        if data_level != self.data_level:
+            # Set the data level, which will trigger a layer refresh and
+            # further updates including recalculation of the corner_pixels
+            # for the new level
+            self.data_level = data_level
+            self.refresh()
+        elif not np.all(self.corner_pixels == corner_pixels):
+            self.refresh()
+
+    @property
+    def displayed_coordinates(self):
+        """list: List of currently displayed coordinates."""
+        return [self.coordinates[i] for i in self.dims.displayed]
 
     def get_message(self):
         """Generate a status message based on the coordinates and value
@@ -648,7 +728,7 @@ class Layer(KeymapProvider, ABC):
         value = self._value
         if value is not None:
             if isinstance(value, tuple) and value != (None, None):
-                # it's a pyramid -> value = (data_level, value)
+                # it's a multiscale -> value = (data_level, value)
                 msg += f': {status_format(value[0])}'
                 if value[1] is not None:
                     msg += f', {status_format(value[1])}'
@@ -657,91 +737,25 @@ class Layer(KeymapProvider, ABC):
                 msg += f': {status_format(value)}'
         return msg
 
-    def to_xml_list(self):
-        """Generates a list of xml elements for the layer.
-
-        Returns
-        ----------
-        xml : list of xml.etree.ElementTree.Element
-            List of a single xml element specifying the currently viewed image
-            as a png according to the svg specification.
-        """
-        return []
-
-    def to_svg(self, file=None, canvas_shape=None):
-        """Convert the current layer state to an SVG.
+    def save(self, path: str, plugin: Optional[str] = None) -> List[str]:
+        """Save this layer to ``path`` with default (or specified) plugin.
 
         Parameters
         ----------
-        file : path-like object, optional
-            An object representing a file system path. A path-like object is
-            either a str or bytes object representing a path, or an object
-            implementing the `os.PathLike` protocol. If passed the svg will be
-            written to this file
-        canvas_shape : 4-tuple, optional
-            View box of SVG canvas to be generated specified as `min-x`,
-            `min-y`, `width` and `height`. If not specified, calculated
-            from the last two dimensions of the layer.
+        path : str
+            A filepath, directory, or URL to open.  Extensions may be used to
+            specify output format (provided a plugin is avaiable for the
+            requested format).
+        plugin : str, optional
+            Name of the plugin to use for saving. If ``None`` then all plugins
+            corresponding to appropriate hook specification will be looped
+            through to find the first one that can save the data.
 
         Returns
-        ----------
-        svg : string
-            SVG representation of the layer.
+        -------
+        list of str
+            File paths of any files that were written.
         """
+        from ...plugins.io import save_layers
 
-        if canvas_shape is None:
-            min_shape = [r[0] for r in self.dims.range[-2:]]
-            max_shape = [r[1] for r in self.dims.range[-2:]]
-            shape = np.subtract(max_shape, min_shape)
-        else:
-            shape = canvas_shape[2:]
-            min_shape = canvas_shape[:2]
-
-        props = {
-            'xmlns': 'http://www.w3.org/2000/svg',
-            'xmlns:xlink': 'http://www.w3.org/1999/xlink',
-        }
-
-        xml = Element(
-            'svg',
-            height=f'{shape[0]}',
-            width=f'{shape[1]}',
-            version='1.1',
-            **props,
-        )
-
-        transform = f'translate({-min_shape[1]} {-min_shape[0]})'
-        xml_transform = Element('g', transform=transform)
-
-        xml_list = self.to_xml_list()
-        for x in xml_list:
-            xml_transform.append(x)
-        xml.append(xml_transform)
-
-        svg = (
-            '<?xml version=\"1.0\" standalone=\"no\"?>\n'
-            + '<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\"\n'
-            + '\"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n'
-            + tostring(xml, encoding='unicode', method='xml')
-        )
-
-        if file:
-            # Save svg to file
-            with open(file, 'w') as f:
-                f.write(svg)
-
-        return svg
-
-    def on_mouse_move(self, event):
-        """Called whenever mouse moves over canvas."""
-        return
-
-    def on_mouse_press(self, event):
-        """Called whenever mouse pressed in canvas.
-        """
-        return
-
-    def on_mouse_release(self, event):
-        """Called whenever mouse released in canvas.
-        """
-        return
+        return save_layers(path, [self], plugin=plugin)

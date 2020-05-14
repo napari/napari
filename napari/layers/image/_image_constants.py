@@ -28,6 +28,13 @@ class Interpolation(StringEnum):
     SPLINE36 = auto()
 
 
+class Interpolation3D(StringEnum):
+    """INTERPOLATION: Vispy interpolation mode for volume rendering."""
+
+    LINEAR = auto()
+    NEAREST = auto()
+
+
 class Rendering(StringEnum):
     """Rendering: Rendering mode for the layer.
 

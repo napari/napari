@@ -1,7 +1,10 @@
 import pytest
 import numpy as np
 
-from ..colormaps.colormaps import AVAILABLE_COLORMAPS
+from ..colormaps.colormaps import (
+    AVAILABLE_COLORMAPS,
+    increment_unnamed_colormap,
+)
 from vispy.color.color_array import ColorArray
 
 
@@ -25,3 +28,18 @@ def test_colormap(name):
     # http://vispy.org/color.html
     q = np.random.rand(10, 10)
     assert cmap.map(q.reshape(-1, 1)).shape == (q.size, 4)
+
+
+def test_increment_unnamed_colormap():
+    # test that unnamed colormaps are incremented
+    names = [
+        '[unnamed colormap 0',
+        'existing_colormap',
+        'perceptually_uniform',
+        '[unnamed colormap 1]',
+    ]
+    assert increment_unnamed_colormap(names) == '[unnamed colormap 2]'
+
+    # test that named colormaps are not incremented
+    named_colormap = 'perfect_colormap'
+    assert increment_unnamed_colormap(names, named_colormap) == named_colormap

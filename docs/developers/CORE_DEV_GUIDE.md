@@ -143,21 +143,21 @@ that responsibility seriously.
 As a core member, you should be familiar with community and developer
 resources such as:
 
--  Our [contributor guide](CONTRIBUTING.md).
--  Our [code of conduct](CODE_OF_CONDUCT.md).
--  Our [governance](GOVERNANCE.md).
--  Our [mission and values](MISSION_AND_VALUES.md).
--  Our [benchmarking guide](BENCHMARKS.md).
--  [PEP8](https://www.python.org/dev/peps/pep-0008/) for Python style.
--  [PEP257](https://www.python.org/dev/peps/pep-0257/) and the
+- Our [contributor guide](CONTRIBUTING.md).
+- Our [code of conduct](CODE_OF_CONDUCT.md).
+- Our [governance](GOVERNANCE.md).
+- Our [mission and values](MISSION_AND_VALUES.md).
+- Our [benchmarking guide](BENCHMARKS.md).
+- [PEP8](https://www.python.org/dev/peps/pep-0008/) for Python style.
+- [PEP257](https://www.python.org/dev/peps/pep-0257/) and the
    [NumPy documentation guide](https://docs.scipy.org/doc/numpy/docs/howto_document.html)
    for docstring conventions.
--  [`pre-commit`](https://pre-commit.com) hooks for autoformatting.
--  [`black`](https://github.com/psf/black) autoformatting.
--  [`flake8`](https://github.com/PyCQA/flake8) linting.
--  [#napari on image.sc](https://forum.image.sc/tags/napari).
--  [#napari](https://twitter.com/search?q=%23napari&f=live) and [@napari_imaging](https://twitter.com/napari_imaging) on twitter.
--  [napari zulip](https://napari.zulipchat.com/) community chat channel.
+- [`pre-commit`](https://pre-commit.com) hooks for autoformatting.
+- [`black`](https://github.com/psf/black) autoformatting.
+- [`flake8`](https://github.com/PyCQA/flake8) linting.
+- [#napari on image.sc](https://forum.image.sc/tags/napari).
+- [#napari](https://twitter.com/search?q=%23napari&f=live) and [@napari_imaging](https://twitter.com/napari_imaging) on twitter.
+- [napari zulip](https://napari.zulipchat.com/) community chat channel.
 
 You are not required to monitor the social resources.
 
@@ -183,7 +183,7 @@ the cast votes is enough.
 Core developers can choose to become emeritus core developers and suspend
 their approval and voting rights until they become active again.
 
-## Contribute To This Guide!
+## Contribute To This Guide (!)
 
 This guide reflects the experience of the current core developers.  We
 may well have missed things that, by now, have become second

@@ -9,7 +9,7 @@ from qtpy.QtWidgets import (
     QSlider,
 )
 
-from ...layers.points._constants import Mode, Symbol
+from ...layers.points._points_constants import Mode, Symbol
 from ..qt_color_dialog import QColorSwatchEdit
 from ..qt_mode_buttons import QtModePushButton, QtModeRadioButton
 from ..utils import qt_signals_blocked

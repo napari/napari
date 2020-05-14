@@ -1,5 +1,4 @@
 from collections import deque
-from copy import copy
 from typing import Union
 
 import numpy as np
@@ -8,9 +7,9 @@ from scipy import ndimage as ndi
 from ..image import Image
 from ...utils.colormaps import colormaps
 from ...utils.event import Event
-from .labels_utils import interpolate_coordinates
 from ...utils.status_messages import format_float
-from ._constants import Mode
+from ._labels_constants import Mode
+from ._labels_mouse_bindings import fill, paint, pick
 
 
 class Labels(Image):
@@ -22,13 +21,7 @@ class Labels(Image):
     Parameters
     ----------
     data : array or list of array
-        Labels data as an array or pyramid.
-    is_pyramid : bool
-        Whether the data is an image pyramid or not. Pyramid data is
-        represented by a list of array like image data. If not specified by
-        the user and if the data is a list of arrays that decrease in shape
-        then it will be taken to be a pyramid. The first image in the list
-        should be the largest.
+        Labels data as an array or multiscale.
     num_colors : int
         Number of unique colors to use in colormap.
     seed : float
@@ -49,6 +42,12 @@ class Labels(Image):
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
+    multiscale : bool
+        Whether the data is a multiscale image or not. Multiscale data is
+        represented by a list of array like image data. If not specified by
+        the user and if the data is a list of arrays that decrease in shape
+        then it will be taken to be multiscale. The first image in the list
+        should be the largest.
 
     Attributes
     ----------
@@ -56,8 +55,8 @@ class Labels(Image):
         Integer valued label data. Can be N dimensional. Every pixel contains
         an integer ID corresponding to the region it belongs to. The label 0 is
         rendered as transparent.
-    is_pyramid : bool
-        Whether the data is an image pyramid or not. Pyramid data is
+    multiscale : bool
+        Whether the data is a multiscale image or not. Multiscale data is
         represented by a list of array like image data. The first image in the
         list should be the largest.
     metadata : dict
@@ -80,7 +79,7 @@ class Labels(Image):
         Interactive mode. The normal, default mode is PAN_ZOOM, which
         allows for normal interactivity with the canvas.
 
-        In PICKER mode the cursor functions like a color picker, setting the
+        In PICK mode the cursor functions like a color picker, setting the
         clicked on label to be the curent label. If the background is picked it
         will select the background label `0`.
 
@@ -104,9 +103,6 @@ class Labels(Image):
     _selected_color : 4-tuple or None
         RGBA tuple of the color of the selected label, or None if the
         background label `0` is selected.
-    _last_cursor_coord : list or None
-        Coordinates of last cursor click before painting, gets reset to None
-        after painting is done. Used for interpolating brush strokes.
     """
 
     _history_limit = 100
@@ -115,7 +111,6 @@ class Labels(Image):
         self,
         data,
         *,
-        is_pyramid=None,
         num_colors=50,
         seed=0.5,
         name=None,
@@ -125,6 +120,7 @@ class Labels(Image):
         opacity=0.7,
         blending='translucent',
         visible=True,
+        multiscale=None,
     ):
 
         self._seed = seed
@@ -134,7 +130,6 @@ class Labels(Image):
         super().__init__(
             data,
             rgb=False,
-            is_pyramid=is_pyramid,
             colormap=colormap,
             contrast_limits=[0.0, 1.0],
             interpolation='nearest',
@@ -146,6 +141,7 @@ class Labels(Image):
             opacity=opacity,
             blending=blending,
             visible=visible,
+            multiscale=multiscale,
         )
 
         self.events.add(
@@ -160,7 +156,6 @@ class Labels(Image):
         self._n_dimensional = False
         self._contiguous = True
         self._brush_size = 10
-        self._last_cursor_coord = None
 
         self._selected_label = 0
         self._selected_color = None
@@ -252,7 +247,7 @@ class Labels(Image):
         state = self._get_base_state()
         state.update(
             {
-                'is_pyramid': self.is_pyramid,
+                'multiscale': self.multiscale,
                 'num_colors': self.num_colors,
                 'seed': self.seed,
                 'data': self.data,
@@ -281,7 +276,7 @@ class Labels(Image):
         """MODE: Interactive mode. The normal, default mode is PAN_ZOOM, which
         allows for normal interactivity with the canvas.
 
-        In PICKER mode the cursor functions like a color picker, setting the
+        In PICK mode the cursor functions like a color picker, setting the
         clicked on label to be the curent label. If the background is picked it
         will select the background label `0`.
 
@@ -310,23 +305,33 @@ class Labels(Image):
         if mode == self._mode:
             return
 
+        if self._mode == Mode.PICK:
+            self.mouse_drag_callbacks.remove(pick)
+        elif self._mode == Mode.PAINT:
+            self.mouse_drag_callbacks.remove(paint)
+        elif self._mode == Mode.FILL:
+            self.mouse_drag_callbacks.remove(fill)
+
         if mode == Mode.PAN_ZOOM:
             self.cursor = 'standard'
             self.interactive = True
             self.help = 'enter paint or fill mode to edit labels'
-        elif mode == Mode.PICKER:
+        elif mode == Mode.PICK:
             self.cursor = 'cross'
             self.interactive = False
             self.help = 'hold <space> to pan/zoom, click to pick a label'
+            self.mouse_drag_callbacks.append(pick)
         elif mode == Mode.PAINT:
             self.cursor_size = self.brush_size / self.scale_factor
             self.cursor = 'square'
             self.interactive = False
             self.help = 'hold <space> to pan/zoom, drag to paint a label'
+            self.mouse_drag_callbacks.append(paint)
         elif mode == Mode.FILL:
             self.cursor = 'cross'
             self.interactive = False
             self.help = 'hold <space> to pan/zoom, click to fill a label'
+            self.mouse_drag_callbacks.append(fill)
         else:
             raise ValueError("Mode not recognized")
 
@@ -339,7 +344,7 @@ class Labels(Image):
     def _set_editable(self, editable=None):
         """Set editable mode based on layer properties."""
         if editable is None:
-            if self.is_pyramid or self.dims.ndisplay == 3:
+            if self.multiscale or self.dims.ndisplay == 3:
                 self.editable = False
             else:
                 self.editable = True
@@ -524,59 +529,3 @@ class Labels(Image):
 
         if refresh is True:
             self.refresh()
-
-    def on_mouse_press(self, event):
-        """Called whenever mouse pressed in canvas.
-
-        Parameters
-        ----------
-        event : Event
-            Vispy event
-        """
-        if self._mode == Mode.PAN_ZOOM:
-            # If in pan/zoom mode do nothing
-            pass
-        elif self._mode == Mode.PICKER:
-            self.selected_label = self._value or 0
-        elif self._mode == Mode.PAINT:
-            # Start painting with new label
-            self._save_history()
-            self._block_saving = True
-            self.paint(self.coordinates, self.selected_label)
-            self._last_cursor_coord = copy(self.coordinates)
-        elif self._mode == Mode.FILL:
-            # Fill clicked on region with new label
-            self.fill(self.coordinates, self._value, self.selected_label)
-        else:
-            raise ValueError("Mode not recognized")
-
-    def on_mouse_move(self, event):
-        """Called whenever mouse moves over canvas.
-
-        Parameters
-        ----------
-        event : Event
-            Vispy event
-        """
-        if self._mode == Mode.PAINT and event.is_dragging:
-            if self._last_cursor_coord is None:
-                interp_coord = [self.coordinates]
-            else:
-                interp_coord = interpolate_coordinates(
-                    self._last_cursor_coord, self.coordinates, self.brush_size
-                )
-            for c in interp_coord:
-                self.paint(c, self.selected_label, refresh=False)
-            self.refresh()
-            self._last_cursor_coord = copy(self.coordinates)
-
-    def on_mouse_release(self, event):
-        """Called whenever mouse released in canvas.
-
-        Parameters
-        ----------
-        event : Event
-            Vispy event
-        """
-        self._last_cursor_coord = None
-        self._block_saving = False

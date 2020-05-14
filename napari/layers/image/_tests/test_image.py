@@ -1,5 +1,4 @@
 import numpy as np
-from xml.etree.ElementTree import Element
 import dask.array as da
 import xarray as xr
 
@@ -19,8 +18,7 @@ def test_random_image():
     assert layer.shape == shape
     assert layer.dims.range == [(0, m, 1) for m in shape]
     assert layer.rgb is False
-    assert layer.is_pyramid is False
-    assert layer._data_pyramid is None
+    assert layer.multiscale is False
     assert layer._data_view.shape == shape[-2:]
 
 
@@ -553,17 +551,6 @@ def test_narrow_thumbnail():
     assert np.all(thumbnail[: middle_row - 1] == 0)
     assert np.all(thumbnail[middle_row + 1 :] == 0)
     assert np.mean(thumbnail[middle_row - 1 : middle_row + 1]) > 0
-
-
-def test_xml_list():
-    """Test the xml generation."""
-    np.random.seed(0)
-    data = np.random.random((15, 30))
-    layer = Image(data)
-    xml = layer.to_xml_list()
-    assert type(xml) == list
-    assert len(xml) == 1
-    assert type(xml[0]) == Element
 
 
 @pytest.mark.parametrize('dtype', [np.float32, np.float64])

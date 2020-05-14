@@ -1,3 +1,12 @@
+QLabel#h1 {
+  font-size: 28px;
+}
+
+QLabel#h2 {
+  font-size: 22px;
+  color: {{ secondary }};
+}
+
 QtViewer {
    padding-top: 0px;
 }
@@ -185,7 +194,7 @@ QLabel#Image {
   image: url(":/themes/{{ folder }}/new_image.svg");
 }
 
-QLabel#Pyramid {
+QLabel#Multiscale {
   image: url(":/themes/{{ folder }}/new_image.svg");
 }
 
@@ -397,6 +406,47 @@ QtAbout > QTextEdit{
   padding: 2px;
 }
 
-#hithere QObject {
-  background: red;
+/* ------------ Plugin Sorter ------------ */
+
+ImplementationListItem {
+  background-color: {{ background }};
+  border-radius: 2px;
+}
+
+QtHookImplementationListWidget::item {
+  background: transparent;
+}
+
+QtHookImplementationListWidget {
+  background-color: {{ console }};
+}
+
+/* for the error reporter */
+#pluginInfo {
+  color: text;
+}
+
+/* ------------ Plugin Info ------------ */
+
+#pluginTable::item {
+  background: {{ background }};
+  padding-top: 2px;
+}
+
+#pluginTableHeader::section {
+    background-color: {{ background }};
+    border: none;
+    font-weight: bold;
+    font-size: 12px;
+    text-align: left;
+    qproperty-alignment: left;
+}
+
+#pluginTableHeader::section:horizontal {
+  border-left: 1px solid {{ foreground }};
+}
+
+QTableCornerButton::section{
+  background: {{ background }};
+  border: 1px solid {{ background }};
 }

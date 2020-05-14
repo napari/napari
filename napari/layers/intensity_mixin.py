@@ -1,14 +1,9 @@
-import warnings
-
 import numpy as np
-from vispy.color import Colormap
 
-from ..utils.colormaps import make_colorbar
+from ..utils.colormaps import ensure_colormap_tuple, make_colorbar
 from ..utils.event import Event
 from ..utils.status_messages import format_float
 from ..utils.validators import validate_n_seq
-from .utils.layer_utils import increment_unnamed_colormap
-
 
 validate_2_tuple = validate_n_seq(2)
 
@@ -56,25 +51,9 @@ class IntensityVisualizationMixin:
 
     @colormap.setter
     def colormap(self, colormap):
-        name = '[unnamed colormap]'
-        if isinstance(colormap, str):
-            name = colormap
-        elif isinstance(colormap, tuple):
-            name, cmap = colormap
-            self._colormaps[name] = cmap
-        elif isinstance(colormap, dict):
-            self._colormaps.update(colormap)
-            name = list(colormap)[0]  # first key in dict
-        elif isinstance(colormap, Colormap):
-            name = increment_unnamed_colormap(
-                name, list(self._colormaps.keys())
-            )
-            self._colormaps[name] = colormap
-        else:
-            warnings.warn(f'invalid value for colormap: {colormap}')
-            name = self._colormap_name
+        name, cmap = ensure_colormap_tuple(colormap)
         self._colormap_name = name
-        self._cmap = self._colormaps[name]
+        self._cmap = cmap
         self._colorbar = make_colorbar(self._cmap)
         self._update_thumbnail()
         self.events.colormap()

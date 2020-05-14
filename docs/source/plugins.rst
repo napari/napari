@@ -1,4 +1,0 @@
-napari Plugins
-==============
-
-coming soon.
