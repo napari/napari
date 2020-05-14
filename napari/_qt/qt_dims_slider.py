@@ -386,8 +386,8 @@ class QtDimSliderWidget(QWidget):
         worker, thread = new_worker_qthread(
             AnimationWorker,
             self,
-            start_thread=True,
-            connections={'frame_requested': self.qt_dims._set_frame},
+            _start_thread=True,
+            _connect={'frame_requested': self.qt_dims._set_frame},
         )
         worker.finished.connect(self.qt_dims.stop)
         thread.finished.connect(self.play_stopped.emit)

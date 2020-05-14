@@ -5,7 +5,7 @@ from qtpy.QtWidgets import QApplication
 
 from ._qt.qt_main_window import Window
 from ._qt.qt_viewer import QtViewer
-from ._qt.threading import wait_for_workers_to_quit, worker_factory
+from ._qt.threading import wait_for_workers_to_quit, create_worker
 from .components import ViewerModel
 
 
@@ -115,10 +115,10 @@ class Viewer(ViewerModel):
 
         warnings.warn(
             "Viewer.update() is deprecated, use "
-            "worker_factory(func, *args, **kwargs) instead",
+            "create_worker(func, *args, **kwargs) instead",
             DeprecationWarning,
         )
-        return worker_factory(func, *args, start_thread=True, **kwargs)
+        return create_worker(func, *args, **kwargs, _start_thread=True)
 
     def show(self):
         """Resize, show, and raise the viewer window."""

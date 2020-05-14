@@ -25,7 +25,7 @@ if __name__ == "__main__":
     wdg = create_widget()
 
     # call decorated function
-    worker = long_running_function(start_thread=False)
+    worker = long_running_function(_start_thread=False)
 
     # Note that signals/slots are best connected *before* starting the worker.
     worker.started.connect(lambda: wdg.status.setText("worker is running..."))

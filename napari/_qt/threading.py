@@ -51,10 +51,14 @@ class WorkerBase(QRunnable, QObject):
     def run(self):
         """Start the worker.
 
+        The end-user should never need to call this function.
+        But it cannot be made private or renamed, since it is called by Qt.
+
         **This** is the function that actually gets called when calling
-        :func:`start_worker(worker)`.  It simply wraps the :meth:`work` method,
-        and emits a few signals.  Subclasses should NOT override this method
-        (except with good reason), and instead should implement :meth:`work`.
+        :func:`QThreadPool.start(worker)`.  It simply wraps the :meth:`work`
+        method, and emits a few signals.  Subclasses should NOT override this
+        method (except with good reason), and instead should implement
+        :meth:`work`.
         """
         self.started.emit()
         self._running = True
@@ -67,7 +71,8 @@ class WorkerBase(QRunnable, QObject):
     def work(self):
         """Main method to execute the worker.
 
-        Subclasses must implement this method.  Minimally, it should check
+        The end-user should never need to call this function.
+        But subclasses must implement this method.  Minimally, it should check
         ``self.abort_requested`` periodically and exit if True.
 
         Example
@@ -90,6 +95,16 @@ class WorkerBase(QRunnable, QObject):
         raise NotImplementedError(
             f'"{self.__class__.__name__}" failed to define work() method'
         )
+
+    def start(self):
+        """Start this worker in a thread and add it to the global threadpool.
+        """
+        if self in _WORKERS:
+            raise RuntimeError('This worker is already started!')
+
+        # This will raise a RunTime error if the worker is already deleted
+        repr(self)
+        start_worker(self)
 
 
 class Worker(WorkerBase):
@@ -308,18 +323,38 @@ def active_thread_count() -> int:
 # convenience functions for creating Worker instances
 
 
-def worker_factory(
+def create_worker(
+    func: Callable,
     *args,
-    start_thread: bool = True,  # TODO: Get opinions on best default value
-    connections: Dict[str, Callable] = None,
-    worker_class: Type[WorkerBase] = Worker,
+    _start_thread: bool = False,
+    _connect: Optional[Dict[str, Callable]] = None,
+    _worker_class: Type[WorkerBase] = Worker,
     **kwargs,
 ) -> WorkerBase:
-    """Convenience function to start a function in a .
+    """Convenience function to start a function in another thread.
 
     By default, uses :class:`Worker`, but a custom ``WorkerBase`` subclass may
     be provided.  If so, it must be a subclass of :class:`Worker`, which
     defines a standard set of signals and a run method.
+
+    Parameters
+    ----------
+    func : Callable
+        The function to call in another thread.
+    _start_thread : bool, optional
+        Whether to immediaetly start the thread.  If False, the returned worker
+        must be manually started with ``worker.start()``. by default False
+    _connect : Dict[str, Callable], optional
+        A mapping of ``"signal_name"`` -> ``callable``: callback functions to
+        connect to the various signals offered by the worker class.
+        by default None
+    _worker_class : Type[WorkerBase], optional
+        The :class`WorkerBase` to instantiate, by default :class:`Worker`
+    *args
+        will be passed to ``func``
+    **kwargs
+        will be passed to ``func``
+
 
     Example
     -------
@@ -330,44 +365,56 @@ def worker_factory(
             import time
             time.sleep(duration)
 
-        worker = worker_factory(long_function, 10)
+        worker = create_worker(long_function, 10)
 
+
+    Returns
+    -------
+    WorkerBase
+        An instantiated worker.  If ``_start_thread`` was ``False``, the worker
+        will have a `.start()` method that can be used to start the thread.
+
+    Raises
+    ------
+    TypeError
+        [description]
+    TypeError
+        [description]
     """
 
-    if inspect.isclass(worker_class) and issubclass(WorkerBase, worker_class):
-        raise TypeError(f'Worker {worker_class} must be a subclass of Worker')
+    if inspect.isclass(_worker_class) and issubclass(
+        WorkerBase, _worker_class
+    ):
+        raise TypeError(f'Worker {_worker_class} must be a subclass of Worker')
 
-    worker = worker_class(*args, **kwargs)
+    worker = _worker_class(func, *args, **kwargs)
 
-    if connections:
-        if not isinstance(connections, dict):
-            raise TypeError("The 'connections' argument must be a dict")
+    if _connect:
+        if not isinstance(_connect, dict):
+            raise TypeError("The '_connect' argument must be a dict")
 
-        for key, val in connections.items():
+        for key, val in _connect.items():
             if not callable(val):
                 raise TypeError(
-                    f'"connections[{key!r}]" is not a callable function'
+                    f'"_connect[{key!r}]" is not a callable function'
                 )
             getattr(worker, key).connect(val)
 
-    def start():
-        start_worker(worker)
-
-    if start_thread:
-        start()
-    else:
-        worker.start = start
+    if _start_thread:
+        worker.start()
     return worker
 
 
 def thread_worker(
     function: Optional[Callable] = None,
+    start_thread: bool = False,
+    connect: Optional[Dict[str, Callable]] = None,
     worker_class: Type[WorkerBase] = Worker,
 ) -> Callable:
     """Decorator that runs a function in a seperate thread when called.
 
     When called, the decorated function returns a :class:`Worker`.  See
-    :func:`worker_factory` for additional keyword arguments that can be used
+    :func:`create_worker` for additional keyword arguments that can be used
     when calling the function.
 
     The returned worker will have these signals:
@@ -390,7 +437,7 @@ def thread_worker(
           decorator function uses the ``value = yield`` syntax)
 
         # optionally
-        - *start*: if you call your function with ``func(start_thread=False)``,
+        - *start*: if you call your function with ``func(_start_thread=False)``,
           it will also have a `.start()` method that can be used to start
           execution of the function in another thread.  (useful if you need
           to connect callbacks to signals prior to execution)
@@ -427,23 +474,31 @@ def thread_worker(
             return 'anything'
 
         # call the function to start running in another thread.
-        worker = long_function(start_thread=False)
+        worker = long_function(_start_thread=False)
         # connect signals if desired
         worker.start()
     """
 
-    def inner_func(func: Callable) -> Callable:
+    # this extra level of nesting (and the "optional" function in the sig)
+    # allows this decorator to be used with OR without arguments:
+    # @thread_worker
+    # or
+    # @thread_worker(start_thread=True)
+    def decorator(func: Callable) -> Callable:
         @wraps(func)
         def wrapper(*args, **kwargs):
-            return worker_factory(
-                func, *args, worker_class=worker_class, **kwargs
-            )
+            # decorator kwargs can be overridden at call time by using the
+            # underscore-prefixed version of the kwarg.
+            kwargs['_start_thread'] = kwargs.get('_start_thread', start_thread)
+            kwargs['_connect'] = kwargs.get('_connect', connect)
+            kwargs['_worker_class'] = kwargs.get('_worker_class', worker_class)
+            return create_worker(func, *args, **kwargs,)
 
         return wrapper
 
     if function is None:
-        return inner_func
-    return inner_func(function)
+        return decorator
+    return decorator(function)
 
 
 ############################################################################
@@ -458,8 +513,8 @@ def thread_worker(
 def new_worker_qthread(
     Worker: Type[QObject],
     *args,
-    start_thread: bool = False,
-    connections: Dict[str, Callable] = None,
+    _start_thread: bool = False,
+    _connect: Dict[str, Callable] = None,
     **kwargs,
 ):
     """This is a convenience function to start a worker in a Qthread.
@@ -544,8 +599,8 @@ def new_worker_qthread(
 
     """
 
-    if connections and not isinstance(connections, dict):
-        raise TypeError('connections parameter must be a dict')
+    if _connect and not isinstance(_connect, dict):
+        raise TypeError('_connect parameter must be a dict')
 
     thread = QThread()
     worker = Worker(*args, **kwargs)
@@ -555,9 +610,9 @@ def new_worker_qthread(
     worker.finished.connect(worker.deleteLater)
     thread.finished.connect(thread.deleteLater)
 
-    if connections:
-        [getattr(worker, key).connect(val) for key, val in connections.items()]
+    if _connect:
+        [getattr(worker, key).connect(val) for key, val in _connect.items()]
 
-    if start_thread:
+    if _start_thread:
         thread.start()  # sometimes need to connect stuff before starting
     return worker, thread

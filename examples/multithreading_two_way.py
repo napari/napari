@@ -68,7 +68,7 @@ def create_connected_widget():
     # the decorated function now returns a GeneratorWorker object, and the
     # Qthread in which it's running.
     # (optionally pass start=False to prevent immediate running)
-    worker = two_way_communication_with_args(0, 40, start_thread=False)
+    worker = two_way_communication_with_args(0, 40, _start_thread=False)
     w.play_btn.clicked.connect(worker.start)
 
     # it provides signals like {started, yielded, returned, errored, finished}
