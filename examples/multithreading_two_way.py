@@ -27,7 +27,7 @@ def two_way_communication_with_args(start, end):
         'start_val': start,
         'end_val': end,
         'some_other_val': 'hi',
-        '__len__': end,
+        '__len__': end,  # note, the '__len__' key is required for ProgressWorker
     }
 
     # do computationally intensive work here

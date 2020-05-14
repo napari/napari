@@ -10,9 +10,8 @@ with napari.gui_qt():
     viewer = napari.Viewer()
     layer = viewer.add_image(data)
 
-    @thread_worker
+    @thread_worker(start_thread=True)
     def layer_update(*, update_period, num_updates):
-        yield
         # number of times to update
         for k in range(num_updates):
             time.sleep(update_period)

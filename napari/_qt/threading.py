@@ -3,6 +3,7 @@ from functools import wraps
 from typing import Type, Dict, Callable, Any, Set, Optional
 from qtpy.QtCore import QObject, QThread, Signal, Slot, QRunnable, QThreadPool
 import time
+import re
 
 
 def as_generator_function(func: Callable) -> Callable:
@@ -21,17 +22,14 @@ class WorkerBase(QRunnable, QObject):
 
     started = Signal()  # emitted when the work is started
     finished = Signal()  # emitted when the work is finished
-    yielded = Signal(object)  # emitted with yielded values (if generator used)
     returned = Signal(object)  # emitted with return value
     errored = Signal(object)  # emitted with error object on Exception
-    paused = Signal()  # emitted when a running job has successfully paused
-    resumed = Signal()  # emitted when a paused job has successfully resumed
-    aborted = Signal()  # emitted when a running job is successfully aborted
 
     def __init__(self, *args, **kwargs) -> None:
         QRunnable.__init__(self)
         QObject.__init__(self)
         self._abort_requested = False
+        self._running = False
 
     def quit(self) -> None:
         """Send a message to abort the worker."""
@@ -107,8 +105,27 @@ class WorkerBase(QRunnable, QObject):
         start_worker(self)
 
 
-class Worker(WorkerBase):
-    """QRunnable with signals that wraps a long-running function.
+class FunctionWorker(WorkerBase):
+    """QRunnable with signals that wraps a simple long-running function."""
+
+    def __init__(self, func: Callable, *args, **kwargs):
+        super().__init__()
+        if inspect.isgeneratorfunction(func):
+            raise TypeError(
+                f"Generator function {func} cannot be used with "
+                "FunctionWorker, use GeneratorWorker instead"
+            )
+
+        self._func = func
+        self._args = args
+        self._kwargs = kwargs
+
+    def work(self):
+        self._func(*self.args, **self.kwargs)
+
+
+class GeneratorWorker(WorkerBase):
+    """QRunnable with signals that wraps a long-running generator.
 
     When combined with :func:`new_worker_qthread`, provides a convenient way
     to run a function in another thread, while allowing 2-way communication
@@ -125,23 +142,30 @@ class Worker(WorkerBase):
         Will be passed to func on instantiation
     """
 
-    def __init__(self, func: Callable, *args, **kwargs):
-        super().__init__()
-        if inspect.isgeneratorfunction(func):
-            self._gen = func(*args, **kwargs)
-        else:
-            self._gen = as_generator_function(func)(*args, **kwargs)
+    yielded = Signal(object)  # emitted with yielded values (if generator used)
+    paused = Signal()  # emitted when a running job has successfully paused
+    resumed = Signal()  # emitted when a paused job has successfully resumed
+    aborted = Signal()  # emitted when a running job is successfully aborted
 
+    def __init__(self, func: Callable, *args, init_yield=False, **kwargs):
+        super().__init__()
+        if not inspect.isgeneratorfunction(func):
+            raise TypeError(
+                f"Regular function {func} cannot be used with "
+                "GeneratorWorker, use FunctionWorker instead"
+            )
+
+        self._gen = func(*args, **kwargs)
         self._incoming_value = None
         self._pause_requested = False
         self._resume_requested = False
         self._paused = False
         self._pause_interval = 0.01
-        self._running = False
 
-        first_yield = next(self._gen)
-        if isinstance(first_yield, dict):
-            self.parse_first_yield(first_yield)
+        if init_yield:
+            first_yield = next(self._gen)
+            if isinstance(first_yield, dict):
+                self.parse_first_yield(first_yield)
 
     def parse_first_yield(self, first_yield):
         self.__dict__.update(**first_yield)
@@ -209,23 +233,32 @@ class Worker(WorkerBase):
         pass
 
 
-class ProgressWorker(Worker):
+class ProgressWorker(GeneratorWorker):
     """A Worker that emits a progress update on each yield.
 
     See Worker docstring for details.  This simply counts the number of
     iterations, and emits a progress signal on every iteration.
     """
 
-    # emitted on yield ONLY if the function was a generator AND it yielded
-    # dict in the first yield with a key "__len__" that defines the number of
-    # total yields in the generator.  Will emit an integer between 0 - 100
-    # every time a value is yielded
+    # Will emit an integer between 0 - 100 every time a value is yielded
     progress = Signal(int)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(self, func, *args, **kwargs):
         self._counter = 0
         self._length = None
-        super().__init__(*args, **kwargs)
+        source = inspect.getsource(func)
+
+        match = re.search(
+            r'yield\s\{([^}]*[\'"]__len__[\'"].*)\}', source, flags=re.DOTALL
+        )
+        if not match:
+            raise ValueError(
+                "ProgressWorker may only be used with a generator function "
+                "whose first yield expression yields a dict with the key "
+                "'__len__'"
+            )
+
+        super().__init__(func, *args, init_yield=True, **kwargs)
 
     def parse_first_yield(self, result):
         self._length = result.pop("__len__", None)
@@ -243,6 +276,11 @@ class ProgressWorker(Worker):
 
     def reset_counter(self) -> None:
         self._counter = -1
+
+    def __len__(self):
+        if self._length is not None:
+            return self._length
+        raise TypeError("ProgressWorker was not provided with a length.")
 
 
 ############################################################################
@@ -328,7 +366,7 @@ def create_worker(
     *args,
     _start_thread: bool = False,
     _connect: Optional[Dict[str, Callable]] = None,
-    _worker_class: Type[WorkerBase] = Worker,
+    _worker_class: Optional[Type[WorkerBase]] = None,
     **kwargs,
 ) -> WorkerBase:
     """Convenience function to start a function in another thread.
@@ -349,7 +387,9 @@ def create_worker(
         connect to the various signals offered by the worker class.
         by default None
     _worker_class : Type[WorkerBase], optional
-        The :class`WorkerBase` to instantiate, by default :class:`Worker`
+        The :class`WorkerBase` to instantiate, by default
+        :class:`FunctionWorker` will be used if ``func`` is a regular function,
+        and :class:`GeneratorWorker` will be used if it is a generator.
     *args
         will be passed to ``func``
     **kwargs
@@ -377,10 +417,15 @@ def create_worker(
     Raises
     ------
     TypeError
-        [description]
+        If a worker_class is provided that is not a subclass of WorkerBase.
     TypeError
-        [description]
+        If _connect is provided and is not a dict of ``{str: callable}``
     """
+    if not _worker_class:
+        if inspect.isgeneratorfunction(func):
+            _worker_class = GeneratorWorker
+        else:
+            _worker_class = FunctionWorker
 
     if inspect.isclass(_worker_class) and issubclass(
         WorkerBase, _worker_class
@@ -409,7 +454,7 @@ def thread_worker(
     function: Optional[Callable] = None,
     start_thread: bool = False,
     connect: Optional[Dict[str, Callable]] = None,
-    worker_class: Type[WorkerBase] = Worker,
+    worker_class: Optional[Type[WorkerBase]] = None,
 ) -> Callable:
     """Decorator that runs a function in a seperate thread when called.
 
