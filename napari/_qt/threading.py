@@ -5,7 +5,7 @@ from qtpy.QtCore import QObject, QThread, Signal, Slot, QRunnable, QThreadPool
 import time
 
 
-def as_generatorfunction(func: Callable) -> Callable:
+def as_generator_function(func: Callable) -> Callable:
     """Turns a regular function (single return) into a generator function."""
 
     @wraps(func)
