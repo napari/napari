@@ -31,7 +31,9 @@ class Viewer(ViewerModel):
         Whether to show the viewer after instantiation. by default True.
     """
 
-    napari_app_id = 'napari.napari.viewer.' + str(__version__)
+    # set _napari_app_id to False to avoid overwriting dock icon on windows
+    # set _napari_app_id to custom string to prevent grouping different base viewer
+    _napari_app_id = 'napari.napari.viewer.' + str(__version__)
 
     def __init__(
         self,
@@ -60,13 +62,15 @@ class Viewer(ViewerModel):
             )
             raise RuntimeError(message)
 
-        if platform.system() == "Windows" and not getattr(
-            sys, 'frozen', False
+        if (
+            platform.system() == "Windows"
+            and not getattr(sys, 'frozen', False)
+            and self._napari_app_id
         ):
             import ctypes
 
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
-                self.napari_app_id
+                self._napari_app_id
             )
 
         logopath = join(dirname(__file__), 'resources', 'logo.png')
