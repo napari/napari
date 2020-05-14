@@ -145,6 +145,8 @@ def view_path(
     path,
     *,
     stack=False,
+    plugin=None,
+    layer_type=None,
     title='napari',
     ndisplay=2,
     order=None,
@@ -164,6 +166,16 @@ def view_path(
         plugins to know how to handle a list of paths.  If ``stack`` is
         ``False``, then the ``path`` list is broken up and passed to plugin
         readers one by one.  by default False.
+    plugin : str, optional
+        Name of a plugin to use.  If provided, will force ``path`` to be
+        read with the specified ``plugin``.  If the requested plugin cannot
+        read ``path``, an execption will be raised.
+    layer_type : str, optional
+        If provided, will force data read from ``path`` to be passed to the
+        corresponding ``add_<layer_type>`` method (along with any
+        additional) ``kwargs`` provided to this function.  This *may*
+        result in exceptions if the data returned from the path is not
+        compatible with the layer_type.
     title : string, optional
         The title of the viewer window. by default 'napari'
     ndisplay : {2, 3}, optional
@@ -192,7 +204,9 @@ def view_path(
         axis_labels=axis_labels,
         show=show,
     )
-    viewer.open(path=path, stack=stack, **kwargs)
+    viewer.open(
+        path=path, stack=stack, plugin=plugin, layer_type=layer_type, **kwargs
+    )
     return viewer
 
 
