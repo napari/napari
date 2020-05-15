@@ -396,6 +396,7 @@ def create_worker(
     _start_thread: bool = False,
     _connect: Optional[Dict[str, Callable]] = None,
     _worker_class: Optional[Type[WorkerBase]] = None,
+    _ignore_errors: bool = False,
     **kwargs,
 ) -> WorkerBase:
     """Convenience function to start a function in another thread.
@@ -472,6 +473,16 @@ def create_worker(
                 )
             getattr(worker, key).connect(val)
 
+    # if the user has not provided a default connection for the "errored"
+    # signal... and they have not explicitly set ``ignore_errors=True``
+    # Then rereaise any errors from the thread.
+    if not _ignore_errors and not (_connect or {}).get('errored', False):
+
+        def reraise(e):
+            raise e
+
+        worker.errored.connect(reraise)
+
     if _start_thread:
         worker.start()
     return worker
@@ -483,6 +494,7 @@ def thread_worker(
     start_thread: bool = False,
     connect: Optional[Dict[str, Callable]] = None,
     worker_class: Optional[Type[WorkerBase]] = None,
+    ignore_errors: bool = False,
 ) -> Callable:
     """Decorator that runs a function in a seperate thread when called.
 
@@ -562,6 +574,7 @@ def thread_worker(
         kwargs['_start_thread'] = kwargs.get('_start_thread', start_thread)
         kwargs['_connect'] = kwargs.get('_connect', connect)
         kwargs['_worker_class'] = kwargs.get('_worker_class', worker_class)
+        kwargs['_ignore_errors'] = kwargs.get('_ignore_errors', ignore_errors)
         return create_worker(function, *args, **kwargs,)
 
     return worker_function
