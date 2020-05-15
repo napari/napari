@@ -1,9 +1,11 @@
 import inspect
-from functools import wraps
-from typing import Type, Dict, Callable, Any, Set, Optional
-from qtpy.QtCore import QObject, QThread, Signal, Slot, QRunnable, QThreadPool
-import time
 import re
+import time
+from functools import wraps
+from typing import Any, Callable, Dict, Optional, Set, Type
+
+import toolz as tz
+from qtpy.QtCore import QObject, QRunnable, QThread, QThreadPool, Signal, Slot
 
 #: A set of Workers.  Do not add directly, use ``start_worker``.`
 _WORKERS: Set['WorkerBase'] = set()
@@ -35,7 +37,7 @@ class WorkerBase(QRunnable, QObject):
         self._running = False
 
     def quit(self) -> None:
-        """Send a message to abort the worker."""
+        """Send a request to abort the worker."""
         self._abort_requested = True
 
     @property
@@ -75,7 +77,8 @@ class WorkerBase(QRunnable, QObject):
         self.started.emit()
         self._running = True
         try:
-            self.work()
+            result = self.work()
+            self.returned.emit(result)
         except Exception as exc:
             self.errored.emit(exc)
         self.finished.emit()
@@ -146,7 +149,7 @@ class FunctionWorker(WorkerBase):
         self._kwargs = kwargs
 
     def work(self):
-        self._func(*self.args, **self.kwargs)
+        return self._func(*self._args, **self._kwargs)
 
 
 class GeneratorWorker(WorkerBase):
@@ -222,8 +225,7 @@ class GeneratorWorker(WorkerBase):
                 self.yielded.emit(self._gen.send(self._next_value()))
                 self.post_yield_hook()
             except StopIteration as exc:
-                self.returned.emit(exc.value)
-                break
+                return exc.value
 
     def send(self, value: Any):
         """Send a value into the function (if a generator was used)."""
@@ -271,8 +273,13 @@ class ProgressWorker(GeneratorWorker):
     def __init__(self, func, *args, **kwargs):
         self._counter = 0
         self._length = None
-        source = inspect.getsource(func)
 
+        # look in the source code of the function for a yield statement
+        # that yields a dict with a key named "__len__"
+        # Note: this does NOT assert that it's actually the FIRST yield.
+        # (That's harder to do, because the word "yield" may appear in the
+        # docstring, etc...)
+        source = inspect.getsource(func)
         match = re.search(
             r'yield\s\{([^}]*[\'"]__len__[\'"].*)\}', source, flags=re.DOTALL
         )
@@ -299,8 +306,8 @@ class ProgressWorker(GeneratorWorker):
         if self._length:
             self.progress.emit(round(100 * (self._counter - 1) / self._length))
 
-    def reset_counter(self) -> None:
-        self._counter = -1
+    def set_counter(self, val) -> None:
+        self._counter = val
 
     def __len__(self):
         if self._length is not None:
@@ -417,7 +424,6 @@ def create_worker(
     **kwargs
         will be passed to ``func``
 
-
     Example
     -------
 
@@ -428,7 +434,6 @@ def create_worker(
             time.sleep(duration)
 
         worker = create_worker(long_function, 10)
-
 
     Returns
     -------
@@ -472,8 +477,9 @@ def create_worker(
     return worker
 
 
+@tz.curry
 def thread_worker(
-    function: Optional[Callable] = None,
+    function: Callable,
     start_thread: bool = False,
     connect: Optional[Dict[str, Callable]] = None,
     worker_class: Optional[Type[WorkerBase]] = None,
@@ -549,26 +555,16 @@ def thread_worker(
         worker.start()
     """
 
-    # this extra level of nesting (and the "optional" function in the sig)
-    # allows this decorator to be used with OR without arguments:
-    # @thread_worker
-    # or
-    # @thread_worker(start_thread=True)
-    def decorator(func: Callable) -> Callable:
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            # decorator kwargs can be overridden at call time by using the
-            # underscore-prefixed version of the kwarg.
-            kwargs['_start_thread'] = kwargs.get('_start_thread', start_thread)
-            kwargs['_connect'] = kwargs.get('_connect', connect)
-            kwargs['_worker_class'] = kwargs.get('_worker_class', worker_class)
-            return create_worker(func, *args, **kwargs,)
+    @wraps(function)
+    def worker_function(*args, **kwargs):
+        # decorator kwargs can be overridden at call time by using the
+        # underscore-prefixed version of the kwarg.
+        kwargs['_start_thread'] = kwargs.get('_start_thread', start_thread)
+        kwargs['_connect'] = kwargs.get('_connect', connect)
+        kwargs['_worker_class'] = kwargs.get('_worker_class', worker_class)
+        return create_worker(function, *args, **kwargs,)
 
-        return wrapper
-
-    if function is None:
-        return decorator
-    return decorator(function)
+    return worker_function
 
 
 ############################################################################

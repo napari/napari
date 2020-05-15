@@ -86,7 +86,7 @@ def create_connected_widget():
 
     # send values into the function (like generator.send) using worker.send
     w.reset_btn.clicked.connect(lambda: worker.send(0))
-    w.reset_btn.clicked.connect(lambda: worker.reset_counter())
+    w.reset_btn.clicked.connect(lambda: worker.set_counter(-1))
     # abort thread with worker.abort()
     w.abort_btn.clicked.connect(lambda: worker.quit())
     # Receive events and update widget progress

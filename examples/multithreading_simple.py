@@ -25,21 +25,21 @@ if __name__ == "__main__":
     wdg = create_widget()
 
     # call decorated function
-    worker = long_running_function(_start_thread=False)
-
-    # Note that signals/slots are best connected *before* starting the worker.
+    # By default, @thread_worker-decorated functions do not immediately start
+    worker = long_running_function()
+    # Signals are best connected *before* starting the worker.
     worker.started.connect(lambda: wdg.status.setText("worker is running..."))
-    worker.returned.connect(
-        lambda x: wdg.status.setText(f"worker returned {x}")
-    )
-    worker.start()
+    worker.returned.connect(lambda x: wdg.status.setText(f"returned {x}"))
 
+    # # Connections may also be passed directly to the decorated function.
     # # The above syntax is equivalent to:
     # worker = long_running_function(
-    #     connections={
+    #     _connect={
     #         'started': lambda: wdg.status.setText("worker is running..."),
-    #         'returned': lambda x: wdg.status.setText(f"worker returned {x!r}"),
+    #         'returned': lambda x: wdg.status.setText(f"returned {x!r}"),
     #     }
     # )
+
+    worker.start()
 
     app.exec_()
