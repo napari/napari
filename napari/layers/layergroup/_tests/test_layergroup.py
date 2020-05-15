@@ -1,8 +1,7 @@
 import numpy as np
 import pytest
 
-from napari.components import LayerGroup
-from napari.layers import Image
+from napari.layers import LayerGroup, Image
 
 
 @pytest.fixture
