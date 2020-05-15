@@ -5,6 +5,9 @@ from qtpy.QtCore import QObject, QThread, Signal, Slot, QRunnable, QThreadPool
 import time
 import re
 
+#: A set of Workers.  Do not add directly, use ``start_worker``.`
+_WORKERS: Set['WorkerBase'] = set()
+
 
 def as_generator_function(func: Callable) -> Callable:
     """Turns a regular function (single return) into a generator function."""
@@ -52,6 +55,17 @@ class WorkerBase(QRunnable, QObject):
         The end-user should never need to call this function.
         But it cannot be made private or renamed, since it is called by Qt.
 
+        The order of method calls when starting a worker is:
+
+        .. code-block:: none
+
+           calls start_worker -> QThreadPool.globalInstance().start(worker)
+           |               triggered by the QThreadPool.start() method
+           |               |             called by worker.run
+           |               |             |
+           V               V             V
+           worker.start -> worker.run -> worker.work
+
         **This** is the function that actually gets called when calling
         :func:`QThreadPool.start(worker)`.  It simply wraps the :meth:`work`
         method, and emits a few signals.  Subclasses should NOT override this
@@ -96,6 +110,17 @@ class WorkerBase(QRunnable, QObject):
 
     def start(self):
         """Start this worker in a thread and add it to the global threadpool.
+
+        The order of method calls when starting a worker is:
+
+        .. code-block:: none
+
+           calls start_worker -> QThreadPool.globalInstance().start(worker)
+           |               triggered by the QThreadPool.start() method
+           |               |             called by worker.run
+           |               |             |
+           V               V             V
+           worker.start -> worker.run -> worker.work
         """
         if self in _WORKERS:
             raise RuntimeError('This worker is already started!')
@@ -292,9 +317,6 @@ class ProgressWorker(GeneratorWorker):
 # provided that ``wait_for_workers_to_quit`` is called at shutdown.
 # In the future, this could wrap any API, or a pure python threadpool.
 
-#: A set of Workers.  Do not add directly, use ``start_worker``.`
-_WORKERS: Set[WorkerBase] = set()
-
 
 def start_worker(worker: WorkerBase) -> None:
     """Add a worker instance to the global ThreadPool and start it.
@@ -458,7 +480,7 @@ def thread_worker(
 ) -> Callable:
     """Decorator that runs a function in a seperate thread when called.
 
-    When called, the decorated function returns a :class:`Worker`.  See
+    When called, the decorated function returns a :class:`WorkerBase`.  See
     :func:`create_worker` for additional keyword arguments that can be used
     when calling the function.
 
@@ -466,26 +488,29 @@ def thread_worker(
 
         - *started*: emitted when the work is started
         - *finished*: emitted when the work is finished
-        - *yielded*: emitted with yielded values (if generator used)
         - *returned*: emitted with return value
         - *errored*: emitted with error object on Exception
+
+    If the decorated function is a generator, the (default) returned worker
+    will also provide these signals:
+
+        - *yielded*: emitted with yielded values (if generator used)
         - *paused*: emitted when a running job has successfully paused
         - *resumed*: emitted when a paused job has successfully resumed
         - *aborted*: emitted when a running job is successfully aborted
 
-    If the decorated function is a generator, the (default) returned worker
-    will also provide these methods:
+    And these methods:
 
         - *quit*: ask the thread to quit
         - *toggle_paused*: toggle the running state of the thread.
         - *send*: send a value into the generator.  (This requires that your
           decorator function uses the ``value = yield`` syntax)
 
-        # optionally
-        - *start*: if you call your function with ``func(_start_thread=False)``,
-          it will also have a `.start()` method that can be used to start
-          execution of the function in another thread.  (useful if you need
-          to connect callbacks to signals prior to execution)
+    If you call your function with ``func(_start_thread=False)`` (the default)
+
+        - *start*: it will also have a ``.start()`` method that can be used to
+        start execution of the function in another thread.  (useful if you need
+        to connect callbacks to signals prior to execution)
 
     Parameters
     ----------

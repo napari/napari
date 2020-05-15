@@ -34,7 +34,9 @@ def two_way_communication_with_args(start, end):
     i = start
     while i <= end:
         time.sleep(0.1)
-        incoming = yield i  # incoming receives values from the main thread
+        # incoming receives values from the main thread
+        # while yielding sends values back to the main thread
+        incoming = yield i
         i = incoming if incoming is not None else i + 1
 
     # do optional teardown here
@@ -62,7 +64,7 @@ class Controller(QWidget):
 
 
 def create_connected_widget():
-    """Builds a widget that can control and respond to function in another thread."""
+    """Builds a widget that can control a function in another thread."""
     w = Controller()
 
     # the decorated function now returns a GeneratorWorker object, and the
