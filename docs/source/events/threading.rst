@@ -144,58 +144,150 @@ also connect your own custom handler to the ``worker.errored`` event:
 Generators for the win!
 -----------------------
 
-**Use a generator!**
+**Use a generator!**  By writing our decorated function as a generator, we gain
+a number of very valuable features.  
 
-By writing our decorated function as a generator, we gain a number of very
-valuable features.
+.. admonition::  quick reminder
+
+   A generator function is a `special kind of function
+   <https://realpython.com/introduction-to-python-generators/>`_ that returns
+   a lazy iterator. To make a generator, you "yield" results rather than (or in
+   addition to) "returning" them:
+
+   .. code-block:: python
+
+      def my_generator():
+          for i in range(10):
+              yield i
 
 Intermediate Results
 ^^^^^^^^^^^^^^^^^^^^
 
-The most obvious benefit is that you can "peek" at intermediate results back in
+The most obvious benefit is that you can monitor intermediate results back in
 the main thread.  Continuing with our example of taking the mean projection of
-very large stack, if we yield each plane as it is generated, we can watch the
-mean projection as it builds:
+a large stack, if we yield the cumulative average as it is generated (rather
+than taking the average of the fully generated stack) we can watch the mean
+projection as it builds:
 
 
+.. code-block:: python
+   :linenos:
+   :emphasize-lines: 14,20
+
+    with napari.gui_qt():
+        viewer = napari.Viewer()
+
+        def update_layer(new_image):
+            try:
+                # if the layer exists, update the data
+                viewer.layers['result'].data = new_image
+            except KeyError:
+                # otherwise add it to the viewer
+                viewer.add_image(
+                    new_image, contrast_limits=(0.45, 0.55), name='result'
+                )
+
+        @thread_worker(connect={'yielded': update_layer})
+        def large_random_images():
+            cumsum = np.zeros((512, 512))
+            for i in range(1024):
+                cumsum += np.random.rand(512, 512)
+                if i % 16 == 0:
+                    yield cumsum / (i + 1)
+
+        large_random_images()  # call the function!
+
+Note how we periodically (every 16 iterations) ``yield`` the image result in
+the ``large_random_images`` function (**20**).  We also connected the
+``yielded`` event in the ``@thread_worker`` decorator to the previously-defined
+``update_layer`` function (**14**).  The result is that the image in the viewer
+is updated everytime a new image is yielded.
+
+Any time you can break up your long-running function into a stream of
+shorter-running yield statements like this, you not only benefit from the
+increased responsivity, you can often save on precious memory resources.
 
 
+Flow control and escape hatches
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A perhaps even more useful aspect of yielding periodically in our long running
+function is that we provide a "hook" for the main thread to control the flow
+of our long running function.
+
+.. code-block:: python
+   :linenos:
+   :emphasize-lines: 14,20
+    
+    import napari
+    from qtpy.QtWidgets import QPushButton
+
+
+    with napari.gui_qt():
+        viewer = napari.Viewer()
+
+        def update_layer(new_image):
+            try:
+                # if the layer exists, update the data
+                viewer.layers['result'].data = new_image
+            except KeyError:
+                # otherwise add it to the viewer
+                viewer.add_image(
+                    new_image, contrast_limits=(0.45, 0.55), name='result'
+                )
+
+        @thread_worker
+        def large_random_images():
+            while True:
+                yield np.random.rand(512, 512)
+
+        worker = large_random_images()  # call the function!
+        worker.yielded.connect(update_layer)
+
+        button = QPushButton("STOP!")
+        button.clicked.connect(worker.quit)
+
+        worker.start
 
 Syntactic sugar
 ---------------
 
-The ``@thread_worker`` decorator is just syntactic sugar for calling the 
-``create_worker`` function on your function.  And in turn, ``create_worker`` is
-just a convenience that creates the right type of ``Worker`` depending on your
-function type. The following three examples are equivalent:
+The ``@thread_worker`` decorator is just syntactic sugar for calling 
+``create_worker`` on your function.  In turn, ``create_worker`` is just a
+convenient "factory function" that creates the right type of ``Worker``
+depending on your function type. The following three examples are equivalent:
+
+**Using the** ``@thread_worker`` **decorator:**
 
 .. code-block:: python
 
-    # with `@thread_worker` decorator
     from napari._qt.threading import thread_worker
 
     @thread_worker
     def my_function(arg1, arg2=None):
-        pass
+        ...
 
     worker = my_function('hello', arg2=42)
 
+**Using the** ``create_worker`` **function:**
 
-    # with `create_worker`
+.. code-block:: python
+
     from napari._qt.threading import create_worker
 
     def my_function(arg1, arg2=None):
-       pass
+       ...
 
     worker = create_worker(my_function, 'hello', arg2=42)
 
+**Using a** ``Worker`` **class:**
 
+.. code-block:: python
 
-    # with Worker class
     from napari._qt.threading import FunctionWorker
     
     def my_function(arg1, arg2=None):
-       pass
+       ...
 
     worker = FunctionWorker(my_function, 'hello', arg2=42)
 
