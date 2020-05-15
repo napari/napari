@@ -393,7 +393,7 @@ def active_thread_count() -> int:
 def create_worker(
     func: Callable,
     *args,
-    _start_thread: bool = False,
+    _start_thread: Optional[bool] = None,
     _connect: Optional[Dict[str, Callable]] = None,
     _worker_class: Optional[Type[WorkerBase]] = None,
     _ignore_errors: bool = False,
@@ -411,7 +411,8 @@ def create_worker(
         The function to call in another thread.
     _start_thread : bool, optional
         Whether to immediaetly start the thread.  If False, the returned worker
-        must be manually started with ``worker.start()``. by default False
+        must be manually started with ``worker.start()``. by default it will be
+        ``False`` if the ``_connect`` argument is ``None``, otherwise ``True``.
     _connect : Dict[str, Callable], optional
         A mapping of ``"signal_name"`` -> ``callable``: callback functions to
         connect to the various signals offered by the worker class.
@@ -462,9 +463,12 @@ def create_worker(
 
     worker = _worker_class(func, *args, **kwargs)
 
-    if _connect:
+    if _connect is not None:
         if not isinstance(_connect, dict):
             raise TypeError("The '_connect' argument must be a dict")
+
+        if _start_thread is None:
+            _start_thread = True
 
         for key, val in _connect.items():
             if not callable(val):
@@ -491,7 +495,7 @@ def create_worker(
 @tz.curry
 def thread_worker(
     function: Callable,
-    start_thread: bool = False,
+    start_thread: Optional[bool] = None,
     connect: Optional[Dict[str, Callable]] = None,
     worker_class: Optional[Type[WorkerBase]] = None,
     ignore_errors: bool = False,
