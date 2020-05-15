@@ -303,18 +303,6 @@ class Surface(IntensityVisualizationMixin, Layer):
         """Update thumbnail with current surface."""
         pass
 
-    def to_xml_list(self):
-        """Convert surface to a list of svg xml elements.
-
-        Returns
-        ----------
-        xml : list
-            List of xml elements.
-        """
-        xml_list = []
-
-        return xml_list
-
     def _get_value(self):
         """Returns coordinates, values, and a string for a given mouse position
         and set of indices.

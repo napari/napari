@@ -48,6 +48,7 @@ vispy_logger = logging.getLogger('vispy')
 vispy_logger.setLevel(logging.WARNING)
 
 from .viewer import Viewer
+from .plugins.io import save_layers
 
 # Note that importing _viewer_key_bindings is needed as the Viewer gets
 # decorated with keybindings during that process, but it is not directly needed
@@ -68,13 +69,5 @@ from .utils import sys_info, _magicgui
 # register napari object types with magicgui if it is installed
 _magicgui.register_types_with_magicgui()
 
-
-# this unused import is here to fix a very strange bug.
-# there is some mysterious magical goodness in scipy stats that needs
-# to be imported early.
-# see: https://github.com/napari/napari/issues/925
-from scipy import stats  # noqa: F401
-
 del _magicgui
-del stats
 del _viewer_key_bindings

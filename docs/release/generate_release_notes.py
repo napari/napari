@@ -13,7 +13,7 @@ python /path/to/generate_release_notes.py v.14.2 v0.14.3 --version 0.14.3
 ```
 You should probably redirect the output with:
 ```
-python /path/to/generate_release_notes.py [args] | tee release_notes.rst
+python /path/to/generate_release_notes.py [args] | tee release_notes.md
 ```
 You'll require PyGitHub and tqdm, which you can install with:
 ```
@@ -122,13 +122,13 @@ authors.discard("azure-pipelines-bot")
 
 highlights = OrderedDict()
 
-highlights['Highlight'] = {}
-highlights['New Feature'] = {}
-highlights['Improvement'] = {}
-highlights['Bugfix'] = {}
-highlights['API Change'] = {}
-highlights['Deprecation'] = {}
-highlights['Build Tool'] = {}
+highlights['Highlights'] = {}
+highlights['New Features'] = {}
+highlights['Improvements'] = {}
+highlights['Bug Fixes'] = {}
+highlights['API Changes'] = {}
+highlights['Deprecations'] = {}
+highlights['Build Tools'] = {}
 other_pull_requests = {}
 
 for pull in tqdm(
@@ -158,32 +158,32 @@ for pull in tqdm(
 
 
 # add Other PRs to the ordered dict to make doc generation easier.
-highlights['Other Pull Request'] = other_pull_requests
+highlights['Other Pull Requests'] = other_pull_requests
 
 
 # Now generate the release notes
-announcement_title = f'# Announcement: napari {args.version}'
-print(announcement_title)
+title = f'# napari {args.version}'
+print(title)
 
 print(
     f"""
-We're happy to announce the release of napari {args.version}! \
-napari is a fast, interactive, multi-dimensional image viewer for Python. \
-It's designed for browsing, annotating, and analyzing large multi-dimensional \
-images. It's built on top of Qt (for the GUI), vispy (for performant GPU-based \
-rendering), and the scientific Python stack (numpy, scipy).\
+We're happy to announce the release of napari {args.version}!
+napari is a fast, interactive, multi-dimensional image viewer for Python.
+It's designed for browsing, annotating, and analyzing large multi-dimensional
+images. It's built on top of Qt (for the GUI), vispy (for performant GPU-based
+rendering), and the scientific Python stack (numpy, scipy).
 """
 )
 
 print(
     """
-For more information, examples, and documentation, please visit our website: \
+For more information, examples, and documentation, please visit our website:
 https://github.com/napari/napari
 """
 )
 
 for section, pull_request_dicts in highlights.items():
-    print(f'## {section}s')
+    print(f'## {section}\n')
     if len(pull_request_dicts.items()) == 0:
         print()
     for number, pull_request_info in pull_request_dicts.items():
@@ -206,6 +206,7 @@ for section_name, contributor_set in contributors.items():
         'release (alphabetical)'
     )
     print(committer_str)
+    print()
 
     for c in sorted(contributor_set, key=lambda x: users[x].lower()):
         commit_link = f"{GH}/{GH_USER}/{GH_REPO}/commits?author={c}"

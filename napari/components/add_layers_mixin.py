@@ -1,12 +1,18 @@
+import inspect
 import itertools
+import os
+from functools import lru_cache
 from logging import getLogger
-from typing import List, Optional, Sequence, Union
-from os import fspath
+from typing import Any, Dict, List, Optional, Sequence, Set, Union
+
 import numpy as np
 
 from .. import layers
+from ..layers.image._image_utils import guess_labels, guess_multiscale
 from ..plugins.io import read_data_with_plugins
-from ..utils import colormaps, io
+from ..types import FullLayerData, LayerData
+from ..utils import colormaps
+from ..utils.colormaps import ensure_colormap_tuple
 from ..utils.misc import (
     ensure_iterable,
     ensure_sequence_of_iterables,
@@ -66,7 +72,6 @@ class AddLayersMixin:
         *,
         channel_axis=None,
         rgb=None,
-        is_pyramid=None,
         colormap=None,
         contrast_limits=None,
         gamma=1,
@@ -81,7 +86,7 @@ class AddLayersMixin:
         opacity=1,
         blending=None,
         visible=True,
-        path=None,
+        multiscale=None,
     ) -> Union[layers.Image, List[layers.Image]]:
         """Add an image layer to the layers list.
 
@@ -91,10 +96,10 @@ class AddLayersMixin:
             Image data. Can be N dimensional. If the last dimension has length
             3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a
             list and arrays are decreasing in shape then the data is treated as
-            an image pyramid.
+            a multiscale image.
         channel_axis : int, optional
             Axis to expand image along.  If provided, each channel in the data
-            will be added as an individual image layer.  byIn channel_axis mode,
+            will be added as an individual image layer.  In channel_axis mode,
             all other parameters MAY be provided as lists, and the Nth value
             will be applied to the Nth channel in the data.  If a single value
             is provided, it will be broadcast to all Layers.
@@ -104,13 +109,6 @@ class AddLayersMixin:
             `True`. If `False` the image is interpreted as a luminance image.
             If a list then must be same length as the axis that is being
             expanded as channels.
-        is_pyramid : bool or list
-            Whether the data is an image pyramid or not. Pyramid data is
-            represented by a list of array like image data. If not specified by
-            the user and if the data is a list of arrays that decrease in shape
-            then it will be taken to be a pyramid. The first image in the list
-            should be the largest. If a list then must be same length as the
-            axis that is being expanded as channels.
         colormap : str, vispy.Color.Colormap, tuple, dict, list
             Colormaps to use for luminance images. If a string must be the name
             of a supported colormap from vispy or matplotlib. If a tuple the
@@ -171,26 +169,32 @@ class AddLayersMixin:
             Whether the layer visual is currently being displayed.
             If a list then must be same length as the axis that is
             being expanded as channels.
-        path : str or list of str
-            Path or list of paths to image data. Paths can be passed as strings
-            or `pathlib.Path` instances.
+        multiscale : bool
+            Whether the data is a multiscale image or not. Multiscale data is
+            represented by a list of array like image data. If not specified by
+            the user and if the data is a list of arrays that decrease in shape
+            then it will be taken to be multiscale. The first image in the list
+            should be the largest.
 
         Returns
         -------
         layer : :class:`napari.layers.Image` or list
             The newly-created image layer or list of image layers.
         """
-        if data is None and path is None:
-            raise ValueError("One of either data or path must be provided")
-        elif data is not None and path is not None:
-            raise ValueError("Only one of data or path can be provided")
-        elif data is None:
-            data = io.magic_imread(path)
+
+        if colormap is not None:
+            # standardize colormap argument(s) to strings, and make sure they
+            # are in AVAILABLE_COLORMAPS.  This will raise one of many various
+            # errors if the colormap argument is invalid.  See
+            # ensure_colormap_tuple for details
+            if isinstance(colormap, list):
+                colormap = [ensure_colormap_tuple(c)[0] for c in colormap]
+            else:
+                colormap, _ = ensure_colormap_tuple(colormap)
 
         # doing this here for IDE/console autocompletion in add_image function.
         kwargs = {
             'rgb': rgb,
-            'is_pyramid': is_pyramid,
             'colormap': colormap,
             'contrast_limits': contrast_limits,
             'gamma': gamma,
@@ -205,6 +209,7 @@ class AddLayersMixin:
             'opacity': opacity,
             'blending': blending,
             'visible': visible,
+            'multiscale': multiscale,
         }
 
         # these arguments are *already* iterables in the single-channel case.
@@ -224,14 +229,19 @@ class AddLayersMixin:
 
             return self.add_layer(layers.Image(data, **kwargs))
         else:
-            n_channels = (data[0] if is_pyramid else data).shape[channel_axis]
+            # Determine if data is a multiscale
+            if multiscale is None:
+                multiscale, data = guess_multiscale(data)
+            n_channels = (data[0] if multiscale else data).shape[channel_axis]
             kwargs['blending'] = kwargs['blending'] or 'additive'
 
             # turn the kwargs dict into a mapping of {key: iterator}
             # so that we can use {k: next(v) for k, v in kwargs.items()} below
             for key, val in kwargs.items():
                 if key == 'colormap' and val is None:
-                    if n_channels < 3:
+                    if n_channels == 1:
+                        kwargs[key] = iter(['gray'])
+                    elif n_channels == 2:
                         kwargs[key] = iter(colormaps.MAGENTA_GREEN)
                     else:
                         kwargs[key] = itertools.cycle(colormaps.CYMRGB)
@@ -248,7 +258,7 @@ class AddLayersMixin:
 
             layer_list = []
             for i in range(n_channels):
-                if is_pyramid:
+                if multiscale:
                     image = [
                         np.take(data[j], i, axis=channel_axis)
                         for j in range(len(data))
@@ -306,9 +316,9 @@ class AddLayersMixin:
             Width of the symbol edge in pixels.
         edge_color : str, array-like
             Color of the point marker border. Numeric color values should be RGB(A).
-        edge_color_cycle : np.ndarray, list, cycle
-            Cycle of colors (provided as RGBA) to map to edge_color if a
-            categorical attribute is used to set face_color.
+        edge_color_cycle : np.ndarray, list
+            Cycle of colors (provided as string name, RGB, or RGBA) to map to edge_color if a
+            categorical attribute is used color the vectors.
         edge_colormap : str, vispy.color.colormap.Colormap
             Colormap to set edge_color if a continuous attribute is used to set face_color.
             See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
@@ -319,9 +329,9 @@ class AddLayersMixin:
             (property.min(), property.max())
         face_color : str, array-like
             Color of the point marker body. Numeric color values should be RGB(A).
-        face_color_cycle : np.ndarray, list, cycle
-            Cycle of colors (provided as RGBA) to map to face_color if a
-            categorical attribute is used to set face_color.
+        face_color_cycle : np.ndarray, list
+            Cycle of colors (provided as string name, RGB, or RGBA) to map to face_color if a
+            categorical attribute is used color the vectors.
         face_colormap : str, vispy.color.colormap.Colormap
             Colormap to set face_color if a continuous attribute is used to set face_color.
             See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
@@ -392,9 +402,8 @@ class AddLayersMixin:
 
     def add_labels(
         self,
-        data=None,
+        data,
         *,
-        is_pyramid=None,
         num_colors=50,
         seed=0.5,
         name=None,
@@ -404,7 +413,7 @@ class AddLayersMixin:
         opacity=0.7,
         blending='translucent',
         visible=True,
-        path=None,
+        multiscale=None,
     ) -> layers.Labels:
         """Add a labels (or segmentation) layer to the layers list.
 
@@ -424,13 +433,7 @@ class AddLayersMixin:
         Parameters
         ----------
         data : array or list of array
-            Labels data as an array or pyramid.
-        is_pyramid : bool
-            Whether the data is an image pyramid or not. Pyramid data is
-            represented by a list of array like image data. If not specified by
-            the user and if the data is a list of arrays that decrease in shape
-            then it will be taken to be a pyramid. The first image in the list
-            should be the largest.
+            Labels data as an array or multiscale.
         num_colors : int
             Number of unique colors to use in colormap.
         seed : float
@@ -451,25 +454,20 @@ class AddLayersMixin:
             {'opaque', 'translucent', and 'additive'}.
         visible : bool
             Whether the layer visual is currently being displayed.
-        path : str or list of str
-            Path or list of paths to image data. Paths can be passed as strings
-            or `pathlib.Path` instances.
+        multiscale : bool
+            Whether the data is a multiscale image or not. Multiscale data is
+            represented by a list of array like image data. If not specified by
+            the user and if the data is a list of arrays that decrease in shape
+            then it will be taken to be multiscale. The first image in the list
+            should be the largest.
 
         Returns
         -------
         layer : :class:`napari.layers.Labels`
             The newly-created labels layer.
         """
-        if data is None and path is None:
-            raise ValueError("One of either data or path must be provided")
-        elif data is not None and path is not None:
-            raise ValueError("Only one of data or path can be provided")
-        elif data is None:
-            data = io.magic_imread(path)
-
         layer = layers.Labels(
             data,
-            is_pyramid=is_pyramid,
             num_colors=num_colors,
             seed=seed,
             name=name,
@@ -479,6 +477,7 @@ class AddLayersMixin:
             opacity=opacity,
             blending=blending,
             visible=visible,
+            multiscale=multiscale,
         )
         self.add_layer(layer)
         return layer
@@ -661,8 +660,12 @@ class AddLayersMixin:
         self,
         data,
         *,
+        properties=None,
         edge_width=1,
         edge_color='red',
+        edge_color_cycle=None,
+        edge_colormap='viridis',
+        edge_contrast_limits=None,
         length=1,
         name=None,
         metadata=None,
@@ -682,12 +685,26 @@ class AddLayersMixin:
             D dimensions. An (N1, N2, ..., ND, D) array is interpreted as
             "image-like" data where there is a length D vector of the
             projections at each pixel.
+        properties : dict {str: array (N,)}, DataFrame
+            Properties for each vector. Each property should be an array of length N,
+            where N is the number of vectors.
         edge_width : float
             Width for all vectors in pixels.
         length : float
              Multiplicative factor on projections for length of all vectors.
         edge_color : str
-            Edge color of all the vectors.
+            Color of all of the vectors.
+        edge_color_cycle : np.ndarray, list
+            Cycle of colors (provided as string name, RGB, or RGBA) to map to edge_color if a
+            categorical attribute is used color the vectors.
+        edge_colormap : str, vispy.color.colormap.Colormap
+            Colormap to set vector color if a continuous attribute is used to set edge_color.
+            See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
+        edge_contrast_limits : None, (float, float)
+            clims for mapping the property to a color map. These are the min and max value
+            of the specified property that are mapped to 0 and 1, respectively.
+            The default value is None. If set the none, the clims will be set to
+            (property.min(), property.max())
         name : str
             Name of the layer.
         metadata : dict
@@ -712,8 +729,12 @@ class AddLayersMixin:
         """
         layer = layers.Vectors(
             data,
+            properties=properties,
             edge_width=edge_width,
             edge_color=edge_color,
+            edge_color_cycle=edge_color_cycle,
+            edge_colormap=edge_colormap,
+            edge_contrast_limits=edge_contrast_limits,
             length=length,
             name=name,
             metadata=metadata,
@@ -726,10 +747,15 @@ class AddLayersMixin:
         self.add_layer(layer)
         return layer
 
-    def add_path(
-        self, path: Union[str, Sequence[str]], stack: bool = False
+    def open(
+        self,
+        path: Union[str, Sequence[str]],
+        stack: bool = False,
+        plugin: Optional[str] = None,
+        layer_type: Optional[str] = None,
+        **kwargs,
     ) -> List[layers.Layer]:
-        """Add a path or list of paths to the viewer.
+        """Open a path or list of paths with plugins, and add layers to viewer.
 
         A list of paths will be handed one-by-one to the napari_get_reader hook
         if stack is False, otherwise the full list is passed to each plugin
@@ -745,6 +771,19 @@ class AddLayersMixin:
             plugins to know how to handle a list of paths.  If ``stack`` is
             ``False``, then the ``path`` list is broken up and passed to plugin
             readers one by one.  by default False.
+        plugin : str, optional
+            Name of a plugin to use.  If provided, will force ``path`` to be
+            read with the specified ``plugin``.  If the requested plugin cannot
+            read ``path``, an execption will be raised.
+        layer_type : str, optional
+            If provided, will force data read from ``path`` to be passed to the
+            corresponding ``add_<layer_type>`` method (along with any
+            additional) ``kwargs`` provided to this function.  This *may*
+            result in exceptions if the data returned from the path is not
+            compatible with the layer_type.
+        **kwargs
+            All other keyword arguments will be passed on to the respective
+            ``add_layer`` method.
 
         Returns
         -------
@@ -752,27 +791,37 @@ class AddLayersMixin:
             A list of any layers that were added to the viewer.
         """
         paths = [path] if isinstance(path, str) else path
-        paths = [fspath(path) for path in paths]  # PathObjects -> str
+        paths = [os.fspath(path) for path in paths]  # PathObjects -> str
         if not isinstance(paths, (tuple, list)):
             raise ValueError(
                 "'path' argument must be a string, list, or tuple"
             )
 
         if stack:
-            return self._add_layers_with_plugins(paths)
+            return self._add_layers_with_plugins(
+                paths, kwargs, plugin=plugin, layer_type=layer_type
+            )
 
         added: List[layers.Layer] = []  # for layers that get added
         for _path in paths:
-            added.extend(self._add_layers_with_plugins(_path))
+            added.extend(
+                self._add_layers_with_plugins(
+                    _path, kwargs, plugin=plugin, layer_type=layer_type
+                )
+            )
 
         return added
 
     def _add_layers_with_plugins(
-        self, path_or_paths: Union[str, Sequence[str]]
+        self,
+        path_or_paths: Union[str, Sequence[str]],
+        kwargs: Optional[dict] = None,
+        plugin: Optional[str] = None,
+        layer_type: Optional[str] = None,
     ) -> List[layers.Layer]:
         """Load a path or a list of paths into the viewer using plugins.
 
-        This function is mostly called from self.add_path, where the ``stack``
+        This function is mostly called from self.open_path, where the ``stack``
         argument determines whether a list of strings is handed to plugins one
         at a time, or en-masse.
 
@@ -781,31 +830,50 @@ class AddLayersMixin:
         path_or_paths : str or list of str
             A filepath, directory, or URL (or a list of any) to open. If a
             list, the assumption is that the list is to be treated as a stack.
+        kwargs : dict, optional
+            keyword arguments that will be used to overwrite any of those that
+            are returned in the meta dict from plugins.
+        plugin : str, optional
+            Name of a plugin to use.  If provided, will force ``path`` to be
+            read with the specified ``plugin``.  If the requested plugin cannot
+            read ``path``, an execption will be raised.
+        layer_type : str, optional
+            If provided, will force data read from ``path`` to be passed to the
+            corresponding ``add_<layer_type>`` method (along with any
+            additional) ``kwargs`` provided to this function.  This *may*
+            result in exceptions if the data returned from the path is not
+            compatible with the layer_type.
 
         Returns
         -------
         List[layers.Layer]
             A list of any layers that were added to the viewer.
         """
-        layer_data = read_data_with_plugins(path_or_paths)
+        layer_data = read_data_with_plugins(path_or_paths, plugin=plugin)
 
-        if not layer_data:
-            # if layer_data is empty, it means no plugin could read path
-            # we just want to provide some useful feedback, which includes
-            # whether or not paths were passed to plugins as a list.
-            if isinstance(path_or_paths, (tuple, list)):
-                path_repr = f"[{path_or_paths[0]}, ...] as stack"
+        # glean layer names from filename. These will be used as *fallback*
+        # names, if the plugin does not return a name kwarg in their meta dict.
+        if isinstance(path_or_paths, str):
+            filenames = itertools.repeat(path_or_paths)
+        elif is_sequence(path_or_paths):
+            if len(path_or_paths) == len(layer_data):
+                filenames = iter(path_or_paths)
             else:
-                path_repr = path_or_paths
-            msg = f'No plugin found capable of reading {path_repr}.'
-            logger.error(msg)
-            return []
+                # if a list of paths has been returned as a list of layer data
+                # without a 1:1 relationship between the two lists we iterate
+                # over the first name
+                filenames = itertools.repeat(path_or_paths[0])
 
         # add each layer to the viewer
         added: List[layers.Layer] = []  # for layers that get added
-        for data in layer_data:
-            new = self._add_layer_from_data(*data)
-            # some add_* methods return a List[Layer] others just a Layer
+        for data, filename in zip(layer_data, filenames):
+            basename, ext = os.path.splitext(os.path.basename(filename))
+            _data = _unify_data_and_user_kwargs(
+                data, kwargs, layer_type, fallback_name=basename
+            )
+            # actually add the layer
+            new = self._add_layer_from_data(*_data)
+            # some add_* methods return a List[Layer], others just a Layer
             # we want to always return a list
             added.extend(new if isinstance(new, list) else [new])
         return added
@@ -859,15 +927,7 @@ class AddLayersMixin:
 
         # assumes that big integer type arrays are likely labels.
         if not layer_type:
-            if hasattr(data, 'dtype') and data.dtype in (
-                np.int32,
-                np.uint32,
-                np.int64,
-                np.uint64,
-            ):
-                layer_type = 'labels'
-            else:
-                layer_type = 'image'
+            layer_type = guess_labels(data)
 
         if layer_type not in layers.NAMES:
             raise ValueError(
@@ -896,3 +956,163 @@ class AddLayersMixin:
                 raise exc
 
         return layer
+
+
+@lru_cache(maxsize=1)
+def valid_add_kwargs() -> Dict[str, Set[str]]:
+    """Return a dict where keys are layer types & values are valid kwargs."""
+    valid = dict()
+    for meth in dir(AddLayersMixin):
+        if not meth.startswith('add_') or meth[4:] == 'layer':
+            continue
+        params = inspect.signature(getattr(AddLayersMixin, meth)).parameters
+        valid[meth[4:]] = set(params) - {'self', 'kwargs'}
+    return valid
+
+
+def _normalize_layer_data(data: LayerData) -> FullLayerData:
+    """Accepts any layerdata tuple, and returns a fully qualified tuple.
+
+    Parameters
+    ----------
+    data : LayerData
+        1-, 2-, or 3-tuple with (data, meta, layer_type).
+
+    Returns
+    -------
+    FullLayerData
+        3-tuple with (data, meta, layer_type)
+
+    Raises
+    ------
+    ValueError
+        If data has len < 1 or len > 3, or if the second item in ``data`` is
+        not a ``dict``, or the third item is not a valid layer_type ``str``
+    """
+    if not isinstance(data, tuple) and 0 < len(data) < 4:
+        raise ValueError("LayerData must be a 1-, 2-, or 3-tuple")
+    _data = list(data)
+    if len(_data) > 1:
+        if not isinstance(_data[1], dict):
+            raise ValueError(
+                "The second item in a LayerData tuple must be a dict"
+            )
+    else:
+        _data.append(dict())
+    if len(_data) > 2:
+        if _data[2] not in layers.NAMES:
+            raise ValueError(
+                "The third item in a LayerData tuple must be one of: "
+                f"{layers.NAMES!r}."
+            )
+    else:
+        _data.append(guess_labels(_data[0]))
+    return tuple(_data)  # type: ignore
+
+
+def _unify_data_and_user_kwargs(
+    data: LayerData,
+    kwargs: Optional[dict] = None,
+    layer_type: Optional[str] = None,
+    fallback_name: str = None,
+) -> FullLayerData:
+    """Merge data returned from plugins with options specified by user.
+
+    If ``data == (_data, _meta, _type)``.  Then:
+
+    - ``kwargs`` will be used to update ``_meta``
+    - ``layer_type`` will replace ``_type`` and, if provided, ``_meta`` keys
+        will be pruned to layer_type-appropriate kwargs
+    - ``fallback_name`` is used if ``not _meta.get('name')``
+
+    .. note:
+
+        If a user specified both layer_type and additional keyword arguments
+        to viewer.open(), it is their responsibility to make sure the kwargs
+        match the layer_type.
+
+    Parameters
+    ----------
+    data : LayerData
+        1-, 2-, or 3-tuple with (data, meta, layer_type) returned from plugin.
+    kwargs : dict, optional
+        User-supplied keyword arguments, to override those in ``meta`` supplied
+        by plugins.
+    layer_type : str, optional
+        A user-supplied layer_type string, to override the ``layer_type``
+        declared by the plugin.
+    fallback_name : str, optional
+        A name for the layer, to override any name in ``meta`` supplied by the
+        plugin.
+
+    Returns
+    -------
+    FullLayerData
+        Fully qualified LayerData tuple with user-provided overrides.
+    """
+    _data, _meta, _type = _normalize_layer_data(data)
+
+    if layer_type:
+        # the user has explicitly requested this be a certain layer type
+        # strip any kwargs from the plugin that are no longer relevant
+        _meta = prune_kwargs(_meta, layer_type)
+        _type = layer_type
+
+    if kwargs:
+        # if user provided kwargs, use to override any meta dict values that
+        # were returned by the plugin. We only prune kwargs if the user did
+        # *not* specify the layer_type. This means that if a user specified
+        # both layer_type and additional keyword arguments to viewer.open(),
+        # it is their responsibility to make sure the kwargs match the
+        # layer_type.
+        _meta.update(prune_kwargs(kwargs, _type) if not layer_type else kwargs)
+
+    if not _meta.get('name') and fallback_name:
+        _meta['name'] = fallback_name
+    return (_data, _meta, _type)
+
+
+def prune_kwargs(kwargs: Dict[str, Any], layer_type: str) -> Dict[str, Any]:
+    """Return copy of ``kwargs`` with only keys valid for ``add_<layer_type>``
+
+    Parameters
+    ----------
+    kwargs : dict
+        A key: value mapping where some or all of the keys are parameter names
+        for the corresponding ``Viewer.add_<layer_type>`` method.
+    layer_type : str
+        The type of layer that is going to be added with these ``kwargs``.
+
+    Returns
+    -------
+    pruned_kwargs : dict
+        A key: value mapping where all of the keys are valid parameter names
+        for the corresponding ``Viewer.add_<layer_type>`` method.
+
+    Raises
+    ------
+    ValueError
+        If ``AddLayersMixin`` does not provide an ``add_<layer_type>`` method
+        for the provided ``layer_type``.
+
+    Examples
+    --------
+    >>> test_kwargs = {
+            'scale': (0.75, 1),
+            'blending': 'additive',
+            'num_colors': 10,
+        }
+    >>> prune_kwargs(test_kwargs, 'image')
+    {'scale': (0.75, 1), 'blending': 'additive'}
+
+    >>> # only labels has the ``num_colors`` argument
+    >>> prune_kwargs(test_kwargs, 'labels')
+    {'scale': (0.75, 1), 'blending': 'additive', 'num_colors': 10}
+    """
+    add_method = getattr(AddLayersMixin, 'add_' + layer_type, None)
+    if not add_method or layer_type == 'layer':
+        raise ValueError(f"Invalid layer_type: {layer_type}")
+
+    # get valid params for the corresponding add_<layer_type> method
+    valid = valid_add_kwargs()[layer_type]
+    return {k: v for k, v in kwargs.items() if k in valid}

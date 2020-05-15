@@ -12,3 +12,24 @@ IO hooks
 --------
 
 .. autofunction:: napari_get_reader
+.. autofunction:: napari_get_writer
+
+.. _write-single-layer-hookspecs:
+
+Single Layers IO
+''''''''''''''''
+
+The following hook specifications will be called when a user saves a single
+layer in napari, and should save the layer to the requested format and return
+``True`` if successful, or ``False`` if unable.  They each accept a ``path``.
+It is up to plugins to inspect and obey the extension of the path (and return
+``False`` if it is an unsupported extension).  The ``data`` argument will come
+from ``Layer.data``, and a ``meta`` dict that will correspond to the layer's
+:meth:`~napari.layers.base.base.Layer._get_state` method.
+
+.. autofunction:: napari_write_image
+.. autofunction:: napari_write_labels
+.. autofunction:: napari_write_points
+.. autofunction:: napari_write_shapes
+.. autofunction:: napari_write_surface
+.. autofunction:: napari_write_vectors

@@ -83,9 +83,5 @@ with napari.gui_qt():
         opacity=0.75,
     )
 
-    # Set the layer mode with a string
-    layer.mode = 'select'
-
-# Print the shape coordinate data
-print(layer.nshapes, "shapes at:")
-print(layer.data)
+    # To save layers to svg:
+    # viewer.layers.save('viewer.svg', plugin='svg')

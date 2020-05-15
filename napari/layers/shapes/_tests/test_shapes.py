@@ -1,5 +1,4 @@
 import numpy as np
-from xml.etree.ElementTree import Element
 from napari.layers import Shapes
 
 
@@ -943,15 +942,3 @@ def test_to_labels_3D():
     labels = layer.to_labels(labels_shape=labels_shape)
     assert np.all(labels.shape == labels_shape)
     assert np.all(np.unique(labels) == [0, 1, 2, 3])
-
-
-def test_xml_list():
-    """Test the xml generation."""
-    shape = (10, 4, 2)
-    np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    layer = Shapes(data)
-    xml = layer.to_xml_list()
-    assert type(xml) == list
-    assert len(xml) == shape[0]
-    assert np.all([type(x) == Element for x in xml])

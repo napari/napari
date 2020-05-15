@@ -7,7 +7,7 @@ def test_big_2D_image(viewer_factory):
 
     shape = (20_000, 10)
     data = np.random.random(shape)
-    layer = viewer.add_image(data, is_pyramid=False)
+    layer = viewer.add_image(data, multiscale=False)
     visual = view.layer_to_visual[layer]
     assert visual.node is not None
     if visual.MAX_TEXTURE_SIZE_2D is not None:
@@ -21,7 +21,7 @@ def test_big_3D_image(viewer_factory):
 
     shape = (5, 10, 3_000)
     data = np.random.random(shape)
-    layer = viewer.add_image(data, is_pyramid=False)
+    layer = viewer.add_image(data, multiscale=False)
     visual = view.layer_to_visual[layer]
     assert visual.node is not None
     if visual.MAX_TEXTURE_SIZE_3D is not None:

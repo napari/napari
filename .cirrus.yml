@@ -22,15 +22,6 @@ lint_task:
   test_script:
     - flake8 napari
 
-requirements_task:
-  name: Check if all requirements are listed
-  install_script:
-    - python -m pip install --retries 3 --upgrade "pip<19.3"
-    - pip install pip_check_reqs
-    - pip install --retries 3 -r requirements/development.txt
-  test_script:
-    - pip-missing-reqs napari --ignore-file="**/_tests/*" --ignore-module=PySide2 --ignore-module=zarr  --ignore-file=napari/conftest.py
-
 linux_task:
   auto_cancellation: true
 
@@ -203,9 +194,9 @@ win_task:
 
   test_script: pytest -v -o qt_no_exception_capture=1
 
-
 codecov_task:
   auto_cancellation: true
+  name: Coverage & Requirements
 
   depends_on:
     - linux 3.8
@@ -227,9 +218,16 @@ codecov_task:
 
   install_script: |
     python -m pip install --retries 3 --upgrade pip
+    # pip-check-reqs doesn't work with newer versions of pip
+    # this PR fixes it, but the author hasn't commented on #22 it since it was submitted Jan 27, 2020
+    # this PR introduces additional fixes for pip 20.1.
+    pip install git+https://github.com/r1chardj0n3s/pip-check-reqs.git@refs/pull/23/head
     pip install -r requirements/development.txt
     pip install -e .
     pip install pytest-cov codecov
+
+  check_requirements_script:
+    pip-missing-reqs napari --ignore-file="**/_tests/*" --ignore-module=PySide2 --ignore-module=zarr  --ignore-file=napari/conftest.py
 
   coverage_script: |
     pytest --cov=./napari
