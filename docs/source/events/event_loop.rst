@@ -14,14 +14,14 @@ that looks like this (in pseudo-code):
 
 .. code-block:: python
    
-   event_queue = Queue()
+    event_queue = Queue()
 
-   while True:  # infinite loop!
-      if not event_queue.is_empty():
-         event = get_next_event()
-         if event.value == 'Quit':
+    while True:  # infinite loop!
+        if not event_queue.is_empty():
+            event = get_next_event()
+            if event.value == 'Quit':
             break
-         else:
+            else:
             process_event(event)
 
 Actions taken by the user add events to the queue ("button pressed",
@@ -37,8 +37,8 @@ When you use the following syntax:
 
 .. code-block:: python
 
-   with napari.gui_qt():
-      viewer = napari.Viewer()
+    with napari.gui_qt():
+        viewer = napari.Viewer()
 
 ... you are starting up the Qt event loop.  This also explains why the only
 wait to get *out* of that ``gui_qt`` context is to *stop* the Qt event loop
@@ -78,22 +78,22 @@ key is pressed:
 
 .. code-block:: python
 
-   import numpy as np
-   import napari
+    import numpy as np
+    import napari
 
-   with napari.gui_qt():
-      viewer = napari.Viewer()
+    with napari.gui_qt():
+        viewer = napari.Viewer()
 
-      @viewer.bind_key('i')
-      def add_layer(viewer):
-         viewer.add_image(np.random.random((512, 512)))
+        @viewer.bind_key('i')
+        def add_layer(viewer):
+            viewer.add_image(np.random.random((512, 512)))
 
-      @viewer.bind_key('k')
-      def delete_layer(viewer):
-         try:
-               viewer.layers.pop(0)
-         except IndexError:
-               pass
+        @viewer.bind_key('k')
+        def delete_layer(viewer):
+            try:
+                viewer.layers.pop(0)
+            except IndexError:
+                pass
 
 See also this `custom key bindings example
 <https://github.com/napari/napari/blob/master/examples/custom_key_bindings.py>`_
@@ -107,16 +107,16 @@ clicked.
 
 .. code-block:: python
 
-   import numpy as np
-   import napari
+    import numpy as np
+    import napari
 
-   with napari.gui_qt():
-      viewer = napari.Viewer()
-      layer = viewer.add_image(np.random.random((512, 512)))
+    with napari.gui_qt():
+        viewer = napari.Viewer()
+        layer = viewer.add_image(np.random.random((512, 512)))
 
-      @layer.mouse_drag_callbacks.append
-      def update_layer(layer, event):
-         layer.data = np.random.random((512, 512))
+        @layer.mouse_drag_callbacks.append
+        def update_layer(layer, event):
+            layer.data = np.random.random((512, 512))
 
 See also the `custom mouse functions
 <https://github.com/napari/napari/blob/master/examples/custom_mouse_functions.py>`_
@@ -137,12 +137,12 @@ method a ``self.events`` section that looks like this:
 
 .. code-block:: python
 
-   self.events = EmitterGroup(
-      ...
-      data=Event,
-      name=Event,
-      ...
-   )
+    self.events = EmitterGroup(
+        ...
+        data=Event,
+        name=Event,
+        ...
+    )
 
 That tells you that all layers are capable of emitting events called ``data``,
 and ``name`` (among many others) that will (presumably) be emitted when that
@@ -151,10 +151,10 @@ a callback function that accepts the event object:
 
 .. code-block:: python
 
-   def print_layer_name(event):
-      print(f"{event.source.name} changed it's data!")
+    def print_layer_name(event):
+        print(f"{event.source.name} changed it's data!")
 
-   layer.events.data.connect(print_layer_name)
+    layer.events.data.connect(print_layer_name)
 
 
 Long-running, blocking functions
@@ -170,15 +170,15 @@ Take this example in napari:
 
 .. code-block:: python
 
-   import napari
-   import numpy as np
+    import napari
+    import numpy as np
 
-   with napari.gui_qt():
-       viewer = napari.Viewer()
-       # everything is fine so far... but if we trigger a long computation
-       image = np.random.rand(512, 1024, 1024).mean(0)
-       viewer.add_image(image)
-       # the entire interface freezes!
+    with napari.gui_qt():
+        viewer = napari.Viewer()
+        # everything is fine so far... but if we trigger a long computation
+        image = np.random.rand(512, 1024, 1024).mean(0)
+        viewer.add_image(image)
+        # the entire interface freezes!
 
 Here we have a long computation (``np.random.rand(512, 1024, 1024).mean(0)``)
 that "blocks" the main thread, meaning *no button press, key press, or any

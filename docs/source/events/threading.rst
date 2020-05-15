@@ -61,18 +61,145 @@ your function with the ``@thread_worker`` decorator.  Continuing with the
 example above:
 
 .. code-block:: python
+   :linenos:
+   :emphasize-lines: 4,7,13-15
 
-   import napari
-   import numpy as np
+    import napari
+    import numpy as np
 
-   from napari._qt.threading import thread_worker
+    from napari._qt.threading import thread_worker
 
-   @thread_worker
-   def create_complicated_image():
-      return np.random.rand(512, 1024, 1024).mean(0)
 
-   with napari.gui_qt():
-      viewer = napari.Viewer()
-      worker = create_complicated_image()
-      worker.returned.connect(viewer.add_image)
-      worker.start()   
+    @thread_worker
+    def average_large_image():
+        return np.random.rand(512, 1024, 1024).mean(0)
+
+    with napari.gui_qt():
+        viewer = napari.Viewer()
+        worker = average_large_image()  # create "worker" object
+        worker.returned.connect(viewer.add_image)  # connect callback functions
+        worker.start()  # start the thread!
+
+
+The ``@thread_worker`` decorator (**7**), converts your function into one that
+returns a ``worker`` instance (**13**). The ``worker`` manages the work being
+done by your function in another thread.  It also exposes a few "signals" that
+let you respond to events happening in the other thread.  Here, we connect the
+``worker.returned`` signal to the ``viewer.add_image`` function (**14**), which
+has the effect of adding the result to the viewer when it is ready. Lastly, we
+start the worker with ``worker.start()`` (**15**) because workers do not start
+themselves by default.
+
+The ``@thread_worker`` decorator also accepts keyword arguments like
+``connect``, and ``start_thread``, which may enable more concise syntax.
+The example below is equivalent to lines 7-15 in the above example:
+
+.. code-block:: python
+
+    with napari.gui_qt():
+        viewer = napari.Viewer()
+
+        @thread_worker(connect={"returned": viewer.add_image}, start_thread=True)
+        def average_large_image():
+            return np.random.rand(512, 1024, 1024).mean(0)
+
+        average_large_image()
+
+
+Responding to feedback from threads
+-----------------------------------
+
+As shown above, the ``worker`` object returned by a function decorated with
+``@thread_worker`` has a number of signals that are emitted in response to
+certain events.  The base signals provided by the ``worker`` are:
+
+* **started** - emitted when the work is started
+* **finished** - emitted when the work is finished
+* **returned** [*value*] - emitted with return value when the function returns
+* **errored** [*exception*] - emitted with an ``Exception`` object if an
+  exception is raised in the thread.
+
+Example: custom exception handler
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Because debugging issues in multithreaded applications can be tricky, the
+default behavior of a ``@thread-worker`` - decorated function is to re-raise
+any exceptions in the main thread.  But just as we connected the
+``worker.returned`` event above to the ``viewer.add_image`` method, you can
+also connect your own custom handler to the ``worker.errored`` event:
+
+.. code-block:: python
+
+    def my_handler(exc):
+        if isinstance(exc, ValueError):
+            print(f"We had a minor problem {exc}")
+        else:
+            raise exc
+
+   @thread_worker(connect={"errored": my_handler})
+    def error_prone_function():
+        ...
+
+
+Generators for the win!
+-----------------------
+
+**Use a generator!**
+
+By writing our decorated function as a generator, we gain a number of very
+valuable features.
+
+Intermediate Results
+^^^^^^^^^^^^^^^^^^^^
+
+The most obvious benefit is that you can "peek" at intermediate results back in
+the main thread.  Continuing with our example of taking the mean projection of
+very large stack, if we yield each plane as it is generated, we can watch the
+mean projection as it builds:
+
+
+
+
+
+Syntactic sugar
+---------------
+
+The ``@thread_worker`` decorator is just syntactic sugar for calling the 
+``create_worker`` function on your function.  And in turn, ``create_worker`` is
+just a convenience that creates the right type of ``Worker`` depending on your
+function type. The following three examples are equivalent:
+
+.. code-block:: python
+
+    # with `@thread_worker` decorator
+    from napari._qt.threading import thread_worker
+
+    @thread_worker
+    def my_function(arg1, arg2=None):
+        pass
+
+    worker = my_function('hello', arg2=42)
+
+
+    # with `create_worker`
+    from napari._qt.threading import create_worker
+
+    def my_function(arg1, arg2=None):
+       pass
+
+    worker = create_worker(my_function, 'hello', arg2=42)
+
+
+
+    # with Worker class
+    from napari._qt.threading import FunctionWorker
+    
+    def my_function(arg1, arg2=None):
+       pass
+
+    worker = FunctionWorker(my_function, 'hello', arg2=42)
+
+(the main difference between using ``create_worker`` and directly instantiating
+the ``FunctionWorker`` class is that ``create_worker`` will automatically
+dispatch the appropriate type of ``Worker`` class depending on whether the
+function is a generator or not).
