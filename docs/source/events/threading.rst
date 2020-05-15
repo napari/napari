@@ -16,6 +16,7 @@ completely unresponsive viewer.  The example used there was:
    import napari
    import numpy as np
 
+
    with napari.gui_qt():
        viewer = napari.Viewer()
        # everything is fine so far... but if we trigger a long computation
@@ -56,8 +57,22 @@ Threading in napari with ``@thread_worker``
 -------------------------------------------
 
 The simplest way to run a function in another thread in napari is to decorate
-your function with the ``@thread_worker`` decorator.  Taking the example above:
+your function with the ``@thread_worker`` decorator.  Continuing with the
+example above:
 
 .. code-block:: python
 
+   import napari
+   import numpy as np
 
+   from napari._qt.threading import thread_worker
+
+   @thread_worker
+   def create_complicated_image():
+      return np.random.rand(512, 1024, 1024).mean(0)
+
+   with napari.gui_qt():
+      viewer = napari.Viewer()
+      worker = create_complicated_image()
+      worker.returned.connect(viewer.add_image)
+      worker.start()   
