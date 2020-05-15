@@ -354,7 +354,7 @@ class Shapes(Layer):
             maxs = np.max([np.max(d, axis=0) for d in self.data], axis=0)
             mins = np.min([np.min(d, axis=0) for d in self.data], axis=0)
 
-        return tuple((min, max, 1) for min, max in zip(mins, maxs))
+        return tuple((min, max) for min, max in zip(mins, maxs))
 
     @property
     def nshapes(self):
