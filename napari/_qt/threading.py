@@ -251,6 +251,18 @@ class GeneratorWorker(WorkerBase):
         else:
             self._pause_requested = True
 
+    def pause(self) -> None:
+        """Send a request to pause the worker.
+        """
+        if not self.is_paused:
+            self._pause_requested = True
+
+    def resume(self) -> None:
+        """Send a request to resume the worker.
+        """
+        if self.is_paused:
+            self._resume_requested = True
+
     def pre_yield_hook(self):
         """Hook for subclasses. Called just before yielding from generator"""
         pass
