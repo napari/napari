@@ -20,9 +20,9 @@ that looks like this (in pseudo-code):
         if not event_queue.is_empty():
             event = get_next_event()
             if event.value == 'Quit':
-            break
+                break
             else:
-            process_event(event)
+                process_event(event)
 
 Actions taken by the user add events to the queue ("button pressed",
 "slider moved", etc...), and the event loop handles them one at a time. 
