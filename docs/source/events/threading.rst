@@ -445,3 +445,49 @@ depending on your function type. The following three examples are equivalent:
 the ``FunctionWorker`` class is that ``create_worker`` will automatically
 dispatch the appropriate type of ``Worker`` class depending on whether the
 function is a generator or not).
+
+Using a Custom Worker Class
+---------------------------
+
+If you need even more control over the worker – such as the ability to define
+custom methods or signals that the worker can emit, then you can subclass the
+napari :class:`~napari._qt.threading.WorkerBase` class.  When doing so, please
+keep in mind the following guidelines:
+
+1. The subclass must either implement the ``work()`` method (preferred), or in
+   extreme cases, may directly reimplement the ``run()`` method.  (When a
+   worker "start" is started with ``worker.start()``, the call order is always
+   ``worker.start()`` → ``worker.run()`` → ``worker.work()``.
+
+2. When implementing the ``work()`` method, it is 
+   important that you periodically check ``self.abort_requested`` in your 
+   thread loop, and exit the thread accordingly, otherwise ``napari`` will 
+   not be able to gracefully exit a long-running thread.
+     
+     .. code-block:: python
+
+        def work(self):
+            i = 0
+            while True:
+                if self.abort_requested:
+                    self.aborted.emit()
+                    break
+                time.sleep(0.5)
+
+3. It is also important to be mindful of the fact that the base
+   ``worker.start`` start method adds the worker to a global Pool, such that it
+   can request shutdown when exiting napari.  So if you re-implement ``start``,
+   please be sure to call ``start_worker(self)`` as shown in the base class.
+
+4. When reimplementing the ``run()`` method, it is your responsibility to emit
+   the ``started``, ``returned``, ``finished``, and ``errored`` signals at the
+   appropriate moments.
+
+For examples of subclassing :class:`~napari._qt.threading.WorkerBase`, have a
+look at the two main concrete subclasses in napari:
+:class:`~napari._qt.threading.FunctionWorker` and
+:class:`~napari._qt.threading.GeneratorWorker`.  You may also wish to simply
+subclass one of those two classes.  As an example, see the
+:class:`~napari._qt.threading.ProgressWorker` class, which adds an additional
+counter and ``progress`` signal to the
+:class:`~napari._qt.threading.GeneratorWorker`.
