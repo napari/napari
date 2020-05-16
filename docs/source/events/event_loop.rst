@@ -152,7 +152,7 @@ a callback function that accepts the event object:
 .. code-block:: python
 
     def print_layer_name(event):
-        print(f"{event.source.name} changed it's data!")
+        print(f"{event.source.name} changed its data!")
 
     layer.events.data.connect(print_layer_name)
 
