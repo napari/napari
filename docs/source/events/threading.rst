@@ -20,7 +20,7 @@ completely unresponsive viewer.  The example used there was:
    with napari.gui_qt():
        viewer = napari.Viewer()
        # everything is fine so far... but if we trigger a long computation
-       image = np.random.rand(512, 1024, 1024).mean(0)
+       image = np.random.rand(1024, 512, 512).mean(0)
        viewer.add_image(image)
        # the entire interface freezes!
 
@@ -72,7 +72,7 @@ example above:
 
     @thread_worker
     def average_large_image():
-        return np.random.rand(512, 1024, 1024).mean(0)
+        return np.random.rand(1024, 512, 512).mean(0)
 
     with napari.gui_qt():
         viewer = napari.Viewer()
@@ -101,7 +101,7 @@ The example below is equivalent to lines 7-15 in the above example:
 
         @thread_worker(connect={"returned": viewer.add_image}, start_thread=True)
         def average_large_image():
-            return np.random.rand(512, 1024, 1024).mean(0)
+            return np.random.rand(1024, 512, 512).mean(0)
 
         average_large_image()
 
@@ -113,10 +113,10 @@ As shown above, the ``worker`` object returned by a function decorated with
 ``@thread_worker`` has a number of signals that are emitted in response to
 certain events.  The base signals provided by the ``worker`` are:
 
-* **started** - emitted when the work is started
-* **finished** - emitted when the work is finished
-* **returned** [*value*] - emitted with return value when the function returns
-* **errored** [*exception*] - emitted with an ``Exception`` object if an
+* ``started`` - emitted when the work is started
+* ``finished`` - emitted when the work is finished
+* ``returned`` [*value*] - emitted with return value when the function returns
+* ``errored`` [*exception*] - emitted with an ``Exception`` object if an
   exception is raised in the thread.
 
 Example: custom exception handler
@@ -144,9 +144,6 @@ also connect your own custom handler to the ``worker.errored`` event:
 Generators for the win!
 -----------------------
 
-**Use a generator!**  By writing our decorated function as a generator, we gain
-a number of very valuable features.  
-
 .. admonition::  quick reminder
 
    A generator function is a `special kind of function
@@ -156,18 +153,36 @@ a number of very valuable features.
 
    .. code-block:: python
 
-      def my_generator():
-          for i in range(10):
-              yield i
+        def my_generator():
+            for i in range(10):
+                yield i
+        
 
-Intermediate Results
-^^^^^^^^^^^^^^^^^^^^
+**Use a generator!** By writing our decorated function as a generator that
+``yields`` results instead of a function that ``returns`` a single result at
+the end, we gain a number of valuable features, and a few extra signals and
+methods on the ``worker``.
 
-The most obvious benefit is that you can monitor intermediate results back in
-the main thread.  Continuing with our example of taking the mean projection of
-a large stack, if we yield the cumulative average as it is generated (rather
-than taking the average of the fully generated stack) we can watch the mean
-projection as it builds:
+* ``yielded`` [*value*]- emitted with a value when a value is yielded
+* ``paused`` - emitted when a running job has successfully paused
+* ``resumed``  - emitted when a paused job has successfully resumed
+* ``aborted`` - emitted when a running job is successfully aborted
+
+Additionally, generator ``workers`` will also have a few additional methods:
+
+* ``send`` - send a value *into* the thread (see below)
+* ``toggle_pause`` - toggle the running state of the worker
+* ``quit`` - send a request to abort the worker
+
+
+Retreiving Intermediate Results
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The most obvious benefit of using a generator is that you can monitor
+intermediate results back in the main thread.  Continuing with our example of
+taking the mean projection of a large stack, if we yield the cumulative average
+as it is generated (rather than taking the average of the fully generated
+stack) we can watch the mean projection as it builds:
 
 
 .. code-block:: python
@@ -203,9 +218,10 @@ the ``large_random_images`` function (**20**).  We also connected the
 ``update_layer`` function (**14**).  The result is that the image in the viewer
 is updated everytime a new image is yielded.
 
-Any time you can break up your long-running function into a stream of
+Any time you can break up a long-running function into a stream of
 shorter-running yield statements like this, you not only benefit from the
-increased responsivity, you can often save on precious memory resources.
+increased responsivity in the viewer, you can often save on precious memory
+resources.
 
 
 Flow control and escape hatches
@@ -213,41 +229,77 @@ Flow control and escape hatches
 
 A perhaps even more useful aspect of yielding periodically in our long running
 function is that we provide a "hook" for the main thread to control the flow
-of our long running function.
+of our long running function.  When you use the ``@thread_worker`` decorator on
+a generator function, the ability to stop, start, and quit a thread comes for
+free.  In the example below we decorate what would normally be an infinitely
+yielding generator, but add a button that aborts the worker when clicked:
 
 .. code-block:: python
    :linenos:
-   :emphasize-lines: 14,20
+   :emphasize-lines: 19,28
     
+    import time
     import napari
     from qtpy.QtWidgets import QPushButton
-
 
     with napari.gui_qt():
         viewer = napari.Viewer()
 
         def update_layer(new_image):
             try:
-                # if the layer exists, update the data
                 viewer.layers['result'].data = new_image
             except KeyError:
-                # otherwise add it to the viewer
                 viewer.add_image(
-                    new_image, contrast_limits=(0.45, 0.55), name='result'
+                    new_image, name='result', contrast_limits=(-0.8, 0.8)
                 )
 
         @thread_worker
-        def large_random_images():
-            while True:
-                yield np.random.rand(512, 512)
+        def yield_random_images_forever():
+            i = 0
+            while True:  # infinite loop!
+                yield np.random.rand(512, 512) * np.cos(i * 0.2)
+                i += 1
+                time.sleep(0.05)
 
-        worker = large_random_images()  # call the function!
+        worker = yield_random_images_forever()
         worker.yielded.connect(update_layer)
 
+        # add a button to the viewew that, when clicked, stops the worker
         button = QPushButton("STOP!")
         button.clicked.connect(worker.quit)
+        worker.finished.connect(button.clicked.disconnect)
+        viewer.window.add_dock_widget(button)
 
-        worker.start
+        worker.start()
+
+Graceful exit
+^^^^^^^^^^^^^
+
+A side-effect of this added flow control is that ``napari`` can gracefully
+shutdown any still-running workers when you try to quit the program.  Try the
+example above, but quit the program *without* pressing the "STOP" button.  No
+problem!  ``napari`` asks the thread to stop itself the next time it yields,
+and then closes without leaving any orphaned threads.
+
+Now go back to the first example with the pure (non-generator) function, and
+try quitting before the function has returned (i.e. before the image appears).
+You'll notice that it takes a while to quit: it has to wait for the background
+thread to finish because there is no good way to communicate equest that it
+quit!  If you had a *very* long function, you'd be left with no choice but to
+force quit your program.
+
+So whenever possible, sprinkle your long-running functions with ``yield``.
+
+Two-way communication
+---------------------
+
+So far we've mostly been *receiving* results from the threaded function, but we
+can send values into the thread as well using ``worker.send``.  This works
+exactly like a standard python `generator.send
+<https://docs.python.org/3/reference/expressions.html#generator.send>`_ 
+pattern.
+
+
 
 Syntactic sugar
 ---------------
