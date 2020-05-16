@@ -106,7 +106,7 @@ The example below is equivalent to lines 7-15 in the above example:
         average_large_image()
 
 
-Responding to feedback from threads
+Responding to Feedback from Threads
 -----------------------------------
 
 As shown above, the ``worker`` object returned by a function decorated with
@@ -119,7 +119,7 @@ certain events.  The base signals provided by the ``worker`` are:
 * ``errored`` [*exception*] - emitted with an ``Exception`` object if an
   exception is raised in the thread.
 
-Example: custom exception handler
+Example: Custom Exception Handler
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Because debugging issues in multithreaded applications can be tricky, the
@@ -141,7 +141,7 @@ also connect your own custom handler to the ``worker.errored`` event:
         ...
 
 
-Generators for the win!
+Generators for the Win!
 -----------------------
 
 .. admonition::  quick reminder
@@ -171,7 +171,9 @@ methods on the ``worker``.
 Additionally, generator ``workers`` will also have a few additional methods:
 
 * ``send`` - send a value *into* the thread (see below)
-* ``toggle_pause`` - toggle the running state of the worker
+* ``pause`` - send a request to pause a running worker
+* ``resume`` - send a request to resume a paused worker
+* ``toggle_pause`` - send a request to toggle the running state of the worker
 * ``quit`` - send a request to abort the worker
 
 
@@ -224,7 +226,7 @@ increased responsivity in the viewer, you can often save on precious memory
 resources.
 
 
-Flow control and escape hatches
+Flow Control and Escape Hatches
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 A perhaps even more useful aspect of yielding periodically in our long running
@@ -272,7 +274,7 @@ yielding generator, but add a button that aborts the worker when clicked:
 
         worker.start()
 
-Graceful exit
+Graceful Exit
 ^^^^^^^^^^^^^
 
 A side-effect of this added flow control is that ``napari`` can gracefully
@@ -290,18 +292,114 @@ force quit your program.
 
 So whenever possible, sprinkle your long-running functions with ``yield``.
 
-Two-way communication
----------------------
+Full Two-way Communication
+--------------------------
 
 So far we've mostly been *receiving* results from the threaded function, but we
-can send values into the thread as well using ``worker.send``.  This works
-exactly like a standard python `generator.send
+can send values *into* a generator-based thread as well using ``worker.send``.
+This works exactly like a standard python `generator.send
 <https://docs.python.org/3/reference/expressions.html#generator.send>`_ 
-pattern.
+pattern.  This next example ties together a number of concepts and demonstrates
+two-thread communication with conditional flow control.  It's a simple
+cumulative multiplier that runs in another thread, and exits if the product
+hits "0":
 
 
+.. code-block:: python
+   :linenos:
+   :emphasize-lines: 9,14-16,35,39,49,50,52,53
 
-Syntactic sugar
+    import napari
+    import time
+    
+    from napari._qt.threading import thread_worker
+    from qtpy.QtWidgets import QLineEdit, QLabel, QWidget, QVBoxLayout
+    from qtpy.QtGui import QDoubleValidator
+
+
+    @thread_worker
+    def multiplier():
+        total = 1
+        while True:
+            time.sleep(0.1)
+            new = yield total
+            total *= new if new is not None else 1
+            if total == 0:
+                return "Game Over!"
+
+
+    with napari.gui_qt():
+        viewer = napari.Viewer()
+
+        # make a widget to control the worker
+        # (not the main point of this example...)
+        widget = QWidget()
+        layout = QVBoxLayout()
+        widget.setLayout(layout)
+        result_label = QLabel()
+        line_edit = QLineEdit()
+        line_edit.setValidator(QDoubleValidator())
+        layout.addWidget(line_edit)
+        layout.addWidget(result_label)
+        viewer.window.add_dock_widget(widget)
+
+        # create the worker
+        worker = multiplier()
+
+        # define some callbacks
+        def on_yielded(value):
+            worker.pause()
+            result_label.setText(str(value))
+            line_edit.setText('1')
+
+        def on_return(value):
+            line_edit.setText('')
+            line_edit.setEnabled(False)
+            result_label.setText(value)
+
+        def send_next_value():
+            worker.send(float(line_edit.text()))
+            worker.resume()
+
+        worker.yielded.connect(on_yielded)
+        worker.returned.connect(on_return)
+        line_edit.returnPressed.connect(send_next_value)
+
+        worker.start()
+
+Let's break it down:
+
+1. As usual, we decorate our generator function with ``@thread_worker`` (**9**)
+   and instantiate it to create a ``worker`` (**35**).
+
+2. The most interesting line in this example is line **14**, where we both
+   ``yield`` the current ``total`` to the main thread (``yield total``), *and*
+   receive a new value from the main thread (with ``new = yield``).
+
+3. In the main thread, we have connected that ``worker.yielded`` event (**52**)
+   to a callback that pauses the worker and updates the ``result_label``
+   widget (**38**).
+
+4. The thread will then wait indefinitely for the ``resume()`` command
+   (**50**), which we have connected to the ``line_edit.returnPressed`` signal
+   (**54**).
+
+5. However, before that ``resume()`` command gets sent, we use
+   ``worker.send()`` to send the current value of the ``line_edit`` widget
+   into the thread (**49**) which the thread will multiple by the existing
+   total (**15**).
+
+6. Lastly, if the thread total every goes to "0", we stop the thread by
+   returning the string ``"Game Over"`` (**16**).  In the main thread, the
+   ``worker.returned`` event is connected to a callback that disables the
+   ``line_edit`` widget and shows the string returned from the thread (**53**).
+
+This example is a bit contrived, since there's little need to put such a basic
+computation in another thread.  But it demonstrates some of the power and
+features provided when decorating a generator function with the
+``@thread_worker`` decorator.
+
+Syntactic Sugar
 ---------------
 
 The ``@thread_worker`` decorator is just syntactic sugar for calling 
