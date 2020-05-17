@@ -171,10 +171,9 @@ class FunctionWorker(WorkerBase):
 class GeneratorWorker(WorkerBase):
     """QRunnable with signals that wraps a long-running generator.
 
-    When combined with :func:`new_worker_qthread`, provides a convenient way
-    to run a function in another thread, while allowing 2-way communication
-    between threads, using plain-python generator syntax in the original
-    function.
+    Provides a convenient way to run a generator function in another thread,
+    while allowing 2-way communication between threads, using plain-python
+    generator syntax in the original function.
 
     Parameters
     ----------
@@ -664,12 +663,24 @@ def thread_worker(
 
 # This is a variant on the above pattern, it uses QThread instead of Qrunnable
 # see https://doc.qt.io/qt-5/threads-technologies.html#comparison-of-solutions
-# It provides more flexibility, but requires that the user manage the threads.
-# With the runnable pattern above, we leverage the QThreadPool.globalInstance()
-# which is wrapped in our own convenience method API.
+# (it appears from that table that QRunnable cannot emit or receive signals,
+# but we circumvent that here with our WorkerBase class that also inherits from
+# QObject... providing signals/slots).
+#
+# A benefit of the QRunnable pattern is that Qt manages the threads for you,
+# in the QThreadPool.globalInstance() ... making it easier to reuse threads,
+# and reduce overhead.
+#
+# However, a disadvantage is that you have no access to (and therefore less
+# control over) the QThread itself.  See for example all of the methods
+# provided on the QThread object: https://doc.qt.io/qt-5/qthread.html
 
 
-def new_worker_qthread(
+# TODO: potentially remove this altogether, by refactoring the dims
+# AnimationWorker to subclass WorkerBase
+
+
+def _new_worker_qthread(
     Worker: Type[QObject],
     *args,
     _start_thread: bool = False,
@@ -749,7 +760,7 @@ def new_worker_qthread(
                     self.increment.emit(i)
                 self.finished.emit()
 
-        worker, thread = new_worker_qthread(
+        worker, thread = _new_worker_qthread(
             Worker,
             'argument',
             start_thread=True,
