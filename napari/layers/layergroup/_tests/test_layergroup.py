@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from napari.layers import LayerGroup, Image
+from napari.layers import Layergroup, Image
 
 
 @pytest.fixture
@@ -27,18 +27,18 @@ def layergroup_tree():
 
     data = np.random.random((100, 100))
 
-    tree = LayerGroup(name='tree')
+    tree = Layergroup(name='tree')
 
-    branch1 = LayerGroup(name='branch1')
+    branch1 = Layergroup(name='branch1')
     branch1.append(Image(data, name='image1_on_branch1'))
     branch1.append(Image(data, name='image2_on_branch1'))
 
-    branch2 = LayerGroup(name='branch2')
+    branch2 = Layergroup(name='branch2')
     branch2.append(Image(data, name='image1_on_branch2'))
 
-    branch3 = LayerGroup(name='branch3')
-    branch4 = LayerGroup(name='branch4')
-    branch5 = LayerGroup(name='branch5')
+    branch3 = Layergroup(name='branch3')
+    branch4 = Layergroup(name='branch4')
+    branch5 = Layergroup(name='branch5')
     branch4.append(Image(data, name='image1_on_branch4_on_branch3'))
     branch4.append(Image(data, name='image2_on_branch4_on_branch3'))
     branch5.append(Image(data, name='image1_on_branch5_on_branch3'))

@@ -1,1 +1,1 @@
-from .layergroup import LayerGroup
+from .layergroup import Layergroup
