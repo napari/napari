@@ -99,12 +99,16 @@ The example below is equivalent to lines 7-15 in the above example:
     with napari.gui_qt():
         viewer = napari.Viewer()
 
-        @thread_worker(connect={"returned": viewer.add_image}, start_thread=True)
+        @thread_worker(connect={"returned": viewer.add_image})
         def average_large_image():
             return np.random.rand(1024, 512, 512).mean(0)
 
         average_large_image()
 
+*Note: when the* ``connect`` *argument to* ``@thread_worker`` *is not*
+``None``, *the thread will start by default when the decorated function is*
+*called.  Otherwise the thread must be manually started by calling*
+``worker.start()``.
 
 Responding to Feedback from Threads
 -----------------------------------
@@ -491,3 +495,52 @@ subclass one of those two classes.  As an example, see the
 :class:`~napari._qt.threading.ProgressWorker` class, which adds an additional
 counter and ``progress`` signal to the
 :class:`~napari._qt.threading.GeneratorWorker`.
+
+Adding custom signals
+^^^^^^^^^^^^^^^^^^^^^
+
+In order to emit signals, an object must inherit from ``QObject``.  However,
+due to challenges with multiple inheritance in Qt, the signals for 
+:class:`WorkerBase` objects actually live in the :attr:`WorkerBase._signals`
+attribute (though they are accessible directly in the worker namespace).  To
+add custom signals to a :class:`WorkerBase` subclass you must first create a
+new ``QObject`` with signals as class attributes:
+
+.. code-block:: python
+
+    from qtpy.QtCore import QObject, Signal
+
+    class MyWorkerSignals(QObject):
+        signal_name = Signal()
+
+    # or subclass one of the existing signals objects to "add"
+    # additional signals:
+
+    from napari._qt.threading import WorkerBaseSignals
+
+    # WorkerBaseSignals already has started, finished, errored...
+    class MyWorkerSignals(WorkerBaseSignals):
+        signal_name = Signal()
+
+and then either directly override the ``self._signals`` attribute on the
+``Worker`` class with an instance of your signals class:
+
+
+.. code-block:: python
+
+    class MyWorker(WorkerBase):
+
+        def __init__(self):
+            super().__init__()
+            self._signals = MyWorkerSignals()
+
+... or pass the signals class as the ``SignalsClass`` argument when
+initializing the superclass in your Worker ``.__init__`` method:
+
+.. code-block:: python
+
+    class MyWorker(WorkerBase):
+
+        def __init__(self):
+            super().__init__(SignalsClass=MyWorkerSignals)
+
