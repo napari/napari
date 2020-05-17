@@ -416,27 +416,58 @@ def set_max_thread_count(num: int):
     QThreadPool.globalInstance().setMaxThreadCount(num)
 
 
-def wait_for_workers_to_quit(msecs: int = -1) -> bool:
+def wait_for_workers_to_quit(msecs: int = None):
     """Ask all workers to quit, and wait up to `msec` for quit.
 
-    Attempts to clean up all running workers.  (It is assumed that they have a
-    ``quit()`` method, which they will if ``start_worker`` was used.)
+    Attempts to clean up all running workers by calling ``worker.quit()``
+    method.  Any workers in the ``_WORKERS`` set will have this method.
+
+    By default, this function will block indefinitely, until worker threads
+    finish.  If a timeout is provided, a ``RuntimeError`` will be raised if
+    the workers do not gracefully exit in the time requests, but the threads
+    will NOT be killed.  It is (currently) left to the user to use their OS
+    to force-quit rogue threads.
+
+    .. important::
+
+        If the user does not put any yields in their function, and the function
+        is super long, it will just hang... For instance, there's no graceful
+        way to kill this thread in python:
+
+        .. code-block:: python
+
+            @thread_worker
+            def ZZZzzz():
+                time.sleep(10000000)
+
+        This is why it's always advisable to use a generator that periodically
+        yields for long-running computations in another thread.
+
+        See `this stack-overflow post
+        <https://stackoverflow.com/questions/323972/is-there-any-way-to-kill-a-thread>`_
+        for a good discussion on the difficulty of killing a rogue python thread:
 
     Parameters
     ----------
     msecs : int, optional
         Waits up to msecs milliseconds for all threads to exit and removes all
-        threads from the thread pool. If msecs is -1 (the default), the timeout
-        is ignored (waits for the last thread to exit).
+        threads from the thread pool. If msecs is `None` (the default), the
+        timeout is ignored (waits for the last thread to exit).
 
-    Returns
+    Raises
     -------
-    bool
-        True if all threads were removed; otherwise False.
+    RuntimeError
+        If a timeout is provided and workers do not quit successfully within
+        the time alotted.
     """
     for worker in _WORKERS:
         worker.quit()
-    return QThreadPool.globalInstance().waitForDone(msecs)
+
+    msecs if msecs is not None else -1
+    if not QThreadPool.globalInstance().waitForDone(msecs):
+        raise RuntimeError(
+            f"Workers did not quit gracefully in the time alotted ({msecs} ms)"
+        )
 
 
 def active_thread_count() -> int:

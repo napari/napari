@@ -58,6 +58,8 @@ class Viewer(ViewerModel):
         logopath = join(dirname(__file__), 'resources', 'logo.png')
         app.setWindowIcon(QIcon(logopath))
 
+        # see docstring of `wait_for_workers_to_quit` for caveats on killing
+        # workers at shutdown.
         app.aboutToQuit.connect(wait_for_workers_to_quit)
 
         super().__init__(
