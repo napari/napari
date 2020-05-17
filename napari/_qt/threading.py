@@ -37,7 +37,14 @@ class WorkerBase(QRunnable, QObject):
         self._running = False
 
     def quit(self) -> None:
-        """Send a request to abort the worker."""
+        """Send a request to abort the worker.
+
+        .. note::
+
+            It is entirely up to subclasses to honor this method by checking
+            ``self.abort_requested`` periodically in their ``worker.work``
+            method, and exiting if ``True``.
+        """
         self._abort_requested = True
 
     @property
@@ -87,25 +94,28 @@ class WorkerBase(QRunnable, QObject):
         """Main method to execute the worker.
 
         The end-user should never need to call this function.
-        But subclasses must implement this method.  Minimally, it should check
-        ``self.abort_requested`` periodically and exit if True.
+        But subclasses must implement this method (See
+        :meth:`GeneratorFunction.work` for an example implementation).
+        Minimally, it should check ``self.abort_requested`` periodically and
+        exit if True.
 
         Example
         -------
 
         .. code-block:: python
 
-            def work(self):
-                i = 0
-                while True:
-                    if self.abort_requested:
-                        self.aborted.emit()
-                        break
-                    i += 1
-                    if i > max_iters:
-                        break
-                    time.sleep(0.5)
+            class MyWorker(WorkerBase):
 
+                def work(self):
+                    i = 0
+                    while True:
+                        if self.abort_requested:
+                            self.aborted.emit()
+                            break
+                        i += 1
+                        if i > max_iters:
+                            break
+                        time.sleep(0.5)
         """
         raise NotImplementedError(
             f'"{self.__class__.__name__}" failed to define work() method'
@@ -128,13 +138,19 @@ class WorkerBase(QRunnable, QObject):
         if self in _WORKERS:
             raise RuntimeError('This worker is already started!')
 
-        # This will raise a RunTime error if the worker is already deleted
+        # This will raise a RunTimeError if the worker is already deleted
         repr(self)
         start_worker(self)
 
 
 class FunctionWorker(WorkerBase):
-    """QRunnable with signals that wraps a simple long-running function."""
+    """QRunnable with signals that wraps a simple long-running function.
+
+    Note: ``FunctionWorker`` does not provide a way to stop a very long-running
+    function (e.g. ``time.sleep(10000)``).  So whenever possible, it is
+    better to implement your long running function as a generator that yields
+    periodically, and use the :class:`GeneratorWorker` instead.
+    """
 
     def __init__(self, func: Callable, *args, **kwargs):
         super().__init__()
@@ -164,10 +180,31 @@ class GeneratorWorker(WorkerBase):
     ----------
     func : callable
         The function being run in another thread.  May be a generator function.
+    init_yield : bool
+        If ``True``, the first yield in the generator will be called in the
+        main thread.  The first yield statement should return a ``dict``, and
+        the keys of this dict will be added as attributes to the worker.
+        by default, False.
     *args
         Will be passed to func on instantiation
     **kwargs
         Will be passed to func on instantiation
+
+    Example
+    -------
+    demonstration of the ``init_yield`` argument:
+
+    .. code-block:: python
+
+        def my_function(some_arg):
+            # setup here
+            yield {'my_attr': some_arg}
+            # long running part here:
+            ...
+
+        worker = GeneratorWorker(my_function, 8, init_yield=True)
+        if worker.my_attr > 5:
+            worker.start()
     """
 
     yielded = Signal(object)  # emitted with yielded values (if generator used)
@@ -188,6 +225,7 @@ class GeneratorWorker(WorkerBase):
         self._pause_requested = False
         self._resume_requested = False
         self._paused = False
+        # polling interval: ONLY relevant if the user paused a running worker
         self._pause_interval = 0.01
 
         if init_yield:
@@ -199,9 +237,12 @@ class GeneratorWorker(WorkerBase):
         self.__dict__.update(**first_yield)
 
     def work(self) -> None:
-        """Core loop that calls the original function.  Enters a continual
-        loop, yielding and returning from the original function.  Checks for
-        various events (quit, pause, resume, etc...)
+        """Core event loop that calls the original function.
+
+        Enters a continual loop, yielding and returning from the original
+        function.  Checks for various events (quit, pause, resume, etc...).
+        (To clarify: we are creating a rudimentary event loop here because
+        there IS NO Qt event loop running in the other thread to hook into)
         """
         while True:
             if self.abort_requested:
@@ -433,6 +474,9 @@ def create_worker(
         The :class`WorkerBase` to instantiate, by default
         :class:`FunctionWorker` will be used if ``func`` is a regular function,
         and :class:`GeneratorWorker` will be used if it is a generator.
+    _ignore_errors : bool, optional
+        If ``False`` (the default), errors raised in the other thread will be
+        reraised in the main thread (makes debugging significantly easier).
     *args
         will be passed to ``func``
     **kwargs
@@ -525,10 +569,14 @@ def thread_worker(
         - *returned*: emitted with return value
         - *errored*: emitted with error object on Exception
 
-    If the decorated function is a generator, the (default) returned worker
-    will also provide these signals:
+    It will also have a ``worker.start()`` method that can be used to start
+    execution of the function in another thread. (useful if you need to connect
+    callbacks to signals prior to execution)
 
-        - *yielded*: emitted with yielded values (if generator used)
+    If the decorated function is a generator, the returned worker will also
+    provide these signals:
+
+        - *yielded*: emitted with yielded values
         - *paused*: emitted when a running job has successfully paused
         - *resumed*: emitted when a paused job has successfully resumed
         - *aborted*: emitted when a running job is successfully aborted
@@ -540,17 +588,27 @@ def thread_worker(
         - *send*: send a value into the generator.  (This requires that your
           decorator function uses the ``value = yield`` syntax)
 
-    If you call your function with ``func(_start_thread=False)`` (the default)
-
-        - *start*: it will also have a ``.start()`` method that can be used to
-        start execution of the function in another thread.  (useful if you need
-        to connect callbacks to signals prior to execution)
 
     Parameters
     ----------
     func : callable
         Function to call in another thread.  For communication between threads
         may be a generator function.
+    start_thread : bool, optional
+        Whether to immediaetly start the thread.  If False, the returned worker
+        must be manually started with ``worker.start()``. by default it will be
+        ``False`` if the ``_connect`` argument is ``None``, otherwise ``True``.
+    connect : Dict[str, Callable], optional
+        A mapping of ``"signal_name"`` -> ``callable``: callback functions to
+        connect to the various signals offered by the worker class.
+        by default None
+    worker_class : Type[WorkerBase], optional
+        The :class`WorkerBase` to instantiate, by default
+        :class:`FunctionWorker` will be used if ``func`` is a regular function,
+        and :class:`GeneratorWorker` will be used if it is a generator.
+    ignore_errors : bool, optional
+        If ``False`` (the default), errors raised in the other thread will be
+        reraised in the main thread (makes debugging significantly easier).
 
     Returns
     -------
@@ -565,9 +623,6 @@ def thread_worker(
 
         @thread_worker
         def long_function(start, end):
-            # do setup here.
-            yield # Critical to yield before computation when using generator
-
             # do work, periodically yielding
             i = start
             while i <= end:
@@ -578,8 +633,10 @@ def thread_worker(
             return 'anything'
 
         # call the function to start running in another thread.
-        worker = long_function(_start_thread=False)
-        # connect signals if desired
+        worker = long_function()
+        # connect signals here if desired... or they may be added using the
+        # `connect` argument in the `@thread_worker` decorator... in which
+        # case the worker will start immediately when long_function() is called
         worker.start()
     """
 
