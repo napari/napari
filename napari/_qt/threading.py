@@ -233,7 +233,7 @@ class GeneratorWorker(WorkerBase):
             if isinstance(first_yield, dict):
                 self.parse_first_yield(first_yield)
 
-    def parse_first_yield(self, first_yield):
+    def parse_first_yield(self, first_yield: dict):
         self.__dict__.update(**first_yield)
 
     def work(self) -> None:
@@ -323,9 +323,9 @@ class ProgressWorker(GeneratorWorker):
     # Will emit an integer between 0 - 100 every time a value is yielded
     progress = Signal(int)
 
-    def __init__(self, func, *args, **kwargs):
+    def __init__(self, func: Callable, *args, **kwargs):
         self._counter = 0
-        self._length = None
+        self._length: Optional[int] = None
 
         # look in the source code of the function for a yield statement
         # that yields a dict with a key named "__len__"
@@ -345,7 +345,9 @@ class ProgressWorker(GeneratorWorker):
 
         super().__init__(func, *args, init_yield=True, **kwargs)
 
-    def parse_first_yield(self, result):
+    def parse_first_yield(self, result: dict):
+        """Parse dict from first yield, and use __len__ key for self._length.
+        """
         self._length = result.pop("__len__", None)
         if self._length is not None:
             if not isinstance(self._length, int) and self._length > 0:
@@ -354,15 +356,20 @@ class ProgressWorker(GeneratorWorker):
                 )
         super().parse_first_yield(result)
 
-    def pre_yield_hook(self):
-        self._counter += 1
-        if self._length:
-            self.progress.emit(round(100 * (self._counter - 1) / self._length))
+    def pre_yield_hook(self) -> None:
+        if self._length is not None:
+            self.progress.emit(round(100 * self._counter / self._length))
+            self.increment()
 
-    def set_counter(self, val) -> None:
+    def increment(self) -> None:
+        """Increment the progress counter."""
+        self._counter += 1
+
+    def set_counter(self, val: int):
+        """Set the progress counter to a specific value."""
         self._counter = val
 
-    def __len__(self):
+    def __len__(self) -> int:
         if self._length is not None:
             return self._length
         raise TypeError("ProgressWorker was not provided with a length.")
