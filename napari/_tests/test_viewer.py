@@ -122,6 +122,9 @@ def test_update(viewer_factory):
             layer.data = dat
 
             assert layer.data.all() == dat.all()
+            # if you're looking at this as an example,
+            # it would be best to put a yield statement here...
+            # but we're testing how it handles not having a yield statement
 
     # NOTE: The closure approach used here has the potential to throw an error:
     # "RuntimeError: Internal C++ object () already deleted."
