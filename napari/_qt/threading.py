@@ -22,19 +22,31 @@ def as_generator_function(func: Callable) -> Callable:
     return genwrapper
 
 
-class WorkerBase(QRunnable, QObject):
-    """Base class for creating a Worker that can run in another thread."""
+class WorkerBaseSignals(QObject):
 
     started = Signal()  # emitted when the work is started
     finished = Signal()  # emitted when the work is finished
     returned = Signal(object)  # emitted with return value
     errored = Signal(object)  # emitted with error object on Exception
 
-    def __init__(self, *args, **kwargs) -> None:
-        QRunnable.__init__(self)
-        QObject.__init__(self)
+
+class WorkerBase(QRunnable):
+    """Base class for creating a Worker that can run in another thread."""
+
+    def __init__(
+        self, *args, SignalsClass=WorkerBaseSignals, **kwargs
+    ) -> None:
+        super().__init__()
         self._abort_requested = False
         self._running = False
+        self._signals = SignalsClass()
+
+    def __getattribute__(self, name):
+        if name != '_signals':
+            attr = getattr(self._signals.__class__, name, None)
+            if isinstance(attr, Signal):
+                return getattr(self._signals, name)
+        return object.__getattribute__(self, name)
 
     def quit(self) -> None:
         """Send a request to abort the worker.
@@ -153,12 +165,12 @@ class FunctionWorker(WorkerBase):
     """
 
     def __init__(self, func: Callable, *args, **kwargs):
-        super().__init__()
         if inspect.isgeneratorfunction(func):
             raise TypeError(
                 f"Generator function {func} cannot be used with "
                 "FunctionWorker, use GeneratorWorker instead"
             )
+        super().__init__()
 
         self._func = func
         self._args = args
@@ -166,6 +178,14 @@ class FunctionWorker(WorkerBase):
 
     def work(self):
         return self._func(*self._args, **self._kwargs)
+
+
+class GeneratorWorkerSignals(WorkerBaseSignals):
+
+    yielded = Signal(object)  # emitted with yielded values (if generator used)
+    paused = Signal()  # emitted when a running job has successfully paused
+    resumed = Signal()  # emitted when a paused job has successfully resumed
+    aborted = Signal()  # emitted when a running job is successfully aborted
 
 
 class GeneratorWorker(WorkerBase):
@@ -206,18 +226,20 @@ class GeneratorWorker(WorkerBase):
             worker.start()
     """
 
-    yielded = Signal(object)  # emitted with yielded values (if generator used)
-    paused = Signal()  # emitted when a running job has successfully paused
-    resumed = Signal()  # emitted when a paused job has successfully resumed
-    aborted = Signal()  # emitted when a running job is successfully aborted
-
-    def __init__(self, func: Callable, *args, init_yield=False, **kwargs):
-        super().__init__()
+    def __init__(
+        self,
+        func: Callable,
+        *args,
+        init_yield=False,
+        SignalsClass=GeneratorWorkerSignals,
+        **kwargs,
+    ):
         if not inspect.isgeneratorfunction(func):
             raise TypeError(
                 f"Regular function {func} cannot be used with "
                 "GeneratorWorker, use FunctionWorker instead"
             )
+        super().__init__(SignalsClass=SignalsClass)
 
         self._gen = func(*args, **kwargs)
         self._incoming_value = None
@@ -312,15 +334,17 @@ class GeneratorWorker(WorkerBase):
         pass
 
 
+class ProgressWorkerSignals(GeneratorWorkerSignals):
+    # Will emit an integer between 0 - 100 every time a value is yielded
+    progress = Signal(int)
+
+
 class ProgressWorker(GeneratorWorker):
     """A Worker that emits a progress update on each yield.
 
     See Worker docstring for details.  This simply counts the number of
     iterations, and emits a progress signal on every iteration.
     """
-
-    # Will emit an integer between 0 - 100 every time a value is yielded
-    progress = Signal(int)
 
     def __init__(self, func: Callable, *args, **kwargs):
         self._counter = 0
@@ -342,7 +366,13 @@ class ProgressWorker(GeneratorWorker):
                 "'__len__'"
             )
 
-        super().__init__(func, *args, init_yield=True, **kwargs)
+        super().__init__(
+            func,
+            *args,
+            init_yield=True,
+            SignalsClass=ProgressWorkerSignals,
+            **kwargs,
+        )
 
     def parse_first_yield(self, result: dict):
         """Parse dict from first yield, and use __len__ key for self._length.
@@ -463,7 +493,7 @@ def wait_for_workers_to_quit(msecs: int = None):
     for worker in _WORKERS:
         worker.quit()
 
-    msecs if msecs is not None else -1
+    msecs = msecs if msecs is not None else -1
     if not QThreadPool.globalInstance().waitForDone(msecs):
         raise RuntimeError(
             f"Workers did not quit gracefully in the time alotted ({msecs} ms)"
