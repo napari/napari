@@ -171,14 +171,16 @@ def build_pyqt_resources(out_path: str, overwrite: bool = False) -> str:
     # once, we use this try/catch loop because
     # 1. we always want to use pyrcc5 if it's available, regardless of API
     # 2. it will sometimes, (if not always) be named pyrcc5.bat on windows...
-    # 3. only then do we try pyside2-rcc
-    # see https://github.com/napari/napari/issues/1221 for background
-    for binary in ('pyrcc5.bat', 'pyrcc5', 'pyside2-rcc'):
-        try:
-            check_call([binary, '-o', out_path, qrc_path])
-        except FileNotFoundError:
-            continue
-        break
+    #    but shutil.which() will find that too
+    # 3. We also want to prefer binaries higher up on the path
+    # 4. only then do we try pyside2-rcc
+    # see https://github.com/napari/napari/issues/1221
+    # and https://github.com/napari/napari/issues/1254
+    for bin_name in ('pyrcc5', 'pyside2-rcc'):
+        rcc_binary = shutil.which(bin_name)
+        if rcc_binary:
+            check_call([rcc_binary, '-o', out_path, qrc_path])
+            break
     else:
         raise FileNotFoundError(
             "Unable to find an executable to build Qt resources (icons).\n"
