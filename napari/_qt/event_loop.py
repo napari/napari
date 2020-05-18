@@ -2,6 +2,7 @@ import sys
 from contextlib import contextmanager
 from os.path import dirname, join
 
+from qtpy.QtCore import Qt
 from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import QApplication, QSplashScreen
 
@@ -25,6 +26,9 @@ def gui_qt(*, startup_logo=False):
     splash_widget = None
     app = QApplication.instance()
     if not app:
+        # automatically determine monitor DPI.
+        # Note: this MUST be set before the QApplication is instantiated
+        QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
         # if this is the first time the Qt app is being instantiated, we set
         # the name, so that we know whether to raise_ in Window.show()
         app = QApplication(sys.argv)
