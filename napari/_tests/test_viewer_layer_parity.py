@@ -22,7 +22,8 @@ for name in dir(module):
         continue
 
     if issubclass(obj, module.Layer):
-        layers.append(obj)
+        if obj is not module.Layergroup:
+            layers.append(obj)
 
 
 @pytest.mark.parametrize('layer', layers, ids=lambda layer: layer.__name__)
