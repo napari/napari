@@ -454,7 +454,6 @@ class Layer(KeymapProvider, ABC):
         """
         base_dict = {
             'name': self.name,
-            'type': type(self),
             'metadata': self.metadata,
             'scale': list(self.scale),
             'translate': list(self.translate),
