@@ -203,7 +203,7 @@ class QtViewer(QSplitter):
         if os.getenv("NAPARI_PERFMON", "0") == "0":
             return None
 
-        widget = QtViewerDockWidget(
+        return QtViewerDockWidget(
             self,
             QtPerformance(),
             name='performance',
@@ -211,10 +211,6 @@ class QtViewer(QSplitter):
             allowed_areas=['bottom'],
             shortcut='Ctrl+Shift+P',
         )
-
-        widget.setMaximumWidth(800)
-        widget.setMinimumWidth(800)
-        return widget
 
     @property
     def console(self):
