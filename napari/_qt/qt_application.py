@@ -34,7 +34,9 @@ def _get_event_name(event, receiver):
     try:
         object_name = receiver.objectName()
     except AttributeError:
-        print("ATTRIBUTE ERROR type = ", type(receiver))
+        # During shutdown the call to receiver.objectName() can fail because the
+        # event has no "attribute objectName". So we just ignore that case,
+        # we're shutting down anyway.
         object_name = None
 
     # Make up a colon separated syntax, although we could keep these

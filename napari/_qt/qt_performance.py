@@ -1,35 +1,16 @@
 """A dockable widget to show performance information.
 """
-import threading
 from qtpy.QtCore import QTimer, Qt
 from qtpy.QtGui import QTextCursor
 
 from qtpy.QtWidgets import (
     QWidget,
     QVBoxLayout,
-    QLabel,
     QTextEdit,
     QProgressBar,
 )
 
 from ..utils.perf_timers import TIMERS
-
-
-class Labels:
-    def __init__(self):
-        self.counter = QLabel("counter")
-        self.draw_time = QLabel("draw_time")
-        self.fps = QLabel("fps")
-
-    def add_to_layout(self, layout):
-        layout.addWidget(self.counter)
-        layout.addWidget(self.draw_time)
-        layout.addWidget(self.fps)
-
-    def set_text(self, counter_str, draw_time_str, fps_str):
-        self.counter.setText(counter_str)
-        self.draw_time.setText(draw_time_str)
-        self.fps.setText(fps_str)
 
 
 class TextLog(QTextEdit):
@@ -49,15 +30,19 @@ class TextLog(QTextEdit):
 class QtPerformance(QWidget):
     """Dock widget to show performance metrics and info.
 
-    This UI is totally placeholder for now, just experimenting with what
-    we want to show to people.
+    This UI is totally placeholder for now. It's really just proof of
+    concept that we can display information from our PerfTimers.
+
+    What exactly we want to show here is TBD.
     """
 
-    def __init__(self):
-        super().__init__()
-        self.counter = 1
-        self.labels = Labels()
+    # Log events that take longer than this.
+    LONG_EVENT_MS = 100
 
+    def __init__(self):
+        """Create our progress bar and text window.
+        """
+        super().__init__()
         layout = QVBoxLayout()
 
         bar = QProgressBar()
@@ -79,7 +64,8 @@ class QtPerformance(QWidget):
         self.timer.start()
 
     def update(self):
-        print("QtPerformance thread: ", threading.get_ident())
+        """Update our progress bar and log any new slow events.
+        """
         update_average = None
         long_events = []
 
@@ -90,7 +76,7 @@ class QtPerformance(QWidget):
                 update_average = timer.average
 
             # For now just log any "long" events.
-            if timer.max >= 100:
+            if timer.max >= self.LONG_EVENT_MS:
                 long_events.append((name, timer.max))
 
         # Update GUI only after iteration is one, or the timers
