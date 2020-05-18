@@ -179,6 +179,5 @@ class Layergroup(Layer):
         raise NotImplementedError  # user should not be able to overwrite this
 
     def save(self):
-        # FIXME
         for layer in self:
-            layer.save()
+            yield layer.save()
