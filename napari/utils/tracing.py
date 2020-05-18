@@ -1,8 +1,10 @@
-"""Write files in the chrome://tracing file format.
+"""Write files in the chrome://tracing format.
 """
 import json
 import os
+from pathlib import Path
 import threading
+from typing import Union
 
 
 class ChromeTracingFile:
@@ -12,18 +14,31 @@ class ChromeTracingFile:
     1) JSON Array Format
     2) JSON Object Format
 
-    We are using style 1 for now since you can stop/truncate the file and its
-    still valid. See the "trace_event format" Google Doc on this page:
+    We are using style 1 for now since you can stop/truncate the file at
+    anytime.
+
+    Both formats are essentially JSON, see the "trace_event format" Google Doc
+    linked from this page:
     https://chromium.googlesource.com/catapult/+/HEAD/tracing/README.md
+
+    Parameters
+    ----------
+    path : str
+        The instantiated MagicGui widget.  May or may not be docked in a
+        dock widget.
+
     """
 
-    def __init__(self, path):
+    def __init__(self, path: Union[Path, str]):
         """Open the tracing file on disk."""
+        # PID goes in every event.
         self.pid = os.getpid()
+
+        # TID goes in every event, for now assume the current thread.
         self.tid = threading.get_ident()
 
-        # Catagories can be toggle on/off in the UI, for now all our events
-        # are Qt events, but we will have more types later.
+        # Catagories can be toggled on/off in the UI. For now we only have
+        # one category, they are all Qt Events.
         self.cat = "qt_event"
 
         # Start the JSON Array Format with an open bracket.

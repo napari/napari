@@ -44,13 +44,39 @@ class PerfTimers:
 
     Performance Timers are for recording the duration of:
     1) Qt Event handling (today)
-    2) Key blocks of code (future)
+    2) Key blocks of code (future);
     3) IO operations (future)
 
-    Environment Variables:
+    Environment Variables
+    ---------------------
 
     NAPARI_PERFMON_TRACE_PATH
-        Write all timers to this path in chrome://tracing format.
+
+    Write all timers to this path in chrome://tracing format.
+
+    Nesting:
+    --------
+    Chrome tracing correctly figures out nesting based on the start/end
+    times of each timer. In the chrome://tracing viewer you can see the
+    nesting exactly as it happened.
+
+    Our own self.timers dictionary does not understand nesting yet.
+
+    If two timers took 1ms but they overlapped with different names:
+    <------RequestUpdate------>
+    <------------Paint-------->
+
+    Then we'll see that 2 timers that each took 1ms, even though it was the
+    same 1ms. If both timers have the same name:
+
+    <----------Resize--------->
+    <----------Resize--------->
+
+    Then we'll show the Resize event was called twice for 1ms each.
+
+    Even though this sounds broken, for the purpose of just identifying long
+    running events it still works well. But full support for nesting is something
+    we could add.
     """
 
     def __init__(self):
