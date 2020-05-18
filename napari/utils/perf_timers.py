@@ -9,14 +9,15 @@ from .tracing import ChromeTracingFile
 class PerfTimer:
     """One performance timer.
 
-    Each PerfTimer stores the min/max/average for one value.
+    Each PerfTimer stores the min/max/average for one timer.
 
-    We want the min/max/average because the QtPerformance UI wants to
-    display those state and not just display the previous frame's
-    timing information.
+    We want to track the min/max/average because the UI might be updating at a
+    much slower rate than the timers. And displaying the min/max/average gives a
+    better picture of what's happening than just show the duration for the
+    last time it ran.
 
-    So we can run QtPerformance at some lower frequence like 1Hz even
-    while PerfTimers is getting populated every frame.
+    For example we might be drawing at 60Hz but the QtPerformance widget
+    is only updating at 1Hz.
     """
 
     def __init__(self, value):
@@ -41,19 +42,19 @@ class PerfTimer:
 class PerfTimers:
     """Performance Timers.
 
-    Performance Timers are meant to be timers from various sources, Qt Events,
-    blocks of code that we explicitly time, IO operations.
-
-    This is a WIP and for now we only time Qt Events.
+    Performance Timers are for recording the duration of:
+    1) Qt Event handling (today)
+    2) Key blocks of code (future)
+    3) IO operations (future)
 
     Environment Variables:
 
     NAPARI_PERFMON_TRACE_PATH
-        If set we write to this path in chrome://tracing format.
+        Write all timers to this path in chrome://tracing format.
     """
 
     def __init__(self):
-        """Create PerfTimers, start log file if we are logging.
+        """Create PerfTimers, optionally start a trace file.
         """
         # Key is (event_name, object_name).
         self.timers = {}
@@ -73,10 +74,11 @@ class PerfTimers:
     def record(self, name, start_ns, end_ns):
         """Record the span of one timer.
         """
+        duration_ns = end_ns - start_ns
+
         # Make the times zero based.
         start_ns = start_ns - self.zero_ns
         end_ns = end_ns - self.zero_ns
-        duration_ns = end_ns - start_ns
 
         # Chrome tracing wants micro-seconds.
         start_us = start_ns / 1000
@@ -99,5 +101,5 @@ class PerfTimers:
         self.timers.clear()
 
 
-# Only one instance today, but we could have more maybe?
+# Only one instance today.
 TIMERS = PerfTimers()

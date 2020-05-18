@@ -3,7 +3,7 @@
 In the normal case QtApplication is just QApplication.
 
 However if the NAPARI_PERFMON environment variable is set then QtApplication is
-the PerfMonApplication defined below, which adds timing of every QtEvent.
+the PerfmonApplication defined below, which adds timing of every Qt Event.
 
 This is a WIP as we experiment with performance monitoring.
 """
@@ -42,46 +42,31 @@ def _get_event_name(event, receiver) -> str:
 
 
 class PerfmonApplication(QApplication):
-    """Extend QApplication to time events.
+    """Extend QApplication to time Qt Events.
 
-    Performance monitoring is a WIP. The goal is provide insight into what is
-    causing Napari to run slowly or not smoothly.
-
-    There are 3 main parts to performance monitoring today:
-    1) PerfMonApplication: times events, records them with PerfTimers.
+    Performance monitoring is a WIP. There are 3 main parts to performance
+    monitoring today:
+    1) PerfmonApplication: times events, sends times to PerfTimers.
     2) PerfTimers: stores timing data, optionally writes to chrome://tracing.
     3) QtPerformance: dockable widget which displays some PerfTime data.
 
-    In the future we will have PerfTimers which are not Qt Events. Where we
-    explicitly time a block of code or an IO event.
-
     Nesting: Note that Qt Event handling is nested. A call to notify() can
-    trigger other calls to notify() prior to the first call finishing. This
-    hierarchy of event processing is visible in chrome://tracing.
-
-    Some TBD items:
-    1) Measure the overhead of monitoring. Hopefully some monitoring can be
-    left enabled at all times, but it might be more minimal that what we
-    are doing today guarded by a environment variables.
-
-    2) At other times of PerfTimers that are not Qt Events, for example
-    timing a block of code or an IO operation.
-
-    3) Handling threading, chrome://tracing can supports threads.
+    trigger other calls to notify() prior to the first one finishing, and so one
+    several levels deep. This hierarchy of timers is visible in
+    chrome://tracing.
     """
 
     def notify(self, receiver, event):
-        """Time every event."""
-        # Must grab these before calling notify().
+        """Time events while we handle them."""
+        # Must access event/receiver before calling notify().
         name = _get_event_name(event, receiver)
 
-        # Notify as usual while timing it.
+        # Time the event while we handle it.
         start_ns = time.perf_counter_ns()
         ret_value = QApplication.notify(self, receiver, event)
         end_ns = time.perf_counter_ns()
 
-        # For now record every event. Later if not doing a full trace we
-        # will probably only record times over some threshold duration.
+        # Record every event for now.
         TIMERS.record(name, start_ns, end_ns)
         return ret_value
 
@@ -90,7 +75,6 @@ USE_PERFMON = os.getenv("NAPARI_PERFMON", "0") != "0"
 
 if USE_PERFMON:
     # Use our performance monitoring version.
-    print("Performance Monitoring: ENABLED")
     QtApplication = PerfmonApplication
 else:
     # Use the normal stock QApplication
