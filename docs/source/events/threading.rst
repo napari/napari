@@ -193,7 +193,12 @@ stack) we can watch the mean projection as it builds:
 
 .. code-block:: python
    :linenos:
-   :emphasize-lines: 14,20
+   :emphasize-lines: 19,25
+
+    import napari
+    import numpy as np
+    from napari._qt.threading import thread_worker
+
 
     with napari.gui_qt():
         viewer = napari.Viewer()
@@ -219,9 +224,9 @@ stack) we can watch the mean projection as it builds:
         large_random_images()  # call the function!
 
 Note how we periodically (every 16 iterations) ``yield`` the image result in
-the ``large_random_images`` function (**20**).  We also connected the
+the ``large_random_images`` function (**25**).  We also connected the
 ``yielded`` event in the ``@thread_worker`` decorator to the previously-defined
-``update_layer`` function (**14**).  The result is that the image in the viewer
+``update_layer`` function (**19**).  The result is that the image in the viewer
 is updated everytime a new image is yielded.
 
 Any time you can break up a long-running function into a stream of
@@ -242,7 +247,7 @@ yielding generator, but add a button that aborts the worker when clicked:
 
 .. code-block:: python
    :linenos:
-   :emphasize-lines: 19,28
+   :emphasize-lines: 19,29
     
     import time
     import napari
