@@ -1,7 +1,6 @@
 import os
 import stat
 import sys
-import time
 from collections import OrderedDict
 from contextlib import contextmanager
 
@@ -162,6 +161,7 @@ def test_env():
     }
 
     res = config.collect_env(env)
+    res.pop("_dirty")
     assert res == expected
 
 
@@ -181,6 +181,7 @@ def test_collect(tmp_path):
         yaml.dump(b, f)
 
     conf = config.collect([fn1, fn2], env=env)
+    conf.pop("_dirty", None)
     assert conf == expected
 
 
@@ -188,6 +189,7 @@ def test_collect_env_none():
     os.environ["NAPARI_FOO"] = "bar"
     try:
         conf = config.collect([])
+        conf.pop("_dirty", None)
         assert conf == {"foo": "bar"}
     finally:
         del os.environ["NAPARI_FOO"]
@@ -207,11 +209,14 @@ def test_pop():
     d = {"x": 1, "y": {"a": 2, "b": 3}}
 
     assert config.pop("y.a", config=d) == 2
+    d.pop("_dirty", None)
     assert d == {"x": 1, "y": {"b": 3}}
     assert config.pop("x", config=d) == 1
+    d.pop("_dirty", None)
     assert d == {"y": {"b": 3}}
     assert config.pop("y.c", 123, config=d) == 123
     assert config.pop("y", config=d) == {"b": 3}
+    d.pop("_dirty", None)
     assert d == {}
 
     with pytest.raises(KeyError):
@@ -356,6 +361,7 @@ def test_rename():
     aliases = {"foo_bar": "foo.bar"}
     conf = {"foo-bar": 123}
     config.rename(aliases, config=conf)
+    conf.pop("_dirty", None)
     assert conf == {"foo": {"bar": 123}}
 
 
@@ -364,16 +370,19 @@ def test_refresh():
     conf = {}
 
     config.update_defaults({"a": 1}, config=conf, defaults=defaults)
+    conf.pop("_dirty", None)
     assert conf == {"a": 1}
 
     config.refresh(
         paths=[], env={"NAPARI_B": "2"}, config=conf, defaults=defaults
     )
+    conf.pop("_dirty", None)
     assert conf == {"a": 1, "b": 2}
 
     config.refresh(
         paths=[], env={"NAPARI_C": "3"}, config=conf, defaults=defaults
     )
+    conf.pop("_dirty", None)
     assert conf == {"a": 1, "c": 3}
 
 
@@ -481,58 +490,6 @@ def test_sync(tmp_path):
     assert not config.sync(d, destination=dest)
 
 
-def test_two_way_sync(tmp_path):
-    """Test that syncing goes both ways, with preference to the config"""
-    dest = tmp_path / 'dest.yaml'
-    assert not os.path.isfile(dest)
-
-    d = {}
-    config.set({"abc.x": 123, 'b': 10}, config=d)
-    assert config.sync(d, destination=dest)
-    assert os.path.isfile(dest)
-
-    # we can change both the config and the yaml file,
-    # with conflicts, values from the current config will override the yaml.
-    with open(dest, 'w') as f:
-        f.write("abc:\n  x: 123\nb: 15\nanswer: 42")
-        time.sleep(0.1)
-
-    config.set({'abc.x': 55, 'foo': 'bar'}, config=d)
-    assert config.sync(d, destination=dest)
-
-    # note that b: 15 in the yaml file is not used because the config also
-    # changed
-    expected = {'abc': {'x': 55}, 'b': 10, 'foo': 'bar', 'answer': 42}
-    conf = d.copy()
-    conf.pop('_last_synced', None)
-    assert conf == expected
-    with open(dest, 'r') as f:
-        assert yaml.safe_load(f) == expected
-
-
-def test_yaml_overrides_clean_config(tmp_path):
-    """If the yaml on disk has changed but not the config, update config."""
-    dest = tmp_path / 'dest.yaml'
-    assert not os.path.isfile(dest)
-
-    d = {}
-    config.set({"abc.x": 123, 'b': 10}, config=d)
-    assert config.sync(d, destination=dest)
-    assert os.path.isfile(dest)
-
-    # confirm that we are synced and there is nothing to do.
-    assert not config.sync(d, destination=dest)
-
-    # if the config has NOT changed when we sync with a modified yaml
-    # the modified yaml will override the current config.
-    with open(dest, 'w') as f:
-        f.write("answer: 42")
-        # necessary to cause change in file modification time on linux
-        time.sleep(0.05)
-    assert config.sync(d, destination=dest)
-    assert d == {'answer': 42}
-
-
 def test_sync_with_serialization_errors(tmp_path, caplog):
     dest = tmp_path / 'dest.yaml'
     d = {}
@@ -557,4 +514,3 @@ def test_sync_without_sync_status(tmp_path, caplog):
     assert config.sync(d, destination=dest)
     assert os.path.isfile(dest)
     assert not config.sync(d, destination=dest)
-    assert not config.sync(d, destination=dest, sync_status=None)

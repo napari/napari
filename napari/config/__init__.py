@@ -408,7 +408,7 @@ class _set:
                     key = check_deprecations(key)
                     self._assign(key.split("."), value, config)
 
-        status.mark_dirty(config)
+        config['_dirty'] = True
 
     def __enter__(self) -> dict:
         return self.config
@@ -614,7 +614,7 @@ def pop(key: str, default=no_default, config: dict = config):
         try:
             if i == len(keys) - 1:
                 result = result.pop(k)
-                status.mark_dirty(config)
+                config['_dirty'] = True
             else:
                 result = result[k]
         except (TypeError, IndexError, KeyError):
@@ -769,111 +769,10 @@ ConfigDumper.add_multi_representer(StringEnum, ConfigDumper.coerce_to_str)
 ConfigDumper.add_multi_representer(None, ConfigDumper.represent_undefined)
 
 
-PathLike = TypeVar("PathLike", str, bytes, os.PathLike)
-
-
-class SyncStatus:
-    """An object to track sync events and modifications to configs and file.
-
-    Parameters
-    ----------
-    default_config : dict, optional
-        A default config object to check when using ``is_dirty`` or
-        ``needs_sync``. by default, the global config is used
-    default_dest : str, optional
-        A default file path to check when using ``is_dirty`` or ``needs_sync``,
-        by default config._SESSION
-
-    Example
-    -------
-    >>> from napari import config
-    >>> config.status
-    <config.status CLEAN :: last synced 5.18 min ago to ~/.config/napari/_session.yaml>
-
-    >>> config.set(a=1)
-    >>> config.status.needs_sync()
-    True
-    >>> config.sync()
-    True
-    >>> config.status
-    <config.status CLEAN :: last synced 0.29 min ago to ~/.config/napari/_session.yaml>
-
-    >>> config.status.needs_sync()
-    False
-    >>> config.sync()
-    False
-    """
-
-    def __init__(
-        self, default_config: dict = config, default_dest: str = _SESSION
-    ):
-        self._default_config = default_config
-        self._default_dest = str(default_dest)
-        self._last_synced: Dict[str, float] = {}
-        self._dirty_configs: Set[int] = builtins.set()
-
-    def mark_dirty(self, conf: dict):
-        """Mark config object as dirty (needing to be synced)."""
-        self._dirty_configs.add(id(conf))
-
-    def mark_clean(self, *objects: Union[dict, PathLike]):
-        """Mark config or filepath object(s) as clean"""
-        for obj in objects:
-            if isinstance(obj, dict):
-                try:
-                    self._dirty_configs.remove(id(obj))
-                except KeyError:
-                    pass
-            else:
-                self._last_synced[str(obj)] = (
-                    os.path.getmtime(obj)
-                    if os.path.exists(obj)
-                    else time.time()
-                )
-
-    def is_dirty(self, path_or_config: Union[dict, PathLike] = None) -> bool:
-        """Return true if path_or_config object has changed since last sync."""
-        path_or_config = path_or_config or self._default_config
-        if isinstance(path_or_config, dict):
-            # it's a config
-            return id(path_or_config) in self._dirty_configs
-        else:
-            # it's a filepath
-            path = str(path_or_config)
-            if os.path.exists(path) and (
-                os.path.getmtime(path) > self._last_synced.get(path, 0)
-            ):
-                return True
-            return False
-
-    def needs_sync(self, conf: dict = None, dest: str = None) -> bool:
-        """Return True if either config or dest have changed."""
-        dest = dest or self._default_dest
-        return (
-            self.is_dirty(conf or self._default_config)
-            or self.is_dirty(dest)
-            or not os.path.exists(dest)
-        )
-
-    def __repr__(self) -> str:
-        last = self._last_synced.get(self._default_dest, None)
-        when = f"{(time.time() - last) / 60:.2f} min ago" if last else 'never'
-        loc = self._default_dest.replace(os.path.expanduser("~"), '~')
-        return (
-            f"<config.status {'DIRTY' if self.is_dirty() else 'CLEAN'} :: "
-            f"last synced {when} to {loc}>"
-        )
-
-
-status = SyncStatus()
-
-
 def sync(
     config: dict = config,
     destination: str = _SESSION,
-    prefer_config=True,
     lock: threading.Lock = config_lock,
-    sync_status: Optional[SyncStatus] = status,
 ) -> bool:
     """Synchronize config with a yaml file on disk.
 
@@ -893,17 +792,9 @@ def sync(
     destination : str, optional
         Filename or directory to sync to, by default will sync to
         ``config.PATH/_session.yaml``
-    prefer_config : bool
-        In the case of conflict bewteen the disk yaml and the config, this
-        argument determines which value will be used. By default (``True``),
-        the value from the config dict will override the yaml value.
     lock : threading.Lock, optional
         A threading.Lock instance to protect read/write on ``destination``,
         by default, this module's config_lock is used.
-    sync_status : status, optional
-        A :class:`status` class object that tracks the history of previous
-        sync events.  If ``None``, a sync will always be performed.  By default
-        napari.config.status is used.
 
     Returns
     -------
@@ -914,37 +805,15 @@ def sync(
     if not os.fspath(destination).endswith((".yaml", ".yml")):
         raise ValueError("Only YAML is currently supported")
 
-    file_is_dirty = True
-    config_is_dirty = True
-    if status:
-        file_is_dirty = status.is_dirty(destination)
-        config_is_dirty = status.is_dirty(config) or (
-            not os.path.exists(destination)
-        )
-    # do nothing if neither the config nor file have changed
-    if not (config_is_dirty or file_is_dirty):
+    config_is_dirty = config.pop('_dirty', None)
+    if not os.path.exists(destination):
+        config_is_dirty = True
+    # do nothing the config hasn't changed
+    if not config_is_dirty:
         return False
 
     with lock:  # aquire file lock on yaml file
-        if file_is_dirty:
-            # get the new data from the file
-            with open(destination, 'r') as f:
-                yaml_data = yaml.safe_load(f) or {}
-        else:
-            yaml_data = {}
-        if config_is_dirty:
-            # merge prefers values in the later arguments, over the earlier
-            # so if new keys have shown up on disk, we use them, otherwise
-            # we overwrite the disk values with the current config
-            priority = "old" if prefer_config else "new"
-            update(config, yaml_data, priority=priority)
-        elif yaml_data:
-            # if config is not dirty, but the outputfile IS dirty, we overwrite
-            # the the config with the new values from disk.
-            config.clear()
-            update(config, yaml_data)
-
-        # write the merged config to disk
+        # write the config to disk
         with open(destination, 'w') as f:
             if config:
                 try:
@@ -952,13 +821,9 @@ def sync(
                 except yaml.YAMLError as exc:
                     msg = f"Failed to write session config to disk: {exc}"
                     raise type(exc)(msg)
-
             else:  # instead of writing "{}" to file, write "# empty"
                 f.write("# empty")
 
-    # update the status with the time of last modification
-    if status:
-        status.mark_clean(config, destination)
     return True
 
 
@@ -981,8 +846,7 @@ if os.path.isfile(_SESSION):
     with open(_SESSION) as f:
         update(config, yaml.safe_load(f) or {}, priority="old")
 
-# set the status tracker as clean
-status.mark_clean(config, _SESSION)
+config.pop("_dirty", None)
 
 set = _set
 del napari_defaults
