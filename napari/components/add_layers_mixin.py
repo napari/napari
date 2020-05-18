@@ -66,6 +66,26 @@ class AddLayersMixin:
             self.reset_view()
         return layer
 
+    def add_layergroup(
+        self, layergroup: layers.Layergroup
+    ) -> layers.Layergroup:
+        """Add a layergroup to the viewer.
+
+        Parameters
+        ----------
+        layergroup : :class:`napari.layers.Layergroup`
+            Layergroup to add.
+
+        Returns
+        -------
+        layergroup : :class:`napari.layers.Layergroup` or list
+            The layergroup that was added (same as input).
+        """
+        # FIXME
+        for layer in layergroup:
+            self.add_layer(layer)
+        return layergroup
+
     def add_image(
         self,
         data=None,
