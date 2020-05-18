@@ -5,6 +5,8 @@ from os.path import dirname, join
 from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import QApplication, QSplashScreen
 
+from .qt_application import QtApplication
+
 
 @contextmanager
 def gui_qt(*, startup_logo=False):
@@ -27,7 +29,7 @@ def gui_qt(*, startup_logo=False):
     if not app:
         # if this is the first time the Qt app is being instantiated, we set
         # the name, so that we know whether to raise_ in Window.show()
-        app = QApplication(sys.argv)
+        app = QtApplication(sys.argv)
         app.setApplicationName('napari')
         if startup_logo:
             logopath = join(dirname(__file__), '..', 'resources', 'logo.png')

@@ -101,6 +101,10 @@ class Window:
         self._add_viewer_dock_widget(self.qt_viewer.dockLayerControls)
         self._add_viewer_dock_widget(self.qt_viewer.dockLayerList)
 
+        # Performance widget is optional for now.
+        if self.qt_viewer.dockPerformance is not None:
+            self._add_viewer_dock_widget(self.qt_viewer.dockPerformance)
+
         self.qt_viewer.viewer.events.status.connect(self._status_changed)
         self.qt_viewer.viewer.events.help.connect(self._help_changed)
         self.qt_viewer.viewer.events.title.connect(self._title_changed)
