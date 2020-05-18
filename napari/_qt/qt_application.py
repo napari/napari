@@ -15,33 +15,29 @@ from qtpy.QtWidgets import QApplication
 from ..utils.perf_timers import TIMERS
 
 
-def _get_event_name(event, receiver):
-    """Get single compound name for this event.
+def _get_event_name(event, receiver) -> str:
+    """Return a name for this event.
 
     If there is no object we return just <event_name>.
-    If there is an object we do <event_name>:<object_name>
+    If there is an object we do <event_name>:<object_name>.
 
-    This is a made up format to have just a single string, but if we end up
-    parsing this string, we might want to just keep it as a tuple.
+    This our own made up format we can revise as needed.
     """
     # For an event.type() like "PySide2.QtCore.QEvent.Type.WindowIconChange"
-    # We just use the final "WindowIconChange" part.
+    # we set event_str to just the final "WindowIconChange" part.
     event_str = str(event.type()).split(".")[-1]
 
     try:
         object_name = receiver.objectName()
     except AttributeError:
-        # During shutdown the call to receiver.objectName() can fail because the
-        # event has no "attribute objectName". So we just ignore that case,
-        # we're shutting down anyway.
+        # During shutdown the call to receiver.objectName() can fail with
+        # "missing objectName attribute". Ingore and assume no object name.
         object_name = None
 
-    # Make up a colon separated syntax, although we could keep these
-    # separate if that made things down the line easier.
     if object_name:
         return f"{event_str}:{object_name}"
 
-    # Frequently events have no object.
+    # Many events have no object.
     return event_str
 
 
