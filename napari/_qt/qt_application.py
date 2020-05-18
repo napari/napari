@@ -28,9 +28,6 @@ def _get_event_name(event, receiver):
     # We just use the final "WindowIconChange" part.
     event_str = str(event.type()).split(".")[-1]
 
-    # Try since we sometimes get:
-    # AttributeError: 'PySide2.QtGui.QMouseEvent' object has no attribute 'objectName'
-    # Is that because the receiver is an event in that case? Not sure yet.
     try:
         object_name = receiver.objectName()
     except AttributeError:
