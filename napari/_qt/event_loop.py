@@ -4,6 +4,7 @@ from os.path import dirname, join
 
 from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import QApplication, QSplashScreen
+from qtpy.QtCore import Qt
 
 
 @contextmanager
@@ -31,7 +32,10 @@ def gui_qt(*, startup_logo=False):
         app.setApplicationName('napari')
         if startup_logo:
             logopath = join(dirname(__file__), '..', 'resources', 'logo.png')
-            splash_widget = QSplashScreen(QPixmap(logopath).scaled(400, 400))
+            pm = QPixmap(logopath).scaled(
+                360, 360, Qt.KeepAspectRatio, Qt.SmoothTransformation
+            )
+            splash_widget = QSplashScreen(pm)
             splash_widget.show()
     yield app
     # if the application already existed before this function was called,
