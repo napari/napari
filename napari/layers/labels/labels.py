@@ -1,4 +1,4 @@
-from collections import deque, Iterable
+from collections import deque
 from typing import Union
 
 import numpy as np
@@ -546,18 +546,28 @@ class Labels(Image):
         if refresh is True:
             self.refresh()
 
-    def paint_without_overwrite(self, array, slice_coord, new_label, dimension):
+    def paint_without_overwrite(
+        self, array, slice_coord, new_label, dimension
+    ):
         if dimension == len(slice_coord) - 1:
             for coord in self.read_dimension(slice_coord, dimension):
                 if array[coord] == 0:
                     array[coord] = new_label
         else:
             for coord in self.read_dimension(slice_coord, dimension):
-                self.paint_without_overwrite(array[coord], slice_coord, new_label, dimension + 1)
+                self.paint_without_overwrite(
+                    array[coord], slice_coord, new_label, dimension + 1
+                )
 
     @staticmethod
     def read_dimension(slice_coord, dimension):
         if isinstance(slice_coord[dimension], slice):
-            return list(range(slice_coord[dimension].start, slice_coord[dimension].stop, slice_coord[dimension].step))
+            return list(
+                range(
+                    slice_coord[dimension].start,
+                    slice_coord[dimension].stop,
+                    slice_coord[dimension].step,
+                )
+            )
         else:
-            return slice_coord[dimension],
+            return (slice_coord[dimension],)
