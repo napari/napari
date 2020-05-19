@@ -8,7 +8,7 @@ import warnings
 from contextlib import contextmanager
 from enum import Enum, EnumMeta
 from os import PathLike, fspath, path
-from typing import ContextManager, Optional, Sequence, Type, TypeVar
+from typing import ContextManager, Callable, Optional, Sequence, Type, TypeVar
 
 import dask
 import dask.array as da
@@ -399,7 +399,7 @@ def _is_dask_data(data) -> bool:
     )
 
 
-def configure_dask(data) -> ContextManager[dict]:
+def configure_dask(data) -> Callable[[], ContextManager]:
     """Spin up cache and return context manager that optimizes Dask indexing.
 
     This function determines whether data is a dask array or list of dask
@@ -456,13 +456,13 @@ def configure_dask(data) -> ContextManager[dict]:
                 f'{dask.__version__}'
             )
 
-        def dask_optimized_slicing(*args, **kwds):
+        def dask_optimized_slicing():
             with dask.config.set({"optimization.fuse.active": False}) as cfg:
                 yield cfg
 
     else:
 
-        def dask_optimized_slicing(*args, **kwds):
+        def dask_optimized_slicing():
             yield {}
 
     return contextmanager(dask_optimized_slicing)

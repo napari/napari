@@ -67,3 +67,7 @@ ValidColormapArg = Union[
     Tuple[str, vispy.color.Colormap],
     Dict[str, vispy.color.Colormap],
 ]
+
+Coords2d = Tuple[float, float]
+Coords3d = Tuple[float, float, float]
+CursorPosition = Union[Coords2d, Coords3d]

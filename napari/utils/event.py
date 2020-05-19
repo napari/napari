@@ -683,6 +683,10 @@ class EmitterGroup(EventEmitter):
         """
         return self._emitters[name]
 
+    # just for typing support
+    def __getattr__(self, name: str):
+        return object.__getattribute__(self, name)
+
     def __setitem__(self, name, emitter):
         """
         Alias for EmitterGroup.add(name=emitter)

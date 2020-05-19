@@ -611,7 +611,7 @@ class Image(IntensityVisualizationMixin, Layer):
             colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 
-    def _get_value(self) -> Optional[Union[float, Tuple[int, float]]]:
+    def _get_value(self) -> Union[float, Tuple[int, float], None]:
         """Return the value of the layer at the current ``self.coordinates``.
 
         self.coordinates is set elsewhere, and usually reflects the current

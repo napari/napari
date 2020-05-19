@@ -3,9 +3,9 @@
 import inspect
 import re
 from collections import ChainMap
+from typing import Optional
 
 from .misc import formatdoc
-
 
 sep = ' '
 start = 1
@@ -47,7 +47,7 @@ def inc_name_count(name):
     return numbered_patt.sub(_inc_name_count_sub, name, count=1)
 
 
-def magic_name(value, *, path_prefix):
+def magic_name(value, *, path_prefix) -> Optional[str]:
     """Fetch the name of the variable with the given value passed to the calling function.
 
     Parameters

@@ -2,11 +2,12 @@ import warnings
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from types import GeneratorType
-from typing import Callable, Dict, List, Optional, Sequence, Tuple, Union
+from typing import Callable, Dict, List, Optional, Sequence, Tuple
 
 import numpy as np
 
 from ...components import Dims
+from ...types import CursorPosition, FullLayerData
 from ...utils.event import EmitterGroup, Event
 from ...utils.key_bindings import KeymapProvider
 from ...utils.misc import ROOT_DIR, configure_dask
@@ -184,7 +185,7 @@ class Layer(KeymapProvider, ABC):
             ]
         )
 
-        self.coordinates = (0,) * ndim
+        self.coordinates: Tuple[int, ...] = (0,) * ndim
         self._position = (0,) * self.dims.ndisplay
         self.corner_pixels = np.zeros((2, ndim), dtype=int)
         self._editable = True
@@ -250,7 +251,7 @@ class Layer(KeymapProvider, ABC):
         return self._name
 
     @name.setter
-    def name(self, name: str):
+    def name(self, name: Optional[str]):
         if name == self.name:
             return
         if not name:
@@ -363,9 +364,7 @@ class Layer(KeymapProvider, ABC):
         self.events.translate()
 
     @property
-    def position(
-        self,
-    ) -> Union[Tuple[float, float], Tuple[float, float, float]]:
+    def position(self,) -> CursorPosition:
         """Return cursor position in image in image coordinates.
 
         (0, 0) is the origin (top left pixel of the image as shown on the
@@ -384,15 +383,12 @@ class Layer(KeymapProvider, ABC):
         return self._position
 
     @position.setter
-    def position(
-        self, position: Union[Tuple[float, float], Tuple[float, float, float]]
-    ):
+    def position(self, position: CursorPosition):
         """tuple of float: Cursor position in image of displayed dimensions."""
         _position = tuple(position)  # just in case we don't receive a tuple
         if self._position == _position:
             return
         self._position = _position
-        print(self.position)
         self._update_coordinates()
 
     def _update_dims(self, event: Optional[Event] = None):
@@ -450,17 +446,17 @@ class Layer(KeymapProvider, ABC):
         """Return the number of dimensions of the layer."""
         raise NotImplementedError()
 
-    def _set_editable(self, editable=None):
+    def _set_editable(self, editable: Optional[bool] = None):
         if editable is None:
             self.editable = True
 
-    def _get_range(self):
+    def _get_range(self) -> Tuple[Tuple[float, float, float], ...]:
         extent = self._get_extent()
         return tuple(
             (s * e[0], s * e[1], s) for e, s in zip(extent, self.scale)
         )
 
-    def _get_base_state(self):
+    def _get_base_state(self) -> dict:
         """Get dictionary of attributes on base layer.
 
         Returns
@@ -484,21 +480,21 @@ class Layer(KeymapProvider, ABC):
         raise NotImplementedError()
 
     @property
-    def _type_string(self):
+    def _type_string(self) -> str:
         return self.__class__.__name__.lower()
 
-    def as_layer_data_tuple(self):
+    def as_layer_data_tuple(self) -> FullLayerData:
         state = self._get_state()
         state.pop('data', None)
         return self.data, state, self._type_string
 
     @property
-    def thumbnail(self):
+    def thumbnail(self) -> np.ndarray:
         """array: Integer array of thumbnail for the layer"""
         return self._thumbnail
 
     @thumbnail.setter
-    def thumbnail(self, thumbnail):
+    def thumbnail(self, thumbnail: np.ndarray):
         if 0 in thumbnail.shape:
             thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         if thumbnail.dtype != np.uint8:
@@ -522,24 +518,24 @@ class Layer(KeymapProvider, ABC):
         self.events.thumbnail()
 
     @property
-    def ndim(self):
+    def ndim(self) -> int:
         """int: Number of dimensions in the data."""
         return self.dims.ndim
 
     @property
-    def shape(self):
+    def shape(self) -> Tuple[int, ...]:
         """tuple of int: Shape of the data."""
         return tuple(
             np.round(r[1] - r[0]).astype(int) for r in self.dims.range
         )
 
     @property
-    def selected(self):
+    def selected(self) -> bool:
         """bool: Whether this layer is selected or not."""
         return self._selected
 
     @selected.setter
-    def selected(self, selected):
+    def selected(self, selected: bool):
         if selected == self.selected:
             return
         self._selected = selected
@@ -550,66 +546,66 @@ class Layer(KeymapProvider, ABC):
             self.events.deselect()
 
     @property
-    def status(self):
+    def status(self) -> str:
         """str: displayed in status bar bottom left."""
         return self._status
 
     @status.setter
-    def status(self, status):
+    def status(self, status: str):
         if status == self.status:
             return
         self.events.status(status=status)
         self._status = status
 
     @property
-    def help(self):
+    def help(self) -> str:
         """str: displayed in status bar bottom right."""
         return self._help
 
     @help.setter
-    def help(self, help):
+    def help(self, help: str):
         if help == self.help:
             return
         self.events.help(help=help)
         self._help = help
 
     @property
-    def interactive(self):
+    def interactive(self) -> bool:
         """bool: Determine if canvas pan/zoom interactivity is enabled."""
         return self._interactive
 
     @interactive.setter
-    def interactive(self, interactive):
+    def interactive(self, interactive: bool):
         if interactive == self.interactive:
             return
         self.events.interactive(interactive=interactive)
         self._interactive = interactive
 
     @property
-    def cursor(self):
+    def cursor(self) -> str:
         """str: String identifying cursor displayed over canvas."""
         return self._cursor
 
     @cursor.setter
-    def cursor(self, cursor):
+    def cursor(self, cursor: str):
         if cursor == self.cursor:
             return
         self.events.cursor(cursor=cursor)
         self._cursor = cursor
 
     @property
-    def cursor_size(self):
+    def cursor_size(self) -> Optional[int]:
         """int | None: Size of cursor if custom. None yields default size."""
         return self._cursor_size
 
     @cursor_size.setter
-    def cursor_size(self, cursor_size):
+    def cursor_size(self, cursor_size: int):
         if cursor_size == self.cursor_size:
             return
         self.events.cursor_size(cursor_size=cursor_size)
         self._cursor_size = cursor_size
 
-    def set_view_slice(self):
+    def set_view_slice(self) -> None:
         with self.dask_optimized_slicing():
             self._set_view_slice()
 
@@ -644,7 +640,7 @@ class Layer(KeymapProvider, ABC):
         yield
         self._update_properties = True
 
-    def _set_highlight(self, force=False):
+    def _set_highlight(self, force: bool = False):
         """Render layer highlights when appropriate.
 
         Parameters
@@ -664,7 +660,7 @@ class Layer(KeymapProvider, ABC):
             self._update_coordinates()
             self._set_highlight(force=True)
 
-    def _update_coordinates(self):
+    def _update_coordinates(self) -> None:
         """Insert the cursor position into the correct position in the
         tuple of indices and update the cursor coordinates.
         """
@@ -675,7 +671,15 @@ class Layer(KeymapProvider, ABC):
         self._value = self.get_value()
         self.status = self.get_message()
 
-    def _update_multiscale(self, corner_pixels, shape_threshold):
+    @property
+    def level_shapes(self):
+        raise NotImplementedError(
+            f'Layer {self} has not implemented `level_shapes`.'
+        )
+
+    def _update_multiscale(
+        self, corner_pixels: np.ndarray, shape_threshold: Tuple[float, ...]
+    ):
         """Refresh layer multiscale if new resolution level or tile is required.
 
         Parameters
@@ -724,9 +728,9 @@ class Layer(KeymapProvider, ABC):
             self.refresh()
 
     @property
-    def displayed_coordinates(self):
-        """list: List of currently displayed coordinates."""
-        return [self.coordinates[i] for i in self.dims.displayed]
+    def displayed_coordinates(self) -> Tuple[float, ...]:
+        """tuple: List of currently displayed coordinates."""
+        return tuple(self.coordinates[i] for i in self.dims.displayed)
 
     def get_message(self):
         """Generate a status message based on the coordinates and value
