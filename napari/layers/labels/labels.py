@@ -346,10 +346,13 @@ class Labels(Image):
 
     @property
     def overwrite(self):
-        return str(self._overwrite)
+        """
+        Defines if painting should overwrite existing labels, if set to true, painting should only be performed on the background label, and not on existing lables.
+        """
+        return self._overwrite
 
     @overwrite.setter
-    def overwrite(self, overwrite: Union[str, bool]):
+    def overwrite(self, overwrite: bool):
         self._overwrite = overwrite
         self.events.overwrite(overwrite=overwrite)
         self.refresh()
