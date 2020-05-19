@@ -2,7 +2,6 @@ from abc import ABC, abstractmethod
 import numpy as np
 from copy import copy
 
-from ....utils.colormaps.standardize_color import rgb_to_hex
 from .._shapes_utils import (
     triangulate_edge,
     triangulate_face,
@@ -21,14 +20,6 @@ class Shape(ABC):
         Vertices specifying the shape.
     edge_width : float
         thickness of lines and edges.
-    edge_color : str | tuple
-        If string can be any color name recognized by vispy or hex value if
-        starting with `#`. If array-like must be 1-dimensional array with 3 or
-        4 elements.
-    face_color : str | tuple
-        If string can be any color name recognized by vispy or hex value if
-        starting with `#`. If array-like must be 1-dimensional array with 3 or
-        4 elements.
     opacity : float
         Opacity of the shape, must be between 0 and 1.
     z_index : int
@@ -48,10 +39,6 @@ class Shape(ABC):
         currently supported.
     edge_width : float
         thickness of lines and edges.
-    edge_color : ColorArray
-        Color of the shape edge
-    face_color : ColorArray
-        Color of the shape face
     opacity : float
         Opacity of the shape, must be between 0 and 1.
     name : str
@@ -74,12 +61,6 @@ class Shape(ABC):
 
     Extended Summary
     ----------
-    _edge_color_name : str
-        Name of edge color or six digit hex code representing edge color if not
-        recognized
-    _face_color_name : str
-        Name of edge color or six digit hex code representing face color if not
-        recognized
     _closed : bool
         Bool if shape edge is a closed path or not
     _box : np.ndarray
@@ -113,8 +94,6 @@ class Shape(ABC):
         *,
         shape_type='rectangle',
         edge_width=1,
-        edge_color='black',
-        face_color='white',
         opacity=1,
         z_index=0,
         dims_order=None,
@@ -131,15 +110,11 @@ class Shape(ABC):
         self._edge_offsets = np.empty((0, self.ndisplay))
         self._edge_triangles = np.empty((0, 3), dtype=np.uint32)
         self._box = np.empty((9, 2))
-        self._edge_color_name = 'black'
-        self._face_color_name = 'white'
 
         self._closed = False
         self._filled = True
         self._use_face_vertices = False
         self.edge_width = edge_width
-        self.edge_color = edge_color
-        self.face_color = face_color
         self.opacity = opacity
         self.z_index = z_index
         self.name = ''
@@ -207,28 +182,6 @@ class Shape(ABC):
     @edge_width.setter
     def edge_width(self, edge_width):
         self._edge_width = edge_width
-
-    @property
-    def edge_color(self):
-        """Color, ColorArray: color of edges
-        """
-        return copy(self._edge_color)
-
-    @edge_color.setter
-    def edge_color(self, edge_color):
-        self._edge_color = edge_color
-        self._edge_color_name = rgb_to_hex(edge_color)[0]
-
-    @property
-    def face_color(self):
-        """Color, ColorArray: color of faces
-        """
-        return copy(self._face_color)
-
-    @face_color.setter
-    def face_color(self, face_color):
-        self._face_color = face_color
-        self._face_color_name = rgb_to_hex(face_color)[0]
 
     @property
     def opacity(self):
