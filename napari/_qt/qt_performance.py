@@ -36,21 +36,31 @@ class TextLog(QTextEdit):
 class QtPerformance(QWidget):
     """Dockable widget to show performance metrics and info.
 
-    This UI is mostly proof-of-concept that we can display performance
-    information in the GUI. We need to figure out what information
-    the developer needs to see and how best to depict it.
+    Display some performance related information. This is mostly proof-of-concept
+    until we figure out what exactly we want to display.
 
-    Right now the widget contains:
-    1) A timer label, added just so we can see if the GUI is updating.
-    Sometimes it seems like QtPerformance is not updated even while the
-    main window is updating.
+    Widget Layout
+    -------------
 
-    2) A "progress bar" that shows the average time of the "UpdateRequest"
-    Qt Event. This seems to be the main paint/draw event.
+    Draw Time:
+    <----progress bar showing draw time---->
 
-    3) A text box where we "log" events that run longer than SLOW_EVENT_MS.
-    One enhancement here might be a dropdown that lets you set SLOW_EVENT_MS
-    from the GUI. So you can see more/fewer events.
+    Slow Events:
+    <----text edit window showing slow events---->
+
+    Uptime: <---uptime in seconds--->
+
+    Widget Notes
+    ------------
+
+    1) The progress bar doesn't show "progress", we use it as a bar graph to
+       show the average duration of recent "UpdateRequest" events.
+
+    2) We log any event whose duration is longer then SLOW_EVENT_MS
+
+    3) We show uptime so you can tell if this window is being updated at all.
+    Right now it seems like the main window's slider starves us out, so we
+    don't receive timer events at all some of the time.
     """
 
     # Log events that take longer than this.
