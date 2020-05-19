@@ -165,7 +165,7 @@ class Image(IntensityVisualizationMixin, Layer):
         if multiscale:
             init_shape = data[0].shape
         else:
-            init_shape = data.shape
+            init_shape = cast(ArrayLike, data).shape
 
         # Determine if rgb
         if rgb is None:
@@ -269,7 +269,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @property
     def data(self) -> Union[ArrayLike, List[ArrayLike]]:
-        """array: Image data. Will be a list of arrays if self.is_pyramid"""
+        """Image data. Will be a list of arrays if self.multiscale"""
         return self._data
 
     @data.setter
@@ -288,7 +288,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @property
     def data_level(self) -> int:
-        """int: Current level of multiscale, or 0 if image."""
+        """Current level of multiscale, or 0 if image."""
         return self._data_level
 
     @data_level.setter
@@ -300,7 +300,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @property
     def level_shapes(self) -> np.ndarray:
-        """array: Shapes of each level of the multiscale or just of image."""
+        """Shapes of each level of the multiscale or just of image."""
         if self.multiscale:
             if self.rgb:
                 shapes = [im.shape[:-1] for im in self.data]
@@ -313,13 +313,13 @@ class Image(IntensityVisualizationMixin, Layer):
         return np.array(shapes)
 
     @property
-    def downsample_factors(self):
-        """list: Downsample factors for each level of the multiscale."""
+    def downsample_factors(self) -> np.ndarray:
+        """Downsample factors for each level of the multiscale."""
         return np.divide(self.level_shapes[0], self.level_shapes)
 
     @property
     def iso_threshold(self) -> float:
-        """float: threshold for isosurface."""
+        """Threshold for isosurface."""
         return self._iso_threshold
 
     @iso_threshold.setter
@@ -331,7 +331,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @property
     def attenuation(self) -> float:
-        """float: attenuation rate for attenuated_mip rendering."""
+        """Attenuation rate for attenuated_mip rendering."""
         return self._attenuation
 
     @attenuation.setter
@@ -376,7 +376,7 @@ class Image(IntensityVisualizationMixin, Layer):
         self.events.interpolation()
 
     @property
-    def rendering(self):
+    def rendering(self) -> str:
         """Return current rendering mode.
 
         Selects a preset rendering mode in vispy that determines how
