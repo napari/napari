@@ -347,7 +347,8 @@ class Labels(Image):
     @property
     def overwrite(self):
         """
-        Defines if painting should overwrite existing labels, if set to true, painting should only be performed on the background label, and not on existing lables.
+        Defines if painting should overwrite existing labels, default to true to allow overwrite.
+        If set to false, painting would only be performed on the background label, and not on existing labels.
         """
         return self._overwrite
 
