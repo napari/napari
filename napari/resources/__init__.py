@@ -51,6 +51,7 @@ def import_resources(version: str = '', overwrite: bool = False) -> str:
 
     This function attempts to write that file to one of three locations
     (in this order):
+
         1. The directory of *this* file (currently ``napari/resources``)
         2. The user ~/.config/napari directory
         3. A temporary file.
@@ -68,6 +69,7 @@ def import_resources(version: str = '', overwrite: bool = False) -> str:
     overwrite : bool, optional
         Whether to recompile and overwrite the resources.
         Resources will be rebuilt if any of the following are True:
+        
             - the resources file does not already exist.
             - ``overwrite`` argument is True
             - the ``NAPARI_REBUILD_RESOURCES`` environmental variable is set

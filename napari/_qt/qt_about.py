@@ -60,7 +60,7 @@ class QtAbout(QDialog):
         self.infoTextBox.setText(sys_info(as_html=True))
         self.infoTextBox.setMinimumSize(
             self.infoTextBox.document().size().width() + 19,
-            self.infoTextBox.document().size().height() + 10,
+            min(self.infoTextBox.document().size().height() + 10, 500),
         )
 
         self.layout.addWidget(QLabel('<b>citation information:</b>'))

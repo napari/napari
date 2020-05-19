@@ -1,3 +1,5 @@
 pre-commit>=1.16.1
-black>=19.3b0
+black==19.10b0
 flake8==3.7.9
+-r test.txt
+-r default.txt

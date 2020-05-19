@@ -22,7 +22,10 @@ class ReadOnlyWrapper(wrapt.ObjectProxy):
 def mouse_press_callbacks(obj, event):
     """Run mouse press callbacks on either layer or viewer object.
 
-    Note that drag callbacks should have the following form::
+    Note that drag callbacks should have the following form:
+
+    .. code-block:: python
+
         def hello_world(layer, event):
             "dragging"
             # on press
@@ -39,7 +42,7 @@ def mouse_press_callbacks(obj, event):
 
     Parameters
     ---------
-    obj : napari.components.ViewerModel or napar.layers.Layer
+    obj : ViewerModel or Layer
         Layer or Viewer object to run callbacks on
     event : Event
         Mouse event
@@ -63,7 +66,10 @@ def mouse_press_callbacks(obj, event):
 def mouse_move_callbacks(obj, event):
     """Run mouse move callbacks on either layer or viewer object.
 
-    Note that drag callbacks should have the following form::
+    Note that drag callbacks should have the following form:
+
+    .. code-block:: python
+
         def hello_world(layer, event):
             "dragging"
             # on press
@@ -80,7 +86,7 @@ def mouse_move_callbacks(obj, event):
 
     Parameters
     ---------
-    obj : napari.components.ViewerModel or napar.layers.Layer
+    obj : ViewerModel or Layer
         Layer or Viewer object to run callbacks on
     event : Event
         Mouse event
@@ -106,7 +112,10 @@ def mouse_move_callbacks(obj, event):
 def mouse_release_callbacks(obj, event):
     """Run mouse release callbacks on either layer or viewer object.
 
-    Note that drag callbacks should have the following form::
+    Note that drag callbacks should have the following form:
+
+    .. code-block:: python
+
         def hello_world(layer, event):
             "dragging"
             # on press
@@ -123,7 +132,7 @@ def mouse_release_callbacks(obj, event):
 
     Parameters
     ---------
-    obj : napari.components.ViewerModel or napar.layers.Layer
+    obj : ViewerModel or Layer
         Layer or Viewer object to run callbacks on
     event : Event
         Mouse event

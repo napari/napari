@@ -1,5 +1,4 @@
 import numpy as np
-from xml.etree.ElementTree import Element
 from napari.layers import Shapes
 
 
@@ -371,14 +370,14 @@ def test_selecting_shapes():
     data = 20 * np.random.random((10, 4, 2))
     np.random.seed(0)
     layer = Shapes(data)
-    layer.selected_data = [0, 1]
-    assert layer.selected_data == [0, 1]
+    layer.selected_data = {0, 1}
+    assert layer.selected_data == {0, 1}
 
-    layer.selected_data = [9]
-    assert layer.selected_data == [9]
+    layer.selected_data = {9}
+    assert layer.selected_data == {9}
 
-    layer.selected_data = []
-    assert layer.selected_data == []
+    layer.selected_data = set()
+    assert layer.selected_data == set()
 
 
 def test_removing_selected_shapes():
@@ -395,7 +394,7 @@ def test_removing_selected_shapes():
     assert len(layer.data) == len(data)
 
     # Select three shapes and remove them
-    layer.selected_data = [1, 7, 8]
+    layer.selected_data = {1, 7, 8}
     layer.remove_selected()
     keep = [0] + list(range(2, 7)) + [9]
     data_keep = [data[i] for i in keep]
@@ -539,14 +538,14 @@ def test_edge_color():
     assert layer.edge_color == ['black'] * shape[0]
 
     # Select data and change edge color of selection
-    layer.selected_data = [0, 1]
+    layer.selected_data = {0, 1}
     assert layer.current_edge_color == 'black'
     layer.current_edge_color = 'green'
     assert layer.edge_color == ['green'] * 2 + ['black'] * (shape[0] - 2)
 
     # Add new shape and test its color
     new_shape = np.random.random((1, 4, 2))
-    layer.selected_data = []
+    layer.selected_data = set()
     layer.current_edge_color = 'blue'
     layer.add(new_shape)
     assert len(layer.edge_color) == shape[0] + 1
@@ -571,7 +570,7 @@ def test_edge_color():
     assert layer.edge_color == col_list + ['blue']
 
     # Check removing data adjusts colors correctly
-    layer.selected_data = [0, 2]
+    layer.selected_data = {0, 2}
     layer.remove_selected()
     assert len(layer.data) == shape[0] - 1
     assert len(layer.edge_color) == shape[0] - 1
@@ -594,14 +593,14 @@ def test_face_color():
     assert layer.face_color == ['white'] * shape[0]
 
     # Select data and change face color of selection
-    layer.selected_data = [0, 1]
+    layer.selected_data = {0, 1}
     assert layer.current_face_color == 'white'
     layer.current_face_color = 'green'
     assert layer.face_color == ['green'] * 2 + ['white'] * (shape[0] - 2)
 
     # Add new shape and test its color
     new_shape = np.random.random((1, 4, 2))
-    layer.selected_data = []
+    layer.selected_data = set()
     layer.current_face_color = 'blue'
     layer.add(new_shape)
     assert len(layer.face_color) == shape[0] + 1
@@ -626,7 +625,7 @@ def test_face_color():
     assert layer.face_color == col_list + ['blue']
 
     # Check removing data adjusts colors correctly
-    layer.selected_data = [0, 2]
+    layer.selected_data = {0, 2}
     layer.remove_selected()
     assert len(layer.data) == shape[0] - 1
     assert len(layer.face_color) == shape[0] - 1
@@ -649,14 +648,14 @@ def test_edge_width():
     assert layer.edge_width == [1] * shape[0]
 
     # Select data and change edge color of selection
-    layer.selected_data = [0, 1]
+    layer.selected_data = {0, 1}
     assert layer.current_edge_width == 1
     layer.current_edge_width = 3
     assert layer.edge_width == [3] * 2 + [1] * (shape[0] - 2)
 
     # Add new shape and test its width
     new_shape = np.random.random((1, 4, 2))
-    layer.selected_data = []
+    layer.selected_data = set()
     layer.current_edge_width = 4
     layer.add(new_shape)
     assert layer.edge_width == [3] * 2 + [1] * (shape[0] - 2) + [4]
@@ -678,7 +677,7 @@ def test_edge_width():
     assert layer.edge_width == width_list + [4]
 
     # Check removing data adjusts colors correctly
-    layer.selected_data = [0, 2]
+    layer.selected_data = {0, 2}
     layer.remove_selected()
     assert len(layer.data) == shape[0] - 1
     assert len(layer.edge_width) == shape[0] - 1
@@ -702,14 +701,14 @@ def test_opacity():
     assert layer.opacity == [0.7] * shape[0]
 
     # Select data and change opacity of selection
-    layer.selected_data = [0, 1]
+    layer.selected_data = {0, 1}
     assert layer.current_opacity == 0.7
     layer.current_opacity = 0.5
     assert layer.opacity == [0.5] * 2 + [0.7] * (shape[0] - 2)
 
     # Add new shape and test its width
     new_shape = np.random.random((1, 4, 2))
-    layer.selected_data = []
+    layer.selected_data = set()
     layer.current_opacity = 0.3
     layer.add(new_shape)
     assert layer.opacity == [0.5] * 2 + [0.7] * (shape[0] - 2) + [0.3]
@@ -731,7 +730,7 @@ def test_opacity():
     assert layer.opacity == opacity_list + [0.6]
 
     # Check removing data adjusts opacity correctly
-    layer.selected_data = [0, 2]
+    layer.selected_data = {0, 2}
     layer.remove_selected()
     assert len(layer.data) == shape[0] - 1
     assert len(layer.opacity) == shape[0] - 1
@@ -762,7 +761,7 @@ def test_z_index():
     assert layer.z_index == z_index_list + [4]
 
     # Check removing data adjusts colors correctly
-    layer.selected_data = [0, 2]
+    layer.selected_data = {0, 2}
     layer.remove_selected()
     assert len(layer.data) == shape[0] - 1
     assert len(layer.z_index) == shape[0] - 1
@@ -779,7 +778,7 @@ def test_move_to_front():
     assert layer.z_index == z_index_list
 
     # Move selected shapes to front
-    layer.selected_data = [0, 2]
+    layer.selected_data = {0, 2}
     layer.move_to_front()
     assert layer.z_index == [4] + [z_index_list[1]] + [4] + z_index_list[3:]
 
@@ -794,7 +793,7 @@ def test_move_to_back():
     assert layer.z_index == z_index_list
 
     # Move selected shapes to front
-    layer.selected_data = [0, 2]
+    layer.selected_data = {0, 2}
     layer.move_to_back()
     assert layer.z_index == [1] + [z_index_list[1]] + [1] + z_index_list[3:]
 
@@ -807,13 +806,13 @@ def test_interaction_box():
     layer = Shapes(data)
     assert layer._selected_box is None
 
-    layer.selected_data = [0]
+    layer.selected_data = {0}
     assert len(layer._selected_box) == 10
 
-    layer.selected_data = [0, 1]
+    layer.selected_data = {0, 1}
     assert len(layer._selected_box) == 10
 
-    layer.selected_data = []
+    layer.selected_data = set()
     assert layer._selected_box is None
 
 
@@ -835,7 +834,7 @@ def test_copy_and_paste():
     assert layer._clipboard == {}
 
     # Copying and pasting with two shapes selected adds to clipboard and data
-    layer.selected_data = [0, 1]
+    layer.selected_data = {0, 1}
     layer._copy_data()
     layer._paste_data()
     assert len(layer._clipboard) == 2
@@ -853,7 +852,7 @@ def test_copy_and_paste():
 
     # Unselecting everything and copying and pasting will empty the clipboard
     # and add no new data
-    layer.selected_data = []
+    layer.selected_data = set()
     layer._copy_data()
     layer._paste_data()
     assert layer._clipboard == {}
@@ -872,7 +871,7 @@ def test_value():
     assert value == (9, None)
 
     layer.mode = 'select'
-    layer.selected_data = [9]
+    layer.selected_data = {9}
     value = layer.get_value()
     assert value == (9, 7)
 
@@ -943,15 +942,3 @@ def test_to_labels_3D():
     labels = layer.to_labels(labels_shape=labels_shape)
     assert np.all(labels.shape == labels_shape)
     assert np.all(np.unique(labels) == [0, 1, 2, 3])
-
-
-def test_xml_list():
-    """Test the xml generation."""
-    shape = (10, 4, 2)
-    np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    layer = Shapes(data)
-    xml = layer.to_xml_list()
-    assert type(xml) == list
-    assert len(xml) == shape[0]
-    assert np.all([type(x) == Element for x in xml])

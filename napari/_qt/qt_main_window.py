@@ -5,11 +5,13 @@ wrap.
 import time
 
 # set vispy to use same backend as qtpy
-from skimage.io import imsave
+from ..utils.io import imsave
 
+from .qt_viewer import QtViewer
 from .qt_about import QtAbout
 from .qt_plugin_report import QtPluginErrReporter
-from .qt_plugin_list import QtPluginSorter
+from .qt_plugin_sorter import QtPluginSorter
+from .qt_dict_table import QtDictTable
 from .qt_viewer_dock_widget import QtViewerDockWidget
 from ..resources import get_stylesheet
 
@@ -17,18 +19,22 @@ from ..resources import get_stylesheet
 # these module-level imports have to come after `app.use_app(API)`
 # see discussion on #638
 from qtpy.QtWidgets import (  # noqa: E402
+    QAbstractItemView,
     QApplication,
     QMainWindow,
     QWidget,
     QHBoxLayout,
+    QDialog,
     QDockWidget,
     QLabel,
     QAction,
     QShortcut,
     QStatusBar,
+    QVBoxLayout,
+    QFileDialog,
 )
 from qtpy.QtCore import Qt  # noqa: E402
-from qtpy.QtGui import QKeySequence  # noqa: E402
+from qtpy.QtGui import QKeySequence, QIcon  # noqa: E402
 from .utils import QImg2array  # noqa: E402
 from ..utils.theme import template  # noqa: E402
 
@@ -59,7 +65,7 @@ class Window:
 
     raw_stylesheet = get_stylesheet()
 
-    def __init__(self, qt_viewer, *, show=True):
+    def __init__(self, qt_viewer: QtViewer, *, show: bool = True):
 
         self.qt_viewer = qt_viewer
 
@@ -136,43 +142,96 @@ class Window:
 
     def _add_file_menu(self):
         """Add 'File' menu to app menubar."""
-        open_images = QAction('Open image(s)...', self._qt_window)
+        open_images = QAction('Open File(s)...', self._qt_window)
         open_images.setShortcut('Ctrl+O')
-        open_images.setStatusTip('Open image file(s)')
-        open_images.triggered.connect(self.qt_viewer._open_images)
+        open_images.setStatusTip('Open file(s)')
+        open_images.triggered.connect(self.qt_viewer._open_files_dialog)
 
-        open_stack = QAction('Open image series as stack...', self._qt_window)
+        open_stack = QAction('Open Files as Stack...', self._qt_window)
         open_stack.setShortcut('Ctrl+Alt+O')
-        open_stack.setStatusTip('Open image files')
-        open_stack.triggered.connect(self.qt_viewer._open_images_as_stack)
+        open_stack.setStatusTip('Open files')
+        open_stack.triggered.connect(
+            self.qt_viewer._open_files_dialog_as_stack_dialog
+        )
 
         open_folder = QAction('Open Folder...', self._qt_window)
         open_folder.setShortcut('Ctrl+Shift+O')
-        open_folder.setStatusTip(
-            'Open a folder of image file(s) or a zarr file'
-        )
-        open_folder.triggered.connect(self.qt_viewer._open_folder)
+        open_folder.setStatusTip('Open a folder')
+        open_folder.triggered.connect(self.qt_viewer._open_folder_dialog)
 
-        screenshot = QAction('Screenshot', self._qt_window)
-        screenshot.setShortcut('Ctrl+Alt+S')
+        save_selected_layers = QAction(
+            'Save Selected Layer(s)...', self._qt_window
+        )
+        save_selected_layers.setShortcut('Ctrl+S')
+        save_selected_layers.setStatusTip('Save selected layers')
+        save_selected_layers.triggered.connect(
+            lambda: self.qt_viewer._save_layers_dialog(selected=True)
+        )
+
+        save_all_layers = QAction('Save All Layers...', self._qt_window)
+        save_all_layers.setShortcut('Ctrl+Shift+S')
+        save_all_layers.setStatusTip('Save all layers')
+        save_all_layers.triggered.connect(
+            lambda: self.qt_viewer._save_layers_dialog(selected=False)
+        )
+
+        screenshot = QAction('Save Screenshot...', self._qt_window)
+        screenshot.setShortcut('Alt+S')
         screenshot.setStatusTip(
             'Save screenshot of current display, default .png'
         )
-        screenshot.triggered.connect(self.qt_viewer._save_screenshot)
+        screenshot.triggered.connect(self.qt_viewer._screenshot_dialog)
+
+        screenshot_wv = QAction(
+            'Save Screenshot with Viewer...', self._qt_window
+        )
+        screenshot_wv.setShortcut('Alt+Shift+S')
+        screenshot_wv.setStatusTip(
+            'Save screenshot of current display with the viewer, default .png'
+        )
+        screenshot_wv.triggered.connect(self._screenshot_dialog)
+
+        # OS X will rename this to Quit and put it in the app menu.
+        exitAction = QAction('Exit', self._qt_window)
+        exitAction.setShortcut('Ctrl+Q')
+        exitAction.setMenuRole(QAction.QuitRole)
+
+        def handle_exit():
+            # if the event loop was started in gui_qt() then the app will be
+            # named 'napari'. Since the Qapp was started by us, just close it.
+            if QApplication.applicationName() == 'napari':
+                QApplication.closeAllWindows()
+                QApplication.quit()
+            # otherwise, something else created the QApp before us (such as
+            # %gui qt IPython magic).  If we quit the app in this case, then
+            # *later* attemps to instantiate a napari viewer won't work until
+            # the event loop is restarted with app.exec_().  So rather than
+            # quit just close all the windows (and clear our app icon).
+            else:
+                QApplication.setWindowIcon(QIcon())
+                self.close()
+
+        exitAction.triggered.connect(handle_exit)
 
         self.file_menu = self.main_menu.addMenu('&File')
         self.file_menu.addAction(open_images)
         self.file_menu.addAction(open_stack)
         self.file_menu.addAction(open_folder)
+        self.file_menu.addSeparator()
+        self.file_menu.addAction(save_selected_layers)
+        self.file_menu.addAction(save_all_layers)
         self.file_menu.addAction(screenshot)
+        self.file_menu.addAction(screenshot_wv)
+        self.file_menu.addSeparator()
+        self.file_menu.addAction(exitAction)
 
     def _add_view_menu(self):
         """Add 'View' menu to app menubar."""
-        toggle_visible = QAction('Toggle menubar visibility', self._qt_window)
+        toggle_visible = QAction('Toggle Menubar Visibility', self._qt_window)
         toggle_visible.setShortcut('Ctrl+M')
         toggle_visible.setStatusTip('Hide Menubar')
         toggle_visible.triggered.connect(self._toggle_menubar_visible)
-        toggle_theme = QAction('Toggle theme', self._qt_window)
+        toggle_theme = QAction('Toggle Theme', self._qt_window)
         toggle_theme.setShortcut('Ctrl+Shift+T')
         toggle_theme.setStatusTip('Toggle theme')
         toggle_theme.triggered.connect(self.qt_viewer.viewer._toggle_theme)
@@ -182,7 +241,7 @@ class Window:
 
     def _add_window_menu(self):
         """Add 'Window' menu to app menubar."""
-        exit_action = QAction("Close window", self._qt_window)
+        exit_action = QAction("Close Window", self._qt_window)
         exit_action.setShortcut("Ctrl+W")
         exit_action.setStatusTip('Close napari window')
         exit_action.triggered.connect(self._qt_window.close)
@@ -191,18 +250,69 @@ class Window:
 
     def _add_plugins_menu(self):
         """Add 'Plugins' menu to app menubar."""
-        order_plugin_action = QAction("Plugin call order...", self._qt_window)
+        self.plugins_menu = self.main_menu.addMenu('&Plugins')
+
+        list_plugins_action = QAction(
+            "List Installed Plugins...", self._qt_window
+        )
+        list_plugins_action.setStatusTip('List installed plugins')
+        list_plugins_action.triggered.connect(self._show_plugin_list)
+        self.plugins_menu.addAction(list_plugins_action)
+
+        order_plugin_action = QAction("Plugin Call Order...", self._qt_window)
         order_plugin_action.setStatusTip('Change call order for plugins')
         order_plugin_action.triggered.connect(self._show_plugin_sorter)
-        self.plugins_menu = self.main_menu.addMenu('&Plugins')
         self.plugins_menu.addAction(order_plugin_action)
 
-        report_plugin_action = QAction("Plugin errors...", self._qt_window)
+        report_plugin_action = QAction("Plugin Errors...", self._qt_window)
         report_plugin_action.setStatusTip(
             'Review stack traces for plugin exceptions and notify developers'
         )
         report_plugin_action.triggered.connect(self._show_plugin_err_reporter)
         self.plugins_menu.addAction(report_plugin_action)
+
+    def _show_plugin_list(self, plugin_manager=None):
+        """Show dialog with a table of installed plugins and metadata."""
+        if not plugin_manager:
+            from ..plugins import plugin_manager
+
+        dialog = QDialog(self._qt_window)
+        dialog.setMaximumHeight(800)
+        dialog.setMaximumWidth(1280)
+        layout = QVBoxLayout()
+        # maybe someday add a search bar here?
+        title = QLabel("Installed Plugins")
+        title.setObjectName("h2")
+        layout.addWidget(title)
+        # get metadata for successfully registered plugins
+        plugin_manager.discover()
+        data = plugin_manager.list_plugin_metadata()
+        data = list(filter(lambda x: x['plugin_name'] != 'builtins', data))
+        # create a table for it
+        dialog.table = QtDictTable(
+            self._qt_window,
+            data,
+            headers=[
+                'plugin_name',
+                'package',
+                'version',
+                'url',
+                'author',
+                'license',
+            ],
+            min_section_width=60,
+        )
+        dialog.table.setObjectName("pluginTable")
+        dialog.table.horizontalHeader().setObjectName("pluginTableHeader")
+        dialog.table.verticalHeader().setObjectName("pluginTableHeader")
+        dialog.table.setGridStyle(Qt.NoPen)
+        # prevent editing of table
+        dialog.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
+        layout.addWidget(dialog.table)
+        dialog.setLayout(layout)
+        dialog.setAttribute(Qt.WA_DeleteOnClose)
+        self._plugin_list = dialog
+        dialog.exec_()
 
     def _show_plugin_sorter(self):
         """Show dialog that allows users to sort the call order of plugins."""
@@ -223,7 +333,7 @@ class Window:
         """Add 'Help' menu to app menubar."""
         self.help_menu = self.main_menu.addMenu('&Help')
 
-        about_action = QAction("napari info", self._qt_window)
+        about_action = QAction("napari Info", self._qt_window)
         about_action.setShortcut("Ctrl+/")
         about_action.setStatusTip('About napari')
         about_action.triggered.connect(
@@ -231,7 +341,7 @@ class Window:
         )
         self.help_menu.addAction(about_action)
 
-        about_key_bindings = QAction("Show key bindings", self._qt_window)
+        about_key_bindings = QAction("Show Key Bindings", self._qt_window)
         about_key_bindings.setShortcut("Ctrl+Alt+/")
         about_key_bindings.setShortcutContext(Qt.ApplicationShortcut)
         about_key_bindings.setStatusTip('key_bindings')
@@ -331,6 +441,8 @@ class Window:
         """Resize, show, and bring forward the window."""
         self._qt_window.resize(self._qt_window.layout().sizeHint())
         self._qt_window.show()
+        # Resize axis labels now that window is shown
+        self.qt_viewer.dims._resize_axis_labels()
 
         # We want to call Window._qt_window.raise_() in every case *except*
         # when instantiating a viewer within a gui_qt() context for the
@@ -390,6 +502,24 @@ class Window:
             Event from the Qt context.
         """
         self._help.setText(event.text)
+
+    def _screenshot_dialog(self):
+        """Save screenshot of current display with viewer, default .png"""
+        filename, _ = QFileDialog.getSaveFileName(
+            parent=self.qt_viewer,
+            caption='Save screenshot with viewer',
+            directory=self.qt_viewer._last_visited_dir,  # home dir by default
+            filter="Image files (*.png *.bmp *.gif *.tif *.tiff)",  # first one used by default
+            # jpg and jpeg not included as they don't support an alpha channel
+        )
+        if (filename != '') and (filename is not None):
+            # double check that an appropriate extension has been added as the
+            # filter option does not always add an extension on linux and windows
+            # see https://bugreports.qt.io/browse/QTBUG-27186
+            image_extensions = ('.bmp', '.gif', '.png', '.tif', '.tiff')
+            if not filename.endswith(image_extensions):
+                filename = filename + '.png'
+            self.screenshot(path=filename)
 
     def screenshot(self, path=None):
         """Take currently displayed viewer and convert to an image array.

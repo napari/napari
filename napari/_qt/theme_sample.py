@@ -40,7 +40,7 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from skimage.io import imsave
+from ..utils.io import imsave
 
 from .qt_range_slider import QHRangeSlider
 from ..resources import get_stylesheet

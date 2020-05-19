@@ -1,7 +1,8 @@
-from napari.components import LayerList
-from napari.layers import Image
+import os
 import numpy as np
 import pytest
+from napari.components import LayerList
+from napari.layers import Image
 
 
 def test_empty_layers_list():
@@ -393,3 +394,133 @@ def test_move_selected():
         False,
         False,
     ]
+
+
+def test_toggle_visibility():
+    """
+    Test toggling layer visibility
+    """
+    layers = LayerList()
+    layer_a = Image(np.random.random((10, 10)))
+    layer_b = Image(np.random.random((15, 15)))
+    layer_c = Image(np.random.random((15, 15)))
+    layer_d = Image(np.random.random((15, 15)))
+    layers.append(layer_a)
+    layers.append(layer_b)
+    layers.append(layer_c)
+    layers.append(layer_d)
+
+    layers[0].visible = False
+    layers[1].visible = True
+    layers[2].visible = False
+    layers[3].visible = True
+
+    layers.select_all()
+    layers[0].selected = False
+
+    layers.toggle_selected_visibility()
+
+    assert [l.visible for l in layers] == [False, False, True, False]
+
+    layers.toggle_selected_visibility()
+
+    assert [l.visible for l in layers] == [False, True, False, True]
+
+
+# the layer_data_and_types fixture is defined in napari/conftest.py
+def test_layers_save(tmpdir, layer_data_and_types):
+    """Test saving all layer data."""
+    list_of_layers, _, _, filenames = layer_data_and_types
+    layers = LayerList(list_of_layers)
+
+    path = os.path.join(tmpdir, 'layers_folder')
+
+    # Check folder does not exist
+    assert not os.path.isdir(path)
+
+    # Write data
+    layers.save(path, plugin='builtins')
+
+    # Check folder now exists
+    assert os.path.isdir(path)
+
+    # Check individual files now exist
+    for f in filenames:
+        assert os.path.isfile(os.path.join(path, f))
+
+    # Check no additional files exist
+    assert set(os.listdir(path)) == set(filenames)
+    assert set(os.listdir(tmpdir)) == set(['layers_folder'])
+
+
+# the layer_data_and_types fixture is defined in napari/conftest.py
+def test_layers_save_none_selected(tmpdir, layer_data_and_types):
+    """Test saving all layer data."""
+    list_of_layers, _, _, filenames = layer_data_and_types
+    layers = LayerList(list_of_layers)
+    layers.unselect_all()
+
+    path = os.path.join(tmpdir, 'layers_folder')
+
+    # Check folder does not exist
+    assert not os.path.isdir(path)
+
+    # Write data (will get a warning that nothing is selected)
+    with pytest.warns(UserWarning):
+        layers.save(path, selected=True, plugin='builtins')
+
+    # Check folder still does not exist
+    assert not os.path.isdir(path)
+
+    # Check individual files still do not exist
+    for f in filenames:
+        assert not os.path.isfile(os.path.join(path, f))
+
+    # Check no additional files exist
+    assert set(os.listdir(tmpdir)) == set('')
+
+
+# the layer_data_and_types fixture is defined in napari/conftest.py
+def test_layers_save_seleteced(tmpdir, layer_data_and_types):
+    """Test saving all layer data."""
+    list_of_layers, _, _, filenames = layer_data_and_types
+    layers = LayerList(list_of_layers)
+    layers.unselect_all()
+    layers[0].selected = True
+    layers[2].selected = True
+
+    path = os.path.join(tmpdir, 'layers_folder')
+
+    # Check folder does not exist
+    assert not os.path.isdir(path)
+
+    # Write data
+    layers.save(path, selected=True, plugin='builtins')
+
+    # Check folder exists
+    assert os.path.isdir(path)
+
+    # Check only appropriate files exist
+    assert os.path.isfile(os.path.join(path, filenames[0]))
+    assert not os.path.isfile(os.path.join(path, filenames[1]))
+    assert os.path.isfile(os.path.join(path, filenames[2]))
+    assert not os.path.isfile(os.path.join(path, filenames[1]))
+
+    # Check no additional files exist
+    assert set(os.listdir(path)) == set([filenames[0], filenames[2]])
+    assert set(os.listdir(tmpdir)) == set(['layers_folder'])
+
+
+# the layers fixture is defined in napari/conftest.py
+def test_layers_save_svg(tmpdir, layers):
+    """Test saving all layer data to an svg."""
+    path = os.path.join(tmpdir, 'layers_file.svg')
+
+    # Check file does not exist
+    assert not os.path.isfile(path)
+
+    # Write data
+    layers.save(path, plugin='svg')
+
+    # Check file now exists
+    assert os.path.isfile(path)

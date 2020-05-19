@@ -1,6 +1,5 @@
 """Provides a QtPluginErrReporter that allows the user report plugin errors.
 """
-import webbrowser
 from typing import Optional
 
 from qtpy.QtCore import Qt
@@ -16,11 +15,8 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ..plugins.exceptions import (
-    PLUGIN_ERRORS,
-    fetch_module_metadata,
-    format_exceptions,
-)
+from ..plugins.exceptions import format_exceptions
+from napari_plugin_engine import PluginManager, standard_metadata
 
 
 class QtPluginErrReporter(QDialog):
@@ -56,11 +52,18 @@ class QtPluginErrReporter(QDialog):
 
     def __init__(
         self,
-        parent: Optional[QWidget] = None,
+        plugin_manager: Optional[PluginManager] = None,
         *,
+        parent: Optional[QWidget] = None,
         initial_plugin: Optional[str] = None,
     ) -> None:
         super().__init__(parent)
+        if not plugin_manager:
+            from ..plugins import plugin_manager as _pm
+
+            self.plugin_manager = _pm
+        else:
+            self.plugin_manager = plugin_manager
 
         self.setWindowTitle('Recorded Plugin Exceptions')
         self.setWindowModality(Qt.NonModal)
@@ -76,7 +79,8 @@ class QtPluginErrReporter(QDialog):
         # Create plugin dropdown menu
         self.plugin_combo = QComboBox()
         self.plugin_combo.addItem(self.NULL_OPTION)
-        self.plugin_combo.addItems(list(sorted(set(PLUGIN_ERRORS))))
+        bad_plugins = [e.plugin_name for e in self.plugin_manager.get_errors()]
+        self.plugin_combo.addItems(list(sorted(set(bad_plugins))))
         self.plugin_combo.currentTextChanged.connect(self.set_plugin)
         self.plugin_combo.setCurrentText(self.NULL_OPTION)
 
@@ -132,9 +136,6 @@ class QtPluginErrReporter(QDialog):
         plugin : str
             name of a plugin that has created an error this session.
         """
-        if plugin not in PLUGIN_ERRORS:
-            raise ValueError("No errors reported for plugin '{plugin}'")
-        self.plugin_combo.setCurrentText(plugin)
         self.github_button.hide()
         self.clipboard_button.hide()
         try:
@@ -144,13 +145,22 @@ class QtPluginErrReporter(QDialog):
         except (RuntimeError, TypeError):
             pass
 
+        if not plugin or (plugin == self.NULL_OPTION):
+            self.plugin_meta.setText('')
+            self.text_area.setHtml('')
+            return
+
+        if not self.plugin_manager.get_errors(plugin):
+            raise ValueError(f"No errors reported for plugin '{plugin}'")
+        self.plugin_combo.setCurrentText(plugin)
+
         err_string = format_exceptions(plugin, as_html=True)
         self.text_area.setHtml(err_string)
         self.clipboard_button.show()
 
         # set metadata and outbound links/buttons
-        err0 = PLUGIN_ERRORS[plugin][0]
-        meta = fetch_module_metadata(err0.plugin_module)
+        err0 = self.plugin_manager.get_errors(plugin)[0]
+        meta = standard_metadata(err0.plugin) if err0.plugin else {}
         meta_text = ''
         if not meta:
             self.plugin_meta.setText(meta_text)
@@ -159,24 +169,26 @@ class QtPluginErrReporter(QDialog):
         url = meta.get('url')
         if url:
             meta_text += (
-                '<span style="color:#999;">plugin home page:&nbsp;&nbsp;</span>'
-                f'<a href="{url}" style="color:#999">{url}</a>'
+                '<span style="color:#999;">plugin home page:&nbsp;&nbsp;'
+                f'</span><a href="{url}" style="color:#999">{url}</a>'
             )
+            if 'github.com' in url:
+
+                def onclick():
+                    import webbrowser
+
+                    err = format_exceptions(plugin, as_html=False)
+                    err = (
+                        "<!--Provide detail on the error here-->\n\n\n\n"
+                        "<details>\n<summary>Traceback from napari</summary>"
+                        f"\n\n```\n{err}\n```\n</details>"
+                    )
+                    url = f'{meta.get("url")}/issues/new?&body={err}'
+                    webbrowser.open(url, new=2)
+
+                self.github_button.clicked.connect(onclick)
+                self.github_button.show()
         self.plugin_meta.setText(meta_text)
-        if 'github.com' in meta.get('url', ''):
-
-            def onclick():
-                err = format_exceptions(plugin, as_html=False)
-                err = (
-                    "<!--Provide detail on the error here-->\n\n\n\n"
-                    "<details>\n<summary>Traceback from napari</summary>"
-                    f"\n\n```\n{err}\n```\n</details>"
-                )
-                url = f'{meta.get("url")}/issues/new?&body={err}'
-                webbrowser.open(url, new=2)
-
-            self.github_button.clicked.connect(onclick)
-            self.github_button.show()
 
     def copyToClipboard(self) -> None:
         """Copy current plugin traceback info to clipboard as plain text."""

@@ -1,11 +1,9 @@
 import types
 import warnings
-from base64 import b64encode
-from typing import List, Union, Optional, Tuple, Sequence, cast, Dict, Any
-from xml.etree.ElementTree import Element
+from typing import Any, Dict, List, Optional, Sequence, Tuple, Union, cast
+
 
 import numpy as np
-from imageio import imwrite
 from scipy import ndimage as ndi
 
 from ...types import ArrayLike, ValidColormapArg
@@ -15,8 +13,8 @@ from ...utils.status_messages import format_float
 from ..base import Layer
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
-from ._image_constants import Interpolation, Rendering
-from ._image_utils import get_pyramid_and_rgb
+from ._image_constants import Interpolation, Interpolation3D, Rendering
+from ._image_utils import guess_multiscale, guess_rgb
 
 
 # Mixin must come before Layer
@@ -29,17 +27,11 @@ class Image(IntensityVisualizationMixin, Layer):
         Image data. Can be N dimensional. If the last dimension has length
         3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a
         list and arrays are decreasing in shape then the data is treated as
-        an image pyramid.
+        a multiscale image.
     rgb : bool
         Whether the image is rgb RGB or RGBA. If not specified by user and
         the last dimension of the data has length 3 or 4 it will be set as
         `True`. If `False` the image is interpreted as a luminance image.
-    is_pyramid : bool
-        Whether the data is an image pyramid or not. Pyramid data is
-        represented by a list of array like image data. If not specified by
-        the user and if the data is a list of arrays that decrease in shape
-        then it will be taken to be a pyramid. The first image in the list
-        should be the largest.
     colormap : str, vispy.Color.Colormap, tuple, dict
         Colormap to use for luminance images. If a string must be the name
         of a supported colormap from vispy or matplotlib. If a tuple the
@@ -79,15 +71,20 @@ class Image(IntensityVisualizationMixin, Layer):
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
-
+    multiscale : bool
+        Whether the data is a multiscale image or not. Multiscale data is
+        represented by a list of array like image data. If not specified by
+        the user and if the data is a list of arrays that decrease in shape
+        then it will be taken to be multiscale. The first image in the list
+        should be the largest.
 
     Attributes
     ----------
-    data : array
+    data : array or list of array
         Image data. Can be N dimensional. If the last dimension has length
         3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a list
-        and arrays are decreaing in shape then the data is treated as an
-        image pyramid.
+        and arrays are decreaing in shape then the data is treated as a
+        multiscale image.
     metadata : dict
         Image metadata.
     rgb : bool
@@ -95,8 +92,8 @@ class Image(IntensityVisualizationMixin, Layer):
         specified by user and the last dimension of the data has length 3 or 4
         it will be set as `True`. If `False` the image is interpreted as a
         luminance image.
-    is_pyramid : bool
-        Whether the data is an image pyramid or not. Pyramid data is
+    multiscale : bool
+        Whether the data is a multiscale image or not. Multiscale data is
         represented by a list of array like image data. The first image in the
         list should be the largest.
     colormap : 2-tuple of str, vispy.color.Colormap
@@ -135,14 +132,12 @@ class Image(IntensityVisualizationMixin, Layer):
     """
 
     _colormaps = AVAILABLE_COLORMAPS
-    _max_tile_shape = 1600
 
     def __init__(
         self,
         data: Union[ArrayLike, List[ArrayLike]],
         *,
         rgb: Optional[bool] = None,
-        is_pyramid: Optional[bool] = None,
         colormap: ValidColormapArg = 'gray',
         contrast_limits: Optional[Tuple[float, float]] = None,
         gamma: float = 1,
@@ -157,13 +152,30 @@ class Image(IntensityVisualizationMixin, Layer):
         opacity: float = 1,
         blending: str = 'translucent',
         visible: bool = True,
+        multiscale: Optional[bool] = None,
     ):
         if isinstance(data, types.GeneratorType):
             data = list(data)
 
-        ndim, rgb, is_pyramid, data_pyramid = get_pyramid_and_rgb(
-            data, pyramid=is_pyramid, rgb=rgb
-        )
+        # Determine if data is a multiscale
+        if multiscale is None:
+            multiscale, data = guess_multiscale(data)
+
+        # Determine initial shape
+        if multiscale:
+            init_shape = data[0].shape
+        else:
+            init_shape = data.shape
+
+        # Determine if rgb
+        if rgb is None:
+            rgb = guess_rgb(init_shape)
+
+        # Determine dimensionality of the data
+        if rgb:
+            ndim = len(init_shape) - 1
+        else:
+            ndim = len(init_shape)
 
         super().__init__(
             data,
@@ -175,6 +187,7 @@ class Image(IntensityVisualizationMixin, Layer):
             opacity=opacity,
             blending=blending,
             visible=visible,
+            multiscale=multiscale,
         )
 
         self.events.add(
@@ -185,13 +198,25 @@ class Image(IntensityVisualizationMixin, Layer):
         )
 
         # Set data
-        self.is_pyramid = is_pyramid
         self.rgb = rgb
         self._data = data
-        self._data_pyramid = data_pyramid
-        self._top_left = np.zeros(ndim, dtype=int)
-        # XXX: is it ok to let _data_level be -1 if not self.is_pyramid?
-        self._data_level = len(data_pyramid) - 1
+        if self.multiscale:
+            self._data_level = len(self.data) - 1
+            # Determine which level of the multiscale to use for the thumbnail.
+            # Pick the smallest level with at least one axis >= 64. This is
+            # done to prevent the thumbnail from being from one of the very
+            # low resolution layers and therefore being very blurred.
+            big_enough_levels = [
+                np.any(np.greater_equal(p.shape, 64)) for p in data
+            ]
+            if np.any(big_enough_levels):
+                self._thumbnail_level = np.where(big_enough_levels)[0][-1]
+            else:
+                self._thumbnail_level = 0
+        else:
+            self._data_level = 0
+            self._thumbnail_level = 0
+        self.corner_pixels[1] = self.level_shapes[self._data_level]
 
         # Intitialize image views and thumbnails with zeros
         if self.rgb:
@@ -214,6 +239,14 @@ class Image(IntensityVisualizationMixin, Layer):
         self._contrast_limits = tuple(self.contrast_limits_range)
         self.colormap = colormap
         self.contrast_limits = self._contrast_limits
+        self._interpolation = {
+            2: Interpolation.NEAREST,
+            3: (
+                Interpolation3D.NEAREST
+                if self.__class__.__name__ == 'Labels'
+                else Interpolation3D.LINEAR
+            ),
+        }
         self.interpolation = interpolation
         self.rendering = rendering
 
@@ -221,15 +254,15 @@ class Image(IntensityVisualizationMixin, Layer):
         self._update_dims()
 
     def _calc_data_range(self) -> Tuple[float, float]:
-        if self.is_pyramid:
-            input_data = self._data_pyramid[-1]
+        if self.multiscale:
+            input_data = self.data[-1]
         else:
             input_data = self.data
         return calc_data_range(input_data)
 
     @property
     def dtype(self) -> np.dtype:
-        if self.is_pyramid:
+        if self.multiscale:
             return self.data[0].dtype
         else:
             return cast(ArrayLike, self.data).dtype
@@ -241,14 +274,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @data.setter
     def data(self, data: Union[ArrayLike, List[ArrayLike]]):
-        ndim, rgb, is_pyramid, data_pyramid = get_pyramid_and_rgb(
-            data, pyramid=self.is_pyramid, rgb=self.rgb
-        )
-        self.is_pyramid = is_pyramid
-        self.rgb = rgb
         self._data = data
-        self._data_pyramid = data_pyramid
-
         self._update_dims()
         self.events.data()
 
@@ -262,7 +288,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @property
     def data_level(self) -> int:
-        """int: Current level of pyramid, or -1 if image."""
+        """int: Current level of multiscale, or 0 if image."""
         return self._data_level
 
     @data_level.setter
@@ -274,12 +300,12 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @property
     def level_shapes(self) -> np.ndarray:
-        """array: Shapes of each level of the pyramid or just of image."""
-        if self.is_pyramid:
+        """array: Shapes of each level of the multiscale or just of image."""
+        if self.multiscale:
             if self.rgb:
-                shapes = [im.shape[:-1] for im in self._data_pyramid]
+                shapes = [im.shape[:-1] for im in self.data]
             else:
-                shapes = [im.shape for im in self._data_pyramid]
+                shapes = [im.shape for im in self.data]
         else:
             data = cast(ArrayLike, self.data)
             shapes = [data.shape[:-1]] if self.rgb else [data.shape]
@@ -287,21 +313,9 @@ class Image(IntensityVisualizationMixin, Layer):
         return np.array(shapes)
 
     @property
-    def level_downsamples(self) -> np.ndarray:
-        """list: Downsample factors for each level of the pyramid."""
+    def downsample_factors(self):
+        """list: Downsample factors for each level of the multiscale."""
         return np.divide(self.level_shapes[0], self.level_shapes)
-
-    @property
-    def top_left(self) -> np.ndarray:
-        """tuple: Location of top left canvas pixel in image."""
-        return self._top_left
-
-    @top_left.setter
-    def top_left(self, top_left: np.ndarray):
-        if np.all(self._top_left == top_left):
-            return
-        self._top_left = top_left.astype(int)
-        self.refresh()
 
     @property
     def iso_threshold(self) -> float:
@@ -329,42 +343,69 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @property
     def interpolation(self) -> str:
-        """{
-            'bessel', 'bicubic', 'bilinear', 'blackman', 'catrom', 'gaussian',
-            'hamming', 'hanning', 'hermite', 'kaiser', 'lanczos', 'mitchell',
-            'nearest', 'spline16', 'spline36'
-            }: Equipped interpolation method's name.
+        """Return current interpolation mode.
+
+        Selects a preset interpolation mode in vispy that determines how volume
+        is displayed.  Makes use of the two Texture2D interpolation methods and
+        the available interpolation methods defined in
+        vispy/gloo/glsl/misc/spatial_filters.frag
+
+        Options include:
+        'bessel', 'bicubic', 'bilinear', 'blackman', 'catrom', 'gaussian',
+        'hamming', 'hanning', 'hermite', 'kaiser', 'lanczos', 'mitchell',
+        'nearest', 'spline16', 'spline36'
+
+        Returns
+        -------
+        str
+            The current interpolation mode
         """
-        return str(self._interpolation)
+        return str(self._interpolation[self.dims.ndisplay])
 
     @interpolation.setter
     def interpolation(self, interpolation: str):
-        self._interpolation = Interpolation(interpolation)
+        """Set current interpolation mode."""
+        if self.dims.ndisplay == 3:
+            self._interpolation[self.dims.ndisplay] = Interpolation3D(
+                interpolation
+            )
+        else:
+            self._interpolation[self.dims.ndisplay] = Interpolation(
+                interpolation
+            )
         self.events.interpolation()
 
     @property
-    def rendering(self) -> str:
-        """Rendering: Rendering mode.
-            Selects a preset rendering mode in vispy that determines how
-            volume is displayed
-            * translucent: voxel colors are blended along the view ray until
-              the result is opaque.
-            * mip: maxiumum intensity projection. Cast a ray and display the
-              maximum value that was encountered.
-            * additive: voxel colors are added along the view ray until
-              the result is saturated.
-            * iso: isosurface. Cast a ray until a certain threshold is
-              encountered. At that location, lighning calculations are
-              performed to give the visual appearance of a surface.
-            * attenuated_mip: attenuated maxiumum intensity projection. Cast a
-              ray and attenuate values based on integral of encountered values,
-              display the maximum value that was encountered after attenuation.
-              This will make nearer objects appear more prominent.
+    def rendering(self):
+        """Return current rendering mode.
+
+        Selects a preset rendering mode in vispy that determines how
+        volume is displayed.  Options include:
+
+        * ``translucent``: voxel colors are blended along the view ray until
+          the result is opaque.
+        * ``mip``: maxiumum intensity projection. Cast a ray and display the
+          maximum value that was encountered.
+        * ``additive``: voxel colors are added along the view ray until the
+          result is saturated.
+        * ``iso``: isosurface. Cast a ray until a certain threshold is
+          encountered. At that location, lighning calculations are performed to
+          give the visual appearance of a surface.
+        * ``attenuated_mip``: attenuated maxiumum intensity projection. Cast a
+          ray and attenuate values based on integral of encountered values,
+          display the maximum value that was encountered after attenuation.
+          This will make nearer objects appear more prominent.
+
+        Returns
+        -------
+        str
+            The current rendering mode
         """
         return str(self._rendering)
 
     @rendering.setter
     def rendering(self, rendering: str):
+        """Set current rendering mode."""
         self._rendering = Rendering(rendering)
         self.events.rendering()
 
@@ -380,7 +421,7 @@ class Image(IntensityVisualizationMixin, Layer):
         state.update(
             {
                 'rgb': self.rgb,
-                'is_pyramid': self.is_pyramid,
+                'multiscale': self.multiscale,
                 'colormap': self.colormap[0],
                 'contrast_limits': self.contrast_limits,
                 'interpolation': self.interpolation,
@@ -425,16 +466,16 @@ class Image(IntensityVisualizationMixin, Layer):
         else:
             order = self.dims.displayed_order
 
-        if self.is_pyramid:
-            # If 3d redering just show lowest level of pyramid
+        if self.multiscale:
+            # If 3d redering just show lowest level of multiscale
             if self.dims.ndisplay == 3:
-                self.data_level = len(self._data_pyramid) - 1
+                self.data_level = len(self.data) - 1
 
             # Slice currently viewed level
             level = self.data_level
             indices = np.array(self.dims.indices)
             downsampled_indices = (
-                indices[not_disp] / self.level_downsamples[level, not_disp]
+                indices[not_disp] / self.downsample_factors[level, not_disp]
             )
             downsampled_indices = np.round(
                 downsampled_indices.astype(float)
@@ -444,69 +485,68 @@ class Image(IntensityVisualizationMixin, Layer):
             )
             indices[not_disp] = downsampled_indices
 
-            disp_shape = self.level_shapes[level, self.dims.displayed]
             scale = np.ones(self.ndim)
             for d in self.dims.displayed:
-                scale[d] = self.level_downsamples[self.data_level][d]
+                scale[d] = self.downsample_factors[self.data_level][d]
             self._transforms['tile2data'].scale = scale
 
-            if np.any(disp_shape > self._max_tile_shape):
+            if self.dims.ndisplay == 2:
+                corner_pixels = np.clip(
+                    self.corner_pixels,
+                    0,
+                    np.subtract(self.level_shapes[self.data_level], 1),
+                )
+
                 for d in self.dims.displayed:
                     indices[d] = slice(
-                        self._top_left[d],
-                        self._top_left[d] + self._max_tile_shape,
-                        1,
+                        corner_pixels[0, d], corner_pixels[1, d] + 1, 1
                     )
-                # Note that top left marks the location of top left canvas
-                # pixel in data coordinates
                 self._transforms['tile2data'].translate = (
-                    self._top_left
+                    corner_pixels[0]
                     * self._transforms['data2world'].scale
                     * self._transforms['tile2data'].scale
                 )
-            else:
-                self._transforms['tile2data'].translate = [0] * self.ndim
 
-            image = np.asarray(
-                self._data_pyramid[level][tuple(indices)]
+            image = np.transpose(
+                np.asarray(self.data[level][tuple(indices)]), order
+            )
+
+            # Slice thumbnail
+            indices = np.array(self.dims.indices)
+            downsampled_indices = (
+                indices[not_disp]
+                / self.downsample_factors[self._thumbnail_level, not_disp]
+            )
+            downsampled_indices = np.round(
+                downsampled_indices.astype(float)
+            ).astype(int)
+            downsampled_indices = np.clip(
+                downsampled_indices,
+                0,
+                self.level_shapes[self._thumbnail_level, not_disp] - 1,
+            )
+            indices[not_disp] = downsampled_indices
+            thumbnail_source = np.asarray(
+                self.data[self._thumbnail_level][tuple(indices)]
             ).transpose(order)
-
-            if level == len(self._data_pyramid) - 1:
-                thumbnail = image
-            else:
-                # Slice thumbnail
-                indices = np.array(self.dims.indices)
-                downsampled_indices = (
-                    indices[not_disp] / self.level_downsamples[-1, not_disp]
-                )
-                downsampled_indices = np.round(
-                    downsampled_indices.astype(float)
-                ).astype(int)
-                downsampled_indices = np.clip(
-                    downsampled_indices, 0, self.level_shapes[-1, not_disp] - 1
-                )
-                indices[not_disp] = downsampled_indices
-                thumbnail = np.asarray(
-                    self._data_pyramid[-1][tuple(indices)]
-                ).transpose(order)
         else:
             self._transforms['tile2data'].scale = np.ones(self.dims.ndim)
             image = np.asarray(self.data[self.dims.indices]).transpose(order)
-            thumbnail = image
+            thumbnail_source = image
 
         if self.rgb and image.dtype.kind == 'f':
             self._data_raw = np.clip(image, 0, 1)
             self._data_view = self._raw_to_displayed(self._data_raw)
             self._data_thumbnail = self._raw_to_displayed(
-                np.clip(thumbnail, 0, 1)
+                np.clip(thumbnail_source, 0, 1)
             )
 
         else:
             self._data_raw = image
             self._data_view = self._raw_to_displayed(self._data_raw)
-            self._data_thumbnail = self._raw_to_displayed(thumbnail)
+            self._data_thumbnail = self._raw_to_displayed(thumbnail_source)
 
-        if self.is_pyramid:
+        if self.multiscale:
             self.events.scale()
             self.events.translate()
 
@@ -595,41 +635,7 @@ class Image(IntensityVisualizationMixin, Layer):
         else:
             value = None
 
-        if self.is_pyramid:
+        if self.multiscale:
             value = (self.data_level, value)
 
         return value
-
-    def to_xml_list(self) -> List[Element]:
-        """Generates a list with a single xml element that defines the
-        currently viewed image as a png according to the svg specification.
-
-        Returns
-        ----------
-        xml : list of xml.etree.ElementTree.Element
-            List of a single xml element specifying the currently viewed image
-            as a png according to the svg specification.
-        """
-        if self.dims.ndisplay == 3:
-            image = np.max(self._data_thumbnail, axis=0)
-        else:
-            image = self._data_thumbnail
-        image = np.clip(
-            image, self.contrast_limits[0], self.contrast_limits[1]
-        )
-        image = image - self.contrast_limits[0]
-        color_range = self.contrast_limits[1] - self.contrast_limits[0]
-        if color_range != 0:
-            image = image / color_range
-        mapped_image = self.colormap[1][image.ravel()]
-        mapped_image = mapped_image.RGBA.reshape(image.shape + (4,))
-        image_str = imwrite('<bytes>', mapped_image, format='png')
-        image_str = "data:image/png;base64," + str(b64encode(image_str))[2:-1]
-        props = {'xlink:href': image_str}
-        width = str(self.shape[self.dims.displayed[1]])
-        height = str(self.shape[self.dims.displayed[0]])
-        opacity = str(self.opacity)
-        xml = Element(
-            'image', width=width, height=height, opacity=opacity, **props
-        )
-        return [xml]

@@ -111,12 +111,6 @@ def test_signature(layer):
     class_parameters = dict(inspect.signature(layer.__init__).parameters)
     method_parameters = dict(inspect.signature(method).parameters)
 
-    # Remove path and data parameters from viewer method if path exists
-    if 'path' in method_parameters:
-        del method_parameters['path']
-        del method_parameters['data']
-        del class_parameters['data']
-
     fail_msg = f"signatures don't match for class {name}"
     if name == 'Image':
         # If Image just test that class params appear in method
@@ -127,9 +121,24 @@ def test_signature(layer):
 
     code = inspect.getsource(method)
 
-    args = re.search(rf'layer = layers\.{name}\((.+?)\)', code, flags=re.S)
-    # get the arguments & normalize whitepsace
-    args = ' '.join(args.group(1).split())
+    # Below, we test that somewhere in the source code of the method, a call to
+    # the corresponding Layer.__init__ method is made that has all of the same
+    # parameters.  add_image has a special implementation, and therefore
+    # requires a modified test.
+    if name == 'Image':
+        # it becomes very cumbersome to have to type out all of the
+        # parameters in add_image for both single images, and all the iterables
+        # when channel_axis is supplied, so the approach was changed in
+        # https://github.com/napari/napari/pull/1092
+        # this makes sure we're still passing all the proper arguments
+        args = re.search(r'kwargs = \{(.+?)\}', code, flags=re.S)
+        args = ' '.join(args.group(1).split())
+        # convert 'arg': arg -> arg=arg
+        args = 'data, ' + re.sub(r"['\"]([^'\"]+)['\"]:\s?", '\\1=', args)
+    else:
+        args = re.search(rf'layer = layers\.{name}\((.+?)\)', code, flags=re.S)
+        # get the arguments & normalize whitepsace
+        args = ' '.join(args.group(1).split())
 
     if args.endswith(','):  # remove tailing comma if present
         args = args[:-1]
@@ -144,5 +153,8 @@ def test_signature(layer):
     try:
         assert args == autogen
     except AssertionError as e:
-        msg = f'arguments improperly passed from convenience method to layer {name}'  # noqa: E501
+        msg = (
+            'arguments improperly passed from convenience '
+            f'method to layer {name}'
+        )
         raise SyntaxError(msg) from e
