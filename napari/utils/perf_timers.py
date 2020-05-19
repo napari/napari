@@ -1,20 +1,34 @@
 """Timers for monitoring performance.
 """
+from contextlib import contextmanager
 import os
 import time
 import sys
 
 from .tracing import ChromeTracingFile
 
-
-# time.perf_counter_ns() was added in Python 3.7. In order to support
-# Python 3.6 we define our own version.
+# Custom perf_counter_ns() for pre Python 3.7.
 if sys.version_info[:2] >= (3, 7):
     perf_counter_ns = time.perf_counter_ns
 else:
 
     def perf_counter_ns():
         return int(time.perf_counter() * 1e9)
+
+
+@contextmanager
+def perf_timer(timer_name):
+    """Context manager to time a block of code.
+
+    Example
+    -------
+    with perf_timer("calculate"):
+        self.calculate()
+    """
+    start_ns = perf_counter_ns()
+    yield
+    end_ns = perf_counter_ns()
+    TIMERS.record(timer_name, start_ns, end_ns)
 
 
 class PerfTimer:
