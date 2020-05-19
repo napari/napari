@@ -5,7 +5,6 @@ from os.path import dirname, join
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import QApplication, QSplashScreen
-from qtpy.QtCore import Qt
 
 
 @contextmanager
