@@ -1,5 +1,9 @@
-import numpy as np
+from typing import Tuple, List
 
+import numpy as np
+from vispy.color import Colormap
+
+from ..types import ValidColormapArg
 from ..utils.colormaps import ensure_colormap_tuple, make_colorbar
 from ..utils.event import Event
 from ..utils.status_messages import format_float
@@ -22,18 +26,18 @@ class IntensityVisualizationMixin:
         super().__init__(*args, **kwargs)
 
         self.events.add(contrast_limits=Event, gamma=Event, colormap=Event)
-        self._gamma = 1
+        self._gamma = 1.0
         self._colormap_name = ''
         self._contrast_limits_msg = ''
         self._contrast_limits = [None, None]
         self._contrast_limits_range = [None, None]
 
-    def reset_contrast_limits(self):
+    def reset_contrast_limits(self) -> None:
         """Scale contrast limits to data range"""
         data_range = self._calc_data_range()
         self.contrast_limits = data_range
 
-    def reset_contrast_limits_range(self):
+    def reset_contrast_limits_range(self) -> None:
         """Scale contrast limits range to data type.
 
         Currently, this only does something if the data type is an unsigned
@@ -44,13 +48,13 @@ class IntensityVisualizationMixin:
             self.contrast_limits_range = (info.min, info.max)
 
     @property
-    def colormap(self):
+    def colormap(self) -> Tuple[str, Colormap]:
         """2-tuple of str, vispy.color.Colormap: colormap for luminance images.
         """
         return self._colormap_name, self._cmap
 
     @colormap.setter
-    def colormap(self, colormap):
+    def colormap(self, colormap: ValidColormapArg):
         name, cmap = ensure_colormap_tuple(colormap)
         self._colormap_name = name
         self._cmap = cmap
@@ -59,17 +63,17 @@ class IntensityVisualizationMixin:
         self.events.colormap()
 
     @property
-    def colormaps(self):
+    def colormaps(self) -> Tuple[str, ...]:
         """tuple of str: names of available colormaps."""
         return tuple(self._colormaps.keys())
 
     @property
-    def contrast_limits(self):
+    def contrast_limits(self) -> List[float]:
         """list of float: Limits to use for the colormap."""
         return list(self._contrast_limits)
 
     @contrast_limits.setter
-    def contrast_limits(self, contrast_limits):
+    def contrast_limits(self, contrast_limits: Tuple[float, float]):
         validate_2_tuple(contrast_limits)
         self._contrast_limits_msg = (
             format_float(contrast_limits[0])
@@ -87,12 +91,12 @@ class IntensityVisualizationMixin:
         self.events.contrast_limits()
 
     @property
-    def contrast_limits_range(self):
+    def contrast_limits_range(self) -> List[float]:
         """The current valid range of the contrast limits."""
         return list(self._contrast_limits_range)
 
     @contrast_limits_range.setter
-    def contrast_limits_range(self, value):
+    def contrast_limits_range(self, value: List[float]):
         """Set the valid range of the contrast limits"""
         validate_2_tuple(value)
         if list(value) == self.contrast_limits_range:
@@ -116,11 +120,11 @@ class IntensityVisualizationMixin:
             self.events.contrast_limits()
 
     @property
-    def gamma(self):
+    def gamma(self) -> float:
         return self._gamma
 
     @gamma.setter
-    def gamma(self, value):
+    def gamma(self, value: float):
         self.status = format_float(value)
         self._gamma = value
         self._update_thumbnail()

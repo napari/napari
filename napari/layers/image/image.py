@@ -140,7 +140,7 @@ class Image(IntensityVisualizationMixin, Layer):
         rgb: Optional[bool] = None,
         colormap: ValidColormapArg = 'gray',
         contrast_limits: Optional[Tuple[float, float]] = None,
-        gamma: float = 1,
+        gamma: float = 1.0,
         interpolation: str = 'nearest',
         rendering: str = 'mip',
         iso_threshold: float = 0.5,

@@ -1,12 +1,14 @@
 import warnings
+from typing import Optional, Sequence, Tuple
 
 import numpy as np
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.event import Event
 from ..base import Layer
-from ..utils.layer_utils import calc_data_range
 from ..intensity_mixin import IntensityVisualizationMixin
+from ..utils.layer_utils import calc_data_range
+from ...types import ValidColormapArg
 
 
 # Mixin must come before Layer
@@ -97,16 +99,16 @@ class Surface(IntensityVisualizationMixin, Layer):
         self,
         data,
         *,
-        colormap='gray',
-        contrast_limits=None,
-        gamma=1,
-        name=None,
-        metadata=None,
-        scale=None,
-        translate=None,
-        opacity=1,
-        blending='translucent',
-        visible=True,
+        colormap: ValidColormapArg = 'gray',
+        contrast_limits: Optional[Tuple[float, float]] = None,
+        gamma: float = 1.0,
+        name: Optional[str] = None,
+        metadata: Optional[dict] = None,
+        scale: Optional[Sequence[float]] = None,
+        translate: Optional[Sequence[float]] = None,
+        opacity: float = 1,
+        blending: str = 'translucent',
+        visible: bool = True,
     ):
 
         ndim = data[0].shape[1]
@@ -138,7 +140,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         # Data containing vectors in the currently viewed slice
         self._data_view = np.zeros((0, self.dims.ndisplay))
         self._view_faces = np.zeros((0, 3))
-        self._view_vertex_values = []
+        self._view_vertex_values: np.ndarray = []
 
         # assign mesh data and establish default behavior
         self._vertices = data[0]
@@ -152,19 +154,19 @@ class Surface(IntensityVisualizationMixin, Layer):
         return calc_data_range(self.vertex_values)
 
     @property
-    def dtype(self):
+    def dtype(self) -> np.dtype:
         return self.vertex_values.dtype
 
     @property
-    def data(self):
+    def data(self) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
         return (self.vertices, self.faces, self.vertex_values)
 
     @property
-    def vertices(self):
+    def vertices(self) -> np.ndarray:
         return self._vertices
 
     @vertices.setter
-    def vertices(self, vertices):
+    def vertices(self, vertices: np.ndarray):
         """Array of vertices of mesh triangles."""
 
         self._vertices = vertices
@@ -199,12 +201,12 @@ class Surface(IntensityVisualizationMixin, Layer):
         self.refresh()
         self.events.data()
 
-    def _get_ndim(self):
+    def _get_ndim(self) -> int:
         """Determine number of dimensions of the layer."""
         return self.vertices.shape[1] + (self.vertex_values.ndim - 1)
 
-    def _get_extent(self):
-        """Determine ranges for slicing given by (min, max, step)."""
+    def _get_extent(self) -> Tuple[Tuple[int, int], ...]:
+        """Determine ranges for slicing given by (min, max)."""
         if len(self.vertices) == 0:
             maxs = np.ones(self.vertices.shape[1], dtype=int)
             mins = np.zeros(self.vertices.shape[1], dtype=int)
@@ -219,9 +221,9 @@ class Surface(IntensityVisualizationMixin, Layer):
             mins = [0] * (self.vertex_values.ndim - 1) + list(mins)
             maxs = list(self.vertex_values.shape[:-1]) + list(maxs)
 
-        return [(min, max) for min, max in zip(mins, maxs)]
+        return tuple((min, max) for min, max in zip(mins, maxs))
 
-    def _get_state(self):
+    def _get_state(self) -> dict:
         """Get dictionary of layer state.
 
         Returns
@@ -240,7 +242,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         )
         return state
 
-    def _set_view_slice(self):
+    def _set_view_slice(self) -> None:
         """Sets the view given the indices to slice with."""
         N, vertex_ndim = self.vertices.shape
         values_ndim = self.vertex_values.ndim - 1
@@ -299,11 +301,11 @@ class Surface(IntensityVisualizationMixin, Layer):
         else:
             self._view_faces = self.faces
 
-    def _update_thumbnail(self):
+    def _update_thumbnail(self) -> None:
         """Update thumbnail with current surface."""
         pass
 
-    def _get_value(self):
+    def _get_value(self) -> None:
         """Returns coordinates, values, and a string for a given mouse position
         and set of indices.
 
