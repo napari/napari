@@ -1,6 +1,6 @@
 import warnings
 from copy import copy
-from typing import Dict, List, Tuple, Union
+from typing import Dict, List, Tuple, Union, Optional, Sequence
 
 import numpy as np
 from vispy.color.colormap import Colormap
@@ -92,7 +92,7 @@ class Vectors(Layer):
     edge_colormap : str, vispy.color.colormap.Colormap
         Colormap to set vector color if a continuous attribute is used to set edge_color.
         See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
-    edge_contrast_limits : None, (float, float)
+    edge_contrast_limits : (float, float), optional
         clims for mapping the property to a color map. These are the min and max value
         of the specified property that are mapped to 0 and 1, respectively.
         The default value is None. If set the none, the clims will be set to
@@ -135,20 +135,20 @@ class Vectors(Layer):
         self,
         data,
         *,
-        properties=None,
-        edge_width=1,
-        edge_color='red',
-        edge_color_cycle=None,
-        edge_colormap='viridis',
-        edge_contrast_limits=None,
-        length=1,
-        name=None,
-        metadata=None,
-        scale=None,
-        translate=None,
-        opacity=0.7,
-        blending='translucent',
-        visible=True,
+        properties: Optional[Dict[str, np.ndarray]] = None,
+        edge_width: float = 1.0,
+        edge_color: str = 'red',
+        edge_color_cycle: Union[list, np.ndarray] = None,
+        edge_colormap: ValidColormapArg = 'viridis',
+        edge_contrast_limits: Optional[Tuple[float, float]] = None,
+        length: float = 1.0,
+        name: Optional[str] = None,
+        metadata: Optional[dict] = None,
+        scale: Optional[Sequence[float]] = None,
+        translate: Optional[Sequence[float]] = None,
+        opacity: float = 0.7,
+        blending: str = 'translucent',
+        visible: bool = True,
     ):
 
         super().__init__(
@@ -273,7 +273,7 @@ class Vectors(Layer):
 
         return properties
 
-    def _get_state(self):
+    def _get_state(self) -> dict:
         """Get dictionary of layer state.
 
         Returns
@@ -300,8 +300,8 @@ class Vectors(Layer):
         """Determine number of dimensions of the layer."""
         return self.data.shape[2]
 
-    def _get_extent(self) -> List[Tuple[int, int, int]]:
-        """Determine ranges for slicing given by (min, max, step)."""
+    def _get_extent(self) -> List[Tuple[int, int]]:
+        """Determine ranges for slicing given by (min, max)."""
         if len(self.data) == 0:
             maxs = np.ones(self.data.shape[2], dtype=int)
             mins = np.zeros(self.data.shape[2], dtype=int)
@@ -494,7 +494,7 @@ class Vectors(Layer):
             )
 
     @property
-    def edge_color_mode(self) -> ColorMode:
+    def edge_color_mode(self) -> str:
         """str: Edge color setting mode
 
         DIRECT (default mode) allows each vector to be set arbitrarily
@@ -585,7 +585,7 @@ class Vectors(Layer):
 
     @edge_contrast_limits.setter
     def edge_contrast_limits(
-        self, contrast_limits: Union[None, Tuple[float, float]]
+        self, contrast_limits: Optional[Tuple[float, float]]
     ):
         self._edge_contrast_limits = contrast_limits
 
@@ -598,7 +598,7 @@ class Vectors(Layer):
 
         return face_color
 
-    def _set_view_slice(self):
+    def _set_view_slice(self) -> None:
         """Sets the view given the indices to slice with."""
 
         if not self.dims.displayed == self._displayed_stored:
@@ -652,7 +652,7 @@ class Vectors(Layer):
             self._view_vertices = vertices
             self._view_faces = faces
 
-    def _update_thumbnail(self):
+    def _update_thumbnail(self) -> None:
         """Update thumbnail with current vectors and colors."""
         # calculate min vals for the vertices and pad with 0.5
         # the offset is needed to ensure that the top left corner of the

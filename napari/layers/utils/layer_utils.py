@@ -135,6 +135,7 @@ def convert_to_uint8(data: np.ndarray) -> np.ndarray:
             ).astype(out_dtype)
 
 
+# XXX: is dataframe actually a DataFrame?  or a dict?
 def dataframe_to_properties(dataframe) -> Dict[str, np.ndarray]:
     """Convert a dataframe to Points.properties formatted dictionary.
 
