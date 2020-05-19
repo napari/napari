@@ -66,10 +66,13 @@ import sys
 import threading
 import time
 import warnings
-from collections.abc import Mapping
+from collections import abc, defaultdict
+from functools import wraps
 from types import TracebackType
 from typing import (
     Any,
+    Callable,
+    DefaultDict,
     Dict,
     Iterable,
     List,
@@ -113,6 +116,12 @@ _SESSION = os.path.join(PATH, '_session.yaml')
 #: the main global config dict
 config: Dict[str, Any] = {}
 
+CallbackDict = DefaultDict[Tuple[str, ...], Set[Callable[[Any], None]]]
+#: mapping from key (as tuple of strings), to callback function
+#:
+#: callback will be called whenever the key changes
+callbacks: CallbackDict = defaultdict(set)
+
 config_lock = threading.Lock()
 
 #: A list of config dicts that downstream libraries may use to register defaults
@@ -124,7 +133,7 @@ defaults: List[dict] = []
 no_default = "__no_default__"
 
 
-def canonical_name(k: str, config: Mapping) -> str:
+def canonical_name(k: str, config: abc.Mapping) -> str:
     """Return the canonical name for a key.
 
     Handles user choice of '-' or '_' conventions by standardizing on whichever
@@ -179,7 +188,7 @@ def update(old: dict, new: dict, priority="new") -> dict:
     for k, v in new.items():
         k = canonical_name(k, old)
 
-        if isinstance(v, Mapping):
+        if isinstance(v, abc.Mapping):
             if k not in old or old[k] is None:
                 old[k] = {}
             update(old[k], v, priority=priority)  # type: ignore
@@ -383,10 +392,12 @@ class _set:
         arg: Optional[dict] = None,
         config: dict = config,
         lock: threading.Lock = config_lock,
+        callbacks: CallbackDict = callbacks,
         **kwargs,
     ):
         with lock:
             self.config = config
+            self.callbacks = callbacks
             self._record: List[Tuple[str, Tuple[str, ...], Any]] = []
 
             if arg is not None:
@@ -421,9 +432,11 @@ class _set:
     ):
         for op, path, value in reversed(self._record):
             d = self.config
+            old_val = None
             if op == "replace":
                 for key in path[:-1]:
                     d = d.setdefault(key, {})
+                old_val = d[path[-1]]
                 d[path[-1]] = value
             else:  # insert
                 for key in path[:-1]:
@@ -432,7 +445,8 @@ class _set:
                     except KeyError:
                         break
                 else:
-                    d.pop(path[-1], None)
+                    old_val = d.pop(path[-1], None)
+            _callback_to_listeners(path, value, self.callbacks, old_val)
 
     def _assign(
         self,
@@ -462,12 +476,15 @@ class _set:
         path = path + (key,)
 
         if len(keys) == 1:
+            old_val = None
             if record:
                 if key in d:
                     self._record.append(("replace", path, d[key]))
+                    old_val = d[key]
                 else:
                     self._record.append(("insert", path, None))
             d[key] = value
+            _callback_to_listeners(path, value, self.callbacks, old_val)
 
             # might be worth emitting a warning here if we know the value
             # cannot be serialized
@@ -607,7 +624,8 @@ def pop(key: str, default=no_default, config: dict = config):
     --------
     napari.config.get
     """
-    keys = key.split(".")
+    keys = tuple(key.split("."))
+
     result = config
     for i, k in enumerate(keys):
         k = canonical_name(k, result)
@@ -615,6 +633,8 @@ def pop(key: str, default=no_default, config: dict = config):
             if i == len(keys) - 1:
                 result = result.pop(k)
                 config['_dirty'] = True
+                _callback_to_listeners(keys, None, callbacks, result)
+
             else:
                 result = result[k]
         except (TypeError, IndexError, KeyError):
@@ -663,7 +683,7 @@ def update_defaults(
     update(config, new, priority="old")
 
 
-T = TypeVar("T", Mapping, Iterable, str)
+T = TypeVar("T", abc.Mapping, Iterable, str)
 
 
 def expand_environment_variables(config: T) -> T:
@@ -686,7 +706,7 @@ def expand_environment_variables(config: T) -> T:
     >>> expand_environment_variables({'x': [1, 2, '$USER']})
     {'x': [1, 2, 'my-username']}
     """
-    if isinstance(config, Mapping):
+    if isinstance(config, abc.Mapping):
         return {k: expand_environment_variables(v) for k, v in config.items()}
     elif isinstance(config, str):
         return os.path.expandvars(config)
@@ -748,6 +768,61 @@ def check_deprecations(key: str, deprecations: dict = deprecations):
             )
     else:
         return key
+
+
+def register_listener(
+    key: Union[str, Tuple[str, ...]],
+    callback: Callable[[Any], None],
+    callbacks: CallbackDict = callbacks,
+):
+    path: Tuple = tuple(key.split('.')) if isinstance(key, str) else key
+    if not callable(callback):
+        raise ValueError(
+            "'callback' must be a function that accepts one parameter"
+        )
+    callbacks[path].add(callback)
+
+
+def _callback_to_listeners(
+    path: Tuple[str, ...],
+    new_value: Any,
+    callbacks: CallbackDict = callbacks,
+    old_val=None,
+):
+    if old_val is not None and old_val == new_value:
+        return
+    if path in callbacks:
+        for cb in callbacks[path]:
+            cb(new_value)
+
+
+def updates_config(
+    key: str, config: dict = config
+) -> Callable[[Callable], Callable]:
+    """Return decorator that updates config when decorated function is called.
+
+    Parameters
+    ----------
+    key : str
+        the config key to update
+    config : dict, optional
+        The config to update, by default updates global config
+    """
+
+    def decorator(function):
+        """Return function that updates config when original func is called."""
+
+        @wraps(function)
+        def modified_function(*args):
+            function(*args)
+            # assume last item in *args is the new value
+            # works for both method `setter(self, val)` and func `setter(val)`
+            if get(key, config=config) != args[-1]:
+                _set({key: args[-1]}, config=config)
+
+        return modified_function
+
+    return decorator
 
 
 class ConfigDumper(yaml.SafeDumper):
