@@ -243,20 +243,36 @@ Type hints are *not* required in contributions to napari.
 Some developers choose to include them in their code for the following reasons:
 
 1. *They act as documentation*.  When reading code, it can sometimes be hard to
-   figure out what exactly a given variable is supposed to be or do (even with
-   types in the docstring).  Type annotations provide a very specific syntax for
-   restricting the intended type of a certain object.
+   figure out what exactly a given variable is supposed to be or do. Docstrings
+   certainly help here, but type annotations provide a very specific syntax for
+   restricting the intended type of a certain object, and can be used throughout
+   the body of the function or method. For example, you might create an empty
+   list that is intended to store 2-tuples of a certain format:
+
+   ```python
+   # very clear what `my_list` is going to be used for
+   my_list: List[Tuple[str, np.ndarray]] = []
+   ```
+
 2. *IDEs can use them to catch bugs!*.  Probably the most useful feature
    provided by type-annotations is the fact that packages (such as mypy, pyre,
    pyright, etc...) can use them to "warn" you when you may be using a variable
    incorrectly. (A common example is a variable that can be either a `list` or
    `None`: it can be easy to forget to check `isistance(value, list)` before
    indexing into it (`value[0]`).) By installing a typing extension in your
-   code-editor, your IDE linter can warn you of potential errors in your code.
+   code-editor, your IDE linter can warn you of potential errors in your code:
+
+   ```python
+   my_list.append(np.random.rand(16, 16))  # error!  not a 2-tuple!
+   ```
+
 3. *IDEs can use them for autocompletion*.  With a typing extension installed,
-   your IDE can often provide richer tab-autocompletion hints.  For intance,
-   declare `x = "hi"` ... when you next type `x.` and hit TAB, the IDE will
-   provide all of the string methods (e.g. `startswith`, `replace`) as options.
+   your IDE can often provide richer tab-autocompletion hints
+
+   ```python
+   my_list.  # hit tab ... you'll see all the "list" methods
+   ```
+
 4. *Can help improve code architecture*.  The act of writing type hints often
    encourages you to think more carefully about the assumptions you are making
    in your code.  This can often improve design.

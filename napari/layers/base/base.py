@@ -128,7 +128,7 @@ class Layer(KeymapProvider, ABC):
         metadata: Optional[dict] = None,
         scale: Optional[Sequence[float]] = None,
         translate: Optional[Sequence[float]] = None,
-        opacity: float = 1,
+        opacity: float = 1.0,
         blending: str = 'translucent',
         visible: bool = True,
         multiscale: bool = False,
