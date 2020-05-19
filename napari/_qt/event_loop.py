@@ -2,8 +2,10 @@ import sys
 from contextlib import contextmanager
 from os.path import dirname, join
 
+from qtpy.QtCore import Qt
 from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import QApplication, QSplashScreen
+from qtpy.QtCore import Qt
 
 
 @contextmanager
@@ -25,13 +27,19 @@ def gui_qt(*, startup_logo=False):
     splash_widget = None
     app = QApplication.instance()
     if not app:
+        # automatically determine monitor DPI.
+        # Note: this MUST be set before the QApplication is instantiated
+        QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
         # if this is the first time the Qt app is being instantiated, we set
         # the name, so that we know whether to raise_ in Window.show()
         app = QApplication(sys.argv)
         app.setApplicationName('napari')
         if startup_logo:
             logopath = join(dirname(__file__), '..', 'resources', 'logo.png')
-            splash_widget = QSplashScreen(QPixmap(logopath).scaled(400, 400))
+            pm = QPixmap(logopath).scaled(
+                360, 360, Qt.KeepAspectRatio, Qt.SmoothTransformation
+            )
+            splash_widget = QSplashScreen(pm)
             splash_widget.show()
     yield app
     # if the application already existed before this function was called,
