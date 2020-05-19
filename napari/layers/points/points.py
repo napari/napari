@@ -1,40 +1,36 @@
-from typing import Union, Dict, Tuple, List
+import warnings
 from copy import copy, deepcopy
 from itertools import cycle
-import warnings
+from typing import Dict, List, Tuple, Union, Iterator, Optional, Sequence, cast
 
 import numpy as np
 from vispy.color.colormap import Colormap
 
-from ...utils.colormaps import ensure_colormap_tuple
 from ...types import ValidColormapArg
-
-from ..base import Layer
+from ...utils.colormaps import ensure_colormap_tuple
+from ...utils.colormaps.standardize_color import (
+    get_color_namelist,
+    hex_to_name,
+    rgb_to_hex,
+    transform_color,
+)
 from ...utils.event import Event
 from ...utils.status_messages import format_float
-from ...utils.colormaps.standardize_color import (
-    transform_color,
-    hex_to_name,
-    get_color_namelist,
-    rgb_to_hex,
-)
+from ..base import Layer
 from ..utils.color_transformations import (
-    transform_color_with_defaults,
-    transform_color_cycle,
-    normalize_and_broadcast_colors,
     ColorType,
-)
-from ._points_constants import Symbol, SYMBOL_ALIAS, Mode, ColorMode
-from ._points_mouse_bindings import add, select, highlight
-from ._points_utils import (
-    create_box,
-    points_to_squares,
+    normalize_and_broadcast_colors,
+    transform_color_cycle,
+    transform_color_with_defaults,
 )
 from ..utils.layer_utils import (
     dataframe_to_properties,
     guess_continuous,
     map_property,
 )
+from ._points_constants import SYMBOL_ALIAS, ColorMode, Mode, Symbol
+from ._points_mouse_bindings import add, highlight, select
+from ._points_utils import create_box, points_to_squares
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
@@ -216,26 +212,26 @@ class Points(Layer):
         self,
         data=None,
         *,
-        properties=None,
-        symbol='o',
-        size=10,
-        edge_width=1,
-        edge_color='black',
-        edge_color_cycle=None,
-        edge_colormap='viridis',
-        edge_contrast_limits=None,
-        face_color='white',
-        face_color_cycle=None,
-        face_colormap='viridis',
-        face_contrast_limits=None,
-        n_dimensional=False,
-        name=None,
-        metadata=None,
-        scale=None,
-        translate=None,
-        opacity=1,
-        blending='translucent',
-        visible=True,
+        properties: Optional[dict] = None,
+        symbol: str = 'o',
+        size: Union[float, np.ndarray] = 10.0,
+        edge_width: float = 1.0,
+        edge_color: ColorType = 'black',
+        edge_color_cycle: Union[list, np.ndarray] = None,
+        edge_colormap: ValidColormapArg = 'viridis',
+        edge_contrast_limits: Optional[Tuple[float, float]] = None,
+        face_color: ColorType = 'white',
+        face_color_cycle: Union[list, np.ndarray] = None,
+        face_colormap: ValidColormapArg = 'viridis',
+        face_contrast_limits: Optional[Tuple[float, float]] = None,
+        n_dimensional: bool = False,
+        name: Optional[str] = None,
+        metadata: Optional[dict] = None,
+        scale: Optional[Sequence[float]] = None,
+        translate: Optional[Sequence[float]] = None,
+        opacity: float = 1.0,
+        blending: str = 'translucent',
+        visible: bool = True,
     ):
         if data is None:
             data = np.empty((0, 2))
@@ -336,6 +332,11 @@ class Points(Layer):
         self._drag_box_stored = None
         self._is_selecting = False
         self._clipboard = {}
+
+        self._edge_color_cycle_values: Iterator = None
+        self._face_color_cycle_values: Iterator = None
+        self._edge_color_mode: ColorMode = ColorMode.DIRECT
+        self._face_color_mode: ColorMode = ColorMode.DIRECT
 
         with self.block_update_properties():
             self._edge_color_property = ''
@@ -600,7 +601,7 @@ class Points(Layer):
         """Determine number of dimensions of the layer."""
         return self.data.shape[1]
 
-    def _get_extent(self) -> List[Tuple[int, int, int]]:
+    def _get_extent(self) -> List[Tuple[int, int]]:
         """Determine ranges for slicing given by (min, max, step)."""
         if len(self.data) == 0:
             maxs = np.ones(self.data.shape[1], dtype=int)
@@ -640,6 +641,7 @@ class Points(Layer):
         self.events.symbol()
         self.events.highlight()
 
+    # XXX: when is size not an array?
     @property
     def size(self) -> Union[int, float, np.ndarray, list]:
         """(N, D) array: size of all N points in D dimensions."""
@@ -694,7 +696,7 @@ class Points(Layer):
         return self._edge_color
 
     @edge_color.setter
-    def edge_color(self, edge_color):
+    def edge_color(self, edge_color: ColorType):
         self._set_color(edge_color, 'edge')
 
     @property
@@ -783,7 +785,7 @@ class Points(Layer):
         return self._face_color
 
     @face_color.setter
-    def face_color(self, face_color):
+    def face_color(self, face_color: ColorType):
         self._set_color(face_color, 'face')
 
     @property
@@ -927,7 +929,7 @@ class Points(Layer):
         # if the provided color is a string, first check if it is a key in the properties.
         # otherwise, assume it is the name of a color
         if self._is_color_mapped(color):
-            if guess_continuous(self.properties[color]):
+            if guess_continuous(self.properties[cast(str, color)]):
                 setattr(self, f'_{attribute}_color_mode', ColorMode.COLORMAP)
             else:
                 setattr(self, f'_{attribute}_color_mode', ColorMode.CYCLE)
@@ -1087,7 +1089,7 @@ class Points(Layer):
             color_event = getattr(self.events, f'{attribute}_color')
             color_event()
 
-    def _is_color_mapped(self, color):
+    def _is_color_mapped(self, color: ColorType) -> bool:
         """ determines if the new color argument is for directly setting or cycle/colormap"""
         if isinstance(color, str):
             if color in self.properties:
@@ -1101,7 +1103,7 @@ class Points(Layer):
                 'face_color should be the name of a color, an array of colors, or the name of an property'
             )
 
-    def _get_state(self):
+    def _get_state(self) -> dict:
         """Get dictionary of layer state.
 
         Returns
@@ -1136,7 +1138,7 @@ class Points(Layer):
         return self._selected_data
 
     @selected_data.setter
-    def selected_data(self, selected_data):
+    def selected_data(self, selected_data: Union[set, list, tuple]):
         self._selected_data = set(selected_data)
         selected = []
         for c in self._selected_data:
@@ -1179,7 +1181,7 @@ class Points(Layer):
                 self.current_properties = properties
         self._set_highlight()
 
-    def interaction_box(self, index) -> np.ndarray:
+    def interaction_box(self, index: list) -> np.ndarray:
         """Create the interaction box around a list of points in view.
 
         Parameters
@@ -1219,7 +1221,7 @@ class Points(Layer):
         return str(self._mode)
 
     @mode.setter
-    def mode(self, mode):
+    def mode(self, mode: Union[str, Mode]):
         mode = Mode(mode)
 
         if not self.editable:
@@ -1332,7 +1334,7 @@ class Points(Layer):
         """
         return self.edge_color[self._indices_view]
 
-    def _set_editable(self, editable=None):
+    def _set_editable(self, editable: bool = None):
         """Set editable mode based on layer properties."""
         if editable is None:
             if self.dims.ndisplay == 3:
@@ -1341,7 +1343,7 @@ class Points(Layer):
                 self.editable = True
 
         if not self.editable:
-            self.mode = Mode.PAN_ZOOM
+            self.mode = 'pan_zoom'
 
     def _slice_data(
         self, dims_indices
@@ -1368,7 +1370,7 @@ class Points(Layer):
         if len(self.data) > 0:
             if self.n_dimensional is True and self.ndim > 2:
                 distances = abs(self.data[:, not_disp] - indices[not_disp])
-                sizes = self.size[:, not_disp] / 2
+                sizes = cast(np.ndarray, self.size)[:, not_disp] / 2
                 matches = np.all(distances <= sizes, axis=1)
                 size_match = sizes[matches]
                 size_match[size_match == 0] = 1

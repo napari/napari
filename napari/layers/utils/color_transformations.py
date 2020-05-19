@@ -58,7 +58,7 @@ def transform_color_with_defaults(
 
 def transform_color_cycle(
     color_cycle: Union[ColorType, cycle], elem_name: str, default: str
-) -> cycle:
+) -> Tuple[cycle, np.ndarray]:
     """Helper method to return an Nx4 np.array from an arbitrary user input.
 
     Parameters
