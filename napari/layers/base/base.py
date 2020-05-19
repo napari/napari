@@ -672,7 +672,7 @@ class Layer(KeymapProvider, ABC):
         self.status = self.get_message()
 
     @property
-    def level_shapes(self):
+    def level_shapes(self) -> np.ndarray:
         raise NotImplementedError(
             f'Layer {self} has not implemented `level_shapes`.'
         )
@@ -732,7 +732,7 @@ class Layer(KeymapProvider, ABC):
         """tuple: List of currently displayed coordinates."""
         return tuple(self.coordinates[i] for i in self.dims.displayed)
 
-    def get_message(self):
+    def get_message(self) -> str:
         """Generate a status message based on the coordinates and value
 
         Returns
