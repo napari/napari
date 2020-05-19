@@ -149,7 +149,7 @@ class QtHookImplementationListWidget(QListWidget):
         # _nonwrappers returns hook implementations in REVERSE call order
         # so we reverse them here to show them in the list in the order in
         # which they get called.
-        for hook_implementation in reversed(hook_caller._nonwrappers):
+        for hook_implementation in hook_caller.get_hookimpls():
             self.append_hook_implementation(hook_implementation)
 
     def append_hook_implementation(
@@ -198,7 +198,7 @@ class QtHookImplementationListWidget(QListWidget):
         """
         if not self.hook_caller:
             return
-        self.hook_caller.bring_to_front(order)
+        self.hook_caller.call_order = order
 
 
 class QtPluginSorter(QDialog):
