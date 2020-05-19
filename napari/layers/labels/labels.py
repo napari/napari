@@ -1,5 +1,5 @@
 from collections import deque
-from typing import Union
+from typing import Union, Optional, Sequence, Deque
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -111,16 +111,16 @@ class Labels(Image):
         self,
         data,
         *,
-        num_colors=50,
-        seed=0.5,
-        name=None,
-        metadata=None,
-        scale=None,
-        translate=None,
-        opacity=0.7,
-        blending='translucent',
-        visible=True,
-        multiscale=None,
+        num_colors: int = 50,
+        seed: float = 0.5,
+        name: Optional[str] = None,
+        metadata: Optional[dict] = None,
+        scale: Optional[Sequence[float]] = None,
+        translate: Optional[Sequence[float]] = None,
+        opacity: float = 0.7,
+        blending: str = 'translucent',
+        visible: bool = True,
+        multiscale: Optional[bool] = None,
     ):
 
         self._seed = seed
@@ -131,7 +131,7 @@ class Labels(Image):
             data,
             rgb=False,
             colormap=colormap,
-            contrast_limits=[0.0, 1.0],
+            contrast_limits=(0.0, 1.0),
             interpolation='nearest',
             rendering='translucent',
             name=name,
@@ -177,56 +177,56 @@ class Labels(Image):
         self.dims.events.axis.connect(self._reset_history)
 
     @property
-    def contiguous(self):
-        """bool: fill bucket changes only connected pixels of same label."""
+    def contiguous(self) -> bool:
+        """Whether fill bucket changes only connected pixels of same label."""
         return self._contiguous
 
     @contiguous.setter
-    def contiguous(self, contiguous):
+    def contiguous(self, contiguous: bool):
         self._contiguous = contiguous
         self.events.contiguous()
 
     @property
-    def n_dimensional(self):
-        """bool: paint and fill edits labels across all dimensions."""
+    def n_dimensional(self) -> bool:
+        """Whether paint and fill edits labels across all dimensions."""
         return self._n_dimensional
 
     @n_dimensional.setter
-    def n_dimensional(self, n_dimensional):
+    def n_dimensional(self, n_dimensional: bool):
         self._n_dimensional = n_dimensional
         self.events.n_dimensional()
 
     @property
-    def brush_size(self):
-        """float: Size of the paint brush."""
+    def brush_size(self) -> float:
+        """Size of the paint brush."""
         return self._brush_size
 
     @brush_size.setter
-    def brush_size(self, brush_size):
+    def brush_size(self, brush_size: float):
         self._brush_size = int(brush_size)
         self.cursor_size = self._brush_size / self.scale_factor
         self.status = format_float(self.brush_size)
         self.events.brush_size()
 
     @property
-    def seed(self):
-        """float: Seed for colormap random generator."""
+    def seed(self) -> float:
+        """Seed for colormap random generator."""
         return self._seed
 
     @seed.setter
-    def seed(self, seed):
+    def seed(self, seed: float):
         self._seed = seed
         self._selected_color = self.get_color(self.selected_label)
         self.refresh()
         self.events.selected_label()
 
     @property
-    def num_colors(self):
-        """int: Number of unique colors to use in colormap."""
+    def num_colors(self) -> int:
+        """Number of unique colors to use in colormap."""
         return self._num_colors
 
     @num_colors.setter
-    def num_colors(self, num_colors):
+    def num_colors(self, num_colors: int):
         self._num_colors = num_colors
         self.colormap = (
             self._colormap_name,
@@ -236,7 +236,7 @@ class Labels(Image):
         self._selected_color = self.get_color(self.selected_label)
         self.events.selected_label()
 
-    def _get_state(self):
+    def _get_state(self) -> dict:
         """Get dictionary of layer state.
 
         Returns
@@ -256,12 +256,12 @@ class Labels(Image):
         return state
 
     @property
-    def selected_label(self):
-        """int: Index of selected label."""
+    def selected_label(self) -> int:
+        """Index of selected label."""
         return self._selected_label
 
     @selected_label.setter
-    def selected_label(self, selected_label):
+    def selected_label(self, selected_label: int):
         if selected_label < 0:
             raise ValueError('cannot reduce selected label below 0')
         if selected_label == self.selected_label:
@@ -272,7 +272,7 @@ class Labels(Image):
         self.events.selected_label()
 
     @property
-    def mode(self):
+    def mode(self) -> str:
         """MODE: Interactive mode. The normal, default mode is PAN_ZOOM, which
         allows for normal interactivity with the canvas.
 
@@ -341,7 +341,7 @@ class Labels(Image):
         self.events.mode(mode=mode)
         self.refresh()
 
-    def _set_editable(self, editable=None):
+    def _set_editable(self, editable: bool = None):
         """Set editable mode based on layer properties."""
         if editable is None:
             if self.multiscale or self.dims.ndisplay == 3:
@@ -350,10 +350,10 @@ class Labels(Image):
                 self.editable = True
 
         if not self.editable:
-            self.mode = Mode.PAN_ZOOM
+            self.mode = 'pan_zoom'
             self._reset_history()
 
-    def _raw_to_displayed(self, raw):
+    def _raw_to_displayed(self, raw: np.ndarray) -> np.ndarray:
         """Determine displayed image from a saved raw image and a saved seed.
 
         This function ensures that the 0 label gets mapped to the 0 displayed
@@ -374,10 +374,10 @@ class Labels(Image):
         )
         return image
 
-    def new_colormap(self):
+    def new_colormap(self) -> None:
         self.seed = np.random.rand()
 
-    def get_color(self, label):
+    def get_color(self, label: int):
         """Return the color corresponding to a specific label."""
         if label == 0:
             col = None
@@ -386,24 +386,24 @@ class Labels(Image):
             col = self.colormap[1][val].rgba[0]
         return col
 
-    def _reset_history(self, event=None):
-        self._undo_history = deque()
-        self._redo_history = deque()
+    def _reset_history(self, event=None) -> None:
+        self._undo_history: Deque[np.ndarray] = deque()
+        self._redo_history: Deque[np.ndarray] = deque()
 
-    def _trim_history(self):
+    def _trim_history(self) -> None:
         while (
             len(self._undo_history) + len(self._redo_history)
             > self._history_limit
         ):
             self._undo_history.popleft()
 
-    def _save_history(self):
+    def _save_history(self) -> None:
         self._redo_history = deque()
         if not self._block_saving:
             self._undo_history.append(self.data[self.dims.indices].copy())
             self._trim_history()
 
-    def _load_history(self, before, after):
+    def _load_history(self, before: Deque, after: Deque):
         if len(before) == 0:
             return
 
@@ -413,13 +413,13 @@ class Labels(Image):
 
         self.refresh()
 
-    def undo(self):
+    def undo(self) -> None:
         self._load_history(self._undo_history, self._redo_history)
 
-    def redo(self):
+    def redo(self) -> None:
         self._load_history(self._redo_history, self._undo_history)
 
-    def fill(self, coord, old_label, new_label):
+    def fill(self, coord: Sequence[float], old_label: int, new_label: int):
         """Replace an existing label with a new label, either just at the
         connected component if the `contiguous` flag is `True` or everywhere
         if it is `False`, working either just in the current slice if
@@ -467,7 +467,9 @@ class Labels(Image):
 
         self.refresh()
 
-    def paint(self, coord, new_label, refresh=True):
+    def paint(
+        self, coord: Sequence[int], new_label: int, refresh: bool = True
+    ):
         """Paint over existing labels with a new label, using the selected
         brush shape and size, either only on the visible slice or in all
         n dimensions.

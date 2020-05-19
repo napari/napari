@@ -594,12 +594,12 @@ class Layer(KeymapProvider, ABC):
         self._cursor = cursor
 
     @property
-    def cursor_size(self) -> Optional[int]:
-        """int | None: Size of cursor if custom. None yields default size."""
+    def cursor_size(self) -> Optional[float]:
+        """Size of cursor if custom. None yields default size."""
         return self._cursor_size
 
     @cursor_size.setter
-    def cursor_size(self, cursor_size: int):
+    def cursor_size(self, cursor_size: float):
         if cursor_size == self.cursor_size:
             return
         self.events.cursor_size(cursor_size=cursor_size)
