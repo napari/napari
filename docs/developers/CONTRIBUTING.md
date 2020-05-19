@@ -174,7 +174,7 @@ you create during testing are cleaned up at the end of each test:
 
 > If you're curious to see the actual `viewer_factory` fixture definition, it's in `napari/conftest.py`
 
-### Help us make sure it's you
+## Help us make sure it's you
 
 Each commit you make must have a [GitHub-registered email](https://github.com/settings/emails)
 as the `author`. You can read more [here](https://help.github.com/en/github/setting-up-and-managing-your-github-user-account/setting-your-commit-email-address).
@@ -225,6 +225,41 @@ The docs will be built at `docs/build/html`.
 
 Most web browsers will allow you to preview HTML pages.
 Try entering `file:///absolute/path/to/napari/docs/build/html/index.html` in your address bar.
+
+## Type hints in napari
+
+In some napari modules you will find
+[PEP 484](https://www.python.org/dev/peps/pep-0484/)-style
+[type annotations](https://docs.python.org/3/library/typing.html):
+
+```python
+def my_function(x: float, y: Tuple[int, ...]] = (2,)) -> Optional[str]:
+    if y[0] > x:
+        return "hi!"
+```
+
+Type hints are *not* required in contributions to napari.
+
+Some developers choose to include them in their code for the following reasons:
+
+1. *They act as documentation*.  When reading code, it can sometimes be hard to
+   figure out what exactly a given variable is supposed to be or do (even with
+   types in the docstring).  Type annotations provide a very specific syntax for
+   restricting the intended type of a certain object.
+2. *IDEs can use them to catch bugs!*.  Probably the most useful feature
+   provided by type-annotations is the fact that packages (such as mypy, pyre,
+   pyright, etc...) can use them to "warn" you when you may be using a variable
+   incorrectly. (A common example is a variable that can be either a `list` or
+   `None`: it can be easy to forget to check `isistance(value, list)` before
+   indexing into it (`value[0]`).) By installing a typing extension in your
+   code-editor, your IDE linter can warn you of potential errors in your code.
+3. *IDEs can use them for autocompletion*.  With a typing extension installed,
+   your IDE can often provide richer tab-autocompletion hints.  For intance,
+   declare `x = "hi"` ... when you next type `x.` and hit TAB, the IDE will
+   provide all of the string methods (e.g. `startswith`, `replace`) as options.
+4. *Can help improve code architecture*.  The act of writing type hints often
+   encourages you to think more carefully about the assumptions you are making
+   in your code.  This can often improve design.
 
 ## Code of conduct
 
