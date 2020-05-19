@@ -1,4 +1,4 @@
-from collections import deque
+from collections import deque, Iterable
 from typing import Union
 
 import numpy as np
@@ -146,6 +146,7 @@ class Labels(Image):
 
         self.events.add(
             mode=Event,
+            overwrite=Event,
             n_dimensional=Event,
             contiguous=Event,
             brush_size=Event,
@@ -163,6 +164,7 @@ class Labels(Image):
         self._mode = Mode.PAN_ZOOM
         self._mode_history = self._mode
         self._status = self.mode
+        self._overwrite = True
         self._help = 'enter paint or fill mode to edit labels'
 
         self._block_saving = False
@@ -325,7 +327,7 @@ class Labels(Image):
             self.cursor_size = self.brush_size / self.scale_factor
             self.cursor = 'square'
             self.interactive = False
-            self.help = 'hold <space> to pan/zoom, drag to paint a label'
+            self.help = 'hold <space> to pan/zoom, hold <shift> to disable overwrite, drag to paint a label'
             self.mouse_drag_callbacks.append(paint)
         elif mode == Mode.FILL:
             self.cursor = 'cross'
@@ -339,6 +341,16 @@ class Labels(Image):
         self._mode = mode
 
         self.events.mode(mode=mode)
+        self.refresh()
+
+    @property
+    def overwrite(self):
+        return str(self._overwrite)
+
+    @overwrite.setter
+    def overwrite(self, overwrite: Union[str, bool]):
+        self._overwrite = overwrite
+        self.events.overwrite(overwrite=overwrite)
         self.refresh()
 
     def _set_editable(self, editable=None):
@@ -525,7 +537,27 @@ class Labels(Image):
             slice_coord = tuple(slice_coord)
 
         # update the labels image
-        self.data[slice_coord] = new_label
+
+        if self._overwrite:
+            self.data[slice_coord] = new_label
+        else:
+            self.paint_without_overwrite(self.data, slice_coord, new_label, 0)
 
         if refresh is True:
             self.refresh()
+
+    def paint_without_overwrite(self, array, slice_coord, new_label, dimension):
+        if dimension == len(slice_coord) - 1:
+            for coord in self.read_dimension(slice_coord, dimension):
+                if array[coord] == 0:
+                    array[coord] = new_label
+        else:
+            for coord in self.read_dimension(slice_coord, dimension):
+                self.paint_without_overwrite(array[coord], slice_coord, new_label, dimension + 1)
+
+    @staticmethod
+    def read_dimension(slice_coord, dimension):
+        if isinstance(slice_coord[dimension], slice):
+            return list(range(slice_coord[dimension].start, slice_coord[dimension].stop, slice_coord[dimension].step))
+        else:
+            return slice_coord[dimension],

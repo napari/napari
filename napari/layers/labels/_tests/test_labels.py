@@ -312,6 +312,22 @@ def test_paint():
     assert np.unique(layer.data[5:10, 5:10]) == 2
 
 
+def test_paint_without_overwrite():
+    """Test painting labels without overwriting existing labels"""
+    data = np.zeros((15, 10))
+    data[:3, :3] = 1
+    layer = Labels(data)
+    layer.overwrite = False
+    assert np.unique(layer.data[:3, :3]) == 1
+
+    layer.brush_size = 9
+    layer.paint([0, 0], 2)
+
+    assert np.unique(layer.data[3:5, 0:5]) == 2
+    assert np.unique(layer.data[0:5, 3:5]) == 2
+    assert np.unique(layer.data[:3, :3]) == 1
+
+
 def test_fill():
     """Test filling labels with different brush sizes."""
     np.random.seed(0)

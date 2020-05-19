@@ -74,3 +74,15 @@ def undo(layer):
 def redo(layer):
     """Redo any previously undone actions."""
     layer.redo()
+
+
+@Labels.bind_key('Shift')
+def overwrite(layer):
+    """Disallow overwrite of labeling when pressed"""
+    # on key press
+    layer.overwrite = False
+
+    yield
+
+    # on key release
+    layer.overwrite = True
