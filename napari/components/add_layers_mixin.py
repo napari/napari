@@ -68,7 +68,7 @@ class AddLayersMixin:
 
     def add_image(
         self,
-        data=None,
+        data,
         *,
         channel_axis=None,
         rgb=None,

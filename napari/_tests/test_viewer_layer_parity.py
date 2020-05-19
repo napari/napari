@@ -106,18 +106,32 @@ def test_docstring(layer):
 def test_signature(layer):
     name = layer.__name__
 
-    method = getattr(Viewer, f'add_{camel_to_snake(name)}')
+    method_name = f'add_{camel_to_snake(name)}'
+    method = getattr(Viewer, method_name)
 
     class_parameters = dict(inspect.signature(layer.__init__).parameters)
     method_parameters = dict(inspect.signature(method).parameters)
 
-    fail_msg = f"signatures don't match for class {name}"
-    if name == 'Image':
-        # If Image just test that class params appear in method
-        for class_param in class_parameters.keys():
-            assert class_param in method_parameters.keys(), fail_msg
-    else:
-        assert class_parameters == method_parameters, fail_msg
+    for p_name, c_param in class_parameters.items():
+        # make sure signatures have all the same parameters
+        assert p_name in method_parameters, (
+            f'{method_name} method does not have the '
+            f'{p_name} argument that the {name} Layer has'
+        )
+        # unless it's the Image layer, make sure they have the same defaults
+        if name == 'Image':
+            continue
+        m_param = method_parameters[p_name]
+        c_param_default = (
+            "no default provided"
+            if c_param.default == c_param.empty
+            else c_param.default
+        )
+        assert c_param.default == m_param.default, (
+            f'{method_name} has a different default value ({m_param.default}) '
+            f'for argument "{p_name}" than {name}.__init__ has '
+            f'({c_param_default})'
+        )
 
     code = inspect.getsource(method)
 
