@@ -8,11 +8,10 @@ the PerfmonApplication defined below, which adds timing of every Qt Event.
 This is a WIP as we experiment with performance monitoring.
 """
 import os
-import time
 
 from qtpy.QtWidgets import QApplication
 
-from ..utils.perf_timers import TIMERS
+from ..utils.perf_timers import TIMERS, perf_counter_ns
 
 
 def _get_event_name(event, receiver) -> str:
@@ -62,9 +61,9 @@ class PerfmonApplication(QApplication):
         name = _get_event_name(event, receiver)
 
         # Time the event while we handle it.
-        start_ns = time.perf_counter_ns()
+        start_ns = perf_counter_ns()
         ret_value = QApplication.notify(self, receiver, event)
-        end_ns = time.perf_counter_ns()
+        end_ns = perf_counter_ns()
 
         # Record every event for now.
         TIMERS.record(name, start_ns, end_ns)

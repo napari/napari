@@ -2,8 +2,19 @@
 """
 import os
 import time
+import sys
 
 from .tracing import ChromeTracingFile
+
+
+# time.perf_counter_ns() was added in Python 3.7. In order to support
+# Python 3.6 we define our own version.
+if sys.version_info[:2] >= (3, 7):
+    perf_counter_ns = time.perf_counter_ns
+else:
+
+    def perf_counter_ns():
+        return int(time.perf_counter() * 1e9)
 
 
 class PerfTimer:
@@ -13,11 +24,11 @@ class PerfTimer:
 
     We want to track the min/max/average because the UI might be updating at a
     much slower rate than the timers. And displaying the min/max/average gives a
-    better picture of what's happening than just show the duration for the
-    last time it ran.
+    better picture of what's happening than just showing the last value.
 
     For example we might be drawing at 60Hz but the QtPerformance widget
-    is only updating at 1Hz.
+    is only updating at 1Hz, so QtPerformance is conveying 60 frames with
+    of timing data.
     """
 
     def __init__(self, value):
@@ -87,7 +98,7 @@ class PerfTimers:
         self.trace_file = self._create_trace_file()
 
         # So we can start the times at zero.
-        self.zero_ns = time.perf_counter_ns()
+        self.zero_ns = perf_counter_ns()
 
     def _create_trace_file(self) -> ChromeTracingFile:
         """Return ChromeTracingFile or None."
