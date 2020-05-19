@@ -476,47 +476,45 @@ class Shapes(Layer):
         self._selected_box = self.interaction_box(self._selected_data)
 
         # Update properties based on selected shapes
-        face_colors = list(
-            set(
-                [
-                    self._data_view.shapes[i]._face_color_name
-                    for i in selected_data
-                ]
+        if len(selected_data) > 0:
+            selected_face_colors = self._data_view._face_color[
+                list(selected_data)
+            ]
+            face_colors = np.unique(selected_face_colors, axis=0)
+            if len(face_colors) == 1:
+                face_color = face_colors[0]
+                with self.block_update_properties():
+                    self.current_face_color = face_color
+
+            selected_edge_colors = self._data_view._edge_color[
+                list(selected_data)
+            ]
+            edge_colors = np.unique(selected_edge_colors, axis=0)
+            if len(edge_colors) == 1:
+                edge_color = edge_colors[0]
+                with self.block_update_properties():
+                    self.current_edge_color = edge_color
+
+            edge_width = list(
+                set(
+                    [
+                        self._data_view.shapes[i].edge_width
+                        for i in selected_data
+                    ]
+                )
             )
-        )
-        if len(face_colors) == 1:
-            face_color = face_colors[0]
-            with self.block_update_properties():
-                self.current_face_color = face_color
+            if len(edge_width) == 1:
+                edge_width = edge_width[0]
+                with self.block_update_properties():
+                    self.current_edge_width = edge_width
 
-        edge_colors = list(
-            set(
-                [
-                    self._data_view.shapes[i]._edge_color_name
-                    for i in selected_data
-                ]
+            opacities = list(
+                set([self._data_view.shapes[i].opacity for i in selected_data])
             )
-        )
-        if len(edge_colors) == 1:
-            edge_color = edge_colors[0]
-            with self.block_update_properties():
-                self.current_edge_color = edge_color
-
-        edge_width = list(
-            set([self._data_view.shapes[i].edge_width for i in selected_data])
-        )
-        if len(edge_width) == 1:
-            edge_width = edge_width[0]
-            with self.block_update_properties():
-                self.current_edge_width = edge_width
-
-        opacities = list(
-            set([self._data_view.shapes[i].opacity for i in selected_data])
-        )
-        if len(opacities) == 1:
-            opacity = opacities[0]
-            with self.block_update_properties():
-                self.current_opacity = opacity
+            if len(opacities) == 1:
+                opacity = opacities[0]
+                with self.block_update_properties():
+                    self.current_opacity = opacity
 
     def _get_state(self):
         """Get dictionary of layer state.
@@ -767,8 +765,6 @@ class Shapes(Layer):
                 shape = shape_cls(
                     d,
                     edge_width=ew,
-                    edge_color=ec,
-                    face_color=fc,
                     opacity=o,
                     z_index=z,
                     dims_order=self.dims.order,
@@ -776,7 +772,7 @@ class Shapes(Layer):
                 )
 
                 # Add shape
-                self._data_view.add(shape)
+                self._data_view.add(shape, edge_color=ec, face_color=fc)
 
         self._display_order_stored = copy(self.dims.order)
         self._ndisplay_stored = copy(self.dims.ndisplay)

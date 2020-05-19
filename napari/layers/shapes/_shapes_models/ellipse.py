@@ -51,8 +51,6 @@ class Ellipse(Shape):
 
         super().__init__(
             edge_width=edge_width,
-            edge_color=edge_color,
-            face_color=face_color,
             opacity=opacity,
             z_index=z_index,
             dims_order=dims_order,

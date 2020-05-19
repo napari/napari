@@ -74,6 +74,9 @@ class ShapeList:
 
         self._mesh = Mesh(ndisplay=self.ndisplay)
 
+        self._edge_color = np.empty((0, 4))
+        self._face_color = np.empty((0, 4))
+
         for d in data:
             self.add(d)
 
@@ -182,7 +185,7 @@ class ShapeList:
         self.displayed_vertices = self._vertices[disp_vert]
         self.displayed_index = self._index[disp_vert]
 
-    def add(self, shape, shape_index=None):
+    def add(self, shape, face_color=None, edge_color=None, shape_index=None):
         """Adds a single Shape object
 
         Parameters
@@ -203,10 +206,22 @@ class ShapeList:
             shape_index = len(self.shapes)
             self.shapes.append(shape)
             self._z_index = np.append(self._z_index, shape.z_index)
+
+            self._face_color = np.vstack([self._face_color, face_color])
+            self._edge_color = np.vstack([self._edge_color, edge_color])
         else:
             z_refresh = False
             self.shapes[shape_index] = shape
             self._z_index[shape_index] = shape.z_index
+
+            if face_color is None:
+                face_color = self._face_color[shape_index]
+            else:
+                self._face_color[shape_index, :] = face_color
+            if edge_color is None:
+                edge_color = self._edge_color[shape_index]
+            else:
+                self._edge_color[shape_index, :] = edge_color
 
         self._vertices = np.append(
             self._vertices, shape.data_displayed, axis=0
@@ -239,7 +254,7 @@ class ShapeList:
         self._mesh.triangles_index = np.append(
             self._mesh.triangles_index, index, axis=0
         )
-        color = shape.face_color
+        color = face_color
         color[3] = color[3] * shape.opacity
         color_array = np.repeat([color], len(triangles), axis=0)
         self._mesh.triangles_colors = np.append(
@@ -273,7 +288,7 @@ class ShapeList:
         self._mesh.triangles_index = np.append(
             self._mesh.triangles_index, index, axis=0
         )
-        color = shape.edge_color
+        color = edge_color
         color[3] = color[3] * shape.opacity
         color_array = np.repeat([color], len(triangles), axis=0)
         self._mesh.triangles_colors = np.append(
@@ -397,7 +412,9 @@ class ShapeList:
             self._mesh.triangles_z_order = np.concatenate(triangles_z_order)
         self._update_displayed()
 
-    def edit(self, index, data, new_type=None):
+    def edit(
+        self, index, data, face_color=None, edge_color=None, new_type=None
+    ):
         """Updates the data of a single shape located at index. If
         `new_type` is not None then converts the shape type to the new type
 
@@ -426,8 +443,6 @@ class ShapeList:
             shape = shape_cls(
                 data,
                 edge_width=cur_shape.edge_width,
-                edge_color=cur_shape.edge_color,
-                face_color=cur_shape.face_color,
                 opacity=cur_shape.opacity,
                 z_index=cur_shape.z_index,
                 dims_order=cur_shape.dims_order,
@@ -435,6 +450,11 @@ class ShapeList:
         else:
             shape = self.shapes[index]
             shape.data = data
+
+        if face_color is not None:
+            self._face_color[index] = face_color
+        if edge_color is not None:
+            self._edge_color[index] = edge_color
 
         self.remove(index, renumber=False)
         self.add(shape, shape_index=index)
@@ -503,11 +523,11 @@ class ShapeList:
         """
         self.shapes[index].opacity = opacity
         indices = np.all(self._mesh.triangles_index == [index, 1], axis=1)
-        color = self.shapes[index].edge_color
+        color = self._edge_color[index]
         self._mesh.triangles_colors[indices, 3] = color[3] * opacity
 
         indices = np.all(self._mesh.triangles_index == [index, 0], axis=1)
-        color = self.shapes[index].face_color
+        color = self._face_color[index]
         self._mesh.triangles_colors[indices, 3] = color[3] * opacity
         self._update_displayed()
 
@@ -837,10 +857,10 @@ class ShapeList:
                     colors_shape, zoom_factor=zoom_factor, offset=offset
                 )
                 if type(self.shapes[ind]) in [Path, Line]:
-                    col = self.shapes[ind].edge_color
+                    col = self._edge_color[ind]
                     col[3] = col[3] * self.shapes[ind].opacity
                 else:
-                    col = self.shapes[ind].face_color
+                    col = self._face_color[ind]
                     col[3] = col[3] * self.shapes[ind].opacity
                 colors[mask, :] = col
 
