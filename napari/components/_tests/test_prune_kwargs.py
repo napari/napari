@@ -71,7 +71,6 @@ EXPECTATIONS = [
         'surface',
         {'blending': 'translucent', 'scale': (0.75, 1), 'name': 'name'},
     ),
-    ('layer', {}),
 ]
 
 ids = [i[0] for i in EXPECTATIONS]

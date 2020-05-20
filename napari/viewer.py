@@ -1,3 +1,5 @@
+import platform
+import sys
 from os.path import dirname, join
 
 from qtpy.QtGui import QIcon
@@ -7,6 +9,7 @@ from ._qt.qt_update_ui import QtUpdateUI
 from ._qt.qt_main_window import Window
 from ._qt.qt_viewer import QtViewer
 from .components import ViewerModel
+from . import __version__
 
 
 class Viewer(ViewerModel):
@@ -27,6 +30,10 @@ class Viewer(ViewerModel):
     show : bool, optional
         Whether to show the viewer after instantiation. by default True.
     """
+
+    # set _napari_app_id to False to avoid overwriting dock icon on windows
+    # set _napari_app_id to custom string to prevent grouping different base viewer
+    _napari_app_id = 'napari.napari.viewer.' + str(__version__)
 
     def __init__(
         self,
@@ -54,6 +61,17 @@ class Viewer(ViewerModel):
                 " Then, restart IPython."
             )
             raise RuntimeError(message)
+
+        if (
+            platform.system() == "Windows"
+            and not getattr(sys, 'frozen', False)
+            and self._napari_app_id
+        ):
+            import ctypes
+
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+                self._napari_app_id
+            )
 
         logopath = join(dirname(__file__), 'resources', 'logo.png')
         app.setWindowIcon(QIcon(logopath))

@@ -243,6 +243,7 @@ with napari.gui_qt():
 - Normalize paths handed to reader plugins (#1195)
 - Fix singleton dims display after toggle (#1196)
 - Fix resize axis labels on show (#1197)
+- Only assert that dask config returns to original value in test (#1202)
 
 ## Breaking API Changes
 - Allow add_path() to accept any layer-specific kwarg and rename to open() (#1111)
@@ -278,7 +279,6 @@ with napari.gui_qt():
 - Update napari-svg to 0.1.1 (#1182)
 - Update manifest.in for plugin code removal (#1187)
 - Fix pip-missing-reqs step (#1189)
-- Only assert that dask config returns to original value in test (#1202)
 
 
 ## 13 authors added to this release (alphabetical)
