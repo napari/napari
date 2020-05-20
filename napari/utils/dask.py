@@ -179,7 +179,7 @@ def configure_dask(data) -> Callable[[], ContextManager[dict]]:
 
     else:
 
-        def dask_optimized_slicing(*args, **kwds):
+        def dask_optimized_slicing():
             yield {}
 
     return contextmanager(dask_optimized_slicing)
