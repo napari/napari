@@ -173,7 +173,7 @@ def configure_dask(data) -> Callable[[], ContextManager[dict]]:
                 f'{dask.__version__}'
             )
 
-        def dask_optimized_slicing(*args, **kwds):
+        def dask_optimized_slicing():
             with dask.config.set({"optimization.fuse.active": False}) as cfg:
                 yield cfg
 
