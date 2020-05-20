@@ -89,16 +89,8 @@ class Layergroup(Layer):
         return self._children.append(item)
 
     def __len__(self):
-        """Length of top-level list of children on the layergroup."""
-        return len(self._children)
-
-    @property
-    def nlayers(self):
+        """Number of all non-group layers contained in the layergroup."""
         return sum([1 for _ in self])
-
-    @nlayers.setter
-    def nlayers(self, value):
-        raise NotImplementedError  # user should not be able to overwrite this
 
     def _get_extent(self):
         """Combined extent bounding all the individual layergroup layers.
@@ -123,23 +115,26 @@ class Layergroup(Layer):
         """
         state = []
         state.append(self._get_base_state())
-        for child in self:
-            if child._children is not None:
-                state.append(child._get_state())
-            else:
-                state.append(child._get_state())
+        if self._children is not None:
+            for layer in self._children:
+                if isinstance(layer, Layergroup):
+                    state.append(layer._get_state())
+                else:
+                    state.append(layer._get_state())
         return state
 
     def _get_value(self):
-        """Returns nested list of all layer values in the layergroup
+        """Returns a flat list of all layer values in the layergroup
         for a given mouse position and set of indices.
+
+        Layers in layergroup are iterated over by depth-first recursive search.
 
         Returns
         ----------
         value : list
-            Nested list containing Values of the layer data at the coord.
+            Flat list containing values of the layer data at the coord.
         """
-        return [c._get_value() for c in self._children]
+        return [layer._get_value() for layer in self]
 
     def _set_view_slice(self):
         """Set the view for each layer given the indices to slice with."""
@@ -168,7 +163,7 @@ class Layergroup(Layer):
 
     @data.setter
     def data(self, value):
-        raise NotImplementedError  # user should not be able to overwrite this
+        raise NotImplementedError("You may not assign data to a Layergroup.")
 
     @property
     def blending(self):
@@ -176,7 +171,9 @@ class Layergroup(Layer):
 
     @blending.setter
     def blending(self, value):
-        raise NotImplementedError  # user should not be able to overwrite this
+        raise NotImplementedError(
+            "You may not set a blending mode on a Layergroup."
+        )
 
     def save(self):
         for layer in self:
