@@ -116,7 +116,7 @@ def _is_dask_data(data) -> bool:
     )
 
 
-def configure_dask(data) -> ContextManager[dict]:
+def configure_dask(data) -> Callable[[], ContextManager[dict]]:
     """Spin up cache and return context manager that optimizes Dask indexing.
 
     This function determines whether data is a dask array or list of dask
