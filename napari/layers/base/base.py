@@ -1,6 +1,7 @@
 import warnings
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
+from functools import reduce
 from typing import List, Optional
 
 import numpy as np
@@ -241,6 +242,13 @@ class Layer(KeymapProvider, ABC):
     def __iter__(self):
         yield self
 
+    def _up_through_parents(self):
+        """Propagates up from the layer through all its parent layergroups."""
+        layer = self
+        while layer is not None:
+            yield layer
+            layer = layer.parent
+
     @classmethod
     def _basename(cls):
         return f'{cls.__name__}'
@@ -276,6 +284,16 @@ class Layer(KeymapProvider, ABC):
         self._update_thumbnail()
         self.status = format_float(self.opacity)
         self.events.opacity()
+
+    @property
+    def effective_opacity(self):
+        """float: Effective opacity value, scaled by parent layergroups opacity
+
+        Multiplies layer opacity with the opacity of all its parent layergroups
+        """
+        return reduce(
+            lambda x, y: x * y, [i.opacity for i in self._up_through_parents()]
+        )
 
     @property
     def blending(self):
@@ -315,6 +333,15 @@ class Layer(KeymapProvider, ABC):
             self.editable = self._set_editable()
         else:
             self.editable = False
+
+    @property
+    def effective_visibility(self):
+        """bool: Whether the visual is displayed, taking layergroup
+
+        Returns True if the layer and all parent layergroups are visible,
+        and returns False otherwise.
+        """
+        return all([i.visible for i in self._up_through_parents()])
 
     @property
     def editable(self):
