@@ -304,7 +304,7 @@ class QtShapesControls(QtLayerControls):
             Input range 0 - 100 (transparent to fully opaque).
         """
         with self.layer.events.blocker(self._on_opacity_change):
-            self.layer.current_opacity = value / 100
+            self.layer.opacity = value / 100
 
     def _on_edge_width_change(self, event=None):
         """Receive layer model edge line width change event and update slider.
@@ -350,7 +350,7 @@ class QtShapesControls(QtLayerControls):
             Event from the Qt context, by default None.
         """
         with self.layer.events.opacity.blocker():
-            self.opacitySlider.setValue(self.layer.current_opacity * 100)
+            self.opacitySlider.setValue(self.layer.opacity * 100)
 
     def _on_editable_change(self, event=None):
         """Receive layer model editable change event & enable/disable buttons.

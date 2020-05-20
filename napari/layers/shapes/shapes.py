@@ -100,8 +100,6 @@ class Shapes(Layer):
         Name of face color for each shape.
     edge_width : (N, ) list of float
         Edge width for each shape.
-    opacity : (N, ) list of float
-        Opacity for each shape.
     z_index : (N, ) list of int
         z-index for each shape.
     current_edge_width : float
@@ -113,8 +111,6 @@ class Shapes(Layer):
     current_face_color : str
         Color of the face of the next shape to be added or the currently
         selected shape.
-    current_opacity : float
-        Opacity of the next shape to be added or the currently selected shape.
     selected_data : set
         List of currently selected shapes.
     nshapes : int
@@ -238,8 +234,6 @@ class Shapes(Layer):
         else:
             ndim = np.array(data[0]).shape[1]
 
-        # Don't pass on opacity value to base layer as it could be a list
-        # and will get set bellow
         super().__init__(
             data,
             ndim,
@@ -247,6 +241,7 @@ class Shapes(Layer):
             metadata=metadata,
             scale=scale,
             translate=translate,
+            opacity=opacity,
             blending=blending,
             visible=visible,
         )
@@ -282,11 +277,6 @@ class Shapes(Layer):
             self._current_face_color = transform_color(face_color)
         else:
             self._current_face_color = np.array([1, 1, 1, 1])
-
-        if np.isscalar(opacity):
-            self._current_opacity = opacity
-        else:
-            self._current_opacity = 0.7
 
         self._data_view = ShapeList(ndisplay=self.dims.ndisplay)
         self._data_view.slice_key = np.array(self.dims.indices)[
@@ -328,7 +318,6 @@ class Shapes(Layer):
             edge_width=edge_width,
             edge_color=edge_color,
             face_color=face_color,
-            opacity=opacity,
             z_index=z_index,
         )
 
@@ -417,25 +406,6 @@ class Shapes(Layer):
         self.events.current_face_color()
 
     @property
-    def current_opacity(self):
-        """float: Opacity value between 0.0 and 1.0."""
-        return self._current_opacity
-
-    @current_opacity.setter
-    def current_opacity(self, opacity):
-        if not 0.0 <= opacity <= 1.0:
-            raise ValueError(
-                'opacity must be between 0.0 and 1.0; ' f'got {opacity}'
-            )
-
-        self._current_opacity = opacity
-        if self._update_properties:
-            for i in self.selected_data:
-                self._data_view.update_opacity(i, opacity)
-        self.status = format_float(self.current_opacity)
-        self.events.opacity()
-
-    @property
     def shape_type(self):
         """list of str: name of shape type for each shape."""
         return self._data_view.shape_types
@@ -454,11 +424,6 @@ class Shapes(Layer):
     def edge_width(self):
         """list of float: edge width for each shape."""
         return self._data_view.edge_widths
-
-    @property
-    def opacity(self):
-        """list of float: opacity for each shape."""
-        return self._data_view.opacities
 
     @property
     def z_index(self):
@@ -507,14 +472,6 @@ class Shapes(Layer):
                 edge_width = edge_width[0]
                 with self.block_update_properties():
                     self.current_edge_width = edge_width
-
-            opacities = list(
-                set([self._data_view.shapes[i].opacity for i in selected_data])
-            )
-            if len(opacities) == 1:
-                opacity = opacities[0]
-                with self.block_update_properties():
-                    self.current_opacity = opacity
 
     def _get_state(self):
         """Get dictionary of layer state.
@@ -665,7 +622,6 @@ class Shapes(Layer):
         edge_width=None,
         edge_color=None,
         face_color=None,
-        opacity=None,
         z_index=None,
     ):
         """Add shapes to the current layer.
@@ -699,8 +655,6 @@ class Shapes(Layer):
             or 4 elements. If a list is supplied it must be the same length as
             the length of `data` and each element will be applied to each shape
             otherwise the same value will be used for all shapes.
-        opacity : float | list
-            Opacity of the shapes, must be between 0 and 1.
         z_index : int | list
             Specifier of z order priority. Shapes with higher z order are
             displayed ontop of others. If a list is supplied it must be the
@@ -714,8 +668,6 @@ class Shapes(Layer):
             edge_color = self.current_edge_color
         if face_color is None:
             face_color = self.current_face_color
-        if opacity is None:
-            opacity = self.current_opacity
         if self._data_view is not None:
             z_index = z_index or max(self._data_view._z_index, default=-1) + 1
         else:
@@ -753,11 +705,10 @@ class Shapes(Layer):
                 ensure_iterable(edge_width),
                 transformed_edge_color,
                 transformed_face_color,
-                ensure_iterable(opacity),
                 ensure_iterable(z_index),
             )
 
-            for d, st, ew, ec, fc, o, z in shape_inputs:
+            for d, st, ew, ec, fc, z in shape_inputs:
 
                 # A False slice_key means the shape is invalid as it is not
                 # confined to a single plane
@@ -765,7 +716,6 @@ class Shapes(Layer):
                 shape = shape_cls(
                     d,
                     edge_width=ew,
-                    opacity=o,
                     z_index=z,
                     dims_order=self.dims.order,
                     ndisplay=self.dims.ndisplay,

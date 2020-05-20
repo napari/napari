@@ -132,11 +132,6 @@ class ShapeList:
         return [s.edge_width for s in self.shapes]
 
     @property
-    def opacities(self):
-        """list of float: opacity for each shape."""
-        return [s.opacity for s in self.shapes]
-
-    @property
     def z_indices(self):
         """list of int: z-index for each shape."""
         return [s.z_index for s in self.shapes]
@@ -254,9 +249,7 @@ class ShapeList:
         self._mesh.triangles_index = np.append(
             self._mesh.triangles_index, index, axis=0
         )
-        color = face_color
-        color[3] = color[3] * shape.opacity
-        color_array = np.repeat([color], len(triangles), axis=0)
+        color_array = np.repeat([face_color], len(triangles), axis=0)
         self._mesh.triangles_colors = np.append(
             self._mesh.triangles_colors, color_array, axis=0
         )
@@ -288,9 +281,7 @@ class ShapeList:
         self._mesh.triangles_index = np.append(
             self._mesh.triangles_index, index, axis=0
         )
-        color = edge_color
-        color[3] = color[3] * shape.opacity
-        color_array = np.repeat([color], len(triangles), axis=0)
+        color_array = np.repeat([edge_color], len(triangles), axis=0)
         self._mesh.triangles_colors = np.append(
             self._mesh.triangles_colors, color_array, axis=0
         )
@@ -443,7 +434,6 @@ class ShapeList:
             shape = shape_cls(
                 data,
                 edge_width=cur_shape.edge_width,
-                opacity=cur_shape.opacity,
                 z_index=cur_shape.z_index,
                 dims_order=cur_shape.dims_order,
             )
@@ -487,9 +477,7 @@ class ShapeList:
         """
         self.shapes[index].edge_color = edge_color
         indices = np.all(self._mesh.triangles_index == [index, 1], axis=1)
-        color = self.shapes[index].edge_color
-        color[3] = color[3] * self.shapes[index].opacity
-        self._mesh.triangles_colors[indices] = color
+        self._mesh.triangles_colors[indices] = self._edge_color[index]
         self._update_displayed()
 
     def update_face_color(self, index, face_color):
@@ -506,29 +494,7 @@ class ShapeList:
         """
         self.shapes[index].face_color = face_color
         indices = np.all(self._mesh.triangles_index == [index, 0], axis=1)
-        color = self.shapes[index].face_color
-        color[3] = color[3] * self.shapes[index].opacity
-        self._mesh.triangles_colors[indices] = color
-        self._update_displayed()
-
-    def update_opacity(self, index, opacity):
-        """Updates the face color of a single shape located at index.
-
-        Parameters
-        ----------
-        index : int
-            Location in list of the shape to be changed.
-        opacity : float
-            Opacity, must be between 0 and 1
-        """
-        self.shapes[index].opacity = opacity
-        indices = np.all(self._mesh.triangles_index == [index, 1], axis=1)
-        color = self._edge_color[index]
-        self._mesh.triangles_colors[indices, 3] = color[3] * opacity
-
-        indices = np.all(self._mesh.triangles_index == [index, 0], axis=1)
-        color = self._face_color[index]
-        self._mesh.triangles_colors[indices, 3] = color[3] * opacity
+        self._mesh.triangles_colors[indices] = self._face_color[index]
         self._update_displayed()
 
     def update_dims_order(self, dims_order):
@@ -858,10 +824,8 @@ class ShapeList:
                 )
                 if type(self.shapes[ind]) in [Path, Line]:
                     col = self._edge_color[ind]
-                    col[3] = col[3] * self.shapes[ind].opacity
                 else:
                     col = self._face_color[ind]
-                    col[3] = col[3] * self.shapes[ind].opacity
                 colors[mask, :] = col
 
         return colors

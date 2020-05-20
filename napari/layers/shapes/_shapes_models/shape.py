@@ -20,8 +20,6 @@ class Shape(ABC):
         Vertices specifying the shape.
     edge_width : float
         thickness of lines and edges.
-    opacity : float
-        Opacity of the shape, must be between 0 and 1.
     z_index : int
         Specifier of z order priority. Shapes with higher z order are displayed
         ontop of others.
@@ -39,8 +37,6 @@ class Shape(ABC):
         currently supported.
     edge_width : float
         thickness of lines and edges.
-    opacity : float
-        Opacity of the shape, must be between 0 and 1.
     name : str
         Name of shape type.
     z_index : int
@@ -94,7 +90,6 @@ class Shape(ABC):
         *,
         shape_type='rectangle',
         edge_width=1,
-        opacity=1,
         z_index=0,
         dims_order=None,
         ndisplay=2,
@@ -115,7 +110,6 @@ class Shape(ABC):
         self._filled = True
         self._use_face_vertices = False
         self.edge_width = edge_width
-        self.opacity = opacity
         self.z_index = z_index
         self.name = ''
 
@@ -182,16 +176,6 @@ class Shape(ABC):
     @edge_width.setter
     def edge_width(self, edge_width):
         self._edge_width = edge_width
-
-    @property
-    def opacity(self):
-        """float: opacity of shape
-        """
-        return self._opacity
-
-    @opacity.setter
-    def opacity(self, opacity):
-        self._opacity = opacity
 
     @property
     def z_index(self):
