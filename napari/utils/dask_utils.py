@@ -11,7 +11,9 @@ from dask.cache import Cache
 from .. import utils
 
 
-def create_dask_cache(nbytes=None, mem_fraction=0.5):
+def create_dask_cache(
+    nbytes: Optional[int] = None, mem_fraction: float = 0.5
+) -> Cache:
     """Create a dask cache at utils.dask_cache if one doesn't already exist.
 
     Parameters
@@ -28,8 +30,8 @@ def create_dask_cache(nbytes=None, mem_fraction=0.5):
 
     Returns
     -------
-    [type]
-        [description]
+    dask_cache : dask.cache.Cache
+        An instance of a Dask Cache
     """
     import psutil
 
@@ -67,7 +69,7 @@ def resize_dask_cache(
 
     Returns
     -------
-    dask_cache : Cache
+    dask_cache : dask.cache.Cache
         An instance of a Dask Cache
 
     Example
