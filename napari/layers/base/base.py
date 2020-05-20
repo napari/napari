@@ -6,7 +6,7 @@ from typing import List, Optional
 import numpy as np
 
 from ...components import Dims
-from ...utils.dask import configure_dask
+from ...utils.dask_utils import configure_dask
 from ...utils.event import EmitterGroup, Event
 from ...utils.key_bindings import KeymapProvider
 from ...utils.misc import ROOT_DIR
