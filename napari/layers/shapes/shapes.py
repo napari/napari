@@ -386,7 +386,7 @@ class Shapes(Layer):
         self._current_edge_color = transform_color(edge_color)
         if self._update_properties:
             for i in self.selected_data:
-                self._data_view.update_edge_color(i, edge_color)
+                self._data_view.update_edge_color(i, self._current_edge_color)
         self.events.edge_color()
         self.events.current_face_color()
 
@@ -401,7 +401,7 @@ class Shapes(Layer):
         self._current_face_color = transform_color(face_color)
         if self._update_properties:
             for i in self.selected_data:
-                self._data_view.update_face_color(i, face_color)
+                self._data_view.update_face_color(i, self._current_face_color)
         self.events.face_color()
         self.events.current_face_color()
 
@@ -665,9 +665,9 @@ class Shapes(Layer):
         if edge_width is None:
             edge_width = self.current_edge_width
         if edge_color is None:
-            edge_color = self.current_edge_color
+            edge_color = self._current_edge_color
         if face_color is None:
-            face_color = self.current_face_color
+            face_color = self._current_face_color
         if self._data_view is not None:
             z_index = z_index or max(self._data_view._z_index, default=-1) + 1
         else:
@@ -1014,6 +1014,14 @@ class Shapes(Layer):
         to_remove = sorted(index, reverse=True)
         for ind in to_remove:
             self._data_view.remove(ind)
+
+        if len(index) > 0:
+            self._data_view._edge_color = np.delete(
+                self._data_view._edge_color, index, axis=0
+            )
+            self._data_view._face_color = np.delete(
+                self._data_view._face_color, index, axis=0
+            )
         self.selected_data = set()
         self._finish_drawing()
 
@@ -1187,11 +1195,14 @@ class Shapes(Layer):
     def _copy_data(self):
         """Copy selected shapes to clipboard."""
         if len(self.selected_data) > 0:
+            index = list(self.selected_data)
             self._clipboard = {
                 'data': [
                     deepcopy(self._data_view.shapes[i])
                     for i in self._selected_data
                 ],
+                'edge_color': deepcopy(self._data_view._edge_color[index]),
+                'face_color': deepcopy(self._data_view._face_color[index]),
                 'indices': self.dims.indices,
             }
         else:
@@ -1208,14 +1219,18 @@ class Shapes(Layer):
             ]
 
             # Add new shape data
-            for s in self._clipboard['data']:
+            for i, s in enumerate(self._clipboard['data']):
                 shape = deepcopy(s)
                 data = copy(shape.data)
                 data[:, self.dims.not_displayed] = data[
                     :, self.dims.not_displayed
                 ] + np.array(offset)
                 shape.data = data
-                self._data_view.add(shape)
+                face_color = self._clipboard['face_color'][i]
+                edge_color = self._clipboard['edge_color'][i]
+                self._data_view.add(
+                    shape, face_color=face_color, edge_color=edge_color
+                )
 
             self.selected_data = set(
                 range(cur_shapes, cur_shapes + len(self._clipboard['data']))

@@ -3,6 +3,7 @@ from ._mesh import Mesh
 from ._shapes_models import Shape, Line, Path
 from ._shapes_utils import inside_triangles, triangles_intersect_box
 from ._shapes_constants import shape_classes, ShapeType
+from ...utils.colormaps.standardize_color import hex_to_name, rgb_to_hex
 
 
 class ShapeList:
@@ -119,12 +120,12 @@ class ShapeList:
     @property
     def edge_colors(self):
         """list of str: name of edge color for each shape."""
-        return [s._edge_color_name for s in self.shapes]
+        return [hex_to_name[c] for c in rgb_to_hex(self._edge_color)]
 
     @property
     def face_colors(self):
         """list of str: name of face color for each shape."""
-        return [s._face_color_name for s in self.shapes]
+        return [hex_to_name[c] for c in rgb_to_hex(self._face_color)]
 
     @property
     def edge_widths(self):
@@ -202,7 +203,11 @@ class ShapeList:
             self.shapes.append(shape)
             self._z_index = np.append(self._z_index, shape.z_index)
 
+            if face_color is None:
+                face_color = np.array([1, 1, 1, 1])
             self._face_color = np.vstack([self._face_color, face_color])
+            if edge_color is None:
+                edge_color = np.array([0, 0, 0, 1])
             self._edge_color = np.vstack([self._edge_color, edge_color])
         else:
             z_refresh = False
@@ -475,7 +480,7 @@ class ShapeList:
             starting with `#`. If array-like must be 1-dimensional array with 3
             or 4 elements.
         """
-        self.shapes[index].edge_color = edge_color
+        self._edge_color[index] = edge_color
         indices = np.all(self._mesh.triangles_index == [index, 1], axis=1)
         self._mesh.triangles_colors[indices] = self._edge_color[index]
         self._update_displayed()
@@ -492,7 +497,7 @@ class ShapeList:
             starting with `#`. If array-like must be 1-dimensional array with 3
             or 4 elements.
         """
-        self.shapes[index].face_color = face_color
+        self._face_color[index] = face_color
         indices = np.all(self._mesh.triangles_index == [index, 0], axis=1)
         self._mesh.triangles_colors[indices] = self._face_color[index]
         self._update_displayed()
