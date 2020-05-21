@@ -161,7 +161,7 @@ class QtLabelsControls(QtLayerControls):
         self.grid_layout.addWidget(self.contigCheckBox, 5, 1)
         self.grid_layout.addWidget(QLabel('n-dim:'), 6, 0)
         self.grid_layout.addWidget(self.ndimCheckBox, 6, 1)
-        self.grid_layout.addWidget(QLabel('preserve_labels:'), 7, 0)
+        self.grid_layout.addWidget(QLabel('preserve labels:'), 7, 0)
         self.grid_layout.addWidget(self.preserveLabelsCheckBox, 7, 1)
         self.grid_layout.setRowStretch(8, 1)
         self.grid_layout.setColumnStretch(1, 1)
