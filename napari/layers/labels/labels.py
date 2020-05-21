@@ -328,7 +328,7 @@ class Labels(Image):
             self.cursor_size = self.brush_size / self.scale_factor
             self.cursor = 'square'
             self.interactive = False
-            self.help = 'hold <space> to pan/zoom, hold <shift> to disable overwrite, drag to paint a label'
+            self.help = 'hold <space> to pan/zoom, hold <shift> to toggle overwrite, drag to paint a label'
             self.mouse_drag_callbacks.append(paint)
         elif mode == Mode.FILL:
             self.cursor = 'cross'
@@ -356,7 +356,6 @@ class Labels(Image):
     def overwrite(self, overwrite: bool):
         self._overwrite = overwrite
         self.events.overwrite(overwrite=overwrite)
-        self.refresh()
 
     def _set_editable(self, editable=None):
         """Set editable mode based on layer properties."""
@@ -546,50 +545,8 @@ class Labels(Image):
         if self._overwrite:
             self.data[slice_coord] = new_label
         else:
-            self.paint_without_overwrite(self.data, slice_coord, new_label, 0)
+            keep_coords = self.data[slice_coord] == self._background_label
+            self.data[slice_coord][keep_coords] = new_label
 
         if refresh is True:
             self.refresh()
-
-    def paint_without_overwrite(
-        self, array, slice_coord, new_label, dimension
-    ):
-        """
-        Paint the label without overwriting existing label, which is equivalent to only painting on background label.
-
-        Parameters
-        ----------
-        array : data array to paint on
-        slice_coord : coordinates to paint
-        new_label: new label to paint with
-        dimension: dimension of the current painting progress
-        """
-        if dimension == len(slice_coord) - 1:
-            for coord in self.list_coordinates(slice_coord[dimension]):
-                if array[coord] == self._background_label:
-                    array[coord] = new_label
-        else:
-            for coord in self.list_coordinates(slice_coord[dimension]):
-                self.paint_without_overwrite(
-                    array[coord], slice_coord, new_label, dimension + 1
-                )
-
-    @staticmethod
-    def list_coordinates(slice_coord):
-        """
-        List out all coordinates in the given slice range.
-
-        Parameters
-        ----------
-        slice_coord : slice of coordinate to check and convert to list of all coordinates within the range
-
-        Returns
-        -------
-        list of all coordinates within the given coordinate range
-        """
-        if isinstance(slice_coord, slice):
-            return list(
-                range(slice_coord.start, slice_coord.stop, slice_coord.step,)
-            )
-        else:
-            return (slice_coord,)

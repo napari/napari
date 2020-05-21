@@ -103,6 +103,12 @@ class QtLabelsControls(QtLayerControls):
         self.ndimCheckBox = ndim_cb
         self._on_n_dim_change()
 
+        overwrite_cb = QCheckBox()
+        overwrite_cb.setToolTip('overwrite editing')
+        overwrite_cb.stateChanged.connect(self.change_overwrite)
+        self.overwriteCheckBox = overwrite_cb
+        self._on_overwrite_change()
+
         self.panzoom_button = QtModeRadioButton(
             layer, 'zoom', Mode.PAN_ZOOM, tooltip='Pan/zoom mode', checked=True
         )
@@ -152,7 +158,9 @@ class QtLabelsControls(QtLayerControls):
         self.grid_layout.addWidget(self.contigCheckBox, 5, 1)
         self.grid_layout.addWidget(QLabel('n-dim:'), 6, 0)
         self.grid_layout.addWidget(self.ndimCheckBox, 6, 1)
-        self.grid_layout.setRowStretch(7, 1)
+        self.grid_layout.addWidget(QLabel('overwrite:'), 7, 0)
+        self.grid_layout.addWidget(self.overwriteCheckBox, 7, 1)
+        self.grid_layout.setRowStretch(8, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
 
@@ -245,6 +253,19 @@ class QtLabelsControls(QtLayerControls):
         else:
             self.layer.n_dimensional = False
 
+    def change_overwrite(self, state):
+        """Toggle overwrite state of label layer.
+
+        Parameters
+        ----------
+        state : QCheckBox
+            Checkbox indicating if overwriting label is enabled.
+        """
+        if state == Qt.Checked:
+            self.layer.overwrite = True
+        else:
+            self.layer.overwrite = False
+
     def _on_selection_change(self, event=None):
         """Receive layer model label selection change event and update spinbox.
 
@@ -291,6 +312,17 @@ class QtLabelsControls(QtLayerControls):
         """
         with self.layer.events.contiguous.blocker():
             self.contigCheckBox.setChecked(self.layer.contiguous)
+
+    def _on_overwrite_change(self, event=None):
+        """Receive layer model overwrite change event and update the checkbox.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional.
+            Event from the Qt context.
+        """
+        with self.layer.events.overwrite.blocker():
+            self.overwriteCheckBox.setChecked(self.layer.overwrite)
 
     def _on_editable_change(self, event=None):
         """Receive layer model editable change event & enable/disable buttons.

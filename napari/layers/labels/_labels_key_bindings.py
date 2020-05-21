@@ -80,9 +80,9 @@ def redo(layer):
 def overwrite(layer):
     """Disallow overwrite of labeling when pressed"""
     # on key press
-    layer.overwrite = False
+    layer.overwrite = not layer.overwrite
 
     yield
 
     # on key release
-    layer.overwrite = True
+    layer.overwrite = not layer.overwrite
