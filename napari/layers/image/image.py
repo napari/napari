@@ -269,7 +269,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @property
     def data(self) -> Union[ArrayLike, List[ArrayLike]]:
-        """Image data. Will be a list of arrays if self.multiscale"""
+        """Image data. Will be a list of arrays if self.multiscale is True."""
         return self._data
 
     @data.setter
