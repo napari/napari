@@ -1,6 +1,6 @@
 import warnings
 from copy import copy
-from typing import Dict, List, Tuple, Union, Optional, Sequence
+from typing import Dict, Tuple, Union, Optional, Sequence
 
 import numpy as np
 from vispy.color.colormap import Colormap
@@ -300,7 +300,7 @@ class Vectors(Layer):
         """Determine number of dimensions of the layer."""
         return self.data.shape[2]
 
-    def _get_extent(self) -> List[Tuple[int, int]]:
+    def _get_extent(self) -> Tuple[Tuple[int, int], ...]:
         """Determine ranges for slicing given by (min, max)."""
         if len(self.data) == 0:
             maxs = np.ones(self.data.shape[2], dtype=int)
@@ -312,7 +312,7 @@ class Vectors(Layer):
             maxs = np.max(data, axis=(0, 1))
             mins = np.min(data, axis=(0, 1))
 
-        return [(min, max) for min, max in zip(mins, maxs)]
+        return tuple((min, max) for min, max in zip(mins, maxs))
 
     @property
     def edge_width(self) -> Union[int, float]:
