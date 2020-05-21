@@ -312,12 +312,12 @@ def test_paint():
     assert np.unique(layer.data[5:10, 5:10]) == 2
 
 
-def test_paint_without_overwrite():
-    """Test painting labels without overwriting existing labels"""
+def test_paint_with_preserve_labels():
+    """Test painting labels while preserving existing labels"""
     data = np.zeros((15, 10))
     data[:3, :3] = 1
     layer = Labels(data)
-    layer.overwrite = False
+    layer.preserve_labels = True
     assert np.unique(layer.data[:3, :3]) == 1
 
     layer.brush_size = 9
