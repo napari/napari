@@ -543,7 +543,7 @@ class Labels(Image):
 
         # update the labels image
 
-        if not self._preserve_labels:
+        if not self.preserve_labels:
             self.data[slice_coord] = new_label
         else:
             keep_coords = self.data[slice_coord] == self._background_label
