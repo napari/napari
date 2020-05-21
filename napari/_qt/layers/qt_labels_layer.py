@@ -66,6 +66,7 @@ class QtLabelsControls(QtLayerControls):
         self.layer.events.contiguous.connect(self._on_contig_change)
         self.layer.events.n_dimensional.connect(self._on_n_dim_change)
         self.layer.events.editable.connect(self._on_editable_change)
+        self.layer.events.overwrite.connect(self._on_overwrite_change)
 
         # shuffle colormap button
         self.colormapUpdate = QPushButton('shuffle colors')
