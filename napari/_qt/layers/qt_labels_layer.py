@@ -107,7 +107,7 @@ class QtLabelsControls(QtLayerControls):
         self._on_n_dim_change()
 
         preserve_labels_cb = QCheckBox()
-        preserve_labels_cb.setToolTip('preserve_labels editing')
+        preserve_labels_cb.setToolTip('preserve existing labels while painting')
         preserve_labels_cb.stateChanged.connect(self.change_preserve_labels)
         self.preserveLabelsCheckBox = preserve_labels_cb
         self._on_preserve_labels_change()
