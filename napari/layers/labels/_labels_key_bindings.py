@@ -78,7 +78,7 @@ def redo(layer):
 
 @Labels.bind_key('Shift')
 def preserve_labels(layer):
-    """toggle preserve label option when pressed"""
+    """Toggle preserve label option when pressed"""
     # on key press
     layer.preserve_labels = not layer.preserve_labels
 
