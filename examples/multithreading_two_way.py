@@ -9,6 +9,7 @@ from qtpy.QtWidgets import (
 )
 
 import napari
+import numpy as np
 from napari._qt.threading import ProgressWorker, thread_worker
 
 
@@ -108,6 +109,6 @@ def create_connected_widget():
 if __name__ == "__main__":
 
     with napari.gui_qt():
-        viewer = napari.Viewer()
+        viewer = napari.view_image(np.random.rand(512, 512))
         w = create_connected_widget()
         viewer.window.add_dock_widget(w)
