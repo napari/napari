@@ -1,6 +1,6 @@
 import numpy as np
 import napari
-from napari._qt.threading import thread_worker
+from napari.qt import thread_worker
 import time
 
 

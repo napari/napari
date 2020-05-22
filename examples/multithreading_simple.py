@@ -1,6 +1,6 @@
 from qtpy.QtWidgets import QApplication, QWidget, QHBoxLayout, QLabel
 import time
-from napari._qt.threading import thread_worker
+from napari.qt import thread_worker
 
 
 @thread_worker

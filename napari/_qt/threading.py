@@ -7,9 +7,6 @@ from typing import Any, Callable, Dict, Optional, Set, Type
 import toolz as tz
 from qtpy.QtCore import QObject, QRunnable, QThread, QThreadPool, Signal, Slot
 
-#: A set of Workers.  Do not add directly, use ``start_worker``.`
-_WORKERS: Set['WorkerBase'] = set()
-
 
 def as_generator_function(func: Callable) -> Callable:
     """Turns a regular function (single return) into a generator function."""
@@ -32,6 +29,9 @@ class WorkerBaseSignals(QObject):
 
 class WorkerBase(QRunnable):
     """Base class for creating a Worker that can run in another thread."""
+
+    #: A set of Workers.  Add to set using :meth:`WorkerBase.start`
+    _worker_set: Set['WorkerBase'] = set()
 
     def __init__(
         self, *args, SignalsClass=WorkerBaseSignals, **kwargs
@@ -80,7 +80,7 @@ class WorkerBase(QRunnable):
 
         .. code-block:: none
 
-           calls start_worker -> QThreadPool.globalInstance().start(worker)
+           calls QThreadPool.globalInstance().start(worker)
            |               triggered by the QThreadPool.start() method
            |               |             called by worker.run
            |               |             |
@@ -140,19 +140,22 @@ class WorkerBase(QRunnable):
 
         .. code-block:: none
 
-           calls start_worker -> QThreadPool.globalInstance().start(worker)
+           calls QThreadPool.globalInstance().start(worker)
            |               triggered by the QThreadPool.start() method
            |               |             called by worker.run
            |               |             |
            V               V             V
            worker.start -> worker.run -> worker.work
         """
-        if self in _WORKERS:
+        if self in WorkerBase._worker_set:
             raise RuntimeError('This worker is already started!')
 
         # This will raise a RunTimeError if the worker is already deleted
         repr(self)
-        start_worker(self)
+
+        WorkerBase._worker_set.add(self)
+        self.finished.connect(lambda: WorkerBase._worker_set.discard(self))
+        QThreadPool.globalInstance().start(self)
 
 
 class FunctionWorker(WorkerBase):
@@ -414,29 +417,6 @@ class ProgressWorker(GeneratorWorker):
 # In the future, this could wrap any API, or a pure python threadpool.
 
 
-def start_worker(worker: WorkerBase) -> None:
-    """Add a worker instance to the global ThreadPool and start it.
-
-    Parameters
-    ----------
-    worker : WorkerBase
-        A Worker instance to start and add to the threadpool.
-
-    Raises
-    ------
-    TypeError
-        If ``worker`` is not an instance of ``WorkerBase``.
-    """
-    if not isinstance(worker, WorkerBase):
-        raise TypeError(
-            'Using the `start_worker` API requires the the worker '
-            'object be an instance of Worker'
-        )
-    _WORKERS.add(worker)
-    worker.finished.connect(lambda: _WORKERS.discard(worker))
-    QThreadPool.globalInstance().start(worker)
-
-
 def set_max_thread_count(num: int):
     """Set the maximum number of threads used by the thread pool.
 
@@ -450,7 +430,8 @@ def wait_for_workers_to_quit(msecs: int = None):
     """Ask all workers to quit, and wait up to `msec` for quit.
 
     Attempts to clean up all running workers by calling ``worker.quit()``
-    method.  Any workers in the ``_WORKERS`` set will have this method.
+    method.  Any workers in the ``WorkerBase._worker_set`` set will have this
+    method.
 
     By default, this function will block indefinitely, until worker threads
     finish.  If a timeout is provided, a ``RuntimeError`` will be raised if
@@ -490,7 +471,7 @@ def wait_for_workers_to_quit(msecs: int = None):
         If a timeout is provided and workers do not quit successfully within
         the time alotted.
     """
-    for worker in _WORKERS:
+    for worker in WorkerBase._worker_set:
         worker.quit()
 
     msecs = msecs if msecs is not None else -1
