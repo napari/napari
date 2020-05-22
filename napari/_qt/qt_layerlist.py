@@ -511,7 +511,7 @@ class QtLayerWidget(QFrame):
         textbox = QLineEdit(self)
         textbox.setText(layer.name)
         textbox.home(False)
-        textbox.setToolTip('Layer name')
+        textbox.setToolTip(self.layer.name)
         textbox.setAcceptDrops(False)
         textbox.setEnabled(True)
         textbox.editingFinished.connect(self.changeText)
