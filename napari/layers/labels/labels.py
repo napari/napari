@@ -146,6 +146,7 @@ class Labels(Image):
 
         self.events.add(
             mode=Event,
+            preserve_labels=Event,
             n_dimensional=Event,
             contiguous=Event,
             brush_size=Event,
@@ -157,12 +158,14 @@ class Labels(Image):
         self._contiguous = True
         self._brush_size = 10
 
+        self._background_label = 0
         self._selected_label = 0
         self._selected_color = None
 
         self._mode = Mode.PAN_ZOOM
         self._mode_history = self._mode
         self._status = self.mode
+        self._preserve_labels = False
         self._help = 'enter paint or fill mode to edit labels'
 
         self._block_saving = False
@@ -325,7 +328,7 @@ class Labels(Image):
             self.cursor_size = self.brush_size / self.scale_factor
             self.cursor = 'square'
             self.interactive = False
-            self.help = 'hold <space> to pan/zoom, drag to paint a label'
+            self.help = 'hold <space> to pan/zoom, hold <shift> to toggle preserve_labels, drag to paint a label'
             self.mouse_drag_callbacks.append(paint)
         elif mode == Mode.FILL:
             self.cursor = 'cross'
@@ -340,6 +343,20 @@ class Labels(Image):
 
         self.events.mode(mode=mode)
         self.refresh()
+
+    @property
+    def preserve_labels(self):
+        """Defines if painting should preserve existing labels.
+
+        Default to false to allow paint on existing labels. When
+        set to true, existing labels will be replaced during painting.
+        """
+        return self._preserve_labels
+
+    @preserve_labels.setter
+    def preserve_labels(self, preserve_labels: bool):
+        self._preserve_labels = preserve_labels
+        self.events.preserve_labels(preserve_labels=preserve_labels)
 
     def _set_editable(self, editable=None):
         """Set editable mode based on layer properties."""
@@ -525,7 +542,12 @@ class Labels(Image):
             slice_coord = tuple(slice_coord)
 
         # update the labels image
-        self.data[slice_coord] = new_label
+
+        if not self.preserve_labels:
+            self.data[slice_coord] = new_label
+        else:
+            keep_coords = self.data[slice_coord] == self._background_label
+            self.data[slice_coord][keep_coords] = new_label
 
         if refresh is True:
             self.refresh()
