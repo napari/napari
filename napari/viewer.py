@@ -10,6 +10,7 @@ from ._qt.qt_main_window import Window
 from ._qt.qt_viewer import QtViewer
 from .components import ViewerModel
 from . import __version__
+from .utils.notebook_display import NotebookScreenshot
 
 
 class Viewer(ViewerModel):
@@ -125,6 +126,22 @@ class Viewer(ViewerModel):
         else:
             image = self.window.qt_viewer.screenshot(path=path)
         return image
+
+    def nbscreenshot(self, with_viewer=True):
+        """Display napari screenshot in the jupyter notebook.
+
+        Parameters
+        ----------
+        with_viewer : bool, optional
+            If True includes the napari viewer frame in the screenshot,
+            otherwise just includes the canvas. By default, True.
+
+        Returns
+        -------
+        napari.utils.notebook_display.NotebookScreenshot
+            Napari screenshot rendered as rich display in the jupyter notebook.
+        """
+        return NotebookScreenshot(self, with_viewer=with_viewer)
 
     def update(self, func, *args, **kwargs):
         t = QtUpdateUI(func, *args, **kwargs)
