@@ -4,8 +4,7 @@ from abc import ABC, abstractmethod
 import os
 from functools import lru_cache
 from logging import getLogger
-from typing import Any, Dict, List, Optional, Sequence, Union, TypeVar
-from ..utils.colormaps import ensure_colormap_tuple
+from typing import Any, Dict, List, Optional, Set, Sequence, Union, TypeVar
 
 import numpy as np
 
