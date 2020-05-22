@@ -107,6 +107,21 @@ def test_screenshot(viewer_factory):
     assert screenshot.ndim == 3
 
 
+def test_nbscreenshot(viewer_factory):
+    """Test taking a screenshot."""
+    view, viewer = viewer_factory()
+
+    np.random.seed(0)
+    data = np.random.random((10, 15))
+    viewer.add_image(data)
+
+    rich_display_object = viewer.nbscreenshot()
+    assert hasattr(rich_display_object, '_repr_png_')
+    # Trigger method that would run in jupyter notebook cell automatically
+    rich_display_object._repr_png_()
+    assert rich_display_object.image is not None
+
+
 def test_update(viewer_factory):
     data = np.random.random((512, 512))
     view, viewer = viewer_factory()
