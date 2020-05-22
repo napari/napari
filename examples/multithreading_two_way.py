@@ -83,6 +83,8 @@ def create_connected_widget():
 
     # if you chose to pass start=False, you can start the thread manually
     worker.finished.connect(lambda: w.play_btn.setDisabled(True))
+    worker.finished.connect(lambda: w.reset_btn.setDisabled(True))
+    worker.finished.connect(lambda: w.abort_btn.setDisabled(True))
     worker.finished.connect(lambda: w.play_btn.setText("Done"))
 
     # send values into the function (like generator.send) using worker.send
