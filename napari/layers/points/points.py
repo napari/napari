@@ -1016,7 +1016,7 @@ class Points(Layer):
                 if update_color_mapping:
                     color_cycle = getattr(self, f'_{attribute}_color_cycle')
                     color_cycle_map = {
-                        k: transform_color(c)
+                        k: np.squeeze(transform_color(c))
                         for k, c in zip(
                             np.unique(color_properties), color_cycle
                         )
