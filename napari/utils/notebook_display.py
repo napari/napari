@@ -1,7 +1,5 @@
 from io import BytesIO
 
-import imageio
-
 
 class NotebookScreenshot:
     """Display napari screenshot in the jupyter notebook.
@@ -36,6 +34,8 @@ class NotebookScreenshot:
             If True includes the napari viewer frame in the screenshot,
             otherwise just includes the canvas. By default, True.
         """
+        import imageio
+        
         self.viewer = viewer
         self.with_viewer = with_viewer
         self.image = None
