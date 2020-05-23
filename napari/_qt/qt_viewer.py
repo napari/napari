@@ -1,10 +1,16 @@
 from pathlib import Path
 
 from qtpy.QtCore import QCoreApplication, Qt, QSize
-from qtpy.QtWidgets import QWidget, QVBoxLayout, QFileDialog, QSplitter
+from qtpy.QtWidgets import (
+    QWidget,
+    QVBoxLayout,
+    QFileDialog,
+    QSplitter,
+    QMessageBox,
+)
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtCore import QThreadPool
-from skimage.io import imsave
+from ..utils.io import imsave
 from vispy.scene import SceneCanvas, PanZoomCamera, ArcballCamera
 from vispy.visuals.transforms import ChainTransform
 
@@ -146,7 +152,6 @@ class QtViewer(QSplitter):
         self.canvas.connect(self.on_mouse_release)
         self.canvas.connect(self.on_key_press)
         self.canvas.connect(self.on_key_release)
-        self.canvas.connect(self.on_draw)
 
         self.view = self.canvas.central_widget.add_view()
         self._update_camera()
@@ -228,9 +233,9 @@ class QtViewer(QSplitter):
         layers = event.source
         layer = event.item
         vispy_layer = create_vispy_visual(layer)
-        vispy_layer.camera = self.view.camera
         vispy_layer.node.parent = self.view.scene
         vispy_layer.order = len(layers)
+        self.canvas.connect(vispy_layer.on_draw)
         self.layer_to_visual[layer] = vispy_layer
 
     def _remove_layer(self, event):
@@ -243,9 +248,10 @@ class QtViewer(QSplitter):
         """
         layer = event.item
         vispy_layer = self.layer_to_visual[layer]
+        self.canvas.events.draw.disconnect(vispy_layer.on_draw)
         vispy_layer.node.transforms = ChainTransform()
         vispy_layer.node.parent = None
-        del self.layer_to_visual[layer]
+        del vispy_layer
 
     def _reorder_layers(self, event):
         """When the list is reordered, propagate changes to draw order.
@@ -284,6 +290,35 @@ class QtViewer(QSplitter):
                 self.view.camera.viewbox_key_event = viewbox_key_event
                 self.viewer.reset_view()
 
+    def _save_layers_dialog(self, selected=False):
+        """Save layers (all or selected) to disk, using ``LayerList.save()``.
+
+        Parameters
+        ----------
+        selected : bool
+            If True, only layers that are selected in the viewer will be saved.
+            By default, all layers are saved.
+        """
+        msg = ''
+        if not len(self.viewer.layers):
+            msg = "There are no layers in the viewer to save"
+        elif selected and not len(self.viewer.layers.selected):
+            msg = (
+                'Please select one or more layers to save,'
+                '\nor use "Save all layers..."'
+            )
+        if msg:
+            QMessageBox.warning(self, "Nothing to save", msg, QMessageBox.Ok)
+            return
+
+        filename, _ = QFileDialog.getSaveFileName(
+            parent=self,
+            caption=f'Save {"selected" if selected else "all"} layers',
+            directory=self._last_visited_dir,  # home dir by default
+        )
+        if filename:
+            self.viewer.layers.save(filename, selected=selected)
+
     def screenshot(self, path=None):
         """Take currently displayed screen and convert to an image array.
 
@@ -303,17 +338,17 @@ class QtViewer(QSplitter):
             imsave(path, QImg2array(img))  # scikit-image imsave method
         return QImg2array(img)
 
-    def _save_screenshot(self):
+    def _screenshot_dialog(self):
         """Save screenshot of current display, default .png"""
         filename, _ = QFileDialog.getSaveFileName(
             parent=self,
-            caption='',
+            caption='Save screenshot',
             directory=self._last_visited_dir,  # home dir by default
             filter="Image files (*.png *.bmp *.gif *.tif *.tiff)",  # first one used by default
             # jpg and jpeg not included as they don't support an alpha channel
         )
         if (filename != '') and (filename is not None):
-            # double check that an appropriate extension has been added as the filter
+            # double check that an appropriate extension has been added as the
             # filter option does not always add an extension on linux and windows
             # see https://bugreports.qt.io/browse/QTBUG-27186
             image_extensions = ('.bmp', '.gif', '.png', '.tif', '.tiff')
@@ -321,27 +356,27 @@ class QtViewer(QSplitter):
                 filename = filename + '.png'
             self.screenshot(path=filename)
 
-    def _open_images(self):
-        """Add image files from the menubar."""
+    def _open_files_dialog(self):
+        """Add files from the menubar."""
         filenames, _ = QFileDialog.getOpenFileNames(
             parent=self,
-            caption='Select image(s)...',
+            caption='Select file(s)...',
             directory=self._last_visited_dir,  # home dir by default
         )
         if (filenames != []) and (filenames is not None):
-            self.viewer.add_path(filenames)
+            self.viewer.open(filenames)
 
-    def _open_images_as_stack(self):
-        """Add image files as a stack, from the menubar."""
+    def _open_files_dialog_as_stack_dialog(self):
+        """Add files as a stack, from the menubar."""
         filenames, _ = QFileDialog.getOpenFileNames(
             parent=self,
-            caption='Select images...',
+            caption='Select files...',
             directory=self._last_visited_dir,  # home dir by default
         )
         if (filenames != []) and (filenames is not None):
-            self.viewer.add_path(filenames, stack=True)
+            self.viewer.open(filenames, stack=True)
 
-    def _open_folder(self):
+    def _open_folder_dialog(self):
         """Add a folder of files from the menubar."""
         folder = QFileDialog.getExistingDirectory(
             parent=self,
@@ -349,7 +384,7 @@ class QtViewer(QSplitter):
             directory=self._last_visited_dir,  # home dir by default
         )
         if folder not in {'', None}:
-            self.viewer.add_path([folder])
+            self.viewer.open([folder])
 
     def _on_interactive(self, event):
         """Link interactive attributes of view and viewer.
@@ -459,8 +494,10 @@ class QtViewer(QSplitter):
 
         layer = self.viewer.active_layer
         if layer is not None:
-            # Line bellow needed until layer mouse callbacks are refactored
-            self.layer_to_visual[layer].on_mouse_press(event)
+            # update cursor position in visual and layer
+            visual = self.layer_to_visual[layer]
+            visual._position = list(event.pos)
+            layer.position = visual._transform_position(visual._position)
             mouse_press_callbacks(layer, event)
 
     def on_mouse_move(self, event):
@@ -478,8 +515,10 @@ class QtViewer(QSplitter):
 
         layer = self.viewer.active_layer
         if layer is not None:
-            # Line bellow needed until layer mouse callbacks are refactored
-            self.layer_to_visual[layer].on_mouse_move(event)
+            # update cursor position in visual and layer
+            visual = self.layer_to_visual[layer]
+            visual._position = list(event.pos)
+            layer.position = visual._transform_position(visual._position)
             mouse_move_callbacks(layer, event)
 
     def on_mouse_release(self, event):
@@ -490,12 +529,17 @@ class QtViewer(QSplitter):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
+        if event.pos is None:
+            return
+
         mouse_release_callbacks(self.viewer, event)
 
         layer = self.viewer.active_layer
         if layer is not None:
-            # Line bellow needed until layer mouse callbacks are refactored
-            self.layer_to_visual[layer].on_mouse_release(event)
+            # update cursor position in visual and layer
+            visual = self.layer_to_visual[layer]
+            visual._position = list(event.pos)
+            layer.position = visual._transform_position(visual._position)
             mouse_release_callbacks(layer, event)
 
     def on_key_press(self, event):
@@ -527,19 +571,10 @@ class QtViewer(QSplitter):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
+        if event.key is None:
+            return
         combo = components_to_key_combo(event.key.name, event.modifiers)
         self.viewer.release_key(combo)
-
-    def on_draw(self, event):
-        """Called whenever drawn in canvas. Called for all layers, not just top
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
-        """
-        for visual in self.layer_to_visual.values():
-            visual.on_draw(event)
 
     def keyPressEvent(self, event):
         """Called whenever a key is pressed.
@@ -595,7 +630,7 @@ class QtViewer(QSplitter):
                 filenames.append(url.toLocalFile())
             else:
                 filenames.append(url.toString())
-        self.viewer.add_path(filenames, stack=bool(shift_down))
+        self.viewer.open(filenames, stack=bool(shift_down))
 
     def closeEvent(self, event):
         """Clear pool of worker threads and close.

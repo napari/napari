@@ -1,4 +1,6 @@
 from enum import auto
+from os.path import expanduser, abspath, sep
+from pathlib import Path
 
 import pytest
 
@@ -7,6 +9,7 @@ from napari.utils.misc import (
     callsignature,
     ensure_sequence_of_iterables,
     ensure_iterable,
+    abspath_or_url,
 )
 
 ITERABLE = (0, 1, 2)
@@ -166,3 +169,21 @@ def test_string_enum():
     #  test setting by instance of a different StringEnum is an error
     with pytest.raises(ValueError):
         TestEnum(OtherEnum.SOMETHING)
+
+
+def test_abspath_or_url():
+    relpath = "~" + sep + "something"
+    assert abspath_or_url(relpath) == expanduser(relpath)
+    assert abspath_or_url('something') == abspath('something')
+    assert abspath_or_url(sep + 'something') == abspath(sep + 'something')
+    assert abspath_or_url('https://something') == 'https://something'
+    assert abspath_or_url('http://something') == 'http://something'
+    assert abspath_or_url('ftp://something') == 'ftp://something'
+    assert abspath_or_url('file://something') == 'file://something'
+    assert abspath_or_url(('a', '~')) == (abspath('a'), expanduser('~'))
+    assert abspath_or_url(['a', '~']) == [abspath('a'), expanduser('~')]
+
+    assert abspath_or_url(('a', Path('~'))) == (abspath('a'), expanduser('~'))
+
+    with pytest.raises(TypeError):
+        abspath_or_url({'a', '~'})

@@ -21,13 +21,7 @@ class Labels(Image):
     Parameters
     ----------
     data : array or list of array
-        Labels data as an array or pyramid.
-    is_pyramid : bool
-        Whether the data is an image pyramid or not. Pyramid data is
-        represented by a list of array like image data. If not specified by
-        the user and if the data is a list of arrays that decrease in shape
-        then it will be taken to be a pyramid. The first image in the list
-        should be the largest.
+        Labels data as an array or multiscale.
     num_colors : int
         Number of unique colors to use in colormap.
     seed : float
@@ -48,6 +42,12 @@ class Labels(Image):
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
+    multiscale : bool
+        Whether the data is a multiscale image or not. Multiscale data is
+        represented by a list of array like image data. If not specified by
+        the user and if the data is a list of arrays that decrease in shape
+        then it will be taken to be multiscale. The first image in the list
+        should be the largest.
 
     Attributes
     ----------
@@ -55,8 +55,8 @@ class Labels(Image):
         Integer valued label data. Can be N dimensional. Every pixel contains
         an integer ID corresponding to the region it belongs to. The label 0 is
         rendered as transparent.
-    is_pyramid : bool
-        Whether the data is an image pyramid or not. Pyramid data is
+    multiscale : bool
+        Whether the data is a multiscale image or not. Multiscale data is
         represented by a list of array like image data. The first image in the
         list should be the largest.
     metadata : dict
@@ -111,7 +111,6 @@ class Labels(Image):
         self,
         data,
         *,
-        is_pyramid=None,
         num_colors=50,
         seed=0.5,
         name=None,
@@ -121,6 +120,7 @@ class Labels(Image):
         opacity=0.7,
         blending='translucent',
         visible=True,
+        multiscale=None,
     ):
 
         self._seed = seed
@@ -130,7 +130,6 @@ class Labels(Image):
         super().__init__(
             data,
             rgb=False,
-            is_pyramid=is_pyramid,
             colormap=colormap,
             contrast_limits=[0.0, 1.0],
             interpolation='nearest',
@@ -142,10 +141,12 @@ class Labels(Image):
             opacity=opacity,
             blending=blending,
             visible=visible,
+            multiscale=multiscale,
         )
 
         self.events.add(
             mode=Event,
+            preserve_labels=Event,
             n_dimensional=Event,
             contiguous=Event,
             brush_size=Event,
@@ -157,12 +158,14 @@ class Labels(Image):
         self._contiguous = True
         self._brush_size = 10
 
+        self._background_label = 0
         self._selected_label = 0
         self._selected_color = None
 
         self._mode = Mode.PAN_ZOOM
         self._mode_history = self._mode
         self._status = self.mode
+        self._preserve_labels = False
         self._help = 'enter paint or fill mode to edit labels'
 
         self._block_saving = False
@@ -247,7 +250,7 @@ class Labels(Image):
         state = self._get_base_state()
         state.update(
             {
-                'is_pyramid': self.is_pyramid,
+                'multiscale': self.multiscale,
                 'num_colors': self.num_colors,
                 'seed': self.seed,
                 'data': self.data,
@@ -325,7 +328,7 @@ class Labels(Image):
             self.cursor_size = self.brush_size / self.scale_factor
             self.cursor = 'square'
             self.interactive = False
-            self.help = 'hold <space> to pan/zoom, drag to paint a label'
+            self.help = 'hold <space> to pan/zoom, hold <shift> to toggle preserve_labels, drag to paint a label'
             self.mouse_drag_callbacks.append(paint)
         elif mode == Mode.FILL:
             self.cursor = 'cross'
@@ -341,10 +344,24 @@ class Labels(Image):
         self.events.mode(mode=mode)
         self.refresh()
 
+    @property
+    def preserve_labels(self):
+        """Defines if painting should preserve existing labels.
+
+        Default to false to allow paint on existing labels. When
+        set to true, existing labels will be replaced during painting.
+        """
+        return self._preserve_labels
+
+    @preserve_labels.setter
+    def preserve_labels(self, preserve_labels: bool):
+        self._preserve_labels = preserve_labels
+        self.events.preserve_labels(preserve_labels=preserve_labels)
+
     def _set_editable(self, editable=None):
         """Set editable mode based on layer properties."""
         if editable is None:
-            if self.is_pyramid or self.dims.ndisplay == 3:
+            if self.multiscale or self.dims.ndisplay == 3:
                 self.editable = False
             else:
                 self.editable = True
@@ -525,7 +542,12 @@ class Labels(Image):
             slice_coord = tuple(slice_coord)
 
         # update the labels image
-        self.data[slice_coord] = new_label
+
+        if not self.preserve_labels:
+            self.data[slice_coord] = new_label
+        else:
+            keep_coords = self.data[slice_coord] == self._background_label
+            self.data[slice_coord][keep_coords] = new_label
 
         if refresh is True:
             self.refresh()

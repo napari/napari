@@ -46,6 +46,9 @@ class VispyShapesLayer(VispyBaseLayer):
         self.node._subvisuals[0].set_data(
             vertices=vertices, faces=faces, face_colors=colors
         )
+        # Call to update order of translation values with new dims:
+        self._on_scale_change()
+        self._on_translate_change()
         self.node.update()
 
     def _on_highlight_change(self, event=None):

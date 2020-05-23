@@ -219,7 +219,7 @@ class Surface(IntensityVisualizationMixin, Layer):
             mins = [0] * (self.vertex_values.ndim - 1) + list(mins)
             maxs = list(self.vertex_values.shape[:-1]) + list(maxs)
 
-        return [(min, max, 1) for min, max in zip(mins, maxs)]
+        return [(min, max) for min, max in zip(mins, maxs)]
 
     def _get_state(self):
         """Get dictionary of layer state.
@@ -302,18 +302,6 @@ class Surface(IntensityVisualizationMixin, Layer):
     def _update_thumbnail(self):
         """Update thumbnail with current surface."""
         pass
-
-    def to_xml_list(self):
-        """Convert surface to a list of svg xml elements.
-
-        Returns
-        ----------
-        xml : list
-            List of xml elements.
-        """
-        xml_list = []
-
-        return xml_list
 
     def _get_value(self):
         """Returns coordinates, values, and a string for a given mouse position

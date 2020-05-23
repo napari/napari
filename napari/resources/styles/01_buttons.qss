@@ -102,7 +102,7 @@ QtGridViewButton::indicator {
 }
 
 QtGridViewButton::indicator:unchecked {
-  image: url(":/themes/{{ folder }}/new_image.svg");
+  image: url(":/themes/{{ folder }}/square.svg");
 }
 
 QtGridViewButton::indicator:checked {
@@ -268,7 +268,7 @@ QtPlayButton[playing=True]:hover {
 }
 
 QtPlayButton[playing=True] {
-    image: url(":/themes/{{ folder }}/new_image.svg");
+    image: url(":/themes/{{ folder }}/square.svg");
     background-color: {{ warning }};
     height: 12px;
     width: 12px;

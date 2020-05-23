@@ -196,6 +196,18 @@ def test_singleton_dims(qtbot):
         ]
     )
 
+    # Change ndisplay to three
+    view.dims.ndisplay = 3
+
+    # Check no sliders now shown
+    assert np.sum(view._displayed_sliders) == 0
+
+    # Change ndisplay back to two
+    view.dims.ndisplay = 2
+
+    # Check only slider now shown
+    assert np.sum(view._displayed_sliders) == 1
+
 
 def test_order_when_changing_ndim(qtbot):
     """
