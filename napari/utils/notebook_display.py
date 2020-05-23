@@ -33,9 +33,7 @@ class NotebookScreenshot:
         with_viewer : bool, optional
             If True includes the napari viewer frame in the screenshot,
             otherwise just includes the canvas. By default, True.
-        """
-        import imageio
-        
+        """        
         self.viewer = viewer
         self.with_viewer = with_viewer
         self.image = None
@@ -47,8 +45,10 @@ class NotebookScreenshot:
         -------
         In memory binary stream containing PNG screenshot image.
         """
+        from imageio import imsave
+
         self.image = self.viewer.screenshot(with_viewer=self.with_viewer)
         file_obj = BytesIO()
-        imageio.imsave(file_obj, self.image, format='png')
+        imsave(file_obj, self.image, format='png')
         file_obj.seek(0)
         return file_obj.read()
