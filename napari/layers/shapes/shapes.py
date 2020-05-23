@@ -412,12 +412,12 @@ class Shapes(Layer):
 
     @property
     def edge_color(self):
-        """list of str: name of edge color for each shape."""
+        """(N x 4) np.ndarray: Array of RGBA face colors for each shape"""
         return self._data_view.edge_colors
 
     @property
     def face_color(self):
-        """list of str: name of face color for each shape."""
+        """(N x 4) np.ndarray: Array of RGBA face colors for each shape"""
         return self._data_view.face_colors
 
     @property
