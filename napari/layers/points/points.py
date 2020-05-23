@@ -510,9 +510,10 @@ class Points(Layer):
             color_cycle_keys = [*color_cycle_map]
             if color_property_value not in color_cycle_keys:
                 color_cycle = getattr(self, f'_{attribute}_color_cycle')
-                color_cycle_map[color_property_value] = transform_color(
-                    next(color_cycle)
+                color_cycle_map[color_property_value] = np.squeeze(
+                    transform_color(next(color_cycle))
                 )
+
                 setattr(self, f'{attribute}_color_cycle_map', color_cycle_map)
 
             new_colors = np.tile(
