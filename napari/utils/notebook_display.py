@@ -33,7 +33,7 @@ class NotebookScreenshot:
         with_viewer : bool, optional
             If True includes the napari viewer frame in the screenshot,
             otherwise just includes the canvas. By default, True.
-        """        
+        """
         self.viewer = viewer
         self.with_viewer = with_viewer
         self.image = None
