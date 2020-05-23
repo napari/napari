@@ -411,7 +411,7 @@ class Points(Layer):
             color_property = getattr(self, f'_{attribute}_color_property')
             prop_value = self._property_choices[color_property][0]
             color_cycle_map = getattr(self, f'{attribute}_color_cycle_map')
-            color_cycle_map[prop_value] = curr_color
+            color_cycle_map[prop_value] = np.squeeze(curr_color)
             setattr(self, f'{attribute}_color_cycle_map', color_cycle_map)
 
         elif color_mode == ColorMode.COLORMAP:
