@@ -24,25 +24,19 @@ jobs:
           briefcase create
           briefcase build
           if [ "$RUNNER_OS" == "macOS" ]; then
-                briefcase package --no-sign
+            briefcase package --no-sign
+            export DEST="/macOS/*.dmg"
+          elif [ "$RUNNER_OS" == "Windows ]; then
+            export DEST="/linux/*.AppImage"
+            briefcase package
           else
-                briefcase package
+            export DEST="/windows/*.msi"
+            briefcase package
           fi
+          shell: bash
       - name: Upload Linux Artifact
         uses: actions/upload-artifact@v1
         if: runner.os == 'Linux'
         with:
           name: napari_installer
-          path: ${{ github.workspace }}/linux/*.AppImage
-      - name: Upload Mac Artifact
-        uses: actions/upload-artifact@v1
-        if: runner.os == 'macOS'
-        with:
-          name: napari_installer
-          path: ${{ github.workspace }}/macOS/*.dmg
-      - name: Upload Windows Artifact
-        uses: actions/upload-artifact@v1
-        if: runner.os == 'Windows'
-        with:
-          name: napari_installer
-          path: ${{ github.workspace }}/windows/*.msi
+          path: ${{ github.workspace }}${{ DEST }}
