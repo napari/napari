@@ -31,14 +31,15 @@ jobs:
         run: |
           # briefcase create
           # briefcase build
-          mkdir -p ${{ github.workspace }}\artifact
+          mkdir -p ${{ github.workspace }}/artifact
           ls
           # ${{ env.cmd }}
           # mv ${{ env.output }} ${{ github.workspace }}/artifact
           # echo ${{ github.workspace }}/artifact
           # ls ${{ github.workspace }}/artifact
           # mv ${{ env.output }} ${{ github.workspace }}/artifact
-          echo hello > ${{ github.workspace }}\artifact\world.txt
+          echo hello > ${{ github.workspace }}/artifact/world.txt
+          ls ${{ github.workspace }}/artifact/
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
         with:
