@@ -19,11 +19,15 @@ jobs:
         run: |
           python -m pip install --upgrade pip 
           pip install briefcase
+      - name: Patch Briefcase
+        if: runner.os == 'macOS'
+        run: python patch_briefcase.py
       - name: Make Bundle
         shell: bash
         env:
-          output: ${{ ( runner.os == 'Windows' && '.\windows\*.msi' ) || ( runner.os == 'Linux' && './linux/*.AppImage' ) || ( runner.os == 'macOS' && './macOS/*.dmg' ) }}
+          output: ${{ ( runner.os == 'Windows' && './windows/*.msi' ) || ( runner.os == 'Linux' && './linux/*.AppImage' ) || ( runner.os == 'macOS' && './macOS/*.dmg' ) }}
           cmd: ${{ ( runner.os == 'macOS' && 'briefcase package --no-sign' ) || 'briefcase package' }}
+          DMGSIZE: '1.8g'
         run: |
           briefcase create
           briefcase build
