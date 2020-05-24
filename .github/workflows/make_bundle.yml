@@ -12,41 +12,37 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@master
-      # - name: Install Python
-      #   uses: actions/setup-python@v1
-      #   with:
-      #     python-version: 3.8
-      # - name: Install Dependencies
-      #   run: |
-      #     python -m pip install --upgrade pip 
-      #     # pip install briefcase
-      # - name: Patch Briefcase
-      #   if: runner.os == 'macOS'
-      #   run: python patch_briefcase.py
+      - name: Install Python
+        uses: actions/setup-python@v1
+        with:
+          python-version: 3.8
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip 
+          # pip install briefcase
+      - name: Patch Briefcase
+        if: runner.os == 'macOS'
+        run: python patch_briefcase.py
       - name: Make nix Bundle
         if: runner.os != 'Windows'
         env:
-          output: ${{ ( runner.os == 'Windows' && './windows/*.msi' ) || ( runner.os == 'Linux' && './linux/*.AppImage' ) || ( runner.os == 'macOS' && './macOS/*.dmg' ) }}
+          output: ${{ ( runner.os == 'macOS' && './macOS/*.dmg' ) || './linux/*.AppImage' }}
           cmd: ${{ ( runner.os == 'macOS' && 'briefcase package --no-sign' ) || 'briefcase package' }}
-          DMGSIZE: '1.8g'
+          DMGSIZE: '1.4g'
         run: |
-          # briefcase create
-          # briefcase build
+          briefcase create
+          briefcase build
           mkdir -p ${{ github.workspace }}/artifact
-          ls
-          # ${{ env.cmd }}
-          # mv ${{ env.output }} ${{ github.workspace }}/artifact
-          # echo ${{ github.workspace }}/artifact
-          # ls ${{ github.workspace }}/artifact
-          # mv ${{ env.output }} ${{ github.workspace }}/artifact
-          echo hello > ${{ github.workspace }}/artifact/world.txt
-          ls ${{ github.workspace }}/artifact/
+          ${{ env.cmd }}
+          mv ${{ env.output }} ${{ github.workspace }}/artifact
       - name: Make Windows Bundle
         if: runner.os == 'Windows'
         run: |
-          mkdir artifact
-          dir $( $GITHUB_WORKSPACE )
-          echo hello > artifact\world.txt
+          briefcase create
+          briefcase build
+          mkdir -p artifact
+          briefcase package
+          move windows\*.msi artifact
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
         with:
