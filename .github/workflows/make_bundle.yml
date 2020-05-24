@@ -34,12 +34,12 @@ jobs:
           mv ${{ env.output }} ${{ github.workspace }}/artifact
           echo ${{ github.workspace }}/artifact
           ls ${{ github.workspace }}/artifact
-          ls ${{ github.workspace }}/artifact/**/*
+          ls ${{ github.workspace }}/artifact/*
 
       - name: Upload Linux Artifact
         uses: actions/upload-artifact@v1
         with:
           name: napari_installer
-          path: ${{ github.workspace }}/artifact/**/*
+          path: ${{ github.workspace }}/artifact/*
           
 
