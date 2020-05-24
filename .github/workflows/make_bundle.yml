@@ -46,7 +46,7 @@ jobs:
         run: |
           mkdir artifact
           dir $( $GITHUB_WORKSPACE )
-          echo hello > \artifact\world.txt
+          echo hello > artifact\world.txt
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
         with:
