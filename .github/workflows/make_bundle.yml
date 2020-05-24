@@ -12,14 +12,14 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@master
-      - name: Install Python
-        uses: actions/setup-python@v1
-        with:
-          python-version: 3.8
-      - name: Install Dependencies
-        run: |
-          python -m pip install --upgrade pip 
-          # pip install briefcase
+      # - name: Install Python
+      #   uses: actions/setup-python@v1
+      #   with:
+      #     python-version: 3.8
+      # - name: Install Dependencies
+      #   run: |
+      #     python -m pip install --upgrade pip 
+      #     # pip install briefcase
       # - name: Patch Briefcase
       #   if: runner.os == 'macOS'
       #   run: python patch_briefcase.py
@@ -46,7 +46,7 @@ jobs:
         run: |
           mkdir artifact
           dir $( $GITHUB_WORKSPACE )
-          echo hello > /artifact/world.txt
+          echo hello > \artifact\world.txt
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
         with:
