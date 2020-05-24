@@ -155,7 +155,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
         # Determine if data is a multiscale
         if multiscale is None:
-            multiscale = guess_multiscale(data)
+            multiscale, data = guess_multiscale(data)
 
         # Determine initial shape
         if multiscale:

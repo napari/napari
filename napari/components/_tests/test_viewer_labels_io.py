@@ -15,7 +15,7 @@ def test_open_labels(suffix):
     labeled = ndi.label(blobs)[0].astype(np.uint8)
     with temporary_file(suffix) as fout:
         imwrite(fout, labeled, format=suffix)
-        viewer.open(fout, layer_type='labels')
+        viewer.open(fout, layer_type='labels', plugin='builtins')
         assert len(viewer.layers) == 1
         assert np.all(labeled == viewer.layers[0].data)
         assert isinstance(viewer.layers[0], Labels)

@@ -1,15 +1,16 @@
-import os
 import csv
+import os
 import re
-
 from glob import glob
 from pathlib import Path
-from typing import Union, List, Optional, Tuple
+from typing import List, Optional, Tuple, Union
+from ..types import FullLayerData
 
 import numpy as np
-
-from dask import delayed
 from dask import array as da
+from dask import delayed
+
+from ..utils.misc import abspath_or_url
 
 
 def imsave(filename: str, data: np.ndarray):
@@ -99,6 +100,7 @@ def imread(filename: str) -> np.ndarray:
     data : np.ndarray
         The image data.
     """
+    filename = abspath_or_url(filename)
     ext = os.path.splitext(filename)[1]
     if ext in [".tif", ".tiff", ".lsm"]:
         import tifffile
@@ -189,6 +191,11 @@ def magic_imread(filenames, *, use_dask=None, stack=True):
     if use_dask is None:
         use_dask = len(filenames_expanded) > 1
 
+    if not filenames_expanded:
+        raise ValueError(
+            f"No files found in {filenames} after removing subdirectories"
+        )
+
     # then, read in images
     images = []
     shape = None
@@ -228,6 +235,8 @@ def magic_imread(filenames, *, use_dask=None, stack=True):
                             'different shapes.'
                         )
                         raise ValueError(msg) from e
+                    else:
+                        raise e
         else:
             image = images  # return a list
     return image
@@ -290,27 +299,210 @@ def write_csv(
             writer.writerow(row)
 
 
-def read_csv(filename: str) -> Tuple[np.array, List[str]]:
-    """Read a csv file.
+def guess_layer_type_from_column_names(
+    column_names: List[str],
+) -> Optional[str]:
+    """Guess layer type based on column names from a csv file.
+
+    Parameters
+    ----------
+    column_names : list of str
+        List of the column names from the csv.
+
+    Returns
+    -------
+    str or None
+        Layer type if recognized, otherwise None.
+    """
+
+    if set(
+        ['index', 'shape-type', 'vertex-index', 'axis-0', 'axis-1']
+    ).issubset(column_names):
+        return 'shapes'
+    elif set(['axis-0', 'axis-1']).issubset(column_names):
+        return 'points'
+    else:
+        return None
+
+
+def read_csv(
+    filename: str, require_type: str = None
+) -> Tuple[np.array, List[str], Optional[str]]:
+    """Return CSV data only if column names match format for ``require_type``.
+
+    Reads only the first line of the CSV at first, then optionally raises an
+    exception if the column names are not consistent with a known format, as
+    determined by the ``require_type`` argument and
+    :func:`guess_layer_type_from_column_names`.
 
     Parameters
     ----------
     filename : str
-        Filename for saving csv.
+        Path of file to open
+    require_type : str, optional
+        The desired layer type. If provided, should be one of the keys in
+        ``csv_reader_functions`` or the string "any".  If ``None``, data, will
+        not impose any format requirements on the csv, and data will always be
+        returned.  If ``any``, csv must be recognized as one of the valid layer
+        data formats, otherwise a ``ValueError`` will be raised.  If a specific
+        layer type string, then a ``ValueError`` will be raised if the column
+        names are not of the predicted format.
 
     Returns
     -------
-    data : array
-        Table values, contained in an array.
-    column_names : list
-        List of column names for table data.
+    (data, column_names, layer_type) : Tuple[np.array, List[str], str]
+        The table data and column names from the CSV file, along with the
+        detected layer type (string).
+
+    Raises
+    ------
+    ValueError
+        If the column names do not match the format requested by
+        ``require_type``.
     """
     with open(filename, newline='') as csvfile:
         reader = csv.reader(csvfile, delimiter=',')
-        output_data = []
-        for row_index, row in enumerate(reader):
-            if row_index == 0:
-                column_names = [str(i) for i in row]
-            else:
-                output_data.append([float(i) for i in row])
-        return np.array(output_data), column_names
+        column_names = next(reader)
+
+        layer_type = guess_layer_type_from_column_names(column_names)
+        if require_type:
+            if not layer_type:
+                raise ValueError(
+                    f'File "{filename}" not recognized as valid Layer data'
+                )
+            elif layer_type != require_type and require_type.lower() != "any":
+                raise ValueError(
+                    f'File "{filename}" not recognized as {require_type} data'
+                )
+
+        data = np.array(list(reader))
+    return data, column_names, layer_type
+
+
+def csv_to_layer_data(
+    path: str, require_type: str = None
+) -> Optional[FullLayerData]:
+    """Return layer data from a CSV file if detected as a valid type.
+
+    Parameters
+    ----------
+    path : str
+        Path of file to open
+    require_type : str, optional
+        The desired layer type. If provided, should be one of the keys in
+        ``csv_reader_functions`` or the string "any".  If ``None``,
+        unrecognized CSV files will simply return ``None``.  If ``any``,
+        unrecognized CSV files will raise a ``ValueError``.  If a specific
+        layer type string, then a ``ValueError`` will be raised if the column
+        names are not of the predicted format.
+
+    Returns
+    -------
+    layer_data : tuple, or None
+        3-tuple ``(array, dict, str)`` (points data, metadata, layer_type) if
+        CSV is recognized as a valid type.
+
+    Raises
+    ------
+    ValueError
+        If ``require_type`` is not ``None``, but the CSV is not detected as a
+        valid data format.
+    """
+    try:
+        # pass at least require "any" here so that we don't bother reading the
+        # full dataset if it's not going to yield valid layer_data.
+        _require = require_type or 'any'
+        table, column_names, _type = read_csv(path, require_type=_require)
+    except ValueError:
+        if not require_type:
+            return None
+        raise
+    if _type in csv_reader_functions:
+        return csv_reader_functions[_type](table, column_names)
+    return None  # only reachable if it is a valid layer type without a reader
+
+
+def _points_csv_to_layerdata(
+    table: np.ndarray, column_names: List[str]
+) -> FullLayerData:
+    """Convert table data and column names from a csv file to Points LayerData.
+
+    Parameters
+    ----------
+    table : np.ndarray
+        CSV data.
+    column_names : list of str
+        The column names of the csv file
+
+    Returns
+    -------
+    layer_data : tuple
+        3-tuple ``(array, dict, str)`` (points data, metadata, 'points')
+    """
+
+    data_axes = [cn.startswith('axis-') for cn in column_names]
+    data = np.array(table[:, data_axes]).astype('float')
+
+    # Add properties to metadata if provided
+    prop_axes = np.logical_not(data_axes)
+    if column_names[0] == 'index':
+        prop_axes[0] = False
+    meta = {}
+    if np.any(prop_axes):
+        meta['properties'] = {}
+        for ind in np.nonzero(prop_axes)[0]:
+            values = table[:, ind]
+            try:
+                values = np.array(values).astype('int')
+            except ValueError:
+                try:
+                    values = np.array(values).astype('float')
+                except ValueError:
+                    pass
+            meta['properties'][column_names[ind]] = values
+
+    return data, meta, 'points'
+
+
+def _shapes_csv_to_layerdata(
+    table: np.ndarray, column_names: List[str]
+) -> FullLayerData:
+    """Convert table data and column names from a csv file to Shapes LayerData.
+
+    Parameters
+    ----------
+    table : np.ndarray
+        CSV data.
+    column_names : list of str
+        The column names of the csv file
+
+    Returns
+    -------
+    layer_data : tuple
+        3-tuple ``(array, dict, str)`` (points data, metadata, 'shapes')
+    """
+
+    data_axes = [cn.startswith('axis-') for cn in column_names]
+    raw_data = np.array(table[:, data_axes]).astype('float')
+
+    inds = np.array(table[:, 0]).astype('int')
+    n_shapes = max(inds) + 1
+    # Determine when shape id changes
+    transitions = list((np.diff(inds)).nonzero()[0] + 1)
+    shape_boundaries = [0] + transitions + [len(table)]
+    if n_shapes != len(shape_boundaries) - 1:
+        raise ValueError('Expected number of shapes not found')
+
+    data = []
+    shape_type = []
+    for ind_a, ind_b in zip(shape_boundaries[:-1], shape_boundaries[1:]):
+        data.append(raw_data[ind_a:ind_b])
+        shape_type.append(table[ind_a, 1])
+
+    return data, {'shape_type': shape_type}, 'shapes'
+
+
+csv_reader_functions = {
+    'points': _points_csv_to_layerdata,
+    'shapes': _shapes_csv_to_layerdata,
+}

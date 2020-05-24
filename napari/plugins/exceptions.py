@@ -52,7 +52,7 @@ def format_exceptions(plugin_name: str, as_html: bool = False):
                 [
                     f'{"plugin package": >16}: {package_meta["package"]}',
                     f'{"version": >16}: {package_meta["version"]}',
-                    f'{"module": >16}: {err0.plugin_module}',
+                    f'{"module": >16}: {err0.plugin}',
                 ]
             )
     msg.append('')

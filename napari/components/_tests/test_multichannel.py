@@ -99,7 +99,9 @@ def test_multichannel(shape, kwargs):
         assert np.all(viewer.layers[i].data == data.take(i, axis=channel_axis))
         # make sure colors have been assigned properly
         if 'colormap' not in kwargs:
-            if n_channels < 3:
+            if n_channels == 1:
+                assert viewer.layers[i].colormap[0] == 'gray'
+            elif n_channels == 2:
                 assert viewer.layers[i].colormap[0] == two_colormaps[i]
             else:
                 assert viewer.layers[i].colormap[0] == base_colormaps[i]
@@ -133,6 +135,28 @@ def test_multichannel_multiscale():
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     viewer.add_image(data, channel_axis=-1, multiscale=True)
+    assert len(viewer.layers) == data[0].shape[-1]
+    for i in range(data[0].shape[-1]):
+        assert np.all(
+            [
+                np.all(l_d == d)
+                for l_d, d in zip(
+                    viewer.layers[i].data,
+                    [data[j].take(i, axis=-1) for j in range(len(data))],
+                )
+            ]
+        )
+        assert viewer.layers[i].colormap[0] == base_colormaps[i]
+
+
+def test_multichannel_implicit_multiscale():
+    """Test adding multichannel implicit multiscale."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    shapes = [(40, 20, 4), (20, 10, 4), (10, 5, 4)]
+    np.random.seed(0)
+    data = [np.random.random(s) for s in shapes]
+    viewer.add_image(data, channel_axis=-1)
     assert len(viewer.layers) == data[0].shape[-1]
     for i in range(data[0].shape[-1]):
         assert np.all(

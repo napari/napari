@@ -219,7 +219,7 @@ class Surface(IntensityVisualizationMixin, Layer):
             mins = [0] * (self.vertex_values.ndim - 1) + list(mins)
             maxs = list(self.vertex_values.shape[:-1]) + list(maxs)
 
-        return [(min, max, 1) for min, max in zip(mins, maxs)]
+        return [(min, max) for min, max in zip(mins, maxs)]
 
     def _get_state(self):
         """Get dictionary of layer state.

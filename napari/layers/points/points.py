@@ -411,7 +411,7 @@ class Points(Layer):
             color_property = getattr(self, f'_{attribute}_color_property')
             prop_value = self._property_choices[color_property][0]
             color_cycle_map = getattr(self, f'{attribute}_color_cycle_map')
-            color_cycle_map[prop_value] = curr_color
+            color_cycle_map[prop_value] = np.squeeze(curr_color)
             setattr(self, f'{attribute}_color_cycle_map', color_cycle_map)
 
         elif color_mode == ColorMode.COLORMAP:
@@ -510,9 +510,10 @@ class Points(Layer):
             color_cycle_keys = [*color_cycle_map]
             if color_property_value not in color_cycle_keys:
                 color_cycle = getattr(self, f'_{attribute}_color_cycle')
-                color_cycle_map[color_property_value] = transform_color(
-                    next(color_cycle)
+                color_cycle_map[color_property_value] = np.squeeze(
+                    transform_color(next(color_cycle))
                 )
+
                 setattr(self, f'{attribute}_color_cycle_map', color_cycle_map)
 
             new_colors = np.tile(
@@ -609,7 +610,7 @@ class Points(Layer):
             maxs = np.max(self.data, axis=0)
             mins = np.min(self.data, axis=0)
 
-        return [(min, max, 1) for min, max in zip(mins, maxs)]
+        return [(min, max) for min, max in zip(mins, maxs)]
 
     @property
     def n_dimensional(self) -> bool:
@@ -1015,7 +1016,7 @@ class Points(Layer):
                 if update_color_mapping:
                     color_cycle = getattr(self, f'_{attribute}_color_cycle')
                     color_cycle_map = {
-                        k: transform_color(c)
+                        k: np.squeeze(transform_color(c))
                         for k, c in zip(
                             np.unique(color_properties), color_cycle
                         )

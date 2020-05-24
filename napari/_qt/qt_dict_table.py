@@ -1,5 +1,4 @@
 import re
-import webbrowser
 from typing import List, Optional
 
 from qtpy.QtCore import QSize, Slot
@@ -114,6 +113,8 @@ class QtDictTable(QTableWidget):
     @Slot(int, int)
     def _go_to_links(self, row, col):
         """if a cell is clicked and it contains an email or url, go to link."""
+        import webbrowser
+
         item = self.item(row, col)
         text = item.text().strip()
         if email_pattern.match(text):

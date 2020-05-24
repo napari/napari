@@ -1,4 +1,5 @@
 import warnings
+from functools import partial
 from typing import List
 
 import numpy as np
@@ -6,10 +7,32 @@ import pytest
 from qtpy.QtWidgets import QApplication
 
 from napari import Viewer
-from napari.layers import Image, Labels, Points, Shapes, Vectors
 from napari.components import LayerList
-from napari.plugins._builtins import napari_write_image, napari_write_points
+from napari.layers import Image, Labels, Points, Shapes, Vectors
+from napari.plugins._builtins import (
+    napari_write_image,
+    napari_write_labels,
+    napari_write_points,
+    napari_write_shapes,
+)
 from napari.utils import io
+
+try:
+    from skimage.data import image_fetcher
+except ImportError:
+    from skimage.data import data_dir
+    import os
+
+    class image_fetcher:
+        def fetch(data_name):
+            if data_name.startswith("data/"):
+                data_name = data_name[5:]
+            path = os.path.join(data_dir, data_name)
+            if not os.path.exists(path):
+                raise ValueError(
+                    f"Legacy skimage image_fetcher cannot find file: {path}"
+                )
+            return path
 
 
 def pytest_addoption(parser):
@@ -65,7 +88,9 @@ def viewer_factory(qtbot, request):
         viewer.close()
 
 
-@pytest.fixture(params=['image', 'points', 'points-with-properties'])
+@pytest.fixture(
+    params=['image', 'labels', 'points', 'points-with-properties', 'shapes']
+)
 def layer_writer_and_data(request):
     """Fixture that supplies layer io utilities for tests.
 
@@ -94,10 +119,17 @@ def layer_writer_and_data(request):
         extension = '.tif'
 
         def reader(path):
-            return (
-                io.imread(path),
-                {},  # metadata
-            )
+            return (io.imread(path), {}, 'image')  # metadata
+
+    elif request.param == 'labels':
+        data = np.random.randint(0, 16000, (32, 32), 'uint64')
+        Layer = Labels
+        layer = Labels(data)
+        writer = napari_write_labels
+        extension = '.tif'
+
+        def reader(path):
+            return (io.imread(path), {}, 'labels')  # metadata
 
     elif request.param == 'points':
         data = np.random.rand(20, 2)
@@ -105,30 +137,29 @@ def layer_writer_and_data(request):
         layer = Points(data)
         writer = napari_write_points
         extension = '.csv'
-
-        def reader(path):
-            return (
-                io.read_csv(path)[0][:, 1:3],
-                {},  # metadata
-            )
-
+        reader = partial(io.csv_to_layer_data, require_type='points')
     elif request.param == 'points-with-properties':
         data = np.random.rand(20, 2)
         Layer = Points
         layer = Points(data, properties={'values': np.random.rand(20)})
         writer = napari_write_points
         extension = '.csv'
-
-        def reader(path):
-            return (
-                io.read_csv(path)[0][:, 1:3],
-                {
-                    'properties': {
-                        io.read_csv(path)[1][3]: io.read_csv(path)[0][:, 3]
-                    }
-                },
-            )
-
+        reader = partial(io.csv_to_layer_data, require_type='points')
+    elif request.param == 'shapes':
+        np.random.seed(0)
+        data = [
+            np.random.rand(2, 2),
+            np.random.rand(2, 2),
+            np.random.rand(6, 2),
+            np.random.rand(6, 2),
+            np.random.rand(2, 2),
+        ]
+        shape_type = ['ellipse', 'line', 'path', 'polygon', 'rectangle']
+        Layer = Shapes
+        layer = Shapes(data, shape_type=shape_type)
+        writer = napari_write_shapes
+        extension = '.csv'
+        reader = partial(io.csv_to_layer_data, require_type='shapes')
     else:
         return None, None, None, None, None
 
@@ -236,3 +267,28 @@ def layers():
         Vectors(np.random.rand(10, 2, 2)),
     ]
     return LayerList(list_of_layers)
+
+
+@pytest.fixture
+def two_pngs():
+    return [image_fetcher.fetch(f'data/{n}.png') for n in ('moon', 'camera')]
+
+
+@pytest.fixture
+def rgb_png():
+    return [image_fetcher.fetch('data/astronaut.png')]
+
+
+@pytest.fixture
+def single_png():
+    return [image_fetcher.fetch('data/camera.png')]
+
+
+@pytest.fixture
+def irregular_images():
+    return [image_fetcher.fetch(f'data/{n}.png') for n in ('camera', 'coins')]
+
+
+@pytest.fixture
+def single_tiff():
+    return [image_fetcher.fetch('data/multipage.tif')]

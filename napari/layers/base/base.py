@@ -1,4 +1,3 @@
-import os
 import warnings
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
@@ -7,9 +6,10 @@ from typing import List, Optional
 import numpy as np
 
 from ...components import Dims
+from ...utils.dask_utils import configure_dask
 from ...utils.event import EmitterGroup, Event
 from ...utils.key_bindings import KeymapProvider
-from ...utils.misc import ROOT_DIR, configure_dask
+from ...utils.misc import ROOT_DIR
 from ...utils.naming import magic_name
 from ...utils.status_messages import format_float, status_format
 from ..transforms import ScaleTranslate, TransformChain
@@ -134,7 +134,7 @@ class Layer(KeymapProvider, ABC):
     ):
         super().__init__()
 
-        if name is None and data is not None and os.getenv('MAGICNAME'):
+        if name is None and data is not None:
             name = magic_name(data, path_prefix=ROOT_DIR)
 
         self.dask_optimized_slicing = configure_dask(data)
