@@ -601,16 +601,16 @@ class Points(Layer):
         """Determine number of dimensions of the layer."""
         return self.data.shape[1]
 
-    def _get_extent(self) -> List[Tuple[int, int, int]]:
-        """Determine ranges for slicing given by (min, max, step)."""
+    @property
+    def _data_range(self) -> np.ndarray:
+        """(2, D) array: Range of layer in data coordinates."""
         if len(self.data) == 0:
             maxs = np.ones(self.data.shape[1], dtype=int)
             mins = np.zeros(self.data.shape[1], dtype=int)
         else:
             maxs = np.max(self.data, axis=0)
             mins = np.min(self.data, axis=0)
-
-        return [(min, max) for min, max in zip(mins, maxs)]
+        return np.vstack([mins, maxs])
 
     @property
     def n_dimensional(self) -> bool:

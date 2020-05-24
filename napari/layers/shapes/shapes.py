@@ -345,16 +345,16 @@ class Shapes(Layer):
             ndim = self.data[0].shape[1]
         return ndim
 
-    def _get_extent(self):
-        """Determine ranges for slicing given by (min, max, step)."""
-        if self.nshapes == 0:
-            maxs = [1] * self.ndim
-            mins = [0] * self.ndim
+    @property
+    def _data_range(self) -> np.ndarray:
+        """(2, D) array: Range of layer in data coordinates."""
+        if len(self.data) == 0:
+            maxs = np.ones(self.ndim, dtype=int)
+            mins = np.zeros(self.ndim, dtype=int)
         else:
             maxs = np.max([np.max(d, axis=0) for d in self.data], axis=0)
             mins = np.min([np.min(d, axis=0) for d in self.data], axis=0)
-
-        return tuple((min, max) for min, max in zip(mins, maxs))
+        return np.vstack([mins, maxs])
 
     @property
     def nshapes(self):

@@ -203,8 +203,9 @@ class Surface(IntensityVisualizationMixin, Layer):
         """Determine number of dimensions of the layer."""
         return self.vertices.shape[1] + (self.vertex_values.ndim - 1)
 
-    def _get_extent(self):
-        """Determine ranges for slicing given by (min, max, step)."""
+    @property
+    def _data_range(self) -> np.ndarray:
+        """(2, D) array: Range of layer in data coordinates."""
         if len(self.vertices) == 0:
             maxs = np.ones(self.vertices.shape[1], dtype=int)
             mins = np.zeros(self.vertices.shape[1], dtype=int)
@@ -218,8 +219,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         if self.vertex_values.ndim > 1:
             mins = [0] * (self.vertex_values.ndim - 1) + list(mins)
             maxs = list(self.vertex_values.shape[:-1]) + list(maxs)
-
-        return [(min, max) for min, max in zip(mins, maxs)]
+        return np.vstack([mins, maxs])
 
     def _get_state(self):
         """Get dictionary of layer state.

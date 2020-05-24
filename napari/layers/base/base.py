@@ -110,7 +110,7 @@ class Layer(KeymapProvider, ABC):
     Notes
     -----
     Must define the following:
-        * `_get_range()`: called by `range` property
+        * `_data_range` property
         * `data` property (setter & getter)
 
     May define the following:
@@ -396,9 +396,9 @@ class Layer(KeymapProvider, ABC):
 
         self.dims.ndim = ndim
 
-        curr_range = self._get_range()
-        for i, r in enumerate(curr_range):
-            self.dims.set_range(i, r)
+        world_range = self._world_range
+        for i in range(self.dims.ndim):
+            self.dims.set_range(i, (world_range[0, i], world_range[1, i], 1))
 
         self.refresh()
         self._update_coordinates()
@@ -414,8 +414,10 @@ class Layer(KeymapProvider, ABC):
     def data(self, data):
         raise NotImplementedError()
 
+    @property
     @abstractmethod
-    def _get_extent(self):
+    def _data_range(self):
+        """(2, D) array: Range of layer in data coordinates."""
         raise NotImplementedError()
 
     @abstractmethod
@@ -426,11 +428,10 @@ class Layer(KeymapProvider, ABC):
         if editable is None:
             self.editable = True
 
-    def _get_range(self):
-        extent = self._get_extent()
-        return tuple(
-            (s * e[0], s * e[1], s) for e, s in zip(extent, self.scale)
-        )
+    @property
+    def _world_range(self):
+        """(2, D) array: Range of layer in world coordinates."""
+        return self._transforms.simplified(self._data_range)
 
     def _get_base_state(self):
         """Get dictionary of attributes on base layer.
