@@ -44,4 +44,4 @@ jobs:
         if: runner.os == 'Linux'
         with:
           name: napari_installer
-          path: ${{ github.workspace }}${{ DEST }}
+          path: ${{ github.workspace }}$DEST
