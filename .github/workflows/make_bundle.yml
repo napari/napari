@@ -7,7 +7,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        platform: [ubuntu-16.04, macos-latest, windows-latest]
+        platform: [ubuntu-16.04, ubuntu-latest, macos-latest, windows-latest]
     steps:
       - name: Checkout code
         uses: actions/checkout@master
@@ -21,19 +21,21 @@ jobs:
           pip install briefcase setuptools
       - name: Make Bundle
         shell: bash
+        env:
+          output: path: ${{ ( runner.os == 'Windows' && '.\windows\*.msi' ) || ( runner.os == 'Linux' && './linux/*.AppImage' ) || ( runner.os == 'macOS' && './macOS/*.dmg' ) }}
+          cmd: path: ${{ ( runner.os == 'macOS' && 'briefcase package --no-sign' ) || 'briefcase package' }}
         run: |
-          pwd
-          ls -la
           briefcase create
           briefcase build
-          if [ "$RUNNER_OS" == "macOS" ]; then
-                briefcase package --no-sign
-          else
-                briefcase package
-          fi
+          mkdir -p ${{ github.workspace }}/artifact
+          ${{ env.cmd }}
+          ls ${{ env.output }}
+          mv ${{ env.output }} ${{ github.workspace }}/artifact
+
       - name: Upload Linux Artifact
         uses: actions/upload-artifact@v1
         with:
           name: napari_installer
-          path: ${{ github.workspace }}${{ ( runner.os == 'Windows' && '/windows/*.msi' ) || ( runner.os == 'Linux' && '/linux/*.AppImage' ) || ( runner.os == 'macOS' && '/macOS/*.dmg' ) }}
+          path: ${{ github.workspace }}/artifact/**/*
+          
 
