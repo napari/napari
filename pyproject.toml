@@ -31,10 +31,12 @@ bundle = "com.napari"
 version = "0.3.0"
 author = "napari"
 author_email = "napari@example.com"
+url = "https://napari.org/"
+license = "BSD license"
 
 [tool.briefcase.app.napari]
 formal_name = "napari"
-description = "My first Briefcase App"
+description = "napari: a multi-dimensional image viewer"
 requires = [
   'dask[array]>=2.1.0',
   'cachey>=0.2.1',
