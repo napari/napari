@@ -18,7 +18,7 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip 
-          pip install briefcase setuptools
+          pip install briefcase
       - name: Make Bundle
         shell: bash
         env:
@@ -28,16 +28,11 @@ jobs:
           briefcase create
           briefcase build
           mkdir -p ${{ github.workspace }}/artifact
-          echo RUNNING ${{ env.cmd }}
           ${{ env.cmd }}
-          ls ${{ env.output }}
           mv ${{ env.output }} ${{ github.workspace }}/artifact
-          echo ${{ github.workspace }}/artifact
-          ls ${{ github.workspace }}/artifact
-          ls ${{ github.workspace }}/artifact/*
 
       - name: Upload Linux Artifact
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v2
         with:
           name: napari_installer
           path: ${{ github.workspace }}/artifact/*
