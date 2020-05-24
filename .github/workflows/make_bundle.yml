@@ -23,7 +23,7 @@ jobs:
         shell: bash
         env:
           output: ${{ ( runner.os == 'Windows' && '.\windows\*.msi' ) || ( runner.os == 'Linux' && './linux/*.AppImage' ) || ( runner.os == 'macOS' && './macOS/*.dmg' ) }}
-          cmd: path: ${{ ( runner.os == 'macOS' && 'briefcase package --no-sign' ) || 'briefcase package' }}
+          cmd: ${{ ( runner.os == 'macOS' && '--no-sign' ) || 'briefcase package' }}
         run: |
           briefcase create
           briefcase build
