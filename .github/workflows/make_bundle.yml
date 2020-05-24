@@ -33,7 +33,7 @@ jobs:
         run: |
           # briefcase create
           # briefcase build
-          # mkdir -p ${{ github.workspace }}/artifact
+          mkdir -p ${{ github.workspace }}/artifact
           # ${{ env.cmd }}
           # mv ${{ env.output }} ${{ github.workspace }}/artifact
           # echo ${{ github.workspace }}/artifact
