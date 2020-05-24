@@ -10,7 +10,6 @@ from ._qt.qt_main_window import Window
 from ._qt.qt_viewer import QtViewer
 from .components import ViewerModel
 from . import __version__
-from .utils.notebook_display import NotebookScreenshot
 
 
 class Viewer(ViewerModel):
@@ -104,16 +103,17 @@ class Viewer(ViewerModel):
         else:
             self.window.qt_viewer.console.push(variables)
 
-    def screenshot(self, path=None, *, with_viewer=False):
+    def screenshot(self, path=None, *, canvas_only=False):
         """Take currently displayed screen and convert to an image array.
 
         Parameters
         ----------
         path : str
             Filename for saving screenshot image.
-        with_viewer : bool
-            If True includes the napari viewer, otherwise just includes the
-            canvas.
+        canvas_only : bool
+            If False include the napari viewer frame in the screenshot,
+            and if True then take screenshot of just the image display canvas.
+            By default, False.
 
         Returns
         -------
@@ -121,27 +121,11 @@ class Viewer(ViewerModel):
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
-        if with_viewer:
-            image = self.window.screenshot(path=path)
-        else:
+        if canvas_only:
             image = self.window.qt_viewer.screenshot(path=path)
+        else:
+            image = self.window.screenshot(path=path)
         return image
-
-    def nbscreenshot(self, with_viewer=True):
-        """Display napari screenshot in the jupyter notebook.
-
-        Parameters
-        ----------
-        with_viewer : bool, optional
-            If True includes the napari viewer frame in the screenshot,
-            otherwise just includes the canvas. By default, True.
-
-        Returns
-        -------
-        napari.utils.notebook_display.NotebookScreenshot
-            Napari screenshot rendered as rich display in the jupyter notebook.
-        """
-        return NotebookScreenshot(self, with_viewer=with_viewer)
 
     def update(self, func, *args, **kwargs):
         t = QtUpdateUI(func, *args, **kwargs)
