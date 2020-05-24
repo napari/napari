@@ -138,3 +138,7 @@ class Viewer(ViewerModel):
     def close(self):
         """Close the viewer window."""
         self.window.close()
+
+    def __str__(self):
+        """Simple string representation"""
+        return f'napari.Viewer: {self.title}'
