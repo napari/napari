@@ -35,5 +35,5 @@ jobs:
         uses: actions/upload-artifact@v1
         with:
           name: napari_installer
-          path: ${{ github.workspace }}${{ ( ${{ runner.os }} == 'Windows' && '/windows/*.msi' ) || ( ${{ runner.os }} == 'Linux' && '/linux/*.AppImage' ) || ( ${{ runner.os }} == 'macOS' && '/macOS/*.dmg' ) }}
+          path: ${{ github.workspace }}${{ ( runner.os == 'Windows' && '/windows/*.msi' ) || ( runner.os == 'Linux' && '/linux/*.AppImage' ) || ( runner.os == 'macOS' && '/macOS/*.dmg' ) }}
 
