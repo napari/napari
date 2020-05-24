@@ -38,7 +38,7 @@ jobs:
       - name: Upload Linux Artifact
         uses: actions/upload-artifact@v2
         with:
-          name: napari_installer
+          name: napari_installer-${{ runner.os }}-${{ github.sha }}
           path: ${{ github.workspace }}/artifact/*
           
 
