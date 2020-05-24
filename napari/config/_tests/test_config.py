@@ -57,7 +57,7 @@ def test_collect_yaml_paths(tmp_path):
     with open(fn2, "w") as f:
         yaml.dump(b, f)
 
-    conf = config.merge(*config.collect_yaml(paths=[fn1, fn2]))
+    conf = config.merge(*config.core.collect_yaml(paths=[fn1, fn2]))
     assert conf == expected
 
 
@@ -75,7 +75,7 @@ def test_collect_yaml_dir(tmp_path):
     with open(fn2, "w") as f:
         yaml.dump(b, f)
 
-    conf = config.merge(*config.collect_yaml(paths=[tmp_path]))
+    conf = config.merge(*config.core.collect_yaml(paths=[tmp_path]))
     assert conf == expected
 
 
@@ -92,7 +92,7 @@ def test_collect_yaml_with_private(tmp_path):
     with open(fn2, "w") as f:
         yaml.dump(b, f)
 
-    conf = config.merge(*config.collect_yaml(paths=[tmp_path]))
+    conf = config.merge(*config.core.collect_yaml(paths=[tmp_path]))
     assert conf == a
 
 
@@ -135,7 +135,7 @@ def test_collect_yaml_permission_errors(tmpdir, kind):
         expected = b
 
     with no_read_permissions(cant_read):
-        conf = config.merge(*config.collect_yaml(paths=[dir_path]))
+        conf = config.merge(*config.core.collect_yaml(paths=[dir_path]))
         assert conf == expected
 
 
@@ -160,7 +160,7 @@ def test_env():
         "g": "/not/parsable/as/literal",
     }
 
-    res = config.collect_env(env)
+    res = config.core.collect_env(env)
     res.pop("_dirty")
     assert res == expected
 
@@ -402,7 +402,7 @@ def test_refresh():
 def test_expand_environment_variables(inp, out):
     try:
         os.environ["FOO"] = "foo"
-        assert config.expand_environment_variables(inp) == out
+        assert config.utils.expand_environment_variables(inp) == out
     finally:
         del os.environ["FOO"]
 
@@ -449,7 +449,7 @@ def test_merge_None_to_dict():
 
 
 def test_deprecations():
-    config.deprecations['old_key'] = 'new.key'
+    config.deprecations.deprecations['old_key'] = 'new.key'
     with pytest.warns(Warning) as info:
         with config.set(old_key=123):
             assert config.get("new.key") == 123
