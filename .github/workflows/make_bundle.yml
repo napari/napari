@@ -31,17 +31,17 @@ jobs:
         run: |
           # briefcase create
           # briefcase build
-          mkdir -p ${{ github.workspace }}/artifact
+          mkdir -p ${{ github.workspace }}\artifact
           # ${{ env.cmd }}
           # mv ${{ env.output }} ${{ github.workspace }}/artifact
           # echo ${{ github.workspace }}/artifact
           # ls ${{ github.workspace }}/artifact
           # mv ${{ env.output }} ${{ github.workspace }}/artifact
-          echo hello > ${{ github.workspace }}/artifact/world.txt
+          echo hello > ${{ github.workspace }}\artifact\world.txt
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
         with:
           name: napari_installer-${{ runner.os }}-${{ github.sha }}
-          path: ${{ github.workspace }}/artifact/*
+          path: ${{ github.workspace }}\artifact\*
           
 
