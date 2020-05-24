@@ -28,9 +28,13 @@ jobs:
           briefcase create
           briefcase build
           mkdir -p ${{ github.workspace }}/artifact
+          echo RUNNING ${{ env.cmd }}
           ${{ env.cmd }}
           ls ${{ env.output }}
           mv ${{ env.output }} ${{ github.workspace }}/artifact
+          echo ${{ github.workspace }}/artifact
+          ls ${{ github.workspace }}/artifact
+          ls ${{ github.workspace }}/artifact/**/*
 
       - name: Upload Linux Artifact
         uses: actions/upload-artifact@v1
