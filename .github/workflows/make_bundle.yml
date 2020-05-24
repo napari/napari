@@ -4,8 +4,6 @@ jobs:
   bundle:
     name: Bundle ${{ matrix.platform }}
     runs-on: ${{ matrix.platform }}
-    env:
-      SHA8: ${GITHUB_SHA::8}
     strategy:
       fail-fast: false
       matrix:
@@ -43,7 +41,7 @@ jobs:
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
         with:
-          name: napari_installer-${{ runner.os }}-${{ env.SHA8 }}
+          name: napari_installer-${{ runner.os }}-${{ github.sha }}
           path: ${{ github.workspace }}/artifact/*
           
 
