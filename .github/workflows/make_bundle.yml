@@ -31,25 +31,9 @@ jobs:
           else
                 briefcase package
           fi
-
-          ls macOS
-          ls windows
-          ls linux
       - name: Upload Linux Artifact
         uses: actions/upload-artifact@v1
-        if: runner.os == 'Linux'
         with:
           name: napari_installer
-          path: ${{ github.workspace }}/linux/*.AppImage
-      - name: Upload Mac Artifact
-        uses: actions/upload-artifact@v1
-        if: runner.os == 'macOS'
-        with:
-          name: napari_installer
-          path: ${{ github.workspace }}/macOS/*.dmg
-      - name: Upload Windows Artifact
-        uses: actions/upload-artifact@v1
-        if: runner.os == 'Windows'
-        with:
-          name: napari_installer
-          path: ${{ github.workspace }}/windows/*.msi
+          path: ${{ github.workspace }}${{ ( ${{ runner.os }} == 'Windows' && '/windows/*.msi' ) || ( ${{ runner.os }} == 'Linux' && '/linux/*.AppImage' ) || ( ${{ runner.os }} == 'macOS' && '/macOS/*.dmg' ) }}
+
