@@ -1,5 +1,6 @@
 on: [push, pull_request]
 
+
 jobs:
   bundle:
     name: Bundle ${{ matrix.platform }}
@@ -41,10 +42,7 @@ jobs:
           echo hello > ${{ github.workspace }}/artifact/world.txt
           ls ${{ github.workspace }}/artifact/
       - name: Make Windows Bundle
-        env:
-          output: ${{ ( runner.os == 'Windows' && './windows/*.msi' ) || ( runner.os == 'Linux' && './linux/*.AppImage' ) || ( runner.os == 'macOS' && './macOS/*.dmg' ) }}
-          cmd: ${{ ( runner.os == 'macOS' && 'briefcase package --no-sign' ) || 'briefcase package' }}
-          DMGSIZE: '1.8g'
+        if: runner.os == 'Windows'
         run: |
           mkdir artifact
           dir $( $GITHUB_WORKSPACE )
