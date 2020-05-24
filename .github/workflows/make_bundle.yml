@@ -20,28 +20,36 @@ jobs:
           python -m pip install --upgrade pip 
           pip install briefcase setuptools
       - name: Make Bundle
+        shell: bash
         run: |
+          pwd
+          ls -la
           briefcase create
           briefcase build
           if [ "$RUNNER_OS" == "macOS" ]; then
-            briefcase package --no-sign
-            export DEST="/macOS/*.dmg"
-          elif [ "$RUNNER_OS" == "Windows ]; then
-            export DEST="/linux/*.AppImage"
-            briefcase package
+                briefcase package --no-sign
           else
-            export DEST="/windows/*.msi"
-            briefcase package
+                briefcase package
           fi
-          pwd
-          ls -la
-          ls linux
-          ls windows
+
           ls macOS
-        shell: bash
+          ls windows
+          ls linux
       - name: Upload Linux Artifact
         uses: actions/upload-artifact@v1
         if: runner.os == 'Linux'
         with:
           name: napari_installer
-          path: ${{ github.workspace }}$DEST
+          path: ${{ github.workspace }}/linux/*.AppImage
+      - name: Upload Mac Artifact
+        uses: actions/upload-artifact@v1
+        if: runner.os == 'macOS'
+        with:
+          name: napari_installer
+          path: ${{ github.workspace }}/macOS/*.dmg
+      - name: Upload Windows Artifact
+        uses: actions/upload-artifact@v1
+        if: runner.os == 'Windows'
+        with:
+          name: napari_installer
+          path: ${{ github.workspace }}/windows/*.msi
