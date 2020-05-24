@@ -42,7 +42,6 @@ jobs:
           echo hello > ${{ github.workspace }}/artifact/world.txt
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
-        shell: bash
         with:
           name: napari_installer-${{ runner.os }}-${{ env.SHA8 }}
           path: ${{ github.workspace }}/artifact/*
