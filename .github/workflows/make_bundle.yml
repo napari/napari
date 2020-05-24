@@ -22,8 +22,8 @@ jobs:
       # - name: Patch Briefcase
       #   if: runner.os == 'macOS'
       #   run: python patch_briefcase.py
-      - name: Make Bundle
-        shell: bash
+      - name: Make nix Bundle
+        if: runner.os != 'Windows'
         env:
           output: ${{ ( runner.os == 'Windows' && './windows/*.msi' ) || ( runner.os == 'Linux' && './linux/*.AppImage' ) || ( runner.os == 'macOS' && './macOS/*.dmg' ) }}
           cmd: ${{ ( runner.os == 'macOS' && 'briefcase package --no-sign' ) || 'briefcase package' }}
@@ -40,11 +40,18 @@ jobs:
           # mv ${{ env.output }} ${{ github.workspace }}/artifact
           echo hello > ${{ github.workspace }}/artifact/world.txt
           ls ${{ github.workspace }}/artifact/
+      - name: Make Windows Bundle
+        env:
+          output: ${{ ( runner.os == 'Windows' && './windows/*.msi' ) || ( runner.os == 'Linux' && './linux/*.AppImage' ) || ( runner.os == 'macOS' && './macOS/*.dmg' ) }}
+          cmd: ${{ ( runner.os == 'macOS' && 'briefcase package --no-sign' ) || 'briefcase package' }}
+          DMGSIZE: '1.8g'
+        run: |
+          mkdir artifact
+          dir $( $GITHUB_WORKSPACE )
+          echo hello > /artifact/world.txt
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
         with:
           name: napari_installer-${{ runner.os }}-${{ github.sha }}
-          path: ${{ github.workspace }}${{ ( runner.os == 'Windows' && '\artifact\world.txt' ) || '/artifact/world.txt' }}
-
-          
+          path: artifact/
 
