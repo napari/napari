@@ -4,6 +4,8 @@ jobs:
   bundle:
     name: Bundle ${{ matrix.platform }}
     runs-on: ${{ matrix.platform }}
+    env:
+      SHA8: ${GITHUB_SHA::8}
     strategy:
       fail-fast: false
       matrix:
@@ -18,10 +20,10 @@ jobs:
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip 
-          pip install briefcase
-      - name: Patch Briefcase
-        if: runner.os == 'macOS'
-        run: python patch_briefcase.py
+          # pip install briefcase
+      # - name: Patch Briefcase
+      #   if: runner.os == 'macOS'
+      #   run: python patch_briefcase.py
       - name: Make Bundle
         shell: bash
         env:
@@ -29,16 +31,20 @@ jobs:
           cmd: ${{ ( runner.os == 'macOS' && 'briefcase package --no-sign' ) || 'briefcase package' }}
           DMGSIZE: '1.8g'
         run: |
-          briefcase create
-          briefcase build
-          mkdir -p ${{ github.workspace }}/artifact
-          ${{ env.cmd }}
-          mv ${{ env.output }} ${{ github.workspace }}/artifact
-
-      - name: Upload Linux Artifact
+          # briefcase create
+          # briefcase build
+          # mkdir -p ${{ github.workspace }}/artifact
+          # ${{ env.cmd }}
+          # mv ${{ env.output }} ${{ github.workspace }}/artifact
+          # echo ${{ github.workspace }}/artifact
+          # ls ${{ github.workspace }}/artifact
+          # mv ${{ env.output }} ${{ github.workspace }}/artifact
+          echo hello > ${{ github.workspace }}/artifact/world.txt
+      - name: Upload Artifact
         uses: actions/upload-artifact@v2
+        shell: bash
         with:
-          name: napari_installer-${{ runner.os }}-${{ github.sha }}
+          name: napari_installer-${{ runner.os }}-${{ env.SHA8 }}
           path: ${{ github.workspace }}/artifact/*
           
 
