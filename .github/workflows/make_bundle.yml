@@ -33,7 +33,12 @@ jobs:
             export DEST="/windows/*.msi"
             briefcase package
           fi
-          shell: bash
+          pwd
+          ls -la
+          ls linux
+          ls windows
+          ls macOS
+        shell: bash
       - name: Upload Linux Artifact
         uses: actions/upload-artifact@v1
         if: runner.os == 'Linux'
