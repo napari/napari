@@ -44,6 +44,6 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: napari_installer-${{ runner.os }}-${{ github.sha }}
-          path: ${{ github.workspace }}\artifact\
+          path: ${{ github.workspace }}/artifact/world.txt
           
 
