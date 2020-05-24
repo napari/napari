@@ -10,3 +10,4 @@ source.insert(
 source.insert(lineno, '        import os\n')
 with open(dmg.__file__, 'w') as f:
     f.write("".join(source))
+    print('successfully patched', dmg.__file__)
