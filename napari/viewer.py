@@ -103,7 +103,7 @@ class Viewer(ViewerModel):
         else:
             self.window.qt_viewer.console.push(variables)
 
-    def screenshot(self, path=None, *, canvas_only=False):
+    def screenshot(self, path=None, *, canvas_only=True):
         """Take currently displayed screen and convert to an image array.
 
         Parameters
@@ -111,9 +111,9 @@ class Viewer(ViewerModel):
         path : str
             Filename for saving screenshot image.
         canvas_only : bool
-            If False include the napari viewer frame in the screenshot,
-            and if True then take screenshot of just the image display canvas.
-            By default, False.
+            If True, screenshot shows only the image display canvas, and
+            if False include the napari viewer frame in the screenshot,
+            By default, True.
 
         Returns
         -------
