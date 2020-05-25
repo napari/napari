@@ -146,9 +146,9 @@ class Labels(Image):
         if properties is None:
             self._properties = {}
             self._property_choices = {}
-        self._properties = self._validate_properties(
-            dataframe_to_properties(properties)
-        )
+        else:
+            properties = self._validate_properties(properties)
+            self._properties = dataframe_to_properties(properties)
         if label_index is None:
             props = self._properties
             if len(props) > 0:
@@ -613,8 +613,11 @@ class Labels(Image):
 
     def get_message(self):
         msg = super().get_message()
-        if self._value is not None and self._value != 0:
-            idx = self._label_index[self._value]
-            for k, v in self._properties.items():
-                msg += f' {k}: {v[idx]}'
+        # if this labels layer has properties
+        if self._label_index and self._properties:
+            # if the cursor is not outside the image or on the background
+            if self._value is not None and self._value != 0:
+                idx = self._label_index[self._value]
+                for k, v in self._properties.items():
+                    msg += f' {k}: {v[idx]}'
         return msg
