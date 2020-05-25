@@ -405,6 +405,8 @@ class AddLayersMixin:
         data,
         *,
         num_colors=50,
+        properties=None,
+        label_index=None,
         seed=0.5,
         name=None,
         metadata=None,
@@ -469,6 +471,8 @@ class AddLayersMixin:
         layer = layers.Labels(
             data,
             num_colors=num_colors,
+            properties=properties,
+            label_index=label_index,
             seed=seed,
             name=name,
             metadata=metadata,

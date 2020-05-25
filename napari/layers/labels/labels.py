@@ -1,5 +1,5 @@
 from collections import deque
-from typing import Union
+from typing import Union, Dict
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -10,6 +10,8 @@ from ...utils.event import Event
 from ...utils.status_messages import format_float
 from ._labels_constants import Mode
 from ._labels_mouse_bindings import fill, paint, pick
+
+from ..utils.layer_utils import dataframe_to_properties
 
 
 class Labels(Image):
@@ -22,6 +24,12 @@ class Labels(Image):
     ----------
     data : array or list of array
         Labels data as an array or multiscale.
+    properties : dict {str: array (N,)}, DataFrame
+        Properties for each label. Each property should be an array of length
+        N, where N is the number of labels.
+    label_index : dict {int: int}
+        Dictionary mapping labels (arbitrary integers) to row indices
+        (sequential integers in 0..N not inclusive).
     num_colors : int
         Number of unique colors to use in colormap.
     seed : float
@@ -55,6 +63,12 @@ class Labels(Image):
         Integer valued label data. Can be N dimensional. Every pixel contains
         an integer ID corresponding to the region it belongs to. The label 0 is
         rendered as transparent.
+    properties : dict {str: array (N,)}, DataFrame
+        Properties for each label. Each property should be an array of length
+        N, where N is the number of labels.
+    label_index : dict {int: int}
+        Dictionary mapping labels (arbitrary integers) to row indices
+        (sequential integers in 0..N not inclusive).
     multiscale : bool
         Whether the data is a multiscale image or not. Multiscale data is
         represented by a list of array like image data. The first image in the
@@ -112,6 +126,8 @@ class Labels(Image):
         data,
         *,
         num_colors=50,
+        properties=None,
+        label_index=None,
         seed=0.5,
         name=None,
         metadata=None,
@@ -126,6 +142,22 @@ class Labels(Image):
         self._seed = seed
         self._num_colors = num_colors
         colormap = ('random', colormaps.label_colormap(self.num_colors))
+
+        if properties is None:
+            self._properties = {}
+            self._property_choices = {}
+        self._properties = self._validate_properties(
+            dataframe_to_properties(properties)
+        )
+        if label_index is None:
+            props = self._properties
+            if len(props) > 0:
+                arbitrary_key = list(props.keys())[0]
+                self._label_index = {
+                    i: i for i in range(len(props[arbitrary_key]))
+                }
+            else:
+                self._label_index = {}
 
         super().__init__(
             data,
@@ -238,6 +270,33 @@ class Labels(Image):
         self.refresh()
         self._selected_color = self.get_color(self.selected_label)
         self.events.selected_label()
+
+    @property
+    def properties(self) -> Dict[str, np.ndarray]:
+        """dict {str: array (N,)}, DataFrame: Properties for each label."""
+        return self._properties
+
+    @properties.setter
+    def properties(self, properties: Dict[str, np.ndarray]):
+        if not isinstance(properties, dict):
+            properties = dataframe_to_properties(properties)
+        self._properties = self._validate_properties(properties)
+
+    def _validate_properties(
+        self, properties: Dict[str, np.ndarray]
+    ) -> Dict[str, np.ndarray]:
+        """Validate the type and size of properties."""
+        lens = []
+        for k, v in properties.items():
+            lens.append(len(v))
+            if not isinstance(v, np.ndarray):
+                properties[k] = np.asarray(v)
+
+        if not all([v == lens[0] for v in lens]):
+            raise ValueError(
+                "the number of items must be equal for all properties"
+            )
+        return properties
 
     def _get_state(self):
         """Get dictionary of layer state.
@@ -551,3 +610,11 @@ class Labels(Image):
 
         if refresh is True:
             self.refresh()
+
+    def get_message(self):
+        msg = super().get_message()
+        if self._value is not None:
+            idx = self._label_index[self._value]
+            for k, v in self._properties.items():
+                msg += f' {k}: {v[idx]}'
+        return msg
