@@ -25,8 +25,7 @@ jobs:
         if: runner.os != 'Windows'
         env:
           output: ${{ ( runner.os == 'macOS' && './macOS/*.dmg' ) || './linux/*.AppImage' }}
-          cmd: ${{ ( runner.os == 'macOS' && 'briefcase package --no-sign' ) || 'briefcase package' }}
-          DMGSIZE: '1.4g'
+          cmd: ${{ ( runner.os == 'macOS' && 'briefcase package -i -' ) || 'briefcase package' }}
         run: |
           briefcase create
           briefcase build
