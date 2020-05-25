@@ -1,6 +1,6 @@
 import numpy as np
 
-from napari.utils.notebook_display import nbscreenshot
+from napari.utils import nbscreenshot
 
 
 def test_nbscreenshot(viewer_factory):
