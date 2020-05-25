@@ -9,8 +9,10 @@ end-user annotates one of their function arguments with a type hint using one
 of those custom classes, magicgui will know what to do with it.
 
 """
-from typing import Tuple, Type, Any
+from typing import Any, Tuple, Type
+
 from ..layers import Layer
+from ..viewer import Viewer
 
 try:
     from magicgui import register_type as _magictype
@@ -36,6 +38,18 @@ def register_types_with_magicgui():
 
     """
     _magictype(Layer, choices=get_layers, return_callback=show_layer_result)
+    _magictype(Viewer, choices=get_viewers)
+
+
+def get_viewers(gui, *args) -> Tuple[Viewer, ...]:
+    """Return the viewer that the magicwidget is in, or a list of all Viewers.
+    """
+    try:
+        return (gui.parent().qt_viewer.viewer,)
+    except AttributeError:
+        # until we maintain a list of instantiated viewers, this might be the
+        # only option
+        return tuple(v for v in globals().values() if isinstance(v, Viewer))
 
 
 def get_layers(gui, layer_type: Type[Layer]) -> Tuple[Layer, ...]:
