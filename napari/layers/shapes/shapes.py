@@ -413,12 +413,12 @@ class Shapes(Layer):
     @property
     def edge_color(self):
         """(N x 4) np.ndarray: Array of RGBA face colors for each shape"""
-        return self._data_view.edge_colors
+        return self._data_view._edge_color
 
     @property
     def face_color(self):
         """(N x 4) np.ndarray: Array of RGBA face colors for each shape"""
-        return self._data_view.face_colors
+        return self._data_view._face_color
 
     @property
     def edge_width(self):
