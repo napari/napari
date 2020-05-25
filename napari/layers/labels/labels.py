@@ -154,7 +154,7 @@ class Labels(Image):
             if len(props) > 0:
                 arbitrary_key = list(props.keys())[0]
                 self._label_index = {
-                    i: i for i in range(len(props[arbitrary_key]))
+                    i + 1: i for i in range(len(props[arbitrary_key]))
                 }
             else:
                 self._label_index = {}
@@ -613,7 +613,7 @@ class Labels(Image):
 
     def get_message(self):
         msg = super().get_message()
-        if self._value is not None:
+        if self._value is not None and self._value != 0:
             idx = self._label_index[self._value]
             for k, v in self._properties.items():
                 msg += f' {k}: {v[idx]}'
