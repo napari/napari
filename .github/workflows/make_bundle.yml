@@ -37,6 +37,7 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           briefcase create
+          python .github/workflows/patch_briefcase.py
           briefcase build
           mkdir -p artifact
           briefcase package
