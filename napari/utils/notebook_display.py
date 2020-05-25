@@ -3,11 +3,13 @@ from io import BytesIO
 __all__ = ['nbscreenshot']
 
 
-def nbscreenshot(viewer, canvas_only=False):
+def nbscreenshot(viewer, *, canvas_only=False):
     """Display napari screenshot in the jupyter notebook.
 
     Parameters
     ----------
+    viewer : napari.Viewer
+        The napari viewer.
     with_viewer : bool, optional
         If True includes the napari viewer frame in the screenshot,
         otherwise just includes the canvas. By default, True.
@@ -42,7 +44,7 @@ class NotebookScreenshot:
     ```
     """
 
-    def __init__(self, viewer, canvas_only=False):
+    def __init__(self, viewer, *, canvas_only=False):
         """Initalize screenshot object.
 
         Parameters
