@@ -158,6 +158,8 @@ class Labels(Image):
                 }
             else:
                 self._label_index = {}
+        else:
+            self._label_index = label_index
 
         super().__init__(
             data,
@@ -311,6 +313,8 @@ class Labels(Image):
             {
                 'multiscale': self.multiscale,
                 'num_colors': self.num_colors,
+                'properties': self._properties,
+                'label_index': self._label_index,
                 'seed': self.seed,
                 'data': self.data,
             }
