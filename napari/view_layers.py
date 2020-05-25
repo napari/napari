@@ -363,6 +363,8 @@ def view_labels(
     data=None,
     *,
     num_colors=50,
+    properties=None,
+    label_index=None,
     seed=0.5,
     name=None,
     metadata=None,
@@ -399,6 +401,12 @@ def view_labels(
         Labels data as an array or multiscale.
     num_colors : int
         Number of unique colors to use in colormap.
+    properties : dict {str: array (N,)}, DataFrame
+        Properties for each label. Each property should be an array of length
+        N, where N is the number of labels.
+    label_index : dict {int: int}
+        Dictionary mapping labels (arbitrary integers) to row indices
+        (sequential integers in 0..N not inclusive).
     seed : float
         Seed for colormap random generator.
     name : str
@@ -452,6 +460,8 @@ def view_labels(
         data=data,
         multiscale=multiscale,
         num_colors=num_colors,
+        properties=properties,
+        label_index=label_index,
         seed=seed,
         name=name,
         metadata=metadata,

@@ -438,6 +438,12 @@ class AddLayersMixin:
             Labels data as an array or multiscale.
         num_colors : int
             Number of unique colors to use in colormap.
+        properties : dict {str: array (N,)}, DataFrame
+            Properties for each label. Each property should be an array of length
+            N, where N is the number of labels.
+        label_index : dict {int: int}
+            Dictionary mapping labels (arbitrary integers) to row indices
+            (sequential integers in 0..N not inclusive).
         seed : float
             Seed for colormap random generator.
         name : str

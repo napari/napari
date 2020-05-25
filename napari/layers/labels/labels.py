@@ -24,14 +24,14 @@ class Labels(Image):
     ----------
     data : array or list of array
         Labels data as an array or multiscale.
+    num_colors : int
+        Number of unique colors to use in colormap.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each label. Each property should be an array of length
         N, where N is the number of labels.
     label_index : dict {int: int}
         Dictionary mapping labels (arbitrary integers) to row indices
         (sequential integers in 0..N not inclusive).
-    num_colors : int
-        Number of unique colors to use in colormap.
     seed : float
         Seed for colormap random generator.
     name : str
@@ -63,12 +63,6 @@ class Labels(Image):
         Integer valued label data. Can be N dimensional. Every pixel contains
         an integer ID corresponding to the region it belongs to. The label 0 is
         rendered as transparent.
-    properties : dict {str: array (N,)}, DataFrame
-        Properties for each label. Each property should be an array of length
-        N, where N is the number of labels.
-    label_index : dict {int: int}
-        Dictionary mapping labels (arbitrary integers) to row indices
-        (sequential integers in 0..N not inclusive).
     multiscale : bool
         Whether the data is a multiscale image or not. Multiscale data is
         represented by a list of array like image data. The first image in the
@@ -77,6 +71,12 @@ class Labels(Image):
         Labels metadata.
     num_colors : int
         Number of unique colors to use in colormap.
+    properties : dict {str: array (N,)}, DataFrame
+        Properties for each label. Each property should be an array of length
+        N, where N is the number of labels.
+    label_index : dict {int: int}
+        Dictionary mapping labels (arbitrary integers) to row indices
+        (sequential integers in 0..N not inclusive).
     seed : float
         Seed for colormap random generator.
     opacity : float
