@@ -284,6 +284,15 @@ class Labels(Image):
             properties = dataframe_to_properties(properties)
         self._properties = self._validate_properties(properties)
 
+    @property
+    def label_index(self) -> Dict[int, int]:
+        """Dictionary mapping labels (arbitrary integers) to row indices"""
+        return self._label_index
+
+    @label_index.setter
+    def label_index(self, label_index: Dict[int, int]):
+        self._label_index = label_index
+
     def _validate_properties(
         self, properties: Dict[str, np.ndarray]
     ) -> Dict[str, np.ndarray]:
