@@ -1,27 +1,3 @@
-[tool.black]
-target-version = ['py36', 'py37', 'py38']
-skip-string-normalization = true
-line-length = 79
-exclude = '''
-(
-  /(
-      \.eggs
-    | \.git
-    | \.hg
-    | \.mypy_cache
-    | \.tox
-    | \.venv
-    | _build
-    | buck-out
-    | build
-    | dist
-    | examples
-    | vendored
-  )/
-  | napari/resources/qt.py
-)
-'''
-
 [build-system]
 requires = ["setuptools>=42", "wheel", "briefcase"]
 
@@ -63,3 +39,28 @@ requires = [
 ]
 sources = ['napari']
 icon = "resources/icon"
+
+
+[tool.black]
+target-version = ['py36', 'py37', 'py38']
+skip-string-normalization = true
+line-length = 79
+exclude = '''
+(
+  /(
+      \.eggs
+    | \.git
+    | \.hg
+    | \.mypy_cache
+    | \.tox
+    | \.venv
+    | _build
+    | buck-out
+    | build
+    | dist
+    | examples
+    | vendored
+  )/
+  | napari/resources/qt.py
+)
+'''
