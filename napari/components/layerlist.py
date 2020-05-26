@@ -1,4 +1,6 @@
 from typing import Optional, List
+import numpy as np
+import itertools
 from ..layers import Layer
 from ..utils.naming import inc_name_count
 from ..utils.list import ListModel
@@ -256,3 +258,36 @@ class LayerList(ListModel):
             return []
 
         return save_layers(path, layers, plugin=plugin)
+
+    @property
+    def _world_range(self):
+        """(2, D) array: Range of layers in world coordinates.
+
+        Default to 2D with (0, 512) min/ max values if no data is present.
+        """
+        if len(self) == 0:
+            min_v = [np.nan, np.nan]
+            max_v = [np.nan, np.nan]
+        else:
+            extrema = [l._world_range for l in self]
+            mins = [e[0] for e in extrema]
+            maxs = [e[1] for e in extrema]
+
+            min_v = np.nanmin(
+                list(itertools.zip_longest(*mins, fillvalue=np.nan)), axis=1
+            )
+            max_v = np.nanmax(
+                list(itertools.zip_longest(*maxs, fillvalue=np.nan)), axis=1
+            )
+
+        min_vals = np.nan_to_num(min_v, nan=0)
+        max_vals = np.nan_to_num(max_v, nan=512)
+
+        return np.vstack([min_vals, max_vals])
+
+    @property
+    def ndim(self):
+        """int: Maximum dimensionality of layers.
+        """
+        ndims = [l.ndim for l in self]
+        return max(ndims, default=0)

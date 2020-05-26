@@ -514,7 +514,7 @@ class Labels(Image):
                         ).astype(int),
                         1,
                     )
-                    for c, s in zip(coord, self.shape)
+                    for c, s in zip(coord, self.data.shape)
                 ]
             )
         else:
@@ -525,14 +525,14 @@ class Labels(Image):
                         np.clip(
                             coord[i] - self.brush_size / 2 + 0.5,
                             0,
-                            self.shape[i],
+                            self.data.shape[i],
                         )
                     ).astype(int),
                     np.round(
                         np.clip(
                             coord[i] + self.brush_size / 2 + 0.5,
                             0,
-                            self.shape[i],
+                            self.data.shape[i],
                         )
                     ).astype(int),
                     1,

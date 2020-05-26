@@ -605,12 +605,12 @@ class Points(Layer):
     def _data_range(self) -> np.ndarray:
         """(2, D) array: Range of layer in data coordinates."""
         if len(self.data) == 0:
-            maxs = np.ones(self.data.shape[1], dtype=int)
-            mins = np.zeros(self.data.shape[1], dtype=int)
+            extrema = np.full((2, self.ndim), np.nan)
         else:
             maxs = np.max(self.data, axis=0)
             mins = np.min(self.data, axis=0)
-        return np.vstack([mins, maxs])
+            extrema = np.vstack([mins, maxs])
+        return extrema
 
     @property
     def n_dimensional(self) -> bool:
@@ -1504,12 +1504,10 @@ class Points(Layer):
         colormapped = np.zeros(self._thumbnail_shape)
         colormapped[..., 3] = 1
         if len(self._view_data) > 0:
-            min_vals = [self.dims.range[i][0] for i in self.dims.displayed]
+            dr = self._data_range
+            min_vals = [dr[0, i] for i in self.dims.displayed]
             shape = np.ceil(
-                [
-                    self.dims.range[i][1] - self.dims.range[i][0] + 1
-                    for i in self.dims.displayed
-                ]
+                [dr[1, i] - dr[0, i] + 1 for i in self.dims.displayed]
             ).astype(int)
             zoom_factor = np.divide(
                 self._thumbnail_shape[:2], shape[-2:]

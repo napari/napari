@@ -207,19 +207,19 @@ class Surface(IntensityVisualizationMixin, Layer):
     def _data_range(self) -> np.ndarray:
         """(2, D) array: Range of layer in data coordinates."""
         if len(self.vertices) == 0:
-            maxs = np.ones(self.vertices.shape[1], dtype=int)
-            mins = np.zeros(self.vertices.shape[1], dtype=int)
+            extrema = np.full((2, self.ndim), np.nan)
         else:
             maxs = np.max(self.vertices, axis=0)
             mins = np.min(self.vertices, axis=0)
 
-        # The full dimensionality and shape of the layer is determined by
-        # the number of additional vertex value dimensions and the
-        # dimensionality of the vertices themselves
-        if self.vertex_values.ndim > 1:
-            mins = [0] * (self.vertex_values.ndim - 1) + list(mins)
-            maxs = list(self.vertex_values.shape[:-1]) + list(maxs)
-        return np.vstack([mins, maxs])
+            # The full dimensionality and shape of the layer is determined by
+            # the number of additional vertex value dimensions and the
+            # dimensionality of the vertices themselves
+            if self.vertex_values.ndim > 1:
+                mins = [0] * (self.vertex_values.ndim - 1) + list(mins)
+                maxs = list(self.vertex_values.shape[:-1]) + list(maxs)
+            extrema = np.vstack([mins, maxs])
+        return extrema
 
     def _get_state(self):
         """Get dictionary of layer state.

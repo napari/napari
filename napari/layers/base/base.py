@@ -396,9 +396,10 @@ class Layer(KeymapProvider, ABC):
 
         self.dims.ndim = ndim
 
-        world_range = self._world_range
+        wr = self._world_range
+        steps = self._transforms['data2world'].scale
         for i in range(self.dims.ndim):
-            self.dims.set_range(i, (world_range[0, i], world_range[1, i], 1))
+            self.dims.set_range(i, (wr[0, i], wr[1, i], steps[i]))
 
         self.refresh()
         self._update_coordinates()
@@ -431,7 +432,7 @@ class Layer(KeymapProvider, ABC):
     @property
     def _world_range(self):
         """(2, D) array: Range of layer in world coordinates."""
-        return self._transforms.simplified(self._data_range)
+        return self._transforms['data2world'](self._data_range)
 
     def _get_base_state(self):
         """Get dictionary of attributes on base layer.
@@ -498,13 +499,6 @@ class Layer(KeymapProvider, ABC):
     def ndim(self):
         """int: Number of dimensions in the data."""
         return self.dims.ndim
-
-    @property
-    def shape(self):
-        """tuple of int: Shape of the data."""
-        return tuple(
-            np.round(r[1] - r[0]).astype(int) for r in self.dims.range
-        )
 
     @property
     def selected(self):

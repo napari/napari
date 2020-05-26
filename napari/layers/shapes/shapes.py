@@ -349,12 +349,12 @@ class Shapes(Layer):
     def _data_range(self) -> np.ndarray:
         """(2, D) array: Range of layer in data coordinates."""
         if len(self.data) == 0:
-            maxs = np.ones(self.ndim, dtype=int)
-            mins = np.zeros(self.ndim, dtype=int)
+            extrema = np.full((2, self.ndim), np.nan)
         else:
             maxs = np.max([np.max(d, axis=0) for d in self.data], axis=0)
             mins = np.min([np.min(d, axis=0) for d in self.data], axis=0)
-        return np.vstack([mins, maxs])
+            extrema = np.vstack([mins, maxs])
+        return extrema
 
     @property
     def nshapes(self):
@@ -1004,18 +1004,13 @@ class Shapes(Layer):
         # calculate min vals for the vertices and pad with 0.5
         # the offset is needed to ensure that the top left corner of the shapes
         # corresponds to the top left corner of the thumbnail
-        offset = (
-            np.array([self.dims.range[d][0] for d in self.dims.displayed])
-            + 0.5
-        )
+        dr = self._data_range
+        offset = np.array([dr[0, d] for d in self.dims.displayed]) + 0.5
         # calculate range of values for the vertices and pad with 1
         # padding ensures the entire shape can be represented in the thumbnail
         # without getting clipped
         shape = np.ceil(
-            [
-                self.dims.range[d][1] - self.dims.range[d][0] + 1
-                for d in self.dims.displayed
-            ]
+            [dr[1, d] - dr[0, d] + 1 for d in self.dims.displayed]
         ).astype(int)
         zoom_factor = np.divide(self._thumbnail_shape[:2], shape[-2:]).min()
 

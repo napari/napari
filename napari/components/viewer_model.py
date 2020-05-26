@@ -1,5 +1,3 @@
-from math import inf
-import itertools
 import numpy as np
 
 from .add_layers_mixin import AddLayersMixin
@@ -261,11 +259,10 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             displayed view is 2D or 3D.
         """
         # Scale the camera to the contents in the scene
-        min_shape, max_shape = self._calc_bbox()
-        size = np.subtract(max_shape, min_shape)
+        wr = self.layers._world_range
+        size = np.subtract(wr[1], wr[0])
         size = [size[i] for i in self.dims.displayed]
-        corner = [min_shape[i] for i in self.dims.displayed]
-
+        corner = [wr[0][i] for i in self.dims.displayed]
         return size, corner
 
     def reset_view(self, event=None):
@@ -298,15 +295,11 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             )
 
     def _new_labels(self):
-        if self.dims.ndim == 0:
-            dims = (512, 512)
-        else:
-            dims = self._calc_bbox()[1]
-            dims = [np.ceil(d).astype('int') if d > 0 else 1 for d in dims]
-            if len(dims) < 1:
-                dims = (512, 512)
+        """Create new labels layer filling full world coordinates space."""
+        size, corner = self._scene_shape()
+        dims = [np.ceil(d).astype('int') if d > 0 else 1 for d in size]
         empty_labels = np.zeros(dims, dtype=int)
-        self.add_labels(empty_labels)
+        self.add_labels(empty_labels, translate=np.array(corner))
 
     def _update_layers(self, event=None, layers=None):
         """Updates the contained layers.
@@ -386,56 +379,11 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             self.dims.ndim = 2
             self.dims.reset()
         else:
-            layer_range = self._calc_layers_ranges()
-            self.dims.ndim = len(layer_range)
-            for i, r in enumerate(layer_range):
-                self.dims.set_range(i, r)
+            wr = self.layers._world_range
+            self.dims.ndim = self.layers.ndim
+            for i in range(self.dims.ndim):
+                self.dims.set_range(i, (wr[0, i], wr[1, i], 1))
         self.events.layers_change()
-
-    def _calc_layers_ranges(self):
-        """Calculates the range along each axis from all present layers.
-        """
-
-        ndims = self._calc_layers_num_dims()
-        ranges = [(inf, -inf, inf)] * ndims
-
-        for layer in self.layers:
-            layer_range = layer.dims.range[::-1]
-            ranges = [
-                (min(a, b), max(c, d), min(e, f))
-                for (a, c, e), (b, d, f) in itertools.zip_longest(
-                    ranges, layer_range, fillvalue=(inf, -inf, inf)
-                )
-            ]
-
-        return ranges[::-1]
-
-    def _calc_bbox(self):
-        """Calculates the bounding box of all displayed layers.
-        This assumes that all layers are stacked.
-        """
-
-        min_shape = []
-        max_shape = []
-        for min, max, step in self._calc_layers_ranges():
-            min_shape.append(min)
-            max_shape.append(max)
-        if len(min_shape) == 0:
-            min_shape = [0] * self.dims.ndim
-            max_shape = [1] * self.dims.ndim
-
-        return min_shape, max_shape
-
-    def _calc_layers_num_dims(self):
-        """Calculates the number of maximum dimensions in the contained images.
-        """
-        max_dims = 0
-        for layer in self.layers:
-            dims = layer.ndim
-            if dims > max_dims:
-                max_dims = dims
-
-        return max_dims
 
     def _update_status(self, event):
         """Set the viewer status with the `event.status` string."""
