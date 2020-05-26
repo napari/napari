@@ -50,7 +50,7 @@ def themify_icons(
 
     color_lookup = color_lookup or {
         'visibility': 'text',
-        'visibility_off': 'highlight',
+        'visibility_off': 'secondary',
         'menu': 'highlight',
         'drop_down': 'secondary',
         'plus': 'secondary',
