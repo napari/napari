@@ -347,7 +347,7 @@ class QtDims(QWidget):
                 )
             loop_mode = LoopMode(loop_mode)
 
-        if axis >= len(self.dims.range):
+        if axis >= self.dims.ndim:
             raise IndexError('axis argument out of range')
 
         if self.is_playing:

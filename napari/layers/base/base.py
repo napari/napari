@@ -394,11 +394,6 @@ class Layer(KeymapProvider, ABC):
 
         self.dims.ndim = ndim
 
-        wr = self._world_range
-        steps = self._transforms['data2world'].scale
-        for i in range(self.dims.ndim):
-            self.dims.set_range(i, (wr[0, i], wr[1, i], steps[i]))
-
         self.refresh()
         self._update_coordinates()
 
