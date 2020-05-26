@@ -1,65 +1,130 @@
-on:
-  push:
-    # Sequence of patterns matched against refs/tags
-    tags:
-      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+# on:
+#   push:
+#     # Sequence of patterns matched against refs/tags
+#     tags:
+#       - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
+
+on: [pull_request]
 
 name: Create Release
 
 jobs:
-  build:
-    name: Create Release
-    runs-on: ubuntu-latest
-    if: github.repository == 'napari/napari'
+  # build:
+  #   name: Create Release
+  #   runs-on: ubuntu-latest
+  #   if: github.repository == 'napari/napari'
+  #   env:
+  #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # This token is provided by Actions, you do not need to create your own token
+  #   steps:
+  #     - name: Checkout code
+  #       uses: actions/checkout@master
+  #     - name: Install Python
+  #       uses: actions/setup-python@v1
+  #       with:
+  #         python-version: 3.7
+  #     - name: Install Dependencies
+  #       run: |
+  #         python -m pip install --upgrade pip
+  #         pip install -r requirements.txt
+  #     - name: Build Distribution
+  #       run: |
+  #         python setup.py sdist
+  #     - name: Find Release Notes
+  #       id: release_notes
+  #       run: |
+  #         TAG="${GITHUB_REF/refs\/tags\/v/}"  # clean tag
+  #         VER="${TAG/rc*/}"  # remove pre-release identifier
+  #         RELEASE_NOTES="$(cat docs/release/release_${VER//./_}.md)"
+  #         # https://github.community/t5/GitHub-Actions/set-output-Truncates-Multiline-Strings/m-p/38372/highlight/true#M3322
+  #         RELEASE_NOTES="${RELEASE_NOTES//'%'/'%25'}"
+  #         RELEASE_NOTES="${RELEASE_NOTES//$'\n'/'%0A'}"
+  #         RELEASE_NOTES="${RELEASE_NOTES//$'\r'/'%0D'}"
+  #         # https://help.github.com/en/actions/reference/workflow-commands-for-github-actions
+  #         echo "::set-env name=tag::$TAG"
+  #         echo "::set-output name=contents::$RELEASE_NOTES"
+  #     - name: Create Release
+  #       id: create_release
+  #       uses: actions/create-release@latest
+  #       with:
+  #         tag_name: ${{ github.ref }}
+  #         release_name: ${{ env.tag }}
+  #         body: ${{ steps.release_notes.outputs.contents }}
+  #         draft: false
+  #         prerelease: ${{ contains(github.ref, 'rc') }}
+  #     - name: Upload Release Asset
+  #       uses: actions/upload-release-asset@v1
+  #       with:
+  #         upload_url: ${{ steps.create_release.outputs.upload_url }}
+  #         asset_path: ./dist/napari-${{ env.tag }}.tar.gz
+  #         asset_name: napari-${{ env.tag }}.tar.gz
+  #         asset_content_type: application/gzip
+  #     - name: Publish PyPI Package
+  #       uses: pypa/gh-action-pypi-publish@master
+  #       with:
+  #         user: __token__
+  #         password: ${{ secrets.pypi_password }}
+
+  bundle:
+    name: Bundle ${{ matrix.platform }}
+    # needs: [build]
+    runs-on: ${{ matrix.platform }}
+    # if: github.repository == 'napari/napari'
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ubuntu-16.04, macos-latest, windows-latest]
     steps:
       - name: Checkout code
         uses: actions/checkout@master
       - name: Install Python
         uses: actions/setup-python@v1
         with:
-          python-version: 3.7
+          python-version: 3.8
       - name: Install Dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-      - name: Build Distribution
-        run: |
-          python setup.py sdist
-      - name: Find Release Notes
-        id: release_notes
+          python -m pip install --upgrade pip 
+          pip install briefcase tomlkit
+          # pip install .
+          python .github/workflows/update_version.py
+          napari --info  # will trigger resources build?
+      - name: get tag
+        shell: bash
         run: |
           TAG="${GITHUB_REF/refs\/tags\/v/}"  # clean tag
           VER="${TAG/rc*/}"  # remove pre-release identifier
-          RELEASE_NOTES="$(cat docs/release/release_${VER//./_}.md)"
-          # https://github.community/t5/GitHub-Actions/set-output-Truncates-Multiline-Strings/m-p/38372/highlight/true#M3322
-          RELEASE_NOTES="${RELEASE_NOTES//'%'/'%25'}"
-          RELEASE_NOTES="${RELEASE_NOTES//$'\n'/'%0A'}"
-          RELEASE_NOTES="${RELEASE_NOTES//$'\r'/'%0D'}"
-          # https://help.github.com/en/actions/reference/workflow-commands-for-github-actions
           echo "::set-env name=tag::$TAG"
-          echo "::set-output name=contents::$RELEASE_NOTES"
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@latest
+      - name: Make nix Bundle
+        if: runner.os != 'Windows'
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # This token is provided by Actions, you do not need to create your own token
+          output: ${{ ( runner.os == 'macOS' && './macOS/*.dmg' ) || './linux/*.AppImage' }}
+          cmd: ${{ ( runner.os == 'macOS' && 'briefcase package --no-sign' ) || 'briefcase package' }}
+        run: |
+          briefcase create
+          briefcase build
+          ${{ env.cmd }}
+          zip -j napari-${{ env.tag }}-${{ runner.os }}.zip ${{ env.output }}
+      - name: Make Windows Bundle
+        if: runner.os == 'Windows'
+        run: |
+          briefcase create
+          python .github/workflows/patch_briefcase.py  # run *after* create
+          briefcase build
+          briefcase package
+          powershell "Compress-Archive windows\napari-${{ env.tag }}.msi napari-${{ env.tag }}-${{ runner.os }}.zip"
+      - name: Get Release
+        id: get_release
+        uses: bruceadams/get-release@v1.2.0
+      # - name: Upload Release Asset
+      #   uses: actions/upload-release-asset@v1
+      #   with:
+      #     upload_url: ${{ steps.get_release.outputs.upload_url }}
+      #     asset_path: napari-${{ env.tag }}-${{ runner.os }}.zip
+      #     asset_name: napari-${{ env.tag }}-${{ runner.os }}.zip
+      #     asset_content_type: application/zip
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
         with:
-          tag_name: ${{ github.ref }}
-          release_name: ${{ env.tag }}
-          body: ${{ steps.release_notes.outputs.contents }}
-          draft: false
-          prerelease: ${{ contains(github.ref, 'rc') }}
-      - name: Upload Release Asset
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./dist/napari-${{ env.tag }}.tar.gz
-          asset_name: napari-${{ env.tag }}.tar.gz
-          asset_content_type: application/gzip
-      - name: Publish PyPI Package
-        uses: pypa/gh-action-pypi-publish@master
-        with:
-          user: __token__
-          password: ${{ secrets.pypi_password }}
+          name: napari-${{ env.tag }}-${{ runner.os }}.zip
+          path: napari-${{ env.tag }}-${{ runner.os }}.zip
