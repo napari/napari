@@ -42,9 +42,6 @@ class Dims:
         outside their range.
     ndim : int
         Number of dimensions.
-    indices : tuple of slice object
-        Tuple of slice objects for slicing arrays on each dimension, one for
-        each dimension
     displayed : tuple
         List of dimensions that are displayed.
     not_displayed : tuple
@@ -256,26 +253,6 @@ class Dims:
         arr = np.array(order)
         arr[np.argsort(arr)] = range(len(arr))
         return arr.tolist()
-
-    @property
-    def indices(self):
-        """Tuple of slice objects for slicing arrays on each dimension."""
-        slice_list = []
-        for axis in range(self.ndim):
-            if axis in self.displayed:
-                slice_list.append(slice(None))
-            else:
-                if self.clip:
-                    p = np.clip(
-                        self.point[axis],
-                        np.round(self.range[axis][0]),
-                        np.round(self.range[axis][1]) - 1,
-                    )
-                else:
-                    p = self.point[axis]
-                p = np.round(p / self.range[axis][2]).astype(int)
-                slice_list.append(p)
-        return tuple(slice_list)
 
     @property
     def ndisplay(self):

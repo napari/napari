@@ -84,8 +84,6 @@ class Layer(KeymapProvider, ABC):
         dimensions of the layer.
     position : 2-tuple of int
         Cursor position in the image space of only the displayed dimensions.
-    shape : tuple of int
-        Size of the data in the layer.
     ndim : int
         Dimensionality of the layer.
     selected : bool
@@ -114,7 +112,7 @@ class Layer(KeymapProvider, ABC):
         * `data` property (setter & getter)
 
     May define the following:
-        * `_set_view_slice(indices)`: called to set currently viewed slice
+        * `_set_view_slice()`: called to set currently viewed slice
         * `_basename()`: base/default name of the layer
     """
 
@@ -434,6 +432,30 @@ class Layer(KeymapProvider, ABC):
         """(2, D) array: Range of layer in world coordinates."""
         return self._transforms['data2world'](self._data_range)
 
+    @property
+    def _slice_indices(self):
+        """(D, ) array: Slice indices in data coordinates."""
+        world_pts = [self.dims.point[ax] for ax in self.dims.not_displayed]
+        inv_transform = self._transforms['data2world'].inverse
+        data_pts = inv_transform.set_slice(self.dims.not_displayed)(world_pts)
+
+        if self.dims.clip:
+            data_pts = np.clip(
+                data_pts,
+                [self._data_range[0, ax] for ax in self.dims.not_displayed],
+                [
+                    self._data_range[1, ax] - 1
+                    for ax in self.dims.not_displayed
+                ],
+            )
+        data_pts = np.round(data_pts).astype(int)
+
+        indices = [slice(None)] * self.ndim
+        for i, ax in enumerate(self.dims.not_displayed):
+            indices[ax] = data_pts[i]
+
+        return tuple(indices)
+
     def _get_base_state(self):
         """Get dictionary of attributes on base layer.
 
@@ -635,7 +657,7 @@ class Layer(KeymapProvider, ABC):
         """Insert the cursor position into the correct position in the
         tuple of indices and update the cursor coordinates.
         """
-        coords = list(self.dims.indices)
+        coords = list(self._slice_indices)
         for d, p in zip(self.dims.displayed, self.position):
             coords[d] = p
         self.coordinates = tuple(coords)

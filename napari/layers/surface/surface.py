@@ -249,7 +249,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         # is provided per vertex.
         if values_ndim > 0:
             # Get indices for axes corresponding to values dimensions
-            values_indices = self.dims.indices[:-vertex_ndim]
+            values_indices = self._slice_indices[:-vertex_ndim]
             values = self.vertex_values[values_indices]
             if values.ndim > 1:
                 warnings.warn(
@@ -267,7 +267,7 @@ class Surface(IntensityVisualizationMixin, Layer):
             # Determine which axes of the vertices data are being displayed
             # and not displayed, ignoring the additional dimensions
             # corresponding to the vertex_values.
-            indices = np.array(self.dims.indices[-vertex_ndim:])
+            indices = np.array(self._slice_indices[-vertex_ndim:])
             disp = [
                 d
                 for d in np.subtract(self.dims.displayed, values_ndim)
@@ -280,7 +280,7 @@ class Surface(IntensityVisualizationMixin, Layer):
             ]
         else:
             self._view_vertex_values = self.vertex_values
-            indices = np.array(self.dims.indices)
+            indices = np.array(self._slice_indices)
             not_disp = list(self.dims.not_displayed)
             disp = list(self.dims.displayed)
 

@@ -417,7 +417,7 @@ class Labels(Image):
     def _save_history(self):
         self._redo_history = deque()
         if not self._block_saving:
-            self._undo_history.append(self.data[self.dims.indices].copy())
+            self._undo_history.append(self.data[self._slice_indices].copy())
             self._trim_history()
 
     def _load_history(self, before, after):
@@ -425,8 +425,8 @@ class Labels(Image):
             return
 
         prev = before.pop()
-        after.append(self.data[self.dims.indices].copy())
-        self.data[self.dims.indices] = prev
+        after.append(self.data[self._slice_indices].copy())
+        self.data[self._slice_indices] = prev
 
         self.refresh()
 
@@ -480,7 +480,7 @@ class Labels(Image):
 
         if not (self.n_dimensional or self.ndim == 2):
             # if working with just the slice, update the rest of the raw data
-            self.data[tuple(self.dims.indices)] = labels
+            self.data[tuple(self._slice_indices)] = labels
 
         self.refresh()
 
