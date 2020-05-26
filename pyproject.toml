@@ -1,8 +1,24 @@
 [build-system]
-requires = ["setuptools>=42", "wheel", "setuptools_scm[toml]>=3.4"]
+requires = ["setuptools>=42", "wheel", "briefcase", "setuptools_scm[toml]>=3.4"]
 
 [tool.setuptools_scm]
 write_to = "napari/_version.py"
+
+[tool.briefcase]
+project_name = "napari"
+bundle = "com.napari"
+version = "0.0.0"  # populated with .github/workflows/update_version.py
+author = "napari"
+url = "https://napari.org/"
+license = "BSD license"
+
+[tool.briefcase.app.napari]
+formal_name = "napari"
+description = "napari: a multi-dimensional image viewer"
+requires = []  # populated with .github/workflows/update_version.py
+sources = ['napari']
+icon = "resources/icon"
+
 
 [tool.black]
 target-version = ['py36', 'py37', 'py38']

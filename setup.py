@@ -10,6 +10,7 @@ import os.path as osp
 import sys
 from setuptools import find_packages, setup
 
+
 MIN_PY_MAJOR_VER = 3
 MIN_PY_MINOR_VER = 6
 MIN_PY_VER = f"{MIN_PY_MAJOR_VER}.{MIN_PY_MINOR_VER}"
