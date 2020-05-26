@@ -103,16 +103,17 @@ class Viewer(ViewerModel):
         else:
             self.window.qt_viewer.console.push(variables)
 
-    def screenshot(self, path=None, *, with_viewer=False):
+    def screenshot(self, path=None, *, canvas_only=True):
         """Take currently displayed screen and convert to an image array.
 
         Parameters
         ----------
         path : str
             Filename for saving screenshot image.
-        with_viewer : bool
-            If True includes the napari viewer, otherwise just includes the
-            canvas.
+        canvas_only : bool
+            If True, screenshot shows only the image display canvas, and
+            if False include the napari viewer frame in the screenshot,
+            By default, True.
 
         Returns
         -------
@@ -120,10 +121,10 @@ class Viewer(ViewerModel):
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
-        if with_viewer:
-            image = self.window.screenshot(path=path)
-        else:
+        if canvas_only:
             image = self.window.qt_viewer.screenshot(path=path)
+        else:
+            image = self.window.screenshot(path=path)
         return image
 
     def update(self, func, *args, **kwargs):
