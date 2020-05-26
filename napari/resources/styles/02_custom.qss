@@ -184,7 +184,8 @@ QtLayerWidget > QLineEdit:disabled {
 }
 
 QtLayerWidget > QLineEdit:focus {
-  background-color: {{ primary }};
+  background-color: {{ darken(current, 20) }};
+  selection-background-color: {{ lighten(current, 20) }};
 }
 
 QtLayerWidget QCheckBox::indicator {
