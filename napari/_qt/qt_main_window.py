@@ -11,9 +11,11 @@ from .qt_viewer import QtViewer
 from .qt_about import QtAbout
 from .qt_plugin_report import QtPluginErrReporter
 from .qt_plugin_sorter import QtPluginSorter
+from .qt_debug_menu import DebugMenu
 from .qt_dict_table import QtDictTable
 from .qt_viewer_dock_widget import QtViewerDockWidget
 from ..resources import get_stylesheet
+from ..utils import perf
 
 # these "# noqa" comments are here to skip flake8 linting (E402),
 # these module-level imports have to come after `app.use_app(API)`
@@ -88,6 +90,8 @@ class Window:
         self._add_plugins_menu()
         self._add_help_menu()
 
+        self._debug_menu = DebugMenu(self) if perf.USE_PERFMON else None
+
         self._status_bar.showMessage('Ready')
         self._help = QLabel('')
         self._status_bar.addPermanentWidget(self._help)
@@ -101,8 +105,7 @@ class Window:
         self._add_viewer_dock_widget(self.qt_viewer.dockLayerControls)
         self._add_viewer_dock_widget(self.qt_viewer.dockLayerList)
 
-        # Performance widget is optional for now.
-        if self.qt_viewer.dockPerformance is not None:
+        if perf.USE_PERFMON:
             self._add_viewer_dock_widget(self.qt_viewer.dockPerformance)
 
         self.qt_viewer.viewer.events.status.connect(self._status_changed)

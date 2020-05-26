@@ -1,7 +1,4 @@
-"""A dockable widget to show performance information.
-
-This is a WIP while we figure out what's useful for the developer to
-see related to performance and timers.
+"""QtPerformance widget to show performance information.
 """
 import time
 
@@ -16,13 +13,13 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ..utils.perf_timers import TIMERS
+from ..utils import perf
 
 
 class TextLog(QTextEdit):
     """Text window we can write "log" messages to.
 
-    This is very WIP might not use this control at all.
+    TODO: need to limit length, erase oldest messages.
     """
 
     def append(self, name, time_ms):
@@ -34,49 +31,45 @@ class TextLog(QTextEdit):
 
 
 class QtPerformance(QWidget):
-    """Dockable widget to show performance metrics and info.
+    """Dockable widget to show performance info.
 
-    Display some performance related information. This is mostly proof-of-concept
-    until we figure out what exactly we want to display.
-
-    Widget Layout
-    -------------
+    Layout
+    ------
 
     Draw Time:
     <----progress bar showing draw time---->
 
     Slow Events:
-    <----text edit window showing slow events---->
+    <----TextLog listing slow events---->
 
     Uptime: <---uptime in seconds--->
 
-    Widget Notes
-    ------------
+    Notes
+    -----
 
     1) The progress bar doesn't show "progress", we use it as a bar graph to
-       show the average duration of recent "UpdateRequest" events.
+       show the average duration of recent "UpdateRequest" events. This
+       is actually not the total draw time, but it's generally the biggest
+       part of each frame.
 
     2) We log any event whose duration is longer then SLOW_EVENT_MS
 
     3) We show uptime so you can tell if this window is being updated at all.
-    Right now it seems like the main window's slider starves us out, so we
-    don't receive timer events at all some of the time.
     """
 
     # Log events that take longer than this.
     SLOW_EVENT_MS = 100
 
     # Update at 250ms / 4Hz for now. The more we update more alive our
-    # display will look, but the more we will slow things down. We will
-    # need to tune this carefully at some point. This is a guess.
+    # display will look, but the more we will slow things down.
     #
     # Also for some reason our timer gets "starved out" if someone is using the
     # slider in the main window, the main window will update but we want. Maybe
-    # it's being directly updated so the timer event is not being handled?
+    # it's being directly updating things? So the timer event is not being handled?
     UPDATE_MS = 250
 
     def __init__(self):
-        """Create our progress bar and text window.
+        """Create our windgets.
         """
         super().__init__()
         layout = QVBoxLayout()
@@ -101,13 +94,12 @@ class QtPerformance(QWidget):
         log_label = QLabel("Slow Events:")
         layout.addWidget(log_label)
 
-        # We log slow events to this widow.
+        # We log slow events to this window.
         log = TextLog()
         layout.addWidget(log)
         self.log = log
 
-        # Label that shows the time since napari started. This is mostly
-        # just so we can see if our window is being updated or not.
+        # Uptime label. To indicate if the widget is getting updated.
         label = QLabel('')
         layout.addWidget(label)
         self.timer_label = label
@@ -126,11 +118,10 @@ class QtPerformance(QWidget):
         average = None
         long_events = []
 
-        # We don't update any GUI/widgets while iterating over the TIMERS
-        # dictionary. Updating widgets can create immediate Qt Events which
-        # would modify the TIMERS out from under us! So we only read here and we
-        # update the GUI later.
-        for name, timer in TIMERS.timers.items():
+        # We don't update any GUI/widgets while iterating over the timers.
+        # Updating widgets can create immediate Qt Events which would modify the
+        # timers out from under us!
+        for name, timer in perf.timers.timers.items():
 
             # The Qt Event "UpdateRequest" is the main "draw" event, so
             # that's what we use for our progress bar.
@@ -161,5 +152,5 @@ class QtPerformance(QWidget):
             self.log.append(name, time_ms)
 
         # Clear all the timers since we've displayed them. They will immediately
-        # start accumulating numbers for the text time we run.
-        TIMERS.clear()
+        # start accumulating numbers for the next update.
+        perf.timers.clear()

@@ -5,7 +5,19 @@ from os.path import dirname, join
 from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import QApplication, QSplashScreen
 
-from .qt_application import QtApplication
+from ..utils import perf
+
+
+def _create_application() -> QApplication:
+    """Return a new QApplication.
+    """
+    if not perf.USE_PERFMON:
+        return QApplication(sys.argv)  # Normal stock QApplication.
+
+    # Special version that times Qt Events.
+    from .qt_timing import QApplicationWithTiming
+
+    return QApplicationWithTiming(sys.argv)
 
 
 @contextmanager
@@ -29,7 +41,7 @@ def gui_qt(*, startup_logo=False):
     if not app:
         # if this is the first time the Qt app is being instantiated, we set
         # the name, so that we know whether to raise_ in Window.show()
-        app = QtApplication(sys.argv)
+        app = _create_application()
         app.setApplicationName('napari')
         if startup_logo:
             logopath = join(dirname(__file__), '..', 'resources', 'logo.png')
