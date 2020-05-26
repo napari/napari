@@ -1,10 +1,8 @@
-# on:
-#   push:
-#     # Sequence of patterns matched against refs/tags
-#     tags:
-#       - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
-
-on: [push, pull_request]
+on:
+  push:
+    # Sequence of patterns matched against refs/tags
+    tags:
+      - 'v*' # Push events to matching v*, i.e. v1.0, v20.15.10
 
 name: Create Release
 
@@ -115,7 +113,7 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           briefcase create
-          python .github/workflows/patch_briefcase.py  # run *after* create
+          python .github/workflows/patch_briefcase.py  # run *after* create, switches to non-windowed python.exe
           briefcase build
           briefcase package
           powershell "Compress-Archive windows\napari-${{ env.tag }}.msi napari-${{ env.tag }}-${{ runner.os }}.zip"
