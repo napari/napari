@@ -97,7 +97,10 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           python .github/workflows/patch_briefcase.py
-          napari --info  # build resources
+          ls napari/resources/
+          python -m napari.resources.build_icons
+          sleep 1
+          ls napari/resources/
           ls napari/resources/_qt_resources*.py 1> /dev/null 2>&1 || exit 1
           briefcase create
           # make sure the resources were built and included
