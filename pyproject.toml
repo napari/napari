@@ -23,14 +23,13 @@ exclude = '''
 '''
 
 [build-system]
-requires = ["briefcase"]
+requires = ["setuptools>=42", "wheel", "briefcase"]
 
 [tool.briefcase]
 project_name = "napari"
 bundle = "com.napari"
-version = "0.3.0"
+version = "changed_dynamically"
 author = "napari"
-author_email = "napari@example.com"
 url = "https://napari.org/"
 license = "BSD license"
 
