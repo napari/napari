@@ -1,5 +1,4 @@
 include LICENSE
-include versioneer.py
 include napari/_version.py
 recursive-include napari/resources *.png *.jpeg *.jpg *.svg *.qss
 exclude napari/resources/_qt_resources*.py
