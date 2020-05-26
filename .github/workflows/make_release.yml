@@ -85,6 +85,7 @@ jobs:
           python -m pip install --upgrade pip 
           pip install briefcase tomlkit wheel
           pip install -e .
+          # by importing napari, this will also build resources
           python .github/workflows/update_version.py
           cat pyproject.toml
       - name: get tag
@@ -96,17 +97,14 @@ jobs:
       - name: Make macOS Bundle
         if: runner.os == 'macOS'
         run: |
+          # for mac, this patch fixes DMG building, and allows adhoc signing
           python .github/workflows/patch_briefcase.py
-          ls napari/resources/
-          python -m napari.resources.build_icons
-          sleep 1
-          ls napari/resources/
           ls napari/resources/_qt_resources*.py 1> /dev/null 2>&1 || exit 1
           briefcase create
           # make sure the resources were built and included
           ls macOS/napari/napari.app/Contents/Resources/app/napari/resources/_qt_resources*.py 1> /dev/null 2>&1 || exit 1
           briefcase build
-          briefcase package --no-sign
+          briefcase package -i -
           zip -j napari-${{ env.tag }}-${{ runner.os }}.zip ./macOS/*.dmg
       - name: Make Linux Bundle
         if: runner.os == 'Linux'
@@ -119,7 +117,8 @@ jobs:
         if: runner.os == 'Windows'
         run: |
           briefcase create
-          python .github/workflows/patch_briefcase.py  # run *after* create, switches to non-windowed python.exe
+          # for windows, run *after* create, switches to non-windowed python.exe
+          python .github/workflows/patch_briefcase.py 
           briefcase build
           briefcase package
           powershell "Compress-Archive windows\napari-${{ env.tag }}.msi napari-${{ env.tag }}-${{ runner.os }}.zip"
