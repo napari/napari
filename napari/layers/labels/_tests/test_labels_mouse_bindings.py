@@ -60,7 +60,7 @@ def test_pick(Event):
     data[:5, :5] = 2
     data[-5:, -5:] = 3
     layer = Labels(data)
-    assert layer.selected_label == 0
+    assert layer.selected_label == 1
 
     layer.mode = 'pick'
     layer.position = (0, 0)
