@@ -54,6 +54,37 @@ def test_paint(Event):
     assert np.unique(layer.data[-5:, :5]) == 1
 
 
+def test_erase(Event):
+    """Test erasing labels with different brush sizes."""
+    data = np.ones((20, 20))
+    layer = Labels(data)
+    layer.brush_size = 10
+    layer.mode = 'erase'
+    layer.selected_label = 3
+    layer.position = (0, 0)
+
+    # Simulate click
+    event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
+    mouse_press_callbacks(layer, event)
+
+    layer.position = (19, 19)
+
+    # Simulate drag
+    event = ReadOnlyWrapper(Event(type='mouse_move', is_dragging=True))
+    mouse_move_callbacks(layer, event)
+
+    # Simulate release
+    event = ReadOnlyWrapper(Event(type='mouse_release', is_dragging=False))
+    mouse_release_callbacks(layer, event)
+
+    # Painting goes from (0, 0) to (19, 19) with a brush size of 10, changing
+    # all pixels along that path, but non outside it.
+    assert np.unique(layer.data[:5, :5]) == 0
+    assert np.unique(layer.data[-5:, -5:]) == 0
+    assert np.unique(layer.data[:5, -5:]) == 1
+    assert np.unique(layer.data[-5:, :5]) == 1
+
+
 def test_pick(Event):
     """Test picking label."""
     data = np.ones((20, 20))

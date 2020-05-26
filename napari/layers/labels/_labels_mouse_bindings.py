@@ -6,7 +6,7 @@ def paint(layer, event):
     """Paint with the proper label.
 
     Use current selected label when in paint mode,
-    background label when in erase mode.
+    and use background label when in erase mode (or right click).
     """
     if layer._mode == Mode.ERASE:
         label = layer._background_label
@@ -44,7 +44,11 @@ def pick(layer, event):
 
 
 def fill(layer, event):
-    """Fill in an area with the currently selected label."""
+    """Fill in an area with the proper label.
+
+    Use current selected label when in fill mode,
+    (and use background label when using right click).
+    """
     # Experimental:
     if hasattr(event, 'button') and event.button == 2:
         label = layer._background_label
