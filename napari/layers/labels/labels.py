@@ -339,8 +339,8 @@ class Labels(Image):
             self.help = (
                 'hold <space> to pan/zoom, '
                 'hold <shift> to toggle preserve_labels, '
-                'hold <control> to fill,'
-                'hold <alt> to erase,'
+                'hold <control> to fill, '
+                'hold <alt> to erase, '
                 'drag to paint a label'
             )
             self.mouse_drag_callbacks.append(paint)

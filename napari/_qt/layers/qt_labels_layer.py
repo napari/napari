@@ -117,7 +117,11 @@ class QtLabelsControls(QtLayerControls):
         self._on_preserve_labels_change()
 
         self.panzoom_button = QtModeRadioButton(
-            layer, 'zoom', Mode.PAN_ZOOM, tooltip='Pan/zoom mode', checked=True
+            layer,
+            'zoom',
+            Mode.PAN_ZOOM,
+            tooltip='Pan/zoom mode (Space)',
+            checked=True,
         )
         self.pick_button = QtModeRadioButton(
             layer, 'picker', Mode.PICK, tooltip='Pick mode'
@@ -126,10 +130,10 @@ class QtLabelsControls(QtLayerControls):
             layer, 'paint', Mode.PAINT, tooltip='Paint mode'
         )
         self.fill_button = QtModeRadioButton(
-            layer, 'fill', Mode.FILL, tooltip='Fill mode'
+            layer, 'fill', Mode.FILL, tooltip='Fill mode (Ctrl)'
         )
         self.erase_button = QtModeRadioButton(
-            layer, 'erase', Mode.ERASE, tooltip='Erase mode'
+            layer, 'erase', Mode.ERASE, tooltip='Erase mode (Alt)'
         )
 
         self.button_group = QButtonGroup(self)
