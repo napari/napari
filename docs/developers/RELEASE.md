@@ -20,9 +20,13 @@ to add it as a secret.
 
 ## determining the version
 
-The version of `napari` is automatically determined by [`versioneer`](https://github.com/warner/python-versioneer)
-from the latest [`git` tag](https://git-scm.com/book/en/v2/Git-Basics-Tagging) beginning with `v`.
-Thus, you'll need to tag the [reference](https://git-scm.com/book/en/v2/Git-Internals-Git-References) with the new version number. It is likely something like `X.Y.Z`. Before making a release though we need to generate the release notes.
+The version of `napari` is automatically determined at install time by
+[`setuptools_scm`](https://github.com/pypa/setuptools_scm) from the latest
+[`git` tag](https://git-scm.com/book/en/v2/Git-Basics-Tagging) beginning with
+`v`. Thus, you'll need to tag the
+[reference](https://git-scm.com/book/en/v2/Git-Internals-Git-References) with
+the new version number. It is likely something like `X.Y.Z`. Before making a
+release though we need to generate the release notes.
 
 ## generating release notes
 
