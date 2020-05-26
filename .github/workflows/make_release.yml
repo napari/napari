@@ -98,7 +98,10 @@ jobs:
         run: |
           python .github/workflows/patch_briefcase.py
           napari --info  # build resources
+          ls napari/resources/_qt_resources*.py 1> /dev/null 2>&1 || exit 1
           briefcase create
+          # make sure the resources were built and included
+          ls macOS/napari/napari.app/Contents/Resources/app/napari/resources/_qt_resources*.py 1> /dev/null 2>&1 || exit 1
           briefcase build
           briefcase package --no-sign
           zip -j napari-${{ env.tag }}-${{ runner.os }}.zip ./macOS/*.dmg
