@@ -93,6 +93,8 @@ setup(
     install_requires=requirements,
     python_requires=f'>={MIN_PY_VER}',
     packages=find_packages(),
+    use_scm_version={"write_to": "napari/_version.py"},
+    setup_requires=["setuptools_scm"],
     entry_points={'console_scripts': ['napari=napari.__main__:main']},
     include_package_data=True,
     zip_safe=False,  # the package can run out of an .egg file
