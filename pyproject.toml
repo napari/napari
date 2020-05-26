@@ -28,7 +28,7 @@ requires = ["setuptools>=42", "wheel", "briefcase"]
 [tool.briefcase]
 project_name = "napari"
 bundle = "com.napari"
-version = "changed_dynamically"
+version = "0.0.0"
 author = "napari"
 url = "https://napari.org/"
 license = "BSD license"

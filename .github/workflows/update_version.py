@@ -10,6 +10,7 @@ with open(pyprjct, 'r') as f:
 
 doc = tomlkit.parse(content)
 doc['tool']['briefcase']['version'] = __version__
+print("patching pyroject.toml to version: ", __version__)
 
 with open(pyprjct, 'w') as f:
     f.write(tomlkit.dumps(doc))

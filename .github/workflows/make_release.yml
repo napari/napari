@@ -94,7 +94,7 @@ jobs:
           TAG="${GITHUB_REF/refs\/tags\/v/}"  # clean tag
           VER="${TAG/rc*/}"  # remove pre-release identifier
           echo "::set-env name=tag::$TAG"
-      - name: Make mac Bundle
+      - name: Make macOS Bundle
         if: runner.os == 'macOS'
         run: |
           python .github/workflows/patch_briefcase.py
@@ -103,7 +103,7 @@ jobs:
           briefcase build
           briefcase package --no-sign
           zip -j napari-${{ env.tag }}-${{ runner.os }}.zip ./macOS/*.dmg
-      - name: Make nix Bundle
+      - name: Make Linux Bundle
         if: runner.os == 'Linux'
         run: |
           briefcase create
