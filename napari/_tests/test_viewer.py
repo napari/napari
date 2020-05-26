@@ -98,12 +98,12 @@ def test_screenshot(viewer_factory):
     data = 20 * np.random.random((10, 4, 2))
     viewer.add_shapes(data)
 
-    # Take screenshot
-    screenshot = viewer.screenshot()
+    # Take screenshot of the image canvas only
+    screenshot = viewer.screenshot(canvas_only=True)
     assert screenshot.ndim == 3
 
     # Take screenshot with the viewer included
-    screenshot = viewer.screenshot(with_viewer=True)
+    screenshot = viewer.screenshot(canvas_only=False)
     assert screenshot.ndim == 3
 
 
