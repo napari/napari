@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 
 from qtpy.QtCore import QCoreApplication, Qt, QSize
@@ -26,6 +25,7 @@ from ..utils.interactions import (
     mouse_release_callbacks,
 )
 from ..utils.key_bindings import components_to_key_combo
+from ..utils import perf
 
 from .utils import QImg2array, square_pixmap
 from .qt_controls import QtControls
@@ -200,7 +200,7 @@ class QtViewer(QSplitter):
     def _create_performance_dock_widget(self):
         """Create the dock widget for performance metrics.
         """
-        if os.getenv("NAPARI_PERFMON", "0") == "0":
+        if not perf.USE_PERFMON:
             return None
 
         return QtViewerDockWidget(
