@@ -36,10 +36,6 @@ class DebugMenu:
             main_window, self.debug_menu.addMenu("Performance Trace")
         )
 
-    @property
-    def qt_window(self):
-        return
-
 
 class TraceFileSub:
     """The "Trace File" flyout menu.
