@@ -3,8 +3,12 @@ from ._labels_constants import Mode
 
 
 def paint(layer, event):
-    """Paint with the currently selected label."""
-    if layer.mode == Mode.ERASE:
+    """Paint with the proper label.
+
+    Use current selected label when in paint mode,
+    background label when in erase mode.
+    """
+    if layer._mode == Mode.ERASE or event.button == 2:
         label = layer._background_label
     else:
         label = layer.selected_label
@@ -38,5 +42,9 @@ def pick(layer, event):
 
 def fill(layer, event):
     """Fill in an area with the currently selected label."""
+    if layer._mode == Mode.ERASE or event.button == 2:
+        label = layer._background_label
+    else:
+        label = layer.selected_label
     # on press
-    layer.fill(layer.coordinates, layer._value, layer.selected_label)
+    layer.fill(layer.coordinates, layer._value, label)

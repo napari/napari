@@ -196,6 +196,10 @@ QtModeRadioButton[mode="picker"]::indicator {
   image: url(":/themes/{{ folder }}/picker.svg");
 }
 
+QtModeRadioButton[mode="erase"]::indicator {
+    image: url(":/themes/{{ folder }}/erase.svg");
+}
+
 QtModeRadioButton[mode="pan_zoom"]::indicator {
     image: url(":/themes/{{ folder }}/zoom.svg");
 }

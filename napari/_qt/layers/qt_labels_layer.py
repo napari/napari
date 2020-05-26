@@ -29,7 +29,7 @@ class QtLabelsControls(QtLayerControls):
     Attributes
     ----------
     button_group : qtpy.QtWidgets.QButtonGroup
-        Button group of labels layer modes: PAN_ZOOM, PICKER, PAINT, or FILL.
+        Button group of labels layer modes: PAN_ZOOM, PICKER, PAINT, ERASE or FILL.
     colormapUpdate : qtpy.QtWidgets.QPushButton
         Button to update colormap of label layer.
     contigCheckBox : qtpy.QtWidgets.QCheckBox
@@ -48,6 +48,8 @@ class QtLabelsControls(QtLayerControls):
         Button to select PAN_ZOOM mode on Labels layer.
     pick_button : qtpy.QtWidgets.QtModeRadioButton
         Button to select PICKER mode on Labels layer.
+    erase_button : qtpy.QtWidgets.QtModeRadioButton
+        Button to select ERASE mode on Labels layer.
     selectionSpinBox : qtpy.QtWidgets.QSpinBox
         Widget to select a specfic label by its index.
 
@@ -71,7 +73,7 @@ class QtLabelsControls(QtLayerControls):
         )
 
         # shuffle colormap button
-        self.colormapUpdate = QPushButton('shuffle colors')
+        self.colormapUpdate = QPushButton('shuffle\ncolors')
         self.colormapUpdate.setObjectName('shuffleButton')
         self.colormapUpdate.clicked.connect(self.changeColor)
 
@@ -79,7 +81,7 @@ class QtLabelsControls(QtLayerControls):
         self.selectionSpinBox = QSpinBox()
         self.selectionSpinBox.setKeyboardTracking(False)
         self.selectionSpinBox.setSingleStep(1)
-        self.selectionSpinBox.setMinimum(0)
+        self.selectionSpinBox.setMinimum(1)
         self.selectionSpinBox.setMaximum(2147483647)
         self.selectionSpinBox.valueChanged.connect(self.changeSelection)
         self.selectionSpinBox.setAlignment(Qt.AlignCenter)
@@ -126,12 +128,16 @@ class QtLabelsControls(QtLayerControls):
         self.fill_button = QtModeRadioButton(
             layer, 'fill', Mode.FILL, tooltip='Fill mode'
         )
+        self.erase_button = QtModeRadioButton(
+            layer, 'erase', Mode.ERASE, tooltip='Erase mode'
+        )
 
         self.button_group = QButtonGroup(self)
         self.button_group.addButton(self.panzoom_button)
         self.button_group.addButton(self.paint_button)
         self.button_group.addButton(self.pick_button)
         self.button_group.addButton(self.fill_button)
+        self.button_group.addButton(self.erase_button)
         self._on_editable_change()
 
         button_row = QHBoxLayout()
@@ -139,6 +145,7 @@ class QtLabelsControls(QtLayerControls):
         button_row.addWidget(self.pick_button)
         button_row.addWidget(self.fill_button)
         button_row.addWidget(self.paint_button)
+        button_row.addWidget(self.erase_button)
         button_row.addWidget(self.panzoom_button)
         button_row.setSpacing(4)
         button_row.setContentsMargins(0, 0, 0, 5)
@@ -149,22 +156,22 @@ class QtLabelsControls(QtLayerControls):
 
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
-        self.grid_layout.addLayout(button_row, 0, 1)
-        self.grid_layout.addWidget(self.colormapUpdate, 0, 0)
-        self.grid_layout.addWidget(QLabel('label:'), 1, 0)
-        self.grid_layout.addLayout(color_layout, 1, 1)
-        self.grid_layout.addWidget(QLabel('opacity:'), 2, 0)
-        self.grid_layout.addWidget(self.opacitySlider, 2, 1)
-        self.grid_layout.addWidget(QLabel('brush size:'), 3, 0)
-        self.grid_layout.addWidget(self.brushSizeSlider, 3, 1)
-        self.grid_layout.addWidget(QLabel('blending:'), 4, 0)
-        self.grid_layout.addWidget(self.blendComboBox, 4, 1)
-        self.grid_layout.addWidget(QLabel('contiguous:'), 5, 0)
-        self.grid_layout.addWidget(self.contigCheckBox, 5, 1)
-        self.grid_layout.addWidget(QLabel('n-dim:'), 6, 0)
-        self.grid_layout.addWidget(self.ndimCheckBox, 6, 1)
-        self.grid_layout.addWidget(QLabel('preserve labels:'), 7, 0)
-        self.grid_layout.addWidget(self.preserveLabelsCheckBox, 7, 1)
+        self.grid_layout.addWidget(self.colormapUpdate, 0, 0, 1, 2)
+        self.grid_layout.addLayout(button_row, 0, 2, 1, 6)
+        self.grid_layout.addWidget(QLabel('label:'), 1, 0, 1, 5)
+        self.grid_layout.addLayout(color_layout, 1, 3, 1, 5)
+        self.grid_layout.addWidget(QLabel('opacity:'), 2, 0, 1, 5)
+        self.grid_layout.addWidget(self.opacitySlider, 2, 3, 1, 5)
+        self.grid_layout.addWidget(QLabel('brush size:'), 3, 0, 1, 5)
+        self.grid_layout.addWidget(self.brushSizeSlider, 3, 3, 1, 5)
+        self.grid_layout.addWidget(QLabel('blending:'), 4, 0, 1, 5)
+        self.grid_layout.addWidget(self.blendComboBox, 4, 3, 1, 5)
+        self.grid_layout.addWidget(QLabel('contiguous:'), 5, 0, 1, 5)
+        self.grid_layout.addWidget(self.contigCheckBox, 5, 3, 1, 5)
+        self.grid_layout.addWidget(QLabel('n-dim:'), 6, 0, 1, 5)
+        self.grid_layout.addWidget(self.ndimCheckBox, 6, 3, 1, 5)
+        self.grid_layout.addWidget(QLabel('preserve labels:'), 7, 0, 1, 5)
+        self.grid_layout.addWidget(self.preserveLabelsCheckBox, 7, 3, 1, 5)
         self.grid_layout.setRowStretch(8, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
@@ -172,7 +179,7 @@ class QtLabelsControls(QtLayerControls):
     def mouseMoveEvent(self, event):
         """On mouse move, set layer status equal to the current selected mode.
 
-        Available mode options are: PAN_ZOOM, PICKER, PAINT, or FILL
+        Available mode options are: PAN_ZOOM, PICKER, PAINT, ERASE or FILL
 
         Parameters
         ----------
@@ -192,7 +199,7 @@ class QtLabelsControls(QtLayerControls):
         Raises
         ------
         ValueError
-            Raise error if event.mode is not PAN_ZOOM, PICK, PAINT, or FILL
+            Raise error if event.mode is not PAN_ZOOM, PICK, PAINT, ERASE or FILL
         """
         mode = event.mode
         if mode == Mode.PAN_ZOOM:
@@ -203,6 +210,8 @@ class QtLabelsControls(QtLayerControls):
             self.paint_button.setChecked(True)
         elif mode == Mode.FILL:
             self.fill_button.setChecked(True)
+        elif mode == Mode.ERASE:
+            self.erase_button.setChecked(True)
         else:
             raise ValueError("Mode not recognized")
 

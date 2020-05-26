@@ -99,7 +99,7 @@ def switch_fill(layer):
     yield
 
     # on key release
-    layer.preserve_labels = previous_mode
+    layer.mode = previous_mode
 
 
 @Labels.bind_key('Alt')
@@ -108,9 +108,9 @@ def switch_erase(layer):
     previous_mode = layer.mode
 
     # on key press
-    layer.mode = Mode.Erase
+    layer.mode = Mode.ERASE
 
     yield
 
     # on key release
-    layer.preserve_labels = previous_mode
+    layer.mode = previous_mode

@@ -320,6 +320,8 @@ class Labels(Image):
             self.mouse_drag_callbacks.remove(paint)
         elif self._mode == Mode.FILL:
             self.mouse_drag_callbacks.remove(fill)
+        elif self._mode == Mode.ERASE:
+            self.mouse_drag_callbacks.remove(paint)
 
         if mode == Mode.PAN_ZOOM:
             self.cursor = 'standard'
@@ -334,13 +336,25 @@ class Labels(Image):
             self.cursor_size = self.brush_size / self.scale_factor
             self.cursor = 'square'
             self.interactive = False
-            self.help = 'hold <space> to pan/zoom, hold <shift> to toggle preserve_labels, drag to paint a label'
+            self.help = (
+                'hold <space> to pan/zoom, '
+                'hold <shift> to toggle preserve_labels, '
+                'hold <control> to fill,'
+                'hold <alt> to erase,'
+                'drag to paint a label'
+            )
             self.mouse_drag_callbacks.append(paint)
         elif mode == Mode.FILL:
             self.cursor = 'cross'
             self.interactive = False
             self.help = 'hold <space> to pan/zoom, click to fill a label'
             self.mouse_drag_callbacks.append(fill)
+        elif mode == Mode.ERASE:
+            self.cursor_size = self.brush_size / self.scale_factor
+            self.cursor = 'square'
+            self.interactive = False
+            self.help = 'hold <space> to pan/zoom, drag to erase a label'
+            self.mouse_drag_callbacks.append(paint)
         else:
             raise ValueError("Mode not recognized")
 
