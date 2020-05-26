@@ -96,6 +96,9 @@ class Labels(Image):
         pixels will be changed to background and this tool functions like an
         eraser.
 
+        In ERASE mode the cursor functions similarly to PAINT mode, but to
+        paint with background label, which effectively removes the label.
+
     Extended Summary
     ----------
     _data_raw : array (N, M)
@@ -159,8 +162,8 @@ class Labels(Image):
         self._brush_size = 10
 
         self._background_label = 0
-        self._selected_label = 0
-        self._selected_color = None
+        self._selected_label = 1
+        self._selected_color = self.get_color(self._selected_label)
 
         self._mode = Mode.PAN_ZOOM
         self._mode_history = self._mode
@@ -265,8 +268,8 @@ class Labels(Image):
 
     @selected_label.setter
     def selected_label(self, selected_label):
-        if selected_label < 0:
-            raise ValueError('cannot reduce selected label below 0')
+        if selected_label < 1:
+            raise ValueError('cannot reduce selected label below 1')
         if selected_label == self.selected_label:
             return
 
@@ -295,6 +298,9 @@ class Labels(Image):
         clicked on pixel. If the background label `0` is selected than any
         pixels will be changed to background and this tool functions like an
         eraser.
+
+        In ERASE mode the cursor functions similarly to PAINT mode, but to
+        paint with background label, which effectively removes the label.
         """
         return str(self._mode)
 

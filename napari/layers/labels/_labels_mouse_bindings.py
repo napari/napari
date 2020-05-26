@@ -1,12 +1,17 @@
 from ._labels_utils import interpolate_coordinates
+from ._labels_constants import Mode
 
 
 def paint(layer, event):
     """Paint with the currently selected label."""
+    if layer.mode == Mode.ERASE:
+        label = layer._background_label
+    else:
+        label = layer.selected_label
     # on press
     layer._save_history()
     layer._block_saving = True
-    layer.paint(layer.coordinates, layer.selected_label)
+    layer.paint(layer.coordinates, label)
     last_cursor_coord = layer.coordinates
     yield
 
@@ -16,7 +21,7 @@ def paint(layer, event):
             last_cursor_coord, layer.coordinates, layer.brush_size
         )
         for c in interp_coord:
-            layer.paint(c, layer.selected_label, refresh=False)
+            layer.paint(c, label, refresh=False)
         layer.refresh()
         last_cursor_coord = layer.coordinates
         yield
