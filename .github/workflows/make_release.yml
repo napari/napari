@@ -88,23 +88,28 @@ jobs:
           pip install briefcase tomlkit
           pip install .
           python .github/workflows/update_version.py
-          napari --info  # will trigger resources build?
       - name: get tag
         shell: bash
         run: |
           TAG="${GITHUB_REF/refs\/tags\/v/}"  # clean tag
           VER="${TAG/rc*/}"  # remove pre-release identifier
           echo "::set-env name=tag::$TAG"
+      - name: Make mac Bundle
+        if: runner.os == 'macOS'
+        run: |
+          python .github/workflows/patch_briefcase.py
+          napari --info  # build resources
+          briefcase create
+          briefcase build
+          briefcase package --no-sign
+          zip -j napari-${{ env.tag }}-${{ runner.os }}.zip ./macOS/*.dmg
       - name: Make nix Bundle
-        if: runner.os != 'Windows'
-        env:
-          output: ${{ ( runner.os == 'macOS' && './macOS/*.dmg' ) || './linux/*.AppImage' }}
-          cmd: ${{ ( runner.os == 'macOS' && 'briefcase package --no-sign' ) || 'briefcase package' }}
+        if: runner.os == 'Linux'
         run: |
           briefcase create
           briefcase build
-          ${{ env.cmd }}
-          zip -j napari-${{ env.tag }}-${{ runner.os }}.zip ${{ env.output }}
+          briefcase package
+          zip -j napari-${{ env.tag }}-${{ runner.os }}.zip ./linux/*.AppImage
       - name: Make Windows Bundle
         if: runner.os == 'Windows'
         run: |
