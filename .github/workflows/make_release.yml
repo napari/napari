@@ -10,14 +10,14 @@ jobs:
   build:
     name: Create Release
     runs-on: ubuntu-latest
-    if: github.repository == 'napari/napari'
+    # if: github.repository == 'napari/napari'
     env:
       GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # This token is provided by Actions, you do not need to create your own token
     steps:
       - name: Checkout code
         uses: actions/checkout@master
       - name: Install Python
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v2
         with:
           python-version: 3.7
       - name: Install Dependencies
@@ -32,21 +32,21 @@ jobs:
         run: |
           TAG="${GITHUB_REF/refs\/tags\/v/}"  # clean tag
           VER="${TAG/rc*/}"  # remove pre-release identifier
-          RELEASE_NOTES="$(cat docs/release/release_${VER//./_}.md)"
-          # https://github.community/t5/GitHub-Actions/set-output-Truncates-Multiline-Strings/m-p/38372/highlight/true#M3322
-          RELEASE_NOTES="${RELEASE_NOTES//'%'/'%25'}"
-          RELEASE_NOTES="${RELEASE_NOTES//$'\n'/'%0A'}"
-          RELEASE_NOTES="${RELEASE_NOTES//$'\r'/'%0D'}"
+          # RELEASE_NOTES="$(cat docs/release/release_${VER//./_}.md)"
+          # # https://github.community/t5/GitHub-Actions/set-output-Truncates-Multiline-Strings/m-p/38372/highlight/true#M3322
+          # RELEASE_NOTES="${RELEASE_NOTES//'%'/'%25'}"
+          # RELEASE_NOTES="${RELEASE_NOTES//$'\n'/'%0A'}"
+          # RELEASE_NOTES="${RELEASE_NOTES//$'\r'/'%0D'}"
           # https://help.github.com/en/actions/reference/workflow-commands-for-github-actions
           echo "::set-env name=tag::$TAG"
-          echo "::set-output name=contents::$RELEASE_NOTES"
+          # echo "::set-output name=contents::$RELEASE_NOTES"
       - name: Create Release
         id: create_release
         uses: actions/create-release@latest
         with:
           tag_name: ${{ github.ref }}
           release_name: ${{ env.tag }}
-          body: ${{ steps.release_notes.outputs.contents }}
+          # body: ${{ steps.release_notes.outputs.contents }}
           draft: false
           prerelease: ${{ contains(github.ref, 'rc') }}
       - name: Upload Release Asset
@@ -56,17 +56,17 @@ jobs:
           asset_path: ./dist/napari-${{ env.tag }}.tar.gz
           asset_name: napari-${{ env.tag }}.tar.gz
           asset_content_type: application/gzip
-      - name: Publish PyPI Package
-        uses: pypa/gh-action-pypi-publish@master
-        with:
-          user: __token__
-          password: ${{ secrets.pypi_password }}
+      # - name: Publish PyPI Package
+      #   uses: pypa/gh-action-pypi-publish@master
+      #   with:
+      #     user: __token__
+      #     password: ${{ secrets.pypi_password }}
 
   bundle:
     name: Bundle ${{ matrix.platform }}
     needs: [build]
     runs-on: ${{ matrix.platform }}
-    if: github.repository == 'napari/napari'
+    # if: github.repository == 'napari/napari'
     env:
       GITHUB_TOKEN: ${{ github.token }}
     strategy:
@@ -77,7 +77,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@master
       - name: Install Python
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v2
         with:
           python-version: 3.8
       - name: Install Dependencies
@@ -132,8 +132,8 @@ jobs:
           asset_path: napari-${{ env.tag }}-${{ runner.os }}.zip
           asset_name: napari-${{ env.tag }}-${{ runner.os }}.zip
           asset_content_type: application/zip
-      - name: Upload Artifact
-        uses: actions/upload-artifact@v2
-        with:
-          name: napari-${{ env.tag }}-${{ runner.os }}.zip
-          path: napari-${{ env.tag }}-${{ runner.os }}.zip
+      # - name: Upload Artifact
+      #   uses: actions/upload-artifact@v2
+      #   with:
+      #     name: napari-${{ env.tag }}-${{ runner.os }}.zip
+      #     path: napari-${{ env.tag }}-${{ runner.os }}.zip
