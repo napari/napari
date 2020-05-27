@@ -40,12 +40,15 @@ of this document, but strategies generally fall into one of three camps:
 3. Single-thread concurrency with `asyncio
    <https://docs.python.org/3/library/asyncio.html>`_
 
-For a good high level overview, see `this post
-<https://realpython.com/python-concurrency/>`_.  For details, see the
-python docs on `threading <https://docs.python.org/3/library/threading.html>`_,
+For a good high level overview on concurrency in python, see `this post
+<https://realpython.com/python-concurrency/>`_.  See the `trio docs
+<https://trio.readthedocs.io/en/stable/tutorial.html>`_ for a good introduction
+to Python's new ``async/await`` syntax. And of course, see the python docs on
+`threading <https://docs.python.org/3/library/threading.html>`_,
 `multiprocessing <https://docs.python.org/3/library/multiprocessing.html>`_,
-`concurrent.futures <https://docs.python.org/3/library/concurrent.futures.html>`_,
-and `asyncio <https://docs.python.org/3/library/asyncio.html>`_
+`concurrent.futures
+<https://docs.python.org/3/library/concurrent.futures.html>`_, and `asyncio
+<https://docs.python.org/3/library/asyncio.html>`_.
 
 If you already have experience with any of these methods, you should be able to
 immediately leverage them in napari.  ``napari`` also provides a few
