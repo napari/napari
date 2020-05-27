@@ -441,7 +441,7 @@ def create_worker(
 
     Returns
     -------
-    WorkerBase
+    worker : WorkerBase
         An instantiated worker.  If ``_start_thread`` was ``False``, the worker
         will have a `.start()` method that can be used to start the thread.
 
