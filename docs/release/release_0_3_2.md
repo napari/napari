@@ -17,6 +17,7 @@ https://github.com/napari/napari
 
 ## Improvements
 - Make Qt component non private module (#1122)
+- Docs on threading and the event loop (#1258)
 - Add option to disable overwrite of labels during painting (#1264)
 - Move dask utils from misc.py to new dask_utils.py (#1265)
 - Have layer tooltip display the layer name (#1271)
