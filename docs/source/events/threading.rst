@@ -60,8 +60,9 @@ Threading in napari with ``@thread_worker``
 -------------------------------------------
 
 The simplest way to run a function in another thread in napari is to decorate
-your function with the ``@thread_worker`` decorator.  Continuing with the
-example above:
+your function with the :func:`@thread_worker
+<napari.qt.threading.thread_worker>` decorator. Continuing with the example
+above:
 
 .. code-block:: python
    :linenos:
@@ -84,18 +85,23 @@ example above:
         worker.start()  # start the thread!
 
 
-The ``@thread_worker`` decorator (**7**), converts your function into one that
-returns a ``worker`` instance (**13**). The ``worker`` manages the work being
-done by your function in another thread.  It also exposes a few "signals" that
-let you respond to events happening in the other thread.  Here, we connect the
-``worker.returned`` signal to the ``viewer.add_image`` function (**14**), which
-has the effect of adding the result to the viewer when it is ready. Lastly, we
-start the worker with ``worker.start()`` (**15**) because workers do not start
-themselves by default.
+The :func:`@thread_worker <napari.qt.threading.thread_worker>` decorator
+(**7**), converts your function into one that returns a
+:class:`~napari.qt.threading.WorkerBase` instance (**13**). The ``worker``
+manages the work being done by your function in another thread.  It also
+exposes a few "signals" that let you respond to events happening in the other
+thread.  Here, we connect the ``worker.returned`` signal to the
+:meth:`viewer.add_image
+<napari.components.add_layers_mixin.AddLayersMixin.add_image>` function
+(**14**), which has the effect of adding the result to the viewer when it is
+ready. Lastly, we start the worker with
+:meth:`~napari.qt.threading.WorkerBase.start` (**15**) because workers do not
+start themselves by default.
 
-The ``@thread_worker`` decorator also accepts keyword arguments like
-``connect``, and ``start_thread``, which may enable more concise syntax.
-The example below is equivalent to lines 7-15 in the above example:
+The :func:`@thread_worker <napari.qt.threading.thread_worker>` decorator also
+accepts keyword arguments like ``connect``, and ``start_thread``, which may
+enable more concise syntax. The example below is equivalent to lines 7-15 in
+the above example:
 
 .. code-block:: python
 
@@ -108,17 +114,19 @@ The example below is equivalent to lines 7-15 in the above example:
 
         average_large_image()
 
-*Note: when the* ``connect`` *argument to* ``@thread_worker`` *is not*
-``None``, *the thread will start by default when the decorated function is*
-*called.  Otherwise the thread must be manually started by calling*
-``worker.start()``.
+*Note: when the* ``connect`` *argument to* :func:`@thread_worker
+<napari.qt.threading.thread_worker>` *is not* ``None``, *the thread will start
+by default when the decorated function is* *called.  Otherwise the thread must
+be manually started by calling* :meth:`worker.start()
+<napari.qt.threading.WorkerBase.start>`.
 
 Responding to Feedback from Threads
 -----------------------------------
 
 As shown above, the ``worker`` object returned by a function decorated with
-``@thread_worker`` has a number of signals that are emitted in response to
-certain events.  The base signals provided by the ``worker`` are:
+:func:`@thread_worker <napari.qt.threading.thread_worker>` has a number of
+signals that are emitted in response to certain events.  The base signals
+provided by the ``worker`` are:
 
 * ``started`` - emitted when the work is started
 * ``finished`` - emitted when the work is finished
@@ -130,7 +138,7 @@ Example: Custom Exception Handler
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Because debugging issues in multithreaded applications can be tricky, the
-default behavior of a ``@thread-worker`` - decorated function is to re-raise
+default behavior of a ``@thread_worker`` - decorated function is to re-raise
 any exceptions in the main thread.  But just as we connected the
 ``worker.returned`` event above to the ``viewer.add_image`` method, you can
 also connect your own custom handler to the ``worker.errored`` event:
@@ -228,7 +236,8 @@ stack) we can watch the mean projection as it builds:
 
 Note how we periodically (every 16 iterations) ``yield`` the image result in
 the ``large_random_images`` function (**25**).  We also connected the
-``yielded`` event in the ``@thread_worker`` decorator to the previously-defined
+``yielded`` event in the :func:`@thread_worker
+<napari.qt.threading.thread_worker>` decorator to the previously-defined
 ``update_layer`` function (**19**).  The result is that the image in the viewer
 is updated everytime a new image is yielded.
 
@@ -242,11 +251,12 @@ Flow Control and Escape Hatches
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 A perhaps even more useful aspect of yielding periodically in our long running
-function is that we provide a "hook" for the main thread to control the flow
-of our long running function.  When you use the ``@thread_worker`` decorator on
-a generator function, the ability to stop, start, and quit a thread comes for
-free.  In the example below we decorate what would normally be an infinitely
-yielding generator, but add a button that aborts the worker when clicked:
+function is that we provide a "hook" for the main thread to control the flow of
+our long running function.  When you use the :func:`@thread_worker
+<napari.qt.threading.thread_worker>` decorator on a generator function, the
+ability to stop, start, and quit a thread comes for free.  In the example below
+we decorate what would normally be an infinitely yielding generator, but add a
+button that aborts the worker when clicked:
 
 .. code-block:: python
    :linenos:
@@ -308,9 +318,10 @@ Full Two-way Communication
 --------------------------
 
 So far we've mostly been *receiving* results from the threaded function, but we
-can send values *into* a generator-based thread as well using ``worker.send``.
-This works exactly like a standard python `generator.send
-<https://docs.python.org/3/reference/expressions.html#generator.send>`_ 
+can send values *into* a generator-based thread as well using
+:meth:`worker.send() <napari.qt.threading.GeneratorWorker.send>` This works
+exactly like a standard python `generator.send
+<https://docs.python.org/3/reference/expressions.html#generator.send>`_
 pattern.  This next example ties together a number of concepts and demonstrates
 two-thread communication with conditional flow control.  It's a simple
 cumulative multiplier that runs in another thread, and exits if the product
@@ -381,8 +392,9 @@ hits "0":
 
 Let's break it down:
 
-1. As usual, we decorate our generator function with ``@thread_worker`` (**9**)
-   and instantiate it to create a ``worker`` (**35**).
+1. As usual, we decorate our generator function with :func:`@thread_worker
+   <napari.qt.threading.thread_worker>` (**9**) and instantiate it to create
+   a ``worker`` (**35**).
 
 2. The most interesting line in this example is line **14**, where we both
    ``yield`` the current ``total`` to the main thread (``yield total``), *and*
@@ -409,14 +421,15 @@ Let's break it down:
 This example is a bit contrived, since there's little need to put such a basic
 computation in another thread.  But it demonstrates some of the power and
 features provided when decorating a generator function with the
-``@thread_worker`` decorator.
+:func:`@thread_worker <napari.qt.threading.thread_worker>` decorator.
 
 Syntactic Sugar
 ---------------
 
-The ``@thread_worker`` decorator is just syntactic sugar for calling 
-``create_worker`` on your function.  In turn, ``create_worker`` is just a
-convenient "factory function" that creates the right type of ``Worker``
+The :func:`@thread_worker <napari.qt.threading.thread_worker>` decorator is
+just syntactic sugar for calling :func:`~napari.qt.threading.create_worker` on
+your function.  In turn, :func:`~napari.qt.threading.create_worker` is just a
+convenient "factory function" that creates the right subtype of ``Worker``
 depending on your function type. The following three examples are equivalent:
 
 **Using the** ``@thread_worker`` **decorator:**
@@ -466,15 +479,21 @@ custom methods or signals that the worker can emit, then you can subclass the
 napari :class:`~napari.qt.threading.WorkerBase` class.  When doing so, please
 keep in mind the following guidelines:
 
-1. The subclass must either implement the ``work()`` method (preferred), or in
-   extreme cases, may directly reimplement the ``run()`` method.  (When a
-   worker "start" is started with ``worker.start()``, the call order is always
-   ``worker.start()`` → ``worker.run()`` → ``worker.work()``.
+1. The subclass must either implement the
+   :meth:`~napari.qt.threading.WorkerBase.work` method (preferred), or in
+   extreme cases, may directly reimplement the
+   :meth:`~napari.qt.threading.WorkerBase.run` method.  (When a worker "start"
+   is started with :meth:`~napari.qt.threading.WorkerBase.start`, the call
+   order is always :meth:`worker.start()
+   <napari.qt.threading.WorkerBase.start>` → :meth:`worker.run()
+   <napari.qt.threading.WorkerBase.run>` → :meth:`worker.work()
+   <napari.qt.threading.WorkerBase.work>`.
 
-2. When implementing the ``work()`` method, it is 
-   important that you periodically check ``self.abort_requested`` in your 
-   thread loop, and exit the thread accordingly, otherwise ``napari`` will 
-   not be able to gracefully exit a long-running thread.
+2. When implementing the :meth:`~napari.qt.threading.WorkerBase.work` method,
+it is 
+   important that you periodically check ``self.abort_requested`` in your
+   thread loop, and exit the thread accordingly, otherwise ``napari`` will not
+   be able to gracefully exit a long-running thread.
      
      .. code-block:: python
 
@@ -486,33 +505,32 @@ keep in mind the following guidelines:
                     break
                 time.sleep(0.5)
 
-3. It is also important to be mindful of the fact that the base
-   ``worker.start`` start method adds the worker to a global Pool, such that it
-   can request shutdown when exiting napari.  So if you re-implement ``start``,
-   please be sure to call ``start_worker(self)`` as shown in the base class.
+3. It is also important to be mindful of the fact that the
+   :meth:`worker.start() <napari.qt.threading.WorkerBase.start>` method adds
+   the worker to a global Pool, such that it can request shutdown when exiting
+   napari.  So if you re-implement ``start``, please be sure to call
+   ``super().start()`` to keep track of the ``worker``.
 
-4. When reimplementing the ``run()`` method, it is your responsibility to emit
-   the ``started``, ``returned``, ``finished``, and ``errored`` signals at the
-   appropriate moments.
+4. When reimplementing the :meth:`~napari.qt.threading.WorkerBase.run` method,
+   it is your responsibility to emit the ``started``, ``returned``,
+   ``finished``, and ``errored`` signals at the appropriate moments.
 
 For examples of subclassing :class:`~napari.qt.threading.WorkerBase`, have a
 look at the two main concrete subclasses in napari:
 :class:`~napari.qt.threading.FunctionWorker` and
 :class:`~napari.qt.threading.GeneratorWorker`.  You may also wish to simply
-subclass one of those two classes.  As an example, see the
-:class:`~napari.qt.threading.ProgressWorker` class, which adds an additional
-counter and ``progress`` signal to the
-:class:`~napari.qt.threading.GeneratorWorker`.
+subclass one of those two classes.
 
 Adding custom signals
 ^^^^^^^^^^^^^^^^^^^^^
 
 In order to emit signals, an object must inherit from ``QObject``.  However,
-due to challenges with multiple inheritance in Qt, the signals for 
-:class:`WorkerBase` objects actually live in the :attr:`WorkerBase._signals`
-attribute (though they are accessible directly in the worker namespace).  To
-add custom signals to a :class:`WorkerBase` subclass you must first create a
-new ``QObject`` with signals as class attributes:
+due to challenges with multiple inheritance in Qt, the signals for
+:class:`~napari.qt.threading.WorkerBase` objects actually live in the
+``WorkerBase._signals`` attribute (though they are accessible directly in the
+worker namespace).  To add custom signals to a
+:class:`~napari.qt.threading.WorkerBase` subclass you must first create a new
+``QObject`` with signals as class attributes:
 
 .. code-block:: python
 
@@ -531,7 +549,8 @@ new ``QObject`` with signals as class attributes:
         signal_name = Signal()
 
 and then either directly override the ``self._signals`` attribute on the
-``Worker`` class with an instance of your signals class:
+:class:`~napari.qt.threading.WorkerBase` class with an instance of your
+signals class:
 
 
 .. code-block:: python
@@ -543,7 +562,7 @@ and then either directly override the ``self._signals`` attribute on the
             self._signals = MyWorkerSignals()
 
 ... or pass the signals class as the ``SignalsClass`` argument when
-initializing the superclass in your Worker ``.__init__`` method:
+initializing the superclass in your ``__init__`` method:
 
 .. code-block:: python
 
