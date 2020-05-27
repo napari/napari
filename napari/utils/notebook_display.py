@@ -73,4 +73,5 @@ class NotebookScreenshot:
         with BytesIO() as file_obj:
             imsave(file_obj, self.image, format='png')
             file_obj.seek(0)
-            return file_obj.read()
+            png = file_obj.read()
+        return png
