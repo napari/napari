@@ -9,7 +9,6 @@ from qtpy.QtWidgets import (
     QMessageBox,
 )
 from qtpy.QtGui import QCursor, QGuiApplication
-from qtpy.QtCore import QThreadPool
 from ..utils.io import imsave
 from vispy.scene import SceneCanvas, PanZoomCamera, ArcballCamera
 from vispy.visuals.transforms import ChainTransform
@@ -66,8 +65,6 @@ class QtViewer(QSplitter):
         Qt view for LayerList controls.
     layer_to_visual : dict
         Dictionary mapping napari layers with their corresponding vispy_layers.
-    pool : qtpy.QtCore.QThreadPool
-        Pool of worker threads.
     view : vispy scene widget
         View displayed by vispy canvas. Adds a vispy ViewBox as a child widget.
     viewer : napari.components.ViewerModel
@@ -81,7 +78,6 @@ class QtViewer(QSplitter):
     def __init__(self, viewer):
         super().__init__()
         self.setAttribute(Qt.WA_DeleteOnClose)
-        self.pool = QThreadPool()
 
         QCoreApplication.setAttribute(
             Qt.AA_UseStyleSheetPropagationInWidgetStyles, True
@@ -633,7 +629,7 @@ class QtViewer(QSplitter):
         self.viewer.open(filenames, stack=bool(shift_down))
 
     def closeEvent(self, event):
-        """Clear pool of worker threads and close.
+        """Cleanup and close.
 
         Parameters
         ----------
@@ -649,8 +645,6 @@ class QtViewer(QSplitter):
         if self._console is not None:
             self.console.close()
         self.dockConsole.deleteLater()
-        if not self.pool.waitForDone(10000):
-            raise TimeoutError("Timed out waiting for QtViewer.pool to finish")
         event.accept()
 
 

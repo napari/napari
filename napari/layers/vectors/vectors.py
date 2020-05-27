@@ -312,7 +312,7 @@ class Vectors(Layer):
             maxs = np.max(data, axis=(0, 1))
             mins = np.min(data, axis=(0, 1))
 
-        return [(min, max, 1) for min, max in zip(mins, maxs)]
+        return [(min, max) for min, max in zip(mins, maxs)]
 
     @property
     def edge_width(self) -> Union[int, float]:
