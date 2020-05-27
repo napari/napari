@@ -27,13 +27,19 @@ class WorkerBaseSignals(QObject):
 
 
 class WorkerBase(QRunnable):
-    """Base class for creating a Worker that can run in another thread."""
+    """Base class for creating a Worker that can run in another thread.
+
+    Parameters
+    ----------
+    SignalsClass : type, optional
+        A QObject subclass that contains signals, by default WorkerBaseSignals
+    """
 
     #: A set of Workers.  Add to set using :meth:`WorkerBase.start`
     _worker_set: Set['WorkerBase'] = set()
 
     def __init__(
-        self, *args, SignalsClass=WorkerBaseSignals, **kwargs
+        self, *args, SignalsClass: Type[QObject] = WorkerBaseSignals, **kwargs
     ) -> None:
         super().__init__()
         self._abort_requested = False
@@ -121,8 +127,8 @@ class WorkerBase(QRunnable):
         Minimally, it should check ``self.abort_requested`` periodically and
         exit if True.
 
-        Example
-        -------
+        Examples
+        --------
 
         .. code-block:: python
 
@@ -171,13 +177,33 @@ class WorkerBase(QRunnable):
 class FunctionWorker(WorkerBase):
     """QRunnable with signals that wraps a simple long-running function.
 
-    Note: ``FunctionWorker`` does not provide a way to stop a very long-running
-    function (e.g. ``time.sleep(10000)``).  So whenever possible, it is
-    better to implement your long running function as a generator that yields
-    periodically, and use the :class:`GeneratorWorker` instead.
+    .. note::
+
+        ``FunctionWorker`` does not provide a way to stop a very long-running
+        function (e.g. ``time.sleep(10000)``).  So whenever possible, it is
+        better to implement your long running function as a generator that
+        yields periodically, and use the :class:`GeneratorWorker` instead.
+
+    Parameters
+    ----------
+    func : Callable
+        A function to call in another thread
+    *args
+        will be passed to the function
+    **kwargs
+        will be passed to the function
+
+    Raises
+    ------
+    TypeError
+        If ``func`` is a generator function and not a regular function.
     """
 
     def __init__(self, func: Callable, *args, **kwargs):
+        """[summary]
+
+
+        """
         if inspect.isgeneratorfunction(func):
             raise TypeError(
                 f"Generator function {func} cannot be used with "
@@ -212,6 +238,9 @@ class GeneratorWorker(WorkerBase):
     ----------
     func : callable
         The function being run in another thread.  May be a generator function.
+    SignalsClass : type, optional
+        A QObject subclass that contains signals, by default
+        GeneratorWorkerSignals
     *args
         Will be passed to func on instantiation
     **kwargs
@@ -222,7 +251,7 @@ class GeneratorWorker(WorkerBase):
         self,
         func: Callable,
         *args,
-        SignalsClass=GeneratorWorkerSignals,
+        SignalsClass: Type[QObject] = GeneratorWorkerSignals,
         **kwargs,
     ):
         if not inspect.isgeneratorfunction(func):
@@ -428,17 +457,6 @@ def create_worker(
     **kwargs
         will be passed to ``func``
 
-    Examples
-    --------
-
-    .. code-block:: python
-
-        def long_function(duration):
-            import time
-            time.sleep(duration)
-
-        worker = create_worker(long_function, 10)
-
     Returns
     -------
     worker : WorkerBase
@@ -451,6 +469,18 @@ def create_worker(
         If a worker_class is provided that is not a subclass of WorkerBase.
     TypeError
         If _connect is provided and is not a dict of ``{str: callable}``
+
+    Examples
+    --------
+
+    .. code-block:: python
+
+        def long_function(duration):
+            import time
+            time.sleep(duration)
+
+        worker = create_worker(long_function, 10)
+
     """
     if not _worker_class:
         if inspect.isgeneratorfunction(func):
@@ -681,6 +711,12 @@ def _new_worker_qthread(
         will be passed to the Worker class on instantiation.
     **kwargs
         will be passed to the Worker class on instantiation.
+
+    Returns
+    -------
+    tuple
+        ``(worker, thread)``, where ``worker`` is an instance of ``Worker``,
+        and ``thread`` is an instance of ``QThread``.
 
     Examples
     --------
