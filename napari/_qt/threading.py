@@ -324,8 +324,7 @@ class GeneratorWorker(WorkerBase):
             self._pause_requested = True
 
     def pause(self) -> None:
-        """Send a request to pause the worker.
-        """
+        """Request to pause the worker."""
         if not self.is_paused:
             self._pause_requested = True
 
