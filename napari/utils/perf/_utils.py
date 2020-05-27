@@ -53,6 +53,8 @@ if USE_PERFMON:
 
             return time_function
 
+        return decorator
+
 
 else:
     # Disable both with hopefully zero run-time overhead.
