@@ -200,10 +200,6 @@ class FunctionWorker(WorkerBase):
     """
 
     def __init__(self, func: Callable, *args, **kwargs):
-        """[summary]
-
-
-        """
         if inspect.isgeneratorfunction(func):
             raise TypeError(
                 f"Generator function {func} cannot be used with "
