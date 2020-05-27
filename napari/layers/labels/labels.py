@@ -154,7 +154,7 @@ class Labels(Image):
             if len(props) > 0:
                 arbitrary_key = list(props.keys())[0]
                 self._label_index = {
-                    i + 1: i for i in range(len(props[arbitrary_key]))
+                    i: i for i in range(len(props[arbitrary_key]))
                 }
             else:
                 self._label_index = {}
@@ -629,8 +629,11 @@ class Labels(Image):
         # if this labels layer has properties
         if self._label_index and self._properties:
             # if the cursor is not outside the image or on the background
-            if self._value is not None and self._value != 0:
-                idx = self._label_index[self._value]
-                for k, v in self._properties.items():
-                    msg += f' {k}: {v[idx]}'
+            if self._value is not None:
+                if self._label_index.get(self._value) is not None:
+                    idx = self._label_index[self._value]
+                    for k, v in self._properties.items():
+                        msg += f' {k}: {v[idx]}'
+                else:
+                    msg += f' [No Properties]'
         return msg
