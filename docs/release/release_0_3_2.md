@@ -34,6 +34,7 @@ https://github.com/napari/napari
 - Fix missing docstring `create_dask_cache` (#1266)
 - Fix adding points with new properties  (#1274)
 - Close bytesIO in `NotebookScreenshot._repr_png_` (#1295)
+- Fix shift-click for selecting shapes (#1297)
 
 ## Build Tools
 - Add pooch to requirements/test.txt (#1249)
