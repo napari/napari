@@ -569,8 +569,8 @@ def thread_worker(
         function that creates a worker, puts it in a new thread and returns
         the worker instance.
 
-    Example
-    -------
+    Examples
+    --------
 
     .. code-block:: python
 
