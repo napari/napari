@@ -710,10 +710,10 @@ def _new_worker_qthread(
 
     Returns
     -------
-worker : WorkerBase
-    The created worker.
-thread : QThread
-    The thread on which the worker is running.
+    worker : WorkerBase
+        The created worker.
+    thread : QThread
+        The thread on which the worker is running.
 
     Examples
     --------
