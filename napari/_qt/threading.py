@@ -428,8 +428,8 @@ def create_worker(
     **kwargs
         will be passed to ``func``
 
-    Example
-    -------
+    Examples
+    --------
 
     .. code-block:: python
 
