@@ -33,6 +33,7 @@ https://github.com/napari/napari
 - Remove dupe import (#1263)
 - Fix missing docstring `create_dask_cache` (#1266)
 - Fix adding points with new properties  (#1274)
+- Close bytesIO in `NotebookScreenshot._repr_png_` (#1295)
 
 ## Build Tools
 - Add pooch to requirements/test.txt (#1249)
