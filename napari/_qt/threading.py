@@ -502,8 +502,7 @@ def create_worker(
             _start_thread = True
 
         for key, val in _connect.items():
-            if not isinstance(val, (tuple, list)):
-                _val = [val]
+            _val = val if isinstance(val, (tuple, list)) else [val]
             for v in _val:
                 if not callable(v):
                     raise TypeError(
