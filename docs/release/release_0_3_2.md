@@ -16,9 +16,9 @@ https://github.com/napari/napari
 - Rich jupyter display for napari screenshots (#1269)
 
 ## Improvements
-- make Qt component non private module (#1122)
-- add option to disable overwrite of labels during painting (#1264)
-- Refactor: move dask utils from misc.py to new dask_utils.py (#1265)
+- Make Qt component non private module (#1122)
+- Add option to disable overwrite of labels during painting (#1264)
+- Move dask utils from misc.py to new dask_utils.py (#1265)
 - Have layer tooltip display the layer name (#1271)
 - Support viewer annotation in magicgui (#1279)
 - Blue colored active layer (#1284)
