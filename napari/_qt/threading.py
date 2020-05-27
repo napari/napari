@@ -287,16 +287,14 @@ class GeneratorWorker(WorkerBase):
         return self._paused
 
     def toggle_pause(self) -> None:
-        """Send a request to pause the worker if playing or resumed if paused.
-        """
+        """Request to pause the worker if playing or resume if paused."""
         if self.is_paused:
             self._resume_requested = True
         else:
             self._pause_requested = True
 
     def pause(self) -> None:
-        """Send a request to pause the worker.
-        """
+        """Request to pause the worker."""
         if not self.is_paused:
             self._pause_requested = True
 
