@@ -41,12 +41,20 @@ class WorkerBase(QRunnable):
         self._running = False
         self._signals = SignalsClass()
 
-    def __getattribute__(self, name):
+    def __getattr__(self, name):
+        """Pass through attr requests to signals to simplify connection API.
+
+        The goal is to enable ``worker.signal.connect`` instead of
+        ``worker.signals.yielded.connect``. Because multiple inheritance of Qt
+        classes is not well supported in PyQt, we have to use composition here
+        (signals are provided by QObjects, and QRunnable is not a QObject). So
+        this passthrough allows us to connect to signals on the ``_signals``
+        object.
+        """
         if name != '_signals':
             attr = getattr(self._signals.__class__, name, None)
             if isinstance(attr, Signal):
                 return getattr(self._signals, name)
-        return object.__getattribute__(self, name)
 
     def quit(self) -> None:
         """Send a request to abort the worker.
