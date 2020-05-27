@@ -14,6 +14,7 @@ https://github.com/napari/napari
 ## New Features
 - General multithreading API and @thread_worker decorator (#1210)
 - Rich jupyter display for napari screenshots (#1269)
+- Allow add_dock_widget to accept a list of widgets (#1296)
 
 ## Improvements
 - Make Qt component non private module (#1122)
