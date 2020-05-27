@@ -1,11 +1,21 @@
 from contextlib import contextmanager
 from functools import lru_cache
+from typing import Sequence, Union
 
 import numpy as np
 from qtpy import API_NAME
 from qtpy.QtCore import QSize, Qt
 from qtpy.QtGui import QCursor, QDrag, QImage, QPainter, QPixmap
-from qtpy.QtWidgets import QGraphicsOpacityEffect, QListWidget
+from qtpy.QtWidgets import (
+    QGraphicsOpacityEffect,
+    QHBoxLayout,
+    QListWidget,
+    QVBoxLayout,
+    QWidget,
+    QSizePolicy,
+)
+
+from ..utils.misc import is_sequence
 
 
 def QImg2array(img):
@@ -115,3 +125,47 @@ def drag_with_pixmap(list_widget: QListWidget) -> QDrag:
     drag.setPixmap(pixmap)
     drag.setHotSpot(list_widget.viewport().mapFromGlobal(QCursor.pos()))
     return drag
+
+
+def combine_widgets(
+    widgets: Union[QWidget, Sequence[QWidget]], vertical: bool = False
+) -> QWidget:
+    """Combine a list of widgets into a single QWidget with Layout.
+
+    Parameters
+    ----------
+    widgets : QWidget or sequence of QWidget
+        A widget or a list of widgets to combine.
+    vertical : bool, optional
+        Whether the layout should be QVBoxLayout or not, by default
+        QHBoxLayout is used
+
+    Returns
+    -------
+    QWidget
+        If ``widgets`` is a sequence, returns combined QWidget with `.layout`
+        property, otherwise returns the original widget.
+
+    Raises
+    ------
+    TypeError
+        If ``widgets`` is neither a ``QWidget`` or a sequence of ``QWidgets``.
+    """
+    if isinstance(widgets, QWidget):
+        return widgets
+    elif is_sequence(widgets) and all(isinstance(i, QWidget) for i in widgets):
+        container = QWidget()
+        container.layout = QVBoxLayout() if vertical else QHBoxLayout()
+        container.setLayout(container.layout)
+        for widget in widgets:
+            container.layout.addWidget(widget)
+        # if this is a vertical layout, and none of the widgets declare a size
+        # policy of "expanding", add our own stretch.
+        if vertical and not any(
+            w.sizePolicy().verticalPolicy() == QSizePolicy.Expanding
+            for w in widgets
+        ):
+            container.layout.addStretch()
+        return container
+    else:
+        raise TypeError('"widget" must be a QWidget or a sequence of QWidgets')
