@@ -12,6 +12,7 @@ from qtpy.QtWidgets import (
     QListWidget,
     QVBoxLayout,
     QWidget,
+    QSizePolicy,
 )
 
 from ..utils.misc import is_sequence
@@ -158,7 +159,12 @@ def combine_widgets(
         container.setLayout(container.layout)
         for widget in widgets:
             container.layout.addWidget(widget)
-        if vertical:
+        # if this is a vertical layout, and none of the widgets declare a size
+        # policy of "expanding", add our own stretch.
+        if vertical and not any(
+            w.sizePolicy().verticalPolicy() == QSizePolicy.Expanding
+            for w in widgets
+        ):
             container.layout.addStretch()
         return container
     else:
