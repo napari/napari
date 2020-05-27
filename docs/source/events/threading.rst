@@ -200,7 +200,7 @@ stack) we can watch the mean projection as it builds:
 
     import napari
     import numpy as np
-    from napari._qt.threading import thread_worker
+    from napari.qt.threading import thread_worker
 
 
     with napari.gui_qt():
@@ -324,7 +324,7 @@ hits "0":
     import napari
     import time
     
-    from napari._qt.threading import thread_worker
+    from napari.qt.threading import thread_worker
     from qtpy.QtWidgets import QLineEdit, QLabel, QWidget, QVBoxLayout
     from qtpy.QtGui import QDoubleValidator
 
@@ -423,7 +423,7 @@ depending on your function type. The following three examples are equivalent:
 
 .. code-block:: python
 
-    from napari._qt.threading import thread_worker
+    from napari.qt.threading import thread_worker
 
     @thread_worker
     def my_function(arg1, arg2=None):
@@ -435,7 +435,7 @@ depending on your function type. The following three examples are equivalent:
 
 .. code-block:: python
 
-    from napari._qt.threading import create_worker
+    from napari.qt.threading import create_worker
 
     def my_function(arg1, arg2=None):
        ...
@@ -446,7 +446,7 @@ depending on your function type. The following three examples are equivalent:
 
 .. code-block:: python
 
-    from napari._qt.threading import FunctionWorker
+    from napari.qt.threading import FunctionWorker
     
     def my_function(arg1, arg2=None):
        ...
@@ -463,7 +463,7 @@ Using a Custom Worker Class
 
 If you need even more control over the worker – such as the ability to define
 custom methods or signals that the worker can emit, then you can subclass the
-napari :class:`~napari._qt.threading.WorkerBase` class.  When doing so, please
+napari :class:`~napari.qt.threading.WorkerBase` class.  When doing so, please
 keep in mind the following guidelines:
 
 1. The subclass must either implement the ``work()`` method (preferred), or in
@@ -495,14 +495,14 @@ keep in mind the following guidelines:
    the ``started``, ``returned``, ``finished``, and ``errored`` signals at the
    appropriate moments.
 
-For examples of subclassing :class:`~napari._qt.threading.WorkerBase`, have a
+For examples of subclassing :class:`~napari.qt.threading.WorkerBase`, have a
 look at the two main concrete subclasses in napari:
-:class:`~napari._qt.threading.FunctionWorker` and
-:class:`~napari._qt.threading.GeneratorWorker`.  You may also wish to simply
+:class:`~napari.qt.threading.FunctionWorker` and
+:class:`~napari.qt.threading.GeneratorWorker`.  You may also wish to simply
 subclass one of those two classes.  As an example, see the
-:class:`~napari._qt.threading.ProgressWorker` class, which adds an additional
+:class:`~napari.qt.threading.ProgressWorker` class, which adds an additional
 counter and ``progress`` signal to the
-:class:`~napari._qt.threading.GeneratorWorker`.
+:class:`~napari.qt.threading.GeneratorWorker`.
 
 Adding custom signals
 ^^^^^^^^^^^^^^^^^^^^^
@@ -524,7 +524,7 @@ new ``QObject`` with signals as class attributes:
     # or subclass one of the existing signals objects to "add"
     # additional signals:
 
-    from napari._qt.threading import WorkerBaseSignals
+    from napari.qt.threading import WorkerBaseSignals
 
     # WorkerBaseSignals already has started, finished, errored...
     class MyWorkerSignals(WorkerBaseSignals):
