@@ -234,7 +234,7 @@ is updated everytime a new image is yielded.
 
 Any time you can break up a long-running function into a stream of
 shorter-running yield statements like this, you not only benefit from the
-increased responsivity in the viewer, you can often save on precious memory
+increased responsiveness in the viewer, you can often save on precious memory
 resources.
 
 
