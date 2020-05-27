@@ -1,9 +1,12 @@
 from napari._qt import threading
 import inspect
 import pytest
+import time
 
 
 def test_as_generator_function():
+    """Test we can convert a regular function to a generator function."""
+
     def func():
         return
 
@@ -17,7 +20,7 @@ def test_as_generator_function():
 # qtbot is necessary for qthreading here.
 # note: pytest-cov cannot check coverage of code run in the other thread.
 def test_thread_worker(qtbot):
-    """test basic threadworker on a function"""
+    """Test basic threadworker on a function"""
 
     def func():
         return 1
@@ -31,7 +34,7 @@ def test_thread_worker(qtbot):
 
 
 def test_thread_generator_worker(qtbot):
-    """test basic threadworker on a generator"""
+    """Test basic threadworker on a generator"""
 
     def func():
         yield 1
@@ -52,7 +55,7 @@ def test_thread_generator_worker(qtbot):
 
 
 def test_thread_raises(qtbot):
-    """test exceptions get returned to main thread"""
+    """Test exceptions get returned to main thread"""
 
     def func():
         yield 1
@@ -71,7 +74,7 @@ def test_thread_raises(qtbot):
 
 
 def test_multiple_connections(qtbot):
-    """test the connect dict accepts a list of functions"""
+    """Test the connect dict accepts a list of functions, and type checks"""
 
     def func():
         return 1
@@ -98,6 +101,8 @@ def test_multiple_connections(qtbot):
 
 
 def test_create_worker():
+    """Test directly calling create_worker."""
+
     def func(x, y):
         return x + y
 
@@ -111,7 +116,7 @@ def test_create_worker():
 # note: pytest-cov cannot check coverage of code run in the other thread.
 # this is just for the sake of coverage
 def test_thread_worker_in_main_thread():
-    """test basic threadworker on a function"""
+    """Test basic threadworker on a function"""
 
     def func(x):
         return x
@@ -123,19 +128,48 @@ def test_thread_worker_in_main_thread():
 
 # note: pytest-cov cannot check coverage of code run in the other thread.
 # this is just for the sake of coverage
-def test_thread_generator_worker_in_main_thread(qtbot):
-    """test basic threadworker on a generator"""
+def test_thread_generator_worker_in_main_thread():
+    """Test basic threadworker on a generator in the main thread with methods.
+    """
 
     def func():
-        yield 1
-        yield 1
+        i = 0
+        while i < 10:
+            i += 1
+            incoming = yield i
+            i = incoming if incoming is not None else i
         return 3
 
-    def test_yield(v):
-        assert v == 1
-
     worker = threading.thread_worker(func, start_thread=False)()
+    counter = 0
+
+    def handle_pause():
+        time.sleep(0.1)
+        assert worker.is_paused
+        worker.toggle_pause()
+
+    def test_yield(v):
+        nonlocal counter
+        counter += 1
+        if v == 2:
+            assert not worker.is_paused
+            worker.pause()
+            assert not worker.is_paused
+        if v == 3:
+            worker.send(7)
+        if v == 9:
+            worker.quit()
+
+    def handle_abort():
+        assert counter == 5  # because we skipped a few by sending in 7
+
+    worker.paused.connect(handle_pause)
     assert isinstance(worker, threading.GeneratorWorker)
     worker.yielded.connect(test_yield)
-    assert worker.work() == 3
+    worker.aborted.connect(handle_abort)
+    assert worker.work() is None  # because we aborted it
     assert not worker.is_paused
+    assert counter == 5
+
+    worker2 = threading.thread_worker(func, start_thread=False)()
+    assert worker2.work() == 3
