@@ -48,7 +48,7 @@ if USE_PERFMON:
         def decorator(func):
             @functools.wraps(func)
             def time_function(*args, **kwargs):
-                with perf_timer(name):
+                with perf_timer(name, "decorator"):
                     return func(*args, **kwargs)
 
             return time_function
