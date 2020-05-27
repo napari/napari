@@ -70,7 +70,7 @@ class NotebookScreenshot:
         from imageio import imsave
 
         self.image = self.viewer.screenshot(canvas_only=self.canvas_only)
-        file_obj = BytesIO()
-        imsave(file_obj, self.image, format='png')
-        file_obj.seek(0)
-        return file_obj.read()
+        with BytesIO() as file_obj:
+            imsave(file_obj, self.image, format='png')
+            file_obj.seek(0)
+            return file_obj.read()
