@@ -243,7 +243,7 @@ is updated everytime a new image is yielded.
 
 Any time you can break up a long-running function into a stream of
 shorter-running yield statements like this, you not only benefit from the
-increased responsivity in the viewer, you can often save on precious memory
+increased responsiveness in the viewer, you can often save on precious memory
 resources.
 
 
@@ -413,7 +413,7 @@ Let's break it down:
    into the thread (**49**) which the thread will multiple by the existing
    total (**15**).
 
-6. Lastly, if the thread total every goes to "0", we stop the thread by
+6. Lastly, if the thread total ever goes to "0", we stop the thread by
    returning the string ``"Game Over"`` (**16**).  In the main thread, the
    ``worker.returned`` event is connected to a callback that disables the
    ``line_edit`` widget and shows the string returned from the thread (**53**).
