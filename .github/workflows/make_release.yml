@@ -109,7 +109,10 @@ jobs:
       - name: Make Linux Bundle
         if: runner.os == 'Linux'
         run: |
+          python -m napari --info
+          ls napari/resources/_qt_resources*.py 1> /dev/null 2>&1 || exit 1
           briefcase create
+          ls linux/
           briefcase build
           briefcase package
           zip -j napari-${{ env.tag }}-${{ runner.os }}.zip ./linux/*.AppImage
