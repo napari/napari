@@ -33,6 +33,8 @@ https://github.com/napari/napari
 - Remove dupe import (#1263)
 - Fix missing docstring `create_dask_cache` (#1266)
 - Fix adding points with new properties  (#1274)
+- Fix error when binding multiple connections (#1293)
+- Add tests for `qt.threading` (#1294)
 
 ## Build Tools
 - Add pooch to requirements/test.txt (#1249)
