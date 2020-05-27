@@ -665,7 +665,6 @@ def _new_worker_qthread(
         Slots Across Threads
         <https://doc.qt.io/qt-5/threads-qobject.html#signals-and-slots-across-threads>`_
 
-
     Parameters
     ----------
     Worker : QObject
