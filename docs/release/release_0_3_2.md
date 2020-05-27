@@ -38,7 +38,7 @@ https://github.com/napari/napari
 - Add pooch to requirements/test.txt (#1249)
 - Prefer rcc binary at front of path (#1261)
 - Pin napari-svg to 0.1.2 (#1275)
-
+- Add PyYAML as dependency (#1291)
 
 ## 9 authors added to this release (alphabetical)
 
