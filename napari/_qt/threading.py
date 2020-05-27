@@ -710,9 +710,10 @@ def _new_worker_qthread(
 
     Returns
     -------
-    tuple
-        ``(worker, thread)``, where ``worker`` is an instance of ``Worker``,
-        and ``thread`` is an instance of ``QThread``.
+worker : WorkerBase
+    The created worker.
+thread : QThread
+    The thread on which the worker is running.
 
     Examples
     --------
