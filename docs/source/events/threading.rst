@@ -70,7 +70,7 @@ example above:
     import napari
     import numpy as np
 
-    from napari._qt.threading import thread_worker
+    from napari.qt.threading import thread_worker
 
 
     @thread_worker
@@ -551,4 +551,3 @@ initializing the superclass in your Worker ``.__init__`` method:
 
         def __init__(self):
             super().__init__(SignalsClass=MyWorkerSignals)
-
