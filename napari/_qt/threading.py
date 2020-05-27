@@ -51,10 +51,13 @@ class WorkerBase(QRunnable):
         this passthrough allows us to connect to signals on the ``_signals``
         object.
         """
-        if name != '_signals':
-            attr = getattr(self._signals.__class__, name, None)
-            if isinstance(attr, Signal):
-                return getattr(self._signals, name)
+        # the Signal object is actually a class attribute
+        attr = getattr(self._signals.__class__, name, None)
+        if isinstance(attr, Signal):
+            # but what we need to connect to is the instantiated signal
+            # (which is of type `SignalInstance` in PySide and
+            # `pyqtBoundSignal` in PyQt)
+            return getattr(self._signals, name)
 
     def quit(self) -> None:
         """Send a request to abort the worker.
@@ -119,8 +122,8 @@ class WorkerBase(QRunnable):
         Minimally, it should check ``self.abort_requested`` periodically and
         exit if True.
 
-        Examples
-        --------
+        Example
+        -------
 
         .. code-block:: python
 
