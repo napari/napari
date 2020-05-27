@@ -12,6 +12,7 @@ https://github.com/napari/napari
 
 
 ## New Features
+- General multithreading API and @thread_worker decorator (#1210)
 - Rich jupyter display for napari screenshots (#1269)
 
 ## Improvements
