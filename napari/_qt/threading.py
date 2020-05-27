@@ -2,7 +2,7 @@ import inspect
 import re
 import time
 from functools import wraps
-from typing import Any, Callable, Dict, Optional, Set, Type
+from typing import Any, Callable, Dict, Optional, Set, Type, Union, Sequence
 
 import toolz as tz
 from qtpy.QtCore import QObject, QRunnable, QThread, QThreadPool, Signal, Slot
@@ -495,7 +495,7 @@ def create_worker(
     func: Callable,
     *args,
     _start_thread: Optional[bool] = None,
-    _connect: Optional[Dict[str, Callable]] = None,
+    _connect: Optional[Dict[str, Union[Callable, Sequence[Callable]]]] = None,
     _worker_class: Optional[Type[WorkerBase]] = None,
     _ignore_errors: bool = False,
     **kwargs,
@@ -514,10 +514,10 @@ def create_worker(
         Whether to immediaetly start the thread.  If False, the returned worker
         must be manually started with ``worker.start()``. by default it will be
         ``False`` if the ``_connect`` argument is ``None``, otherwise ``True``.
-    _connect : Dict[str, Callable], optional
-        A mapping of ``"signal_name"`` -> ``callable``: callback functions to
-        connect to the various signals offered by the worker class.
-        by default None
+    _connect : Dict[str, Union[Callable, Sequence]], optional
+        A mapping of ``"signal_name"`` -> ``callable`` or list of ``callable``:
+        callback functions to connect to the various signals offered by the
+        worker class. by default None
     _worker_class : Type[WorkerBase], optional
         The :class`WorkerBase` to instantiate, by default
         :class:`FunctionWorker` will be used if ``func`` is a regular function,
@@ -575,11 +575,15 @@ def create_worker(
             _start_thread = True
 
         for key, val in _connect.items():
-            if not callable(val):
-                raise TypeError(
-                    f'"_connect[{key!r}]" is not a callable function'
-                )
-            getattr(worker, key).connect(val)
+            if not isinstance(val, (tuple, list)):
+                _val = [val]
+            for v in _val:
+                if not callable(v):
+                    raise TypeError(
+                        f'"_connect[{key!r}]" must be a function or '
+                        'sequence of functions'
+                    )
+                getattr(worker, key).connect(v)
 
     # if the user has not provided a default connection for the "errored"
     # signal... and they have not explicitly set ``ignore_errors=True``
@@ -600,7 +604,7 @@ def create_worker(
 def thread_worker(
     function: Callable,
     start_thread: Optional[bool] = None,
-    connect: Optional[Dict[str, Callable]] = None,
+    connect: Optional[Dict[str, Union[Callable, Sequence[Callable]]]] = None,
     worker_class: Optional[Type[WorkerBase]] = None,
     ignore_errors: bool = False,
 ) -> Callable:
@@ -646,10 +650,10 @@ def thread_worker(
         Whether to immediaetly start the thread.  If False, the returned worker
         must be manually started with ``worker.start()``. by default it will be
         ``False`` if the ``_connect`` argument is ``None``, otherwise ``True``.
-    connect : Dict[str, Callable], optional
-        A mapping of ``"signal_name"`` -> ``callable``: callback functions to
-        connect to the various signals offered by the worker class.
-        by default None
+    connect : Dict[str, Union[Callable, Sequence]], optional
+        A mapping of ``"signal_name"`` -> ``callable`` or list of ``callable``:
+        callback functions to connect to the various signals offered by the
+        worker class. by default None
     worker_class : Type[WorkerBase], optional
         The :class`WorkerBase` to instantiate, by default
         :class:`FunctionWorker` will be used if ``func`` is a regular function,
