@@ -5,7 +5,8 @@ import os
 if sys.platform == 'darwin':
     from dmgbuild import core
 
-    # will not be required after next version of dmgbuild
+    # will not be required after dmgbuild > v1.3.3
+    # see https://github.com/al45tair/dmgbuild/pull/18
     with open(core.__file__, 'r') as f:
         source = f.read()
     source = source.replace('max(total_size / 1024', 'max(total_size / 1000')

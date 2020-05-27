@@ -1,3 +1,5 @@
+# leave first due to circular imports if plugin exceptions are raised
+# on startup (we need to be able to show the napari version in the traceback.)
 try:
     from ._version import version as __version__
 except ImportError:
