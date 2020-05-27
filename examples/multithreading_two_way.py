@@ -65,7 +65,7 @@ def create_connected_widget():
     # Qthread in which it's running.
     # (optionally pass start=False to prevent immediate running)
     worker = two_way_communication_with_args(0, steps)
-    worker.counter = 0
+
     w.play_btn.clicked.connect(worker.start)
 
     # it provides signals like {started, yielded, returned, errored, finished}
@@ -79,13 +79,13 @@ def create_connected_widget():
     w.abort_btn.clicked.connect(lambda: worker.quit())
 
     def on_reset_button_pressed():
-        worker.counter = -1
-        worker.send(0)
+        # we want to avoid sending into a unstarted worker
+        if worker.is_running:
+            worker.send(0)
 
     def on_yield(x):
         # Receive events and update widget progress
-        worker.counter += 1
-        w.progress_bar.setValue(100 * worker.counter // steps)
+        w.progress_bar.setValue(100 * x // steps)
         w.status.setText(f"worker yielded {x}")
 
     def on_start():
