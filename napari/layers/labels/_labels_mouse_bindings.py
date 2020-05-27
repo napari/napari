@@ -1,12 +1,16 @@
 from ._labels_utils import interpolate_coordinates
+from ._labels_constants import Mode
 
 
-def paint(layer, event):
+def draw(layer, event):
     """Paint with the currently selected label."""
     # on press
     layer._save_history()
     layer._block_saving = True
-    layer.paint(layer.coordinates, layer.selected_label)
+    if layer._mode == Mode.PAINT:
+        layer.paint(layer.coordinates, layer.selected_label)
+    elif layer._mode == Mode.FILL:
+        layer.fill(layer.coordinates, layer._value, layer.selected_label)
     last_cursor_coord = layer.coordinates
     yield
 
@@ -16,7 +20,15 @@ def paint(layer, event):
             last_cursor_coord, layer.coordinates, layer.brush_size
         )
         for c in interp_coord:
-            layer.paint(c, layer.selected_label, refresh=False)
+            if layer._mode == Mode.PAINT:
+                layer.paint(c, layer.selected_label, refresh=False)
+            elif (
+                layer._mode == Mode.FILL
+                and layer._value != layer.selected_label
+            ):
+                layer.fill(
+                    layer.coordinates, layer._value, layer.selected_label
+                )
         layer.refresh()
         last_cursor_coord = layer.coordinates
         yield
@@ -29,9 +41,3 @@ def pick(layer, event):
     """Change the selected label to the same as the region clicked."""
     # on press
     layer.selected_label = layer._value or 0
-
-
-def fill(layer, event):
-    """Fill in an area with the currently selected label."""
-    # on press
-    layer.fill(layer.coordinates, layer._value, layer.selected_label)

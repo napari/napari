@@ -9,7 +9,7 @@ from ...utils.colormaps import colormaps
 from ...utils.event import Event
 from ...utils.status_messages import format_float
 from ._labels_constants import Mode
-from ._labels_mouse_bindings import fill, paint, pick
+from ._labels_mouse_bindings import draw, pick
 
 
 class Labels(Image):
@@ -311,9 +311,9 @@ class Labels(Image):
         if self._mode == Mode.PICK:
             self.mouse_drag_callbacks.remove(pick)
         elif self._mode == Mode.PAINT:
-            self.mouse_drag_callbacks.remove(paint)
+            self.mouse_drag_callbacks.remove(draw)
         elif self._mode == Mode.FILL:
-            self.mouse_drag_callbacks.remove(fill)
+            self.mouse_drag_callbacks.remove(draw)
 
         if mode == Mode.PAN_ZOOM:
             self.cursor = 'standard'
@@ -329,12 +329,12 @@ class Labels(Image):
             self.cursor = 'square'
             self.interactive = False
             self.help = 'hold <space> to pan/zoom, hold <shift> to toggle preserve_labels, drag to paint a label'
-            self.mouse_drag_callbacks.append(paint)
+            self.mouse_drag_callbacks.append(draw)
         elif mode == Mode.FILL:
             self.cursor = 'cross'
             self.interactive = False
             self.help = 'hold <space> to pan/zoom, click to fill a label'
-            self.mouse_drag_callbacks.append(fill)
+            self.mouse_drag_callbacks.append(draw)
         else:
             raise ValueError("Mode not recognized")
 
