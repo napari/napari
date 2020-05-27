@@ -6,10 +6,14 @@ from qtpy.QtCore import QTimer, Qt
 from qtpy.QtGui import QTextCursor
 
 from qtpy.QtWidgets import (
-    QVBoxLayout,
+    QComboBox,
+    QHBoxLayout,
     QLabel,
     QProgressBar,
+    QSizePolicy,
+    QSpacerItem,
     QTextEdit,
+    QVBoxLayout,
     QWidget,
 )
 
@@ -52,13 +56,25 @@ class QtPerformance(QWidget):
        is actually not the total draw time, but it's generally the biggest
        part of each frame.
 
-    2) We log any event whose duration is longer then SLOW_EVENT_MS
+    2) We log any event whose duration is longer then some threshold.
 
     3) We show uptime so you can tell if this window is being updated at all.
     """
 
-    # Log events that take longer than this.
-    SLOW_EVENT_MS = 100
+    # We log events slower than some threshold (in milliseconds).
+    THRESH_DEFAULT = 100
+    THRESH_OPTIONS = [
+        "1",
+        "5",
+        "10",
+        "15",
+        "20",
+        "30",
+        "40",
+        "50",
+        "100",
+        "200",
+    ]
 
     # Update at 250ms / 4Hz for now. The more we update more alive our
     # display will look, but the more we will slow things down.
@@ -90,14 +106,24 @@ class QtPerformance(QWidget):
         layout.addWidget(bar)
         self.bar = bar
 
-        # Label for our text window.
-        log_label = QLabel("Slow Events:")
-        layout.addWidget(log_label)
+        self.thresh_ms = self.THRESH_DEFAULT
+        self.thresh_combo = QComboBox()
+        self.thresh_combo.addItems(self.THRESH_OPTIONS)
+        self.thresh_combo.activated[str].connect(self._change_thresh)
+        self.thresh_combo.setCurrentText(str(self.thresh_ms))
+
+        combo_layout = QHBoxLayout()
+        combo_layout.addWidget(QLabel("Show Events Slower Than:"))
+        combo_layout.addWidget(self.thresh_combo)
+        combo_layout.addWidget(QLabel("milliseconds"))
+        combo_layout.addItem(
+            QSpacerItem(40, 20, QSizePolicy.Expanding, QSizePolicy.Minimum)
+        )
+        layout.addLayout(combo_layout)
 
         # We log slow events to this window.
-        log = TextLog()
-        layout.addWidget(log)
-        self.log = log
+        self.log = TextLog()
+        layout.addWidget(self.log)
 
         # Uptime label. To indicate if the widget is getting updated.
         label = QLabel('')
@@ -111,6 +137,12 @@ class QtPerformance(QWidget):
         self.timer.timeout.connect(self.update)
         self.timer.setInterval(self.UPDATE_MS)
         self.timer.start()
+
+    def _change_thresh(self, text):
+        """Threshold combo box change.
+        """
+        self.thresh_ms = float(text)
+        self.log.clear()  # start fresh with this new threshold
 
     def _get_timer_info(self):
         """Get the information from the timers that we want to display.
@@ -129,7 +161,7 @@ class QtPerformance(QWidget):
                 average = timer.average
 
             # Log any "long" events to the text window.
-            if timer.max >= self.SLOW_EVENT_MS:
+            if timer.max >= self.thresh_ms:
                 long_events.append((name, timer.max))
 
         return average, long_events
