@@ -35,12 +35,13 @@ https://github.com/napari/napari
 - Fix adding points with new properties  (#1274)
 - Fix error when binding multiple connections (#1293)
 - Add tests for `qt.threading` (#1294)
+- Close bytesIO in `NotebookScreenshot._repr_png_` (#1295)
 
 ## Build Tools
 - Add pooch to requirements/test.txt (#1249)
 - Prefer rcc binary at front of path (#1261)
 - Pin napari-svg to 0.1.2 (#1275)
-
+- Add PyYAML as dependency (#1291)
 
 ## 9 authors added to this release (alphabetical)
 
