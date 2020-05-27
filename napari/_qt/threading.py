@@ -458,10 +458,13 @@ def create_worker(
         else:
             _worker_class = FunctionWorker
 
-    if inspect.isclass(_worker_class) and issubclass(
-        WorkerBase, _worker_class
+    if not (
+        inspect.isclass(_worker_class)
+        and issubclass(_worker_class, WorkerBase)
     ):
-        raise TypeError(f'Worker {_worker_class} must be a subclass of Worker')
+        raise TypeError(
+            f'Worker {_worker_class} must be a subclass of WorkerBase'
+        )
 
     worker = _worker_class(func, *args, **kwargs)
 
