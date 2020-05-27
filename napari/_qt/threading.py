@@ -1,8 +1,7 @@
 import inspect
-import re
 import time
 from functools import wraps
-from typing import Any, Callable, Dict, Optional, Set, Type, Union, Sequence
+from typing import Any, Callable, Dict, Optional, Sequence, Set, Type, Union
 
 import toolz as tz
 from qtpy.QtCore import QObject, QRunnable, QThread, QThreadPool, Signal, Slot
@@ -213,38 +212,16 @@ class GeneratorWorker(WorkerBase):
     ----------
     func : callable
         The function being run in another thread.  May be a generator function.
-    init_yield : bool
-        If ``True``, the first yield in the generator will be called in the
-        main thread.  The first yield statement should return a ``dict``, and
-        the keys of this dict will be added as attributes to the worker.
-        by default, False.
     *args
         Will be passed to func on instantiation
     **kwargs
         Will be passed to func on instantiation
-
-    Example
-    -------
-    demonstration of the ``init_yield`` argument:
-
-    .. code-block:: python
-
-        def my_function(some_arg):
-            # setup here
-            yield {'my_attr': some_arg}
-            # long running part here:
-            ...
-
-        worker = GeneratorWorker(my_function, 8, init_yield=True)
-        if worker.my_attr > 5:
-            worker.start()
     """
 
     def __init__(
         self,
         func: Callable,
         *args,
-        init_yield=False,
         SignalsClass=GeneratorWorkerSignals,
         **kwargs,
     ):
@@ -262,14 +239,6 @@ class GeneratorWorker(WorkerBase):
         self._paused = False
         # polling interval: ONLY relevant if the user paused a running worker
         self._pause_interval = 0.01
-
-        if init_yield:
-            first_yield = next(self._gen)
-            if isinstance(first_yield, dict):
-                self.parse_first_yield(first_yield)
-
-    def parse_first_yield(self, first_yield: dict):
-        self.__dict__.update(**first_yield)
 
     def work(self) -> None:
         """Core event loop that calls the original function.
@@ -297,9 +266,7 @@ class GeneratorWorker(WorkerBase):
                 self.paused.emit()
                 continue
             try:
-                self.pre_yield_hook()
                 self.yielded.emit(self._gen.send(self._next_value()))
-                self.post_yield_hook()
             except StopIteration as exc:
                 return exc.value
 
@@ -338,84 +305,6 @@ class GeneratorWorker(WorkerBase):
         """
         if self.is_paused:
             self._resume_requested = True
-
-    def pre_yield_hook(self):
-        """Hook for subclasses. Called just before yielding from generator"""
-        pass
-
-    def post_yield_hook(self):
-        """Hook for subclasses. Called just after yielding from generator"""
-        pass
-
-
-class ProgressWorkerSignals(GeneratorWorkerSignals):
-    # Will emit an integer between 0 - 100 every time a value is yielded
-    progress = Signal(int)
-
-
-class ProgressWorker(GeneratorWorker):
-    """A Worker that emits a progress update on each yield.
-
-    See Worker docstring for details.  This simply counts the number of
-    iterations, and emits a progress signal on every iteration.
-    """
-
-    def __init__(self, func: Callable, *args, **kwargs):
-        self._counter = 0
-        self._length: Optional[int] = None
-
-        # look in the source code of the function for a yield statement
-        # that yields a dict with a key named "__len__"
-        # Note: this does NOT assert that it's actually the FIRST yield.
-        # (That's harder to do, because the word "yield" may appear in the
-        # docstring, etc...)
-        source = inspect.getsource(func)
-        match = re.search(
-            r'yield\s\{([^}]*[\'"]__len__[\'"].*)\}', source, flags=re.DOTALL
-        )
-        if not match:
-            raise ValueError(
-                "ProgressWorker may only be used with a generator function "
-                "whose first yield expression yields a dict with the key "
-                "'__len__'"
-            )
-
-        super().__init__(
-            func,
-            *args,
-            init_yield=True,
-            SignalsClass=ProgressWorkerSignals,
-            **kwargs,
-        )
-
-    def parse_first_yield(self, result: dict):
-        """Parse dict from first yield, and use __len__ key for self._length.
-        """
-        self._length = result.pop("__len__", None)
-        if self._length is not None:
-            if not isinstance(self._length, int) and self._length > 0:
-                raise ValueError(
-                    "If providing __len__, it must be a positive int"
-                )
-        super().parse_first_yield(result)
-
-    def pre_yield_hook(self) -> None:
-        if self._length is not None:
-            self.progress.emit(round(100 * self._counter / self._length))
-            self.increment()
-
-    def increment(self) -> None:
-        """Increment the progress counter."""
-        self._counter += 1
-
-    def set_counter(self, val: int):
-        """Set the progress counter to a specific value."""
-        self._counter = val
-
-    def __len__(self) -> int:
-        if self._length is not None:
-            return self._length
-        raise TypeError("ProgressWorker was not provided with a length.")
 
 
 ############################################################################

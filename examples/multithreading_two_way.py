@@ -10,10 +10,10 @@ from qtpy.QtWidgets import (
 
 import napari
 import numpy as np
-from napari._qt.threading import ProgressWorker, thread_worker
+from napari._qt.threading import thread_worker
 
 
-@thread_worker(worker_class=ProgressWorker)
+@thread_worker
 def two_way_communication_with_args(start, end):
     """Both sends and receives values to & from the main thread.
 
@@ -22,23 +22,15 @@ def two_way_communication_with_args(start, end):
     Optionally returns a value at the end
     """
 
-    # optionally, do setup here... this happens in the main thread
-    # if you yield a dict, they will be added as attributes to the worker
-    yield {
-        'start_val': start,
-        'end_val': end,
-        'some_other_val': 'hi',
-        '__len__': end,  # note, the '__len__' key is required for ProgressWorker
-    }
-
     # do computationally intensive work here
     i = start
-    while i <= end:
+    while i < end:
+        i += 1
         time.sleep(0.1)
         # incoming receives values from the main thread
         # while yielding sends values back to the main thread
         incoming = yield i
-        i = incoming if incoming is not None else i + 1
+        i = incoming if incoming is not None else i
 
     # do optional teardown here
     return "done"
@@ -67,33 +59,34 @@ class Controller(QWidget):
 def create_connected_widget():
     """Builds a widget that can control a function in another thread."""
     w = Controller()
+    steps = 40
 
     # the decorated function now returns a GeneratorWorker object, and the
     # Qthread in which it's running.
     # (optionally pass start=False to prevent immediate running)
-    worker = two_way_communication_with_args(0, 40, _start_thread=False)
+    worker = two_way_communication_with_args(0, steps)
+    worker.counter = 0
     w.play_btn.clicked.connect(worker.start)
 
     # it provides signals like {started, yielded, returned, errored, finished}
-    worker.yielded.connect(lambda x: w.status.setText(f"worker yielded {x}"))
     worker.returned.connect(lambda x: w.status.setText(f"worker returned {x}"))
     worker.errored.connect(lambda x: w.status.setText(f"worker errored {x}"))
     worker.started.connect(lambda: w.status.setText("worker started..."))
     worker.aborted.connect(lambda: w.status.setText("worker aborted"))
 
-    # if you chose to pass start=False, you can start the thread manually
-    worker.finished.connect(lambda: w.play_btn.setDisabled(True))
-    worker.finished.connect(lambda: w.reset_btn.setDisabled(True))
-    worker.finished.connect(lambda: w.abort_btn.setDisabled(True))
-    worker.finished.connect(lambda: w.play_btn.setText("Done"))
-
     # send values into the function (like generator.send) using worker.send
-    w.reset_btn.clicked.connect(lambda: worker.send(0))
-    w.reset_btn.clicked.connect(lambda: worker.set_counter(-1))
     # abort thread with worker.abort()
     w.abort_btn.clicked.connect(lambda: worker.quit())
-    # Receive events and update widget progress
-    worker.progress.connect(w.progress_bar.setValue)
+
+    def on_reset_button_pressed():
+        worker.counter = -1
+        worker.send(0)
+
+    def on_yield(x):
+        # Receive events and update widget progress
+        worker.counter += 1
+        w.progress_bar.setValue(100 * worker.counter // steps)
+        w.status.setText(f"worker yielded {x}")
 
     def on_start():
         def handle_pause():
@@ -104,7 +97,16 @@ def create_connected_widget():
         w.play_btn.setText("Pause")
         w.play_btn.clicked.connect(handle_pause)
 
+    def on_finish():
+        w.play_btn.setDisabled(True)
+        w.reset_btn.setDisabled(True)
+        w.abort_btn.setDisabled(True)
+        w.play_btn.setText("Done")
+
+    w.reset_btn.clicked.connect(on_reset_button_pressed)
+    worker.yielded.connect(on_yield)
     worker.started.connect(on_start)
+    worker.finished.connect(on_finish)
     return w
 
 
