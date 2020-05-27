@@ -119,8 +119,8 @@ class WorkerBase(QRunnable):
         Minimally, it should check ``self.abort_requested`` periodically and
         exit if True.
 
-        Example
-        -------
+        Examples
+        --------
 
         .. code-block:: python
 
