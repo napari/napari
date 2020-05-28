@@ -115,7 +115,7 @@ def ensure_file(source: str, destination: Optional[str] = None, comment=True):
     if destination is None:
         from .. import config
 
-        destination = config.PATH
+        destination = config.core.PATH
 
     # destination is a file and already exists, never overwrite
     if os.path.isfile(destination):

@@ -345,12 +345,12 @@ def test_ensure_file_defaults_to_NAPARI_CONFIG_directory(tmpdir):
         yaml.dump(a, f)
 
     destination = os.path.join(str(tmpdir), "napari")
-    PATH = config.PATH
+    PATH = config.core.PATH
     try:
-        config.PATH = destination
+        config.core.PATH = destination
         config.ensure_file(source=source)
     finally:
-        config.PATH = PATH
+        config.core.PATH = PATH
 
     assert os.path.isdir(destination)
     [fn] = os.listdir(destination)
