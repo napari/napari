@@ -615,6 +615,8 @@ class Image(IntensityVisualizationMixin, Layer):
         """
         if coord is None:
             coord = np.round(self.coordinates).astype(int)
+        else:
+            coord = np.round(coord).astype(int)
         if self.rgb:
             shape = self._data_raw.shape[:-1]
         else:
