@@ -82,12 +82,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self._palette = None
         self.theme = config.get(self.theme_key, 'dark')
 
-        # TODO: just an example... we may not want theme to be global?
-        config.register_listener(
-            self.theme_key,
-            callback=lambda x: self.__class__.theme.fset(self, (x or 'dark')),
-        )
-
         self.dims.events.camera.connect(self.reset_view)
         self.dims.events.ndisplay.connect(self._update_layers)
         self.dims.events.order.connect(self._update_layers)
@@ -128,7 +122,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
                 return theme
 
     @theme.setter
-    @config.updates_config(theme_key)
     def theme(self, theme):
         if theme == self.theme:
             return

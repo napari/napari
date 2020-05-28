@@ -606,7 +606,7 @@ ConfigDumper.add_multi_representer(None, ConfigDumper.represent_undefined)
 
 def sync(
     config: dict = config,
-    destination: str = None,
+    destination: str = _SESSION,
     lock: threading.Lock = config_lock,
 ) -> bool:
     """Synchronize config with a yaml file on disk.
@@ -636,11 +636,6 @@ def sync(
     synced : bool
         Whether a sync occurred.
     """
-    if not destination:
-        from . import _SESSION
-
-        destination = _SESSION
-
     if not os.fspath(destination).endswith((".yaml", ".yml")):
         raise ValueError("Only YAML is currently supported")
 
