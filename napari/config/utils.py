@@ -113,9 +113,9 @@ def ensure_file(source: str, destination: Optional[str] = None, comment=True):
         Whether or not to comment out the config file when copying.
     """
     if destination is None:
-        from .. import config
+        from ..config import core
 
-        destination = config.core.PATH
+        destination = core.PATH
 
     # destination is a file and already exists, never overwrite
     if os.path.isfile(destination):
