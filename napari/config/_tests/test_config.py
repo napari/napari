@@ -514,3 +514,16 @@ def test_sync_without_sync_status(tmp_path, caplog):
     assert config.sync(d, destination=dest)
     assert os.path.isfile(dest)
     assert not config.sync(d, destination=dest)
+
+
+def test_register_listener():
+    """Test that we can register callbacks to listen to changes"""
+
+    def callback(x):
+        assert x == 5
+
+    config.register_listener('some.key', callback)
+    config.set({'some.key': 5})
+    # make sure the callback is actually being called
+    with pytest.raises(AssertionError):
+        config.set({'some.key': 7})
