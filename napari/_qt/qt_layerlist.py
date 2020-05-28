@@ -511,7 +511,7 @@ class QtLayerWidget(QFrame):
         textbox = QLineEdit(self)
         textbox.setText(layer.name)
         textbox.home(False)
-        textbox.setToolTip('Layer name')
+        textbox.setToolTip(self.layer.name)
         textbox.setAcceptDrops(False)
         textbox.setEnabled(True)
         textbox.editingFinished.connect(self.changeText)
@@ -557,6 +557,7 @@ class QtLayerWidget(QFrame):
     def changeText(self):
         """Update layer name attribute using layer name textbox contents."""
         self.layer.name = self.nameTextBox.text()
+        self.nameTextBox.setToolTip(self.layer.name)
         self.nameTextBox.clearFocus()
         self.setFocus()
 
