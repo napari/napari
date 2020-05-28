@@ -641,6 +641,7 @@ def sync(
 
     config_is_dirty = config.pop('_dirty', None)
     if not os.path.exists(destination):
+        os.makedirs(os.path.dirname(destination), exist_ok=True)
         config_is_dirty = True
     # do nothing the config hasn't changed
     if not config_is_dirty:
