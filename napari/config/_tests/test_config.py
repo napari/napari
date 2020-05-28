@@ -319,6 +319,12 @@ def test_set_hard_to_copyables():
             pass
 
 
+def test_set_raises():
+    # a single positional arg should be a dict...
+    with pytest.raises(TypeError):
+        config.set('asdf.sadf')
+
+
 @pytest.mark.parametrize("mkdir", [True, False])
 def test_ensure_file_directory(mkdir, tmpdir):
     a = {"x": 1, "y": {"a": 1}}
@@ -527,3 +533,17 @@ def test_register_listener():
     # make sure the callback is actually being called
     with pytest.raises(AssertionError):
         config.set({'some.key': 7})
+
+
+def test_updates_config():
+    """The updates_config decorator updates the config when setter is called."""
+
+    @config.updates_config('any.key')
+    def setter1(x):
+        # this might be a class method for instance
+        # that the global config needs to follow...
+        pass
+
+    assert config.get('any.key', None) is None
+    setter1('hello')
+    assert config.get('any.key', None) == 'hello'

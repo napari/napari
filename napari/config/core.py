@@ -662,7 +662,7 @@ def sync(
     return True
 
 
-def initialize():
+def _initialize():
 
     # clear out config and initialize with yaml files from the user directory,
     # env variables, and downstream libraries that have used update_defaults()
@@ -684,3 +684,6 @@ def initialize():
             update(config, yaml.safe_load(f) or {}, priority="old")
 
     config.pop("_dirty", None)
+
+
+_initialize()
