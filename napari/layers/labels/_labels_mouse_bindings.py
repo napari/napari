@@ -27,7 +27,7 @@ def draw(layer, event):
     if layer._mode == Mode.PAINT:
         layer.paint(layer.coordinates, layer.selected_label)
     elif layer._mode == Mode.FILL:
-        layer.fill(layer.coordinates, layer._value, layer.selected_label)
+        layer.fill(layer.coordinates, layer.selected_label)
     last_cursor_coord = layer.coordinates
     yield
 
@@ -41,11 +41,9 @@ def draw(layer, event):
                 layer.paint(c, layer.selected_label, refresh=False)
             elif (
                 layer._mode == Mode.FILL
-                and layer._value != layer.selected_label
+                and layer.get_value(c) != layer.selected_label
             ):
-                layer.fill(
-                    layer.coordinates, layer._value, layer.selected_label
-                )
+                layer.fill(c, layer.selected_label)
         layer.refresh()
         last_cursor_coord = layer.coordinates
         yield

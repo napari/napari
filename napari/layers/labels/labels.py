@@ -436,7 +436,7 @@ class Labels(Image):
     def redo(self):
         self._load_history(self._redo_history, self._undo_history)
 
-    def fill(self, coord, old_label, new_label):
+    def fill(self, coord, new_label):
         """Replace an existing label with a new label, either just at the
         connected component if the `contiguous` flag is `True` or everywhere
         if it is `False`, working either just in the current slice if
@@ -447,25 +447,27 @@ class Labels(Image):
         ----------
         coord : sequence of float
             Position of mouse cursor in image coordinates.
-        old_label : int
-            Value of the label image at the coord to be replaced.
         new_label : int
             Value of the new label to be filled in.
         """
         self._save_history()
 
-        int_coord = np.round(coord).astype(int)
-
         if self.n_dimensional or self.ndim == 2:
             # work with entire image
             labels = self.data
-            slice_coord = tuple(int_coord)
+            slice_coord = tuple(
+                np.round(np.clip(c, 0, s - 1)).astype(int)
+                for c, s in zip(coord, self.shape)
+            )
         else:
             # work with just the sliced image
             labels = self._data_raw
-            slice_coord = tuple(int_coord[d] for d in self.dims.displayed)
+            slice_coord = tuple(
+                np.round(np.clip(coord[d], 0, self.shape[d] - 1)).astype(int)
+                for d in self.dims.displayed
+            )
 
-        matches = labels == old_label
+        matches = labels == self.get_value(slice_coord)
         if self.contiguous:
             # if not contiguous replace only selected connected component
             labeled_matches, num_features = ndi.label(matches)

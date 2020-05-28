@@ -604,7 +604,7 @@ class Image(IntensityVisualizationMixin, Layer):
             colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 
-    def _get_value(self):
+    def _get_value(self, coord=None):
         """Returns coordinates, values, and a string for a given mouse position
         and set of indices.
 
@@ -613,7 +613,8 @@ class Image(IntensityVisualizationMixin, Layer):
         value : tuple
             Value of the data at the coord.
         """
-        coord = np.round(self.coordinates).astype(int)
+        if coord is None:
+            coord = np.round(self.coordinates).astype(int)
         if self.rgb:
             shape = self._data_raw.shape[:-1]
         else:
