@@ -8,7 +8,6 @@ from .layerlist import LayerList
 from ..utils.event import EmitterGroup, Event
 from ..utils.key_bindings import KeymapHandler, KeymapProvider
 from ..utils.theme import palettes
-from .. import config
 
 
 class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
@@ -41,7 +40,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
     """
 
     themes = palettes
-    theme_key = "main_window.theme"
 
     def __init__(
         self, title='napari', ndisplay=2, order=None, axis_labels=None
@@ -80,7 +78,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self.grid_stride = 1
 
         self._palette = None
-        self.theme = config.get(self.theme_key, 'dark')
+        self.theme = 'dark'
 
         self.dims.events.camera.connect(self.reset_view)
         self.dims.events.ndisplay.connect(self._update_layers)
