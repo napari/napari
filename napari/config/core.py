@@ -577,7 +577,7 @@ def updates_config(
             function(*args)
             # assume last item in *args is the new value
             # works for both method `setter(self, val)` and func `setter(val)`
-            if get(key, config=config) != args[-1]:
+            if get(key, None, config=config) != args[-1]:
                 _set({key: args[-1]}, config=config)
 
         return modified_function

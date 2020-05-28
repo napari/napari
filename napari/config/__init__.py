@@ -11,5 +11,6 @@ from .core import (
     updates_config,
     config,
     paths,
+    register_listener,
 )
 from .utils import canonical_name, ensure_file, merge
