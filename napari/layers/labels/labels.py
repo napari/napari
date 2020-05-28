@@ -467,7 +467,8 @@ class Labels(Image):
                 for d in self.dims.displayed
             )
 
-        matches = labels == self.get_value(coord=slice_coord)
+        self.coordinates = slice_coord
+        matches = labels == self.get_value()
         if self.contiguous:
             # if not contiguous replace only selected connected component
             labeled_matches, num_features = ndi.label(matches)

@@ -594,10 +594,10 @@ class Layer(KeymapProvider, ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def _get_value(self, coord=None):
+    def _get_value(self):
         raise NotImplementedError()
 
-    def get_value(self, coord=None):
+    def get_value(self):
         """Value of data at current or given coordinates.
 
         Returns
@@ -606,7 +606,7 @@ class Layer(KeymapProvider, ABC):
             Value of the data at the coordinates.
         """
         if self.visible:
-            return self._get_value(coord=coord)
+            return self._get_value()
         else:
             return None
 
