@@ -140,7 +140,6 @@ class Labels(Image):
 
         if properties is None:
             self._properties = {}
-            self._property_choices = {}
             label_index = {}
         else:
             properties = self._validate_properties(properties)
