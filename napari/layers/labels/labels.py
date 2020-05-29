@@ -436,7 +436,7 @@ class Labels(Image):
     def redo(self):
         self._load_history(self._redo_history, self._undo_history)
 
-    def fill(self, coord, new_label):
+    def fill(self, coord, new_label, refresh=True):
         """Replace an existing label with a new label, either just at the
         connected component if the `contiguous` flag is `True` or everywhere
         if it is `False`, working either just in the current slice if
@@ -449,8 +449,16 @@ class Labels(Image):
             Position of mouse cursor in image coordinates.
         new_label : int
             Value of the new label to be filled in.
+        refresh : bool
+            Whether to refresh view slice or not. Set to False to batch paint
+            calls.
         """
-        self._save_history()
+        if refresh is True:
+            self._save_history()
+
+        old_label = self.get_value()
+        if old_label == self.selected_label:
+            return
 
         if self.n_dimensional or self.ndim == 2:
             # work with entire image
@@ -468,7 +476,7 @@ class Labels(Image):
             )
 
         self.coordinates = slice_coord
-        matches = labels == self.get_value()
+        matches = labels == old_label
         if self.contiguous:
             # if not contiguous replace only selected connected component
             labeled_matches, num_features = ndi.label(matches)
@@ -485,7 +493,8 @@ class Labels(Image):
             # if working with just the slice, update the rest of the raw data
             self.data[tuple(self.dims.indices)] = labels
 
-        self.refresh()
+        if refresh is True:
+            self.refresh()
 
     def paint(self, coord, new_label, refresh=True):
         """Paint over existing labels with a new label, using the selected

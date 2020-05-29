@@ -39,11 +39,8 @@ def draw(layer, event):
         for c in interp_coord:
             if layer._mode == Mode.PAINT:
                 layer.paint(c, layer.selected_label, refresh=False)
-            elif (
-                layer._mode == Mode.FILL
-                and layer.get_value() != layer.selected_label
-            ):
-                layer.fill(c, layer.selected_label)
+            elif layer._mode == Mode.FILL:
+                layer.fill(c, layer.selected_label, refresh=False)
         layer.refresh()
         last_cursor_coord = layer.coordinates
         yield
