@@ -3,7 +3,6 @@ from ._mesh import Mesh
 from ._shapes_models import Shape, Line, Path
 from ._shapes_utils import inside_triangles, triangles_intersect_box
 from ._shapes_constants import shape_classes, ShapeType
-from ...utils.colormaps.standardize_color import hex_to_name, rgb_to_hex
 
 
 class ShapeList:
@@ -32,14 +31,12 @@ class ShapeList:
         by those values.
     shape_types : (N, ) list of str
         Name of shape type for each shape.
-    edge_colors : (N, ) list of str
-        Name of edge color for each shape.
-    face_colors : (N, ) list of str
-        Name of face color for each shape.
+    edge_color : (N x 4) np.ndarray
+        Array of RGBA edge colors for each shape.
+    face_color : (N x 4) np.ndarray
+        Array of RGBA face colors for each shape.
     edge_widths : (N, ) list of float
         Edge width for each shape.
-    opacities : (N, ) list of float
-        Opacity for each shape.
     z_indices : (N, ) list of int
         z-index for each shape.
 
@@ -118,14 +115,46 @@ class ShapeList:
         return [s.name for s in self.shapes]
 
     @property
-    def edge_colors(self):
-        """list of str: name of edge color for each shape."""
-        return [hex_to_name[c] for c in rgb_to_hex(self._edge_color)]
+    def edge_color(self):
+        """(N x 4) np.ndarray: Array of RGBA edge colors for each shape"""
+        return self._edge_color
+
+    @edge_color.setter
+    def edge_color(self, edge_color):
+        self._set_color(edge_color, 'edge')
 
     @property
-    def face_colors(self):
-        """list of str: name of face color for each shape."""
-        return [hex_to_name[c] for c in rgb_to_hex(self._face_color)]
+    def face_color(self):
+        """(N x 4) np.ndarray: Array of RGBA face colors for each shape"""
+        return self._face_color
+
+    @face_color.setter
+    def face_color(self, face_color):
+        self._set_color(face_color, 'face')
+
+    def _set_color(self, colors, attribute):
+        """ Set the face_color or edge_color property
+
+        Parameters
+        ----------
+        colors : (N, 4) np.ndarray
+            The value for setting edge or face_color. There must
+            be one color for each shape
+        attribute : str in {'edge', 'face'}
+            The name of the attribute to set the color of.
+            Should be 'edge' for edge_color or 'face' for face_color.
+        """
+        n_shapes = len(self.data)
+        if not np.all(colors.shape == (n_shapes, 4)):
+            raise ValueError(
+                f'{attribute}_color must have shape ({n_shapes}, 4)'
+            )
+
+        update_method = getattr(self, f'update_{attribute}_color')
+
+        for i, col in enumerate(colors):
+            update_method(i, col, update=False)
+        self._update_displayed()
 
     @property
     def edge_widths(self):
@@ -468,7 +497,7 @@ class ShapeList:
         self.shapes[index].edge_width = edge_width
         self._update_mesh_vertices(index, edge=True)
 
-    def update_edge_color(self, index, edge_color):
+    def update_edge_color(self, index, edge_color, update=True):
         """Updates the edge color of a single shape located at index.
 
         Parameters
@@ -479,13 +508,17 @@ class ShapeList:
             If string can be any color name recognized by vispy or hex value if
             starting with `#`. If array-like must be 1-dimensional array with 3
             or 4 elements.
+        update : bool
+            If True, update the mesh with the new color property. Set to False to avoid
+            repeated updates when modifying multiple shapes. Default is True.
         """
         self._edge_color[index] = edge_color
         indices = np.all(self._mesh.triangles_index == [index, 1], axis=1)
         self._mesh.triangles_colors[indices] = self._edge_color[index]
-        self._update_displayed()
+        if update:
+            self._update_displayed()
 
-    def update_face_color(self, index, face_color):
+    def update_face_color(self, index, face_color, update=True):
         """Updates the face color of a single shape located at index.
 
         Parameters
@@ -496,11 +529,15 @@ class ShapeList:
             If string can be any color name recognized by vispy or hex value if
             starting with `#`. If array-like must be 1-dimensional array with 3
             or 4 elements.
+        update : bool
+            If True, update the mesh with the new color property. Set to False to avoid
+            repeated updates when modifying multiple shapes. Default is True.
         """
         self._face_color[index] = face_color
         indices = np.all(self._mesh.triangles_index == [index, 0], axis=1)
         self._mesh.triangles_colors[indices] = self._face_color[index]
-        self._update_displayed()
+        if update:
+            self._update_displayed()
 
     def update_dims_order(self, dims_order):
         """Updates dimensions order for all shapes.

@@ -52,13 +52,13 @@ class Shapes(Layer):
         same length as the length of `data` and each element will be
         applied to each shape otherwise the same value will be used for all
         shapes.
-    edge_color : str or list
+    edge_color : str, array-like
         If string can be any color name recognized by vispy or hex value if
         starting with `#`. If array-like must be 1-dimensional array with 3
         or 4 elements. If a list is supplied it must be the same length as
         the length of `data` and each element will be applied to each shape
         otherwise the same value will be used for all shapes.
-    face_color : str or list
+    face_color : str, array-like
         If string can be any color name recognized by vispy or hex value if
         starting with `#`. If array-like must be 1-dimensional array with 3
         or 4 elements. If a list is supplied it must be the same length as
@@ -78,7 +78,7 @@ class Shapes(Layer):
         Scale factors for the layer.
     translate : tuple of float
         Translation values for the layer.
-    opacity : float or list
+    opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
         One of a list of preset blending modes that determines how RGB and
@@ -94,10 +94,10 @@ class Shapes(Layer):
         N vertices of a shape in D dimensions.
     shape_type : (N, ) list of str
         Name of shape type for each shape.
-    edge_color : (N, ) list of str
-        Name of edge color for each shape.
-    face_color : (N, ) list of str
-        Name of face color for each shape.
+    edge_color : str, array-like
+        Color of the shape border. Numeric color values should be RGB(A).
+    face_color : str, array-like
+        Color of the shape face. Numeric color values should be RGB(A).
     edge_width : (N, ) list of float
         Edge width for each shape.
     z_index : (N, ) list of int
@@ -413,12 +413,22 @@ class Shapes(Layer):
     @property
     def edge_color(self):
         """(N x 4) np.ndarray: Array of RGBA face colors for each shape"""
-        return self._data_view._edge_color
+        return self._data_view.edge_color
+
+    @edge_color.setter
+    def edge_color(self, edge_color):
+        self._set_color(edge_color, 'edge')
+        self.events.edge_color()
 
     @property
     def face_color(self):
         """(N x 4) np.ndarray: Array of RGBA face colors for each shape"""
-        return self._data_view._face_color
+        return self._data_view.face_color
+
+    @face_color.setter
+    def face_color(self, face_color):
+        self._set_color(face_color, 'face')
+        self.events.face_color()
 
     @property
     def edge_width(self):
@@ -472,6 +482,32 @@ class Shapes(Layer):
                 edge_width = edge_width[0]
                 with self.block_update_properties():
                     self.current_edge_width = edge_width
+
+    def _set_color(self, color, attribute: str):
+        """ Set the face_color or edge_color property
+
+        Parameters
+        ----------
+        color : (N, 4) array or str
+            The value for setting edge or face_color
+        attribute : str in {'edge', 'face'}
+            The name of the attribute to set the color of.
+            Should be 'edge' for edge_color or 'face' for face_color.
+        """
+        transformed_color = transform_color_with_defaults(
+            num_entries=len(self.data),
+            colors=color,
+            elem_name="face_color",
+            default="white",
+        )
+        colors = normalize_and_broadcast_colors(
+            len(self.data), transformed_color
+        )
+
+        setattr(self._data_view, f'{attribute}_color', colors)
+
+        color_event = getattr(self.events, f'{attribute}_color')
+        color_event()
 
     def _get_state(self):
         """Get dictionary of layer state.
