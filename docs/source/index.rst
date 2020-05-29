@@ -8,6 +8,7 @@
    :hidden:
 
    plugins/index
+   events/index
    api
    releases
    developers
