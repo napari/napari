@@ -1,20 +1,49 @@
 """
-Display a labels layer with classes for each label, including the background
+Display a labels layer with various properties
 """
 
-import napari
-import numpy as np
-from skimage import data
-from scipy import ndimage as ndi
-from napari.layers import Labels
 
-blobs = data.binary_blobs(length=128, volume_fraction=0.1, n_dim=2)
-labelled, num_labels = ndi.label(blobs)
-class_dict = {
-    'class': ["Background"]
-    + ["Class " + str(i + 1) for i in range(num_labels)]
-}
+from skimage import data
+from skimage.filters import threshold_otsu
+from skimage.segmentation import clear_border
+from skimage.measure import label
+from skimage.morphology import closing, square, remove_small_objects
+import numpy as np
+import napari
+
 
 with napari.gui_qt():
-    viewer = napari.Viewer()
-    viewer.add_labels(labelled, properties=class_dict)
+    image = data.coins()[50:-50, 50:-50]
+
+    # apply threshold
+    thresh = threshold_otsu(image)
+    bw = closing(image > thresh, square(4))
+
+    # remove artifacts connected to image border
+    cleared = remove_small_objects(clear_border(bw), 20)
+
+    # label image regions
+    label_image = label(cleared)
+
+    # initialise viewer with coins image
+    viewer = napari.view_image(image, name='coins', rgb=False)
+
+    # get the size of each coin (first element is background area)
+    label_areas = np.bincount(label_image.ravel())[1:]
+
+    # split coins into small or large
+    size_range = max(label_areas) - min(label_areas)
+    small_threshold = min(label_areas) + (size_range / 2)
+    coin_sizes = np.where(label_areas > small_threshold, 'large', 'small')
+
+    label_properties = {
+        'row': ['none']
+        + ['top'] * 4
+        + ['bottom'] * 4,  # background is row: none
+        'size': ['none'] + list(coin_sizes),  # background is size: none
+    }
+
+    # add the labels
+    label_layer = viewer.add_labels(
+        label_image, name='segmentation', properties=label_properties
+    )
