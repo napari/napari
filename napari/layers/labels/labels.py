@@ -154,6 +154,7 @@ class Labels(Image):
             contiguous=Event,
             brush_size=Event,
             selected_label=Event,
+            paint=Event,
         )
 
         self._data_raw = np.zeros((1,) * self.dims.ndisplay)
@@ -569,5 +570,6 @@ class Labels(Image):
             keep_coords = self.data[slice_coord] == self._background_label
             self.data[slice_coord][keep_coords] = new_label
 
+        self.events.paint(coord=coord, new_label=new_label)
         if refresh is True:
             self.refresh()

@@ -1,3 +1,4 @@
+from qtpy.QtCore import QTimer
 from qtpy.QtGui import QPainter, QColor
 from qtpy.QtWidgets import (
     QButtonGroup,
@@ -67,6 +68,7 @@ class QtLabelsControls(QtLayerControls):
         self.layer.events.contiguous.connect(self._on_contig_change)
         self.layer.events.n_dimensional.connect(self._on_n_dim_change)
         self.layer.events.editable.connect(self._on_editable_change)
+        self.layer.events.paint.connect(self._on_paint)
         self.layer.events.preserve_labels.connect(
             self._on_preserve_labels_change
         )
@@ -101,6 +103,8 @@ class QtLabelsControls(QtLayerControls):
         ndim_cb.stateChanged.connect(self.change_ndim)
         self.ndimCheckBox = ndim_cb
         self._on_n_dim_change()
+
+        self.preserveLabelsQLabel = QLabel('preserve labels:')
 
         preserve_labels_cb = QCheckBox()
         preserve_labels_cb.setToolTip(
@@ -173,7 +177,7 @@ class QtLabelsControls(QtLayerControls):
         self.grid_layout.addWidget(self.contigCheckBox, 5, 3, 1, 5)
         self.grid_layout.addWidget(QLabel('n-dim:'), 6, 0, 1, 5)
         self.grid_layout.addWidget(self.ndimCheckBox, 6, 3, 1, 5)
-        self.grid_layout.addWidget(QLabel('preserve labels:'), 7, 0, 1, 5)
+        self.grid_layout.addWidget(self.preserveLabelsQLabel, 7, 0, 1, 5)
         self.grid_layout.addWidget(self.preserveLabelsCheckBox, 7, 3, 1, 5)
         self.grid_layout.setRowStretch(8, 1)
         self.grid_layout.setColumnStretch(1, 1)
@@ -331,7 +335,7 @@ class QtLabelsControls(QtLayerControls):
             self.contigCheckBox.setChecked(self.layer.contiguous)
 
     def _on_preserve_labels_change(self, event=None):
-        """Receive layer model preserve_labels change event and update the checkbox.
+        """Receive layer model preserve_labels event and update the checkbox.
 
         Parameters
         ----------
@@ -340,6 +344,18 @@ class QtLabelsControls(QtLayerControls):
         """
         with self.layer.events.preserve_labels.blocker():
             self.preserveLabelsCheckBox.setChecked(self.layer.preserve_labels)
+
+    def _on_paint(self, event=None):
+        """Receive layer model paint event and possibly highlight Qlabel."""
+        if self.layer.preserve_labels and (
+            event.new_label == self.layer._background_label
+        ):
+
+            def undo():
+                self.preserveLabelsQLabel.setStyleSheet("")
+
+            self.preserveLabelsQLabel.setStyleSheet(r"QLabel {color: red}")
+            QTimer().singleShot(300, undo)
 
     def _on_editable_change(self, event=None):
         """Receive layer model editable change event & enable/disable buttons.
