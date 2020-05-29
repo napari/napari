@@ -625,7 +625,8 @@ class Labels(Image):
                 if self._value in self._label_index:
                     idx = self._label_index[self._value]
                     for k, v in self._properties.items():
-                        msg += f' {k}: {v[idx]}'
+                        if k != 'index':
+                            msg += f' {k}: {v[idx]}'
                 else:
                     msg += f' [No Properties]'
         return msg
