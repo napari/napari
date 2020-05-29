@@ -28,10 +28,8 @@ class Labels(Image):
         Number of unique colors to use in colormap.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each label. Each property should be an array of length
-        N, where N is the number of labels.
-    label_index : dict {int: int}
-        Dictionary mapping labels (arbitrary integers) to row indices
-        (sequential integers in 0..N not inclusive).
+        N, where N is the number of labels, and the first property corresponds to
+        background.
     seed : float
         Seed for colormap random generator.
     name : str
@@ -73,10 +71,8 @@ class Labels(Image):
         Number of unique colors to use in colormap.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each label. Each property should be an array of length
-        N, where N is the number of labels.
-    label_index : dict {int: int}
-        Dictionary mapping labels (arbitrary integers) to row indices
-        (sequential integers in 0..N not inclusive).
+        N, where N is the number of labels, and the first property corresponds to
+        background.
     seed : float
         Seed for colormap random generator.
     opacity : float
@@ -127,7 +123,6 @@ class Labels(Image):
         *,
         num_colors=50,
         properties=None,
-        label_index=None,
         seed=0.5,
         name=None,
         metadata=None,
@@ -146,16 +141,14 @@ class Labels(Image):
         if properties is None:
             self._properties = {}
             self._property_choices = {}
+            label_index = {}
         else:
             properties = self._validate_properties(properties)
-            self._properties = dataframe_to_properties(properties)
+            self._properties, label_index = dataframe_to_properties(properties)
         if label_index is None:
             props = self._properties
             if len(props) > 0:
-                arbitrary_key = list(props.keys())[0]
-                self._label_index = {
-                    i: i for i in range(len(props[arbitrary_key]))
-                }
+                self._label_index = self._map_index(properties)
             else:
                 self._label_index = {}
         else:
@@ -281,16 +274,10 @@ class Labels(Image):
     @properties.setter
     def properties(self, properties: Dict[str, np.ndarray]):
         if not isinstance(properties, dict):
-            properties = dataframe_to_properties(properties)
+            properties, label_index = dataframe_to_properties(properties)
+            if label_index is None:
+                label_index = self._map_index(properties)
         self._properties = self._validate_properties(properties)
-
-    @property
-    def label_index(self) -> Dict[int, int]:
-        """Dictionary mapping labels (arbitrary integers) to row indices"""
-        return self._label_index
-
-    @label_index.setter
-    def label_index(self, label_index: Dict[int, int]):
         self._label_index = label_index
 
     def _validate_properties(
@@ -309,6 +296,12 @@ class Labels(Image):
             )
         return properties
 
+    def _map_index(self, properties: Dict[str, np.ndarray]) -> Dict[int, int]:
+        """Map rows in given properties to label indices"""
+        arbitrary_key = list(properties.keys())[0]
+        label_index = {i: i for i in range(len(properties[arbitrary_key]))}
+        return label_index
+
     def _get_state(self):
         """Get dictionary of layer state.
 
@@ -323,7 +316,6 @@ class Labels(Image):
                 'multiscale': self.multiscale,
                 'num_colors': self.num_colors,
                 'properties': self._properties,
-                'label_index': self._label_index,
                 'seed': self.seed,
                 'data': self.data,
             }
