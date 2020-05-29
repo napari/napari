@@ -38,7 +38,7 @@ palettes = {
         'text': 'rgb(59, 58, 57)',
         'icon': 'rgb(107, 105, 103)',
         'warning': 'rgb(255, 18, 31)',
-        'current': 'rgb(148, 240, 253)',
+        'current': 'rgb(253, 240, 148)',
         'syntax_style': 'default',
         'console': 'rgb(255, 255, 255)',
         'canvas': 'white',

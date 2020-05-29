@@ -203,6 +203,39 @@ def test_num_colors():
     assert layer.num_colors == 60
 
 
+def test_properties():
+    """Test adding labels with properties."""
+    np.random.seed(0)
+    data = np.random.randint(20, size=(10, 15))
+
+    layer = Labels(data)
+    assert isinstance(layer.properties, dict)
+    assert len(layer.properties) == 0
+
+    properties = {'class': ['Background'] + [f'Class {i}' for i in range(20)]}
+    label_index = {i: i for i in range(len(properties['class']))}
+    layer = Labels(data, properties=properties)
+    assert isinstance(layer.properties, dict)
+    assert layer.properties == properties
+    assert layer._label_index == label_index
+
+    current_label = layer.get_value()
+    layer_message = layer.get_message()
+    assert layer_message.endswith(f'Class {current_label - 1}')
+
+    properties = {'class': ['Background']}
+    layer = Labels(data, properties=properties)
+    layer_message = layer.get_message()
+    assert layer_message.endswith("[No Properties]")
+
+    properties = {'class': ['Background', 'Class 12'], 'index': [0, 12]}
+    label_index = {0: 0, 12: 1}
+    layer = Labels(data, properties=properties)
+    layer_message = layer.get_message()
+    assert layer._label_index == label_index
+    assert layer_message.endswith('Class 12')
+
+
 def test_colormap():
     """Test colormap."""
     np.random.seed(0)
@@ -310,6 +343,22 @@ def test_paint():
     layer.paint([0, 0], 2)
     assert np.unique(layer.data[:5, :5]) == 2
     assert np.unique(layer.data[5:10, 5:10]) == 2
+
+
+def test_paint_with_preserve_labels():
+    """Test painting labels while preserving existing labels"""
+    data = np.zeros((15, 10))
+    data[:3, :3] = 1
+    layer = Labels(data)
+    layer.preserve_labels = True
+    assert np.unique(layer.data[:3, :3]) == 1
+
+    layer.brush_size = 9
+    layer.paint([0, 0], 2)
+
+    assert np.unique(layer.data[3:5, 0:5]) == 2
+    assert np.unique(layer.data[0:5, 3:5]) == 2
+    assert np.unique(layer.data[:3, :3]) == 1
 
 
 def test_fill():

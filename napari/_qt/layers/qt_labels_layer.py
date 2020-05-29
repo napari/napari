@@ -66,6 +66,9 @@ class QtLabelsControls(QtLayerControls):
         self.layer.events.contiguous.connect(self._on_contig_change)
         self.layer.events.n_dimensional.connect(self._on_n_dim_change)
         self.layer.events.editable.connect(self._on_editable_change)
+        self.layer.events.preserve_labels.connect(
+            self._on_preserve_labels_change
+        )
 
         # shuffle colormap button
         self.colormapUpdate = QPushButton('shuffle colors')
@@ -102,6 +105,14 @@ class QtLabelsControls(QtLayerControls):
         ndim_cb.stateChanged.connect(self.change_ndim)
         self.ndimCheckBox = ndim_cb
         self._on_n_dim_change()
+
+        preserve_labels_cb = QCheckBox()
+        preserve_labels_cb.setToolTip(
+            'preserve existing labels while painting'
+        )
+        preserve_labels_cb.stateChanged.connect(self.change_preserve_labels)
+        self.preserveLabelsCheckBox = preserve_labels_cb
+        self._on_preserve_labels_change()
 
         self.panzoom_button = QtModeRadioButton(
             layer, 'zoom', Mode.PAN_ZOOM, tooltip='Pan/zoom mode', checked=True
@@ -152,7 +163,9 @@ class QtLabelsControls(QtLayerControls):
         self.grid_layout.addWidget(self.contigCheckBox, 5, 1)
         self.grid_layout.addWidget(QLabel('n-dim:'), 6, 0)
         self.grid_layout.addWidget(self.ndimCheckBox, 6, 1)
-        self.grid_layout.setRowStretch(7, 1)
+        self.grid_layout.addWidget(QLabel('preserve labels:'), 7, 0)
+        self.grid_layout.addWidget(self.preserveLabelsCheckBox, 7, 1)
+        self.grid_layout.setRowStretch(8, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
 
@@ -245,6 +258,19 @@ class QtLabelsControls(QtLayerControls):
         else:
             self.layer.n_dimensional = False
 
+    def change_preserve_labels(self, state):
+        """Toggle preserve_labels state of label layer.
+
+        Parameters
+        ----------
+        state : QCheckBox
+            Checkbox indicating if overwriting label is enabled.
+        """
+        if state == Qt.Checked:
+            self.layer.preserve_labels = True
+        else:
+            self.layer.preserve_labels = False
+
     def _on_selection_change(self, event=None):
         """Receive layer model label selection change event and update spinbox.
 
@@ -291,6 +317,17 @@ class QtLabelsControls(QtLayerControls):
         """
         with self.layer.events.contiguous.blocker():
             self.contigCheckBox.setChecked(self.layer.contiguous)
+
+    def _on_preserve_labels_change(self, event=None):
+        """Receive layer model preserve_labels change event and update the checkbox.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional.
+            Event from the Qt context.
+        """
+        with self.layer.events.preserve_labels.blocker():
+            self.preserveLabelsCheckBox.setChecked(self.layer.preserve_labels)
 
     def _on_editable_change(self, event=None):
         """Receive layer model editable change event & enable/disable buttons.
