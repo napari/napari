@@ -2,7 +2,6 @@ from qtpy.QtGui import QPainter, QColor
 from qtpy.QtWidgets import (
     QButtonGroup,
     QWidget,
-    QPushButton,
     QSlider,
     QCheckBox,
     QLabel,
@@ -14,7 +13,7 @@ from qtpy.QtCore import Qt
 import numpy as np
 from .qt_base_layer import QtLayerControls
 from ...layers.labels._labels_constants import Mode
-from ..qt_mode_buttons import QtModeRadioButton
+from ..qt_mode_buttons import QtModeRadioButton, QtModePushButton
 from ..utils import disable_with_opacity
 
 
@@ -72,11 +71,6 @@ class QtLabelsControls(QtLayerControls):
             self._on_preserve_labels_change
         )
 
-        # shuffle colormap button
-        self.colormapUpdate = QPushButton('shuffle\ncolors')
-        self.colormapUpdate.setObjectName('shuffleButton')
-        self.colormapUpdate.clicked.connect(self.changeColor)
-
         # selection spinbox
         self.selectionSpinBox = QSpinBox()
         self.selectionSpinBox.setKeyboardTracking(False)
@@ -116,6 +110,11 @@ class QtLabelsControls(QtLayerControls):
         self.preserveLabelsCheckBox = preserve_labels_cb
         self._on_preserve_labels_change()
 
+        # shuffle colormap button
+        self.colormapUpdate = QtModePushButton(
+            None, 'shuffle', slot=self.changeColor, tooltip='shuffle colors',
+        )
+
         self.panzoom_button = QtModeRadioButton(
             layer,
             'zoom',
@@ -146,6 +145,7 @@ class QtLabelsControls(QtLayerControls):
 
         button_row = QHBoxLayout()
         button_row.addStretch(1)
+        button_row.addWidget(self.colormapUpdate)
         button_row.addWidget(self.pick_button)
         button_row.addWidget(self.fill_button)
         button_row.addWidget(self.paint_button)
@@ -160,8 +160,7 @@ class QtLabelsControls(QtLayerControls):
 
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
-        self.grid_layout.addWidget(self.colormapUpdate, 0, 0, 1, 2)
-        self.grid_layout.addLayout(button_row, 0, 2, 1, 6)
+        self.grid_layout.addLayout(button_row, 0, 0, 1, 8)
         self.grid_layout.addWidget(QLabel('label:'), 1, 0, 1, 5)
         self.grid_layout.addLayout(color_layout, 1, 3, 1, 5)
         self.grid_layout.addWidget(QLabel('opacity:'), 2, 0, 1, 5)

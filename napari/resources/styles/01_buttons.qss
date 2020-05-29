@@ -212,6 +212,10 @@ QtModeRadioButton[mode="add_points"]::indicator {
     image: url(":/themes/{{ folder }}/add.svg");
 }
 
+QtModePushButton[mode="shuffle"] {
+   image: url(":/themes/{{ folder }}/shuffle.svg");
+}
+
 QtModePushButton[mode="move_back"] {
    image: url(":/themes/{{ folder }}/move_back.svg");
 }
@@ -277,9 +281,4 @@ QtPlayButton[playing=True] {
     height: 12px;
     width: 12px;
     padding: 2px;
-}
-
-#shuffleButton {
-  font-size: 11pt;
-  margin-bottom: 4px;
 }
