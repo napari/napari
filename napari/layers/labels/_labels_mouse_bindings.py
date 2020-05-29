@@ -41,7 +41,7 @@ def draw(layer, event):
                 layer.paint(c, layer.selected_label, refresh=False)
             elif (
                 layer._mode == Mode.FILL
-                and layer.get_value(c) != layer.selected_label
+                and layer.get_value() != layer.selected_label
             ):
                 layer.fill(c, layer.selected_label)
         layer.refresh()
