@@ -456,10 +456,6 @@ class Labels(Image):
         if refresh is True:
             self._save_history()
 
-        old_label = self.get_value()
-        if old_label == self.selected_label:
-            return
-
         if self.n_dimensional or self.ndim == 2:
             # work with entire image
             labels = self.data
@@ -476,6 +472,11 @@ class Labels(Image):
             )
 
         self.coordinates = slice_coord
+
+        old_label = self.get_value()
+        if old_label == self.selected_label:
+            return
+
         matches = labels == old_label
         if self.contiguous:
             # if not contiguous replace only selected connected component
