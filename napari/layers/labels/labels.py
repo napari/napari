@@ -1,5 +1,5 @@
 from collections import deque
-from typing import Union
+from typing import Union, Dict
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -10,6 +10,8 @@ from ...utils.event import Event
 from ...utils.status_messages import format_float
 from ._labels_constants import Mode
 from ._labels_mouse_bindings import fill, paint, pick
+
+from ..utils.layer_utils import dataframe_to_properties
 
 
 class Labels(Image):
@@ -24,6 +26,10 @@ class Labels(Image):
         Labels data as an array or multiscale.
     num_colors : int
         Number of unique colors to use in colormap.
+    properties : dict {str: array (N,)}, DataFrame
+        Properties for each label. Each property should be an array of length
+        N, where N is the number of labels, and the first property corresponds to
+        background.
     seed : float
         Seed for colormap random generator.
     name : str
@@ -63,6 +69,10 @@ class Labels(Image):
         Labels metadata.
     num_colors : int
         Number of unique colors to use in colormap.
+    properties : dict {str: array (N,)}, DataFrame
+        Properties for each label. Each property should be an array of length
+        N, where N is the number of labels, and the first property corresponds to
+        background.
     seed : float
         Seed for colormap random generator.
     opacity : float
@@ -115,6 +125,7 @@ class Labels(Image):
         data,
         *,
         num_colors=50,
+        properties=None,
         seed=0.5,
         name=None,
         metadata=None,
@@ -129,6 +140,21 @@ class Labels(Image):
         self._seed = seed
         self._num_colors = num_colors
         colormap = ('random', colormaps.label_colormap(self.num_colors))
+
+        if properties is None:
+            self._properties = {}
+            label_index = {}
+        else:
+            properties = self._validate_properties(properties)
+            self._properties, label_index = dataframe_to_properties(properties)
+        if label_index is None:
+            props = self._properties
+            if len(props) > 0:
+                self._label_index = self._map_index(properties)
+            else:
+                self._label_index = {}
+        else:
+            self._label_index = label_index
 
         super().__init__(
             data,
@@ -243,6 +269,42 @@ class Labels(Image):
         self._selected_color = self.get_color(self.selected_label)
         self.events.selected_label()
 
+    @property
+    def properties(self) -> Dict[str, np.ndarray]:
+        """dict {str: array (N,)}, DataFrame: Properties for each label."""
+        return self._properties
+
+    @properties.setter
+    def properties(self, properties: Dict[str, np.ndarray]):
+        if not isinstance(properties, dict):
+            properties, label_index = dataframe_to_properties(properties)
+            if label_index is None:
+                label_index = self._map_index(properties)
+        self._properties = self._validate_properties(properties)
+        self._label_index = label_index
+
+    def _validate_properties(
+        self, properties: Dict[str, np.ndarray]
+    ) -> Dict[str, np.ndarray]:
+        """Validate the type and size of properties."""
+        lens = []
+        for k, v in properties.items():
+            lens.append(len(v))
+            if not isinstance(v, np.ndarray):
+                properties[k] = np.asarray(v)
+
+        if not all([v == lens[0] for v in lens]):
+            raise ValueError(
+                "the number of items must be equal for all properties"
+            )
+        return properties
+
+    def _map_index(self, properties: Dict[str, np.ndarray]) -> Dict[int, int]:
+        """Map rows in given properties to label indices"""
+        arbitrary_key = list(properties.keys())[0]
+        label_index = {i: i for i in range(len(properties[arbitrary_key]))}
+        return label_index
+
     def _get_state(self):
         """Get dictionary of layer state.
 
@@ -256,6 +318,7 @@ class Labels(Image):
             {
                 'multiscale': self.multiscale,
                 'num_colors': self.num_colors,
+                'properties': self._properties,
                 'seed': self.seed,
                 'data': self.data,
             }
@@ -573,3 +636,18 @@ class Labels(Image):
         self.events.paint(coord=coord, new_label=new_label)
         if refresh is True:
             self.refresh()
+
+    def get_message(self):
+        msg = super().get_message()
+        # if this labels layer has properties
+        if self._label_index and self._properties:
+            # if the cursor is not outside the image or on the background
+            if self._value is not None:
+                if self._value in self._label_index:
+                    idx = self._label_index[self._value]
+                    for k, v in self._properties.items():
+                        if k != 'index':
+                            msg += f', {k}: {v[idx]}'
+                else:
+                    msg += f' [No Properties]'
+        return msg
