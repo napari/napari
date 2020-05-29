@@ -14,6 +14,7 @@ https://github.com/napari/napari
 ## New Features
 - General multithreading API and @thread_worker decorator (#1210)
 - Rich jupyter display for napari screenshots (#1269)
+- Allow add_dock_widget to accept a list of widgets (#1296)
 
 ## Improvements
 - Make Qt component non private module (#1122)
@@ -33,7 +34,10 @@ https://github.com/napari/napari
 - Remove dupe import (#1263)
 - Fix missing docstring `create_dask_cache` (#1266)
 - Fix adding points with new properties  (#1274)
+- Fix error when binding multiple connections (#1293)
+- Add tests for `qt.threading` (#1294)
 - Close bytesIO in `NotebookScreenshot._repr_png_` (#1295)
+- Fix shift-click for selecting shapes (#1297)
 
 ## Build Tools
 - Add pooch to requirements/test.txt (#1249)
