@@ -354,7 +354,7 @@ class QtLabelsControls(QtLayerControls):
             def undo():
                 self.preserveLabelsQLabel.setStyleSheet("")
 
-            self.preserveLabelsQLabel.setStyleSheet(r"QLabel {color: red}")
+            self.preserveLabelsQLabel.setStyleSheet(r"QLabel {color: #EF5944}")
             QTimer().singleShot(300, undo)
 
     def _on_editable_change(self, event=None):
