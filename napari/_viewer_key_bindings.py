@@ -25,14 +25,10 @@ def increment_dims_left(viewer):
     """Increment dimensions slider to the left."""
     axis = viewer.window.qt_viewer.dims.last_used
     if axis is not None:
-        cur_point = viewer.dims.point[axis]
-        axis_range = viewer.dims.range[axis]
-        new_point = np.clip(
-            cur_point - axis_range[2],
-            axis_range[0],
-            axis_range[1] - axis_range[2],
-        )
-        viewer.dims.set_point(axis, new_point)
+        cur_step = viewer.dims.step[axis]
+        axis_range = viewer.dims.nsteps[axis]
+        new_step = np.clip(cur_step - 1, 0, axis_range)
+        viewer.dims.set_step(axis, new_step)
 
 
 @Viewer.bind_key('Right')
@@ -40,14 +36,10 @@ def increment_dims_right(viewer):
     """Increment dimensions slider to the right."""
     axis = viewer.window.qt_viewer.dims.last_used
     if axis is not None:
-        cur_point = viewer.dims.point[axis]
-        axis_range = viewer.dims.range[axis]
-        new_point = np.clip(
-            cur_point + axis_range[2],
-            axis_range[0],
-            axis_range[1] - axis_range[2],
-        )
-        viewer.dims.set_point(axis, new_point)
+        cur_step = viewer.dims.step[axis]
+        axis_range = viewer.dims.nsteps[axis]
+        new_step = np.clip(cur_step + 1, 0, axis_range)
+        viewer.dims.set_step(axis, new_step)
 
 
 @Viewer.bind_key('Control-E')

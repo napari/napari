@@ -288,6 +288,31 @@ class LayerList(ListModel):
     @property
     def ndim(self):
         """int: Maximum dimensionality of layers.
+
+        Defaults to 2 if no data is present.
         """
         ndims = [l.ndim for l in self]
-        return max(ndims, default=0)
+        return max(ndims, default=2)
+
+    @property
+    def _increments(self):
+        """(D, ) array: Maximum increment for layers in world coordinates.
+
+        Computes the maxiumum step size that allows all data planes to be
+        sampled if moving through the data full range of world coordinates.
+        This step size is given by the greatest common divisor.
+        """
+        if len(self) == 0:
+            return np.ones(self.ndim)
+        else:
+            scales = [l.scale for l in self]
+            full_scales = np.array(
+                list(itertools.zip_longest(*scales, fillvalue=np.nan))
+            ).T
+            min_scales = np.nanmin(full_scales, axis=0)
+            adj_scales = np.round(full_scales / min_scales).astype(int)
+            adj_scales = np.nan_to_num(adj_scales, nan=1)
+            raw_increments = np.ones(self.ndim, dtype=int)
+            for a in adj_scales:
+                raw_increments = np.gcd(raw_increments, a)
+            return raw_increments * min_scales

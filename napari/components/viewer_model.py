@@ -262,7 +262,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         wr = self.layers._world_range
         size = np.subtract(wr[1], wr[0])
         size = [size[i] for i in self.dims.displayed]
-        corner = [wr[0][i] for i in self.dims.displayed]
+        corner = [wr[0, i] for i in self.dims.displayed]
         return size, corner
 
     def reset_view(self, event=None):
@@ -330,8 +330,8 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             # Update the point values of the layers for the dimensions that
             # the layer has
             for axis in range(layer.dims.ndim):
-                point = self.dims.point[axis + offset]
-                layer.dims.set_point(axis, point)
+                step = self.dims.step[axis + offset]
+                layer.dims.set_step(axis, step)
 
     def _toggle_theme(self):
         """Switch to next theme in list of themes
@@ -380,9 +380,10 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             self.dims.reset()
         else:
             wr = self.layers._world_range
+            incs = self.layers._increments
             self.dims.ndim = self.layers.ndim
             for i in range(self.dims.ndim):
-                self.dims.set_range(i, (wr[0, i], wr[1, i], 1))
+                self.dims.set_range(i, (wr[0, i], wr[1, i], incs[i]))
         self.events.layers_change()
 
     def _update_status(self, event):

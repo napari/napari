@@ -430,7 +430,7 @@ class Layer(KeymapProvider, ABC):
     @property
     def _slice_indices(self):
         """(D, ) array: Slice indices in data coordinates."""
-        world_pts = [self.dims.point[ax] for ax in self.dims.not_displayed]
+        world_pts = [self.dims.position[ax] for ax in self.dims.not_displayed]
         inv_transform = self._transforms['data2world'].inverse
         data_pts = inv_transform.set_slice(self.dims.not_displayed)(world_pts)
 

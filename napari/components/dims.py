@@ -1,8 +1,6 @@
 from copy import copy
 from typing import Union, Sequence
 import numpy as np
-
-from .dims_constants import DimsMode
 from ..utils.event import EmitterGroup
 
 
@@ -20,22 +18,23 @@ class Dims:
         three dimensions correspond to row x column or plane x row x column if
         ndisplay is 2 or 3.
     axis_labels : list of str, optional
-        Dimension names
+        Dimension names.
 
     Attributes
     ----------
     events : EmitterGroup
         Event emitter group
-    range : list of 3-tuple
-        List of tuples (min, max, step), one for each dimension
-    point : list of float
-        List of floats setting the current value of the range slider when in
-        POINT mode, one for each dimension
-    interval : list of 2-tuple
-        List of tuples (min, max) setting the current selection of the range
-        slider when in INTERVAL mode, one for each dimension
-    mode : list of DimsMode
-        List of DimsMode, one for each dimension
+    range : tuple of 3-tuple
+        Tuple of tuples (min, max, step_size), one for each dimension with
+        range and step size in a world coordinate space.
+    position : tuple of float
+        Tuple of float with the currently requested position for each dimension
+        in a world coordinate space.
+    step : tuple of int
+        Tuple of int of the slider position of the currently requested position
+        for each dimension.
+    nsteps : tuple of int
+        Number of steps available to each slider.
     clip : bool
         Flag if to clip indices based on range. Needed for image-like
         layers, but prevents shape-like layers from adding new shapes
@@ -66,9 +65,7 @@ class Dims:
             camera=None,
         )
         self._range = []
-        self._point = []
-        self._interval = []
-        self._mode = []
+        self._step = []
         self._order = []
         self._axis_labels = []
         self.clip = True
@@ -95,55 +92,41 @@ class Dims:
                     f"Length of axis labels must be identical to ndim."
                     f" ndim is {ndim} while axis labels is {axis_labels}."
                 )
-            self._axis_labels = list(axis_labels)
+            self._axis_labels = tuple(axis_labels)
 
     def __str__(self):
         return "~~".join(
-            map(
-                str,
-                [
-                    self.range,
-                    self.point,
-                    self.interval,
-                    self.mode,
-                    self.order,
-                    self.axis_labels,
-                ],
-            )
+            map(str, [self.range, self.position, self.axis_labels],)
         )
 
     @property
     def range(self):
-        """List of 3-tuple: (min, max, step size) of each dimension.
+        """Tuple of 3-tuple: (min, max, step size) of each dimension.
         """
-        return copy(self._range)
+        return self._range
 
     @property
-    def max_indices(self):
-        """Maximum index for each dimension (in data space).
+    def position(self):
+        """Tuple of float: value of position for each dimension."""
+        return [
+            mi + st * stz for (mi, ma, stz), st in zip(self._range, self._step)
+        ]
+
+    @property
+    def nsteps(self):
+        """Number of slider steps for each dimension.
         """
-        return [((ma - st) // st) for mi, ma, st in self._range]
+        return [int((ma - mi - stz) // stz) for mi, ma, stz in self._range]
 
     @property
-    def point(self):
-        """List of int: value of each dimension if in POINT mode."""
-        return copy(self._point)
-
-    @property
-    def interval(self):
-        """List of 2-tuple: (min, max) of each dimension if in INTERVAL mode.
-        """
-        return copy(self._interval)
-
-    @property
-    def mode(self):
-        """List of DimsMode: List of DimsMode, one for each dimension."""
-        return copy(self._mode)
+    def step(self):
+        """Tuple of int: value of slider position for each dimension."""
+        return self._step
 
     @property
     def axis_labels(self):
         """List of labels for each axis."""
-        return copy(self._axis_labels)
+        return self._axis_labels
 
     @axis_labels.setter
     def axis_labels(self, labels):
@@ -165,7 +148,7 @@ class Dims:
     @property
     def order(self):
         """List of int: Display order of dimensions."""
-        return copy(self._order)
+        return self._order
 
     @order.setter
     def order(self, order):
@@ -190,7 +173,7 @@ class Dims:
         ndim : int
             Number of dimensions
         """
-        return len(self.point)
+        return len(self.range)
 
     @ndim.setter
     def ndim(self, ndim):
@@ -200,21 +183,16 @@ class Dims:
         elif ndim > cur_ndim:
             # Range value is (min, max, step) for the entire slider
             self._range = [(0, 2, 1)] * (ndim - cur_ndim) + self._range
-            # Point is the slider value if in point mode
-            self._point = [0] * (ndim - cur_ndim) + self._point
-            # Interval value is the (min, max) of the slider selction
-            # if in interval mode
-            self._interval = [(0, 1)] * (ndim - cur_ndim) + self._interval
-            self._mode = [DimsMode.POINT] * (ndim - cur_ndim) + self._mode
-            self._order = list(range(ndim - cur_ndim)) + [
+            self._step = [0] * (ndim - cur_ndim) + self._step
+            self._order = list(range(ndim - cur_ndim)) + list(
                 o + ndim - cur_ndim for o in self.order
-            ]
+            )
             # Append new "default" labels to existing ones
             if self._axis_labels == list(map(str, range(cur_ndim))):
                 self._axis_labels = list(map(str, range(ndim)))
             else:
-                self._axis_labels = (
-                    list(map(str, range(ndim - cur_ndim))) + self._axis_labels
+                self._axis_labels = list(
+                    (map(str, range(ndim - cur_ndim)),) + self._axis_labels
                 )
 
             # Notify listeners that the number of dimensions have changed
@@ -225,9 +203,7 @@ class Dims:
                 self.events.axis(axis=axis_changed)
         elif ndim < cur_ndim:
             self._range = self._range[-ndim:]
-            self._point = self._point[-ndim:]
-            self._interval = self._interval[-ndim:]
-            self._mode = self._mode[-ndim:]
+            self._step = self._step[-ndim:]
             self._order = self._reorder_after_dim_reduction(
                 self._order[-ndim:]
             )
@@ -275,12 +251,12 @@ class Dims:
 
     @property
     def displayed(self):
-        """Tuple: Dimensions that are displayed."""
+        """List: Dimensions that are displayed."""
         return self.order[-self.ndisplay :]
 
     @property
     def not_displayed(self):
-        """Tuple: Dimensions that are not displayed."""
+        """List: Dimensions that are not displayed."""
         return self.order[: -self.ndisplay]
 
     @property
@@ -296,11 +272,9 @@ class Dims:
             # Range value is (min, max, step) for the entire slider
             self._range[axis] = (0, 2, 1)
             # Point is the slider value if in point mode
-            self._point[axis] = 0
+            self._step[axis] = 0
             # Interval value is the (min, max) of the slider selction
             # if in interval mode
-            self._interval[axis] = (0, 1)
-            self._mode[axis] = DimsMode.POINT
             self._order[axis] = axis
             # Default axis labels go from "-ndim" to "-1" so new axes can easily be added
             self._axis_labels[axis] = str(axis - self.ndim)
@@ -320,50 +294,33 @@ class Dims:
             self._range[axis] = _range
             self.events.range(axis=axis)
 
-    def set_point(self, axis: int, value: Union[int, float]):
-        """Sets the point at which to slice this dimension.
+    @step.setter
+    def step(self, step):
+        for i, s in step:
+            self.set_step(i, s)
+
+    @position.setter
+    def position(self, position):
+        raw_step = [
+            ((p - mi) // stz)
+            for (mi, ma, stz), p in zip(self._range, position)
+        ]
+        self.step = np.round(np.clip(raw_step, 0, self.nsteps)).astype(int)
+
+    def set_step(self, axis: int, value: Union[int, float]):
+        """Sets the slider step at which to slice this dimension.
 
         Parameters
         ----------
         axis : int
             Dimension index.
-        value : int or float
-            Value of the point.
+        value : int
+            Value of the slider position.
         """
         axis = self._assert_axis_in_bounds(axis)
-        if self.point[axis] != value:
-            self._point[axis] = value
+        if self.step[axis] != value:
+            self._step[axis] = value
             self.events.axis(axis=axis, value=value)
-
-    def set_interval(self, axis: int, interval: Sequence[Union[int, float]]):
-        """Sets the interval used for cropping and projecting this dimension.
-
-        Parameters
-        ----------
-        axis : int
-            Dimension index.
-        interval : tuple
-            INTERVAL specified with (min, max).
-        """
-        axis = self._assert_axis_in_bounds(axis)
-        if self.interval[axis] != interval:
-            self._interval[axis] = interval
-            self.events.axis(axis=axis)
-
-    def set_mode(self, axis: int, mode: DimsMode):
-        """Sets the mode: POINT or INTERVAL.
-
-        Parameters
-        ----------
-        axis : int
-            Dimension index.
-        mode : POINT or INTERVAL
-            Whether dimension is in the POINT or INTERVAL mode.
-        """
-        axis = self._assert_axis_in_bounds(axis)
-        if self.mode[axis] != mode:
-            self._mode[axis] = mode
-            self.events.axis(axis=axis)
 
     def set_axis_label(self, axis: int, label: str):
         """Sets a new axis label for the given axis.
