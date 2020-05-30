@@ -474,7 +474,7 @@ class Labels(Image):
         self.coordinates = slice_coord
 
         old_label = self.get_value()
-        if old_label == self.selected_label:
+        if old_label == new_label:
             return
 
         matches = labels == old_label
