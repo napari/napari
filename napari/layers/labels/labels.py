@@ -9,7 +9,7 @@ from ...utils.colormaps import colormaps
 from ...utils.event import Event
 from ...utils.status_messages import format_float
 from ._labels_constants import Mode
-from ._labels_mouse_bindings import fill, paint, pick
+from ._labels_mouse_bindings import draw, pick
 
 from ..utils.layer_utils import dataframe_to_properties
 
@@ -332,8 +332,8 @@ class Labels(Image):
 
     @selected_label.setter
     def selected_label(self, selected_label):
-        if selected_label < 1:
-            raise ValueError('cannot reduce selected label below 1')
+        if selected_label < 0:
+            raise ValueError('cannot reduce selected label below 0')
         if selected_label == self.selected_label:
             return
 
@@ -380,12 +380,8 @@ class Labels(Image):
 
         if self._mode == Mode.PICK:
             self.mouse_drag_callbacks.remove(pick)
-        elif self._mode == Mode.PAINT:
-            self.mouse_drag_callbacks.remove(paint)
-        elif self._mode == Mode.FILL:
-            self.mouse_drag_callbacks.remove(fill)
-        elif self._mode == Mode.ERASE:
-            self.mouse_drag_callbacks.remove(paint)
+        elif self._mode in [Mode.PAINT, Mode.FILL, Mode.ERASE]:
+            self.mouse_drag_callbacks.remove(draw)
 
         if mode == Mode.PAN_ZOOM:
             self.cursor = 'standard'
@@ -407,18 +403,18 @@ class Labels(Image):
                 'hold <alt> to erase, '
                 'drag to paint a label'
             )
-            self.mouse_drag_callbacks.append(paint)
+            self.mouse_drag_callbacks.append(draw)
         elif mode == Mode.FILL:
             self.cursor = 'cross'
             self.interactive = False
             self.help = 'hold <space> to pan/zoom, click to fill a label'
-            self.mouse_drag_callbacks.append(fill)
+            self.mouse_drag_callbacks.append(draw)
         elif mode == Mode.ERASE:
             self.cursor_size = self.brush_size / self.scale_factor
             self.cursor = 'square'
             self.interactive = False
             self.help = 'hold <space> to pan/zoom, drag to erase a label'
-            self.mouse_drag_callbacks.append(paint)
+            self.mouse_drag_callbacks.append(draw)
         else:
             raise ValueError("Mode not recognized")
 
@@ -520,7 +516,7 @@ class Labels(Image):
     def redo(self):
         self._load_history(self._redo_history, self._undo_history)
 
-    def fill(self, coord, old_label, new_label):
+    def fill(self, coord, new_label, refresh=True):
         """Replace an existing label with a new label, either just at the
         connected component if the `contiguous` flag is `True` or everywhere
         if it is `False`, working either just in the current slice if
@@ -531,23 +527,33 @@ class Labels(Image):
         ----------
         coord : sequence of float
             Position of mouse cursor in image coordinates.
-        old_label : int
-            Value of the label image at the coord to be replaced.
         new_label : int
             Value of the new label to be filled in.
+        refresh : bool
+            Whether to refresh view slice or not. Set to False to batch paint
+            calls.
         """
-        self._save_history()
+        slice_coord = tuple(np.round(coord).astype(int))
+        # If requested fill location is outside data shape then return
+        if np.any(np.less(slice_coord, 0)) or np.any(
+            np.greater_equal(slice_coord, self.shape)
+        ):
+            return
 
-        int_coord = np.round(coord).astype(int)
+        # If requested new label doesn't change old label then return
+        old_label = self.data[slice_coord]
+        if old_label == new_label:
+            return
+
+        if refresh is True:
+            self._save_history()
 
         if self.n_dimensional or self.ndim == 2:
             # work with entire image
             labels = self.data
-            slice_coord = tuple(int_coord)
         else:
             # work with just the sliced image
             labels = self._data_raw
-            slice_coord = tuple(int_coord[d] for d in self.dims.displayed)
 
         matches = labels == old_label
         if self.contiguous:
@@ -566,7 +572,8 @@ class Labels(Image):
             # if working with just the slice, update the rest of the raw data
             self.data[tuple(self.dims.indices)] = labels
 
-        self.refresh()
+        if refresh is True:
+            self.refresh()
 
     def paint(self, coord, new_label, refresh=True):
         """Paint over existing labels with a new label, using the selected

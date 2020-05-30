@@ -371,7 +371,7 @@ def test_fill():
     assert np.unique(layer.data[:5, :5]) == 1
     assert np.unique(layer.data[5:10, 5:10]) == 2
 
-    layer.fill([0, 0], 1, 3)
+    layer.fill([0, 0], 3)
     assert np.unique(layer.data[:5, :5]) == 3
     assert np.unique(layer.data[5:10, 5:10]) == 2
 

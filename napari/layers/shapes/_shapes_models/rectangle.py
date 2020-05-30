@@ -14,16 +14,6 @@ class Rectangle(Shape):
         box that contains the rectangle. These need not be axis aligned.
     edge_width : float
         thickness of lines and edges.
-    edge_color : str | tuple
-        If string can be any color name recognized by vispy or hex value if
-        starting with `#`. If array-like must be 1-dimensional array with 3 or
-        4 elements.
-    face_color : str | tuple
-        If string can be any color name recognized by vispy or hex value if
-        starting with `#`. If array-like must be 1-dimensional array with 3 or
-        4 elements.
-    opacity : float
-        Opacity of the shape, must be between 0 and 1.
     z_index : int
         Specifier of z order priority. Shapes with higher z order are displayed
         ontop of others.
@@ -32,23 +22,11 @@ class Rectangle(Shape):
     """
 
     def __init__(
-        self,
-        data,
-        *,
-        edge_width=1,
-        edge_color='black',
-        face_color='white',
-        opacity=1,
-        z_index=0,
-        dims_order=None,
-        ndisplay=2,
+        self, data, *, edge_width=1, z_index=0, dims_order=None, ndisplay=2,
     ):
 
         super().__init__(
             edge_width=edge_width,
-            edge_color=edge_color,
-            face_color=face_color,
-            opacity=opacity,
             z_index=z_index,
             dims_order=dims_order,
             ndisplay=ndisplay,

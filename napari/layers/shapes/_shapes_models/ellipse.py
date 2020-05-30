@@ -19,14 +19,6 @@ class Ellipse(Shape):
         boudning box that contains the ellipse. These need not be axis aligned.
     edge_width : float
         thickness of lines and edges.
-    edge_color : str | tuple
-        If string can be any color name recognized by vispy or hex value if
-        starting with `#`. If array-like must be 1-dimensional array with 3 or
-        4 elements.
-    face_color : str | tuple
-        If string can be any color name recognized by vispy or hex value if
-        starting with `#`. If array-like must be 1-dimensional array with 3 or
-        4 elements.
     opacity : float
         Opacity of the shape, must be between 0 and 1.
     z_index : int
@@ -41,8 +33,6 @@ class Ellipse(Shape):
         data,
         *,
         edge_width=1,
-        edge_color='black',
-        face_color='white',
         opacity=1,
         z_index=0,
         dims_order=None,
@@ -51,9 +41,6 @@ class Ellipse(Shape):
 
         super().__init__(
             edge_width=edge_width,
-            edge_color=edge_color,
-            face_color=face_color,
-            opacity=opacity,
             z_index=z_index,
             dims_order=dims_order,
             ndisplay=ndisplay,
