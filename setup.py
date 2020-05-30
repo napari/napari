@@ -79,9 +79,9 @@ with open(osp.join('requirements', 'default.txt')) as f:
             requirements.append(stripped)
 
 if pyqt:
-    requirements.append("PyQt5>=" + QT_MIN_VERSION)
+    requirements.append(f"PyQt5>={QT_MIN_VERSION},<5.15")
 if pyside or not (pyqt or pyside):
-    requirements.append("PySide2>=" + QT_MIN_VERSION)
+    requirements.append(f"PySide2>={QT_MIN_VERSION},<5.15")
 
 
 setup(
