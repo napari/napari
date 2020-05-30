@@ -594,6 +594,12 @@ def test_color_direct(attribute: str):
         layer_color, np.vstack((color_array[1], color_array[3:])),
     )
 
+    # set the color directly
+    setattr(layer, f'{attribute}_color', 'black')
+    color_array = np.tile([[0, 0, 0, 1]], (len(layer.data), 1))
+    layer_color = getattr(layer, f'{attribute}_color')
+    np.testing.assert_allclose(color_array, layer_color)
+
 
 def test_edge_width():
     """Test setting edge width."""
