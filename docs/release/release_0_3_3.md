@@ -7,7 +7,7 @@ images. It's built on top of Qt (for the GUI), vispy (for performant GPU-based
 rendering), and the scientific Python stack (numpy, scipy).
 
 
-This is a small bug fix PR that pins our Qt version at < 0.5.15, due to
+This is a small bug fix PR that pins our Qt version at < 5.15.0, due to
 incompatibilities with their latest release until we fix them. See #1312 for
 discussion and the latest progress.
 
@@ -18,8 +18,9 @@ https://github.com/napari/napari
 - Adding properties attribute to Labels layers (#1281)
 
 ## Improvements
+- Shapes colors refactor (#1248)
+- Allow drag filling of labels (#1299)
 - Make Qt window public (#1306)
-
 
 ## Bug Fixes
 - Exit context before return on `_repr_png` (#1298)
@@ -28,14 +29,17 @@ https://github.com/napari/napari
 - Pin PySide2 and PyQt5 at <5.15 (#1316)
 
 
-## 2 authors added to this release (alphabetical)
+## 4 authors added to this release (alphabetical)
 
-- [DragaDoncila](https://github.com/napari/napari/commits?author=DragaDoncila) - @DragaDoncila
+- [Draga Doncila](https://github.com/napari/napari/commits?author=DragaDoncila) - @DragaDoncila
+- [Kevin Yamauchi](https://github.com/napari/napari/commits?author=kevinyamauchi) - @kevinyamauchi
 - [Talley Lambert](https://github.com/napari/napari/commits?author=tlambert03) - @tlambert03
+- [Ziyang Liu](https://github.com/napari/napari/commits?author=ziyangczi) - @ziyangczi
 
 
-## 3 reviewers added to this release (alphabetical)
+## 4 reviewers added to this release (alphabetical)
 
-- [DragaDoncila](https://github.com/napari/napari/commits?author=DragaDoncila) - @DragaDoncila
+- [Draga Doncila](https://github.com/napari/napari/commits?author=DragaDoncila) - @DragaDoncila
 - [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - @jni
 - [Nicholas Sofroniew](https://github.com/napari/napari/commits?author=sofroniewn) - @sofroniewn
+- [Talley Lambert](https://github.com/napari/napari/commits?author=tlambert03) - @tlambert03
