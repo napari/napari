@@ -121,7 +121,7 @@ class QtViewerSingleImageSuite:
 
     def time_ndisplay(self):
         """Time to enter 3D rendering."""
-        self.viewer.dims.ndisplay = 3
+        self.viewer.layers.dims.ndisplay = 3
 
 
 class QtViewerSingleInvisbleImageSuite:
@@ -164,4 +164,4 @@ class QtViewerSingleInvisbleImageSuite:
 
     def time_ndisplay(self):
         """Time to enter 3D rendering."""
-        self.viewer.dims.ndisplay = 3
+        self.viewer.layers.dims.ndisplay = 3

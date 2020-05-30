@@ -47,4 +47,4 @@ with napari.gui_qt():
         vectors, edge_width=0.4, name='sliced vectors', edge_color='blue'
     )
 
-    viewer.dims.ndisplay = 3
+    viewer.layers.dims.ndisplay = 3

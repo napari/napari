@@ -22,15 +22,15 @@ def test_viewer(viewer_factory):
     assert len(viewer.layers) == 0
     assert view.layers.vbox_layout.count() == 2
 
-    assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == viewer.dims.ndim
+    assert viewer.layers.dims.ndim == 2
+    assert view.dims.nsliders == viewer.layers.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
 
     # Switch to 3D rendering mode and back to 2D rendering mode
-    viewer.dims.ndisplay = 3
-    assert viewer.dims.ndisplay == 3
-    viewer.dims.ndisplay = 2
-    assert viewer.dims.ndisplay == 2
+    viewer.layers.dims.ndisplay = 3
+    assert viewer.layers.dims.ndisplay == 3
+    viewer.layers.dims.ndisplay = 2
+    assert viewer.layers.dims.ndisplay == 2
 
     # Run all class key bindings
     for func in viewer.class_keymap.values():
@@ -179,9 +179,9 @@ def test_roll_traspose_update(viewer_factory, layer_class, data, ndim):
     check_view_transform_consistency(layer, viewer, transf_dict)
 
     # Roll dims and check again:
-    viewer.dims._roll()
+    viewer.layers.dims._roll()
     check_view_transform_consistency(layer, viewer, transf_dict)
 
     # Transpose and check again:
-    viewer.dims._transpose()
+    viewer.layers.dims._transpose()
     check_view_transform_consistency(layer, viewer, transf_dict)

@@ -84,7 +84,7 @@ class QtViewer(QSplitter):
         )
 
         self.viewer = viewer
-        self.dims = QtDims(self.viewer.dims)
+        self.dims = QtDims(self.viewer.layers.dims)
         self.controls = QtControls(self.viewer)
         self.layers = QtLayerList(self.viewer.layers)
         self.layerButtons = QtLayerButtons(self.viewer)
@@ -181,11 +181,11 @@ class QtViewer(QSplitter):
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
         self.viewer.layers.events.added.connect(self._add_layer)
         self.viewer.layers.events.removed.connect(self._remove_layer)
-        self.viewer.dims.events.camera.connect(
+        self.viewer.layers.dims.events.camera.connect(
             lambda event: self._update_camera()
         )
         # stop any animations whenever the layers change
-        self.viewer.events.layers_change.connect(lambda x: self.dims.stop())
+        self.viewer.layers.events.changed.connect(lambda x: self.dims.stop())
 
         self.setAcceptDrops(True)
 
@@ -265,7 +265,7 @@ class QtViewer(QSplitter):
 
     def _update_camera(self):
         """Update the viewer camera."""
-        if self.viewer.dims.ndisplay == 3:
+        if self.viewer.layers.dims.ndisplay == 3:
             # Set a 3D camera
             if not isinstance(self.view.camera, ArcballCamera):
                 self.view.camera = ArcballCamera(name="ArcballCamera", fov=0)

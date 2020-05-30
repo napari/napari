@@ -1,6 +1,7 @@
 from typing import Optional, List
 import numpy as np
 import itertools
+from .dims import Dims
 from ..layers import Layer
 from ..utils.naming import inc_name_count
 from ..utils.list import ListModel
@@ -13,6 +14,13 @@ def _add(event):
     layer.name = layers._coerce_name(layer.name, layer)
     layer.events.name.connect(lambda e: layers._update_name(e))
     layers.unselect_all(ignore=layer)
+    layers._update_layer_dims(layer)
+
+
+def _change(event):
+    """When layer or layer list is changed update dimesnions."""
+    layers = event.source
+    layers._update_dims()
 
 
 class LayerList(ListModel):
@@ -22,6 +30,8 @@ class LayerList(ListModel):
     ----------
     iterable : iterable
         Iterable of napari.layer.Layer
+    dims : Dimensions
+        Contains axes, indices, dimensions and sliders.
 
     Attributes
     ----------
@@ -32,14 +42,21 @@ class LayerList(ListModel):
             * reordered(): whenever the list is reordered
     """
 
-    def __init__(self, iterable=()):
+    def __init__(
+        self, iterable=(), *, ndisplay=2, order=None, axis_labels=None
+    ):
         super().__init__(
             basetype=Layer,
             iterable=iterable,
             lookup={str: lambda q, e: q == e.name},
         )
 
+        self.dims = Dims(
+            ndim=None, ndisplay=ndisplay, order=order, axis_labels=axis_labels
+        )
+
         self.events.added.connect(_add)
+        self.events.changed.connect(_change)
 
     def __newlike__(self, iterable):
         return ListModel(self._basetype, iterable, self._lookup)
@@ -316,3 +333,56 @@ class LayerList(ListModel):
             for a in adj_scales:
                 raw_increments = np.gcd(raw_increments, a)
             return raw_increments * min_scales
+
+    @property
+    def _scene_shape(self):
+        """tuple: Size and corner of viewed dimensions in world coordinates.
+
+        Returns
+        ----------
+        size : list
+            List of size of scene, length 2 or 3 if displayed view is 2D or 3D.
+        corner : list
+            List of coordinates of top left corner of scene, length 2 or 3 if
+            displayed view is 2D or 3D.
+        """
+        # Scale the camera to the contents in the scene
+        wr = self._world_range
+        size = np.subtract(wr[1], wr[0])
+        size = [size[i] for i in self.dims.displayed]
+        corner = [wr[0, i] for i in self.dims.displayed]
+        return size, corner
+
+    def _update_layer_dims(self, layer):
+        """Updates the dims of a particular layer."""
+        # adjust the order of the global dims based on the number of
+        # dimensions that a layer has - for example a global order of
+        # [2, 1, 0, 3] -> [0, 1] for a layer that only has two dimesnions
+        # or -> [1, 0, 2] for a layer with three as that corresponds to
+        # the relative order of the last two and three dimensions
+        # respectively
+        offset = self.dims.ndim - layer.dims.ndim
+        order = np.array(self.dims.order)
+        if offset <= 0:
+            order = list(range(-offset)) + list(order - offset)
+        else:
+            order = list(order[order >= offset] - offset)
+        layer.dims.order = order
+        layer.dims.ndisplay = self.dims.ndisplay
+
+        # Update the point values of the layers for the dimensions that
+        # the layer has
+        for axis in range(layer.dims.ndim):
+            step = self.dims.step[axis + offset]
+            layer.dims.set_step(axis, step)
+
+    def _update_dims(self):
+        """When layer or layer list is changed update dimesnions."""
+        self.dims.ndim = self.ndim
+        if len(self) == 0:
+            self.dims.reset()
+        else:
+            wr = self._world_range
+            incs = self._increments
+            for i in range(self.dims.ndim):
+                self.dims.set_range(i, (wr[0, i], wr[1, i], incs[i]))

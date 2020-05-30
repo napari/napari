@@ -49,7 +49,7 @@ def test_3D_multiscale_image(viewer_factory):
     viewer.add_image(data)
 
     # Check that this doesn't crash.
-    viewer.dims.ndisplay = 3
+    viewer.layers.dims.ndisplay = 3
 
     # Check lowest resolution is used
     assert viewer.layers[0].data_level == 1

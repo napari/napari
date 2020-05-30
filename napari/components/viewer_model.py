@@ -1,7 +1,6 @@
 import numpy as np
 
 from .add_layers_mixin import AddLayersMixin
-from .dims import Dims
 from .layerlist import LayerList
 from ..utils.event import EmitterGroup, Event
 from ..utils.key_bindings import KeymapHandler, KeymapProvider
@@ -31,8 +30,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         Parent window.
     layers : LayerList
         List of contained layers.
-    dims : Dimensions
-        Contains axes, indices, dimensions and sliders.
     themes : dict of str: dict of str: str
         Preset color palettes.
     """
@@ -56,11 +53,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             active_layer=Event,
             palette=Event,
             grid=Event,
-            layers_change=Event,
-        )
-
-        self.dims = Dims(
-            ndim=None, ndisplay=ndisplay, order=order, axis_labels=axis_labels
         )
 
         self.layers = LayerList()
@@ -78,13 +70,12 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self._palette = None
         self.theme = 'dark'
 
-        self.dims.events.camera.connect(self.reset_view)
-        self.dims.events.ndisplay.connect(self._update_layers)
-        self.dims.events.order.connect(self._update_layers)
-        self.dims.events.axis.connect(self._update_layers)
-        self.layers.events.changed.connect(self._on_layers_change)
+        self.layers.dims.events.camera.connect(self.reset_view)
         self.layers.events.changed.connect(self._update_active_layer)
         self.layers.events.changed.connect(self._update_grid)
+        self.layers.dims.events.ndisplay.connect(self._update_all_layer_dims)
+        self.layers.dims.events.order.connect(self._update_all_layer_dims)
+        self.layers.dims.events.axis.connect(self._update_all_layer_dims)
 
         self.keymap_providers = [self]
 
@@ -244,40 +235,19 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
 
         self.events.active_layer(item=self._active_layer)
 
-    def _scene_shape(self):
-        """Get shape of currently viewed dimensions.
-
-        Returns
-        ----------
-        centroid : list
-            List of center coordinates of scene, length 2 or 3 if displayed
-            view is 2D or 3D.
-        size : list
-            List of size of scene, length 2 or 3 if displayed view is 2D or 3D.
-        corner : list
-            List of coordinates of top left corner of scene, length 2 or 3 if
-            displayed view is 2D or 3D.
-        """
-        # Scale the camera to the contents in the scene
-        wr = self.layers._world_range
-        size = np.subtract(wr[1], wr[0])
-        size = [size[i] for i in self.dims.displayed]
-        corner = [wr[0, i] for i in self.dims.displayed]
-        return size, corner
-
     def reset_view(self, event=None):
         """Resets the camera's view using `event.rect` a 4-tuple of the x, y
         corner position followed by width and height of the camera
         """
 
-        scene_size, corner = self._scene_shape()
+        scene_size, corner = self.layers._scene_shape
         grid_size = list(self.grid_size)
         if len(scene_size) > len(grid_size):
             grid_size = [1] * (len(scene_size) - len(grid_size)) + grid_size
         size = np.multiply(scene_size, grid_size)
         centroid = np.add(corner, np.divide(size, 2))
 
-        if self.dims.ndisplay == 2:
+        if self.layers.dims.ndisplay == 2:
             # For a PanZoomCamera emit a 4-tuple of the rect
             corner = np.subtract(corner, np.multiply(0.05, size))[::-1]
             size = np.multiply(1.1, size)[::-1]
@@ -296,42 +266,10 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
 
     def _new_labels(self):
         """Create new labels layer filling full world coordinates space."""
-        size, corner = self._scene_shape()
+        size, corner = self.layers._scene_shape
         dims = [np.ceil(d).astype('int') if d > 0 else 1 for d in size]
         empty_labels = np.zeros(dims, dtype=int)
         self.add_labels(empty_labels, translate=np.array(corner))
-
-    def _update_layers(self, event=None, layers=None):
-        """Updates the contained layers.
-
-        Parameters
-        ----------
-        layers : list of napari.layers.Layer, optional
-            List of layers to update. If none provided updates all.
-        """
-        layers = layers or self.layers
-
-        for layer in layers:
-            # adjust the order of the global dims based on the number of
-            # dimensions that a layer has - for example a global order of
-            # [2, 1, 0, 3] -> [0, 1] for a layer that only has two dimesnions
-            # or -> [1, 0, 2] for a layer with three as that corresponds to
-            # the relative order of the last two and three dimensions
-            # respectively
-            offset = self.dims.ndim - layer.dims.ndim
-            order = np.array(self.dims.order)
-            if offset <= 0:
-                order = list(range(-offset)) + list(order - offset)
-            else:
-                order = list(order[order >= offset] - offset)
-            layer.dims.order = order
-            layer.dims.ndisplay = self.dims.ndisplay
-
-            # Update the point values of the layers for the dimensions that
-            # the layer has
-            for axis in range(layer.dims.ndim):
-                step = self.dims.step[axis + offset]
-                layer.dims.set_step(axis, step)
 
     def _toggle_theme(self):
         """Switch to next theme in list of themes
@@ -373,18 +311,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             self.cursor = active_layer.cursor
             self.interactive = active_layer.interactive
             self.active_layer = active_layer
-
-    def _on_layers_change(self, event):
-        if len(self.layers) == 0:
-            self.dims.ndim = 2
-            self.dims.reset()
-        else:
-            wr = self.layers._world_range
-            incs = self.layers._increments
-            self.dims.ndim = self.layers.ndim
-            for i in range(self.dims.ndim):
-                self.dims.set_range(i, (wr[0, i], wr[1, i], incs[i]))
-        self.events.layers_change()
 
     def _update_status(self, event):
         """Set the viewer status with the `event.status` string."""
@@ -474,8 +400,17 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         size : 2-tuple of int
             Size of the grid that is being used.
         """
-        scene_size, corner = self._scene_shape()
+        scene_size, corner = self.layers._scene_shape
         translate_2d = np.multiply(scene_size[-2:], position)
         translate = [0] * layer.ndim
         translate[-2:] = translate_2d
         layer.translate_grid = translate
+
+    def _update_all_layer_dims(self, event):
+        """Updates the dims of all the layers."""
+        for layer in self.layers:
+            self.layers._update_layer_dims(layer)
+
+    def _update_layers_dims(self, event):
+        """Updates layers dims model."""
+        self.layers._update_dims()

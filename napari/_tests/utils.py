@@ -88,31 +88,31 @@ def view_layer_type(layer_type, data):
 
 
 def check_viewer_functioning(viewer, view=None, data=None, ndim=2):
-    viewer.dims.ndisplay = 2
+    viewer.layers.dims.ndisplay = 2
     assert np.all(viewer.layers[0].data == data)
     assert len(viewer.layers) == 1
     assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
 
-    assert viewer.dims.ndim == ndim
-    assert view.dims.nsliders == viewer.dims.ndim
+    assert viewer.layers.dims.ndim == ndim
+    assert view.dims.nsliders == viewer.layers.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == ndim - 2
 
     # Switch to 3D rendering mode and back to 2D rendering mode
-    viewer.dims.ndisplay = 3
-    assert viewer.dims.ndisplay == 3
+    viewer.layers.dims.ndisplay = 3
+    assert viewer.layers.dims.ndisplay == 3
 
     # Flip dims order displayed
     dims_order = list(range(ndim))
-    viewer.dims.order = dims_order
-    assert viewer.dims.order == dims_order
+    viewer.layers.dims.order = dims_order
+    assert viewer.layers.dims.order == dims_order
 
     # Flip dims order including non-displayed
     dims_order[0], dims_order[-1] = dims_order[-1], dims_order[0]
-    viewer.dims.order = dims_order
-    assert viewer.dims.order == dims_order
+    viewer.layers.dims.order = dims_order
+    assert viewer.layers.dims.order == dims_order
 
-    viewer.dims.ndisplay = 2
-    assert viewer.dims.ndisplay == 2
+    viewer.layers.dims.ndisplay = 2
+    assert viewer.layers.dims.ndisplay == 2
 
 
 def check_view_transform_consistency(layer, viewer, transf_dict):
@@ -134,7 +134,7 @@ def check_view_transform_consistency(layer, viewer, transf_dict):
 
     # Visual layer attributes should match expected from viewer dims:
     for transf_name, transf in transf_dict.items():
-        disp_dims = viewer.dims.displayed  # dimensions displayed in 2D
+        disp_dims = viewer.layers.dims.displayed  # dimensions displayed in 2D
         # values of visual layer
         vis_vals = getattr(vis_lyr, transf_name)[1::-1]
 

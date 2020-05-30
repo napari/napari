@@ -55,13 +55,12 @@ class AddLayersMixin:
         layer.events.interactive.connect(self._update_interactive)
         layer.events.cursor.connect(self._update_cursor)
         layer.events.cursor_size.connect(self._update_cursor_size)
-        layer.events.data.connect(self._on_layers_change)
-        layer.dims.events.ndisplay.connect(self._on_layers_change)
-        layer.dims.events.order.connect(self._on_layers_change)
-        layer.dims.events.range.connect(self._on_layers_change)
-        self.layers.append(layer)
-        self._update_layers(layers=[layer])
+        layer.events.data.connect(self._update_layers_dims)
+        layer.dims.events.ndisplay.connect(self._update_layers_dims)
+        layer.dims.events.order.connect(self._update_layers_dims)
+        layer.dims.events.range.connect(self._update_layers_dims)
 
+        self.layers.append(layer)
         if len(self.layers) == 1:
             self.reset_view()
         return layer
@@ -371,7 +370,7 @@ class AddLayersMixin:
         http://api.vispy.org/en/latest/visuals.html#vispy.visuals.MarkersVisual
         """
         if data is None:
-            ndim = max(self.dims.ndim, 2)
+            ndim = max(self.layers.ndim, 2)
             data = np.empty([0, ndim])
 
         layer = layers.Points(
@@ -565,7 +564,7 @@ class AddLayersMixin:
             The newly-created shapes layer.
         """
         if data is None:
-            ndim = max(self.dims.ndim, 2)
+            ndim = max(self.layers.ndim, 2)
             data = np.empty((0, 0, ndim))
 
         layer = layers.Shapes(

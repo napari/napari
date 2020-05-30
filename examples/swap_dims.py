@@ -33,4 +33,4 @@ with napari.gui_qt():
         points, size=[0, 6, 10, 10], face_color='blue', n_dimensional=True
     )
 
-    viewer.dims.order = (0, 2, 1, 3)
+    viewer.layers.dims.order = (0, 2, 1, 3)

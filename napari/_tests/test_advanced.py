@@ -15,8 +15,8 @@ def test_4D_5D_images(viewer_factory):
     viewer.add_image(data)
     assert np.all(viewer.layers[0].data == data)
     assert len(viewer.layers) == 1
-    assert viewer.dims.ndim == 4
-    assert view.dims.nsliders == viewer.dims.ndim
+    assert viewer.layers.dims.ndim == 4
+    assert view.dims.nsliders == viewer.layers.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 2
 
     # now add 5D image data - check an extra slider has been created
@@ -24,8 +24,8 @@ def test_4D_5D_images(viewer_factory):
     viewer.add_image(data)
     assert np.all(viewer.layers[1].data == data)
     assert len(viewer.layers) == 2
-    assert viewer.dims.ndim == 5
-    assert view.dims.nsliders == viewer.dims.ndim
+    assert viewer.layers.dims.ndim == 5
+    assert view.dims.nsliders == viewer.layers.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 3
 
 
@@ -39,15 +39,15 @@ def test_5D_image_3D_rendering(viewer_factory):
     viewer.add_image(data)
     assert np.all(viewer.layers[0].data == data)
     assert len(viewer.layers) == 1
-    assert viewer.dims.ndim == 5
-    assert viewer.dims.ndisplay == 2
+    assert viewer.layers.dims.ndim == 5
+    assert viewer.layers.dims.ndisplay == 2
     assert viewer.layers[0]._data_view.ndim == 2
-    assert view.dims.nsliders == viewer.dims.ndim
+    assert view.dims.nsliders == viewer.layers.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 3
 
     # switch to 3D rendering
-    viewer.dims.ndisplay = 3
-    assert viewer.dims.ndisplay == 3
+    viewer.layers.dims.ndisplay = 3
+    assert viewer.layers.dims.ndisplay == 3
     assert viewer.layers[0]._data_view.ndim == 3
     assert np.sum(view.dims._displayed_sliders) == 2
 
@@ -64,32 +64,32 @@ def test_change_image_dims(viewer_factory):
     viewer.add_image(data)
     assert np.all(viewer.layers[0].data == data)
     assert len(viewer.layers) == 1
-    assert viewer.dims.ndim == 3
-    assert view.dims.nsliders == viewer.dims.ndim
+    assert viewer.layers.dims.ndim == 3
+    assert view.dims.nsliders == viewer.layers.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 1
 
     # switch number of displayed dimensions
     viewer.layers[0].data = data[0]
     assert np.all(viewer.layers[0].data == data[0])
     assert len(viewer.layers) == 1
-    assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == viewer.dims.ndim
+    assert viewer.layers.dims.ndim == 2
+    assert view.dims.nsliders == viewer.layers.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
 
     # switch number of displayed dimensions
     viewer.layers[0].data = data[:6]
     assert np.all(viewer.layers[0].data == data[:6])
     assert len(viewer.layers) == 1
-    assert viewer.dims.ndim == 3
-    assert view.dims.nsliders == viewer.dims.ndim
+    assert viewer.layers.dims.ndim == 3
+    assert view.dims.nsliders == viewer.layers.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 1
 
     # change the shape of the data
     viewer.layers[0].data = data[:3]
     assert np.all(viewer.layers[0].data == data[:3])
     assert len(viewer.layers) == 1
-    assert viewer.dims.ndim == 3
-    assert view.dims.nsliders == viewer.dims.ndim
+    assert viewer.layers.dims.ndim == 3
+    assert view.dims.nsliders == viewer.layers.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 1
 
 
@@ -107,8 +107,8 @@ def test_range_one_image(viewer_factory):
     viewer.add_image(data)
     assert np.all(viewer.layers[0].data == data)
     assert len(viewer.layers) == 1
-    assert viewer.dims.ndim == 5
-    assert view.dims.nsliders == viewer.dims.ndim
+    assert viewer.layers.dims.ndim == 5
+    assert view.dims.nsliders == viewer.layers.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
 
     # now add 5D points data - check extra sliders have been created
@@ -117,8 +117,8 @@ def test_range_one_image(viewer_factory):
     viewer.add_points(points)
     assert np.all(viewer.layers[1].data == points)
     assert len(viewer.layers) == 2
-    assert viewer.dims.ndim == 5
-    assert view.dims.nsliders == viewer.dims.ndim
+    assert viewer.layers.dims.ndim == 5
+    assert view.dims.nsliders == viewer.layers.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 3
 
 
@@ -136,8 +136,8 @@ def test_range_one_images_and_points(viewer_factory):
     viewer.add_image(data)
     assert np.all(viewer.layers[0].data == data)
     assert len(viewer.layers) == 1
-    assert viewer.dims.ndim == 5
-    assert view.dims.nsliders == viewer.dims.ndim
+    assert viewer.layers.dims.ndim == 5
+    assert view.dims.nsliders == viewer.layers.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
 
     # now add 5D points data - check extra sliders have been created
@@ -146,8 +146,8 @@ def test_range_one_images_and_points(viewer_factory):
     viewer.add_points(points)
     assert np.all(viewer.layers[1].data == points)
     assert len(viewer.layers) == 2
-    assert viewer.dims.ndim == 5
-    assert view.dims.nsliders == viewer.dims.ndim
+    assert viewer.layers.dims.ndim == 5
+    assert view.dims.nsliders == viewer.layers.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 3
 
 
@@ -186,27 +186,27 @@ def test_changing_display_surface(viewer_factory):
     assert len(viewer.layers) == 1
     assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
 
-    assert viewer.dims.ndim == 3
-    assert view.dims.nsliders == viewer.dims.ndim
+    assert viewer.layers.dims.ndim == 3
+    assert view.dims.nsliders == viewer.layers.dims.ndim
 
     # Check display is currently 2D with one slider
     assert viewer.layers[0]._data_view.shape[1] == 2
     assert np.sum(view.dims._displayed_sliders) == 1
 
     # Make display 3D
-    viewer.dims.ndisplay = 3
+    viewer.layers.dims.ndisplay = 3
     assert viewer.layers[0]._data_view.shape[1] == 3
     assert np.sum(view.dims._displayed_sliders) == 0
 
     # Make display 2D again
-    viewer.dims.ndisplay = 2
+    viewer.layers.dims.ndisplay = 2
     assert viewer.layers[0]._data_view.shape[1] == 2
     assert np.sum(view.dims._displayed_sliders) == 1
 
     # Iterate over all values in first dimension
-    len_slider = viewer.dims.range[0]
+    len_slider = viewer.layers.dims.range[0]
     for s in len_slider:
-        viewer.dims.set_point(0, s)
+        viewer.layers.dims.set_point(0, s)
 
 
 def test_labels_undo_redo(viewer_factory):

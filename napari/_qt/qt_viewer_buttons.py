@@ -97,13 +97,13 @@ class QtViewerButtons(QFrame):
             self.viewer,
             'roll',
             'Roll dimensions order for display',
-            lambda: self.viewer.dims._roll(),
+            lambda: self.viewer.layers.dims._roll(),
         )
         self.transposeDimsButton = QtViewerPushButton(
             self.viewer,
             'transpose',
             'Transpose displayed dimensions',
-            lambda: self.viewer.dims._transpose(),
+            lambda: self.viewer.layers.dims._transpose(),
         )
         self.resetViewButton = QtViewerPushButton(
             self.viewer, 'home', 'Reset view', lambda: self.viewer.reset_view()
@@ -278,9 +278,11 @@ class QtNDisplayButton(QCheckBox):
 
         self.viewer = viewer
         self.setToolTip('Toggle number of displayed dimensions')
-        self.viewer.dims.events.ndisplay.connect(self._on_ndisplay_change)
+        self.viewer.layers.dims.events.ndisplay.connect(
+            self._on_ndisplay_change
+        )
 
-        self.setChecked(self.viewer.dims.ndisplay == 3)
+        self.setChecked(self.viewer.layers.dims.ndisplay == 3)
         self.stateChanged.connect(self.change_ndisplay)
 
     def change_ndisplay(self, state):
@@ -292,9 +294,9 @@ class QtNDisplayButton(QCheckBox):
             If state is True the display view is 3D, if False display is 2D.
         """
         if state == Qt.Checked:
-            self.viewer.dims.ndisplay = 3
+            self.viewer.layers.dims.ndisplay = 3
         else:
-            self.viewer.dims.ndisplay = 2
+            self.viewer.layers.dims.ndisplay = 2
 
     def _on_ndisplay_change(self, event=None):
         """Update number of displayed dimensions, while blocking events.
@@ -304,5 +306,5 @@ class QtNDisplayButton(QCheckBox):
         event : qtpy.QtCore.QEvent, optional
             Event from the Qt context.
         """
-        with self.viewer.dims.events.ndisplay.blocker():
-            self.setChecked(self.viewer.dims.ndisplay == 3)
+        with self.viewer.layers.dims.events.ndisplay.blocker():
+            self.setChecked(self.viewer.layers.dims.ndisplay == 3)

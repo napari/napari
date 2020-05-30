@@ -24,8 +24,8 @@ def test_qt_viewer(viewer_factory):
     assert len(viewer.layers) == 0
     assert view.layers.vbox_layout.count() == 2
 
-    assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == viewer.dims.ndim
+    assert viewer.layers.dims.ndim == 2
+    assert view.dims.nsliders == viewer.layers.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
 
 
@@ -68,8 +68,8 @@ def test_new_labels(viewer_factory):
     assert len(viewer.layers) == 1
     assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
 
-    assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == viewer.dims.ndim
+    assert viewer.layers.dims.ndim == 2
+    assert view.dims.nsliders == viewer.layers.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
 
     # Add labels with image already present
@@ -83,8 +83,8 @@ def test_new_labels(viewer_factory):
     assert len(viewer.layers) == 2
     assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
 
-    assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == viewer.dims.ndim
+    assert viewer.layers.dims.ndim == 2
+    assert view.dims.nsliders == viewer.layers.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
 
 
@@ -98,8 +98,8 @@ def test_new_points(viewer_factory):
     assert len(viewer.layers) == 1
     assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
 
-    assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == viewer.dims.ndim
+    assert viewer.layers.dims.ndim == 2
+    assert view.dims.nsliders == viewer.layers.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
 
     # Add points with image already present
@@ -113,8 +113,8 @@ def test_new_points(viewer_factory):
     assert len(viewer.layers) == 2
     assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
 
-    assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == viewer.dims.ndim
+    assert viewer.layers.dims.ndim == 2
+    assert view.dims.nsliders == viewer.layers.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
 
 
@@ -128,8 +128,8 @@ def test_new_shapes_empty_viewer(viewer_factory):
     assert len(viewer.layers) == 1
     assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
 
-    assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == viewer.dims.ndim
+    assert viewer.layers.dims.ndim == 2
+    assert view.dims.nsliders == viewer.layers.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
 
     # Add points with image already present
@@ -143,8 +143,8 @@ def test_new_shapes_empty_viewer(viewer_factory):
     assert len(viewer.layers) == 2
     assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
 
-    assert viewer.dims.ndim == 2
-    assert view.dims.nsliders == viewer.dims.ndim
+    assert viewer.layers.dims.ndim == 2
+    assert view.dims.nsliders == viewer.layers.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
 
 
@@ -234,10 +234,10 @@ def test_qt_viewer_data_integrity(viewer_factory, dtype):
     datamean = viewer.layers[0].data.mean()
     assert datamean == imean
     # toggle dimensions
-    viewer.dims.ndisplay = 3
+    viewer.layers.dims.ndisplay = 3
     datamean = viewer.layers[0].data.mean()
     assert datamean == imean
     # back to 2D
-    viewer.dims.ndisplay = 2
+    viewer.layers.dims.ndisplay = 2
     datamean = viewer.layers[0].data.mean()
     assert datamean == imean

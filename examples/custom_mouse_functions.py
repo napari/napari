@@ -19,7 +19,7 @@ with napari.gui_qt():
     @viewer.mouse_drag_callbacks.append
     def get_ndisplay(viewer, event):
         if 'Alt' in event.modifiers:
-            print('viewer display ', viewer.dims.ndisplay)
+            print('viewer display ', viewer.layers.dims.ndisplay)
 
     @labels_layer.mouse_drag_callbacks.append
     def get_connected_component_shape(layer, event):
@@ -39,7 +39,9 @@ with napari.gui_qt():
                 data[binary_new] = val
             size = np.sum(binary_new)
             layer.data = data
-            msg = f'clicked at {cords} on blob {val} which is now {size} pixels'
+            msg = (
+                f'clicked at {cords} on blob {val} which is now {size} pixels'
+            )
         else:
             msg = f'clicked at {cords} on background which is ignored'
         layer.status = msg

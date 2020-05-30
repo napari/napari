@@ -197,7 +197,6 @@ class Dims:
 
             # Notify listeners that the number of dimensions have changed
             self.events.ndim()
-
             # Notify listeners of which dimensions have been affected
             for axis_changed in range(ndim - cur_ndim):
                 self.events.axis(axis=axis_changed)

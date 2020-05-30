@@ -22,7 +22,7 @@ def test_add_single_png_defaults(single_png):
     viewer = ViewerModel()
     viewer.open(image_files, plugin='builtins')
     assert len(viewer.layers) == 1
-    assert viewer.dims.ndim == 2
+    assert viewer.layers.dims.ndim == 2
     assert isinstance(viewer.layers[0].data, np.ndarray)
     assert viewer.layers[0].data.shape == (512, 512)
 
@@ -32,7 +32,7 @@ def test_add_multi_png_defaults(two_pngs):
     viewer = ViewerModel()
     viewer.open(image_files, stack=True, plugin='builtins')
     assert len(viewer.layers) == 1
-    assert viewer.dims.ndim == 3
+    assert viewer.layers.dims.ndim == 3
     assert isinstance(viewer.layers[0].data, da.Array)
     assert viewer.layers[0].data.shape == (2, 512, 512)
 
@@ -45,7 +45,7 @@ def test_add_tiff(single_tiff):
     viewer = ViewerModel()
     viewer.open(image_files, plugin='builtins')
     assert len(viewer.layers) == 1
-    assert viewer.dims.ndim == 3
+    assert viewer.layers.dims.ndim == 3
     assert isinstance(viewer.layers[0].data, np.ndarray)
     assert viewer.layers[0].data.shape == (2, 15, 10)
     assert viewer.layers[0].data.dtype == np.uint8
@@ -56,7 +56,7 @@ def test_add_many_tiffs(single_tiff):
     viewer = ViewerModel()
     viewer.open(image_files, stack=True, plugin='builtins')
     assert len(viewer.layers) == 1
-    assert viewer.dims.ndim == 4
+    assert viewer.layers.dims.ndim == 4
     assert isinstance(viewer.layers[0].data, da.Array)
     assert viewer.layers[0].data.shape == (3, 2, 15, 10)
     assert viewer.layers[0].data.dtype == np.uint8
@@ -67,7 +67,7 @@ def test_add_single_filename(single_tiff):
     viewer = ViewerModel()
     viewer.open(image_files, plugin='builtins')
     assert len(viewer.layers) == 1
-    assert viewer.dims.ndim == 3
+    assert viewer.layers.dims.ndim == 3
     assert isinstance(viewer.layers[0].data, np.ndarray)
     assert viewer.layers[0].data.shape == (2, 15, 10)
     assert viewer.layers[0].data.dtype == np.uint8
@@ -115,7 +115,7 @@ def test_add_multichannel_rgb(rgb_png):
     viewer = ViewerModel()
     viewer.open(image_files, channel_axis=2, plugin='builtins')
     assert len(viewer.layers) == 3
-    assert viewer.dims.ndim == 2
+    assert viewer.layers.dims.ndim == 2
     assert isinstance(viewer.layers[0].data, np.ndarray)
     assert viewer.layers[0].data.shape == (512, 512)
 
@@ -125,7 +125,7 @@ def test_add_multichannel_tiff(single_tiff):
     viewer = ViewerModel()
     viewer.open(image_files, channel_axis=0, plugin='builtins')
     assert len(viewer.layers) == 2
-    assert viewer.dims.ndim == 2
+    assert viewer.layers.dims.ndim == 2
     assert isinstance(viewer.layers[0].data, np.ndarray)
     assert viewer.layers[0].data.shape == (15, 10)
     assert viewer.layers[0].data.dtype == np.uint8

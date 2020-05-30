@@ -312,10 +312,10 @@ def test_slice_labels(viewer_factory):
 
     # make sure setting the dims.point updates the slice label
     label_edit = view.dims.slider_widgets[0].curslice_label
-    viewer.dims.set_point(0, 15)
+    viewer.layers.dims.set_point(0, 15)
     assert int(label_edit.text()) == 15
 
     # make sure setting the current slice label updates the model
     label_edit.setText(str(8))
     label_edit.editingFinished.emit()
-    assert viewer.dims.point[0] == 8
+    assert viewer.layers.dims.point[0] == 8

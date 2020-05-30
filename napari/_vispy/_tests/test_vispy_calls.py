@@ -13,7 +13,7 @@ def test_data_change_ndisplay_image(viewer_factory):
 
     @patch.object(visual, '_on_data_change', wraps=visual._on_data_change)
     def test_ndisplay_change(mocked_method, ndisplay=3):
-        viewer.dims.ndisplay = ndisplay
+        viewer.layers.dims.ndisplay = ndisplay
         mocked_method.assert_called_once()
 
     # Switch to 3D rendering mode and back to 2D rendering mode
@@ -33,7 +33,7 @@ def test_data_change_ndisplay_labels(viewer_factory):
 
     @patch.object(visual, '_on_data_change', wraps=visual._on_data_change)
     def test_ndisplay_change(mocked_method, ndisplay=3):
-        viewer.dims.ndisplay = ndisplay
+        viewer.layers.dims.ndisplay = ndisplay
         mocked_method.assert_called_once()
 
     # Switch to 3D rendering mode and back to 2D rendering mode
@@ -52,7 +52,7 @@ def test_data_change_ndisplay_points(viewer_factory):
 
     @patch.object(visual, '_on_data_change', wraps=visual._on_data_change)
     def test_ndisplay_change(mocked_method, ndisplay=3):
-        viewer.dims.ndisplay = ndisplay
+        viewer.layers.dims.ndisplay = ndisplay
         mocked_method.assert_called_once()
 
     # Switch to 3D rendering mode and back to 2D rendering mode
@@ -71,7 +71,7 @@ def test_data_change_ndisplay_vectors(viewer_factory):
 
     @patch.object(visual, '_on_data_change', wraps=visual._on_data_change)
     def test_ndisplay_change(mocked_method, ndisplay=3):
-        viewer.dims.ndisplay = ndisplay
+        viewer.layers.dims.ndisplay = ndisplay
         mocked_method.assert_called_once()
 
     # Switch to 3D rendering mode and back to 2D rendering mode
@@ -91,7 +91,7 @@ def test_data_change_ndisplay_shapes(viewer_factory):
 
     @patch.object(visual, '_on_data_change', wraps=visual._on_data_change)
     def test_ndisplay_change(mocked_method, ndisplay=3):
-        viewer.dims.ndisplay = ndisplay
+        viewer.layers.dims.ndisplay = ndisplay
         mocked_method.assert_called_once()
 
     # Switch to 3D rendering mode and back to 2D rendering mode
@@ -114,7 +114,7 @@ def test_data_change_ndisplay_surface(viewer_factory):
 
     @patch.object(visual, '_on_data_change', wraps=visual._on_data_change)
     def test_ndisplay_change(mocked_method, ndisplay=3):
-        viewer.dims.ndisplay = ndisplay
+        viewer.layers.dims.ndisplay = ndisplay
         mocked_method.assert_called_once()
 
     # Switch to 3D rendering mode and back to 2D rendering mode

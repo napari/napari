@@ -11,7 +11,7 @@ def test_viewer_model():
     viewer = ViewerModel()
     assert viewer.title == 'napari'
     assert len(viewer.layers) == 0
-    assert viewer.dims.ndim == 2
+    assert viewer.layers.dims.ndim == 2
 
     # Create viewer model with custom title
     viewer = ViewerModel(title='testing')
@@ -26,7 +26,7 @@ def test_add_image():
     viewer.add_image(data)
     assert len(viewer.layers) == 1
     assert np.all(viewer.layers[0].data == data)
-    assert viewer.dims.ndim == 2
+    assert viewer.layers.dims.ndim == 2
 
 
 def test_add_image_colormap_variants():
@@ -73,7 +73,7 @@ def test_add_volume():
     viewer.add_image(data)
     assert len(viewer.layers) == 1
     assert np.all(viewer.layers[0].data == data)
-    assert viewer.dims.ndim == 3
+    assert viewer.layers.dims.ndim == 3
 
 
 def test_add_multiscale():
@@ -85,7 +85,7 @@ def test_add_multiscale():
     viewer.add_image(data, multiscale=True)
     assert len(viewer.layers) == 1
     assert np.all(viewer.layers[0].data == data)
-    assert viewer.dims.ndim == 2
+    assert viewer.layers.dims.ndim == 2
 
 
 def test_add_labels():
@@ -96,7 +96,7 @@ def test_add_labels():
     viewer.add_labels(data)
     assert len(viewer.layers) == 1
     assert np.all(viewer.layers[0].data == data)
-    assert viewer.dims.ndim == 2
+    assert viewer.layers.dims.ndim == 2
 
 
 def test_add_points():
@@ -107,7 +107,7 @@ def test_add_points():
     viewer.add_points(data)
     assert len(viewer.layers) == 1
     assert np.all(viewer.layers[0].data == data)
-    assert viewer.dims.ndim == 2
+    assert viewer.layers.dims.ndim == 2
 
 
 def test_add_empty_points_to_empty_viewer():
@@ -146,7 +146,7 @@ def test_add_vectors():
     viewer.add_vectors(data)
     assert len(viewer.layers) == 1
     assert np.all(viewer.layers[0].data == data)
-    assert viewer.dims.ndim == 2
+    assert viewer.layers.dims.ndim == 2
 
 
 def test_add_shapes():
@@ -157,7 +157,7 @@ def test_add_shapes():
     viewer.add_shapes(data)
     assert len(viewer.layers) == 1
     assert np.all(viewer.layers[0].data == data)
-    assert viewer.dims.ndim == 2
+    assert viewer.layers.dims.ndim == 2
 
 
 def test_add_surface():
@@ -173,7 +173,7 @@ def test_add_surface():
     assert np.all(
         [np.all(vd == d) for vd, d in zip(viewer.layers[0].data, data)]
     )
-    assert viewer.dims.ndim == 3
+    assert viewer.layers.dims.ndim == 3
 
 
 def test_mix_dims():
@@ -184,13 +184,13 @@ def test_mix_dims():
     viewer.add_image(data)
     assert len(viewer.layers) == 1
     assert np.all(viewer.layers[0].data == data)
-    assert viewer.dims.ndim == 2
+    assert viewer.layers.dims.ndim == 2
 
     data = np.random.random((6, 10, 15))
     viewer.add_image(data)
     assert len(viewer.layers) == 2
     assert np.all(viewer.layers[1].data == data)
-    assert viewer.dims.ndim == 3
+    assert viewer.layers.dims.ndim == 3
 
 
 def test_new_labels():
@@ -200,7 +200,7 @@ def test_new_labels():
     viewer._new_labels()
     assert len(viewer.layers) == 1
     assert np.max(viewer.layers[0].data) == 0
-    assert viewer.dims.ndim == 2
+    assert viewer.layers.dims.ndim == 2
 
     # Add labels with image already present
     viewer = ViewerModel()
@@ -210,7 +210,7 @@ def test_new_labels():
     viewer._new_labels()
     assert len(viewer.layers) == 2
     assert np.max(viewer.layers[1].data) == 0
-    assert viewer.dims.ndim == 2
+    assert viewer.layers.dims.ndim == 2
 
 
 def test_new_points():
@@ -220,7 +220,7 @@ def test_new_points():
     viewer.add_points()
     assert len(viewer.layers) == 1
     assert len(viewer.layers[0].data) == 0
-    assert viewer.dims.ndim == 2
+    assert viewer.layers.dims.ndim == 2
 
     # Add points with image already present
     viewer = ViewerModel()
@@ -230,7 +230,7 @@ def test_new_points():
     viewer.add_points()
     assert len(viewer.layers) == 2
     assert len(viewer.layers[1].data) == 0
-    assert viewer.dims.ndim == 2
+    assert viewer.layers.dims.ndim == 2
 
 
 def test_new_shapes():
@@ -240,7 +240,7 @@ def test_new_shapes():
     viewer.add_shapes()
     assert len(viewer.layers) == 1
     assert len(viewer.layers[0].data) == 0
-    assert viewer.dims.ndim == 2
+    assert viewer.layers.dims.ndim == 2
 
     # Add points with image already present
     viewer = ViewerModel()
@@ -250,7 +250,7 @@ def test_new_shapes():
     viewer.add_shapes()
     assert len(viewer.layers) == 2
     assert len(viewer.layers[1].data) == 0
-    assert viewer.dims.ndim == 2
+    assert viewer.layers.dims.ndim == 2
 
 
 def test_swappable_dims():
@@ -276,8 +276,8 @@ def test_swappable_dims():
     )
 
     # Swap dims
-    viewer.dims.order = [0, 2, 1, 3]
-    assert viewer.dims.order == [0, 2, 1, 3]
+    viewer.layers.dims.order = [0, 2, 1, 3]
+    assert viewer.layers.dims.order == [0, 2, 1, 3]
     assert np.all(
         viewer.layers[image_name]._data_view == image_data[0, :, 0, :]
     )
@@ -320,19 +320,19 @@ def test_add_remove_layer_dims_change():
     viewer = ViewerModel()
 
     # Check ndim starts at 2
-    assert viewer.dims.ndim == 2
+    assert viewer.layers.dims.ndim == 2
 
     # Check ndim increase to 3 when 3D data added
     data = np.random.random((10, 15, 20))
     layer = viewer.add_image(data)
     assert len(viewer.layers) == 1
     assert np.all(viewer.layers[0].data == data)
-    assert viewer.dims.ndim == 3
+    assert viewer.layers.dims.ndim == 3
 
     # Remove layer and check ndim returns to 2
     viewer.layers.remove(layer)
     assert len(viewer.layers) == 0
-    assert viewer.dims.ndim == 2
+    assert viewer.layers.dims.ndim == 2
 
 
 @pytest.mark.parametrize('data', good_layer_data)

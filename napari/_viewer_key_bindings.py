@@ -14,10 +14,10 @@ def toggle_fullscreen(viewer):
 @Viewer.bind_key('Control-Y')
 def toggle_ndisplay(viewer):
     """Toggle ndisplay."""
-    if viewer.dims.ndisplay == 3:
-        viewer.dims.ndisplay = 2
+    if viewer.layers.dims.ndisplay == 3:
+        viewer.layers.dims.ndisplay = 2
     else:
-        viewer.dims.ndisplay = 3
+        viewer.layers.dims.ndisplay = 3
 
 
 @Viewer.bind_key('Left')
@@ -25,10 +25,10 @@ def increment_dims_left(viewer):
     """Increment dimensions slider to the left."""
     axis = viewer.window.qt_viewer.dims.last_used
     if axis is not None:
-        cur_step = viewer.dims.step[axis]
-        axis_range = viewer.dims.nsteps[axis]
+        cur_step = viewer.layers.dims.step[axis]
+        axis_range = viewer.layers.dims.nsteps[axis]
         new_step = np.clip(cur_step - 1, 0, axis_range)
-        viewer.dims.set_step(axis, new_step)
+        viewer.layers.dims.set_step(axis, new_step)
 
 
 @Viewer.bind_key('Right')
@@ -36,22 +36,22 @@ def increment_dims_right(viewer):
     """Increment dimensions slider to the right."""
     axis = viewer.window.qt_viewer.dims.last_used
     if axis is not None:
-        cur_step = viewer.dims.step[axis]
-        axis_range = viewer.dims.nsteps[axis]
+        cur_step = viewer.layers.dims.step[axis]
+        axis_range = viewer.layers.dims.nsteps[axis]
         new_step = np.clip(cur_step + 1, 0, axis_range)
-        viewer.dims.set_step(axis, new_step)
+        viewer.layers.dims.set_step(axis, new_step)
 
 
 @Viewer.bind_key('Control-E')
 def roll_axes(viewer):
     """Change order of the visible axes, e.g. [0, 1, 2] -> [2, 0, 1]."""
-    viewer.dims._roll()
+    viewer.layers.dims._roll()
 
 
 @Viewer.bind_key('Control-T')
 def transpose_axes(viewer):
     """Transpose order of the last two visible axes, e.g. [0, 1] -> [1, 0]."""
-    viewer.dims._transpose()
+    viewer.layers.dims._transpose()
 
 
 @Viewer.bind_key('Alt-Up')
