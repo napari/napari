@@ -834,6 +834,19 @@ def test_color_cycle(attribute, color_cycle):
     # refresh colors
     layer.refresh_colors(update_color_mapping=True)
 
+    # test adding a point with a new property value
+    layer.selected_data = {}
+    current_properties = layer.current_properties
+    current_properties['point_type'] = np.array(['new'])
+    layer.current_properties = current_properties
+    layer.add([10, 10])
+    color_cycle_map = getattr(layer, f'{attribute}_color_cycle_map')
+
+    assert 'new' in color_cycle_map
+    np.testing.assert_allclose(
+        color_cycle_map['new'], np.squeeze(transform_color(color_cycle[0]))
+    )
+
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
 def test_add_color_cycle_to_empty_layer(attribute):
