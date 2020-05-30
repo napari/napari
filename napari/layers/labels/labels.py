@@ -516,29 +516,27 @@ class Labels(Image):
             Whether to refresh view slice or not. Set to False to batch paint
             calls.
         """
+        slice_coord = tuple(np.round(coord).astype(int))
+        # If requested fill location is outside data shape then return
+        if np.any(np.less(slice_coord, 0)) or np.any(
+            np.greater_equal(slice_coord, self.shape)
+        ):
+            return
+
+        # If requested new label doesn't change old label then return
+        old_label = self.data[slice_coord]
+        if old_label == new_label:
+            return
+
         if refresh is True:
             self._save_history()
 
         if self.n_dimensional or self.ndim == 2:
             # work with entire image
             labels = self.data
-            slice_coord = tuple(
-                np.round(np.clip(c, 0, s - 1)).astype(int)
-                for c, s in zip(coord, self.shape)
-            )
         else:
             # work with just the sliced image
             labels = self._data_raw
-            slice_coord = tuple(
-                np.round(np.clip(coord[d], 0, self.shape[d] - 1)).astype(int)
-                for d in self.dims.displayed
-            )
-
-        self.coordinates = slice_coord
-
-        old_label = self.get_value()
-        if old_label == new_label:
-            return
 
         matches = labels == old_label
         if self.contiguous:
