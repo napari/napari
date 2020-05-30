@@ -206,7 +206,7 @@ def test_changing_display_surface(viewer_factory):
     # Iterate over all values in first dimension
     len_slider = viewer.layers.dims.range[0]
     for s in len_slider:
-        viewer.layers.dims.set_point(0, s)
+        viewer.layers.dims.set_step(0, s)
 
 
 def test_labels_undo_redo(viewer_factory):

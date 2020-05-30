@@ -388,11 +388,19 @@ class Layer(KeymapProvider, ABC):
         if old_ndim > ndim:
             keep_axes = range(old_ndim - ndim, old_ndim)
             self._transforms = self._transforms.set_slice(keep_axes)
+            self.coordinates = self.coordinates[-ndim:]
         elif old_ndim < ndim:
             new_axes = range(ndim - old_ndim)
             self._transforms = self._transforms.expand_dims(new_axes)
+            self.coordinates = (0,) * (ndim - old_ndim) + self.coordinates
 
         self.dims.ndim = ndim
+
+        # This update can be deprecated as it isn't used
+        wr = self._world_range
+        incs = self.scale
+        for i in range(self.dims.ndim):
+            self.dims.set_range(i, (wr[0, i], wr[1, i], incs[i]))
 
         self.refresh()
         self._update_coordinates()
@@ -448,6 +456,11 @@ class Layer(KeymapProvider, ABC):
         indices = [slice(None)] * self.ndim
         for i, ax in enumerate(self.dims.not_displayed):
             indices[ax] = data_pts[i]
+
+        coords = list(self.coordinates)
+        for d in self.dims.not_displayed:
+            coords[d] = indices[d]
+        self.coordinates = tuple(coords)
 
         return tuple(indices)
 
@@ -516,6 +529,13 @@ class Layer(KeymapProvider, ABC):
     def ndim(self):
         """int: Number of dimensions in the data."""
         return self.dims.ndim
+
+    @property
+    def shape(self):
+        """tuple of int: Shape of the data."""
+        # Should add a deprecation warning here!
+        wr = self._world_range
+        return tuple(np.round(wr[1] - wr[0]).astype(int))
 
     @property
     def selected(self):
@@ -652,7 +672,7 @@ class Layer(KeymapProvider, ABC):
         """Insert the cursor position into the correct position in the
         tuple of indices and update the cursor coordinates.
         """
-        coords = list(self._slice_indices)
+        coords = list(self.coordinates)
         for d, p in zip(self.dims.displayed, self.position):
             coords[d] = p
         self.coordinates = tuple(coords)

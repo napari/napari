@@ -55,7 +55,12 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             grid=Event,
         )
 
-        self.layers = LayerList()
+        self.layers = LayerList(
+            ndisplay=ndisplay, order=order, axis_labels=axis_labels
+        )
+
+        # Should add a deprecation warning here!
+        self.dims = self.layers.dims
 
         self._status = 'Ready'
         self._help = ''

@@ -14,6 +14,7 @@ def _add(event):
     layer.name = layers._coerce_name(layer.name, layer)
     layer.events.name.connect(lambda e: layers._update_name(e))
     layers.unselect_all(ignore=layer)
+    layers._update_dims()
     layers._update_layer_dims(layer)
 
 
@@ -283,8 +284,8 @@ class LayerList(ListModel):
         Default to 2D with (0, 512) min/ max values if no data is present.
         """
         if len(self) == 0:
-            min_v = [np.nan, np.nan]
-            max_v = [np.nan, np.nan]
+            min_v = [np.nan] * self.ndim
+            max_v = [np.nan] * self.ndim
         else:
             extrema = [l._world_range for l in self]
             mins = [e[0] for e in extrema]
@@ -309,7 +310,7 @@ class LayerList(ListModel):
         Defaults to 2 if no data is present.
         """
         ndims = [l.ndim for l in self]
-        return max(ndims, default=2)
+        return max(ndims, default=self.dims.ndim)
 
     @property
     def _increments(self):
@@ -361,7 +362,7 @@ class LayerList(ListModel):
         # or -> [1, 0, 2] for a layer with three as that corresponds to
         # the relative order of the last two and three dimensions
         # respectively
-        offset = self.dims.ndim - layer.dims.ndim
+        offset = self.ndim - layer.ndim
         order = np.array(self.dims.order)
         if offset <= 0:
             order = list(range(-offset)) + list(order - offset)
@@ -372,7 +373,7 @@ class LayerList(ListModel):
 
         # Update the point values of the layers for the dimensions that
         # the layer has
-        for axis in range(layer.dims.ndim):
+        for axis in range(layer.ndim):
             step = self.dims.step[axis + offset]
             layer.dims.set_step(axis, step)
 

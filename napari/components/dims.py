@@ -92,7 +92,7 @@ class Dims:
                     f"Length of axis labels must be identical to ndim."
                     f" ndim is {ndim} while axis labels is {axis_labels}."
                 )
-            self._axis_labels = tuple(axis_labels)
+            self._axis_labels = list(axis_labels)
 
     def __str__(self):
         return "~~".join(
@@ -191,8 +191,8 @@ class Dims:
             if self._axis_labels == list(map(str, range(cur_ndim))):
                 self._axis_labels = list(map(str, range(ndim)))
             else:
-                self._axis_labels = list(
-                    (map(str, range(ndim - cur_ndim)),) + self._axis_labels
+                self._axis_labels = (
+                    list(map(str, range(ndim - cur_ndim))) + self._axis_labels
                 )
 
             # Notify listeners that the number of dimensions have changed

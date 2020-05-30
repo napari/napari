@@ -89,7 +89,7 @@ class QtDimSliderWidget(QWidget):
     def _set_slice_from_label(self):
         """Update the dims point based on the curslice_label."""
         val = int(self.curslice_label.text())
-        max_allowed = self.dims.max_indices[self.axis]
+        max_allowed = self.dims.nsteps[self.axis]
         if val > max_allowed:
             val = max_allowed
             self.curslice_label.setText(str(val))
@@ -179,7 +179,7 @@ class QtDimSliderWidget(QWidget):
         displayed_sliders = self.qt_dims._displayed_sliders
 
         nsteps = self.dims.nsteps[self.axis]
-        if nsteps <= 1:
+        if nsteps == 0:
             displayed_sliders[self.axis] = False
             self.qt_dims.last_used = None
             self.hide()

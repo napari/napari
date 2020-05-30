@@ -132,17 +132,17 @@ def test_slider_values(qtbot):
     # Check that values of the dimension slider matches the values of the
     # dims point at initialization
     first_slider = view.slider_widgets[0].slider
-    assert first_slider.value() == view.dims.point[0]
+    assert first_slider.value() == view.dims.step[0]
 
     # Check that values of the dimension slider matches the values of the
     # dims point after the point has been moved within the dims
-    view.dims.set_point(0, 2)
-    assert first_slider.value() == view.dims.point[0]
+    view.dims.set_step(0, 2)
+    assert first_slider.value() == view.dims.step[0]
 
     # Check that values of the dimension slider matches the values of the
     # dims point after the point has been moved within the slider
     first_slider.setValue(1)
-    assert first_slider.value() == view.dims.point[0]
+    assert first_slider.value() == view.dims.step[0]
 
 
 def test_slider_range(qtbot):
@@ -156,20 +156,16 @@ def test_slider_range(qtbot):
     # Check the range of slider matches the values of the range of the dims
     # at initialization
     first_slider = view.slider_widgets[0].slider
-    assert first_slider.minimum() == view.dims.range[0][0]
-    assert (
-        first_slider.maximum() == view.dims.range[0][1] - view.dims.range[0][2]
-    )
-    assert first_slider.singleStep() == view.dims.range[0][2]
+    assert first_slider.minimum() == 0
+    assert first_slider.maximum() == view.dims.nsteps[0]
+    assert first_slider.singleStep() == 1
 
     # Check the range of slider stays matched to the values of the range of
     # the dims
     view.dims.set_range(0, (1, 5, 2))
-    assert first_slider.minimum() == view.dims.range[0][0]
-    assert (
-        first_slider.maximum() == view.dims.range[0][1] - view.dims.range[0][2]
-    )
-    assert first_slider.singleStep() == view.dims.range[0][2]
+    assert first_slider.minimum() == 0
+    assert first_slider.maximum() == view.dims.nsteps[0]
+    assert first_slider.singleStep() == 1
 
 
 def test_singleton_dims(qtbot):
@@ -219,32 +215,32 @@ def test_order_when_changing_ndim(qtbot):
 
     # Check that values of the dimension slider matches the values of the
     # dims point after the point has been moved within the dims
-    view.dims.set_point(0, 2)
-    view.dims.set_point(1, 1)
+    view.dims.set_step(0, 2)
+    view.dims.set_step(1, 1)
     for i in range(view.dims.ndim - 2):
         slider = view.slider_widgets[i].slider
-        assert slider.value() == view.dims.point[i]
+        assert slider.value() == view.dims.step[i]
 
     # Check the matching dimensions and sliders are preserved when
     # dimensions are added
     view.dims.ndim = 5
     for i in range(view.dims.ndim - 2):
         slider = view.slider_widgets[i].slider
-        assert slider.value() == view.dims.point[i]
+        assert slider.value() == view.dims.step[i]
 
     # Check the matching dimensions and sliders are preserved when dims
     # dimensions are removed
     view.dims.ndim = 4
     for i in range(view.dims.ndim - 2):
         slider = view.slider_widgets[i].slider
-        assert slider.value() == view.dims.point[i]
+        assert slider.value() == view.dims.step[i]
 
     # Check the matching dimensions and sliders are preserved when dims
     # dimensions are removed
     view.dims.ndim = 3
     for i in range(view.dims.ndim - 2):
         slider = view.slider_widgets[i].slider
-        assert slider.value() == view.dims.point[i]
+        assert slider.value() == view.dims.step[i]
 
 
 def test_update_dims_labels(qtbot):
@@ -310,12 +306,12 @@ def test_slice_labels(viewer_factory):
     # make sure the totslice_label is showing the correct number
     assert int(view.dims.slider_widgets[0].totslice_label.text()) == 19
 
-    # make sure setting the dims.point updates the slice label
+    # make sure setting the dims.step updates the slice label
     label_edit = view.dims.slider_widgets[0].curslice_label
-    viewer.layers.dims.set_point(0, 15)
+    viewer.layers.dims.set_step(0, 15)
     assert int(label_edit.text()) == 15
 
     # make sure setting the current slice label updates the model
     label_edit.setText(str(8))
     label_edit.editingFinished.emit()
-    assert viewer.layers.dims.point[0] == 8
+    assert viewer.layers.dims.step[0] == 8

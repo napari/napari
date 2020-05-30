@@ -216,9 +216,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
         # Intitialize image views and thumbnails with zeros
         if self.rgb:
-            self._data_view = np.zeros(
-                (1,) * self.dims.ndisplay + (self.data.shape[-1],)
-            )
+            self._data_view = np.zeros((1,) * self.dims.ndisplay + (3,))
         else:
             self._data_view = np.zeros((1,) * self.dims.ndisplay)
         self._data_raw = self._data_view

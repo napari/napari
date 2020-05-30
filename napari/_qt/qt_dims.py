@@ -155,7 +155,7 @@ class QtDims(QWidget):
         widgets = reversed(list(enumerate(self.slider_widgets)))
         nsteps = self.dims.nsteps
         for (axis, widget) in widgets:
-            if axis in self.dims.displayed or nsteps[axis] <= 1:
+            if axis in self.dims.displayed or nsteps[axis] == 0:
                 # Displayed dimensions correspond to non displayed sliders
                 self._displayed_sliders[axis] = False
                 self.last_used = None
@@ -395,7 +395,7 @@ class QtDims(QWidget):
         if self._play_ready:
             # disable additional point advance requests until this one draws
             self._play_ready = False
-            self.dims.set_point(axis, frame)
+            self.dims.set_step(axis, frame)
 
     def enable_play(self, *args):
         # this is mostly here to connect to the main SceneCanvas.events.draw

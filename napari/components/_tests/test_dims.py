@@ -1,7 +1,6 @@
 import pytest
 
 from napari.components import Dims
-from napari.components.dims_constants import DimsMode
 
 
 def test_ndim():
@@ -61,29 +60,18 @@ def test_keyword_only_dims():
         Dims(3, [1, 2, 3])
 
 
-def test_point():
+def test_step():
     """
-    Test point setting.
-    """
-    dims = Dims(4)
-    assert dims.point == [0] * 4
-
-    dims.set_point(3, 4)
-    assert dims.point == [0, 0, 0, 4]
-
-    dims.set_point(2, 1)
-    assert dims.point == [0, 0, 1, 4]
-
-
-def test_mode():
-    """
-    Test mode setting.
+    Test step setting.
     """
     dims = Dims(4)
-    assert dims.mode == [DimsMode.POINT] * 4
+    assert dims.step == [0] * 4
 
-    dims.set_mode(3, DimsMode.INTERVAL)
-    assert dims.mode == [DimsMode.POINT] * 3 + [DimsMode.INTERVAL]
+    dims.set_step(3, 4)
+    assert dims.step == [0, 0, 0, 4]
+
+    dims.set_step(2, 1)
+    assert dims.step == [0, 0, 1, 4]
 
 
 def test_range():
@@ -97,39 +85,6 @@ def test_range():
     assert dims.range == [(0, 2, 1)] * 3 + [(0, 4, 2)]
 
 
-def test_interval():
-    """
-    Test interval setting.
-    """
-    dims = Dims(4)
-    assert dims.interval == [(0, 1)] * 4
-
-    dims.set_interval(3, (0, 3))
-    assert dims.interval == [(0, 1)] * 3 + [(0, 3)]
-
-
-def test_indices():
-    """
-    Test indices values.
-    """
-    dims = Dims(4)
-    # On instantiation the last two dims are set to sliced mode
-    assert dims.indices == (0,) * 2 + (slice(None, None, None),) * 2
-
-    # Set the values of the first two dims in point mode outside of range
-    dims.set_point(0, 2)
-    dims.set_point(1, 3)
-    assert dims.indices == (1, 1) + (slice(None, None, None),) * 2
-
-    # Increase range and then set points again
-    # Note changing the step size changes the indices for the same point value
-    dims.set_range(0, (0, 4, 2))
-    dims.set_range(1, (0, 4, 2))
-    dims.set_point(0, 2)
-    dims.set_point(1, 3)
-    assert dims.indices == (1, 2) + (slice(None, None, None),) * 2
-
-
 def test_axis_labels():
     dims = Dims(4)
     assert dims.axis_labels == ['0', '1', '2', '3']
@@ -140,18 +95,18 @@ def test_order_when_changing_ndim():
     Test order of the dims when changing the number of dimensions.
     """
     dims = Dims(4)
-    dims.set_point(0, 2)
+    dims.set_step(0, 2)
 
     dims.ndim = 5
     # Test that new dims get appended to the beginning of lists
-    assert dims.point == [0, 2, 0, 0, 0]
+    assert dims.step == [0, 2, 0, 0, 0]
     assert dims.order == [0, 1, 2, 3, 4]
     assert dims.axis_labels == ['0', '1', '2', '3', '4']
 
-    dims.set_point(2, 3)
+    dims.set_step(2, 3)
     dims.ndim = 3
     # Test that dims get removed from the beginning of lists
-    assert dims.point == [3, 0, 0]
+    assert dims.step == [3, 0, 0]
     assert dims.order == [0, 1, 2]
     assert dims.axis_labels == ['2', '3', '4']
 

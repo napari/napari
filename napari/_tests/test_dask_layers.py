@@ -99,20 +99,20 @@ def test_dask_optimized_slicing(delayed_dask_stack, monkeypatch):
     # changing the Z plane should never incur calls
     # since the stack has already been loaded (& it is chunked as a 3D array)
     for i in range(3):
-        v.dims.set_point(1, i)
+        v.dims.set_step(1, i)
         assert delayed_dask_stack['calls'] == 1  # still just the first call
 
     # changing the timepoint will, of course, incur some compute calls
-    v.dims.set_point(0, 1)
+    v.dims.set_step(0, 1)
     assert delayed_dask_stack['calls'] == 2
-    v.dims.set_point(0, 2)
+    v.dims.set_step(0, 2)
     assert delayed_dask_stack['calls'] == 3
 
     # but going back to previous timepoints should not, since they are cached
-    v.dims.set_point(0, 1)
-    v.dims.set_point(0, 0)
+    v.dims.set_step(0, 1)
+    v.dims.set_step(0, 0)
     assert delayed_dask_stack['calls'] == 3
-    v.dims.set_point(0, 3)
+    v.dims.set_step(0, 3)
     assert delayed_dask_stack['calls'] == 4
 
 
@@ -146,19 +146,19 @@ def test_dask_unoptimized_slicing(delayed_dask_stack, monkeypatch):
     # (which "re-reads" the full z stack) EVERY time we change the Z plane
     # even though we've already read this full timepoint.
     for i in range(3):
-        v.dims.set_point(1, i)
+        v.dims.set_step(1, i)
         assert delayed_dask_stack['calls'] == 1 + i  # 😞
 
     # of course we still incur calls when moving to a new timepoint...
-    v.dims.set_point(0, 1)
-    v.dims.set_point(0, 2)
+    v.dims.set_step(0, 1)
+    v.dims.set_step(0, 2)
     assert delayed_dask_stack['calls'] == 5
 
     # without the cache we ALSO incur calls when returning to previously loaded
     # timepoints 😭
-    v.dims.set_point(0, 1)
-    v.dims.set_point(0, 0)
-    v.dims.set_point(0, 3)
+    v.dims.set_step(0, 1)
+    v.dims.set_step(0, 0)
+    v.dims.set_step(0, 3)
     # all told, we have 2x as many calls as the optimized version above.
     assert delayed_dask_stack['calls'] == 8
 
@@ -186,7 +186,7 @@ def test_dask_cache_resizing(delayed_dask_stack):
     assert utils.dask_cache.cache.available_bytes == 0
     # and the cache will remain empty regardless of what we do
     for i in range(3):
-        v.dims.set_point(1, i)
+        v.dims.set_step(1, i)
     assert len(utils.dask_cache.cache.heap.heap) == 0
 
     # but we can always spin it up again
@@ -197,7 +197,7 @@ def test_dask_cache_resizing(delayed_dask_stack):
     assert utils.dask_cache.cache.available_bytes == 1e4
     # but the cache heap is getting populated again
     for i in range(3):
-        v.dims.set_point(0, i)
+        v.dims.set_step(0, i)
     assert len(utils.dask_cache.cache.heap.heap) > 0
 
     # however, if the dask_cache attribute is deleted entirely (or set to None)
@@ -222,5 +222,5 @@ def test_prevent_dask_cache(delayed_dask_stack):
     assert utils.dask_cache.cache.available_bytes == 0
     # and the cache will not be populated
     for i in range(3):
-        v.dims.set_point(0, i)
+        v.dims.set_step(0, i)
     assert len(utils.dask_cache.cache.heap.heap) == 0
