@@ -24,10 +24,16 @@ def draw(layer, event):
     # on press
     layer._save_history()
     layer._block_saving = True
-    if layer._mode == Mode.PAINT:
-        layer.paint(layer.coordinates, layer.selected_label)
+    if layer._mode == Mode.ERASE:
+        new_label = layer._background_label
+    else:
+        new_label = layer.selected_label
+
+    if layer._mode in [Mode.PAINT, Mode.ERASE]:
+        layer.paint(layer.coordinates, new_label)
     elif layer._mode == Mode.FILL:
-        layer.fill(layer.coordinates, layer.selected_label)
+        layer.fill(layer.coordinates, new_label)
+
     last_cursor_coord = layer.coordinates
     yield
 
@@ -37,10 +43,10 @@ def draw(layer, event):
             last_cursor_coord, layer.coordinates, layer.brush_size
         )
         for c in interp_coord:
-            if layer._mode == Mode.PAINT:
-                layer.paint(c, layer.selected_label, refresh=False)
+            if layer._mode in [Mode.PAINT, Mode.ERASE]:
+                layer.paint(c, new_label, refresh=False)
             elif layer._mode == Mode.FILL:
-                layer.fill(c, layer.selected_label, refresh=False)
+                layer.fill(c, new_label, refresh=False)
         layer.refresh()
         last_cursor_coord = layer.coordinates
         yield

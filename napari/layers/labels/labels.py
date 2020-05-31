@@ -106,6 +106,9 @@ class Labels(Image):
         pixels will be changed to background and this tool functions like an
         eraser.
 
+        In ERASE mode the cursor functions similarly to PAINT mode, but to
+        paint with background label, which effectively removes the label.
+
     Extended Summary
     ----------
     _data_raw : array (N, M)
@@ -185,8 +188,8 @@ class Labels(Image):
         self._brush_size = 10
 
         self._background_label = 0
-        self._selected_label = 0
-        self._selected_color = None
+        self._selected_label = 1
+        self._selected_color = self.get_color(self._selected_label)
 
         self._mode = Mode.PAN_ZOOM
         self._mode_history = self._mode
@@ -358,6 +361,9 @@ class Labels(Image):
         clicked on pixel. If the background label `0` is selected than any
         pixels will be changed to background and this tool functions like an
         eraser.
+
+        In ERASE mode the cursor functions similarly to PAINT mode, but to
+        paint with background label, which effectively removes the label.
         """
         return str(self._mode)
 
@@ -373,9 +379,7 @@ class Labels(Image):
 
         if self._mode == Mode.PICK:
             self.mouse_drag_callbacks.remove(pick)
-        elif self._mode == Mode.PAINT:
-            self.mouse_drag_callbacks.remove(draw)
-        elif self._mode == Mode.FILL:
+        elif self._mode in [Mode.PAINT, Mode.FILL, Mode.ERASE]:
             self.mouse_drag_callbacks.remove(draw)
 
         if mode == Mode.PAN_ZOOM:
@@ -391,12 +395,24 @@ class Labels(Image):
             self.cursor_size = self.brush_size / self.scale_factor
             self.cursor = 'square'
             self.interactive = False
-            self.help = 'hold <space> to pan/zoom, hold <shift> to toggle preserve_labels, drag to paint a label'
+            self.help = (
+                'hold <space> to pan/zoom, '
+                'hold <shift> to toggle preserve_labels, '
+                'hold <control> to fill, '
+                'hold <alt> to erase, '
+                'drag to paint a label'
+            )
             self.mouse_drag_callbacks.append(draw)
         elif mode == Mode.FILL:
             self.cursor = 'cross'
             self.interactive = False
             self.help = 'hold <space> to pan/zoom, click to fill a label'
+            self.mouse_drag_callbacks.append(draw)
+        elif mode == Mode.ERASE:
+            self.cursor_size = self.brush_size / self.scale_factor
+            self.cursor = 'square'
+            self.interactive = False
+            self.help = 'hold <space> to pan/zoom, drag to erase a label'
             self.mouse_drag_callbacks.append(draw)
         else:
             raise ValueError("Mode not recognized")
@@ -516,16 +532,18 @@ class Labels(Image):
             Whether to refresh view slice or not. Set to False to batch paint
             calls.
         """
-        slice_coord = tuple(np.round(coord).astype(int))
+        int_coord = tuple(np.round(coord).astype(int))
         # If requested fill location is outside data shape then return
-        if np.any(np.less(slice_coord, 0)) or np.any(
-            np.greater_equal(slice_coord, self.shape)
+        if np.any(np.less(int_coord, 0)) or np.any(
+            np.greater_equal(int_coord, self.shape)
         ):
             return
 
         # If requested new label doesn't change old label then return
-        old_label = self.data[slice_coord]
-        if old_label == new_label:
+        old_label = self.data[int_coord]
+        if old_label == new_label or (
+            self.preserve_labels and old_label != self._background_label
+        ):
             return
 
         if refresh is True:
@@ -534,13 +552,15 @@ class Labels(Image):
         if self.n_dimensional or self.ndim == 2:
             # work with entire image
             labels = self.data
+            slice_coord = tuple(int_coord)
         else:
             # work with just the sliced image
             labels = self._data_raw
+            slice_coord = tuple(int_coord[d] for d in self.dims.displayed)
 
         matches = labels == old_label
         if self.contiguous:
-            # if not contiguous replace only selected connected component
+            # if contiguous replace only selected connected component
             labeled_matches, num_features = ndi.label(matches)
             if num_features != 1:
                 match_label = labeled_matches[slice_coord]
@@ -620,7 +640,10 @@ class Labels(Image):
         if not self.preserve_labels:
             self.data[slice_coord] = new_label
         else:
-            keep_coords = self.data[slice_coord] == self._background_label
+            if new_label == self._background_label:
+                keep_coords = self.data[slice_coord] == self.selected_label
+            else:
+                keep_coords = self.data[slice_coord] == self._background_label
             self.data[slice_coord][keep_coords] = new_label
 
         if refresh is True:
