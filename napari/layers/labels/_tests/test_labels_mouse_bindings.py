@@ -142,3 +142,77 @@ def test_fill(Event):
     assert np.unique(layer.data[-5:, -5:]) == 5
     assert np.unique(layer.data[:5, -5:]) == 1
     assert np.unique(layer.data[-5:, :5]) == 1
+
+
+def test_fill_nD_plane(Event):
+    """Test filling label nD plane."""
+    data = np.ones((20, 20, 20))
+    data[:5, :5, :5] = 2
+    data[-5:, -5:, -5:] = 3
+    layer = Labels(data)
+    assert np.unique(layer.data[:5, :5, :5]) == 2
+    assert np.unique(layer.data[-5:, -5:, -5:]) == 3
+    assert np.unique(layer.data[:5, -5:, -5:]) == 1
+    assert np.unique(layer.data[-5:, :5, -5:]) == 1
+
+    layer.mode = 'fill'
+    layer.position = (0, 0)
+    layer.selected_label = 4
+
+    # Simulate click
+    event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
+    mouse_press_callbacks(layer, event)
+    assert np.unique(layer.data[0, :5, :5]) == 4
+    assert np.unique(layer.data[1:5, :5, :5]) == 2
+    assert np.unique(layer.data[-5:, -5:, -5:]) == 3
+    assert np.unique(layer.data[:5, -5:, -5:]) == 1
+    assert np.unique(layer.data[-5:, :5, -5:]) == 1
+
+    layer.position = (19, 19)
+    layer.selected_label = 5
+
+    # Simulate click
+    event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
+    mouse_press_callbacks(layer, event)
+    assert np.unique(layer.data[0, :5, :5]) == 4
+    assert np.unique(layer.data[1:5, :5, :5]) == 2
+    assert np.unique(layer.data[-5:, -5:, -5:]) == 3
+    assert np.unique(layer.data[1:5, -5:, -5:]) == 1
+    assert np.unique(layer.data[-5:, :5, -5:]) == 1
+    assert np.unique(layer.data[0, -5:, -5:]) == 5
+    assert np.unique(layer.data[0, :5, -5:]) == 5
+
+
+def test_fill_nD_all(Event):
+    """Test filling label nD."""
+    data = np.ones((20, 20, 20))
+    data[:5, :5, :5] = 2
+    data[-5:, -5:, -5:] = 3
+    layer = Labels(data)
+    assert np.unique(layer.data[:5, :5, :5]) == 2
+    assert np.unique(layer.data[-5:, -5:, -5:]) == 3
+    assert np.unique(layer.data[:5, -5:, -5:]) == 1
+    assert np.unique(layer.data[-5:, :5, -5:]) == 1
+    layer.n_dimensional = True
+    layer.mode = 'fill'
+    layer.position = (0, 0)
+    layer.selected_label = 4
+
+    # Simulate click
+    event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
+    mouse_press_callbacks(layer, event)
+    assert np.unique(layer.data[:5, :5, :5]) == 4
+    assert np.unique(layer.data[-5:, -5:, -5:]) == 3
+    assert np.unique(layer.data[:5, -5:, -5:]) == 1
+    assert np.unique(layer.data[-5:, :5, -5:]) == 1
+
+    layer.position = (19, 19)
+    layer.selected_label = 5
+
+    # Simulate click
+    event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
+    mouse_press_callbacks(layer, event)
+    assert np.unique(layer.data[:5, :5, :5]) == 4
+    assert np.unique(layer.data[-5:, -5:, -5:]) == 3
+    assert np.unique(layer.data[:5, -5:, -5:]) == 5
+    assert np.unique(layer.data[-5:, :5, -5:]) == 5
