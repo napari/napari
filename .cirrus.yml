@@ -226,7 +226,8 @@ codecov_task:
     pip install -e .
     pip install pytest-cov codecov
 
-  check_requirements_script:
+  check_requirements_script: |
+    check-manifest
     pip-missing-reqs napari --ignore-file="**/_tests/*" --ignore-module=PySide2 --ignore-module=zarr  --ignore-file=napari/conftest.py
 
   coverage_script: |

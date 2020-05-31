@@ -21,3 +21,12 @@ exclude = '''
   | napari/resources/qt.py
 )
 '''
+
+[tool.check-manifest]
+ignore = [
+  ".cirrus.yml",
+  ".pre-commit-config.yaml",
+  "asv.conf.json",
+  "codecov.yml",
+  "Makefile",
+]
