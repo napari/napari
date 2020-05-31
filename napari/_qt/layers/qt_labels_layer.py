@@ -1,4 +1,3 @@
-from qtpy.QtCore import QTimer
 from qtpy.QtGui import QPainter, QColor
 from qtpy.QtWidgets import (
     QButtonGroup,
@@ -68,7 +67,6 @@ class QtLabelsControls(QtLayerControls):
         self.layer.events.contiguous.connect(self._on_contig_change)
         self.layer.events.n_dimensional.connect(self._on_n_dim_change)
         self.layer.events.editable.connect(self._on_editable_change)
-        self.layer.events.paint.connect(self._on_paint)
         self.layer.events.preserve_labels.connect(
             self._on_preserve_labels_change
         )
@@ -344,18 +342,6 @@ class QtLabelsControls(QtLayerControls):
         """
         with self.layer.events.preserve_labels.blocker():
             self.preserveLabelsCheckBox.setChecked(self.layer.preserve_labels)
-
-    def _on_paint(self, event=None):
-        """Receive layer model paint event and possibly highlight Qlabel."""
-        if self.layer.preserve_labels and (
-            event.new_label == self.layer._background_label
-        ):
-
-            def undo():
-                self.preserveLabelsQLabel.setStyleSheet("")
-
-            self.preserveLabelsQLabel.setStyleSheet(r"QLabel {color: #EF5944}")
-            QTimer().singleShot(300, undo)
 
     def _on_editable_change(self, event=None):
         """Receive layer model editable change event & enable/disable buttons.

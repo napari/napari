@@ -542,7 +542,9 @@ class Labels(Image):
 
         # If requested new label doesn't change old label then return
         old_label = self.data[slice_coord]
-        if old_label == new_label:
+        if old_label == new_label or (
+            self.preserve_labels and old_label != self._background_label
+        ):
             return
 
         if refresh is True:
@@ -637,7 +639,10 @@ class Labels(Image):
         if not self.preserve_labels:
             self.data[slice_coord] = new_label
         else:
-            keep_coords = self.data[slice_coord] == self._background_label
+            if new_label == self._background_label:
+                keep_coords = self.data[slice_coord] == self.selected_label
+            else:
+                keep_coords = self.data[slice_coord] == self._background_label
             self.data[slice_coord][keep_coords] = new_label
 
         self.events.paint(coord=coord, new_label=new_label)
