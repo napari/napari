@@ -1,3 +1,4 @@
+import sys
 from qtpy.QtGui import QPainter, QColor
 from qtpy.QtWidgets import (
     QButtonGroup,
@@ -102,8 +103,6 @@ class QtLabelsControls(QtLayerControls):
         self.ndimCheckBox = ndim_cb
         self._on_n_dim_change()
 
-        self.preserveLabelsQLabel = QLabel('preserve labels:')
-
         preserve_labels_cb = QCheckBox()
         preserve_labels_cb.setToolTip(
             'preserve existing labels while painting'
@@ -130,8 +129,9 @@ class QtLabelsControls(QtLayerControls):
         self.paint_button = QtModeRadioButton(
             layer, 'paint', Mode.PAINT, tooltip='Paint mode'
         )
+        btn = 'Cmd' if sys.platform == 'darwin' else 'Ctrl'
         self.fill_button = QtModeRadioButton(
-            layer, 'fill', Mode.FILL, tooltip='Fill mode (Ctrl)'
+            layer, 'fill', Mode.FILL, tooltip=f'Fill mode ({btn})'
         )
         self.erase_button = QtModeRadioButton(
             layer, 'erase', Mode.ERASE, tooltip='Erase mode (Alt)'
@@ -162,21 +162,21 @@ class QtLabelsControls(QtLayerControls):
 
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
-        self.grid_layout.addLayout(button_row, 0, 0, 1, 8)
-        self.grid_layout.addWidget(QLabel('label:'), 1, 0, 1, 5)
-        self.grid_layout.addLayout(color_layout, 1, 3, 1, 5)
-        self.grid_layout.addWidget(QLabel('opacity:'), 2, 0, 1, 5)
-        self.grid_layout.addWidget(self.opacitySlider, 2, 3, 1, 5)
-        self.grid_layout.addWidget(QLabel('brush size:'), 3, 0, 1, 5)
-        self.grid_layout.addWidget(self.brushSizeSlider, 3, 3, 1, 5)
-        self.grid_layout.addWidget(QLabel('blending:'), 4, 0, 1, 5)
-        self.grid_layout.addWidget(self.blendComboBox, 4, 3, 1, 5)
-        self.grid_layout.addWidget(QLabel('contiguous:'), 5, 0, 1, 5)
-        self.grid_layout.addWidget(self.contigCheckBox, 5, 3, 1, 5)
-        self.grid_layout.addWidget(QLabel('n-dim:'), 6, 0, 1, 5)
-        self.grid_layout.addWidget(self.ndimCheckBox, 6, 3, 1, 5)
-        self.grid_layout.addWidget(self.preserveLabelsQLabel, 7, 0, 1, 5)
-        self.grid_layout.addWidget(self.preserveLabelsCheckBox, 7, 3, 1, 5)
+        self.grid_layout.addLayout(button_row, 0, 0, 1, 2)
+        self.grid_layout.addWidget(QLabel('label:'), 1, 0)
+        self.grid_layout.addLayout(color_layout, 1, 1)
+        self.grid_layout.addWidget(QLabel('opacity:'), 2, 0)
+        self.grid_layout.addWidget(self.opacitySlider, 2, 1)
+        self.grid_layout.addWidget(QLabel('brush size:'), 3, 0)
+        self.grid_layout.addWidget(self.brushSizeSlider, 3, 1)
+        self.grid_layout.addWidget(QLabel('blending:'), 4, 0)
+        self.grid_layout.addWidget(self.blendComboBox, 4, 1)
+        self.grid_layout.addWidget(QLabel('contiguous:'), 5, 0)
+        self.grid_layout.addWidget(self.contigCheckBox, 5, 1)
+        self.grid_layout.addWidget(QLabel('n-dim:'), 6, 0)
+        self.grid_layout.addWidget(self.ndimCheckBox, 6, 1)
+        self.grid_layout.addWidget(QLabel('preserve labels:'), 7, 0)
+        self.grid_layout.addWidget(self.preserveLabelsCheckBox, 7, 1)
         self.grid_layout.setRowStretch(8, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
@@ -204,7 +204,8 @@ class QtLabelsControls(QtLayerControls):
         Raises
         ------
         ValueError
-            Raise error if event.mode is not PAN_ZOOM, PICK, PAINT, ERASE or FILL
+            Raise error if event.mode is not PAN_ZOOM, PICK, PAINT, ERASE or
+            FILL
         """
         mode = event.mode
         if mode == Mode.PAN_ZOOM:
