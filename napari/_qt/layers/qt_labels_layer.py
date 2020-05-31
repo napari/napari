@@ -29,7 +29,8 @@ class QtLabelsControls(QtLayerControls):
     Attributes
     ----------
     button_group : qtpy.QtWidgets.QButtonGroup
-        Button group of labels layer modes: PAN_ZOOM, PICKER, PAINT, ERASE or FILL.
+        Button group of labels layer modes: PAN_ZOOM, PICKER, PAINT, ERASE, or
+        FILL.
     colormapUpdate : qtpy.QtWidgets.QPushButton
         Button to update colormap of label layer.
     contigCheckBox : qtpy.QtWidgets.QCheckBox
@@ -56,7 +57,8 @@ class QtLabelsControls(QtLayerControls):
     Raises
     ------
     ValueError
-        Raise error if label mode is not PAN_ZOOM, PICKER, PAINT, or FILL.
+        Raise error if label mode is not PAN_ZOOM, PICKER, PAINT, ERASE, or
+        FILL.
     """
 
     def __init__(self, layer):
@@ -204,7 +206,7 @@ class QtLabelsControls(QtLayerControls):
         Raises
         ------
         ValueError
-            Raise error if event.mode is not PAN_ZOOM, PICK, PAINT, ERASE or
+            Raise error if event.mode is not PAN_ZOOM, PICK, PAINT, ERASE, or
             FILL
         """
         mode = event.mode
