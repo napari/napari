@@ -148,12 +148,14 @@ def test_fill_nD_plane(Event):
     """Test filling label nD plane."""
     data = np.ones((20, 20, 20))
     data[:5, :5, :5] = 2
+    data[0, 8:10, 8:10] = 2
     data[-5:, -5:, -5:] = 3
     layer = Labels(data)
     assert np.unique(layer.data[:5, :5, :5]) == 2
     assert np.unique(layer.data[-5:, -5:, -5:]) == 3
     assert np.unique(layer.data[:5, -5:, -5:]) == 1
     assert np.unique(layer.data[-5:, :5, -5:]) == 1
+    assert np.unique(layer.data[0, 8:10, 8:10]) == 2
 
     layer.mode = 'fill'
     layer.position = (0, 0)
@@ -167,6 +169,7 @@ def test_fill_nD_plane(Event):
     assert np.unique(layer.data[-5:, -5:, -5:]) == 3
     assert np.unique(layer.data[:5, -5:, -5:]) == 1
     assert np.unique(layer.data[-5:, :5, -5:]) == 1
+    assert np.unique(layer.data[0, 8:10, 8:10]) == 2
 
     layer.position = (19, 19)
     layer.selected_label = 5
@@ -181,18 +184,22 @@ def test_fill_nD_plane(Event):
     assert np.unique(layer.data[-5:, :5, -5:]) == 1
     assert np.unique(layer.data[0, -5:, -5:]) == 5
     assert np.unique(layer.data[0, :5, -5:]) == 5
+    assert np.unique(layer.data[0, 8:10, 8:10]) == 2
 
 
 def test_fill_nD_all(Event):
     """Test filling label nD."""
     data = np.ones((20, 20, 20))
     data[:5, :5, :5] = 2
+    data[0, 8:10, 8:10] = 2
     data[-5:, -5:, -5:] = 3
     layer = Labels(data)
     assert np.unique(layer.data[:5, :5, :5]) == 2
     assert np.unique(layer.data[-5:, -5:, -5:]) == 3
     assert np.unique(layer.data[:5, -5:, -5:]) == 1
     assert np.unique(layer.data[-5:, :5, -5:]) == 1
+    assert np.unique(layer.data[0, 8:10, 8:10]) == 2
+
     layer.n_dimensional = True
     layer.mode = 'fill'
     layer.position = (0, 0)
@@ -205,6 +212,7 @@ def test_fill_nD_all(Event):
     assert np.unique(layer.data[-5:, -5:, -5:]) == 3
     assert np.unique(layer.data[:5, -5:, -5:]) == 1
     assert np.unique(layer.data[-5:, :5, -5:]) == 1
+    assert np.unique(layer.data[0, 8:10, 8:10]) == 2
 
     layer.position = (19, 19)
     layer.selected_label = 5
@@ -216,3 +224,4 @@ def test_fill_nD_all(Event):
     assert np.unique(layer.data[-5:, -5:, -5:]) == 3
     assert np.unique(layer.data[:5, -5:, -5:]) == 5
     assert np.unique(layer.data[-5:, :5, -5:]) == 5
+    assert np.unique(layer.data[0, 8:10, 8:10]) == 2

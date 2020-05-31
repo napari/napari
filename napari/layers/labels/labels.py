@@ -560,7 +560,7 @@ class Labels(Image):
 
         matches = labels == old_label
         if self.contiguous:
-            # if not contiguous replace only selected connected component
+            # if contiguous replace only selected connected component
             labeled_matches, num_features = ndi.label(matches)
             if num_features != 1:
                 match_label = labeled_matches[slice_coord]
