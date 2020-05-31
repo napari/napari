@@ -16,6 +16,7 @@ https://github.com/napari/napari
 
 ## New Features
 - Adding properties attribute to Labels layers (#1281)
+- Add eraser button and functionality to Labels layer (#1288)
 
 ## Improvements
 - Shapes colors refactor (#1248)
