@@ -196,6 +196,10 @@ QtModeRadioButton[mode="picker"]::indicator {
   image: url(":/themes/{{ folder }}/picker.svg");
 }
 
+QtModeRadioButton[mode="erase"]::indicator {
+    image: url(":/themes/{{ folder }}/erase.svg");
+}
+
 QtModeRadioButton[mode="pan_zoom"]::indicator {
     image: url(":/themes/{{ folder }}/zoom.svg");
 }
@@ -206,6 +210,10 @@ QtModeRadioButton[mode="select_points"]::indicator {
 
 QtModeRadioButton[mode="add_points"]::indicator {
     image: url(":/themes/{{ folder }}/add.svg");
+}
+
+QtModePushButton[mode="shuffle"] {
+   image: url(":/themes/{{ folder }}/shuffle.svg");
 }
 
 QtModePushButton[mode="move_back"] {
@@ -273,9 +281,4 @@ QtPlayButton[playing=True] {
     height: 12px;
     width: 12px;
     padding: 2px;
-}
-
-#shuffleButton {
-  font-size: 11pt;
-  margin-bottom: 4px;
 }

@@ -9,7 +9,8 @@ end-user annotates one of their function arguments with a type hint using one
 of those custom classes, magicgui will know what to do with it.
 
 """
-from typing import Any, Tuple, Type
+from typing import Any, Tuple, Type, Optional
+from qtpy.QtWidgets import QWidget
 
 from ..layers import Layer
 from ..viewer import Viewer
@@ -41,12 +42,34 @@ def register_types_with_magicgui():
     _magictype(Viewer, choices=get_viewers)
 
 
+def find_viewer_ancestor(widget: QWidget) -> Optional[Viewer]:
+    """Return the Viewer object if it is an ancestory of ``widget``, else None.
+
+    Parameters
+    ----------
+    widget : QWidget
+        A widget
+
+    Returns
+    -------
+    viewer : napari.Viewer or None
+        Viewer instance if one exists, else None.
+    """
+    parent = widget.parent()
+    while parent:
+        if hasattr(parent, 'qt_viewer'):
+            return parent.qt_viewer.viewer
+        parent = parent.parent()
+    return None
+
+
 def get_viewers(gui, *args) -> Tuple[Viewer, ...]:
     """Return the viewer that the magicwidget is in, or a list of all Viewers.
     """
-    try:
-        return (gui.parent().qt_viewer.viewer,)
-    except AttributeError:
+    viewer = find_viewer_ancestor(gui)
+    if viewer:
+        return (viewer,)
+    else:
         # until we maintain a list of instantiated viewers, this might be the
         # only option
         return tuple(v for v in globals().values() if isinstance(v, Viewer))
@@ -79,14 +102,11 @@ def get_layers(gui, layer_type: Type[Layer]) -> Tuple[Layer, ...]:
     ...     return layer.data.mean()
 
     """
-    try:
-        # look for the parent Viewer based on where the magicgui is docked.
-        # if the magicgui widget does not have a parent, it is unattached
-        # to any viewers, and therefore we cannot return a list of layers
-        viewer = gui.parent().qt_viewer.viewer
+
+    viewer = find_viewer_ancestor(gui)
+    if viewer:
         return tuple(l for l in viewer.layers if isinstance(l, layer_type))
-    except AttributeError:
-        return ()
+    return ()
 
 
 def show_layer_result(gui, result: Any, return_type: Type[Layer]) -> None:
@@ -105,9 +125,8 @@ def show_layer_result(gui, result: Any, return_type: Type[Layer]) -> None:
     if result is None:
         return
 
-    try:
-        viewer = gui.parent().qt_viewer.viewer
-    except AttributeError:
+    viewer = find_viewer_ancestor(gui)
+    if not viewer:
         return
 
     # if they have annotated the return type as a base layer (layers.Layer),

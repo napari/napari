@@ -22,7 +22,7 @@ from ..utils.event import Event
 from ._constants import LoopMode
 from .qt_modal import QtPopup
 from .qt_scrollbar import ModifiedScrollBar
-from .utils import new_worker_qthread
+from .threading import _new_worker_qthread
 
 
 class QtDimSliderWidget(QWidget):
@@ -383,11 +383,11 @@ class QtDimSliderWidget(QWidget):
         if fps == 0:
             return
 
-        worker, thread = new_worker_qthread(
+        worker, thread = _new_worker_qthread(
             AnimationWorker,
             self,
-            start=True,
-            connections={'frame_requested': self.qt_dims._set_frame},
+            _start_thread=True,
+            _connect={'frame_requested': self.qt_dims._set_frame},
         )
         worker.finished.connect(self.qt_dims.stop)
         thread.finished.connect(self.play_stopped.emit)
