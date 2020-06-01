@@ -119,10 +119,7 @@ class Layergroup(Layer):
         state.append(self._get_base_state())
         if self._children is not None:
             for layer in self._children:
-                if isinstance(layer, Layergroup):
-                    state.append(layer._get_state())
-                else:
-                    state.append(layer._get_state())
+                state.append(layer._get_state())
         return state
 
     def _get_value(self):
