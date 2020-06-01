@@ -55,7 +55,7 @@ def layergroup_tree():
 
 
 def test_construct_layergroup(layergroup_tree):
-    assert len(layergroup_tree) == 4
+    assert len(layergroup_tree) == 8  # number of non-group layers contained
     expected_layergroup_string = (
         "tree\n"
         "  +--branch1\n"
