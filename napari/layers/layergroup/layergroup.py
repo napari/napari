@@ -61,7 +61,7 @@ class Layergroup(Layer):
     def __iter__(self):
         """Iteration yields every non-group layer with a depth first search."""
         for child in self._children:
-            yield from child.__iter__()
+            yield from child
 
     def traverse(self):
         "Recursively traverse all nodes and leaves of the LayerGroup tree."
