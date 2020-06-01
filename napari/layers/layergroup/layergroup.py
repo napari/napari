@@ -85,6 +85,14 @@ class Layergroup(Layer):
         # FIXME - update ndim property on layergroup with self._get_ndim()
         return self._children.append(item)
 
+    def remove(self, item):
+        item._parent = None
+        return self._children.remove(item)
+
+    def pop(self, index):
+        self._children[index]._parent = None
+        return self._children.pop(index)
+
     def __len__(self):
         """Number of all non-group layers contained in the layergroup."""
         return sum([1 for _ in self])
