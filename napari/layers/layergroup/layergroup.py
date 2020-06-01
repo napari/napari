@@ -160,10 +160,6 @@ class Layergroup(Layer):
     def data(self):
         return None
 
-    @data.setter
-    def data(self, value):
-        raise NotImplementedError("You may not assign data to a Layergroup.")
-
     @property
     def blending(self):
         return None
