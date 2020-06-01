@@ -198,7 +198,7 @@ codecov_task:
     # this PR introduces additional fixes for pip 20.1.
     pip install git+https://github.com/r1chardj0n3s/pip-check-reqs.git@refs/pull/23/head
     python -m pip install --retries 3 pytest-cov codecov
-    python -m pip install --retries 3 -e ".[tests,dev]"
+    python -m pip install --retries 3 -e ".[dev]"
 
   check_requirements_script: |
     check-manifest
