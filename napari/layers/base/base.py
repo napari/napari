@@ -254,7 +254,7 @@ class Layer(KeymapProvider, ABC):
         return f'{cls.__name__}'
 
     @property
-    def name(self):
+    def name(self) -> str:
         """str: Unique name of the layer."""
         return self._name
 
@@ -268,7 +268,7 @@ class Layer(KeymapProvider, ABC):
         self.events.name()
 
     @property
-    def opacity(self):
+    def opacity(self) -> float:
         """float: Opacity value between 0.0 and 1.0.
         """
         return self._opacity
@@ -286,7 +286,7 @@ class Layer(KeymapProvider, ABC):
         self.events.opacity()
 
     @property
-    def effective_opacity(self):
+    def effective_opacity(self) -> float:
         """float: Effective opacity value, scaled by parent layergroups opacity
 
         Multiplies layer opacity with the opacity of all its parent layergroups
@@ -320,8 +320,8 @@ class Layer(KeymapProvider, ABC):
         self.events.blending()
 
     @property
-    def visible(self):
-        """bool: Whether the visual is currently being displayed."""
+    def visible(self) -> bool:
+        """Whether the visual is currently being displayed."""
         return self._visible
 
     @visible.setter
@@ -335,8 +335,8 @@ class Layer(KeymapProvider, ABC):
             self.editable = False
 
     @property
-    def effective_visibility(self):
-        """bool: Whether the visual is displayed, taking layergroup
+    def effective_visibility(self) -> bool:
+        """Whether visual is displayed, taking layergroup parents into account.
 
         Returns True if the layer and all parent layergroups are visible,
         and returns False otherwise.
@@ -344,7 +344,7 @@ class Layer(KeymapProvider, ABC):
         return all([i.visible for i in self._up_through_parents()])
 
     @property
-    def editable(self):
+    def editable(self) -> bool:
         """bool: Whether the current layer data is editable from the viewer."""
         return self._editable
 
