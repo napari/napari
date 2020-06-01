@@ -6,8 +6,6 @@ class Layergroup(Layer):
     def __init__(
         self, children=None, *, name='LayerGroup', ndim=2, visible=True
     ) -> None:
-        if children is not None:
-            ndim = self._get_ndim()
         super().__init__(None, ndim)
         self._name = name
         if children is None:
