@@ -103,7 +103,11 @@ class Layergroup(Layer):
         return combine_extents([c._get_extent() for c in self._children])
 
     def _get_ndim(self):
-        return max([c._get_ndim() for c in self._children])
+        try:
+            self._ndim = max([c._get_ndim() for c in self._children])
+        except ValueError:
+            self._ndim = 2
+        return self._ndim
 
     def _get_state(self):
         """LayerGroup state as a list of state dictionaries.
