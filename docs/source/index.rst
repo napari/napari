@@ -36,7 +36,13 @@ Python 3.6 or later by running:
 
 .. code-block:: console
 
-   $ pip install napari
+   $ pip install napari[pyside2]
+
+or, if you'd prefer to use PyQt5 for the GUI backend:
+
+.. code-block:: console
+
+   $ pip install napari[pyqt5]
 
 
 tutorials & getting started

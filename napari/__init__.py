@@ -1,18 +1,12 @@
-from ._version import get_versions
-
-__version__ = get_versions()['version']
-del get_versions
+try:
+    from ._version import version as __version__
+except ImportError:
+    __version__ = "unknown"
 
 import os
 from distutils.version import StrictVersion
 from pathlib import Path
 from qtpy import API_NAME
-from ._version import get_versions
-
-# putting up higher due to circular imports if plugin exceptions are raised
-# on startup (we need to be able to show the napari version in the traceback.)
-__version__ = get_versions()['version']
-del get_versions
 
 
 if API_NAME == 'PySide2':

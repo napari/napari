@@ -110,7 +110,7 @@ $ git commit -m "my message"
 To run our test suite locally, install test requirements and run pytest as follows:
 
 ```sh
-pip install -r requirements/test.txt
+pip install -e .[tests]
 pytest
 ```
 

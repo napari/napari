@@ -24,7 +24,13 @@ We're working on [tutorials](https://napari.org/tutorials/), but you can also qu
 **napari** can be installed on most macOS, Linux, and Windows systems with Python 3.6, 3.7 and 3.8 by calling
 
 ```sh
-$ pip install napari
+$ pip install napari[pyside2]
+```
+
+Or, if you'd prefer to use PyQt5 for the GUI backend:
+
+```sh
+$ pip install napari[pyqt5]
 ```
 
 To clone the repository locally and install in editable mode use
@@ -33,6 +39,8 @@ To clone the repository locally and install in editable mode use
 $ git clone https://github.com/napari/napari.git
 $ cd napari
 $ pip install -e .
+# or, to also grab all of the developer tools that we use
+$ pip install -e .[dev]
 ```
 
 For more information or troubleshooting see our [installation tutorial](https://napari.org/tutorials/fundamentals/installation)
