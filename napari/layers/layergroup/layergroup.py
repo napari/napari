@@ -8,10 +8,9 @@ class Layergroup(Layer):
     ) -> None:
         super().__init__(None, ndim)
         self._name = name
-        if children is None:
-            self._children = []
-        else:
-            self._children = children
+        self._children = []
+        for child in children or []:
+            self.append(child)
 
     def _render(self):
         """Recursively return list of strings that can render ascii tree."""
