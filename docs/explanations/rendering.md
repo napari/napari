@@ -256,8 +256,11 @@ still be fast and napari should still be responsive.
 We may have to allow the user to configure the number of threads manually for
 the very best performance. Either through the GUI or through an API. People
 writing custom applications with napari will probably not mind doing a bit of
-manual configuration to get the best performance. In theory some day we could
-try to infer what's going on and adjust things dynamically ourselves.
+manual configuration to get the best performance. 
+
+Some day we could try to infer what's going on and adjust things dynamically
+ourselves. For example we could detect if the CPU was underused and add more
+threads.
 
 ## Threads or Processes
 
@@ -265,8 +268,9 @@ Hopefully we can stick with threads for parallelism. However in Python threads
 cannot run completely independently of each other due to the [Global Interpreter
 Lock
 (GIL)](https://medium.com/python-features/pythons-gil-a-hurdle-to-multithreaded-program-d04ad9c1a63).
-Luckily in many cases thread will release the GIL to do IO or compute-intensive
-operations, such that they can run independently. If there contention however we
-can paging and compute processes instead of threads. This has issue though
-especially running arbitrary user code, so it's something we'll address only if
-we have to.
+Luckily in many cases a threads will release the GIL to do IO or
+compute-intensive operations. During those spans of time they can run
+independently. The limitation only applies to actively running Python bytecode,
+only one thread can be doing that at a time.
+
+This is something we will just have to monitor and tackle if needed.
