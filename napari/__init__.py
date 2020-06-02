@@ -1,7 +1,7 @@
 try:
     from ._version import version as __version__
 except ImportError:
-    __version__ = "unknown"
+    __version__ = "not-installed"
 
 import os
 from distutils.version import StrictVersion
