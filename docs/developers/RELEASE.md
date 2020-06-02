@@ -7,7 +7,7 @@ it will include generating release notes, documentation, etc.
 This is mainly meant for the core developers who will actually be performing the release.
 They will need to have a [PyPI](https://pypi.org) account with upload permissions to the `napari` package.
 
-You will also need the additional `release` dependencies in `requirements/release.txt` to complete the release process.
+You will also need the additional `release` dependencies (`pip install -e .[release]`) to complete the release process.
 
 > [`MANIFEST.in`](../MANIFEST.in) determines which non-Python files are included.
 > Make sure to check that all necessary ones are listed before beginning the release process.
@@ -20,9 +20,13 @@ to add it as a secret.
 
 ## determining the version
 
-The version of `napari` is automatically determined by [`versioneer`](https://github.com/warner/python-versioneer)
-from the latest [`git` tag](https://git-scm.com/book/en/v2/Git-Basics-Tagging) beginning with `v`.
-Thus, you'll need to tag the [reference](https://git-scm.com/book/en/v2/Git-Internals-Git-References) with the new version number. It is likely something like `X.Y.Z`. Before making a release though we need to generate the release notes.
+The version of `napari` is automatically determined at install time by
+[`setuptools_scm`](https://github.com/pypa/setuptools_scm) from the latest
+[`git` tag](https://git-scm.com/book/en/v2/Git-Basics-Tagging) beginning with
+`v`. Thus, you'll need to tag the
+[reference](https://git-scm.com/book/en/v2/Git-Internals-Git-References) with
+the new version number. It is likely something like `X.Y.Z`. Before making a
+release though we need to generate the release notes.
 
 ## generating release notes
 

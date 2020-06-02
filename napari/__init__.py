@@ -1,18 +1,24 @@
-from ._version import get_versions
-
-__version__ = get_versions()['version']
-del get_versions
+try:
+    from ._version import version as __version__
+except ImportError:
+    __version__ = "not-installed"
 
 import os
 from distutils.version import StrictVersion
 from pathlib import Path
-from qtpy import API_NAME
-from ._version import get_versions
 
-# putting up higher due to circular imports if plugin exceptions are raised
-# on startup (we need to be able to show the napari version in the traceback.)
-__version__ = get_versions()['version']
-del get_versions
+try:
+    from qtpy import API_NAME
+except Exception as e:
+    if 'No Qt bindings could be found' in str(e):
+        raise type(e)(
+            "No Qt bindings could be found.\n\nnapari requires either PyQt5 or"
+            " PySide2 to be installed in the environment.\nTo install the "
+            'default backend (currently PyQt5), run "pip install napari[all]"'
+            '\nYou may also use "pip install napari[pyside2]" for Pyside2, '
+            'or "pip install napari[pyqt5]" for PyQt5'
+        ) from e
+    raise
 
 
 if API_NAME == 'PySide2':

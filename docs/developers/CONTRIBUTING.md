@@ -13,29 +13,24 @@ If you are not familiar with `git`, we recommend reading up on [this guide](http
 
 Clone the forked repository to your local machine and change directories:
 ```sh
-$ git clone https://github.com/your-username/napari.git
-$ cd napari
+git clone https://github.com/your-username/napari.git
+cd napari
 ```
 
 Set the `upstream` remote to the base `napari` repository:
 ```sh
-$ git remote add upstream https://github.com/napari/napari.git
+git remote add upstream https://github.com/napari/napari.git
 ```
 
-Install the required dependencies:
+Install the package in editable mode, along with all of the developer tools
 ```sh
-$ pip install -r requirements.txt
-```
-
-Make the development version available globally:
-```sh
-$ pip install -e .
+pip install -r requirements.txt
 ```
 
 We use
 [`pre-commit`](https://pre-commit.com) to run [`black`](https://github.com/psf/black) formatting and [`flake8`](https://github.com/PyCQA/flake8) linting automatically prior to each commit.  Please install it in your environment as follows:
 ```sh
-$ pre-commit install
+pre-commit install
 ```
 Upon committing, your code will be formatted according to our [`black` configuration](../pyproject.toml),
 which includes the settings `skip-string-normalization = true` and `max-line-length = 79`.
@@ -91,19 +86,19 @@ python -m napari._qt.theme_sample dark
 
 Create a new feature branch:
 ```sh
-$ git checkout master -b your-branch-name
+git checkout master -b your-branch-name
 ```
 
 `git` will automatically detect changes to a repository.
 You can view them with:
 ```sh
-$ git status
+git status
 ```
 
 Add and commit your changed files:
 ```sh
-$ git add my-file-or-directory
-$ git commit -m "my message"
+git add my-file-or-directory
+git commit -m "my message"
 ```
 ## Running Tests
 
@@ -185,31 +180,31 @@ To set it, use `git config --global user.email your-address@example.com`.
 
 Switch to the `master` branch:
 ```sh
-$ git checkout master
+git checkout master
 ```
 
 Fetch changes and update `master`:
 ```sh
-$ git pull upstream master --tags
+git pull upstream master --tags
 ```
 
 This is shorthand for:
 ```sh
-$ git fetch upstream master --tags
-$ git merge upstream/master
+git fetch upstream master --tags
+git merge upstream/master
 ```
 
 Update your other branches:
 ```sh
-$ git checkout your-branch-name
-$ git merge master
+git checkout your-branch-name
+git merge master
 ```
 
 ## Sharing your changes
 
 Update your remote branch:
 ```sh
-$ git push -u origin your-branch-name
+git push -u origin your-branch-name
 ```
 
 You can then make a [pull-request](https://guides.github.com/activities/forking/#making-a-pull-request) to `napari`'s `master` branch.
@@ -218,7 +213,7 @@ You can then make a [pull-request](https://guides.github.com/activities/forking/
 
 From the project root:
 ```sh
-$ make docs
+make docs
 ```
 
 The docs will be built at `docs/build/html`.
