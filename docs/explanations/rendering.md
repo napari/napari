@@ -160,7 +160,7 @@ example 5 milliseconds. Each frame can spend that much time loading data into
 VRAM, it will spend the rest of the frame drawing as normal. In this case it's
 important that no single chunk takes more than 5 milliseconds to transfer.
 
-![paging-chunks](images/paging-chunks.png | width=600)
+![paging-chunks](images/paging-chunks.png)
 
 Viewed as a timeline the rendering thread render regularly spaced frames while
 in parallel IO and compute threads load data into RAM.
@@ -175,7 +175,7 @@ coming off disk some are computed. The "working set" is the set of chunks we
 need to draw the full current scene. In this case we need the visible layers for
 the current slice.
 
-![example-1320](images/example-1320.png | width=600)
+![example-1320](images/example-1320.png)
 
 # Example: #845
 
