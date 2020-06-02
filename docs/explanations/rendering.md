@@ -46,9 +46,9 @@ degrades rapidly as the refresh rate gets slower:
 
 Aside from the average framerate if napari renders even a single frame slowly or
 has a pattern of slow and fast frames is can be annoying. People have coined the
-term "[janky](http://jankfree.org/)" to describe applications that have
-framerate irregularity. So we want napari's average framerate to be high but
-also prefer a consistent framerate to one that's all over the map.
+term [janky](http://jankfree.org/) to describe applications that have framerate
+irregularity. We want napari's average framerate to be high but we also want
+prefer a consistent framerate to one that's all over the map.
 
 # Array-like Interface
 
@@ -61,30 +61,30 @@ we'd like napari to work with basically any source of data.
 
 With **Dask** or custom code it's possible an array access results in disk or
 network IO. It's even possible the data does not exist at all and it will be
-computed on-the-fly when it is accessed. In this case the user's code is doing
-the computation and we have no control or visibility into what it's doing, it
-could take a really long time.
+computed on-the-fly. In this case the user's code is doing the computation and
+we have no control or visibility into what it's doing or how long it will take.
 
 In #845 the array access leads to loading data from disk or over the network. In
-#1320 the array access leads to a machine learning (Torch) calculation. In #1300
-the problem is different. There the data is already entirely in memory, but it's
-not chunked. So today we transfer a single large array, 100's of MB, to the card
-and this is slow. We can't have huge monolithic arrays of data in the system.
+#1320 the array access leads to a machine learning calculation with Torch. In
+#1300 the problem is different. There the data is already entirely in memory,
+but it's not chunked, so currently we transfer 100's of MB to the card in one
+shot which block the UI. We can't have huge monolithic arrays of data in the
+napari. Everything must be broken down into reasonably sized chunks.
 
 # Requirements
 
-To meant our goal of never blocked we need to satisfy two requirements:
+To met our goal of never blocking the UI we need to satisfy two requirements:
 
-1. Always break data into "small" chunks.
+1. Always break data into small chunks. Exact size TBD.
 2. Never call `asarray` on user data from the GUI thread since we don't know
    what it will do or how long it will take.
 
 # Render Algorithm
 
 The renderer will intersect the current view with the dataset to determine the
-working set. The working set is the set of chunks that we want to draw for that
-specific view. The renderer will step through every chunk in the working set and
-do one of three things:
+working set. The working set is the set of chunks that we need to draw to fully
+render that view. The renderer will step through every chunk in the working set
+and do one of three things:
 
 | Case                         | Action                                      |
 | ---------------------------- | ------------------------------------------- |
@@ -93,11 +93,10 @@ do one of three things:
 | Chunk is not in RAM          | Ask the `ChunkManager` to load the chunk    |
 
 If a chunk cannot be drawn a placeholder will be drawn instead. What we draw as
-placeholder is TBD and it may vary. In some cases we might be able to draw a
+a placeholder is TBD and it may vary. In some cases we might be able to draw a
 lower resolution version of the data, which can be refined later as more data is
 available. In the worst case we might have to draw a grid or a loading
-animation. Since we only draw what's in VRAM and we never block, we should be
-able to maintain a very high framerate.
+animation.
 
 # Chunks
 
@@ -105,9 +104,11 @@ able to maintain a very high framerate.
 portion of the scene*. Without chunks we have only two choices: render nothing
 or render the entire scene. With chunks we can partially and progressively
 render the scene using whatever chunks are currently available. This very
-valuable because often the user can navigate or make other decisions with
-partially loaded data. Progressive rendering leads to be better user experience
-even if the user is just waiting.
+valuable because often the user can often navigate or make other decisions with
+partially loaded data, so progressive allows the user to operate more quickly.
+Also progressive rendering just feels more pleasant for the users. Progressive
+loading is a form of making the internal state of the application visible, which
+is often appreciated by the user.
 
 ![chunked-format](images/chunked-format.png)
 
