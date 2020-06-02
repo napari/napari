@@ -67,12 +67,12 @@ For more information or troubleshooting see our [installation tutorial](https://
 > already have one of them installed in your environment, thanks to other
 > scientific packages such as Spyder or matplotlib. If neither is available,
 > running napari will result in an error message asking you to install one of
-> them.>
+> them.
 >
 > Running `pip install napari[all]` will install the default framework – currently
-> PyQt5, but this could change in the future.>
+> PyQt5, but this could change in the future.
 >
-> To install napari with a specific UI framework, you can use:
+> To install napari with a specific framework, you can use:
 >
 > ```sh
 > pip install napari[pyqt5]    # for PyQt5
