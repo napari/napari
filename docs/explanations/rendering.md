@@ -1,6 +1,6 @@
 # Overview
 
-This document outlines our plans for making napari's rendering non-blocking. We hope to morph this document from a plan into the final design as we implement it.
+This document outlines our plans for making napari's rendering non-blocking. We hope to morph this document from a plan into the details of the final design as implement things.
 
 # Blocked UI
 
@@ -15,14 +15,14 @@ In May 2020 we looked into three issues related to blocked UI:
 When the UI is "blocked" napari feels slow and lags. It's not just an aesthetic
 issue, manipulation of interactive UI elements like sliders becomes nearly
 impossible if the framerate is low enough. In the worst case if the GUI thread
-is blocked for long enough you can get the "spinning wheel of death" on Macs
+is blocked a few seconds you can get the "spinning wheel of death" on Macs
 indicating the application is hung, which makes napari seem totally broken.
 
 Napari is very extensible and customizable and users can create what amounts to
 custom applications built on top of napari. For example they can create custom
 UI elements which manipulate parameters which generate new images on the fly. So
 when the napari UI is blocked it's not just "image viewing" that's blocked,
-their whole application is not usable.
+their whole application becomes unusable.
 
  For all of these reasons we'd like napari's GUI thread to never block.
 
@@ -48,13 +48,12 @@ glitchy or flakey even if the average framerate is decent.
 
 # Array-like Interface
 
-Napari renders data out of an "array like" interface, which is any object that
-presents an interface compatible with `numpy`'s slicing syntax.
-
-This is a powerful abstraction because almost anything could present an
-interface like that. However this flexibility is a huge challenge for napari.
-Many "large image viewers" are tightly integrated with a specific file format.
-In contrast we'd like napari to work with basically any source of data.
+Napari renders data out of an "array-like" interface, which is any object that
+presents an interface compatible with `numpy`'s slicing syntax. This is a
+powerful abstraction because almost anything could present an array-like
+interface. However this flexibility is a huge challenge for napari. Many "large
+image viewers" are tightly integrated with a specific file format. In contrast
+we'd like napari to work with basically any source of data.
 
 With **Dask** or custom code it's possible an array access results in IO from
 disk or the network. It's even possible the data does not exist at all and it
@@ -93,38 +92,39 @@ This algorithm is why the GUI thread should never block. Not matter what is in m
 
 # Chunks
 
-**Chunks** is a deliberately vague term. A chunk is data used to render a
-portion of the scene. Without chunks we have only two choices: render nothing or
-render the entire scene. With chunks we can partially and progressively render
-the scene using whatever chunks are currently available. This very valuable because often the user can navigate or make other decisions with partially loaded data.
+**Chunks** is a deliberately vague term. *A chunk is data used to render a
+portion of the scene*. Without chunks we have only two choices: render nothing
+or render the entire scene. With chunks we can partially and progressively
+render the scene using whatever chunks are currently available. This very
+valuable because often the user can navigate or make other decisions with
+partially loaded data.
 
 ![render-frame](images/chunked-format.png)
 
 The most common types of chunks are blocks of contiguous memory inside a chunked
 file format like **Zarr** (on disk) and exposed by an API like **Dask**. If an
 image is stored without chunks then reading a 2D rectangle would require
-hundreds of small read operations from all over the file. With chunks you can read a rectangular region with a single read operation.
+hundreds of small read operations from all over the file. With chunks you can
+read a rectangular region with a single read operation.
 
-For 3D images the chunks tend to be 3D blocks, but the idea is the same. With
-Neuroglancer they commonly store the data in 64x64x64 voxel chunks which is
-256KB. This is useful because you can read the data in XY, XZ or YZ and it
-performs the same in each orientation. It's also nice because you scroll through
-slices quickly since on average you have 32 slices above and below your current
+For 3D images the chunks tend to be 3D blocks, but the idea is the same.
+Neuroglancer commonly stores the data in 64x64x64 voxel chunks which is 256KB.
+This is useful because you can read the data in XY, XZ or YZ and it performs the
+same in each orientation. It's also nice because you scroll through slices
+quickly since on average you have 32 slices above and below your current
 location.
 
 In #1300 there are no chunks, the images were created in memory as one
 monolithic thing, so we are going to have to break it into chunks in order to
-send it to the graphics card incrementally. 
-
-In #1320 the images are small so we are not chunked, but there are 3 image
-layers, so we can consider the full layers to be chunks. In general we can get
-creative with chunks, they can be spatial subdivisions or any other division we
-want.
+send it to the graphics card incrementally. In #1320 the images are small so we
+are not chunked, but there are 3 image layers, so we can consider the full
+layers to be chunks. In general we can get creative with chunks, they can be
+spatial subdivisions or any other division we want.
 
 With non-image data like points, shapes and meshes we can have 2D or 3D spatial
 chunks, we can have layers, and we can invent other sub-divisions to use as
-chunks. As long as things can be loaded and drawn independently we can use them
-as chunks.
+chunks. *As long as things can be loaded and drawn independently we can use them
+as chunks*.
 
 # Loading into RAM and VRAM
 
@@ -161,7 +161,10 @@ means loading one Dask chunk can cause many disk chunks to load into memory. We
 might choose our rendering chunks to be the same size as Dask is using, if we
 can even determine that, or we might chose a different size.
 
-In the end there are two different types of speed, framerate and load time, and sometimes there is a tradeoff. For example chunks that are really small might have a great framerate but slow loading speed. In the worst case we might have to let the user tune the chunk size.
+In the end there are two different types of speed, framerate and load time, and
+sometimes there is a tradeoff. For example chunks that are really small might
+have a great framerate but slow loading speed. In the worst case we might have
+to let the user tune the chunk size.
 
 ## Octree
 
