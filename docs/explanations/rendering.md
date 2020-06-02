@@ -99,7 +99,7 @@ render the scene using whatever chunks are currently available. This very
 valuable because often the user can navigate or make other decisions with
 partially loaded data.
 
-![render-frame](images/chunked-format.png)
+![chunked-format](images/chunked-format.png)
 
 The most common types of chunks are blocks of contiguous memory inside a chunked
 file format like **Zarr** (on disk) and exposed by an API like **Dask**. If an
@@ -137,7 +137,11 @@ new `@thread_worker` interface for our thread pool.
 
 Loading into VRAM is a different story because it must happen in the GUI thread, at least that is our assumption while we are using OpenGL. Therefore we need to amortize the load over some number of frames. We will set a a budget, for example 5 milliseconds. Each frame can spend that much time loading data into VRAM, it will spend the rest of the frame drawing as normal. In this case it's important no single chunk takes more than 5 milliseconds to transfer, or that frame might be slow.
 
-![render-frame](images/paging-chunks.png)
+![paging-chunks](images/paging-chunks.png)
+
+Viewed as a timeline:
+
+![timeline](images/timeline.png)
 
 # Example: #1320
 
@@ -147,7 +151,7 @@ coming off disk some are computed. The "working set" is the set of chunks we
 need to draw the full current scene. In this case we need the visible layers for
 the current slice.
 
-![render-frame](images/example-1320.png)
+![example-1320](images/example-1320.png)
 
 # Example: #845
 
@@ -172,7 +176,7 @@ In #1320 our chunks were layers, so the ChunkManager can write data into those l
 
 We are doing to use an octree. See [Apple's](https://developer.apple.com/documentation/gameplaykit/gkoctree) depiction of an octree:
 
-![render-frame](images/octree.png)
+![octree](images/octree.png)
 
 In a quadtree every node has 4 children that divides each square node into 4
 parts: upper-left, upper-right, lower-left and lower-right. An octree is the
