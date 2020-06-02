@@ -89,7 +89,11 @@ do one of three things:
 | Chunk is in RAM but not VRAM | If there is time transfer the chunk to VRAM |
 | Chunk is not in RAM          | Ask the `ChunkManager` to load the chunk    |
 
-This algorithm is why the GUI thread should never block. Not matter what is in memory or not in memory, the render should be very quick, hopefully less than 16.7ms so we can draw at 60Hz.
+If a chunk cannot be drawn a placeholder will be drawn instead. What we draw as
+placeholder is TB and may vary. In some cases we can draw a lower resolution
+version of the data. In the worst case we might have to draw a grid or loading
+animation. Since only draw what's in VRAM and we never block, we should be able
+to maintain a very high framerate.
 
 # Chunks
 
