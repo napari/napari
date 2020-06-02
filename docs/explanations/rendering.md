@@ -1,4 +1,8 @@
-# Background
+# Overview
+
+This document outlines our plans for making napari's rendering non-blocking. We hope to update this document as the implementation evolves with more concrete and final details.
+
+# Blocked UI
 
 In May 2020 we looked into three issues related to the UI becoming blocked:
 
@@ -14,17 +18,19 @@ impossible if the framerate is low enough. If the GUI thread is blocked for long
 enough you can get the "spinning wheel of death" on Macs indicating the
 application is hung, which makes napari seem totally broken.
 
-If napari is being used as the basis for a custom application, it's not just
-image viewing that's blocked, the user's entire custom application is
-essentially unusable. For all of these reasons we'd like napari's GUI thread to
-never block.
+Napari is very extensible and customizable and users can create what amounts to
+custom applications built on top of napari. So when the napari UI is blocked
+it's not just "image viewing" that's blocked, their whole application becomes
+unusable.
+
+ For all of these reasons we'd like napari's GUI thread to never block.
 
 # Framerate
 
 Most screens refresh at 60Hz. To look and feel fully responsive a GUI
 application should strive to draw at 60Hz as well. If 60Hz is not possible,
-refreshing as fast as possible is desirable because the user experience degrades
-rapidly as the refresh rate gets slower:
+however, refreshing as fast as possible is important because the user experience
+degrades rapidly as the refresh rate gets slower:
 
 | Framerate | Milliseconds | User Experience |
 | --------- | ------------ | --------------- |
@@ -34,63 +40,78 @@ rapidly as the refresh rate gets slower:
 | 10Hz      | 100          | Bad             |
 | 5Hz       | 200          | Unusable        |
 
-# The Problem
+In addition to the average rate dropping there can be single slow frames, or
+stretches of slow frames sometimes called stuttering. These should be minimized
+as well since they will make napari seem glitchy or flakey even if the average framerate is decent.
 
-It's been a design goal that napari does not know very much about the data it's
-rendering. It receives a `numpy` compatible "array like" interface and can
-request whatever regions of data it needs.
+# Array-like Interface
 
-In #845 and #1320 the problem is using `dask` or custom code when napari calls
-`asarray` it might execute arbitrary code. In #845 the code contains disk or
-networked IO operations which potentially take a long time. In #1320 the code
-performance a computation for the user.
+Napari renders data out of an "array like" interface, which is any object that
+presents an interface compatible with `numpy` slicing and access. Using
+`dask` or custom code it's possible the data does not live in memory and will be
+paged in as chunks from disk as it's accessed. It's also possible the data does
+not exist at all and it will be computed on-the-fly when it is accessed.
 
-In #1300 the problem is different. In that case the data is 100% in memory and
-ready to go. The problem is this is not a multi-image, it's a single large
-image. And sending all that data to the card in one shot is slow. Even though
-the data isn't chunked, we need to create chunks and send them over a few at a
-time.
+In those of these cases the array access is not a simple memory access. Instead
+accessing the array triggers code that can more or less do anything. It could therefore take a long time to execute.
 
-# The Rules
+In #845 the array access lead to IO from disk or over the network. In #1320 the
+array access leads to a Machine Learning (Torch) calculation.
 
-The solution to these 3 problems is following two rules:
+In #1300 the problem is different. There the data is already entirely in memory,
+but it's not chunked. So we transfer a single large array, 100's of MB, on to
+the card and this is slow.
 
-1. Always break data into small "chunks" to send to the card.
-2. Never call `asarray` on user data from the GUI thread.
+# Goals
+
+The above analysis leads to these design goals for rendering:
+
+1. Always break data into small "chunks" to send to the graphics card.
+2. Never call `asarray` on user data from the GUI thread since we don't know
+   what it will do or how long it will take.
 
 # Chunks
 
+**Chunks** is a deliberately vague term. A chunk is data used to render a
+portion of the scene. Without chunks we are stuck rendering nothing or rendering
+the entire scene. With chunks we can partially and progressively render the
+scene using whatever chunks are available.
 
+![render-frame](images/chunked-format.png)
 
+The most common types of chunks are blocks of contiguous memory inside a chunked
+file format like **Zarr** (on disk) and exposed by an API like *Dask*. If an
+image is stored without chunks then reading a 2D rectangle would require
+hundreds of small read operations from all over the file. With chunks reading
+single span of data gets a single complete 2D rectangle.
 
+For 3D images the chunks tend to be 3D blocks, but the idea is the same. With
+Neuroglancer they commonly store the data in 64x64x64 voxel chunks. This is
+useful because you can read the data in XY, XZ or YZ and it performs the same in
+each orientation. It's also nice because you scroll through slices quickly since
+you are reading up to 64 slices head of where you are.
 
-| Step   | Action |
-| ------ | ------ |
-| Need d |
-d
+In #1300 there are no chunks, the images were created in memory as one
+monolithic thing, so we are going to have to break it into chunks in order to
+send it to the graphics card incrementally. 
 
-Going forward where the GUI thread used to call `asarray` we need it to request
-that chunk gets paged in by some asynchronous mechanism such as a worker thread.
-The worker thread will call `asarray` which might trigger IO or a computation in
-that worker thread.
+In #1320 the images are small so we are not chunked, but there are 3 image
+layers, so we can consider the full layers to be chunks. In general we can get
+creative with chunks, they can be spatial subdivisions or any other division we
+want.
 
+# Loading into RAM and VRAM
 
-The dataset needs to be divided up spatially somehow. These could be 3d chunks
-or 2d tiles or buckets or lists or some other unit of division. We cannot render
-an opaque monolithic dataset.
+Data needs to be in VRAM before we draw it. This is a two step process: loading
+it into RAM first them VRAM.
 
-When it is rendering the GUI thread needs figure out what portion of the data
-needs to be rendered, generally what is visible on screen. This is the "working
-set", it's part of the dataset we want to render.
+Loading into RAM must be done in a thread since we don't know how long it will
+take. For example loading data over the internet or doing a complex calculation
+to produce the data could both take really long time. We are going to use the
+new `@thread_worker` interface for our thread pool.
 
-As we iterate though the chunk in the working set we make one of 3 decisions:
+Loading into VRAM is a different story because it must happen in the GUI thread, at least for now with OpenGL. Therefore we need to amortize the load over some number of frames. We will set a a budget, for example 5 milliseconds. Each frame can spend that much time loading data into VRAM, it will spend the rest of the frame drawing as normal.
 
-1. The resources for this chunk are on the card, so we render the chunk.
-2. The resources for this chunk are in RAM, but not on the card. We spend a
-   bounded amount of time each thread moving chunks into VRAM, say 5ms per frame.
-3. The resources for this piece are not in RAM, we request that a paging thread
-   page the data into RAM.
-
-![render-frame](images/render-frame.png)
+![render-frame](images/paging-chunks.png)
 
 
