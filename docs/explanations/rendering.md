@@ -90,10 +90,11 @@ do one of three things:
 | Chunk is not in RAM          | Ask the `ChunkManager` to load the chunk    |
 
 If a chunk cannot be drawn a placeholder will be drawn instead. What we draw as
-placeholder is TB and may vary. In some cases we can draw a lower resolution
-version of the data. In the worst case we might have to draw a grid or loading
-animation. Since only draw what's in VRAM and we never block, we should be able
-to maintain a very high framerate.
+placeholder is TBD and it may vary. In some cases we might be able to draw a
+lower resolution version of the data, which can be refined later as more data is
+available. In the worst case we might have to draw a grid or a loading
+animation. Since we only draw what's in VRAM and we never block, we should be
+able to maintain a very high framerate.
 
 # Chunks
 
