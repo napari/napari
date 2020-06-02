@@ -2,5 +2,5 @@ pre-commit>=1.16.1
 black==19.10b0
 flake8==3.7.9
 check-manifest>=0.42
--r tests.txt
+-r test.txt
 -r docs.txt
