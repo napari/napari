@@ -242,12 +242,12 @@ With #1320 resolved we need to create the octree infrastrcture to solve #845 and
 How many worker threads should we have? The challenge is we don't know what is
 going on behind the array-like interface. Some possible situations:
 
-| What Work Is Doing      | Optimal Number Of Threads                               |
-| ----------------------- | ------------------------------------------------------- |
-| Local IO                | Depends on the device and access pattern.               |
-| Remote IO               | Potentially a large number to mask connection overhead. |
-| Small Compute (1 core)  | We might want one thread per core.                      |
-| Big Compute (all cores) | We probably want one thread total.                      |
+| What The Worker Is Doing | Optimal Number Of Threads                      |
+| ------------------------ | ---------------------------------------------- |
+| Local IO                 | Depends on the device and the access patterns. |
+| Remote IO                | A large number since setup costs are large.    |
+| Small Compute (1 core)   | One thread per available core.                 |
+| Big Compute (all cores)  | One thread total.                              |
 
 We might have to aim for "reasonable defaults which yield reasonable
 performance". Even if loading/compute speed is not optimal, rendering should
