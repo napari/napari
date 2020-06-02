@@ -8,7 +8,7 @@ black_task:
   name: Black Formatting
   install_script:
     - python -m pip install --retries 3 --upgrade pip
-    - pip install `cat setup.cfg | grep black==`
+    - pip install `cat requirements/development.txt | grep black`
   test_script:
     - black --check .
 
@@ -18,7 +18,7 @@ lint_task:
   name: Flake8 Linting
   install_script:
     - python -m pip install --retries 3 --upgrade pip
-    - pip install `cat setup.cfg | grep flake8==`
+    - pip install `cat requirements/development.txt | grep flake8`
   test_script:
     - flake8 napari
 
@@ -39,6 +39,7 @@ linux_task:
   env:
     PATH: $HOME/conda/bin:$PATH
     DISPLAY: ":99"
+    CODECOV_TOKEN: ENCRYPTED[be41b51dac12576cfe9889ddd604d1f9db97cee5db0d98f7241fc8d5adf8d23da1135cd67e20b2ecec4005ac03083286]
 
   system_script:
     - apt-get update
@@ -57,15 +58,25 @@ linux_task:
   # https://pytest-qt.readthedocs.io/en/latest/troubleshooting.html#xvfb-assertionerror-timeouterror-when-using-waituntil-waitexposed-and-ui-events
   herbstluftwm_start_background_script: herbstluftwm
 
+  pip_cache:
+    folder: ~/.cache/pip
+    populate_script: 
+      - python -m pip install --retries 3 --upgrade pip
+      - python -m pip install --retries 3 -r requirements/tests.txt
+
   install_script:
     - python -m pip install --retries 3 --upgrade pip
-    - python -m pip install --retries 3 -e ".[pyside2,tests]"
+    - python -m pip install --retries 3 -r requirements/tests.txt
+    - python -m pip install --retries 3 pytest-cov codecov
+    - python -m pip install -e .[pyside2]
 
   check_script:
     - conda list
     - python -c "import napari; print(napari.__version__)"
 
-  test_pyside2_script: pytest -v
+  test_pyside2_script:
+    - pytest -v --cov-report=xml --cov=./napari
+    - codecov
 
   test_pyqt5_script:
     - pip uninstall -y pyside2
@@ -102,9 +113,17 @@ mac_task:
     - conda update -y -n base conda
     - conda install -y python=$PY_VER
 
+  pip_cache:
+    folder: $HOME/Library/Caches/pip
+    populate_script:
+      - export MACOSX_DEPLOYMENT_TARGET=10.10
+      - python -m pip install --retries 3 --upgrade pip
+      - python -m pip install --retries 3 -r requirements/tests.txt
+
   install_script:
     - python -m pip install --retries 3 --upgrade pip
-    - python -m pip install --retries 3 -e ".[pyside2,tests]"
+    - python -m pip install --retries 3 -r requirements/tests.txt
+    - python -m pip install -e .[pyside2]
 
   check_script:
     - conda list
@@ -157,51 +176,23 @@ win_task:
     - conda install --yes -c conda-forge setuptools
     - conda update -y -n base conda
     - conda install -y python=%PY_VER%
-    
+
+  pip_cache:
+    folder: $LOCALAPPDATA\pip\Cache
+    populate_script: 
+      - python -m pip install --retries 3 --upgrade pip
+      - python -m pip install --retries 3 -r requirements/tests.txt
+
   install_script:
     - python -m pip install --retries 3 --upgrade pip
-    - python -m pip install --retries 3 setuptools-scm
-    - python -m pip install --retries 3 -e ".[pyside2,tests]"
+    - python -m pip install --retries 3 -r requirements/tests.txt
+    - python -m pip install -e .[pyside2]
 
   check_script:
     - conda list
     - python -c "import napari; print(napari.__version__)"
 
   test_script: pytest -v -o qt_no_exception_capture=1
-
-codecov_task:
-  auto_cancellation: true
-  name: Coverage
-
-  depends_on:
-    - linux 3.8
-    - macos 3.8
-    - windows 3.8
-
-  env:
-    CODECOV_TOKEN: ENCRYPTED[be41b51dac12576cfe9889ddd604d1f9db97cee5db0d98f7241fc8d5adf8d23da1135cd67e20b2ecec4005ac03083286]
-    DISPLAY: ":99"
-
-  system_script: |
-    apt-get update
-    apt-get install -y libgl1-mesa-glx xvfb libqt5x11extras5 herbstluftwm
-
-  # https://github.com/cirruslabs/cirrus-ci-docs/issues/97
-  xvfb_start_background_script: Xvfb $DISPLAY -ac -screen 0 1024x768x24
-  # https://pytest-qt.readthedocs.io/en/latest/troubleshooting.html#xvfb-assertionerror-timeouterror-when-using-waituntil-waitexposed-and-ui-events
-  herbstluftwm_start_background_script: herbstluftwm
-
-  install_script: |
-    python -m pip install --retries 3 --upgrade pip
-    python -m pip install --retries 3 pytest-cov codecov
-    python -m pip install --retries 3 -e ".[all,dev]"
-
-  check_manifest_script: |
-    check-manifest
-
-  coverage_script: |
-    pytest --cov=./napari
-    codecov
 
 
 push_docs_task:
@@ -219,8 +210,9 @@ push_docs_task:
     apt-get install -y libgl1-mesa-glx libqt5x11extras5
 
   install_script: |
-    python -m pip install --retries 3 --upgrade pip
-    python -m pip install --retries 3 -e ".[pyside2,docs]"
+    - python -m pip install --retries 3 --upgrade pip
+    - python -m pip install --retries 3 -e ".[all]"
+    - python -m pip install --retries 3 -r requirements/docs.txt
 
   build_script: make docs
 
