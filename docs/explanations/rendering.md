@@ -262,7 +262,7 @@ Some day we could try to infer what's going on and adjust things dynamically
 ourselves. For example we could detect if the CPU was underused and add more
 threads.
 
-## Threads or Processes
+## Threads, Processes and `asyncio`
 
 Hopefully we can stick with threads for parallelism. However in Python threads
 cannot run completely independently of each other due to the [Global Interpreter
@@ -280,10 +280,9 @@ datastucture without a lock because the GIL is kind of a universal lock.
 If we cannot get the performance we want using threads we might consider
 switching to proceses in some cases.
 
-In the other direction Python contains asynchronous mechianism such as
-`asyncio`. These generally provide concurrency without parallelism. That is you
-can have N tasks in progress, but they are all running in the same thread. The
-advantage of this is you could have thousands of concurrent routines. `asyncio`
-is relatively new and we should keep it in mind for rendering and other
-purposes.
+In the other direction Python contains asynchronous mechanisms such as
+`asyncio`. These generally provide concurrency without parallelism. You can have
+N tasks in progress, but they are all running in the same thread. The advantage
+of this is you could have thousands of concurrent routines. `asyncio` is
+relatively new and we should keep it in mind for rendering and other purposes.
 
