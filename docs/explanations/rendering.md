@@ -22,9 +22,9 @@ indicating the application is hung, which makes napari seem totally broken.
 
 Napari is very extensible and customizable and users can create what amounts to
 custom applications built on top of napari. For example they can create custom
-UI elements which manipulate parameters which generate new images on the fly. So
-when the napari UI is blocked it's not just "image viewing" that's blocked,
-their whole application can become unusable.
+UI elements which manipulate parameters which generate new images on the fly. In
+these cases when napari UI is blocked it's not just image viewing that's
+blocked, their whole application is frozen.
 
  For all of these reasons a primary design goal for rendering is to make sure
  napari's GUI thread never blocks.
@@ -44,10 +44,11 @@ degrades rapidly as the refresh rate gets slower:
 | 10Hz      | 100          | Bad             |
 | 5Hz       | 200          | Unusable        |
 
-In addition to the average framerate dropping there can be single slow frames, or
-patterns with slow and fast frames, this leads to "stuttering". These variations
-in framerate should be minimized as well since they will make napari seem
-glitchy or flakey even if the average framerate is decent.
+Aside from the average framerate if napari renders even a single frame slowly or
+has a pattern of slow and fast frames is can be annoying. People have coined the
+term "[janky](http://jankfree.org/)" to describe applications that have
+framerate irregularity. So we want napari's average framerate to be high but
+also prefer a consistent framerate to one that's all over the map.
 
 # Array-like Interface
 
@@ -299,9 +300,9 @@ independently.
 
 The GIL only applies to threads that are actively running Python bytecode. Only
 one thread can be executing bytecode at a time. The GIL makes Python threads
-safer to use than threads in many languages. In Python two threads can access
-the same datastructure without a lock because the GIL serves as kind of a
-universal lock.
+safer to use than threads in many languages. In Python two threads can in many
+cases access the same datastructure without a lock because the GIL serves as
+kind of a universal lock.
 
 If we cannot get the performance we want using threads we might consider
 switching to processes in some cases.
