@@ -171,7 +171,7 @@ win_task:
 
 codecov_task:
   auto_cancellation: true
-  name: Coverage & Requirements
+  name: Coverage
 
   depends_on:
     - linux 3.8
@@ -193,16 +193,11 @@ codecov_task:
 
   install_script: |
     python -m pip install --retries 3 --upgrade pip
-    # pip-check-reqs doesn't work with newer versions of pip
-    # this PR fixes it, but the author hasn't commented on #22 it since it was submitted Jan 27, 2020
-    # this PR introduces additional fixes for pip 20.1.
-    pip install git+https://github.com/r1chardj0n3s/pip-check-reqs.git@refs/pull/23/head
     python -m pip install --retries 3 pytest-cov codecov
-    python -m pip install --retries 3 -e ".[dev]"
+    python -m pip install --retries 3 -e ".[all,dev]"
 
-  check_requirements_script: |
+  check_manifest_script: |
     check-manifest
-    pip-missing-reqs napari --ignore-file="**/_tests/*" --ignore-module=PySide2 --ignore-module=zarr  --ignore-file=napari/conftest.py
 
   coverage_script: |
     pytest --cov=./napari

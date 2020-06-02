@@ -4,6 +4,7 @@ recursive-include napari/resources *.png *.jpeg *.jpg *.svg *.qss
 exclude napari/resources/_qt_resources*.py
 include napari/utils/colormaps/matplotlib_cmaps.txt
 
+exclude requirements/*.txt requirements.txt
 
 # explicit excludes to keep check-manifest happy and remind us that
 # these things are not being included unless we ask
@@ -11,4 +12,3 @@ recursive-exclude docs *
 recursive-exclude examples *
 exclude napari/benchmarks/*
 recursive-exclude resources *
-exclude requirements.txt
