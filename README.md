@@ -40,6 +40,7 @@ $ git clone https://github.com/napari/napari.git
 $ cd napari
 $ pip install -e .
 # or, to also grab all of the developer tools that we use
+# (this is required if you want to contribute code back to napari)
 $ pip install -e .[dev]
 ```
 
