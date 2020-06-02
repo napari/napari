@@ -21,27 +21,40 @@ We're working on [tutorials](https://napari.org/tutorials/), but you can also qu
 
 ## installation
 
-**napari** can be installed on most macOS, Linux, and Windows systems with Python 3.6, 3.7 and 3.8 by calling
+### from pip, with "batteries included"
+
+napari can be installed on most macOS, Linux, and Windows systems with
+Python 3.6, 3.7 and 3.8 using pip:
 
 ```sh
-$ pip install napari[pyside2]
+pip install napari[all]
 ```
 
-Or, if you'd prefer to use PyQt5 for the GUI backend:
+napari needs a library called [Qt](https://www.qt.io/) to run its user interface
+(UI). In Python, there are two alternative libraries to run this, called
+[PyQt5](https://www.riverbankcomputing.com/software/pyqt/download5) and
+[PySide2](https://doc.qt.io/qtforpython/). By default, we don't choose for you,
+and simply running `pip install napari` will not install either. You *might*
+already have one of them installed in your environment, thanks to other
+scientific packages such as Spyder or matplotlib. If neither is available,
+running napari will result in an error message.
 
-```sh
-$ pip install napari[pyqt5]
-```
+To install napari with a UI framework, you can use `pip install napari[pyqt5]`,
+`pip install napari[pyside2]`, or `pip install napari[all]`. This last option
+will choose a framework for you — currently PyQt5, but this could change in the
+future.
+
+### from source
 
 To clone the repository locally and install in editable mode use
 
 ```sh
-$ git clone https://github.com/napari/napari.git
-$ cd napari
-$ pip install -e .
+git clone https://github.com/napari/napari.git
+cd napari
+pip install -e .[all]
 # or, to also grab all of the developer tools that we use
 # (this is required if you want to contribute code back to napari)
-$ pip install -e .[dev]
+pip install -e .[all,dev]
 ```
 
 For more information or troubleshooting see our [installation tutorial](https://napari.org/tutorials/fundamentals/installation)

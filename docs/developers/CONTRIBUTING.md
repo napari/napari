@@ -22,14 +22,9 @@ Set the `upstream` remote to the base `napari` repository:
 $ git remote add upstream https://github.com/napari/napari.git
 ```
 
-Install the required dependencies:
+Make the development version available globally and install the required dependencies
 ```sh
-$ pip install -r requirements.txt
-```
-
-Make the development version available globally:
-```sh
-$ pip install -e .
+$ pip install -e .[pyqt5,dev]
 ```
 
 We use

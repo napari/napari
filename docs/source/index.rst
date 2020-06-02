@@ -32,17 +32,34 @@ installation
 ------------
 
 napari can be installed on most macOS, Linux, and Windows systems with
-Python 3.6 or later by running:
+Python 3.6, 3.7 and 3.8 using pip:
 
 .. code-block:: console
 
-   $ pip install napari[pyside2]
+   pip install napari[all]
 
-or, if you'd prefer to use PyQt5 for the GUI backend:
+
+napari needs a library called `Qt <https://www.qt.io/>`_ to run its user
+interface (UI). In Python, there are two alternative libraries to run this,
+called `PyQt5 <https://www.riverbankcomputing.com/software/pyqt/download5>`_
+and `PySide2 <https://doc.qt.io/qtforpython/>`_. By default, we don't choose
+for you, and simply running ``pip install napari`` will not install either. You
+*might* already have one of them installed in your environment, thanks to other
+scientific packages such as Spyder or matplotlib. If neither is available,
+running napari will result in an error message.
+
+To install napari with a specific UI framework, you can use 
 
 .. code-block:: console
 
-   $ pip install napari[pyqt5]
+   pip install napari[pyqt5]
+   # or
+   pip install napari[pyside2]
+   # or
+   pip install napari[all]
+
+This last option (``pip install napari[all]``) will choose a framework for
+you — currently PyQt5, but this could change in the future.
 
 
 tutorials & getting started
