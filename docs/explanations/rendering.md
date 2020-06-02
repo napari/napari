@@ -8,23 +8,23 @@ we implement it.
 
 In May 2020 we looked into three issues related to blocked UI:
 
-| Issue                                                 | Summary                                                        |
-| ----------------------------------------------------- | -------------------------------------------------------------- |
-| [#845](https://github.com/napari/napari/issues/845)   | UI blocked by Disk or Network IO rendering multi-scale images. |
-| [#1300](https://github.com/napari/napari/issues/1300) | UI blocked rendering large in-memory images (not multi-scale). |
-| [#1320](https://github.com/napari/napari/issues/1320) | UI blocked rendering small images due to lazy computations.    |
+| Issue                                                 | Summary                                                              |
+| ----------------------------------------------------- | -------------------------------------------------------------------- |
+| [#845](https://github.com/napari/napari/issues/845)   | UI blocked by Disk or Network IO while rendering multi-scale images. |
+| [#1300](https://github.com/napari/napari/issues/1300) | UI blocked while rendering large in-memory images (not multi-scale). |
+| [#1320](https://github.com/napari/napari/issues/1320) | UI blocked while rendering small images due to lazy computations.    |
 
 When the UI is "blocked" napari feels slow and lags. It's not just an aesthetic
 issue, manipulation of interactive UI elements like sliders becomes nearly
 impossible if the framerate is low enough. In the worst case if the GUI thread
-is blocked a few seconds you can get the "spinning wheel of death" on Macs
+is blocked for a few seconds you can get the "spinning wheel of death" on Macs
 indicating the application is hung, which makes napari seem totally broken.
 
 Napari is very extensible and customizable and users can create what amounts to
 custom applications built on top of napari. For example they can create custom
 UI elements which manipulate parameters which generate new images on the fly. In
-these cases when napari UI is blocked it's not just image viewing that's
-blocked, their whole application is frozen.
+these cases when napari UI is blocked it's not just viewing images that's
+blocked, their whole application is frozen and unusable.
 
  For all of these reasons a primary design goal for rendering is to make sure
  napari's GUI thread never blocks.
@@ -32,9 +32,9 @@ blocked, their whole application is frozen.
 # Framerate
 
 Most screens refresh at 60Hz. To look and feel fully responsive a GUI
-application should strive to draw at 60Hz as well. If 60Hz is not possible,
-however, refreshing as fast as possible is important because the user experience
-degrades rapidly as the refresh rate gets slower:
+application should strive to draw at 60Hz as well. If 60Hz cannot be acheived
+rendering as fast as possible is desired. The user experience degrades rapidly
+as the refresh rate gets slower:
 
 | Framerate | Milliseconds | User Experience |
 | --------- | ------------ | --------------- |
@@ -45,37 +45,37 @@ degrades rapidly as the refresh rate gets slower:
 | 5Hz       | 200          | Unusable        |
 
 Aside from the average framerate if napari renders even a single frame slowly or
-has a pattern of slow and fast frames is can be annoying. People have coined the
-term [janky](http://jankfree.org/) to describe applications that have framerate
+has a pattern of slow and fast frames is can be annoying. People use the term
+[janky](http://jankfree.org/) to describe applications that have framerate
 irregularity. We want napari's average framerate to be high but we also want
-prefer a consistent framerate to one that's all over the map.
+a consistent framerate.
 
 # Array-like Interface
 
-Napari renders data out of an "array-like" interface, which is any object that
-presents an interface compatible with `numpy`'s slicing syntax. This is a
-powerful abstraction because almost anything could present an array-like
-interface. However this flexibility is a huge challenge for napari. Many "large
-image viewers" are tightly integrated with a specific file format. In contrast
-we'd like napari to work with basically any source of data.
+Napari renders data out of an "array-like" interface. This means napari accepts
+any object that can take `numpy`'s slicing syntax. This is a powerful
+abstraction because almost anything could present this type of interface, but
+the flexibility creates a huge challenge for napari since it needs to work with
+basically any source of data.
 
-With **Dask** or custom code it's possible an array access results in disk or
-network IO. It's even possible the data does not exist at all and it will be
+With **Dask** or custom code it's possible an array access will result in disk
+or network IO. It's even possible the data does not exist at all and it will be
 computed on-the-fly. In this case the user's code is doing the computation and
-we have no control or visibility into what it's doing or how long it will take.
+napari has no control or visibility into the computation or how long it will
+take.
 
 In #845 the array access leads to loading data from disk or over the network. In
 #1320 the array access leads to a machine learning calculation with Torch. In
 #1300 the problem is different. There the data is already entirely in memory,
-but it's not chunked, so currently we transfer 100's of MB to the card in one
-shot which block the UI. We can't have huge monolithic arrays of data in the
-napari. Everything must be broken down into reasonably sized chunks.
+but it's not chunked. Today that means we transfer 100's of MB to the card in
+one shot and this blocks the UI. We can't allow huge monolithic arrays of data
+in napari. Everything must be broken down into reasonably sized chunks.
 
 # Requirements
 
 To met our goal of never blocking the UI we need to satisfy two requirements:
 
-1. Always break data into small chunks. Exact size TBD.
+1. Always break data into chunks. The exact maximum chunk size is TBD.
 2. Never call `asarray` on user data from the GUI thread since we don't know
    what it will do or how long it will take.
 
@@ -83,19 +83,19 @@ To met our goal of never blocking the UI we need to satisfy two requirements:
 
 The renderer will intersect the current view with the dataset to determine the
 working set. The working set is the set of chunks that we need to draw to fully
-render that view. The renderer will step through every chunk in the working set
-and do one of three things:
+render that specific view. The renderer will step through every chunk in the
+working set and do one of three things:
 
 | Case                         | Action                                      |
 | ---------------------------- | ------------------------------------------- |
 | Chunk is in VRAM             | Render the chunk                            |
-| Chunk is in RAM but not VRAM | If there is time transfer the chunk to VRAM |
+| Chunk is in RAM but not VRAM | Transfer the chunk to VRAM if there is time |
 | Chunk is not in RAM          | Ask the `ChunkManager` to load the chunk    |
 
 If a chunk cannot be drawn a placeholder will be drawn instead. What we draw as
 a placeholder is TBD and it may vary. In some cases we might be able to draw a
 lower resolution version of the data, which can be refined later as more data is
-available. In the worst case we might have to draw a grid or a loading
+available. In the worst case we might have to draw a blank grid or a loading
 animation.
 
 # Chunks
@@ -106,11 +106,11 @@ or render the entire scene. With chunks we can partially render the scene using
 whatever chunks are currently available, and we can progressively add more and
 more chunks as more data is loaded.
 
-Progressive rendering is valuable because often the user can often navigate or
-make other decisions with partially loaded data, so the user can wait less and
-take action sooner. Also progressive rendering just feels more pleasant for the
-user. Progressive rending makes the internal state of the application visible
-which is often leads to a better user experience.
+Progressive rendering is valuable because the user can often navigate or make
+other decisions with partially loaded data, so the user can work faster. Also
+progressive rendering just feels more pleasant for the user. Progressive rending
+makes the internal state of the application visible which is often leads to a
+better user experience.
 
 ## Chunked File Formats
 
@@ -123,20 +123,20 @@ read a rectangular region with a single read operation.
 ![chunked-format](images/chunked-format.png)
 
 For 3D images the chunks tend to be 3D blocks, but the idea is the same.
-Neuroglancer commonly stores the data in 64x64x64 voxel chunks which is 256KB.
-This is useful because you can read the data in XY, XZ or YZ and it performs the
-same in each orientation. It's also nice because you scroll through slices
-quickly since on average you have 32 slices above and below your current
+Neuroglancer commonly stores the data in 64x64x64 voxel chunks which is 0.25MB
+per chunk. This is useful because you can read the data in XY, XZ or YZ and it
+performs the same in each orientation. It's also nice because you scroll through
+slices quickly since on average you have 32 slices above and below your current
 location.
 
 ## Creating Chunks
 
 In #1300 there are no chunks, the images were created in memory as one
-monolithic array, so we are going to have to break it into chunks in order to
-send it to the graphics card incrementally. In #1320 the images are small so we
-are not chunked, but there are 3 image layers, so we can consider the full
-layers to be chunks. In general we can get creative with chunks, they can be
-spatial subdivisions or any other division we want.
+monolithic array. So to solve #1300 we are going to have to break that array
+into chunks in order to send it to the graphics card incrementally. In #1320 the
+images are small so we are not chunked, but there are 3 image layers, so we can
+consider the full layers to be chunks. In general we can get creative with
+chunks, they can be spatial subdivisions or any other division we want.
 
 With non-image data like points, shapes and meshes we can have 2D or 3D spatial
 chunks, we can have layers, and we can invent other sub-divisions to use as
