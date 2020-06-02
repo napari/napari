@@ -112,4 +112,67 @@ Loading into VRAM is a different story because it must happen in the GUI thread,
 
 ![render-frame](images/paging-chunks.png)
 
+# Example: #1320
 
+In #1320 the images are not chunked since they are very small, but there are 3 layers per slice, so these per-slice layers are our chunks. Some layers are coming off disk some are computed.
+
+The "working set" is the set of chunks we need to draw the full current scene. In this case we need the visible layers for the current slice.
+
+![render-frame](images/example-1320.png)
+
+# Example: #845
+
+In #845 we are drawing a multi-scale image which is chunked on disk.
+
+## Chunk Size
+
+While confusing there can be many different chunks sizes in use at one time. With **Dask** often Dask's chunks are larger than the disk chunks. Our chunks might be the disk size, Dask's size, or some 3rd size.
+
+In some cases like #1300 there might be no chunks so we can choose any size we want. In other cases we might want to infer or detect what sizes are being use and choose accordingly. In all cases though it's possible the existing chunks sizes are not appropriate for rending.
+
+## Octree
+
+In #1320 our chunks were layers, so the ChunkManager can write data into those layers. With #845 chunks are spatial so we need a new spatial datastructure than can keep track of which chunks are in memory and store the per-chunk data.
+
+We are doing to use an octree. See [Apple's](https://developer.apple.com/documentation/gameplaykit/gkoctree) depiction of an octree:
+
+![render-frame](images/octree.png)
+
+In a quadtree every node has 4 children that divide the square into 4 parts: upper-left, upper-right, lower-left and lower-right. An octree is the same thing in 3D: every node has up to 8 children, the 4 on top then 4 on the bottom. We can use our octree for 2D situations just by restricting ourselves to the top 4 children.
+
+## Multi-resolution
+
+Like image pyramids the octree can store many versions of the same data at different resolutions. The root node contains a downsampled depiction of the entire datasets. As the user zooms in, we descend into child nodes which contain ever smaller portions of the data at higher resolution.
+
+The working set will be determined by the current view. For a very wide view we the working state will contain nodes high in the tree. For a very zoomed in view the working set will contain nodes farther down in the tree.
+
+In either case if a chunk is not in memory it will be requested from the `ChunkManager`. Until the data is in memory the reader thread needs to draw a placeholder. In many cases the best placeholder will be from a different level of the octree. This produces the common effect in larger image browsers where the view is initially blurry and then "refines" as more data is loaded.
+
+## Beyond Images
+
+We hope to use this same octree for all layers types than need spatial subdivision. The type of "downsampling" can vary widely from one layer type to another. For 2D and 3D images methods for downsampling are very standard and well understood.
+
+For geometry layers things can get much more complicated. For example there are many ways to "downsample" a mesh with varying costs and quality levels. And sometimes with geometry the user doesn't want to see miniature version of the data, they want to see bounding boxes or other type of aggregation objects. They want to be directed to where the data is rather than see a tiny version of it.
+
+To start we are only dealing with 2D images. However we are doing try to make things generic so we can add more layer types easily.
+
+Note each layer time could be rendered differently. For example we might have an octree for images but render points and shapes without any spatial data structure. This will work fine up to a certain number of points and shapes.
+
+# Appendix
+
+## Number of Workers
+
+How many worker threads should we have? The problem is we don't know what is going on "under the hood". Some possible cases:
+
+| Situation               | Optimal Number Of Threads                               |
+| ----------------------- | ------------------------------------------------------- |
+| Local IO                | Depends on the device and access patterns.              |
+| Remote IO               | Potentially a large number to mask connection overhead. |
+| Small Compute (1 core)  | We might want one thread per core.                      |
+| Big Compute (all cores) | One thread only.                                        |
+
+We might have to aim for "reasonable defaults which yield reasonable performance" and count on the user the configure napari (through GUI or API) to make things more optimal. Or some day we might get fancy and try to sense or infer that's going on and tune it ourselves.
+
+## Threads or Processes
+
+Hopefully we can stick with threads for parallelism. However in Python threads cannot run completely independently of each other due to the GIL. Luckily in many cases thread will release the GIL to do IO or compute-intensive operations, such that they can run independently. If there contention however we can paging and compute processes instead of threads. This has issue though especially running arbitrary user code, so it's something we'll address only if we have to.
