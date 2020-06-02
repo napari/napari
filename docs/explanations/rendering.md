@@ -1,6 +1,8 @@
 # Overview
 
-This document outlines our plans for making napari's rendering non-blocking. We hope to morph this document from a plan into the details of the final design as we implement it.
+This document outlines our plans for making napari's rendering non-blocking. We
+hope to morph this document from a plan into the details of the final design as
+we implement it.
 
 # Blocked UI
 
@@ -78,7 +80,7 @@ To meant our goal of never blocked we need to satisfy two requirements:
 
 # Render Algorithm
 
-The renderer will intesect the current view with the dataset to determine the
+The renderer will intersect the current view with the dataset to determine the
 working set. The working set is the set of chunks that we want to draw for that
 specific view. The renderer will step through every chunk in the working set and
 do one of three things:
@@ -184,9 +186,13 @@ to let the user tune the chunk size.
 
 ## Octree
 
-In #1320 our chunks were layers, so the ChunkManager can write data into those layers. With #845 chunks are spatial so we need a new spatial datastructure that can keep track of which chunks are in memory and store the per-chunk data.
+In #1320 our chunks were layers, so the ChunkManager can write data into those
+layers. With #845 chunks are spatial so we need a new spatial datastructure that
+can keep track of which chunks are in memory and store the per-chunk data.
 
-We are doing to use an octree. See [Apple's](https://developer.apple.com/documentation/gameplaykit/gkoctree) depiction of an octree:
+We are doing to use an octree. See
+[Apple's](https://developer.apple.com/documentation/gameplaykit/gkoctree)
+depiction of an octree:
 
 ![octree](images/octree.png)
 
@@ -198,7 +204,10 @@ the top 4 children.
 
 ## Multi-resolution
 
-Like image pyramids the octree can store many versions of the same data at different resolutions. The root node contains a downsampled depiction of the entire dataset. As the user zooms in, we descend into child nodes which contain ever smaller portions of the data, but at a higher resolution.
+Like image pyramids the octree can store many versions of the same data at
+different resolutions. The root node contains a downsampled depiction of the
+entire dataset. As the user zooms in, we descend into child nodes which contain
+ever smaller portions of the data, but at a higher resolution.
 
 In either case if a chunk is not in memory it will be requested from the
 `ChunkManager`. Until the data is in memory the renderer needs to draw a
@@ -206,19 +215,33 @@ placeholder. In many cases the best placeholder will be from a different level
 of the octree. This produces the common effect in larger image browsers where
 the view is initially blurry and then "refines" as more data is loaded.
 
-In the worst case if no stand-in is availabel the placeholder can be blank or a grid or a "loading" animation.
+In the worst case if no stand-in is available the placeholder can be blank or a
+grid or a "loading" animation.
 
 ## Beyond Images
 
-We are starting with 2D images but we are going to build the `ChunkManager` and octree in a generic way so that we can add in more layer types as we go, including 3D images, points, shapes and meshes. 2D images are the simplest case, but we believe most the infrastucture can be used by the they other layers times.
+We are starting with 2D images but we are going to build the `ChunkManager` and
+octree in a generic way so that we can add in more layer types as we go,
+including 3D images, points, shapes and meshes. 2D images are the simplest case,
+but we believe most the infrastructure can be used by the they other layers
+times.
 
 There are several reason the other layers types can be harder:
 
-1. Downsampling images is fast and well understood but downsample geometry can be slow and complicated. There are many ways to "downsample" a 3D mesh it can get very complex with trade-offs for speed and quality.
-2. Sometimes we will want downsample versions of things to look totally unlike the real data. For example instead of seeing millions of tiny points, the user might want to see heatmap indicating where the points are.
+1. Downsampling images is fast and well understood but downsample geometry can
+   be slow and complicated. There are many ways to "downsample" a 3D mesh it can
+   get very complex with trade-offs for speed and quality.
+2. Sometimes we will want downsample versions of things to look totally unlike
+   the real data. For example instead of seeing millions of tiny points, the
+   user might want to see heatmap indicating where the points are.
 3. With images the data density is uniform but with geometry it can vary widely. You can pack in millions of points/shapes/triangles into a tiny area.
 
-Luckily we don't need to solve all these problems to start. We can have a working octree for 2D and later 3D images before tackling the other layer types. We can render asymetrically where with an octree for the images but no spatial subdivision for the other types. Or we can have a simplistic downsampling algorithm to start that doesn't preserve visual quality but does render fast, and improve it over time.
+Luckily we don't need to solve all these problems to start. We can have a
+working octree for 2D and later 3D images before tackling the other layer types.
+We can render asymmetrically where with an octree for the images but no spatial
+subdivision for the other types. Or we can have a simplistic downsampling
+algorithm to start that doesn't preserve visual quality but does render fast,
+and improve it over time.
 
 ## Implementation Plan
 
@@ -233,7 +256,9 @@ We will resolve [#1320](https://github.com/napari/napari/issues/1320) first:
 
 See the issue comments for more details.
    
-With #1320 resolved we need to create the octree infrastrcture to solve #845 and #1300. The steps are TBD but we do want to keep in general with the other image types in mind.
+With #1320 resolved we need to create the octree infrastructure to solve #845
+and #1300. The steps are TBD but we do want to keep in general with the other
+image types in mind.
 
 # Appendix
 
@@ -268,18 +293,18 @@ Hopefully we can stick with threads for parallelism. However in Python threads
 cannot run completely independently of each other due to the [Global Interpreter
 Lock
 (GIL)](https://medium.com/python-features/pythons-gil-a-hurdle-to-multithreaded-program-d04ad9c1a63).
-Luckily in many cases a threads will release the GIL to do IO or
+Luckily in many cases a thread will release the GIL to do IO or
 compute-intensive operations. During those spans of time the threads can run
 independently.
 
 The GIL only applies to threads that are actively running Python bytecode. Only
 one thread can be executing bytecode at a time. The GIL makes Python threads
 safer to use than threads in many languages. In Python two threads can access
-the same datastucture without a lock because the GIL is kind of a universal
-lock.
+the same datastructure without a lock because the GIL serves as kind of a
+universal lock.
 
 If we cannot get the performance we want using threads we might consider
-switching to proceses in some cases.
+switching to processes in some cases.
 
 In the other direction Python contains asynchronous mechanisms such as
 `asyncio`. These generally provide concurrency without parallelism. You can have
