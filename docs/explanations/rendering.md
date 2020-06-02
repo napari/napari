@@ -327,7 +327,7 @@ The advantage of this is you can have many more tasks in progress than you would
 have threads. You could have thousands of tasks going at once. `asyncio` is
 relatively new and we should keep it in mind for rendering and other purposes.
 
-# VRAM and Vispy
+## VRAM and Vispy
 
 With OpenGL you cannot directly manage VRAM. Instead we will control what's in
 VRAM by creating and drawing vispy objects. By drawing objects in our working
