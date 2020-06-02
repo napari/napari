@@ -252,4 +252,12 @@ We might have to aim for "reasonable defaults which yield reasonable performance
 
 ## Threads or Processes
 
-Hopefully we can stick with threads for parallelism. However in Python threads cannot run completely independently of each other due to the GIL. Luckily in many cases thread will release the GIL to do IO or compute-intensive operations, such that they can run independently. If there contention however we can paging and compute processes instead of threads. This has issue though especially running arbitrary user code, so it's something we'll address only if we have to.
+Hopefully we can stick with threads for parallelism. However in Python threads
+cannot run completely independently of each other due to the [Global Interpreter
+Lock
+(GIL)](https://medium.com/python-features/pythons-gil-a-hurdle-to-multithreaded-program-d04ad9c1a63).
+Luckily in many cases thread will release the GIL to do IO or compute-intensive
+operations, such that they can run independently. If there contention however we
+can paging and compute processes instead of threads. This has issue though
+especially running arbitrary user code, so it's something we'll address only if
+we have to.
