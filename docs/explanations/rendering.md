@@ -269,8 +269,11 @@ cannot run completely independently of each other due to the [Global Interpreter
 Lock
 (GIL)](https://medium.com/python-features/pythons-gil-a-hurdle-to-multithreaded-program-d04ad9c1a63).
 Luckily in many cases a threads will release the GIL to do IO or
-compute-intensive operations. During those spans of time they can run
-independently. The limitation only applies to actively running Python bytecode,
-only one thread can be doing that at a time.
+compute-intensive operations. During those spans of time the threads can run
+independently. The GIL only applies to threads that are actively running Python
+bytecode. Only one thread can be executing bytecode at a time. The GIL makes
+Python threads safer to use than in many languages. In Python two threads can
+access the same datastucture without a lock because the GIL is kind of a
+universal lock.
 
 This is something we will just have to monitor and tackle if needed.
