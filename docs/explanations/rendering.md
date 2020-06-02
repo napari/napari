@@ -326,3 +326,17 @@ N tasks in progress, but they are all running interleaved in the same thread.
 The advantage of this is you can have many more tasks in progress than you would
 have threads. You could have thousands of tasks going at once. `asyncio` is
 relatively new and we should keep it in mind for rendering and other purposes.
+
+# VRAM and Vispy
+
+With OpenGL you cannot directly manage VRAM. Instead we will control what's in
+VRAM by creating and drawing vispy objects. By drawing objects in our working
+set VRAM should very quickly align to what we want it to contain.
+
+To hit our ~5ms budget for paging into VRAM we just have to limit the number of
+new vispy objects we create each frame. The goal is instead of having one super
+long frame following by all the chunks popping in at once, we have fast
+regularly spaced frames with more and more chunks progressively appearing.
+
+It's TBD exactly how we will use vispy, especially with the octree, but once we
+have a concrete design we will revise this document.
