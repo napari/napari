@@ -22,9 +22,10 @@ Napari is very extensible and customizable and users can create what amounts to
 custom applications built on top of napari. For example they can create custom
 UI elements which manipulate parameters which generate new images on the fly. So
 when the napari UI is blocked it's not just "image viewing" that's blocked,
-their whole application becomes unusable.
+their whole application can become unusable.
 
- For all of these reasons we'd like napari's GUI thread to never block.
+ For all of these reasons a primary design goal for rendering is to make sure
+ napari's GUI thread never blocks.
 
 # Framerate
 
@@ -41,7 +42,7 @@ degrades rapidly as the refresh rate gets slower:
 | 10Hz      | 100          | Bad             |
 | 5Hz       | 200          | Unusable        |
 
-In addition to the average rate dropping there can be single slow frames, or
+In addition to the average framerate dropping there can be single slow frames, or
 patterns with slow and fast frames, this leads to "stuttering". These variations
 in framerate should be minimized as well since they will make napari seem
 glitchy or flakey even if the average framerate is decent.
@@ -55,13 +56,13 @@ interface. However this flexibility is a huge challenge for napari. Many "large
 image viewers" are tightly integrated with a specific file format. In contrast
 we'd like napari to work with basically any source of data.
 
-With **Dask** or custom code it's possible an array access results in IO from
-disk or the network. It's even possible the data does not exist at all and it
-will be computed on-the-fly when it is accessed. In this case the user's code is
-doing the computation and we have no control or visibility into what it's doing,
-it could take a really long time.
+With **Dask** or custom code it's possible an array access results in disk or
+network IO. It's even possible the data does not exist at all and it will be
+computed on-the-fly when it is accessed. In this case the user's code is doing
+the computation and we have no control or visibility into what it's doing, it
+could take a really long time.
 
-In #845 the array access lead to loading data from disk or over the network. In
+In #845 the array access leads to loading data from disk or over the network. In
 #1320 the array access leads to a Machine Learning (Torch) calculation. In #1300
 the problem is different. There the data is already entirely in memory, but it's
 not chunked. So today we transfer a single large array, 100's of MB, to the card
