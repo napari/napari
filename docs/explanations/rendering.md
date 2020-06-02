@@ -102,12 +102,14 @@ animation.
 
 **Chunks** is a deliberately vague term. *A chunk is data used to render a
 portion of the scene*. Without chunks we have only two choices: render nothing
-or render the entire scene. With chunks we can partially and progressively
-render the scene using whatever chunks are currently available. This very
-valuable because often the user can often navigate or make other decisions with
-partially loaded data, so progressive allows the user to operate more quickly.
-Also progressive rendering just feels more pleasant for the users. Progressive
-loading is a form of making the internal state of the application visible, which
+or render the entire scene. With chunks we can partially render the scene using
+whatever chunks are currently available, and we can progressively add more and
+more chunks as more data is loaded.
+
+Progressive rendering is valuable because often the user can often navigate or
+make other decisions with partially loaded data, so the user to operate more
+quickly. Also progressive rendering just feels more pleasant for the user.
+Progressive loading makes the internal state of the application visible, which
 is often appreciated by the user.
 
 ![chunked-format](images/chunked-format.png)
