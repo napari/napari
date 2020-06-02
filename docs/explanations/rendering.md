@@ -1,6 +1,6 @@
 # Overview
 
-This document outlines our plans for making napari's rendering non-blocking. We hope to morph this document from a plan into the details of the final design as implement things.
+This document outlines our plans for making napari's rendering non-blocking. We hope to morph this document from a plan into the details of the final design as we implement it.
 
 # Blocked UI
 
