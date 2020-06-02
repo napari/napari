@@ -107,10 +107,10 @@ whatever chunks are currently available, and we can progressively add more and
 more chunks as more data is loaded.
 
 Progressive rendering is valuable because often the user can often navigate or
-make other decisions with partially loaded data, so the user to operate more
-quickly. Also progressive rendering just feels more pleasant for the user.
-Progressive loading makes the internal state of the application visible, which
-is often appreciated by the user.
+make other decisions with partially loaded data, so the user can wait less and
+take action sooner. Also progressive rendering just feels more pleasant for the
+user. Progressive rending makes the internal state of the application visible
+which is often leads to a better user experience.
 
 ![chunked-format](images/chunked-format.png)
 
@@ -141,7 +141,8 @@ as chunks*.
 
 # Loading into RAM and VRAM
 
-There is a two step process to get data into VRAM where we can draw it. First it needs to be loaded into RAM and then transferred into VRAM.
+There is a two step process to get data into VRAM where we can draw it. First it
+needs to be loaded into RAM and then transferred into VRAM.
 
 Loading into RAM must be done in a thread since we don't know how long it will
 take. For example loading data over the internet or doing a complex calculation
