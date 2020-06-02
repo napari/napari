@@ -270,10 +270,20 @@ Lock
 (GIL)](https://medium.com/python-features/pythons-gil-a-hurdle-to-multithreaded-program-d04ad9c1a63).
 Luckily in many cases a threads will release the GIL to do IO or
 compute-intensive operations. During those spans of time the threads can run
-independently. The GIL only applies to threads that are actively running Python
-bytecode. Only one thread can be executing bytecode at a time. The GIL makes
-Python threads safer to use than in many languages. In Python two threads can
-access the same datastucture without a lock because the GIL is kind of a
-universal lock.
+independently.
 
-This is something we will just have to monitor and tackle if needed.
+The GIL only applies to threads that are actively running Python bytecode. Only
+one thread can be executing bytecode at a time.The GIL makes Python threads
+safer to use than in many languages. In Python two threads can access the same
+datastucture without a lock because the GIL is kind of a universal lock.
+
+If we cannot get the performance we want using threads we might consider
+switching to proceses in some cases.
+
+In the other direction Python contains asynchronous mechianism such as
+`asyncio`. These generally provide concurrency without parallelism. That is you
+can have N tasks in progress, but they are all running in the same thread. The
+advantage of this is you could have thousands of concurrent routines. `asyncio`
+is relatively new and we should keep it in mind for rendering and other
+purposes.
+
