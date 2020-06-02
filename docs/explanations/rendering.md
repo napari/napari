@@ -239,16 +239,25 @@ With #1320 resolved we need to create the octree infrastrcture to solve #845 and
 
 ## Number of Workers
 
-How many worker threads should we have? The problem is we don't know what is going on "under the hood". Some possible cases:
+How many worker threads should we have? The challenge is we don't know what is
+going on behind the array-like interface. Some possible situations:
 
-| Situation               | Optimal Number Of Threads                               |
+| What Work Is Doing      | Optimal Number Of Threads                               |
 | ----------------------- | ------------------------------------------------------- |
-| Local IO                | Depends on the device and access patterns.              |
+| Local IO                | Depends on the device and access pattern.               |
 | Remote IO               | Potentially a large number to mask connection overhead. |
 | Small Compute (1 core)  | We might want one thread per core.                      |
-| Big Compute (all cores) | One thread only.                                        |
+| Big Compute (all cores) | We probably want one thread total.                      |
 
-We might have to aim for "reasonable defaults which yield reasonable performance" and count on the user the configure napari (through GUI or API) to make things more optimal. Or some day we might get fancy and try to sense or infer that's going on and tune it ourselves.
+We might have to aim for "reasonable defaults which yield reasonable
+performance". Even if loading/compute speed is not optimal, rendering should
+still be fast and napari should still be responsive.
+
+We may have to allow the user to configure the number of threads manually for
+the very best performance. Either through the GUI or through an API. People
+writing custom applications with napari will probably not mind doing a bit of
+manual configuration to get the best performance. In theory some day we could
+try to infer what's going on and adjust things dynamically ourselves.
 
 ## Threads or Processes
 
