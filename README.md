@@ -37,7 +37,8 @@ napari needs a library called [Qt](https://www.qt.io/) to run its user interface
 and simply running `pip install napari` will not install either. You *might*
 already have one of them installed in your environment, thanks to other
 scientific packages such as Spyder or matplotlib. If neither is available,
-running napari will result in an error message.
+running napari will result in an error message asking you to install one of
+them.
 
 To install napari with a UI framework, you can use `pip install napari[pyqt5]`,
 `pip install napari[pyside2]`, or `pip install napari[all]`. This last option

@@ -46,7 +46,8 @@ and `PySide2 <https://doc.qt.io/qtforpython/>`_. By default, we don't choose
 for you, and simply running ``pip install napari`` will not install either. You
 *might* already have one of them installed in your environment, thanks to other
 scientific packages such as Spyder or matplotlib. If neither is available,
-running napari will result in an error message.
+running napari will result in an error message asking you to install one of
+them.
 
 To install napari with a specific UI framework, you can use 
 

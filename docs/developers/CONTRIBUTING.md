@@ -24,7 +24,7 @@ $ git remote add upstream https://github.com/napari/napari.git
 
 Make the development version available globally and install the required dependencies
 ```sh
-$ pip install -e .[pyqt5,dev]
+$ pip install -e .[all,dev]
 ```
 
 We use

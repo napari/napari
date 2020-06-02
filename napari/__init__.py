@@ -14,9 +14,9 @@ except Exception as e:
         raise type(e)(
             "No Qt bindings could be found.\n\nnapari requires either PyQt5 or"
             " PySide2 to be installed in the environment.\nTo install the "
-            'current default default backend (PyQt5), run "pip install '
-            'napari[pyqt5]"\nIf you prefer PySide2, you may use "pip install '
-            'napari[pyside2]"'
+            'default backend (currently PyQt5), run "pip install napari[all]"'
+            '\nYou may also use "pip install napari[pyside2]" for Pyside2, '
+            'or "pip install napari[pyqt5]" for PyQt5'
         ) from e
     raise
 
