@@ -17,7 +17,7 @@ https://github.com/napari/napari
 - Add check-manifest to CI and release workflow (#1318)
 - Packaging and setup.py refactor (#1324)
 
-## 2 authors added to this release (alphabetical)
+## 1 author added to this release (alphabetical)
 
 - [Talley Lambert](https://github.com/napari/napari/commits?author=tlambert03) - @tlambert03
 
