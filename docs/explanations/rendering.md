@@ -76,9 +76,9 @@ To meant our goal of never blocked we need to satisfy two requirements:
 2. Never call `asarray` on user data from the GUI thread since we don't know
    what it will do or how long it will take.
 
-# Render Algorithm.
+# Render Algorithm
 
-The render will interect the current view with the dataset to determine the
+The renderer will intesect the current view with the dataset to determine the
 working set. The working set is the set of chunks that we want to draw for that
 specific view. The renderer will step through every chunk in the working set and
 do one of three things:
