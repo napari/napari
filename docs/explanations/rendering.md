@@ -63,14 +63,14 @@ the computation and we have no control or visibility into what it's doing, it
 could take a really long time.
 
 In #845 the array access leads to loading data from disk or over the network. In
-#1320 the array access leads to a Machine Learning (Torch) calculation. In #1300
+#1320 the array access leads to a machine learning (Torch) calculation. In #1300
 the problem is different. There the data is already entirely in memory, but it's
 not chunked. So today we transfer a single large array, 100's of MB, to the card
 and this is slow. We can't have huge monolithic arrays of data in the system.
 
-# Goals
+# Requirements
 
-This leads to two major design goals for rendering:
+To meant our goal of never blocked we need to satisfy two requirements:
 
 1. Always break data into "small" chunks.
 2. Never call `asarray` on user data from the GUI thread since we don't know
