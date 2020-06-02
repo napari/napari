@@ -1,6 +1,6 @@
 # Overview
 
-This document outlines our plans for making napari's rendering non-blocking. We hope to update this document as the implementation evolves with more concrete and final details.
+This document outlines our plans for making napari's rendering non-blocking. We hope to morph this document from a plan into the final design as we implement it.
 
 # Blocked UI
 
@@ -14,13 +14,15 @@ In May 2020 we looked into three issues related to blocked UI:
 
 When the UI is "blocked" napari feels slow and lags. It's not just an aesthetic
 issue, manipulation of interactive UI elements like sliders becomes nearly
-impossible if the framerate is low enough. If the GUI thread is blocked for long
-enough you can get the "spinning wheel of death" on Macs indicating the
-application is hung, which makes napari seem totally broken.
+impossible if the framerate is low enough. In the worst case if the GUI thread
+is blocked for long enough you can get the "spinning wheel of death" on Macs
+indicating the application is hung, which makes napari seem totally broken.
 
 Napari is very extensible and customizable and users can create what amounts to
-custom applications built on top of napari. So when the napari UI is blocked
-it's not just "image viewing" that's blocked, their whole application is not usable.
+custom applications built on top of napari. For example they can create custom
+UI elements which manipulate parameters which generate new images on the fly. So
+when the napari UI is blocked it's not just "image viewing" that's blocked,
+their whole application is not usable.
 
  For all of these reasons we'd like napari's GUI thread to never block.
 
@@ -40,41 +42,61 @@ degrades rapidly as the refresh rate gets slower:
 | 5Hz       | 200          | Unusable        |
 
 In addition to the average rate dropping there can be single slow frames, or
-stretches of slow frames sometimes called stuttering. These should be minimized
-as well since they will make napari seem glitchy or flakey even if the average framerate is decent.
+patterns with slow and fast frames, this leads to "stuttering". These variations
+in framerate should be minimized as well since they will make napari seem
+glitchy or flakey even if the average framerate is decent.
 
 # Array-like Interface
 
 Napari renders data out of an "array like" interface, which is any object that
-presents an interface compatible with `numpy` slicing and access. 
+presents an interface compatible with `numpy`'s slicing syntax.
 
-This is a powerful abstraction because almost anything could present an interface like that like this. That's flexibility is also a huge challenge. Many "large image viewers" are tightly integrated with a specific file format. In contrast we'd like napari to work with basically any source of data.
+This is a powerful abstraction because almost anything could present an
+interface like that. However this flexibility is a huge challenge for napari.
+Many "large image viewers" are tightly integrated with a specific file format.
+In contrast we'd like napari to work with basically any source of data.
 
-With `dask` or custom code it's possible an array access results in IO from disk
-or the network. It's even possible the data does not exist at all and it will be
-computed on-the-fly when it is accessed. In this case the user's code is doing the computation and we have not control or visibility into what it's doing, it could take a really long time.
+With **Dask** or custom code it's possible an array access results in IO from
+disk or the network. It's even possible the data does not exist at all and it
+will be computed on-the-fly when it is accessed. In this case the user's code is
+doing the computation and we have no control or visibility into what it's doing,
+it could take a really long time.
 
 In #845 the array access lead to loading data from disk or over the network. In
-#1320 the array access leads to a Machine Learning (Torch) calculation.
-
-In #1300 the problem is different. There the data is already entirely in memory,
-but it's not chunked. So we transfer a single large array, 100's of MB, on to
-the card and this is slow. We can't deal with huge monolithic arrays of data.
+#1320 the array access leads to a Machine Learning (Torch) calculation. In #1300
+the problem is different. There the data is already entirely in memory, but it's
+not chunked. So today we transfer a single large array, 100's of MB, to the card
+and this is slow. We can't have huge monolithic arrays of data in the system.
 
 # Goals
 
-This leads to these design goals for rendering:
+This leads to two major design goals for rendering:
 
 1. Always break data into "small" chunks.
 2. Never call `asarray` on user data from the GUI thread since we don't know
    what it will do or how long it will take.
 
+# Render Algorithm.
+
+The render will interect the current view with the dataset to determine the
+working set. The working set is the set of chunks that we want to draw for that
+specific view. The renderer will step through every chunk in the working set and
+do one of three things:
+
+| Case                         | Action                                      |
+| ---------------------------- | ------------------------------------------- |
+| Chunk is in VRAM             | Render the chunk                            |
+| Chunk is in RAM but not VRAM | If there is time transfer the chunk to VRAM |
+| Chunk is not in RAM          | Ask the `ChunkManager` to load the chunk    |
+
+This algorithm is why the GUI thread should never block. Not matter what is in memory or not in memory, the render should be very quick, hopefully less than 16.7ms so we can draw at 60Hz.
+
 # Chunks
 
 **Chunks** is a deliberately vague term. A chunk is data used to render a
-portion of the scene. Without chunks we are stuck rendering nothing or rendering
-the entire scene. With chunks we can partially and progressively render the
-scene using whatever chunks are available.
+portion of the scene. Without chunks we have only two choices: render nothing or
+render the entire scene. With chunks we can partially and progressively render
+the scene using whatever chunks are currently available. This very valuable because often the user can navigate or make other decisions with partially loaded data.
 
 ![render-frame](images/chunked-format.png)
 
@@ -84,9 +106,11 @@ image is stored without chunks then reading a 2D rectangle would require
 hundreds of small read operations from all over the file. With chunks you can read a rectangular region with a single read operation.
 
 For 3D images the chunks tend to be 3D blocks, but the idea is the same. With
-Neuroglancer they commonly store the data in 64x64x64 chunks. This is useful
-because you can read the data in XY, XZ or YZ and it performs the same in each
-orientation. It's also nice because you scroll through slices quickly since on average you have 32 slices above and below your current location.
+Neuroglancer they commonly store the data in 64x64x64 voxel chunks which is
+256KB. This is useful because you can read the data in XY, XZ or YZ and it
+performs the same in each orientation. It's also nice because you scroll through
+slices quickly since on average you have 32 slices above and below your current
+location.
 
 In #1300 there are no chunks, the images were created in memory as one
 monolithic thing, so we are going to have to break it into chunks in order to
@@ -97,7 +121,10 @@ layers, so we can consider the full layers to be chunks. In general we can get
 creative with chunks, they can be spatial subdivisions or any other division we
 want.
 
-With non-image data like points, shapes and meshes we can have 2D or 3D spatial chunks, we can have layers, and we invent other sub-divisions to use as chunks. As long as things can be loaded and drawn independently we can use them as chunks.
+With non-image data like points, shapes and meshes we can have 2D or 3D spatial
+chunks, we can have layers, and we can invent other sub-divisions to use as
+chunks. As long as things can be loaded and drawn independently we can use them
+as chunks.
 
 # Loading into RAM and VRAM
 
@@ -114,9 +141,11 @@ Loading into VRAM is a different story because it must happen in the GUI thread,
 
 # Example: #1320
 
-In #1320 the images are not chunked since they are very small, but there are 3 layers per slice, so these per-slice layers are our chunks. Some layers are coming off disk some are computed.
-
-The "working set" is the set of chunks we need to draw the full current scene. In this case we need the visible layers for the current slice.
+In #1320 the images are not chunked since they are very small, but there are 3
+layers per slice, so these per-slice layers are our chunks. Some layers are
+coming off disk some are computed. The "working set" is the set of chunks we
+need to draw the full current scene. In this case we need the visible layers for
+the current slice.
 
 ![render-frame](images/example-1320.png)
 
@@ -126,37 +155,64 @@ In #845 we are drawing a multi-scale image which is chunked on disk.
 
 ## Chunk Size
 
-While confusing there can be many different chunks sizes in use at one time. With **Dask** often Dask's chunks are larger than the disk chunks. Our chunks might be the disk size, Dask's size, or some 3rd size.
+It's confusing but there can be different chunk sizes in use at one time. With
+**Dask** often Dask's chunks are larger than the file format's chunks. This
+means loading one Dask chunk can cause many disk chunks to load into memory. We
+might choose our rendering chunks to be the same size as Dask is using, if we
+can even determine that, or we might chose a different size.
 
-In some cases like #1300 there might be no chunks so we can choose any size we want. In other cases we might want to infer or detect what sizes are being use and choose accordingly. In all cases though it's possible the existing chunks sizes are not appropriate for rending.
+In the end there are two different types of speed, framerate and load time, and sometimes there is a tradeoff. For example chunks that are really small might have a great framerate but slow loading speed. In the worst case we might have to let the user tune the chunk size.
 
 ## Octree
 
-In #1320 our chunks were layers, so the ChunkManager can write data into those layers. With #845 chunks are spatial so we need a new spatial datastructure than can keep track of which chunks are in memory and store the per-chunk data.
+In #1320 our chunks were layers, so the ChunkManager can write data into those layers. With #845 chunks are spatial so we need a new spatial datastructure that can keep track of which chunks are in memory and store the per-chunk data.
 
 We are doing to use an octree. See [Apple's](https://developer.apple.com/documentation/gameplaykit/gkoctree) depiction of an octree:
 
 ![render-frame](images/octree.png)
 
-In a quadtree every node has 4 children that divide the square into 4 parts: upper-left, upper-right, lower-left and lower-right. An octree is the same thing in 3D: every node has up to 8 children, the 4 on top then 4 on the bottom. We can use our octree for 2D situations just by restricting ourselves to the top 4 children.
+In a quadtree every node has 4 children that divides each square node into 4
+parts: upper-left, upper-right, lower-left and lower-right. An octree is the
+same thing in 3D: every node has up to 8 children, the 4 on top and the 4 on the
+bottom. We can use our octree for 2D situations just by restricting ourselves to
+the top 4 children.
 
 ## Multi-resolution
 
-Like image pyramids the octree can store many versions of the same data at different resolutions. The root node contains a downsampled depiction of the entire datasets. As the user zooms in, we descend into child nodes which contain ever smaller portions of the data at higher resolution.
+Like image pyramids the octree can store many versions of the same data at different resolutions. The root node contains a downsampled depiction of the entire dataset. As the user zooms in, we descend into child nodes which contain ever smaller portions of the data, but at a higher resolution.
 
-The working set will be determined by the current view. For a very wide view we the working state will contain nodes high in the tree. For a very zoomed in view the working set will contain nodes farther down in the tree.
+In either case if a chunk is not in memory it will be requested from the
+`ChunkManager`. Until the data is in memory the renderer needs to draw a
+placeholder. In many cases the best placeholder will be from a different level
+of the octree. This produces the common effect in larger image browsers where
+the view is initially blurry and then "refines" as more data is loaded.
 
-In either case if a chunk is not in memory it will be requested from the `ChunkManager`. Until the data is in memory the reader thread needs to draw a placeholder. In many cases the best placeholder will be from a different level of the octree. This produces the common effect in larger image browsers where the view is initially blurry and then "refines" as more data is loaded.
+In the worst case if no stand-in is availabel the placeholder can be blank or a grid or a "loading" animation.
 
 ## Beyond Images
 
-We hope to use this same octree for all layers types than need spatial subdivision. The type of "downsampling" can vary widely from one layer type to another. For 2D and 3D images methods for downsampling are very standard and well understood.
+We are starting with 2D images but we are going to build the `ChunkManager` and octree in a generic way so that we can add in more layer types as we go, including 3D images, points, shapes and meshes. 2D images are the simplest case, but we believe most the infrastucture can be used by the they other layers times.
 
-For geometry layers things can get much more complicated. For example there are many ways to "downsample" a mesh with varying costs and quality levels. And sometimes with geometry the user doesn't want to see miniature version of the data, they want to see bounding boxes or other type of aggregation objects. They want to be directed to where the data is rather than see a tiny version of it.
+There are several reason the other layers types can be harder:
 
-To start we are only dealing with 2D images. However we are doing try to make things generic so we can add more layer types easily.
+1. Downsampling images is fast and well understood but downsample geometry can be slow and complicated. There are many ways to "downsample" a 3D mesh it can get very complex with trade-offs for speed and quality.
+2. Sometimes we will want downsample versions of things to look totally unlike the real data. For example instead of seeing millions of tiny points, the user might want to see heatmap indicating where the points are.
+3. With images the data density is uniform but with geometry it can vary widely. You can pack in millions of points/shapes/triangles into a tiny area.
 
-Note each layer time could be rendered differently. For example we might have an octree for images but render points and shapes without any spatial data structure. This will work fine up to a certain number of points and shapes.
+Luckily we don't need to solve all these problems to start. We can have a working octree for 2D and later 3D images before tackling the other layer types. We can render asymetrically where with an octree for the images but no spatial subdivision for the other types. Or we can have a simplistic downsampling algorithm to start that doesn't preserve visual quality but does render fast, and improve it over time.
+
+## Implementation Plan
+
+Follow the steps listed in [#1320](https://github.com/napari/napari/issues/1320) to fully resolve it first it:
+
+1.  Create a `ChunkManager` class that uses a `@thread_worker` thread pool.
+2.  Introduce a `DataSource` class that only optionally contains data.
+3.  Paging thread puts data into `DataSource` and triggers a `draw()`.
+4.  Morph `_set_view_slice` into a `draw()` routine.
+    1.  Draws what it can, pages/loads what is to.
+5.  Figure out how we set the size of the thread poo.
+   
+With #1320 resolved we need to create the octree infrastrcture to solve #845 and #1300. The steps are TBD but we do want to keep in general with the other image types in mind.
 
 # Appendix
 
