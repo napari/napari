@@ -6,11 +6,11 @@ This document outlines our plans for making napari's rendering non-blocking. We 
 
 In May 2020 we looked into three issues related to blocked UI:
 
-| Issue | Summary                                                        |
-| ----- | -------------------------------------------------------------- |
-| #845  | UI blocked by Disk or Network IO rendering multi-scale images. |
-| #1300 | UI blocked rendering large in-memory images (not multi-scale). |
-| #1320 | UI blocked rendering small images due to lazy computations.    |
+| Issue                                                 | Summary                                                        |
+| ----------------------------------------------------- | -------------------------------------------------------------- |
+| [#845](https://github.com/napari/napari/issues/845)   | UI blocked by Disk or Network IO rendering multi-scale images. |
+| [#1300](https://github.com/napari/napari/issues/1300) | UI blocked rendering large in-memory images (not multi-scale). |
+| [#1320](https://github.com/napari/napari/issues/1320) | UI blocked rendering small images due to lazy computations.    |
 
 When the UI is "blocked" napari feels slow and lags. It's not just an aesthetic
 issue, manipulation of interactive UI elements like sliders becomes nearly
