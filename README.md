@@ -53,9 +53,9 @@ To clone the repository locally and install in editable mode use
 git clone https://github.com/napari/napari.git
 cd napari
 pip install -e .[all]
-# or, to also grab all of the developer tools that we use
+# or, to install in editable mode AND grab all of the developer tools
 # (this is required if you want to contribute code back to napari)
-pip install -e .[all,dev]
+pip install -r requirements.txt
 ```
 
 For more information or troubleshooting see our [installation tutorial](https://napari.org/tutorials/fundamentals/installation)
