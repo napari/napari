@@ -112,7 +112,7 @@ take action sooner. Also progressive rendering just feels more pleasant for the
 user. Progressive rending makes the internal state of the application visible
 which is often leads to a better user experience.
 
-![chunked-format](images/chunked-format.png)
+## Chunked File Formats
 
 The most common types of chunks are blocks of contiguous memory inside a chunked
 file format like **Zarr** and exposed by an API like **Dask**. If an
@@ -120,12 +120,16 @@ image is stored without chunks then reading a 2D rectangle would require
 hundreds of small read operations from all over the file. With chunks you can
 read a rectangular region with a single read operation.
 
+![chunked-format](images/chunked-format.png)
+
 For 3D images the chunks tend to be 3D blocks, but the idea is the same.
 Neuroglancer commonly stores the data in 64x64x64 voxel chunks which is 256KB.
 This is useful because you can read the data in XY, XZ or YZ and it performs the
 same in each orientation. It's also nice because you scroll through slices
 quickly since on average you have 32 slices above and below your current
 location.
+
+## Creating Chunks
 
 In #1300 there are no chunks, the images were created in memory as one
 monolithic array, so we are going to have to break it into chunks in order to
@@ -151,14 +155,15 @@ new `@thread_worker` interface for our thread pool.
 
 Loading into VRAM is a different story because it must happen in the GUI thread,
 at least that is our assumption while we are using OpenGL. Therefore we need to
-amortize the load over some number of frames. We will set a a budget, for
+amortize the load over some number of frames. We will set a budget, for
 example 5 milliseconds. Each frame can spend that much time loading data into
 VRAM, it will spend the rest of the frame drawing as normal. In this case it's
 important that no single chunk takes more than 5 milliseconds to transfer.
 
 ![paging-chunks](images/paging-chunks.png)
 
-Viewed as a timeline:
+Viewed as a timeline the rendering thread render regularly spaced frames while
+in parallel IO and compute threads load data into RAM.
 
 ![timeline](images/timeline.png)
 
@@ -178,50 +183,54 @@ In #845 we are drawing a multi-scale image which is chunked on disk.
 
 ## Chunk Size
 
-It's confusing but there can be different chunk sizes in use at one time. With
-**Dask** often Dask's chunks are larger than the file format's chunks. This
+It's confusing but there can be different chunk sizes in use at one time. If
+using **Dask** it's chunks are often larger than the file format's chunks. This
 means loading one Dask chunk can cause many disk chunks to load into memory. We
 might choose our rendering chunks to be the same size as Dask is using, if we
 can even determine that, or we might chose a different size.
 
-In the end there are two different types of speed, framerate and load time, and
-sometimes there is a tradeoff. For example chunks that are really small might
-have a great framerate but slow loading speed. In the worst case we might have
-to let the user tune the chunk size.
+In the end there are two different types of speed: framerate and load time.
+Sometimes there is a tradeoff and we can speed up loading by slowing the
+framerate a bit. Hopefully we can come up with defaults that work well for most
+people, but we'll probably need to provide a way for the user to tune the chunks
+if necessary.
 
 ## Octree
 
-In #1320 our chunks were layers, so the ChunkManager can write data into those
-layers. With #845 chunks are spatial so we need a new spatial datastructure that
-can keep track of which chunks are in memory and store the per-chunk data.
+To solve #1320 our chunks will be layers. The ChunkManager can write the data
+into the `Image` object for those layers. However with #845 chunks are spatial
+so we need a new spatial datastructure that can keep track of which chunks are
+in memory and store the per-chunk data.
 
 We are doing to use an octree. See
-[Apple's](https://developer.apple.com/documentation/gameplaykit/gkoctree)
-depiction of an octree:
+[Apple's](https://developer.apple.com/documentation/gameplaykit/gkoctree) nice
+illustration of an octree:
 
 ![octree](images/octree.png)
 
-In a quadtree every node has 4 children that divides each square node into 4
-parts: upper-left, upper-right, lower-left and lower-right. An octree is the
-same thing in 3D: every node has up to 8 children, the 4 on top and the 4 on the
-bottom. We can use our octree for 2D situations just by restricting ourselves to
-the top 4 children.
+In a quadtree every square node is divided into 4 children representing the 4
+spatial quadrants of that node: upper-left, upper-right, lower-left and
+lower-right. An octree is the same idea but in 3D: every node has up to 8 children,
+the 4 on top and the 4 on the bottom.
+
+We can use our octree for 2D situations just by restricting ourselves to the top
+4 children. So we plan to always use the same octree datastructure all the time,
+but use it in 2D or 3D modes as needed.
 
 ## Multi-resolution
 
 Like image pyramids the octree can store many versions of the same data at
 different resolutions. The root node contains a downsampled depiction of the
 entire dataset. As the user zooms in, we descend into child nodes which contain
-ever smaller portions of the data, but at a higher resolution.
+ever smaller portions of the data, but at ever higher resolutions.
 
 In either case if a chunk is not in memory it will be requested from the
-`ChunkManager`. Until the data is in memory the renderer needs to draw a
+`ChunkManager`. Until the data is in memory the renderer will draw a
 placeholder. In many cases the best placeholder will be from a different level
-of the octree. This produces the common effect in larger image browsers where
-the view is initially blurry and then "refines" as more data is loaded.
-
-In the worst case if no stand-in is available the placeholder can be blank or a
-grid or a "loading" animation.
+of the octree. This will produce the often seen effect where the image is
+initially blurry but then "refines" as more data is loaded. In the worst case if
+no stand-in is available the placeholder can be blank or a grid potentially with
+a "loading" animation.
 
 ## Beyond Images
 
