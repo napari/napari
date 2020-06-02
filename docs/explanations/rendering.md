@@ -289,13 +289,12 @@ going on behind the array-like interface. Some possible situations:
 | Big Compute (all cores)  | One thread total.                              |
 
 We might have to aim for "reasonable defaults which yield reasonable
-performance". Even if loading/compute speed is not optimal, rendering should
-still be fast and napari should still be responsive.
-
-We may have to allow the user to configure the number of threads manually for
-the very best performance. Either through the GUI or through an API. People
-writing custom applications with napari will probably not mind doing a bit of
-manual configuration to get the best performance. 
+performance". This should keep rendering non-blocking and fast even if
+load/compute is not optimal. We may have to allow the user to configure the
+number of threads manually for the very best performance, either through the GUI
+or through an API. People writing custom applications with napari will probably
+not mind doing a bit of manual tuning and configuration to get the best
+performance. 
 
 Some day we could try to infer what's going on and adjust things dynamically
 ourselves. For example we could detect if the CPU was underused and add more
@@ -308,7 +307,7 @@ cannot run completely independently of each other due to the [Global Interpreter
 Lock
 (GIL)](https://medium.com/python-features/pythons-gil-a-hurdle-to-multithreaded-program-d04ad9c1a63).
 Luckily in many cases a thread will release the GIL to do IO or
-compute-intensive operations. During those spans of time the threads can run
+compute-intensive operations. During those spans of time the threads *can* run
 independently.
 
 The GIL only applies to threads that are actively running Python bytecode. Only
@@ -318,14 +317,17 @@ cases access the same datastructure without a lock because the GIL serves as
 kind of a universal lock.
 
 If we cannot get the performance we want using threads we might consider
-switching to processes in some cases.
+switching to processes in some cases. Process ofter total isolation, but
+processes do not share memory, so you have to explicitly pass data between
+processes.
 
 In the other direction Python contains asynchronous mechanisms such as
 `asyncio`. These generally provide concurrency without parallelism. You can have
 N tasks in progress, but they are all running interleaved in the same thread.
-The advantage of this is you can have many more tasks in progress than you would
-have threads. You could have thousands of tasks going at once. `asyncio` is
-relatively new and we should keep it in mind for rendering and other purposes.
+The advantage of this is these concurrent tasks are *much* lighter weight than
+threads. In some languages you can have millions of concurrent tasks, not sure
+about Python. `asyncio` is relatively new and we should keep it in mind for
+rendering and other purposes.
 
 ## VRAM and Vispy
 
@@ -334,9 +336,9 @@ VRAM by creating and drawing vispy objects. By drawing objects in our working
 set VRAM should very quickly align to what we want it to contain.
 
 To hit our ~5ms budget for paging into VRAM we just have to limit the number of
-new vispy objects we create each frame. The goal is instead of having one super
-long frame following by all the chunks popping in at once, we have fast
-regularly spaced frames with more and more chunks progressively appearing.
+new vispy objects we create each frame. The goal is to have regularly spaced
+frames and load in chunks over time, rather than have one super long frame where
+all the chunks get loaded.
 
 It's TBD exactly how we will use vispy, especially with the octree, but once we
 have a concrete design we will revise this document.
