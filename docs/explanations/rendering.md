@@ -103,12 +103,13 @@ portion of the scene*. Without chunks we have only two choices: render nothing
 or render the entire scene. With chunks we can partially and progressively
 render the scene using whatever chunks are currently available. This very
 valuable because often the user can navigate or make other decisions with
-partially loaded data.
+partially loaded data. Progressive rendering leads to be better user experience
+even if the user is just waiting.
 
 ![chunked-format](images/chunked-format.png)
 
 The most common types of chunks are blocks of contiguous memory inside a chunked
-file format like **Zarr** (on disk) and exposed by an API like **Dask**. If an
+file format like **Zarr** and exposed by an API like **Dask**. If an
 image is stored without chunks then reading a 2D rectangle would require
 hundreds of small read operations from all over the file. With chunks you can
 read a rectangular region with a single read operation.
@@ -121,7 +122,7 @@ quickly since on average you have 32 slices above and below your current
 location.
 
 In #1300 there are no chunks, the images were created in memory as one
-monolithic thing, so we are going to have to break it into chunks in order to
+monolithic array, so we are going to have to break it into chunks in order to
 send it to the graphics card incrementally. In #1320 the images are small so we
 are not chunked, but there are 3 image layers, so we can consider the full
 layers to be chunks. In general we can get creative with chunks, they can be
@@ -141,7 +142,12 @@ take. For example loading data over the internet or doing a complex calculation
 to produce the data could both take really long time. We are going to use the
 new `@thread_worker` interface for our thread pool.
 
-Loading into VRAM is a different story because it must happen in the GUI thread, at least that is our assumption while we are using OpenGL. Therefore we need to amortize the load over some number of frames. We will set a a budget, for example 5 milliseconds. Each frame can spend that much time loading data into VRAM, it will spend the rest of the frame drawing as normal. In this case it's important no single chunk takes more than 5 milliseconds to transfer, or that frame might be slow.
+Loading into VRAM is a different story because it must happen in the GUI thread,
+at least that is our assumption while we are using OpenGL. Therefore we need to
+amortize the load over some number of frames. We will set a a budget, for
+example 5 milliseconds. Each frame can spend that much time loading data into
+VRAM, it will spend the rest of the frame drawing as normal. In this case it's
+important that no single chunk takes more than 5 milliseconds to transfer.
 
 ![paging-chunks](images/paging-chunks.png)
 
@@ -216,14 +222,16 @@ Luckily we don't need to solve all these problems to start. We can have a workin
 
 ## Implementation Plan
 
-Follow the steps listed in [#1320](https://github.com/napari/napari/issues/1320) to fully resolve it first it:
+We will resolve [#1320](https://github.com/napari/napari/issues/1320) first:
 
 1.  Create a `ChunkManager` class that uses a `@thread_worker` thread pool.
 2.  Introduce a `DataSource` class that only optionally contains data.
 3.  Paging thread puts data into `DataSource` and triggers a `draw()`.
 4.  Morph `_set_view_slice` into a `draw()` routine.
     1.  Draws what it can, pages/loads what is to.
-5.  Figure out how we set the size of the thread poo.
+5.  Figure out how we set the size of the thread pool.
+
+See the issue comments for more details.
    
 With #1320 resolved we need to create the octree infrastrcture to solve #845 and #1300. The steps are TBD but we do want to keep in general with the other image types in mind.
 
