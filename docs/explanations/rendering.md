@@ -318,8 +318,8 @@ cases access the same datastructure without a lock because the GIL serves as
 kind of a universal lock for all datastructures.
 
 If our threads interfere too much we might consider switching to processes in
-those cases. Processes ofter total independence, but processes do not share
-memory by default, so that might add complexity.
+those cases. Processes offer total independence, but processes do not share
+memory by default, so that could add complexity.
 
 Python also has [asyncio](https://docs.python.org/3/library/asyncio.html) which
 gives you concurrency but not necessarily parallelism. The advantage is the
