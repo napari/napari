@@ -326,8 +326,8 @@ With OpenGL you cannot directly manage VRAM. Instead we will control what's in
 VRAM by creating and drawing [vispy](http://vispy.org/) objects. By drawing
 objects in our working set VRAM will soon contain what we want. We will tightly
 manage the construction and destruction of vispy objects to match the current
-working set. We also have to make sure we don't create too many new objects in
-one frame so that we do not exceed our time budget.
+working set. We also have to make sure that we don't create too many new objects
+in one frame and exceed our time budget.
 
 A future version of this document will need to document our use of vispy
 thorougly. We just don't know the details yet.
