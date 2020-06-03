@@ -51,7 +51,7 @@ flexibility creates a huge challenge for napari. Many graphics applications have
 specific and customized data formats, but napari needs to work with basically
 any source of data.
 
-With **Dask** or custom code it's possible an array access will result in disk
+With [Dask](https://dask.org/) or custom code it's possible an array access will result in disk
 or network IO. It's even possible the data does not exist at all and it will be
 computed on-the-fly. In this case the user's code is doing the computation and
 napari has no control or visibility into the computation or how long it will
