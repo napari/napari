@@ -1,5 +1,5 @@
 from collections import deque
-from typing import Union
+from typing import Union, Dict
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -9,7 +9,9 @@ from ...utils.colormaps import colormaps
 from ...utils.event import Event
 from ...utils.status_messages import format_float
 from ._labels_constants import Mode
-from ._labels_mouse_bindings import fill, paint, pick
+from ._labels_mouse_bindings import draw, pick
+
+from ..utils.layer_utils import dataframe_to_properties
 
 
 class Labels(Image):
@@ -24,6 +26,10 @@ class Labels(Image):
         Labels data as an array or multiscale.
     num_colors : int
         Number of unique colors to use in colormap.
+    properties : dict {str: array (N,)}, DataFrame
+        Properties for each label. Each property should be an array of length
+        N, where N is the number of labels, and the first property corresponds to
+        background.
     seed : float
         Seed for colormap random generator.
     name : str
@@ -63,6 +69,10 @@ class Labels(Image):
         Labels metadata.
     num_colors : int
         Number of unique colors to use in colormap.
+    properties : dict {str: array (N,)}, DataFrame
+        Properties for each label. Each property should be an array of length
+        N, where N is the number of labels, and the first property corresponds to
+        background.
     seed : float
         Seed for colormap random generator.
     opacity : float
@@ -96,6 +106,9 @@ class Labels(Image):
         pixels will be changed to background and this tool functions like an
         eraser.
 
+        In ERASE mode the cursor functions similarly to PAINT mode, but to
+        paint with background label, which effectively removes the label.
+
     Extended Summary
     ----------
     _data_raw : array (N, M)
@@ -112,6 +125,7 @@ class Labels(Image):
         data,
         *,
         num_colors=50,
+        properties=None,
         seed=0.5,
         name=None,
         metadata=None,
@@ -126,6 +140,21 @@ class Labels(Image):
         self._seed = seed
         self._num_colors = num_colors
         colormap = ('random', colormaps.label_colormap(self.num_colors))
+
+        if properties is None:
+            self._properties = {}
+            label_index = {}
+        else:
+            properties = self._validate_properties(properties)
+            self._properties, label_index = dataframe_to_properties(properties)
+        if label_index is None:
+            props = self._properties
+            if len(props) > 0:
+                self._label_index = self._map_index(properties)
+            else:
+                self._label_index = {}
+        else:
+            self._label_index = label_index
 
         super().__init__(
             data,
@@ -159,8 +188,8 @@ class Labels(Image):
         self._brush_size = 10
 
         self._background_label = 0
-        self._selected_label = 0
-        self._selected_color = None
+        self._selected_label = 1
+        self._selected_color = self.get_color(self._selected_label)
 
         self._mode = Mode.PAN_ZOOM
         self._mode_history = self._mode
@@ -239,6 +268,42 @@ class Labels(Image):
         self._selected_color = self.get_color(self.selected_label)
         self.events.selected_label()
 
+    @property
+    def properties(self) -> Dict[str, np.ndarray]:
+        """dict {str: array (N,)}, DataFrame: Properties for each label."""
+        return self._properties
+
+    @properties.setter
+    def properties(self, properties: Dict[str, np.ndarray]):
+        if not isinstance(properties, dict):
+            properties, label_index = dataframe_to_properties(properties)
+            if label_index is None:
+                label_index = self._map_index(properties)
+        self._properties = self._validate_properties(properties)
+        self._label_index = label_index
+
+    def _validate_properties(
+        self, properties: Dict[str, np.ndarray]
+    ) -> Dict[str, np.ndarray]:
+        """Validate the type and size of properties."""
+        lens = []
+        for k, v in properties.items():
+            lens.append(len(v))
+            if not isinstance(v, np.ndarray):
+                properties[k] = np.asarray(v)
+
+        if not all([v == lens[0] for v in lens]):
+            raise ValueError(
+                "the number of items must be equal for all properties"
+            )
+        return properties
+
+    def _map_index(self, properties: Dict[str, np.ndarray]) -> Dict[int, int]:
+        """Map rows in given properties to label indices"""
+        arbitrary_key = list(properties.keys())[0]
+        label_index = {i: i for i in range(len(properties[arbitrary_key]))}
+        return label_index
+
     def _get_state(self):
         """Get dictionary of layer state.
 
@@ -252,6 +317,7 @@ class Labels(Image):
             {
                 'multiscale': self.multiscale,
                 'num_colors': self.num_colors,
+                'properties': self._properties,
                 'seed': self.seed,
                 'data': self.data,
             }
@@ -295,6 +361,9 @@ class Labels(Image):
         clicked on pixel. If the background label `0` is selected than any
         pixels will be changed to background and this tool functions like an
         eraser.
+
+        In ERASE mode the cursor functions similarly to PAINT mode, but to
+        paint with background label, which effectively removes the label.
         """
         return str(self._mode)
 
@@ -310,10 +379,8 @@ class Labels(Image):
 
         if self._mode == Mode.PICK:
             self.mouse_drag_callbacks.remove(pick)
-        elif self._mode == Mode.PAINT:
-            self.mouse_drag_callbacks.remove(paint)
-        elif self._mode == Mode.FILL:
-            self.mouse_drag_callbacks.remove(fill)
+        elif self._mode in [Mode.PAINT, Mode.FILL, Mode.ERASE]:
+            self.mouse_drag_callbacks.remove(draw)
 
         if mode == Mode.PAN_ZOOM:
             self.cursor = 'standard'
@@ -328,13 +395,25 @@ class Labels(Image):
             self.cursor_size = self.brush_size / self.scale_factor
             self.cursor = 'square'
             self.interactive = False
-            self.help = 'hold <space> to pan/zoom, hold <shift> to toggle preserve_labels, drag to paint a label'
-            self.mouse_drag_callbacks.append(paint)
+            self.help = (
+                'hold <space> to pan/zoom, '
+                'hold <shift> to toggle preserve_labels, '
+                'hold <control> to fill, '
+                'hold <alt> to erase, '
+                'drag to paint a label'
+            )
+            self.mouse_drag_callbacks.append(draw)
         elif mode == Mode.FILL:
             self.cursor = 'cross'
             self.interactive = False
             self.help = 'hold <space> to pan/zoom, click to fill a label'
-            self.mouse_drag_callbacks.append(fill)
+            self.mouse_drag_callbacks.append(draw)
+        elif mode == Mode.ERASE:
+            self.cursor_size = self.brush_size / self.scale_factor
+            self.cursor = 'square'
+            self.interactive = False
+            self.help = 'hold <space> to pan/zoom, drag to erase a label'
+            self.mouse_drag_callbacks.append(draw)
         else:
             raise ValueError("Mode not recognized")
 
@@ -436,7 +515,7 @@ class Labels(Image):
     def redo(self):
         self._load_history(self._redo_history, self._undo_history)
 
-    def fill(self, coord, old_label, new_label):
+    def fill(self, coord, new_label, refresh=True):
         """Replace an existing label with a new label, either just at the
         connected component if the `contiguous` flag is `True` or everywhere
         if it is `False`, working either just in the current slice if
@@ -447,14 +526,28 @@ class Labels(Image):
         ----------
         coord : sequence of float
             Position of mouse cursor in image coordinates.
-        old_label : int
-            Value of the label image at the coord to be replaced.
         new_label : int
             Value of the new label to be filled in.
+        refresh : bool
+            Whether to refresh view slice or not. Set to False to batch paint
+            calls.
         """
-        self._save_history()
+        int_coord = tuple(np.round(coord).astype(int))
+        # If requested fill location is outside data shape then return
+        if np.any(np.less(int_coord, 0)) or np.any(
+            np.greater_equal(int_coord, self.shape)
+        ):
+            return
 
-        int_coord = np.round(coord).astype(int)
+        # If requested new label doesn't change old label then return
+        old_label = self.data[int_coord]
+        if old_label == new_label or (
+            self.preserve_labels and old_label != self._background_label
+        ):
+            return
+
+        if refresh is True:
+            self._save_history()
 
         if self.n_dimensional or self.ndim == 2:
             # work with entire image
@@ -467,7 +560,7 @@ class Labels(Image):
 
         matches = labels == old_label
         if self.contiguous:
-            # if not contiguous replace only selected connected component
+            # if contiguous replace only selected connected component
             labeled_matches, num_features = ndi.label(matches)
             if num_features != 1:
                 match_label = labeled_matches[slice_coord]
@@ -482,7 +575,8 @@ class Labels(Image):
             # if working with just the slice, update the rest of the raw data
             self.data[tuple(self.dims.indices)] = labels
 
-        self.refresh()
+        if refresh is True:
+            self.refresh()
 
     def paint(self, coord, new_label, refresh=True):
         """Paint over existing labels with a new label, using the selected
@@ -546,8 +640,26 @@ class Labels(Image):
         if not self.preserve_labels:
             self.data[slice_coord] = new_label
         else:
-            keep_coords = self.data[slice_coord] == self._background_label
+            if new_label == self._background_label:
+                keep_coords = self.data[slice_coord] == self.selected_label
+            else:
+                keep_coords = self.data[slice_coord] == self._background_label
             self.data[slice_coord][keep_coords] = new_label
 
         if refresh is True:
             self.refresh()
+
+    def get_message(self):
+        msg = super().get_message()
+        # if this labels layer has properties
+        if self._label_index and self._properties:
+            # if the cursor is not outside the image or on the background
+            if self._value is not None:
+                if self._value in self._label_index:
+                    idx = self._label_index[self._value]
+                    for k, v in self._properties.items():
+                        if k != 'index':
+                            msg += f', {k}: {v[idx]}'
+                else:
+                    msg += f' [No Properties]'
+        return msg

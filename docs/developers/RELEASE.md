@@ -7,7 +7,7 @@ it will include generating release notes, documentation, etc.
 This is mainly meant for the core developers who will actually be performing the release.
 They will need to have a [PyPI](https://pypi.org) account with upload permissions to the `napari` package.
 
-You will also need the additional `release` dependencies in `requirements/release.txt` to complete the release process.
+You will also need the additional `release` dependencies (`pip install -e .[release]`) to complete the release process.
 
 > [`MANIFEST.in`](../MANIFEST.in) determines which non-Python files are included.
 > Make sure to check that all necessary ones are listed before beginning the release process.

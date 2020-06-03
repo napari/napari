@@ -203,6 +203,39 @@ def test_num_colors():
     assert layer.num_colors == 60
 
 
+def test_properties():
+    """Test adding labels with properties."""
+    np.random.seed(0)
+    data = np.random.randint(20, size=(10, 15))
+
+    layer = Labels(data)
+    assert isinstance(layer.properties, dict)
+    assert len(layer.properties) == 0
+
+    properties = {'class': ['Background'] + [f'Class {i}' for i in range(20)]}
+    label_index = {i: i for i in range(len(properties['class']))}
+    layer = Labels(data, properties=properties)
+    assert isinstance(layer.properties, dict)
+    assert layer.properties == properties
+    assert layer._label_index == label_index
+
+    current_label = layer.get_value()
+    layer_message = layer.get_message()
+    assert layer_message.endswith(f'Class {current_label - 1}')
+
+    properties = {'class': ['Background']}
+    layer = Labels(data, properties=properties)
+    layer_message = layer.get_message()
+    assert layer_message.endswith("[No Properties]")
+
+    properties = {'class': ['Background', 'Class 12'], 'index': [0, 12]}
+    label_index = {0: 0, 12: 1}
+    layer = Labels(data, properties=properties)
+    layer_message = layer.get_message()
+    assert layer._label_index == label_index
+    assert layer_message.endswith('Class 12')
+
+
 def test_colormap():
     """Test colormap."""
     np.random.seed(0)
@@ -267,8 +300,8 @@ def test_selecting_label():
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
-    assert layer.selected_label == 0
-    assert layer._selected_color is None
+    assert layer.selected_label == 1
+    assert (layer._selected_color == layer.get_color(1)).all
 
     layer.selected_label = 1
     assert layer.selected_label == 1
@@ -338,7 +371,7 @@ def test_fill():
     assert np.unique(layer.data[:5, :5]) == 1
     assert np.unique(layer.data[5:10, 5:10]) == 2
 
-    layer.fill([0, 0], 1, 3)
+    layer.fill([0, 0], 3)
     assert np.unique(layer.data[:5, :5]) == 3
     assert np.unique(layer.data[5:10, 5:10]) == 2
 
