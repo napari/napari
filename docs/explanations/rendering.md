@@ -243,7 +243,7 @@ There are several reasons the other layer types might be harder:
 1. Downsampling images is fast and well understood but "downsampling" geometry
    can be slow and complicated. Plus this is no one definitive result, there
    will be complicated trade-offs for speed and quality.
-2. Sometimes we will want downsample versions of things into a format that
+2. Sometimes we will to want downsample versions of things into a format that
    represents the data but does not look like data. For example instead of
    seeing millions of tiny points, the user might want to see heatmap or
    bounding boxes indicating where the points are. Many different types of
