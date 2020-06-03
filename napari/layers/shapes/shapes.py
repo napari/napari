@@ -1,6 +1,15 @@
 import numpy as np
 from copy import copy, deepcopy
 
+from ..utils.color_transformations import (
+    normalize_and_broadcast_colors,
+    transform_color_with_defaults,
+)
+from ...utils.colormaps.standardize_color import (
+    transform_color,
+    hex_to_name,
+    rgb_to_hex,
+)
 from ...utils.event import Event
 from ...utils.misc import ensure_iterable
 from ...utils.status_messages import format_float
@@ -43,13 +52,13 @@ class Shapes(Layer):
         same length as the length of `data` and each element will be
         applied to each shape otherwise the same value will be used for all
         shapes.
-    edge_color : str or list
+    edge_color : str, array-like
         If string can be any color name recognized by vispy or hex value if
         starting with `#`. If array-like must be 1-dimensional array with 3
         or 4 elements. If a list is supplied it must be the same length as
         the length of `data` and each element will be applied to each shape
         otherwise the same value will be used for all shapes.
-    face_color : str or list
+    face_color : str, array-like
         If string can be any color name recognized by vispy or hex value if
         starting with `#`. If array-like must be 1-dimensional array with 3
         or 4 elements. If a list is supplied it must be the same length as
@@ -69,7 +78,7 @@ class Shapes(Layer):
         Scale factors for the layer.
     translate : tuple of float
         Translation values for the layer.
-    opacity : float or list
+    opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
         One of a list of preset blending modes that determines how RGB and
@@ -85,14 +94,12 @@ class Shapes(Layer):
         N vertices of a shape in D dimensions.
     shape_type : (N, ) list of str
         Name of shape type for each shape.
-    edge_color : (N, ) list of str
-        Name of edge color for each shape.
-    face_color : (N, ) list of str
-        Name of face color for each shape.
+    edge_color : str, array-like
+        Color of the shape border. Numeric color values should be RGB(A).
+    face_color : str, array-like
+        Color of the shape face. Numeric color values should be RGB(A).
     edge_width : (N, ) list of float
         Edge width for each shape.
-    opacity : (N, ) list of float
-        Opacity for each shape.
     z_index : (N, ) list of int
         z-index for each shape.
     current_edge_width : float
@@ -104,8 +111,6 @@ class Shapes(Layer):
     current_face_color : str
         Color of the face of the next shape to be added or the currently
         selected shape.
-    current_opacity : float
-        Opacity of the next shape to be added or the currently selected shape.
     selected_data : set
         List of currently selected shapes.
     nshapes : int
@@ -229,8 +234,6 @@ class Shapes(Layer):
         else:
             ndim = np.array(data[0]).shape[1]
 
-        # Don't pass on opacity value to base layer as it could be a list
-        # and will get set bellow
         super().__init__(
             data,
             ndim,
@@ -238,6 +241,7 @@ class Shapes(Layer):
             metadata=metadata,
             scale=scale,
             translate=translate,
+            opacity=opacity,
             blending=blending,
             visible=visible,
         )
@@ -247,6 +251,8 @@ class Shapes(Layer):
             edge_width=Event,
             edge_color=Event,
             face_color=Event,
+            current_edge_color=Event,
+            current_face_color=Event,
             highlight=Event,
         )
 
@@ -263,19 +269,14 @@ class Shapes(Layer):
             self._current_edge_width = 1
 
         if type(edge_color) is str:
-            self._current_edge_color = edge_color
+            self._current_edge_color = transform_color(edge_color)
         else:
-            self._current_edge_color = 'black'
+            self._current_edge_color = np.array([0, 0, 0, 1])
 
         if type(face_color) is str:
-            self._current_face_color = face_color
+            self._current_face_color = transform_color(face_color)
         else:
-            self._current_face_color = 'white'
-
-        if np.isscalar(opacity):
-            self._current_opacity = opacity
-        else:
-            self._current_opacity = 0.7
+            self._current_face_color = np.array([1, 1, 1, 1])
 
         self._data_view = ShapeList(ndisplay=self.dims.ndisplay)
         self._data_view.slice_key = np.array(self.dims.indices)[
@@ -317,7 +318,6 @@ class Shapes(Layer):
             edge_width=edge_width,
             edge_color=edge_color,
             face_color=face_color,
-            opacity=opacity,
             z_index=z_index,
         )
 
@@ -378,47 +378,32 @@ class Shapes(Layer):
     @property
     def current_edge_color(self):
         """str: color of shape edges including lines and paths."""
-        return self._current_edge_color
+        hex_ = rgb_to_hex(self._current_edge_color)[0]
+        return hex_to_name.get(hex_, hex_)
 
     @current_edge_color.setter
     def current_edge_color(self, edge_color):
-        self._current_edge_color = edge_color
+        self._current_edge_color = transform_color(edge_color)
         if self._update_properties:
             for i in self.selected_data:
-                self._data_view.update_edge_color(i, edge_color)
+                self._data_view.update_edge_color(i, self._current_edge_color)
         self.events.edge_color()
+        self.events.current_face_color()
 
     @property
     def current_face_color(self):
         """str: color of shape faces."""
-        return self._current_face_color
+        hex_ = rgb_to_hex(self._current_face_color)[0]
+        return hex_to_name.get(hex_, hex_)
 
     @current_face_color.setter
     def current_face_color(self, face_color):
-        self._current_face_color = face_color
+        self._current_face_color = transform_color(face_color)
         if self._update_properties:
             for i in self.selected_data:
-                self._data_view.update_face_color(i, face_color)
+                self._data_view.update_face_color(i, self._current_face_color)
         self.events.face_color()
-
-    @property
-    def current_opacity(self):
-        """float: Opacity value between 0.0 and 1.0."""
-        return self._current_opacity
-
-    @current_opacity.setter
-    def current_opacity(self, opacity):
-        if not 0.0 <= opacity <= 1.0:
-            raise ValueError(
-                'opacity must be between 0.0 and 1.0; ' f'got {opacity}'
-            )
-
-        self._current_opacity = opacity
-        if self._update_properties:
-            for i in self.selected_data:
-                self._data_view.update_opacity(i, opacity)
-        self.status = format_float(self.current_opacity)
-        self.events.opacity()
+        self.events.current_face_color()
 
     @property
     def shape_type(self):
@@ -427,23 +412,28 @@ class Shapes(Layer):
 
     @property
     def edge_color(self):
-        """list of str: name of edge color for each shape."""
-        return self._data_view.edge_colors
+        """(N x 4) np.ndarray: Array of RGBA face colors for each shape"""
+        return self._data_view.edge_color
+
+    @edge_color.setter
+    def edge_color(self, edge_color):
+        self._set_color(edge_color, 'edge')
+        self.events.edge_color()
 
     @property
     def face_color(self):
-        """list of str: name of face color for each shape."""
-        return self._data_view.face_colors
+        """(N x 4) np.ndarray: Array of RGBA face colors for each shape"""
+        return self._data_view.face_color
+
+    @face_color.setter
+    def face_color(self, face_color):
+        self._set_color(face_color, 'face')
+        self.events.face_color()
 
     @property
     def edge_width(self):
         """list of float: edge width for each shape."""
         return self._data_view.edge_widths
-
-    @property
-    def opacity(self):
-        """list of float: opacity for each shape."""
-        return self._data_view.opacities
 
     @property
     def z_index(self):
@@ -461,47 +451,63 @@ class Shapes(Layer):
         self._selected_box = self.interaction_box(self._selected_data)
 
         # Update properties based on selected shapes
-        face_colors = list(
-            set(
-                [
-                    self._data_view.shapes[i]._face_color_name
-                    for i in selected_data
-                ]
+        if len(selected_data) > 0:
+            selected_face_colors = self._data_view._face_color[
+                list(selected_data)
+            ]
+            face_colors = np.unique(selected_face_colors, axis=0)
+            if len(face_colors) == 1:
+                face_color = face_colors[0]
+                with self.block_update_properties():
+                    self.current_face_color = face_color
+
+            selected_edge_colors = self._data_view._edge_color[
+                list(selected_data)
+            ]
+            edge_colors = np.unique(selected_edge_colors, axis=0)
+            if len(edge_colors) == 1:
+                edge_color = edge_colors[0]
+                with self.block_update_properties():
+                    self.current_edge_color = edge_color
+
+            edge_width = list(
+                set(
+                    [
+                        self._data_view.shapes[i].edge_width
+                        for i in selected_data
+                    ]
+                )
             )
-        )
-        if len(face_colors) == 1:
-            face_color = face_colors[0]
-            with self.block_update_properties():
-                self.current_face_color = face_color
+            if len(edge_width) == 1:
+                edge_width = edge_width[0]
+                with self.block_update_properties():
+                    self.current_edge_width = edge_width
 
-        edge_colors = list(
-            set(
-                [
-                    self._data_view.shapes[i]._edge_color_name
-                    for i in selected_data
-                ]
-            )
-        )
-        if len(edge_colors) == 1:
-            edge_color = edge_colors[0]
-            with self.block_update_properties():
-                self.current_edge_color = edge_color
+    def _set_color(self, color, attribute: str):
+        """ Set the face_color or edge_color property
 
-        edge_width = list(
-            set([self._data_view.shapes[i].edge_width for i in selected_data])
+        Parameters
+        ----------
+        color : (N, 4) array or str
+            The value for setting edge or face_color
+        attribute : str in {'edge', 'face'}
+            The name of the attribute to set the color of.
+            Should be 'edge' for edge_color or 'face' for face_color.
+        """
+        transformed_color = transform_color_with_defaults(
+            num_entries=len(self.data),
+            colors=color,
+            elem_name="face_color",
+            default="white",
         )
-        if len(edge_width) == 1:
-            edge_width = edge_width[0]
-            with self.block_update_properties():
-                self.current_edge_width = edge_width
+        colors = normalize_and_broadcast_colors(
+            len(self.data), transformed_color
+        )
 
-        opacities = list(
-            set([self._data_view.shapes[i].opacity for i in selected_data])
-        )
-        if len(opacities) == 1:
-            opacity = opacities[0]
-            with self.block_update_properties():
-                self.current_opacity = opacity
+        setattr(self._data_view, f'{attribute}_color', colors)
+
+        color_event = getattr(self.events, f'{attribute}_color')
+        color_event()
 
     def _get_state(self):
         """Get dictionary of layer state.
@@ -652,7 +658,6 @@ class Shapes(Layer):
         edge_width=None,
         edge_color=None,
         face_color=None,
-        opacity=None,
         z_index=None,
     ):
         """Add shapes to the current layer.
@@ -686,8 +691,6 @@ class Shapes(Layer):
             or 4 elements. If a list is supplied it must be the same length as
             the length of `data` and each element will be applied to each shape
             otherwise the same value will be used for all shapes.
-        opacity : float | list
-            Opacity of the shapes, must be between 0 and 1.
         z_index : int | list
             Specifier of z order priority. Shapes with higher z order are
             displayed ontop of others. If a list is supplied it must be the
@@ -698,11 +701,9 @@ class Shapes(Layer):
         if edge_width is None:
             edge_width = self.current_edge_width
         if edge_color is None:
-            edge_color = self.current_edge_color
+            edge_color = self._current_edge_color
         if face_color is None:
-            face_color = self.current_face_color
-        if opacity is None:
-            opacity = self.current_opacity
+            face_color = self._current_face_color
         if self._data_view is not None:
             z_index = z_index or max(self._data_view._z_index, default=-1) + 1
         else:
@@ -713,18 +714,37 @@ class Shapes(Layer):
                 # If a single array for a shape has been passed turn into list
                 data = [data]
 
+            # transform the colors
+            transformed_ec = transform_color_with_defaults(
+                num_entries=len(data),
+                colors=edge_color,
+                elem_name="edge_color",
+                default="white",
+            )
+            transformed_edge_color = normalize_and_broadcast_colors(
+                len(data), transformed_ec
+            )
+            transformed_fc = transform_color_with_defaults(
+                num_entries=len(data),
+                colors=face_color,
+                elem_name="face_color",
+                default="white",
+            )
+            transformed_face_color = normalize_and_broadcast_colors(
+                len(data), transformed_fc
+            )
+
             # Turn input arguments into iterables
             shape_inputs = zip(
                 data,
                 ensure_iterable(shape_type),
                 ensure_iterable(edge_width),
-                ensure_iterable(edge_color, color=True),
-                ensure_iterable(face_color, color=True),
-                ensure_iterable(opacity),
+                transformed_edge_color,
+                transformed_face_color,
                 ensure_iterable(z_index),
             )
 
-            for d, st, ew, ec, fc, o, z in shape_inputs:
+            for d, st, ew, ec, fc, z in shape_inputs:
 
                 # A False slice_key means the shape is invalid as it is not
                 # confined to a single plane
@@ -732,16 +752,13 @@ class Shapes(Layer):
                 shape = shape_cls(
                     d,
                     edge_width=ew,
-                    edge_color=ec,
-                    face_color=fc,
-                    opacity=o,
                     z_index=z,
                     dims_order=self.dims.order,
                     ndisplay=self.dims.ndisplay,
                 )
 
                 # Add shape
-                self._data_view.add(shape)
+                self._data_view.add(shape, edge_color=ec, face_color=fc)
 
         self._display_order_stored = copy(self.dims.order)
         self._ndisplay_stored = copy(self.dims.ndisplay)
@@ -1033,6 +1050,14 @@ class Shapes(Layer):
         to_remove = sorted(index, reverse=True)
         for ind in to_remove:
             self._data_view.remove(ind)
+
+        if len(index) > 0:
+            self._data_view._edge_color = np.delete(
+                self._data_view._edge_color, index, axis=0
+            )
+            self._data_view._face_color = np.delete(
+                self._data_view._face_color, index, axis=0
+            )
         self.selected_data = set()
         self._finish_drawing()
 
@@ -1206,11 +1231,14 @@ class Shapes(Layer):
     def _copy_data(self):
         """Copy selected shapes to clipboard."""
         if len(self.selected_data) > 0:
+            index = list(self.selected_data)
             self._clipboard = {
                 'data': [
                     deepcopy(self._data_view.shapes[i])
                     for i in self._selected_data
                 ],
+                'edge_color': deepcopy(self._data_view._edge_color[index]),
+                'face_color': deepcopy(self._data_view._face_color[index]),
                 'indices': self.dims.indices,
             }
         else:
@@ -1227,14 +1255,18 @@ class Shapes(Layer):
             ]
 
             # Add new shape data
-            for s in self._clipboard['data']:
+            for i, s in enumerate(self._clipboard['data']):
                 shape = deepcopy(s)
                 data = copy(shape.data)
                 data[:, self.dims.not_displayed] = data[
                     :, self.dims.not_displayed
                 ] + np.array(offset)
                 shape.data = data
-                self._data_view.add(shape)
+                face_color = self._clipboard['face_color'][i]
+                edge_color = self._clipboard['edge_color'][i]
+                self._data_view.add(
+                    shape, face_color=face_color, edge_color=edge_color
+                )
 
             self.selected_data = set(
                 range(cur_shapes, cur_shapes + len(self._clipboard['data']))
