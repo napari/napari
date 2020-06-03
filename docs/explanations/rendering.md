@@ -159,8 +159,8 @@ transfer.
 
 ![paging-chunks](images/paging-chunks.png)
 
-Viewed as a timeline the rendering thread has regularly spaced frames while in
-parallel IO and compute threads load data into RAM.
+Viewed as a timeline, the rendering thread has regularly spaced frames, while
+the IO and compute threads load data into RAM in parallel.
 
 ![timeline](images/timeline.png)
 
