@@ -124,10 +124,10 @@ class QtDimSliderWidget(QWidget):
 
         slider = ModifiedScrollBar(Qt.Horizontal)
         slider.setFocusPolicy(Qt.NoFocus)
-        slider.setMinimum(_range[0])
-        slider.setMaximum(_range[1])
-        slider.setSingleStep(_range[2])
-        slider.setPageStep(_range[2])
+        slider.setMinimum(int(_range[0]))
+        slider.setMaximum(int(_range[1]))
+        slider.setSingleStep(int(_range[2]))
+        slider.setPageStep(int(_range[2]))
         slider.setValue(point)
 
         # Listener to be used for sending events back to model:
@@ -198,10 +198,10 @@ class QtDimSliderWidget(QWidget):
                     displayed_sliders[self.axis] = True
                     self.last_used = self.axis
                     self.show()
-                self.slider.setMinimum(_range[0])
-                self.slider.setMaximum(_range[1])
-                self.slider.setSingleStep(_range[2])
-                self.slider.setPageStep(_range[2])
+                self.slider.setMinimum(int(_range[0]))
+                self.slider.setMaximum(int(_range[1]))
+                self.slider.setSingleStep(int(_range[2]))
+                self.slider.setPageStep(int(_range[2]))
                 maxi = self.dims.max_indices[self.axis]
                 self.totslice_label.setText(str(int(maxi)))
                 self.totslice_label.setAlignment(Qt.AlignLeft)
@@ -214,7 +214,7 @@ class QtDimSliderWidget(QWidget):
         """Update dimension slider."""
         mode = self.dims.mode[self.axis]
         if mode == DimsMode.POINT:
-            self.slider.setValue(self.dims.point[self.axis])
+            self.slider.setValue(int(self.dims.point[self.axis]))
             self._update_slice_labels()
 
     def _update_slice_labels(self):
