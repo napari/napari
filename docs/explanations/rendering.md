@@ -266,8 +266,8 @@ We will resolve [#1320](https://github.com/napari/napari/issues/1320) first:
 1.  Create a `ChunkManager` class that uses a `@thread_worker` thread pool.
 2.  Introduce a `DataSource` class whose data may or may not be in memory.
 3.  The paging thread will put into `DataSource` and triggers a `draw()`.
-4.  Morph `_set_view_slice` into a `draw()` routine that draws what it can and
-    pages/requests chunks as needed.
+4.  Morph `_set_view_slice` into a `draw()` routine that draws the chunks it can
+    and pages/requests chunks that it needs.
 5.  Figure out how we set the size of the thread pool.
   
 With [#1320](https://github.com/napari/napari/issues/1320) resolved the next big
