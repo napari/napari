@@ -80,7 +80,7 @@ In order to never block the GUI thread we need to do two things:
 The renderer will compute the **working set** based on the current view. The
 working set is the set of chunks that we need to draw to fully render that
 specific view. The renderer will step through every chunk in the working set and
-do one of three things:
+do one of these three things:
 
 | Case                         | Action                                      |
 | ---------------------------- | ------------------------------------------- |
@@ -191,20 +191,21 @@ determine that, or we might chose a different size.
 
 In the end there are two different types of speed: framerate and load time. As
 long as the chunk size is not too big we should be able to get a good framerate.
-However loading speed can be trickier and can depend on many factors. Sometimes
-there is a tradeoff, perhaps we can speed up loading by slowing the framerate a
-bit. Hopefully we can come up with defaults that work well for most situations,
-but we'll probably need to provide a way for the user to tune the chunk size and
-other parameters if necessary.
+However loading speed can be trickier and can depend on many factors.
+
+Sometimes there is a tradeoff, perhaps we can speed up loading by slowing the
+framerate a bit. Hopefully we can come up with defaults that work well for most
+situations, but we'll probably need to provide a way for the user to tune the
+chunk size and other parameters if necessary.
 
 ## Octree
 
 To solve [#1320](https://github.com/napari/napari/issues/1320) our chunks will
 be layers. The ChunkManager can write the data into the `Image` object for those
-layers. However with [#845](https://github.com/napari/napari/issues/845) chunks
-are spatial so we need a new spatial datastructure that can keep track of which
-chunks are in memory and store the per-chunk data. We are going to use an
-octree. See
+layers. However with [#845](https://github.com/napari/napari/issues/845) and
+[#1300](https://github.com/napari/napari/issues/1300) chunks are spatial so we
+need a new spatial datastructure that can keep track of which chunks are in
+memory and store the per-chunk data. We are going to use an octree. See
 [Apple's](https://developer.apple.com/documentation/gameplaykit/gkoctree) nice
 illustration of an octree:
 
@@ -217,7 +218,7 @@ the 4 on top and the 4 on the bottom.
 
 We can use our octree for 2D situations just by restricting ourselves to the top
 4 children. So we plan to always use the same octree datastructure, but use it
-for both 2D and 3D situations.
+for both 2D and 3D data.
 
 ## Multi-resolution
 
@@ -260,19 +261,23 @@ There are several reasons the other layer types might be harder than 2D images:
 
 Luckily we don't need to solve all of these problems to start. We will start
 with 2D images and grow from there. We can render asymmetrically with an octree
-for one layer time but no octree for another. Or we could start using an octree
-with a new layer type but start with a very simplistic downsampling scheme that
-we can improve over time. So we can incrementally improve the rendering system.
+for one layer type but no octree for another. So long as the non-octree data can
+be rendered all at once, that's fine. Or we could start using an octree with a
+new layer type but a *very* simplistic downsampling scheme at first, for example
+bounding boxes. We can improve the downsampling method over time. In general we
+can incrementally improve the rendering system in many ways.
 
 ## Implementation Plan
 
-We will resolve [#1320](https://github.com/napari/napari/issues/1320) first:
+We will resolve [#1320](https://github.com/napari/napari/issues/1320) first with
+these steps:
 
-1.  Create a `ChunkManager` class that uses a `@thread_worker` thread pool.
+1.  Create a `ChunkManager` class that uses an `@thread_worker` thread pool.
 2.  Introduce a `DataSource` class whose data may or may not be in memory.
-3.  The paging thread will put its data into `DataSource` and trigger a `draw()`.
-4.  Probably `_set_view_slice`  will become just `draw()` and it will draw
-    chunks it can and page/request the chunks that it needs.
+3.  The paging thread will put its data into `DataSource` and trigger a `draw()`
+    so the renderer will draw the new data.
+4.  Probably `_set_view_slice`  will become the `draw()` method and it will draw
+    the chunks it can and page/request the chunks that it still needs.
 5.  Figure out how we set the size of the thread pool.
   
 With [#1320](https://github.com/napari/napari/issues/1320) resolved the next big
@@ -289,12 +294,12 @@ How many worker threads should we have? The challenge is the optimal numbers of
 threads will depend on the workload, but we don't know what's going on behind
 the array-like interface. Some possible workloads:
 
-| Workload                | Optimal Number Of Threads                      |
-| ----------------------- | ---------------------------------------------- |
-| Local IO                | Depends on the device and the access patterns. |
-| Networked IO            | A large number since setup costs are large.    |
-| Small Compute (1 core)  | Probably want one thread per available core.   |
-| Big Compute (all cores) | Maybe we want just one thread total.           |
+| Workload                | Optimal Number Of Threads                                          |
+| ----------------------- | ------------------------------------------------------------------ |
+| Local IO                | Depends on the device and the access patterns.                     |
+| Networked IO            | A large number since setup costs are large and compute is minimal. |
+| Small Compute (1 core)  | Probably want one thread per available core.                       |
+| Big Compute (all cores) | Maybe we want just one thread total.                               |
 
 We will probably try to aim for "reasonable defaults which yield reasonable
 performance". If necessary we might have ways for the user to configure the
