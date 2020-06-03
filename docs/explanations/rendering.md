@@ -77,10 +77,10 @@ In order to never block the GUI thread we need to do two things:
 
 # Render Algorithm
 
-The renderer will intersect the current view with the dataset to determine the
-working set. The working set is the set of chunks that we need to draw to fully
-render that specific view. The renderer will step through every chunk in the
-working set and do one of three things:
+The renderer will compute the **working set** based on the current view. The
+working set is the set of chunks that we need to draw to fully render that
+specific view. The renderer will step through every chunk in the working set and
+do one of three things:
 
 | Case                         | Action                                      |
 | ---------------------------- | ------------------------------------------- |
@@ -236,7 +236,7 @@ We are starting with 2D images but we are going to build the `ChunkManager` and
 octree in a generic way so that we can add in more layer types as we go,
 including 3D images, points, shapes and meshes. 2D images are the simplest case,
 but we believe most of the infrastructure we create can be used by the other
-layers types.
+layer types.
 
 There are several reasons the other layer types might be harder:
 
