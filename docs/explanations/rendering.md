@@ -21,8 +21,8 @@ impossible if the framerate is low enough. Blocking can even lead to the
 
 Napari is very extensible and customizable and users can create what amounts to
 custom applications built on top of napari. In those cases a blocked UI doesn't
-just hamper viewing images, it disables their entire application. For all of
-these reasons we never want napari's GUI thread to block.
+just hamper viewing images, it can take down their entire application. For all
+of these reasons we never want napari's GUI thread to block.
 
 # Framerate
 
@@ -103,7 +103,7 @@ can and works on getting more stuff to be drawable next time.
 to render a portion of the scene*. Without chunks we have only two choices:
 render nothing or render the entire scene. With chunks we can partially render
 the scene using whatever chunks are currently available, and we can
-progressively add more and more chunks as more data is loaded.
+progressively add more chunks as more data is loaded.
 
 Progressive rendering is valuable because the user can often navigate or make
 other decisions with partially loaded data, so the user can work faster. Also
@@ -124,10 +124,10 @@ chunking you can read a rectangular region with a single read operation.
 
 For 3D images the chunks tend to be 3D blocks, but the idea is the same.
 [Neuroglancer](https://opensource.google/projects/neuroglancer) commonly stores
-the data in 64x64x64 voxel chunks which is 0.25MB per chunk. This is useful
-because you can view the data in XY, XZ or YZ and it performs the same in each
-orientation. It's also nice because you scroll through slices quickly since on
-average you have 32 slices above and below your current location.
+data in 64x64x64 voxel chunks which is 256,000 voxels per chunk. This is useful
+because you can view the data in XY, XZ or YZ orientations and it performs just
+as well in each case. It's also nice because you can scroll through slices quickly
+since on average you have 32 slices above and below your current location.
 
 ## Creating Chunks
 
@@ -136,11 +136,11 @@ since the images were created in memory as one monolithic array. To solve
 [#1300](https://github.com/napari/napari/issues/1300) we are going to have to
 break that array into chunks, so we can send the data to the graphics card
 incrementally. In [#1320](https://github.com/napari/napari/issues/1320) the
-images are small so we are not chunked, but there are 3 image **layers**, so in
-that case image layers are our chunks. In general we can get creative with
-chunks, they can be spatial or non-spatial subdivisions, basically anything we
-want. *As long as the things can be loaded and drawn independently we can use
-them as chunks*.
+images are small so they are not chunked, but there are 3 image **layers** per
+slice. In that case the *image layers are our chunks*. In general we can get
+creative with chunks, they can be spatial or non-spatial subdivisions, basically
+anything we want. As long as the things can be loaded and drawn independently
+we can use them as chunks.
 
 # Loading into RAM and VRAM
 
@@ -148,20 +148,21 @@ There is a two step process to get data into VRAM where we can draw it. First it
 needs to be loaded into RAM and then transferred into VRAM. Loading into RAM
 must be done in a thread since we don't know how long it will take. For example
 loading data over the internet or doing a complex calculation to produce the
-data could both take a really long time. We are going to use the new
-`@thread_worker` interface for our thread pool.
+data could both take a really long time.
 
 Loading into VRAM is a different story because it must happen in the GUI thread,
 at least with OpenGL. Therefore we need to amortize the load over some number of
 frames. We will set a budget, for example 5 milliseconds. Each frame can spend
-up to that much time loading data into VRAM before it starts drawing. In this
-case it's important that no single chunk takes more than 5 milliseconds to
-transfer.
+up to that much time loading data into VRAM before it starts drawing. It's
+important that no single chunk takes more than 5 milliseconds to transfer,
+otherwise we will definitely go over our budget transferring that chunk.
 
 ![paging-chunks](images/paging-chunks.png)
 
-Viewed as a timeline, the rendering thread has regularly spaced frames, while
-the IO and compute threads load data into RAM in parallel.
+When the rendering process is viewed as a timeline, the rendering thread has
+regularly spaced frames, while the IO and compute threads load data into RAM in
+parallel. When a paging/compute operation finishes it puts the data into RAM and
+marks it as available, so the renderer can use it during the next frame.
 
 ![timeline](images/timeline.png)
 
@@ -182,17 +183,19 @@ multi-scale image which is chunked on disk.
 
 ## Chunk Size
 
-It's confusing but there can be different chunk sizes in use at one time.
+It's confusing but there can be different chunk sizes in play at one time.
 **Dask** chunks are often larger than the file format's chunks. This means
-loading one Dask chunk loads many disk chunks. We might set our rendering chunks
-to be the same size that Dask is using, if we can even determine that, or we might
-chose a different size.
+loading one Dask chunk will cause many disk chunks to load. We might set our
+rendering chunks to be the same size that Dask is using, if we can even
+determine that, or we might chose a different size.
 
-In the end there are two different types of speed: framerate and load time.
-Sometimes there is a tradeoff, perhaps we can speed up loading by slowing the
-framerate a bit. Hopefully we can come up with defaults that work well for most
-situations, but we'll probably need to provide a way for the user to tune the
-chunk size and other parameters if necessary.
+In the end there are two different types of speed: framerate and load time. As
+long as the chunk size is not too big we should be able to get a good framerate.
+However loading speed can be trickier and can depend on many factors. Sometimes
+there is a tradeoff, perhaps we can speed up loading by slowing the framerate a
+bit. Hopefully we can come up with defaults that work well for most situations,
+but we'll probably need to provide a way for the user to tune the chunk size and
+other parameters if necessary.
 
 ## Octree
 
@@ -214,7 +217,7 @@ the 4 on top and the 4 on the bottom.
 
 We can use our octree for 2D situations just by restricting ourselves to the top
 4 children. So we plan to always use the same octree datastructure, but use it
-in 2D or 3D modes as needed.
+for both 2D and 3D situations.
 
 ## Multi-resolution
 
@@ -228,37 +231,38 @@ In either case if a chunk is not in memory it will be requested from the
 placeholder. In many cases the best placeholder will be from a different level
 of the octree. This will produce the familiar effect where the image is
 initially blurry but then "refines" as more data is loaded. In the worst case if
-no stand-in is available the placeholder can be a blank grid potentially with a
-"loading" animation.
+no stand-in is available the placeholder can be a blank grid, potentially with
+some sort of "loading" animation.
 
 ## Beyond Images
 
 We are starting with 2D images but we are going to build the `ChunkManager` and
-octree in a generic way so that we can add in more layer types as we go,
+octree in a generic way so that we can add in more layer types over time,
 including 3D images, points, shapes and meshes. 2D images are the simplest case,
 but we believe most of the infrastructure we create can be used by the other
-layer types.
+layer types as well.
 
-There are several reasons the other layer types might be harder:
+There are several reasons the other layer types might be harder than 2D images:
 
 1. Downsampling images is fast and well understood but "downsampling" geometry
    can be slow and complicated. Plus this is no one definitive result, there
    will be complicated trade-offs for speed and quality.
 2. Sometimes we will to want downsample versions of things into a format that
    represents the data but does not look like data. For example instead of
-   seeing millions of tiny points, the user might want to see heatmap or
+   seeing millions of tiny points, the user might want to see a heatmap or
    bounding boxes indicating where the points are. Many different types of
    aggregation are possible and we will need to experiment and get user
    feedback.
-1. With images the data density is uniform but with geometry it can vary
+3. With images the data density is uniform but with geometry it can vary
    drastically. You can pack in millions of points/shapes/triangles into a tiny
    area. This taxes spatial subdivision schemes and might require other
    solutions.
 
 Luckily we don't need to solve all of these problems to start. We will start
-with 2D images and grow from there. We can render asymmetrically, so the images
-could use an octree while the geometric layers do not. Or we could start with a
-simplistic downsampling approach and make it fancier over time.
+with 2D images and grow from there. We can render asymmetrically with an octree
+for one layer time but no octree for another. Or we could start using an octree
+with a new layer type but start with a very simplistic downsampling scheme that
+we can improve over time. So we can incrementally improve the rendering system.
 
 ## Implementation Plan
 
@@ -266,34 +270,36 @@ We will resolve [#1320](https://github.com/napari/napari/issues/1320) first:
 
 1.  Create a `ChunkManager` class that uses a `@thread_worker` thread pool.
 2.  Introduce a `DataSource` class whose data may or may not be in memory.
-3.  The paging thread will put into `DataSource` and triggers a `draw()`.
-4.  Morph `_set_view_slice` into a `draw()` routine that draws the chunks it can
-    and pages/requests chunks that it needs.
+3.  The paging thread will put its data into `DataSource` and trigger a `draw()`.
+4.  Probably `_set_view_slice`  will become just `draw()` and it will draw
+    chunks it can and page/request the chunks that it needs.
 5.  Figure out how we set the size of the thread pool.
   
 With [#1320](https://github.com/napari/napari/issues/1320) resolved the next big
-step will be creating an octree and the related infrastructure. Once more is 
-known about that we will document it here.
+step will be creating an octree and the related infrastructure to take on
+[#845](https://github.com/napari/napari/issues/845) and
+[#1300](https://github.com/napari/napari/issues/1300). Once more is known about
+the octree we will document it here.
 
 # Appendix
 
-## A. Number of Workers
+## A. Number of Worker Threads
 
-How many worker threads should we have? The challenge is we don't know what is
-going on behind the array-like interface. Some possible situations:
+How many worker threads should we have? The challenge is the optimal numbers of
+threads will depend on the workload, but we don't know what's going on behind
+the array-like interface. Some possible workloads:
 
-| What The Worker Is Doing | Optimal Number Of Threads                      |
-| ------------------------ | ---------------------------------------------- |
-| Local IO                 | Depends on the device and the access patterns. |
-| Remote IO                | A large number since setup costs are large.    |
-| Small Compute (1 core)   | One thread per available core.                 |
-| Big Compute (all cores)  | One thread total.                              |
+| Workload                | Optimal Number Of Threads                      |
+| ----------------------- | ---------------------------------------------- |
+| Local IO                | Depends on the device and the access patterns. |
+| Networked IO            | A large number since setup costs are large.    |
+| Small Compute (1 core)  | Probably want one thread per available core.   |
+| Big Compute (all cores) | Maybe we want just one thread total.           |
 
 We will probably try to aim for "reasonable defaults which yield reasonable
 performance". If necessary we might have ways for the user to configure the
-number of threads. Some day we could try to infer what's going on and adjust
-things dynamically ourselves. For example we could detect if the CPU was
-underused and add more threads.
+number of threads. A fancy thing would be try to infer what's going on and
+adjust the number of threads dynamically ourselves.
 
 ## B. Threads, Processes and `asyncio`
 
@@ -309,16 +315,16 @@ The GIL only applies to threads that are actively running Python bytecode. Only
 one thread can be executing bytecode at a time. The GIL makes Python threads
 safer to use than threads in many languages. In Python two threads can in many
 cases access the same datastructure without a lock because the GIL serves as
-kind of a universal lock.
+kind of a universal lock for all datastructures.
 
-If we cannot obtain the behavior we want using threads we might consider
-switching to processes in some cases. Processes ofter total independence, but
-processes do not share memory by default, so that needs to be considered.
+If we threads interfere too much we might consider switching to processes in
+those cases. Processes ofter total independence, but processes do not share
+memory by default, so that might add complexity.
 
-Python also has `[asyncio](https://docs.python.org/3/library/asyncio.html)`
-which gives you concurrency without parallelism. The advantage is the tasks are
-much lighter weight than threads. In some languages you can have millions of
-concurrent (not not parallel) tasks. `asyncio` is relatively new and we should
+Python also has [asyncio](https://docs.python.org/3/library/asyncio.html) which
+gives you concurrency but not necessarily parallelism. The advantage is the
+concurrent tasks are much lighter weight than threads. In some languages you can
+have millions of concurrent tasks. `asyncio` is relatively new and we should
 keep it in mind for rendering and other purposes.
 
 ## C. VRAM and Vispy
@@ -328,7 +334,6 @@ VRAM by creating and drawing [vispy](http://vispy.org/) objects. By drawing
 objects in our working set VRAM will soon contain what we want. We will tightly
 manage the construction and destruction of vispy objects to match the current
 working set. We also have to make sure that we don't create too many new objects
-in one frame and exceed our time budget.
+in one frame which could cause us to exceed our time budget.
 
-A future version of this document will need to document our use of vispy
-thorougly. We just don't know the details yet.
+This document does not get into vispy only because we don't know those details yet.
