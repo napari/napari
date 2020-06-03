@@ -270,7 +270,7 @@ types.
 
 # Appendix
 
-## A) Number of Workers
+## A. Number of Workers
 
 How many worker threads should we have? The challenge is we don't know what is
 going on behind the array-like interface. Some possible situations:
@@ -288,7 +288,7 @@ number of threads. Some day we could try to infer what's going on and adjust
 things dynamically ourselves. For example we could detect if the CPU was
 underused and add more threads.
 
-## B) Threads, Processes and `asyncio`
+## B. Threads, Processes and `asyncio`
 
 Hopefully we can stick with threads for parallelism. However in Python threads
 cannot run completely independently of each other due to the [Global Interpreter
@@ -313,7 +313,7 @@ advantage is you can have many more tasks doing at once. In some languages you
 have millions of concurrent (not not parallel) tasks. `asyncio` is relatively
 new and we should keep it in mind for rendering and other purposes.
 
-## C) VRAM and Vispy
+## C. VRAM and Vispy
 
 With OpenGL you cannot directly manage VRAM. Instead we will control what's in
 VRAM by creating and drawing vispy objects. By drawing objects in our working
