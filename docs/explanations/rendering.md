@@ -147,7 +147,7 @@ There is a two step process to get data into VRAM where we can draw it. First it
 needs to be loaded into RAM and then transferred into VRAM. Loading into RAM
 must be done in a thread since we don't know how long it will take. For example
 loading data over the internet or doing a complex calculation to produce the
-data could both take really long time. We are going to use the new
+data could both take a really long time. We are going to use the new
 `@thread_worker` interface for our thread pool.
 
 Loading into VRAM is a different story because it must happen in the GUI thread,
@@ -168,7 +168,7 @@ parallel IO and compute threads load data into RAM.
 
 In [#1320](https://github.com/napari/napari/issues/1320) the images are not
 chunked since they are very small, but there are 3 layers per slice, so these
-per-slice layers are our chunks. Some layers are coming off disk some are
+per-slice layers are our chunks. Some layers are coming off disk while some are
 computed. The "working set" is the set of chunks we need to draw the full
 current scene. In this case we need the visible layers for the current slice.
 
@@ -199,7 +199,7 @@ To solve [#1320](https://github.com/napari/napari/issues/1320) our chunks will
 be layers. The ChunkManager can write the data into the `Image` object for those
 layers. However with [#845](https://github.com/napari/napari/issues/845) chunks
 are spatial so we need a new spatial datastructure that can keep track of which
-chunks are in memory and store the per-chunk data. We are doing to use an
+chunks are in memory and store the per-chunk data. We are going to use an
 octree. See
 [Apple's](https://developer.apple.com/documentation/gameplaykit/gkoctree) nice
 illustration of an octree:
@@ -227,7 +227,7 @@ In either case if a chunk is not in memory it will be requested from the
 placeholder. In many cases the best placeholder will be from a different level
 of the octree. This will produce the familiar effect where the image is
 initially blurry but then "refines" as more data is loaded. In the worst case if
-no stand-in is available the placeholder can be blank grid potentially with a
+no stand-in is available the placeholder can be a blank grid potentially with a
 "loading" animation.
 
 ## Beyond Images
