@@ -8,6 +8,12 @@ rendering), and the scientific Python stack (numpy, scipy).
 
 This is a short release that refactors our installation process allow more
 flexibility around which Qt python bindings users install (PySide2, PyQt5).
+Starting with this release, running `pip install napari` will *no longer*
+install a GUI backend by default. For a complete installation with a GUI
+backend, users are now encouraged to use `pip install napari[all]`, which
+will install the default backend (currently PyQt5).  To explicitly select
+a backend, users may run either `pip install napari[pyqt5]` or
+`pip install napari[pyside2]`.
 
 For more information, examples, and documentation, please visit our website:
 https://github.com/napari/napari
