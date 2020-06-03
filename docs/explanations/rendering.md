@@ -115,9 +115,10 @@ better user experience.
 
 The most common types of chunks are blocks of contiguous memory inside a chunked
 file format like **Zarr** and exposed by an API like **Dask**. If an image is
-stored without chunks then reading a 2D rectangle would require many small read
-operations all over the file. With chunks you can read a rectangular region with
-a single read operation.
+stored without chunks then reading any given small 2D region of the image
+requires many different read operations. The bytes for that region are spread
+throughout the file, intermingled with the bytes from other regions. With
+chunking you can read a rectangular region with a single read operation.
 
 ![chunked-format](images/chunked-format.png)
 
