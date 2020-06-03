@@ -317,7 +317,7 @@ safer to use than threads in many languages. In Python two threads can in many
 cases access the same datastructure without a lock because the GIL serves as
 kind of a universal lock for all datastructures.
 
-If we threads interfere too much we might consider switching to processes in
+If our threads interfere too much we might consider switching to processes in
 those cases. Processes ofter total independence, but processes do not share
 memory by default, so that might add complexity.
 
