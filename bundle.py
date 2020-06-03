@@ -70,22 +70,53 @@ def build():
 
 
 def package():
-    subprocess.check_call(['briefcase', 'package'])
+    if MACOS:
+        subprocess.check_call(['briefcase', 'package', '--no-sign'])
+    else:
+        subprocess.check_call(['briefcase', 'package'])
 
 
 def import_once():
-    if WINDOWS:
-        binary = os.path.join(
-            BUILD_DIR, 'napari', 'src', 'python', 'python.exe'
-        )
+    # if WINDOWS:
+    #     binary = os.path.join(
+    #         BUILD_DIR, 'napari', 'src', 'python', 'python.exe'
+    #     )
+    # elif MACOS:
+    #     binary = os.path.join(
+    #         BUILD_DIR,
+    #         'napari',
+    #         'napari.app',
+    #         'Contents',
+    #         'Resources',
+    #         'Support',
+    #         'bin',
+    #         'python3',
+    #     )
 
-    subprocess.check_call([binary, '-m', 'napari', '--info'])
+    subprocess.check_call([sys.executable, '-m', 'napari', '--info'])
+
+
+def patch_dmgbuild():
+    if not MACOS:
+        return
+    from dmgbuild import core
+
+    # will not be required after dmgbuild > v1.3.3
+    # see https://github.com/al45tair/dmgbuild/pull/18
+    with open(core.__file__, 'r') as f:
+        src = f.read()
+    if 'max(total_size / 1024' not in src:
+        return
+    with open(core.__file__, 'w') as f:
+        f.write(src.replace('max(total_size / 1024', 'max(total_size / 1000'))
+        print("patched dmgbuild.core")
 
 
 def bundle():
+    patch_dmgbuild()
+    import_once()  # smoke test, and build resources
     patch_toml()
     create()
-    import_once()  # smoke test, and build resources
     build()
     package()
 
