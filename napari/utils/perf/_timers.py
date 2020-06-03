@@ -100,5 +100,5 @@ if USE_PERFMON:
     # The one global instance
     timers = PerfTimers()
 else:
-    # No one should be access this since env var is not set.
+    # No one should be access this since they are disabled.
     timers = None

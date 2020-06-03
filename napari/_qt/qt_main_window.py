@@ -90,8 +90,6 @@ class Window:
         self._add_plugins_menu()
         self._add_help_menu()
 
-        self._debug_menu = DebugMenu(self) if perf.USE_PERFMON else None
-
         self._status_bar.showMessage('Ready')
         self._help = QLabel('')
         self._status_bar.addPermanentWidget(self._help)
@@ -105,13 +103,21 @@ class Window:
         self._add_viewer_dock_widget(self.qt_viewer.dockLayerControls)
         self._add_viewer_dock_widget(self.qt_viewer.dockLayerList)
 
-        if perf.USE_PERFMON:
-            self._add_viewer_dock_widget(self.qt_viewer.dockPerformance)
-
         self.qt_viewer.viewer.events.status.connect(self._status_changed)
         self.qt_viewer.viewer.events.help.connect(self._help_changed)
         self.qt_viewer.viewer.events.title.connect(self._title_changed)
         self.qt_viewer.viewer.events.palette.connect(self._update_palette)
+
+        if perf.USE_PERFMON:
+            # Add DebugMenu if using perfmon. The DebugMenu is intended to
+            # contain non-perfmon stuff as well. When it does we will want
+            # a separate env variable for it.
+            self._debug_menu = DebugMenu(self)
+
+            # The QtPerformance widget only exists if we are using perfmon.
+            self._add_viewer_dock_widget(self.qt_viewer.dockPerformance)
+        else:
+            self._debug_menu = None
 
         if show:
             self.show()

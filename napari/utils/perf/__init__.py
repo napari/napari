@@ -1,6 +1,7 @@
 """Performance Monitoring init.
 
-USE_PERFMON is true only if NAPARI_PERFMON environment variable was true.
+USE_PERFMON is true only if NAPARI_PERFMON environment variable is set and not
+zero.
 
 timers is an instance of PerfTimers with these methods:
     add_event(event: PerfEvent)
@@ -10,7 +11,6 @@ timers is an instance of PerfTimers with these methods:
 
 Use perf_timer to time blocks of code.
 Use perf_func to time functions.
-
 """
 from ._config import USE_PERFMON
 from ._event import PerfEvent
