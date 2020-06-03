@@ -288,7 +288,7 @@ going on behind the array-like interface. Some possible situations:
 | Small Compute (1 core)   | One thread per available core.                 |
 | Big Compute (all cores)  | One thread total.                              |
 
-We will probably to aim for "reasonable defaults which yield reasonable
+We will probably try to aim for "reasonable defaults which yield reasonable
 performance". If necessary we might have ways for the user to configure the
 number of threads. Some day we could try to infer what's going on and adjust
 things dynamically ourselves. For example we could detect if the CPU was
