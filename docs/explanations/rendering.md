@@ -247,15 +247,16 @@ There are several reasons the other layer types might be harder:
    represents the data but does not look like data. For example instead of
    seeing millions of tiny points, the user might want to see heatmap or
    bounding boxes indicating where the points are. Many different types of
-   aggregation are possible and we would need to be experiment.
+   aggregation are possible and we will need to experiment and get user
+   feedback.
 1. With images the data density is uniform but with geometry it can vary
    drastically. You can pack in millions of points/shapes/triangles into a tiny
    area. This taxes spatial subdivision schemes and might require other
    solutions.
 
-Luckily we don't need to solve all these problems to start. We will start with
-2D images and grow from there. We can render asymmetrically, so the images could
-use an octree while the geometric layers do not. Or we could start with a
+Luckily we don't need to solve all of these problems to start. We will start
+with 2D images and grow from there. We can render asymmetrically, so the images
+could use an octree while the geometric layers do not. Or we could start with a
 simplistic downsampling approach and make it fancier over time.
 
 ## Implementation Plan
@@ -263,18 +264,15 @@ simplistic downsampling approach and make it fancier over time.
 We will resolve [#1320](https://github.com/napari/napari/issues/1320) first:
 
 1.  Create a `ChunkManager` class that uses a `@thread_worker` thread pool.
-2.  Introduce a `DataSource` class that only optionally contains data.
-3.  Paging thread puts data into `DataSource` and triggers a `draw()`.
-4.  Morph `_set_view_slice` into a `draw()` routine.
-    1.  Draws what it can, pages/loads what is to.
+2.  Introduce a `DataSource` class whose data may or may not be in memory.
+3.  The paging thread will put into `DataSource` and triggers a `draw()`.
+4.  Morph `_set_view_slice` into a `draw()` routine that draws what it can and
+    pages/requests chunks as needed.
 5.  Figure out how we set the size of the thread pool.
-
-See the issue comments for more details.
-   
+  
 With [#1320](https://github.com/napari/napari/issues/1320) resolved the next big
-step will be creating an octree and the related infrastructure. We will need to
-design that more as we get closer. The one thing we know up front is the octree
-should be generic enough to use with all layer types.
+step will be creating an octree and the related infrastructure. Once more is 
+known about that we will document it here.
 
 # Appendix
 
@@ -316,20 +314,20 @@ If we cannot obtain the behavior we want using threads we might consider
 switching to processes in some cases. Processes ofter total independence, but
 processes do not share memory by default, so that needs to be considered.
 
-Python also has `asyncio` which gives you concurrency without parallelism. The
-advantage is you can have many more going doing at once, since tasks are much
-lighter weight than threads. In some languages you have millions of concurrent
-(not not parallel) tasks. `asyncio` is relatively new and we should keep it in
-mind for rendering and other purposes.
+Python also has `[asyncio](https://docs.python.org/3/library/asyncio.html)`
+which gives you concurrency without parallelism. The advantage is the tasks are
+much lighter weight than threads. In some languages you can have millions of
+concurrent (not not parallel) tasks. `asyncio` is relatively new and we should
+keep it in mind for rendering and other purposes.
 
 ## C. VRAM and Vispy
 
 With OpenGL you cannot directly manage VRAM. Instead we will control what's in
-VRAM by creating and drawing vispy objects. By drawing objects in our working
-set VRAM will soon contain what we want. We will tightly manage the construction
-and destruction of vispy objects to match the current working set. We also have
-to make sure we don't create too many new objects in one frame so that we do not
-exceed our time budget.
+VRAM by creating and drawing [vispy](http://vispy.org/) objects. By drawing
+objects in our working set VRAM will soon contain what we want. We will tightly
+manage the construction and destruction of vispy objects to match the current
+working set. We also have to make sure we don't create too many new objects in
+one frame so that we do not exceed our time budget.
 
 A future version of this document will need to document our use of vispy
 thorougly. We just don't know the details yet.
