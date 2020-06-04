@@ -331,6 +331,7 @@ class Labels(Image):
                 'properties': self._properties,
                 'seed': self.seed,
                 'data': self.data,
+                'color_dict': self.color_dict,
             }
         )
         return state
