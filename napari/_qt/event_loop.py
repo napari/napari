@@ -17,8 +17,8 @@ def _create_application(argv) -> QApplication:
     -----
 
     We substitute QApplicationWithTiming when using perfmon. Note that we also
-    do a perfmon related monkey patch in Viewer. But for the command-line case
-    when using our gui_at we need to create the right one up front.
+    call convert_app_for_timing() in Viewer but that one is for Jupyter/IPython
+    while this one is for running from the command line.
     """
     if not perf.USE_PERFMON:
         return QApplication(argv)
