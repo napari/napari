@@ -29,7 +29,7 @@ with open(PYPROJECT_TOML, 'r') as f:
 with open(os.path.join(HERE, "napari", "_version.py")) as f:
     match = re.search(r'version\s?=\s?\'([^\']+)', f.read())
     if match:
-        VERSION = match.groups()[0].split('.dev')[0]
+        VERSION = match.groups()[0].split('+')[0]
 
 
 def patch_toml():
@@ -99,7 +99,6 @@ def make_zip():
     with zipfile.ZipFile(dest, 'w', zipfile.ZIP_DEFLATED) as zf:
         zf.write(artifact, arcname=os.path.basename(artifact))
     print("created zipfile: ", dest)
-
     return dest
 
 
@@ -144,5 +143,8 @@ def bundle():
 if __name__ == "__main__":
     if '--clean' in sys.argv:
         clean()
+        sys.exit()
+    if '--version' in sys.argv:
+        print(VERSION)
         sys.exit()
     print('created', bundle())

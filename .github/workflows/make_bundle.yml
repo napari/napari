@@ -7,6 +7,7 @@ jobs:
     # if: github.repository == 'napari/napari'
     env:
       GITHUB_TOKEN: ${{ github.token }}
+      DISPLAY: ':99.0'
     strategy:
       fail-fast: false
       matrix:
@@ -20,8 +21,6 @@ jobs:
           python-version: 3.8
       - name: Start xvfb
         if: runner.os == 'Linux'
-        env:
-          DISPLAY: ":99.0"
         run: |
           sudo apt install libxkbcommon-x11-0
           /sbin/start-stop-daemon --start --quiet \
@@ -36,10 +35,9 @@ jobs:
       - name: get tag
         shell: bash
         run: |
-          TAG="${GITHUB_REF/refs\/tags\/v/}"  # clean tag
-          VER="${TAG/rc*/}"  # remove pre-release identifier
-          echo "::set-env name=tag::$TAG"
-          echo $TAG
+          VER=`python bundle.py --version`
+          echo "::set-env name=version::$VER"
+          echo $VER
       - name: Make Bundle
         run: python -m bundle
       # - name: Get Release
@@ -49,11 +47,11 @@ jobs:
       #   uses: actions/upload-release-asset@v1
       #   with:
       #     upload_url: ${{ steps.get_release.outputs.upload_url }}
-      #     asset_path: napari-${{ env.tag }}-${{ runner.os }}.zip
-      #     asset_name: napari-${{ env.tag }}-${{ runner.os }}.zip
+      #     asset_path: napari-${{ env.version }}-${{ runner.os }}.zip
+      #     asset_name: napari-${{ env.version }}-${{ runner.os }}.zip
       #     asset_content_type: application/zip
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
         with:
-          name: napari-${{ env.tag }}-${{ runner.os }}.zip
-          path: napari-${{ env.tag }}-${{ runner.os }}.zip
+          name: napari-${{ env.version }}-${{ runner.os }}.zip
+          path: napari-${{ env.version }}-${{ runner.os }}.zip
