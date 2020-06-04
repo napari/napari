@@ -371,7 +371,7 @@ class QtLabelsControls(QtLayerControls):
             self.preserveLabelsCheckBox.setChecked(self.layer.preserve_labels)
 
     def _on_custom_color_check_box_change(self, event=None):
-        """Receive layer model preserve_labels event and update the checkbox.
+        """Receive layer model enable custom color event and update the checkbox.
 
         Parameters
         ----------
