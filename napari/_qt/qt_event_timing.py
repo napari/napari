@@ -6,7 +6,8 @@ when perfmon is enabled to time Qt Events.
 Perf timers power the debug menu's "Start Tracing" feature as well as the
 dockable QtPerformance widget.
 """
-from qtpy.QtWidgets import QApplication
+from qtpy.QtCore import QEvent
+from qtpy.QtWidgets import QApplication, QWidget
 
 from ..utils import perf
 
@@ -27,8 +28,8 @@ def convert_app_for_timing(app: QApplication) -> QApplication:
 
     if app is not None:
 
-        # Because we can't monkey patch QApplication.notify (since it's a
-        # wrapped C++ method?) we delete the current app and create a new one.
+        # Because we can't monkey patch QApplication.notify, since it's a
+        # SIP wrapped C++ method, we delete the current app and create a new one.
         # This must be done very early before any Qt objects are created.
         import sip
 
@@ -40,7 +41,7 @@ def convert_app_for_timing(app: QApplication) -> QApplication:
 class QApplicationWithTiming(QApplication):
     """Extend QApplication to time Qt Events.
 
-    Our QApplication times how long the normal notify() method takes.
+    This QApplication times how long the normal notify() method takes.
 
     Notes
     -----
@@ -49,7 +50,7 @@ class QApplicationWithTiming(QApplication):
 
     The hierarchy of timers is displayed correctly in the chrome://tracing GUI.
     Seeing the structure of the event handling hierarchy can be very informative
-    even apart from the timing numbers.
+    even apart from the actual timing numbers.
     """
 
     def notify(self, receiver, event):
@@ -61,7 +62,41 @@ class QApplicationWithTiming(QApplication):
             return QApplication.notify(self, receiver, event)
 
 
-def _get_timer_name(receiver, event) -> str:
+class EventTypes:
+    """Convert event type to a string name.
+
+    Create event type to string mapping once on startup. We want human-readable
+    event names for our timers. PySide2 does this for you but PyQt5 does not:
+
+    # PySide2
+    str(QEvent.KeyPress) -> 'PySide2.QtCore.QEvent.Type.KeyPress'
+
+    # PyQt5
+    str(QEvent.KeyPress) -> '6'
+
+    We use this class for PyQt5 and PySide2 to be consistent.
+    """
+
+    def __init__(self):
+        """Create mapping for all known event types."""
+        self.string_name = {}
+        for name in vars(QEvent):
+            attribute = getattr(QEvent, name)
+            if type(attribute) == QEvent.Type:
+                self.string_name[attribute] = name
+
+    def as_string(self, event: QEvent.Type) -> str:
+        """Return the string name for this event."""
+        try:
+            return self.string_name[event]
+        except KeyError:
+            return f"UnknownEvent:{event}"
+
+
+EVENT_TYPES = EventTypes()
+
+
+def _get_timer_name(receiver: QWidget, event: QEvent) -> str:
     """Return a name for this event.
 
     Parameters
@@ -82,9 +117,7 @@ def _get_timer_name(receiver, event) -> str:
 
     This our own made up format we can revise as needed.
     """
-    # For an event.type() like "PySide2.QtCore.QEvent.Type.WindowIconChange"
-    # we set event_str to just the final "WindowIconChange" part.
-    event_str = str(event.type()).split(".")[-1]
+    event_str = EVENT_TYPES.as_string(event.type())
 
     try:
         # There may or may not be a receiver object name.
