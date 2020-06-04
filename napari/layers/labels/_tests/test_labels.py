@@ -251,6 +251,22 @@ def test_colormap():
     assert type(layer.colormap[1]) == Colormap
 
 
+def test_custom_color_dict():
+    """Test custom color dict."""
+    np.random.seed(0)
+    data = np.random.randint(20, size=(10, 15))
+    layer = Labels(data, color_dict={1: 'white'})
+
+    # test with custom color dict
+    assert type(layer.get_color(2)) == np.ndarray
+    assert type(layer.get_color(1)) == np.ndarray
+    assert (layer.get_color(1) == np.array([1.0, 1.0, 1.0, 1.0])).all()
+
+    # test disable custom color dict
+    layer.enable_custom_color_dict = False
+    assert not (layer.get_color(1) == np.array([1.0, 1.0, 1.0, 1.0])).all()
+
+
 def test_metadata():
     """Test setting labels metadata."""
     np.random.seed(0)
@@ -301,11 +317,9 @@ def test_selecting_label():
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
     assert layer.selected_label == 1
-    assert (layer._selected_color == layer.get_color(1)).all
 
     layer.selected_label = 1
     assert layer.selected_label == 1
-    assert len(layer._selected_color) == 4
 
 
 def test_label_color():

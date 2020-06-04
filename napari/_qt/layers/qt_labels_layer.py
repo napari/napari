@@ -73,6 +73,9 @@ class QtLabelsControls(QtLayerControls):
         self.layer.events.preserve_labels.connect(
             self._on_preserve_labels_change
         )
+        self.layer.events.enable_custom_color_dict.connect(
+            self._on_custom_color_check_box_change
+        )
 
         # selection spinbox
         self.selectionSpinBox = QSpinBox()
@@ -158,7 +161,15 @@ class QtLabelsControls(QtLayerControls):
         button_row.setSpacing(4)
         button_row.setContentsMargins(0, 0, 0, 5)
 
+        self.customColorCheckBox = QCheckBox()
+        self.customColorCheckBox.setToolTip('enable custom color dict')
+        self.customColorCheckBox.stateChanged.connect(
+            self.change_enable_custom_color_dict
+        )
+        self._on_custom_color_check_box_change()
+
         color_layout = QHBoxLayout()
+        color_layout.addWidget(self.customColorCheckBox)
         color_layout.addWidget(QtColorBox(layer))
         color_layout.addWidget(self.selectionSpinBox)
 
@@ -288,6 +299,19 @@ class QtLabelsControls(QtLayerControls):
         else:
             self.layer.preserve_labels = False
 
+    def change_enable_custom_color_dict(self, state):
+        """Toggle enable custom color dict state of label layer.
+
+        Parameters
+        ----------
+        state : QCheckBox
+            Checkbox indicating if custom color dict is enabled in layer.
+        """
+        if state == Qt.Checked:
+            self.layer.enable_custom_color_dict = True
+        else:
+            self.layer.enable_custom_color_dict = False
+
     def _on_selection_change(self, event=None):
         """Receive layer model label selection change event and update spinbox.
 
@@ -345,6 +369,19 @@ class QtLabelsControls(QtLayerControls):
         """
         with self.layer.events.preserve_labels.blocker():
             self.preserveLabelsCheckBox.setChecked(self.layer.preserve_labels)
+
+    def _on_custom_color_check_box_change(self, event=None):
+        """Receive layer model preserve_labels event and update the checkbox.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional.
+            Event from the Qt context.
+        """
+        with self.layer.events.enable_custom_color_dict.blocker():
+            self.customColorCheckBox.setChecked(
+                self.layer.enable_custom_color_dict
+            )
 
     def _on_editable_change(self, event=None):
         """Receive layer model editable change event & enable/disable buttons.

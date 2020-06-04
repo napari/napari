@@ -3,7 +3,7 @@ from typing import Union, Dict
 
 import numpy as np
 from scipy import ndimage as ndi
-
+from vispy.color import Color, Colormap
 from ..image import Image
 from ...utils.colormaps import colormaps
 from ...utils.event import Event
@@ -135,11 +135,15 @@ class Labels(Image):
         blending='translucent',
         visible=True,
         multiscale=None,
+        color_dict=None,
     ):
 
         self._seed = seed
         self._num_colors = num_colors
-        colormap = ('random', colormaps.label_colormap(self.num_colors))
+        self.random_colormap = (
+            'random',
+            colormaps.label_colormap(self.num_colors),
+        )
 
         if properties is None:
             self._properties = {}
@@ -159,7 +163,7 @@ class Labels(Image):
         super().__init__(
             data,
             rgb=False,
-            colormap=colormap,
+            colormap=self.random_colormap,
             contrast_limits=[0.0, 1.0],
             interpolation='nearest',
             rendering='translucent',
@@ -180,6 +184,7 @@ class Labels(Image):
             contiguous=Event,
             brush_size=Event,
             selected_label=Event,
+            enable_custom_color_dict=Event,
         )
 
         self._data_raw = np.zeros((1,) * self.dims.ndisplay)
@@ -190,6 +195,12 @@ class Labels(Image):
         self._background_label = 0
         self._selected_label = 1
         self._selected_color = self.get_color(self._selected_label)
+        if color_dict is None:
+            self.color_dict = {}
+            self.enable_custom_color_dict = False
+        else:
+            self.color_dict = color_dict
+            self.enable_custom_color_dict = True
 
         self._mode = Mode.PAN_ZOOM
         self._mode_history = self._mode
@@ -341,6 +352,45 @@ class Labels(Image):
         self.events.selected_label()
 
     @property
+    def enable_custom_color_dict(self):
+        """True if enabling custom color dictionary"""
+        return (
+            hasattr(self, '_enable_custom_color_dict')
+            and self._enable_custom_color_dict
+        )
+
+    @enable_custom_color_dict.setter
+    def enable_custom_color_dict(self, enable_custom_color_dict):
+
+        if not self.color_dict:
+            return
+
+        if enable_custom_color_dict:
+            self.custom_color = {0: 0.0}
+            colors = ['#000000'] + [
+                color_str for label, color_str in self.color_dict.items()
+            ]
+            self.custom_color_map = Colormap(colors)
+            self.colormap = self.custom_color_map
+
+            for label, color_str in self.color_dict.items():
+                color = Color(color_str)
+                for i in range(len(self.custom_color_map.colors)):
+                    if self.custom_color_map.colors[i] == color:
+                        self.custom_color[
+                            label
+                        ] = self.custom_color_map._controls[i]
+        else:
+            self.custom_color = {}
+            self.colormap = self.random_colormap
+
+        self._enable_custom_color_dict = enable_custom_color_dict
+        self._selected_color = self.get_color(self.selected_label)
+        self.events.enable_custom_color_dict()
+        self.events.colormap()
+        self.events.selected_label()
+
+    @property
     def mode(self):
         """MODE: Interactive mode. The normal, default mode is PAN_ZOOM, which
         allows for normal interactivity with the canvas.
@@ -465,9 +515,20 @@ class Labels(Image):
         image : array
             Image mapped between 0 and 1 to be displayed.
         """
-        image = np.where(
-            raw > 0, colormaps._low_discrepancy_image(raw, self._seed), 0
-        )
+        if self.enable_custom_color_dict:
+            u, inv = np.unique(raw, return_inverse=True)
+            image = np.array(
+                [
+                    self.custom_color[x]
+                    if x in self.custom_color
+                    else colormaps._low_discrepancy_image(x, self._seed)
+                    for x in u
+                ]
+            )[inv].reshape(raw.shape)
+        else:
+            image = np.where(
+                raw > 0, colormaps._low_discrepancy_image(raw, self._seed), 0
+            )
         return image
 
     def new_colormap(self):
