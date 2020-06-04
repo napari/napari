@@ -6,7 +6,7 @@ easy-to-use and discoverable, but which is not for the average user.
 Current Items
 -------------
 Trace File -> Start Tracing...
-              Stop Tracking
+Trace File -> Stop Tracking
 """
 from qtpy.QtCore import QTimer
 from qtpy.QtWidgets import QAction, QFileDialog
@@ -44,23 +44,23 @@ class PerformanceSubMenu:
     def __init__(self, main_window, sub_menu):
         self.main_window = main_window
         self.sub_menu = sub_menu
-        self.start_trace = self._add_start_trace()
-        self.stop_trace = self._add_stop_trace()
+        self.start = self._add_start()
+        self.stop = self._add_stop()
         self._set_recording(False)
 
     def _set_recording(self, recording: bool):
-        """Toggle which are enabled/disabed.
+        """Toggle which are enabled/disabled.
 
         Parameters
         ----------
         record : bool
             Are we currently recording a trace file.
         """
-        self.start_trace.setEnabled(not recording)
-        self.stop_trace.setEnabled(recording)
+        self.start.setEnabled(not recording)
+        self.stop.setEnabled(recording)
 
-    def _add_start_trace(self):
-        """Add start recording menu item.
+    def _add_start(self):
+        """Add Start Recording action.
         """
         start = QAction('Start Recording...', self.main_window._qt_window)
         start.setShortcut('Alt+T')
@@ -69,8 +69,8 @@ class PerformanceSubMenu:
         self.sub_menu.addAction(start)
         return start
 
-    def _add_stop_trace(self):
-        """Add stop recording menu item.
+    def _add_stop(self):
+        """Add Stop Recording action.
         """
         stop = QAction('Stop Recording', self.main_window._qt_window)
         stop.setShortcut('Shift+Alt+T')
@@ -96,8 +96,8 @@ class PerformanceSubMenu:
                 perf.timers.start_trace_file(filename)
                 self._set_recording(True)
 
-            # If we don't start with a timer the first event in the trace will
-            # be a super long "MetaCall" event for the file dialog.
+            # Schedule this to avoid bogus "MetaCall" event for the entire
+            # time the file dialog was up.
             QTimer.singleShot(0, start_trace)
 
     def _stop_trace(self):

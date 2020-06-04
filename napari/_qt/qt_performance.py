@@ -37,17 +37,6 @@ class TextLog(QTextEdit):
 class QtPerformance(QWidget):
     """Dockable widget to show performance info.
 
-    Layout
-    ------
-
-    Draw Time:
-    <----progress bar showing draw time---->
-
-    Slow Events:
-    <----TextLog listing slow events---->
-
-    Uptime: <---uptime in seconds--->
-
     Notes
     -----
 
@@ -56,7 +45,7 @@ class QtPerformance(QWidget):
        is actually not the total draw time, but it's generally the biggest
        part of each frame.
 
-    2) We log any event whose duration is longer then some threshold.
+    2) We log any event whose duration is longer than the threshold.
 
     3) We show uptime so you can tell if this window is being updated at all.
     """
@@ -78,10 +67,6 @@ class QtPerformance(QWidget):
 
     # Update at 250ms / 4Hz for now. The more we update more alive our
     # display will look, but the more we will slow things down.
-    #
-    # Also for some reason our timer gets "starved out" if someone is using the
-    # slider in the main window, the main window will update but we want. Maybe
-    # it's being directly updating things? So the timer event is not being handled?
     UPDATE_MS = 250
 
     def __init__(self):
@@ -106,6 +91,7 @@ class QtPerformance(QWidget):
         layout.addWidget(bar)
         self.bar = bar
 
+        # We let the user set the "slow event" threshold.
         self.thresh_ms = self.THRESH_DEFAULT
         self.thresh_combo = QComboBox()
         self.thresh_combo.addItems(self.THRESH_OPTIONS)

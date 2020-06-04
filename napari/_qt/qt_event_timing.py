@@ -1,11 +1,13 @@
 """A special QApplication for perfmon.
 
-Defines QApplicationWithTiming and convert_app_for_timing(), both of which we use
-when perfmon is enabled to time Qt Events.
+This file defines QApplicationWithTiming and convert_app_for_timing(), both of
+which we use when perfmon is enabled to time Qt Events.
 
 Perf timers power the debug menu's "Start Tracing" feature as well as the
 dockable QtPerformance widget.
 """
+import sys
+
 from qtpy.QtCore import QEvent
 from qtpy.QtWidgets import QApplication, QWidget
 
@@ -35,7 +37,9 @@ def convert_app_for_timing(app: QApplication) -> QApplication:
 
         sip.delete(app)
 
-    return QApplicationWithTiming([])
+    # Is it right to pass in sys.argv here? I think so if there are any
+    # Qt flags on there?
+    return QApplicationWithTiming(sys.argv)
 
 
 class QApplicationWithTiming(QApplication):
@@ -115,7 +119,8 @@ def _get_timer_name(receiver: QWidget, event: QEvent) -> str:
     If no object we return <event_name>.
     If there's an object we return <event_name>:<object_name>.
 
-    This our own made up format we can revise as needed.
+    Combining the two names with a colon is our own made-up format. The name
+    will show up in chrome://tracing and our QtPerformance widget.
     """
     event_str = EVENT_TYPES.as_string(event.type())
 
@@ -123,12 +128,11 @@ def _get_timer_name(receiver: QWidget, event: QEvent) -> str:
         # There may or may not be a receiver object name.
         object_name = receiver.objectName()
     except AttributeError:
-        # During shutdown the call to receiver.objectName() can fail with
-        # "missing objectName attribute". Ignore and assume no object name.
+        # Ignore "missing objectName attribute" during shutdown.
         object_name = None
 
     if object_name:
         return f"{event_str}:{object_name}"
 
-    # Many events have no object, only an event string.
+    # There was no object (pretty common).
     return event_str

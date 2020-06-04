@@ -20,10 +20,10 @@ def _create_application(argv) -> QApplication:
     call convert_app_for_timing() in Viewer but that one is for Jupyter/IPython
     while this one is for running from the command line.
     """
-    if not perf.USE_PERFMON:
-        return QApplication(argv)
-    else:
+    if perf.USE_PERFMON:
         return QApplicationWithTiming(argv)
+    else:
+        return QApplication(argv)
 
 
 @contextmanager
