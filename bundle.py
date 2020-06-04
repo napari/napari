@@ -98,6 +98,7 @@ def make_zip():
 
     with zipfile.ZipFile(dest, 'w', zipfile.ZIP_DEFLATED) as zf:
         zf.write(artifact, arcname=os.path.basename(artifact))
+    print("created zipfile: ", dest)
 
     return dest
 
@@ -131,11 +132,13 @@ def bundle():
     subprocess.check_call(cmd)
 
     # compress
-    make_zip()
+    dest = make_zip()
     clean()
 
     with open(PYPROJECT_TOML, 'w') as f:
         f.write(original_toml)
+
+    return dest
 
 
 if __name__ == "__main__":

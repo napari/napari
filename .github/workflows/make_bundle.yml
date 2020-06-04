@@ -18,6 +18,16 @@ jobs:
         uses: actions/setup-python@v2
         with:
           python-version: 3.8
+      - name: Start xvfb
+        if: runner.os == 'Linux'
+        env:
+          DISPLAY: ":99.0"
+        run: |
+          sudo apt install libxkbcommon-x11-0
+          /sbin/start-stop-daemon --start --quiet \
+            --pidfile /tmp/custom_xvfb_99.pid --make-pidfile \
+            --background --exec /usr/bin/Xvfb \
+            -- :99 -screen 0 1920x1200x24 -ac +extension GLX
       - name: Install Dependencies
         run: |
           python -m pip install --upgrade pip 
@@ -29,6 +39,7 @@ jobs:
           TAG="${GITHUB_REF/refs\/tags\/v/}"  # clean tag
           VER="${TAG/rc*/}"  # remove pre-release identifier
           echo "::set-env name=tag::$TAG"
+          echo $TAG
       - name: Make Bundle
         run: python -m bundle
       # - name: Get Release
