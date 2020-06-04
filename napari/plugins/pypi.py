@@ -2,9 +2,11 @@
 These convenience functions will be useful for searching pypi for packages
 that match the plugin naming convention, and retrieving related metadata.
 """
-from urllib import request
-from typing import Tuple, Dict
 import re
+import subprocess
+import sys
+from typing import Dict, Tuple
+from urllib import request
 
 PYPI_SIMPLE_API_URL = 'https://pypi.org/simple/'
 URL_CACHE = {}  # {name: url} for packages at pypi.org/simple
@@ -64,3 +66,18 @@ def get_package_versions(name: str) -> Tuple[str]:
     versions = tuple(set(re.findall(f'>{name}-(.+).tar', html.decode())))
     VERSION_CACHE[name] = versions
     return versions
+
+
+def pip_install(*specifiers):
+    from . import plugin_manager
+
+    subprocess.check_call(
+        [sys.executable, '-m', 'pip', 'install'] + list(specifiers)
+    )
+    plugin_manager.discover()
+
+
+def pip_uninstall(*specifiers):
+    subprocess.check_call(
+        [sys.executable, '-m', 'pip', 'uninstall', '-y'] + list(specifiers)
+    )
