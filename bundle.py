@@ -23,29 +23,29 @@ elif MACOS:
     BUILD_DIR = os.path.join(HERE, 'macOS')
 
 
+with open(PYPROJECT_TOML, 'r') as f:
+    original_toml = f.read()
+
+with open(os.path.join(HERE, "napari", "_version.py")) as f:
+    match = re.search(r'version\s?=\s?\'([^\']+)', f.read())
+    if match:
+        VERSION = match.groups()[0].split('.dev')[0]
+
+
 def patch_toml():
     parser = configparser.ConfigParser()
     parser.read(SETUP_CFG)
     requirements = parser.get("options", "install_requires").splitlines()
     requirements = [r.split('#')[0].strip() for r in requirements if r]
 
-    with open(PYPROJECT_TOML, 'r') as f:
-        toml = tomlkit.parse(f.read())
-
-    with open(os.path.join(HERE, "napari", "_version.py")) as f:
-        match = re.search(r'version\s?=\s?\'([^\']+)', f.read())
-        if match:
-            version = match.groups()[0].split('.dev')[0]
-        else:
-            version = ''
-
-    toml['tool']['briefcase']['version'] = version
+    toml = tomlkit.parse(original_toml)
+    toml['tool']['briefcase']['version'] = VERSION
     toml['tool']['briefcase']['app']['napari']['requires'] = requirements + [
         "pip",
         "PySide2==5.14.2.2",
     ]
 
-    print("patching pyroject.toml to version: ", version)
+    print("patching pyroject.toml to version: ", VERSION)
     print(
         "patching pyroject.toml requirements to : \n",
         "\n".join(toml['tool']['briefcase']['app']['napari']['requires']),
@@ -53,47 +53,6 @@ def patch_toml():
 
     with open(PYPROJECT_TOML, 'w') as f:
         f.write(tomlkit.dumps(toml))
-
-
-def clean():
-    shutil.rmtree(BUILD_DIR, ignore_errors=True)
-
-
-def create():
-    clean()
-    subprocess.check_call(['briefcase', 'create'])
-    time.sleep(0.5)
-
-
-def build():
-    subprocess.check_call(['briefcase', 'build'])
-
-
-def package():
-    if MACOS:
-        subprocess.check_call(['briefcase', 'package', '--no-sign'])
-    else:
-        subprocess.check_call(['briefcase', 'package'])
-
-
-def import_once():
-    # if WINDOWS:
-    #     binary = os.path.join(
-    #         BUILD_DIR, 'napari', 'src', 'python', 'python.exe'
-    #     )
-    # elif MACOS:
-    #     binary = os.path.join(
-    #         BUILD_DIR,
-    #         'napari',
-    #         'napari.app',
-    #         'Contents',
-    #         'Resources',
-    #         'Support',
-    #         'bin',
-    #         'python3',
-    #     )
-
-    subprocess.check_call([sys.executable, '-m', 'napari', '--info'])
 
 
 def patch_dmgbuild():
@@ -112,16 +71,75 @@ def patch_dmgbuild():
         print("patched dmgbuild.core")
 
 
+def patch_wxs():
+    # must run after briefcase create
+    fname = os.path.join(BUILD_DIR, 'napari', 'napari.wxs')
+
+    if os.path.exists(fname):
+        with open(fname, 'r') as f:
+            source = f.read()
+        with open(fname, 'w') as f:
+            f.write(source.replace('pythonw.exe', 'python.exe'))
+            print("patched pythonw.exe -> python.exe")
+
+
+def make_zip():
+    import zipfile
+    import glob
+
+    if WINDOWS:
+        ext, OS = '*.msi', 'Windows'
+    elif LINUX:
+        ext, OS = '*.AppImage', 'Linux'
+    elif MACOS:
+        ext, OS = '*.dmg', 'macOS'
+    artifact = glob.glob(os.path.join(BUILD_DIR, ext))[0]
+    dest = f'napari-{VERSION}-{OS}.zip'
+
+    with zipfile.ZipFile(dest, 'w', zipfile.ZIP_DEFLATED) as zf:
+        zf.write(artifact, arcname=os.path.basename(artifact))
+
+    return dest
+
+
+def clean():
+    shutil.rmtree(BUILD_DIR, ignore_errors=True)
+
+
 def bundle():
-    patch_dmgbuild()
-    import_once()  # smoke test, and build resources
+    clean()
+
+    if MACOS:
+        patch_dmgbuild()
+
+    # smoke test, and build resources
+    subprocess.check_call([sys.executable, '-m', 'napari', '--info'])
     patch_toml()
-    create()
-    build()
-    package()
+
+    # create
+    subprocess.check_call(['briefcase', 'create'])
+    time.sleep(0.5)
+
+    if WINDOWS:
+        patch_wxs()
+
+    # build
+    subprocess.check_call(['briefcase', 'build'])
+
+    # package
+    cmd = ['briefcase', 'package'] + (['--no-sign'] if MACOS else [])
+    subprocess.check_call(cmd)
+
+    # compress
+    make_zip()
+    clean()
+
+    with open(PYPROJECT_TOML, 'w') as f:
+        f.write(original_toml)
 
 
 if __name__ == "__main__":
     if '--clean' in sys.argv:
-        sys.exit(clean())
-    bundle()
+        clean()
+        sys.exit()
+    print('created', bundle())
