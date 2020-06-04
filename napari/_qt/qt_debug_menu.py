@@ -32,13 +32,13 @@ class DebugMenu:
         """
         self.debug_menu = main_window.main_menu.addMenu('&Debug')
 
-        self.trace_file_sub = TraceFileSub(
+        self.perf = PerformanceSubMenu(
             main_window, self.debug_menu.addMenu("Performance Trace")
         )
 
 
-class TraceFileSub:
-    """The "Trace File" flyout menu.
+class PerformanceSubMenu:
+    """The flyout menu to start/stop recording a trace file.
     """
 
     def __init__(self, main_window, sub_menu):
