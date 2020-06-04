@@ -64,7 +64,10 @@ class Viewer(ViewerModel):
             )
             raise RuntimeError(message)
 
-        # If using permon we need a special QApplication.
+        # If using permon we need a special QApplication. If we were run at the
+        # command line using our gui_qt context object then we already have the
+        # special one, and this will be a noop. This is really for when running
+        # with IPython or Jupyter were the QApplication was pre-existing.
         if perf.USE_PERFMON:
             app = convert_app_for_timing(app)
 
