@@ -11,6 +11,151 @@ from ..utils.layer_utils import calc_data_range
 from ..intensity_mixin import IntensityVisualizationMixin
 from ._image_constants import Interpolation, Interpolation3D, Rendering
 from ._image_utils import guess_rgb, guess_multiscale
+from ...types import ArrayLike
+
+"""
+Refactoring Note: will turn into PR description.
+
+Previously:
+    _data : the full data, all slices
+    _data_view : viewable current slice
+    _data_raw : raw current slice
+    _data_thumbnail : viewable current thumbnail
+    N/A             : raw current thumbnail
+
+    Image class updates raw->view:
+        self._data_raw = np.clip(image, 0, 1)
+        self._data_view = self._raw_to_displayed(self._data_raw)
+
+Now:
+    _data : same as before
+    _slice.image.view : viewable current slice
+    _slice.image.raw : raw current slice
+    _slice.thumbnail.view : viewable current thumbnail
+    _slice.thumbnail.raw : raw current thumbnail
+
+    ImageSlice class updates raw->view
+        self._slice.image.raw = np.clip(image, 0, 1)
+"""
+
+
+def _raw_to_displayed(raw_image: ArrayLike):
+    """Determine displayed image from raw image.
+
+    For normal image layers, just return the actual image.
+
+    Parameters
+    -------
+    raw_image : ArrayLike
+        Raw image.
+
+    Returns
+    -------
+    view_image : np.ndarray
+        Viewable image.
+    """
+    view_image = raw_image
+    return view_image
+
+
+class ImageView:
+    """An image with two forms: raw and the displayed view.
+
+    Attributes
+    ----------
+    _raw : ArrayLike
+        The raw image.
+
+    _view : ArrayLike
+        The viewable image, dervied from raw.
+
+    Example:
+    --------
+        # Sets viewable image and raw image to the same thing.
+        image = ImageView(view_image)
+        #  or
+        image.view = view_image
+
+        # Sets raw image, computes the new viewable one.
+        image.raw = raw_image
+    """
+
+    def __init__(self, view_image: ArrayLike):
+        """Create ImageView with some default image.
+
+        This class is for tracking 2 versions of the same image, a raw one and a
+        viewable one. If you set the raw one, the viewable one is computed.
+
+        If you set the viewable one, raw is set to the same thing.
+
+        Parameters
+        ----------
+        view_image : ArrayLike
+            Default viewable image, raw is set to the same thing.
+        """
+        self.view = view_image
+
+    @property
+    def view(self):
+        return self._view
+
+    @view.setter
+    def view(self, view_image: ArrayLike):
+        """Set the viewed and draw images.
+
+        Parameters
+        ----------
+        view_image : ArrayLike
+            The viewable and raw images are set to this.
+        """
+        self._view = view_image
+        self._raw = view_image
+
+    @property
+    def raw(self):
+        return self._raw
+
+    @raw.setter
+    def raw(self, raw_image: ArrayLike):
+        """Set the raw image, viewable image is computed.
+
+        Parameters
+        ----------
+        raw_image : ArrayLike
+            The raw image to set.
+        """
+        self._raw = raw_image
+        self._view = _raw_to_displayed(raw_image)
+
+
+class ImageSlice:
+    """The 2D slice of the image that we are currently viewing.
+
+    Example
+    -------
+        # Create with some default image.
+        slice = ImageSlice(default_image)
+
+        # Set raw image or thumbnail, viewable is computed.
+        slice.image = raw_image
+        slice.thumbnail = raw_thumbnail
+
+        # Access the viewable images.
+        draw_image(slice.image.view)
+        draw_thumbnail(slice.thumbnail.view)
+    """
+
+    def __init__(self, view_image: ArrayLike):
+        """
+        Create an ImageSlice with some default viewable image.
+
+        Parameters
+        ----------
+        view_image : ArrayLike
+            Our default viewable image and viewable thumbnail.
+        """
+        self.image = ImageView(view_image)
+        self.thumbnail = ImageView(view_image)
 
 
 # Mixin must come before Layer
@@ -79,7 +224,7 @@ class Image(IntensityVisualizationMixin, Layer):
     data : array or list of array
         Image data. Can be N dimensional. If the last dimension has length
         3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a list
-        and arrays are decreaing in shape then the data is treated as a
+        and arrays are decreasing in shape then the data is treated as a
         multiscale image.
     metadata : dict
         Image metadata.
@@ -102,7 +247,7 @@ class Image(IntensityVisualizationMixin, Layer):
         Color limits to be used for determining the colormap bounds for
         luminance images. If the image is rgb the contrast_limits is ignored.
     contrast_limits_range : list (2,) of float
-        Range for the color limits for luminace images. If the image is
+        Range for the color limits for luminance images. If the image is
         rgb the contrast_limits_range is ignored.
     gamma : float
         Gamma correction for determining colormap linearity.
@@ -214,15 +359,8 @@ class Image(IntensityVisualizationMixin, Layer):
             self._thumbnail_level = 0
         self.corner_pixels[1] = self.level_shapes[self._data_level]
 
-        # Intitialize image views and thumbnails with zeros
-        if self.rgb:
-            self._data_view = np.zeros(
-                (1,) * self.dims.ndisplay + (self.shape[-1],)
-            )
-        else:
-            self._data_view = np.zeros((1,) * self.dims.ndisplay)
-        self._data_raw = self._data_view
-        self._data_thumbnail = self._data_view
+        # Intitialize the current slice to an empty image.
+        self._slice = ImageSlice(self._get_empty_image())
 
         # Set contrast_limits and colormaps
         self._gamma = gamma
@@ -248,6 +386,20 @@ class Image(IntensityVisualizationMixin, Layer):
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
+
+    def _get_empty_image(self):
+        """Get empty image to use as the default before data is loaded.
+        """
+        if self.rgb:
+            return np.zeros((1,) * self.dims.ndisplay + (self.shape[-1],))
+        else:
+            return np.zeros((1,) * self.dims.ndisplay)
+
+    @property
+    def _data_view(self):
+        """Backward compatibility for tests, for now.
+        """
+        return self._slice.image.view
 
     def _calc_data_range(self):
         if self.multiscale:
@@ -427,37 +579,22 @@ class Image(IntensityVisualizationMixin, Layer):
         )
         return state
 
-    def _raw_to_displayed(self, raw):
-        """Determine displayed image from raw image.
-
-        For normal image layers, just return the actual image.
-
-        Parameters
-        -------
-        raw : array
-            Raw array.
-
-        Returns
-        -------
-        image : array
-            Displayed array.
-        """
-        image = raw
-        return image
-
-    def _set_view_slice(self):
-        """Set the view given the indices to slice with."""
-        not_disp = self.dims.not_displayed
-
+    def _get_order(self):
+        """Return the order of the displayed dimensions."""
         if self.rgb:
             # if rgb need to keep the final axis fixed during the
             # transpose. The index of the final axis depends on how many
             # axes are displayed.
-            order = self.dims.displayed_order + (
+            return self.dims.displayed_order + (
                 max(self.dims.displayed_order) + 1,
             )
         else:
-            order = self.dims.displayed_order
+            return self.dims.displayed_order
+
+    def _set_view_slice(self):
+        """Set the view given the indices to slice with."""
+        not_disp = self.dims.not_displayed
+        order = self._get_order()
 
         if self.multiscale:
             # If 3d redering just show lowest level of multiscale
@@ -500,9 +637,9 @@ class Image(IntensityVisualizationMixin, Layer):
                     * self._transforms['tile2data'].scale
                 )
 
-            image = np.transpose(
-                np.asarray(self.data[level][tuple(indices)]), order
-            )
+            # No threading: this can block.
+            array = self.data[level][tuple(indices)]
+            image = np.asarray(array).transpose(order)
 
             # Slice thumbnail
             indices = np.array(self.dims.indices)
@@ -519,25 +656,23 @@ class Image(IntensityVisualizationMixin, Layer):
                 self.level_shapes[self._thumbnail_level, not_disp] - 1,
             )
             indices[not_disp] = downsampled_indices
+
+            # No threading: this can block.
             thumbnail_source = np.asarray(
                 self.data[self._thumbnail_level][tuple(indices)]
             ).transpose(order)
         else:
             self._transforms['tile2data'].scale = np.ones(self.dims.ndim)
-            image = np.asarray(self.data[self.dims.indices]).transpose(order)
+            array = self.data[self.dims.indices]
+            image = np.asarray(array).transpose(order)
             thumbnail_source = image
 
         if self.rgb and image.dtype.kind == 'f':
-            self._data_raw = np.clip(image, 0, 1)
-            self._data_view = self._raw_to_displayed(self._data_raw)
-            self._data_thumbnail = self._raw_to_displayed(
-                np.clip(thumbnail_source, 0, 1)
-            )
-
+            self._slice.image.raw = np.clip(image, 0, 1)
+            self._slice.thumbnail.raw = np.clip(thumbnail_source, 0, 1)
         else:
-            self._data_raw = image
-            self._data_view = self._raw_to_displayed(self._data_raw)
-            self._data_thumbnail = self._raw_to_displayed(thumbnail_source)
+            self._slice.image.raw = image
+            self._slice.thumbnail.raw = thumbnail_source
 
         if self.multiscale:
             self.events.scale()
@@ -545,10 +680,9 @@ class Image(IntensityVisualizationMixin, Layer):
 
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""
+        image = self._slice.thumbnail.view
         if self.dims.ndisplay == 3 and self.dims.ndim > 2:
-            image = np.max(self._data_thumbnail, axis=0)
-        else:
-            image = self._data_thumbnail
+            image = np.max(image, axis=0)
 
         # float16 not supported by ndi.zoom
         dtype = np.dtype(image.dtype)
@@ -614,13 +748,14 @@ class Image(IntensityVisualizationMixin, Layer):
             Value of the data at the coord.
         """
         coord = np.round(self.coordinates).astype(int)
+        raw = self._slice.image.raw
         if self.rgb:
-            shape = self._data_raw.shape[:-1]
+            shape = raw.shape[:-1]
         else:
-            shape = self._data_raw.shape
+            shape = raw.shape
 
         if all(0 <= c < s for c, s in zip(coord[self.dims.displayed], shape)):
-            value = self._data_raw[tuple(coord[self.dims.displayed])]
+            value = raw[tuple(coord[self.dims.displayed])]
         else:
             value = None
 
