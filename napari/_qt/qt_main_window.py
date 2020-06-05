@@ -27,16 +27,13 @@ from qtpy.QtWidgets import (  # noqa: E402
     QDialog,
     QDockWidget,
     QLabel,
-    QLineEdit,
-    QPushButton,
     QAction,
     QShortcut,
     QStatusBar,
     QVBoxLayout,
-    QTextEdit,
     QFileDialog,
 )
-from qtpy.QtCore import Qt, QProcess  # noqa: E402
+from qtpy.QtCore import Qt  # noqa: E402
 from qtpy.QtGui import QKeySequence, QIcon  # noqa: E402
 from .utils import QImg2array  # noqa: E402
 from ..utils.theme import template  # noqa: E402
@@ -263,7 +260,7 @@ class Window:
         self.plugins_menu.addAction(list_plugins_action)
 
         pip_install_action = QAction(
-            "Pip install package(s)...", self._qt_window
+            "Install/Uninstall Package(s)...", self._qt_window
         )
         pip_install_action.triggered.connect(self._show_pip_install_dialog)
         self.plugins_menu.addAction(pip_install_action)
@@ -335,58 +332,9 @@ class Window:
 
     def _show_pip_install_dialog(self):
         """Show dialog that allows users to sort the call order of plugins."""
-        import sys
+        from .qt_pip_dialog import QtPipDialog
 
-        dialog = QDialog(self._qt_window)
-        dialog.setMaximumHeight(800)
-        dialog.setMaximumWidth(1280)
-        layout = QVBoxLayout()
-        # maybe someday add a search bar here?
-        title = QLabel("Pip install plugins...")
-        title.setObjectName("h2")
-        line_edit = QLineEdit()
-        install_button = QPushButton("install", dialog)
-        uninstall_button = QPushButton("uninstall", dialog)
-        text_area = QTextEdit(dialog, readOnly=True)
-
-        dialog.process = QProcess(dialog)
-        dialog.process.setProgram(sys.executable)
-        dialog.process.setProcessChannelMode(QProcess.MergedChannels)
-
-        def on_stdout_ready():
-            text = dialog.process.readAllStandardOutput().data().decode()
-            text_area.append(text)
-
-        dialog.process.readyReadStandardOutput.connect(on_stdout_ready)
-
-        def _install():
-            text_area.clear()
-            dialog.process.setArguments(
-                ['-m', 'pip', 'install'] + line_edit.text().split()
-            )
-            dialog.process.start()
-
-        def _uninstall():
-            text_area.clear()
-            dialog.process.setArguments(
-                ['-m', 'pip', 'uninstall', '-y'] + line_edit.text().split()
-            )
-            dialog.process.start()
-
-        install_button.clicked.connect(_install)
-        uninstall_button.clicked.connect(_uninstall)
-
-        hlay = QHBoxLayout()
-        hlay.addWidget(line_edit)
-        hlay.addWidget(install_button)
-        hlay.addWidget(uninstall_button)
-        layout.addWidget(title)
-        layout.addLayout(hlay)
-        layout.addWidget(text_area)
-
-        dialog.setLayout(layout)
-        dialog.setAttribute(Qt.WA_DeleteOnClose)
-        dialog.setFixedSize(700, 400)
+        dialog = QtPipDialog(self._qt_window)
         dialog.exec_()
 
     def _show_plugin_err_reporter(self):
