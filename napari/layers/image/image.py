@@ -395,6 +395,18 @@ class Image(IntensityVisualizationMixin, Layer):
         else:
             return np.zeros((1,) * self.dims.ndisplay)
 
+    def _get_order(self):
+        """Return the order of the displayed dimensions."""
+        if self.rgb:
+            # if rgb need to keep the final axis fixed during the
+            # transpose. The index of the final axis depends on how many
+            # axes are displayed.
+            return self.dims.displayed_order + (
+                max(self.dims.displayed_order) + 1,
+            )
+        else:
+            return self.dims.displayed_order
+
     @property
     def _data_view(self):
         """Backward compatibility for tests, for now.
@@ -578,18 +590,6 @@ class Image(IntensityVisualizationMixin, Layer):
             }
         )
         return state
-
-    def _get_order(self):
-        """Return the order of the displayed dimensions."""
-        if self.rgb:
-            # if rgb need to keep the final axis fixed during the
-            # transpose. The index of the final axis depends on how many
-            # axes are displayed.
-            return self.dims.displayed_order + (
-                max(self.dims.displayed_order) + 1,
-            )
-        else:
-            return self.dims.displayed_order
 
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
