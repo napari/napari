@@ -3,64 +3,59 @@ import numpy as np
 from napari.layers import Image
 
 
-def split_axis(viewer, axis=None, keep=False):
+def stack_to_images(stack, axis):
     """Function to split the active layer into separate layers along an axis
 
     Parameters
     ----------
-    viewer : napari.viewer.Viewer
-        The viewer with the selected image
+    stack : napari.layers.Image
+        The image stack to be split into a list of image layers
     axis : int
-        The axis to split along. If None, pick the dimension with the least elements.
-    keep : Boolean
-        If true keep the original active layer, otherwise delete it
+        The axis to split along.
+
+    Returns
+    -------
+    list
+        List of images
     """
 
-    if not isinstance(viewer.active_layer, Image):
+    if not isinstance(stack, Image):
         print("Active layer is not an image")
-        return
+        return None
 
-    data = viewer.active_layer.data
-    name = viewer.active_layer.name
+    data = stack.data
+    name = stack.name
 
     cmaps = list(simple_colormaps.keys())
-    display_dims = viewer.active_layer.dims.displayed
     num_dim = len(data.shape)
-
-    orig = viewer.active_layer
-
-    if axis is None:
-        axis = np.array(data.shape).argmin()
-
-    print(axis)
-    if axis in display_dims:
-        print("don't split x or y")
-        return
 
     if num_dim < 3:
         print("not enough dimensions")
-        return
+        return None
 
     if axis >= num_dim:
         print("the image has {} dimensions".format(num_dim))
-        return
+        return None
 
-    # data = np.moveaxis(data, axis, -1)
-    # viewer.add_image(data, channel_axis=axis, blending='additive', name="split_" + name)
+    imagelist = list()
     for i in range(data.shape[axis]):
-        vname = "C{:02d}_{}".format(i, name)
-        print(i, vname)
-        viewer.add_image(
+        layer_name = "{:02d}_{}".format(i, name)
+
+        try:
+            color = cmaps[i]
+        except IndexError:
+            color = 'gray'
+
+        image = Image(
             np.take(data, i, axis=axis),
             blending='additive',
-            colormap=cmaps[i],
-            name=vname,
+            colormap=color,
+            name=layer_name,
         )
 
-    if not keep:
-        viewer.layers.remove(orig)
+        imagelist.append(image)
 
-    print('done')
+    return imagelist
 
 
 def combine_layers(viewer, rgb=False, keep=True):
