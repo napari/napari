@@ -127,9 +127,20 @@ class QtPopup(QDialog):
         # make sure the popup is completely on the screen
         # In Qt ≥5.10 we can use screenAt to know which monitor the mouse is on
 
-        screen_geometry: QRect = QGuiApplication.screenAt(
-            QCursor.pos()
-        ).geometry()
+        if hasattr(QGuiApplication, "screenAt"):
+            screen_geometry: QRect = QGuiApplication.screenAt(
+                QCursor.pos()
+            ).geometry()
+        else:
+            from qtpy.QtWidgets import QDesktopWidget
+
+            window = self.parent().window() if self.parent() else None
+            screen_num = (
+                QDesktopWidget.screenNumber(window)
+                if window is not None
+                else 0
+            )
+            screen_geometry = QGuiApplication.screens()[screen_num].geometry()
 
         left = max(
             min(screen_geometry.right() - width, left), screen_geometry.left()
