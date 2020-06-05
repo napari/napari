@@ -261,7 +261,7 @@ class QtGridViewButton(QCheckBox):
             Event from the Qt context.
         """
         with self.viewer.events.grid.blocker():
-            self.setChecked(np.all(self.viewer.grid_size == (1, 1)))
+            self.setChecked(bool(np.all(self.viewer.grid_size == (1, 1))))
 
 
 class QtNDisplayButton(QCheckBox):

@@ -79,8 +79,8 @@ linux_task:
     - codecov
 
   test_pyqt5_script:
-    - pip uninstall -y pyside2
-    - pip install pyqt5
+    - python -m pip uninstall -y pyside2
+    - python -m pip install -e .[pyqt5]
     - pytest -v
 
 
