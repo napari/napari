@@ -119,6 +119,8 @@ class QtPopup(QDialog):
         elif isinstance(position, (tuple, list)):
             assert len(position) == 4, '`position` argument must have length 4'
             left, top, width, height = position
+        else:
+            raise ValueError(f"Wrong type of position {position}")
 
         # necessary for transparent round corners
         self.resize(self.sizeHint())
