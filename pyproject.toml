@@ -51,6 +51,7 @@ exclude = '''
 
 [tool.check-manifest]
 ignore = [
+  "bundle.py",
   ".cirrus.yml",
   ".pre-commit-config.yaml",
   "asv.conf.json",

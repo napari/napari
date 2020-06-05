@@ -6,6 +6,8 @@ on:
     types:
       - created
 
+name: Create App Bundle
+
 jobs:
   bundle:
     name: Bundle ${{ matrix.platform }}
