@@ -132,6 +132,7 @@ class QtPopup(QDialog):
                 QCursor.pos()
             ).geometry()
         else:
+            # This widget is deprecated since Qt 5.11
             from qtpy.QtWidgets import QDesktopWidget
 
             window = self.parent().window() if self.parent() else None
