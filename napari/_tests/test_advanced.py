@@ -223,7 +223,7 @@ def test_labels_undo_redo(viewer_factory):
     l1 = labels.data.copy()
 
     # fill
-    labels.fill((30, 30), 3, 42)
+    labels.fill((30, 30), 42)
 
     l2 = labels.data.copy()
     assert not np.array_equal(l1, l2)
@@ -238,7 +238,7 @@ def test_labels_undo_redo(viewer_factory):
 
     # history limit
     labels._history_limit = 1
-    labels.fill((0, 0), 1, 3)
+    labels.fill((0, 0), 3)
 
     l3 = labels.data.copy()
 

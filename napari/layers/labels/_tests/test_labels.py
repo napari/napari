@@ -300,8 +300,8 @@ def test_selecting_label():
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
-    assert layer.selected_label == 0
-    assert layer._selected_color is None
+    assert layer.selected_label == 1
+    assert (layer._selected_color == layer.get_color(1)).all
 
     layer.selected_label = 1
     assert layer.selected_label == 1
@@ -371,7 +371,7 @@ def test_fill():
     assert np.unique(layer.data[:5, :5]) == 1
     assert np.unique(layer.data[5:10, 5:10]) == 2
 
-    layer.fill([0, 0], 1, 3)
+    layer.fill([0, 0], 3)
     assert np.unique(layer.data[:5, :5]) == 3
     assert np.unique(layer.data[5:10, 5:10]) == 2
 

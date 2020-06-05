@@ -42,8 +42,8 @@ def activate_picker_mode(layer):
 
 @Labels.bind_key('E')
 def erase(layer):
-    """Set the currently selected label to the background value, 0."""
-    layer.selected_label = 0
+    """Activate the label eraser."""
+    layer.mode = Mode.ERASE
 
 
 @Labels.bind_key('M')
@@ -78,7 +78,7 @@ def redo(layer):
 
 @Labels.bind_key('Shift')
 def preserve_labels(layer):
-    """Toggle preserve label option when pressed"""
+    """Toggle preserve label option when pressed."""
     # on key press
     layer.preserve_labels = not layer.preserve_labels
 
@@ -86,3 +86,31 @@ def preserve_labels(layer):
 
     # on key release
     layer.preserve_labels = not layer.preserve_labels
+
+
+@Labels.bind_key('Control')
+def switch_fill(layer):
+    """Switch to fill mode temporarily when pressed."""
+    previous_mode = layer.mode
+
+    # on key press
+    layer.mode = Mode.FILL
+
+    yield
+
+    # on key release
+    layer.mode = previous_mode
+
+
+@Labels.bind_key('Alt')
+def switch_erase(layer):
+    """Switch to erase mode temporarily when pressed."""
+    previous_mode = layer.mode
+
+    # on key press
+    layer.mode = Mode.ERASE
+
+    yield
+
+    # on key release
+    layer.mode = previous_mode

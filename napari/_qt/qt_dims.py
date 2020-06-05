@@ -272,7 +272,7 @@ class QtDims(QWidget):
         self.layout().removeWidget(slider_widget)
         slider_widget.deleteLater()
         nsliders = np.sum(self._displayed_sliders)
-        self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
+        self.setMinimumHeight(int(nsliders * self.SLIDERHEIGHT))
         self.last_used = None
 
     def focus_up(self):
