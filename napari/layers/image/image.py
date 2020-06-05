@@ -13,38 +13,6 @@ from ._image_constants import Interpolation, Interpolation3D, Rendering
 from ._image_utils import guess_rgb, guess_multiscale
 from ._image_slice import ImageSlice
 
-"""
-Refactoring Note: will turn into PR description.
-
-Previously:
-    _data : the full data, all slices
-    _data_view : viewable current slice
-    _data_raw : raw current slice
-    _data_thumbnail : viewable current thumbnail
-    N/A             : raw current thumbnail
-
-    Image class updates raw->view:
-        self._data_raw = np.clip(image, 0, 1)
-        self._data_view = self._raw_to_displayed(self._data_raw)
-
-Problems:
-    The 4 _data values are confusingly named.
-    Nothing enforces the raw->view behavior.
-    Nothing groups the per-slice data.
-    Poor symmetry between the image and thumbnail data.
-    No where to put new Slice specific functionality.
-
-Now:
-    _data : same as before
-    _slice.image.view : viewable current slice
-    _slice.image.raw : raw current slice
-    _slice.thumbnail.view : viewable current thumbnail
-    _slice.thumbnail.raw : raw current thumbnail
-
-    ImageSlice class does raw->view update for you:
-        self._slice.image.raw = np.clip(image, 0, 1)
-"""
-
 
 # Mixin must come before Layer
 class Image(IntensityVisualizationMixin, Layer):
