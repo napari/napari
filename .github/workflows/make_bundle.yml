@@ -1,4 +1,10 @@
-on: [push, pull_request]
+on:
+  push:
+    tags:
+      - "bundle*" # Push events with tags starting with bundle
+  release:
+    types:
+      - created
 
 jobs:
   bundle:
@@ -7,7 +13,7 @@ jobs:
     # if: github.repository == 'napari/napari'
     env:
       GITHUB_TOKEN: ${{ github.token }}
-      DISPLAY: ':99.0'
+      DISPLAY: ":99.0"
     strategy:
       fail-fast: false
       matrix:
@@ -40,18 +46,18 @@ jobs:
           echo $VER
       - name: Make Bundle
         run: python -m bundle
-      # - name: Get Release
-      #   id: get_release
-      #   uses: bruceadams/get-release@v1.2.0
-      # - name: Upload Release Asset
-      #   uses: actions/upload-release-asset@v1
-      #   with:
-      #     upload_url: ${{ steps.get_release.outputs.upload_url }}
-      #     asset_path: napari-${{ env.version }}-${{ runner.os }}.zip
-      #     asset_name: napari-${{ env.version }}-${{ runner.os }}.zip
-      #     asset_content_type: application/zip
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
         with:
           name: napari-${{ env.version }}-${{ runner.os }}.zip
           path: napari-${{ env.version }}-${{ runner.os }}.zip
+      - name: Get Release
+        id: get_release
+        uses: bruceadams/get-release@v1.2.0
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
+          asset_path: napari-${{ env.version }}-${{ runner.os }}.zip
+          asset_name: napari-${{ env.version }}-${{ runner.os }}.zip
+          asset_content_type: application/zip
