@@ -5,6 +5,9 @@ from ._image_view import ImageView
 class ImageSlice:
     """The slice of the image that we are currently viewing.
 
+    Right now this just holds the image and its thumbnail, however future async
+    and multiscale-async changes will likely grow this class a lot.
+
     Example
     -------
         # Create with some default image.
