@@ -11,7 +11,7 @@ from ..utils.layer_utils import calc_data_range
 from ..intensity_mixin import IntensityVisualizationMixin
 from ._image_constants import Interpolation, Interpolation3D, Rendering
 from ._image_utils import guess_rgb, guess_multiscale
-from ...types import ArrayLike
+from ._image_slice import ImageSlice
 
 """
 Refactoring Note: will turn into PR description.
@@ -27,6 +27,13 @@ Previously:
         self._data_raw = np.clip(image, 0, 1)
         self._data_view = self._raw_to_displayed(self._data_raw)
 
+Problems:
+    The 4 _data values are confusingly named.
+    Nothing enforces the raw->view behavior.
+    Nothing groups the per-slice data.
+    Poor symmetry between the image and thumbnail data.
+    No where to put new Slice specific functionality.
+
 Now:
     _data : same as before
     _slice.image.view : viewable current slice
@@ -34,128 +41,9 @@ Now:
     _slice.thumbnail.view : viewable current thumbnail
     _slice.thumbnail.raw : raw current thumbnail
 
-    ImageSlice class updates raw->view
+    ImageSlice class does raw->view update for you:
         self._slice.image.raw = np.clip(image, 0, 1)
 """
-
-
-def _raw_to_displayed(raw_image: ArrayLike):
-    """Determine displayed image from raw image.
-
-    For normal image layers, just return the actual image.
-
-    Parameters
-    -------
-    raw_image : ArrayLike
-        Raw image.
-
-    Returns
-    -------
-    view_image : np.ndarray
-        Viewable image.
-    """
-    view_image = raw_image
-    return view_image
-
-
-class ImageView:
-    """An image with two forms: raw and the displayed view.
-
-    Attributes
-    ----------
-    _raw : ArrayLike
-        The raw image.
-
-    _view : ArrayLike
-        The viewable image, dervied from raw.
-
-    Example:
-    --------
-        # Sets viewable image and raw image to the same thing.
-        image = ImageView(view_image)
-        #  or
-        image.view = view_image
-
-        # Sets raw image, computes the new viewable one.
-        image.raw = raw_image
-    """
-
-    def __init__(self, view_image: ArrayLike):
-        """Create ImageView with some default image.
-
-        This class is for tracking 2 versions of the same image, a raw one and a
-        viewable one. If you set the raw one, the viewable one is computed.
-
-        If you set the viewable one, raw is set to the same thing.
-
-        Parameters
-        ----------
-        view_image : ArrayLike
-            Default viewable image, raw is set to the same thing.
-        """
-        self.view = view_image
-
-    @property
-    def view(self):
-        return self._view
-
-    @view.setter
-    def view(self, view_image: ArrayLike):
-        """Set the viewed and draw images.
-
-        Parameters
-        ----------
-        view_image : ArrayLike
-            The viewable and raw images are set to this.
-        """
-        self._view = view_image
-        self._raw = view_image
-
-    @property
-    def raw(self):
-        return self._raw
-
-    @raw.setter
-    def raw(self, raw_image: ArrayLike):
-        """Set the raw image, viewable image is computed.
-
-        Parameters
-        ----------
-        raw_image : ArrayLike
-            The raw image to set.
-        """
-        self._raw = raw_image
-        self._view = _raw_to_displayed(raw_image)
-
-
-class ImageSlice:
-    """The 2D slice of the image that we are currently viewing.
-
-    Example
-    -------
-        # Create with some default image.
-        slice = ImageSlice(default_image)
-
-        # Set raw image or thumbnail, viewable is computed.
-        slice.image = raw_image
-        slice.thumbnail = raw_thumbnail
-
-        # Access the viewable images.
-        draw_image(slice.image.view)
-        draw_thumbnail(slice.thumbnail.view)
-    """
-
-    def __init__(self, view_image: ArrayLike):
-        """
-        Create an ImageSlice with some default viewable image.
-
-        Parameters
-        ----------
-        view_image : ArrayLike
-            Our default viewable image and viewable thumbnail.
-        """
-        self.image = ImageView(view_image)
-        self.thumbnail = ImageView(view_image)
 
 
 # Mixin must come before Layer
