@@ -2,7 +2,13 @@ import os
 from typing import Tuple, List
 
 import numpy as np
-from vispy.color import BaseColormap, Colormap, get_colormap, get_colormaps
+from vispy.color import (
+    Color,
+    BaseColormap,
+    Colormap,
+    get_colormap,
+    get_colormaps,
+)
 
 from ...types import ValidColormapArg
 from .vendored import cm, colorconv
@@ -109,6 +115,31 @@ def _low_discrepancy_image(image, seed=0.5, margin=1 / 256):
         image_float - np.floor(image_float)
     )
     return image_out
+
+
+def color_dict_to_colormap(color_dict):
+    """
+    Generate a color map based on the given color dictionary
+    Parameters
+    ----------
+    color_dict : dict of label and color string matches
+
+    Returns
+    -------
+    colormap : Colormap with provided control colors
+    custom_color : dict of label to color control point within colormap
+    """
+    custom_color = {0: 0.0}
+    colors = ['#000000'] + [
+        color_str for label, color_str in color_dict.items()
+    ]
+    colormap = Colormap(colors)
+    for label, color_str in color_dict.items():
+        color = Color(color_str)
+        for i in range(len(colormap.colors)):
+            if colormap.colors[i] == color:
+                custom_color[label] = colormap._controls[i]
+    return colormap, custom_color
 
 
 def _low_discrepancy(dim, n, seed=0.5):

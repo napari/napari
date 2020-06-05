@@ -3,7 +3,6 @@ from typing import Union, Dict
 
 import numpy as np
 from scipy import ndimage as ndi
-from vispy.color import Color, Colormap
 from ..image import Image
 from ...utils.colormaps import colormaps
 from ...utils.event import Event
@@ -140,7 +139,7 @@ class Labels(Image):
 
         self._seed = seed
         self._num_colors = num_colors
-        self.random_colormap = (
+        self._random_colormap = (
             'random',
             colormaps.label_colormap(self.num_colors),
         )
@@ -163,7 +162,7 @@ class Labels(Image):
         super().__init__(
             data,
             rgb=False,
-            colormap=self.random_colormap,
+            colormap=self._random_colormap,
             contrast_limits=[0.0, 1.0],
             interpolation='nearest',
             rendering='translucent',
@@ -367,23 +366,14 @@ class Labels(Image):
             return
 
         if enable_custom_color_dict:
-            self.custom_color = {0: 0.0}
-            colors = ['#000000'] + [
-                color_str for label, color_str in self.color_dict.items()
-            ]
-            self.custom_color_map = Colormap(colors)
-            self.colormap = self.custom_color_map
-
-            for label, color_str in self.color_dict.items():
-                color = Color(color_str)
-                for i in range(len(self.custom_color_map.colors)):
-                    if self.custom_color_map.colors[i] == color:
-                        self.custom_color[
-                            label
-                        ] = self.custom_color_map._controls[i]
+            custom_colormap, custom_color = colormaps.color_dict_to_colormap(
+                self.color_dict
+            )
+            self.colormap = custom_colormap
+            self.custom_color = custom_color
         else:
             self.custom_color = {}
-            self.colormap = self.random_colormap
+            self.colormap = self._random_colormap
 
         self._enable_custom_color_dict = enable_custom_color_dict
         self._selected_color = self.get_color(self.selected_label)
