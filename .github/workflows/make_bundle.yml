@@ -1,10 +1,9 @@
 on:
   push:
+    # Sequence of patterns matched against refs/tags
     tags:
-      - "bundle*" # Push events with tags starting with bundle
-  release:
-    types:
-      - created
+      - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
+      - "bundle*" # Push events to matching v*, i.e. v1.0, v20.15.10
 
 name: Create App Bundle
 
