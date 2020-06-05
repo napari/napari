@@ -5,8 +5,9 @@ class ImageView:
     """A raw image and a viewable version of it.
 
     A very simple class that groups together two related images, the raw one and
-    the viewable one. And it makes sure if you update the raw one, the viewable
-    one will get updated.
+    the viewable one. Its primary purpose right now is just making sure the
+    viewable image is updated when the raw one is changed. And just to group
+    them together and provide convenient access.
 
     Attributes
     ----------

@@ -8,6 +8,14 @@ class ImageSlice:
     Right now this just holds the image and its thumbnail, however future async
     and multiscale-async changes will likely grow this class a lot.
 
+    Attributes
+    ----------
+    image : ImageView
+        The main image for this slice.
+
+    thumbnail : ImageView
+        The smaller thumbnail image for this slice.
+
     Example
     -------
         # Create with some default image.
@@ -29,7 +37,7 @@ class ImageSlice:
         Parameters
         ----------
         view_image : ArrayLike
-            Our default viewable image and viewable thumbnail.
+            The default image for the time and its thumbail.
         """
-        self.image = ImageView(view_image)
-        self.thumbnail = ImageView(view_image)
+        self.image: ImageView = ImageView(view_image)
+        self.thumbnail: ImageView = ImageView(view_image)
