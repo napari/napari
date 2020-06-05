@@ -265,9 +265,13 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @property
     def _data_view(self):
-        """Backward compatibility for tests, for now.
-        """
+        """Viewable image for the current slice. (compatibility)"""
         return self._slice.image.view
+
+    @property
+    def _data_raw(self):
+        """Raw image for the current slice. (compatibility)"""
+        return self._slice.image.raw
 
     def _calc_data_range(self):
         if self.multiscale:
