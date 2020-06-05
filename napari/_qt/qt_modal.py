@@ -1,4 +1,4 @@
-from qtpy.QtCore import QPoint, Qt
+from qtpy.QtCore import QPoint, Qt, QRect
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QDialog, QFrame, QVBoxLayout
 
@@ -126,13 +126,17 @@ class QtPopup(QDialog):
         self.resize(self.sizeHint())
         # make sure the popup is completely on the screen
         # In Qt ≥5.10 we can use screenAt to know which monitor the mouse is on
-        if hasattr(QGuiApplication, 'screenAt'):
-            screen_size = QGuiApplication.screenAt(QCursor.pos()).size()
-        else:
-            # otherwise we just use the size of the first monitor
-            screen_size = QGuiApplication.screens()[0].size()
-        left = max(min(screen_size.width() - width, left), 0)
-        top = max(min(screen_size.height() - height, top), 0)
+
+        screen_geometry: QRect = QGuiApplication.screenAt(
+            QCursor.pos()
+        ).geometry()
+
+        left = max(
+            min(screen_geometry.right() - width, left), screen_geometry.left()
+        )
+        top = max(
+            min(screen_geometry.bottom() - height, top), screen_geometry.top()
+        )
         self.setGeometry(left, top, width, height)
         self.show()
 
