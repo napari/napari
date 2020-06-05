@@ -4,11 +4,9 @@ from ...types import ArrayLike
 class ImageView:
     """A raw image and a viewable version of it.
 
-    A very simple class that just maintain two version of the same image, the
-    raw version and the viewable version. The purpose is to make sure that
-    if you update the raw version, the viewing one is automatically updated.
-
-    Also to provide convenient access to both versions.
+    A very simple class that groups together two related images, the raw one and
+    the viewable one. And it makes sure if you update the raw one, the viewable
+    one will get updated.
 
     Attributes
     ----------
@@ -77,7 +75,7 @@ class ImageView:
 def _raw_to_displayed(raw_image: ArrayLike):
     """Determine displayed image from raw image.
 
-    For normal image layers, just return the actual image.
+    This is a NOOP right now for normal images.
 
     Parameters
     -------
@@ -86,7 +84,7 @@ def _raw_to_displayed(raw_image: ArrayLike):
 
     Returns
     -------
-    view_image : np.ndarray
+    view_image : ArrayLike
         Viewable image.
     """
     view_image = raw_image
