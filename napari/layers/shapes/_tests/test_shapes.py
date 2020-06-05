@@ -1,5 +1,8 @@
 import numpy as np
+import pytest
+
 from napari.layers import Shapes
+from napari.utils.colormaps.standardize_color import transform_color
 
 
 def test_empty_shapes():
@@ -488,21 +491,36 @@ def test_visiblity():
     assert layer.visible is True
 
 
-def test_current_opacity():
-    """Test setting current layer opacity."""
+def test_opacity():
+    """Test setting opacity."""
+    shape = (10, 4, 2)
     np.random.seed(0)
-    data = 20 * np.random.random((10, 4, 2))
+    data = 20 * np.random.random(shape)
     layer = Shapes(data)
-    assert layer.current_opacity == 0.7
+    # Check default opacity value of 0.7
+    assert layer.opacity == 0.7
 
-    layer.current_opacity = 0.5
-    assert layer.current_opacity == 0.5
+    # Select data and change opacity of selection
+    layer.selected_data = {0, 1}
+    assert layer.opacity == 0.7
+    layer.opacity = 0.5
+    assert layer.opacity == 0.5
 
-    layer = Shapes(data, opacity=0.6)
-    assert layer.current_opacity == 0.6
+    # Add new shape and test its width
+    new_shape = np.random.random((1, 4, 2))
+    layer.selected_data = set()
+    layer.add(new_shape)
+    assert layer.opacity == 0.5
 
-    layer.current_opacity = 0.3
-    assert layer.current_opacity == 0.3
+    # Instantiate with custom opacity
+    layer2 = Shapes(data, opacity=0.2)
+    assert layer2.opacity == 0.2
+
+    # Check removing data shouldn't change opacity
+    layer2.selected_data = {0, 2}
+    layer2.remove_selected()
+    assert len(layer2.data) == shape[0] - 2
+    assert layer2.opacity == 0.2
 
 
 def test_blending():
@@ -522,114 +540,65 @@ def test_blending():
     assert layer.blending == 'opaque'
 
 
-def test_edge_color():
-    """Test setting edge color."""
+@pytest.mark.parametrize("attribute", ['edge', 'face'])
+def test_color_direct(attribute: str):
+    """Test setting face/edge color directly."""
     shape = (10, 4, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    layer = Shapes(data)
-    assert layer.current_edge_color == 'black'
-    assert len(layer.edge_color) == shape[0]
-    assert layer.edge_color == ['black'] * shape[0]
+    layer_kwargs = {f'{attribute}_color': 'black'}
+    layer = Shapes(data, **layer_kwargs)
+    color_array = transform_color(['black'] * shape[0])
 
-    # With no data selected changing edge color has no effect
-    layer.current_edge_color = 'blue'
-    assert layer.current_edge_color == 'blue'
-    assert layer.edge_color == ['black'] * shape[0]
+    current_color = getattr(layer, f'current_{attribute}_color')
+    layer_color = getattr(layer, f'{attribute}_color')
+    assert current_color == 'black'
+    assert len(layer.edge_color) == shape[0]
+    np.testing.assert_allclose(color_array, layer_color)
+
+    # With no data selected changing color has no effect
+    setattr(layer, f'current_{attribute}_color', 'blue')
+    current_color = getattr(layer, f'current_{attribute}_color')
+    assert current_color == 'blue'
+    np.testing.assert_allclose(color_array, layer_color)
 
     # Select data and change edge color of selection
+    selected_data = {0, 1}
     layer.selected_data = {0, 1}
-    assert layer.current_edge_color == 'black'
-    layer.current_edge_color = 'green'
-    assert layer.edge_color == ['green'] * 2 + ['black'] * (shape[0] - 2)
+    current_color = getattr(layer, f'current_{attribute}_color')
+    assert current_color == 'black'
+    setattr(layer, f'current_{attribute}_color', 'green')
+    colorarray_green = transform_color(['green'] * len(layer.selected_data))
+    color_array[list(selected_data)] = colorarray_green
+    layer_color = getattr(layer, f'{attribute}_color')
+    np.testing.assert_allclose(color_array, layer_color)
 
     # Add new shape and test its color
     new_shape = np.random.random((1, 4, 2))
     layer.selected_data = set()
-    layer.current_edge_color = 'blue'
+    setattr(layer, f'current_{attribute}_color', 'blue')
     layer.add(new_shape)
-    assert len(layer.edge_color) == shape[0] + 1
-    assert layer.edge_color == ['green'] * 2 + ['black'] * (shape[0] - 2) + [
-        'blue'
-    ]
-
-    # Instantiate with custom edge color
-    layer = Shapes(data, edge_color='red')
-    assert layer.current_edge_color == 'red'
-
-    # Instantiate with custom edge color list
-    col_list = ['red', 'green'] * 5
-    layer = Shapes(data, edge_color=col_list)
-    assert layer.current_edge_color == 'black'
-    assert layer.edge_color == col_list
-
-    # Add new point and test its color
-    layer.current_edge_color = 'blue'
-    layer.add(new_shape)
-    assert len(layer.edge_color) == shape[0] + 1
-    assert layer.edge_color == col_list + ['blue']
+    color_array = np.vstack([color_array, transform_color('blue')])
+    layer_color = getattr(layer, f'{attribute}_color')
+    assert len(layer_color) == shape[0] + 1
+    np.testing.assert_allclose(color_array, layer_color)
 
     # Check removing data adjusts colors correctly
     layer.selected_data = {0, 2}
     layer.remove_selected()
     assert len(layer.data) == shape[0] - 1
-    assert len(layer.edge_color) == shape[0] - 1
-    assert layer.edge_color == [col_list[1]] + col_list[3:] + ['blue']
 
+    layer_color = getattr(layer, f'{attribute}_color')
+    assert len(layer_color) == shape[0] - 1
+    np.testing.assert_allclose(
+        layer_color, np.vstack((color_array[1], color_array[3:])),
+    )
 
-def test_face_color():
-    """Test setting face color."""
-    shape = (10, 4, 2)
-    np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    layer = Shapes(data)
-    assert layer.current_face_color == 'white'
-    assert len(layer.face_color) == shape[0]
-    assert layer.face_color == ['white'] * shape[0]
-
-    # With no data selected changing face color has no effect
-    layer.current_face_color = 'blue'
-    assert layer.current_face_color == 'blue'
-    assert layer.face_color == ['white'] * shape[0]
-
-    # Select data and change face color of selection
-    layer.selected_data = {0, 1}
-    assert layer.current_face_color == 'white'
-    layer.current_face_color = 'green'
-    assert layer.face_color == ['green'] * 2 + ['white'] * (shape[0] - 2)
-
-    # Add new shape and test its color
-    new_shape = np.random.random((1, 4, 2))
-    layer.selected_data = set()
-    layer.current_face_color = 'blue'
-    layer.add(new_shape)
-    assert len(layer.face_color) == shape[0] + 1
-    assert layer.face_color == ['green'] * 2 + ['white'] * (shape[0] - 2) + [
-        'blue'
-    ]
-
-    # Instantiate with custom face color
-    layer = Shapes(data, face_color='red')
-    assert layer.current_face_color == 'red'
-
-    # Instantiate with custom face color list
-    col_list = ['red', 'green'] * 5
-    layer = Shapes(data, face_color=col_list)
-    assert layer.current_face_color == 'white'
-    assert layer.face_color == col_list
-
-    # Add new point and test its color
-    layer.current_face_color = 'blue'
-    layer.add(new_shape)
-    assert len(layer.face_color) == shape[0] + 1
-    assert layer.face_color == col_list + ['blue']
-
-    # Check removing data adjusts colors correctly
-    layer.selected_data = {0, 2}
-    layer.remove_selected()
-    assert len(layer.data) == shape[0] - 1
-    assert len(layer.face_color) == shape[0] - 1
-    assert layer.face_color == [col_list[1]] + col_list[3:] + ['blue']
+    # set the color directly
+    setattr(layer, f'{attribute}_color', 'black')
+    color_array = np.tile([[0, 0, 0, 1]], (len(layer.data), 1))
+    layer_color = getattr(layer, f'{attribute}_color')
+    np.testing.assert_allclose(color_array, layer_color)
 
 
 def test_edge_width():
@@ -682,59 +651,6 @@ def test_edge_width():
     assert len(layer.data) == shape[0] - 1
     assert len(layer.edge_width) == shape[0] - 1
     assert layer.edge_width == [width_list[1]] + width_list[3:] + [4]
-
-
-def test_opacity():
-    """Test setting opacity."""
-    shape = (10, 4, 2)
-    np.random.seed(0)
-    data = 20 * np.random.random(shape)
-    layer = Shapes(data)
-    # Check default opacity value of 0.7
-    assert layer.current_opacity == 0.7
-    assert len(layer.opacity) == shape[0]
-    assert layer.opacity == [0.7] * shape[0]
-
-    # With no data selected changing opacity has no effect
-    layer.current_opacity = 1
-    assert layer.current_opacity == 1
-    assert layer.opacity == [0.7] * shape[0]
-
-    # Select data and change opacity of selection
-    layer.selected_data = {0, 1}
-    assert layer.current_opacity == 0.7
-    layer.current_opacity = 0.5
-    assert layer.opacity == [0.5] * 2 + [0.7] * (shape[0] - 2)
-
-    # Add new shape and test its width
-    new_shape = np.random.random((1, 4, 2))
-    layer.selected_data = set()
-    layer.current_opacity = 0.3
-    layer.add(new_shape)
-    assert layer.opacity == [0.5] * 2 + [0.7] * (shape[0] - 2) + [0.3]
-
-    # Instantiate with custom opacity
-    layer = Shapes(data, opacity=0.2)
-    assert layer.current_opacity == 0.2
-
-    # Instantiate with custom opacity list
-    opacity_list = [0.1, 0.4] * 5
-    layer = Shapes(data, opacity=opacity_list)
-    assert layer.current_opacity == 0.7
-    assert layer.opacity == opacity_list
-
-    # Add new shape and test its opacity
-    layer.current_opacity = 0.6
-    layer.add(new_shape)
-    assert len(layer.opacity) == shape[0] + 1
-    assert layer.opacity == opacity_list + [0.6]
-
-    # Check removing data adjusts opacity correctly
-    layer.selected_data = {0, 2}
-    layer.remove_selected()
-    assert len(layer.data) == shape[0] - 1
-    assert len(layer.opacity) == shape[0] - 1
-    assert layer.opacity == [opacity_list[1]] + opacity_list[3:] + [0.6]
 
 
 def test_z_index():
@@ -837,7 +753,7 @@ def test_copy_and_paste():
     layer.selected_data = {0, 1}
     layer._copy_data()
     layer._paste_data()
-    assert len(layer._clipboard) == 2
+    assert len(layer._clipboard) == 4
     assert len(layer.data) == shape[0] + 2
     assert np.all(
         [np.all(a == b) for a, b in zip(layer.data[:2], layer.data[-2:])]
