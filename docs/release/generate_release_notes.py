@@ -17,7 +17,7 @@ python /path/to/generate_release_notes.py [args] | tee release_notes.md
 ```
 You'll require PyGitHub and tqdm, which you can install with:
 ```
-pip install -r requirements/_release_tools.txt
+pip install -e ".[release]"
 ```
 References
 https://github.com/scikit-image/scikit-image/blob/master/tools/generate_release_notes.py
