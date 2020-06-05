@@ -637,9 +637,9 @@ class Image(IntensityVisualizationMixin, Layer):
                     * self._transforms['tile2data'].scale
                 )
 
-            # No threading: this can block.
-            array = self.data[level][tuple(indices)]
-            image = np.asarray(array).transpose(order)
+            image = np.transpose(
+                np.asarray(self.data[level][tuple(indices)]), order
+            )
 
             # Slice thumbnail
             indices = np.array(self.dims.indices)
@@ -657,14 +657,12 @@ class Image(IntensityVisualizationMixin, Layer):
             )
             indices[not_disp] = downsampled_indices
 
-            # No threading: this can block.
             thumbnail_source = np.asarray(
                 self.data[self._thumbnail_level][tuple(indices)]
             ).transpose(order)
         else:
             self._transforms['tile2data'].scale = np.ones(self.dims.ndim)
-            array = self.data[self.dims.indices]
-            image = np.asarray(array).transpose(order)
+            image = np.asarray(self.data[self.dims.indices]).transpose(order)
             thumbnail_source = image
 
         if self.rgb and image.dtype.kind == 'f':
