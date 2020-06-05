@@ -1,3 +1,6 @@
+from typing import Dict, Optional
+import warnings
+
 import numpy as np
 from copy import copy, deepcopy
 
@@ -11,6 +14,7 @@ from ...utils.colormaps.standardize_color import (
     rgb_to_hex,
 )
 from ...utils.event import Event
+from ..utils.layer_utils import dataframe_to_properties
 from ...utils.misc import ensure_iterable
 from ...utils.status_messages import format_float
 from ..base import Layer
@@ -41,6 +45,9 @@ class Shapes(Layer):
         List of shape data, where each element is an (N, D) array of the
         N vertices of a shape in D dimensions. Can be an 3-dimensional
         array if each shape has the same number of vertices.
+    properties : dict {str: array (N,)}, DataFrame
+        Properties for each point. Each property should be an array of length N,
+        where N is the number of points.
     shape_type : string or list
         String of shape shape_type, must be one of "{'line', 'rectangle',
         'ellipse', 'path', 'polygon'}". If a list is supplied it must be
@@ -92,6 +99,9 @@ class Shapes(Layer):
     data : (N, ) list of array
         List of shape data, where each element is an (N, D) array of the
         N vertices of a shape in D dimensions.
+    properties : dict {str: array (N,)}, DataFrame
+        Properties for each point. Each property should be an array of length N,
+        where N is the number of points.
     shape_type : (N, ) list of str
         Name of shape type for each shape.
     edge_color : str, array-like
@@ -210,6 +220,7 @@ class Shapes(Layer):
         self,
         data=None,
         *,
+        properties=None,
         shape_type='rectangle',
         edge_width=1,
         edge_color='black',
@@ -253,12 +264,33 @@ class Shapes(Layer):
             face_color=Event,
             current_edge_color=Event,
             current_face_color=Event,
+            current_properties=Event,
             highlight=Event,
         )
 
         self._display_order_stored = []
         self._ndisplay_stored = self.dims.ndisplay
         self.dims.clip = False
+
+        # Save the properties
+        if properties is None:
+            self._properties = {}
+            self._property_choices = {}
+        elif len(data) > 0:
+            properties, _ = dataframe_to_properties(properties)
+            self._properties = self._validate_properties(properties, len(data))
+            self._property_choices = {
+                k: np.unique(v) for k, v in properties.items()
+            }
+        elif len(data) == 0:
+            self._property_choices = {
+                k: np.asarray(v) for k, v in properties.items()
+            }
+            empty_properties = {
+                k: np.empty(0, dtype=v.dtype)
+                for k, v in self._property_choices.items()
+            }
+            self._properties = empty_properties
 
         # The following shape properties are for the new shapes that will
         # be drawn. Each shape has a corresponding property with the
@@ -312,7 +344,7 @@ class Shapes(Layer):
         self.events.face_color.connect(self._update_thumbnail)
         self.events.edge_color.connect(self._update_thumbnail)
 
-        self.add(
+        self._add_shapes(
             data,
             shape_type=shape_type,
             edge_width=edge_width,
@@ -320,6 +352,40 @@ class Shapes(Layer):
             face_color=face_color,
             z_index=z_index,
         )
+
+        # set the current_* properties
+        if len(data) > 0:
+            self._current_edge_color = self.edge_color[-1]
+            self._current_face_color = self.face_color[-1]
+            self.current_properties = {
+                k: np.asarray([v[-1]]) for k, v in self.properties.items()
+            }
+        elif len(data) == 0 and self.properties:
+            self.current_properties = {
+                k: np.asarray([v[0]])
+                for k, v in self._property_choices.items()
+            }
+            self._initialize_current_color_for_empty_layer(edge_color, 'edge')
+            self._initialize_current_color_for_empty_layer(face_color, 'face')
+        elif len(data) == 0 and len(self.properties) == 0:
+            self._current_edge_color = transform_color_with_defaults(
+                num_entries=1,
+                colors=edge_color,
+                elem_name="edge_color",
+                default="black",
+            )
+            self._current_face_color = transform_color_with_defaults(
+                num_entries=1,
+                colors=face_color,
+                elem_name="face_color",
+                default="black",
+            )
+            self.current_properties = {}
+
+        else:
+            self._current_edge_color = self.edge_color[-1]
+            self._current_face_color = self.face_color[-1]
+            self.current_properties = {}
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -336,6 +402,32 @@ class Shapes(Layer):
         self.add(data, shape_type=shape_type)
         self._update_dims()
         self.events.data()
+
+    @property
+    def properties(self) -> Dict[str, np.ndarray]:
+        """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each point"""
+        return self._properties
+
+    @properties.setter
+    def properties(self, properties: Dict[str, np.ndarray]):
+        if not isinstance(properties, dict):
+            properties, _ = dataframe_to_properties(properties)
+        self._properties = self._validate_properties(properties)
+        if self._face_color_property and (
+            self._face_color_property not in self._properties
+        ):
+            self._face_color_property = ''
+            warnings.warn(
+                'property used for face_color dropped', RuntimeWarning
+            )
+
+        if self._edge_color_property and (
+            self._edge_color_property not in self._properties
+        ):
+            self._edge_color_property = ''
+            warnings.warn(
+                'property used for edge_color dropped', RuntimeWarning
+            )
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
@@ -406,6 +498,28 @@ class Shapes(Layer):
         self.events.current_face_color()
 
     @property
+    def current_properties(self) -> Dict[str, np.ndarray]:
+        """dict{str: np.ndarray(1,)}: properties for the next added point."""
+        return self._current_properties
+
+    @current_properties.setter
+    def current_properties(self, current_properties):
+        self._current_properties = current_properties
+
+        if (
+            self._update_properties
+            and len(self.selected_data) > 0
+            and self._mode != Mode.ADD
+        ):
+            props = self.properties
+            for k in props:
+                props[k][list(self.selected_data)] = current_properties[k]
+            self.properties = props
+
+            self.refresh_colors()
+        self.events.current_properties()
+
+    @property
     def shape_type(self):
         """list of str: name of shape type for each shape."""
         return self._data_view.shape_types
@@ -452,8 +566,9 @@ class Shapes(Layer):
 
         # Update properties based on selected shapes
         if len(selected_data) > 0:
+            selected_data_indices = list(selected_data)
             selected_face_colors = self._data_view._face_color[
-                list(selected_data)
+                selected_data_indices
             ]
             face_colors = np.unique(selected_face_colors, axis=0)
             if len(face_colors) == 1:
@@ -462,7 +577,7 @@ class Shapes(Layer):
                     self.current_face_color = face_color
 
             selected_edge_colors = self._data_view._edge_color[
-                list(selected_data)
+                selected_data_indices
             ]
             edge_colors = np.unique(selected_edge_colors, axis=0)
             if len(edge_colors) == 1:
@@ -482,6 +597,16 @@ class Shapes(Layer):
                 edge_width = edge_width[0]
                 with self.block_update_properties():
                     self.current_edge_width = edge_width
+            properties = {
+                k: np.unique(v[selected_data_indices], axis=0)
+                for k, v in self.properties.items()
+            }
+            n_unique_properties = np.array(
+                [len(v) for v in properties.values()]
+            )
+            if np.all(n_unique_properties == 1):
+                with self.block_update_properties():
+                    self.current_properties = properties
 
     def _set_color(self, color, attribute: str):
         """ Set the face_color or edge_color property
@@ -520,6 +645,7 @@ class Shapes(Layer):
         state = self._get_base_state()
         state.update(
             {
+                'properties': self.properties,
                 'shape_type': self.shape_type,
                 'opacity': self.opacity,
                 'z_index': self.z_index,
@@ -709,6 +835,83 @@ class Shapes(Layer):
         else:
             z_index = z_index or 0
 
+        n_new_shapes = len(data)
+        if n_new_shapes > 0:
+            for k in self.properties:
+                new_property = np.repeat(
+                    self.current_properties[k], n_new_shapes, axis=0
+                )
+                self.properties[k] = np.concatenate(
+                    (self.properties[k], new_property), axis=0
+                )
+            self._add_shapes(
+                data,
+                shape_type=shape_type,
+                edge_width=edge_width,
+                edge_color=edge_color,
+                face_color=face_color,
+                z_index=z_index,
+            )
+
+    def _add_shapes(
+        self,
+        data,
+        *,
+        shape_type='rectangle',
+        edge_width=None,
+        edge_color=None,
+        face_color=None,
+        z_index=None,
+    ):
+        """Add shapes to the data view.
+
+        Parameters
+        ----------
+        data : list or array
+            List of shape data, where each element is an (N, D) array of the
+            N vertices of a shape in D dimensions. Can be an 3-dimensional
+            array if each shape has the same number of vertices.
+        shape_type : string | list
+            String of shape shape_type, must be one of "{'line', 'rectangle',
+            'ellipse', 'path', 'polygon'}". If a list is supplied it must be
+            the same length as the length of `data` and each element will be
+            applied to each shape otherwise the same value will be used for all
+            shapes.
+        edge_width : float | list
+            thickness of lines and edges. If a list is supplied it must be the
+            same length as the length of `data` and each element will be
+            applied to each shape otherwise the same value will be used for all
+            shapes.
+        edge_color : str | tuple | list
+            If string can be any color name recognized by vispy or hex value if
+            starting with `#`. If array-like must be 1-dimensional array with 3
+            or 4 elements. If a list is supplied it must be the same length as
+            the length of `data` and each element will be applied to each shape
+            otherwise the same value will be used for all shapes.
+        face_color : str | tuple | list
+            If string can be any color name recognized by vispy or hex value if
+            starting with `#`. If array-like must be 1-dimensional array with 3
+            or 4 elements. If a list is supplied it must be the same length as
+            the length of `data` and each element will be applied to each shape
+            otherwise the same value will be used for all shapes.
+        z_index : int | list
+            Specifier of z order priority. Shapes with higher z order are
+            displayed ontop of others. If a list is supplied it must be the
+            same length as the length of `data` and each element will be
+            applied to each shape otherwise the same value will be used for all
+            shapes.
+        """
+        if edge_width is None:
+            edge_width = self.current_edge_width
+        if edge_color is None:
+            edge_color = self._current_edge_color
+        if face_color is None:
+            face_color = self._current_face_color
+        if self._data_view is not None:
+            z_index = z_index or max(self._data_view._z_index, default=-1) + 1
+        else:
+            z_index = z_index or 0
+
         if len(data) > 0:
             if np.array(data[0]).ndim == 1:
                 # If a single array for a shape has been passed turn into list
@@ -763,6 +966,23 @@ class Shapes(Layer):
         self._display_order_stored = copy(self.dims.order)
         self._ndisplay_stored = copy(self.dims.ndisplay)
         self._update_dims()
+
+    def _validate_properties(
+        self, properties: Dict[str, np.ndarray], n_shapes: Optional[int] = None
+    ) -> Dict[str, np.ndarray]:
+        """Validates the type and size of the properties"""
+        if n_shapes is None:
+            n_shapes = len(self.data)
+        for k, v in properties.items():
+            if len(v) != n_shapes:
+                raise ValueError(
+                    'the number of properties must equal the number of points'
+                )
+            # ensure the property values are a numpy array
+            if type(v) != np.ndarray:
+                properties[k] = np.asarray(v)
+
+        return properties
 
     def _set_view_slice(self):
         """Set the view given the slicing indices."""
@@ -1052,6 +1272,10 @@ class Shapes(Layer):
             self._data_view.remove(ind)
 
         if len(index) > 0:
+            for k in self.properties:
+                self.properties[k] = np.delete(
+                    self.properties[k], index, axis=0
+                )
             self._data_view._edge_color = np.delete(
                 self._data_view._edge_color, index, axis=0
             )
@@ -1239,6 +1463,9 @@ class Shapes(Layer):
                 ],
                 'edge_color': deepcopy(self._data_view._edge_color[index]),
                 'face_color': deepcopy(self._data_view._face_color[index]),
+                'properties': {
+                    k: deepcopy(v[index]) for k, v in self.properties.items()
+                },
                 'indices': self.dims.indices,
             }
         else:
@@ -1253,6 +1480,12 @@ class Shapes(Layer):
                 self.dims.indices[i] - self._clipboard['indices'][i]
                 for i in self.dims.not_displayed
             ]
+
+            for k in self.properties:
+                self.properties[k] = np.concatenate(
+                    (self.properties[k], self._clipboard['properties'][k]),
+                    axis=0,
+                )
 
             # Add new shape data
             for i, s in enumerate(self._clipboard['data']):

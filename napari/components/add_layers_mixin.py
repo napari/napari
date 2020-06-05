@@ -492,6 +492,7 @@ class AddLayersMixin:
         self,
         data=None,
         *,
+        properties=None,
         shape_type='rectangle',
         edge_width=1,
         edge_color='black',
@@ -513,6 +514,9 @@ class AddLayersMixin:
             List of shape data, where each element is an (N, D) array of the
             N vertices of a shape in D dimensions. Can be an 3-dimensional
             array if each shape has the same number of vertices.
+        properties : dict {str: array (N,)}, DataFrame
+            Properties for each point. Each property should be an array of length N,
+            where N is the number of points.
         shape_type : string or list
             String of shape shape_type, must be one of "{'line', 'rectangle',
             'ellipse', 'path', 'polygon'}". If a list is supplied it must be
@@ -570,6 +574,7 @@ class AddLayersMixin:
 
         layer = layers.Shapes(
             data=data,
+            properties=properties,
             shape_type=shape_type,
             edge_width=edge_width,
             edge_color=edge_color,

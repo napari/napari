@@ -1,3 +1,6 @@
+from copy import copy
+from itertools import cycle, islice
+
 import numpy as np
 import pytest
 
@@ -5,9 +8,73 @@ from napari.layers import Shapes
 from napari.utils.colormaps.standardize_color import transform_color
 
 
+def _make_cycled_properties(values, length):
+    """Helper function to make property values
+
+    Parameters:
+    -----------
+    values :
+        The values to be cycled.
+    length : int
+        The length of the resulting property array
+
+    Returns:
+    --------
+    cycled_properties : np.ndarray
+        The property array comprising the cycled values.
+    """
+    cycled_properties = np.array(list(islice(cycle(values), 0, length)))
+    return cycled_properties
+
+
 def test_empty_shapes():
     shp = Shapes()
     assert shp.dims.ndim == 2
+
+
+properties_array = {'shape_type': _make_cycled_properties(['A', 'B'], 10)}
+properties_list = {'shape_type': list(_make_cycled_properties(['A', 'B'], 10))}
+
+
+@pytest.mark.parametrize("properties", [properties_array, properties_list])
+def test_properties(properties):
+    shape = (10, 4, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Shapes(data, properties=copy(properties))
+    np.testing.assert_equal(layer.properties, properties)
+
+    current_prop = {'shape_type': np.array(['B'])}
+    assert layer.current_properties == current_prop
+
+    # test removing points
+    layer.selected_data = {0, 1}
+    layer.remove_selected()
+    remove_properties = properties['shape_type'][2::]
+    assert len(layer.properties['shape_type']) == (shape[0] - 2)
+    assert np.all(layer.properties['shape_type'] == remove_properties)
+
+    # test selection of properties
+    layer.selected_data = {0}
+    selected_annotation = layer.current_properties['shape_type']
+    assert len(selected_annotation) == 1
+    assert selected_annotation[0] == 'A'
+
+    # test adding shapes with properties
+    new_data = np.random.random((1, 4, 2))
+    new_shape_type = ['rectangle']
+    layer.add(new_data, shape_type=new_shape_type)
+    add_properties = np.concatenate((remove_properties, ['A']), axis=0)
+    assert np.all(layer.properties['shape_type'] == add_properties)
+
+    # test copy/paste
+    layer.selected_data = {0, 1}
+    layer._copy_data()
+    assert np.all(layer._clipboard['properties']['shape_type'] == ['A', 'B'])
+
+    layer._paste_data()
+    paste_properties = np.concatenate((add_properties, ['A', 'B']), axis=0)
+    assert np.all(layer.properties['shape_type'] == paste_properties)
 
 
 def test_rectangles():
@@ -753,7 +820,7 @@ def test_copy_and_paste():
     layer.selected_data = {0, 1}
     layer._copy_data()
     layer._paste_data()
-    assert len(layer._clipboard) == 4
+    assert len(layer._clipboard) == 5
     assert len(layer.data) == shape[0] + 2
     assert np.all(
         [np.all(a == b) for a, b in zip(layer.data[:2], layer.data[-2:])]

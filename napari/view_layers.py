@@ -473,6 +473,7 @@ def view_labels(
 def view_shapes(
     data=None,
     *,
+    properties=None,
     shape_type='rectangle',
     edge_width=1,
     edge_color='black',
@@ -499,6 +500,9 @@ def view_shapes(
         List of shape data, where each element is an (N, D) array of the
         N vertices of a shape in D dimensions. Can be an 3-dimensional
         array if each shape has the same number of vertices.
+    properties : dict {str: array (N,)}, DataFrame
+        Properties for each point. Each property should be an array of length N,
+        where N is the number of points.
     shape_type : string or list
         String of shape shape_type, must be one of "{'line', 'rectangle',
         'ellipse', 'path', 'polygon'}". If a list is supplied it must be
@@ -544,18 +548,6 @@ def view_shapes(
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
-    title : string
-        The title of the viewer window.
-    ndisplay : {2, 3}
-        Number of displayed dimensions.
-    order : tuple of int
-        Order in which dimensions are displayed where the last two or last
-        three dimensions correspond to row x column or plane x row x column if
-        ndisplay is 2 or 3.
-    axis_labels : list of str
-        Dimension names.
-    show : bool, optional
-        Whether to show the viewer after instantiation. by default True.
 
     Returns
     -------
@@ -571,6 +563,7 @@ def view_shapes(
     )
     viewer.add_shapes(
         data=data,
+        properties=properties,
         shape_type=shape_type,
         edge_width=edge_width,
         edge_color=edge_color,
