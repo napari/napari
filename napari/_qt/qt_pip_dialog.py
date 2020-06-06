@@ -11,7 +11,7 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
 )
 
-# from ..utils.misc import running_as_bundled_app
+from ..utils.misc import running_as_bundled_app
 from ..utils._appdirs import user_plugin_dir, user_site_packages
 
 
@@ -54,8 +54,12 @@ class QtPipDialog(QDialog):
 
             text_area.clear()
             cmd = ['-m', 'pip', 'install']
-            # if running_as_bundled_app() and sys.platform.startswith('linux'):
-            cmd += ['--prefix', user_plugin_dir(), '--no-warn-script-location']
+            if running_as_bundled_app() and sys.platform.startswith('linux'):
+                cmd += [
+                    '--no-warn-script-location',
+                    '--prefix',
+                    user_plugin_dir(),
+                ]
             self.process.setArguments(cmd + self.line_edit.text().split())
             self.process.start()
             self.process.finished.connect(plugin_manager.discover)

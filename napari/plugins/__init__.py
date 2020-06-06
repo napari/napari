@@ -5,7 +5,7 @@ from napari_plugin_engine import PluginManager as _PM
 from . import hook_specifications
 from . import _builtins
 from ..utils.misc import running_as_bundled_app
-from ..utils._appdirs import user_site_packages, user_plugin_dir
+from ..utils._appdirs import user_site_packages
 
 
 class PluginManager(_PM):
