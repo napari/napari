@@ -150,7 +150,6 @@ class Image(IntensityVisualizationMixin, Layer):
         blending='translucent',
         visible=True,
         multiscale=None,
-        image_converter=None,
     ):
         if isinstance(data, types.GeneratorType):
             data = list(data)
