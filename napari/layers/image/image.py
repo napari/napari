@@ -217,7 +217,9 @@ class Image(IntensityVisualizationMixin, Layer):
         self.corner_pixels[1] = self.level_shapes[self._data_level]
 
         # Intitialize the current slice to an empty image.
-        self._slice = ImageSlice(self._get_empty_image(), image_converter)
+        self._slice = ImageSlice(
+            self._get_empty_image(), self._raw_to_displayed
+        )
 
         # Set contrast_limits and colormaps
         self._gamma = gamma
@@ -451,6 +453,24 @@ class Image(IntensityVisualizationMixin, Layer):
             }
         )
         return state
+
+    def _raw_to_displayed(self, raw):
+        """Determine displayed image from raw image.
+
+        For normal image layers, just return the actual image.
+
+        Parameters
+        ----------
+        raw : array
+            Raw array.
+
+        Returns
+        -------
+        image : array
+            Displayed array.
+        """
+        image = raw
+        return image
 
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""

@@ -171,7 +171,6 @@ class Labels(Image):
             blending=blending,
             visible=visible,
             multiscale=multiscale,
-            image_converter=self._raw_to_displayed,
         )
 
         self.events.add(
@@ -661,5 +660,5 @@ class Labels(Image):
                         if k != 'index':
                             msg += f', {k}: {v[idx]}'
                 else:
-                    msg += f' [No Properties]'
+                    msg += ' [No Properties]'
         return msg

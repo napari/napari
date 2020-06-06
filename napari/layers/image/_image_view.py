@@ -1,6 +1,6 @@
-from typing import Callable, Optional
+from typing import Optional
 
-from ...types import ArrayLike
+from ...types import ArrayLike, ImageConverter
 
 
 class ImageView:
@@ -30,10 +30,11 @@ class ImageView:
         image.raw = raw_image
     """
 
-    # A converter takes in a raw array and returns a visible one.
-    ConverterType = Optional[Callable[[ArrayLike], ArrayLike]]
-
-    def __init__(self, view_image: ArrayLike, converter: ConverterType = None):
+    def __init__(
+        self,
+        view_image: ArrayLike,
+        image_converter: Optional[ImageConverter] = None,
+    ):
         """Create an ImageView with some default image.
 
         Parameters
@@ -44,7 +45,7 @@ class ImageView:
             If given this is used to convert images from raw to viewable.
         """
         self.view = view_image
-        self.converter = converter
+        self.image_converter = image_converter
 
     @property
     def view(self):
@@ -79,5 +80,8 @@ class ImageView:
         """
         self._raw = raw_image
 
-        has_converter = self.converter is not None
-        self._view = self.converter(raw_image) if has_converter else raw_image
+        # Update the view image based on this new raw image.
+        has_converter = self.image_converter is not None
+        self._view = (
+            self.image_converter(raw_image) if has_converter else raw_image
+        )

@@ -1,5 +1,7 @@
-from ...types import ArrayLike
+from typing import Optional
+
 from ._image_view import ImageView
+from ...types import ArrayLike, ImageConverter
 
 
 class ImageSlice:
@@ -31,7 +33,9 @@ class ImageSlice:
     """
 
     def __init__(
-        self, view_image: ArrayLike, converter: ImageView.ConverterType = None
+        self,
+        view_image: ArrayLike,
+        image_converter: Optional[ImageConverter] = None,
     ):
         """
         Create an ImageSlice with some default viewable image.
@@ -40,8 +44,8 @@ class ImageSlice:
         ----------
         view_image : ArrayLike
             The default image for the time and its thumbail.
-        converter : ImageView.ConverterType
-            ImageView will use this to convert from raw to viewable.
+        image_converter : ImageConverter
+            ImageView uses this to convert from raw to viewable.
         """
-        self.image: ImageView = ImageView(view_image, converter)
-        self.thumbnail: ImageView = ImageView(view_image, converter)
+        self.image: ImageView = ImageView(view_image, image_converter)
+        self.thumbnail: ImageView = ImageView(view_image, image_converter)
