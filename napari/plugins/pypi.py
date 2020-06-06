@@ -78,6 +78,9 @@ def pip_install(*specifiers):
 
 
 def pip_uninstall(*specifiers):
+    from . import plugin_manager
+
     subprocess.check_call(
         [sys.executable, '-m', 'pip', 'uninstall', '-y'] + list(specifiers)
     )
+    plugin_manager.prune()

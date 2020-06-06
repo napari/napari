@@ -13,6 +13,18 @@ import numpy as np
 
 ROOT_DIR = path.dirname(path.dirname(__file__))
 
+try:
+    from importlib import metadata as importlib_metadata
+except ImportError:
+    import importlib_metadata  # type: ignore
+
+
+def running_as_bundled_app() -> bool:
+    """Infer whether we are running as a briefcase bundle"""
+    # https://github.com/beeware/briefcase/issues/412
+    # this assumes the name of the app stays "napari"
+    return importlib_metadata.metadata("napari").get("App-ID") is not None
+
 
 def str_to_rgb(arg):
     """Convert an rgb string 'rgb(x,y,z)' to a list of ints [x,y,z].

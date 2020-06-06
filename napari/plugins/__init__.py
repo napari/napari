@@ -4,25 +4,14 @@ import os
 from napari_plugin_engine import PluginManager as _PM
 from . import hook_specifications
 from . import _builtins
+from ..utils.misc import running_as_bundled_app
+from ..utils._appdirs import user_site_packages, user_plugin_dir
 
 
-# move to napari-plugin-engine
 class PluginManager(_PM):
-    def prune(self):
-        for plugin in list(self.plugins):
-            meta = self.get_standard_metadata(plugin)
-            meta.pop("hooks")
-            meta.pop("plugin_name")
-            meta.pop("version")
-            if not any(i for i in meta.values()):
-                self.unregister(plugin)
+    def discover(self):
+        return super().discover(user_site_packages())
 
-
-if os.name == 'nt':
-    # This is where plugins will be in bundled apps on windows
-    exe_dir = os.path.dirname(sys.executable)
-    winlib = os.path.join(exe_dir, "Lib", "site-packages")
-    sys.path.append(winlib)
 
 # the main plugin manager instance for the `napari` plugin namespace.
 plugin_manager = PluginManager(

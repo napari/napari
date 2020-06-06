@@ -1,5 +1,6 @@
 # requirements are in setup.cfg
 # https://caremad.io/posts/2013/07/setup-vs-requirement/
 
+-e git+git://github.com/napari/napari-plugin-engine.git#egg=napari-plugin-engine
 -e ".[all]"
 -r requirements/development.txt

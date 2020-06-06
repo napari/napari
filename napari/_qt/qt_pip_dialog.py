@@ -1,6 +1,6 @@
 import sys
 
-from qtpy.QtCore import QProcess, Qt
+from qtpy.QtCore import QProcess, QProcessEnvironment, Qt
 from qtpy.QtWidgets import (
     QDialog,
     QHBoxLayout,
@@ -10,6 +10,9 @@ from qtpy.QtWidgets import (
     QTextEdit,
     QVBoxLayout,
 )
+
+# from ..utils.misc import running_as_bundled_app
+from ..utils._appdirs import user_plugin_dir, user_site_packages
 
 
 class QtPipDialog(QDialog):
@@ -35,6 +38,9 @@ class QtPipDialog(QDialog):
 
         self.process = QProcess(self)
         self.process.setProgram(sys.executable)
+        env = QProcessEnvironment()
+        env.insert("PYTHONPATH", user_site_packages())
+        self.process.setProcessEnvironment(env)
         self.process.setProcessChannelMode(QProcess.MergedChannels)
 
         def on_stdout_ready():
@@ -47,9 +53,10 @@ class QtPipDialog(QDialog):
             from ..plugins import plugin_manager
 
             text_area.clear()
-            self.process.setArguments(
-                ['-m', 'pip', 'install'] + self.line_edit.text().split()
-            )
+            cmd = ['-m', 'pip', 'install']
+            # if running_as_bundled_app() and sys.platform.startswith('linux'):
+            cmd += ['--prefix', user_plugin_dir(), '--no-warn-script-location']
+            self.process.setArguments(cmd + self.line_edit.text().split())
             self.process.start()
             self.process.finished.connect(plugin_manager.discover)
 
@@ -57,10 +64,8 @@ class QtPipDialog(QDialog):
             from ..plugins import plugin_manager
 
             text_area.clear()
-            self.process.setArguments(
-                ['-m', 'pip', 'uninstall', '-y']
-                + self.line_edit.text().split()
-            )
+            args = ['-m', 'pip', 'uninstall', '-y']
+            self.process.setArguments(args + self.line_edit.text().split())
             self.process.start()
             self.process.finished.connect(plugin_manager.prune)
 
