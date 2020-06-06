@@ -41,7 +41,7 @@ class ImageView:
         ----------
         view_image : ArrayLike
             Default viewable image, raw is set to the same thing.
-        converter : ConverterType
+        image_converter : Optional[ImageConverter]
             If given this is used to convert images from raw to viewable.
         """
         self.view = view_image
