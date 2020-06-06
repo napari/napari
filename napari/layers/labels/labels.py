@@ -182,7 +182,6 @@ class Labels(Image):
             selected_label=Event,
         )
 
-        self._data_raw = np.zeros((1,) * self.dims.ndisplay)
         self._n_dimensional = False
         self._contiguous = True
         self._brush_size = 10
