@@ -171,6 +171,7 @@ class Labels(Image):
             blending=blending,
             visible=visible,
             multiscale=multiscale,
+            image_converter=self._raw_to_displayed,
         )
 
         self.events.add(

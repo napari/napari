@@ -150,6 +150,7 @@ class Image(IntensityVisualizationMixin, Layer):
         blending='translucent',
         visible=True,
         multiscale=None,
+        image_converter=None,
     ):
         if isinstance(data, types.GeneratorType):
             data = list(data)
@@ -216,7 +217,7 @@ class Image(IntensityVisualizationMixin, Layer):
         self.corner_pixels[1] = self.level_shapes[self._data_level]
 
         # Intitialize the current slice to an empty image.
-        self._slice = ImageSlice(self._get_empty_image())
+        self._slice = ImageSlice(self._get_empty_image(), image_converter)
 
         # Set contrast_limits and colormaps
         self._gamma = gamma

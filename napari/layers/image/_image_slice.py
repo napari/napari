@@ -30,7 +30,9 @@ class ImageSlice:
         draw_thumbnail(image_slice.thumbnail.view)
     """
 
-    def __init__(self, view_image: ArrayLike):
+    def __init__(
+        self, view_image: ArrayLike, converter: ImageView.ConverterType = None
+    ):
         """
         Create an ImageSlice with some default viewable image.
 
@@ -38,6 +40,8 @@ class ImageSlice:
         ----------
         view_image : ArrayLike
             The default image for the time and its thumbail.
+        converter : ImageView.ConverterType
+            ImageView will use this to convert from raw to viewable.
         """
-        self.image: ImageView = ImageView(view_image)
-        self.thumbnail: ImageView = ImageView(view_image)
+        self.image: ImageView = ImageView(view_image, converter)
+        self.thumbnail: ImageView = ImageView(view_image, converter)
