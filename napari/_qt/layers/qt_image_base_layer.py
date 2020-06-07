@@ -187,7 +187,7 @@ class QtBaseImageControls(QtLayerControls):
             Event from the Qt context, by default None.
         """
         with qt_signals_blocked(self.gammaSlider):
-            self.gammaSlider.setValue(self.layer.gamma * 100)
+            self.gammaSlider.setValue(int(self.layer.gamma * 100))
 
     def mouseMoveEvent(self, event):
         self.layer.status = self.layer._contrast_limits_msg
