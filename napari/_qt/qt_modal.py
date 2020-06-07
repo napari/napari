@@ -135,12 +135,7 @@ class QtPopup(QDialog):
             # This widget is deprecated since Qt 5.11
             from qtpy.QtWidgets import QDesktopWidget
 
-            window = self.parent().window() if self.parent() else None
-            screen_num = (
-                QDesktopWidget.screenNumber(window)
-                if window is not None
-                else 0
-            )
+            screen_num = QDesktopWidget().screenNumber(QCursor.pos())
             screen_geometry = QGuiApplication.screens()[screen_num].geometry()
 
         left = max(
