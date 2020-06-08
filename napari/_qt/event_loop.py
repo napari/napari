@@ -1,3 +1,4 @@
+import os
 import sys
 from contextlib import contextmanager
 from os.path import dirname, join
@@ -5,9 +6,6 @@ from os.path import dirname, join
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import QApplication, QSplashScreen
-
-from .qt_event_timing import QApplicationWithTiming
-from ..utils import perf
 
 
 def _create_application(argv) -> QApplication:
@@ -20,7 +18,9 @@ def _create_application(argv) -> QApplication:
     call convert_app_for_timing() in Viewer but that one is for Jupyter/IPython
     while this one is for running from the command line.
     """
-    if perf.USE_PERFMON:
+    if os.getenv("NAPARI_PERFMON", "0") != "0":
+        from .qt_event_timing import QApplicationWithTiming
+
         return QApplicationWithTiming(argv)
     else:
         return QApplication(argv)
