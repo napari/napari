@@ -204,7 +204,6 @@ class QtViewer(QSplitter):
             QtPerformance(),
             name='performance',
             area='bottom',
-            allowed_areas=['bottom', 'right'],
             shortcut='Ctrl+Shift+P',
         )
 
