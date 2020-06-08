@@ -5,7 +5,7 @@
 class PerfEvent:
     """One perf event represents a span of time.
 
-    Attributes
+    Parameters
     ----------
     category : str
         You can toggle categories on/off in some GUIs.

@@ -18,6 +18,11 @@ class PerfTraceFile:
     1) https://www.speedscope.app/ which does flamegraphs (Chrome doesn't).
     2) Qt Creator's performance tools.
 
+    Parameters
+    ----------
+    path : str
+        Write the trace file to this path.
+
     Attributes
     ----------
     zero_ns : int
@@ -45,11 +50,6 @@ class PerfTraceFile:
 
     def __init__(self, path: str):
         """Open the tracing file on disk.
-
-        Parameters
-        ----------
-        path : str
-            Write the trace file to this path.
         """
         # So the events we write start at t=0.
         self.zero_ns = perf_counter_ns()

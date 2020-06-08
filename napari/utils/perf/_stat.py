@@ -5,6 +5,11 @@
 class Stat:
     """Keep min/max/average on an integer value.
 
+    Parameters
+    ----------
+    value : int
+        The first value to keep statistics on.
+
     Attributes
     ----------
     min : int

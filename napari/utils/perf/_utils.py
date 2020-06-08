@@ -18,10 +18,14 @@ if USE_PERFMON:
     @contextlib.contextmanager
     def perf_timer(name: str, category: Optional[str] = None):
         """Time a block of code.
-        Attributes
+
+        Parameters
         ----------
         name : str
             The name of this timer.
+        category : str, optional
+            Category for this timer.
+
         Example
         -------
         with perf_timer("draw"):
@@ -34,7 +38,15 @@ if USE_PERFMON:
         timers.add_event(event)
 
     def perf_func(func):
-        """Decorator to time a function. Timer name is automatic.
+        """Decorator to time a function.
+
+        The timer name is automatically based on the function's name.
+
+        Parameters
+        ----------
+        func
+            The function we are wrapping.
+
         Example
         -------
         @perf_func
@@ -53,7 +65,13 @@ if USE_PERFMON:
         return time_function
 
     def perf_func_named(timer_name: str):
-        """Decorator to time a function with a given timer name.
+        """Decorator to time a function where we specify the timer name.
+
+        Parameters
+        ----------
+        timer_name : str
+            The name to give this timer.
+
         Example
         -------
         @perf_func_name("important draw")

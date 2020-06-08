@@ -23,11 +23,18 @@ from ..utils import perf
 class TextLog(QTextEdit):
     """Text window we can write "log" messages to.
 
-    TODO: need to limit length, erase oldest messages.
+    TODO: need to limit length, erase oldest messages?
     """
 
-    def append(self, name, time_ms):
+    def append(self, name: str, time_ms: float) -> None:
         """Add one line of text for this timer.
+
+        Parameters
+        ----------
+        name : str
+            Timer name.
+        time_ms : float
+            Duration of the timer in milliseconds.
         """
         self.moveCursor(QTextCursor.End)
         self.setTextColor(Qt.red)
@@ -48,6 +55,19 @@ class QtPerformance(QWidget):
     2) We log any event whose duration is longer than the threshold.
 
     3) We show uptime so you can tell if this window is being updated at all.
+
+    Attributes
+    ----------
+    start_time : float
+        Time is seconds when widget was created.
+    bar : QProgressBar
+        The progress bar we use as your draw time indicator.
+    thresh_ms : float
+        Log events whose duration is longer then this.
+    timer_label : QLabel
+        We write the current "uptime" into this label.
+    timer : QTimer
+        To update our window every UPDATE_MS.
     """
 
     # We log events slower than some threshold (in milliseconds).

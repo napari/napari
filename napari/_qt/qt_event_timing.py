@@ -90,7 +90,11 @@ class EventTypes:
                 self.string_name[attribute] = name
 
     def as_string(self, event: QEvent.Type) -> str:
-        """Return the string name for this event."""
+        """Return the string name for this event.
+
+        event : QEvent.Type
+            Return string for this event type.
+        """
         try:
             return self.string_name[event]
         except KeyError:
@@ -112,7 +116,8 @@ def _get_timer_name(receiver: QWidget, event: QEvent) -> str:
 
     Returns
     -------
-    timer_name : str
+    str
+        The timer's name
 
     Notes
     -----
