@@ -14,9 +14,12 @@ def _create_application(argv) -> QApplication:
     Notes
     -----
 
-    We substitute QApplicationWithTiming when using perfmon. Note that we also
-    call convert_app_for_timing() in Viewer but that one is for Jupyter/IPython
-    while this one is for running from the command line.
+    We substitute QApplicationWithTiming when using perfmon.
+
+    Note that in Viewer we call convert_app_for_timing() which will create a
+    QApplicationWithTiming. However that's only for IPython/Jupyter. When using
+    gui_qt we need to create it up front here before any QWidget objects are
+    created, like the splash screen.
     """
     if os.getenv("NAPARI_PERFMON", "0") != "0":
         from .qt_event_timing import QApplicationWithTiming
