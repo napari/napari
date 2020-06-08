@@ -2,8 +2,7 @@
 
 While not mandatory for most pull requests, we ask that performance related
 PRs include a benchmark in order to clearly depict the use-case that is being
-optimized for. A historical view of our snapshots can be found on
-at the following [website](https://pandas.pydata.org/speed/napari/).
+optimized for.
 
 In this section we will review how to setup the benchmarks,
 and three commands ``asv dev``, ``asv run`` and ``asv continuous``.
