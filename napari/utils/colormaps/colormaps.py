@@ -12,6 +12,7 @@ from vispy.color import (
 
 from ...types import ValidColormapArg
 from .vendored import cm, colorconv
+from .standardize_color import transform_color
 
 _matplotlib_list_file = os.path.join(
     os.path.dirname(__file__), 'matplotlib_cmaps.txt'
@@ -117,29 +118,37 @@ def _low_discrepancy_image(image, seed=0.5, margin=1 / 256):
     return image_out
 
 
-def color_dict_to_colormap(color_dict):
+def color_dict_to_colormap(
+    color_dict, background_label=0, empty_color='black'
+):
     """
     Generate a color map based on the given color dictionary
     Parameters
     ----------
     color_dict : dict of label and color string matches
+    background_label : int of background label, default to 0
+    empty_color : str of color used as placeholder when color not present
 
     Returns
     -------
     colormap : Colormap with provided control colors
-    custom_color : dict of label to color control point within colormap
+    label_color_index : dict of label to color control point within colormap
     """
-    custom_color = {0: 0.0}
-    colors = ['#000000'] + [
-        color_str for label, color_str in color_dict.items()
+    color_dict[background_label] = 'transparent'
+    color_dict[None] = empty_color
+    colors = [
+        transform_color(color_str)[0]
+        for label, color_str in color_dict.items()
     ]
+
     colormap = Colormap(colors)
+    label_color_index = {}
     for label, color_str in color_dict.items():
-        color = Color(color_str)
+        color = Color(transform_color(color_str)[0])
         for i in range(len(colormap.colors)):
             if colormap.colors[i] == color:
-                custom_color[label] = colormap._controls[i]
-    return colormap, custom_color
+                label_color_index[label] = colormap._controls[i]
+    return colormap, label_color_index
 
 
 def _low_discrepancy(dim, n, seed=0.5):

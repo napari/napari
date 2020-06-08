@@ -366,13 +366,14 @@ class Labels(Image):
             return
 
         if enable_custom_color_dict:
-            custom_colormap, custom_color = colormaps.color_dict_to_colormap(
-                self.color_dict
-            )
+            (
+                custom_colormap,
+                label_color_index,
+            ) = colormaps.color_dict_to_colormap(self.color_dict)
             self.colormap = custom_colormap
-            self.custom_color = custom_color
+            self._label_color_index = label_color_index
         else:
-            self.custom_color = {}
+            self._label_color_index = {}
             self.colormap = self._random_colormap
 
         self._enable_custom_color_dict = enable_custom_color_dict
@@ -380,6 +381,7 @@ class Labels(Image):
         self.events.enable_custom_color_dict()
         self.events.colormap()
         self.events.selected_label()
+        self.refresh()
 
     @property
     def mode(self):
@@ -510,9 +512,9 @@ class Labels(Image):
             u, inv = np.unique(raw, return_inverse=True)
             image = np.array(
                 [
-                    self.custom_color[x]
-                    if x in self.custom_color
-                    else colormaps._low_discrepancy_image(x, self._seed)
+                    self._label_color_index[x]
+                    if x in self._label_color_index
+                    else self._label_color_index[None]
                     for x in u
                 ]
             )[inv].reshape(raw.shape)
