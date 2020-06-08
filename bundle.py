@@ -8,6 +8,7 @@ import time
 
 import tomlkit
 
+APP = 'napari'
 WINDOWS = os.name == 'nt'
 MACOS = sys.platform == 'darwin'
 LINUX = sys.platform.startswith("linux")
@@ -21,6 +22,7 @@ elif LINUX:
     BUILD_DIR = os.path.join(HERE, 'linux')
 elif MACOS:
     BUILD_DIR = os.path.join(HERE, 'macOS')
+    APP_DIR = os.path.join(BUILD_DIR, APP, f'{APP}.app')
 
 
 with open(PYPROJECT_TOML, 'r') as f:
@@ -40,7 +42,7 @@ def patch_toml():
 
     toml = tomlkit.parse(original_toml)
     toml['tool']['briefcase']['version'] = VERSION
-    toml['tool']['briefcase']['app']['napari']['requires'] = requirements + [
+    toml['tool']['briefcase']['app'][APP]['requires'] = requirements + [
         "pip",
         "PySide2==5.14.2.2",
     ]
@@ -48,7 +50,7 @@ def patch_toml():
     print("patching pyroject.toml to version: ", VERSION)
     print(
         "patching pyroject.toml requirements to : \n",
-        "\n".join(toml['tool']['briefcase']['app']['napari']['requires']),
+        "\n".join(toml['tool']['briefcase']['app'][APP]['requires']),
     )
 
     with open(PYPROJECT_TOML, 'w') as f:
@@ -71,9 +73,38 @@ def patch_dmgbuild():
         print("patched dmgbuild.core")
 
 
+def add_site_packages_to_path():
+    # on mac, make sure the site-packages folder exists even before the user
+    # has pip installed, so it is in sys.path on the first run
+    # (otherwise, newly installed plugins will not be detected until restart)
+    if MACOS:
+        PKGS_DIR = os.path.join(
+            APP_DIR,
+            'Contents',
+            'Resources',
+            'Support',
+            'lib',
+            f'python{sys.version_info.major}.{sys.version_info.minor}',
+            'site-packages',
+        )
+        os.makedirs(PKGS_DIR)
+        print("created site-packages at", PKGS_DIR)
+
+    # on windows, briefcase uses a _pth file to determine the sys.path at
+    # runtime.  https://docs.python.org/3/using/windows.html#finding-modules
+    # We update that file with the eventual location of pip site-packages
+    elif WINDOWS:
+        py = "".join(map(str, sys.version_info[:2]))
+        pth = os.path.join(BUILD_DIR, APP, 'src', 'python', f'python{py}._pth')
+        with open(pth, "a") as f:
+            # Append 'hello' at the end of file
+            f.write(".\\\\Lib\\\\site-packages\n")
+        print("added bundled site-packages to", pth)
+
+
 def patch_wxs():
     # must run after briefcase create
-    fname = os.path.join(BUILD_DIR, 'napari', 'napari.wxs')
+    fname = os.path.join(BUILD_DIR, APP, f'{APP}.wxs')
 
     if os.path.exists(fname):
         with open(fname, 'r') as f:
@@ -113,12 +144,14 @@ def bundle():
         patch_dmgbuild()
 
     # smoke test, and build resources
-    subprocess.check_call([sys.executable, '-m', 'napari', '--info'])
+    subprocess.check_call([sys.executable, '-m', APP, '--info'])
     patch_toml()
 
     # create
     subprocess.check_call(['briefcase', 'create'])
     time.sleep(0.5)
+
+    add_site_packages_to_path()
 
     if WINDOWS:
         patch_wxs()
