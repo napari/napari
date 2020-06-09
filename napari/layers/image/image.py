@@ -12,6 +12,7 @@ from ..intensity_mixin import IntensityVisualizationMixin
 from ._image_constants import Interpolation, Interpolation3D, Rendering
 from ._image_utils import guess_rgb, guess_multiscale
 from ._image_slice import ImageSlice
+from ..types import ArrayLike
 
 
 # Mixin must come before Layer
@@ -531,6 +532,17 @@ class Image(IntensityVisualizationMixin, Layer):
         if self.multiscale:
             self.events.scale()
             self.events.translate()
+
+    def update_slice(self, image: ArrayLike) -> None:
+        image = image.transpose(self._get_order())
+        thumbnail_source = image  # true for non-multiscale
+        self._transforms['tile2data'].scale = np.ones(self.dims.ndim)
+        if self.rgb and image.dtype.kind == 'f':
+            self._slice.image.raw = np.clip(image, 0, 1)
+            self._slice.thumbnail.raw = np.clip(thumbnail_source, 0, 1)
+        else:
+            self._slice.image.raw = image
+            self._slice.thumbnail.raw = thumbnail_source
 
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""
