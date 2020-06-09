@@ -1,5 +1,7 @@
-from ...types import ArrayLike
+from typing import Optional
+
 from ._image_view import ImageView
+from ...types import ArrayLike, ImageConverter
 
 
 class ImageSlice:
@@ -7,6 +9,13 @@ class ImageSlice:
 
     Right now this just holds the image and its thumbnail, however future async
     and multiscale-async changes will likely grow this class a lot.
+
+    Parameters
+    ----------
+    view_image : ArrayLike
+        The default image for the time and its thumbail.
+    image_converter : ImageConverter, optional
+        ImageView uses this to convert from raw to viewable.
 
     Attributes
     ----------
@@ -30,14 +39,13 @@ class ImageSlice:
         draw_thumbnail(image_slice.thumbnail.view)
     """
 
-    def __init__(self, view_image: ArrayLike):
+    def __init__(
+        self,
+        view_image: ArrayLike,
+        image_converter: Optional[ImageConverter] = None,
+    ):
         """
         Create an ImageSlice with some default viewable image.
-
-        Parameters
-        ----------
-        view_image : ArrayLike
-            The default image for the time and its thumbail.
         """
-        self.image: ImageView = ImageView(view_image)
-        self.thumbnail: ImageView = ImageView(view_image)
+        self.image: ImageView = ImageView(view_image, image_converter)
+        self.thumbnail: ImageView = ImageView(view_image, image_converter)

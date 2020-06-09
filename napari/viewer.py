@@ -1,3 +1,4 @@
+import os
 import platform
 import sys
 from os.path import dirname, join
@@ -61,6 +62,14 @@ class Viewer(ViewerModel):
                 " Then, restart IPython."
             )
             raise RuntimeError(message)
+
+        # For perfmon we need a special QApplication. If using gui_qt we already
+        # have the special one, and this is a noop. When running inside IPython
+        # or Jupyter however this is where we switch out the QApplication.
+        if os.getenv("NAPARI_PERFMON", "0") != "0":
+            from ._qt.qt_event_timing import convert_app_for_timing
+
+            app = convert_app_for_timing(app)
 
         if (
             platform.system() == "Windows"

@@ -1,4 +1,6 @@
-from ...types import ArrayLike
+from typing import Optional
+
+from ...types import ArrayLike, ImageConverter
 
 
 class ImageView:
@@ -8,6 +10,13 @@ class ImageView:
     the viewable one. Its primary purpose right now is just making sure the
     viewable image is updated when the raw one is changed. And just to group
     them together and provide convenient access.
+
+    Parameters
+    ----------
+    view_image : ArrayLike
+        Default viewable image, raw is set to the same thing.
+    image_converter : Optional[ImageConverter]
+        If given this is used to convert images from raw to viewable.
 
     Attributes
     ----------
@@ -28,15 +37,15 @@ class ImageView:
         image.raw = raw_image
     """
 
-    def __init__(self, view_image: ArrayLike):
+    def __init__(
+        self,
+        view_image: ArrayLike,
+        image_converter: Optional[ImageConverter] = None,
+    ):
         """Create an ImageView with some default image.
-
-        Parameters
-        ----------
-        view_image : ArrayLike
-            Default viewable image, raw is set to the same thing.
         """
         self.view = view_image
+        self.image_converter = image_converter
 
     @property
     def view(self):
@@ -70,23 +79,9 @@ class ImageView:
             The raw image to set.
         """
         self._raw = raw_image
-        self._view = _raw_to_displayed(raw_image)
 
-
-def _raw_to_displayed(raw_image: ArrayLike):
-    """Determine displayed image from raw image.
-
-    This is a NOOP right now for normal images.
-
-    Parameters
-    -------
-    raw_image : ArrayLike
-        Raw image.
-
-    Returns
-    -------
-    view_image : ArrayLike
-        Viewable image.
-    """
-    view_image = raw_image
-    return view_image
+        # Update the view image based on this new raw image.
+        has_converter = self.image_converter is not None
+        self._view = (
+            self.image_converter(raw_image) if has_converter else raw_image
+        )
