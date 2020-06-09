@@ -1,10 +1,11 @@
-from ...layers import Image, Labels, Points, Shapes, Surface, Vectors
+from ...layers import Image, Labels, Points, Shapes, Surface, Vectors, Tracks
 from .qt_image_layer import QtImageControls
 from .qt_points_layer import QtPointsControls
 from .qt_shapes_layer import QtShapesControls
 from .qt_labels_layer import QtLabelsControls
 from .qt_surface_layer import QtSurfaceControls
 from .qt_vectors_layer import QtVectorsControls
+from .qt_tracks_layer import QtTracksControls
 
 
 layer_to_controls = {
@@ -14,6 +15,7 @@ layer_to_controls = {
     Shapes: QtShapesControls,
     Surface: QtSurfaceControls,
     Vectors: QtVectorsControls,
+    Tracks: QtTracksControls,
 }
 
 

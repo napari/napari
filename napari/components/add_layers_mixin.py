@@ -753,6 +753,45 @@ class AddLayersMixin:
         self.add_layer(layer)
         return layer
 
+    def add_tracks(
+        self,
+        data,
+        *,
+        properties=None,
+        graph=None,
+        edge_width=2,
+        tail_length=30,
+        color_by=0,
+        n_dimensional=True,
+        name=None,
+        metadata=None,
+        scale=None,
+        translate=None,
+        opacity=1,
+        blending='translucent',
+        visible=True,
+        colormaps=None,
+    ) -> layers.Tracks:
+
+        layer = layers.Tracks(
+            data,
+            properties=properties,
+            graph=graph,
+            edge_width=2,
+            tail_length=edge_width,
+            color_by=color_by,
+            name=name,
+            metadata=metadata,
+            scale=scale,
+            translate=translate,
+            opacity=opacity,
+            blending=blending,
+            visible=visible,
+            colormaps=colormaps,
+        )
+        self.add_layer(layer)
+        return layer
+
     def open(
         self,
         path: Union[str, Sequence[str]],
