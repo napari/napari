@@ -473,14 +473,22 @@ PluginListItem > QPushButton {
   background-color: {{ current }}
 }
 
-PluginListItem > QPushButton#remove_button {
-  background-color: {{ warning }}
-}
-
 PluginListItem > QPushButton:hover {
   background-color: {{ lighten(current, 10) }}
 }
 
 PluginListItem > QPushButton:pressed {
   background-color: {{ darken(current, 10) }}
+}
+
+PluginListItem > QPushButton#remove_button {
+  background-color: {{ warning }}
+}
+
+PluginListItem > QPushButton#remove_button:hover {
+  background-color: {{ lighten(warning, 10) }}
+}
+
+PluginListItem > QPushButton#remove_button:pressed {
+  background-color: {{ darken(warning, 10) }}
 }

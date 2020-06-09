@@ -4,7 +4,7 @@ from typing import List
 
 from pkg_resources import parse_version
 from qtpy.QtCore import QProcess, QProcessEnvironment, QSize, Qt, Slot
-from qtpy.QtGui import QFont, QMovie
+from qtpy.QtGui import QFont, QMovie, QFontMetrics
 from qtpy.QtWidgets import (
     QCheckBox,
     QDialog,
@@ -89,6 +89,24 @@ class Installer:
         self.process.start()
 
 
+class ElidingLabel(QLabel):
+    def __init__(self, text='', parent=None):
+        super().__init__(parent)
+        self._text = text
+        self.fm = QFontMetrics(self.font())
+
+    def setText(self, txt):
+        self._text = txt
+        short = self.fm.elidedText(self._text, Qt.ElideRight, self.width())
+        super().setText(short)
+
+    def resizeEvent(self, rEvent):
+        width = rEvent.size().width()
+        short = self.fm.elidedText(self._text, Qt.ElideRight, width)
+        super().setText(short)
+        rEvent.accept()
+
+
 class PluginListItem(QFrame):
     def __init__(
         self,
@@ -104,11 +122,11 @@ class PluginListItem(QFrame):
     ):
         super().__init__(parent)
         self.setup_ui()
-
         if plugin_name:
             self.plugin_name.setText(plugin_name)
             self.package_name.setText(f"{package_name} {version}")
             self.summary.setText(summary)
+            self.summary.setIndent(25)
             self.package_author.setText(author)
             self.action_button.setText("remove")
             self.action_button.setObjectName("remove_button")
@@ -127,6 +145,9 @@ class PluginListItem(QFrame):
         self.row1 = QHBoxLayout()
         self.row1.setSpacing(12)
         self.enabled_checkbox = QCheckBox(self)
+        self.enabled_checkbox.setChecked(True)
+        self.enabled_checkbox.setDisabled(True)
+        self.enabled_checkbox.setToolTip("enable/disable")
         sizePolicy = QSizePolicy(QSizePolicy.Fixed, QSizePolicy.Fixed)
         sizePolicy.setHorizontalStretch(0)
         sizePolicy.setVerticalStretch(0)
@@ -165,8 +186,8 @@ class PluginListItem(QFrame):
         self.row1.addWidget(self.action_button)
         self.v_lay.addLayout(self.row1)
         self.row2 = QHBoxLayout()
-        self.row2.setContentsMargins(-1, -1, 8, -1)
-        self.summary = QLabel(self)
+        self.row2.setContentsMargins(-1, 4, 0, -1)
+        self.summary = ElidingLabel(parent=self)
         sizePolicy = QSizePolicy(
             QSizePolicy.MinimumExpanding, QSizePolicy.Preferred
         )
@@ -179,7 +200,6 @@ class PluginListItem(QFrame):
         font11 = QFont()
         font11.setPointSize(11)
         self.summary.setFont(font11)
-        self.summary.setIndent(25)
         self.row2.addWidget(self.summary)
         self.package_author = QLabel(self)
         sizePolicy = QSizePolicy(QSizePolicy.Preferred, QSizePolicy.Preferred)
@@ -310,6 +330,7 @@ class QtPluginDialog(QDialog):
         self.v_splitter = QSplitter(self.h_splitter)
         self.v_splitter.setOrientation(Qt.Vertical)
         self.plugin_lists = QWidget(self.v_splitter)
+        self.plugin_lists.setMinimumWidth(440)
         self.stdout_text = QTextEdit(self.v_splitter)
         self.stdout_text.hide()
         self.vlay_2 = QVBoxLayout(self.plugin_lists)
@@ -321,7 +342,7 @@ class QtPluginDialog(QDialog):
         horiz = QHBoxLayout()
         horiz.addWidget(QLabel("Available Plugin Packages", self))
         mov = QMovie(LOADER)
-        mov.setScaledSize(QSize(20, 20))
+        mov.setScaledSize(QSize(18, 18))
         self.working = QLabel("loading ...", self)
         self.working.setMovie(mov)
         mov.start()
