@@ -78,7 +78,7 @@ def add_site_packages_to_path():
     # has pip installed, so it is in sys.path on the first run
     # (otherwise, newly installed plugins will not be detected until restart)
     if MACOS:
-        PKGS_DIR = os.path.join(
+        pkgs_dir = os.path.join(
             APP_DIR,
             'Contents',
             'Resources',
@@ -87,19 +87,26 @@ def add_site_packages_to_path():
             f'python{sys.version_info.major}.{sys.version_info.minor}',
             'site-packages',
         )
-        os.makedirs(PKGS_DIR)
-        print("created site-packages at", PKGS_DIR)
+        os.makedirs(pkgs_dir)
+        print("created site-packages at", pkgs_dir)
 
     # on windows, briefcase uses a _pth file to determine the sys.path at
     # runtime.  https://docs.python.org/3/using/windows.html#finding-modules
     # We update that file with the eventual location of pip site-packages
     elif WINDOWS:
         py = "".join(map(str, sys.version_info[:2]))
-        pth = os.path.join(BUILD_DIR, APP, 'src', 'python', f'python{py}._pth')
+        python_dir = os.path.join(BUILD_DIR, APP, 'src', 'python')
+        pth = os.path.join(python_dir, f'python{py}._pth')
         with open(pth, "a") as f:
             # Append 'hello' at the end of file
             f.write(".\\\\Lib\\\\site-packages\n")
         print("added bundled site-packages to", pth)
+
+        pkgs_dir = os.path.join(python_dir, 'Lib', 'site-packages')
+        os.makedirs(pkgs_dir)
+        print("created site-packages at", pkgs_dir)
+        with open(os.path.join(pkgs_dir, 'readme.txt'), 'w') as f:
+            f.write("this is where plugin packages will go")
 
 
 def patch_wxs():
