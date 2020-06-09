@@ -24,12 +24,14 @@ from ..utils.interactions import (
     mouse_release_callbacks,
 )
 from ..utils.key_bindings import components_to_key_combo
+from ..utils import perf
 
 from .utils import QImg2array, square_pixmap
 from .qt_controls import QtControls
 from .qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .qt_viewer_dock_widget import QtViewerDockWidget
 from .qt_about_key_bindings import QtAboutKeyBindings
+from .qt_performance import QtPerformance
 from .._vispy import create_vispy_visual
 
 
@@ -131,6 +133,8 @@ class QtViewer(QSplitter):
         self.dockLayerList.setMaximumWidth(258)
         self.dockLayerList.setMinimumWidth(258)
 
+        self.dockPerformance = self._create_performance_dock_widget()
+
         # This dictionary holds the corresponding vispy visual for each layer
         self.layer_to_visual = {}
         self.viewerButtons.consoleButton.clicked.connect(
@@ -188,6 +192,20 @@ class QtViewer(QSplitter):
         self.viewer.events.layers_change.connect(lambda x: self.dims.stop())
 
         self.setAcceptDrops(True)
+
+    def _create_performance_dock_widget(self):
+        """Create the dock widget that shows performance metrics.
+        """
+        if not perf.USE_PERFMON:
+            return None
+
+        return QtViewerDockWidget(
+            self,
+            QtPerformance(),
+            name='performance',
+            area='bottom',
+            shortcut='Ctrl+Shift+P',
+        )
 
     @property
     def console(self):
