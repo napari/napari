@@ -32,11 +32,16 @@ from ..utils.misc import running_as_bundled_app
 from .qt_plugin_sorter import QtPluginSorter
 from .threading import create_worker
 
+# TODO: Refresh sorter after install/uninstall
+# TODO: Pull docstrings from hookspecs and add to plugin sorter
+# TODO: add error icon and handle pip install errors
+# TODO: move loader gif
 LOADER = os.path.abspath(
     os.path.join(os.path.dirname(__file__), '..', 'resources', "loading.gif")
 )
 
 
+# TODO: add queue to handle clicks when already processing
 class Installer:
     def __init__(self, output_widget: QTextEdit = None):
         from ..plugins import plugin_manager
@@ -140,7 +145,7 @@ class PluginListItem(QFrame):
 
     def setup_ui(self):
         self.v_lay = QVBoxLayout(self)
-        self.v_lay.setContentsMargins(-1, -1, -1, 12)
+        self.v_lay.setContentsMargins(-1, 8, -1, 8)
         self.v_lay.setSpacing(0)
         self.row1 = QHBoxLayout()
         self.row1.setSpacing(12)
@@ -263,7 +268,7 @@ class QPluginList(QListWidget):
 
 
 class QtPluginDialog(QDialog):
-    def __init__(self, parent):
+    def __init__(self, parent=None):
         super().__init__(parent)
         self.installer = Installer()
         self.setup_ui()
@@ -389,3 +394,12 @@ class QtPluginDialog(QDialog):
         else:
             self.show_status_btn.setText("Show Status")
             self.stdout_text.hide()
+
+
+if __name__ == "__main__":
+    from qtpy.QtWidgets import QApplication
+
+    app = QApplication([])
+    w = QtPluginDialog()
+    w.show()
+    app.exec_()
