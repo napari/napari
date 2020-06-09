@@ -118,24 +118,21 @@ def _low_discrepancy_image(image, seed=0.5, margin=1 / 256):
     return image_out
 
 
-def color_dict_to_colormap(
-    color_dict, background_label=0, empty_color='black'
-):
+def color_dict_to_colormap(color_dict):
     """
     Generate a color map based on the given color dictionary
     Parameters
     ----------
-    color_dict : dict of label and color string matches
-    background_label : int of background label, default to 0
-    empty_color : str of color used as placeholder when color not present
+    color_dict : dict of int
+        Mapping between labels and color strings
 
     Returns
     -------
-    colormap : Colormap with provided control colors
-    label_color_index : dict of label to color control point within colormap
+    colormap : Colormap
+        Colormap constructed with provided control colors
+    label_color_index : dict of int
+        Mapping of Label to color control point within colormap
     """
-    color_dict[background_label] = 'transparent'
-    color_dict[None] = empty_color
     colors = [
         transform_color(color_str)[0]
         for label, color_str in color_dict.items()

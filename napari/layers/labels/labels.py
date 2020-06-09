@@ -7,7 +7,7 @@ from ..image import Image
 from ...utils.colormaps import colormaps
 from ...utils.event import Event
 from ...utils.status_messages import format_float
-from ._labels_constants import Mode
+from ._labels_constants import Mode, ColorMode
 from ._labels_mouse_bindings import draw, pick
 
 from ..utils.layer_utils import dataframe_to_properties
@@ -183,7 +183,7 @@ class Labels(Image):
             contiguous=Event,
             brush_size=Event,
             selected_label=Event,
-            enable_custom_color_dict=Event,
+            color_mode=Event,
         )
 
         self._data_raw = np.zeros((1,) * self.dims.ndisplay)
@@ -194,12 +194,7 @@ class Labels(Image):
         self._background_label = 0
         self._selected_label = 1
         self._selected_color = self.get_color(self._selected_label)
-        if color_dict is None:
-            self.color_dict = {}
-            self.enable_custom_color_dict = False
-        else:
-            self.color_dict = color_dict
-            self.enable_custom_color_dict = True
+        self.color_dict = color_dict
 
         self._mode = Mode.PAN_ZOOM
         self._mode_history = self._mode
@@ -292,6 +287,30 @@ class Labels(Image):
         self._properties = self._validate_properties(properties)
         self._label_index = label_index
 
+    @property
+    def color_dict(self):
+        """dict: custom color dict for label coloring"""
+        return self._color_dict
+
+    @color_dict.setter
+    def color_dict(self, color_dict):
+
+        if not color_dict:
+            self._color_dict = {
+                self._background_label: 'transparent',
+                None: 'black',
+            }
+            self.color_mode = ColorMode.DIRECT
+        else:
+            if self._background_label not in color_dict:
+                color_dict[self._background_label] = 'transparent'
+
+            if None not in color_dict:
+                color_dict[None] = 'black'
+
+            self._color_dict = color_dict
+            self.color_mode = ColorMode.DICT
+
     def _validate_properties(
         self, properties: Dict[str, np.ndarray]
     ) -> Dict[str, np.ndarray]:
@@ -352,33 +371,32 @@ class Labels(Image):
         self.events.selected_label()
 
     @property
-    def enable_custom_color_dict(self):
-        """True if enabling custom color dictionary"""
-        return (
-            hasattr(self, '_enable_custom_color_dict')
-            and self._enable_custom_color_dict
-        )
+    def color_mode(self):
+        """Color mode string"""
+        if hasattr(self, '_color_mode'):
+            return str(self._color_mode)
+        else:
+            return 'direct'
 
-    @enable_custom_color_dict.setter
-    def enable_custom_color_dict(self, enable_custom_color_dict):
-
-        if not self.color_dict:
-            return
-
-        if enable_custom_color_dict:
+    @color_mode.setter
+    def color_mode(self, color_mode: Union[str, ColorMode]):
+        color_mode = ColorMode(color_mode)
+        if color_mode == ColorMode.DICT:
             (
                 custom_colormap,
                 label_color_index,
             ) = colormaps.color_dict_to_colormap(self.color_dict)
             self.colormap = custom_colormap
             self._label_color_index = label_color_index
-        else:
+        elif color_mode == ColorMode.DIRECT:
             self._label_color_index = {}
             self.colormap = self._random_colormap
+        else:
+            raise ValueError("Unsupported Color Mode")
 
-        self._enable_custom_color_dict = enable_custom_color_dict
+        self._color_mode = color_mode
         self._selected_color = self.get_color(self.selected_label)
-        self.events.enable_custom_color_dict()
+        self.events.color_mode()
         self.events.colormap()
         self.events.selected_label()
         self.refresh()
@@ -508,7 +526,7 @@ class Labels(Image):
         image : array
             Image mapped between 0 and 1 to be displayed.
         """
-        if self.enable_custom_color_dict:
+        if self.color_mode == 'dict':
             u, inv = np.unique(raw, return_inverse=True)
             image = np.array(
                 [
@@ -518,10 +536,12 @@ class Labels(Image):
                     for x in u
                 ]
             )[inv].reshape(raw.shape)
-        else:
+        elif self.color_mode == 'direct':
             image = np.where(
                 raw > 0, colormaps._low_discrepancy_image(raw, self._seed), 0
             )
+        else:
+            raise ValueError("Unsupported Color Mode")
         return image
 
     def new_colormap(self):

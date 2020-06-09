@@ -35,4 +35,17 @@ class Mode(StringEnum):
     ERASE = auto()
 
 
+class ColorMode(StringEnum):
+    """
+    ColorMode: Color setting mode.
+
+    DIRECT (default mode) allows each color to be set arbitrarily
+
+    DICT allows color to be set via a color dictionary
+    """
+
+    DIRECT = auto()
+    DICT = auto()
+
+
 BACKSPACE = 'delete' if sys.platform == 'darwin' else 'backspace'
