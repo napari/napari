@@ -11,8 +11,7 @@ from ..utils.layer_utils import calc_data_range
 from ..intensity_mixin import IntensityVisualizationMixin
 from ._image_constants import Interpolation, Interpolation3D, Rendering
 from ._image_utils import guess_rgb, guess_multiscale
-from ._image_slice import ImageSlice
-from ..types import ArrayLike
+from ._image_slice import ImageProperties, ImageSlice
 
 
 # Mixin must come before Layer
@@ -216,9 +215,11 @@ class Image(IntensityVisualizationMixin, Layer):
             self._thumbnail_level = 0
         self.corner_pixels[1] = self.level_shapes[self._data_level]
 
+        properties = ImageProperties(multiscale, rgb, self._get_order())
+
         # Intitialize the current slice to an empty image.
         self._slice = ImageSlice(
-            self._get_empty_image(), self._raw_to_displayed
+            self._get_empty_image(), self._raw_to_displayed, properties
         )
 
         # Set contrast_limits and colormaps
@@ -541,32 +542,24 @@ class Image(IntensityVisualizationMixin, Layer):
             thumbnail_source = np.asarray(
                 self.data[self._thumbnail_level][tuple(indices)]
             ).transpose(order)
-        else:
-            self._transforms['tile2data'].scale = np.ones(self.dims.ndim)
-            image = np.asarray(self.data[self.dims.indices]).transpose(order)
-            thumbnail_source = image
 
-        if self.rgb and image.dtype.kind == 'f':
-            self._slice.image.raw = np.clip(image, 0, 1)
-            self._slice.thumbnail.raw = np.clip(thumbnail_source, 0, 1)
+            self.slice.set_raw_images(image, thumbnail_source)
         else:
-            self._slice.image.raw = image
-            self._slice.thumbnail.raw = thumbnail_source
+            if self.slice.empty():
+                array = self.data[self.dims.indices]
+                self.slice.async_load(array)
+
+                # TODO: can we do this now or must wait until async load finishes?
+                self._transforms['tile2data'].scale = np.ones(self.dims.ndim)
+
+            # If we're waiting on an async load and it's done, this will
+            # update the slide with the loaded image. If it's not done it
+            # does nothing.
+            self.slice.update()
 
         if self.multiscale:
             self.events.scale()
             self.events.translate()
-
-    def update_slice(self, image: ArrayLike) -> None:
-        image = image.transpose(self._get_order())
-        thumbnail_source = image  # true for non-multiscale
-        self._transforms['tile2data'].scale = np.ones(self.dims.ndim)
-        if self.rgb and image.dtype.kind == 'f':
-            self._slice.image.raw = np.clip(image, 0, 1)
-            self._slice.thumbnail.raw = np.clip(thumbnail_source, 0, 1)
-        else:
-            self._slice.image.raw = image
-            self._slice.thumbnail.raw = thumbnail_source
 
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""
