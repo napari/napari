@@ -11,6 +11,7 @@ from .qt_viewer import QtViewer
 from .qt_about import QtAbout
 from .qt_plugin_report import QtPluginErrReporter
 from .qt_plugin_sorter import QtPluginSorter
+from .qt_plugin_dialog import QtPluginDialog
 from .qt_dict_table import QtDictTable
 from .qt_viewer_dock_widget import QtViewerDockWidget
 from ..resources import get_stylesheet
@@ -323,19 +324,18 @@ class Window:
     def _show_plugin_sorter(self):
         """Show dialog that allows users to sort the call order of plugins."""
         plugin_sorter = QtPluginSorter(parent=self._qt_window)
-        dock_widget = self.add_dock_widget(
-            plugin_sorter, name='Plugin Sorter', area="right"
-        )
-        plugin_sorter.finished.connect(dock_widget.close)
-        plugin_sorter.finished.connect(plugin_sorter.deleteLater)
-        plugin_sorter.finished.connect(dock_widget.deleteLater)
+        if hasattr(self, 'plugin_sorter_widget'):
+            self.plugin_sorter_widget.show()
+        else:
+            self.plugin_sorter_widget = self.add_dock_widget(
+                plugin_sorter, name='Plugin Sorter', area="right"
+            )
 
     def _show_pip_install_dialog(self):
         """Show dialog that allows users to sort the call order of plugins."""
-        from .qt_pip_dialog import QtPipDialog
 
-        dialog = QtPipDialog(self._qt_window)
-        dialog.exec_()
+        self.dialog = QtPluginDialog(self._qt_window)
+        self.dialog.exec_()
 
     def _show_plugin_err_reporter(self):
         """Show dialog that allows users to review and report plugin errors."""

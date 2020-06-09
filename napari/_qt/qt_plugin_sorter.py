@@ -6,7 +6,6 @@ from qtpy.QtCore import QEvent, Qt, Signal, Slot
 from qtpy.QtWidgets import (
     QCheckBox,
     QComboBox,
-    QDialog,
     QFrame,
     QGraphicsOpacityEffect,
     QHBoxLayout,
@@ -201,7 +200,7 @@ class QtHookImplementationListWidget(QListWidget):
         self.hook_caller.bring_to_front(order)
 
 
-class QtPluginSorter(QDialog):
+class QtPluginSorter(QWidget):
     """Dialog that allows a user to change the call order of plugin hooks.
 
     A main QComboBox lets the user pick which hook specification they would

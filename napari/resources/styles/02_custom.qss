@@ -76,7 +76,7 @@ QtConsole {
   min-height: 100px;
 }
 
-QtConsole > QPlainTextEdit, QTextEdit {
+QtConsole > QTextEdit {
   background-color: {{ console }};
   background-clip: padding;
   color: {{ text }};
@@ -454,4 +454,33 @@ QtHookImplementationListWidget {
 QTableCornerButton::section{
   background: {{ background }};
   border: 1px solid {{ background }};
+}
+
+/* ------------ Plugin Dialog ------------ */
+
+QPluginList {
+  background: {{ console }};
+}
+
+PluginListItem {
+  background: {{ darken(foreground, 20) }};
+  padding: 0;
+  margin: 2px 4px;
+  border-radius: 3px;
+}
+
+PluginListItem > QPushButton {
+  background-color: {{ current }}
+}
+
+PluginListItem > QPushButton#remove_button {
+  background-color: {{ warning }}
+}
+
+PluginListItem > QPushButton:hover {
+  background-color: {{ lighten(current, 10) }}
+}
+
+PluginListItem > QPushButton:pressed {
+  background-color: {{ darken(current, 10) }}
 }

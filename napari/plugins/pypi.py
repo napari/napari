@@ -4,10 +4,12 @@ that match the plugin naming convention, and retrieving related metadata.
 """
 import configparser
 import json
+import os
 import re
+import sys
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from functools import lru_cache
-from typing import Dict, Generator, List, NamedTuple, Optional
+from typing import Dict, Generator, List, NamedTuple, Optional, Tuple
 from urllib import error, request
 
 PYPI_SIMPLE_API_URL = 'https://pypi.org/simple/'
@@ -101,7 +103,7 @@ def ensure_published_at_pypi(
             return None
 
     return ProjectInfo(
-        name=info["name"],
+        name=normalized_name(info["name"]),
         version=info["version"],
         url=info["home_page"],
         summary=info["summary"],
@@ -170,7 +172,7 @@ def ensure_repo_is_napari_plugin(repo_info: dict) -> Optional[ProjectInfo]:
     return None
 
 
-def iter_napari_plugin_info() -> Generator[ProjectInfo, None, None]:
+def iter_napari_plugin_info(skip=[]) -> Generator[ProjectInfo, None, None]:
     """Return a generator that yields ProjectInfo of available napari plugins.
 
     By default, requires that packages are at least "Alpha" stage of
@@ -182,11 +184,13 @@ def iter_napari_plugin_info() -> Generator[ProjectInfo, None, None]:
         futures = [
             executor.submit(ensure_published_at_pypi, name)
             for name in get_packages_by_prefix("napari-")
+            if name not in skip
         ]
         futures.extend(
             [
                 executor.submit(ensure_repo_is_napari_plugin, repo_info)
                 for repo_info in get_napari_plugin_repos_from_github()
+                if repo_info['name'] not in skip  # repo may not have pkg name
             ]
         )
         for future in as_completed(futures):
@@ -194,3 +198,31 @@ def iter_napari_plugin_info() -> Generator[ProjectInfo, None, None]:
             if name and name not in already_yielded:
                 already_yielded.add(name)
                 yield name
+
+
+@lru_cache(maxsize=1)
+def list_outdated() -> Dict[str, Tuple[str, ...]]:
+    # slow!
+    import subprocess
+    from ..utils._appdirs import user_site_packages
+
+    env = os.environ.copy()
+    combined = os.pathsep.join(
+        [user_site_packages(), env.get("PYTHONPATH", "")]
+    )
+    env['PYTHONPATH'] = combined
+    result = subprocess.check_output(
+        [sys.executable, '-m', 'pip', 'list', '--outdated'], env=env
+    )
+    lines = result.decode().splitlines()
+    if len(lines) <= 2:
+        return {}
+    out = dict()
+    for line in lines[2:]:
+        name, *rest = line.split()
+        out[name] = tuple(rest[:2])
+    return out
+
+
+def normalized_name(name) -> str:
+    return re.sub(r"[-_.]+", "-", name).lower()
