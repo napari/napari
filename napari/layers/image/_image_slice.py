@@ -10,6 +10,13 @@ class ImageSlice:
     Right now this just holds the image and its thumbnail, however future async
     and multiscale-async changes will likely grow this class a lot.
 
+    Parameters
+    ----------
+    view_image : ArrayLike
+        The default image for the time and its thumbail.
+    image_converter : ImageConverter, optional
+        ImageView uses this to convert from raw to viewable.
+
     Attributes
     ----------
     image : ImageView
@@ -39,13 +46,6 @@ class ImageSlice:
     ):
         """
         Create an ImageSlice with some default viewable image.
-
-        Parameters
-        ----------
-        view_image : ArrayLike
-            The default image for the time and its thumbail.
-        image_converter : ImageConverter
-            ImageView uses this to convert from raw to viewable.
         """
         self.image: ImageView = ImageView(view_image, image_converter)
         self.thumbnail: ImageView = ImageView(view_image, image_converter)

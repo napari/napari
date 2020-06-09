@@ -11,6 +11,13 @@ class ImageView:
     viewable image is updated when the raw one is changed. And just to group
     them together and provide convenient access.
 
+    Parameters
+    ----------
+    view_image : ArrayLike
+        Default viewable image, raw is set to the same thing.
+    image_converter : Optional[ImageConverter]
+        If given this is used to convert images from raw to viewable.
+
     Attributes
     ----------
     _raw : ArrayLike
@@ -36,13 +43,6 @@ class ImageView:
         image_converter: Optional[ImageConverter] = None,
     ):
         """Create an ImageView with some default image.
-
-        Parameters
-        ----------
-        view_image : ArrayLike
-            Default viewable image, raw is set to the same thing.
-        image_converter : Optional[ImageConverter]
-            If given this is used to convert images from raw to viewable.
         """
         self.view = view_image
         self.image_converter = image_converter
