@@ -548,9 +548,9 @@ class Image(IntensityVisualizationMixin, Layer):
             indices = self.dims.indices
 
             if not self._slice.contains(indices):
-                array = self.data[self.dims.indices]
-                self._slice.async_load(array, self.dims.indices)
-                return  # Don't get for an immediate load?
+                array = self.data[indices]
+                self._slice.load_async(indices, array, self.refresh)
+                return  # Don't check for an immediate load?
 
             if self._slice.has_loaded(indices):
                 self._transforms['tile2data'].scale = np.ones(self.dims.ndim)

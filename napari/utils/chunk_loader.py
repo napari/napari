@@ -8,8 +8,26 @@ import numpy as np
 from ..types import ArrayLike
 
 
-def _load_chunk(array: ArrayLike) -> ArrayLike:
-    return np.asarray(array)
+class ChunkRequest:
+    """Ask the ChunkLoader to load this data in a worker thread.
+
+    Placeholder class: get rid of this class if it doesn't grow!
+
+    Parameters
+    ----------
+    array : ArrayLike
+        Load the data from this array.
+    """
+
+    def __init__(self, indices, array: ArrayLike, callback):
+        self.indices = indices
+        self.array = array
+        self.callback = callback
+
+
+def _chunk_loader_worker(request: ChunkRequest):
+    request.array = np.asarray(request.array)
+    return request
 
 
 class ChunkLoader:
@@ -22,17 +40,24 @@ class ChunkLoader:
         self.executor = futures.ThreadPoolExecutor(
             max_workers=self.NUM_WORKER_THREADS
         )
-        self.requests = []
+        self.futures = []
 
-    def request_chunk(self, array: ArrayLike):
-        """Request that the loader load this chunk.
+    def load_chunk(self, request: ChunkRequest):
+        """Request this just is loaded asynchronously.
 
         array : ArrayLike
             Load data from this array-like object in a worker thread.
         """
-        self.requests.append(array)
-        future = self.executor.submit(_load_chunk, array)
+        print(f"load_chunk: {request.indices}")
+        future = self.executor.submit(_chunk_loader_worker, request)
+        future.add_done_callback(self.done)
         self.futures.append(future)
+        return future
+
+    def done(self, future):
+        request = future.result()
+        print(f"done: {request.indices}")
+        request.callback()
 
     def clear(self, array_like):
         # Clear pending requests not yet starter.
