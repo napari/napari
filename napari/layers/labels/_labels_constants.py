@@ -39,9 +39,9 @@ class ColorMode(StringEnum):
     """
     ColorMode: Color setting mode.
 
-    DIRECT (default mode) allows each color to be set arbitrarily
+    RANDOM (default mode) allows color to be set via a hash function with a seed.
 
-    DICT allows color to be set via a color dictionary
+    DIRECT allows color of each label to be set directly by a color dictionary.
     """
 
     DIRECT = auto()
