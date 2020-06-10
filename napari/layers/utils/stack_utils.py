@@ -45,8 +45,9 @@ def stack_to_images(
         )
         return None
 
+    cmap = stack.colormap
     if colormaps is None:
-        colormaps = data.shape[axis] * ['gray']
+        colormaps = data.shape[axis] * [cmap]
 
     imagelist = list()
 
