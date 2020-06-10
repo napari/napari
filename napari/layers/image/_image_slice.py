@@ -1,5 +1,4 @@
 from typing import NamedTuple, Optional, Tuple
-from enum import Enum
 
 import numpy as np
 
@@ -12,13 +11,6 @@ class ImageProperties(NamedTuple):
     multiscale: bool
     rgb: bool
     displayed_order: Tuple[int, ...]
-
-
-class SliceStatus(Enum):
-    EMPTY = 1
-    WAITING = 2
-    LOADED = 3
-    CANCELLED = 3
 
 
 class ImageSlice:
@@ -70,51 +62,70 @@ class ImageSlice:
         self.thumbnail: ImageView = ImageView(view_image, image_converter)
         self.properties = properties
 
-        # We start out empty (except for our default image),
-        self.status = SliceStatus.EMPTY
+        # No load is in progress to start.
+        self.indices = None
         self.future = None
+        self.finished = False
 
-    def empty(self) -> bool:
-        """Return True if this slice is currently empty."""
-        return self.status == SliceStatus.EMPTY
-
-    def waiting(self) -> bool:
-        """Return True if this slice is waiting on a chunk to load."""
-        return self.status == SliceStatus.WAITING
-
-    def loaded(self) -> bool:
-        """Return True if the slice is fully loaded."""
-        return self.status == SliceStatus.LOADED
-
-    def async_load(self, array: ArrayLike):
-        self.future = CHUNK_LOADER.load_chunk(array)
-        self.status = SliceStatus.LOADING
-
-    def update(self) -> None:
-
-        # Async is only for non-multi-scale so far.
+    def contains(self, indices) -> bool:
+        # Async for multiscale is not implemented yet.
         assert self.properties.multiscale
 
-        # Only proceed if we were waiting and finish.
-        if not self.waiting() or not self.future.done():
-            return
+        return self.indices == indices
 
-        # If it's done because it was cancelled.
+    def async_load(self, array: ArrayLike, indices=Tuple[slice, ...]):
+
+        # Async for multiscale is not implemented yet.
+        assert self.properties.multiscale
+
+        if self.future is not None:
+            # We switched slices so cancel the previous async load. This will
+            # only cancel it if it was queue and the load was not in progress.
+            self.future.cancel()
+
+        # We are now loading a slice with these indices
+        self.indices = indices
+        self.future = CHUNK_LOADER.load_chunk(array)
+        self.finished = False
+
+    def has_loaded(self, array: ArrayLike) -> bool:
+        """Check on image loading and install new image when available.
+        """
+
+        # Async for multiscale is not implemented yet.
+        assert self.properties.multiscale
+
+        # If no load is in progress: nothing to do.
+        if self.future is None:
+            return False
+
+        # If still queued or loading, nothing to do.
+        if not self.future.done():
+            return False
+
+        # Load has finished, but it could be either done or cancelled.
+        self.finished = True
+
         if self.future.cancelled():
-            self.status = SliceStatus.CANCELLED
-            return
+            # Not clear what to do here yet.
+            self.future = None
+            return False
 
-        # It's done and succeeded, get the image that was loaded.
+        # Load succeeded, get the image that was loaded.
         image = self.future.result()
         image = image.transpose(self.properties.displayed_order)
 
         # They are the same for non-multiscale.
         thumbnail = image
 
-        self.set_images_with_clipping(image, thumbnail)
+        # This is now our slice contents.
+        self.set_raw_image(image, thumbnail)
+        return True
 
     def set_raw_images(self, image: ArrayLike, thumbnail: ArrayLike) -> None:
         """Set the image and its thumbnail.
+
+        If floating point / grayscale then clip to [0..1].
 
         Parameters
         ----------

@@ -545,17 +545,15 @@ class Image(IntensityVisualizationMixin, Layer):
 
             self.slice.set_raw_images(image, thumbnail_source)
         else:
-            if self.slice.empty():
+            indices = self.dims.indices
+
+            if not self.slice.contains(indices):
                 array = self.data[self.dims.indices]
-                self.slice.async_load(array)
+                self.slice.async_load(array, self.dims.indices)
+                return  # Don't get for an immediate load?
 
-                # TODO: can we do this now or must wait until async load finishes?
+            if self.slice.has_loaded(indices):
                 self._transforms['tile2data'].scale = np.ones(self.dims.ndim)
-
-            # If we're waiting on an async load and it's done, this will
-            # update the slide with the loaded image. If it's not done it
-            # does nothing.
-            self.slice.update()
 
         if self.multiscale:
             self.events.scale()
