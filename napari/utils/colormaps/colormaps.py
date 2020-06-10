@@ -140,11 +140,8 @@ def color_dict_to_colormap(color_dict):
 
     colormap = Colormap(colors)
     label_color_index = {}
-    for label, color_str in color_dict.items():
-        color = Color(transform_color(color_str)[0])
-        for i in range(len(colormap.colors)):
-            if colormap.colors[i] == color:
-                label_color_index[label] = colormap._controls[i]
+    for i, (label, color_str) in enumerate(color_dict.items()):
+        label_color_index[label] = i / (len(colors) - 1)
     return colormap, label_color_index
 
 
