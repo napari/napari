@@ -219,7 +219,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
         # Intitialize the current slice to an empty image.
         self._slice = ImageSlice(
-            self._get_empty_image(), self._raw_to_displayed, properties
+            self._get_empty_image(), properties, self._raw_to_displayed
         )
 
         # Set contrast_limits and colormaps
@@ -543,16 +543,16 @@ class Image(IntensityVisualizationMixin, Layer):
                 self.data[self._thumbnail_level][tuple(indices)]
             ).transpose(order)
 
-            self.slice.set_raw_images(image, thumbnail_source)
+            self._slice.set_raw_images(image, thumbnail_source)
         else:
             indices = self.dims.indices
 
-            if not self.slice.contains(indices):
+            if not self._slice.contains(indices):
                 array = self.data[self.dims.indices]
-                self.slice.async_load(array, self.dims.indices)
+                self._slice.async_load(array, self.dims.indices)
                 return  # Don't get for an immediate load?
 
-            if self.slice.has_loaded(indices):
+            if self._slice.has_loaded(indices):
                 self._transforms['tile2data'].scale = np.ones(self.dims.ndim)
 
         if self.multiscale:
