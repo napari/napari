@@ -14,7 +14,7 @@ from qtpy.QtCore import Qt
 
 import numpy as np
 from .qt_base_layer import QtLayerControls
-from ...layers.labels._labels_constants import Mode, ColorMode
+from ...layers.labels._labels_constants import Mode, LabelColorMode
 from ..qt_mode_buttons import QtModeRadioButton, QtModePushButton
 from ..utils import disable_with_opacity
 
@@ -161,7 +161,7 @@ class QtLabelsControls(QtLayerControls):
         button_row.setContentsMargins(0, 0, 0, 5)
 
         color_mode_comboBox = QComboBox(self)
-        color_mode_comboBox.addItems(ColorMode.keys())
+        color_mode_comboBox.addItems(LabelColorMode.keys())
         index = color_mode_comboBox.findText(
             self.layer.color_mode, Qt.MatchFixedString
         )

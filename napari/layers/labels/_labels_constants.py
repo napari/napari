@@ -35,17 +35,17 @@ class Mode(StringEnum):
     ERASE = auto()
 
 
-class ColorMode(StringEnum):
+class LabelColorMode(StringEnum):
     """
-    ColorMode: Color setting mode.
+    LabelColorMode: Labelling Color setting mode.
 
-    RANDOM (default mode) allows color to be set via a hash function with a seed.
+    RANDOM (default) allows color to be set via a hash function with a seed.
 
     DIRECT allows color of each label to be set directly by a color dictionary.
     """
 
+    RANDOM = auto()
     DIRECT = auto()
-    DICT = auto()
 
 
 BACKSPACE = 'delete' if sys.platform == 'darwin' else 'backspace'

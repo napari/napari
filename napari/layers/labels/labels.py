@@ -7,7 +7,7 @@ from ..image import Image
 from ...utils.colormaps import colormaps
 from ...utils.event import Event
 from ...utils.status_messages import format_float
-from ._labels_constants import Mode, ColorMode
+from ._labels_constants import Mode, LabelColorMode
 from ._labels_mouse_bindings import draw, pick
 
 from ..utils.layer_utils import dataframe_to_properties
@@ -143,6 +143,7 @@ class Labels(Image):
             'random',
             colormaps.label_colormap(self.num_colors),
         )
+        self._color_mode = LabelColorMode.RANDOM
 
         if properties is None:
             self._properties = {}
@@ -300,7 +301,7 @@ class Labels(Image):
                 self._background_label: 'transparent',
                 None: 'black',
             }
-            self.color_mode = ColorMode.DIRECT
+            self.color_mode = LabelColorMode.RANDOM
         else:
             if self._background_label not in color_dict:
                 color_dict[self._background_label] = 'transparent'
@@ -309,7 +310,7 @@ class Labels(Image):
                 color_dict[None] = 'black'
 
             self._color_dict = color_dict
-            self.color_mode = ColorMode.DICT
+            self.color_mode = LabelColorMode.DIRECT
 
     def _validate_properties(
         self, properties: Dict[str, np.ndarray]
@@ -373,22 +374,19 @@ class Labels(Image):
     @property
     def color_mode(self):
         """Color mode string"""
-        if hasattr(self, '_color_mode'):
-            return str(self._color_mode)
-        else:
-            return 'direct'
+        return str(self._color_mode)
 
     @color_mode.setter
-    def color_mode(self, color_mode: Union[str, ColorMode]):
-        color_mode = ColorMode(color_mode)
-        if color_mode == ColorMode.DICT:
+    def color_mode(self, color_mode: Union[str, LabelColorMode]):
+        color_mode = LabelColorMode(color_mode)
+        if color_mode == LabelColorMode.DIRECT:
             (
                 custom_colormap,
                 label_color_index,
             ) = colormaps.color_dict_to_colormap(self.color_dict)
             self.colormap = custom_colormap
             self._label_color_index = label_color_index
-        elif color_mode == ColorMode.DIRECT:
+        elif color_mode == LabelColorMode.RANDOM:
             self._label_color_index = {}
             self.colormap = self._random_colormap
         else:
@@ -526,7 +524,7 @@ class Labels(Image):
         image : array
             Image mapped between 0 and 1 to be displayed.
         """
-        if self.color_mode == 'dict':
+        if self.color_mode == 'direct':
             u, inv = np.unique(raw, return_inverse=True)
             image = np.array(
                 [
@@ -536,7 +534,7 @@ class Labels(Image):
                     for x in u
                 ]
             )[inv].reshape(raw.shape)
-        elif self.color_mode == 'direct':
+        elif self.color_mode == 'random':
             image = np.where(
                 raw > 0, colormaps._low_discrepancy_image(raw, self._seed), 0
             )

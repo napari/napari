@@ -263,7 +263,7 @@ def test_custom_color_dict():
     assert (layer.get_color(1) == np.array([1.0, 1.0, 1.0, 1.0])).all()
 
     # test disable custom color dict
-    layer.color_mode = 'direct'
+    layer.color_mode = 'random'
     assert not (layer.get_color(1) == np.array([1.0, 1.0, 1.0, 1.0])).all()
 
 
