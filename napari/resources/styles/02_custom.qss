@@ -492,3 +492,18 @@ PluginListItem > QPushButton#remove_button:hover {
 PluginListItem > QPushButton#remove_button:pressed {
   background-color: {{ darken(warning, 10) }}
 }
+
+
+#info_icon {
+  image: url(":/themes/{{ folder }}/info.svg");
+  min-width: 18px;
+  min-height: 18px;
+  margin: 2px;
+}
+
+#warning_icon {
+  image: url(":/themes/{{ folder }}/warning.svg");
+  min-width: 18px;
+  min-height: 18px;
+  margin: 2px;
+}

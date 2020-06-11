@@ -57,6 +57,7 @@ def themify_icons(
         'minus': 'secondary',
         'properties_contract': 'secondary',
         'properties_expand': 'secondary',
+        'warning': 'warning',
     }
     icon_names = [
         i.replace('.svg', '')
