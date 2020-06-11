@@ -5,6 +5,7 @@ import numpy as np
 from scipy import ndimage as ndi
 from ..image import Image
 from ...utils.colormaps import colormaps
+from ..utils.color_transformations import transform_color
 from ...utils.event import Event
 from ...utils.status_messages import format_float
 from ._labels_constants import Mode, LabelColorMode
@@ -138,12 +139,17 @@ class Labels(Image):
     ):
 
         self._seed = seed
+        self._background_label = 0
         self._num_colors = num_colors
         self._random_colormap = (
             'random',
             colormaps.label_colormap(self.num_colors),
         )
-        self._color_mode = LabelColorMode.RANDOM
+        self._color_mode = LabelColorMode.AUTO
+        self._color_dict = {
+            self._background_label: 'transparent',
+            None: 'black',
+        }
 
         if properties is None:
             self._properties = {}
@@ -192,7 +198,6 @@ class Labels(Image):
         self._contiguous = True
         self._brush_size = 10
 
-        self._background_label = 0
         self._selected_label = 1
         self._selected_color = self.get_color(self._selected_label)
         self.color_dict = color_dict
@@ -297,20 +302,24 @@ class Labels(Image):
     def color_dict(self, color_dict):
 
         if not color_dict:
-            self._color_dict = {
-                self._background_label: 'transparent',
-                None: 'black',
-            }
-            self.color_mode = LabelColorMode.RANDOM
+            color_dict = {}
+            color_mode = LabelColorMode.AUTO
         else:
-            if self._background_label not in color_dict:
-                color_dict[self._background_label] = 'transparent'
+            color_mode = LabelColorMode.DIRECT
 
-            if None not in color_dict:
-                color_dict[None] = 'black'
+        if self._background_label not in color_dict:
+            color_dict[self._background_label] = 'transparent'
 
-            self._color_dict = color_dict
-            self.color_mode = LabelColorMode.DIRECT
+        if None not in color_dict:
+            color_dict[None] = 'black'
+
+        colors = {
+            label: transform_color(color_str)[0]
+            for label, color_str in color_dict.items()
+        }
+
+        self._color_dict = colors
+        self.color_mode = color_mode
 
     def _validate_properties(
         self, properties: Dict[str, np.ndarray]
@@ -351,6 +360,7 @@ class Labels(Image):
                 'seed': self.seed,
                 'data': self.data,
                 'color_dict': self.color_dict,
+                'color_mode': self.color_mode,
             }
         )
         return state
@@ -386,7 +396,7 @@ class Labels(Image):
             ) = colormaps.color_dict_to_colormap(self.color_dict)
             self.colormap = custom_colormap
             self._label_color_index = label_color_index
-        elif color_mode == LabelColorMode.RANDOM:
+        elif color_mode == LabelColorMode.AUTO:
             self._label_color_index = {}
             self.colormap = self._random_colormap
         else:
@@ -534,7 +544,7 @@ class Labels(Image):
                     for x in u
                 ]
             )[inv].reshape(raw.shape)
-        elif self.color_mode == 'random':
+        elif self.color_mode == 'auto':
             image = np.where(
                 raw > 0, colormaps._low_discrepancy_image(raw, self._seed), 0
             )

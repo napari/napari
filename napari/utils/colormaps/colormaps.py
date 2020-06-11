@@ -3,7 +3,6 @@ from typing import Tuple, List
 
 import numpy as np
 from vispy.color import (
-    Color,
     BaseColormap,
     Colormap,
     get_colormap,
@@ -12,7 +11,6 @@ from vispy.color import (
 
 from ...types import ValidColormapArg
 from .vendored import cm, colorconv
-from .standardize_color import transform_color
 
 _matplotlib_list_file = os.path.join(
     os.path.dirname(__file__), 'matplotlib_cmaps.txt'
@@ -118,13 +116,13 @@ def _low_discrepancy_image(image, seed=0.5, margin=1 / 256):
     return image_out
 
 
-def color_dict_to_colormap(color_dict):
+def color_dict_to_colormap(colors):
     """
     Generate a color map based on the given color dictionary
     Parameters
     ----------
-    color_dict : dict of int
-        Mapping between labels and color strings
+    colors : dict of int to array of float, shape (4)
+        Mapping between labels and color
 
     Returns
     -------
@@ -133,14 +131,10 @@ def color_dict_to_colormap(color_dict):
     label_color_index : dict of int
         Mapping of Label to color control point within colormap
     """
-    colors = [
-        transform_color(color_str)[0]
-        for label, color_str in color_dict.items()
-    ]
 
-    colormap = Colormap(colors)
+    colormap = Colormap([color for label, color in colors.items()])
     label_color_index = {}
-    for i, (label, color_str) in enumerate(color_dict.items()):
+    for i, (label, color) in enumerate(colors.items()):
         label_color_index[label] = i / (len(colors) - 1)
     return colormap, label_color_index
 

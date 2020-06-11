@@ -263,7 +263,8 @@ def test_custom_color_dict():
     assert (layer.get_color(1) == np.array([1.0, 1.0, 1.0, 1.0])).all()
 
     # test disable custom color dict
-    layer.color_mode = 'random'
+    # should not initialize as white since we are using random.seed
+    layer.color_mode = 'auto'
     assert not (layer.get_color(1) == np.array([1.0, 1.0, 1.0, 1.0])).all()
 
 

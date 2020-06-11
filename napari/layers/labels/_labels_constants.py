@@ -39,12 +39,12 @@ class LabelColorMode(StringEnum):
     """
     LabelColorMode: Labelling Color setting mode.
 
-    RANDOM (default) allows color to be set via a hash function with a seed.
+    AUTO (default) allows color to be set via a hash function with a seed.
 
     DIRECT allows color of each label to be set directly by a color dictionary.
     """
 
-    RANDOM = auto()
+    AUTO = auto()
     DIRECT = auto()
 
 
