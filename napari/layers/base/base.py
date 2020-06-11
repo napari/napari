@@ -47,7 +47,7 @@ class Layer(KeymapProvider, ABC):
     ----------
     name : str
         Unique name of the layer.
-    opacity : flaot
+    opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     visible : bool
         Whether the layer visual is currently being displayed.
