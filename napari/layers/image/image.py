@@ -226,9 +226,6 @@ class Image(IntensityVisualizationMixin, Layer, ImageLayerInterface):
         self._data_thumbnail = self._data_view
 
         # Set contrast_limits and colormaps
-        self._on_gamma(gamma)
-        self._on_iso_threshold_change(iso_threshold)
-        self._on_attenuation_change(attenuation)
         if contrast_limits is None:
             self.contrast_limits_range = self._calc_data_range()
         else:
@@ -244,10 +241,13 @@ class Image(IntensityVisualizationMixin, Layer, ImageLayerInterface):
             ),
         }
 
-        self._on_colormap(colormap)
-        self._on_contrast_limits(self._contrast_limits)
+        self._on_colormap_change(colormap)
+        self._on_contrast_limits_change(self._contrast_limits)
         self._on_interpolation_change(interpolation)
         self._on_rendering_change(rendering)
+        self._on_gamma_change(gamma)
+        self._on_iso_threshold_change(iso_threshold)
+        self._on_attenuation_change(attenuation)
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()

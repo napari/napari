@@ -74,7 +74,7 @@ class IntensityVisualizationMixin:
     def contrast_limits(self, contrast_limits):
         self.events.contrast_limits(value=contrast_limits)
 
-    def _on_contrast_limits(self, contrast_limits):
+    def _on_contrast_limits_change(self, contrast_limits):
         validate_2_tuple(contrast_limits)
         self._contrast_limits_msg = (
             format_float(contrast_limits[0])
@@ -127,7 +127,7 @@ class IntensityVisualizationMixin:
     def gamma(self, value):
         self.events.gamma(value=value)
 
-    def _on_gamma(self, value):
+    def _on_gamma_change(self, value):
         self.status = format_float(value)
         self._gamma = value
         self._update_thumbnail()

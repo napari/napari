@@ -80,7 +80,3 @@ class BaseLayerInterface(BaseInterface):
     @abstractmethod
     def _on_editable_change(self, value):
         ...
-
-    @abstractmethod
-    def _on_update_dims(self):
-        ...
