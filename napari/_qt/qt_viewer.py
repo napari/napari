@@ -585,7 +585,11 @@ class QtViewer(QSplitter):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
-        if event.key is None or event.native.isAutoRepeat():
+        if event.key is None or (
+            # on linux press down is treated as multiple press and release
+            event.native is not None
+            and event.native.isAutoRepeat()
+        ):
             return
         combo = components_to_key_combo(event.key.name, event.modifiers)
         self.viewer.release_key(combo)
