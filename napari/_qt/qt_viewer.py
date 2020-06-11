@@ -194,10 +194,18 @@ class QtViewer(QSplitter):
 
         self.setAcceptDrops(True)
 
+        # Connect to signal saying a chunk loaded.
         CHUNK_LOADER.signals.chunk_loaded.connect(self._chunk_loaded)
 
     def _chunk_loaded(self, request: ChunkRequest) -> None:
-        request.layer._chunk_loaded(request)
+        """Pass loaded chunks on to their layer.
+
+        Parameters
+        ----------
+        request : ChunkRequest
+            This chunk was successfully loaded.
+        """
+        request.layer.chunk_loaded(request)
 
     def _create_performance_dock_widget(self):
         """Create the dock widget that shows performance metrics.
