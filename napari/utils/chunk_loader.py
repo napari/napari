@@ -1,7 +1,8 @@
-"""Asynchronously load chunks for rendering.
+"""ChunkLoader and related classes.
 """
 
 from concurrent import futures
+import time
 
 import numpy as np
 from qtpy.QtCore import Signal, QObject
@@ -10,12 +11,8 @@ from qtpy.QtCore import Signal, QObject
 from ..types import ArrayLike
 
 
-class ChunkLoaderSignals(QObject):
-    chunk_loaded = Signal()
-
-
 class ChunkRequest:
-    """Ask the ChunkLoader to load this data in a worker thread.
+    """A ChunkLoader request: please load this chunk.
 
     Placeholder class: get rid of this class if it doesn't grow!
 
@@ -25,15 +22,20 @@ class ChunkRequest:
         Load the data from this array.
     """
 
-    def __init__(self, indices, array: ArrayLike, callback):
+    def __init__(self, layer, indices, array: ArrayLike):
+        self.layer = layer
         self.indices = indices
         self.array = array
-        self.callback = callback
 
 
 def _chunk_loader_worker(request: ChunkRequest):
     request.array = np.asarray(request.array)
+    time.sleep(3)
     return request
+
+
+class ChunkLoaderSignals(QObject):
+    chunk_loaded = Signal(ChunkRequest)
 
 
 class ChunkLoader:
@@ -64,13 +66,10 @@ class ChunkLoader:
     def done(self, future):
         request = future.result()
         print(f"done: {request.indices}")
-        request.callback()
-        self.signals.chunk_loaded.emit()
+        self.signals.chunk_loaded.emit(request)
 
     def clear(self, array_like):
-        # Clear pending requests not yet starter.
-        # We cannot currently cancel load that are in progress.
-        self.requests.clear()
+        raise NotImplementedError()
 
 
 CHUNK_LOADER = ChunkLoader()

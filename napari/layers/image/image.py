@@ -1,6 +1,7 @@
 import types
 import warnings
 import numpy as np
+
 from scipy import ndimage as ndi
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS
@@ -12,7 +13,7 @@ from ..intensity_mixin import IntensityVisualizationMixin
 from ._image_constants import Interpolation, Interpolation3D, Rendering
 from ._image_utils import guess_rgb, guess_multiscale
 from ._image_slice import ImageProperties, ImageSlice
-from ...utils.chunk_loader import CHUNK_LOADER
+from ...utils.chunk_loader import ChunkRequest, CHUNK_LOADER
 
 
 # Mixin must come before Layer
@@ -248,7 +249,7 @@ class Image(IntensityVisualizationMixin, Layer):
         # Trigger generation of view slice and thumbnail
         self._update_dims()
 
-        CHUNK_LOADER.signals.chunk_loaded.connect(self._slice.on_load)
+        CHUNK_LOADER.signals.chunk_loaded.connect(self._chunk_loaded)
 
     def _get_empty_image(self):
         """Get empty image to use as the default before data is loaded.
@@ -552,15 +553,23 @@ class Image(IntensityVisualizationMixin, Layer):
 
             if not self._slice.contains(indices):
                 array = self.data[indices]
-                self._slice.load_async(indices, array, self.refresh)
-                return  # Don't check for an immediate load?
+                request = ChunkRequest(self, indices, array)
+                CHUNK_LOADER.load_chunk(request)
 
-            if self._slice.has_loaded(indices):
-                self._transforms['tile2data'].scale = np.ones(self.dims.ndim)
+                # We requested the chunk so we are done. When it arrives
+                # our _chunk_loaded will be called.
+                return
 
         if self.multiscale:
             self.events.scale()
             self.events.translate()
+
+    def _chunk_loaded(self, request):
+        # Not sure this is in the right place, but this was doing prior
+        # to async loading so we do it here.
+        self._transforms['tile2data'].scale = np.ones(self.dims.ndim)
+
+        self._slice.chunk_loaded(request)
 
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""

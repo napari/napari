@@ -25,6 +25,7 @@ from ..utils.interactions import (
 )
 from ..utils.key_bindings import components_to_key_combo
 from ..utils import perf
+from ..utils.chunk_loader import ChunkRequest, CHUNK_LOADER
 
 from .utils import QImg2array, square_pixmap
 from .qt_controls import QtControls
@@ -192,6 +193,11 @@ class QtViewer(QSplitter):
         self.viewer.events.layers_change.connect(lambda x: self.dims.stop())
 
         self.setAcceptDrops(True)
+
+        CHUNK_LOADER.signals.chunk_loaded.connect(self._chunk_loaded)
+
+    def _chunk_loaded(self, request: ChunkRequest) -> None:
+        request.layer._chunk_loaded(request)
 
     def _create_performance_dock_widget(self):
         """Create the dock widget that shows performance metrics.
