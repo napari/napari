@@ -123,18 +123,24 @@ class ImageSlice:
             # We are loading or have loaded this slice already
             return
 
-        # For now clear everything, later we'll only want to clear our layer?
-        CHUNK_LOADER.clear_queued()
-
-        # Initiate the async load, self.chunk_loaded() will be called when ready.
-        CHUNK_LOADER.load_chunk(request)
-
         # Save these so we don't try to re-load the same chunk.
         self.current_indices = request.indices
 
-        # While still debugging set a blank numbered image so something
-        # happens and we know an image is being loaded.
-        self._set_index_image()
+        # For now clear everything, later we'll only want to clear our layer?
+        CHUNK_LOADER.clear_queued()
+
+        # Load from cache (instantly) or initiate async load.
+        array = CHUNK_LOADER.load_chunk(request)
+
+        if array is None:
+            # Async load started. For debugging we show an "index image" which
+            # just big number indicating what slice we are loading. This is
+            # so we can see in the UI that's going on.
+            self._set_index_image()
+        else:
+            # It was in the cache, slam it right in.
+            request.array = array
+            self.chunk_loaded(request)
 
     def chunk_loaded(self, request: ChunkRequest):
         """Chunk was loaded, show this new data.

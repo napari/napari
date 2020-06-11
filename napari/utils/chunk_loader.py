@@ -11,6 +11,19 @@ from qtpy.QtCore import Signal, QObject
 from ..types import ArrayLike
 
 
+def _index_to_tuple(index):
+    """Slice is not hashable so we need a tuple.
+
+    Parameters
+    ----------
+    index
+        Could be a numeric index or a slice.
+    """
+    if isinstance(index, slice):
+        return (index.start, index.stop, index.step)
+    return index
+
+
 class ChunkRequest:
     """A ChunkLoader request: please load this chunk.
 
@@ -31,6 +44,14 @@ class ChunkRequest:
         self.layer = layer
         self.indices = indices
         self.array = array
+
+    @property
+    def key(self):
+        """Hashable key.
+
+        Slice objects are not hashable.
+        """
+        return tuple(_index_to_tuple(x) for x in self.indices)
 
 
 def _chunk_loader_worker(request: ChunkRequest):
@@ -55,6 +76,29 @@ class ChunkLoaderSignals(QObject):
     chunk_loaded = Signal(ChunkRequest)
 
 
+class ChunkCache:
+    """Cache of recently loaded chunks.
+
+    TODO_ASYNC: need LRU eviction, sizing based on RAM...
+    """
+
+    def __init__(self):
+        self.chunks = {}
+
+    def add_chunk(self, request: ChunkRequest) -> None:
+        """Add recently loaded chunk to the cache.
+        """
+        print(f"ChunkCache.add_chunk: {request.key}")
+        self.chunks[request.key] = request.array
+
+    def get_chunk(self, request: ChunkRequest):
+        """Return chunk data or None if not found.
+
+        TODO_ASYNC: assumes there's just one layer....
+        """
+        return self.chunks.get(request.key)
+
+
 class ChunkLoader:
     """Load chunks for rendering.
     """
@@ -67,18 +111,28 @@ class ChunkLoader:
             max_workers=self.NUM_WORKER_THREADS
         )
         self.futures = []
+        self.cache = ChunkCache()
 
     def load_chunk(self, request: ChunkRequest):
-        """Request this just is loaded asynchronously.
+        """Load this chunk asynchronously.
 
-        array : ArrayLike
-            Load data from this array-like object in a worker thread.
+        Called from the GUI thread by Image or ImageSlice.
+
+        request : ChunkRequest
+            Contains the array to load from and related info.
         """
         print(f"load_chunk: {request.indices}")
+        array = self.cache.get_chunk(request)
+
+        if array is not None:
+            print(f"load_chunk: cache hit {request.indices}")
+            return array
+        print(f"load_chunk: cache miss {request.indices}")
+
         future = self.executor.submit(_chunk_loader_worker, request)
         future.add_done_callback(self.done)
         self.futures.append(future)
-        return future
+        return None  # not available yet
 
     def done(self, future):
         """Future was done, success or cancelled.
@@ -87,6 +141,10 @@ class ChunkLoader:
         """
         request = future.result()
         print(f"ChunkLoader.done: {request.indices}")
+
+        # Do this from worker thread for now. It's safe for now.
+        # TODO_ASYNC: Maybe switch to GUI thread but then we need an event.
+        self.cache.add_chunk(request)
 
         # Notify QtViewer in the GUI thread, it will pass the data to the
         # layer that requested it.
