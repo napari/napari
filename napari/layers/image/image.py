@@ -249,6 +249,7 @@ class Image(IntensityVisualizationMixin, Layer):
         # Trigger generation of view slice and thumbnail
         self._update_dims()
 
+        # ChunkLoader tells us when one of our requested chunks is loaded.
         CHUNK_LOADER.signals.chunk_loaded.connect(self._chunk_loaded)
 
     def _get_empty_image(self):
@@ -550,25 +551,23 @@ class Image(IntensityVisualizationMixin, Layer):
             self._slice.set_raw_images(image, thumbnail_source)
         else:
             indices = self.dims.indices
+            array = self.data[indices]
+            request = ChunkRequest(self, indices, array)
+            self._slice.load_chunk(request)
 
-            if not self._slice.contains(indices):
-                array = self.data[indices]
-                request = ChunkRequest(self, indices, array)
-                CHUNK_LOADER.load_chunk(request)
-
-                # We requested the chunk so we are done. When it arrives
-                # our _chunk_loaded will be called.
-                return
+            # We requested that the ChunkManager load our data, when it
+            # arrives our self._chunk_loaded() will be called.
+            return
 
         if self.multiscale:
             self.events.scale()
             self.events.translate()
 
-    def _chunk_loaded(self, request):
-        # Not sure this is in the right place, but this was doing prior
-        # to async loading so we do it here.
+    def chunk_loaded(self, request):
+        # Maybe could move this when chunk was requested?
         self._transforms['tile2data'].scale = np.ones(self.dims.ndim)
 
+        # Tell the slice its data is ready to show.
         self._slice.chunk_loaded(request)
 
     def _update_thumbnail(self):

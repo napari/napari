@@ -4,6 +4,7 @@ import numpy as np
 
 from ._image_view import ImageView
 from ...types import ArrayLike, ImageConverter
+from ...utils.chunk_loader import ChunkRequest, CHUNK_LOADER
 
 
 class ImageProperties(NamedTuple):
@@ -60,10 +61,7 @@ class ImageSlice:
         self.properties = properties
 
         # We're showing the slice at these indices
-        self.indices = None
-
-    def contains(self, indices):
-        return self.indices == indices
+        self.current_indices = None
 
     def set_raw_images(self, image: ArrayLike, thumbnail: ArrayLike) -> None:
         """Set the image and its thumbnail.
@@ -84,16 +82,46 @@ class ImageSlice:
         self.image.raw = image
         self.thumbnail.raw = thumbnail
 
-    def chunk_loaded(self, request):
+    def load_chunk(self, request: ChunkRequest):
+        """Load the requested chunk.
+
+        Parameters
+        ----------
+        request : ChunkRequest
+            This chunk was successfully loaded.
+        """
         # Async not supported for multiscale yet
         assert not self.properties.multiscale
 
-        # Could worker do this? Does it take any time?
+        if self.current_indices == request.indices:
+            # We are loading or have loaded this slice already
+            return
+
+        # Initiate the async load, self.chunk_loaded() will be called when ready.
+        CHUNK_LOADER.load_chunk(request)
+
+        # Save these so we don't try to re-load the same chunk.
+        self.current_indices = request.indices
+
+    def chunk_loaded(self, request: ChunkRequest):
+        """Chunk was loaded, show this new data.
+
+        Parameters
+        ----------
+        request : ChunkRequest
+            This chunk was successfully loaded.
+        """
+        # Async not supported for multiscale yet
+        assert not self.properties.multiscale
+
+        # Is this the chunk we requested?
+        assert self.current_indices == request.indices
+
+        # Could worker do the transpose? Does it take any time?
         image = request.array.transpose(self.properties.displayed_order)
 
         # Thumbnail is just the same image for non-multiscale.
         thumbnail = image
 
-        # We are now showing data at these indices.
+        # Show the new data, show this slice.
         self.set_raw_images(image, thumbnail)
-        self.indices = request.indices
