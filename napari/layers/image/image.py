@@ -12,6 +12,7 @@ from ..intensity_mixin import IntensityVisualizationMixin
 from ._image_constants import Interpolation, Interpolation3D, Rendering
 from ._image_utils import guess_rgb, guess_multiscale
 from ._image_slice import ImageProperties, ImageSlice
+from ...utils.chunk_loader import CHUNK_LOADER
 
 
 # Mixin must come before Layer
@@ -246,6 +247,8 @@ class Image(IntensityVisualizationMixin, Layer):
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
+
+        CHUNK_LOADER.signals.chunk_loaded.connect(self._slice.on_load)
 
     def _get_empty_image(self):
         """Get empty image to use as the default before data is loaded.

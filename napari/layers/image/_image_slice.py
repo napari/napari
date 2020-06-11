@@ -91,6 +91,9 @@ class ImageSlice:
         self.future = CHUNK_LOADER.load_chunk(request)
         self.finished = False
 
+    def on_loaded(self):
+        print("ImageSlice.on_loaded")
+
     def has_loaded(self, array: ArrayLike) -> bool:
         """Check on image loading and install new image when available.
         """
