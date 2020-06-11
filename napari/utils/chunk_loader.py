@@ -65,7 +65,7 @@ class ChunkLoader:
 
     def done(self, future):
         request = future.result()
-        print(f"done: {request.indices}")
+        print(f"ChunkLoader.done: {request.indices}")
         self.signals.chunk_loaded.emit(request)
 
     def clear(self, array_like):

@@ -75,6 +75,7 @@ class ImageSlice:
         thumbnail : ArrayLike
             Set this as the thumbnail.
         """
+        print("ImageSlice.set_raw_images")
 
         if self.properties.rgb and image.dtype.kind == 'f':
             image = np.clip(image, 0, 1)
@@ -111,6 +112,7 @@ class ImageSlice:
         request : ChunkRequest
             This chunk was successfully loaded.
         """
+        print(f"ImageSlice.chunk_loaded {request.indices}")
         # Async not supported for multiscale yet
         assert not self.properties.multiscale
 

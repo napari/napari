@@ -13,7 +13,7 @@ from ..intensity_mixin import IntensityVisualizationMixin
 from ._image_constants import Interpolation, Interpolation3D, Rendering
 from ._image_utils import guess_rgb, guess_multiscale
 from ._image_slice import ImageProperties, ImageSlice
-from ...utils.chunk_loader import ChunkRequest, CHUNK_LOADER
+from ...utils.chunk_loader import ChunkRequest
 
 
 # Mixin must come before Layer
@@ -248,9 +248,6 @@ class Image(IntensityVisualizationMixin, Layer):
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
-
-        # ChunkLoader tells us when one of our requested chunks is loaded.
-        CHUNK_LOADER.signals.chunk_loaded.connect(self.chunk_loaded)
 
     def _get_empty_image(self):
         """Get empty image to use as the default before data is loaded.
@@ -564,6 +561,7 @@ class Image(IntensityVisualizationMixin, Layer):
             self.events.translate()
 
     def chunk_loaded(self, request):
+        print(f"Image.chunk_loaded: {request.indices}")
         # Maybe could move this when chunk was requested?
         self._transforms['tile2data'].scale = np.ones(self.dims.ndim)
 
