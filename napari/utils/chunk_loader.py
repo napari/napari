@@ -4,8 +4,14 @@
 from concurrent import futures
 
 import numpy as np
+from qtpy.QtCore import Signal, QObject
+
 
 from ..types import ArrayLike
+
+
+class ChunkLoaderSignals(QObject):
+    chunk_loaded = Signal()
 
 
 class ChunkRequest:
@@ -35,6 +41,7 @@ class ChunkLoader:
     """
 
     NUM_WORKER_THREADS = 1
+    signals = ChunkLoaderSignals()
 
     def __init__(self):
         self.executor = futures.ThreadPoolExecutor(
@@ -58,6 +65,7 @@ class ChunkLoader:
         request = future.result()
         print(f"done: {request.indices}")
         request.callback()
+        self.signals.chunk_loaded.emit()
 
     def clear(self, array_like):
         # Clear pending requests not yet starter.
