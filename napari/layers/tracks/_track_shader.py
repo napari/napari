@@ -1,18 +1,3 @@
-# -------------------------------------------------------------------------------
-# Name:     Arboretum
-# Purpose:  Dockable widget, and custom track visualization layers for Napari,
-#           to cell/object track data.
-#
-# Authors:  Alan R. Lowe (arl) a.lowe@ucl.ac.uk
-#
-# License:  See LICENSE.md
-#
-# Created:  01/05/2020
-# -------------------------------------------------------------------------------
-
-__author__ = 'Alan R. Lowe'
-__email__ = 'code@arlowe.co.uk'
-
 from vispy.visuals.filters.base_filter import Filter
 from vispy.gloo import VertexBuffer
 

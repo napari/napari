@@ -297,6 +297,3 @@ class TrackManager:
         pos = self._points[lookup, ...]
         lbl = [f'ID:{i}' for i in self._points_id[lookup]]
         return lbl, pos
-
-    def _build_graph(self):
-        pass
