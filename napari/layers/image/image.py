@@ -548,13 +548,11 @@ class Image(IntensityVisualizationMixin, Layer):
             self._slice.set_raw_images(image, thumbnail_source)
         else:
             indices = self.dims.indices
-            array = self.data[indices]
-            request = ChunkRequest(self, indices, array)
-            self._slice.load_chunk(request)
 
-            # We requested that the ChunkManager load our data, when it
-            # arrives our self._chunk_loaded() will be called.
-            return
+            if self._slice.current_indices != indices:
+                array = self.data[indices]
+                request = ChunkRequest(self, indices, array)
+                self._slice.load_chunk(request)
 
         if self.multiscale:
             self.events.scale()
@@ -562,11 +560,14 @@ class Image(IntensityVisualizationMixin, Layer):
 
     def chunk_loaded(self, request):
         print(f"Image.chunk_loaded: {request.indices}")
-        # Maybe could move this when chunk was requested?
+        # Should we do this here or when load was started?
         self._transforms['tile2data'].scale = np.ones(self.dims.ndim)
 
         # Tell the slice its data is ready to show.
         self._slice.chunk_loaded(request)
+
+        # Update vispy, draw the new slice
+        self.refresh()
 
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""
