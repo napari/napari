@@ -22,12 +22,10 @@ class ImageSlice:
     ----------
     view_image : ArrayLike
         The initial image for the time and its thumbail.
+    properties : Image_Properties
+        We are displaying a sliced from an Image with the properties.
     image_converter : ImageConverter
         ImageView uses this to convert from raw to viewable.
-    rgb : bool
-        True if the image RGB, as opposed to float/grayscale.
-    displayed_order : Tuple[int, ...]
-        The order of the displayed dimensions.
 
     Attributes
     ----------
@@ -90,6 +88,7 @@ class ImageSlice:
         # Async not supported for multiscale yet
         assert not self.properties.multiscale
 
+        # Could worker do this? Does it take any time?
         image = request.array.transpose(self.properties.displayed_order)
 
         # Thumbnail is just the same image for non-multiscale.
