@@ -115,7 +115,9 @@ class ImageSlice:
         assert not self.properties.multiscale
 
         # Is this the chunk we requested?
-        assert self.current_indices == request.indices
+        if self.current_indices != request.indices:
+            print(f"IGNORE CHUNK: {request.indices}")
+            return
 
         # Could worker do the transpose? Does it take any time?
         image = request.array.transpose(self.properties.displayed_order)

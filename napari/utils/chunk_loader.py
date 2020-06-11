@@ -71,5 +71,8 @@ class ChunkLoader:
     def clear(self, array_like):
         raise NotImplementedError()
 
+    def remove_layer(self, layer):
+        print(f"remove layer: {layer}")
+
 
 CHUNK_LOADER = ChunkLoader()

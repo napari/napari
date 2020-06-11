@@ -250,7 +250,7 @@ class Image(IntensityVisualizationMixin, Layer):
         self._update_dims()
 
         # ChunkLoader tells us when one of our requested chunks is loaded.
-        CHUNK_LOADER.signals.chunk_loaded.connect(self._chunk_loaded)
+        CHUNK_LOADER.signals.chunk_loaded.connect(self.chunk_loaded)
 
     def _get_empty_image(self):
         """Get empty image to use as the default before data is loaded.
