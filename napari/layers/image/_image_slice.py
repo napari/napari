@@ -7,6 +7,31 @@ from ...types import ArrayLike, ImageConverter
 from ...utils.chunk_loader import ChunkRequest, CHUNK_LOADER
 
 
+def get_text_image(text, rgb):
+    """For debugging create an image with some text on it.
+    """
+    from PIL import Image, ImageDraw, ImageFont
+
+    size = (1024, 1024)
+    if rgb:
+        image = Image.new('RGB', size)
+    else:
+        image = Image.new('L', size)
+
+    text = str(text)
+
+    font = ImageFont.truetype('Arial Black.ttf', size=72)
+    (width, height) = font.getsize(text)
+    x = (image.width / 2) - width / 2
+    y = (image.height / 2) - height / 2
+
+    color = 'rgb(255, 255, 255)'  # white color
+    draw = ImageDraw.Draw(image)
+    draw.text((x, y), text, fill=color, font=font)
+
+    return np.array(image)
+
+
 class ImageProperties(NamedTuple):
     multiscale: bool
     rgb: bool
@@ -104,6 +129,10 @@ class ImageSlice:
         # Save these so we don't try to re-load the same chunk.
         self.current_indices = request.indices
 
+        # While still debugging set a blank numbered image so something
+        # happens and we know an image is being loaded.
+        self._set_index_image()
+
     def chunk_loaded(self, request: ChunkRequest):
         """Chunk was loaded, show this new data.
 
@@ -129,3 +158,17 @@ class ImageSlice:
 
         # Show the new data, show this slice.
         self.set_raw_images(image, thumbnail)
+
+    def _get_current_index(self):
+        """Get slice index for debug placeholder image."""
+        # Not positive this is right in all cases...
+        first = self.properties.displayed_order[0]
+        return self.current_indices[first]
+
+    def _set_index_image(self):
+        """For debugging set a slice image that has text on it.
+        """
+        print(f"{self.properties.displayed_order}")
+        index = self._get_current_index()
+        image = get_text_image(f"loading: {index}", self.properties.rgb)
+        self.set_raw_images(image, image)
