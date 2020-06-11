@@ -14,7 +14,8 @@ from ..types import ArrayLike
 class ChunkRequest:
     """A ChunkLoader request: please load this chunk.
 
-    Placeholder class: get rid of this class if it doesn't grow!
+    Placeholder class: I anticipate this class will grow, if not we can
+    turn it into a namedtuple.
 
     Parameters
     ----------
@@ -29,8 +30,13 @@ class ChunkRequest:
 
 
 def _chunk_loader_worker(request: ChunkRequest):
+    """Worker thread load the array.
+
+    This np.array() call might lead to IO or computation via dask or
+    similar means which is why we are doing it in a worker thread!
+    """
     request.array = np.asarray(request.array)
-    time.sleep(3)
+    time.sleep(1)
     return request
 
 
