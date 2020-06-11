@@ -38,9 +38,7 @@ class ImageView:
     """
 
     def __init__(
-        self,
-        view_image: ArrayLike,
-        image_converter: Optional[ImageConverter] = None,
+        self, view_image: ArrayLike, image_converter: Optional[ImageConverter]
     ):
         """Create an ImageView with some default image.
         """
@@ -81,7 +79,4 @@ class ImageView:
         self._raw = raw_image
 
         # Update the view image based on this new raw image.
-        has_converter = self.image_converter is not None
-        self._view = (
-            self.image_converter(raw_image) if has_converter else raw_image
-        )
+        self._view = self.image_converter(raw_image)

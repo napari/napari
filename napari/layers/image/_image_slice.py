@@ -1,4 +1,4 @@
-from typing import NamedTuple, Optional, Tuple
+from typing import NamedTuple, Tuple
 
 import numpy as np
 
@@ -22,7 +22,7 @@ class ImageSlice:
     ----------
     view_image : ArrayLike
         The initial image for the time and its thumbail.
-    image_converter : ImageConverter, optional
+    image_converter : ImageConverter
         ImageView uses this to convert from raw to viewable.
     rgb : bool
         True if the image RGB, as opposed to float/grayscale.
@@ -55,7 +55,7 @@ class ImageSlice:
         self,
         view_image: ArrayLike,
         properties: ImageProperties,
-        image_converter: Optional[ImageConverter] = None,
+        image_converter: ImageConverter,
     ):
         self.image: ImageView = ImageView(view_image, image_converter)
         self.thumbnail: ImageView = ImageView(view_image, image_converter)
