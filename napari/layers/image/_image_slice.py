@@ -123,6 +123,9 @@ class ImageSlice:
             # We are loading or have loaded this slice already
             return
 
+        # For now clear everything, later we'll only want to clear our layer?
+        CHUNK_LOADER.clear_queued()
+
         # Initiate the async load, self.chunk_loaded() will be called when ready.
         CHUNK_LOADER.load_chunk(request)
 

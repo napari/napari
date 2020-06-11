@@ -19,6 +19,10 @@ class ChunkRequest:
 
     Parameters
     ----------
+    layer
+        The layer requesting the data/
+    indices
+        The tuple of slices index into the data.
     array : ArrayLike
         Load the data from this array.
     """
@@ -30,7 +34,7 @@ class ChunkRequest:
 
 
 def _chunk_loader_worker(request: ChunkRequest):
-    """Worker thread load the array.
+    """Worker thread that loads the array.
 
     This np.array() call might lead to IO or computation via dask or
     similar means which is why we are doing it in a worker thread!
@@ -41,6 +45,13 @@ def _chunk_loader_worker(request: ChunkRequest):
 
 
 class ChunkLoaderSignals(QObject):
+    """QtViewer connects to this.
+
+    We need to notify from a worker thread to the GUI thread so knows to
+    use the chunk we just loaded. The only way to do that is with Qt
+    signals/slots/events.
+    """
+
     chunk_loaded = Signal(ChunkRequest)
 
 
@@ -70,12 +81,24 @@ class ChunkLoader:
         return future
 
     def done(self, future):
+        """Future was done, success or cancelled.
+
+        Called in the worker thread.
+        """
         request = future.result()
         print(f"ChunkLoader.done: {request.indices}")
+
+        # Notify QtViewer in the GUI thread, it will pass the data to the
+        # layer that requested it.
         self.signals.chunk_loaded.emit(request)
 
-    def clear(self, array_like):
-        raise NotImplementedError()
+    def clear_queued(self):
+        """Clear queued but not yet started requests.
+
+        We can't clear in-progress requests that are already running in the
+        worker thread.
+        """
+        self.futures[:] = [x for x in self.futures if x.cancel()]
 
     def remove_layer(self, layer):
         print(f"remove layer: {layer}")
