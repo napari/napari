@@ -2,8 +2,10 @@ from vispy.scene.visuals import Line
 from vispy.scene.visuals import Text
 from vispy.scene.visuals import Compound
 
-from .vispy_base_layer import VispyBaseLayer
+# from napari._vispy.vispy_base_layer import VispyBaseLayer
+# from ._track_shader import TrackShader
 
+from .vispy_base_layer import VispyBaseLayer
 from ..layers.tracks._track_shader import TrackShader
 
 
@@ -16,10 +18,6 @@ class VispyTracksLayer(VispyBaseLayer):
         - Track lines (vispy.LineVisual)
         - Track IDs (vispy.TextVisual)
         - Graph edges (vispy.LineVisual)
-
-    TODO(arl): should we always provide 3D data to the subvisual, and then
-        adjust the values for the n-th dimension when changing the displayed
-        dimension? or... rebuild the whole visual when changing?
 
     """
 
@@ -70,8 +68,10 @@ class VispyTracksLayer(VispyBaseLayer):
         # update the shader
         self.track_shader.current_time = self.layer.current_time
         self.track_shader.tail_length = self.layer.tail_length
+        self.track_shader.use_fade = self.layer.use_fade
         self.graph_shader.current_time = self.layer.current_time
         self.graph_shader.tail_length = self.layer.tail_length
+        self.graph_shader.use_fade = self.layer.use_fade
 
         # set visibility of subvisuals
         self.node._subvisuals[0].visible = self.layer.display_tail

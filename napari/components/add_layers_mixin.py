@@ -758,10 +758,9 @@ class AddLayersMixin:
         data,
         *,
         properties=None,
-        graph=None,
         edge_width=2,
         tail_length=30,
-        color_by=0,
+        color_by='ID',
         n_dimensional=True,
         name=None,
         metadata=None,
@@ -770,13 +769,12 @@ class AddLayersMixin:
         opacity=1,
         blending='translucent',
         visible=True,
-        colormaps=None,
+        colormaps_dict=None,
     ) -> layers.Tracks:
-
+        """ Add a tracks layer to the layers list """
         layer = layers.Tracks(
             data,
             properties=properties,
-            graph=graph,
             edge_width=2,
             tail_length=edge_width,
             color_by=color_by,
@@ -787,7 +785,7 @@ class AddLayersMixin:
             opacity=opacity,
             blending=blending,
             visible=visible,
-            colormaps=colormaps,
+            colormaps_dict=colormaps_dict,
         )
         self.add_layer(layer)
         return layer
