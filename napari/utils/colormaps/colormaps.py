@@ -119,6 +119,7 @@ def _low_discrepancy_image(image, seed=0.5, margin=1 / 256):
 def color_dict_to_colormap(colors):
     """
     Generate a color map based on the given color dictionary
+
     Parameters
     ----------
     colors : dict of int to array of float, shape (4)
