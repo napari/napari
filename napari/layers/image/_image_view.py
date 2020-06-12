@@ -28,13 +28,13 @@ class ImageView:
 
     Examples
     --------
-        Create ImageView with initial default:
+    Create ImageView with initial default:
 
-        >> image = ImageView(view_image)
+    >> image = ImageView(view_image)
 
-        Update ImageView's raw image, it will compute the new viable one:
+    Update ImageView's raw image, it will compute the new viable one:
 
-        >> image.raw = raw_image
+    >> image.raw = raw_image
     """
 
     def __init__(
