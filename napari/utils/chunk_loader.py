@@ -3,6 +3,7 @@
 
 from concurrent import futures
 import time
+from typing import Optional
 
 import numpy as np
 from qtpy.QtCore import Signal, QObject
@@ -26,9 +27,6 @@ def _index_to_tuple(index):
 
 class ChunkRequest:
     """A ChunkLoader request: please load this chunk.
-
-    Placeholder class: I anticipate this class will grow, if not we can
-    turn it into a namedtuple.
 
     Parameters
     ----------
@@ -71,28 +69,35 @@ class ChunkLoaderSignals(QObject):
     We need to notify from a worker thread to the GUI thread so knows to
     use the chunk we just loaded. The only way to do that is with Qt
     signals/slots/events.
+
+    TODO_ASYNC: Create a wrapper so we don't need to import Qt at all?
     """
 
     chunk_loaded = Signal(ChunkRequest)
 
 
 class ChunkCache:
-    """Cache of recently loaded chunks.
+    """Cache of previously loaded chunks.
 
-    TODO_ASYNC: need LRU eviction, sizing based on RAM...
+    TODO_ASYNC: need LRU eviction, sizing based on RAM, etc.
     """
 
     def __init__(self):
         self.chunks = {}
 
     def add_chunk(self, request: ChunkRequest) -> None:
-        """Add recently loaded chunk to the cache.
+        """Add this chunk to the cache.
+
+        Parameters
+        ----------
+        request : ChunkRequest
+            Add the data in this request to the cache.
         """
         print(f"ChunkCache.add_chunk: {request.key}")
         self.chunks[request.key] = request.array
 
-    def get_chunk(self, request: ChunkRequest):
-        """Return chunk data or None if not found.
+    def get_chunk(self, request: ChunkRequest) -> Optional[ArrayLike]:
+        """Get the cached data for this chunk request.
 
         TODO_ASYNC: assumes there's just one layer....
         """
@@ -156,10 +161,10 @@ class ChunkLoader:
         self.signals.chunk_loaded.emit(request)
 
     def clear_queued(self):
-        """Clear queued but not yet started requests.
+        """Clear queued requests.
 
         We can't clear in-progress requests that are already running in the
-        worker thread.
+        worker thread, which is too bad.
         """
         self.futures[:] = [x for x in self.futures if x.cancel()]
 
