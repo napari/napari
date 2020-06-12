@@ -126,13 +126,18 @@ class ChunkLoader:
 
         if array is not None:
             print(f"load_chunk: cache hit {request.indices}")
-            return array
+
+            # Cache hit, request is satisfied.
+            request.array = array
+            return request
         print(f"load_chunk: cache miss {request.indices}")
 
         future = self.executor.submit(_chunk_loader_worker, request)
         future.add_done_callback(self.done)
         self.futures.append(future)
-        return None  # not available yet
+
+        # Async load was started, nothing available yet.
+        return None
 
     def done(self, future):
         """Future was done, success or cancelled.

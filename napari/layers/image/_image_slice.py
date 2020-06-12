@@ -3,33 +3,9 @@ from typing import NamedTuple, Tuple
 import numpy as np
 
 from ._image_view import ImageView
+from ._image_text import get_text_image
 from ...types import ArrayLike, ImageConverter
 from ...utils.chunk_loader import ChunkRequest, CHUNK_LOADER
-
-
-def get_text_image(text, rgb):
-    """For debugging create an image with some text on it.
-    """
-    from PIL import Image, ImageDraw, ImageFont
-
-    size = (1024, 1024)
-    if rgb:
-        image = Image.new('RGB', size)
-    else:
-        image = Image.new('L', size)
-
-    text = str(text)
-
-    font = ImageFont.truetype('Arial Black.ttf', size=72)
-    (width, height) = font.getsize(text)
-    x = (image.width / 2) - width / 2
-    y = (image.height / 2) - height / 2
-
-    color = 'rgb(255, 255, 255)'  # white color
-    draw = ImageDraw.Draw(image)
-    draw.text((x, y), text, fill=color, font=font)
-
-    return np.array(image)
 
 
 class ImageProperties(NamedTuple):
@@ -129,18 +105,16 @@ class ImageSlice:
         # For now clear everything, later we'll only want to clear our layer?
         CHUNK_LOADER.clear_queued()
 
-        # Load from cache (instantly) or initiate async load.
-        array = CHUNK_LOADER.load_chunk(request)
+        # Load from cache or initiate async load.
+        satisfied_request = CHUNK_LOADER.load_chunk(request)
 
-        if array is None:
-            # Async load started. For debugging we show an "index image" which
-            # just big number indicating what slice we are loading. This is
-            # so we can see in the UI that's going on.
-            self._set_index_image()
+        if satisfied_request is None:
+            # Cache miss: async load was started. Show placeholder image
+            # until the load finishes and self.chunk_loaded() is called.
+            self._set_placeholder_image()
         else:
-            # It was in the cache, slam it right in.
-            request.array = array
-            self.chunk_loaded(request)
+            # It was in the cache, put it to immediate use.
+            self.chunk_loaded(satisfied_request)
 
     def chunk_loaded(self, request: ChunkRequest):
         """Chunk was loaded, show this new data.
@@ -168,16 +142,36 @@ class ImageSlice:
         # Show the new data, show this slice.
         self.set_raw_images(image, thumbnail)
 
-    def _get_current_index(self):
-        """Get slice index for debug placeholder image."""
-        # Not positive this is right in all cases...
-        first = self.properties.displayed_order[0]
-        return self.current_indices[first]
+    def _get_slice_string(self):
+        """Get some string to describe the current slice.
 
-    def _set_index_image(self):
-        """For debugging set a slice image that has text on it.
+        Right now it's just an integer like "5". This will be displayed on
+        the placeholder image.
         """
-        print(f"{self.properties.displayed_order}")
-        index = self._get_current_index()
-        image = get_text_image(f"loading: {index}", self.properties.rgb)
-        self.set_raw_images(image, image)
+        first = self.properties.displayed_order[0]
+        return str(self.current_indices[first])
+
+    def _set_placeholder_image(self):
+        """Show placeholder until async load is finished.
+
+        Today we only support async for non-multi-scale images. When the
+        user navigates to a slice and we have no data to show, we show a
+        "placeholder image" so we can stop drawing the previous slice and
+        indicate that a load is in progress.
+
+        Today our placeholder image is a just black with white text that
+        says "loading: N" where N is the index of the slice being loaded.
+        Long term we could show something more stylish or informative
+        including some type of loading/progress animation.
+
+        For multi-scale our "placeholder image" will often be imagery from
+        a different level of detail. For example we can show coarser/blurry
+        imagery until we can load the higher resolution data.
+
+        This black screen with text is just for the worst case where we
+        have flat nothing to show, but we don't want to keep drawing the
+        previous slice.
+        """
+        text = f"loading: {self._get_slice_string()}"
+        placeholder = get_text_image(text, self.properties.rgb)
+        self.set_raw_images(placeholder, placeholder)
