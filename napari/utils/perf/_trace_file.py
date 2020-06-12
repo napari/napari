@@ -71,12 +71,14 @@ class PerfTraceFile:
         event : PerfEvent
             Event to write.
         """
+        category = "none" if event.category is None else event.category
+
         # Event type "X" denotes a completed event. Meaning we already
         # know the duration. The format wants times in micro-seconds.
         data = {
             "pid": self.pid,
             "name": event.name,
-            "cat": event.category,
+            "cat": category,
             "ph": "X",
             "ts": event.start_us,
             "dur": event.duration_us,
