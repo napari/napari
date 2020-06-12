@@ -443,19 +443,19 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
 
     def _update_help(self, event):
         """Set the viewer help with the `event.help` string."""
-        self.help = event.help
+        self.help = event.value
 
     def _update_interactive(self, event):
         """Set the viewer interactivity with the `event.interactive` bool."""
-        self.interactive = event.interactive
+        self.interactive = event.value
 
     def _update_cursor(self, event):
         """Set the viewer cursor with the `event.cursor` string."""
-        self.cursor = event.cursor
+        self.cursor = event.value
 
     def _update_cursor_size(self, event):
         """Set the viewer cursor_size with the `event.cursor_size` int."""
-        self.cursor_size = event.cursor_size
+        self.cursor_size = event.value
 
     def grid_view(self, n_row=None, n_column=None, stride=1):
         """Arrange the current layers is a 2D grid.

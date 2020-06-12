@@ -1,5 +1,11 @@
+import logging
+
+
 from ...utils.event_handler import EventHandler
 from napari.utils.base_interface import BaseInterface
+
+
+logger = logging.getLogger(__name__)
 
 
 class LayerEventHandler(EventHandler):
@@ -18,8 +24,13 @@ class LayerEventHandler(EventHandler):
         Process changes made from any interface
         """
         name = event.type
-        value = event.value
-        print(f"event: {name}")
+        logger.debug(f"event: {name}")
+        try:  # until refactor on all layers is complete, not all events will have a value property
+            value = event.value
+        except AttributeError:
+            logger.debug(f"did not handle event {name}")
+            return
+
         for component in self.components_to_update:
             update_method_name = f"_on_{name}_change"
             update_method = getattr(component, update_method_name)
