@@ -5,7 +5,8 @@ from PIL import Image, ImageDraw, ImageFont
 def get_text_image(text: str, rgb: bool):
     """Return blank image with given text centered on it.
 
-    TODO_ASYNC: Use vispy text not PIL.
+    TODO_ASYNC: Use vispy text not PIL? Although this only takes about 6ms
+    so it's not that bad for now.
 
     Parameters
     ----------

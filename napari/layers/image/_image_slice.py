@@ -172,8 +172,6 @@ class ImageSlice:
         have flat nothing to show, but we don't want to keep drawing the
         previous slice.
         """
-        # It takes about 6ms to create this text image with PIL, we probably
-        # should be using vispy but this is pretty decent for now.
         text = f"loading: {self._get_slice_string()}"
         placeholder = get_text_image(text, self.properties.rgb)
         self.set_raw_images(placeholder, placeholder)
