@@ -1,4 +1,14 @@
 """ChunkLoader and related classes.
+
+There is one global CHUNK_LOADER instance to handle async loading for any
+and all Viewer instances that are running. There are two main reasons we
+just have one and not one per Viewer:
+
+1. We size the ChunkCache as a fraction of RAM, so having more than one
+   would use too much RAM in many cases.
+
+2. We (will) size the thread pool for optimal performance, and having
+   multiple pools would result in more threads than we want.
 """
 
 from concurrent import futures
