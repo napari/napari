@@ -146,10 +146,6 @@ class Labels(Image):
             colormaps.label_colormap(self.num_colors),
         )
         self._color_mode = LabelColorMode.AUTO
-        self._color_dict = {
-            self._background_label: 'transparent',
-            None: 'black',
-        }
 
         if properties is None:
             self._properties = {}
@@ -360,7 +356,6 @@ class Labels(Image):
                 'seed': self.seed,
                 'data': self.data,
                 'color_dict': self.color_dict,
-                'color_mode': self.color_mode,
             }
         )
         return state
@@ -534,7 +529,7 @@ class Labels(Image):
         image : array
             Image mapped between 0 and 1 to be displayed.
         """
-        if self.color_mode == 'direct':
+        if self._color_mode == LabelColorMode.DIRECT:
             u, inv = np.unique(raw, return_inverse=True)
             image = np.array(
                 [
@@ -544,7 +539,7 @@ class Labels(Image):
                     for x in u
                 ]
             )[inv].reshape(raw.shape)
-        elif self.color_mode == 'auto':
+        elif self._color_mode == LabelColorMode.AUTO:
             image = np.where(
                 raw > 0, colormaps._low_discrepancy_image(raw, self._seed), 0
             )
