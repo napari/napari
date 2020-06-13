@@ -507,3 +507,12 @@ PluginListItem > QPushButton#remove_button:pressed {
   min-height: 18px;
   margin: 2px;
 }
+
+QtPluginDialog QSplitter{
+  padding-right: 2;
+}
+
+
+QtPluginSorter {
+  padding: 20px;
+}

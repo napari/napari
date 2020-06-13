@@ -2,6 +2,7 @@
 Custom Qt widgets that serve as native objects that the public-facing elements
 wrap.
 """
+import os
 import time
 
 # set vispy to use same backend as qtpy
@@ -86,7 +87,8 @@ class Window:
         self._add_file_menu()
         self._add_view_menu()
         self._add_window_menu()
-        self._add_plugins_menu()
+        if not os.getenv("DISABLE_ALL_PLUGINS"):
+            self._add_plugins_menu()
         self._add_help_menu()
 
         self._status_bar.showMessage('Ready')

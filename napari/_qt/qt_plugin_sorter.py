@@ -266,10 +266,7 @@ class QtPluginSorter(QWidget):
         firstresult_only: bool = True,
     ):
         super().__init__(parent)
-        self.setWindowModality(Qt.NonModal)
         self.plugin_manager = plugin_manager
-        self.layout = QVBoxLayout()
-        self.setLayout(self.layout)
         self.hook_combo_box = QComboBox()
         self.hook_combo_box.addItem(self.NULL_OPTION, None)
 
@@ -292,7 +289,6 @@ class QtPluginSorter(QWidget):
 
         title = QLabel('Plugin Sorter')
         title.setObjectName("h2")
-        self.layout.addWidget(title)
 
         instructions = QLabel(
             'Select a hook to rearrange, then drag and '
@@ -300,22 +296,27 @@ class QtPluginSorter(QWidget):
             '\nDisable plugins by unchecking their checkbox.'
         )
         instructions.setWordWrap(True)
-        self.layout.addWidget(instructions)
 
         self.docstring = QLabel(self)
         self.info = QLabel(self)
         self.info.setObjectName("info_icon")
-        self.doc_lay = QHBoxLayout()
-        self.doc_lay.addWidget(self.docstring)
-        self.doc_lay.setStretch(0, 1)
-        self.doc_lay.addWidget(self.info)
+        doc_lay = QHBoxLayout()
+        doc_lay.addWidget(self.docstring)
+        doc_lay.setStretch(0, 1)
+        doc_lay.addWidget(self.info)
 
         self.docstring.setWordWrap(True)
         self.info.hide()
         self.docstring.hide()
-        self.layout.addWidget(self.hook_combo_box)
-        self.layout.addLayout(self.doc_lay)
-        self.layout.addWidget(self.hook_list)
+
+        layout = QVBoxLayout(self)
+        layout.addWidget(title)
+        layout.addWidget(instructions)
+        layout.addWidget(self.hook_combo_box)
+        layout.addLayout(doc_lay)
+        layout.addWidget(self.hook_list)
+        layout.setContentsMargins(2, 0, 0, 0)
+
         if initial_hook is not None:
             self.set_hookname(initial_hook)
 
@@ -344,6 +345,9 @@ class QtPluginSorter(QWidget):
             self.info.show()
             self.info.setToolTip(fulldoc.strip())
         else:
-            self.doc_lay.hide()
+            self.docstring.hide()
             self.info.hide()
             self.docstring.setToolTip('')
+
+    def refresh(self):
+        self._on_hook_change(self.hook_combo_box.currentIndex())

@@ -32,8 +32,6 @@ from ..utils.misc import running_as_bundled_app
 from .qt_plugin_sorter import QtPluginSorter
 from .threading import create_worker
 
-# TODO: Refresh sorter after install/uninstall
-# TODO: Pull docstrings from hookspecs and add to plugin sorter
 # TODO: add error icon and handle pip install errors
 # TODO: move loader gif
 LOADER = os.path.abspath(
@@ -131,7 +129,7 @@ class PluginListItem(QFrame):
             self.plugin_name.setText(plugin_name)
             self.package_name.setText(f"{package_name} {version}")
             self.summary.setText(summary)
-            self.summary.setIndent(25)
+            self.summary.setIndent(40)
             self.package_author.setText(author)
             self.action_button.setText("remove")
             self.action_button.setObjectName("remove_button")
@@ -282,9 +280,8 @@ class QtPluginDialog(QDialog):
         )
         self.installer.process.started.connect(self.working.show)
         self.installer.process.finished.connect(self.working.hide)
-
         self.installer.process.finished.connect(self.refresh)
-        self.installer.process.finished.connect(self.refresh)
+        self.installer.process.finished.connect(self.plugin_sorter.refresh)
         self.refresh()
 
     def refresh(self):
@@ -307,7 +304,7 @@ class QtPluginDialog(QDialog):
                     normalized_name(d.get("package") or ''),
                     d['version'],
                     d['url'],
-                    '',  # TODO: get summary locally
+                    d['summary'],
                     d['author'],
                     d['license'],
                 ),
@@ -334,6 +331,9 @@ class QtPluginDialog(QDialog):
         self.h_splitter.setOrientation(Qt.Horizontal)
         self.v_splitter = QSplitter(self.h_splitter)
         self.v_splitter.setOrientation(Qt.Vertical)
+        self.plugin_sorter = QtPluginSorter(parent=self.h_splitter)
+        self.plugin_sorter.hide()
+
         self.plugin_lists = QWidget(self.v_splitter)
         self.plugin_lists.setMinimumWidth(440)
         self.stdout_text = QTextEdit(self.v_splitter)
@@ -356,8 +356,6 @@ class QtPluginDialog(QDialog):
         self.vlay_2.addLayout(horiz)
         self.available_list = QPluginList(self.plugin_lists, self.installer)
         self.vlay_2.addWidget(self.available_list)
-        self.plugin_sorter = QtPluginSorter(parent=self.h_splitter)
-        self.plugin_sorter.hide()
         self.vlay_1.addWidget(self.h_splitter)
         self.buttonBox = QDialogButtonBox(self)
         self.buttonBox.setOrientation(Qt.Horizontal)
