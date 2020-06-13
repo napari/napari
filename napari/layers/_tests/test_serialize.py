@@ -37,5 +37,12 @@ def test_attrs_arrays(Layer, data, ndim):
                     )
                 ]
             )
+        elif isinstance(getattr(layer, prop), dict):
+            assert np.all(
+                [
+                    np.all(value == getattr(new_layer, prop)[key])
+                    for key, value in getattr(layer, prop).items()
+                ]
+            )
         else:
             assert np.all(getattr(layer, prop) == getattr(new_layer, prop))
