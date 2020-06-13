@@ -1,5 +1,3 @@
-from typing import Optional
-
 from ...types import ArrayLike, ImageConverter
 
 
@@ -37,9 +35,7 @@ class ImageView:
     >> image.raw = raw_image
     """
 
-    def __init__(
-        self, view_image: ArrayLike, image_converter: Optional[ImageConverter]
-    ):
+    def __init__(self, view_image: ArrayLike, image_converter: ImageConverter):
         """Create an ImageView with some default image.
         """
         self.view = view_image
