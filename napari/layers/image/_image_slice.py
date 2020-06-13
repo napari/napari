@@ -35,20 +35,23 @@ class ImageSlice:
         The main image for this slice.
 
     thumbnail : ImageView
-        The thumbnail image for this slice.
+        The source image used to compute the smaller thumbnail image.
 
-    Example
-    -------
-        # Create with some default image.
-        image_slice = ImageSlice(default_image)
+    Examples
+    --------
+    Create with some default image:
 
-        # Set raw image or thumbnail, viewable is computed.
-        image_slice.image = raw_image
-        image_slice.thumbnail = raw_thumbnail
+    >> image_slice = ImageSlice(default_image)
 
-        # Access the viewable images.
-        draw_image(image_slice.image.view)
-        draw_thumbnail(image_slice.thumbnail.view)
+    Set raw image or thumbnail, viewable is computed.:
+
+    >> image_slice.image = raw_image
+    >> image_slice.thumbnail = raw_thumbnail
+
+    Access viewable images:
+
+    >> draw_image(image_slice.image.view)
+    >> draw_thumbnail(image_slice.thumbnail.view)
     """
 
     def __init__(

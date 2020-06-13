@@ -26,15 +26,15 @@ class ImageView:
     _view : ArrayLike
         The viewable image, dervied from raw.
 
-    Example:
+    Examples
     --------
-        # Set the viewable image and raw image to the same thing.
-        image = ImageView(view_image)
-        #  or
-        image.view = view_image
+    Create ImageView with initial default:
 
-        # Set the raw image, it will compute the new viewable one.
-        image.raw = raw_image
+    >> image = ImageView(view_image)
+
+    Update ImageView's raw image, it will compute the new viable one:
+
+    >> image.raw = raw_image
     """
 
     def __init__(
