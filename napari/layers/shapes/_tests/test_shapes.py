@@ -4,6 +4,7 @@ from itertools import cycle, islice
 import numpy as np
 import pandas as pd
 import pytest
+from vispy.color import get_colormap
 
 from napari.layers import Shapes
 from napari.utils.colormaps.standardize_color import transform_color
@@ -48,7 +49,7 @@ def test_properties(properties):
     current_prop = {'shape_type': np.array(['B'])}
     assert layer.current_properties == current_prop
 
-    # test removing points
+    # test removing shapes
     layer.selected_data = {0, 1}
     layer.remove_selected()
     remove_properties = properties['shape_type'][2::]
@@ -87,7 +88,7 @@ def test_adding_properties(attribute):
     layer = Shapes(data)
 
     # add properties
-    properties = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
+    properties = {'shape_type': _make_cycled_properties(['A', 'B'], shape[0])}
     layer.properties = properties
     np.testing.assert_equal(layer.properties, properties)
 
@@ -98,15 +99,15 @@ def test_adding_properties(attribute):
 
     # add properties as a dictionary with list values
     properties_list = {
-        'point_type': list(_make_cycled_properties(['A', 'B'], shape[0]))
+        'shape_type': list(_make_cycled_properties(['A', 'B'], shape[0]))
     }
     layer.properties = properties_list
-    assert isinstance(layer.properties['point_type'], np.ndarray)
+    assert isinstance(layer.properties['shape_type'], np.ndarray)
 
     # removing a property that was the _*_color_property should give a warning
-    setattr(layer, f'_{attribute}_color_property', 'vector_type')
+    setattr(layer, f'_{attribute}_color_property', 'shape_type')
     properties_2 = {
-        'not_vector_type': _make_cycled_properties(['A', 'B'], shape[0])
+        'not_shape_type': _make_cycled_properties(['A', 'B'], shape[0])
     }
     with pytest.warns(RuntimeWarning):
         layer.properties = properties_2
@@ -117,9 +118,9 @@ def test_properties_dataframe():
     shape = (10, 4, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
-    properties = {'point_type': _make_cycled_properties(['A', 'B'], shape[0])}
+    properties = {'shape_type': _make_cycled_properties(['A', 'B'], shape[0])}
     properties_df = pd.DataFrame(properties)
-    properties_df = properties_df.astype(properties['point_type'].dtype)
+    properties_df = properties_df.astype(properties['shape_type'].dtype)
     layer = Shapes(data, properties=properties_df)
     np.testing.assert_equal(layer.properties, properties)
 
@@ -846,7 +847,7 @@ def test_adding_value_color_cycle(attribute):
     }
     layer = Shapes(data, **shapes_kwargs)
 
-    # make shape 0 point_type C
+    # make shape 0 shape_type C
     shape_types = layer.properties['shape_type']
     shape_types[0] = 'C'
     layer.properties['shape_type'] = shape_types
@@ -855,6 +856,68 @@ def test_adding_value_color_cycle(attribute):
     color_cycle_map = getattr(layer, f'{attribute}_color_cycle_map')
     color_map_keys = [*color_cycle_map]
     assert 'C' in color_map_keys
+
+
+@pytest.mark.parametrize("attribute", ['edge', 'face'])
+def test_color_colormap(attribute):
+    """Test setting edge/face color with a colormap"""
+    # create Shapes using with a colormap
+    shape = (10, 4, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    properties = {'shape_type': _make_cycled_properties([0, 1.5], shape[0])}
+    shapes_kwargs = {
+        'properties': properties,
+        f'{attribute}_color': 'shape_type',
+        f'{attribute}_colormap': 'gray',
+    }
+    layer = Shapes(data, **shapes_kwargs)
+    assert layer.properties == properties
+    color_mode = getattr(layer, f'{attribute}_color_mode')
+    assert color_mode == 'colormap'
+    color_array = transform_color(['black', 'white'] * int((shape[0] / 2)))
+    attribute_color = getattr(layer, f'{attribute}_color')
+    assert np.all(attribute_color == color_array)
+
+    # change the color cycle - face_color should not change
+    setattr(layer, f'{attribute}_color_cycle', ['red', 'blue'])
+    attribute_color = getattr(layer, f'{attribute}_color')
+    assert np.all(attribute_color == color_array)
+
+    # Add new shape and test its color
+    new_shape = np.random.random((1, 4, 2))
+    layer.selected_data = {0}
+    layer.add(new_shape)
+    attribute_color = getattr(layer, f'{attribute}_color')
+    assert len(attribute_color) == shape[0] + 1
+    np.testing.assert_allclose(
+        attribute_color, np.vstack((color_array, transform_color('black'))),
+    )
+
+    # Check removing data adjusts colors correctly
+    layer.selected_data = {0, 2}
+    layer.remove_selected()
+    assert len(layer.data) == shape[0] - 1
+    attribute_color = getattr(layer, f'{attribute}_color')
+    assert len(attribute_color) == shape[0] - 1
+    np.testing.assert_allclose(
+        attribute_color,
+        np.vstack(
+            (color_array[1], color_array[3:], transform_color('black'),)
+        ),
+    )
+
+    # adjust the clims
+    setattr(layer, f'{attribute}_contrast_limits', (0, 3))
+    layer.refresh_colors(update_color_mapping=False)
+    attribute_color = getattr(layer, f'{attribute}_color')
+    np.testing.assert_allclose(attribute_color[-2], [0.5, 0.5, 0.5, 1])
+
+    # change the colormap
+    new_colormap = 'viridis'
+    setattr(layer, f'{attribute}_colormap', new_colormap)
+    attribute_colormap = getattr(layer, f'{attribute}_colormap')
+    assert attribute_colormap[1] == get_colormap(new_colormap)
 
 
 def test_edge_width():
