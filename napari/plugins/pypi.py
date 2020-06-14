@@ -172,7 +172,9 @@ def ensure_repo_is_napari_plugin(repo_info: dict) -> Optional[ProjectInfo]:
     return None
 
 
-def iter_napari_plugin_info(skip=[]) -> Generator[ProjectInfo, None, None]:
+def iter_napari_plugin_info(
+    skip={'napari-plugin-engine'},
+) -> Generator[ProjectInfo, None, None]:
     """Return a generator that yields ProjectInfo of available napari plugins.
 
     By default, requires that packages are at least "Alpha" stage of
@@ -194,10 +196,10 @@ def iter_napari_plugin_info(skip=[]) -> Generator[ProjectInfo, None, None]:
             ]
         )
         for future in as_completed(futures):
-            name = future.result()
-            if name and name not in already_yielded:
-                already_yielded.add(name)
-                yield name
+            info = future.result()
+            if info and info not in already_yielded:
+                already_yielded.add(info)
+                yield info
 
 
 @lru_cache(maxsize=1)

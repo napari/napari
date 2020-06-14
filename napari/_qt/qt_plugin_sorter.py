@@ -288,12 +288,12 @@ class QtPluginSorter(QWidget):
         self.hook_list = QtHookImplementationListWidget(parent=self)
 
         title = QLabel('Plugin Sorter')
-        title.setObjectName("h2")
+        title.setObjectName("h3")
 
         instructions = QLabel(
             'Select a hook to rearrange, then drag and '
-            'drop plugins into the desired call order. '
-            '\nDisable plugins by unchecking their checkbox.'
+            'drop plugins into the desired call order.\n\n'
+            'Disable plugins for a specific hook by unchecking their checkbox.'
         )
         instructions.setWordWrap(True)
 
@@ -306,6 +306,7 @@ class QtPluginSorter(QWidget):
         doc_lay.addWidget(self.info)
 
         self.docstring.setWordWrap(True)
+        self.docstring.setObjectName('small_text')
         self.info.hide()
         self.docstring.hide()
 

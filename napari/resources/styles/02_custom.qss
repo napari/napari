@@ -7,6 +7,11 @@ QLabel#h2 {
   color: {{ secondary }};
 }
 
+QLabel#h3 {
+  font-size: 18px;
+  color: {{ secondary }};
+}
+
 QtViewer {
    padding-top: 0px;
 }
@@ -431,6 +436,14 @@ QtHookImplementationListWidget {
   color: text;
 }
 
+QtPluginErrReporter > QTextEdit {
+  background-color: {{ console }};
+  background-clip: padding;
+  color: {{ text }};
+  selection-background-color: {{ highlight }};
+  margin: 10px;
+}
+
 /* ------------ Plugin Info ------------ */
 
 #pluginTable::item {
@@ -493,6 +506,15 @@ PluginListItem > QPushButton#remove_button:pressed {
   background-color: {{ darken(warning, 10) }}
 }
 
+#small_text {
+  color: {{ opacity(text, 150) }};
+  font-size: 10px;
+}
+
+#pip_install_status{
+  background: {{ background }};
+  color: {{ opacity(text, 200) }};
+}
 
 #info_icon {
   image: url(":/themes/{{ folder }}/info.svg");
@@ -503,9 +525,22 @@ PluginListItem > QPushButton#remove_button:pressed {
 
 #warning_icon {
   image: url(":/themes/{{ folder }}/warning.svg");
-  min-width: 18px;
-  min-height: 18px;
-  margin: 2px;
+  max-width: 14px;
+  max-height: 14px;
+  min-width: 14px;
+  min-height: 14px;
+  margin: 0px;
+  margin-left: 1px;
+  padding: 2px;
+  background: darken(foreground, 20);
+}
+
+#warning_icon:hover{
+  background: {{ foreground }};
+}
+
+#warning_icon:pressed{
+  background: {{ primary }};
 }
 
 QtPluginDialog QSplitter{

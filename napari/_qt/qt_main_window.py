@@ -336,13 +336,12 @@ class Window:
     def _show_pip_install_dialog(self):
         """Show dialog that allows users to sort the call order of plugins."""
 
-        self.dialog = QtPluginDialog(self._qt_window)
-        self.dialog.exec_()
+        self.plugin_dialog = QtPluginDialog(self._qt_window)
+        self.plugin_dialog.exec_()
 
     def _show_plugin_err_reporter(self):
         """Show dialog that allows users to review and report plugin errors."""
-        plugin_sorter = QtPluginErrReporter(parent=self._qt_window)
-        plugin_sorter.exec_()
+        QtPluginErrReporter(parent=self._qt_window).exec_()
 
     def _add_help_menu(self):
         """Add 'Help' menu to app menubar."""
