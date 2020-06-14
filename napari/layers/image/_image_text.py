@@ -22,13 +22,21 @@ def get_text_image(text: str, rgb: bool):
     else:
         image = Image.new('L', size)
 
-    font = ImageFont.truetype('Arial Black.ttf', size=72)
-    (width, height) = font.getsize(text)
-    x = (image.width / 2) - width / 2
-    y = (image.height / 2) - height / 2
+    try:
+        # TODO_ASYNC: how to choose a font we known will be available?
+        # Do we have to store in somewhere inside napari directory?
+        # Would vispy text resolve this?
+        font = ImageFont.truetype('Arial.ttf', size=72)
+    except OSError:
+        font = None
 
-    color = 'rgb(255, 255, 255)'  # white color
-    draw = ImageDraw.Draw(image)
-    draw.text((x, y), text, fill=color, font=font)
+    if font is not None:
+        (width, height) = font.getsize(text)
+        x = (image.width / 2) - width / 2
+        y = (image.height / 2) - height / 2
+
+        color = 'rgb(255, 255, 255)'  # white color
+        draw = ImageDraw.Draw(image)
+        draw.text((x, y), text, fill=color, font=font)
 
     return np.array(image)
