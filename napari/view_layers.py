@@ -576,6 +576,18 @@ def view_shapes(
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
+        title : string
+        The title of the viewer window.
+    ndisplay : {2, 3}
+        Number of displayed dimensions.
+    order : tuple of int
+        Order in which dimensions are displayed where the last two or last
+        three dimensions correspond to row x column or plane x row x column if
+        ndisplay is 2 or 3.
+    axis_labels : list of str
+        Dimension names.
+    show : bool, optional
+        Whether to show the viewer after instantiation. by default True.
 
     Returns
     -------
