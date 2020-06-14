@@ -415,6 +415,7 @@ class AddLayersMixin:
         blending='translucent',
         visible=True,
         multiscale=None,
+        color_dict=None,
     ) -> layers.Labels:
         """Add a labels (or segmentation) layer to the layers list.
 
@@ -484,6 +485,7 @@ class AddLayersMixin:
             blending=blending,
             visible=visible,
             multiscale=multiscale,
+            color_dict=color_dict,
         )
         self.add_layer(layer)
         return layer
