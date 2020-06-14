@@ -78,6 +78,14 @@ def test_properties(properties):
     paste_properties = np.concatenate((add_properties, ['A', 'B']), axis=0)
     assert np.all(layer.properties['shape_type'] == paste_properties)
 
+    # test updating a property
+    layer.mode = 'select'
+    layer.selected_data = {0}
+    new_property = {'shape_type': np.array(['B'])}
+    layer.current_properties = new_property
+    updated_properties = layer.properties
+    assert updated_properties['shape_type'][0] == 'B'
+
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
 def test_adding_properties(attribute):
@@ -656,6 +664,65 @@ def test_blending():
 
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
+def test_switch_color_mode(attribute):
+    """Test switching between color modes"""
+    shape = (10, 4, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    # create a continuous property with a known value in the last element
+    continuous_prop = np.random.random((shape[0],))
+    continuous_prop[-1] = 1
+    properties = {
+        'point_truthiness': continuous_prop,
+        'shape_type': _make_cycled_properties(['A', 'B'], shape[0]),
+    }
+    initial_color = [1, 0, 0, 1]
+    color_cycle = ['red', 'blue']
+    color_kwarg = f'{attribute}_color'
+    colormap_kwarg = f'{attribute}_colormap'
+    color_cycle_kwarg = f'{attribute}_color_cycle'
+    args = {
+        color_kwarg: initial_color,
+        colormap_kwarg: 'gray',
+        color_cycle_kwarg: color_cycle,
+    }
+    layer = Shapes(data, properties=properties, **args)
+
+    layer_color_mode = getattr(layer, f'{attribute}_color_mode')
+    layer_color = getattr(layer, f'{attribute}_color')
+    assert layer_color_mode == 'direct'
+    np.testing.assert_allclose(
+        layer_color, np.repeat([initial_color], shape[0], axis=0)
+    )
+
+    # there should not be an edge_color_property
+    color_property = getattr(layer, f'_{attribute}_color_property')
+    assert color_property == ''
+
+    # transitioning to colormap should raise a warning
+    # because there isn't an edge color property yet and
+    # the first property in points.properties is being automatically selected
+    with pytest.warns(UserWarning):
+        setattr(layer, f'{attribute}_color_mode', 'colormap')
+    color_property = getattr(layer, f'_{attribute}_color_property')
+    assert color_property == next(iter(properties))
+    layer_color = getattr(layer, f'{attribute}_color')
+    np.testing.assert_allclose(layer_color[-1], [1, 1, 1, 1])
+
+    # switch to color cycle
+    setattr(layer, f'{attribute}_color_mode', 'cycle')
+    setattr(layer, f'{attribute}_color', 'shape_type')
+    color = getattr(layer, f'{attribute}_color')
+    layer_color = transform_color(color_cycle * int((shape[0] / 2)))
+    np.testing.assert_allclose(color, layer_color)
+
+    # switch back to direct, edge_colors shouldn't change
+    setattr(layer, f'{attribute}_color_mode', 'direct')
+    new_edge_color = getattr(layer, f'{attribute}_color')
+    np.testing.assert_allclose(new_edge_color, color)
+
+
+@pytest.mark.parametrize("attribute", ['edge', 'face'])
 def test_color_direct(attribute: str):
     """Test setting face/edge color directly."""
     shape = (10, 4, 2)
@@ -918,6 +985,48 @@ def test_color_colormap(attribute):
     setattr(layer, f'{attribute}_colormap', new_colormap)
     attribute_colormap = getattr(layer, f'{attribute}_colormap')
     assert attribute_colormap[1] == get_colormap(new_colormap)
+
+
+@pytest.mark.parametrize("attribute", ['edge', 'face'])
+def test_colormap_without_properties(attribute):
+    """Setting the colormode to colormap should raise an exception"""
+    shape = (10, 4, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Shapes(data)
+
+    with pytest.raises(ValueError):
+        setattr(layer, f'{attribute}_color_mode', 'colormap')
+
+
+@pytest.mark.parametrize("attribute", ['edge', 'face'])
+def test_colormap_with_categorical_properties(attribute):
+    """Setting the colormode to colormap should raise an exception"""
+    shape = (10, 4, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    properties = {'shape_type': _make_cycled_properties(['A', 'B'], shape[0])}
+    layer = Shapes(data, properties=properties)
+
+    with pytest.raises(TypeError):
+        setattr(layer, f'{attribute}_color_mode', 'colormap')
+
+
+@pytest.mark.parametrize("attribute", ['edge', 'face'])
+def test_add_colormap(attribute):
+    """Test  directly adding a vispy Colormap object"""
+    shape = (10, 4, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    annotations = {'shape_type': _make_cycled_properties([0, 1.5], shape[0])}
+    color_kwarg = f'{attribute}_color'
+    colormap_kwarg = f'{attribute}_colormap'
+    args = {color_kwarg: 'shape_type', colormap_kwarg: 'viridis'}
+    layer = Shapes(data, properties=annotations, **args)
+
+    setattr(layer, f'{attribute}_colormap', get_colormap('gray'))
+    layer_colormap = getattr(layer, f'{attribute}_colormap')
+    assert 'unnamed colormap' in layer_colormap[0]
 
 
 def test_edge_width():

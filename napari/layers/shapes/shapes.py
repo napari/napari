@@ -434,11 +434,6 @@ class Shapes(Layer):
             )
             self.current_properties = {}
 
-        else:
-            self._current_edge_color = self.edge_color[-1]
-            self._current_face_color = self.face_color[-1]
-            self.current_properties = {}
-
         # Trigger generation of view slice and thumbnail
         self._update_dims()
 
@@ -606,7 +601,7 @@ class Shapes(Layer):
         if (
             self._update_properties
             and len(self.selected_data) > 0
-            and self._mode != Mode.ADD
+            and self._mode in [Mode.SELECT, Mode.PAN_ZOOM]
         ):
             props = self.properties
             for k in props:
