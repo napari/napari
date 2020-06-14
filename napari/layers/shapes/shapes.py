@@ -346,16 +346,6 @@ class Shapes(Layer):
         else:
             self._current_edge_width = 1
 
-        # if type(edge_color) is str:
-        #     self._current_edge_color = transform_color(edge_color)
-        # else:
-        #     self._current_edge_color = np.array([0, 0, 0, 1])
-        #
-        # if type(face_color) is str:
-        #     self._current_face_color = transform_color(face_color)
-        # else:
-        #     self._current_face_color = np.array([1, 1, 1, 1])
-
         self._data_view = ShapeList(ndisplay=self.dims.ndisplay)
         self._data_view.slice_key = np.array(self.dims.indices)[
             list(self.dims.not_displayed)
@@ -820,9 +810,11 @@ class Shapes(Layer):
         )
         setattr(self, f'_{attribute}_color_cycle_values', transformed_colors)
         setattr(self, f'_{attribute}_color_cycle', transformed_color_cycle)
-        color_mode = getattr(self, f'_{attribute}_color_mode')
-        if color_mode == ColorMode.CYCLE:
-            self.refresh_colors(update_color_mapping=True)
+
+        if self._update_properties is True:
+            color_mode = getattr(self, f'_{attribute}_color_mode')
+            if color_mode == ColorMode.CYCLE:
+                self.refresh_colors(update_color_mapping=True)
 
     @property
     def edge_width(self):
@@ -945,7 +937,9 @@ class Shapes(Layer):
         self._refresh_color('face', update_color_mapping)
         self._refresh_color('edge', update_color_mapping)
 
-    def _refresh_color(self, attribute, update_color_mapping: bool = False):
+    def _refresh_color(
+        self, attribute: str, update_color_mapping: bool = False
+    ):
         """Calculate and update face or edge colors if using a cycle or color map
 
         Parameters
@@ -964,83 +958,138 @@ class Shapes(Layer):
         """
         if self._update_properties:
             color_mode = getattr(self, f'_{attribute}_color_mode')
-            if color_mode == ColorMode.CYCLE:
-                color_property = getattr(self, f'_{attribute}_color_property')
-                color_properties = self.properties[color_property]
-                if update_color_mapping:
-                    color_cycle = getattr(self, f'_{attribute}_color_cycle')
-                    color_cycle_map = {
-                        k: np.squeeze(transform_color(c))
-                        for k, c in zip(
-                            np.unique(color_properties), color_cycle
-                        )
-                    }
-                    setattr(
-                        self, f'{attribute}_color_cycle_map', color_cycle_map
-                    )
+            if color_mode in [ColorMode.CYCLE, ColorMode.COLORMAP]:
+                colors = self._map_color(attribute, update_color_mapping)
+                setattr(self._data_view, f'{attribute}_color', colors)
 
-                else:
-                    # add properties if they are not in the colormap
-                    # and update_color_mapping==False
-                    color_cycle_map = getattr(
-                        self, f'{attribute}_color_cycle_map'
-                    )
-                    color_cycle_keys = [*color_cycle_map]
-                    props_in_map = np.in1d(color_properties, color_cycle_keys)
-                    if not np.all(props_in_map):
-                        props_to_add = np.unique(
-                            color_properties[np.logical_not(props_in_map)]
-                        )
-                        color_cycle = getattr(
-                            self, f'_{attribute}_color_cycle'
-                        )
-                        for prop in props_to_add:
-                            color_cycle_map[prop] = np.squeeze(
-                                transform_color(next(color_cycle))
-                            )
-                        setattr(
-                            self,
-                            f'{attribute}_color_cycle_map',
-                            color_cycle_map,
-                        )
-                colors = np.array(
-                    [color_cycle_map[x] for x in color_properties]
+                color_event = getattr(self.events, f'{attribute}_color')
+                color_event()
+
+    def _initialize_color(self, color, attribute: str, n_shapes: int):
+        """ Get the face/edge colors the Shapes layer will be initialized with
+
+        Parameters
+        ----------
+        color : (N, 4) array or str
+            The value for setting edge or face_color
+        attribute : str in {'edge', 'face'}
+            The name of the attribute to set the color of.
+            Should be 'edge' for edge_color or 'face' for face_color.
+
+        Returns
+        -------
+        init_colors : (N, 4) array or str
+            The calculated values for setting edge or face_color
+        """
+        if self._is_color_mapped(color):
+            if guess_continuous(self.properties[color]):
+                setattr(self, f'_{attribute}_color_mode', ColorMode.COLORMAP)
+            else:
+                setattr(self, f'_{attribute}_color_mode', ColorMode.CYCLE)
+            setattr(self, f'_{attribute}_color_property', color)
+            init_colors = self._map_color(
+                attribute, update_color_mapping=False
+            )
+
+        else:
+            if n_shapes > 0:
+                transformed_color = transform_color_with_defaults(
+                    num_entries=n_shapes,
+                    colors=color,
+                    elem_name="face_color",
+                    default="white",
                 )
-                if len(colors) == 0:
-                    colors = np.empty((0, 4))
-                setattr(self._data_view, f'{attribute}_color', colors)
+                init_colors = normalize_and_broadcast_colors(
+                    n_shapes, transformed_color
+                )
+            else:
+                init_colors = np.empty((0, 4))
 
-            elif color_mode == ColorMode.COLORMAP:
-                color_property = getattr(self, f'_{attribute}_color_property')
-                color_properties = self.properties[color_property]
-                if len(color_properties) > 0:
-                    contrast_limits = getattr(
-                        self, f'{attribute}_contrast_limits'
+            setattr(self, f'_{attribute}_color_mode', ColorMode.DIRECT)
+
+        return init_colors
+
+    def _map_color(self, attribute: str, update_color_mapping: bool = False):
+        """Calculate the mapping for face or edge colors if using a cycle or color map
+
+        Parameters
+        ----------
+        attribute : str  in {'edge', 'face'}
+            The name of the attribute to set the color of.
+            Should be 'edge' for edge_color or 'face' for face_color.
+        update_color_mapping : bool
+            If set to True, the function will recalculate the color cycle map
+            or colormap (whichever is being used). If set to False, the function
+            will use the current color cycle map or color map. For example, if you
+            are adding/modifying points and want them to be colored with the same
+            mapping as the other points (i.e., the new points shouldn't affect
+            the color cycle map or colormap), set update_color_mapping=False.
+            Default value is False.
+
+        Returns
+        -------
+        colors : (N, 4) array or str
+            The calculated values for setting edge or face_color
+        """
+        color_mode = getattr(self, f'_{attribute}_color_mode')
+        if color_mode == ColorMode.CYCLE:
+            color_property = getattr(self, f'_{attribute}_color_property')
+            color_properties = self.properties[color_property]
+            if update_color_mapping:
+                color_cycle = getattr(self, f'_{attribute}_color_cycle')
+                color_cycle_map = {
+                    k: np.squeeze(transform_color(c))
+                    for k, c in zip(np.unique(color_properties), color_cycle)
+                }
+                setattr(self, f'{attribute}_color_cycle_map', color_cycle_map)
+
+            else:
+                # add properties if they are not in the colormap
+                # and update_color_mapping==False
+                color_cycle_map = getattr(self, f'{attribute}_color_cycle_map')
+                color_cycle_keys = [*color_cycle_map]
+                props_in_map = np.in1d(color_properties, color_cycle_keys)
+                if not np.all(props_in_map):
+                    props_to_add = np.unique(
+                        color_properties[np.logical_not(props_in_map)]
                     )
-                    colormap = getattr(self, f'{attribute}_colormap')
-                    if update_color_mapping or contrast_limits is None:
+                    color_cycle = getattr(self, f'_{attribute}_color_cycle')
+                    for prop in props_to_add:
+                        color_cycle_map[prop] = np.squeeze(
+                            transform_color(next(color_cycle))
+                        )
+                    setattr(
+                        self, f'{attribute}_color_cycle_map', color_cycle_map,
+                    )
+            colors = np.array([color_cycle_map[x] for x in color_properties])
+            if len(colors) == 0:
+                colors = np.empty((0, 4))
 
-                        colors, contrast_limits = map_property(
-                            prop=color_properties, colormap=colormap[1]
-                        )
-                        setattr(
-                            self,
-                            f'{attribute}_contrast_limits',
-                            contrast_limits,
-                        )
-                    else:
+        elif color_mode == ColorMode.COLORMAP:
+            color_property = getattr(self, f'_{attribute}_color_property')
+            color_properties = self.properties[color_property]
+            if len(color_properties) > 0:
+                contrast_limits = getattr(self, f'{attribute}_contrast_limits')
+                colormap = getattr(self, f'{attribute}_colormap')
+                if update_color_mapping or contrast_limits is None:
 
-                        colors, _ = map_property(
-                            prop=color_properties,
-                            colormap=colormap[1],
-                            contrast_limits=contrast_limits,
-                        )
+                    colors, contrast_limits = map_property(
+                        prop=color_properties, colormap=colormap[1]
+                    )
+                    setattr(
+                        self, f'{attribute}_contrast_limits', contrast_limits,
+                    )
                 else:
-                    colors = np.empty((0, 4))
-                setattr(self._data_view, f'{attribute}_color', colors)
 
-            color_event = getattr(self.events, f'{attribute}_color')
-            color_event()
+                    colors, _ = map_property(
+                        prop=color_properties,
+                        colormap=colormap[1],
+                        contrast_limits=contrast_limits,
+                    )
+            else:
+                colors = np.empty((0, 4))
+
+        return colors
 
     def _get_new_shape_color(self, adding: int, attribute: str):
         """Get the color for the shape(s) to be added.
@@ -1397,35 +1446,38 @@ class Shapes(Layer):
             shapes.
         """
 
-        dummy_edge_color = 'white'
-        dummy_face_color = 'white'
+        n_shapes = len(data)
+        with self.block_update_properties():
+            self._edge_color_property = ''
+            self.edge_color_cycle_map = {}
+            self.edge_colormap = edge_colormap
+            self._edge_contrast_limits = edge_contrast_limits
+            if edge_color_cycle is None:
+                edge_color_cycle = deepcopy(DEFAULT_COLOR_CYCLE)
+            self.edge_color_cycle = edge_color_cycle
+            edge_color = self._initialize_color(
+                edge_color, attribute='edge', n_shapes=n_shapes
+            )
+
+            self._face_color_property = ''
+            self.face_color_cycle_map = {}
+            self.face_colormap = face_colormap
+            self._face_contrast_limits = face_contrast_limits
+            if face_color_cycle is None:
+                face_color_cycle = deepcopy(DEFAULT_COLOR_CYCLE)
+            self.face_color_cycle = face_color_cycle
+            face_color = self._initialize_color(
+                face_color, attribute='face', n_shapes=n_shapes
+            )
+
         self._add_shapes(
             data,
             shape_type=shape_type,
             edge_width=edge_width,
-            edge_color=dummy_edge_color,
-            face_color=dummy_face_color,
+            edge_color=edge_color,
+            face_color=face_color,
             z_index=z_index,
         )
-
-        with self.block_update_properties():
-            self._edge_color_property = ''
-            self.edge_color = edge_color
-            if edge_color_cycle is None:
-                edge_color_cycle = deepcopy(DEFAULT_COLOR_CYCLE)
-            self.edge_color_cycle = edge_color_cycle
-            self.edge_color_cycle_map = {}
-            self.edge_colormap = edge_colormap
-            self._edge_contrast_limits = edge_contrast_limits
-
-            self._face_color_property = ''
-            self.face_color = face_color
-            if face_color_cycle is None:
-                face_color_cycle = deepcopy(DEFAULT_COLOR_CYCLE)
-            self.face_color_cycle = face_color_cycle
-            self.face_color_cycle_map = {}
-            self.face_colormap = face_colormap
-            self._face_contrast_limits = face_contrast_limits
 
         self.refresh_colors()
 
