@@ -2,7 +2,7 @@ from napari.layers import Points
 
 
 def test_select_all():
-    """Test selecting all key binging."""
+    """Test select all key binding."""
     data = [[1, 3], [8, 4], [10, 10], [15, 4]]
     layer = Points(data, size=1)
 
