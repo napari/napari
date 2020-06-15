@@ -52,8 +52,7 @@ def stack_to_images(
     imagelist = list()
 
     for i in range(data.shape[axis]):
-        layer_name = "{:02d}_{}".format(i, name)
-
+        layer_name = f'{name} layer {i}'
         try:
             color = colormaps[i]
         except IndexError:
