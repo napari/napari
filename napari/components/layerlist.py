@@ -215,6 +215,25 @@ class LayerList(ListModel):
         return np.vstack([min_vals, max_vals])
 
     @property
+    def _step_size(self):
+        """(D, ) array: Ideal step size between planes in world coordinates.
+
+        Computes the best step size that allows all data planes to be
+        sampled if moving through the full range of world coordinates.
+        The current implementation just takes the minimum scale, but a
+        better approach would use something like a greatest common divisor.
+        """
+        if len(self) == 0:
+            return np.ones(self.ndim)
+        else:
+            scales = [l.scale for l in self]
+            full_scales = np.array(
+                list(itertools.zip_longest(*scales, fillvalue=np.nan))
+            ).T
+            min_scales = np.nanmin(full_scales, axis=0)
+            return min_scales
+
+    @property
     def ndim(self):
         """int: Maximum dimensionality of layers.
 

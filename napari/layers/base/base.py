@@ -426,6 +426,13 @@ class Layer(KeymapProvider, ABC):
         """(2, D) array: Range of layer in world coordinates."""
         return self._transforms['data2world'](self._extent_data)
 
+    @property
+    def shape(self):
+        """tuple: Size of layer in world coordinates (compatibility)."""
+        # Note this should be deprecated
+        extent = self._extent_world
+        return tuple(np.round(extent[1] - extent[0]).astype(int))
+
     @abstractmethod
     def _get_ndim(self):
         raise NotImplementedError()

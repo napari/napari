@@ -379,10 +379,11 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             self.dims.reset()
         else:
             extent = self.layers._extent_world
+            ss = self.layers._step_size
             ndim = extent.shape[1]
             self.dims.ndim = ndim
             for i in range(ndim):
-                self.dims.set_range(i, (extent[0, i], extent[1, i], 1))
+                self.dims.set_range(i, (extent[0, i], extent[1, i], ss[i]))
         self.events.layers_change()
 
     def _update_status(self, event):
