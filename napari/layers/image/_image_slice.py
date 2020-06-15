@@ -11,7 +11,6 @@ from ...utils.chunk_loader import ChunkRequest, CHUNK_LOADER
 class ImageProperties(NamedTuple):
     multiscale: bool
     rgb: bool
-    displayed_order: Tuple[int, ...]
 
 
 class ImageSlice:
@@ -87,7 +86,9 @@ class ImageSlice:
         self.image.raw = image
         self.thumbnail.raw = thumbnail
 
-    def load_chunk(self, request: ChunkRequest):
+    def load_chunk(
+        self, request: ChunkRequest, displayed_order: Tuple[slice, ...]
+    ) -> None:
         """Load the requested chunk.
 
         Parameters
@@ -117,9 +118,11 @@ class ImageSlice:
             self._set_placeholder_image()
         else:
             # It was in the cache, put it to immediate use.
-            self.chunk_loaded(satisfied_request)
+            self.chunk_loaded(satisfied_request, displayed_order)
 
-    def chunk_loaded(self, request: ChunkRequest):
+    def chunk_loaded(
+        self, request: ChunkRequest, displayed_order: Tuple[slice, ...]
+    ) -> None:
         """Chunk was loaded, show this new data.
 
         Parameters
@@ -137,7 +140,7 @@ class ImageSlice:
             return
 
         # Could worker do the transpose? Does it take any time?
-        image = request.array.transpose(self.properties.displayed_order)
+        image = request.array.transpose(displayed_order)
 
         # Thumbnail is just the same image for non-multiscale.
         thumbnail = image
