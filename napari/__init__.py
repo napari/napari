@@ -68,6 +68,7 @@ from .view_layers import (
     view_shapes,
     view_points,
     view_vectors,
+    view_tracks,
 )
 from ._qt import gui_qt
 from .utils import sys_info, _magicgui
