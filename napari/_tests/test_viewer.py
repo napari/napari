@@ -178,10 +178,12 @@ def test_roll_traspose_update(viewer_factory, layer_class, data, ndim):
     # Check consistency:
     check_view_transform_consistency(layer, viewer, transf_dict)
 
-    # Roll dims and check again:
-    viewer.dims._roll()
-    check_view_transform_consistency(layer, viewer, transf_dict)
+    # Multiscale roll, transpose not working properly until world coordiates
+    if not layer.multiscale:
+        # Roll dims and check again:
+        viewer.dims._roll()
+        check_view_transform_consistency(layer, viewer, transf_dict)
 
-    # Transpose and check again:
-    viewer.dims._transpose()
-    check_view_transform_consistency(layer, viewer, transf_dict)
+        # Transpose and check again:
+        viewer.dims._transpose()
+        check_view_transform_consistency(layer, viewer, transf_dict)
