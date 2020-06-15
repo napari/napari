@@ -466,8 +466,8 @@ class AddLayersMixin:
             the user and if the data is a list of arrays that decrease in shape
             then it will be taken to be multiscale. The first image in the list
             should be the largest.
-        color : dict of int to str
-            Custom label to color mapping
+    color : dict of int to str or array
+        Custom label to color mapping. Values must be valid color names or RGBA arrays.
 
         Returns
         -------
