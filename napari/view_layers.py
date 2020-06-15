@@ -815,6 +815,7 @@ def view_tracks(
     opacity=1,
     blending='additive',
     visible=True,
+    colormap='viridis',
     colormaps_dict=None,
     title='napari',
     ndisplay=2,
@@ -908,7 +909,7 @@ def view_tracks(
         properties=properties,
         edge_width=edge_width,
         tail_length=tail_length,
-        color_by=color_by,
+        n_dimensional=n_dimensional,
         name=name,
         metadata=metadata,
         scale=scale,
@@ -916,6 +917,8 @@ def view_tracks(
         opacity=opacity,
         blending=blending,
         visible=visible,
+        colormap=colormap,
+        color_by=color_by,
         colormaps_dict=colormaps_dict,
     )
     return viewer

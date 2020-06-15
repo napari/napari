@@ -87,7 +87,7 @@ class Tracks(Layer):
 
     def __init__(
         self,
-        data=None,
+        data,
         *,
         properties=None,
         edge_width=2,

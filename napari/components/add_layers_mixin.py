@@ -842,7 +842,7 @@ class AddLayersMixin:
             properties=properties,
             edge_width=edge_width,
             tail_length=tail_length,
-            color_by=color_by,
+            n_dimensional=n_dimensional,
             name=name,
             metadata=metadata,
             scale=scale,
@@ -850,6 +850,8 @@ class AddLayersMixin:
             opacity=opacity,
             blending=blending,
             visible=visible,
+            colormap=colormap,
+            color_by=color_by,
             colormaps_dict=colormaps_dict,
         )
         self.add_layer(layer)
