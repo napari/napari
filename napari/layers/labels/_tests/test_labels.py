@@ -255,7 +255,7 @@ def test_custom_color_dict():
     """Test custom color dict."""
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
-    layer = Labels(data, color_dict={1: 'white'})
+    layer = Labels(data, color={1: 'white'})
 
     # test with custom color dict
     assert type(layer.get_color(2)) == np.ndarray
