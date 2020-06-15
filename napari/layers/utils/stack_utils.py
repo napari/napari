@@ -1,15 +1,18 @@
 import warnings
 from typing import Union, List
+import itertools
 
 import numpy as np
 from napari.layers import Image, Labels
 from vispy.color import Colormap
+from ...utils import colormaps
 
 
 def stack_to_images(
     stack: Union[Image, Labels],
     axis: int,
-    colormaps: List[Union[str, Colormap]] = None,
+    colormap: List[Union[str, Colormap]] = None,
+    blending: str = None,
 ) -> List[Image]:
     """Function to split the active layer into separate layers along an axis
 
@@ -29,6 +32,7 @@ def stack_to_images(
     data = stack.data
     name = stack.name
     num_dim = len(data.shape)
+    n_channels = data.shape[axis]
 
     if num_dim < 3:
         warnings.warn(
@@ -45,22 +49,27 @@ def stack_to_images(
         )
         return None
 
-    cmap = stack.colormap
-    if colormaps is None:
-        colormaps = data.shape[axis] * [cmap]
+    if colormap is None:
+        if n_channels == 2:
+            colormap = iter(colormaps.MAGENTA_GREEN)
+        if n_channels > 2:
+            colormap = itertools.cycle(colormaps.CYMRGB)
+
+    if blending not in ['additive', 'translucent', 'opaque']:
+        blending = 'additive'
 
     imagelist = list()
 
     for i in range(data.shape[axis]):
         layer_name = f'{name} layer {i}'
         try:
-            color = colormaps[i]
+            color = next(colormap)
         except IndexError:
             color = 'gray'
 
         image = Image(
             np.take(data, i, axis=axis),
-            blending='additive',
+            blending=blending,
             colormap=color,
             name=layer_name,
         )
