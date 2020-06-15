@@ -441,8 +441,8 @@ def view_labels(
         Dimension names.
     show : bool, optional
         Whether to show the viewer after instantiation. by default True.
-    color : dict of int to str
-        Custom label to color mapping
+    color : dict of int to str or array
+        Custom label to color mapping. Values must be valid color names or RGBA arrays.
 
     Returns
     -------
