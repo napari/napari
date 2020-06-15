@@ -108,6 +108,8 @@ class Labels(Image):
 
         In ERASE mode the cursor functions similarly to PAINT mode, but to
         paint with background label, which effectively removes the label.
+    color : dict of int to str
+            Custom label to color mapping
 
     Extended Summary
     ----------
@@ -135,7 +137,7 @@ class Labels(Image):
         blending='translucent',
         visible=True,
         multiscale=None,
-        color_dict=None,
+        color=None,
     ):
 
         self._seed = seed
@@ -195,7 +197,7 @@ class Labels(Image):
 
         self._selected_label = 1
         self._selected_color = self.get_color(self._selected_label)
-        self.color_dict = color_dict
+        self.color = color
 
         self._mode = Mode.PAN_ZOOM
         self._mode_history = self._mode
@@ -289,31 +291,31 @@ class Labels(Image):
         self._label_index = label_index
 
     @property
-    def color_dict(self):
+    def color(self):
         """dict: custom color dict for label coloring"""
-        return self._color_dict
+        return self._color
 
-    @color_dict.setter
-    def color_dict(self, color_dict):
+    @color.setter
+    def color(self, color):
 
-        if not color_dict:
-            color_dict = {}
+        if not color:
+            color = {}
             color_mode = LabelColorMode.AUTO
         else:
             color_mode = LabelColorMode.DIRECT
 
-        if self._background_label not in color_dict:
-            color_dict[self._background_label] = 'transparent'
+        if self._background_label not in color:
+            color[self._background_label] = 'transparent'
 
-        if None not in color_dict:
-            color_dict[None] = 'black'
+        if None not in color:
+            color[None] = 'black'
 
         colors = {
             label: transform_color(color_str)[0]
-            for label, color_str in color_dict.items()
+            for label, color_str in color.items()
         }
 
-        self._color_dict = colors
+        self._color = colors
         self.color_mode = color_mode
 
     def _validate_properties(
@@ -354,7 +356,7 @@ class Labels(Image):
                 'properties': self._properties,
                 'seed': self.seed,
                 'data': self.data,
-                'color_dict': self.color_dict,
+                'color': self.color,
             }
         )
         return state
@@ -377,7 +379,12 @@ class Labels(Image):
 
     @property
     def color_mode(self):
-        """Color mode string"""
+        """Color mode to change how color is represented.
+
+        AUTO (default) allows color to be set via a hash function with a seed.
+
+        DIRECT allows color of each label to be set directly by a color dict.
+        """
         return str(self._color_mode)
 
     @color_mode.setter
@@ -387,7 +394,7 @@ class Labels(Image):
             (
                 custom_colormap,
                 label_color_index,
-            ) = colormaps.color_dict_to_colormap(self.color_dict)
+            ) = colormaps.color_dict_to_colormap(self.color)
             self.colormap = custom_colormap
             self._label_color_index = label_color_index
         elif color_mode == LabelColorMode.AUTO:

@@ -415,7 +415,7 @@ class AddLayersMixin:
         blending='translucent',
         visible=True,
         multiscale=None,
-        color_dict=None,
+        color=None,
     ) -> layers.Labels:
         """Add a labels (or segmentation) layer to the layers list.
 
@@ -466,6 +466,8 @@ class AddLayersMixin:
             the user and if the data is a list of arrays that decrease in shape
             then it will be taken to be multiscale. The first image in the list
             should be the largest.
+        color : dict of int to str
+            Custom label to color mapping
 
         Returns
         -------
@@ -485,7 +487,7 @@ class AddLayersMixin:
             blending=blending,
             visible=visible,
             multiscale=multiscale,
-            color_dict=color_dict,
+            color=color,
         )
         self.add_layer(layer)
         return layer

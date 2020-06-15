@@ -378,6 +378,7 @@ def view_labels(
     order=None,
     axis_labels=None,
     show=True,
+    color=None,
 ):
     """Create a viewer and add a labels (or segmentation) layer.
 
@@ -440,6 +441,8 @@ def view_labels(
         Dimension names.
     show : bool, optional
         Whether to show the viewer after instantiation. by default True.
+    color : dict of int to str
+        Custom label to color mapping
 
     Returns
     -------
@@ -466,6 +469,7 @@ def view_labels(
         opacity=opacity,
         blending=blending,
         visible=visible,
+        color=color,
     )
     return viewer
 
