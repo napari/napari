@@ -30,6 +30,8 @@ class Labels(Image):
         Properties for each label. Each property should be an array of length
         N, where N is the number of labels, and the first property corresponds to
         background.
+    color : dict of int to str
+            Custom label to color mapping
     seed : float
         Seed for colormap random generator.
     name : str
@@ -73,6 +75,8 @@ class Labels(Image):
         Properties for each label. Each property should be an array of length
         N, where N is the number of labels, and the first property corresponds to
         background.
+    color : dict of int to str
+            Custom label to color mapping
     seed : float
         Seed for colormap random generator.
     opacity : float
@@ -108,8 +112,6 @@ class Labels(Image):
 
         In ERASE mode the cursor functions similarly to PAINT mode, but to
         paint with background label, which effectively removes the label.
-    color : dict of int to str
-            Custom label to color mapping
 
     Extended Summary
     ----------
@@ -128,6 +130,7 @@ class Labels(Image):
         *,
         num_colors=50,
         properties=None,
+        color=None,
         seed=0.5,
         name=None,
         metadata=None,
@@ -137,7 +140,6 @@ class Labels(Image):
         blending='translucent',
         visible=True,
         multiscale=None,
-        color=None,
     ):
 
         self._seed = seed

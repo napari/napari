@@ -364,6 +364,7 @@ def view_labels(
     *,
     num_colors=50,
     properties=None,
+    color=None,
     seed=0.5,
     name=None,
     metadata=None,
@@ -378,7 +379,6 @@ def view_labels(
     order=None,
     axis_labels=None,
     show=True,
-    color=None,
 ):
     """Create a viewer and add a labels (or segmentation) layer.
 
@@ -405,6 +405,8 @@ def view_labels(
         Properties for each label. Each property should be an array of length
         N, where N is the number of labels, and the first property corresponds to
         background.
+    color : dict of int to str
+        Custom label to color mapping
     seed : float
         Seed for colormap random generator.
     name : str
@@ -441,8 +443,6 @@ def view_labels(
         Dimension names.
     show : bool, optional
         Whether to show the viewer after instantiation. by default True.
-    color : dict of int to str
-        Custom label to color mapping
 
     Returns
     -------
