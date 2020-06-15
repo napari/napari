@@ -3,12 +3,12 @@ from typing import Union, Dict
 
 import numpy as np
 from scipy import ndimage as ndi
-
 from ..image import Image
 from ...utils.colormaps import colormaps
+from ..utils.color_transformations import transform_color
 from ...utils.event import Event
 from ...utils.status_messages import format_float
-from ._labels_constants import Mode
+from ._labels_constants import Mode, LabelColorMode
 from ._labels_mouse_bindings import draw, pick
 
 from ..utils.layer_utils import dataframe_to_properties
@@ -135,11 +135,17 @@ class Labels(Image):
         blending='translucent',
         visible=True,
         multiscale=None,
+        color_dict=None,
     ):
 
         self._seed = seed
+        self._background_label = 0
         self._num_colors = num_colors
-        colormap = ('random', colormaps.label_colormap(self.num_colors))
+        self._random_colormap = (
+            'random',
+            colormaps.label_colormap(self.num_colors),
+        )
+        self._color_mode = LabelColorMode.AUTO
 
         if properties is None:
             self._properties = {}
@@ -159,7 +165,7 @@ class Labels(Image):
         super().__init__(
             data,
             rgb=False,
-            colormap=colormap,
+            colormap=self._random_colormap,
             contrast_limits=[0.0, 1.0],
             interpolation='nearest',
             rendering='translucent',
@@ -180,15 +186,16 @@ class Labels(Image):
             contiguous=Event,
             brush_size=Event,
             selected_label=Event,
+            color_mode=Event,
         )
 
         self._n_dimensional = False
         self._contiguous = True
         self._brush_size = 10
 
-        self._background_label = 0
         self._selected_label = 1
         self._selected_color = self.get_color(self._selected_label)
+        self.color_dict = color_dict
 
         self._mode = Mode.PAN_ZOOM
         self._mode_history = self._mode
@@ -281,6 +288,34 @@ class Labels(Image):
         self._properties = self._validate_properties(properties)
         self._label_index = label_index
 
+    @property
+    def color_dict(self):
+        """dict: custom color dict for label coloring"""
+        return self._color_dict
+
+    @color_dict.setter
+    def color_dict(self, color_dict):
+
+        if not color_dict:
+            color_dict = {}
+            color_mode = LabelColorMode.AUTO
+        else:
+            color_mode = LabelColorMode.DIRECT
+
+        if self._background_label not in color_dict:
+            color_dict[self._background_label] = 'transparent'
+
+        if None not in color_dict:
+            color_dict[None] = 'black'
+
+        colors = {
+            label: transform_color(color_str)[0]
+            for label, color_str in color_dict.items()
+        }
+
+        self._color_dict = colors
+        self.color_mode = color_mode
+
     def _validate_properties(
         self, properties: Dict[str, np.ndarray]
     ) -> Dict[str, np.ndarray]:
@@ -319,6 +354,7 @@ class Labels(Image):
                 'properties': self._properties,
                 'seed': self.seed,
                 'data': self.data,
+                'color_dict': self.color_dict,
             }
         )
         return state
@@ -338,6 +374,34 @@ class Labels(Image):
         self._selected_label = selected_label
         self._selected_color = self.get_color(selected_label)
         self.events.selected_label()
+
+    @property
+    def color_mode(self):
+        """Color mode string"""
+        return str(self._color_mode)
+
+    @color_mode.setter
+    def color_mode(self, color_mode: Union[str, LabelColorMode]):
+        color_mode = LabelColorMode(color_mode)
+        if color_mode == LabelColorMode.DIRECT:
+            (
+                custom_colormap,
+                label_color_index,
+            ) = colormaps.color_dict_to_colormap(self.color_dict)
+            self.colormap = custom_colormap
+            self._label_color_index = label_color_index
+        elif color_mode == LabelColorMode.AUTO:
+            self._label_color_index = {}
+            self.colormap = self._random_colormap
+        else:
+            raise ValueError("Unsupported Color Mode")
+
+        self._color_mode = color_mode
+        self._selected_color = self.get_color(self.selected_label)
+        self.events.color_mode()
+        self.events.colormap()
+        self.events.selected_label()
+        self.refresh()
 
     @property
     def mode(self):
@@ -464,9 +528,22 @@ class Labels(Image):
         image : array
             Image mapped between 0 and 1 to be displayed.
         """
-        image = np.where(
-            raw > 0, colormaps._low_discrepancy_image(raw, self._seed), 0
-        )
+        if self._color_mode == LabelColorMode.DIRECT:
+            u, inv = np.unique(raw, return_inverse=True)
+            image = np.array(
+                [
+                    self._label_color_index[x]
+                    if x in self._label_color_index
+                    else self._label_color_index[None]
+                    for x in u
+                ]
+            )[inv].reshape(raw.shape)
+        elif self._color_mode == LabelColorMode.AUTO:
+            image = np.where(
+                raw > 0, colormaps._low_discrepancy_image(raw, self._seed), 0
+            )
+        else:
+            raise ValueError("Unsupported Color Mode")
         return image
 
     def new_colormap(self):
