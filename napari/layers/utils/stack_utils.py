@@ -72,7 +72,7 @@ def stack_to_images(
 
 
 def images_to_stack(
-    images: List[Union[Image, Labels]], axis: int = -1
+    images: List[Union[Image, Labels]], axis: int = 0
 ) -> Image:
     """Function to combine selected image layers in one layer
 
@@ -88,16 +88,9 @@ def images_to_stack(
     stack : napari.layers.Image
         Combined image stack
     """
-    new_list = list()
-    for image in images:
-        new_list.append(image.data)
 
-    try:
-        new_data = np.stack(new_list, axis=axis)
-    except ValueError as err:
-        warnings.warn("{}".format(err))
-        return
-
+    new_list = [image.data for image in images]
+    new_data = np.stack(new_list, axis=axis)
     stack = Image(new_data)
 
     return stack
