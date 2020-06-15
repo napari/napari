@@ -1,3 +1,5 @@
+import numpy as np
+import itertools
 from typing import Optional, List
 from ..layers import Layer
 from ..utils.naming import inc_name_count
@@ -185,6 +187,41 @@ class LayerList(ListModel):
         for layer in self:
             if layer.selected:
                 layer.visible = not layer.visible
+
+    @property
+    def _extent_world(self):
+        """(2, D) array: Extent of layers in world coordinates.
+
+        Default to 2D with (0, 512) min/ max values if no data is present.
+        """
+        if len(self) == 0:
+            min_v = [np.nan] * self.ndim
+            max_v = [np.nan] * self.ndim
+        else:
+            extrema = [l._extent_world for l in self]
+            mins = [e[0] for e in extrema]
+            maxs = [e[1] for e in extrema]
+
+            min_v = np.nanmin(
+                list(itertools.zip_longest(*mins, fillvalue=np.nan)), axis=1
+            )
+            max_v = np.nanmax(
+                list(itertools.zip_longest(*maxs, fillvalue=np.nan)), axis=1
+            )
+
+        min_vals = np.nan_to_num(min_v, nan=0)
+        max_vals = np.nan_to_num(max_v, nan=512)
+
+        return np.vstack([min_vals, max_vals])
+
+    @property
+    def ndim(self):
+        """int: Maximum dimensionality of layers.
+
+        Defaults to 2 if no data is present.
+        """
+        ndims = [l.ndim for l in self]
+        return max(ndims, default=2)
 
     def save(
         self,

@@ -249,7 +249,7 @@ class Image(IntensityVisualizationMixin, Layer):
         """Get empty image to use as the default before data is loaded.
         """
         if self.rgb:
-            return np.zeros((1,) * self.dims.ndisplay + (self.shape[-1],))
+            return np.zeros((1,) * self.dims.ndisplay + (3,))
         else:
             return np.zeros((1,) * self.dims.ndisplay)
 
@@ -301,8 +301,11 @@ class Image(IntensityVisualizationMixin, Layer):
         """Determine number of dimensions of the layer."""
         return len(self.level_shapes[0])
 
-    def _get_extent(self):
-        return tuple((0, m) for m in self.level_shapes[0])
+    @property
+    def _extent_data(self):
+        """(2, D) array: Extent of layer in data coordinates."""
+        shape = self.level_shapes[0]
+        return np.vstack([np.zeros(len(shape)), shape])
 
     @property
     def data_level(self):

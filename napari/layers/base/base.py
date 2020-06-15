@@ -110,11 +110,11 @@ class Layer(KeymapProvider, ABC):
     Notes
     -----
     Must define the following:
-        * `_get_range()`: called by `range` property
+        * `_extent_data`: property
         * `data` property (setter & getter)
 
     May define the following:
-        * `_set_view_slice(indices)`: called to set currently viewed slice
+        * `_set_view_slice()`: called to set currently viewed slice
         * `_basename()`: base/default name of the layer
     """
 
@@ -396,9 +396,10 @@ class Layer(KeymapProvider, ABC):
 
         self.dims.ndim = ndim
 
-        curr_range = self._get_range()
-        for i, r in enumerate(curr_range):
-            self.dims.set_range(i, r)
+        we = self._extent_world
+        increments = self.scale
+        for i in range(self.dims.ndim):
+            self.dims.set_range(i, (we[0, i], we[1, i], increments[i]))
 
         self.refresh()
         self._update_coordinates()
@@ -414,9 +415,16 @@ class Layer(KeymapProvider, ABC):
     def data(self, data):
         raise NotImplementedError()
 
+    @property
     @abstractmethod
-    def _get_extent(self):
+    def _extent_data(self):
+        """(2, D) array: Extent of layer in data coordinates."""
         raise NotImplementedError()
+
+    @property
+    def _extent_world(self):
+        """(2, D) array: Range of layer in world coordinates."""
+        return self._transforms['data2world'](self._extent_data)
 
     @abstractmethod
     def _get_ndim(self):
@@ -425,12 +433,6 @@ class Layer(KeymapProvider, ABC):
     def _set_editable(self, editable=None):
         if editable is None:
             self.editable = True
-
-    def _get_range(self):
-        extent = self._get_extent()
-        return tuple(
-            (s * e[0], s * e[1], s) for e, s in zip(extent, self.scale)
-        )
 
     def _get_base_state(self):
         """Get dictionary of attributes on base layer.
@@ -497,13 +499,6 @@ class Layer(KeymapProvider, ABC):
     def ndim(self):
         """int: Number of dimensions in the data."""
         return self.dims.ndim
-
-    @property
-    def shape(self):
-        """tuple of int: Shape of the data."""
-        return tuple(
-            np.round(r[1] - r[0]).astype(int) for r in self.dims.range
-        )
 
     @property
     def selected(self):

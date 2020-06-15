@@ -611,7 +611,7 @@ class Labels(Image):
         int_coord = tuple(np.round(coord).astype(int))
         # If requested fill location is outside data shape then return
         if np.any(np.less(int_coord, 0)) or np.any(
-            np.greater_equal(int_coord, self.shape)
+            np.greater_equal(int_coord, self.data.shape)
         ):
             return
 
@@ -684,7 +684,7 @@ class Labels(Image):
                         ).astype(int),
                         1,
                     )
-                    for c, s in zip(coord, self.shape)
+                    for c, s in zip(coord, self.data.shape)
                 ]
             )
         else:
@@ -695,14 +695,14 @@ class Labels(Image):
                         np.clip(
                             coord[i] - self.brush_size / 2 + 0.5,
                             0,
-                            self.shape[i],
+                            self.data.shape[i],
                         )
                     ).astype(int),
                     np.round(
                         np.clip(
                             coord[i] + self.brush_size / 2 + 0.5,
                             0,
-                            self.shape[i],
+                            self.data.shape[i],
                         )
                     ).astype(int),
                     1,

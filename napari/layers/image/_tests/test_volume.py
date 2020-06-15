@@ -11,7 +11,7 @@ def test_random_volume():
     layer.dims.ndisplay = 3
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    assert layer.shape == shape
+    assert layer._extent_data[1] == shape
     assert layer.dims.range == [(0, m, 1) for m in shape]
     assert layer._data_view.shape == shape[-3:]
 
@@ -24,7 +24,7 @@ def test_switching_displayed_dimensions():
     layer = Image(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    assert layer.shape == shape
+    assert layer._extent_data[1] == shape
     assert layer.dims.range == [(0, m, 1) for m in shape]
 
     # check displayed data is initially 2D
@@ -42,7 +42,7 @@ def test_switching_displayed_dimensions():
     layer.dims.ndisplay = 3
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    assert layer.shape == shape
+    assert layer._extent_data[1] == shape
     assert layer.dims.range == [(0, m, 1) for m in shape]
 
     # check displayed data is initially 3D
@@ -65,7 +65,7 @@ def test_all_zeros_volume():
     layer.dims.ndisplay = 3
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    assert layer.shape == shape
+    assert layer._extent_data[1] == shape
     assert layer._data_view.shape == shape[-3:]
 
 
@@ -78,7 +78,7 @@ def test_integer_volume():
     layer.dims.ndisplay = 3
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    assert layer.shape == shape
+    assert layer._extent_data[1] == shape
     assert layer._data_view.shape == shape[-3:]
 
 
@@ -91,7 +91,7 @@ def test_3D_volume():
     layer.dims.ndisplay = 3
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    assert layer.shape == shape
+    assert layer._extent_data[1] == shape
     assert layer._data_view.shape == shape[-3:]
 
 
@@ -104,7 +104,7 @@ def test_4D_volume():
     layer.dims.ndisplay = 3
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    assert layer.shape == shape
+    assert layer._extent_data[1] == shape
     assert layer._data_view.shape == shape[-3:]
 
 
@@ -120,7 +120,7 @@ def test_changing_volume():
     layer.data = data_b
     assert np.all(layer.data == data_b)
     assert layer.ndim == len(shape_b)
-    assert layer.shape == shape_b
+    assert layer._extent_data[1] == shape_b
     assert layer.dims.range == [(0, m, 1) for m in shape_b]
     assert layer._data_view.shape == shape_b[-3:]
 
@@ -136,7 +136,7 @@ def test_scale():
     layer.dims.ndisplay = 3
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    assert layer.shape == full_shape
+    assert layer._extent_data[1] == full_shape
     # Note that the scale appears as the step size in the range
     assert layer.dims.range == list(
         (0, m, s) for m, s in zip(full_shape, scale)

@@ -1,6 +1,6 @@
 import warnings
 from copy import copy
-from typing import Dict, List, Tuple, Union
+from typing import Dict, Tuple, Union
 
 import numpy as np
 from vispy.color.colormap import Colormap
@@ -300,19 +300,19 @@ class Vectors(Layer):
         """Determine number of dimensions of the layer."""
         return self.data.shape[2]
 
-    def _get_extent(self) -> List[Tuple[int, int, int]]:
-        """Determine ranges for slicing given by (min, max, step)."""
+    @property
+    def _extent_data(self) -> np.ndarray:
+        """(2, D) array: Extent of layer in data coordinates."""
         if len(self.data) == 0:
-            maxs = np.ones(self.data.shape[2], dtype=int)
-            mins = np.zeros(self.data.shape[2], dtype=int)
+            extrema = np.full((2, self.ndim), np.nan)
         else:
             # Convert from projections to endpoints using the current length
             data = copy(self.data)
             data[:, 1, :] = data[:, 0, :] + self.length * data[:, 1, :]
             maxs = np.max(data, axis=(0, 1))
             mins = np.min(data, axis=(0, 1))
-
-        return [(min, max) for min, max in zip(mins, maxs)]
+            extrema = np.vstack([mins, maxs])
+        return extrema
 
     @property
     def edge_width(self) -> Union[int, float]:
@@ -657,18 +657,13 @@ class Vectors(Layer):
         # calculate min vals for the vertices and pad with 0.5
         # the offset is needed to ensure that the top left corner of the
         # vectors corresponds to the top left corner of the thumbnail
-        offset = (
-            np.array([self.dims.range[d][0] for d in self.dims.displayed])
-            + 0.5
-        )[-2:]
+        de = self._extent_data
+        offset = (np.array([de[0, d] for d in self.dims.displayed]) + 0.5)[-2:]
         # calculate range of values for the vertices and pad with 1
         # padding ensures the entire vector can be represented in the thumbnail
         # without getting clipped
         shape = np.ceil(
-            [
-                self.dims.range[d][1] - self.dims.range[d][0] + 1
-                for d in self.dims.displayed
-            ]
+            [de[1, d] - de[0, d] + 1 for d in self.dims.displayed]
         ).astype(int)[-2:]
         zoom_factor = np.divide(self._thumbnail_shape[:2], shape).min()
 

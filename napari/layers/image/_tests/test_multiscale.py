@@ -13,7 +13,7 @@ def test_random_multiscale():
     assert layer.data == data
     assert layer.multiscale is True
     assert layer.ndim == len(shapes[0])
-    assert layer.shape == shapes[0]
+    assert layer._extent_data[1] == shapes[0]
     assert layer.rgb is False
     assert layer._data_view.ndim == 2
 
@@ -27,7 +27,7 @@ def test_infer_multiscale():
     assert layer.data == data
     assert layer.multiscale is True
     assert layer.ndim == len(shapes[0])
-    assert layer.shape == shapes[0]
+    assert layer._extent_data[1] == shapes[0]
     assert layer.rgb is False
     assert layer._data_view.ndim == 2
 
@@ -41,7 +41,7 @@ def test_infer_tuple_multiscale():
     assert layer.data == data
     assert layer.multiscale is True
     assert layer.ndim == len(shapes[0])
-    assert layer.shape == shapes[0]
+    assert layer._extent_data[1] == shapes[0]
     assert layer.rgb is False
     assert layer._data_view.ndim == 2
 
@@ -55,7 +55,7 @@ def test_blocking_multiscale():
     assert np.all(layer.data == data)
     assert layer.multiscale is False
     assert layer.ndim == len(shape)
-    assert layer.shape == shape
+    assert layer._extent_data[1] == shape
     assert layer.rgb is False
     assert layer._data_view.ndim == 2
 
@@ -70,7 +70,7 @@ def test_multiscale_tuple():
     assert layer.data == data
     assert layer.multiscale is True
     assert layer.ndim == len(shape)
-    assert layer.shape == shape
+    assert layer._extent_data[1] == shape
     assert layer.rgb is False
     assert layer._data_view.ndim == 2
 
@@ -83,7 +83,7 @@ def test_3D_multiscale():
     layer = Image(data, multiscale=True)
     assert layer.data == data
     assert layer.ndim == len(shapes[0])
-    assert layer.shape == shapes[0]
+    assert layer._extent_data[1] == shapes[0]
     assert layer.rgb is False
     assert layer._data_view.ndim == 2
 
@@ -96,7 +96,7 @@ def test_non_uniform_3D_multiscale():
     layer = Image(data, multiscale=True)
     assert layer.data == data
     assert layer.ndim == len(shapes[0])
-    assert layer.shape == shapes[0]
+    assert layer._extent_data[1] == shapes[0]
     assert layer.rgb is False
     assert layer._data_view.ndim == 2
 
@@ -109,7 +109,7 @@ def test_rgb_multiscale():
     layer = Image(data, multiscale=True)
     assert layer.data == data
     assert layer.ndim == len(shapes[0]) - 1
-    assert layer.shape == shapes[0][:-1]
+    assert layer._extent_data[1] == shapes[0][:-1]
     assert layer.rgb is True
     assert layer._data_view.ndim == 3
 
@@ -122,7 +122,7 @@ def test_3D_rgb_multiscale():
     layer = Image(data, multiscale=True)
     assert layer.data == data
     assert layer.ndim == len(shapes[0]) - 1
-    assert layer.shape == shapes[0][:-1]
+    assert layer._extent_data[1] == shapes[0][:-1]
     assert layer.rgb is True
     assert layer._data_view.ndim == 3
 
@@ -135,7 +135,7 @@ def test_non_rgb_image():
     layer = Image(data, multiscale=True, rgb=False)
     assert layer.data == data
     assert layer.ndim == len(shapes[0])
-    assert layer.shape == shapes[0]
+    assert layer._extent_data[1] == shapes[0]
     assert layer.rgb is False
 
 
