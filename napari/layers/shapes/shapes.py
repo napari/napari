@@ -65,7 +65,7 @@ class Shapes(Layer):
         array if each shape has the same number of vertices.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each point. Each property should be an array of length N,
-        where N is the number of points.
+        where N is the number of shapes.
     shape_type : string or list
         String of shape shape_type, must be one of "{'line', 'rectangle',
         'ellipse', 'path', 'polygon'}". If a list is supplied it must be
@@ -141,7 +141,7 @@ class Shapes(Layer):
         N vertices of a shape in D dimensions.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each point. Each property should be an array of length N,
-        where N is the number of points.
+        where N is the number of shapes.
     shape_type : (N, ) list of str
         Name of shape type for each shape.
     edge_color : str, array-like
@@ -928,8 +928,8 @@ class Shapes(Layer):
             If set to True, the function will recalculate the color cycle map
             or colormap (whichever is being used). If set to False, the function
             will use the current color cycle map or color map. For example, if you
-            are adding/modifying points and want them to be colored with the same
-            mapping as the other points (i.e., the new points shouldn't affect
+            are adding/modifying shapes and want them to be colored with the same
+            mapping as the other shapes (i.e., the new shapes shouldn't affect
             the color cycle map or colormap), set update_color_mapping=False.
             Default value is False.
         """
@@ -951,8 +951,8 @@ class Shapes(Layer):
             If set to True, the function will recalculate the color cycle map
             or colormap (whichever is being used). If set to False, the function
             will use the current color cycle map or color map. For example, if you
-            are adding/modifying points and want them to be colored with the same
-            mapping as the other points (i.e., the new points shouldn't affect
+            are adding/modifying shapes and want them to be colored with the same
+            mapping as the other shapes (i.e., the new shapes shouldn't affect
             the color cycle map or colormap), set update_color_mapping=False.
             Default value is False.
         """
@@ -1021,8 +1021,8 @@ class Shapes(Layer):
             If set to True, the function will recalculate the color cycle map
             or colormap (whichever is being used). If set to False, the function
             will use the current color cycle map or color map. For example, if you
-            are adding/modifying points and want them to be colored with the same
-            mapping as the other points (i.e., the new points shouldn't affect
+            are adding/modifying shapes and want them to be colored with the same
+            mapping as the other shapes (i.e., the new shapes shouldn't affect
             the color cycle map or colormap), set update_color_mapping=False.
             Default value is False.
 
@@ -1097,7 +1097,7 @@ class Shapes(Layer):
         Parameters:
         ----------
         adding : int
-            the number of points that were added
+            the number of shapes that were added
             (and thus the number of color entries to add)
         attribute : str in {'edge', 'face'}
             The name of the attribute to set the color of.
@@ -1604,7 +1604,7 @@ class Shapes(Layer):
         for k, v in properties.items():
             if len(v) != n_shapes:
                 raise ValueError(
-                    'the number of properties must equal the number of points'
+                    'the number of properties must equal the number of shapes'
                 )
             # ensure the property values are a numpy array
             if type(v) != np.ndarray:
@@ -1647,7 +1647,7 @@ class Shapes(Layer):
         Returns
         ----------
         box : np.ndarray
-            10x2 array of vertices of the interaction box. The first 8 points
+            10x2 array of vertices of the interaction box. The first 8 shapes
             are the corners and midpoints of the box in clockwise order
             starting in the upper-left corner. The 9th point is the center of
             the box, and the last point is the location of the rotation handle
@@ -1865,7 +1865,7 @@ class Shapes(Layer):
         self._update_dims()
 
     def _update_thumbnail(self, event=None):
-        """Update thumbnail with current points and colors."""
+        """Update thumbnail with current shapes and colors."""
         # calculate min vals for the vertices and pad with 0.5
         # the offset is needed to ensure that the top left corner of the shapes
         # corresponds to the top left corner of the thumbnail

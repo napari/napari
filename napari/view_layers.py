@@ -508,7 +508,7 @@ def view_shapes(
         array if each shape has the same number of vertices.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each point. Each property should be an array of length N,
-        where N is the number of points.
+        where N is the number of shapes.
     shape_type : string or list
         String of shape shape_type, must be one of "{'line', 'rectangle',
         'ellipse', 'path', 'polygon'}". If a list is supplied it must be
