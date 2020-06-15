@@ -22,8 +22,7 @@ class VispyTracksLayer(VispyBaseLayer):
     """
 
     def __init__(self, layer):
-        # node = Line()
-        node = Compound([Line(), Text(method='gpu'), Line()])
+        node = Compound([Line(), Text(), Line()])
         super().__init__(layer, node)
 
         self.layer.events.edge_width.connect(self._on_data_change)
@@ -62,9 +61,6 @@ class VispyTracksLayer(VispyBaseLayer):
         NOTE(arl): this gets called by the VispyBaseLayer
 
         """
-
-        # print(self.layer.dims.displayed)
-
         # update the shader
         self.track_shader.current_time = self.layer.current_time
         self.track_shader.tail_length = self.layer.tail_length
@@ -88,9 +84,9 @@ class VispyTracksLayer(VispyBaseLayer):
 
         # add text labels if they're visible
         if self.node._subvisuals[1].visible:
-            text, pos = zip(*self.layer.track_labels)
-            self.node._subvisuals[1].text = text
-            self.node._subvisuals[1].pos = pos
+            labels_text, labels_pos = self.layer.track_labels
+            self.node._subvisuals[1].text = labels_text
+            self.node._subvisuals[1].pos = labels_pos
 
         # add the meta-linkages / graph edges
         self.node._subvisuals[2].set_data(

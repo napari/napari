@@ -193,7 +193,7 @@ class Tracks(Layer):
         if self.dims.displayed != self._current_dims_displayed:
             self._current_dims_displayed = self.dims.displayed
             # TODO(arl): we can use the shader masking to slice the data
-            print(self.dims.displayed, self.dims.indices)
+            # print(self.dims.displayed, self.dims.indices)
 
         return
 
@@ -274,7 +274,6 @@ class Tracks(Layer):
     def properties(self, properties: list):
         """ set track properties """
         self._manager.properties = properties
-        print(self._manager.properties)
         # properties have been updated, we need to alert the gui
         self.events.properties()
 
@@ -417,4 +416,5 @@ class Tracks(Layer):
     def track_labels(self) -> zip:
         """ return track labels at the current time """
         labels, positions = self._manager.track_labels(self.current_time)
-        return zip(labels, self._pad_display_data(positions))
+        padded_positions = self._pad_display_data(positions)
+        return labels, padded_positions

@@ -14,7 +14,7 @@ from qtpy.QtWidgets import (
 
 import numpy as np
 
-MAX_TAIL_LENGTH = 1500
+MAX_TAIL_LENGTH = 300
 MAX_TAIL_WIDTH = 40
 
 

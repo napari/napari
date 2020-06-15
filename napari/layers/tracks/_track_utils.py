@@ -85,7 +85,11 @@ class TrackManager:
         # build a tree of the track data to allow fast lookup of nearest track
         self._kdtree = cKDTree(self._points)
 
-        # make the lookup
+        # make the lookup table
+        # NOTE(arl): it's important to convert the time index to an integer
+        # here to make sure that we align with the napari dims index which
+        # will be an integer - however, the time index does not necessarily
+        # need to be an int, and the shader will render correctly.
         frames = list(set(self._points[:, 0].astype(np.uint).tolist()))
         self._points_lookup = [None] * (max(frames) + 1)
         for f in range(max(frames) + 1):
@@ -111,16 +115,30 @@ class TrackManager:
 
         # do some type checking/enforcing
         for idx, track in enumerate(properties):
-            for key, value in track.items():
 
-                if isinstance(value, np.generic):
-                    track[key] = value.tolist()
+            # length of this track
+            track_len = len(self.data[idx])
 
             # if there is not a track ID listed, generate one on the fly
             if 'ID' not in track:
                 properties[idx]['ID'] = idx
 
-            points_id += [track['ID']] * len(self.data[idx])  # track length
+            # check whether the property is a scalar or list/array,
+            # if list/array, ensure that the length of the list is equal to the
+            # length of the track
+            for key, value in track.items():
+                if isinstance(value, (np.ndarray, np.generic)):
+                    track[key] = value.tolist()
+
+                if isinstance(track[key], list):
+                    property_len = len(track[key])
+                    if property_len != track_len:
+                        raise ValueError(
+                            f'Track property {key} has incorrect '
+                            f'length: {property_len} (vs {track_len})'
+                        )
+
+            points_id += [track['ID']] * track_len  # track length
 
         self._properties = properties
         self._points_id = np.array(points_id)[self._ordered_points_idx]
