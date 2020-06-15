@@ -405,8 +405,8 @@ def view_labels(
         Properties for each label. Each property should be an array of length
         N, where N is the number of labels, and the first property corresponds to
         background.
-    color : dict of int to str
-        Custom label to color mapping
+    color : dict of int to str or array
+        Custom label to color mapping. Values must be valid color names or RGBA arrays.
     seed : float
         Seed for colormap random generator.
     name : str
