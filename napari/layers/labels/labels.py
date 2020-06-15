@@ -108,8 +108,8 @@ class Labels(Image):
 
         In ERASE mode the cursor functions similarly to PAINT mode, but to
         paint with background label, which effectively removes the label.
-    color : dict of int to str
-            Custom label to color mapping
+    color : dict of int to str or array
+        Custom label to color mapping. Values must be valid color names or RGBA arrays.
 
     Extended Summary
     ----------
