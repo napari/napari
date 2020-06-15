@@ -798,3 +798,124 @@ def view_vectors(
         visible=visible,
     )
     return viewer
+
+
+def view_tracks(
+    data,
+    *,
+    properties=None,
+    edge_width=2,
+    tail_length=30,
+    color_by='ID',
+    n_dimensional=True,
+    name=None,
+    metadata=None,
+    scale=None,
+    translate=None,
+    opacity=1,
+    blending='additive',
+    visible=True,
+    colormaps_dict=None,
+    title='napari',
+    ndisplay=2,
+    order=None,
+    axis_labels=None,
+    show=True,
+):
+    """Create a viewer and add a tracks layer.
+
+    Parameters
+    ----------
+    data : list
+        list of (NxD) arrays of the format: time, x, y, (z), ....
+    properties : list (optional)
+        list of dictionaries of track properties, e.g.:
+
+        [{'ID': 0,
+          'parent': [],
+          'root': 0,
+          'states': [], ...}, ...]
+
+        List needs to be the same length as data, and all items need to
+        contain the same dictionary keys etc. If no properties are provided,
+        the layer autogenerates the ID property based on the track index in
+        the list. Properties can have any numeric type (scalar, array).
+        Importantly, 'parent' is a special property which defines a list of
+        track IDs that are parents of the track. This can be one (the track
+        has one parent, and the parent has >=1 child) in the case of track
+        splitting, or more than one (the track has multiple parents, but
+        only one child) in the case of track merging.
+    color_by: str
+        track property (from property keys) to color vertices by
+    edge_width : float
+        Width for all vectors in pixels.
+    tail_length : float
+        Length of the projection of time as a tail, in units of time.
+    colormap : str
+        Default colormap to use to set vertex colors. Specialized colormaps,
+        relating to specified properties can be passed to the layer via
+        colormaps_dict.
+    colomaps_dict : dict
+        dictionary list of colormap objects to use for coloring by track
+        properties. when coloring vertices, the layer looks in this
+        dictionary to find a matching colormap. the value is any object
+        with a __getitem__, that returns RGBA values that can be mapped to
+        the property
+    name : str
+        Name of the layer.
+    metadata : dict
+        Layer metadata.
+    scale : tuple of float
+        Scale factors for the layer.
+    translate : tuple of float
+        Translation values for the layer.
+    opacity : float
+        Opacity of the layer visual, between 0.0 and 1.0.
+    blending : str
+        One of a list of preset blending modes that determines how RGB and
+        alpha values of the layer visual get mixed. Allowed values are
+        {'opaque', 'translucent', and 'additive'}.
+    visible : bool
+        Whether the layer visual is currently being displayed.
+    title : string
+        The title of the viewer window.
+    ndisplay : {2, 3}
+        Number of displayed dimensions.
+    order : tuple of int
+        Order in which dimensions are displayed where the last two or last
+        three dimensions correspond to row x column or plane x row x column if
+        ndisplay is 2 or 3.
+    axis_labels : list of str
+        Dimension names.
+    show : bool, optional
+        Whether to show the viewer after instantiation. by default True.
+
+    Returns
+    -------
+    viewer : :class:`napari.Viewer`
+        The newly-created viewer.
+    """
+    viewer = Viewer(
+        title=title,
+        ndisplay=ndisplay,
+        order=order,
+        axis_labels=axis_labels,
+        show=show,
+    )
+
+    viewer.add_tracks(
+        data,
+        properties=properties,
+        edge_width=edge_width,
+        tail_length=tail_length,
+        color_by=color_by,
+        name=name,
+        metadata=metadata,
+        scale=scale,
+        translate=translate,
+        opacity=opacity,
+        blending=blending,
+        visible=visible,
+        colormaps_dict=colormaps_dict,
+    )
+    return viewer

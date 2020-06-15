@@ -16,52 +16,61 @@ from ._track_utils import TrackManager, check_track_dimensionality
 class Tracks(Layer):
     """ Tracks
 
-    A napari-style Tracks layer for overlaying trajectories on image data.
-
+    A Tracks layer for overlaying trajectories on image data.
 
     Parameters
     ----------
+    data : list
+        list of (NxD) arrays of the format: time, x, y, (z), ....
+    properties : list (optional)
+        list of dictionaries of track properties, e.g.:
 
-        data : list
-            list of (NxD) arrays of the format: t,x,y,(z),....,n
+        [{'ID': 0,
+          'parent': [],
+          'root': 0,
+          'states': [], ...}, ...]
 
-        properties : list (optional)
-
-            list of dictionaries of track properties:
-
-            [{'ID': 0,
-              'parent': [],
-              'root': 0,
-              'states': [], ...}, ...]
-
-            List needs to be the same length as data, and all items need to
-            contain the same dictionary keys etc...
-
-            If no properties are provided, autogenerates the ID property
-            based on the track index in the list. Properties can have any
-            numeric type (scalar, array), although not much type checking
-            at the moment.
-
-            importantly, parent is a list of track IDs that are parents of the
-            track, this can be one (the track has one parent, and the parent
-            has >=1 child) in the case of splitting, or more than one (the
-            track has multiple parents, but only one child) in the case of
-            track merging.
-
-        color_by: str
-            track property to color vertices by
-
-        colormap: str:
-            default colormap to use for vertex coloring
-
-        colomaps_dict : dict
-            dictionary list of colormap objects to use for coloring by track
-            properties:
-
-            colormaps are any object with a __getitem__, that return RGBA
-
-            {'states': IndexedColormap}
-
+        List needs to be the same length as data, and all items need to
+        contain the same dictionary keys etc. If no properties are provided,
+        the layer autogenerates the ID property based on the track index in
+        the list. Properties can have any numeric type (scalar, array).
+        Importantly, 'parent' is a special property which defines a list of
+        track IDs that are parents of the track. This can be one (the track
+        has one parent, and the parent has >=1 child) in the case of track
+        splitting, or more than one (the track has multiple parents, but
+        only one child) in the case of track merging.
+    color_by: str
+        track property (from property keys) to color vertices by
+    edge_width : float
+        Width for all vectors in pixels.
+    tail_length : float
+        Length of the projection of time as a tail, in units of time.
+    colormap : str
+        Default colormap to use to set vertex colors. Specialized colormaps,
+        relating to specified properties can be passed to the layer via
+        colormaps_dict.
+    colomaps_dict : dict
+        dictionary list of colormap objects to use for coloring by track
+        properties. when coloring vertices, the layer looks in this
+        dictionary to find a matching colormap. the value is any object
+        with a __getitem__, that returns RGBA values that can be mapped to
+        the property
+    name : str
+        Name of the layer.
+    metadata : dict
+        Layer metadata.
+    scale : tuple of float
+        Scale factors for the layer.
+    translate : tuple of float
+        Translation values for the layer.
+    opacity : float
+        Opacity of the layer visual, between 0.0 and 1.0.
+    blending : str
+        One of a list of preset blending modes that determines how RGB and
+        alpha values of the layer visual get mixed. Allowed values are
+        {'opaque', 'translucent', and 'additive'}.
+    visible : bool
+        Whether the layer visual is currently being displayed.
 
     Notes
     -----
@@ -89,7 +98,7 @@ class Tracks(Layer):
         scale=None,
         translate=None,
         opacity=1,
-        blending='translucent',
+        blending='additive',
         visible=True,
         colormap='viridis',
         color_by='ID',

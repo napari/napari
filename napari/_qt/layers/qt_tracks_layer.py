@@ -23,7 +23,7 @@ class QtTracksControls(QtLayerControls):
 
     Parameters
     ----------
-    layer : arboretum.layers.Tracks
+    layer : napari.layers.Tracks
         An instance of a Tracks layer.
 
     Attributes
