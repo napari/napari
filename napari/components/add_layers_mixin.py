@@ -439,9 +439,9 @@ class AddLayersMixin:
         num_colors : int
             Number of unique colors to use in colormap.
         properties : dict {str: array (N,)}, DataFrame
-            Properties for each label. Each property should be an array of length
-            N, where N is the number of labels, and the first property corresponds to
-            background.
+            Properties for each label. Each property should be an array of
+            length N, where N is the number of labels, and the first property
+            corresponds to background.
         seed : float
             Seed for colormap random generator.
         name : str
