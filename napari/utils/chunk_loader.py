@@ -22,9 +22,9 @@ from qtpy.QtCore import Signal, QObject
 from ..types import ArrayLike
 
 
-# For testing purposes turn off async entirely, data will be immediately
-# loaded in the GUI thread.
-DISABLE_ASYNC = True
+# If False then we load chunks immediately in the GUI thread. This is
+# useful for testing and debugging since it greatly simplifies things.
+ENABLE_AYSNC_LOADING = False
 
 
 def _index_to_tuple(index):
@@ -141,8 +141,8 @@ class ChunkLoader:
         request : ChunkRequest
             Contains the array to load from and related info.
         """
-        if DISABLE_ASYNC:
-            # No async, load right here in the GUI thread.
+        if not ENABLE_AYSNC_LOADING:
+            # Load immediately right here in the GUI thread.
             request.array = np.asarray(request.array)
             return request
 
