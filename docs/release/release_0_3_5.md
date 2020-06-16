@@ -12,7 +12,7 @@ https://github.com/napari/napari
 
 
 ## New Features
-- Allow using of custom color dictionary in labels layer (#1339) and (#1362)
+- Allow using of custom color dictionary in labels layer (#1339 and #1362)
 - Add performance monitoring widget (#1262)
 
 
@@ -23,8 +23,8 @@ https://github.com/napari/napari
 ## Bug Fixes
 - Fix warning for python 3.8 (#1335)
 - Fix ranger slide position (#1344)
-- Fix press down linux key press hold (#1350)
-- Fix points select all (#1358)
+- Fix Linux and Windows key hold detection (#1350)
+- Fix crash when selecting all points (#1358)
 - Fix deleting layers changing dims (#1359)
 
 
