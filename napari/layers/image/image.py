@@ -199,6 +199,11 @@ class Image(IntensityVisualizationMixin, Layer):
         # Set data
         self.rgb = rgb
         self._data = data
+
+        # We need to create self._slice now up front, although it would be nice
+        # to wait until self._set_view_slice is called and create it then.
+        self._create_image_slice()
+
         if self.multiscale:
             self._data_level = len(self.data) - 1
             # Determine which level of the multiscale to use for the thumbnail.
@@ -216,13 +221,6 @@ class Image(IntensityVisualizationMixin, Layer):
             self._data_level = 0
             self._thumbnail_level = 0
         self.corner_pixels[1] = self.level_shapes[self._data_level]
-
-        properties = ImageProperties(multiscale, rgb)
-
-        # Intitialize the current slice to an empty image.
-        self._slice = ImageSlice(
-            self._get_empty_image(), properties, self._raw_to_displayed
-        )
 
         # Set contrast_limits and colormaps
         self._gamma = gamma
@@ -298,6 +296,7 @@ class Image(IntensityVisualizationMixin, Layer):
     @data.setter
     def data(self, data):
         self._data = data
+        self._slice = None  # Create a new one for this data.
         self._update_dims()
         self.events.data()
 
@@ -475,10 +474,20 @@ class Image(IntensityVisualizationMixin, Layer):
         image = raw
         return image
 
+    def _create_image_slice(self):
+        """Create an ImageSlice for this specific data."""
+        properties = ImageProperties(self.multiscale, self.rgb)
+        self._slice = ImageSlice(
+            self._get_empty_image(), properties, self._raw_to_displayed
+        )
+
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
         not_disp = self.dims.not_displayed
         order = self._get_order()
+
+        if self._slice is None:
+            self._create_image_slice()
 
         if self.multiscale:
             # If 3d redering just show lowest level of multiscale
