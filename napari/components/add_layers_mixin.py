@@ -443,7 +443,8 @@ class AddLayersMixin:
             N, where N is the number of labels, and the first property corresponds to
             background.
         color : dict of int to str or array
-            Custom label to color mapping. Values must be valid color names or RGBA arrays.
+            Custom label to color mapping. Values must be valid color names or
+            RGBA arrays.
         seed : float
             Seed for colormap random generator.
         name : str
