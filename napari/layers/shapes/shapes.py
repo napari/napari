@@ -774,11 +774,13 @@ class Shapes(Layer):
                         new_color_property,
                     )
                     warnings.warn(
-                        '_{attribute}_color_property was not set, setting to: {new_color_property}'
+                        f'_{attribute}_color_property was not set, '
+                        f'setting to: {new_color_property}'
                     )
                 else:
                     raise ValueError(
-                        'There must be a valid Shapes.properties to use {color_mode}'
+                        'There must be a valid Shapes.properties to use '
+                        f'{color_mode}'
                     )
 
             # ColorMode.COLORMAP can only be applied to numeric properties
