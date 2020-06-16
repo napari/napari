@@ -673,7 +673,7 @@ def test_switch_color_mode(attribute):
     continuous_prop = np.random.random((shape[0],))
     continuous_prop[-1] = 1
     properties = {
-        'point_truthiness': continuous_prop,
+        'shape_truthiness': continuous_prop,
         'shape_type': _make_cycled_properties(['A', 'B'], shape[0]),
     }
     initial_color = [1, 0, 0, 1]
@@ -701,7 +701,7 @@ def test_switch_color_mode(attribute):
 
     # transitioning to colormap should raise a warning
     # because there isn't an edge color property yet and
-    # the first property in points.properties is being automatically selected
+    # the first property in shapes.properties is being automatically selected
     with pytest.warns(UserWarning):
         setattr(layer, f'{attribute}_color_mode', 'colormap')
     color_property = getattr(layer, f'_{attribute}_color_property')
@@ -794,7 +794,7 @@ color_cycle_rgba = [[1, 0, 0, 1], [0, 0, 1, 1]]
 )
 def test_color_cycle(attribute, color_cycle):
     """Test setting edge/face color with a color cycle list"""
-    # create Points using list color cycle
+    # create Shapes using list color cycle
     shape = (10, 4, 2)
     np.random.seed(0)
     data = 20 * np.random.random(shape)
@@ -838,7 +838,7 @@ def test_color_cycle(attribute, color_cycle):
     # refresh colors
     layer.refresh_colors(update_color_mapping=True)
 
-    # test adding a point with a new property value
+    # test adding a shape with a new property value
     layer.selected_data = {}
     current_properties = layer.current_properties
     current_properties['shape_type'] = np.array(['new'])
