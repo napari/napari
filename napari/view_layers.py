@@ -478,10 +478,17 @@ def view_labels(
 def view_shapes(
     data=None,
     *,
+    properties=None,
     shape_type='rectangle',
     edge_width=1,
     edge_color='black',
+    edge_color_cycle=None,
+    edge_colormap='viridis',
+    edge_contrast_limits=None,
     face_color='white',
+    face_color_cycle=None,
+    face_colormap='viridis',
+    face_contrast_limits=None,
     z_index=0,
     name=None,
     metadata=None,
@@ -504,6 +511,9 @@ def view_shapes(
         List of shape data, where each element is an (N, D) array of the
         N vertices of a shape in D dimensions. Can be an 3-dimensional
         array if each shape has the same number of vertices.
+    properties : dict {str: array (N,)}, DataFrame
+        Properties for each shape. Each property should be an array of length N,
+        where N is the number of shapes.
     shape_type : string or list
         String of shape shape_type, must be one of "{'line', 'rectangle',
         'ellipse', 'path', 'polygon'}". If a list is supplied it must be
@@ -521,12 +531,34 @@ def view_shapes(
         or 4 elements. If a list is supplied it must be the same length as
         the length of `data` and each element will be applied to each shape
         otherwise the same value will be used for all shapes.
+    edge_color_cycle : np.ndarray, list
+        Cycle of colors (provided as string name, RGB, or RGBA) to map to edge_color if a
+        categorical attribute is used color the vectors.
+    edge_colormap : str, vispy.color.colormap.Colormap
+        Colormap to set edge_color if a continuous attribute is used to set face_color.
+        See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
+    edge_contrast_limits : None, (float, float)
+        clims for mapping the property to a color map. These are the min and max value
+        of the specified property that are mapped to 0 and 1, respectively.
+        The default value is None. If set the none, the clims will be set to
+        (property.min(), property.max())
     face_color : str, array-like
         If string can be any color name recognized by vispy or hex value if
         starting with `#`. If array-like must be 1-dimensional array with 3
         or 4 elements. If a list is supplied it must be the same length as
         the length of `data` and each element will be applied to each shape
         otherwise the same value will be used for all shapes.
+    face_color_cycle : np.ndarray, list
+        Cycle of colors (provided as string name, RGB, or RGBA) to map to face_color if a
+        categorical attribute is used color the vectors.
+    face_colormap : str, vispy.color.colormap.Colormap
+        Colormap to set face_color if a continuous attribute is used to set face_color.
+        See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
+    face_contrast_limits : None, (float, float)
+        clims for mapping the property to a color map. These are the min and max value
+        of the specified property that are mapped to 0 and 1, respectively.
+        The default value is None. If set the none, the clims will be set to
+        (property.min(), property.max())
     z_index : int or list
         Specifier of z order priority. Shapes with higher z order are
         displayed ontop of others. If a list is supplied it must be the
@@ -576,10 +608,17 @@ def view_shapes(
     )
     viewer.add_shapes(
         data=data,
+        properties=properties,
         shape_type=shape_type,
         edge_width=edge_width,
         edge_color=edge_color,
+        edge_color_cycle=edge_color_cycle,
+        edge_colormap=edge_colormap,
+        edge_contrast_limits=edge_contrast_limits,
         face_color=face_color,
+        face_color_cycle=face_color_cycle,
+        face_colormap=face_colormap,
+        face_contrast_limits=face_contrast_limits,
         z_index=z_index,
         name=name,
         metadata=metadata,
