@@ -64,7 +64,7 @@ class Shapes(Layer):
         N vertices of a shape in D dimensions. Can be an 3-dimensional
         array if each shape has the same number of vertices.
     properties : dict {str: array (N,)}, DataFrame
-        Properties for each point. Each property should be an array of length N,
+        Properties for each shape. Each property should be an array of length N,
         where N is the number of shapes.
     shape_type : string or list
         String of shape shape_type, must be one of "{'line', 'rectangle',
@@ -140,7 +140,7 @@ class Shapes(Layer):
         List of shape data, where each element is an (N, D) array of the
         N vertices of a shape in D dimensions.
     properties : dict {str: array (N,)}, DataFrame
-        Properties for each point. Each property should be an array of length N,
+        Properties for each shape. Each property should be an array of length N,
         where N is the number of shapes.
     shape_type : (N, ) list of str
         Name of shape type for each shape.
@@ -487,7 +487,7 @@ class Shapes(Layer):
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
-        """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each point"""
+        """dict {str: np.ndarray (N,)}, DataFrame: Annotations for each shape"""
         return self._properties
 
     @properties.setter
@@ -581,7 +581,7 @@ class Shapes(Layer):
 
     @property
     def current_properties(self) -> Dict[str, np.ndarray]:
-        """dict{str: np.ndarray(1,)}: properties for the next added point."""
+        """dict{str: np.ndarray(1,)}: properties for the next added shape."""
         return self._current_properties
 
     @current_properties.setter
@@ -619,8 +619,8 @@ class Shapes(Layer):
     @property
     def edge_color_cycle(self) -> np.ndarray:
         """Union[list, np.ndarray] :  Color cycle for edge_color.
-        Can be a list of colors defined by name, RGB or RGBA
 
+        Can be a list of colors defined by name, RGB or RGBA
         """
         return self._edge_color_cycle_values
 
@@ -630,7 +630,7 @@ class Shapes(Layer):
 
     @property
     def edge_colormap(self) -> Tuple[str, Colormap]:
-        """Return the colormap to be applied to a property to get the edge color.
+        """Return the colormap to map a property to an edge color.
 
         Returns
         -------
@@ -664,7 +664,7 @@ class Shapes(Layer):
     def edge_color_mode(self) -> str:
         """str: Edge color setting mode
 
-        DIRECT (default mode) allows each point to be set arbitrarily
+        DIRECT (default mode) allows each shape color to be set arbitrarily
 
         CYCLE allows the color to be set via a color cycle over an attribute
 
@@ -733,7 +733,7 @@ class Shapes(Layer):
     def face_color_mode(self) -> str:
         """str: Face color setting mode
 
-        DIRECT (default mode) allows each point to be set arbitrarily
+        DIRECT (default mode) allows each shape color to be set arbitrarily
 
         CYCLE allows the color to be set via a color cycle over an attribute
 
@@ -778,7 +778,7 @@ class Shapes(Layer):
                     )
                 else:
                     raise ValueError(
-                        'There must be a valid Points.properties to use {color_mode}'
+                        'There must be a valid Shapes.properties to use {color_mode}'
                     )
 
             # ColorMode.COLORMAP can only be applied to numeric properties
