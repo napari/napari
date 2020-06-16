@@ -22,7 +22,7 @@ https://github.com/napari/napari
 
 ## Bug Fixes
 - Fix warning for python 3.8 (#1335)
-- Fix ranger slide position (#1344)
+- Fix range slider position (#1344)
 - Fix Linux and Windows key hold detection (#1350)
 - Fix crash when selecting all points (#1358)
 - Fix deleting layers changing dims (#1359)
