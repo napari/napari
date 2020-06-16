@@ -39,7 +39,7 @@ class ColorMode(StringEnum):
     """
     ColorMode: Color setting mode.
 
-    DIRECT (default mode) allows each point to be set arbitrarily
+    DIRECT (default mode) allows each shape to be set arbitrarily
 
     CYCLE allows the color to be set via a color cycle over an attribute
 

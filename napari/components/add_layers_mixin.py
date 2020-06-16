@@ -523,8 +523,8 @@ class AddLayersMixin:
             N vertices of a shape in D dimensions. Can be an 3-dimensional
             array if each shape has the same number of vertices.
         properties : dict {str: array (N,)}, DataFrame
-            Properties for each point. Each property should be an array of length N,
-            where N is the number of shapes.
+            Properties for each shape. Each property should be an array of
+            length N, where N is the number of shapes.
         shape_type : string or list
             String of shape shape_type, must be one of "{'line', 'rectangle',
             'ellipse', 'path', 'polygon'}". If a list is supplied it must be
