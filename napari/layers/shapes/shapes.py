@@ -1649,7 +1649,7 @@ class Shapes(Layer):
         Returns
         ----------
         box : np.ndarray
-            10x2 array of vertices of the interaction box. The first 8 shapes
+            10x2 array of vertices of the interaction box. The first 8 points
             are the corners and midpoints of the box in clockwise order
             starting in the upper-left corner. The 9th point is the center of
             the box, and the last point is the location of the rotation handle
