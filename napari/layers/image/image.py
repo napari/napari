@@ -247,14 +247,6 @@ class Image(IntensityVisualizationMixin, Layer):
         # Trigger generation of view slice and thumbnail
         self._update_dims()
 
-    def _get_empty_image(self):
-        """Get empty image to use as the default before data is loaded.
-        """
-        if self.rgb:
-            return np.zeros((1,) * self.dims.ndisplay + (self.shape[-1],))
-        else:
-            return np.zeros((1,) * self.dims.ndisplay)
-
     def _get_order(self):
         """Return the order of the displayed dimensions."""
         if self.rgb:
@@ -276,6 +268,10 @@ class Image(IntensityVisualizationMixin, Layer):
     def _data_raw(self):
         """Raw image for the current slice. (compatibility)"""
         return self._slice.image.raw
+
+    @property
+    def displayed_slice(self):
+        return self._slice.displayed
 
     def _calc_data_range(self):
         if self.multiscale:
@@ -476,11 +472,13 @@ class Image(IntensityVisualizationMixin, Layer):
 
     def _create_image_slice(self):
         """Create an ImageSlice for this specific data."""
+        shape = self.data[self.dims.indices].shape
+        empty_image = np.zeros(shape)
         properties = ImageProperties(
             self.multiscale, self.rgb, self._get_order()
         )
         self._slice = ImageSlice(
-            self._get_empty_image(), properties, self._raw_to_displayed
+            empty_image, properties, self._raw_to_displayed
         )
 
     def _set_view_slice(self):

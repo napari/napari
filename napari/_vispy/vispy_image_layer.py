@@ -49,7 +49,7 @@ class VispyImageLayer(VispyBaseLayer):
         self.reset()
 
     def _on_data_change(self, event=None):
-        data = self.layer._data_view
+        data = self.layer.displayed_slice
         dtype = np.dtype(data.dtype)
         if dtype not in texture_dtypes:
             try:

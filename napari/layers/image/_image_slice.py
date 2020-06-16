@@ -64,8 +64,11 @@ class ImageSlice:
         self.thumbnail: ImageView = ImageView(view_image, image_converter)
         self.properties = properties
 
-        # We're showing the slice at these indices
+        # We're showing the slice at these indices.
         self.current_indices = None
+
+        # If set we're showing this placeholder while loading.
+        self.placeholder = None
 
     def set_raw_images(self, image: ArrayLike, thumbnail: ArrayLike) -> None:
         """Set the image and its thumbnail.
@@ -86,6 +89,18 @@ class ImageSlice:
             thumbnail = np.clip(thumbnail, 0, 1)
         self.image.raw = image
         self.thumbnail.raw = thumbnail
+        self.placeholder = None
+
+    @property
+    def displayed(self):
+        """The image that should be displayed for the slice.
+
+        This is the loaded slice image, unless a load is in progress in
+        which case we display the placeholder image.
+        """
+        return (
+            self.image.view if self.placeholder is None else self.placeholder
+        )
 
     def load_chunk(self, request: ChunkRequest) -> None:
         """Load the requested chunk.
@@ -112,8 +127,7 @@ class ImageSlice:
         satisfied_request = CHUNK_LOADER.load_chunk(request)
 
         if satisfied_request is None:
-            # Cache miss: async load was started. Show placeholder image
-            # until the load finishes and self.chunk_loaded() is called.
+            # Async load was started, show placeholder while loading.
             self._set_placeholder_image()
         else:
             # It was in the cache, put it to immediate use.
@@ -176,5 +190,4 @@ class ImageSlice:
         previous slice.
         """
         text = f"loading: {self._get_slice_string()}"
-        placeholder = get_text_image(text, self.properties.rgb)
-        self.set_raw_images(placeholder, placeholder)
+        self.placeholder = get_text_image(text, self.properties.rgb)
