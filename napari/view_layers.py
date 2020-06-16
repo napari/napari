@@ -576,7 +576,7 @@ def view_shapes(
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
-        title : string
+    title : string
         The title of the viewer window.
     ndisplay : {2, 3}
         Number of displayed dimensions.
