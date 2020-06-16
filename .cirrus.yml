@@ -1,6 +1,6 @@
-# # default container
-# container:
-#   image: python:3.8
+# default container
+container:
+  image: python:3.8
 
 
 # black_task:
