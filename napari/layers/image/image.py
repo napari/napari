@@ -476,7 +476,9 @@ class Image(IntensityVisualizationMixin, Layer):
 
     def _create_image_slice(self):
         """Create an ImageSlice for this specific data."""
-        properties = ImageProperties(self.multiscale, self.rgb)
+        properties = ImageProperties(
+            self.multiscale, self.rgb, self._get_order()
+        )
         self._slice = ImageSlice(
             self._get_empty_image(), properties, self._raw_to_displayed
         )
@@ -561,7 +563,7 @@ class Image(IntensityVisualizationMixin, Layer):
             if self._slice.current_indices != indices:
                 array = self.data[indices]
                 request = ChunkRequest(self, indices, array)
-                self._slice.load_chunk(request, order)
+                self._slice.load_chunk(request)
 
         if self.multiscale:
             self.events.scale()
@@ -569,13 +571,12 @@ class Image(IntensityVisualizationMixin, Layer):
 
     def chunk_loaded(self, request):
         print(f"Image.chunk_loaded: {request.indices}")
-        order = self._get_order()
 
         # Should we do this here or when load was started?
         self._transforms['tile2data'].scale = np.ones(self.dims.ndim)
 
         # Tell the slice its data is ready to show.
-        self._slice.chunk_loaded(request, order)
+        self._slice.chunk_loaded(request)
 
         # Update vispy, draw the new slice
         self.refresh()
