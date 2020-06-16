@@ -302,15 +302,18 @@ class QtLabelsControls(QtLayerControls):
         else:
             self.layer.preserve_labels = False
 
-    def change_color_mode(self, text):
+    def change_color_mode(self, new_mode):
         """Change color mode of label layer.
 
         Parameters
         ----------
-        state : QComboBox
-            ComboBox to change between color mode.
+        new_mode : str
+
+        AUTO (default) allows color to be set via a hash function with a seed.
+
+        DIRECT allows color of each label to be set directly by a color dictionary.
         """
-        self.layer.color_mode = text
+        self.layer.color_mode = new_mode
 
     def _on_selection_change(self, event=None):
         """Receive layer model label selection change event and update spinbox.

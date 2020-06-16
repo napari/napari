@@ -364,6 +364,7 @@ def view_labels(
     *,
     num_colors=50,
     properties=None,
+    color=None,
     seed=0.5,
     name=None,
     metadata=None,
@@ -402,8 +403,11 @@ def view_labels(
         Number of unique colors to use in colormap.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each label. Each property should be an array of length
-        N, where N is the number of labels, and the first property corresponds to
-        background.
+        N, where N is the number of labels, and the first property corresponds
+        to background.
+    color : dict of int to str or array
+        Custom label to color mapping. Values must be valid color names or RGBA
+        arrays.
     seed : float
         Seed for colormap random generator.
     name : str
@@ -466,6 +470,7 @@ def view_labels(
         opacity=opacity,
         blending=blending,
         visible=visible,
+        color=color,
     )
     return viewer
 

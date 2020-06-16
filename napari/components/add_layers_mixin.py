@@ -406,6 +406,7 @@ class AddLayersMixin:
         *,
         num_colors=50,
         properties=None,
+        color=None,
         seed=0.5,
         name=None,
         metadata=None,
@@ -415,7 +416,6 @@ class AddLayersMixin:
         blending='translucent',
         visible=True,
         multiscale=None,
-        color_dict=None,
     ) -> layers.Labels:
         """Add a labels (or segmentation) layer to the layers list.
 
@@ -442,6 +442,9 @@ class AddLayersMixin:
             Properties for each label. Each property should be an array of
             length N, where N is the number of labels, and the first property
             corresponds to background.
+        color : dict of int to str or array
+            Custom label to color mapping. Values must be valid color names or
+            RGBA arrays.
         seed : float
             Seed for colormap random generator.
         name : str
@@ -476,6 +479,7 @@ class AddLayersMixin:
             data,
             num_colors=num_colors,
             properties=properties,
+            color=color,
             seed=seed,
             name=name,
             metadata=metadata,
@@ -485,7 +489,6 @@ class AddLayersMixin:
             blending=blending,
             visible=visible,
             multiscale=multiscale,
-            color_dict=color_dict,
         )
         self.add_layer(layer)
         return layer
