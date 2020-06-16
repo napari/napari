@@ -219,13 +219,14 @@ push_docs_task:
   env:
     # GH_REF: github.com/napari/docs
     # GH_TOKEN: ENCRYPTED[bdbe1e34c8f2491f4c982798ed4bb5bfe61da8ecb1d7c5164bd97f6fccaa398818d2b788badd13651d8e1692cab10fec]
-    CIRRUS_CLONE_DEPTH: 200
+    CIRRUS_CLONE_DEPTH: 0
 
   system_script: |
     apt-get update
     apt-get install -y libgl1-mesa-glx libqt5x11extras5
 
   install_script: |
+    git fetch --tags
     python -m pip install --retries 3 --upgrade pip
     python -m pip install --retries 3 -e ".[all]"
     # python -m pip install --retries 3 -r requirements/docs.txt
