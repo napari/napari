@@ -5,6 +5,7 @@ import numpy as np
 from .add_layers_mixin import AddLayersMixin
 from .dims import Dims
 from .layerlist import LayerList
+from .layers import Layer
 from ..utils.event import EmitterGroup, Event
 from ..utils.key_bindings import KeymapHandler, KeymapProvider
 from ..utils.theme import palettes
@@ -503,6 +504,75 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         """Arrange the current layers is a stack.
         """
         self.grid_view(n_row=1, n_column=1, stride=1)
+
+    def save(self, path: str, *, layer=None, plugin):
+        """Save given or all layers to a path using writer plugins.
+
+        If ``plugin`` is not provided and only one layer is given, then we
+        directly call the corresponding``napari_write_<layer_type>`` hook (see
+        :ref:`single layer writer hookspecs <write-single-layer-hookspecs>`)
+        which will loop through implementations and stop when the first one
+        returns a non-``None`` result. The order in which implementations are
+        called can be changed with the Plugin sorter in the GUI or with the
+        corresponding hook's
+        :meth:`~napari.plugins._hook_callers._HookCaller.bring_to_front`
+        method.
+
+        If ``plugin`` is not provided and multiple layers are targeted,
+        then we call
+        :meth:`~napari.plugins.hook_specifications.napari_get_writer` which
+        loops through plugins to find the first one that knows how to handle
+        the combination of layers and is able to write the file. If no plugins
+        offer :meth:`~napari.plugins.hook_specifications.napari_get_writer` for
+        that combination of layers then the default
+        :meth:`~napari.plugins.hook_specifications.napari_get_writer` will
+        create a folder and call ``napari_write_<layer_type>`` for each layer
+        using the ``Layer.name`` variable to modify the path such that the
+        layers are written to unique files in the folder.
+
+        If ``plugin`` is provided and a single layer is targeted, then we
+        call the ``napari_write_<layer_type>`` for that plugin, and if it fails
+        we error.
+
+        If ``plugin`` is provided and multiple layers are targeted, then
+        we call we call
+        :meth:`~napari.plugins.hook_specifications.napari_get_writer` for
+        that plugin, and if it doesn’t return a ``WriterFunction`` we error,
+        otherwise we call it and if that fails we error.
+
+        Parameters
+        ----------
+        path : str
+            A filepath, directory, or URL to open.  Extensions may be used to
+            specify output format (provided a plugin is avaiable for the
+            requested format).
+        layer : napari Layer, int, str, or list
+            A layer object, or layer index in the viewer, or layer name in
+            the viewer. A list of these is also acceptable, but if given as
+            a list, all elements in the list must be of the same type.
+        plugin : str, optional
+            Name of the plugin to use for saving. If None then all plugins
+            corresponding to appropriate hook specification will be looped
+            through to find the first one that can save the data.
+
+        Returns
+        -------
+        list of str
+            File paths of any files that were written.
+        """
+        from ..plugins.io import save_layers
+
+        if isinstance(layer, Layer):
+            layers = [layer]
+        elif isinstance(layer, [int, str]):
+            layers = [self.layers[layer]]
+        else:  # sequence
+            if isinstance(layer[0], Layer):
+                layers = layer
+            else:  # int/str
+                layers = [self.layers[i] for i in layer]
+
+        return save_layers(path, layers, plugin=plugin)
 
     def _update_grid(self, event=None):
         """Update grid with current grid values.
