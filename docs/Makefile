@@ -28,8 +28,6 @@ clean:
 # "make mode" option.  $(O) is meant as a shortcut for $(SPHINXOPTS).
 %: Makefile
 	make buildapi
-	rm -rf source/developers
-	cp -R developers source/
 	rm -rf source/release
 	cp -R release source/
 	rm -f source/release/generate_release_notes.py
