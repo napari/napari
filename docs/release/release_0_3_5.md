@@ -20,6 +20,7 @@ in (#1328).
 
 ## New Features
 - Allow using of custom color dictionary in labels layer (#1339 and #1362)
+- Allow Shapes face and edge colors to be mapped to properties (#1342)
 - Add performance monitoring widget (#1262)
 
 
