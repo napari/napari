@@ -1,8 +1,15 @@
 import sys
+import os
 
 from napari_plugin_engine import PluginManager
 from . import hook_specifications
 from . import _builtins
+
+if os.name == 'nt':
+    # This is where plugins will be in bundled apps on windows
+    exe_dir = os.path.dirname(sys.executable)
+    winlib = os.path.join(exe_dir, "Lib", "site-packages")
+    sys.path.append(winlib)
 
 # the main plugin manager instance for the `napari` plugin namespace.
 plugin_manager = PluginManager(
