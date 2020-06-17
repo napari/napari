@@ -10,6 +10,13 @@ rendering), and the scientific Python stack (numpy, scipy).
 For more information, examples, and documentation, please visit our website:
 https://github.com/napari/napari
 
+## Highlights
+This release contains a number of bug fixes on various platforms. For those
+interested in napari performance, we have added a new performance monitoring
+mode, that can be activated by the `NAPARI_PERFMON` environment variable, see
+(#1262) for details. We have also added a page on napari's rendering pipeline
+in (#1328).
+
 
 ## New Features
 - Allow using of custom color dictionary in labels layer (#1339 and #1362)
