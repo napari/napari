@@ -243,6 +243,15 @@ functionality by simply installing your package along with napari:
 
    pip install napari mypackage
 
+Step 4: Share your plugin with the world
+----------------------------------------
+
+If you are using Github, add the `"napari-plugin" topic
+<https://github.com/topics/napari-plugin>`_ to your repo so other developers can
+see your work.
+
+When you are ready for users, announce your plugin on the `Image.sc Forum
+<https://forum.image.sc/tag/napari>`_.
 
 Cookiecutter template
 ---------------------
@@ -276,6 +285,9 @@ For a more thorough plugin see `napari-aicsimageio
 community plugins developed for napari.  This plugin takes advantage of
 :ref:`entry_point discovery <entry-point-discovery>` to offer multiple
 readers for both in-memory and lazy-loading of image files.
+
+More examples of plugins can be found on the `"napari-plugin" Github topic
+<https://github.com/topics/napari-plugin>`_.
 
 Help
 ----
