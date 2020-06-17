@@ -2,6 +2,7 @@ pytest
 pytest-faulthandler
 pytest-qt
 pytest-ordering
+pytest-timeout<1.4.0
 pandas
 xarray
 fsspec
