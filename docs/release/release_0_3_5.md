@@ -14,8 +14,9 @@ https://github.com/napari/napari
 This release contains a number of bug fixes on various platforms. For those
 interested in napari performance, we have added a new performance monitoring
 mode, that can be activated by the `NAPARI_PERFMON` environment variable, see
-(#1262) for details. We have also added a page on napari's rendering pipeline
-in (#1328).
+(#1262) for details. We have also added a page in the explanations section of
+our docs on napari's [rendering](https://napari.org/docs/explanations/rendering.html)
+including plans for the future.
 
 
 ## New Features
@@ -41,6 +42,7 @@ in (#1328).
 - New documentation on rendering (#1328)
 - Remove incorrect dashes in cirrus push_docs task (#1330)
 - Use correct pyqt version in tests (#1331)
+- Fix docs version, reformat, and add explanations (#1368)
 
 
 ## 8 authors added to this release (alphabetical)
