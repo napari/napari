@@ -28,13 +28,13 @@ including plans for the future.
 ## Improvements
 - Factor out ImageSlice and ImageView from Image (#1343)
 
-
 ## Bug Fixes
 - Fix warning for python 3.8 (#1335)
 - Fix range slider position (#1344)
 - Fix Linux and Windows key hold detection (#1350)
 - Fix crash when selecting all points (#1358)
 - Fix deleting layers changing dims (#1359)
+- Revert "remove scipy.stats import (#1250)" (#1371)
 
 
 ## Build Tools and Support
