@@ -80,6 +80,7 @@ _magicgui.register_types_with_magicgui()
 # there is some mysterious magical goodness in scipy stats that needs
 # to be imported early.
 # see: https://github.com/napari/napari/issues/925
+# see: https://github.com/napari/napari/issues/1347
 from scipy import stats  # noqa: F401
 
 del _magicgui
