@@ -13,6 +13,8 @@ def stack_to_images(
     axis: int,
     colormap: List[Union[str, Colormap]] = None,
     blending: str = None,
+    scale=None,
+    translate=None,
 ) -> List[Image]:
     """Function to split the active layer into separate layers along an axis
 
@@ -57,6 +59,12 @@ def stack_to_images(
 
     if blending not in ['additive', 'translucent', 'opaque']:
         blending = 'additive'
+
+    if scale is not None:
+        scale = stack.scale
+
+    if translate is not None:
+        translate = stack.translate
 
     imagelist = list()
 
