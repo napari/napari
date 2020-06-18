@@ -55,7 +55,7 @@ def paste(layer):
 def select_all(layer):
     """Select all points in the current view slice."""
     if layer._mode == Mode.SELECT:
-        layer.selected_data = layer._indices_view[: len(layer._data_view)]
+        layer.selected_data = set(layer._indices_view[: len(layer._view_data)])
         layer._set_highlight()
 
 

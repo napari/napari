@@ -374,3 +374,18 @@ def test_add_layer_from_data_raises():
             {'rgb': True},  # vectors do not have an 'rgb' kwarg
             layer_type='vectors',
         )
+
+
+def test_add_delete_layers():
+    """Test adding and deleting layers with different dims."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    viewer.add_image(np.random.random((5, 5, 10, 15)))
+    assert len(viewer.layers) == 1
+    assert viewer.dims.ndim == 4
+    viewer.add_image(np.random.random((5, 6, 5, 10, 15)))
+    assert len(viewer.layers) == 2
+    assert viewer.dims.ndim == 5
+    viewer.layers.remove_selected()
+    assert len(viewer.layers) == 1
+    assert viewer.dims.ndim == 4

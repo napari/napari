@@ -8,4 +8,4 @@ and the onboarding of new contributors.
    :maxdepth: 1
    :glob:
 
-   developers/*
+   *
