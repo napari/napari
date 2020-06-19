@@ -24,7 +24,7 @@ might want to enable plugins to extend the file formats that can be handled.  A
 "promise" to call functions created by external developers & installed by the user.
 
 
-1. **Hook Specifications**:  Wherever napari supports hooks, we have created
+1. **Hook Specifications**:  For each supported hook, we have created
 "*hook specifications*", which are
 well-documented function signatures that define the API (or
 "contract") that a plugin developer must adhere to when writing their function
