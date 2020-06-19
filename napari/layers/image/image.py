@@ -498,7 +498,9 @@ class Image(IntensityVisualizationMixin, Layer):
 
         # Nuke self.slice if no longer compatible.
         # TODO_ASYNC: can we nuke slice prior to this? In response to some event?
-        if order != self._slice.properties.displayed_order:
+        # TODO_ASYNC: this is ugly
+        has_slice = self._slice is not None
+        if has_slice and order != self._slice.properties.displayed_order:
             self._slice = None
 
         if self._slice is None:
