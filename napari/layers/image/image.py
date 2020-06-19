@@ -178,7 +178,7 @@ class Image(IntensityVisualizationMixin, Layer):
             ndim = len(init_shape)
 
         # Async loading is opt-in right now.
-        self.async_load = os.getenv("NAPARI_AYSNC_LOAD", "0") != "0"
+        self.async_load = os.getenv("NAPARI_ASYNC_LOAD", "0") != "0"
 
         super().__init__(
             data,
