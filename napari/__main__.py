@@ -172,7 +172,7 @@ def main():
 
         with gui_qt(startup_logo=False) as app:
             runpy.run_path(args.paths[0])
-            if getattr(app, 'existed', False):
+            if getattr(app, '_existed', False):
                 sys.exit()
     else:
         with gui_qt(startup_logo=True):
