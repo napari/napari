@@ -12,7 +12,6 @@ just have one and not one per Viewer:
 """
 
 from concurrent import futures
-import time
 from typing import Optional
 
 import numpy as np
@@ -69,7 +68,6 @@ def _chunk_loader_worker(request: ChunkRequest):
     similar means which is why we are doing it in a worker thread!
     """
     request.array = np.asarray(request.array)
-    time.sleep(1)
     return request
 
 
