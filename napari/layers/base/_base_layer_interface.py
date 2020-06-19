@@ -30,11 +30,7 @@ class BaseLayerInterface(BaseInterface):
         ...
 
     @abstractmethod
-    def _on_select_change(self, value):
-        ...
-
-    @abstractmethod
-    def _on_deselect_change(self, value):
+    def _on_selected_change(self, value):
         ...
 
     @abstractmethod

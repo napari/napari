@@ -8,9 +8,10 @@ import numpy as np
 from .layer_event_handler import LayerEventHandler
 from ._base_layer_interface import BaseLayerInterface
 from ...components import Dims
+from ...utils.dask_utils import configure_dask
 from ...utils.event import EmitterGroup, Event
 from ...utils.key_bindings import KeymapProvider
-from ...utils.misc import ROOT_DIR, configure_dask
+from ...utils.misc import ROOT_DIR
 from ...utils.naming import magic_name
 from ...utils.status_messages import format_float, status_format
 from ..transforms import ScaleTranslate, TransformChain
@@ -204,8 +205,7 @@ class Layer(KeymapProvider, ABC, BaseLayerInterface):
             blending=Event,
             opacity=Event,
             visible=Event,
-            select=Event,
-            deselect=Event,
+            selected=Event,
             scale=Event,
             translate=Event,
             data=Event,
@@ -250,14 +250,15 @@ class Layer(KeymapProvider, ABC, BaseLayerInterface):
         return self._name
 
     @name.setter
-    def name(self, name):
-        if name != self.name:
-            self.events.name(value=name)
+    def name(self, value):
+        if value != self.name:
+            self.events.name(value=value)
 
-    def _on_name_change(self, name):
-        if not name:
-            name = self._basename()
-        self._name = name
+    def _on_name_change(self, value):
+        if not value:
+            self._name = self._basename()
+        else:
+            self._name = value
 
     @property
     def opacity(self):
@@ -266,16 +267,16 @@ class Layer(KeymapProvider, ABC, BaseLayerInterface):
         return self._opacity
 
     @opacity.setter
-    def opacity(self, opacity):
-        self.events.opacity(value=opacity)
+    def opacity(self, value):
+        self.events.opacity(value=value)
 
-    def _on_opacity_change(self, opacity):
-        if not 0.0 <= opacity <= 1.0:
+    def _on_opacity_change(self, value):
+        if not 0.0 <= value <= 1.0:
             raise ValueError(
-                'opacity must be between 0.0 and 1.0; ' f'got {opacity}'
+                'Opacity must be between 0.0 and 1.0; ' f'got {value}.'
             )
 
-        self._opacity = opacity
+        self._opacity = value
         self._update_thumbnail()
         self.status = format_float(self.opacity)
 
@@ -299,13 +300,11 @@ class Layer(KeymapProvider, ABC, BaseLayerInterface):
         return str(self._blending)
 
     @blending.setter
-    def blending(self, blending):
-        self.events.blending(value=blending)
+    def blending(self, value):
+        self.events.blending(value=value)
 
-    def _on_blending_change(self, blending):
-        if isinstance(blending, str):
-            blending = Blending(blending)
-        self._blending = blending
+    def _on_blending_change(self, value):
+        self._blending = Blending(value)
 
     @property
     def visible(self):
@@ -313,14 +312,14 @@ class Layer(KeymapProvider, ABC, BaseLayerInterface):
         return self._visible
 
     @visible.setter
-    def visible(self, visibility):
-        self.events.visible(value=visibility)
+    def visible(self, value):
+        self.events.visible(value=value)
 
-    def _on_visible_change(self, visibility):
-        self._visible = visibility
+    def _on_visible_change(self, value):
+        self._visible = value
         self.refresh()
         if self.visible:
-            self.editable = self._set_editable()
+            self._set_editable()
         else:
             self.editable = False
 
@@ -330,14 +329,13 @@ class Layer(KeymapProvider, ABC, BaseLayerInterface):
         return self._editable
 
     @editable.setter
-    def editable(self, editable):
-        self.events.editable(value=editable)
+    def editable(self, value):
+        self.events.editable(value=value)
 
-    def _on_editable_change(self, editable):
-        if self._editable == editable:
+    def _on_editable_change(self, value):
+        if self._editable == value:
             return
-        self._editable = editable
-        self._set_editable(editable=editable)
+        self._editable = value
 
     @property
     def scale(self):
@@ -345,11 +343,11 @@ class Layer(KeymapProvider, ABC, BaseLayerInterface):
         return self._transforms['data2world'].scale
 
     @scale.setter
-    def scale(self, scale):
-        self.events.scale(value=np.array(scale))
+    def scale(self, value):
+        self.events.scale(value=np.array(value))
 
-    def _on_scale_change(self, scale):
-        self._transforms['data2world'].scale = scale
+    def _on_scale_change(self, value):
+        self._transforms['data2world'].scale = value
         self._update_dims()
 
     @property
@@ -358,11 +356,11 @@ class Layer(KeymapProvider, ABC, BaseLayerInterface):
         return self._transforms['data2world'].translate
 
     @translate.setter
-    def translate(self, translate):
-        self.events.translate(value=np.array(translate))
+    def translate(self, value):
+        self.events.translate(value=np.array(value))
 
-    def _on_translate_change(self, translate):
-        self._transforms['data2world'].translate = np.array(translate)
+    def _on_translate_change(self, value):
+        self._transforms['data2world'].translate = np.array(value)
         self._update_dims()
 
     @property
@@ -371,13 +369,13 @@ class Layer(KeymapProvider, ABC, BaseLayerInterface):
         return self._transforms['world2grid'].translate
 
     @translate_grid.setter
-    def translate_grid(self, translate_grid):
-        if np.all(self.translate_grid == translate_grid):
+    def translate_grid(self, value):
+        if np.all(self.translate_grid == value):
             return
-        self.events.translate(value=np.array(translate_grid))
+        self.events.translate(value=np.array(value))
 
-    def _on_translate_grid_change(self, translate_grid):
-        self._transforms['world2grid'].translate = translate_grid
+    def _on_translate_grid_change(self, value):
+        self._transforms['world2grid'].translate = value
 
     @property
     def position(self):
@@ -385,10 +383,10 @@ class Layer(KeymapProvider, ABC, BaseLayerInterface):
         return self._position
 
     @position.setter
-    def position(self, position):
-        if self._position == position:
+    def position(self, value):
+        if self._position == value:
             return
-        self._position = position
+        self._position = value
         self._update_coordinates()
 
     def _update_dims(self, event=None):
@@ -431,7 +429,7 @@ class Layer(KeymapProvider, ABC, BaseLayerInterface):
 
     @data.setter
     @abstractmethod
-    def data(self, data):
+    def data(self, value):
         raise NotImplementedError()
 
     @abstractmethod
@@ -490,8 +488,8 @@ class Layer(KeymapProvider, ABC, BaseLayerInterface):
         return self._thumbnail
 
     @thumbnail.setter
-    def thumbnail(self, thumbnail):
-        self.events.thumbnail(value=thumbnail.astype(np.uint8))
+    def thumbnail(self, value):
+        self.events.thumbnail(value=value.astype(np.uint8))
 
     def _on_thumbnail_change(self, thumbnail):
         if 0 in thumbnail.shape:
@@ -533,19 +531,13 @@ class Layer(KeymapProvider, ABC, BaseLayerInterface):
         return self._selected
 
     @selected.setter
-    def selected(self, selected):
-        if selected:
-            self.events.select(value=selected)
-        else:
-            self.events.deselect(value=selected)
+    def selected(self, value):
+        self.events.selected(value=value)
 
-    def _on_select_change(self, selected):
-        if selected == self.selected:
+    def _on_selected_change(self, value):
+        if value == self.selected:
             return
-        self._selected = selected
-
-    def _on_deselect_change(self, value):
-        self._on_select_change(value)
+        self._selected = value
 
     @property
     def status(self):
@@ -553,11 +545,11 @@ class Layer(KeymapProvider, ABC, BaseLayerInterface):
         return self._status
 
     @status.setter
-    def status(self, status):
-        self.events.status(value=status)
+    def status(self, value):
+        self.events.status(value=value)
 
-    def _on_status_change(self, status):
-        self._status = status
+    def _on_status_change(self, value):
+        self._status = value
 
     @property
     def help(self):
@@ -565,11 +557,11 @@ class Layer(KeymapProvider, ABC, BaseLayerInterface):
         return self._help
 
     @help.setter
-    def help(self, help):
-        self.events.help(value=help)
+    def help(self, value):
+        self.events.help(value=value)
 
-    def _on_help_change(self, help):
-        self._help = help
+    def _on_help_change(self, value):
+        self._help = value
 
     @property
     def interactive(self):
@@ -577,11 +569,11 @@ class Layer(KeymapProvider, ABC, BaseLayerInterface):
         return self._interactive
 
     @interactive.setter
-    def interactive(self, interactive):
-        self.events.interactive(value=interactive)
+    def interactive(self, value):
+        self.events.interactive(value=value)
 
-    def _on_interactive_change(self, interactive):
-        self._interactive = interactive
+    def _on_interactive_change(self, value):
+        self._interactive = value
 
     @property
     def cursor(self):
@@ -589,11 +581,11 @@ class Layer(KeymapProvider, ABC, BaseLayerInterface):
         return self._cursor
 
     @cursor.setter
-    def cursor(self, cursor):
-        self.events.cursor(value=cursor)
+    def cursor(self, value):
+        self.events.cursor(value=value)
 
-    def _on_cursor_change(self, cursor):
-        self._cursor = cursor
+    def _on_cursor_change(self, value):
+        self._cursor = value
 
     @property
     def cursor_size(self):
@@ -601,11 +593,11 @@ class Layer(KeymapProvider, ABC, BaseLayerInterface):
         return self._cursor_size
 
     @cursor_size.setter
-    def cursor_size(self, cursor_size):
-        self.events.cursor_size(value=cursor_size)
+    def cursor_size(self, value):
+        self.events.cursor_size(value=value)
 
-    def _on_cursor_size_change(self, cursor_size):
-        self._cursor_size = cursor_size
+    def _on_cursor_size_change(self, value):
+        self._cursor_size = value
 
     def set_view_slice(self):
         with self.dask_optimized_slicing():

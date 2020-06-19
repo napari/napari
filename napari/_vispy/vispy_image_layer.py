@@ -21,6 +21,7 @@ class VispyImageLayer(VispyBaseLayer, ImageLayerInterface):
     def __init__(self, layer):
         node = ImageNode(None, method='auto')
         super().__init__(layer, node)
+        self.layer.event_handler.register_component_to_update(self)
 
         self._on_display_change()
         self._on_data_change()
@@ -39,7 +40,7 @@ class VispyImageLayer(VispyBaseLayer, ImageLayerInterface):
         self.node.parent = parent
         self.reset()
 
-    def _on_data_change(self, event=None):
+    def _on_data_change(self, value=None):
         data = self.layer._data_view
         dtype = np.dtype(data.dtype)
         if dtype not in texture_dtypes:
@@ -89,8 +90,8 @@ class VispyImageLayer(VispyBaseLayer, ImageLayerInterface):
         self._on_translate_change()
         self.node.update()
 
-    def _on_interpolation_change(self, interpolation):
-        self.node.interpolation = interpolation
+    def _on_interpolation_change(self, value):
+        self.node.interpolation = value
 
     def _on_rendering_change(self, value):
         if self.layer.dims.ndisplay == 3:
@@ -111,9 +112,9 @@ class VispyImageLayer(VispyBaseLayer, ImageLayerInterface):
             )
         self.node.cmap = cmap
 
-    def _on_contrast_limits_change(self, contrast_limits):
+    def _on_contrast_limits_change(self, value):
         if self.layer.dims.ndisplay == 2:
-            self.node.clim = contrast_limits
+            self.node.clim = value
         else:
             self._on_data_change()
 

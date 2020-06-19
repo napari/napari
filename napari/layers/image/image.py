@@ -12,6 +12,7 @@ from ..utils.layer_utils import calc_data_range
 from ..intensity_mixin import IntensityVisualizationMixin
 from ._image_constants import Interpolation, Interpolation3D, Rendering
 from ._image_utils import guess_rgb, guess_multiscale
+from ._image_slice import ImageSlice
 
 
 # Mixin must come before Layer
@@ -80,7 +81,7 @@ class Image(IntensityVisualizationMixin, Layer, ImageLayerInterface):
     data : array or list of array
         Image data. Can be N dimensional. If the last dimension has length
         3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a list
-        and arrays are decreaing in shape then the data is treated as a
+        and arrays are decreasing in shape then the data is treated as a
         multiscale image.
     metadata : dict
         Image metadata.
@@ -103,7 +104,7 @@ class Image(IntensityVisualizationMixin, Layer, ImageLayerInterface):
         Color limits to be used for determining the colormap bounds for
         luminance images. If the image is rgb the contrast_limits is ignored.
     contrast_limits_range : list (2,) of float
-        Range for the color limits for luminace images. If the image is
+        Range for the color limits for luminance images. If the image is
         rgb the contrast_limits_range is ignored.
     gamma : float
         Gamma correction for determining colormap linearity.
@@ -215,15 +216,10 @@ class Image(IntensityVisualizationMixin, Layer, ImageLayerInterface):
             self._thumbnail_level = 0
         self.corner_pixels[1] = self.level_shapes[self._data_level]
 
-        # Intitialize image views and thumbnails with zeros
-        if self.rgb:
-            self._data_view = np.zeros(
-                (1,) * self.dims.ndisplay + (self.shape[-1],)
-            )
-        else:
-            self._data_view = np.zeros((1,) * self.dims.ndisplay)
-        self._data_raw = self._data_view
-        self._data_thumbnail = self._data_view
+        # Intitialize the current slice to an empty image.
+        self._slice = ImageSlice(
+            self._get_empty_image(), self._raw_to_displayed
+        )
 
         # Set contrast_limits and colormaps
         if contrast_limits is None:
@@ -252,6 +248,36 @@ class Image(IntensityVisualizationMixin, Layer, ImageLayerInterface):
         # Trigger generation of view slice and thumbnail
         self._update_dims()
 
+    def _get_empty_image(self):
+        """Get empty image to use as the default before data is loaded.
+        """
+        if self.rgb:
+            return np.zeros((1,) * self.dims.ndisplay + (self.shape[-1],))
+        else:
+            return np.zeros((1,) * self.dims.ndisplay)
+
+    def _get_order(self):
+        """Return the order of the displayed dimensions."""
+        if self.rgb:
+            # if rgb need to keep the final axis fixed during the
+            # transpose. The index of the final axis depends on how many
+            # axes are displayed.
+            return self.dims.displayed_order + (
+                max(self.dims.displayed_order) + 1,
+            )
+        else:
+            return self.dims.displayed_order
+
+    @property
+    def _data_view(self):
+        """Viewable image for the current slice. (compatibility)"""
+        return self._slice.image.view
+
+    @property
+    def _data_raw(self):
+        """Raw image for the current slice. (compatibility)"""
+        return self._slice.image.raw
+
     def _calc_data_range(self):
         if self.multiscale:
             input_data = self.data[-1]
@@ -269,8 +295,8 @@ class Image(IntensityVisualizationMixin, Layer, ImageLayerInterface):
         return self._data
 
     @data.setter
-    def data(self, data):
-        self._data = data
+    def data(self, value):
+        self._data = value
         self._update_dims()
         self.events.data()
 
@@ -287,10 +313,10 @@ class Image(IntensityVisualizationMixin, Layer, ImageLayerInterface):
         return self._data_level
 
     @data_level.setter
-    def data_level(self, level):
-        if self._data_level == level:
+    def data_level(self, value):
+        if self._data_level == value:
             return
-        self._data_level = level
+        self._data_level = value
         self.refresh()
 
     @property
@@ -323,9 +349,9 @@ class Image(IntensityVisualizationMixin, Layer, ImageLayerInterface):
         self.events.iso_threshold(value=value)
 
     def _on_iso_threshold_change(self, value):
-        self.status = format_float(value)
         self._iso_threshold = value
         self._update_thumbnail()
+        self.status = format_float(self.iso_threshold)
 
     @property
     def attenuation(self):
@@ -363,19 +389,15 @@ class Image(IntensityVisualizationMixin, Layer, ImageLayerInterface):
         return str(self._interpolation[self.dims.ndisplay])
 
     @interpolation.setter
-    def interpolation(self, interpolation):
+    def interpolation(self, value):
         """Set current interpolation mode."""
-        self.events.interpolation(value=interpolation)
+        self.events.interpolation(value=value)
 
-    def _on_interpolation_change(self, interpolation):
+    def _on_interpolation_change(self, value):
         if self.dims.ndisplay == 3:
-            self._interpolation[self.dims.ndisplay] = Interpolation3D(
-                interpolation
-            )
+            self._interpolation[self.dims.ndisplay] = Interpolation3D(value)
         else:
-            self._interpolation[self.dims.ndisplay] = Interpolation(
-                interpolation
-            )
+            self._interpolation[self.dims.ndisplay] = Interpolation(value)
 
     @property
     def rendering(self):
@@ -406,12 +428,12 @@ class Image(IntensityVisualizationMixin, Layer, ImageLayerInterface):
         return str(self._rendering)
 
     @rendering.setter
-    def rendering(self, rendering):
+    def rendering(self, value):
         """Set current rendering mode."""
-        self.events.rendering(value=rendering)
+        self.events.rendering(value=value)
 
-    def _on_rendering_change(self, rendering):
-        self._rendering = Rendering(rendering)
+    def _on_rendering_change(self, value):
+        self._rendering = Rendering(value)
 
     def _get_state(self):
         """Get dictionary of layer state.
@@ -444,7 +466,7 @@ class Image(IntensityVisualizationMixin, Layer, ImageLayerInterface):
         For normal image layers, just return the actual image.
 
         Parameters
-        -------
+        ----------
         raw : array
             Raw array.
 
@@ -459,16 +481,7 @@ class Image(IntensityVisualizationMixin, Layer, ImageLayerInterface):
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
         not_disp = self.dims.not_displayed
-
-        if self.rgb:
-            # if rgb need to keep the final axis fixed during the
-            # transpose. The index of the final axis depends on how many
-            # axes are displayed.
-            order = self.dims.displayed_order + (
-                max(self.dims.displayed_order) + 1,
-            )
-        else:
-            order = self.dims.displayed_order
+        order = self._get_order()
 
         if self.multiscale:
             # If 3d redering just show lowest level of multiscale
@@ -530,6 +543,7 @@ class Image(IntensityVisualizationMixin, Layer, ImageLayerInterface):
                 self.level_shapes[self._thumbnail_level, not_disp] - 1,
             )
             indices[not_disp] = downsampled_indices
+
             thumbnail_source = np.asarray(
                 self.data[self._thumbnail_level][tuple(indices)]
             ).transpose(order)
@@ -539,16 +553,11 @@ class Image(IntensityVisualizationMixin, Layer, ImageLayerInterface):
             thumbnail_source = image
 
         if self.rgb and image.dtype.kind == 'f':
-            self._data_raw = np.clip(image, 0, 1)
-            self._data_view = self._raw_to_displayed(self._data_raw)
-            self._data_thumbnail = self._raw_to_displayed(
-                np.clip(thumbnail_source, 0, 1)
-            )
-
+            self._slice.image.raw = np.clip(image, 0, 1)
+            self._slice.thumbnail.raw = np.clip(thumbnail_source, 0, 1)
         else:
-            self._data_raw = image
-            self._data_view = self._raw_to_displayed(self._data_raw)
-            self._data_thumbnail = self._raw_to_displayed(thumbnail_source)
+            self._slice.image.raw = image
+            self._slice.thumbnail.raw = thumbnail_source
 
         if self.multiscale:
             self.events.scale()
@@ -556,10 +565,9 @@ class Image(IntensityVisualizationMixin, Layer, ImageLayerInterface):
 
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""
+        image = self._slice.thumbnail.view
         if self.dims.ndisplay == 3 and self.dims.ndim > 2:
-            image = np.max(self._data_thumbnail, axis=0)
-        else:
-            image = self._data_thumbnail
+            image = np.max(image, axis=0)
 
         # float16 not supported by ndi.zoom
         dtype = np.dtype(image.dtype)
@@ -625,13 +633,14 @@ class Image(IntensityVisualizationMixin, Layer, ImageLayerInterface):
             Value of the data at the coord.
         """
         coord = np.round(self.coordinates).astype(int)
+        raw = self._slice.image.raw
         if self.rgb:
-            shape = self._data_raw.shape[:-1]
+            shape = raw.shape[:-1]
         else:
-            shape = self._data_raw.shape
+            shape = raw.shape
 
         if all(0 <= c < s for c, s in zip(coord[self.dims.displayed], shape)):
-            value = self._data_raw[tuple(coord[self.dims.displayed])]
+            value = raw[tuple(coord[self.dims.displayed])]
         else:
             value = None
 

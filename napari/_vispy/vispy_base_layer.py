@@ -130,7 +130,7 @@ class VispyBaseLayer(ABC, BaseLayerInterface):
             return 1
 
     @abstractmethod
-    def _on_data_change(self, event=None):
+    def _on_data_change(self, value=None):
         raise NotImplementedError()
 
     def _on_visible_change(self, event=None):

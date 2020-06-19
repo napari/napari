@@ -73,11 +73,9 @@ class QtImageControls(QtBaseImageControls, ImageLayerInterface):
         sld.setMaximum(100)
         sld.setSingleStep(1)
         sld.setValue(self.layer.iso_threshold * 100)
-        self.emit_iso_threshold_event = lambda value: self.events.iso_threshold(
-            value=value / 100
+        sld.valueChanged.connect(
+            lambda v: self.events.iso_threshold(value=v / 100)
         )
-
-        sld.valueChanged.connect(self.emit_iso_threshold_event)
         self.isoThresholdSlider = sld
         self.isoThresholdLabel = QLabel('iso threshold:')
 
@@ -87,10 +85,9 @@ class QtImageControls(QtBaseImageControls, ImageLayerInterface):
         sld.setMaximum(200)
         sld.setSingleStep(1)
         sld.setValue(self.layer.attenuation * 100)
-        self.emit_attenuation_event = lambda value: self.events.attenuation(
-            value=value / 100
+        sld.valueChanged.connect(
+            lambda v: self.events.attenuation(value=v / 100)
         )
-        sld.valueChanged.connect(self.emit_attenuation_event)
         self.attenuationSlider = sld
         self.attenuationLabel = QLabel('attenuation:')
         self._on_ndisplay_change()
@@ -144,8 +141,8 @@ class QtImageControls(QtBaseImageControls, ImageLayerInterface):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        value : float
+            Iso surface threshold value, between 0 and 1.
         """
         self.isoThresholdSlider.setValue(value * 100)
 
@@ -154,26 +151,26 @@ class QtImageControls(QtBaseImageControls, ImageLayerInterface):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        value : float
+            Attenuation value, between 0 and 2.
         """
         self.attenuationSlider.setValue(value * 100)
 
-    def _on_rendering_change(self, value):
+    def _on_rendering_change(self, text):
         """Receive layer model rendering change event and update dropdown menu.
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        text : string
+            Rendering mode used by vispy
         """
-        index = self.renderComboBox.findText(value, Qt.MatchFixedString)
+        index = self.renderComboBox.findText(text, Qt.MatchFixedString)
         self.renderComboBox.setCurrentIndex(index)
-        self._toggle_rendering_parameter_visbility()
+        self._toggle_rendering_parameter_visbility(text)
 
-    def _toggle_rendering_parameter_visbility(self):
+    def _toggle_rendering_parameter_visbility(self, text):
         """Hide isosurface rendering parameters if they aren't needed."""
-        rendering = Rendering(self.layer.rendering)
+        rendering = Rendering(text)
         if rendering == Rendering.ISO:
             self.isoThresholdSlider.show()
             self.isoThresholdLabel.show()
@@ -217,4 +214,4 @@ class QtImageControls(QtBaseImageControls, ImageLayerInterface):
         else:
             self.renderComboBox.show()
             self.renderLabel.show()
-            self._toggle_rendering_parameter_visbility()
+            self._toggle_rendering_parameter_visbility(self.layer.rendering)

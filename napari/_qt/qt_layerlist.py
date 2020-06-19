@@ -1,19 +1,15 @@
 from qtpy.QtCore import Qt, QMimeData, QTimer
-from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import (
     QWidget,
     QVBoxLayout,
     QFrame,
     QScrollArea,
     QApplication,
-    QLineEdit,
-    QLabel,
-    QCheckBox,
-    QHBoxLayout,
     QSizePolicy,
 )
 from qtpy.QtGui import QDrag
 import numpy as np
+from .qt_layer_widget import QtLayerWidget
 
 
 class QtLayerList(QScrollArea):
@@ -82,7 +78,7 @@ class QtLayerList(QScrollArea):
         widget = QtLayerWidget(layer)
         self.vbox_layout.insertWidget(index, widget)
         self.vbox_layout.insertWidget(index + 1, QtDivider())
-        layer.events.select.connect(self._scroll_on_select)
+        layer.events.selected.connect(self._scroll_on_select)
 
     def _remove(self, event):
         """Remove widget for layer at index `event.index`.
@@ -455,190 +451,3 @@ class QtDivider(QFrame):
         else:
             self.setProperty('selected', False)
             self.style().polish(self)
-
-
-class QtLayerWidget(QFrame):
-    """Qt view for Layer model.
-
-    Attributes
-    ----------
-    layer : napari.layers.Layer
-        An instance of a napari layer.
-    layout : QVBoxLayout
-        Layout of the widget.
-    nameTextBox : QLineEdit
-        Textbox for layer name.
-    thumbnailLabel : QLabel
-        Label of layer thumbnail.
-    typeLabel : QLabel
-        Label of layer type.
-    visibleCheckBox : QCheckBox
-        Checkbox to toggle layer visibility.
-    """
-
-    def __init__(self, layer):
-        super().__init__()
-
-        self.layer = layer
-        layer.events.select.connect(lambda v: self.setSelected(True))
-        layer.events.deselect.connect(lambda v: self.setSelected(False))
-        layer.events.name.connect(self._on_layer_name_change)
-        layer.events.visible.connect(self._on_visible_change)
-        layer.events.thumbnail.connect(self._on_thumbnail_change)
-
-        self.setObjectName('layer')
-
-        self.layout = QHBoxLayout()
-        self.layout.setContentsMargins(0, 0, 0, 0)
-        self.setLayout(self.layout)
-
-        tb = QLabel(self)
-        tb.setObjectName('thumbnail')
-        tb.setToolTip('Layer thumbnail')
-        self.thumbnailLabel = tb
-        self._on_thumbnail_change()
-        self.layout.addWidget(tb)
-
-        cb = QCheckBox(self)
-        cb.setObjectName('visibility')
-        cb.setToolTip('Layer visibility')
-        cb.setChecked(self.layer.visible)
-        cb.setProperty('mode', 'visibility')
-        cb.stateChanged.connect(self.changeVisible)
-        self.visibleCheckBox = cb
-        self.layout.addWidget(cb)
-
-        textbox = QLineEdit(self)
-        textbox.setText(layer.name)
-        textbox.home(False)
-        textbox.setToolTip('Layer name')
-        textbox.setAcceptDrops(False)
-        textbox.setEnabled(True)
-        textbox.editingFinished.connect(self.changeText)
-        self.nameTextBox = textbox
-        self.layout.addWidget(textbox)
-
-        ltb = QLabel(self)
-        layer_type = type(layer).__name__
-        ltb.setObjectName(layer_type)
-        ltb.setProperty('layer_type_label', True)
-        ltb.setToolTip('Layer type')
-        self.typeLabel = ltb
-        self.layout.addWidget(ltb)
-
-        msg = 'Click to select\nDrag to rearrange'
-        self.setToolTip(msg)
-        self.setSelected(self.layer.selected)
-
-    def setSelected(self, state):
-        """Select layer widget.
-
-        Parameters
-        ----------
-        state : bool
-        """
-        self.setProperty('selected', state)
-        self.nameTextBox.setEnabled(state)
-        self.style().unpolish(self)
-        self.style().polish(self)
-
-    def changeVisible(self, state):
-        """Toggle visibility of the layer.
-
-        Parameters
-        ----------
-        state : bool
-        """
-        if state == Qt.Checked:
-            self.layer.visible = True
-        else:
-            self.layer.visible = False
-
-    def changeText(self):
-        """Update layer name attribute using layer name textbox contents."""
-        self.layer.name = self.nameTextBox.text()
-        self.nameTextBox.clearFocus()
-        self.setFocus()
-
-    def mouseReleaseEvent(self, event):
-        """Ignores mouse release event.
-
-        Allows the event to pass through a parent widget to its child widget
-        without doing anything. If we did not use event.ignore() then the
-        parent widget would catch the event and not pass it on to the child.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
-        """
-        event.ignore()
-
-    def mousePressEvent(self, event):
-        """Ignores mouse press event.
-
-        Allows the event to pass through a parent widget to its child widget
-        without doing anything. If we did not use event.ignore() then the
-        parent widget would catch the event and not pass it on to the child.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
-        """
-        event.ignore()
-
-    def mouseMoveEvent(self, event):
-        """Ignores mouse move event.
-
-        Allows the event to pass through a parent widget to its child widget
-        without doing anything. If we did not use event.ignore() then the
-        parent widget would catch the event and not pass it on to the child.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
-        """
-        event.ignore()
-
-    def _on_layer_name_change(self, event=None):
-        """Update text displaying name of layer.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent, optional
-            Event from the Qt context.
-        """
-        with self.layer.events.name.blocker():
-            self.nameTextBox.setText(self.layer.name)
-            self.nameTextBox.home(False)
-
-    def _on_visible_change(self, event=None):
-        """Toggle visibility of the layer.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent, optional
-            Event from the Qt context.
-        """
-        with self.layer.events.visible.blocker():
-            self.visibleCheckBox.setChecked(self.layer.visible)
-
-    def _on_thumbnail_change(self, event=None):
-        """Update thumbnail image on the layer widget.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent, optional
-            Event from the Qt context.
-        """
-        thumbnail = self.layer.thumbnail
-        # Note that QImage expects the image width followed by height
-        image = QImage(
-            thumbnail,
-            thumbnail.shape[1],
-            thumbnail.shape[0],
-            QImage.Format_RGBA8888,
-        )
-        self.thumbnailLabel.setPixmap(QPixmap.fromImage(image))
