@@ -1,5 +1,5 @@
 import warnings
-from typing import Union, List
+from typing import Union, List, Tuple
 import itertools
 
 import numpy as np
@@ -12,9 +12,11 @@ def stack_to_images(
     stack: Union[Image, Labels],
     axis: int,
     colormap: List[Union[str, Colormap]] = None,
+    contrast_limits: List[List[int]] = None,
+    gamma: List[float] = None,
     blending: str = None,
-    scale=None,
-    translate=None,
+    scale: Tuple[float] = None,
+    translate: Tuple[float] = None,
 ) -> List[Image]:
     """Function to split the active layer into separate layers along an axis
 
@@ -60,27 +62,47 @@ def stack_to_images(
     if blending not in ['additive', 'translucent', 'opaque']:
         blending = 'additive'
 
-    if scale is not None:
-        scale = stack.scale
+    if scale is None:
+        scale = np.delete(stack.scale, axis)
 
-    if translate is not None:
-        translate = stack.translate
+    if translate is None:
+        translate = np.delete(stack.translate, axis)
+
+    if contrast_limits is None:
+        contrast_limits = n_channels * [None]
+
+    if gamma is None:
+        gamma = n_channels * [1]
+
+    kwargs = {
+        'rgb': stack.rgb,
+        'blending': blending,
+        'interpolation': stack.interpolation,
+        'rendering': stack.rendering,
+        'iso_threshold': stack.iso_threshold,
+        'attenuation': stack.attenuation,
+        'metadata': stack.metadata,
+        'scale': scale,
+        'translate': translate,
+        'opacity': stack.opacity,
+        'visible': stack.visible,
+        'multiscale': stack.multiscale,
+    }
 
     imagelist = list()
 
-    for i in range(data.shape[axis]):
+    for i in range(n_channels):
         layer_name = f'{name} layer {i}'
         try:
             color = next(colormap)
         except IndexError:
             color = 'gray'
 
-        image = Image(
-            np.take(data, i, axis=axis),
-            blending=blending,
-            colormap=color,
-            name=layer_name,
-        )
+        kwargs['contrast_limits'] = contrast_limits[i]
+        kwargs['gamma'] = gamma[i]
+        kwargs['colormap'] = color
+
+        image = Image(np.take(data, i, axis=axis), name=layer_name, **kwargs)
 
         imagelist.append(image)
 
