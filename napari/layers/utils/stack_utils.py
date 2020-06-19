@@ -58,6 +58,8 @@ def stack_to_images(
             colormap = iter(colormaps.MAGENTA_GREEN)
         if n_channels > 2:
             colormap = itertools.cycle(colormaps.CYMRGB)
+    else:
+        colormap = iter(colormap)
 
     if blending not in ['additive', 'translucent', 'opaque']:
         blending = 'additive'
