@@ -3,6 +3,7 @@ napari command line viewer.
 """
 import argparse
 import logging
+import runpy
 import sys
 from ast import literal_eval
 from textwrap import wrap
@@ -92,7 +93,7 @@ def main():
         epilog="optional layer-type-specific arguments (precede with '--'):\n"
         + "\n".join(kwarg_options),
     )
-    parser.add_argument('images', nargs='*', help='image(s) to view.')
+    parser.add_argument('paths', nargs='*', help='path(s) to view.')
     parser.add_argument(
         '-v',
         '--verbose',
@@ -135,10 +136,10 @@ def main():
 
     args, unknown = parser.parse_known_args()
     # this is a hack to allow using "=" as a key=value separator while also
-    # allowing nargs='*' on the "images" argument...
-    for idx, item in enumerate(reversed(args.images)):
+    # allowing nargs='*' on the "paths" argument...
+    for idx, item in enumerate(reversed(args.paths)):
         if item.startswith("--"):
-            unknown.append(args.images.pop(len(args.images) - idx - 1))
+            unknown.append(args.paths.pop(len(args.paths) - idx - 1))
     kwargs = validate_unknown_args(unknown) if unknown else {}
 
     # parse -v flags and set the appropriate logging level
@@ -152,7 +153,7 @@ def main():
 
     if args.plugin:
         # make sure plugin is only used when files are specified
-        if not args.images:
+        if not args.paths:
             sys.exit(
                 "error: The '--plugin' argument is only valid "
                 "when providing a file name"
@@ -162,14 +163,26 @@ def main():
         # so remove --plugin from sys.argv to prevent that warningz
         sys.argv.remove('--plugin')
 
-    with gui_qt(startup_logo=True):
-        view_path(
-            args.images,
-            stack=args.stack,
-            plugin=args.plugin,
-            layer_type=args.layer_type,
-            **kwargs,
-        )
+    if any(p.endswith('.py') for p in args.paths):
+        if len(args.paths) > 1:
+            sys.exit(
+                'When providing a python script, only a '
+                'single positional argument may be provided'
+            )
+
+        with gui_qt(startup_logo=False) as app:
+            runpy.run_path(args.paths[0])
+            if getattr(app, 'existed', False):
+                sys.exit()
+    else:
+        with gui_qt(startup_logo=True):
+            view_path(
+                args.paths,
+                stack=args.stack,
+                plugin=args.plugin,
+                layer_type=args.layer_type,
+                **kwargs,
+            )
 
 
 if __name__ == '__main__':
