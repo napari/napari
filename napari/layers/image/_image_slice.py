@@ -102,13 +102,13 @@ class ImageSlice:
             self.image.view if self.placeholder is None else self.placeholder
         )
 
-    def load_chunk(self, request: ChunkRequest) -> None:
-        """Load the requested chunk.
+    def load_chunk_async(self, request: ChunkRequest) -> None:
+        """Load the requested chunk asynchronously.
 
         Parameters
         ----------
         request : ChunkRequest
-            This chunk was successfully loaded.
+            Initiate async load of this chunk.
         """
         # Async not supported for multiscale yet
         assert not self.properties.multiscale
@@ -132,6 +132,21 @@ class ImageSlice:
         else:
             # It was in the cache, put it to immediate use.
             self.chunk_loaded(satisfied_request)
+
+    def load_chunk_sync(self, request: ChunkRequest) -> None:
+        """Load the requested chunk synchronously.
+
+        Parameters
+        ----------
+        request : ChunkRequest
+            Load this chunk immediately in the current thread.
+        """
+        # This is our new current slice.
+        self.current_indices = request.indices
+
+        # Load it right here in the GUI thread, this could block.
+        request.array = np.asarray(request.array)
+        self.chunk_loaded(request)
 
     def chunk_loaded(self, request: ChunkRequest) -> None:
         """Chunk was loaded, show this new data.

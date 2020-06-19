@@ -1,3 +1,4 @@
+import os
 import types
 import warnings
 import numpy as np
@@ -176,6 +177,9 @@ class Image(IntensityVisualizationMixin, Layer):
         else:
             ndim = len(init_shape)
 
+        # Async loading is opt-in right now.
+        self.async_load = os.getenv("NAPARI_AYSNC_LOAD", "0") != "0"
+
         super().__init__(
             data,
             ndim,
@@ -246,6 +250,14 @@ class Image(IntensityVisualizationMixin, Layer):
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
+
+    def _get_empty_image(self):
+        """Get minimal empty image with just one pixel/voxel.
+        """
+        if self.rgb:
+            return np.zeros((1,) * self.dims.ndisplay + (self.shape[-1],))
+        else:
+            return np.zeros((1,) * self.dims.ndisplay)
 
     def _get_order(self):
         """Return the order of the displayed dimensions."""
@@ -471,9 +483,8 @@ class Image(IntensityVisualizationMixin, Layer):
         return image
 
     def _create_image_slice(self):
-        """Create an ImageSlice for this specific data."""
-        shape = self.data[self.dims.indices].shape
-        empty_image = np.zeros(shape)
+        """Create an ImageSlice to show the current data"""
+        empty_image = self._get_empty_image()
         properties = ImageProperties(
             self.multiscale, self.rgb, self._get_order()
         )
@@ -483,13 +494,19 @@ class Image(IntensityVisualizationMixin, Layer):
 
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
-        not_disp = self.dims.not_displayed
         order = self._get_order()
+
+        # Nuke self.slice if no longer compatible.
+        # TODO_ASYNC: can we nuke slice prior to this? In response to some event?
+        if order != self._slice.properties.displayed_order:
+            self._slice = None
 
         if self._slice is None:
             self._create_image_slice()
 
         if self.multiscale:
+            not_disp = self.dims.not_displayed
+
             # If 3d redering just show lowest level of multiscale
             if self.dims.ndisplay == 3:
                 self.data_level = len(self.data) - 1
@@ -558,10 +575,16 @@ class Image(IntensityVisualizationMixin, Layer):
         else:
             indices = self.dims.indices
 
-            if self._slice.current_indices != indices:
-                array = self.data[indices]
-                request = ChunkRequest(self, indices, array)
-                self._slice.load_chunk(request)
+            if self._slice.current_indices == indices:
+                return  # already showing these indices
+
+            array = self.data[indices]
+            request = ChunkRequest(self, indices, array)
+
+            if self.async_load:
+                self._slice.load_chunk_async(request)
+            else:
+                self._slice.load_chunk_sync(request)
 
         if self.multiscale:
             self.events.scale()

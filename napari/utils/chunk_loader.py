@@ -22,11 +22,6 @@ from qtpy.QtCore import Signal, QObject
 from ..types import ArrayLike
 
 
-# If False then we load chunks immediately in the GUI thread. This is
-# useful for testing and debugging since it greatly simplifies things.
-ENABLE_AYSNC_LOADING = False
-
-
 def _index_to_tuple(index):
     """Slice is not hashable so we need a tuple.
 
@@ -141,11 +136,6 @@ class ChunkLoader:
         request : ChunkRequest
             Contains the array to load from and related info.
         """
-        if not ENABLE_AYSNC_LOADING:
-            # Load immediately right here in the GUI thread.
-            request.array = np.asarray(request.array)
-            return request
-
         print(f"load_chunk: {request.indices}")
         array = self.cache.get_chunk(request)
 
