@@ -190,6 +190,7 @@ class Layer(KeymapProvider, ABC, BaseLayerInterface):
         self._position = (0,) * self.dims.ndisplay
         self.corner_pixels = np.zeros((2, ndim), dtype=int)
         self._editable = True
+        self._editable_history = True
 
         self._thumbnail_shape = (32, 32, 4)
         self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
@@ -220,8 +221,8 @@ class Layer(KeymapProvider, ABC, BaseLayerInterface):
             event_handler_callback=self.event_handler.on_change,
         )
 
-        self.events.data.connect(lambda e: self._set_editable())
-        self.dims.events.ndisplay.connect(lambda e: self._set_editable())
+        self.events.data.connect(lambda e: self._update_editable())
+        self.dims.events.ndisplay.connect(lambda e: self._update_editable())
         self.dims.events.order.connect(self.refresh)
         self.dims.events.ndisplay.connect(self._update_dims)
         self.dims.events.order.connect(self._update_dims)
@@ -319,7 +320,7 @@ class Layer(KeymapProvider, ABC, BaseLayerInterface):
         self._visible = value
         self.refresh()
         if self.visible:
-            self._set_editable()
+            self._update_editable()
         else:
             self.editable = False
 
@@ -333,9 +334,10 @@ class Layer(KeymapProvider, ABC, BaseLayerInterface):
         self.events.editable(value=value)
 
     def _on_editable_change(self, value):
-        if self._editable == value:
-            return
         self._editable = value
+
+    def _update_editable(self):
+        self.editable = self._is_editable
 
     @property
     def scale(self):
@@ -440,9 +442,10 @@ class Layer(KeymapProvider, ABC, BaseLayerInterface):
     def _get_ndim(self):
         raise NotImplementedError()
 
-    def _set_editable(self, editable=None):
-        if editable is None:
-            self.editable = True
+    @property
+    def _is_editable(self):
+        """Determine if editable based on layer properties."""
+        return not self.dims.ndisplay == 3
 
     def _get_range(self):
         extent = self._get_extent()
@@ -489,29 +492,29 @@ class Layer(KeymapProvider, ABC, BaseLayerInterface):
 
     @thumbnail.setter
     def thumbnail(self, value):
-        self.events.thumbnail(value=value.astype(np.uint8))
-
-    def _on_thumbnail_change(self, thumbnail):
-        if 0 in thumbnail.shape:
-            thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
-        if thumbnail.dtype != np.uint8:
+        if 0 in value.shape:
+            value = np.zeros(self._thumbnail_shape, dtype=np.uint8)
+        if value.dtype != np.uint8:
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                thumbnail = convert_to_uint8(thumbnail)
+                value = convert_to_uint8(value)
 
-        padding_needed = np.subtract(self._thumbnail_shape, thumbnail.shape)
+        padding_needed = np.subtract(self._thumbnail_shape, value.shape)
         pad_amounts = [(p // 2, (p + 1) // 2) for p in padding_needed]
-        thumbnail = np.pad(thumbnail, pad_amounts, mode='constant')
+        value = np.pad(value, pad_amounts, mode='constant')
 
         # blend thumbnail with opaque black background
         background = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         background[..., 3] = 255
 
-        f_dest = thumbnail[..., 3][..., None] / 255
+        f_dest = value[..., 3][..., None] / 255
         f_source = 1 - f_dest
-        thumbnail = thumbnail * f_dest + background * f_source
+        value = value * f_dest + background * f_source
 
-        self._thumbnail = thumbnail.astype(np.uint8)
+        self.events.thumbnail(value=value.astype(np.uint8))
+
+    def _on_thumbnail_change(self, value):
+        self._thumbnail = value
 
     @property
     def ndim(self):

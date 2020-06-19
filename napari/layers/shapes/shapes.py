@@ -1299,16 +1299,10 @@ class Shapes(Layer):
             self._finish_drawing()
         self.refresh()
 
-    def _set_editable(self, editable=None):
-        """Set editable mode based on layer properties."""
-        if editable is None:
-            if self.dims.ndisplay == 3:
-                self.editable = False
-            else:
-                self.editable = True
-
-        if not self.editable:
+    def _on_editable_change(self, value):
+        if not value:
             self.mode = Mode.PAN_ZOOM
+        self._editable = value
 
     def add(
         self,

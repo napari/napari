@@ -21,7 +21,6 @@ class VispyImageLayer(VispyBaseLayer, ImageLayerInterface):
     def __init__(self, layer):
         node = ImageNode(None, method='auto')
         super().__init__(layer, node)
-        self.layer.event_handler.register_component_to_update(self)
 
         self._on_display_change()
         self._on_data_change()

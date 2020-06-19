@@ -53,7 +53,7 @@ class QtLayerWidget(QFrame, BaseLayerInterface):
         tb.setObjectName('thumbnail')
         tb.setToolTip('Layer thumbnail')
         self.thumbnailLabel = tb
-        self._on_thumbnail_change()
+        self._on_thumbnail_change(self.layer.thumbnail)
         self.layout.addWidget(tb)
 
         cb = QCheckBox(self)
@@ -169,15 +169,14 @@ class QtLayerWidget(QFrame, BaseLayerInterface):
         """
         self.visibleCheckBox.setChecked(state)
 
-    def _on_thumbnail_change(self, event=None):
+    def _on_thumbnail_change(self, thumbnail):
         """Update thumbnail image on the layer widget.
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional
-            Event from the Qt context.
+        thumbnail : ndarray
+            Thumbnail in RGBA unit8 format.
         """
-        thumbnail = self.layer.thumbnail
         # Note that QImage expects the image width followed by height
         image = QImage(
             thumbnail,
