@@ -7,7 +7,7 @@ def test_stack_to_images():
 
     data = np.random.randint(0, 100, (10, 3, 128, 128))
     stack = Image(data)
-    images = stack_to_images(stack, 1, colormap=['magenta', 'grey', 'blue'])
+    images = stack_to_images(stack, 1, colormap=['magenta', 'gray', 'blue'])
 
     assert isinstance(images, list)
     assert len(images) == 3
