@@ -359,7 +359,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         """
         # iteration goes backwards to find top most selected layer if any
         # if multiple layers are selected sets the active layer to None
-
         active_layer = None
         for layer in self.layers:
             if active_layer is None and layer.selected:
