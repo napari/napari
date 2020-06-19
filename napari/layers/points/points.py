@@ -439,7 +439,7 @@ class Points(Layer):
         if len(data) < cur_npoints:
             # If there are now fewer points, remove the size and colors of the
             # extra ones
-            with self.events.set_data.blocker():
+            with self.events.slice_data.blocker():
                 self._edge_color = self.edge_color[: len(data)]
                 self._face_color = self.face_color[: len(data)]
                 self._size = self._size[: len(data)]
@@ -450,7 +450,7 @@ class Points(Layer):
         elif len(data) > cur_npoints:
             # If there are now more points, add the size and colors of the
             # new ones
-            with self.events.set_data.blocker():
+            with self.events.slice_data.blocker():
                 adding = len(data) - cur_npoints
                 if len(self._size) > 0:
                     new_size = copy(self._size[-1])

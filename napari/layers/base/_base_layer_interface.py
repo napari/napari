@@ -14,7 +14,7 @@ class BaseLayerInterface(BaseInterface):
         ...
 
     @abstractmethod
-    def _on_set_data_change(self, value):
+    def _on_slice_data_change(self, value):
         ...
 
     @abstractmethod

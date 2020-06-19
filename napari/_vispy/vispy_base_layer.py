@@ -132,20 +132,20 @@ class VispyBaseLayer(ABC, BaseLayerInterface):
             return 1
 
     @abstractmethod
-    def _on_data_change(self, value=None):
+    def _on_slice_data_change(self, value=None):
         raise NotImplementedError()
 
-    def _on_visible_change(self, event=None):
-        self.node.visible = self.layer.visible
+    def _on_visible_change(self, value):
+        self.node.visible = value
 
-    def _on_opacity_change(self, event=None):
-        self.node.opacity = self.layer.opacity
+    def _on_opacity_change(self, value):
+        self.node.opacity = value
 
-    def _on_blending_change(self, event=None):
-        self.node.set_gl_state(self.layer.blending)
+    def _on_blending_change(self, value):
+        self.node.set_gl_state(value)
         self.node.update()
 
-    def _on_scale_change(self, event=None):
+    def _on_scale_change(self, value=None):
         scale = self.layer._transforms.simplified.set_slice(
             self.layer.dims.displayed
         ).scale
@@ -154,7 +154,7 @@ class VispyBaseLayer(ABC, BaseLayerInterface):
         self.layer.corner_pixels = self.coordinates_of_canvas_corners()
         self.layer.position = self._transform_position(self._position)
 
-    def _on_translate_change(self, event=None):
+    def _on_translate_change(self, value=None):
         translate = self.layer._transforms.simplified.set_slice(
             self.layer.dims.displayed
         ).translate
@@ -186,11 +186,11 @@ class VispyBaseLayer(ABC, BaseLayerInterface):
             return (0,) * nd
 
     def _reset_base(self):
-        self._on_visible_change()
-        self._on_opacity_change()
-        self._on_blending_change()
-        self._on_scale_change()
-        self._on_translate_change()
+        self._on_visible_change(self.layer.visible)
+        self._on_opacity_change(self.layer.opacity)
+        self._on_blending_change(self.layer.blending)
+        self._on_scale_change(self.layer.scale)
+        self._on_translate_change(self.layer.translate)
 
     def coordinates_of_canvas_corners(self):
         """Find location of the corners of canvas in data coordinates.

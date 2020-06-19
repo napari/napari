@@ -23,7 +23,7 @@ class VispyImageLayer(VispyBaseLayer, ImageLayerInterface):
         super().__init__(layer, node)
 
         self._on_display_change()
-        self._on_data_change()
+        self._on_slice_data_change()
 
     def _on_display_change(self, data=None):
         parent = self.node.parent
@@ -39,7 +39,7 @@ class VispyImageLayer(VispyBaseLayer, ImageLayerInterface):
         self.node.parent = parent
         self.reset()
 
-    def _on_data_change(self, value=None):
+    def _on_slice_data_change(self, value=None):
         data = self.layer._data_view
         dtype = np.dtype(data.dtype)
         if dtype not in texture_dtypes:
@@ -95,10 +95,10 @@ class VispyImageLayer(VispyBaseLayer, ImageLayerInterface):
     def _on_rendering_change(self, value):
         if self.layer.dims.ndisplay == 3:
             self.node.method = value
-            self._on_iso_threshold_change(value=None)
+            self._on_iso_threshold_change(self.layer.iso_threshold)
 
     def _on_colormap_change(self, value):
-        cmap = self.layer.colormap[1]
+        cmap = value[1]
         if self.layer.gamma != 1:
             # when gamma!=1, we instantiate a new colormap
             # with 256 control points from 0-1
@@ -115,25 +115,24 @@ class VispyImageLayer(VispyBaseLayer, ImageLayerInterface):
         if self.layer.dims.ndisplay == 2:
             self.node.clim = value
         else:
-            self._on_data_change()
+            self._on_slice_data_change()
 
     def _on_gamma_change(self, value):
-        self._on_colormap_change(value=None)
+        self._on_colormap_change(self.layer.colormap)
 
     def _on_iso_threshold_change(self, value):
-        value = value if value else self.layer.iso_threshold
         if self.layer.dims.ndisplay == 2:
             return
         rendering = Rendering(self.layer.rendering)
         if rendering == Rendering.ISO:
             self.node.threshold = float(value)
         elif rendering == Rendering.ATTENUATED_MIP:
-            self.node.threshold = float(self.layer.attenuation)
+            self.node.threshold = float(value)
 
     def reset(self, event=None):
         self._reset_base()
-        self._on_colormap_change(value=None)
-        self._on_rendering_change(value=None)
+        self._on_colormap_change(self.layer.colormap)
+        self._on_rendering_change(self.layer.rendering)
         if self.layer.dims.ndisplay == 2:
             self._on_contrast_limits_change(self.layer.contrast_limits)
 

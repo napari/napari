@@ -202,7 +202,7 @@ class Layer(KeymapProvider, ABC, BaseLayerInterface):
             source=self,
             auto_connect=True,
             refresh=Event,
-            set_data=Event,
+            slice_data=Event,
             blending=Event,
             opacity=Event,
             visible=Event,
@@ -652,7 +652,7 @@ class Layer(KeymapProvider, ABC, BaseLayerInterface):
         """
         if self.visible:
             self.set_view_slice()
-            self.events.set_data(value=None)
+            self.events.slice_data(value=None)
             self._update_thumbnail()
             self._update_coordinates()
             self._set_highlight(force=True)
