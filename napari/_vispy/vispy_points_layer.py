@@ -1,5 +1,5 @@
 import numpy as np
-from vispy.scene.visuals import Line, Compound
+from vispy.scene.visuals import Line, Compound, Text
 from .markers import Markers
 from vispy.visuals.transforms import ChainTransform
 
@@ -34,18 +34,18 @@ class VispyPointsLayer(VispyBaseLayer):
         self.node.parent = None
 
         if self.layer.dims.ndisplay == 2:
-            self.node = Compound([Markers(), Markers(), Line()])
+            self.node = Compound([Markers(), Markers(), Line(), Text()])
         else:
-            self.node = Compound([Markers(), Markers()])
+            self.node = Compound([Markers(), Markers(), Text()])
         self.node.parent = parent
         self._reset_base()
 
     def _on_data_change(self, event=None):
         # Check if ndisplay has changed current node type needs updating
         if (
-            self.layer.dims.ndisplay == 3 and len(self.node._subvisuals) != 2
+            self.layer.dims.ndisplay == 3 and len(self.node._subvisuals) != 3
         ) or (
-            self.layer.dims.ndisplay == 2 and len(self.node._subvisuals) != 3
+            self.layer.dims.ndisplay == 2 and len(self.node._subvisuals) != 4
         ):
             self._on_display_change()
             self._on_highlight_change()
@@ -77,6 +77,30 @@ class VispyPointsLayer(VispyBaseLayer):
             edge_color=edge_color,
             face_color=face_color,
             scaling=True,
+        )
+
+        # update text
+        if self.layer.dims.ndisplay == 2:
+            positions = np.flip(self.layer._view_text_coords, axis=1)
+        elif self.layer.dims.ndisplay == 3:
+            raw_positions = np.flip(self.layer._view_text_coords, axis=1)
+            n_positions, position_dims = raw_positions.shape
+
+            if position_dims < 3:
+                padded_positions = np.zeros((n_positions, 3))
+                padded_positions[:, 0:2] = raw_positions
+                positions = padded_positions
+            else:
+                positions = raw_positions
+
+        text_node = self.node._subvisuals[-1]
+        self._update_text_node(
+            text_node,
+            text=self.layer._view_text,
+            pos=positions,
+            rotation=self.layer._text.rotation,
+            color=self.layer._text.color,
+            font_size=self.layer._text.size,
         )
         self.node.update()
         # Call to update order of translation values with new dims:
@@ -123,3 +147,14 @@ class VispyPointsLayer(VispyBaseLayer):
             )
 
         self.node.update()
+
+    def _update_text_node(
+        self, node, text=[], rotation=0, color='black', font_size=12, pos=None
+    ):
+        node.text = text
+        node.pos = pos
+        node.rotation = rotation
+        node.color = color
+        node.font_size = font_size
+
+        node.update()

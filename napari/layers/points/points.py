@@ -24,6 +24,7 @@ from ..utils.color_transformations import (
     normalize_and_broadcast_colors,
     ColorType,
 )
+from ..utils.text import TextManager
 from ._points_constants import Symbol, SYMBOL_ALIAS, Mode, ColorMode
 from ._points_mouse_bindings import add, select, highlight
 from ._points_utils import (
@@ -49,6 +50,8 @@ class Points(Layer):
     properties : dict {str: array (N,)}, DataFrame
         Properties for each point. Each property should be an array of length N,
         where N is the number of points.
+    text : str, array, dict
+        Text to be displayed with the points.
     symbol : str
         Symbol to be used for the point markers. Must be one of the
         following: arrow, clobber, cross, diamond, disc, hbar, ring,
@@ -217,6 +220,7 @@ class Points(Layer):
         data=None,
         *,
         properties=None,
+        text=None,
         symbol='o',
         size=10,
         edge_width=1,
@@ -377,6 +381,18 @@ class Points(Layer):
             self._current_edge_color = self.edge_color[-1]
             self._current_face_color = self.face_color[-1]
             self.current_properties = {}
+
+        # make the text
+        if text is None:
+            self._text = TextManager('', len(data), self.properties)
+        elif type(text) in (list, np.ndarray, str):
+            self._text = TextManager(text, len(data), self.properties)
+        elif isinstance(text, dict):
+            text['properties'] = self.properties
+            text['n_text'] = len(data)
+            self._text = TextManager(**text)
+        else:
+            raise TypeError('test should be a string, array, or dict')
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -1287,6 +1303,22 @@ class Points(Layer):
             data = np.zeros((0, self.dims.ndisplay))
 
         return data
+
+    @property
+    def _view_text(self) -> np.ndarray:
+
+        if len(self._indices_view) > 0:
+            text = self._text.text[self._indices_view]
+        else:
+            # if no points in this slice send dummy data
+            text = np.array([''])
+
+        return text
+
+    @property
+    def _view_text_coords(self) -> np.ndarray:
+
+        return self._view_data + self._text.translation
 
     @property
     def _view_size(self) -> np.ndarray:
