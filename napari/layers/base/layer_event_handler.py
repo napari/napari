@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 class LayerEventHandler(EventHandler):
     """
     Event handler for layer specific events. Receives change events made from
-    the data/ controls/ or visual interface and updates all associated
+    the data, controls, or visual interface and updates all associated
     components.
 
     Ex. ImageLayer components = [qt_image.py, vispy_image.py, image.py]
@@ -33,6 +33,14 @@ class LayerEventHandler(EventHandler):
             logger.debug(f" did not handle event {name}")
             return
 
+        # Transform event value
+        for component in self.components_to_update:
+            transform_method_name = f"_transform_{name}_change"
+            transform_method = getattr(component, transform_method_name, None)
+            if transform_method:
+                value = transform_method(value)
+
+        # Update based on event value
         for component in self.components_to_update:
             update_method_name = f"_on_{name}_change"
             update_method = getattr(component, update_method_name, None)

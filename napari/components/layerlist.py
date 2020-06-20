@@ -1,6 +1,6 @@
 from typing import Optional, List
 from ..layers import Layer
-from ..utils.naming import inc_name_count
+from ..utils.naming import force_name_unique
 from ..utils.list import ListModel
 
 
@@ -8,8 +8,12 @@ def _add(event):
     """When a layer is added, set its name."""
     layers = event.source
     layer = event.item
-    layer.name = layers._coerce_name(layer.name, layer)
-    layer.events.name.connect(lambda e: layers._update_name(e))
+    # Coerce name into being unique in layer list and re-emit event
+    name = force_name_unique(layer.name, [l.name for l in layers[:-1]])
+    layer.events.name(value=name)
+    # Register layer event handler
+    layer.event_handler.register_component_to_update(layers)
+    # Unselect all other layers
     layers.unselect_all(ignore=layer)
 
 
@@ -42,33 +46,8 @@ class LayerList(ListModel):
     def __newlike__(self, iterable):
         return ListModel(self._basetype, iterable, self._lookup)
 
-    def _coerce_name(self, name, layer=None):
-        """Coerce a name into a unique equivalent.
-
-        Parameters
-        ----------
-        name : str
-            Original name.
-        layer : napari.layers.Layer, optional
-            Layer for which name is generated.
-
-        Returns
-        -------
-        new_name : str
-            Coerced, unique name.
-        """
-        for l in self:
-            if l is layer:
-                continue
-            if l.name == name:
-                name = inc_name_count(name)
-
-        return name
-
-    def _update_name(self, event):
-        """Coerce name of the layer in `event.layer`."""
-        layer = event.source
-        layer.name = self._coerce_name(layer.name, layer)
+    def _transform_name_change(self, value):
+        return force_name_unique(value, [l.name for l in self])
 
     @property
     def selected(self):

@@ -75,3 +75,10 @@ def magic_name(value, *, path_prefix):
     for name in names:
         if name.isidentifier() and name in varmap and varmap[name] is value:
             return name
+
+
+def force_name_unique(name, names):
+    if names.count(name) == 0:
+        return name
+    else:
+        return force_name_unique(inc_name_count(name), names)

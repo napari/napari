@@ -195,7 +195,11 @@ class Layer(KeymapProvider, ABC, BaseLayerInterface):
         self._thumbnail_shape = (32, 32, 4)
         self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         self._update_properties = True
-        self._on_name_change(name)
+        if not name:
+            self._name = self._basename()
+        else:
+            self._name = name
+
         self.event_handler = LayerEventHandler(component=self)
 
         self.events = EmitterGroup(
@@ -252,14 +256,12 @@ class Layer(KeymapProvider, ABC, BaseLayerInterface):
 
     @name.setter
     def name(self, value):
-        if value != self.name:
-            self.events.name(value=value)
+        if self.name == value:
+            return
+        self.events.name(value=value)
 
     def _on_name_change(self, value):
-        if not value:
-            self._name = self._basename()
-        else:
-            self._name = value
+        self._name = value
 
     @property
     def opacity(self):

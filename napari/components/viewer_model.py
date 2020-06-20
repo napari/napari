@@ -438,19 +438,19 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         return max_dims
 
     def _update_status(self, event):
-        """Set the viewer status with the `event.status` string."""
+        """Set the viewer status with the `event.value` string."""
         self.status = event.value
 
     def _update_help(self, event):
-        """Set the viewer help with the `event.help` string."""
+        """Set the viewer help with the `event.value` string."""
         self.help = event.value
 
     def _update_interactive(self, event):
-        """Set the viewer interactivity with the `event.interactive` bool."""
+        """Set the viewer interactivity with the `event.value` bool."""
         self.interactive = event.value
 
     def _update_cursor(self, event):
-        """Set the viewer cursor with the `event.cursor` string."""
+        """Set the viewer cursor with the `event.value` string."""
         self.cursor = event.value
 
     def _update_cursor_size(self, event):

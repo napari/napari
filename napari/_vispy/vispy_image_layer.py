@@ -98,8 +98,7 @@ class VispyImageLayer(VispyBaseLayer, ImageLayerInterface):
             self._on_iso_threshold_change(self.layer.iso_threshold)
 
     def _on_colormap_change(self, value):
-        print(value)
-        cmap = value[1]
+        cmap = self.layer.colormap[1]
         if self.layer.gamma != 1:
             # when gamma!=1, we instantiate a new colormap
             # with 256 control points from 0-1

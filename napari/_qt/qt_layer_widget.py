@@ -101,10 +101,16 @@ class QtLayerWidget(QFrame, BaseLayerInterface):
 
     def changeText(self):
         """Update layer name attribute using layer name textbox contents."""
-        self.events.name(value=self.nameTextBox.text())
+        name = self.nameTextBox.text()
+        if self.layer.name == name:
+            return
+        self.events.name(value=name)
         self.nameTextBox.setToolTip(self.layer.name)
+        # Prevent retriggering during clearing of focus
+        self.nameTextBox.blockSignals(True)
         self.nameTextBox.clearFocus()
         self.setFocus()
+        self.nameTextBox.blockSignals(False)
 
     def mouseReleaseEvent(self, event):
         """Ignores mouse release event.
@@ -148,7 +154,7 @@ class QtLayerWidget(QFrame, BaseLayerInterface):
         """
         event.ignore()
 
-    def _on_layer_name_change(self, text):
+    def _on_name_change(self, text):
         """Update text displaying name of layer.
 
         Parameters
