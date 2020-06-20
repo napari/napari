@@ -2,12 +2,15 @@ import re
 
 import numpy as np
 
+from ._text_constants import TextMode
+
 
 def format_text_properties(text: str, n_text: int, properties: dict = {}):
 
     # If the text value is a property key, the text is the property values
     if text in properties:
         formatted_text = np.array([str(v) for v in properties[text]])
+        text_mode = TextMode.PROPERTY
     elif ('{' in text) and ('}' in text):
         format_keys = _get_format_keys(text, properties)
         formatted_text = _format_text_f_string(
@@ -16,11 +19,13 @@ def format_text_properties(text: str, n_text: int, properties: dict = {}):
             format_keys=format_keys,
             properties=properties,
         )
+        text_mode = TextMode.FORMATTED
 
     else:
         formatted_text = format_text_direct(text, n_text)
+        text_mode = TextMode.DIRECT
 
-    return np.array(formatted_text)
+    return np.array(formatted_text), text_mode
 
 
 def format_text_direct(text, n_text: int):
@@ -34,7 +39,9 @@ def format_text_direct(text, n_text: int):
 
         formatted_text = np.asarray(text)
 
-    return formatted_text
+    text_mode = TextMode.DIRECT
+
+    return formatted_text, text_mode
 
 
 def _get_format_keys(text: str, properties: dict):
