@@ -613,6 +613,16 @@ class Points(Layer):
 
         return properties
 
+    @property
+    def text(self):
+        return self._text.text
+
+    @text.setter
+    def text(self, text):
+        self._text.set_text(
+            text, n_text=len(self.data), properties=self.properties
+        )
+
     def _get_ndim(self) -> int:
         """Determine number of dimensions of the layer."""
         return self.data.shape[1]
