@@ -144,6 +144,27 @@ def clean():
     shutil.rmtree(BUILD_DIR, ignore_errors=True)
 
 
+def briefcase_create():
+    if LINUX:
+        subprocess.check_call(['briefcase', 'create', '--no-docker'])
+    else:
+        subprocess.check_call(['briefcase', 'create'])
+
+    time.sleep(0.5)
+    add_site_packages_to_path()
+
+    if WINDOWS:
+        patch_wxs()
+
+
+def briefcase_build():
+    if LINUX:
+        subprocess.check_call(['briefcase', 'build', '--no-docker'])
+    else:
+        subprocess.check_call(['briefcase', 'build'])
+    time.sleep(0.5)
+
+
 def bundle():
     clean()
 
@@ -155,16 +176,10 @@ def bundle():
     patch_toml()
 
     # create
-    subprocess.check_call(['briefcase', 'create'])
-    time.sleep(0.5)
-
-    add_site_packages_to_path()
-
-    if WINDOWS:
-        patch_wxs()
+    briefcase_create()
 
     # build
-    subprocess.check_call(['briefcase', 'build'])
+    briefcase_build()
 
     # package
     cmd = ['briefcase', 'package'] + (['--no-sign'] if MACOS else [])
