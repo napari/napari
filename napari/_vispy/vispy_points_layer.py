@@ -80,10 +80,17 @@ class VispyPointsLayer(VispyBaseLayer):
         )
 
         # update text
+        if len(self.layer._indices_view) == 0:
+            text_coords = np.zeros((1, self.layer.dims.ndisplay))
+            text = []
+        else:
+            text_coords = self.layer._view_text_coords
+            text = self.layer._view_text
+
         if self.layer.dims.ndisplay == 2:
-            positions = np.flip(self.layer._view_text_coords, axis=1)
+            positions = np.flip(text_coords, axis=1)
         elif self.layer.dims.ndisplay == 3:
-            raw_positions = np.flip(self.layer._view_text_coords, axis=1)
+            raw_positions = np.flip(text_coords, axis=1)
             n_positions, position_dims = raw_positions.shape
 
             if position_dims < 3:
@@ -96,7 +103,7 @@ class VispyPointsLayer(VispyBaseLayer):
         text_node = self.node._subvisuals[-1]
         self._update_text_node(
             text_node,
-            text=self.layer._view_text,
+            text=text,
             pos=positions,
             rotation=self.layer._text.rotation,
             color=self.layer._text.color,
