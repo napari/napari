@@ -1,11 +1,12 @@
 import numpy as np
+import os
 import sys
 import pytest
 
 
 def test_multiscale(viewer_factory):
     """Test rendering of multiscale data."""
-    view, viewer = viewer_factory(show=True)
+    view, viewer = viewer_factory()
 
     shapes = [(4000, 3000), (2000, 1500), (1000, 750), (500, 375)]
     np.random.seed(0)
@@ -43,7 +44,7 @@ def test_multiscale(viewer_factory):
 
 def test_3D_multiscale_image(viewer_factory):
     """Test rendering of 3D multiscale image uses lowest resolution."""
-    view, viewer = viewer_factory(show=True)
+    view, viewer = viewer_factory()
 
     data = [np.random.random((128,) * 3), np.random.random((64,) * 3)]
     viewer.add_image(data)
@@ -59,7 +60,7 @@ def test_3D_multiscale_image(viewer_factory):
 
 
 @pytest.mark.skipif(
-    sys.platform.startswith('win'),
+    sys.platform.startswith('win') or not os.getenv("CI"),
     reason='Screenshot tests are not supported on napari windows CI.',
 )
 def test_multiscale_screenshot(viewer_factory):
@@ -89,7 +90,7 @@ def test_multiscale_screenshot(viewer_factory):
 
 
 @pytest.mark.skipif(
-    sys.platform.startswith('win'),
+    sys.platform.startswith('win') or not os.getenv("CI"),
     reason='Screenshot tests are not supported on napari windows CI.',
 )
 def test_multiscale_screenshot_zoomed(viewer_factory):
@@ -125,7 +126,7 @@ def test_multiscale_screenshot_zoomed(viewer_factory):
 
 
 @pytest.mark.skipif(
-    sys.platform.startswith('win'),
+    sys.platform.startswith('win') or not os.getenv("CI"),
     reason='Screenshot tests are not supported on napari windows CI.',
 )
 def test_image_screenshot_zoomed(viewer_factory):
