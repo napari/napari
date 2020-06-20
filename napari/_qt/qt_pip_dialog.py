@@ -16,6 +16,7 @@ from ..utils.misc import running_as_bundled_app
 from ..utils._appdirs import user_plugin_dir, user_site_packages
 
 
+# TODO: this is a convenience for now, but will be superceeded by #1357
 class QtPipDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)

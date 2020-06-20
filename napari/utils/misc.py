@@ -22,6 +22,7 @@ except ImportError:
 def running_as_bundled_app() -> bool:
     """Infer whether we are running as a briefcase bundle"""
     # https://github.com/beeware/briefcase/issues/412
+    # https://github.com/beeware/briefcase/pull/425
     # this assumes the name of the app stays "napari"
     return importlib_metadata.metadata("napari").get("App-ID") is not None
 

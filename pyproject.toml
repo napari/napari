@@ -12,17 +12,17 @@ write_to = "napari/_version.py"
 [tool.briefcase]
 project_name = "napari"
 bundle = "com.napari"
-version = "0.0.0"  # populated with .github/workflows/update_version.py
 author = "napari"
 url = "https://napari.org/"
 license = "BSD license"
+# version populated during bundle.py
 
 [tool.briefcase.app.napari]
 formal_name = "napari"
 description = "napari: a multi-dimensional image viewer"
-requires = []  # populated with .github/workflows/update_version.py
 sources = ['napari']
 icon = "resources/icon"
+# requires populated during bundle.py
 
 
 [tool.black]
