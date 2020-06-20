@@ -96,6 +96,7 @@ class VispyImageLayer(VispyBaseLayer, ImageLayerInterface):
         if self.layer.dims.ndisplay == 3:
             self.node.method = value
             self._on_iso_threshold_change(self.layer.iso_threshold)
+            self._on_attenuation_change(self.layer.attenuation)
 
     def _on_colormap_change(self, value):
         cmap = self.layer.colormap[1]
@@ -126,7 +127,12 @@ class VispyImageLayer(VispyBaseLayer, ImageLayerInterface):
         rendering = Rendering(self.layer.rendering)
         if rendering == Rendering.ISO:
             self.node.threshold = float(value)
-        elif rendering == Rendering.ATTENUATED_MIP:
+
+    def _on_attenuation_change(self, value):
+        if self.layer.dims.ndisplay == 2:
+            return
+        rendering = Rendering(self.layer.rendering)
+        if rendering == Rendering.ATTENUATED_MIP:
             self.node.threshold = float(value)
 
     def reset(self, event=None):
