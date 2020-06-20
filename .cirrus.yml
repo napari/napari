@@ -226,6 +226,7 @@ push_docs_task:
     apt-get install -y libgl1-mesa-glx libqt5x11extras5
 
   install_script: |
+    git fetch --tags
     python -m pip install --retries 3 --upgrade pip
     python -m pip install --retries 3 -e ".[all]"
     python -m pip install --retries 3 -r requirements/docs.txt

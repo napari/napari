@@ -8,12 +8,13 @@ from qtpy.QtWidgets import (
     QLabel,
     QSpinBox,
     QHBoxLayout,
+    QComboBox,
 )
 from qtpy.QtCore import Qt
 
 import numpy as np
 from .qt_base_layer import QtLayerControls
-from ...layers.labels._labels_constants import Mode
+from ...layers.labels._labels_constants import Mode, LabelColorMode
 from ..qt_mode_buttons import QtModeRadioButton, QtModePushButton
 from ..utils import disable_with_opacity
 
@@ -73,6 +74,7 @@ class QtLabelsControls(QtLayerControls):
         self.layer.events.preserve_labels.connect(
             self._on_preserve_labels_change
         )
+        self.layer.events.color_mode.connect(self._on_color_mode_change)
 
         # selection spinbox
         self.selectionSpinBox = QSpinBox()
@@ -158,27 +160,39 @@ class QtLabelsControls(QtLayerControls):
         button_row.setSpacing(4)
         button_row.setContentsMargins(0, 0, 0, 5)
 
+        color_mode_comboBox = QComboBox(self)
+        color_mode_comboBox.addItems(LabelColorMode.keys())
+        index = color_mode_comboBox.findText(
+            self.layer.color_mode, Qt.MatchFixedString
+        )
+        color_mode_comboBox.setCurrentIndex(index)
+        color_mode_comboBox.activated[str].connect(self.change_color_mode)
+        self.colorModeComboBox = color_mode_comboBox
+        self._on_color_mode_change()
+
         color_layout = QHBoxLayout()
         color_layout.addWidget(QtColorBox(layer))
         color_layout.addWidget(self.selectionSpinBox)
 
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
-        self.grid_layout.addLayout(button_row, 0, 0, 1, 2)
-        self.grid_layout.addWidget(QLabel('label:'), 1, 0)
-        self.grid_layout.addLayout(color_layout, 1, 1)
-        self.grid_layout.addWidget(QLabel('opacity:'), 2, 0)
-        self.grid_layout.addWidget(self.opacitySlider, 2, 1)
-        self.grid_layout.addWidget(QLabel('brush size:'), 3, 0)
-        self.grid_layout.addWidget(self.brushSizeSlider, 3, 1)
-        self.grid_layout.addWidget(QLabel('blending:'), 4, 0)
-        self.grid_layout.addWidget(self.blendComboBox, 4, 1)
-        self.grid_layout.addWidget(QLabel('contiguous:'), 5, 0)
-        self.grid_layout.addWidget(self.contigCheckBox, 5, 1)
-        self.grid_layout.addWidget(QLabel('n-dim:'), 6, 0)
-        self.grid_layout.addWidget(self.ndimCheckBox, 6, 1)
-        self.grid_layout.addWidget(QLabel('preserve labels:'), 7, 0)
-        self.grid_layout.addWidget(self.preserveLabelsCheckBox, 7, 1)
+        self.grid_layout.addLayout(button_row, 0, 0, 1, 4)
+        self.grid_layout.addWidget(QLabel('label:'), 1, 0, 1, 1)
+        self.grid_layout.addLayout(color_layout, 1, 1, 1, 3)
+        self.grid_layout.addWidget(QLabel('opacity:'), 2, 0, 1, 1)
+        self.grid_layout.addWidget(self.opacitySlider, 2, 1, 1, 3)
+        self.grid_layout.addWidget(QLabel('brush size:'), 3, 0, 1, 1)
+        self.grid_layout.addWidget(self.brushSizeSlider, 3, 1, 1, 3)
+        self.grid_layout.addWidget(QLabel('blending:'), 4, 0, 1, 1)
+        self.grid_layout.addWidget(self.blendComboBox, 4, 1, 1, 3)
+        self.grid_layout.addWidget(QLabel('color mode:'), 5, 0, 1, 1)
+        self.grid_layout.addWidget(self.colorModeComboBox, 5, 1, 1, 3)
+        self.grid_layout.addWidget(QLabel('contiguous:'), 6, 0, 1, 1)
+        self.grid_layout.addWidget(self.contigCheckBox, 6, 1, 1, 1)
+        self.grid_layout.addWidget(QLabel('n-dim:'), 6, 2, 1, 1)
+        self.grid_layout.addWidget(self.ndimCheckBox, 6, 3, 1, 1)
+        self.grid_layout.addWidget(QLabel('preserve labels:'), 7, 0, 1, 2)
+        self.grid_layout.addWidget(self.preserveLabelsCheckBox, 7, 1, 1, 1)
         self.grid_layout.setRowStretch(8, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
@@ -288,6 +302,19 @@ class QtLabelsControls(QtLayerControls):
         else:
             self.layer.preserve_labels = False
 
+    def change_color_mode(self, new_mode):
+        """Change color mode of label layer.
+
+        Parameters
+        ----------
+        new_mode : str
+
+        AUTO (default) allows color to be set via a hash function with a seed.
+
+        DIRECT allows color of each label to be set directly by a color dictionary.
+        """
+        self.layer.color_mode = new_mode
+
     def _on_selection_change(self, event=None):
         """Receive layer model label selection change event and update spinbox.
 
@@ -345,6 +372,20 @@ class QtLabelsControls(QtLayerControls):
         """
         with self.layer.events.preserve_labels.blocker():
             self.preserveLabelsCheckBox.setChecked(self.layer.preserve_labels)
+
+    def _on_color_mode_change(self, event=None):
+        """Receive layer model color.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional.
+            Event from the Qt context.
+        """
+        with self.layer.events.color_mode.blocker():
+            index = self.colorModeComboBox.findText(
+                self.layer.color_mode, Qt.MatchFixedString
+            )
+            self.blendComboBox.setCurrentIndex(index)
 
     def _on_editable_change(self, event=None):
         """Receive layer model editable change event & enable/disable buttons.
