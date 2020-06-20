@@ -133,3 +133,17 @@ class TextManager:
         selected_data = list(selected_data)
 
         return self.text[selected_data]
+
+    def _get_state(self):
+
+        state = {
+            'text': self.text,
+            'rotation': self.rotation,
+            'color': self.color,
+            'translation': self.translation,
+            'size': self.size,
+            'font': self.font,
+            'visible': self.visible,
+        }
+
+        return state
