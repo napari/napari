@@ -14,34 +14,34 @@ from ...utils.event import Event
 class QtImageControls(QtBaseImageControls, ImageLayerInterface):
     """Qt view and controls for the napari Image layer.
 
-   Parameters
-   ----------
-   layer : napari.layers.Image
+    Parameters
+    ----------
+    layer : napari.layers.Image
        An instance of a napari Image layer.
 
-   Attributes
-   ----------
-   attenuationSlider : qtpy.QtWidgets.QSlider
+    Attributes
+    ----------
+    attenuationSlider : qtpy.QtWidgets.QSlider
        Slider controlling attenuation rate for `attenuated_mip` mode.
-   attenuationLabel : qtpy.QtWidgets.QLabel
+    attenuationLabel : qtpy.QtWidgets.QLabel
        Label for the attenuation slider widget.
-   grid_layout : qtpy.QtWidgets.QGridLayout
+    grid_layout : qtpy.QtWidgets.QGridLayout
        Layout of Qt widget controls for the layer.
-   interpComboBox : qtpy.QtWidgets.QComboBox
+    interpComboBox : qtpy.QtWidgets.QComboBox
        Dropdown menu to select the interpolation mode for image display.
-   interpLabel : qtpy.QtWidgets.QLabel
+    interpLabel : qtpy.QtWidgets.QLabel
        Label for the interpolation dropdown menu.
-   isoThresholdSlider : qtpy.QtWidgets.QSlider
+    isoThresholdSlider : qtpy.QtWidgets.QSlider
        Slider controlling the isosurface threshold value for rendering.
-   isoThresholdLabel : qtpy.QtWidgets.QLabel
+    isoThresholdLabel : qtpy.QtWidgets.QLabel
        Label for the isosurface threshold slider widget.
-   layer : napari.layers.Image
+    layer : napari.layers.Image
        An instance of a napari Image layer.
-   renderComboBox : qtpy.QtWidgets.QComboBox
+    renderComboBox : qtpy.QtWidgets.QComboBox
        Dropdown menu to select the rendering mode for image display.
-   renderLabel : qtpy.QtWidgets.QLabel
+    renderLabel : qtpy.QtWidgets.QLabel
        Label for the rendering mode dropdown menu.
-   """
+    """
 
     def __init__(self, layer):
         super().__init__(layer)
@@ -162,8 +162,23 @@ class QtImageControls(QtBaseImageControls, ImageLayerInterface):
 
         Parameters
         ----------
-        text : string
-            Rendering mode used by vispy
+        text : str
+            Rendering mode used by vispy.
+            Selects a preset rendering mode in vispy that determines how
+            volume is displayed:
+            * translucent: voxel colors are blended along the view ray until
+              the result is opaque.
+            * mip: maxiumum intensity projection. Cast a ray and display the
+              maximum value that was encountered.
+            * additive: voxel colors are added along the view ray until
+              the result is saturated.
+            * iso: isosurface. Cast a ray until a certain threshold is
+              encountered. At that location, lighning calculations are
+              performed to give the visual appearance of a surface.
+            * attenuated_mip: attenuated maxiumum intensity projection. Cast a
+              ray and attenuate values based on integral of encountered values,
+              display the maximum value that was encountered after attenuation.
+              This will make nearer objects appear more prominent.
         """
         index = self.renderComboBox.findText(text, Qt.MatchFixedString)
         self.renderComboBox.setCurrentIndex(index)
