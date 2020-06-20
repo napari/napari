@@ -225,7 +225,6 @@ class Layer(KeymapProvider, ABC, BaseLayerInterface):
             event_handler_callback=self.event_handler.on_change,
         )
 
-        self.events.data.connect(lambda e: self._update_editable())
         self.dims.events.ndisplay.connect(lambda e: self._update_editable())
         self.dims.events.order.connect(self.refresh)
         self.dims.events.ndisplay.connect(self._update_dims)

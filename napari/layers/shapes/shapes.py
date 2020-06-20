@@ -483,7 +483,8 @@ class Shapes(Layer):
         self._data_view = ShapeList()
         self.add(data, shape_type=shape_type)
         self._update_dims()
-        self.events.data()
+        self._update_editable()
+        self.events.data(self.data)
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:

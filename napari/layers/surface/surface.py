@@ -171,7 +171,8 @@ class Surface(IntensityVisualizationMixin, Layer):
 
         self._update_dims()
         self.refresh()
-        self.events.data()
+        self._update_editable()
+        self.events.data(self.data)
 
     @property
     def vertex_values(self) -> np.ndarray:
@@ -184,7 +185,8 @@ class Surface(IntensityVisualizationMixin, Layer):
         self._vertex_values = vertex_values
 
         self.refresh()
-        self.events.data()
+        self._update_editable()
+        self.events.data(self.data)
 
     @property
     def faces(self) -> np.ndarray:

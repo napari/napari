@@ -359,7 +359,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         """
         # iteration goes backwards to find top most selected layer if any
         # if multiple layers are selected sets the active layer to None
-
         active_layer = None
         for layer in self.layers:
             if active_layer is None and layer.selected:
@@ -437,25 +436,31 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
 
         return max_dims
 
-    def _update_status(self, event):
-        """Set the viewer status with the `event.value` string."""
-        self.status = event.value
+    def _on_selected_change(self, value):
+        self._update_active_layer(None)
 
-    def _update_help(self, event):
-        """Set the viewer help with the `event.value` string."""
-        self.help = event.value
+    def _on_data_change(self, value):
+        self._on_layers_change(None)
 
-    def _update_interactive(self, event):
-        """Set the viewer interactivity with the `event.value` bool."""
-        self.interactive = event.value
+    def _on_status_change(self, value):
+        """Set the viewer status with the `value` string."""
+        self.status = value
 
-    def _update_cursor(self, event):
-        """Set the viewer cursor with the `event.value` string."""
-        self.cursor = event.value
+    def _on_help_change(self, value):
+        """Set the viewer help with the `value` string."""
+        self.help = value
 
-    def _update_cursor_size(self, event):
-        """Set the viewer cursor_size with the `event.cursor_size` int."""
-        self.cursor_size = event.value
+    def _on_interactive_change(self, value):
+        """Set the viewer interactivity with the `value` bool."""
+        self.interactive = value
+
+    def _on_cursor_change(self, value):
+        """Set the viewer cursor with the `value` string."""
+        self.cursor = value
+
+    def _on_cursor_size_change(self, value):
+        """Set the viewer cursor_size with the `cursor_size` int."""
+        self.cursor_size = value
 
     def grid_view(self, n_row=None, n_column=None, stride=1):
         """Arrange the current layers is a 2D grid.
