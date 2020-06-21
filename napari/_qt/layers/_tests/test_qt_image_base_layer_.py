@@ -1,4 +1,3 @@
-import os
 from unittest.mock import patch
 
 import numpy as np
@@ -32,17 +31,15 @@ def test_base_controls_creation(qtbot, layer):
     assert tuple(slider_clims) == original_clims
 
 
-@patch.object(QRangeSliderPopup, 'show')
 @pytest.mark.parametrize('layer', [Image(_IMAGE), Surface(_SURF)])
-def test_clim_right_click_shows_popup(mock_show, qtbot, layer):
+def test_clim_right_click_shows_popup(qtbot, layer):
     """Right clicking on the contrast limits slider should show a popup."""
-    qtctrl = QtBaseImageControls(layer)
-    if os.getenv("CI"):
-        qtctrl.show()
-    qtbot.addWidget(qtctrl)
-    qtbot.mousePress(qtctrl.contrastLimitsSlider, Qt.RightButton)
-    assert hasattr(qtctrl, 'clim_pop')
-    mock_show.assert_called_once()
+    with patch.object(QRangeSliderPopup, 'show') as mock_show:
+        qtctrl = QtBaseImageControls(layer)
+        qtbot.addWidget(qtctrl)
+        qtbot.mousePress(qtctrl.contrastLimitsSlider, Qt.RightButton)
+        assert hasattr(qtctrl, 'clim_pop')
+        mock_show.assert_called_once()
 
 
 @pytest.mark.parametrize('layer', [Image(_IMAGE), Surface(_SURF)])
