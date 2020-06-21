@@ -36,7 +36,7 @@ from qtpy.QtWidgets import (  # noqa: E402
     QStatusBar,
     QFileDialog,
 )
-from qtpy.QtCore import Qt, Slot  # noqa: E402
+from qtpy.QtCore import Qt  # noqa: E402
 from qtpy.QtGui import QKeySequence, QIcon  # noqa: E402
 from .utils import QImg2array  # noqa: E402
 from ..utils.theme import template  # noqa: E402
@@ -519,7 +519,6 @@ class Window:
             imsave(path, QImg2array(img))  # scikit-image imsave method
         return QImg2array(img)
 
-    @Slot(str, str, str, str)
     def _show_error_dialog(self, errMsg, title=None, info=None, detail=None):
         msg_box = QMessageBox()
         msg_box.setWindowTitle(title or "Napari Error")
