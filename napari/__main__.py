@@ -170,7 +170,9 @@ def main():
                 'single positional argument may be provided'
             )
 
-        with gui_qt(startup_logo=False) as app:
+        with gui_qt(startup_logo=True) as app:
+            if hasattr(app, '_splash_widget'):
+                app._splash_widget.close()
             runpy.run_path(args.paths[0])
             if getattr(app, '_existed', False):
                 sys.exit()

@@ -62,6 +62,7 @@ def gui_qt(*, startup_logo=False):
             )
             splash_widget = QSplashScreen(pm)
             splash_widget.show()
+            app._splash_widget = splash_widget
     else:
         app._existed = True
     yield app
