@@ -496,8 +496,8 @@ class AddLayersMixin:
     def add_shapes(
         self,
         data=None,
-        ndim=None,
         *,
+        ndim=None,
         properties=None,
         shape_type='rectangle',
         edge_width=1,
@@ -612,6 +612,7 @@ class AddLayersMixin:
 
         layer = layers.Shapes(
             data=data,
+            ndim=ndim,
             properties=properties,
             shape_type=shape_type,
             edge_width=edge_width,

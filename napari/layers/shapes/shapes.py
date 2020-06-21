@@ -262,8 +262,8 @@ class Shapes(Layer):
     def __init__(
         self,
         data=None,
-        ndim=None,
         *,
+        ndim=None,
         properties=None,
         shape_type='rectangle',
         edge_width=1,
