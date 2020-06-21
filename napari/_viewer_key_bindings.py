@@ -148,9 +148,3 @@ def play(viewer):
 def toggle_selected_visibility(viewer):
     """Toggle visibility of selected layers"""
     viewer.layers.toggle_selected_visibility()
-
-
-# TODO: remove before merging
-@Viewer.bind_key('Control-Alt-E')
-def raise_error(viewer):
-    raise ValueError("Whoops!", "Looks like we've got a problem")
