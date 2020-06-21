@@ -7,6 +7,8 @@ from qtpy.QtCore import Qt
 from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import QApplication, QSplashScreen
 
+from .exceptions import ExceptionHandler
+
 
 def _create_application(argv) -> QApplication:
     """Create our QApplication.
@@ -62,6 +64,11 @@ def gui_qt(*, startup_logo=False):
             )
             splash_widget = QSplashScreen(pm)
             splash_widget.show()
+
+    # instantiate the execption handler
+    exception_handler = ExceptionHandler()
+    sys.excepthook = exception_handler.handler
+
     yield app
     # if the application already existed before this function was called,
     # there's no need to start it again.  By avoiding unnecessary calls to

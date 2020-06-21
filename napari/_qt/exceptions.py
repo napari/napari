@@ -1,33 +1,74 @@
-from qtpy.QtCore import QObject, Signal
-from ..exceptions import NapariError
 import traceback
-import re
+from types import TracebackType
+from typing import Optional, Type
+
+from qtpy.QtCore import QObject, Signal
+from qtpy.QtWidgets import QApplication, QMainWindow, QMessageBox, QWidget
+
+from ..types import ExcInfo
+from ..utils.misc import camel_to_spaces
 
 
-def camel_to_spaces(val):
-    return re.sub(r"((?<=[a-z])[A-Z]|(?<!\A)[A-R,T-Z](?=[a-z]))", r" \1", val)
+class QtErrorMessageBox(QMessageBox):
+    def __init__(
+        self,
+        exc_info: Optional[ExcInfo] = None,
+        parent: Optional[QWidget] = None,
+    ):
+        super().__init__(parent)
+        self.setIcon(QMessageBox.Warning)
+        if exc_info:
+            self.format_exc_info(exc_info)
+
+    def format_exc_info(self, exc_info: ExcInfo):
+        etype, value, tb = exc_info
+        title = camel_to_spaces(etype.__name__ if etype else 'Error')
+        self.setWindowTitle(title or "Napari Error")
+        self.setText(str(value))
+
+        info = getattr(value, 'info', None)
+        if info:
+            self.setInformativeText(info + "\n")
+
+        detail = "".join(traceback.format_exception(*exc_info))
+        if detail:
+            self.setDetailedText(detail)
+            # FIXME
+            self.setStyleSheet(
+                """QTextEdit{
+                    min-width: 800px;
+                    font-size: 12px;
+                    font-weight: 400;
+                }"""
+            )
 
 
 class ExceptionHandler(QObject):
     """General class to handle all raise exception errors in the GUI"""
 
-    # error message, title, more info, detail (e.g. traceback)
-    error_message = Signal(str, str, str, str)
+    error = Signal(tuple)
 
     def __init__(self):
-        super(ExceptionHandler, self).__init__()
+        super().__init__()
+        # could add a lot more logic about when we actually show the dialog
+        self.error.connect(self._show_error_dialog)
 
-    def handler(self, etype, value, tb):
+    def handler(
+        self,
+        etype: Type[BaseException],
+        value: BaseException,
+        tb: TracebackType,
+    ):
         # etype.__module__ contains the module raising the error
         # Custom exception classes can have different behavior
-        if isinstance(value, NapariError):
-            self.emit_error(etype, value, tb)
         # can add custom exception handlers here ...
-        else:
-            # otherwise, print exception to console as usual
-            traceback.print_exception(etype, value, tb)
+        self.error.emit((etype, value, tb))
 
-    def emit_error(self, etype, value, tb):
-        tbstring = "".join(traceback.format_exception(etype, value, tb))
-        title = camel_to_spaces(etype.__name__)
-        self.error_message.emit(value.msg, title, value.detail, tbstring)
+    def _show_error_dialog(self, exc_info: ExcInfo):
+        parent = None
+        for wdg in QApplication.topLevelWidgets():
+            if isinstance(wdg, QMainWindow):
+                parent = wdg
+                break
+
+        QtErrorMessageBox(exc_info, parent=parent).exec_()

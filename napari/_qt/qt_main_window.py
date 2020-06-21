@@ -3,14 +3,12 @@ Custom Qt widgets that serve as native objects that the public-facing elements
 wrap.
 """
 import time
-import sys
 
 # set vispy to use same backend as qtpy
 from ..utils.io import imsave
 
 from .qt_viewer import QtViewer
 from .qt_about import QtAbout
-from .exceptions import ExceptionHandler
 from .qt_plugin_report import QtPluginErrReporter
 from .qt_plugin_sorter import QtPluginSorter
 from .qt_plugin_table import QtPluginTable
@@ -25,7 +23,6 @@ from ..utils import perf
 # see discussion on #638
 from qtpy.QtWidgets import (  # noqa: E402
     QApplication,
-    QMessageBox,
     QMainWindow,
     QWidget,
     QHBoxLayout,
@@ -109,10 +106,6 @@ class Window:
         self.qt_viewer.viewer.events.title.connect(self._title_changed)
         self.qt_viewer.viewer.events.palette.connect(self._update_palette)
 
-        # instantiate the execption handler
-        self.exception_handler = ExceptionHandler()
-        sys.excepthook = self.exception_handler.handler
-        self.exception_handler.error_message.connect(self._show_error_dialog)
         if perf.USE_PERFMON:
             # Add DebugMenu if using perfmon. The DebugMenu is intended to
             # contain non-perfmon stuff as well. When it does we will want
@@ -518,25 +511,6 @@ class Window:
         if path is not None:
             imsave(path, QImg2array(img))  # scikit-image imsave method
         return QImg2array(img)
-
-    def _show_error_dialog(self, errMsg, title=None, info=None, detail=None):
-        msg_box = QMessageBox()
-        msg_box.setWindowTitle(title or "Napari Error")
-        msg_box.setIcon(QMessageBox.Warning)
-        msg_box.setText(errMsg)
-        if info:
-            msg_box.setInformativeText(info + "\n")
-        if detail:
-            msg_box.setDetailedText(detail)
-            msg_box.setStyleSheet(
-                """QTextEdit{
-                    min-width: 800px;
-                    font-size: 12px;
-                    font-weight: 400;
-                }"""
-            )
-
-        msg_box.exec_()
 
     def close(self):
         """Close the viewer window and cleanup sub-widgets."""
