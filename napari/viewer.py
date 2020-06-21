@@ -1,12 +1,16 @@
+import os
+import platform
+import sys
 from os.path import dirname, join
 
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import QApplication
 
-from ._qt.qt_update_ui import QtUpdateUI
 from ._qt.qt_main_window import Window
 from ._qt.qt_viewer import QtViewer
+from ._qt.threading import wait_for_workers_to_quit, create_worker
 from .components import ViewerModel
+from . import __version__
 
 
 class Viewer(ViewerModel):
@@ -27,6 +31,10 @@ class Viewer(ViewerModel):
     show : bool, optional
         Whether to show the viewer after instantiation. by default True.
     """
+
+    # set _napari_app_id to False to avoid overwriting dock icon on windows
+    # set _napari_app_id to custom string to prevent grouping different base viewer
+    _napari_app_id = 'napari.napari.viewer.' + str(__version__)
 
     def __init__(
         self,
@@ -55,8 +63,31 @@ class Viewer(ViewerModel):
             )
             raise RuntimeError(message)
 
+        # For perfmon we need a special QApplication. If using gui_qt we already
+        # have the special one, and this is a noop. When running inside IPython
+        # or Jupyter however this is where we switch out the QApplication.
+        if os.getenv("NAPARI_PERFMON", "0") != "0":
+            from ._qt.qt_event_timing import convert_app_for_timing
+
+            app = convert_app_for_timing(app)
+
+        if (
+            platform.system() == "Windows"
+            and not getattr(sys, 'frozen', False)
+            and self._napari_app_id
+        ):
+            import ctypes
+
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+                self._napari_app_id
+            )
+
         logopath = join(dirname(__file__), 'resources', 'logo.png')
         app.setWindowIcon(QIcon(logopath))
+
+        # see docstring of `wait_for_workers_to_quit` for caveats on killing
+        # workers at shutdown.
+        app.aboutToQuit.connect(wait_for_workers_to_quit)
 
         super().__init__(
             title=title,
@@ -85,16 +116,17 @@ class Viewer(ViewerModel):
         else:
             self.window.qt_viewer.console.push(variables)
 
-    def screenshot(self, path=None, *, with_viewer=False):
+    def screenshot(self, path=None, *, canvas_only=True):
         """Take currently displayed screen and convert to an image array.
 
         Parameters
         ----------
         path : str
             Filename for saving screenshot image.
-        with_viewer : bool
-            If True includes the napari viewer, otherwise just includes the
-            canvas.
+        canvas_only : bool
+            If True, screenshot shows only the image display canvas, and
+            if False include the napari viewer frame in the screenshot,
+            By default, True.
 
         Returns
         -------
@@ -102,16 +134,21 @@ class Viewer(ViewerModel):
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
-        if with_viewer:
-            image = self.window.screenshot(path=path)
-        else:
+        if canvas_only:
             image = self.window.qt_viewer.screenshot(path=path)
+        else:
+            image = self.window.screenshot(path=path)
         return image
 
     def update(self, func, *args, **kwargs):
-        t = QtUpdateUI(func, *args, **kwargs)
-        self.window.qt_viewer.pool.start(t)
-        return self.window.qt_viewer.pool  # returns threadpool object
+        import warnings
+
+        warnings.warn(
+            "Viewer.update() is deprecated, use "
+            "create_worker(func, *args, **kwargs) instead",
+            DeprecationWarning,
+        )
+        return create_worker(func, *args, **kwargs, _start_thread=True)
 
     def show(self):
         """Resize, show, and raise the viewer window."""
@@ -120,3 +157,7 @@ class Viewer(ViewerModel):
     def close(self):
         """Close the viewer window."""
         self.window.close()
+
+    def __str__(self):
+        """Simple string representation"""
+        return f'napari.Viewer: {self.title}'

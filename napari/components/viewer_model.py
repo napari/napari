@@ -1,7 +1,5 @@
 from math import inf
 import itertools
-from xml.etree.ElementTree import Element, tostring
-
 import numpy as np
 
 from .add_layers_mixin import AddLayersMixin
@@ -86,9 +84,9 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self.dims.events.ndisplay.connect(self._update_layers)
         self.dims.events.order.connect(self._update_layers)
         self.dims.events.axis.connect(self._update_layers)
-        self.layers.events.changed.connect(self._on_layers_change)
         self.layers.events.changed.connect(self._update_active_layer)
         self.layers.events.changed.connect(self._update_grid)
+        self.layers.events.changed.connect(self._on_layers_change)
 
         self.keymap_providers = [self]
 
@@ -298,74 +296,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             self.events.reset_view(
                 center=center, scale_factor=scale_factor, quaternion=quaternion
             )
-
-    def to_svg(self, file=None, view_box=None):
-        """Convert the viewer state to an SVG. Non visible layers will be
-        ignored.
-
-        Parameters
-        ----------
-        file : path-like object, optional
-            An object representing a file system path. A path-like object is
-            either a str or bytes object representing a path, or an object
-            implementing the `os.PathLike` protocol. If passed the svg will be
-            written to this file
-        view_box : 4-tuple, optional
-            View box of SVG canvas to be generated specified as `min-x`,
-            `min-y`, `width` and `height`. If not specified, calculated
-            from the last two dimensions of the view.
-
-        Returns
-        ----------
-        svg : string
-            SVG representation of the currently viewed layers.
-        """
-
-        if view_box is None:
-            min_shape, max_shape = self._calc_bbox()
-            min_shape = min_shape[-2:]
-            max_shape = max_shape[-2:]
-            shape = np.subtract(max_shape, min_shape)
-        else:
-            shape = view_box[2:]
-            min_shape = view_box[:2]
-
-        props = {
-            'xmlns': 'http://www.w3.org/2000/svg',
-            'xmlns:xlink': 'http://www.w3.org/1999/xlink',
-        }
-
-        xml = Element(
-            'svg',
-            height=f'{shape[0]}',
-            width=f'{shape[1]}',
-            version='1.1',
-            **props,
-        )
-
-        transform = f'translate({-min_shape[1]} {-min_shape[0]})'
-        xml_transform = Element('g', transform=transform)
-
-        for layer in self.layers:
-            if layer.visible:
-                xml_list = layer.to_xml_list()
-                for x in xml_list:
-                    xml_transform.append(x)
-        xml.append(xml_transform)
-
-        svg = (
-            '<?xml version=\"1.0\" standalone=\"no\"?>\n'
-            + '<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\"\n'
-            + '\"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n'
-            + tostring(xml, encoding='unicode', method='xml')
-        )
-
-        if file:
-            # Save svg to file
-            with open(file, 'w') as f:
-                f.write(svg)
-
-        return svg
 
     def _new_labels(self):
         if self.dims.ndim == 0:

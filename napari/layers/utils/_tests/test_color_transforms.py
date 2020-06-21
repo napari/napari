@@ -84,7 +84,7 @@ def test_normalize_colors_zero_colors():
 
 def test_transform_color_cycle():
     colors = ['red', 'blue']
-    transformed_color_cycle = transform_color_cycle(
+    transformed_color_cycle, transformed_colors = transform_color_cycle(
         colors, elem_name='face_color', default='white'
     )
     transformed_result = np.array(

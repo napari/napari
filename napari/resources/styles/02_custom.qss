@@ -147,7 +147,6 @@ QtDivider[selected=false] {
 
 QtLayerWidget {
   padding: 0px;
-  border: 1px solid {{ background }};
   background-color: {{ foreground }};
   border-radius: 2px;
   min-height: 32px;
@@ -156,17 +155,63 @@ QtLayerWidget {
   max-width: 228px;
 }
 
-QtLayerWidget QCheckBox::indicator:hover {
-  background-color: {{ foreground }};
+QtLayerWidget[selected="true"] {
+  background-color: {{ current }};
 }
 
-QtLayerWidget[selected="true"] {
-  border: 1px solid {{ secondary }};
-}
 
 QtLayerWidget > QLabel {
+  background-color: transparent;
   padding: 0px;
   qproperty-alignment: AlignCenter;
+}
+
+
+/* The name of the layer*/
+QtLayerWidget > QLineEdit {
+  background-color: transparent;
+  border: none;
+  border-radius: 2px;
+  padding: 2px;
+  font-size: 14px;
+  qproperty-alignment: right;
+}
+
+QtLayerWidget > QLineEdit:disabled {
+  background-color: transparent;
+  border-color: transparent;
+  border-radius: 3px;
+}
+
+QtLayerWidget > QLineEdit:focus {
+  background-color: {{ darken(current, 20) }};
+  selection-background-color: {{ lighten(current, 20) }};
+}
+
+QtLayerWidget QCheckBox::indicator {
+  background-color: transparent;
+}
+
+QtLayerWidget QCheckBox::indicator:hover {
+  background-color:  transparent;
+}
+
+QtLayerWidget > QCheckBox#visibility {
+  spacing: 0px;
+  margin: 0px 0px 0px 4px;
+}
+
+QtLayerWidget > QCheckBox#visibility::indicator{
+  width: 18px;
+  height: 18px;
+}
+
+QtLayerWidget > QCheckBox#visibility::indicator:unchecked {
+  image: url(":/themes/{{ folder }}/visibility_off.svg");
+}
+
+QtLayerWidget > QCheckBox#visibility::indicator:checked {
+  image: url(":/themes/{{ folder }}/visibility.svg");
 }
 
 
@@ -194,7 +239,7 @@ QLabel#Image {
   image: url(":/themes/{{ folder }}/new_image.svg");
 }
 
-QLabel#Pyramid {
+QLabel#Multiscale {
   image: url(":/themes/{{ folder }}/new_image.svg");
 }
 
@@ -204,46 +249,6 @@ QLabel#Surface {
 
 QLabel#Vectors {
   image: url(":/themes/{{ folder }}/new_vectors.svg");
-}
-
-/* The name of the layer*/
-QtLayerWidget > QLineEdit {
-  background-color: {{ foreground }};
-  border: 1px solid {{ foreground }};
-  border-radius: 2px;
-  padding: 2px;
-  font-size: 14px;
-  qproperty-alignment: right;
-}
-
-QtLayerWidget > QLineEdit:focus {
-  border-color: {{ secondary }};
-  background-color: {{ darken(foreground, 20) }};
-}
-
-QtLayerWidget > QLineEdit:disabled {
-  background-color: {{ foreground }};
-  border-color: {{ foreground }};
-  border-radius: 3px;
-}
-
-QtLayerWidget > QCheckBox#visibility {
-  background-color: none;
-  spacing: 0px;
-  margin: 0px 0px 0px 4px;
-}
-
-QtLayerWidget > QCheckBox#visibility::indicator{
-  width: 18px;
-  height: 18px;
-}
-
-QtLayerWidget > QCheckBox#visibility::indicator:unchecked {
-  image: url(":/themes/{{ folder }}/visibility_off.svg");
-}
-
-QtLayerWidget > QCheckBox#visibility::indicator:checked {
-  image: url(":/themes/{{ folder }}/visibility.svg");
 }
 
 
@@ -413,11 +418,11 @@ ImplementationListItem {
   border-radius: 2px;
 }
 
-QtHookImplListWidget::item {
+QtHookImplementationListWidget::item {
   background: transparent;
 }
 
-QtHookImplListWidget {
+QtHookImplementationListWidget {
   background-color: {{ console }};
 }
 

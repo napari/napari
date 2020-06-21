@@ -1,5 +1,6 @@
 import numpy as np
 import pytest
+import os
 
 from qtpy.QtCore import QPoint, Qt
 from napari._qt.qt_range_slider import QHRangeSlider, QVRangeSlider
@@ -13,7 +14,6 @@ def test_range_slider(qtbot, orientation):
     diff = abs(np.diff(range_))
     step = 1
     sld = model(initial_values=initial, data_range=range_, step_size=step)
-    sld.show()
     assert np.all([sld.value_min, sld.value_max] == (initial / diff))
 
     # test clicking parts triggers the right slider.moving
@@ -36,6 +36,13 @@ def test_range_slider(qtbot, orientation):
         qtbot.mousePress(sld, Qt.LeftButton, pos=pos, delay=50)
         assert sld.moving == 'bar'
     else:
+        # for the vertical slider, somehow the required positions are changing
+        # when the slider is not visible.  So we only test the vertical slider
+        # on CI, to minimize GUI tests locally.
+        if not os.getenv("CI"):
+            return
+
+        sld.show()
         pos = sld.rangeSliderSize() * sld.value_min + sld.handle_radius
         pos = QPoint(sld.width() / 2, pos)
         qtbot.mousePress(sld, Qt.LeftButton, pos=pos, delay=50)

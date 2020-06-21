@@ -3,6 +3,7 @@ import pytest
 
 from napari.components import ViewerModel
 from napari._tests.utils import good_layer_data
+from napari.utils.colormaps import colormaps
 
 
 def test_viewer_model():
@@ -28,6 +29,42 @@ def test_add_image():
     assert viewer.dims.ndim == 2
 
 
+def test_add_image_colormap_variants():
+    """Test adding image with all valid colormap argument types."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    data = np.random.random((10, 15))
+    # as string
+    assert viewer.add_image(data, colormap='green')
+
+    # as string that is valid, but not a default colormap
+    assert viewer.add_image(data, colormap='cubehelix')
+
+    # as tuple
+    cmap_tuple = ("my_colormap", colormaps.Colormap(['g', 'm', 'y']))
+    assert viewer.add_image(data, colormap=cmap_tuple)
+
+    # as dict
+    cmap_dict = {"your_colormap": colormaps.Colormap(['g', 'r', 'y'])}
+    assert viewer.add_image(data, colormap=cmap_dict)
+
+    # as Colormap instance
+    fire = colormaps.AVAILABLE_COLORMAPS['fire']
+    assert viewer.add_image(data, colormap=fire)
+
+    # string values must be known colormap types
+    with pytest.raises(KeyError) as err:
+        viewer.add_image(data, colormap='nonsense')
+
+    assert 'Colormap "nonsense" not found' in str(err.value)
+
+    # lists are only valid with channel_axis
+    with pytest.raises(TypeError) as err:
+        viewer.add_image(data, colormap=['green', 'red'])
+
+    assert "did you mean to specify a 'channel_axis'" in str(err.value)
+
+
 def test_add_volume():
     """Test adding volume."""
     viewer = ViewerModel(ndisplay=3)
@@ -39,13 +76,13 @@ def test_add_volume():
     assert viewer.dims.ndim == 3
 
 
-def test_add_pyramid():
-    """Test adding image pyramid."""
+def test_add_multiscale():
+    """Test adding image multiscale."""
     viewer = ViewerModel()
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
-    viewer.add_image(data, is_pyramid=True)
+    viewer.add_image(data, multiscale=True)
     assert len(viewer.layers) == 1
     assert np.all(viewer.layers[0].data == data)
     assert viewer.dims.ndim == 2
@@ -277,36 +314,6 @@ def test_grid():
     assert viewer.grid_stride == -2
 
 
-def test_svg():
-    "Test generating svg"
-    viewer = ViewerModel()
-
-    np.random.seed(0)
-    # Add image
-    data = np.random.random((10, 15))
-    viewer.add_image(data)
-
-    # Add labels
-    data = np.random.randint(20, size=(10, 15))
-    viewer.add_labels(data)
-
-    # Add points
-    data = 20 * np.random.random((10, 2))
-    viewer.add_points(data)
-
-    # Add vectors
-    data = 20 * np.random.random((10, 2, 2))
-    viewer.add_vectors(data)
-
-    # Add shapes
-    data = 20 * np.random.random((10, 4, 2))
-    viewer.add_shapes(data)
-
-    # Generate svg
-    svg = viewer.to_svg()
-    assert type(svg) == str
-
-
 def test_add_remove_layer_dims_change():
     """Test dims change appropriately when adding and removing layers."""
     np.random.seed(0)
@@ -338,7 +345,7 @@ def test_add_layer_from_data(data):
     # make sure a layer of the correct type got added
     assert len(viewer.layers) == 1
     expected_layer_type = data[2] if len(data) > 2 else 'image'
-    assert viewer.layers[0].__class__.__name__.lower() == expected_layer_type
+    assert viewer.layers[0]._type_string == expected_layer_type
 
 
 def test_add_layer_from_data_raises():
@@ -367,3 +374,18 @@ def test_add_layer_from_data_raises():
             {'rgb': True},  # vectors do not have an 'rgb' kwarg
             layer_type='vectors',
         )
+
+
+def test_add_delete_layers():
+    """Test adding and deleting layers with different dims."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    viewer.add_image(np.random.random((5, 5, 10, 15)))
+    assert len(viewer.layers) == 1
+    assert viewer.dims.ndim == 4
+    viewer.add_image(np.random.random((5, 6, 5, 10, 15)))
+    assert len(viewer.layers) == 2
+    assert viewer.dims.ndim == 5
+    viewer.layers.remove_selected()
+    assert len(viewer.layers) == 1
+    assert viewer.dims.ndim == 4

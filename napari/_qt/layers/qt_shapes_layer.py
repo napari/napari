@@ -1,20 +1,12 @@
 from collections.abc import Iterable
 import numpy as np
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import (
-    QButtonGroup,
-    QLabel,
-    QComboBox,
-    QSlider,
-    QFrame,
-    QGridLayout,
-    QHBoxLayout,
-)
-from vispy.color import Color
+from qtpy.QtWidgets import QButtonGroup, QLabel, QSlider, QGridLayout
 from .qt_base_layer import QtLayerControls
+from ..qt_color_dialog import QColorSwatchEdit
 from ...layers.shapes._shapes_constants import Mode
 from ..qt_mode_buttons import QtModeRadioButton, QtModePushButton
-from ..utils import disable_with_opacity
+from ..utils import disable_with_opacity, qt_signals_blocked
 
 
 class QtShapesControls(QtLayerControls):
@@ -83,8 +75,12 @@ class QtShapesControls(QtLayerControls):
 
         self.layer.events.mode.connect(self.set_mode)
         self.layer.events.edge_width.connect(self._on_edge_width_change)
-        self.layer.events.edge_color.connect(self._on_edge_color_change)
-        self.layer.events.face_color.connect(self._on_face_color_change)
+        self.layer.events.current_edge_color.connect(
+            self._on_edge_color_change
+        )
+        self.layer.events.current_face_color.connect(
+            self._on_face_color_change
+        )
         self.layer.events.editable.connect(self._on_editable_change)
 
         sld = QSlider(Qt.Horizontal)
@@ -100,24 +96,6 @@ class QtShapesControls(QtLayerControls):
         sld.setValue(int(value))
         sld.valueChanged.connect(self.changeWidth)
         self.widthSlider = sld
-
-        face_comboBox = QComboBox()
-        face_comboBox.addItems(self.layer._colors)
-        face_comboBox.activated[str].connect(self.changeFaceColor)
-        self.faceComboBox = face_comboBox
-        self.faceColorSwatch = QFrame()
-        self.faceColorSwatch.setObjectName('colorSwatch')
-        self.faceColorSwatch.setToolTip('Face color swatch')
-        self._on_face_color_change()
-
-        edge_comboBox = QComboBox()
-        edge_comboBox.addItems(self.layer._colors)
-        edge_comboBox.activated[str].connect(self.changeEdgeColor)
-        self.edgeComboBox = edge_comboBox
-        self.edgeColorSwatch = QFrame()
-        self.edgeColorSwatch.setObjectName('colorSwatch')
-        self.edgeColorSwatch.setToolTip('Edge color swatch')
-        self._on_edge_color_change()
 
         self.select_button = QtModeRadioButton(
             layer, 'select', Mode.SELECT, tooltip='Select shapes'
@@ -199,12 +177,18 @@ class QtShapesControls(QtLayerControls):
         button_grid.setColumnStretch(0, 1)
         button_grid.setSpacing(4)
 
-        face_color_layout = QHBoxLayout()
-        face_color_layout.addWidget(self.faceColorSwatch)
-        face_color_layout.addWidget(self.faceComboBox)
-        edge_color_layout = QHBoxLayout()
-        edge_color_layout.addWidget(self.edgeColorSwatch)
-        edge_color_layout.addWidget(self.edgeComboBox)
+        self.faceColorEdit = QColorSwatchEdit(
+            initial_color=self.layer.current_face_color,
+            tooltip='click to set current face color',
+        )
+        self._on_face_color_change()
+        self.edgeColorEdit = QColorSwatchEdit(
+            initial_color=self.layer.current_edge_color,
+            tooltip='click to set current edge color',
+        )
+        self._on_edge_color_change()
+        self.faceColorEdit.color_changed.connect(self.changeFaceColor)
+        self.edgeColorEdit.color_changed.connect(self.changeEdgeColor)
 
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
@@ -216,9 +200,9 @@ class QtShapesControls(QtLayerControls):
         self.grid_layout.addWidget(QLabel('blending:'), 3, 0)
         self.grid_layout.addWidget(self.blendComboBox, 3, 1)
         self.grid_layout.addWidget(QLabel('face color:'), 4, 0)
-        self.grid_layout.addLayout(face_color_layout, 4, 1)
+        self.grid_layout.addWidget(self.faceColorEdit, 4, 1)
         self.grid_layout.addWidget(QLabel('edge color:'), 5, 0)
-        self.grid_layout.addLayout(edge_color_layout, 5, 1)
+        self.grid_layout.addWidget(self.edgeColorEdit, 5, 1)
         self.grid_layout.setRowStretch(6, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
@@ -276,27 +260,29 @@ class QtShapesControls(QtLayerControls):
         else:
             raise ValueError(f"Mode '{event.mode}'not recognized")
 
-    def changeFaceColor(self, text):
+    def changeFaceColor(self, color: np.ndarray):
         """Change face color of shapes.
 
         Parameters
         ----------
-        text : str
+        color : np.ndarray
             Face color for shapes, color name or hex string.
             Eg: 'white', 'red', 'blue', '#00ff00', etc.
         """
-        self.layer.current_face_color = text
+        with self.layer.events.current_face_color.blocker():
+            self.layer.current_face_color = color
 
-    def changeEdgeColor(self, text):
+    def changeEdgeColor(self, color: np.ndarray):
         """Change edge color of shapes.
 
         Parameters
         ----------
-        text : str
+        color : np.ndarray
             Edge color for shapes, color name or hex string.
             Eg: 'white', 'red', 'blue', '#00ff00', etc.
         """
-        self.layer.current_edge_color = text
+        with self.layer.events.current_edge_color.blocker():
+            self.layer.current_edge_color = color
 
     def changeWidth(self, value):
         """Change edge line width of shapes on the layer model.
@@ -318,7 +304,7 @@ class QtShapesControls(QtLayerControls):
             Input range 0 - 100 (transparent to fully opaque).
         """
         with self.layer.events.blocker(self._on_opacity_change):
-            self.layer.current_opacity = value / 100
+            self.layer.opacity = value / 100
 
     def _on_edge_width_change(self, event=None):
         """Receive layer model edge line width change event and update slider.
@@ -341,13 +327,8 @@ class QtShapesControls(QtLayerControls):
         event : qtpy.QtCore.QEvent, optional.
             Event from the Qt context, by default None.
         """
-        with self.layer.events.edge_color.blocker():
-            index = self.edgeComboBox.findText(
-                self.layer.current_edge_color, Qt.MatchFixedString
-            )
-            self.edgeComboBox.setCurrentIndex(index)
-        color = Color(self.layer.current_edge_color).hex
-        self.edgeColorSwatch.setStyleSheet("background-color: " + color)
+        with qt_signals_blocked(self.edgeColorEdit):
+            self.edgeColorEdit.setColor(self.layer.current_edge_color)
 
     def _on_face_color_change(self, event=None):
         """Receive layer model face color change event and update color swatch.
@@ -357,13 +338,8 @@ class QtShapesControls(QtLayerControls):
         event : qtpy.QtCore.QEvent, optional.
             Event from the Qt context, by default None.
         """
-        with self.layer.events.face_color.blocker():
-            index = self.faceComboBox.findText(
-                self.layer.current_face_color, Qt.MatchFixedString
-            )
-            self.faceComboBox.setCurrentIndex(index)
-        color = Color(self.layer.current_face_color).hex
-        self.faceColorSwatch.setStyleSheet("background-color: " + color)
+        with qt_signals_blocked(self.faceColorEdit):
+            self.faceColorEdit.setColor(self.layer.current_face_color)
 
     def _on_opacity_change(self, event=None):
         """Receive layer model opacity change event and update opacity slider.
@@ -374,7 +350,7 @@ class QtShapesControls(QtLayerControls):
             Event from the Qt context, by default None.
         """
         with self.layer.events.opacity.blocker():
-            self.opacitySlider.setValue(self.layer.current_opacity * 100)
+            self.opacitySlider.setValue(self.layer.opacity * 100)
 
     def _on_editable_change(self, event=None):
         """Receive layer model editable change event & enable/disable buttons.

@@ -14,5 +14,5 @@ from .shapes import Shapes
 from .surface import Surface
 from .vectors import Vectors
 
-NAMES = [subclass.__name__.lower() for subclass in all_subclasses(Layer)]
+NAMES = {subclass.__name__.lower() for subclass in all_subclasses(Layer)}
 del all_subclasses

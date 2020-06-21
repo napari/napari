@@ -1,9 +1,8 @@
 import os
+import csv
 from pathlib import Path
-
 import numpy as np
 from dask import array as da
-from skimage.data import data_dir
 from tempfile import TemporaryDirectory
 from napari.utils import io
 import pytest
@@ -17,32 +16,8 @@ except ImportError:
     zarr_available = False
 
 
-@pytest.fixture
-def single_png():
-    image_files = [os.path.join(data_dir, fn) for fn in ['camera.png']]
-    return image_files
-
-
-@pytest.fixture
-def two_pngs():
-    image_files = [
-        os.path.join(data_dir, fn) for fn in ['moon.png', 'camera.png']
-    ]
-    return image_files
-
-
-@pytest.fixture
-def irregular_images():
-    image_files = [
-        os.path.join(data_dir, fn) for fn in ['camera.png', 'coins.png']
-    ]
-    return image_files
-
-
-@pytest.fixture
-def single_tiff():
-    image_files = [os.path.join(data_dir, 'multipage.tif')]
-    return image_files
+# the following fixtures are defined in napari/conftest.py
+# single_png, two_pngs, irregular_images, single_tiff
 
 
 def test_single_png_defaults(single_png):
@@ -95,6 +70,12 @@ def test_multi_png_no_stack(two_pngs):
     assert all(a.shape == (512, 512) for a in images)
 
 
+def test_no_files_raises(tmp_path, two_pngs):
+    with pytest.raises(ValueError) as e:
+        io.magic_imread(tmp_path)
+    assert "No files found in" in str(e.value)
+
+
 def test_irregular_images(irregular_images):
     image_files = irregular_images
     # Ideally, this would work "magically" with dask and irregular images,
@@ -143,21 +124,136 @@ def test_zarr():
 
 
 @pytest.mark.skipif(not zarr_available, reason='zarr not installed')
-def test_zarr_pyramid():
-    pyramid = [
+def test_zarr_multiscale():
+    multiscale = [
         np.random.random((20, 20)),
         np.random.random((10, 10)),
         np.random.random((5, 5)),
     ]
     with TemporaryDirectory(suffix='.zarr') as fout:
         root = zarr.open_group(fout, 'a')
-        for i in range(len(pyramid)):
+        for i in range(len(multiscale)):
             shape = 20 // 2 ** i
             z = root.create_dataset(str(i), shape=(shape,) * 2)
-            z[:] = pyramid[i]
-        pyramid_in = io.magic_imread([fout])
-        assert len(pyramid) == len(pyramid_in)
+            z[:] = multiscale[i]
+        multiscale_in = io.magic_imread([fout])
+        assert len(multiscale) == len(multiscale_in)
         # Note: due to lazy loading, the next line needs to happen within
         # the context manager. Alternatively, we could convert to NumPy here.
-        for images, images_in in zip(pyramid, pyramid_in):
+        for images, images_in in zip(multiscale, multiscale_in):
             np.testing.assert_array_equal(images, images_in)
+
+
+def test_write_csv(tmpdir):
+    expected_filename = os.path.join(tmpdir, 'test.csv')
+    column_names = ['column_1', 'column_2', 'column_3']
+    expected_data = np.random.random((5, len(column_names)))
+
+    # Write csv file
+    io.write_csv(expected_filename, expected_data, column_names=column_names)
+    assert os.path.exists(expected_filename)
+
+    # Check csv file is as expected
+    with open(expected_filename) as output_csv:
+        csv.reader(output_csv, delimiter=',')
+        for row_index, row in enumerate(output_csv):
+            if row_index == 0:
+                assert row == "column_1,column_2,column_3\n"
+            else:
+                output_row_data = [float(i) for i in row.split(',')]
+                np.testing.assert_allclose(
+                    np.array(output_row_data), expected_data[row_index - 1]
+                )
+
+
+def test_read_csv(tmpdir):
+    expected_filename = os.path.join(tmpdir, 'test.csv')
+    column_names = ['column_1', 'column_2', 'column_3']
+    expected_data = np.random.random((5, len(column_names)))
+
+    # Write csv file
+    io.write_csv(expected_filename, expected_data, column_names=column_names)
+    assert os.path.exists(expected_filename)
+
+    # Read csv file
+    read_data, read_column_names, _ = io.read_csv(expected_filename)
+    read_data = np.array(read_data).astype('float')
+    np.testing.assert_allclose(expected_data, read_data)
+
+    assert column_names == read_column_names
+
+
+def test_guess_layer_type_from_column_names():
+    points_names = ['index', 'axis-0', 'axis-1']
+    assert io.guess_layer_type_from_column_names(points_names) == 'points'
+
+    shapes_names = ['index', 'shape-type', 'vertex-index', 'axis-0', 'axis-1']
+    assert io.guess_layer_type_from_column_names(shapes_names) == 'shapes'
+
+    also_points_names = ['no-index', 'axis-0', 'axis-1']
+    assert io.guess_layer_type_from_column_names(also_points_names) == 'points'
+
+    bad_names = ['no-index', 'no-axis-0', 'axis-1']
+    assert io.guess_layer_type_from_column_names(bad_names) is None
+
+
+def test_read_csv_raises(tmp_path):
+    """Test various exception raising circumstances with read_csv."""
+    temp = tmp_path / 'points.csv'
+
+    # test that points data is detected with require_type = None, any, points
+    # but raises for other shape types.
+    data = [['index', 'axis-0', 'axis-1']]
+    data.extend(np.random.random((3, 3)).tolist())
+    with open(temp, mode='w', newline='') as csvfile:
+        csv.writer(csvfile).writerows(data)
+    assert io.read_csv(temp, require_type=None)[2] == 'points'
+    assert io.read_csv(temp, require_type='any')[2] == 'points'
+    assert io.read_csv(temp, require_type='points')[2] == 'points'
+    with pytest.raises(ValueError):
+        io.read_csv(temp, require_type='shapes')
+
+    # test that unrecognized data is detected with require_type = None
+    # but raises for specific shape types or "any"
+    data = [['some', 'random', 'header']]
+    data.extend(np.random.random((3, 3)).tolist())
+    with open(temp, mode='w', newline='') as csvfile:
+        csv.writer(csvfile).writerows(data)
+    assert io.read_csv(temp, require_type=None)[2] is None
+    with pytest.raises(ValueError):
+        assert io.read_csv(temp, require_type='any')
+    with pytest.raises(ValueError):
+        assert io.read_csv(temp, require_type='points')
+    with pytest.raises(ValueError):
+        io.read_csv(temp, require_type='shapes')
+
+
+def test_csv_to_layer_data_raises(tmp_path):
+    """Test various exception raising circumstances with csv_to_layer_data."""
+    temp = tmp_path / 'points.csv'
+
+    # test that points data is detected with require_type == points, any, None
+    # but raises for other shape types.
+    data = [['index', 'axis-0', 'axis-1']]
+    data.extend(np.random.random((3, 3)).tolist())
+    with open(temp, mode='w', newline='') as csvfile:
+        csv.writer(csvfile).writerows(data)
+    assert io.csv_to_layer_data(temp, require_type=None)[2] == 'points'
+    assert io.csv_to_layer_data(temp, require_type='any')[2] == 'points'
+    assert io.csv_to_layer_data(temp, require_type='points')[2] == 'points'
+    with pytest.raises(ValueError):
+        io.csv_to_layer_data(temp, require_type='shapes')
+
+    # test that unrecognized data simply returns None when require_type==None
+    # but raises for specific shape types or require_type=="any"
+    data = [['some', 'random', 'header']]
+    data.extend(np.random.random((3, 3)).tolist())
+    with open(temp, mode='w', newline='') as csvfile:
+        csv.writer(csvfile).writerows(data)
+    assert io.csv_to_layer_data(temp, require_type=None) is None
+    with pytest.raises(ValueError):
+        assert io.csv_to_layer_data(temp, require_type='any')
+    with pytest.raises(ValueError):
+        assert io.csv_to_layer_data(temp, require_type='points')
+    with pytest.raises(ValueError):
+        io.csv_to_layer_data(temp, require_type='shapes')

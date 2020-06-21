@@ -1,1 +1,5 @@
--r requirements/default.txt
+# requirements are in setup.cfg
+# https://caremad.io/posts/2013/07/setup-vs-requirement/
+
+-e ".[all]"
+-r requirements/development.txt

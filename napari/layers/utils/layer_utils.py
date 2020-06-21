@@ -1,25 +1,7 @@
+from typing import Dict, Union, Tuple
+
 import numpy as np
-
-
-def increment_unnamed_colormap(name, names):
-    """Increment name for unnamed colormap.
-
-    Parameters
-    ----------
-    name : str
-        Name of colormap to be incremented.
-    names : List[str]
-        Names of existing colormaps.
-
-    Returns
-    -------
-    name : str
-        Name of colormap after incrementing.
-    """
-    if name == '[unnamed colormap]':
-        past_names = [n for n in names if n.startswith('[unnamed colormap')]
-        name = f'[unnamed colormap {len(past_names)}]'
-    return name
+from vispy.color import Colormap
 
 
 def calc_data_range(data):
@@ -151,3 +133,103 @@ def convert_to_uint8(data: np.ndarray) -> np.ndarray:
             return np.right_shift(
                 data, (data.dtype.itemsize - 1) * 8 - 1
             ).astype(out_dtype)
+
+
+def dataframe_to_properties(dataframe) -> Dict[str, np.ndarray]:
+    """Convert a dataframe to Points.properties formatted dictionary.
+
+    Parameters
+    ----------
+    dataframe : DataFrame
+        The dataframe object to be converted to a properties dictionary
+
+    Returns
+    -------
+    dict[str, np.ndarray]
+        A properties dictionary where the key is the property name and the value
+        is an ndarray with the property value for each point.
+    """
+
+    properties = {col: np.asarray(dataframe[col]) for col in dataframe}
+    index = None
+    if 'index' in properties:
+        index = {i: k for k, i in enumerate(properties['index'])}
+    return properties, index
+
+
+def guess_continuous(property: np.ndarray) -> bool:
+    """Guess if the property is continuous (return True) or categorical (return False)"""
+    # if the property is a floating type, guess continuous
+    if (
+        issubclass(property.dtype.type, np.floating)
+        or len(np.unique(property)) > 16
+    ):
+        return True
+    else:
+        return False
+
+
+def map_property(
+    prop: np.ndarray,
+    colormap: Colormap,
+    contrast_limits: Union[None, Tuple[float, float]] = None,
+) -> Tuple[np.ndarray, Tuple[float, float]]:
+    """Apply a colormap to a property
+
+    Parameters
+    ----------
+    prop : np.ndarray
+        The property to be colormapped
+    colormap : vispy.color.Colormap
+        The vispy colormap object to apply to the property
+    contrast_limits: Union[None, Tuple[float, float]]
+        The contrast limits for applying the colormap to the property.
+        If a 2-tuple is provided, it should be provided as (lower_bound, upper_bound).
+        If None is provided, the contrast limits will be set to (property.min(), property.max()).
+        Default value is None.
+    """
+
+    if contrast_limits is None:
+        contrast_limits = (prop.min(), prop.max())
+    normalized_properties = np.interp(prop, contrast_limits, (0, 1))
+    mapped_properties = colormap.map(normalized_properties)
+
+    return mapped_properties, contrast_limits
+
+
+def compute_multiscale_level(
+    requested_shape, shape_threshold, downsample_factors
+):
+    """Computed desired level of the multiscale given requested field of view.
+
+    The level of the multiscale should be the lowest resolution such that
+    the requested shape is above the shape threshold. By passing a shape
+    threshold corresponding to the shape of the canvas on the screen this
+    ensures that we have at least one data pixel per screen pixel, but no
+    more than we need.
+
+    Parameters
+    ----------
+    requested_shape : tuple
+        Requested shape of field of view in data coordinates
+    shape_threshold : tuple
+        Maximum size of a displayed tile in pixels.
+    downsample_factors : list of tuple
+        Downsampling factors for each level of the multiscale. Must be increasing
+        for each level of the multiscale.
+
+    Returns
+    -------
+    level : int
+        Level of the multiscale to be viewing.
+    """
+    # Scale shape by downsample factors
+    scaled_shape = requested_shape / downsample_factors
+
+    # Find the highest resolution level allowed
+    locations = np.argwhere(np.all(scaled_shape > shape_threshold, axis=1))
+    if len(locations) > 0:
+        level = locations[-1][0]
+    else:
+        level = 0
+    return level

@@ -3,10 +3,11 @@ from sys import platform
 
 import numpy as np
 import pytest
-from qtpy.QtCore import Qt
-
 from napari._qt.qt_dims import QtDims
 from napari.components import Dims
+from qtpy.QtCore import Qt
+
+from unittest.mock import patch
 
 
 def test_creating_view(qtbot):
@@ -18,7 +19,6 @@ def test_creating_view(qtbot):
     view = QtDims(dims)
 
     qtbot.addWidget(view)
-    view.show()
 
     # Check that the dims model has been appended to the dims view
     assert view.dims == dims
@@ -29,7 +29,7 @@ def test_creating_view(qtbot):
     assert np.sum(view._displayed_sliders) == view.dims.ndim - 2
     assert np.all(
         [
-            s.isVisible() == d
+            s.isVisibleTo(view) == d
             for s, d in zip(view.slider_widgets, view._displayed_sliders)
         ]
     )
@@ -43,7 +43,6 @@ def test_changing_ndim(qtbot):
     view = QtDims(Dims(ndim))
 
     qtbot.addWidget(view)
-    view.show()
 
     # Check that adding dimensions adds sliders
     view.dims.ndim = 5
@@ -51,7 +50,7 @@ def test_changing_ndim(qtbot):
     assert np.sum(view._displayed_sliders) == view.dims.ndim - 2
     assert np.all(
         [
-            s.isVisible() == d
+            s.isVisibleTo(view) == d
             for s, d in zip(view.slider_widgets, view._displayed_sliders)
         ]
     )
@@ -62,7 +61,7 @@ def test_changing_ndim(qtbot):
     assert np.sum(view._displayed_sliders) == view.dims.ndim - 2
     assert np.all(
         [
-            s.isVisible() == d
+            s.isVisibleTo(view) == d
             for s, d in zip(view.slider_widgets, view._displayed_sliders)
         ]
     )
@@ -98,13 +97,12 @@ def test_changing_display(qtbot):
     ndim = 4
     view = QtDims(Dims(ndim))
     qtbot.addWidget(view)
-    view.show()
 
     assert view.nsliders == view.dims.ndim
     assert np.sum(view._displayed_sliders) == view.dims.ndim - 2
     assert np.all(
         [
-            s.isVisible() == d
+            s.isVisibleTo(view) == d
             for s, d in zip(view.slider_widgets, view._displayed_sliders)
         ]
     )
@@ -115,7 +113,7 @@ def test_changing_display(qtbot):
     assert np.sum(view._displayed_sliders) == view.dims.ndim - 3
     assert np.all(
         [
-            s.isVisible() == d
+            s.isVisibleTo(view) == d
             for s, d in zip(view.slider_widgets, view._displayed_sliders)
         ]
     )
@@ -181,7 +179,6 @@ def test_singleton_dims(qtbot):
     dims.set_range(0, (0, 1, 1))
     view = QtDims(dims)
     qtbot.addWidget(view)
-    view.show()
 
     # Check that the dims model has been appended to the dims view
     assert view.dims == dims
@@ -191,10 +188,22 @@ def test_singleton_dims(qtbot):
     assert np.sum(view._displayed_sliders) == 1
     assert np.all(
         [
-            s.isVisible() == d
+            s.isVisibleTo(view) == d
             for s, d in zip(view.slider_widgets, view._displayed_sliders)
         ]
     )
+
+    # Change ndisplay to three
+    view.dims.ndisplay = 3
+
+    # Check no sliders now shown
+    assert np.sum(view._displayed_sliders) == 0
+
+    # Change ndisplay back to two
+    view.dims.ndisplay = 2
+
+    # Check only slider now shown
+    assert np.sum(view._displayed_sliders) == 1
 
 
 def test_order_when_changing_ndim(qtbot):
@@ -284,9 +293,9 @@ def test_play_button(qtbot):
     qtbot.wait(200)
     assert not view.is_playing
 
-    assert not button.popup.isVisible()
-    qtbot.mouseClick(button, Qt.RightButton)
-    assert button.popup.isVisible()
+    with patch.object(button.popup, 'show_above_mouse') as mock_popup:
+        qtbot.mouseClick(button, Qt.RightButton)
+        mock_popup.assert_called_once()
 
 
 def test_slice_labels(viewer_factory):

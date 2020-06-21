@@ -1,7 +1,16 @@
 import os
-from .vendored import colorconv, cm
+from typing import Tuple, List
+
 import numpy as np
-from vispy.color import get_colormap, get_colormaps, BaseColormap, Colormap
+from vispy.color import (
+    BaseColormap,
+    Colormap,
+    get_colormap,
+    get_colormaps,
+)
+
+from ...types import ValidColormapArg
+from .vendored import cm, colorconv
 
 _matplotlib_list_file = os.path.join(
     os.path.dirname(__file__), 'matplotlib_cmaps.txt'
@@ -105,6 +114,30 @@ def _low_discrepancy_image(image, seed=0.5, margin=1 / 256):
         image_float - np.floor(image_float)
     )
     return image_out
+
+
+def color_dict_to_colormap(colors):
+    """
+    Generate a color map based on the given color dictionary
+
+    Parameters
+    ----------
+    colors : dict of int to array of float, shape (4)
+        Mapping between labels and color
+
+    Returns
+    -------
+    colormap : Colormap
+        Colormap constructed with provided control colors
+    label_color_index : dict of int
+        Mapping of Label to color control point within colormap
+    """
+
+    colormap = Colormap([color for label, color in colors.items()])
+    label_color_index = {}
+    for i, (label, color) in enumerate(colors.items()):
+        label_color_index[label] = i / (len(colors) - 1)
+    return colormap, label_color_index
 
 
 def _low_discrepancy(dim, n, seed=0.5):
@@ -301,3 +334,108 @@ AVAILABLE_COLORMAPS = {k: v for k, v in sorted(ALL_COLORMAPS.items())}
 MAGENTA_GREEN = ['magenta', 'green']
 RGB = ['red', 'green', 'blue']
 CYMRGB = ['cyan', 'yellow', 'magenta', 'red', 'green', 'blue']
+
+
+def increment_unnamed_colormap(
+    existing: List[str], name: str = '[unnamed colormap]'
+) -> str:
+    """Increment name for unnamed colormap.
+
+    Parameters
+    ----------
+    existing : list of str
+        Names of existing colormaps.
+    name : str, optional
+        Name of colormap to be incremented. by default '[unnamed colormap]'
+
+    Returns
+    -------
+    name : str
+        Name of colormap after incrementing.
+    """
+    if name == '[unnamed colormap]':
+        past_names = [n for n in existing if n.startswith('[unnamed colormap')]
+        name = f'[unnamed colormap {len(past_names)}]'
+    return name
+
+
+def ensure_colormap_tuple(colormap: ValidColormapArg) -> Tuple[str, Colormap]:
+    """Accept any valid colormap arg, and return (name, Colormap), or raise.
+
+    Adds any new colormaps to AVAILABLE_COLORMAPS in the process.
+
+    Parameters
+    ----------
+    colormap : ValidColormapArg
+        colormap as str, Colormap, {name: Colormap} ``dict``, or
+        (name, Colormap) ``tuple``.
+
+    Returns
+    -------
+    Tuple[str, Colormap]
+        Normalized name and Colormap.
+
+    Raises
+    ------
+    KeyError
+        If a string is provided that is not in AVAILABLE_COLORMAPS
+    TypeError
+        If a tuple is provided and the first element is not a string or the
+        second element is not a Colormap.
+    TypeError
+        If a dict is provided and any of the values are not Colormap instances.
+    TypeError
+        If ``colormap`` is not a ``str``, ``dict``, ``tuple``, or ``Colormap``
+    """
+    if isinstance(colormap, str):
+        name = colormap
+        if name not in AVAILABLE_COLORMAPS:
+            cmap = vispy_or_mpl_colormap(name)  # raises KeyError if not found
+            AVAILABLE_COLORMAPS[name] = cmap
+    elif isinstance(colormap, BaseColormap):
+        # if a colormap instance is provided, make sure we don't already know
+        # about it before adding a new unnamed colormap
+        name = None
+        for key, val in AVAILABLE_COLORMAPS.items():
+            if colormap == val:
+                name = key
+                break
+        if not name:
+            name = increment_unnamed_colormap(AVAILABLE_COLORMAPS)
+        AVAILABLE_COLORMAPS[name] = colormap
+    elif isinstance(colormap, tuple):
+        if not (
+            len(colormap) > 1
+            and isinstance(colormap[1], BaseColormap)
+            and isinstance(colormap[0], str)
+        ):
+            raise TypeError(
+                "When providing a tuple as a colormap argument, the first "
+                "element must be a string and the second a Colormap instance"
+            )
+        name, cmap = colormap
+        AVAILABLE_COLORMAPS[name] = cmap
+    elif isinstance(colormap, dict):
+        if not all(isinstance(i, BaseColormap) for i in colormap.values()):
+            raise TypeError(
+                "When providing a dict as a colormap, "
+                "all values must be BaseColormap instances"
+            )
+        AVAILABLE_COLORMAPS.update(colormap)
+        if len(colormap) == 1:
+            name = list(colormap)[0]  # first key in dict
+        elif len(colormap) > 1:
+            import warnings
+
+            warnings.warn(
+                "only the first item in a colormap dict is used as an argument"
+            )
+        else:
+            raise ValueError("Received an empty dict as a colormap argument.")
+    else:
+        raise TypeError(
+            f'invalid type for colormap: {type(colormap)}. '
+            'Must be a {str, tuple, dict, vispy.colormap.Colormap}'
+        )
+
+    return name, AVAILABLE_COLORMAPS[name]

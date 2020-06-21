@@ -75,6 +75,7 @@ def focus_axes_down(viewer):
 
 
 @Viewer.bind_key('Control-Backspace')
+@Viewer.bind_key('Control-Delete')
 def remove_selected(viewer):
     """Remove selected layers."""
     viewer.layers.remove_selected()
@@ -87,6 +88,7 @@ def select_all(viewer):
 
 
 @Viewer.bind_key('Control-Shift-Backspace')
+@Viewer.bind_key('Control-Shift-Delete')
 def remove_all_layers(viewer):
     """Remove all layers."""
     viewer.layers.select_all()
@@ -140,6 +142,12 @@ def play(viewer):
     else:
         axis = viewer.window.qt_viewer.dims.last_used or 0
         viewer.window.qt_viewer.dims.play(axis)
+
+
+@Viewer.bind_key('V')
+def toggle_selected_visibility(viewer):
+    """Toggle visibility of selected layers"""
+    viewer.layers.toggle_selected_visibility()
 
 
 # just examples ... would remove before merge

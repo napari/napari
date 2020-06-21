@@ -1,20 +1,21 @@
+import sys
 from qtpy.QtGui import QPainter, QColor
 from qtpy.QtWidgets import (
     QButtonGroup,
     QWidget,
-    QPushButton,
     QSlider,
     QCheckBox,
     QLabel,
     QSpinBox,
     QHBoxLayout,
+    QComboBox,
 )
 from qtpy.QtCore import Qt
 
 import numpy as np
 from .qt_base_layer import QtLayerControls
-from ...layers.labels._labels_constants import Mode
-from ..qt_mode_buttons import QtModeRadioButton
+from ...layers.labels._labels_constants import Mode, LabelColorMode
+from ..qt_mode_buttons import QtModeRadioButton, QtModePushButton
 from ..utils import disable_with_opacity
 
 
@@ -29,7 +30,8 @@ class QtLabelsControls(QtLayerControls):
     Attributes
     ----------
     button_group : qtpy.QtWidgets.QButtonGroup
-        Button group of labels layer modes: PAN_ZOOM, PICKER, PAINT, or FILL.
+        Button group of labels layer modes: PAN_ZOOM, PICKER, PAINT, ERASE, or
+        FILL.
     colormapUpdate : qtpy.QtWidgets.QPushButton
         Button to update colormap of label layer.
     contigCheckBox : qtpy.QtWidgets.QCheckBox
@@ -48,13 +50,16 @@ class QtLabelsControls(QtLayerControls):
         Button to select PAN_ZOOM mode on Labels layer.
     pick_button : qtpy.QtWidgets.QtModeRadioButton
         Button to select PICKER mode on Labels layer.
+    erase_button : qtpy.QtWidgets.QtModeRadioButton
+        Button to select ERASE mode on Labels layer.
     selectionSpinBox : qtpy.QtWidgets.QSpinBox
         Widget to select a specfic label by its index.
 
     Raises
     ------
     ValueError
-        Raise error if label mode is not PAN_ZOOM, PICKER, PAINT, or FILL.
+        Raise error if label mode is not PAN_ZOOM, PICKER, PAINT, ERASE, or
+        FILL.
     """
 
     def __init__(self, layer):
@@ -66,11 +71,10 @@ class QtLabelsControls(QtLayerControls):
         self.layer.events.contiguous.connect(self._on_contig_change)
         self.layer.events.n_dimensional.connect(self._on_n_dim_change)
         self.layer.events.editable.connect(self._on_editable_change)
-
-        # shuffle colormap button
-        self.colormapUpdate = QPushButton('shuffle colors')
-        self.colormapUpdate.setObjectName('shuffleButton')
-        self.colormapUpdate.clicked.connect(self.changeColor)
+        self.layer.events.preserve_labels.connect(
+            self._on_preserve_labels_change
+        )
+        self.layer.events.color_mode.connect(self._on_color_mode_change)
 
         # selection spinbox
         self.selectionSpinBox = QSpinBox()
@@ -103,8 +107,25 @@ class QtLabelsControls(QtLayerControls):
         self.ndimCheckBox = ndim_cb
         self._on_n_dim_change()
 
+        preserve_labels_cb = QCheckBox()
+        preserve_labels_cb.setToolTip(
+            'preserve existing labels while painting'
+        )
+        preserve_labels_cb.stateChanged.connect(self.change_preserve_labels)
+        self.preserveLabelsCheckBox = preserve_labels_cb
+        self._on_preserve_labels_change()
+
+        # shuffle colormap button
+        self.colormapUpdate = QtModePushButton(
+            None, 'shuffle', slot=self.changeColor, tooltip='shuffle colors',
+        )
+
         self.panzoom_button = QtModeRadioButton(
-            layer, 'zoom', Mode.PAN_ZOOM, tooltip='Pan/zoom mode', checked=True
+            layer,
+            'zoom',
+            Mode.PAN_ZOOM,
+            tooltip='Pan/zoom mode (Space)',
+            checked=True,
         )
         self.pick_button = QtModeRadioButton(
             layer, 'picker', Mode.PICK, tooltip='Pick mode'
@@ -112,8 +133,12 @@ class QtLabelsControls(QtLayerControls):
         self.paint_button = QtModeRadioButton(
             layer, 'paint', Mode.PAINT, tooltip='Paint mode'
         )
+        btn = 'Cmd' if sys.platform == 'darwin' else 'Ctrl'
         self.fill_button = QtModeRadioButton(
-            layer, 'fill', Mode.FILL, tooltip='Fill mode'
+            layer, 'fill', Mode.FILL, tooltip=f'Fill mode ({btn})'
+        )
+        self.erase_button = QtModeRadioButton(
+            layer, 'erase', Mode.ERASE, tooltip='Erase mode (Alt)'
         )
 
         self.button_group = QButtonGroup(self)
@@ -121,16 +146,29 @@ class QtLabelsControls(QtLayerControls):
         self.button_group.addButton(self.paint_button)
         self.button_group.addButton(self.pick_button)
         self.button_group.addButton(self.fill_button)
+        self.button_group.addButton(self.erase_button)
         self._on_editable_change()
 
         button_row = QHBoxLayout()
         button_row.addStretch(1)
-        button_row.addWidget(self.pick_button)
+        button_row.addWidget(self.colormapUpdate)
+        button_row.addWidget(self.erase_button)
         button_row.addWidget(self.fill_button)
         button_row.addWidget(self.paint_button)
+        button_row.addWidget(self.pick_button)
         button_row.addWidget(self.panzoom_button)
         button_row.setSpacing(4)
         button_row.setContentsMargins(0, 0, 0, 5)
+
+        color_mode_comboBox = QComboBox(self)
+        color_mode_comboBox.addItems(LabelColorMode.keys())
+        index = color_mode_comboBox.findText(
+            self.layer.color_mode, Qt.MatchFixedString
+        )
+        color_mode_comboBox.setCurrentIndex(index)
+        color_mode_comboBox.activated[str].connect(self.change_color_mode)
+        self.colorModeComboBox = color_mode_comboBox
+        self._on_color_mode_change()
 
         color_layout = QHBoxLayout()
         color_layout.addWidget(QtColorBox(layer))
@@ -138,28 +176,31 @@ class QtLabelsControls(QtLayerControls):
 
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
-        self.grid_layout.addLayout(button_row, 0, 1)
-        self.grid_layout.addWidget(self.colormapUpdate, 0, 0)
-        self.grid_layout.addWidget(QLabel('label:'), 1, 0)
-        self.grid_layout.addLayout(color_layout, 1, 1)
-        self.grid_layout.addWidget(QLabel('opacity:'), 2, 0)
-        self.grid_layout.addWidget(self.opacitySlider, 2, 1)
-        self.grid_layout.addWidget(QLabel('brush size:'), 3, 0)
-        self.grid_layout.addWidget(self.brushSizeSlider, 3, 1)
-        self.grid_layout.addWidget(QLabel('blending:'), 4, 0)
-        self.grid_layout.addWidget(self.blendComboBox, 4, 1)
-        self.grid_layout.addWidget(QLabel('contiguous:'), 5, 0)
-        self.grid_layout.addWidget(self.contigCheckBox, 5, 1)
-        self.grid_layout.addWidget(QLabel('n-dim:'), 6, 0)
-        self.grid_layout.addWidget(self.ndimCheckBox, 6, 1)
-        self.grid_layout.setRowStretch(7, 1)
+        self.grid_layout.addLayout(button_row, 0, 0, 1, 4)
+        self.grid_layout.addWidget(QLabel('label:'), 1, 0, 1, 1)
+        self.grid_layout.addLayout(color_layout, 1, 1, 1, 3)
+        self.grid_layout.addWidget(QLabel('opacity:'), 2, 0, 1, 1)
+        self.grid_layout.addWidget(self.opacitySlider, 2, 1, 1, 3)
+        self.grid_layout.addWidget(QLabel('brush size:'), 3, 0, 1, 1)
+        self.grid_layout.addWidget(self.brushSizeSlider, 3, 1, 1, 3)
+        self.grid_layout.addWidget(QLabel('blending:'), 4, 0, 1, 1)
+        self.grid_layout.addWidget(self.blendComboBox, 4, 1, 1, 3)
+        self.grid_layout.addWidget(QLabel('color mode:'), 5, 0, 1, 1)
+        self.grid_layout.addWidget(self.colorModeComboBox, 5, 1, 1, 3)
+        self.grid_layout.addWidget(QLabel('contiguous:'), 6, 0, 1, 1)
+        self.grid_layout.addWidget(self.contigCheckBox, 6, 1, 1, 1)
+        self.grid_layout.addWidget(QLabel('n-dim:'), 6, 2, 1, 1)
+        self.grid_layout.addWidget(self.ndimCheckBox, 6, 3, 1, 1)
+        self.grid_layout.addWidget(QLabel('preserve labels:'), 7, 0, 1, 2)
+        self.grid_layout.addWidget(self.preserveLabelsCheckBox, 7, 1, 1, 1)
+        self.grid_layout.setRowStretch(8, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
 
     def mouseMoveEvent(self, event):
         """On mouse move, set layer status equal to the current selected mode.
 
-        Available mode options are: PAN_ZOOM, PICKER, PAINT, or FILL
+        Available mode options are: PAN_ZOOM, PICKER, PAINT, ERASE or FILL
 
         Parameters
         ----------
@@ -179,7 +220,8 @@ class QtLabelsControls(QtLayerControls):
         Raises
         ------
         ValueError
-            Raise error if event.mode is not PAN_ZOOM, PICK, PAINT, or FILL
+            Raise error if event.mode is not PAN_ZOOM, PICK, PAINT, ERASE, or
+            FILL
         """
         mode = event.mode
         if mode == Mode.PAN_ZOOM:
@@ -190,6 +232,8 @@ class QtLabelsControls(QtLayerControls):
             self.paint_button.setChecked(True)
         elif mode == Mode.FILL:
             self.fill_button.setChecked(True)
+        elif mode == Mode.ERASE:
+            self.erase_button.setChecked(True)
         else:
             raise ValueError("Mode not recognized")
 
@@ -245,6 +289,32 @@ class QtLabelsControls(QtLayerControls):
         else:
             self.layer.n_dimensional = False
 
+    def change_preserve_labels(self, state):
+        """Toggle preserve_labels state of label layer.
+
+        Parameters
+        ----------
+        state : QCheckBox
+            Checkbox indicating if overwriting label is enabled.
+        """
+        if state == Qt.Checked:
+            self.layer.preserve_labels = True
+        else:
+            self.layer.preserve_labels = False
+
+    def change_color_mode(self, new_mode):
+        """Change color mode of label layer.
+
+        Parameters
+        ----------
+        new_mode : str
+
+        AUTO (default) allows color to be set via a hash function with a seed.
+
+        DIRECT allows color of each label to be set directly by a color dictionary.
+        """
+        self.layer.color_mode = new_mode
+
     def _on_selection_change(self, event=None):
         """Receive layer model label selection change event and update spinbox.
 
@@ -291,6 +361,31 @@ class QtLabelsControls(QtLayerControls):
         """
         with self.layer.events.contiguous.blocker():
             self.contigCheckBox.setChecked(self.layer.contiguous)
+
+    def _on_preserve_labels_change(self, event=None):
+        """Receive layer model preserve_labels event and update the checkbox.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional.
+            Event from the Qt context.
+        """
+        with self.layer.events.preserve_labels.blocker():
+            self.preserveLabelsCheckBox.setChecked(self.layer.preserve_labels)
+
+    def _on_color_mode_change(self, event=None):
+        """Receive layer model color.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent, optional.
+            Event from the Qt context.
+        """
+        with self.layer.events.color_mode.blocker():
+            index = self.colorModeComboBox.findText(
+                self.layer.color_mode, Qt.MatchFixedString
+            )
+            self.blendComboBox.setCurrentIndex(index)
 
     def _on_editable_change(self, event=None):
         """Receive layer model editable change event & enable/disable buttons.

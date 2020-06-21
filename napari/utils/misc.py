@@ -1,16 +1,17 @@
 """Miscellaneous utility functions.
 """
-import os.path as osp
-from enum import Enum, EnumMeta
-import re
+import collections.abc
 import inspect
 import itertools
+import re
+
+from enum import Enum, EnumMeta
+from os import PathLike, fspath, path
+from typing import Optional, Sequence, Type, TypeVar
+
 import numpy as np
-from typing import Type, Optional
-import collections.abc
 
-
-ROOT_DIR = osp.dirname(osp.dirname(__file__))
+ROOT_DIR = path.dirname(path.dirname(__file__))
 
 
 def str_to_rgb(arg):
@@ -186,6 +187,38 @@ camel_to_snake_pattern = re.compile(r'(.)([A-Z][a-z]+)')
 def camel_to_snake(name):
     # https://gist.github.com/jaytaylor/3660565
     return camel_to_snake_pattern.sub(r'\1_\2', name).lower()
+
+
+T = TypeVar('T', str, Sequence[str])
+
+
+def abspath_or_url(relpath: T) -> T:
+    """Utility function that normalizes paths or a sequence thereof.
+
+    Expands user directory and converts relpaths to abspaths... but ignores
+    URLS that begin with "http", "ftp", or "file".
+
+    Parameters
+    ----------
+    relpath : str or list or tuple
+        A path, or list or tuple of paths.
+
+    Returns
+    -------
+    abspath : str or list or tuple
+        An absolute path, or list or tuple of absolute paths (same type as
+        input).
+    """
+    if isinstance(relpath, (tuple, list)):
+        return type(relpath)(abspath_or_url(p) for p in relpath)
+
+    if isinstance(relpath, (str, PathLike)):
+        relpath = fspath(relpath)
+        if relpath.startswith(('http:', 'https:', 'ftp:', 'file:')):
+            return relpath
+        return path.abspath(path.expanduser(relpath))
+
+    raise TypeError("Argument must be a string, PathLike, or sequence thereof")
 
 
 class CallDefault(inspect.Parameter):

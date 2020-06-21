@@ -1,6 +1,7 @@
 import numpy as np
 from napari.layers.shapes._shape_list import ShapeList
 from napari.layers.shapes._shapes_models import Rectangle, Polygon, Path
+import pytest
 
 
 def test_empty_shape_list():
@@ -45,3 +46,19 @@ def test_nD_shapes():
     shape_list.ndisplay = 3
     assert shape_list._vertices.shape[1] == 3
     assert shape_list._mesh.vertices.shape[1] == 3
+
+
+@pytest.mark.parametrize("attribute", ['edge', 'face'])
+def test_bad_color_array(attribute):
+    """Test adding shapes to ShapeList."""
+    np.random.seed(0)
+    data = 20 * np.random.random((4, 2))
+    shape = Rectangle(data)
+    shape_list = ShapeList()
+
+    shape_list.add(shape)
+
+    # test setting color with a color array of the wrong shape
+    bad_color_array = np.array([[0, 0, 0, 1], [1, 1, 1, 1]])
+    with pytest.raises(ValueError):
+        setattr(shape_list, f'{attribute}_color', bad_color_array)

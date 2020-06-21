@@ -14,6 +14,8 @@ import os
 import sys
 import re
 import fileinput
+import recommonmark  # noqa: F401
+from recommonmark.transform import AutoStructify
 
 sys.path.insert(0, os.path.abspath('../..'))
 from napari import __version__  # noqa: E402
@@ -27,30 +29,35 @@ author = 'napari contributors'
 
 release = __version__
 version = __version__
+CONFDIR = os.path.dirname(__file__)
 
 
 def clean_release_notes():
-    dirname = os.path.join(os.path.dirname(__file__), 'release')
-    for rel in os.listdir(dirname):
+
+    release_rst = """Release Notes
+=============
+
+.. toctree::
+   :maxdepth: 1
+   :glob:
+
+"""
+    dirname = os.path.join(CONFDIR, 'release')
+    for rel in sorted(
+        os.listdir(dirname),
+        key=lambda s: list(map(int, re.findall(r'\d+', s))),
+        reverse=True,
+    ):
         for line in fileinput.input(os.path.join(dirname, rel), inplace=True):
-            if line.startswith("Announcement: napari"):
-                line = line.replace("Announcement: ", "")
-            # uncomment to remove the standard announcement paragraph.
-            # if not line.startswith(
-            #     (
-            #         "We're happy",
-            #         'napari is a fast',
-            #         "It's designed for",
-            #         "images. It's built",
-            #         "rendering), and ",
-            #     )
-            # ):
             line = re.sub(
                 r'#(\d+)',
-                r'`#\1 <https://github.com/napari/napari/issues/\1>`_',
+                r'[#\1](<https://github.com/napari/napari/issues/\1>)',
                 line,
             )
             print(line, end='')
+        release_rst += '   release/' + rel.replace('.md', '\n')
+    with open(os.path.join(CONFDIR, 'releases.rst'), 'w') as f:
+        f.write(release_rst)
 
 
 clean_release_notes()
@@ -66,6 +73,7 @@ extensions = [
     'sphinx.ext.todo',
     'sphinx.ext.viewcode',
     'sphinx.ext.intersphinx',
+    'recommonmark',
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -86,6 +94,10 @@ source_parsers = {'.md': 'recommonmark.parser.CommonMarkParser'}
 intersphinx_mapping = {
     'python': ('https://docs.python.org/3', None),
     'numpy': ('http://docs.scipy.org/doc/numpy/', None),
+    'napari_plugin_engine': (
+        'https://napari-plugin-engine.readthedocs.io/en/latest/',
+        'https://napari-plugin-engine.readthedocs.io/en/latest/objects.inv',
+    ),
     # 'scipy': ('http://docs.scipy.org/doc/scipy/reference/', None),
 }
 
@@ -118,3 +130,21 @@ add_module_names = False
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
+
+
+# app setup hook
+github_doc_root = 'https://github.com/napari/napari/tree/master/docs/'
+
+
+def setup(app):
+    app.add_config_value(
+        'recommonmark_config',
+        {
+            'url_resolver': lambda url: github_doc_root + url,
+            'enable_auto_toc_tree': True,
+            'auto_toc_tree_section': 'Contents',
+            'enable_eval_rst': True,
+        },
+        True,
+    )
+    app.add_transform(AutoStructify)

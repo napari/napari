@@ -28,10 +28,10 @@ def test_image_dytpes(viewer_factory, dtype):
     viewer.add_image(data)
     assert np.all(viewer.layers[0].data == data)
 
-    # add dtype pyramid data
+    # add dtype multiscale data
     data = [
         np.random.randint(20, size=(30, 40)).astype(dtype),
         np.random.randint(20, size=(15, 20)).astype(dtype),
     ]
-    viewer.add_image(data, is_pyramid=True)
+    viewer.add_image(data, multiscale=True)
     assert np.all(viewer.layers[1].data == data)

@@ -154,7 +154,8 @@ class QtDims(QWidget):
         """
         widgets = reversed(list(enumerate(self.slider_widgets)))
         for (axis, widget) in widgets:
-            if axis in self.dims.displayed:
+            _range = self.dims.range[axis][1] - self.dims.range[axis][2]
+            if axis in self.dims.displayed or _range == 0:
                 # Displayed dimensions correspond to non displayed sliders
                 self._displayed_sliders[axis] = False
                 self.last_used = None
@@ -271,7 +272,7 @@ class QtDims(QWidget):
         self.layout().removeWidget(slider_widget)
         slider_widget.deleteLater()
         nsliders = np.sum(self._displayed_sliders)
-        self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
+        self.setMinimumHeight(int(nsliders * self.SLIDERHEIGHT))
         self.last_used = None
 
     def focus_up(self):

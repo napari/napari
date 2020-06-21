@@ -69,7 +69,6 @@ with napari.gui_qt():
     # change some properties of the layer
     layer.selected_data = set(range(layer.nshapes))
     layer.current_edge_width = 5
-    layer.current_opacity = 0.75
     layer.selected_data = set()
 
     # add an ellipse to the layer
@@ -80,12 +79,7 @@ with napari.gui_qt():
         edge_width=5,
         edge_color='coral',
         face_color='purple',
-        opacity=0.75,
     )
 
-    # Set the layer mode with a string
-    layer.mode = 'select'
-
-# Print the shape coordinate data
-print(layer.nshapes, "shapes at:")
-print(layer.data)
+    # To save layers to svg:
+    # viewer.layers.save('viewer.svg', plugin='svg')

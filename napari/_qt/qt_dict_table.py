@@ -1,5 +1,4 @@
 import re
-import webbrowser
 from typing import List, Optional
 
 from qtpy.QtCore import QSize, Slot
@@ -87,7 +86,7 @@ class QtDictTable(QTableWidget):
             for h in headers:
                 if h not in _headers:
                     raise ValueError(
-                        f"Argument 'headers' got item {h}, which was "
+                        f"Argument 'headers' got item '{h}', which was "
                         "not found in any of the items in 'data'"
                     )
             _headers = headers
@@ -95,6 +94,7 @@ class QtDictTable(QTableWidget):
         self.setColumnCount(len(_headers))
         for row, elem in enumerate(data):
             for key, value in elem.items():
+                value = value or ''
                 try:
                     col = _headers.index(key)
                 except ValueError:
@@ -113,6 +113,8 @@ class QtDictTable(QTableWidget):
     @Slot(int, int)
     def _go_to_links(self, row, col):
         """if a cell is clicked and it contains an email or url, go to link."""
+        import webbrowser
+
         item = self.item(row, col)
         text = item.text().strip()
         if email_pattern.match(text):

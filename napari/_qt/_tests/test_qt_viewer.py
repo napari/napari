@@ -178,7 +178,7 @@ def test_screenshot(viewer_factory):
     assert screenshot.ndim == 3
 
 
-def test_save_screenshot(viewer_factory, tmpdir):
+def test_screenshot_dialog(viewer_factory, tmpdir):
     """Test save screenshot functionality."""
     view, viewer = viewer_factory()
 
@@ -208,7 +208,7 @@ def test_save_screenshot(viewer_factory, tmpdir):
     mock_return = (input_filepath, '')
     with mock.patch('napari._qt.qt_viewer.QFileDialog') as mocker:
         mocker.getSaveFileName.return_value = mock_return
-        view._save_screenshot()
+        view._screenshot_dialog()
     # Assert behaviour is correct
     expected_filepath = input_filepath + '.png'  # add default file extension
     assert os.path.exists(expected_filepath)

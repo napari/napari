@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 import numpy as np
 from copy import copy
-from vispy.color import Color
+
 from .._shapes_utils import (
     triangulate_edge,
     triangulate_face,
@@ -20,16 +20,6 @@ class Shape(ABC):
         Vertices specifying the shape.
     edge_width : float
         thickness of lines and edges.
-    edge_color : str | tuple
-        If string can be any color name recognized by vispy or hex value if
-        starting with `#`. If array-like must be 1-dimensional array with 3 or
-        4 elements.
-    face_color : str | tuple
-        If string can be any color name recognized by vispy or hex value if
-        starting with `#`. If array-like must be 1-dimensional array with 3 or
-        4 elements.
-    opacity : float
-        Opacity of the shape, must be between 0 and 1.
     z_index : int
         Specifier of z order priority. Shapes with higher z order are displayed
         ontop of others.
@@ -47,12 +37,6 @@ class Shape(ABC):
         currently supported.
     edge_width : float
         thickness of lines and edges.
-    edge_color : ColorArray
-        Color of the shape edge
-    face_color : ColorArray
-        Color of the shape face
-    opacity : float
-        Opacity of the shape, must be between 0 and 1.
     name : str
         Name of shape type.
     z_index : int
@@ -73,12 +57,6 @@ class Shape(ABC):
 
     Extended Summary
     ----------
-    _edge_color_name : str
-        Name of edge color or six digit hex code representing edge color if not
-        recognized
-    _face_color_name : str
-        Name of edge color or six digit hex code representing face color if not
-        recognized
     _closed : bool
         Bool if shape edge is a closed path or not
     _box : np.ndarray
@@ -112,9 +90,6 @@ class Shape(ABC):
         *,
         shape_type='rectangle',
         edge_width=1,
-        edge_color='black',
-        face_color='white',
-        opacity=1,
         z_index=0,
         dims_order=None,
         ndisplay=2,
@@ -130,16 +105,11 @@ class Shape(ABC):
         self._edge_offsets = np.empty((0, self.ndisplay))
         self._edge_triangles = np.empty((0, 3), dtype=np.uint32)
         self._box = np.empty((9, 2))
-        self._edge_color_name = 'black'
-        self._face_color_name = 'white'
 
         self._closed = False
         self._filled = True
         self._use_face_vertices = False
         self.edge_width = edge_width
-        self.edge_color = edge_color
-        self.face_color = face_color
-        self.opacity = opacity
         self.z_index = z_index
         self.name = ''
 
@@ -206,72 +176,6 @@ class Shape(ABC):
     @edge_width.setter
     def edge_width(self, edge_width):
         self._edge_width = edge_width
-
-    @property
-    def edge_color(self):
-        """Color, ColorArray: color of edges
-        """
-        return self._edge_color
-
-    @edge_color.setter
-    def edge_color(self, edge_color):
-        self._edge_color = Color(edge_color)
-        if type(edge_color) is str:
-            self._edge_color_name = edge_color
-        else:
-            rgb = tuple([int(255 * x) for x in self._edge_color.rgba[:3]])
-            self._edge_color_name = '#%02x%02x%02x' % rgb
-
-    @property
-    def face_color(self):
-        """Color, ColorArray: color of faces
-        """
-        return self._face_color
-
-    @face_color.setter
-    def face_color(self, face_color):
-        self._face_color = Color(face_color)
-        if type(face_color) is str:
-            self._face_color_name = face_color
-        else:
-            rgb = tuple([int(255 * x) for x in self._face_color.rgba[:3]])
-            self._face_color_name = '#%02x%02x%02x' % rgb
-
-    @property
-    def opacity(self):
-        """float: opacity of shape
-        """
-        return self._opacity
-
-    @opacity.setter
-    def opacity(self, opacity):
-        self._opacity = opacity
-
-    @property
-    def svg_props(self):
-        """dict: color and width properties in the svg specification
-        """
-        width = str(self.edge_width)
-        face_color = (255 * self.face_color.rgba).astype(np.int)
-        fill = f'rgb{tuple(face_color[:3])}'
-        edge_color = (255 * self.edge_color.rgba).astype(np.int)
-        stroke = f'rgb{tuple(edge_color[:3])}'
-        opacity = str(self.opacity)
-
-        # Currently not using fill or stroke opacity - only global opacity
-        # as otherwise leads to unexpected behavior when reading svg into
-        # other applications
-        # fill_opacity = f'{self.opacity*self.face_color.rgba[3]}'
-        # stroke_opacity = f'{self.opacity*self.edge_color.rgba[3]}'
-
-        props = {
-            'fill': fill,
-            'stroke': stroke,
-            'stroke-width': width,
-            'opacity': opacity,
-        }
-
-        return props
 
     @property
     def z_index(self):
@@ -526,8 +430,3 @@ class Shape(ABC):
             mask = mask_p
 
         return mask
-
-    @abstractmethod
-    def to_xml(self):
-        # user writes own docstring
-        raise NotImplementedError()

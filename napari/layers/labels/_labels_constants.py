@@ -23,12 +23,29 @@ class Mode(StringEnum):
     pixels of that label or just those that are contiguous with the clicked on
     pixel. If the background label `0` is selected than any pixels will be
     changed to background and this tool functions like an eraser.
+
+    In ERASE mode the cursor functions similarly to PAINT mode, but to paint
+    with background label, which effectively removes the label.
     """
 
     PAN_ZOOM = auto()
     PICK = auto()
     PAINT = auto()
     FILL = auto()
+    ERASE = auto()
+
+
+class LabelColorMode(StringEnum):
+    """
+    LabelColorMode: Labelling Color setting mode.
+
+    AUTO (default) allows color to be set via a hash function with a seed.
+
+    DIRECT allows color of each label to be set directly by a color dictionary.
+    """
+
+    AUTO = auto()
+    DIRECT = auto()
 
 
 BACKSPACE = 'delete' if sys.platform == 'darwin' else 'backspace'

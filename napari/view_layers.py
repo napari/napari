@@ -6,7 +6,6 @@ def view_image(
     *,
     channel_axis=None,
     rgb=None,
-    is_pyramid=None,
     colormap=None,
     contrast_limits=None,
     gamma=1,
@@ -21,7 +20,7 @@ def view_image(
     opacity=1,
     blending=None,
     visible=True,
-    path=None,
+    multiscale=None,
     title='napari',
     ndisplay=2,
     order=None,
@@ -36,19 +35,13 @@ def view_image(
         Image data. Can be N dimensional. If the last dimension has length
         3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a
         list and arrays are decreasing in shape then the data is treated as
-        an image pyramid.
+        a multiscale image.
     channel_axis : int, optional
         Axis to expand image along.
     rgb : bool
         Whether the image is rgb RGB or RGBA. If not specified by user and
         the last dimension of the data has length 3 or 4 it will be set as
         `True`. If `False` the image is interpreted as a luminance image.
-    is_pyramid : bool
-        Whether the data is an image pyramid or not. Pyramid data is
-        represented by a list of array like image data. If not specified by
-        the user and if the data is a list of arrays that decrease in shape
-        then it will be taken to be a pyramid. The first image in the list
-        should be the largest.
     colormap : str, vispy.Color.Colormap, tuple, dict, list
         Colormaps to use for luminance images. If a string must be the name
         of a supported colormap from vispy or matplotlib. If a tuple the
@@ -94,9 +87,12 @@ def view_image(
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
-    path : str or list of str
-        Path or list of paths to image data. Paths can be passed as strings
-        or `pathlib.Path` instances.
+    multiscale : bool
+        Whether the data is a multiscale image or not. Multiscale data is
+        represented by a list of array like image data. If not specified by
+        the user and if the data is a list of arrays that decrease in shape
+        then it will be taken to be multiscale. The first image in the list
+        should be the largest.
     title : string
         The title of the viewer window.
     ndisplay : {2, 3}
@@ -126,7 +122,7 @@ def view_image(
         data=data,
         channel_axis=channel_axis,
         rgb=rgb,
-        is_pyramid=is_pyramid,
+        multiscale=multiscale,
         colormap=colormap,
         contrast_limits=contrast_limits,
         gamma=gamma,
@@ -141,7 +137,6 @@ def view_image(
         opacity=opacity,
         blending=blending,
         visible=visible,
-        path=path,
     )
     return viewer
 
@@ -150,11 +145,14 @@ def view_path(
     path,
     *,
     stack=False,
+    plugin=None,
+    layer_type=None,
     title='napari',
     ndisplay=2,
     order=None,
     axis_labels=None,
     show=True,
+    **kwargs,
 ):
     """Create a viewer and add a layer whose type will be determined by path.
 
@@ -168,6 +166,16 @@ def view_path(
         plugins to know how to handle a list of paths.  If ``stack`` is
         ``False``, then the ``path`` list is broken up and passed to plugin
         readers one by one.  by default False.
+    plugin : str, optional
+        Name of a plugin to use.  If provided, will force ``path`` to be
+        read with the specified ``plugin``.  If the requested plugin cannot
+        read ``path``, an execption will be raised.
+    layer_type : str, optional
+        If provided, will force data read from ``path`` to be passed to the
+        corresponding ``add_<layer_type>`` method (along with any
+        additional) ``kwargs`` provided to this function.  This *may*
+        result in exceptions if the data returned from the path is not
+        compatible with the layer_type.
     title : string, optional
         The title of the viewer window. by default 'napari'
     ndisplay : {2, 3}, optional
@@ -180,6 +188,9 @@ def view_path(
         Dimension names. by default None
     show : bool, optional
         Whether to show the viewer after instantiation. by default True.
+    **kwargs
+        All other keyword arguments will be passed on to the respective
+        ``add_layer`` method.
 
     Returns
     -------
@@ -193,7 +204,9 @@ def view_path(
         axis_labels=axis_labels,
         show=show,
     )
-    viewer.add_path(path=path, stack=stack)
+    viewer.open(
+        path=path, stack=stack, plugin=plugin, layer_type=layer_type, **kwargs
+    )
     return viewer
 
 
@@ -247,9 +260,9 @@ def view_points(
         Width of the symbol edge in pixels.
     edge_color : str, array-like
         Color of the point marker border. Numeric color values should be RGB(A).
-    edge_color_cycle : np.ndarray, list, cycle
-        Cycle of colors (provided as RGBA) to map to edge_color if a
-        categorical attribute is used to set face_color.
+    edge_color_cycle : np.ndarray, list
+        Cycle of colors (provided as string name, RGB, or RGBA) to map to edge_color if a
+        categorical attribute is used color the vectors.
     edge_colormap : str, vispy.color.colormap.Colormap
         Colormap to set edge_color if a continuous attribute is used to set face_color.
         See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
@@ -260,9 +273,9 @@ def view_points(
         (property.min(), property.max())
     face_color : str, array-like
         Color of the point marker body. Numeric color values should be RGB(A).
-    face_color_cycle : np.ndarray, list, cycle
-        Cycle of colors (provided as RGBA) to map to face_color if a
-        categorical attribute is used to set face_color.
+    face_color_cycle : np.ndarray, list
+        Cycle of colors (provided as string name, RGB, or RGBA) to map to face_color if a
+        categorical attribute is used color the vectors.
     face_colormap : str, vispy.color.colormap.Colormap
         Colormap to set face_color if a continuous attribute is used to set face_color.
         See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
@@ -349,8 +362,9 @@ def view_points(
 def view_labels(
     data=None,
     *,
-    is_pyramid=None,
     num_colors=50,
+    properties=None,
+    color=None,
     seed=0.5,
     name=None,
     metadata=None,
@@ -359,7 +373,7 @@ def view_labels(
     opacity=0.7,
     blending='translucent',
     visible=True,
-    path=None,
+    multiscale=None,
     title='napari',
     ndisplay=2,
     order=None,
@@ -384,15 +398,16 @@ def view_labels(
     Parameters
     ----------
     data : array or list of array
-        Labels data as an array or pyramid.
-    is_pyramid : bool
-        Whether the data is an image pyramid or not. Pyramid data is
-        represented by a list of array like image data. If not specified by
-        the user and if the data is a list of arrays that decrease in shape
-        then it will be taken to be a pyramid. The first image in the list
-        should be the largest.
+        Labels data as an array or multiscale.
     num_colors : int
         Number of unique colors to use in colormap.
+    properties : dict {str: array (N,)}, DataFrame
+        Properties for each label. Each property should be an array of length
+        N, where N is the number of labels, and the first property corresponds
+        to background.
+    color : dict of int to str or array
+        Custom label to color mapping. Values must be valid color names or RGBA
+        arrays.
     seed : float
         Seed for colormap random generator.
     name : str
@@ -411,9 +426,12 @@ def view_labels(
         {'opaque', 'translucent', and 'additive'}.
     visible : bool
         Whether the layer visual is currently being displayed.
-    path : str or list of str
-        Path or list of paths to image data. Paths can be passed as strings
-        or `pathlib.Path` instances.
+    multiscale : bool
+        Whether the data is a multiscale image or not. Multiscale data is
+        represented by a list of array like image data. If not specified by
+        the user and if the data is a list of arrays that decrease in shape
+        then it will be taken to be multiscale. The first image in the list
+        should be the largest.
     title : string
         The title of the viewer window.
     ndisplay : {2, 3}
@@ -441,8 +459,9 @@ def view_labels(
     )
     viewer.add_labels(
         data=data,
-        is_pyramid=is_pyramid,
+        multiscale=multiscale,
         num_colors=num_colors,
+        properties=properties,
         seed=seed,
         name=name,
         metadata=metadata,
@@ -451,7 +470,7 @@ def view_labels(
         opacity=opacity,
         blending=blending,
         visible=visible,
-        path=path,
+        color=color,
     )
     return viewer
 
@@ -459,10 +478,17 @@ def view_labels(
 def view_shapes(
     data=None,
     *,
+    properties=None,
     shape_type='rectangle',
     edge_width=1,
     edge_color='black',
+    edge_color_cycle=None,
+    edge_colormap='viridis',
+    edge_contrast_limits=None,
     face_color='white',
+    face_color_cycle=None,
+    face_colormap='viridis',
+    face_contrast_limits=None,
     z_index=0,
     name=None,
     metadata=None,
@@ -485,6 +511,9 @@ def view_shapes(
         List of shape data, where each element is an (N, D) array of the
         N vertices of a shape in D dimensions. Can be an 3-dimensional
         array if each shape has the same number of vertices.
+    properties : dict {str: array (N,)}, DataFrame
+        Properties for each shape. Each property should be an array of length N,
+        where N is the number of shapes.
     shape_type : string or list
         String of shape shape_type, must be one of "{'line', 'rectangle',
         'ellipse', 'path', 'polygon'}". If a list is supplied it must be
@@ -496,18 +525,40 @@ def view_shapes(
         same length as the length of `data` and each element will be
         applied to each shape otherwise the same value will be used for all
         shapes.
-    edge_color : str or list
+    edge_color : str, array-like
         If string can be any color name recognized by vispy or hex value if
         starting with `#`. If array-like must be 1-dimensional array with 3
         or 4 elements. If a list is supplied it must be the same length as
         the length of `data` and each element will be applied to each shape
         otherwise the same value will be used for all shapes.
-    face_color : str or list
+    edge_color_cycle : np.ndarray, list
+        Cycle of colors (provided as string name, RGB, or RGBA) to map to edge_color if a
+        categorical attribute is used color the vectors.
+    edge_colormap : str, vispy.color.colormap.Colormap
+        Colormap to set edge_color if a continuous attribute is used to set face_color.
+        See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
+    edge_contrast_limits : None, (float, float)
+        clims for mapping the property to a color map. These are the min and max value
+        of the specified property that are mapped to 0 and 1, respectively.
+        The default value is None. If set the none, the clims will be set to
+        (property.min(), property.max())
+    face_color : str, array-like
         If string can be any color name recognized by vispy or hex value if
         starting with `#`. If array-like must be 1-dimensional array with 3
         or 4 elements. If a list is supplied it must be the same length as
         the length of `data` and each element will be applied to each shape
         otherwise the same value will be used for all shapes.
+    face_color_cycle : np.ndarray, list
+        Cycle of colors (provided as string name, RGB, or RGBA) to map to face_color if a
+        categorical attribute is used color the vectors.
+    face_colormap : str, vispy.color.colormap.Colormap
+        Colormap to set face_color if a continuous attribute is used to set face_color.
+        See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
+    face_contrast_limits : None, (float, float)
+        clims for mapping the property to a color map. These are the min and max value
+        of the specified property that are mapped to 0 and 1, respectively.
+        The default value is None. If set the none, the clims will be set to
+        (property.min(), property.max())
     z_index : int or list
         Specifier of z order priority. Shapes with higher z order are
         displayed ontop of others. If a list is supplied it must be the
@@ -522,7 +573,7 @@ def view_shapes(
         Scale factors for the layer.
     translate : tuple of float
         Translation values for the layer.
-    opacity : float or list
+    opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
         One of a list of preset blending modes that determines how RGB and
@@ -557,10 +608,17 @@ def view_shapes(
     )
     viewer.add_shapes(
         data=data,
+        properties=properties,
         shape_type=shape_type,
         edge_width=edge_width,
         edge_color=edge_color,
+        edge_color_cycle=edge_color_cycle,
+        edge_colormap=edge_colormap,
+        edge_contrast_limits=edge_contrast_limits,
         face_color=face_color,
+        face_color_cycle=face_color_cycle,
+        face_colormap=face_colormap,
+        face_contrast_limits=face_contrast_limits,
         z_index=z_index,
         name=name,
         metadata=metadata,
@@ -675,8 +733,12 @@ def view_surface(
 def view_vectors(
     data,
     *,
+    properties=None,
     edge_width=1,
     edge_color='red',
+    edge_color_cycle=None,
+    edge_colormap='viridis',
+    edge_contrast_limits=None,
     length=1,
     name=None,
     metadata=None,
@@ -701,12 +763,26 @@ def view_vectors(
         D dimensions. An (N1, N2, ..., ND, D) array is interpreted as
         "image-like" data where there is a length D vector of the
         projections at each pixel.
+    properties : dict {str: array (N,)}, DataFrame
+        Properties for each vector. Each property should be an array of length N,
+        where N is the number of vectors.
     edge_width : float
         Width for all vectors in pixels.
     length : float
          Multiplicative factor on projections for length of all vectors.
     edge_color : str
-        Edge color of all the vectors.
+        Color of all of the vectors.
+    edge_color_cycle : np.ndarray, list
+        Cycle of colors (provided as string name, RGB, or RGBA) to map to edge_color if a
+        categorical attribute is used color the vectors.
+    edge_colormap : str, vispy.color.colormap.Colormap
+        Colormap to set vector color if a continuous attribute is used to set edge_color.
+        See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
+    edge_contrast_limits : None, (float, float)
+        clims for mapping the property to a color map. These are the min and max value
+        of the specified property that are mapped to 0 and 1, respectively.
+        The default value is None. If set the none, the clims will be set to
+        (property.min(), property.max())
     name : str
         Name of the layer.
     metadata : dict
@@ -750,8 +826,12 @@ def view_vectors(
     )
     viewer.add_vectors(
         data,
+        properties=properties,
         edge_width=edge_width,
         edge_color=edge_color,
+        edge_color_cycle=edge_color_cycle,
+        edge_colormap=edge_colormap,
+        edge_contrast_limits=edge_contrast_limits,
         length=length,
         name=name,
         metadata=metadata,

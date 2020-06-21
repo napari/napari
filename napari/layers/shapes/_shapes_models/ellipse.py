@@ -1,5 +1,4 @@
 import numpy as np
-from xml.etree.ElementTree import Element
 from .shape import Shape
 from .._shapes_utils import (
     triangulate_edge,
@@ -20,14 +19,6 @@ class Ellipse(Shape):
         boudning box that contains the ellipse. These need not be axis aligned.
     edge_width : float
         thickness of lines and edges.
-    edge_color : str | tuple
-        If string can be any color name recognized by vispy or hex value if
-        starting with `#`. If array-like must be 1-dimensional array with 3 or
-        4 elements.
-    face_color : str | tuple
-        If string can be any color name recognized by vispy or hex value if
-        starting with `#`. If array-like must be 1-dimensional array with 3 or
-        4 elements.
     opacity : float
         Opacity of the shape, must be between 0 and 1.
     z_index : int
@@ -42,8 +33,6 @@ class Ellipse(Shape):
         data,
         *,
         edge_width=1,
-        edge_color='black',
-        face_color='white',
         opacity=1,
         z_index=0,
         dims_order=None,
@@ -52,9 +41,6 @@ class Ellipse(Shape):
 
         super().__init__(
             edge_width=edge_width,
-            edge_color=edge_color,
-            face_color=face_color,
-            opacity=opacity,
             z_index=z_index,
             dims_order=dims_order,
             ndisplay=ndisplay,
@@ -130,45 +116,3 @@ class Ellipse(Shape):
         self._edge_vertices = centers
         self._edge_offsets = offsets
         self._edge_triangles = triangles
-
-    def to_xml(self):
-        """Generates an xml element that defintes the shape according to the
-        svg specification.
-
-        Returns
-        ----------
-        element : xml.etree.ElementTree.Element
-            xml element specifying the shape according to svg.
-        """
-        props = self.svg_props
-        data = self.data[:, self.dims_displayed[::-1]]
-
-        offset = data[1] - data[0]
-        angle = -np.arctan2(offset[0], -offset[1])
-        if not angle == 0:
-            # if shape has been rotated, shift to origin
-            cen = data.mean(axis=0)
-            coords = data - cen
-
-            # rotate back to axis aligned
-            c, s = np.cos(angle), np.sin(-angle)
-            rotation = np.array([[c, s], [-s, c]])
-            coords = coords @ rotation.T
-
-            # shift back to center
-            coords = coords + cen
-
-            # define rotation around center
-            transform = f'rotate({np.degrees(-angle)} {cen[0]} {cen[1]})'
-            props['transform'] = transform
-        else:
-            coords = data
-
-        cx = str(cen[0])
-        cy = str(cen[1])
-        size = abs(coords[2] - coords[0])
-        rx = str(size[0] / 2)
-        ry = str(size[1] / 2)
-
-        element = Element('ellipse', cx=cx, cy=cy, rx=rx, ry=ry, **props)
-        return element

@@ -22,15 +22,6 @@ lint_task:
   test_script:
     - flake8 napari
 
-requirements_task:
-  name: Check if all requirements are listed
-  install_script:
-    - python -m pip install --retries 3 --upgrade "pip<19.3"
-    - pip install pip_check_reqs
-    - pip install --retries 3 -r requirements/development.txt
-  test_script:
-    - pip-missing-reqs napari --ignore-file="**/_tests/*" --ignore-module=PySide2 --ignore-module=zarr  --ignore-file=napari/conftest.py
-
 linux_task:
   auto_cancellation: true
 
@@ -48,6 +39,7 @@ linux_task:
   env:
     PATH: $HOME/conda/bin:$PATH
     DISPLAY: ":99"
+    CODECOV_TOKEN: ENCRYPTED[be41b51dac12576cfe9889ddd604d1f9db97cee5db0d98f7241fc8d5adf8d23da1135cd67e20b2ecec4005ac03083286]
 
   system_script:
     - apt-get update
@@ -58,10 +50,8 @@ linux_task:
     - bash install.sh -b -p $HOME/conda
     # https://github.com/napari/napari/pull/594#issuecomment-542475164
     - conda install --yes -c conda-forge setuptools
-    # conda 4.8.2 is breaking python 3.6 builds at the moment
-    - conda install -yn base conda=4.8.1
+    - conda update -y -n base conda
     - conda install -y python=$PY_VER
-    - rm install.sh
 
   # https://github.com/cirruslabs/cirrus-ci-docs/issues/97
   xvfb_start_background_script: Xvfb $DISPLAY -ac -screen 0 1024x768x24
@@ -72,22 +62,25 @@ linux_task:
     folder: ~/.cache/pip
     populate_script: 
       - python -m pip install --retries 3 --upgrade pip
-      - pip install --retries 3 -r requirements/development.txt
+      - python -m pip install --retries 3 -r requirements/test.txt
 
   install_script:
     - python -m pip install --retries 3 --upgrade pip
-    - pip install --retries 3 -r requirements/development.txt
-    - python -m pip install -e .
+    - python -m pip install --retries 3 -r requirements/test.txt
+    - python -m pip install --retries 3 pytest-cov codecov
+    - python -m pip install -e .[pyside2]
 
   check_script:
     - conda list
     - python -c "import napari; print(napari.__version__)"
 
-  test_pyside2_script: pytest -v
+  test_pyside2_with_coverage_script:
+    - pytest -v --cov-report=xml --cov=./napari
+    - codecov
 
   test_pyqt5_script:
-    - pip uninstall -y pyside2
-    - pip install pyqt5
+    - python -m pip uninstall -y pyside2
+    - python -m pip install -e .[pyqt5]
     - pytest -v
 
 
@@ -117,21 +110,20 @@ mac_task:
     - bash install.sh -b -p $HOME/conda
     # https://github.com/napari/napari/pull/594#issuecomment-542475164
     - conda install --yes -c conda-forge setuptools
-    - conda install -yn base conda=4.8.1
+    - conda update -y -n base conda
     - conda install -y python=$PY_VER
-    - rm install.sh
 
   pip_cache:
     folder: $HOME/Library/Caches/pip
     populate_script:
       - export MACOSX_DEPLOYMENT_TARGET=10.10
       - python -m pip install --retries 3 --upgrade pip
-      - pip install -r requirements/development.txt
+      - python -m pip install --retries 3 -r requirements/test.txt
 
   install_script:
     - python -m pip install --retries 3 --upgrade pip
-    - pip install --retries 3 -r requirements/development.txt
-    - python -m pip install -e .
+    - python -m pip install --retries 3 -r requirements/test.txt
+    - python -m pip install -e .[pyside2]
 
   check_script:
     - conda list
@@ -182,20 +174,19 @@ win_task:
     - choco install -y miniconda3 --params="'/D:%ANACONDA_LOCATION%'"
     # https://github.com/napari/napari/pull/594#issuecomment-542475164
     - conda install --yes -c conda-forge setuptools
-    - conda install -yn base conda=4.8.1
+    - conda update -y -n base conda
     - conda install -y python=%PY_VER%
-    - pip install setuptools-scm
-    
+
   pip_cache:
     folder: $LOCALAPPDATA\pip\Cache
     populate_script: 
       - python -m pip install --retries 3 --upgrade pip
-      - pip install -r requirements/development.txt
+      - python -m pip install --retries 3 -r requirements/test.txt
 
   install_script:
     - python -m pip install --retries 3 --upgrade pip
-    - pip install --retries 3 -r requirements/development.txt
-    - python -m pip install -e .
+    - python -m pip install --retries 3 -r requirements/test.txt
+    - python -m pip install -e .[pyside2]
 
   check_script:
     - conda list
@@ -204,36 +195,20 @@ win_task:
   test_script: pytest -v -o qt_no_exception_capture=1
 
 
-codecov_task:
+check_manifest_task:
   auto_cancellation: true
-
+  name: Check Manifest
   depends_on:
     - linux 3.8
     - macos 3.8
     - windows 3.8
 
-  env:
-    CODECOV_TOKEN: ENCRYPTED[be41b51dac12576cfe9889ddd604d1f9db97cee5db0d98f7241fc8d5adf8d23da1135cd67e20b2ecec4005ac03083286]
-    DISPLAY: ":99"
+  install_script:
+    - python -m pip install --retries 3 --upgrade pip
+    - python -m pip install --retries 3 check-manifest
 
-  system_script: |
-    apt-get update
-    apt-get install -y libgl1-mesa-glx xvfb libqt5x11extras5 herbstluftwm
-
-  # https://github.com/cirruslabs/cirrus-ci-docs/issues/97
-  xvfb_start_background_script: Xvfb $DISPLAY -ac -screen 0 1024x768x24
-  # https://pytest-qt.readthedocs.io/en/latest/troubleshooting.html#xvfb-assertionerror-timeouterror-when-using-waituntil-waitexposed-and-ui-events
-  herbstluftwm_start_background_script: herbstluftwm
-
-  install_script: |
-    python -m pip install --retries 3 --upgrade pip
-    pip install -r requirements/development.txt
-    pip install -e .
-    pip install pytest-cov codecov
-
-  coverage_script: |
-    pytest --cov=./napari
-    codecov
+  test_script:
+    - check-manifest
 
 
 push_docs_task:
@@ -251,16 +226,16 @@ push_docs_task:
     apt-get install -y libgl1-mesa-glx libqt5x11extras5
 
   install_script: |
+    git fetch --tags
     python -m pip install --retries 3 --upgrade pip
-    pip install --retries 3 -r requirements/default.txt
-    pip install --retries 3 -r requirements/docs.txt
-    pip install -e .
+    python -m pip install --retries 3 -e ".[all]"
+    python -m pip install --retries 3 -r requirements/docs.txt
 
   build_script: make docs
 
   push_script:
     # adapted from https://github.com/scikit-image/scikit-image/blob/master/tools/travis/deploy_docs.sh
-    - VERSION=`python -c "from versioneer import get_version; print(get_version())"`
+    - VERSION=`python -c "import napari; print(napari.__version__)"`
     - git clone --quiet https://${GH_REF} doc_repo
     - cd doc_repo
     - git config --global user.email "cirrus@cirrus-ci.org"
