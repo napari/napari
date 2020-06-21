@@ -150,18 +150,7 @@ def toggle_selected_visibility(viewer):
     viewer.layers.toggle_selected_visibility()
 
 
-# just examples ... would remove before merge
-
-
+# TODO: remove before merging
 @Viewer.bind_key('Control-Alt-E')
 def raise_error(viewer):
-    """Reset view to original state."""
-    from .exceptions import NapariError
-
-    raise NapariError("Whoops!", "Looks like we've got a problem")
-
-
-@Viewer.bind_key('Control-Alt-R')
-def raise_generic_error(viewer):
-    """Reset view to original state."""
     raise ValueError("Whoops!", "Looks like we've got a problem")
