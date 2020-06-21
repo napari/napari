@@ -1,3 +1,4 @@
+import os
 import time
 
 import numpy as np
@@ -34,6 +35,10 @@ def test_viewer(viewer_factory):
 
     # Run all class key bindings
     for func in viewer.class_keymap.values():
+        # skip fullscreen test locally
+        if func.__name__ == 'toggle_fullscreen' and not os.getenv("CI"):
+            continue
+
         func(viewer)
         # the `play` keybinding calls QtDims.play_dim(), which then creates a
         # new QThread. we must then run the keybinding a second time, which
