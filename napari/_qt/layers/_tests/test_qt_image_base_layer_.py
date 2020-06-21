@@ -37,7 +37,7 @@ def test_base_controls_creation(qtbot, layer):
 def test_clim_right_click_shows_popup(mock_show, qtbot, layer):
     """Right clicking on the contrast limits slider should show a popup."""
     qtctrl = QtBaseImageControls(layer)
-    if not (os.name == 'nt' and os.getenv("CI")):
+    if os.name == 'nt' and os.getenv("CI"):
         qtctrl.show()
     qtbot.addWidget(qtctrl)
     qtbot.mousePress(qtctrl.contrastLimitsSlider, Qt.RightButton)
