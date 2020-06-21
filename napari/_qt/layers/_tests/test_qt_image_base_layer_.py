@@ -38,8 +38,8 @@ def test_clim_right_click_shows_popup(mock_show, qtbot, layer):
     qtctrl = QtBaseImageControls(layer)
     qtbot.addWidget(qtctrl)
     qtbot.mousePress(qtctrl.contrastLimitsSlider, Qt.RightButton)
-    mock_show.assert_called_once()
     assert hasattr(qtctrl, 'clim_pop')
+    mock_show.assert_called_once()
 
 
 @pytest.mark.parametrize('layer', [Image(_IMAGE), Surface(_SURF)])
