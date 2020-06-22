@@ -176,14 +176,7 @@ class Image(IntensityVisualizationMixin, Layer):
         else:
             ndim = len(init_shape)
 
-        if multiscale:
-            # Async with multiscale not implemented yet.
-            self.async_load = False
-        else:
-            # Opt-in with env var.
-            self.async_load = (
-                True  # os.getenv("NAPARI_ASYNC_LOAD", "0") != "0"
-            )
+        self.async_load = _get_async_load()
 
         super().__init__(
             data,
@@ -699,3 +692,17 @@ class Image(IntensityVisualizationMixin, Layer):
             value = (self.data_level, value)
 
         return value
+
+def _get_async_load() -> bool:
+    """Return True if Image should load asynchronously.
+    """
+    # Default to off until we are ready switch over for real.
+    async_load = False
+
+    # Allow override with env variable.
+    env_var = os.getenv("NAPARI_ASYNC_LOAD")
+
+    if env_var is not None:
+        async_load = env_var != "0"
+
+    return async_load
