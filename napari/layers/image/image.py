@@ -1,4 +1,3 @@
-import os
 import types
 import warnings
 import numpy as np
@@ -177,8 +176,14 @@ class Image(IntensityVisualizationMixin, Layer):
         else:
             ndim = len(init_shape)
 
-        # Async loading is opt-in right now.
-        self.async_load = os.getenv("NAPARI_ASYNC_LOAD", "0") != "0"
+        if multiscale:
+            # Async with multiscale not implemented yet.
+            self.async_load = False
+        else:
+            # Opt-in with env var.
+            self.async_load = (
+                True  # os.getenv("NAPARI_ASYNC_LOAD", "0") != "0"
+            )
 
         super().__init__(
             data,
@@ -204,8 +209,9 @@ class Image(IntensityVisualizationMixin, Layer):
         self.rgb = rgb
         self._data = data
 
-        # We need to create self._slice now up front, although it would be nice
-        # to wait until self._set_view_slice is called and create it then.
+        # We need to create self._slice now up front now because some things
+        # in this __init__ require it. However it won't be the right dimensions
+        # until after _update_dims() is called at the end of __init__
         self._create_image_slice()
 
         if self.multiscale:
@@ -254,6 +260,20 @@ class Image(IntensityVisualizationMixin, Layer):
     def _get_empty_image(self):
         """Get minimal empty image with just one pixel/voxel.
         """
+        if self.async_load:
+            # Create full size blank image, since some tests immediately
+            # check that we've creates the right shape image.
+
+            # TODO_ASYNC: is there a better way to get this shape?
+            displayed_shape = tuple(self.shape[x] for x in self.dims.displayed)
+
+            if self.rgb:
+                displayed_shape += (self.data.shape[-1],)
+
+            return np.zeros(displayed_shape)
+
+        # Not async so create tiny 1 pixel/voxel image that will quickly
+        # be overwritten with the real thing.
         if self.rgb:
             return np.zeros((1,) * self.dims.ndisplay + (self.shape[-1],))
         else:
@@ -280,10 +300,6 @@ class Image(IntensityVisualizationMixin, Layer):
     def _data_raw(self):
         """Raw image for the current slice. (compatibility)"""
         return self._slice.image.raw
-
-    @property
-    def displayed_slice(self):
-        return self._slice.displayed
 
     def _calc_data_range(self):
         if self.multiscale:
@@ -486,7 +502,7 @@ class Image(IntensityVisualizationMixin, Layer):
         """Create an ImageSlice to show the current data"""
         empty_image = self._get_empty_image()
         properties = ImageProperties(
-            self.multiscale, self.rgb, self._get_order()
+            self.multiscale, self.rgb, self._get_ndim(), self._get_order()
         )
         self._slice = ImageSlice(
             empty_image, properties, self._raw_to_displayed
@@ -496,15 +512,9 @@ class Image(IntensityVisualizationMixin, Layer):
         """Set the view given the indices to slice with."""
         order = self._get_order()
 
-        # Nuke self.slice if no longer compatible.
-        # TODO_ASYNC: can we nuke slice prior to this? In response to some event?
-        # TODO_ASYNC: this is ugly
-        has_slice = self._slice is not None
-        if has_slice and order != self._slice.properties.displayed_order:
-            self._slice = None
-
-        if self._slice is None:
-            self._create_image_slice()
+        # TODO_ASYNC: we don't have to do this every time? But how
+        # do we know when it's necessary?
+        self._create_image_slice()
 
         if self.multiscale:
             not_disp = self.dims.not_displayed
@@ -588,15 +598,15 @@ class Image(IntensityVisualizationMixin, Layer):
             else:
                 self._slice.load_chunk_sync(request)
 
+            print("Image set scale 1")
+            self._transforms['tile2data'].scale = np.ones(self.dims.ndim)
+
         if self.multiscale:
             self.events.scale()
             self.events.translate()
 
     def chunk_loaded(self, request):
         print(f"Image.chunk_loaded: {request.indices}")
-
-        # Should we do this here or when load was started?
-        self._transforms['tile2data'].scale = np.ones(self.dims.ndim)
 
         # Tell the slice its data is ready to show.
         self._slice.chunk_loaded(request)

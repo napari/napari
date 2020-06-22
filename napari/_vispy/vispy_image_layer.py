@@ -49,7 +49,7 @@ class VispyImageLayer(VispyBaseLayer):
         self.reset()
 
     def _on_data_change(self, event=None):
-        data = self.layer.displayed_slice
+        data = self.layer._data_view
         dtype = np.dtype(data.dtype)
         if dtype not in texture_dtypes:
             try:
@@ -181,6 +181,7 @@ class VispyImageLayer(VispyBaseLayer):
             scale = np.ones(self.layer.ndim)
             for i, d in enumerate(self.layer.dims.displayed):
                 scale[d] = downsample[i]
+            print("Downsample:", scale)
             self.layer._transforms['tile2data'].scale = scale
             self._on_scale_change()
             slices = tuple(slice(None, None, ds) for ds in downsample)

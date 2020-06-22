@@ -11,6 +11,7 @@ from ...utils.chunk_loader import ChunkRequest, CHUNK_LOADER
 class ImageProperties(NamedTuple):
     multiscale: bool
     rgb: bool
+    ndim: int
     displayed_order: Tuple[slice, ...]
 
 
@@ -90,17 +91,6 @@ class ImageSlice:
         self.image.raw = image
         self.thumbnail.raw = thumbnail
         self.placeholder = None
-
-    @property
-    def displayed(self):
-        """The image that should be displayed for the slice.
-
-        This is the loaded slice image, unless a load is in progress in
-        which case we display the placeholder image.
-        """
-        return (
-            self.image.view if self.placeholder is None else self.placeholder
-        )
 
     def load_chunk_async(self, request: ChunkRequest) -> None:
         """Load the requested chunk asynchronously.
