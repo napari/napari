@@ -296,7 +296,7 @@ class Shapes(Layer):
 
         super().__init__(
             data,
-            ndim,
+            ndim=ndim,
             name=name,
             metadata=metadata,
             scale=scale,
@@ -1176,6 +1176,7 @@ class Shapes(Layer):
         state = self._get_base_state()
         state.update(
             {
+                'ndim': self.ndim,
                 'properties': self.properties,
                 'shape_type': self.shape_type,
                 'opacity': self.opacity,
