@@ -150,11 +150,8 @@ def test_signature(layer):
     )
     autogen = str(autogen)[1:-1]  # remove parentheses
 
-    try:
-        assert args == autogen
-    except AssertionError as e:
-        msg = (
-            'arguments improperly passed from convenience '
-            f'method to layer {name}'
-        )
-        raise SyntaxError(msg) from e
+    msg = (
+        'arguments improperly passed from convenience '
+        f'method to layer {name}'
+    )
+    assert args == autogen, msg
