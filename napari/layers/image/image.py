@@ -1,3 +1,4 @@
+import os
 import types
 import warnings
 import numpy as np
@@ -693,8 +694,9 @@ class Image(IntensityVisualizationMixin, Layer):
 
         return value
 
+
 def _get_async_load() -> bool:
-    """Return True if Image should load asynchronously.
+    """Return True if Image should load data asynchronously.
     """
     # Default to off until we are ready switch over for real.
     async_load = False
