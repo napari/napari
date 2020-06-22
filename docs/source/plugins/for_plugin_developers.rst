@@ -15,7 +15,7 @@ information on how plugins are implemented internally in napari, see
 Overview
 --------
 
-``napari`` allows developers to extend its functionality through **hooks**,
+``napari`` allows developers to extend its functionality through **hooks**:
 specific places in the napari
 codebase where we would like external developers to be able to extend
 functionality. For example, when a user tries to open a filepath in napari, we
