@@ -15,10 +15,10 @@ information on how plugins are implemented internally in napari, see
 Overview
 --------
 
-``napari`` allows developers to extend its functionality through **hooks**:
+``napari`` supports plugin development through **hooks**:
 specific places in the napari
-codebase where we would like external developers to be able to extend
-functionality. For example, when a user tries to open a filepath in napari, we
+codebase where functionality can be extended.
+For example, when a user tries to open a filepath in napari, we
 might want to enable plugins to extend the file formats that can be handled.  A
 *hook*, then, is the place within napari where we
 "promise" to call functions created by external developers & installed by the user.
