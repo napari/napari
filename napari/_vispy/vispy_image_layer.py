@@ -181,7 +181,6 @@ class VispyImageLayer(VispyBaseLayer):
             scale = np.ones(self.layer.ndim)
             for i, d in enumerate(self.layer.dims.displayed):
                 scale[d] = downsample[i]
-            print("Downsample:", scale)
             self.layer._transforms['tile2data'].scale = scale
             self._on_scale_change()
             slices = tuple(slice(None, None, ds) for ds in downsample)
