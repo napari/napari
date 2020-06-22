@@ -510,10 +510,14 @@ def test_metadata():
 
 
 def test_value():
-    """Test getting the value of the data at the current coordinates."""
+    """Test getting the value of the data at the current coordinates.
+
+    We disable async otherwise the data might not be be loaded when we call
+    get_value().
+    """
     np.random.seed(0)
     data = np.random.random((10, 15))
-    layer = Image(data)
+    layer = Image(data, disable_async=True)
     value = layer.get_value()
     assert layer.coordinates == (0, 0)
     assert value == data[0, 0]
@@ -529,7 +533,8 @@ def test_message():
 
 
 def test_thumbnail():
-    """Test the image thumbnail for square data."""
+    """Test the image thumbnail for square data.
+    """
     np.random.seed(0)
     data = np.random.random((30, 30))
     layer = Image(data)
@@ -542,9 +547,12 @@ def test_narrow_thumbnail():
 
     See: https://github.com/napari/napari/issues/641 and
     https://github.com/napari/napari/issues/489
+
+    We disable async otherwise the data might not be be loaded when we read
+    the data from the thumbnail.
     """
     image = np.random.random((1, 2048))
-    layer = Image(image)
+    layer = Image(image, disable_async=True)
     layer._update_thumbnail()
     thumbnail = layer.thumbnail[..., :3]  # ignore alpha channel
     middle_row = thumbnail.shape[0] // 2

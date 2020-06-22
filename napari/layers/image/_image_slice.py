@@ -1,3 +1,4 @@
+import logging
 from typing import NamedTuple, Tuple
 
 import numpy as np
@@ -6,6 +7,8 @@ from ._image_view import ImageView
 from ._image_text import get_text_image
 from ...types import ArrayLike, ImageConverter
 from ...utils.chunk_loader import ChunkRequest, CHUNK_LOADER
+
+LOGGER = logging.getLogger("ChunkLoader")
 
 
 class ImageProperties(NamedTuple):
@@ -61,6 +64,7 @@ class ImageSlice:
         properties: ImageProperties,
         image_converter: ImageConverter,
     ):
+        LOGGER.info("ImageSlice.__init__")
         self.image: ImageView = ImageView(view_image, image_converter)
         self.thumbnail: ImageView = ImageView(view_image, image_converter)
         self.properties = properties
@@ -83,8 +87,6 @@ class ImageSlice:
         thumbnail : ArrayLike
             Set this as the thumbnail.
         """
-        print("ImageSlice.set_raw_images")
-
         if self.properties.rgb and image.dtype.kind == 'f':
             image = np.clip(image, 0, 1)
             thumbnail = np.clip(thumbnail, 0, 1)
@@ -100,6 +102,8 @@ class ImageSlice:
         request : ChunkRequest
             Initiate async load of this chunk.
         """
+        LOGGER.info("ImageSlice.load_chunk_async: %s", request.key)
+
         # Async not supported for multiscale yet
         assert not self.properties.multiscale
 
@@ -109,9 +113,6 @@ class ImageSlice:
 
         # Save these so we don't try to re-load the same chunk.
         self.current_indices = request.indices
-
-        # For now clear everything, later we'll only want to clear our layer?
-        CHUNK_LOADER.clear_queued()
 
         # Load from cache or initiate async load.
         satisfied_request = CHUNK_LOADER.load_chunk(request)
@@ -131,6 +132,8 @@ class ImageSlice:
         request : ChunkRequest
             Load this chunk immediately in the current thread.
         """
+        LOGGER.info("ImageSlice.load_chunk_sync: %s", request.key)
+
         # This is our new current slice.
         self.current_indices = request.indices
 
@@ -146,13 +149,16 @@ class ImageSlice:
         request : ChunkRequest
             This chunk was successfully loaded.
         """
-        print(f"ImageSlice.chunk_loaded {request.indices}")
+        LOGGER.info("ImageSlice.chunk_loaded: %s", request.key)
+
         # Async not supported for multiscale yet
         assert not self.properties.multiscale
 
         # Is this the chunk we requested?
         if self.current_indices != request.indices:
-            print(f"IGNORE CHUNK: {request.indices}")
+            LOGGER.info(
+                "ImageSlice.chunk_loaded: IGNORE CHUNK %s", request.key
+            )
             return
 
         # Could worker do the transpose? Does it take any time?

@@ -1,8 +1,8 @@
 import os
 import types
 import warnings
-import numpy as np
 
+import numpy as np
 from scipy import ndimage as ndi
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS
@@ -153,6 +153,7 @@ class Image(IntensityVisualizationMixin, Layer):
         blending='translucent',
         visible=True,
         multiscale=None,
+        disable_async=False,
     ):
         if isinstance(data, types.GeneratorType):
             data = list(data)
@@ -179,6 +180,10 @@ class Image(IntensityVisualizationMixin, Layer):
 
         self.async_load = _get_async_load()
 
+        if disable_async:
+            # The __init__ param can override the default.
+            self.async_load = False
+
         super().__init__(
             data,
             ndim,
@@ -203,9 +208,9 @@ class Image(IntensityVisualizationMixin, Layer):
         self.rgb = rgb
         self._data = data
 
-        # We need to create self._slice now up front now because some things
-        # in this __init__ require it. However it won't be the right dimensions
-        # until after _update_dims() is called at the end of __init__
+        # TODO_ASYNC: self._slice must exist
+
+        # We don't create it for real until _update_dims() is called at the end of __init__
         self._create_image_slice()
 
         if self.multiscale:
@@ -496,7 +501,7 @@ class Image(IntensityVisualizationMixin, Layer):
         """Create an ImageSlice to show the current data"""
         empty_image = self._get_empty_image()
         properties = ImageProperties(
-            self.multiscale, self.rgb, self._get_ndim(), self._get_order()
+            self.multiscale, self.rgb, self._get_ndim(), self._get_order(),
         )
         self._slice = ImageSlice(
             empty_image, properties, self._raw_to_displayed
@@ -585,14 +590,17 @@ class Image(IntensityVisualizationMixin, Layer):
                 return  # already showing these indices
 
             array = self.data[indices]
-            request = ChunkRequest(self, indices, array)
+
+            # We use id(self.data) so if someone calls our self.data setter
+            # we don't use the cached values from the previous data.
+            data_id = id(self.data)
+            request = ChunkRequest(data_id, indices, array)
 
             if self.async_load:
                 self._slice.load_chunk_async(request)
             else:
                 self._slice.load_chunk_sync(request)
 
-            print("Image set scale 1")
             self._transforms['tile2data'].scale = np.ones(self.dims.ndim)
 
         if self.multiscale:
@@ -600,8 +608,10 @@ class Image(IntensityVisualizationMixin, Layer):
             self.events.translate()
 
     def chunk_loaded(self, request):
-        print(f"Image.chunk_loaded: {request.indices}")
+        """Notify Image that an async request was satisfied.
 
+        The request.array has been turned into an ndarray in the worker thread.
+        """
         # Tell the slice its data is ready to show.
         self._slice.chunk_loaded(request)
 

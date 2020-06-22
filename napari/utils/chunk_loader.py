@@ -10,15 +10,22 @@ just have one and not one per Viewer:
 2. We (will) size the thread pool for optimal performance, and having
    multiple pools would result in more threads than we want.
 """
-
+from collections import defaultdict
 from concurrent import futures
-from typing import Optional
+import logging
+from typing import Dict, List, Optional
 
 import numpy as np
 from qtpy.QtCore import Signal, QObject
 
 
 from ..types import ArrayLike
+
+LOGGER = logging.getLogger("ChunkLoader")
+
+fh = logging.FileHandler('chunk_loader.log')
+LOGGER.addHandler(fh)
+LOGGER.setLevel(logging.INFO)
 
 
 def _index_to_tuple(index):
@@ -39,26 +46,24 @@ class ChunkRequest:
 
     Parameters
     ----------
-    layer
-        The layer requesting the data/
+    data_id
+        Pythod id() for the Layer._data we are viewing.
     indices
         The tuple of slices index into the data.
     array : ArrayLike
         Load the data from this array.
     """
 
-    def __init__(self, layer, indices, array: ArrayLike):
-        self.layer = layer
+    def __init__(self, data_id, indices, array: ArrayLike):
+        self.data_id = data_id
         self.indices = indices
         self.array = array
 
-    @property
-    def key(self):
-        """Hashable key.
+        # Slice objects are not hashable, so turn them into tuples.
+        indices_tuple = tuple(_index_to_tuple(x) for x in self.indices)
 
-        Slice objects are not hashable.
-        """
-        return tuple(_index_to_tuple(x) for x in self.indices)
+        # Key is data_id + indices as a tuples.
+        self.key = tuple([self.data_id, indices_tuple])
 
 
 def _chunk_loader_worker(request: ChunkRequest):
@@ -101,7 +106,7 @@ class ChunkCache:
         request : ChunkRequest
             Add the data in this request to the cache.
         """
-        print(f"ChunkCache.add_chunk: {request.key}")
+        LOGGER.info("ChunkCache.add_chunk: %s", request.key)
         self.chunks[request.key] = request.array
 
     def get_chunk(self, request: ChunkRequest) -> Optional[ArrayLike]:
@@ -109,6 +114,7 @@ class ChunkCache:
 
         TODO_ASYNC: assumes there's just one layer....
         """
+        LOGGER.info("ChunkCache.get_chunk: %s", request.key)
         return self.chunks.get(request.key)
 
 
@@ -123,7 +129,8 @@ class ChunkLoader:
         self.executor = futures.ThreadPoolExecutor(
             max_workers=self.NUM_WORKER_THREADS
         )
-        self.futures = []
+        # Maps data_id to futures for that layer.
+        self.futures: Dict[int, List[futures.Future]] = defaultdict(list)
         self.cache = ChunkCache()
 
     def load_chunk(self, request: ChunkRequest):
@@ -134,22 +141,29 @@ class ChunkLoader:
         request : ChunkRequest
             Contains the array to load from and related info.
         """
-        print(f"load_chunk: {request.indices}")
+        # Clear any existing futures. We only support non-multi-scale so far
+        # and there can only be one load in progress per layer.
+        self.clear_pending(request.data_id)
+
+        LOGGER.info("ChunkLoader.load_chunk: %s", request.key)
         array = self.cache.get_chunk(request)
 
         if array is not None:
-            print(f"load_chunk: cache hit {request.indices}")
+            LOGGER.info("load_chunk: cache hit %s", request.key)
 
             # Cache hit, request is satisfied.
             request.array = array
             return request
-        print(f"load_chunk: cache miss {request.indices}")
+
+        LOGGER.info("ChunkLoader.load_chunk: cache miss %s", request.key)
 
         future = self.executor.submit(_chunk_loader_worker, request)
         future.add_done_callback(self.done)
-        self.futures.append(future)
 
-        # Async load was started, nothing available yet.
+        # Future is in progress for this layer.
+        self.futures[request.data_id].append(future)
+
+        # Async load was started, nothing is available yet.
         return None
 
     def done(self, future):
@@ -158,7 +172,7 @@ class ChunkLoader:
         Called in the worker thread.
         """
         request = future.result()
-        print(f"ChunkLoader.done: {request.indices}")
+        LOGGER.info("ChunkLoader.done: %s", request.key)
 
         # Do this from worker thread for now. It's safe for now.
         # TODO_ASYNC: Maybe switch to GUI thread but then we need an event.
@@ -168,16 +182,33 @@ class ChunkLoader:
         # layer that requested it.
         self.signals.chunk_loaded.emit(request)
 
-    def clear_queued(self):
-        """Clear queued requests.
+    def clear_pending(self, data_id: int) -> None:
+        """Clear any pending requests for this data_id.
 
         We can't clear in-progress requests that are already running in the
         worker thread, which is too bad.
         """
-        self.futures[:] = [x for x in self.futures if x.cancel()]
+        future_list = self.futures[data_id]
 
-    def remove_layer(self, layer):
-        print(f"remove layer: {layer}")
+        # Try to clear them all. If cancel() returns false it mean the
+        # future is running and we can't cancel it.
+        num_before = len(future_list)
+        future_list[:] = [x for x in future_list if x.cancel()]
+        num_after = len(future_list)
+        num_cleared = num_before - num_after
+
+        if num_before == 0:
+            LOGGER.info("ChunkLoader.clear_layer: empty")
+        else:
+            LOGGER.info(
+                "ChunkLoader.clear_layer: %d of %d cleared -> %d remain",
+                num_cleared,
+                num_before,
+                num_after,
+            )
+
+    def remove_layer(self, layer) -> None:
+        LOGGER.info("ChunkLoader.remove_layer: %s", id(layer))
 
 
 CHUNK_LOADER = ChunkLoader()
