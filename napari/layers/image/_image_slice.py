@@ -4,7 +4,6 @@ from typing import NamedTuple, Tuple
 import numpy as np
 
 from ._image_view import ImageView
-from ._image_text import get_text_image
 from ...types import ArrayLike, ImageConverter
 from ...utils.chunk_loader import ChunkRequest, CHUNK_LOADER
 
@@ -94,52 +93,28 @@ class ImageSlice:
         self.thumbnail.raw = thumbnail
         self.placeholder = None
 
-    def load_chunk_async(self, request: ChunkRequest) -> None:
+    def load_chunk(self, request: ChunkRequest) -> None:
         """Load the requested chunk asynchronously.
 
         Parameters
         ----------
         request : ChunkRequest
-            Initiate async load of this chunk.
+            Load this chunk sync or async.
         """
-        LOGGER.info("ImageSlice.load_chunk_async: %s", request.key)
+        LOGGER.info("ImageSlice.load_chunk: %s", request.key)
 
         # Async not supported for multiscale yet
         assert not self.properties.multiscale
 
-        if self.current_indices == request.indices:
-            # We are loading or have loaded this slice already
-            return
-
-        # Save these so we don't try to re-load the same chunk.
+        # Now "showing" this slice, even if it hasn't loaded yet.
         self.current_indices = request.indices
 
-        # Load from cache or initiate async load.
+        # If ChunkLoader.synchronous or the chunk is cached, this
+        # will satisfy the request right away.
         satisfied_request = CHUNK_LOADER.load_chunk(request)
 
-        if satisfied_request is None:
-            # Async load was started, show placeholder while loading.
-            self._set_placeholder_image()
-        else:
-            # It was in the cache, put it to immediate use.
-            self.chunk_loaded(satisfied_request)
-
-    def load_chunk_sync(self, request: ChunkRequest) -> None:
-        """Load the requested chunk synchronously.
-
-        Parameters
-        ----------
-        request : ChunkRequest
-            Load this chunk immediately in the current thread.
-        """
-        LOGGER.info("ImageSlice.load_chunk_sync: %s", request.key)
-
-        # This is our new current slice.
-        self.current_indices = request.indices
-
-        # Load it right here in the GUI thread, this could block.
-        request.array = np.asarray(request.array)
-        self.chunk_loaded(request)
+        if satisfied_request is not None:
+            self.chunk_loaded(satisfied_request)  # Use right away.
 
     def chunk_loaded(self, request: ChunkRequest) -> None:
         """Chunk was loaded, show this new data.
@@ -169,36 +144,3 @@ class ImageSlice:
 
         # Show the new data, show this slice.
         self.set_raw_images(image, thumbnail)
-
-    def _get_slice_string(self):
-        """Get some string to describe the current slice.
-
-        Right now it's just an integer like "5". This will be displayed on
-        the placeholder image.
-        """
-        first = self.properties.displayed_order[0]
-        return str(self.current_indices[first])
-
-    def _set_placeholder_image(self):
-        """Show placeholder until async load is finished.
-
-        Today we only support async for non-multi-scale images. When the
-        user navigates to a slice and we have no data to show, we show a
-        "placeholder image" so we can stop drawing the previous slice and
-        indicate that a load is in progress.
-
-        Today our placeholder image is a just black with white text that
-        says "loading: N" where N is the index of the slice being loaded.
-        Long term we could show something more stylish or informative
-        including some type of loading/progress animation.
-
-        For multi-scale our "placeholder image" will often be imagery from
-        a different level of detail. For example we can show coarser/blurry
-        imagery until we can load the higher resolution data.
-
-        This black screen with text is just for the worst case where we
-        have flat nothing to show, but we don't want to keep drawing the
-        previous slice.
-        """
-        text = f"loading: {self._get_slice_string()}"
-        self.placeholder = get_text_image(text, self.properties.rgb)

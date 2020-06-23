@@ -5,6 +5,7 @@ import xarray as xr
 import pytest
 from vispy.color import Colormap
 from napari.layers import Image
+from napari import synchronous_loading
 
 
 def test_random_image():
@@ -517,10 +518,11 @@ def test_value():
     """
     np.random.seed(0)
     data = np.random.random((10, 15))
-    layer = Image(data, disable_async=True)
-    value = layer.get_value()
-    assert layer.coordinates == (0, 0)
-    assert value == data[0, 0]
+    with synchronous_loading():
+        layer = Image(data)
+        value = layer.get_value()
+        assert layer.coordinates == (0, 0)
+        assert value == data[0, 0]
 
 
 def test_message():
@@ -552,10 +554,11 @@ def test_narrow_thumbnail():
     the data from the thumbnail.
     """
     image = np.random.random((1, 2048))
-    layer = Image(image, disable_async=True)
-    layer._update_thumbnail()
-    thumbnail = layer.thumbnail[..., :3]  # ignore alpha channel
-    middle_row = thumbnail.shape[0] // 2
+    with synchronous_loading():
+        layer = Image(image)
+        layer._update_thumbnail()
+        thumbnail = layer.thumbnail[..., :3]  # ignore alpha channel
+        middle_row = thumbnail.shape[0] // 2
     assert np.all(thumbnail[: middle_row - 1] == 0)
     assert np.all(thumbnail[middle_row + 1 :] == 0)
     assert np.mean(thumbnail[middle_row - 1 : middle_row + 1]) > 0

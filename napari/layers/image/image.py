@@ -1,4 +1,3 @@
-import os
 import types
 import warnings
 
@@ -153,7 +152,6 @@ class Image(IntensityVisualizationMixin, Layer):
         blending='translucent',
         visible=True,
         multiscale=None,
-        disable_async=False,
     ):
         if isinstance(data, types.GeneratorType):
             data = list(data)
@@ -177,12 +175,6 @@ class Image(IntensityVisualizationMixin, Layer):
             ndim = len(init_shape) - 1
         else:
             ndim = len(init_shape)
-
-        self.async_load = _get_async_load()
-
-        if disable_async:
-            # The __init__ param can override the default.
-            self.async_load = False
 
         super().__init__(
             data,
@@ -208,9 +200,15 @@ class Image(IntensityVisualizationMixin, Layer):
         self.rgb = rgb
         self._data = data
 
-        # TODO_ASYNC: self._slice must exist
+        self._slice = None
 
-        # We don't create it for real until _update_dims() is called at the end of __init__
+        # TODO_ASYNC: creating self._slice here seems totally wrong. This
+        # echoes how we did things before, and it's currently needed because
+        # stuff in _init_ requires it.
+        #
+        # We should get rid of this somehow and not create the slice
+        # until _update_dims() is called at the end of __init__ which
+        # will call refresh() and _set_view_slice().
         self._create_image_slice()
 
         if self.multiscale:
@@ -256,23 +254,28 @@ class Image(IntensityVisualizationMixin, Layer):
         # Trigger generation of view slice and thumbnail
         self._update_dims()
 
+    def _get_slice_shape(self):
+        """Return shape of the slice we are displaying.
+        """
+        # TODO_ASYNC: is this shape already available somewhere so
+        # we don't have to produce it here?
+        displayed_shape = tuple(self.shape[x] for x in self.dims.displayed)
+
+        if self.rgb:
+            displayed_shape += (self.data.shape[-1],)
+
+        return displayed_shape
+
     def _get_empty_image(self):
         """Get minimal empty image with just one pixel/voxel.
         """
-        if self.async_load:
-            # Create full size blank image, since some tests immediately
-            # check that we've creates the right shape image.
+        if not self.multiscale:
+            # Create blank image exactly the size it should be, this is
+            # what want for async loading, and it works for non-async too.
+            return np.zeros(self._get_slice_shape())
 
-            # TODO_ASYNC: is there a better way to get this shape?
-            displayed_shape = tuple(self.shape[x] for x in self.dims.displayed)
-
-            if self.rgb:
-                displayed_shape += (self.data.shape[-1],)
-
-            return np.zeros(displayed_shape)
-
-        # Not async so create tiny 1 pixel/voxel image that will quickly
-        # be overwritten with the real thing.
+        # For multi-scale create a tiny 1 pixel/voxel image, this is what
+        # we've always done. Multiscale does not support asyn yet.
         if self.rgb:
             return np.zeros((1,) * self.dims.ndisplay + (self.shape[-1],))
         else:
@@ -499,6 +502,9 @@ class Image(IntensityVisualizationMixin, Layer):
 
     def _create_image_slice(self):
         """Create an ImageSlice to show the current data"""
+        # indices = self.dims.indices
+        # if self._slice is None or self._slice.current_indices != indices:
+        # We need a new slice showing an empty image.
         empty_image = self._get_empty_image()
         properties = ImageProperties(
             self.multiscale, self.rgb, self._get_ndim(), self._get_order(),
@@ -509,13 +515,12 @@ class Image(IntensityVisualizationMixin, Layer):
 
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
-        order = self._get_order()
 
-        # TODO_ASYNC: we don't have to do this every time? But how
-        # do we know when it's necessary?
+        # Create new slice if we need one.
         self._create_image_slice()
 
         if self.multiscale:
+            order = self._get_order()
             not_disp = self.dims.not_displayed
 
             # If 3d redering just show lowest level of multiscale
@@ -583,29 +588,26 @@ class Image(IntensityVisualizationMixin, Layer):
             ).transpose(order)
 
             self._slice.set_raw_images(image, thumbnail_source)
-        else:
-            indices = self.dims.indices
 
-            if self._slice.current_indices == indices:
-                return  # already showing these indices
-
-            array = self.data[indices]
-
-            # We use id(self.data) so if someone calls our self.data setter
-            # we don't use the cached values from the previous data.
-            data_id = id(self.data)
-            request = ChunkRequest(data_id, indices, array)
-
-            if self.async_load:
-                self._slice.load_chunk_async(request)
-            else:
-                self._slice.load_chunk_sync(request)
-
-            self._transforms['tile2data'].scale = np.ones(self.dims.ndim)
-
-        if self.multiscale:
             self.events.scale()
             self.events.translate()
+        else:
+            self._load_single_scale()
+
+    def _load_single_scale(self) -> None:
+        """Load non-multiscale image.
+        """
+        indices = self.dims.indices
+        array = self.data[indices]
+
+        # The caches uses id(self.data) as one of the keys, so that if someone
+        # call our data() setter we consider that do be new data.
+        data_id = id(self.data)
+        request = ChunkRequest(self, data_id, indices, array)
+        self._slice.load_chunk(request)
+
+        # TODO_ASYNC: this seems a bit out of place?
+        self._transforms['tile2data'].scale = np.ones(self.dims.ndim)
 
     def chunk_loaded(self, request):
         """Notify Image that an async request was satisfied.
@@ -616,7 +618,7 @@ class Image(IntensityVisualizationMixin, Layer):
         self._slice.chunk_loaded(request)
 
         # Update vispy, draw the new slice
-        self.refresh()
+        self.events.set_data()
 
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""
@@ -703,18 +705,3 @@ class Image(IntensityVisualizationMixin, Layer):
             value = (self.data_level, value)
 
         return value
-
-
-def _get_async_load() -> bool:
-    """Return True if Image should load data asynchronously.
-    """
-    # Default to off until we are ready switch over for real.
-    async_load = False
-
-    # Allow override with env variable.
-    env_var = os.getenv("NAPARI_ASYNC_LOAD")
-
-    if env_var is not None:
-        async_load = env_var != "0"
-
-    return async_load
