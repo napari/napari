@@ -265,7 +265,17 @@ class AddLayersMixin:
                     ]
                 else:
                     image = np.take(data, i, axis=channel_axis)
-                i_kwargs = {k: next(v) for k, v in kwargs.items()}
+                i_kwargs = {}
+                for key, val in kwargs.items():
+                    try:
+                        i_kwargs[key] = next(val)
+                    except StopIteration:
+                        raise IndexError(
+                            "Error adding multichannel image with data shape "
+                            f"{data.shape!r}. Requested channel_axis "
+                            f"({channel_axis}) had length {n_channels}, but "
+                            f"the '{key}' argument only provided {i} values. "
+                        )
                 layer = self.add_layer(layers.Image(image, **i_kwargs))
                 layer_list.append(layer)
             return layer_list
