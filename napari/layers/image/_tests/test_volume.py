@@ -1,5 +1,6 @@
 import numpy as np
 from napari.layers import Image
+from napari import synchronous_loading
 
 
 def test_random_volume():
@@ -148,9 +149,10 @@ def test_value():
     """Test getting the value of the data at the current coordinates."""
     np.random.seed(0)
     data = np.random.random((10, 15, 20))
-    layer = Image(data)
-    layer.dims.ndisplay = 3
-    value = layer.get_value()
+    with synchronous_loading():
+        layer = Image(data)
+        layer.dims.ndisplay = 3
+        value = layer.get_value()
     assert layer.coordinates == (0, 0, 0)
     assert value == data[0, 0, 0]
 
