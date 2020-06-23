@@ -272,7 +272,7 @@ class AddLayersMixin:
                     except StopIteration:
                         raise IndexError(
                             "Error adding multichannel image with data shape "
-                            f"{data.shape!r}. Requested channel_axis "
+                            f"{data.shape!r}.\nRequested channel_axis "
                             f"({channel_axis}) had length {n_channels}, but "
                             f"the '{key}' argument only provided {i} values. "
                         )
