@@ -8,9 +8,8 @@ def _add(event):
     """When a layer is added, set its name."""
     layers = event.source
     layer = event.item
-    # Coerce name into being unique in layer list and re-emit event
-    name = force_name_unique(layer.name, [l.name for l in layers[:-1]])
-    layer.events.name(value=name)
+    # Coerce name into being unique in layer list
+    layer.name = force_name_unique(layer.name, [l.name for l in layers[:-1]])
     # Register layer event handler
     layer.event_handler.register_component_to_update(layers)
     # Unselect all other layers
@@ -46,8 +45,11 @@ class LayerList(ListModel):
     def __newlike__(self, iterable):
         return ListModel(self._basetype, iterable, self._lookup)
 
-    def _transform_name_change(self, value):
-        return force_name_unique(value, [l.name for l in self])
+    def _on_name_unique_change(self, value):
+        old_name, new_name = value
+        unique_name = force_name_unique(new_name, [l.name for l in self])
+        if new_name != unique_name:
+            self[old_name].name = unique_name
 
     @property
     def selected(self):

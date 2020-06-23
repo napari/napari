@@ -50,6 +50,10 @@ class BaseLayerInterface(BaseInterface):
         ...
 
     @abstractmethod
+    def _on_name_unqiue_change(self, value):
+        ...
+
+    @abstractmethod
     def _on_thumbnail_change(self, value):
         ...
 

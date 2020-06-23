@@ -2,6 +2,7 @@ import warnings
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
 from typing import List, Optional
+from copy import copy
 
 import numpy as np
 
@@ -215,6 +216,7 @@ class Layer(KeymapProvider, ABC, BaseLayerInterface):
             translate=Event,
             data=Event,
             name=Event,
+            name_unique=Event,
             thumbnail=Event,
             status=Event,
             help=Event,
@@ -257,7 +259,10 @@ class Layer(KeymapProvider, ABC, BaseLayerInterface):
     def name(self, value):
         if self.name == value:
             return
-        self.events.name(value=value)
+        old_name = copy(self.name)
+        self.events.name_unique(value=(old_name, value))
+        if self.name == old_name:
+            self.events.name(value=value)
 
     def _on_name_change(self, value):
         self._name = value

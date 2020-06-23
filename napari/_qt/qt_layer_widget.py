@@ -6,6 +6,7 @@ from qtpy.QtWidgets import (
     QCheckBox,
     QHBoxLayout,
 )
+from copy import copy
 from ..layers.base._base_layer_interface import BaseLayerInterface
 from ..utils.event import Event, EmitterGroup
 
@@ -39,6 +40,7 @@ class QtLayerWidget(QFrame, BaseLayerInterface):
             source=self,
             selected=Event,
             name=Event,
+            name_unique=Event,
             visible=Event,
             event_handler_callback=self.layer.event_handler.on_change,
         )
@@ -101,10 +103,13 @@ class QtLayerWidget(QFrame, BaseLayerInterface):
 
     def changeText(self):
         """Update layer name attribute using layer name textbox contents."""
-        name = self.nameTextBox.text()
-        if self.layer.name == name:
+        value = self.nameTextBox.text()
+        if self.layer.name == value:
             return
-        self.events.name(value=name)
+        old_name = copy(self.layer.name)
+        self.events.name_unique(value=(old_name, value))
+        if self.layer.name == old_name:
+            self.events.name(value=value)
         self.nameTextBox.setToolTip(self.layer.name)
         # Prevent retriggering during clearing of focus
         self.nameTextBox.blockSignals(True)
