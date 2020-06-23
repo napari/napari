@@ -1,6 +1,7 @@
 import pytest
 import numpy as np
 import collections
+from napari import synchronous_loading
 from napari.layers import Labels
 from napari.utils.interactions import (
     ReadOnlyWrapper,
@@ -90,23 +91,25 @@ def test_pick(Event):
     data = np.ones((20, 20))
     data[:5, :5] = 2
     data[-5:, -5:] = 3
-    layer = Labels(data)
-    assert layer.selected_label == 1
 
-    layer.mode = 'pick'
-    layer.position = (0, 0)
+    with synchronous_loading():
+        layer = Labels(data)
+        assert layer.selected_label == 1
 
-    # Simulate click
-    event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
-    mouse_press_callbacks(layer, event)
-    assert layer.selected_label == 2
+        layer.mode = 'pick'
+        layer.position = (0, 0)
 
-    layer.position = (19, 19)
+        # Simulate click
+        event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
+        mouse_press_callbacks(layer, event)
+        assert layer.selected_label == 2
 
-    # Simulate click
-    event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
-    mouse_press_callbacks(layer, event)
-    assert layer.selected_label == 3
+        layer.position = (19, 19)
+
+        # Simulate click
+        event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
+        mouse_press_callbacks(layer, event)
+        assert layer.selected_label == 3
 
 
 def test_fill(Event):
