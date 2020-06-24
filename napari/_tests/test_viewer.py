@@ -52,7 +52,7 @@ def test_viewer(viewer_factory):
     # Window.close() method.
 
 
-@pytest.mark.first  # provided by pytest-ordering
+@pytest.mark.run(order=1)  # provided by pytest-ordering
 def test_no_qt_loop():
     """Test informative error raised when no Qt event loop exists.
 
