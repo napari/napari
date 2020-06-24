@@ -56,6 +56,38 @@ If you'd like to include them in local tests, set the environment variable "CI":
 export CI=1
 ```
 
+### Tips for speeding up local testing
+
+Very often when developing new code, you don't need or want to run the entire test suite (which can take many minutes to finish).  With `pytest`, it's easy to run a subset of your tests:
+
+```sh
+# run tests in a specific subdirectory
+pytest napari/components
+# run tests in a specific file
+pytest napari/components/_tests/test_add_layers.py
+# run a specific test within a specific file
+pytest napari/components/_tests/test_add_layers.py::test_add_layers_with_plugins
+# select tests based on substring match of test name:
+pytest napari/layers/ -k 'points and not bindings'
+```
+
+In general, it pays to learn a few of the [tips and tricks](https://docs.pytest.org/en/latest/example/index.html) of running pytest.
+
+### Testing coverage locally
+
+We always aim for good [test coverage](https://en.wikipedia.org/wiki/Code_coverage) and we use [codecov](https://codecov.io/gh/napari/napari) during continuous integration to make sure we maintain good coverage.  If you'd like to test coverage locally as you develop new code, you can install [`pytest-cov`](https://github.com/pytest-dev/pytest-cov) and take advantage of a few handy commands:
+
+```sh
+# run the full test suite with coverage
+pytest --cov=napari
+# instead of coverage in the console, get a nice browser-based cov-report
+pytest --cov=napari --cov-report=html
+open htmlcov/index.html  # look at the report
+# run a subset of tests with coverage
+pytest --cov=napari.layers.shapes --cov-report=html napari/layers/shapes
+open htmlcov/index.html  # look at the report
+```
+
 ## Writing Tests
 
 Writing tests for new code is a critical part of keeping napari maintainable as
@@ -115,6 +147,19 @@ you create during testing are cleaned up at the end of each test:
     ```
 
 > If you're curious to see the actual `viewer_factory` fixture definition, it's in `napari/conftest.py`
+
+### Mocking: "Fake it until you make it"
+
+It can be confusing to write unit tests for individual functions, when the
+function being tested in turn depends on the output from some other function or
+method.  This makes it tempting to write integration tests that "just test the
+whole thing together".  A useful tool in this case is the [mock object
+library](https://docs.python.org/3/library/unittest.mock.html).  "Mocking" lets
+you patch or replace parts of the code being tested with "fake" behavior or
+return values, so that you can test how a given function would perform *if* it
+were to receive some value from the upstream code.  For a few examples of using
+mocks when testing napari, search the codebase for
+[`unittest.mock`](https://github.com/napari/napari/search?q=%22unittest.mock%22&type=Code)
 
 ## Known Issues
 
