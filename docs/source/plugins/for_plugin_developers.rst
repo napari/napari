@@ -6,41 +6,47 @@
 creating a napari plugin
 ========================
 
-This document explains how to extend napari functionality by writing a plugin
+This document explains how to extend napari's functionality by writing a plugin
 that can be installed with ``pip`` and autodetected by napari.  For more
-information on how plugins are implementated internally in napari, see
+information on how plugins are implemented internally in napari, see
 :ref:`plugins-for-napari-developers`.
 
 
 Overview
 --------
 
-``napari`` allows developers to extend the functionality of the program as
-follows:
-
-1. **Hooks**: We (napari) identify specific places ("*hooks*") in the napari
-codebase where we would like external developers to be able to extend
-functionality. For example, when a user tries to open a filepath in napari, we
+``napari`` supports plugin development through **hooks**:
+specific places in the napari
+codebase where functionality can be extended.
+For example, when a user tries to open a filepath in napari, we
 might want to enable plugins to extend the file formats that can be handled.  A
 *hook*, then, is the place within napari where we
-"promise" to call functions created by external developers.
+"promise" to call functions created by external developers & installed by the user.
 
-2. **Hook Specifications**:  We then create "*hook specifications*", which are
+
+1. **Hook Specifications**:  For each supported hook, we have created
+"*hook specifications*", which are
 well-documented function signatures that define the API (or
 "contract") that a plugin developer must adhere to when writing their function
 that we promise to call somewhere in the napari codebase.
+See :ref:`plugins-hook-spec`.
 
-3. **Hook Implementations**: Plugin developers then write functions ("*hook
+2. **Hook Implementations**: To make a plugin, plugin developers then write functions ("*hook
 implementations*") and mark that function as meeting the requirements of a
-specific *hook specification* offered by napari (using a decorator as
-:ref:`described below <hookimplementation-decorator>`).
+specific *hook specification* offered by napari.
+See :ref:`plugins-hook-implement`.
 
-4. **Plugin discovery**: Using :ref:`one of two methods
-<hookimplementation-decorator>`, plugins that are installed in the same python
+3. **Plugin discovery**: Plugins that are installed in the same python
 environment as napari can make themselves known to napari. ``napari`` will then
 scan plugin modules for *hook implementations* that will then be called at the
 appropriate time place during the execution of ``napari``.
+See :ref:`plugin-discovery`.
 
+4. **Plugin sharing**: When you are ready to share your plugin, tag your repo
+with `napari-plugin`, push a release to pypi, and announce it on Image.sc.
+See :ref:`plugin-sharing`.
+
+.. _plugins-hook-spec:
 
 Step 1: Choose a hook specification to implement
 ------------------------------------------------
@@ -95,6 +101,8 @@ of ``(data,)``, ``(data, meta)``, or ``(data, meta, layer_type)``.
 That seems like a bit of a mouthful!  But it's a precise (though flexible)
 contract that you can follow, and know that napari will handle the rest.
 
+
+.. _plugins-hook-implement:
 
 Step 2: Write your hook implementation
 --------------------------------------
@@ -244,6 +252,26 @@ functionality by simply installing your package along with napari:
    pip install napari mypackage
 
 
+.. _plugin-sharing:
+
+Step 4: Share your plugin with the world
+----------------------------------------
+
+Once you are ready to share your plugin, `upload the Python package to PyPI
+<https://packaging.python.org/tutorials/packaging-projects/#uploading-the-distribution-archives>`_
+and it can then be installed with a simple `pip install mypackage`.
+If you used the :ref:`plugin-cookiecutter-template`, you can also `setup automated deployments
+<https://github.com/napari/cookiecutter-napari-plugin#set-up-automatic-deployments>`_.
+
+If you are using Github, add the `"napari-plugin" topic
+<https://github.com/topics/napari-plugin>`_ to your repo so other developers can
+see your work.
+
+When you are ready for users, announce your plugin on the `Image.sc Forum
+<https://forum.image.sc/tag/napari>`_.
+
+.. _plugin-cookiecutter-template:
+
 Cookiecutter template
 ---------------------
 
@@ -276,6 +304,9 @@ For a more thorough plugin see `napari-aicsimageio
 community plugins developed for napari.  This plugin takes advantage of
 :ref:`entry_point discovery <entry-point-discovery>` to offer multiple
 readers for both in-memory and lazy-loading of image files.
+
+More examples of plugins can be found on the `"napari-plugin" Github topic
+<https://github.com/topics/napari-plugin>`_.
 
 Help
 ----

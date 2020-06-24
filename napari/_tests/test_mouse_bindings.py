@@ -1,12 +1,15 @@
 import numpy as np
 from unittest.mock import Mock
+import os
 
 
 def test_viewer_mouse_bindings(viewer_factory):
     """Test adding mouse bindings to the viewer
     """
     np.random.seed(0)
-    view, viewer = viewer_factory(show=True)
+    view, viewer = viewer_factory()
+    if os.getenv("CI"):
+        viewer.show()
 
     mock_press = Mock()
     mock_drag = Mock()
@@ -76,7 +79,9 @@ def test_layer_mouse_bindings(viewer_factory):
     """Test adding mouse bindings to a layer that is selected
     """
     np.random.seed(0)
-    view, viewer = viewer_factory(show=True)
+    view, viewer = viewer_factory()
+    if os.getenv("CI"):
+        viewer.show()
 
     layer = viewer.add_image(np.random.random((10, 20)))
     layer.selected = True
@@ -148,7 +153,9 @@ def test_unselected_layer_mouse_bindings(viewer_factory):
     """Test adding mouse bindings to a layer that is not selected
     """
     np.random.seed(0)
-    view, viewer = viewer_factory(show=True)
+    view, viewer = viewer_factory()
+    if os.getenv("CI"):
+        viewer.show()
 
     layer = viewer.add_image(np.random.random((10, 20)))
     layer.selected = False

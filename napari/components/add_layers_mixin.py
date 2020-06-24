@@ -497,6 +497,7 @@ class AddLayersMixin:
         self,
         data=None,
         *,
+        ndim=None,
         properties=None,
         shape_type='rectangle',
         edge_width=1,
@@ -525,6 +526,9 @@ class AddLayersMixin:
             List of shape data, where each element is an (N, D) array of the
             N vertices of a shape in D dimensions. Can be an 3-dimensional
             array if each shape has the same number of vertices.
+        ndim : int
+            Number of dimensions for shapes. When data is not None, ndim must be D.
+            An empty shapes layer can be instantiated with arbitrary ndim.
         properties : dict {str: array (N,)}, DataFrame
             Properties for each shape. Each property should be an array of
             length N, where N is the number of shapes.
@@ -602,11 +606,13 @@ class AddLayersMixin:
             The newly-created shapes layer.
         """
         if data is None:
-            ndim = max(self.dims.ndim, 2)
+            if ndim is None:
+                ndim = max(self.dims.ndim, 2)
             data = np.empty((0, 0, ndim))
 
         layer = layers.Shapes(
             data=data,
+            ndim=ndim,
             properties=properties,
             shape_type=shape_type,
             edge_width=edge_width,

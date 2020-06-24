@@ -59,8 +59,8 @@ class QtPopup(QDialog):
         self.move(pos)
         self.show()
 
-    def show_at(self, position='top', *, win_ratio=0.9, min_length=0):
-        """Show popup at a position relative to the QMainWindow.
+    def move_to(self, position='top', *, win_ratio=0.9, min_length=0):
+        """Move popup to a position relative to the QMainWindow.
 
         Parameters
         ----------
@@ -145,7 +145,6 @@ class QtPopup(QDialog):
             min(screen_geometry.bottom() - height, top), screen_geometry.top()
         )
         self.setGeometry(left, top, width, height)
-        self.show()
 
     def keyPressEvent(self, event):
         """Close window on return, else pass event through to super class.

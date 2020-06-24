@@ -109,6 +109,14 @@ pip install -r requirements/test.txt
 pytest
 ```
 
+There are a very small number of tests (<5) that require showing GUI elements, (such
+as testing screenshots). By default, these are only run during continuous integration.
+If you'd like to include them in local tests, set the environment variable "CI":
+
+```sh
+export CI=1
+```
+
 ## Writing Tests
 
 Writing tests for new code is a critical part of keeping napari maintainable as
