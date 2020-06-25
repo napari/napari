@@ -205,8 +205,10 @@ class ChunkLoader:
             request.array = np.asarray(request.array)
             return request
 
-        self._load_async(request)
-        return None
+        # This will be synchronous if it's a cache hit. Otherwise it will
+        # initiate an asynchronous load and sometime later Layer.load_chunk
+        # will be called with the loaded chunk.
+        return self._load_async(request)
 
     def _load_async(self, request: ChunkRequest) -> None:
         """Initiate an asynchronous load of the given request.
