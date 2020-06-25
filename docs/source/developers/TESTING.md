@@ -148,7 +148,7 @@ you create during testing are cleaned up at the end of each test:
 
 > If you're curious to see the actual `viewer_factory` fixture definition, it's in `napari/conftest.py`
 
-### Mocking: "Fake it until you make it"
+### Mocking: "Fake it till you make it"
 
 It can be confusing to write unit tests for individual functions, when the
 function being tested in turn depends on the output from some other function or
