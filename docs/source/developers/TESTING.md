@@ -53,7 +53,7 @@ as testing screenshots). By default, these are only run during continuous integr
 If you'd like to include them in local tests, set the environment variable "CI":
 
 ```sh
-export CI=1
+CI=1 pytest
 ```
 
 ### Tips for speeding up local testing
