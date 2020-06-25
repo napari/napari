@@ -8,7 +8,6 @@ from .layerlist import LayerList
 from ..utils.event import EmitterGroup, Event
 from ..utils.key_bindings import KeymapHandler, KeymapProvider
 from ..utils.theme import palettes
-from ..utils.chunk_loader import CHUNK_LOADER
 
 
 class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
@@ -381,10 +380,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             self.cursor = active_layer.cursor
             self.interactive = active_layer.interactive
             self.active_layer = active_layer
-
-    def _on_layer_removed(self, event):
-        layer = event.item
-        CHUNK_LOADER.remove_layer(layer)
 
     def _on_layers_change(self, event):
         if len(self.layers) == 0:

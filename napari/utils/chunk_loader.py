@@ -291,9 +291,6 @@ class ChunkLoader:
                 num_after,
             )
 
-    def remove_layer(self, layer) -> None:
-        LOGGER.info("ChunkLoader.remove_layer: %s", id(layer))
-
 
 @contextmanager
 def synchronous_loading():
