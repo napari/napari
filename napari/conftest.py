@@ -292,3 +292,17 @@ def irregular_images():
 @pytest.fixture
 def single_tiff():
     return [image_fetcher.fetch('data/multipage.tif')]
+
+
+# Set NAPARI_PYTEST_RAISE=1 and pytest will not catch unhandled exceptions.
+# This is very useful inside a debugger, so the debugger will break right
+# where that exception is raised.
+if os.getenv('NAPARI_PYTEST_RAISE', "0") != "0":
+
+    @pytest.hookimpl(tryfirst=True)
+    def pytest_exception_interact(call):
+        raise call.excinfo.value
+
+    @pytest.hookimpl(tryfirst=True)
+    def pytest_internalerror(excinfo):
+        raise excinfo.value
