@@ -614,6 +614,10 @@ class Image(IntensityVisualizationMixin, Layer):
 
         The request.array has been turned into an ndarray in the worker thread.
         """
+        # Ultimately this check should not be needed, but for now.
+        if request.data_id != id(self.data):
+            return  # ignore, chunk was not for us
+
         # Tell the slice its data is ready to show.
         self._slice.chunk_loaded(request)
 
