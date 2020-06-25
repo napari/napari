@@ -16,6 +16,7 @@ from concurrent import futures
 import logging
 import os
 from typing import Dict, List, Optional, Tuple, Union
+import weakref
 
 import numpy as np
 from qtpy.QtCore import Signal, QObject
@@ -79,17 +80,26 @@ class ChunkRequest:
 
     Parameters
     ----------
-    data_id
-        Pythod id() for the Layer._data we are viewing.
+    layer_id : int
+        Python id() for the Layer requesting the chunk.
+    data_id : int
+        Python id() for the Layer._data requesting the chunk.
     indices
         The tuple of slices index into the data.
     array : ArrayLike
         Load the data from this array.
+
+    Attributes
+    ----------
+    layer_ref : weakref
+        Reference to the layer that submitted the request.
+    data_id : int
+        Python id() of the data in the layer.
     """
 
-    def __init__(self, layer, data_id, indices, array: ArrayLike):
-        self.layer = layer
-        self.data_id = data_id
+    def __init__(self, layer, indices, array: ArrayLike):
+        self.layer_ref = weakref.ref(layer)
+        self.data_id = id(layer.data)
         self.indices = indices
         self.array = array
 

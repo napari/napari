@@ -600,13 +600,11 @@ class Image(IntensityVisualizationMixin, Layer):
         indices = self.dims.indices
         array = self.data[indices]
 
-        # The caches uses id(self.data) as one of the keys, so that if someone
-        # call our data() setter we consider that do be new data.
-        data_id = id(self.data)
-        request = ChunkRequest(self, data_id, indices, array)
+        # Request this chunk: could be async or async.
+        request = ChunkRequest(self, indices, array)
         self._slice.load_chunk(request)
 
-        # TODO_ASYNC: this seems a bit out of place?
+        # TODO_ASYNC: where should do this? Seems out of place here.
         self._transforms['tile2data'].scale = np.ones(self.dims.ndim)
 
     def chunk_loaded(self, request):
