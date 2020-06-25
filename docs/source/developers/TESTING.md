@@ -29,8 +29,8 @@ from unit tests to integration and functional tests.
 
 All of `napari` tests are located in folders named `_tests`. We keep our unit
 tests located in the individual folders with the modules or functions they are
-testing (e.g. the tests for the `Image` layer are located in a `_tests` along
-side the `image.py` file). Our integration and functional tests are located in
+testing (e.g. the tests for the `Image` layer are located in a `_tests` folder
+alongside the `image.py` file). Our integration and functional tests are located in
 the `napari/_tests` folder at the top of the repository.
 
 We also strive to unit test as much of our model file and utils code independently of
