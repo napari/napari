@@ -205,7 +205,6 @@ class QtViewer(QSplitter):
         request : ChunkRequest
             This chunk was successfully loaded.
         """
-        print(f"QtViewer._chunk_loaded: {request.indices}")
         request.layer.chunk_loaded(request)
 
     def _create_performance_dock_widget(self):
