@@ -163,7 +163,7 @@ def test_changing_theme(viewer_factory):
 
 
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
-def test_roll_traspose_update(viewer_factory, layer_class, data, ndim):
+def test_roll_transpose_update(viewer_factory, layer_class, data, ndim):
     """Check that transpose and roll preserve correct transform sequence."""
 
     view, viewer = viewer_factory()
