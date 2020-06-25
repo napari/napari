@@ -1,5 +1,6 @@
 import warnings
 from functools import partial
+import os
 from typing import List
 
 import numpy as np
@@ -21,7 +22,6 @@ try:
     from skimage.data import image_fetcher
 except ImportError:
     from skimage.data import data_dir
-    import os
 
     class image_fetcher:
         def fetch(data_name):
