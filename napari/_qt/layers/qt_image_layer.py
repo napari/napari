@@ -177,10 +177,11 @@ class QtImageControls(QtBaseImageControls):
         """
         index = self.renderComboBox.findText(text, Qt.MatchFixedString)
         self.renderComboBox.setCurrentIndex(index)
-        self._toggle_rendering_parameter_visbility(text)
+        self._toggle_rendering_parameter_visbility()
 
-    def _toggle_rendering_parameter_visbility(self, text):
+    def _toggle_rendering_parameter_visbility(self):
         """Hide isosurface rendering parameters if they aren't needed."""
+        text = self.renderComboBox.currentText()
         rendering = Rendering(text)
         if rendering == Rendering.ISO:
             self.isoThresholdSlider.show()
@@ -225,4 +226,4 @@ class QtImageControls(QtBaseImageControls):
         else:
             self.renderComboBox.show()
             self.renderLabel.show()
-            self._toggle_rendering_parameter_visbility(self.layer.rendering)
+            self._toggle_rendering_parameter_visbility()
