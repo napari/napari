@@ -34,11 +34,10 @@ class QtLayerControls(QFrame):
 
         self.layer.event_handler.register_component_to_update(self)
         self.events = EmitterGroup(
-            source=self,
-            blending=Event,
-            opacity=Event,
-            event_handler_callback=self.layer.event_handler.on_change,
+            source=self, auto_connect=False, blending=Event, opacity=Event,
         )
+        self.events.connect(self.layer.event_handler.on_change)
+
         self.setObjectName('layer')
         self.setMouseTracking(True)
 
@@ -56,7 +55,7 @@ class QtLayerControls(QFrame):
         sld.setSingleStep(1)
 
         self.emit_opacity_event = lambda value: self.events.opacity(
-            value=value / 100
+            value / 100
         )
         sld.valueChanged.connect(self.emit_opacity_event)
         self.opacitySlider = sld

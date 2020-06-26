@@ -226,10 +226,8 @@ class EventEmitter(object):
         The class of events that this emitter will generate.
     """
 
-    def __init__(
-        self, source=None, type=None, event_class=Event, callback=None
-    ):
-        self._callbacks = [callback] if callback else []
+    def __init__(self, source=None, type=None, event_class=Event):
+        self._callbacks = []
         self._callback_refs = []
 
         # count number of times this emitter is blocked for each callback.
@@ -674,11 +672,10 @@ class EmitterGroup(EventEmitter):
         See the :func:`add <vispy.event.EmitterGroup.add>` method.
     """
 
-    def __init__(self, source=None, event_handler_callback=None, **emitters):
+    def __init__(self, source=None, auto_connect=True, **emitters):
         EventEmitter.__init__(self, source)
-        # TODO CAN MAKE FIRST COMPONENT SOURCE
 
-        self.event_handler_callback = event_handler_callback
+        self.auto_connect = auto_connect
         self.auto_connect_format = "on_%s"
         self._emitters = OrderedDict()
         # whether the sub-emitters have been connected to the group:
@@ -715,6 +712,8 @@ class EmitterGroup(EventEmitter):
                       mouse_release=EventEmitter(group.source, 'mouse_press',
                                                  MouseEvent))
         """
+        if auto_connect is None:
+            auto_connect = self.auto_connect
 
         # check all names before adding anything
         for name in kwargs:
@@ -734,18 +733,9 @@ class EmitterGroup(EventEmitter):
                 emitter = Event
 
             if inspect.isclass(emitter) and issubclass(emitter, Event):
-                # TODO CAN GET RID OF THIS WHEN EVERYTHING WORKS
-                if self.event_handler_callback:
-                    emitter = EventEmitter(
-                        source=self.source,
-                        type=name,
-                        event_class=emitter,
-                        callback=self.event_handler_callback,
-                    )
-                else:
-                    emitter = EventEmitter(
-                        source=self.source, type=name, event_class=emitter,
-                    )
+                emitter = EventEmitter(
+                    source=self.source, type=name, event_class=emitter
+                )
             elif not isinstance(emitter, EventEmitter):
                 raise Exception(
                     'Emitter must be specified as either an '
@@ -758,6 +748,9 @@ class EmitterGroup(EventEmitter):
 
             setattr(self, name, emitter)
             self._emitters[name] = emitter
+
+            if auto_connect and self.source is not None:
+                emitter.connect((self.source, self.auto_connect_format % name))
 
             # If emitters are connected to the group already, then this one
             # should be connected as well.

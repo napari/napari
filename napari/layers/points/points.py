@@ -482,7 +482,7 @@ class Points(Layer):
 
         self._update_dims()
         self._update_editable()
-        self.events.data(value=self.data)
+        self.events.data(self.data)
 
     def _add_point_color(self, adding: int, attribute: str):
         """Add the edge or face colors for new points.

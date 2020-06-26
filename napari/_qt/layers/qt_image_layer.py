@@ -73,9 +73,7 @@ class QtImageControls(QtBaseImageControls):
         sld.setMaximum(100)
         sld.setSingleStep(1)
         sld.setValue(self.layer.iso_threshold * 100)
-        sld.valueChanged.connect(
-            lambda v: self.events.iso_threshold(value=v / 100)
-        )
+        sld.valueChanged.connect(lambda v: self.events.iso_threshold(v / 100))
         self.isoThresholdSlider = sld
         self.isoThresholdLabel = QLabel('iso threshold:')
 
@@ -85,9 +83,7 @@ class QtImageControls(QtBaseImageControls):
         sld.setMaximum(200)
         sld.setSingleStep(1)
         sld.setValue(self.layer.attenuation * 100)
-        sld.valueChanged.connect(
-            lambda v: self.events.attenuation(value=v / 100)
-        )
+        sld.valueChanged.connect(lambda v: self.events.attenuation(v / 100))
         self.attenuationSlider = sld
         self.attenuationLabel = QLabel('attenuation:')
         self._on_ndisplay_change()

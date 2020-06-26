@@ -298,7 +298,7 @@ class Image(IntensityVisualizationMixin, Layer):
         self._data = value
         self._update_dims()
         self._update_editable()
-        self.events.data(value=value)
+        self.events.data(value)
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
@@ -346,7 +346,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @iso_threshold.setter
     def iso_threshold(self, value):
-        self.events.iso_threshold(value=value)
+        self.events.iso_threshold(value)
 
     def _on_iso_threshold_change(self, value):
         self._iso_threshold = value
@@ -360,7 +360,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @attenuation.setter
     def attenuation(self, value):
-        self.events.attenuation(value=value)
+        self.events.attenuation(value)
 
     def _on_attenuation_change(self, value):
         self.status = format_float(value)
@@ -391,7 +391,7 @@ class Image(IntensityVisualizationMixin, Layer):
     @interpolation.setter
     def interpolation(self, value):
         """Set current interpolation mode."""
-        self.events.interpolation(value=value)
+        self.events.interpolation(value)
 
     def _on_interpolation_change(self, value):
         if self.dims.ndisplay == 3:
@@ -430,7 +430,7 @@ class Image(IntensityVisualizationMixin, Layer):
     @rendering.setter
     def rendering(self, value):
         """Set current rendering mode."""
-        self.events.rendering(value=value)
+        self.events.rendering(value)
 
     def _on_rendering_change(self, value):
         self._rendering = Rendering(value)

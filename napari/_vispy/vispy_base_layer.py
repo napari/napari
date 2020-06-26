@@ -56,8 +56,6 @@ class VispyBaseLayer(ABC):
 
         self._position = (0,) * self.layer.dims.ndisplay
 
-        self.layer.events.refresh.connect(lambda e: self.node.update())
-
     @property
     def _master_transform(self):
         """vispy.visuals.transforms.STTransform:

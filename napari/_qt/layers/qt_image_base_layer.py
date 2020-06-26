@@ -74,9 +74,7 @@ class QtBaseImageControls(QtLayerControls):
         sld.setMaximum(200)
         sld.setSingleStep(2)
         sld.setValue(100)
-        self.emit_gamma_event = lambda value: self.events.gamma(
-            value=value / 100
-        )
+        self.emit_gamma_event = lambda value: self.events.gamma(value / 100)
         sld.valueChanged.connect(self.emit_gamma_event)
         self.gammaSlider = sld
         self._on_gamma_change(self.layer.gamma)

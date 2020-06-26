@@ -37,12 +37,13 @@ class QtLayerWidget(QFrame):
         self.layer.event_handler.register_component_to_update(self)
         self.events = EmitterGroup(
             source=self,
+            auto_connect=False,
             selected=Event,
             name=Event,
             name_unique=Event,
             visible=Event,
-            event_handler_callback=self.layer.event_handler.on_change,
         )
+        self.events.connect(self.layer.event_handler.on_change)
 
         self.setObjectName('layer')
 
@@ -106,9 +107,9 @@ class QtLayerWidget(QFrame):
         if self.layer.name == value:
             return
         old_name = copy(self.layer.name)
-        self.events.name_unique(value=(old_name, value))
+        self.events.name_unique((old_name, value))
         if self.layer.name == old_name:
-            self.events.name(value=value)
+            self.events.name(value)
         self.nameTextBox.setToolTip(self.layer.name)
         # Prevent retriggering during clearing of focus
         self.nameTextBox.blockSignals(True)
