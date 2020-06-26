@@ -16,30 +16,30 @@ class QtImageControls(QtBaseImageControls):
     Parameters
     ----------
     layer : napari.layers.Image
-       An instance of a napari Image layer.
+        An instance of a napari Image layer.
 
     Attributes
     ----------
     attenuationSlider : qtpy.QtWidgets.QSlider
-       Slider controlling attenuation rate for `attenuated_mip` mode.
+        Slider controlling attenuation rate for `attenuated_mip` mode.
     attenuationLabel : qtpy.QtWidgets.QLabel
-       Label for the attenuation slider widget.
+        Label for the attenuation slider widget.
     grid_layout : qtpy.QtWidgets.QGridLayout
-       Layout of Qt widget controls for the layer.
+        Layout of Qt widget controls for the layer.
     interpComboBox : qtpy.QtWidgets.QComboBox
-       Dropdown menu to select the interpolation mode for image display.
+        Dropdown menu to select the interpolation mode for image display.
     interpLabel : qtpy.QtWidgets.QLabel
-       Label for the interpolation dropdown menu.
+        Label for the interpolation dropdown menu.
     isoThresholdSlider : qtpy.QtWidgets.QSlider
-       Slider controlling the isosurface threshold value for rendering.
+        Slider controlling the isosurface threshold value for rendering.
     isoThresholdLabel : qtpy.QtWidgets.QLabel
-       Label for the isosurface threshold slider widget.
+        Label for the isosurface threshold slider widget.
     layer : napari.layers.Image
-       An instance of a napari Image layer.
+        An instance of a napari Image layer.
     renderComboBox : qtpy.QtWidgets.QComboBox
-       Dropdown menu to select the rendering mode for image display.
+        Dropdown menu to select the rendering mode for image display.
     renderLabel : qtpy.QtWidgets.QLabel
-       Label for the rendering mode dropdown menu.
+        Label for the rendering mode dropdown menu.
     """
 
     def __init__(self, layer):

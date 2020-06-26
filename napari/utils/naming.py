@@ -78,7 +78,7 @@ def magic_name(value, *, path_prefix):
 
 
 def force_name_unique(name, names):
-    if names.count(name) == 0:
+    if name not in names:
         return name
     else:
         return force_name_unique(inc_name_count(name), names)
