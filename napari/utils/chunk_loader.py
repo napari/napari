@@ -20,8 +20,7 @@ import weakref
 
 from cachetools import LRUCache
 import numpy as np
-from qtpy.QtCore import Signal, QObject
-
+from qtpy import QtCore
 
 from ..types import ArrayLike
 
@@ -124,19 +123,6 @@ def _chunk_loader_worker(request: ChunkRequest):
     return request
 
 
-class ChunkLoaderSignals(QObject):
-    """QtViewer connects to this.
-
-    We need to notify from a worker thread to the GUI thread so knows to
-    use the chunk we just loaded. The only way to do that is with Qt
-    signals/slots/events.
-
-    TODO_ASYNC: Create a wrapper so we don't need to import Qt at all?
-    """
-
-    chunk_loaded = Signal(ChunkRequest)
-
-
 def _get_cache_size_bytes(mem_fraction):
     import psutil
 
@@ -174,6 +160,17 @@ class ChunkCache:
         """
         LOGGER.info("ChunkCache.get_chunk: %s", request.key)
         return self.chunks.get(request.key)
+
+
+class ChunkLoaderSignals(QtCore.QObject):
+    """ChunkLoader signals.
+
+    ChunkLoader needs to notify the GUI thread when worker thread finishes
+    loading a chunk. The only way we know to do that today is with Qt
+    Signals and Slots. Having a Qt dependency here though is not good.
+    """
+
+    chunk_loaded = QtCore.Signal(ChunkRequest)
 
 
 class ChunkLoader:
