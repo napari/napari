@@ -294,9 +294,12 @@ def single_tiff():
     return [image_fetcher.fetch('data/multipage.tif')]
 
 
-# Set NAPARI_PYTEST_RAISE=1 and pytest will not catch unhandled exceptions.
-# This is very useful inside a debugger, so the debugger will break right
-# where that exception is raised.
+# To prevent pytest from handling exceptions set NAPARI_PYTEST_RAISE=1.
+#
+# The breaks pytest's error reporting, but it's very useful when running
+# tests in a debugger. The debugger will break right where the exception
+# was raised. Similar to pytest's --pdb or --dbcls flags but will work
+# with any debugger (such as vscode's).
 if os.getenv('NAPARI_PYTEST_RAISE', "0") != "0":
 
     @pytest.hookimpl(tryfirst=True)
