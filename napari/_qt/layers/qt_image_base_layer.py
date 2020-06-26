@@ -139,7 +139,7 @@ class QtBaseImageControls(QtLayerControls):
         Parameters
         ----------
         value : tuple
-            Tuple of colormap name and vispy Colormap object.
+            Tuple of colormap name and VisPy Colormap object.
         """
         name = value[0]
         if name not in self.colormapComboBox._allitems:

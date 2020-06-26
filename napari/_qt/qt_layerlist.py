@@ -5,11 +5,11 @@ from qtpy.QtWidgets import (
     QFrame,
     QScrollArea,
     QApplication,
-    QSizePolicy,
     QLineEdit,
     QLabel,
     QCheckBox,
     QHBoxLayout,
+    QSizePolicy,
 )
 from qtpy.QtGui import QDrag, QImage, QPixmap
 import numpy as np
@@ -492,9 +492,9 @@ class QtLayerWidget(QFrame):
 
         # When the EVH refactor #1376 is done we might not even need the layer
         # attribute anymore as all data updates will be through the handler.
-        # At that point we could remove the attribue and do the registering and
-        # connecting outside this class and never even need to pass the layer
-        # to this class.
+        # At that point we could remove the attribute and do the registering
+        # and connecting outside this class and never even need to pass the
+        # layer to this class.
         self.layer = layer
         self.layer.event_handler.register_component_to_update(self)
         self.events.connect(self.layer.event_handler.on_change)

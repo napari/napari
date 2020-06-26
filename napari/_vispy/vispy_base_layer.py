@@ -45,6 +45,11 @@ class VispyBaseLayer(ABC):
     def __init__(self, layer, node):
         super().__init__()
 
+        # When the EVH refactor #1376 is done we might not even need the layer
+        # attribute anymore as all data updates will be through the handler.
+        # At that point we could remove the attribute and do the registering
+        # outside this class and never even need to pass the layer to this
+        # class.
         self.layer = layer
         self.layer.event_handler.register_component_to_update(self)
 
@@ -132,16 +137,39 @@ class VispyBaseLayer(ABC):
         raise NotImplementedError()
 
     def _on_visible_change(self, value):
+        """Receive layer model visibiliy and update the visual.
+
+        Parameters
+        ----------
+        value : bool
+            Layer visibility
+        """
         self.node.visible = value
 
     def _on_opacity_change(self, value):
+        """Receive layer model opacity and update the visual.
+
+        Parameters
+        ----------
+        value : float
+            Layer opacity between 0 and 1.
+        """
         self.node.opacity = value
 
-    def _on_blending_change(self, value):
-        self.node.set_gl_state(value)
+    def _on_blending_change(self, text):
+        """Receive layer model blending mode and update the visual.
+
+        Parameters
+        ----------
+        text : str
+           Blending mode used by VisPy. Must be one of our supported
+           modes:
+           'transluenct', 'additive', 'opaque'
+        """
+        self.node.set_gl_state(text)
         self.node.update()
 
-    def _on_scale_change(self, value=None):
+    def _on_scale_change(self, event=None):
         scale = self.layer._transforms.simplified.set_slice(
             self.layer.dims.displayed
         ).scale
@@ -150,7 +178,7 @@ class VispyBaseLayer(ABC):
         self.layer.corner_pixels = self.coordinates_of_canvas_corners()
         self.layer.position = self._transform_position(self._position)
 
-    def _on_translate_change(self, value=None):
+    def _on_translate_change(self, event=None):
         translate = self.layer._transforms.simplified.set_slice(
             self.layer.dims.displayed
         ).translate
@@ -185,8 +213,8 @@ class VispyBaseLayer(ABC):
         self._on_visible_change(self.layer.visible)
         self._on_opacity_change(self.layer.opacity)
         self._on_blending_change(self.layer.blending)
-        self._on_scale_change(self.layer.scale)
-        self._on_translate_change(self.layer.translate)
+        self._on_scale_change()
+        self._on_translate_change()
 
     def coordinates_of_canvas_corners(self):
         """Find location of the corners of canvas in data coordinates.

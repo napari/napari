@@ -123,7 +123,7 @@ class QtImageControls(QtBaseImageControls):
        Parameters
        ----------
        text : str
-           Interpolation mode used by vispy. Must be one of our supported
+           Interpolation mode used by VisPy. Must be one of our supported
            modes:
            'bessel', 'bicubic', 'bilinear', 'blackman', 'catrom', 'gaussian',
            'hamming', 'hanning', 'hermite', 'kaiser', 'lanczos', 'mitchell',
@@ -158,8 +158,8 @@ class QtImageControls(QtBaseImageControls):
         Parameters
         ----------
         text : str
-            Rendering mode used by vispy.
-            Selects a preset rendering mode in vispy that determines how
+            Rendering mode used by VisPy.
+            Selects a preset rendering mode in VisPy that determines how
             volume is displayed:
             * translucent: voxel colors are blended along the view ray until
               the result is opaque.
