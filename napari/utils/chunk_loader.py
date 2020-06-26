@@ -18,6 +18,7 @@ import os
 from typing import Dict, List, Optional, Tuple, Union
 import weakref
 
+from cachetools import LRUCache
 import numpy as np
 from qtpy.QtCore import Signal, QObject
 
@@ -32,6 +33,9 @@ LOGGER.setLevel(logging.INFO)
 
 # We convert slices to tuple for hashing.
 SliceTuple = Tuple[int, int, int]
+
+# ChunkCache size as a fraction of total RAM
+CACHE_MEM_FRACTION = 0.1
 
 
 def _index_to_tuple(index: Union[int, slice]) -> Union[int, SliceTuple]:
@@ -133,14 +137,24 @@ class ChunkLoaderSignals(QObject):
     chunk_loaded = Signal(ChunkRequest)
 
 
+def _get_cache_size_bytes(mem_fraction):
+    import psutil
+
+    # Sizing approach borrowed from our create_dask_cache()
+    return psutil.virtual_memory().total * mem_fraction
+
+
+def _getsizeof_chunk(array: np.ndarray):
+    return array.nbytes
+
+
 class ChunkCache:
     """Cache of previously loaded chunks.
-
-    TODO_ASYNC: need LRU eviction, sizing based on RAM, etc.
     """
 
     def __init__(self):
-        self.chunks = {}
+        nbytes = _get_cache_size_bytes(CACHE_MEM_FRACTION)
+        self.chunks = LRUCache(maxsize=nbytes, getsizeof=_getsizeof_chunk)
 
     def add_chunk(self, request: ChunkRequest) -> None:
         """Add this chunk to the cache.
