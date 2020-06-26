@@ -459,13 +459,15 @@ class EventEmitter(object):
         return callback
 
     def __call__(self, *args, **kwargs):
-        """ __call__(**kwargs)
+        """ __call__(*args, **kwargs)
         Invoke all callbacks for this emitter.
 
         Emit a new event object, created with the given keyword
         arguments, which must match with the input arguments of the
         corresponding event class. Note that the 'type' argument is
-        filled in by the emitter.
+        filled in by the emitter. If no kwargs and only a single arg is
+        passed (that is not an instance of self.event_class), then assume that
+        that argument is a value emitted with the 'value' kwarg.
 
         Alternatively, the emitter can also be called with an Event
         instance as the only argument. In this case, the specified
