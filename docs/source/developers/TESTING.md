@@ -128,25 +128,25 @@ you create during testing are cleaned up at the end of each test:
     ```
 
 2. When writing a test that requires a `napari.Viewer` object, we provide our
-   own convenient fixture called `viewer_factory` that will take care of
+   own convenient fixture called `make_test_viewer` that will take care of
    creating a viewer and cleaning up at the end of the test.  When using this
    function, it is **not** necessary to use a `qtbot` fixture, nor should you do
    any additional cleanup (such as using `qtbot.addWidget` or calling
    `viewer.close()`) at the end of the test.  Duplicate cleanup may cause an
-   error.  Use the factory as follows:
+   error.  Use the fixture as follows:
 
     ```python
-    # the viewer_factory fixture is defined in napari/conftest.py
-    def test_something_with_a_viewer(viewer_factory):
-        # viewer factory takes any keyword arguments that napari.Viewer() takes
-        view, viewer = viewer_factory()
-        # note, `view` here is just a pointer to viewer.window.qt_viewer
+    # the make_test_viewer fixture is defined in napari/conftest.py
+    def test_something_with_a_viewer(make_test_viewer):
+        # make_test_viewer takes any keyword arguments that napari.Viewer() takes
+        viewer = make_test_viewer()
 
         # do stuff with the viewer, no qtbot or viewer.close() methods needed.
         ...
     ```
 
-> If you're curious to see the actual `viewer_factory` fixture definition, it's in `napari/conftest.py`
+> If you're curious to see the actual `make_test_viewer` fixture definition, it's
+> in `napari/conftest.py`
 
 ### Mocking: "Fake it till you make it"
 
