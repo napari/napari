@@ -1,4 +1,3 @@
-from napari.layers.image.image_interface import ImageLayerInterface
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QHBoxLayout, QLabel, QSlider
 
@@ -11,7 +10,7 @@ from .qt_image_base_layer import QtBaseImageControls
 from ...utils.event import Event
 
 
-class QtImageControls(QtBaseImageControls, ImageLayerInterface):
+class QtImageControls(QtBaseImageControls):
     """Qt view and controls for the napari Image layer.
 
     Parameters

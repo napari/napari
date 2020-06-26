@@ -7,11 +7,10 @@ from qtpy.QtWidgets import (
     QHBoxLayout,
 )
 from copy import copy
-from ..layers.base._base_layer_interface import BaseLayerInterface
 from ..utils.event import Event, EmitterGroup
 
 
-class QtLayerWidget(QFrame, BaseLayerInterface):
+class QtLayerWidget(QFrame):
     """Qt view for Layer model.
 
     Attributes

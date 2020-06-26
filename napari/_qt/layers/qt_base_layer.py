@@ -1,12 +1,11 @@
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QSlider, QGridLayout, QFrame, QComboBox
 
-from ...layers.base._base_layer_interface import BaseLayerInterface
 from ...layers.base._base_constants import Blending
 from ...utils.event import Event, EmitterGroup
 
 
-class QtLayerControls(QFrame, BaseLayerInterface):
+class QtLayerControls(QFrame):
     """Superclass for all the other LayerControl classes.
 
     This class is never directly instantiated anywhere.

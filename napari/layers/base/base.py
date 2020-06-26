@@ -6,8 +6,7 @@ from copy import copy
 
 import numpy as np
 
-from .layer_event_handler import LayerEventHandler
-from ._base_layer_interface import BaseLayerInterface
+from ..layer_event_handler import LayerEventHandler
 from ...components import Dims
 from ...utils.dask_utils import configure_dask
 from ...utils.event import EmitterGroup, Event
@@ -20,7 +19,7 @@ from ..utils.layer_utils import compute_multiscale_level, convert_to_uint8
 from ._base_constants import Blending
 
 
-class Layer(KeymapProvider, ABC, BaseLayerInterface):
+class Layer(KeymapProvider, ABC):
     """Base layer class.
 
     Parameters

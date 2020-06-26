@@ -3,7 +3,6 @@ import warnings
 import numpy as np
 from scipy import ndimage as ndi
 
-from .image_interface import ImageLayerInterface
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.event import Event
 from ...utils.status_messages import format_float
@@ -16,7 +15,7 @@ from ._image_slice import ImageSlice
 
 
 # Mixin must come before Layer
-class Image(IntensityVisualizationMixin, Layer, ImageLayerInterface):
+class Image(IntensityVisualizationMixin, Layer):
     """Image layer.
 
     Parameters

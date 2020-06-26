@@ -1,8 +1,7 @@
 import logging
 
 
-from ...utils.event_handler import EventHandler
-from napari.utils.base_interface import BaseInterface
+from ..utils.event_handler import EventHandler
 
 
 logger = logging.getLogger(__name__)
@@ -17,7 +16,7 @@ class LayerEventHandler(EventHandler):
     Ex. ImageLayer components = [qt_image.py, vispy_image.py, image.py]
     """
 
-    def __init__(self, component: BaseInterface = None):
+    def __init__(self, component=None):
         super().__init__(component)
 
     def on_change(self, event=None):

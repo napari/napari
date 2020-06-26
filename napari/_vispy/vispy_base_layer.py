@@ -5,10 +5,8 @@ from vispy.app import Canvas
 from vispy.gloo import gl
 from vispy.visuals.transforms import STTransform
 
-from napari.layers.base._base_layer_interface import BaseLayerInterface
 
-
-class VispyBaseLayer(ABC, BaseLayerInterface):
+class VispyBaseLayer(ABC):
     """Base object for individual layer views
 
     Meant to be subclassed.
