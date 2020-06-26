@@ -2,7 +2,6 @@ from typing import Optional, List
 from ..layers import Layer
 from ..utils.naming import inc_name_count
 from ..utils.list import ListModel
-from ..utils.chunk_loader import ChunkRequest, CHUNK_LOADER
 
 
 def _add(event):
@@ -12,30 +11,6 @@ def _add(event):
     layer.name = layers._coerce_name(layer.name, layer)
     layer.events.name.connect(lambda e: layers._update_name(e))
     layers.unselect_all(ignore=layer)
-
-
-class ChunkReceiver:
-    """ChunkLoader passes us chunks that we pass to layers.
-
-    We connect to the ChunkLoader's _chunk_loaded signal which is emitted
-    in one of the ChunkLoader's worker threads. We receive it here in GUI
-    thread and pass in on to a layer in the GUI thread.
-    """
-
-    def __init__(self):
-        CHUNK_LOADER.signals.chunk_loaded.connect(self._chunk_loaded)
-
-    def _chunk_loaded(self, request: ChunkRequest) -> None:
-        """If the layer still exists, pass it the chunk.
-
-        Parameters
-        ----------
-        request : ChunkRequest
-            This chunk was successfully loaded.
-        """
-        layer = request.layer_ref()
-        if layer is not None:
-            layer.chunk_loaded(request)
 
 
 class LayerList(ListModel):
@@ -62,7 +37,6 @@ class LayerList(ListModel):
             lookup={str: lambda q, e: q == e.name},
         )
 
-        self._chunk_receiver = ChunkReceiver()
         self.events.added.connect(_add)
 
     def __newlike__(self, iterable):

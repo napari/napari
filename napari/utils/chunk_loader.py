@@ -20,9 +20,9 @@ import weakref
 
 from cachetools import LRUCache
 import numpy as np
-from qtpy import QtCore
 
 from ..types import ArrayLike
+from ..utils.event import EmitterGroup
 
 LOGGER = logging.getLogger("ChunkLoader")
 
@@ -162,23 +162,11 @@ class ChunkCache:
         return self.chunks.get(request.key)
 
 
-class ChunkLoaderSignals(QtCore.QObject):
-    """ChunkLoader signals.
-
-    ChunkLoader needs to notify the GUI thread when worker thread finishes
-    loading a chunk. The only way we know to do that today is with Qt
-    Signals and Slots. Having a Qt dependency here though is not good.
-    """
-
-    chunk_loaded = QtCore.Signal(ChunkRequest)
-
-
 class ChunkLoader:
     """Load chunks for rendering.
     """
 
     NUM_WORKER_THREADS = 1
-    signals = ChunkLoaderSignals()
 
     # If loading is synchronous then the ChunkLoader is essentially
     # disabled, load_chunk() will immediately do the load in the GUI
@@ -192,6 +180,12 @@ class ChunkLoader:
         # Maps data_id to futures for that layer.
         self.futures: Dict[int, List[futures.Future]] = defaultdict(list)
         self.cache = ChunkCache()
+
+        # We emit only one event:
+        #     chunk_loaded - a chunk was loaded
+        self.events = EmitterGroup(
+            source=self, auto_connect=True, chunk_loaded=None
+        )
 
     def load_chunk(self, request: ChunkRequest) -> Optional[ChunkRequest]:
         """Load the array in the given ChunkRequest.
@@ -256,9 +250,14 @@ class ChunkLoader:
         return None
 
     def _done(self, future: futures.Future) -> None:
-        """Future finished with success or was cancelled.
+        """The given future finished with success or was cancelled.
 
-        This is called from the worker thread.
+        Notes
+        -----
+        This method may be called in the worker thread. The documentation
+        very intentionally does not specify which thread the callback will
+        be called in. On MacOS it seems to always be called in the worker
+        thread.
         """
         request = future.result()
         LOGGER.info("ChunkLoader._done: %s", request.key)
@@ -268,9 +267,7 @@ class ChunkLoader:
         # GUI thread so all cache access is from the same thread.
         self.cache.add_chunk(request)
 
-        # Notify QtViewer in the GUI thread, it will pass the data to the
-        # layer that requested it.
-        self.signals.chunk_loaded.emit(request)
+        self.events.chunk_loaded(request=request)
 
     def _clear_pending(self, data_id: int) -> None:
         """Clear any pending requests for this data_id.
