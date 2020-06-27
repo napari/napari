@@ -332,14 +332,14 @@ def skip_sync_async(request):
     """Skip tests depending on our sync/async settings."""
     if CHUNK_LOADER.synchronous:
         if request.config.getoption("--async_only"):
-            # Currently doing sync loads, but user asked for async only.
+            # Currently sync, but user asked for async only so skip.
             pytest.skip("running with --async_only")
-    elif request.config.getoption("--sync_only"):
-        # Currently doing async loads, but user asked for sync only.
-        pytest.skip("running with --sync_only")
     elif request.node.get_closest_marker('sync_only'):
-        # Currently doing async loads, but this test is sync only.
+        # Currently async, but this test is sync only so skip.
         pytest.skip("test is sync only")
+    elif request.config.getoption("--sync_only"):
+        # Currently async, but user asked for sync only so skip.
+        pytest.skip("running with --sync_only")
 
 
 # _PYTEST_RAISE=1 will prevent pytest from handling exceptions.
