@@ -1356,7 +1356,7 @@ class Shapes(Layer):
         if edge_width is None:
             edge_width = self.current_edge_width
 
-        if np.array(data[0]).ndim == 1:
+        if len(data) > 0 and np.array(data[0]).ndim == 1:
             # If a single array for a shape has been passed turn into list
             data = [data]
 
@@ -1446,7 +1446,7 @@ class Shapes(Layer):
             applied to each shape otherwise the same value will be used for all
             shapes.
         """
-        if np.array(data[0]).ndim == 1:
+        if len(data) > 0 and np.array(data[0]).ndim == 1:
             # If a single array for a shape has been passed turn into list
             data = [data]
 
