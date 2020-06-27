@@ -667,6 +667,7 @@ class QtViewer(QSplitter):
         if self._console is not None:
             self.console.close()
         self.dockConsole.deleteLater()
+        self.layers.close()
         event.accept()
 
 

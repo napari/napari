@@ -40,3 +40,9 @@ class QtChunkReceiver(QObject):
         layer = request.layer_ref()
         if layer is not None:
             layer.chunk_loaded(request)
+
+    def close(self):
+        """Viewer is closing.
+        """
+        self.chunk_loaded_gui.disconnect()
+        CHUNK_LOADER.events.chunk_loaded.disconnect()
