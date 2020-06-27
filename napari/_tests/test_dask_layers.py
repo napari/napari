@@ -141,9 +141,6 @@ def test_dask_unoptimized_slicing(delayed_dask_stack, monkeypatch):
     # add dask stack to viewer.
     v = viewer.ViewerModel()
     dask_stack = delayed_dask_stack['stack']
-
-    # Synchronous because we are immediately checking that the
-    # delayed_dask_stack has been accessed.
     v.add_image(dask_stack, multiscale=False, contrast_limits=(0, 1))
     assert delayed_dask_stack['calls'] == 1
 
