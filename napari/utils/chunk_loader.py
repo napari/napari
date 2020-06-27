@@ -2,13 +2,15 @@
 
 There is one global CHUNK_LOADER instance to handle async loading for any
 and all Viewer instances that are running. There are two main reasons we
-just have one and not one per Viewer:
+just have one ChunkLoader and not one per Viewer:
 
 1. We size the ChunkCache as a fraction of RAM, so having more than one
-   would use too much RAM in many cases.
+   would use too much RAM.
 
 2. We (will) size the thread pool for optimal performance, and having
    multiple pools would result in more threads than we want.
+
+The ChunkLoader is a shared resource like the network or the filesystem.
 """
 from collections import defaultdict
 from contextlib import contextmanager
@@ -26,14 +28,21 @@ from ..utils.event import EmitterGroup
 
 LOGGER = logging.getLogger("ChunkLoader")
 
-fh = logging.FileHandler('chunk_loader.log')
-LOGGER.addHandler(fh)
-LOGGER.setLevel(logging.INFO)
+
+def _log_to_file(path):
+    """Write ChunkLoader log message to the own file."""
+    fh = logging.FileHandler('chunk_loader.log')
+    LOGGER.addHandler(fh)
+    LOGGER.setLevel(logging.INFO)
+
+
+# Always on for now. ASYNC_TODO: command line option for this?
+_log_to_file('chunk_loader.log')
 
 # We convert slices to tuple for hashing.
 SliceTuple = Tuple[int, int, int]
 
-# ChunkCache size as a fraction of total RAM
+# ChunkCache size as a fraction of total RAM.
 CACHE_MEM_FRACTION = 0.1
 
 
@@ -182,6 +191,7 @@ class ChunkLoader:
         self.executor = futures.ThreadPoolExecutor(
             max_workers=self.NUM_WORKER_THREADS
         )
+
         # Maps data_id to futures for that layer.
         self.futures: Dict[int, List[futures.Future]] = defaultdict(list)
         self.cache = ChunkCache()
@@ -200,14 +210,15 @@ class ChunkLoader:
 
         Otherwise an asynchronous load is requested and None is returned.
         The load will be performed in a worker thread and later
-        Layer.chunk_loaded() will be called in the GUI thread.
+        Layer.chunk_loaded() will be called in the GUI thread with the
+        satisfied result.
 
         Parameters
         ----------
         request : ChunkRequest
             Contains the array to load from and related info.
 
-        Optional[ChunkRequest]
+        ChunkRequest, optional
             The satisfied ChunkRequest or None indicating an async load.
         """
         if self.synchronous:
