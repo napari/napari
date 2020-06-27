@@ -1,14 +1,8 @@
-import pytest
 import numpy as np
 
 import napari
 from napari import Viewer
 from napari.layers import Image, Labels, Points, Shapes, Vectors, Surface
-from napari.utils.chunk_loader import CHUNK_LOADER
-
-sync_only = pytest.mark.skipif(
-    CHUNK_LOADER.synchronous, reason="test is sync only"
-)
 
 """
 Used as pytest params for testing layer add and view functionality (Layer class, data, ndim)
