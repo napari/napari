@@ -34,11 +34,9 @@ def entrypoint_plugin(tmp_path):
 
 
 # test_plugin_manager fixture is provided by napari_plugin_engine._testsupport
-def test_qt_plugin_list(
-    viewer_factory, test_plugin_manager, entrypoint_plugin
-):
+def test_qt_plugin_list(test_plugin_manager, entrypoint_plugin):
     """Make sure the plugin list viewer works and has the test plugins."""
-    view, viewer = viewer_factory()
+
     with temp_path_additions(entrypoint_plugin):
         test_plugin_manager.discover(entry_point='app.plugin')
         assert 'a_plugin' in test_plugin_manager.plugins

@@ -13,9 +13,10 @@ from napari._tests.utils import (
 )
 
 
-def test_viewer(viewer_factory):
+def test_viewer(make_test_viewer):
     """Test instantiating viewer."""
-    view, viewer = viewer_factory()
+    viewer = make_test_viewer()
+    view = viewer.window.qt_viewer
 
     assert viewer.title == 'napari'
     assert view.viewer == viewer
@@ -52,7 +53,7 @@ def test_viewer(viewer_factory):
     # Window.close() method.
 
 
-@pytest.mark.first  # provided by pytest-ordering
+@pytest.mark.run(order=1)  # provided by pytest-ordering
 def test_no_qt_loop():
     """Test informative error raised when no Qt event loop exists.
 
@@ -68,19 +69,19 @@ def test_no_qt_loop():
 
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
 @pytest.mark.parametrize('visible', [True, False])
-def test_add_layer(viewer_factory, layer_class, data, ndim, visible):
-    view, viewer = viewer_factory()
+def test_add_layer(make_test_viewer, layer_class, data, ndim, visible):
+    viewer = make_test_viewer()
     layer = add_layer_by_type(viewer, layer_class, data, visible=visible)
-    check_viewer_functioning(viewer, view, data, ndim)
+    check_viewer_functioning(viewer, viewer.window.qt_viewer, data, ndim)
 
     # Run all class key bindings
     for func in layer.class_keymap.values():
         func(layer)
 
 
-def test_screenshot(viewer_factory):
+def test_screenshot(make_test_viewer):
     """Test taking a screenshot."""
-    view, viewer = viewer_factory()
+    viewer = make_test_viewer()
 
     np.random.seed(0)
     # Add image
@@ -112,9 +113,9 @@ def test_screenshot(viewer_factory):
     assert screenshot.ndim == 3
 
 
-def test_update(viewer_factory):
+def test_update(make_test_viewer):
     data = np.random.random((512, 512))
-    view, viewer = viewer_factory()
+    viewer = make_test_viewer()
     layer = viewer.add_image(data)
 
     def layer_update(*, update_period, num_updates):
@@ -150,9 +151,9 @@ def test_update(viewer_factory):
         )
 
 
-def test_changing_theme(viewer_factory):
+def test_changing_theme(make_test_viewer):
     """Test instantiating viewer."""
-    view, viewer = viewer_factory()
+    viewer = make_test_viewer()
     assert viewer.palette['folder'] == 'dark'
 
     viewer.theme = 'light'
@@ -163,10 +164,10 @@ def test_changing_theme(viewer_factory):
 
 
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
-def test_roll_transpose_update(viewer_factory, layer_class, data, ndim):
+def test_roll_transpose_update(make_test_viewer, layer_class, data, ndim):
     """Check that transpose and roll preserve correct transform sequence."""
 
-    view, viewer = viewer_factory()
+    viewer = make_test_viewer()
 
     np.random.seed(0)
 

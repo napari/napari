@@ -72,7 +72,7 @@ def qtbot(qtbot):
 
 
 @pytest.fixture(scope="function")
-def viewer_factory(qtbot, request):
+def make_test_viewer(qtbot, request):
     viewers: List[Viewer] = []
 
     def actual_factory(*model_args, **model_kwargs):
@@ -81,8 +81,7 @@ def viewer_factory(qtbot, request):
         )
         viewer = Viewer(*model_args, **model_kwargs)
         viewers.append(viewer)
-        view = viewer.window.qt_viewer
-        return view, viewer
+        return viewer
 
     yield actual_factory
 
