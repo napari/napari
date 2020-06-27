@@ -38,21 +38,42 @@ except ImportError:
 
 
 def pytest_addoption(parser):
-    """An option to show viewers during tests. (Hidden by default).
+    """Add our command line options.
 
+    --show-viewer
+        Show viewers during tests. (Hidden by default).
+
+    --sync_only
+        Run only synchronous tests, instead of both types.
+
+    --async_only
+        Run only synchronous tests, instead of both types.
+
+    Notes
+    -----
     Showing viewers decreases test speed by about %18.  Note, due to the
-    placement of this conftest.py file, you must specify the napari folder (in
-    the pytest command) to use this flag.
-
-    Example
-    -------
-    $ pytest napari --show-viewer
+    placement of this conftest.py file, you must specify the napari folder
+    (in the pytest command) to use this flag.
     """
     parser.addoption(
         "--show-viewer",
         action="store_true",
         default=False,
         help="don't show viewer during tests",
+    )
+
+    parser.addoption(
+        "--sync_only",
+        action="store_true",
+        default=False,
+        help="run only synchronous tests",
+    )
+
+    parser.addoption(
+        "--async_only",
+        action="store_true",
+        default=False,
+        help="run only asynchronous tests",
     )
 
 
@@ -299,14 +320,23 @@ def single_tiff():
     params=[True, False], ids=["sync", "async"], scope="session", autouse=True
 )
 def configure_loading(request):
+    """We do two passes through the test: sync and then async."""
     with synchronous_loading(request.param):
         yield
 
 
 @pytest.fixture(autouse=True)
-def skip_sync_only(request):
-    async_load = not CHUNK_LOADER.synchronous
-    if async_load and request.node.get_closest_marker('sync_only'):
+def skip_sync_async(request):
+    """Skip tests depending on our sync/async settings."""
+    if CHUNK_LOADER.synchronous:
+        if request.config.getoption("--async_only"):
+            # Currently doing sync loads, but user asked for async only.
+            pytest.skip("running with --async_only")
+    elif request.config.getoption("--sync_only"):
+        # Currently doing async loads, but user asked for sync only.
+        pytest.skip("running with --sync_only")
+    elif request.node.get_closest_marker('sync_only'):
+        # Currently doing async loads, but this test is sync only.
         pytest.skip("test is sync only")
 
 
