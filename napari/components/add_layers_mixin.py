@@ -48,7 +48,7 @@ class AddLayersMixin:
         layer : :class:`napari.layers.Layer` or list
             The layer that was added (same as input).
         """
-        layer.event_handler.register_component_to_update(self)
+        layer.event_handler.register_listener(self)
 
         layer.dims.events.ndisplay.connect(self._on_layers_change)
         layer.dims.events.order.connect(self._on_layers_change)

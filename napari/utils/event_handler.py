@@ -14,7 +14,7 @@ class EventHandler:
         """
         self.components_to_update = [component] if component else []
 
-    def register_component_to_update(self, component):
+    def register_listener(self, component):
         """Register a component to listen to emitted events.
 
         Parameters

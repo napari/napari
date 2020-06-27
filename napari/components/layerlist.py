@@ -1,6 +1,6 @@
 from typing import Optional, List
 from ..layers import Layer
-from ..utils.naming import force_name_unique
+from ..utils.naming import force_unique_name
 from ..utils.list import ListModel
 
 
@@ -9,9 +9,9 @@ def _add(event):
     layers = event.source
     layer = event.item
     # Coerce name into being unique in layer list
-    layer.name = force_name_unique(layer.name, [l.name for l in layers[:-1]])
+    layer.name = force_unique_name(layer.name, [l.name for l in layers[:-1]])
     # Register layer event handler
-    layer.event_handler.register_component_to_update(layers)
+    layer.event_handler.register_listener(layers)
     # Unselect all other layers
     layers.unselect_all(ignore=layer)
 
@@ -61,9 +61,9 @@ class LayerList(ListModel):
             Tuple of old name and new name.
         """
         old_name, new_name = value
-        unique_name = force_name_unique(new_name, [l.name for l in self])
-        if new_name != unique_name:
-            self[old_name].name = unique_name
+        unique_name = force_unique_name(new_name, [l.name for l in self])
+        # Re-emit unique name
+        self[old_name].events.name(unique_name)
 
     @property
     def selected(self):

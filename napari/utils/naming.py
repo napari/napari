@@ -77,7 +77,7 @@ def magic_name(value, *, path_prefix):
             return name
 
 
-def force_name_unique(name, names):
+def force_unique_name(name, names):
     """Force a given name to be made unique in the list of names.
 
     The name is made unique by appending an index to it, for example
@@ -98,4 +98,4 @@ def force_name_unique(name, names):
     if name not in names:
         return name
     else:
-        return force_name_unique(inc_name_count(name), names)
+        return force_unique_name(inc_name_count(name), names)

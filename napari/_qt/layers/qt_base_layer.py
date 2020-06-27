@@ -31,7 +31,11 @@ class QtLayerControls(QFrame):
         super().__init__()
 
         self.events = EmitterGroup(
-            source=self, auto_connect=False, blending=Event, opacity=Event,
+            source=self,
+            auto_connect=False,
+            blending=Event,
+            opacity=Event,
+            status=Event,
         )
 
         # When the EVH refactor #1376 is done we might not even need the layer
@@ -40,7 +44,7 @@ class QtLayerControls(QFrame):
         # and connecting outside this class and never even need to pass the
         # layer to this class.
         self.layer = layer
-        self.layer.event_handler.register_component_to_update(self)
+        self.layer.event_handler.register_listener(self)
         self.events.connect(self.layer.event_handler.on_change)
 
         self.setObjectName('layer')
@@ -58,19 +62,18 @@ class QtLayerControls(QFrame):
         sld.setMinimum(0)
         sld.setMaximum(100)
         sld.setSingleStep(1)
-
         sld.valueChanged.connect(lambda v: self.events.opacity(v / 100))
         self.opacitySlider = sld
-        self._on_opacity_change(self.layer.opacity)
 
         blend_comboBox = QComboBox(self)
         blend_comboBox.addItems(Blending.keys())
-        index = blend_comboBox.findText(
-            self.layer.blending, Qt.MatchFixedString
-        )
-        blend_comboBox.setCurrentIndex(index)
         blend_comboBox.activated[str].connect(self.events.blending)
         self.blendComboBox = blend_comboBox
+
+        # Once EVH refactor is done, these can be moved to an initialization
+        # outside of this object
+        self._on_opacity_change(self.layer.opacity)
+        self._on_blending_change(self.layer.blending)
 
     def _on_opacity_change(self, value):
         """Receive layer model opacity change event and update opacity slider.

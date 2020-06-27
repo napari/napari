@@ -51,7 +51,7 @@ class VispyBaseLayer(ABC):
         # outside this class and never even need to pass the layer to this
         # class.
         self.layer = layer
-        self.layer.event_handler.register_component_to_update(self)
+        self.layer.event_handler.register_listener(self)
 
         self.node = node
 

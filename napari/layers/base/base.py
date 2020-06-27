@@ -262,6 +262,8 @@ class Layer(KeymapProvider, ABC):
         # if the name is unique and change it if necessary.
         old_name = copy(self.name)
         self.events.name_unique((old_name, value))
+        # If the name is unchanged that means no name_unique listener was
+        # present and so emit a normal name change event
         if self.name == old_name:
             self.events.name(value)
 

@@ -13,7 +13,6 @@ from qtpy.QtWidgets import (
 )
 from qtpy.QtGui import QDrag, QImage, QPixmap
 import numpy as np
-from copy import copy
 from ..utils.event import Event, EmitterGroup
 
 
@@ -496,7 +495,7 @@ class QtLayerWidget(QFrame):
         # and connecting outside this class and never even need to pass the
         # layer to this class.
         self.layer = layer
-        self.layer.event_handler.register_component_to_update(self)
+        self.layer.event_handler.register_listener(self)
         self.events.connect(self.layer.event_handler.on_change)
 
         self.setObjectName('layer')
@@ -509,31 +508,25 @@ class QtLayerWidget(QFrame):
         tb.setObjectName('thumbnail')
         tb.setToolTip('Layer thumbnail')
         self.thumbnailLabel = tb
-        self._on_thumbnail_change(self.layer.thumbnail)
         self.layout.addWidget(tb)
 
         cb = QCheckBox(self)
         cb.setObjectName('visibility')
         cb.setToolTip('Layer visibility')
-        cb.setChecked(self.layer.visible)
         cb.setProperty('mode', 'visibility')
         cb.stateChanged[int].connect(self.events.visible)
         self.visibleCheckBox = cb
         self.layout.addWidget(cb)
 
         textbox = QLineEdit(self)
-        textbox.setText(layer.name)
-        textbox.home(False)
-        textbox.setToolTip(self.layer.name)
         textbox.setAcceptDrops(False)
         textbox.setEnabled(True)
         textbox.editingFinished.connect(self.changeText)
         self.nameTextBox = textbox
+        self.nameTextBox.oldText = ''
         self.layout.addWidget(textbox)
 
         ltb = QLabel(self)
-        layer_type = type(layer).__name__
-        ltb.setObjectName(layer_type)
         ltb.setProperty('layer_type_label', True)
         ltb.setToolTip('Layer type')
         self.typeLabel = ltb
@@ -541,14 +534,32 @@ class QtLayerWidget(QFrame):
 
         msg = 'Click to select\nDrag to rearrange'
         self.setToolTip(msg)
+
+        # Once EVH refactor is done, these can be moved to an initialization
+        # outside of this object
+        self._set_layer_type(type(self.layer).__name__)
         self._on_selected_change(self.layer.selected)
+        self._on_thumbnail_change(self.layer.thumbnail)
+        self._on_visible_change(self.layer.visible)
+        self._on_name_change(self.layer.name)
+
+    def _set_layer_type(self, layer_type):
+        """Set layer type.
+
+        Parameters
+        ----------
+        layer_type : str
+            Type of layer, must be one of the napari supported layer types.
+        """
+        self.typeLabel.setObjectName(layer_type)
 
     def _on_selected_change(self, state):
-        """Select layer widget.
+        """Update selected status of the layer widget.
 
         Parameters
         ----------
         state : bool
+            Layer selected status.
         """
         self.setProperty('selected', state)
         self.nameTextBox.setEnabled(state)
@@ -557,14 +568,13 @@ class QtLayerWidget(QFrame):
 
     def changeText(self):
         """Update layer name attribute using layer name textbox contents."""
-        value = self.nameTextBox.text()
-        if self.layer.name == value:
+        name = self.nameTextBox.text()
+        old_name = self.nameTextBox.oldText
+        if old_name == name:
             return
-        old_name = copy(self.layer.name)
-        self.events.name_unique((old_name, value))
-        if self.layer.name == old_name:
-            self.events.name(value)
-        self.nameTextBox.setToolTip(self.layer.name)
+        self.events.name_unique((old_name, name))
+        self.nameTextBox.oldText = self.nameTextBox.text()
+
         # Prevent retriggering during clearing of focus
         self.nameTextBox.blockSignals(True)
         self.nameTextBox.clearFocus()
@@ -622,7 +632,9 @@ class QtLayerWidget(QFrame):
             Name of the layer.
         """
         self.nameTextBox.setText(text)
+        self.nameTextBox.setToolTip(text)
         self.nameTextBox.home(False)
+        self.nameTextBox.oldText = text
 
     def _on_visible_change(self, state):
         """Toggle visibility of the layer.
