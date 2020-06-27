@@ -41,19 +41,21 @@ def pytest_addoption(parser):
     """Add our command line options.
 
     --show-viewer
-        Show viewers during tests. (Hidden by default).
+        Show viewers during tests, they are hidden by default. Showing viewers
+        decreases test speed by about %18.
 
     --sync_only
         Run only synchronous tests, instead of both types.
 
     --async_only
-        Run only synchronous tests, instead of both types.
+        Run only asynchronous tests, instead of both types.
 
-    Notes
-    -----
-    Showing viewers decreases test speed by about %18.  Note, due to the
-    placement of this conftest.py file, you must specify the napari folder
-    (in the pytest command) to use this flag.
+    Example
+    -------
+    pytest napari --show-viewer
+
+    Due to the placement of this conftest.py file, you must specify the
+    napari folder (in the pytest command) to use these flags.
     """
     parser.addoption(
         "--show-viewer",
