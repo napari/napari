@@ -6,7 +6,6 @@ from copy import copy
 
 import numpy as np
 
-from ..layer_event_handler import LayerEventHandler
 from ...components import Dims
 from ...utils.dask_utils import configure_dask
 from ...utils.event import EmitterGroup, Event
@@ -14,8 +13,9 @@ from ...utils.key_bindings import KeymapProvider
 from ...utils.misc import ROOT_DIR
 from ...utils.naming import magic_name
 from ...utils.status_messages import format_float, status_format
-from ..transforms import ScaleTranslate, TransformChain
+from ...utils.event_handler import EventHandler
 from ..utils.layer_utils import compute_multiscale_level, convert_to_uint8
+from ..transforms import ScaleTranslate, TransformChain
 from ._base_constants import Blending
 
 
@@ -200,7 +200,7 @@ class Layer(KeymapProvider, ABC):
         else:
             self._name = name
 
-        self.event_handler = LayerEventHandler(component=self)
+        self.event_handler = EventHandler(component=self)
 
         self.events = EmitterGroup(
             source=self,
