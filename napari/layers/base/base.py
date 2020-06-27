@@ -257,6 +257,9 @@ class Layer(KeymapProvider, ABC):
     def name(self, value):
         if self.name == value:
             return
+        # When the layer is used in the layer list the name must be unique.
+        # Emitting the name_unique event first allows the layer list to check
+        # if the name is unique and change it if necessary.
         old_name = copy(self.name)
         self.events.name_unique((old_name, value))
         if self.name == old_name:

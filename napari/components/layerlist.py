@@ -46,6 +46,20 @@ class LayerList(ListModel):
         return ListModel(self._basetype, iterable, self._lookup)
 
     def _on_name_unique_change(self, value):
+        """Receive layer name tuple and update the name if is already in list.
+
+        As the layer list can be indexed by name each layer must have a unique
+        name to ensure that there is only one layer corresponding to every
+        name. This method updates the name to be unique if it is not already.
+
+        The name is made unique by appending an index to it, for example
+        'Image' -> 'Image [1]' or adding to the index, say 'Image [2]'.
+
+        Parameters
+        ----------
+        value : 2-tuple of str
+            Tuple of old name and new name.
+        """
         old_name, new_name = value
         unique_name = force_name_unique(new_name, [l.name for l in self])
         if new_name != unique_name:

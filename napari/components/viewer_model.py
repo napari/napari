@@ -442,24 +442,54 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
     def _on_data_change(self, value):
         self._on_layers_change(None)
 
-    def _on_status_change(self, value):
-        """Set the viewer status with the `value` string."""
-        self.status = value
+    def _on_status_change(self, text):
+        """Receive layer status change event and update viewer status.
 
-    def _on_help_change(self, value):
-        """Set the viewer help with the `value` string."""
-        self.help = value
+        Parameters
+        ----------
+        text : str
+            Viewer status.
+        """
+        self.status = text
 
-    def _on_interactive_change(self, value):
-        """Set the viewer interactivity with the `value` bool."""
-        self.interactive = value
+    def _on_help_change(self, text):
+        """Receive layer help change event and update viewer help.
 
-    def _on_cursor_change(self, value):
-        """Set the viewer cursor with the `value` string."""
-        self.cursor = value
+        Parameters
+        ----------
+        text : str
+            Viewer help.
+        """
+        self.help = text
+
+    def _on_interactive_change(self, state):
+        """Receive layer interactivity event and update viewer interactivity.
+
+        Parameters
+        ----------
+        state : bool
+            Viewer interactivity.
+        """
+        self.interactive = state
+
+    def _on_cursor_change(self, text):
+        """Receive layer cursor change event and update viewer cursor.
+
+        Parameters
+        ----------
+        text : str
+            Cursor name.
+        """
+        self.cursor = text
 
     def _on_cursor_size_change(self, value):
-        """Set the viewer cursor_size with the `cursor_size` int."""
+        """Receive layer cursor size change and update viewer cursor size.
+
+        Parameters
+        ----------
+        value : int
+            Cursor size.
+        """
         self.cursor_size = value
 
     def grid_view(self, n_row=None, n_column=None, stride=1):

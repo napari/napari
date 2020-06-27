@@ -25,7 +25,9 @@ class LayerEventHandler(EventHandler):
         """
         name = event.type
         logger.debug(f"event: {name}")
-        try:  # until refactor on all layers is complete, not all events will have a value property
+        # until refactor on all layers is complete, not all events will have a
+        # value property
+        try:
             value = event.value
             logger.debug(f" value: {value}")
         except AttributeError:

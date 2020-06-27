@@ -81,7 +81,7 @@ class QtBaseImageControls(QtLayerControls):
         self.colorbarLabel.setObjectName('colorbar')
         self.colorbarLabel.setToolTip('Colorbar')
 
-        self._on_colormap_change(self.layer.colormap)
+        self._on_colormap_change(self.layer.colormap[0])
 
     def _clim_mousepress(self, event):
         """Update the slider, or, on right-click, pop-up an expanded slider.
@@ -138,10 +138,10 @@ class QtBaseImageControls(QtLayerControls):
 
         Parameters
         ----------
-        value : tuple
-            Tuple of colormap name and VisPy Colormap object.
+        value : text
+            Colormap name.
         """
-        name = value[0]
+        name = value if value else self.layer.colormap[0]
         if name not in self.colormapComboBox._allitems:
             self.colormapComboBox._allitems.add(name)
             self.colormapComboBox.addItem(name)

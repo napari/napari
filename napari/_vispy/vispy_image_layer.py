@@ -89,15 +89,51 @@ class VispyImageLayer(VispyBaseLayer):
         self.node.update()
 
     def _on_interpolation_change(self, value):
+        """Receive layer model isosurface change event and update the visual.
+
+        Parameters
+        ----------
+        value : float
+            Iso surface threshold value, between 0 and 1.
+        """
         self.node.interpolation = value
 
     def _on_rendering_change(self, value):
+        """Receive layer model rendering change event and update dropdown menu.
+
+        Parameters
+        ----------
+        text : str
+            Rendering mode used by VisPy.
+            Selects a preset rendering mode in VisPy that determines how
+            volume is displayed:
+            * translucent: voxel colors are blended along the view ray until
+              the result is opaque.
+            * mip: maxiumum intensity projection. Cast a ray and display the
+              maximum value that was encountered.
+            * additive: voxel colors are added along the view ray until
+              the result is saturated.
+            * iso: isosurface. Cast a ray until a certain threshold is
+              encountered. At that location, lighning calculations are
+              performed to give the visual appearance of a surface.
+            * attenuated_mip: attenuated maxiumum intensity projection. Cast a
+              ray and attenuate values based on integral of encountered values,
+              display the maximum value that was encountered after attenuation.
+              This will make nearer objects appear more prominent.
+        """
         if self.layer.dims.ndisplay == 3:
             self.node.method = value
             self._on_iso_threshold_change(self.layer.iso_threshold)
             self._on_attenuation_change(self.layer.attenuation)
 
     def _on_colormap_change(self, value):
+        """Receive layer model colormap change event and update the visual.
+
+        Parameters
+        ----------
+        value : text
+            Colormap name.
+        """
         cmap = self.layer.colormap[1]
         if self.layer.gamma != 1:
             # when gamma!=1, we instantiate a new colormap
@@ -112,15 +148,36 @@ class VispyImageLayer(VispyBaseLayer):
         self.node.cmap = cmap
 
     def _on_contrast_limits_change(self, value):
+        """Receive layer model contrast limits change event and update visual.
+
+        Parameters
+        ----------
+        value : tuple
+            Contrast limits.
+        """
         if self.layer.dims.ndisplay == 2:
             self.node.clim = value
         else:
             self._on_slice_data_change()
 
     def _on_gamma_change(self, value):
+        """Receive the layer model gamma change event and update the visual.
+
+        Parameters
+        ----------
+        value : float
+            Gamma value.
+        """
         self._on_colormap_change(self.layer.colormap)
 
     def _on_iso_threshold_change(self, value):
+        """Receive layer model isosurface change event and update the visual.
+
+        Parameters
+        ----------
+        value : float
+            Iso surface threshold value, between 0 and 1.
+        """
         if self.layer.dims.ndisplay == 2:
             return
         rendering = Rendering(self.layer.rendering)
@@ -128,6 +185,13 @@ class VispyImageLayer(VispyBaseLayer):
             self.node.threshold = float(value)
 
     def _on_attenuation_change(self, value):
+        """Receive layer model attenuation change event and update the visual.
+
+        Parameters
+        ----------
+        value : float
+            Attenuation value, between 0 and 2.
+        """
         if self.layer.dims.ndisplay == 2:
             return
         rendering = Rendering(self.layer.rendering)
