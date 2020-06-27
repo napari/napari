@@ -1356,6 +1356,10 @@ class Shapes(Layer):
         if edge_width is None:
             edge_width = self.current_edge_width
 
+        if np.array(data[0]).ndim == 1:
+            # If a single array for a shape has been passed turn into list
+            data = [data]
+
         n_new_shapes = len(data)
 
         if edge_color is None:
@@ -1442,6 +1446,9 @@ class Shapes(Layer):
             applied to each shape otherwise the same value will be used for all
             shapes.
         """
+        if np.array(data[0]).ndim == 1:
+            # If a single array for a shape has been passed turn into list
+            data = [data]
 
         n_shapes = len(data)
         with self.block_update_properties():
@@ -1541,7 +1548,6 @@ class Shapes(Layer):
             if np.array(data[0]).ndim == 1:
                 # If a single array for a shape has been passed turn into list
                 data = [data]
-
             # transform the colors
             transformed_ec = transform_color_with_defaults(
                 num_entries=len(data),
