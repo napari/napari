@@ -109,12 +109,13 @@ class ImageSlice:
         # Now "showing" this slice, even if it hasn't loaded yet.
         self.current_indices = request.indices
 
-        # If ChunkLoader.synchronous or the chunk is cached, this
-        # will satisfy the request right away.
+        # If ChunkLoader is synchronous or the chunk is cached, this will
+        # satisfy the request right away, otherwise it will initiate an
+        # async load in a worker thread.
         satisfied_request = CHUNK_LOADER.load_chunk(request)
 
         if satisfied_request is not None:
-            self.chunk_loaded(satisfied_request)  # Use right away.
+            self.chunk_loaded(satisfied_request)  # Use it right away.
 
     def chunk_loaded(self, request: ChunkRequest) -> None:
         """Chunk was loaded, show this new data.

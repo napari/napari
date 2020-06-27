@@ -5,7 +5,6 @@ import xarray as xr
 import pytest
 from vispy.color import Colormap
 from napari.layers import Image
-from napari import synchronous_loading
 
 
 def test_random_image():
@@ -510,6 +509,7 @@ def test_metadata():
     assert layer.metadata == {'unit': 'cm'}
 
 
+@pytest.mark.sync_only
 def test_value():
     """Test getting the value of the data at the current coordinates.
 
@@ -518,11 +518,10 @@ def test_value():
     """
     np.random.seed(0)
     data = np.random.random((10, 15))
-    with synchronous_loading():
-        layer = Image(data)
-        value = layer.get_value()
-        assert layer.coordinates == (0, 0)
-        assert value == data[0, 0]
+    layer = Image(data)
+    value = layer.get_value()
+    assert layer.coordinates == (0, 0)
+    assert value == data[0, 0]
 
 
 def test_message():
@@ -544,6 +543,7 @@ def test_thumbnail():
     assert layer.thumbnail.shape == layer._thumbnail_shape
 
 
+@pytest.mark.sync_only
 def test_narrow_thumbnail():
     """Ensure that the thumbnail generation works for very narrow images.
 
@@ -554,11 +554,10 @@ def test_narrow_thumbnail():
     the data from the thumbnail.
     """
     image = np.random.random((1, 2048))
-    with synchronous_loading():
-        layer = Image(image)
-        layer._update_thumbnail()
-        thumbnail = layer.thumbnail[..., :3]  # ignore alpha channel
-        middle_row = thumbnail.shape[0] // 2
+    layer = Image(image)
+    layer._update_thumbnail()
+    thumbnail = layer.thumbnail[..., :3]  # ignore alpha channel
+    middle_row = thumbnail.shape[0] // 2
     assert np.all(thumbnail[: middle_row - 1] == 0)
     assert np.all(thumbnail[middle_row + 1 :] == 0)
     assert np.mean(thumbnail[middle_row - 1 : middle_row + 1]) > 0

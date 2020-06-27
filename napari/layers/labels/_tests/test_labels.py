@@ -1,8 +1,8 @@
 import numpy as np
+import pytest
 
 from vispy.color import Colormap
 
-from napari import synchronous_loading
 from napari.layers import Labels
 
 
@@ -206,6 +206,7 @@ def test_num_colors():
     assert layer.num_colors == 60
 
 
+@pytest.mark.sync_only
 def test_properties():
     """Test adding labels with properties."""
     np.random.seed(0)
@@ -218,27 +219,26 @@ def test_properties():
     properties = {'class': ['Background'] + [f'Class {i}' for i in range(20)]}
     label_index = {i: i for i in range(len(properties['class']))}
 
-    with synchronous_loading():
-        layer = Labels(data, properties=properties)
-        assert isinstance(layer.properties, dict)
-        assert layer.properties == properties
-        assert layer._label_index == label_index
+    layer = Labels(data, properties=properties)
+    assert isinstance(layer.properties, dict)
+    assert layer.properties == properties
+    assert layer._label_index == label_index
 
-        current_label = layer.get_value()
-        layer_message = layer.get_message()
-        assert layer_message.endswith(f'Class {current_label - 1}')
+    current_label = layer.get_value()
+    layer_message = layer.get_message()
+    assert layer_message.endswith(f'Class {current_label - 1}')
 
-        properties = {'class': ['Background']}
-        layer = Labels(data, properties=properties)
-        layer_message = layer.get_message()
-        assert layer_message.endswith("[No Properties]")
+    properties = {'class': ['Background']}
+    layer = Labels(data, properties=properties)
+    layer_message = layer.get_message()
+    assert layer_message.endswith("[No Properties]")
 
-        properties = {'class': ['Background', 'Class 12'], 'index': [0, 12]}
-        label_index = {0: 0, 12: 1}
-        layer = Labels(data, properties=properties)
-        layer_message = layer.get_message()
-        assert layer._label_index == label_index
-        assert layer_message.endswith('Class 12')
+    properties = {'class': ['Background', 'Class 12'], 'index': [0, 12]}
+    label_index = {0: 0, 12: 1}
+    layer = Labels(data, properties=properties)
+    layer_message = layer.get_message()
+    assert layer._label_index == label_index
+    assert layer_message.endswith('Class 12')
 
 
 def test_colormap():
@@ -398,13 +398,13 @@ def test_fill():
     assert np.unique(layer.data[5:10, 5:10]) == 2
 
 
+@pytest.mark.sync_only
 def test_value():
     """Test getting the value of the data at the current coordinates."""
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
-    with synchronous_loading():
-        layer = Labels(data)
-        value = layer.get_value()
+    layer = Labels(data)
+    value = layer.get_value()
     assert layer.coordinates == (0, 0)
     assert value == data[0, 0]
 

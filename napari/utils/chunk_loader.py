@@ -57,7 +57,7 @@ def _index_to_tuple(index: Union[int, slice]) -> Union[int, SliceTuple]:
     return index
 
 
-def _get_synchronous() -> bool:
+def _get_synchronous_default() -> bool:
     """
     Return True if ChunkManager should load data synchronously.
 
@@ -164,16 +164,21 @@ class ChunkCache:
 
 class ChunkLoader:
     """Load chunks for rendering.
+
+    Attributes
+    ----------
+    synchronous : bool
+        If True the ChunkLoader is essentially disabled, loads are done
+        immediately and in the GUI thread. If False loads are done
+        asynchronously in a worker thread.
     """
 
     NUM_WORKER_THREADS = 1
 
-    # If loading is synchronous then the ChunkLoader is essentially
-    # disabled, load_chunk() will immediately do the load in the GUI
-    # thread, then it will return the satisfied request.
-    synchronous = _get_synchronous()
-
     def __init__(self):
+        self.synchronous = _get_synchronous_default()
+
+        LOGGER.info("ChunkLoader.__init__ synchronous=%d", self.synchronous)
         self.executor = futures.ThreadPoolExecutor(
             max_workers=self.NUM_WORKER_THREADS
         )
@@ -190,12 +195,12 @@ class ChunkLoader:
     def load_chunk(self, request: ChunkRequest) -> Optional[ChunkRequest]:
         """Load the array in the given ChunkRequest.
 
-        If ChunkLoader.synchronous_loading is set the load is performed
-        immediately in the GUI thread and the satisfied request is returned.
+        If ChunkLoader is synchronous the load is performed immediately in
+        the GUI thread and the satisfied request is returned.
 
         Otherwise an asynchronous load is requested and None is returned.
-        The load will be performed in a worker thread. Later Layer.chunk_loaded()
-        will be called in the GUI thread.
+        The load will be performed in a worker thread and later
+        Layer.chunk_loaded() will be called in the GUI thread.
 
         Parameters
         ----------
@@ -205,7 +210,7 @@ class ChunkLoader:
         Optional[ChunkRequest]
             The satisfied ChunkRequest or None indicating an async load.
         """
-        if ChunkLoader.synchronous:
+        if self.synchronous:
             # Load it immediately right here in the GUI thread.
             request.array = np.asarray(request.array)
             return request
@@ -301,17 +306,17 @@ class ChunkLoader:
 
 
 @contextmanager
-def synchronous_loading():
+def synchronous_loading(enabled):
     """Context object to temporarily disable async loading.
 
-    with synchronous_loading():
+    with synchronous_loading(True):
         layer = Image(data)
         ... use layer ...
     """
-    previous = ChunkLoader.synchronous
-    ChunkLoader.synchronous = True
+    previous = CHUNK_LOADER.synchronous
+    CHUNK_LOADER.synchronous = enabled
     yield
-    ChunkLoader.synchronous = previous
+    CHUNK_LOADER.synchronous = previous
 
 
 CHUNK_LOADER = ChunkLoader()

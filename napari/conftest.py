@@ -17,6 +17,8 @@ from napari.plugins._builtins import (
     napari_write_shapes,
 )
 from napari.utils import io
+from napari import synchronous_loading
+from napari.utils.chunk_loader import CHUNK_LOADER
 
 try:
     from skimage.data import image_fetcher
@@ -294,13 +296,24 @@ def single_tiff():
     return [image_fetcher.fetch('data/multipage.tif')]
 
 
-# To prevent pytest from handling exceptions set NAPARI_PYTEST_RAISE=1.
-#
-# The breaks pytest's error reporting, but it's very useful when running
-# tests in a debugger. The debugger will break right where the exception
-# was raised. Similar to pytest's --pdb or --dbcls flags but will work
-# with any debugger (such as vscode's).
-if os.getenv('NAPARI_PYTEST_RAISE', "0") != "0":
+@pytest.fixture(
+    params=[True, False], ids=["sync", "async"], scope="session", autouse=True
+)
+def configure_loading(request):
+    with synchronous_loading(request.param):
+        yield
+
+
+@pytest.fixture(autouse=True)
+def skip_sync_only(request):
+    async_load = not CHUNK_LOADER.synchronous
+    if async_load and request.node.get_closest_marker('sync_only'):
+        pytest.skip("test is sync only")
+
+
+# _PYTEST_RAISE=1 will prevent pytest from handling exceptions.
+# Use with a debugger that's set to break on "unhandled exceptions".
+if os.getenv('_PYTEST_RAISE', "0") != "0":
 
     @pytest.hookimpl(tryfirst=True)
     def pytest_exception_interact(call):

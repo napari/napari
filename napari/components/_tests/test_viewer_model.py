@@ -4,7 +4,6 @@ import pytest
 from napari.components import ViewerModel
 from napari._tests.utils import good_layer_data
 from napari.utils.colormaps import colormaps
-from napari import synchronous_loading
 
 
 def test_viewer_model():
@@ -254,17 +253,16 @@ def test_new_shapes():
     assert viewer.dims.ndim == 2
 
 
+@pytest.mark.sync_only
 def test_swappable_dims():
     """Test swapping dims after adding layers."""
     viewer = ViewerModel()
     np.random.seed(0)
     image_data = np.random.random((7, 12, 10, 15))
-
-    with synchronous_loading():
-        image_name = viewer.add_image(image_data).name
-        assert np.all(
-            viewer.layers[image_name]._data_view == image_data[0, 0, :, :]
-        )
+    image_name = viewer.add_image(image_data).name
+    assert np.all(
+        viewer.layers[image_name]._data_view == image_data[0, 0, :, :]
+    )
 
     points_data = np.random.randint(6, size=(10, 4))
     viewer.add_points(points_data)
@@ -273,12 +271,10 @@ def test_swappable_dims():
     viewer.add_vectors(vectors_data)
 
     labels_data = np.random.randint(20, size=(7, 12, 10, 15))
-
-    with synchronous_loading():
-        labels_name = viewer.add_labels(labels_data).name
-        assert np.all(
-            viewer.layers[labels_name]._data_raw == labels_data[0, 0, :, :]
-        )
+    labels_name = viewer.add_labels(labels_data).name
+    assert np.all(
+        viewer.layers[labels_name]._data_raw == labels_data[0, 0, :, :]
+    )
 
     # Swap dims
     viewer.dims.order = [0, 2, 1, 3]

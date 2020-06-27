@@ -5,7 +5,7 @@ import dask.array as da
 import numpy as np
 import pytest
 
-from napari import layers, synchronous_loading, utils, viewer
+from napari import layers, utils, viewer
 
 dask_version = tuple(map(int, dask.__version__.split(".")))
 
@@ -84,45 +84,40 @@ def delayed_dask_stack():
     return output
 
 
+@pytest.mark.sync_only
 @pytest.mark.skipif(
     dask_version < (2, 15, 0), reason="requires dask 2.15.0 or higher"
 )
 def test_dask_optimized_slicing(delayed_dask_stack, monkeypatch):
     """Test that dask_configure reduces compute with dask stacks."""
 
-    # Synchronous because we are immediately checking that the
-    # delayed_dask_stack has been accessed.
-    with synchronous_loading():
-        # add dask stack to the viewer, making sure to pass multiscale and clims
-        v = viewer.ViewerModel()
-        dask_stack = delayed_dask_stack['stack']
-        v.add_image(dask_stack, multiscale=False, contrast_limits=(0, 1))
-        assert (
-            delayed_dask_stack['calls'] == 1
-        )  # the first stack will be loaded
+    # add dask stack to the viewer, making sure to pass multiscale and clims
+    v = viewer.ViewerModel()
+    dask_stack = delayed_dask_stack['stack']
+    v.add_image(dask_stack, multiscale=False, contrast_limits=(0, 1))
+    assert delayed_dask_stack['calls'] == 1  # the first stack will be loaded
 
-        # changing the Z plane should never incur calls
-        # since the stack has already been loaded (& it is chunked as a 3D array)
-        for i in range(3):
-            v.dims.set_point(1, i)
-            assert (
-                delayed_dask_stack['calls'] == 1
-            )  # still just the first call
+    # changing the Z plane should never incur calls
+    # since the stack has already been loaded (& it is chunked as a 3D array)
+    for i in range(3):
+        v.dims.set_point(1, i)
+        assert delayed_dask_stack['calls'] == 1  # still just the first call
 
-        # changing the timepoint will, of course, incur some compute calls
-        v.dims.set_point(0, 1)
-        assert delayed_dask_stack['calls'] == 2
-        v.dims.set_point(0, 2)
-        assert delayed_dask_stack['calls'] == 3
+    # changing the timepoint will, of course, incur some compute calls
+    v.dims.set_point(0, 1)
+    assert delayed_dask_stack['calls'] == 2
+    v.dims.set_point(0, 2)
+    assert delayed_dask_stack['calls'] == 3
 
-        # but going back to previous timepoints should not, since they are cached
-        v.dims.set_point(0, 1)
-        v.dims.set_point(0, 0)
-        assert delayed_dask_stack['calls'] == 3
-        v.dims.set_point(0, 3)
-        assert delayed_dask_stack['calls'] == 4
+    # but going back to previous timepoints should not, since they are cached
+    v.dims.set_point(0, 1)
+    v.dims.set_point(0, 0)
+    assert delayed_dask_stack['calls'] == 3
+    v.dims.set_point(0, 3)
+    assert delayed_dask_stack['calls'] == 4
 
 
+@pytest.mark.sync_only
 @pytest.mark.skipif(
     dask_version < (2, 15, 0), reason="requires dask 2.15.0 or higher"
 )
@@ -149,29 +144,28 @@ def test_dask_unoptimized_slicing(delayed_dask_stack, monkeypatch):
 
     # Synchronous because we are immediately checking that the
     # delayed_dask_stack has been accessed.
-    with synchronous_loading():
-        v.add_image(dask_stack, multiscale=False, contrast_limits=(0, 1))
-        assert delayed_dask_stack['calls'] == 1
+    v.add_image(dask_stack, multiscale=False, contrast_limits=(0, 1))
+    assert delayed_dask_stack['calls'] == 1
 
-        # without optimized dask slicing, we get a new call to the get_array func
-        # (which "re-reads" the full z stack) EVERY time we change the Z plane
-        # even though we've already read this full timepoint.
-        for i in range(3):
-            v.dims.set_point(1, i)
-            assert delayed_dask_stack['calls'] == 1 + i  # 😞
+    # without optimized dask slicing, we get a new call to the get_array func
+    # (which "re-reads" the full z stack) EVERY time we change the Z plane
+    # even though we've already read this full timepoint.
+    for i in range(3):
+        v.dims.set_point(1, i)
+        assert delayed_dask_stack['calls'] == 1 + i  # 😞
 
-        # of course we still incur calls when moving to a new timepoint...
-        v.dims.set_point(0, 1)
-        v.dims.set_point(0, 2)
-        assert delayed_dask_stack['calls'] == 5
+    # of course we still incur calls when moving to a new timepoint...
+    v.dims.set_point(0, 1)
+    v.dims.set_point(0, 2)
+    assert delayed_dask_stack['calls'] == 5
 
-        # without the cache we ALSO incur calls when returning to previously loaded
-        # timepoints 😭
-        v.dims.set_point(0, 1)
-        v.dims.set_point(0, 0)
-        v.dims.set_point(0, 3)
-        # all told, we have 2x as many calls as the optimized version above.
-        assert delayed_dask_stack['calls'] == 8
+    # without the cache we ALSO incur calls when returning to previously loaded
+    # timepoints 😭
+    v.dims.set_point(0, 1)
+    v.dims.set_point(0, 0)
+    v.dims.set_point(0, 3)
+    # all told, we have 2x as many calls as the optimized version above.
+    assert delayed_dask_stack['calls'] == 8
 
 
 def test_dask_cache_resizing(delayed_dask_stack):
