@@ -113,7 +113,8 @@ class QtBaseImageControls(QtLayerControls):
             self.clim_pop.layout.addWidget(reset)
             if fullrange is not None:
                 self.clim_pop.layout.addWidget(fullrange)
-            self.clim_pop.show_at('top', min_length=650)
+            self.clim_pop.move_to('top', min_length=650)
+            self.clim_pop.show()
         else:
             return QHRangeSlider.mousePressEvent(
                 self.contrastLimitsSlider, event
@@ -187,7 +188,7 @@ class QtBaseImageControls(QtLayerControls):
             Event from the Qt context, by default None.
         """
         with qt_signals_blocked(self.gammaSlider):
-            self.gammaSlider.setValue(self.layer.gamma * 100)
+            self.gammaSlider.setValue(int(self.layer.gamma * 100))
 
     def mouseMoveEvent(self, event):
         self.layer.status = self.layer._contrast_limits_msg

@@ -84,7 +84,7 @@ def view_layer_type(layer_type, data):
     data :
         The layer data to view
     """
-    return layer2viewmethod[layer_type](data)
+    return layer2viewmethod[layer_type](data, show=False)
 
 
 def check_viewer_functioning(viewer, view=None, data=None, ndim=2):

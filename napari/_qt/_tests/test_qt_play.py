@@ -97,15 +97,15 @@ def test_animation_thread_once(qtbot):
 
 
 @pytest.fixture()
-def view(viewer_factory):
+def view(make_test_viewer):
     """basic viewer with data that we will use a few times"""
-    view, viewer = viewer_factory()
+    viewer = make_test_viewer()
 
     np.random.seed(0)
     data = np.random.random((10, 10, 15))
     viewer.add_image(data)
 
-    return view
+    return viewer.window.qt_viewer
 
 
 def test_play_raises_index_errors(qtbot, view):

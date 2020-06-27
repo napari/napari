@@ -12,13 +12,15 @@ scientific results.
 
 There are two main types of performance:
 
-**Objective Performance**
-* How long operations take when timed with a stopwatch.
-* Most times will vary based on the data being viewed.
+1. [Objective Performance](#objective-performance)
 
-**Subjective Performance**
-* The user’s experience as it relates to performance.
-* Is the user’s experience pleasant or frustrating? Does napari "seem fast"?
+   * How long operations take when timed with a stopwatch.
+   * Most times will vary based on the data being viewed.
+
+2. [Subjective Performance](#subjective-performance)
+
+   * The user’s experience as it relates to performance.
+   * Is the user’s experience pleasant or frustrating? Does napari "seem fast"?
 
 Both types of performance are important. No amount of slickness can make up for
 an application that is fundamentally too slow. And even a relatively fast
@@ -28,7 +30,7 @@ application can feel clunky or frustrating if not designed well.
 
 How to keep napari objectively fast:
 
-**Focus On Real Use Cases**
+### Focus On Real Use Cases
 
 * Focus on cases that matter to lots of people.
 * It’s easy to waste time optimizing things no one cares about or no one will
@@ -36,27 +38,31 @@ How to keep napari objectively fast:
 * If a dataset is unreasonable or out of scope or fringe, don’t spend too
   many resources trying to make it run fast.
 
-**Always Be Timing**
+### Always Be Timing
+
 * Build timers into the software that always run.
 * If not always visible, power users and developers should be able to toggle them on.
 * This gives people an ambient awareness of how long things take.
 * Allows users to report concrete performance numbers:
-  *  *it seemed slow* → *it ran at 10Hz*.
-  *  *it took a long time* → *it took 2 minutes and 30 seconds*.
+  * *it seemed slow* → *it ran at 10Hz*.
+  * *it took a long time* → *it took 2 minutes and 30 seconds*.
 * Teaches users how different hardware impacts performance.
   * For example seek times with SSD are radically faster than HDD.
   * Become familiar with the impact of local vs. networked file systems.
 
-**Performance System Tests**
+### Performance System Tests
+
 * Create automatic tests that time specific operations in specific known datasets.
 * Time many different operations on a nice selection of different datasets.
 
-**Performance Unit Tests**
+### Performance Unit Tests
+
 * Time one small operation to monitor for regressions.
 * Napari has some of these today as "benchmarks".
 * Interesting to see how different hardware performs as time goes on.
 
-**Run All Tests Every Merge**
+### Run All Tests Every Merge
+
 * Save results to a database maybe using [ASV](https://asv.readthedocs.io/en/stable/index.html).
 * Catch a regression right when it happens and not weeks or
   months later.
@@ -66,7 +72,8 @@ How to keep napari objectively fast:
 
 Napari should strive to have these properties:
 
-**Responsive**
+### Responsive
+
 * React to input one of two ways:
   * The full operation happens right away.
   * The interface clearly indicates the input was received and the operation was
@@ -77,7 +84,8 @@ Napari should strive to have these properties:
 * The UI should never seem dead, the user should never be left wondering if
   napari has crashed.
 
-**Interruptible**
+### Interruptible
+
 * Modeless operations are best. They can interrupted by simply performing some
   other action. For example if imagery is loading in the background you can
   interrupt it just by navigating to somewhere else.
@@ -85,13 +93,15 @@ Napari should strive to have these properties:
   unless they are very short.
 * The user should never feel “trapped”.
 
-**Progressive**
+### Progressive
+
 * Show intermediate results as they become available instead of showing nothing
   until the full result is ready.
 * Sometimes progressive results are better even if they slow things down a bit,
   which is not necessarily intuitive.
 
-**Informative**
+### Informative
+
 * Clearly show what controls are enabled or disabled.
 * If progressive display is not possible, show a progress bar.
 * Show a busy animation as the last resort, never look totally locked up.
@@ -103,7 +113,7 @@ Napari should strive to have these properties:
 
 Performance is never "done" for several reasons:
 
-**New Features**
+### New Features
 
 * The objective and subjective performance of new features should be scrutinized
   before merging to master.
@@ -112,13 +122,13 @@ Performance is never "done" for several reasons:
 * It can be hard to impossible to "add performance in later". The best time to
   ensure the new feature performs well is when the feature is first added.
 
-**Regressions** 
+### Regressions*
 
 * We must be on guard for new features slowing down existing features.
 * New versions of dependencies can slow things down.
 * New hardware generally helps performance but not always.
 
-**Scope Changes**
+### Scope Changes
 
 * As new types of users adopt napari they will have new use cases.
 * Existing users will change their usage over time such as more remote viewing.

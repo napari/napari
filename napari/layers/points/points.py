@@ -282,7 +282,7 @@ class Points(Layer):
             self._properties = {}
             self._property_choices = {}
         elif len(data) > 0:
-            properties = dataframe_to_properties(properties)
+            properties, _ = dataframe_to_properties(properties)
             self._properties = self._validate_properties(properties)
             self._property_choices = {
                 k: np.unique(v) for k, v in properties.items()
@@ -542,7 +542,7 @@ class Points(Layer):
     @properties.setter
     def properties(self, properties: Dict[str, np.ndarray]):
         if not isinstance(properties, dict):
-            properties = dataframe_to_properties(properties)
+            properties, _ = dataframe_to_properties(properties)
         self._properties = self._validate_properties(properties)
         if self._face_color_property and (
             self._face_color_property not in self._properties
@@ -896,11 +896,13 @@ class Points(Layer):
                         new_color_property,
                     )
                     warnings.warn(
-                        '_{attribute}_color_property was not set, setting to: {new_color_property}'
+                        f'_{attribute}_color_property was not set, '
+                        f'setting to: {new_color_property}'
                     )
                 else:
                     raise ValueError(
-                        'There must be a valid Points.properties to use {color_mode}'
+                        'There must be a valid Points.properties to use '
+                        f'{color_mode}'
                     )
 
             # ColorMode.COLORMAP can only be applied to numeric properties

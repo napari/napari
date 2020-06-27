@@ -1,12 +1,17 @@
 import numpy as np
 from unittest.mock import Mock
+import os
 
 
-def test_viewer_mouse_bindings(viewer_factory):
+def test_viewer_mouse_bindings(make_test_viewer):
     """Test adding mouse bindings to the viewer
     """
     np.random.seed(0)
-    view, viewer = viewer_factory(show=True)
+    viewer = make_test_viewer()
+    view = viewer.window.qt_viewer
+
+    if os.getenv("CI"):
+        viewer.show()
 
     mock_press = Mock()
     mock_drag = Mock()
@@ -72,11 +77,15 @@ def test_viewer_mouse_bindings(viewer_factory):
     mock_move.method.assert_not_called()
 
 
-def test_layer_mouse_bindings(viewer_factory):
+def test_layer_mouse_bindings(make_test_viewer):
     """Test adding mouse bindings to a layer that is selected
     """
     np.random.seed(0)
-    view, viewer = viewer_factory(show=True)
+    viewer = make_test_viewer()
+    view = viewer.window.qt_viewer
+
+    if os.getenv("CI"):
+        viewer.show()
 
     layer = viewer.add_image(np.random.random((10, 20)))
     layer.selected = True
@@ -144,11 +153,15 @@ def test_layer_mouse_bindings(viewer_factory):
     mock_move.method.assert_not_called()
 
 
-def test_unselected_layer_mouse_bindings(viewer_factory):
+def test_unselected_layer_mouse_bindings(make_test_viewer):
     """Test adding mouse bindings to a layer that is not selected
     """
     np.random.seed(0)
-    view, viewer = viewer_factory(show=True)
+    viewer = make_test_viewer()
+    view = viewer.window.qt_viewer
+
+    if os.getenv("CI"):
+        viewer.show()
 
     layer = viewer.add_image(np.random.random((10, 20)))
     layer.selected = False

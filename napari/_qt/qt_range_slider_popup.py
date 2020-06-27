@@ -71,7 +71,7 @@ class LabelEdit(QLineEdit):
 
     def update_position(self):
         """Update slider position."""
-        x = self.get_pos() - self.width() / 2
+        x = self.get_pos() - self.width() // 2
         y = self.slider.handle_radius + 12
         self.move(QPoint(x, -y) + self.slider.pos())
 
