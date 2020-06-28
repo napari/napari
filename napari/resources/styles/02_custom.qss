@@ -115,6 +115,9 @@ QtLayerList QScrollBar:down-arrow {
   max-width: 6px;
 }
 
+QtLayerList::item:selected {
+  background-color: {{ current }};
+}
 
 /* controls the area around the canvas */
 QSplitter {
@@ -147,16 +150,12 @@ QtDivider[selected=false] {
 
 QtLayerWidget {
   padding: 0px;
-  background-color: {{ foreground }};
+  background-color: {{ transparent }};
   border-radius: 2px;
   min-height: 32px;
   max-height: 32px;
   min-width: 228px;
   max-width: 228px;
-}
-
-QtLayerWidget[selected="true"] {
-  background-color: {{ current }};
 }
 
 
