@@ -56,12 +56,12 @@ def test_format_text():
 def test_format_text_direct():
     text = 'hi'
     n_text = 5
-    formatted_text = format_text_direct(text, n_text=n_text)
+    formatted_text, text_mode = format_text_direct(text, n_text=n_text)
     expected_text = np.repeat(text, n_text)
     np.testing.assert_equal(formatted_text, expected_text)
 
     text_as_list = n_text * ['hi']
-    formatted_text = format_text_direct(text_as_list, n_text=n_text)
+    formatted_text, text_mode = format_text_direct(text_as_list, n_text=n_text)
     np.testing.assert_equal(formatted_text, expected_text)
 
     with pytest.raises(ValueError):
@@ -72,12 +72,12 @@ def test_format_text_direct():
 def test_format_text_properties_no_matching_props():
     text = 'hi'
     n_text = 5
-    formatted_text = format_text_properties(text, n_text=5)
+    formatted_text, text_mode = format_text_properties(text, n_text=5)
     expected_text = np.repeat(text, n_text)
     np.testing.assert_equal(formatted_text, expected_text)
 
     properties = {'hello': [1, 2, 3, 4, 5]}
-    formatted_text = format_text_properties(
+    formatted_text, text_mode = format_text_properties(
         text, n_text=5, properties=properties
     )
     expected_text = np.repeat(text, n_text)
@@ -93,7 +93,9 @@ def test_format_text_properties():
         'weight': np.array([3, 15.123]),
     }
 
-    formatted_text = format_text_properties(text, n_text, properties)
+    formatted_text, text_mode = format_text_properties(
+        text, n_text, properties
+    )
     expected_text = ['bob', 'jane']
     np.testing.assert_equal(formatted_text, expected_text)
     assert isinstance(formatted_text, np.ndarray)
@@ -108,7 +110,9 @@ def test_format_text_properties_f_string():
         'weight': np.array([3, 15.123]),
     }
 
-    formatted_text = format_text_properties(text, n_text, properties)
+    formatted_text, text_mode = format_text_properties(
+        text, n_text, properties
+    )
     expected_text = [
         'bob has 5 ducks that weigh 3.0 kgs',
         'jane has 5 microscopes that weigh 15.1 kgs',

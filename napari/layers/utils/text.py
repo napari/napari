@@ -1,3 +1,5 @@
+from typing import Union
+
 import numpy as np
 
 from ._text_constants import TextMode
@@ -57,7 +59,7 @@ class TextManager:
         self.font = font
         self.visible = visible
 
-        self.set_text(text, n_text, properties)
+        self._set_text(text, n_text, properties)
 
     @property
     def text(self):
@@ -68,11 +70,11 @@ class TextManager:
 
         self._text = text
 
-    def set_text(self, text, n_text: int, properties: dict = {}):
-        if len(properties) == 0:
-            formatted_text, text_mode = format_text_direct(text, n_text)
-            self._mode = TextMode.DIRECT
+    def _set_text(self, text, n_text: int, properties: dict = {}):
+        if len(properties) == 0 or n_text == 0 or text is None:
+            self._mode = TextMode.NONE
             self._text_format_string = ''
+            self._text = None
         else:
             if isinstance(text, str):
                 formatted_text, text_mode = format_text_properties(
@@ -85,9 +87,8 @@ class TextManager:
             else:
                 formatted_text, text_mode = format_text_direct(text, n_text)
                 self._text_format_string = ''
-
-        self._mode = text_mode
-        self.text = formatted_text
+            self.text = formatted_text
+            self._mode = text_mode
 
     @property
     def rotation(self):
@@ -149,23 +150,21 @@ class TextManager:
         self._mode = TextMode(mode)
 
     def add(self, text, n_text):
-        if self._mode == TextMode.DIRECT:
-            if isinstance(text, str):
-                new_text = np.repeat(text, n_text)
-            else:
-                new_text = text
-        elif self._mode in (TextMode.PROPERTY, TextMode.FORMATTED):
-            # text_property = text[self._text_format_string]
-            # if len(text_property) == 1:
-            #     new_text = np.repeat(text, n_text)
-            # else:
-            #     new_text = text_property
-            # elif self._mode == TextMode.FORMATTED:
+        if self._mode in (TextMode.PROPERTY, TextMode.FORMATTED):
             new_text, _ = format_text_properties(
                 self._text_format_string, n_text=n_text, properties=text
             )
+        elif self._mode == TextMode.NONE:
+            new_text = np.repeat([''], n_text)
 
-        self._text = np.concatenate([self.text, new_text])
+        self._text = np.concatenate((self.text, new_text))
+
+    def remove(self, indices_to_remove: Union[set, list, np.ndarray]):
+        """Remove the selected text elements"""
+        if self._mode != TextMode.NONE:
+            selected_indices = list(indices_to_remove)
+            if len(selected_indices) > 0:
+                self._text = np.delete(self.text, selected_indices, axis=0)
 
     def _view_text(self, selected_data):
         selected_data = list(selected_data)

@@ -25,6 +25,7 @@ from ..utils.color_transformations import (
     ColorType,
 )
 from ..utils.text import TextManager
+from ..utils._text_constants import TextMode
 from ._points_constants import Symbol, SYMBOL_ALIAS, Mode, ColorMode
 from ._points_mouse_bindings import add, select, highlight
 from ._points_utils import (
@@ -383,16 +384,14 @@ class Points(Layer):
             self.current_properties = {}
 
         # make the text
-        if text is None:
-            self._text = TextManager('', len(data), self.properties)
-        elif type(text) in (list, np.ndarray, str):
+        if type(text) in (list, np.ndarray, str) or text is None:
             self._text = TextManager(text, len(data), self.properties)
         elif isinstance(text, dict):
             text['properties'] = self.properties
             text['n_text'] = len(data)
             self._text = TextManager(**text)
         else:
-            raise TypeError('test should be a string, array, or dict')
+            raise TypeError('text should be a string, array, or dict')
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -496,6 +495,9 @@ class Points(Layer):
 
                 self.size = np.concatenate((self._size, size), axis=0)
                 self.selected_data = set(np.arange(cur_npoints, len(data)))
+
+                if self._text._mode is not TextMode.NONE:
+                    self._text.add(self.current_properties, adding)
 
         self._update_dims()
         self.events.data()
@@ -1600,6 +1602,7 @@ class Points(Layer):
                 self.properties[k] = np.delete(
                     self.properties[k], index, axis=0
                 )
+            self._text.remove(index)
             if self._value in self.selected_data:
                 self._value = None
             self.selected_data = set()
@@ -1668,6 +1671,12 @@ class Points(Layer):
             self._selected_data = set(
                 range(totpoints, totpoints + len(self._clipboard['data']))
             )
+
+            if self._clipboard['text'] is not None:
+                self._text._text = np.concatenate(
+                    (self.text, self._clipboard['text']), axis=0
+                )
+
             self.refresh()
 
     def _copy_data(self):
@@ -1684,5 +1693,12 @@ class Points(Layer):
                 },
                 'indices': self.dims.indices,
             }
+
+            if self.text is None:
+                self._clipboard['text'] = None
+
+            else:
+                self._clipboard['text'] = deepcopy(self._text.text[index])
+
         else:
             self._clipboard = {}

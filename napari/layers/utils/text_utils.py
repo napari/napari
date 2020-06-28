@@ -22,8 +22,7 @@ def format_text_properties(text: str, n_text: int, properties: dict = {}):
         text_mode = TextMode.FORMATTED
 
     else:
-        formatted_text = format_text_direct(text, n_text)
-        text_mode = TextMode.DIRECT
+        formatted_text, text_mode = format_text_direct(text, n_text)
 
     return np.array(formatted_text), text_mode
 
@@ -39,7 +38,7 @@ def format_text_direct(text, n_text: int):
 
         formatted_text = np.asarray(text)
 
-    text_mode = TextMode.DIRECT
+    text_mode = TextMode.NONE
 
     return formatted_text, text_mode
 
