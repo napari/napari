@@ -291,3 +291,8 @@ def irregular_images():
 @pytest.fixture
 def single_tiff():
     return [image_fetcher.fetch('data/multipage.tif')]
+
+
+@pytest.fixture(params=[0, 1], scope="session", autouse=True)
+def two_passes(request):
+    pass
