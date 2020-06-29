@@ -133,40 +133,40 @@ class VispyBaseLayer(ABC):
             return 1
 
     @abstractmethod
-    def _on_slice_data_change(self, value=None):
+    def _on_slice_data_change(self, event=None):
         raise NotImplementedError()
 
-    def _on_visible_change(self, value):
+    def _on_visible_change(self, visible):
         """Receive layer model visibiliy and update the visual.
 
         Parameters
         ----------
-        value : bool
+        visible : bool
             Layer visibility
         """
-        self.node.visible = value
+        self.node.visible = visible
 
-    def _on_opacity_change(self, value):
+    def _on_opacity_change(self, opacity):
         """Receive layer model opacity and update the visual.
 
         Parameters
         ----------
-        value : float
+        opacity : float
             Layer opacity between 0 and 1.
         """
-        self.node.opacity = value
+        self.node.opacity = opacity
 
-    def _on_blending_change(self, text):
+    def _on_blending_change(self, blending):
         """Receive layer model blending mode and update the visual.
 
         Parameters
         ----------
-        text : str
+        blending : str
            Blending mode used by VisPy. Must be one of our supported
            modes:
            'translucent', 'additive', 'opaque'
         """
-        self.node.set_gl_state(text)
+        self.node.set_gl_state(blending)
         self.node.update()
 
     def _on_scale_change(self, event=None):

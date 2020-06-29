@@ -12,6 +12,7 @@ from ..utils import qt_signals_blocked
 from .qt_base_layer import QtLayerControls
 from ...utils.event import Event
 from ...utils.status_messages import format_float
+from ...utils.colormaps import ensure_colormap_tuple, make_colorbar
 
 
 class QtBaseImageControls(QtLayerControls):
@@ -132,55 +133,53 @@ class QtBaseImageControls(QtLayerControls):
                 self.contrastLimitsSlider, event
             )
 
-    def _on_contrast_limits_change(self, value):
+    def _on_contrast_limits_change(self, contrast_limits):
         """Receive layer model contrast limits change event and update slider.
 
         Parameters
         ----------
-        value : 2-tuple
+        contrast_limits : 2-tuple
             Contrast limits.
         """
         with qt_signals_blocked(self.contrastLimitsSlider):
-            self.contrastLimitsSlider.setValues(value)
+            self.contrastLimitsSlider.setValues(contrast_limits)
 
         # clim_popup will throw an AttributeError if not yet created
         # and a RuntimeError if it has already been cleaned up.
         # we only want to update the slider if it's active
         with suppress(AttributeError, RuntimeError):
             with qt_signals_blocked(self.clim_pop.slider):
-                self.clim_pop.slider.setValues(value)
-                self.clim_pop._on_values_change(value)
+                self.clim_pop.slider.setValues(contrast_limits)
+                self.clim_pop._on_values_change(contrast_limits)
 
-    def _on_contrast_limits_range_change(self, value):
+    def _on_contrast_limits_range_change(self, contrast_limits_range):
         """Receive layer model contrast limits range change and update slider.
 
         Parameters
         ----------
-        value : 2-tuple
+        contrast_limits_range : 2-tuple
             Valid contrast limits range.
         """
         with qt_signals_blocked(self.contrastLimitsSlider):
-            self.contrastLimitsSlider.setRange(value)
+            self.contrastLimitsSlider.setRange(contrast_limits_range)
 
         # clim_popup will throw an AttributeError if not yet created
         # and a RuntimeError if it has already been cleaned up.
         # we only want to update the slider if it's active
         with suppress(AttributeError, RuntimeError):
             with qt_signals_blocked(self.clim_pop.slider):
-                self.clim_pop.slider.setRange(value)
+                self.clim_pop.slider.setRange(contrast_limits_range)
 
-    def _on_colormap_change(self, value):
+    def _on_colormap_change(self, colormap):
         """Receive layer model colormap change event and update dropdown menu.
 
         Parameters
         ----------
-        value : text
-            Colormap name.
+        colormap : str or tuple
+            Colormap name or tuple of (name, vispy.color.Colormap).
         """
-        # To complete the EVH we need to standardize passing of colormaps.
-        # including generation of the colorbar.
-        name = value if value else self.layer.colormap[0]
-        colorbar = self.layer._colorbar
+        name, cmap = ensure_colormap_tuple(colormap)
+        colorbar = make_colorbar(cmap)
 
         if name not in self.colormapComboBox._allitems:
             self.colormapComboBox._allitems.add(name)
@@ -197,15 +196,15 @@ class QtBaseImageControls(QtLayerControls):
         )
         self.colorbarLabel.setPixmap(QPixmap.fromImage(image))
 
-    def _on_gamma_change(self, value):
+    def _on_gamma_change(self, gamma):
         """Receive the layer model gamma change event and update the slider.
 
         Parameters
         ----------
-        value : float
+        gamma : float
             Gamma value.
         """
-        self.gammaSlider.setValue(value * 100)
+        self.gammaSlider.setValue(gamma * 100)
 
     def mouseMoveEvent(self, event):
         clims = self.contrastLimitsSlider.values()

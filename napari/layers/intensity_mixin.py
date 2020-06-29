@@ -1,6 +1,6 @@
 import numpy as np
 
-from ..utils.colormaps import ensure_colormap_tuple, make_colorbar
+from ..utils.colormaps import ensure_colormap_tuple
 from ..utils.event import Event
 from ..utils.status_messages import format_float
 from ..utils.validators import validate_n_seq
@@ -62,7 +62,6 @@ class IntensityVisualizationMixin:
         name, cmap = ensure_colormap_tuple(colormap)
         self._colormap_name = name
         self._cmap = cmap
-        self._colorbar = make_colorbar(self._cmap)
         self._update_thumbnail()
 
     @property

@@ -553,27 +553,27 @@ class QtLayerWidget(QFrame):
         """
         self.typeLabel.setObjectName(layer_type)
 
-    def _on_selected_change(self, state):
+    def _on_selected_change(self, selected):
         """Update selected status of the layer widget.
 
         Parameters
         ----------
-        state : bool
+        selected : bool
             Layer selected status.
         """
-        self.setProperty('selected', state)
-        self.nameTextBox.setEnabled(state)
+        self.setProperty('selected', selected)
+        self.nameTextBox.setEnabled(selected)
         self.style().unpolish(self)
         self.style().polish(self)
 
     def changeText(self):
         """Update layer name attribute using layer name textbox contents."""
         name = self.nameTextBox.text()
-        old_name = self.nameTextBox.oldText
+        old_name = self.nameTextBox.old_name
         if old_name == name:
             return
         self.events.name_unique((old_name, name))
-        self.nameTextBox.oldText = self.nameTextBox.text()
+        self.nameTextBox.old_name = self.nameTextBox.text()
 
         # Prevent retriggering during clearing of focus
         self.nameTextBox.blockSignals(True)
@@ -623,7 +623,7 @@ class QtLayerWidget(QFrame):
         """
         event.ignore()
 
-    def _on_name_change(self, text):
+    def _on_name_change(self, name):
         """Update text displaying name of layer.
 
         Parameters
@@ -631,31 +631,34 @@ class QtLayerWidget(QFrame):
         text : str
             Name of the layer.
         """
-        self.nameTextBox.setText(text)
-        self.nameTextBox.setToolTip(text)
+        self.nameTextBox.setText(name)
+        self.nameTextBox.setToolTip(name)
         self.nameTextBox.home(False)
-        self.nameTextBox.oldText = text
+        self.nameTextBox.old_name = name
 
-    def _on_visible_change(self, state):
+    def _on_visible_change(self, visible):
         """Toggle visibility of the layer.
 
         Parameters
         ----------
-        state : bool
+        visible : bool
             Layer visibility.
         """
-        self.visibleCheckBox.setChecked(state)
+        self.visibleCheckBox.setChecked(visible)
 
-    def _on_thumbnail_change(self, value):
+    def _on_thumbnail_change(self, thumbnail):
         """Update thumbnail image on the layer widget.
 
         Parameters
         ----------
-        value : ndarray
+        thumbnail : ndarray
             Thumbnail in RGBA unit8 format.
         """
         # Note that QImage expects the image width followed by height
         image = QImage(
-            value, value.shape[1], value.shape[0], QImage.Format_RGBA8888,
+            thumbnail,
+            thumbnail.shape[1],
+            thumbnail.shape[0],
+            QImage.Format_RGBA8888,
         )
         self.thumbnailLabel.setPixmap(QPixmap.fromImage(image))

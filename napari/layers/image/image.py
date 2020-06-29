@@ -294,11 +294,11 @@ class Image(IntensityVisualizationMixin, Layer):
         return self._data
 
     @data.setter
-    def data(self, value):
-        self._data = value
+    def data(self, data):
+        self._data = data
         self._update_dims()
         self._update_editable()
-        self.events.data(value)
+        self.events.data(data)
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
@@ -313,10 +313,10 @@ class Image(IntensityVisualizationMixin, Layer):
         return self._data_level
 
     @data_level.setter
-    def data_level(self, value):
-        if self._data_level == value:
+    def data_level(self, data_level):
+        if self._data_level == data_level:
             return
-        self._data_level = value
+        self._data_level = data_level
         self.refresh()
 
     @property
@@ -345,13 +345,13 @@ class Image(IntensityVisualizationMixin, Layer):
         return self._iso_threshold
 
     @iso_threshold.setter
-    def iso_threshold(self, value):
-        self.events.iso_threshold(value)
+    def iso_threshold(self, iso_threshold):
+        self.events.iso_threshold(iso_threshold)
 
-    def _on_iso_threshold_change(self, value):
-        self._iso_threshold = value
+    def _on_iso_threshold_change(self, iso_threshold):
+        self.status = format_float(iso_threshold)
+        self._iso_threshold = iso_threshold
         self._update_thumbnail()
-        self.status = format_float(self.iso_threshold)
 
     @property
     def attenuation(self):
@@ -359,12 +359,12 @@ class Image(IntensityVisualizationMixin, Layer):
         return self._attenuation
 
     @attenuation.setter
-    def attenuation(self, value):
-        self.events.attenuation(value)
+    def attenuation(self, attenuation):
+        self.events.attenuation(attenuation)
 
-    def _on_attenuation_change(self, value):
-        self.status = format_float(value)
-        self._attenuation = value
+    def _on_attenuation_change(self, attenuation):
+        self.status = format_float(attenuation)
+        self._attenuation = attenuation
         self._update_thumbnail()
 
     @property
@@ -389,15 +389,19 @@ class Image(IntensityVisualizationMixin, Layer):
         return str(self._interpolation[self.dims.ndisplay])
 
     @interpolation.setter
-    def interpolation(self, value):
+    def interpolation(self, interpolation):
         """Set current interpolation mode."""
-        self.events.interpolation(value)
+        self.events.interpolation(interpolation)
 
-    def _on_interpolation_change(self, value):
+    def _on_interpolation_change(self, interpolation):
         if self.dims.ndisplay == 3:
-            self._interpolation[self.dims.ndisplay] = Interpolation3D(value)
+            self._interpolation[self.dims.ndisplay] = Interpolation3D(
+                interpolation
+            )
         else:
-            self._interpolation[self.dims.ndisplay] = Interpolation(value)
+            self._interpolation[self.dims.ndisplay] = Interpolation(
+                interpolation
+            )
 
     @property
     def rendering(self):
@@ -428,12 +432,12 @@ class Image(IntensityVisualizationMixin, Layer):
         return str(self._rendering)
 
     @rendering.setter
-    def rendering(self, value):
+    def rendering(self, rendering):
         """Set current rendering mode."""
-        self.events.rendering(value)
+        self.events.rendering(rendering)
 
-    def _on_rendering_change(self, value):
-        self._rendering = Rendering(value)
+    def _on_rendering_change(self, rendering):
+        self._rendering = Rendering(rendering)
 
     def _get_state(self):
         """Get dictionary of layer state.

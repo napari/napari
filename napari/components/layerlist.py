@@ -45,7 +45,7 @@ class LayerList(ListModel):
     def __newlike__(self, iterable):
         return ListModel(self._basetype, iterable, self._lookup)
 
-    def _on_name_unique_change(self, value):
+    def _on_name_unique_change(self, names):
         """Receive layer name tuple and update the name if is already in list.
 
         As the layer list can be indexed by name each layer must have a unique
@@ -57,10 +57,10 @@ class LayerList(ListModel):
 
         Parameters
         ----------
-        value : 2-tuple of str
+        names : 2-tuple of str
             Tuple of old name and new name.
         """
-        old_name, new_name = value
+        old_name, new_name = names
         unique_name = force_unique_name(new_name, [l.name for l in self])
         # Re-emit unique name
         self[old_name].events.name(unique_name)

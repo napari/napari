@@ -75,25 +75,25 @@ class QtLayerControls(QFrame):
         self._on_opacity_change(self.layer.opacity)
         self._on_blending_change(self.layer.blending)
 
-    def _on_opacity_change(self, value):
+    def _on_opacity_change(self, opacity):
         """Receive layer model opacity change event and update opacity slider.
 
         Parameters
         ----------
-        value : float
+        opacity : float
             Opacity value between 0 and 1.
         """
-        self.opacitySlider.setValue(value * 100)
+        self.opacitySlider.setValue(opacity * 100)
 
-    def _on_blending_change(self, text):
+    def _on_blending_change(self, blending):
         """Receive layer model blending mode change event and update slider.
 
         Parameters
         ----------
-        text : str
+        blending : str
            Blending mode used by VisPy. Must be one of our supported
            modes:
            'translucent', 'additive', or 'opaque'
         """
-        index = self.blendComboBox.findText(text, Qt.MatchFixedString)
+        index = self.blendComboBox.findText(blending, Qt.MatchFixedString)
         self.blendComboBox.setCurrentIndex(index)
