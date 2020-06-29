@@ -50,8 +50,8 @@ class VispyImageLayer(VispyBaseLayer):
         self.reset()
 
     def _on_slice_data_change(self, event=None):
-        # Slice data will be fixed to use passed value after EVH refactor is
-        # finished for all layers
+        # Slice data event will be fixed to use passed value after EVH refactor
+        # is finished for all layers
         data = self.layer._data_view
         dtype = np.dtype(data.dtype)
         if dtype not in texture_dtypes:

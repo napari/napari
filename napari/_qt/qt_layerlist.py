@@ -13,6 +13,7 @@ from qtpy.QtWidgets import (
 )
 from qtpy.QtGui import QDrag, QImage, QPixmap
 import numpy as np
+from .utils import qt_signals_blocked
 from ..utils.event import Event, EmitterGroup
 
 
@@ -523,7 +524,7 @@ class QtLayerWidget(QFrame):
         textbox.setEnabled(True)
         textbox.editingFinished.connect(self.changeText)
         self.nameTextBox = textbox
-        self.nameTextBox.oldText = ''
+        self.nameTextBox.old_name = ''
         self.layout.addWidget(textbox)
 
         ltb = QLabel(self)
@@ -576,10 +577,9 @@ class QtLayerWidget(QFrame):
         self.nameTextBox.old_name = self.nameTextBox.text()
 
         # Prevent retriggering during clearing of focus
-        self.nameTextBox.blockSignals(True)
-        self.nameTextBox.clearFocus()
-        self.setFocus()
-        self.nameTextBox.blockSignals(False)
+        with qt_signals_blocked(self.nameTextBox):
+            self.nameTextBox.clearFocus()
+            self.setFocus()
 
     def mouseReleaseEvent(self, event):
         """Ignores mouse release event.
