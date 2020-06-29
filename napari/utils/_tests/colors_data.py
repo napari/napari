@@ -72,18 +72,23 @@ single_colors_as_array = [
     np.zeros((1, 4), dtype=np.float32),
 ]
 
+
+# Use lambda as factory to produce a generator, otherwise the first pass of
+# the test would consume it.
 two_color_options = [
     ['red', 'red'],
     ('green', 'red'),
     ['green', '#ff0000'],
     ['green', 'g'],
-    ('r' for r in range(2)),
+    lambda: ('r' for r in range(2)),
     ['r', 'r'],
     np.array(['r', 'r']),
     np.array([[1, 1, 1, 1], [0, GREENV, 0, 1]]),
     (None, 'green'),
     [GREENARR[0, :3], REDARR[0, :3]],
 ]
+
+
 # Some of the options below are commented out. When the bugs with
 # vispy described above are resolved, we can uncomment the lines
 # below as well.

@@ -41,7 +41,9 @@ def test_warns_but_parses():
     "colors, true_colors", zip(two_color_options, two_colors_as_array)
 )
 def test_twod_points(colors, true_colors):
-    np.testing.assert_array_equal(true_colors, transform_color(colors))
+    # If callable it's a factory for our value.
+    expanded = colors() if callable(colors) else colors
+    np.testing.assert_array_equal(true_colors, transform_color(expanded))
 
 
 @pytest.mark.parametrize("color", invalid_colors)
