@@ -22,7 +22,7 @@ for name in dir(module):
         continue
 
     if issubclass(obj, module.Layer):
-        if obj is not module.Layergroup:
+        if obj is not module.LayerGroup:
             layers.append(obj)
 
 

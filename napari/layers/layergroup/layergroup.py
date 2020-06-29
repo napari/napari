@@ -2,15 +2,26 @@ from ..base import Layer
 from ..utils.layer_utils import combine_extents
 
 
-class Layergroup(Layer):
+def _add(event):
+    """When a layer is added, set its name."""
+    layers = event.source
+    layer = event.item
+    # layer.name = layers._coerce_name(layer.name, layer)
+    layer.events.name.connect(lambda e: layers._update_name(e))
+    layers.unselect_all(ignore=layer)
+
+
+class LayerGroup(Layer):
     def __init__(
         self, children=None, *, name='LayerGroup', ndim=2, visible=True
     ) -> None:
         super().__init__(None, ndim)
         self._name = name
-        self._children = []
-        for child in children or []:
-            self.append(child)
+        from ...components.layerlist import LayerList
+
+        self._children = LayerList()
+        self.events = self._children.events
+        self.extend(children or [])
 
     def _render(self):
         """Recursively return list of strings that can render ascii tree."""
@@ -83,11 +94,35 @@ class Layergroup(Layer):
         item._parent = self
         # FIXME - add a check for unique layergroup names in the tree
         # FIXME - update ndim property on layergroup with self._get_ndim()
-        return self._children.append(item)
+        self._children.append(item)
+
+    def extend(self, items):
+        for item in items:
+            self.append(item)
+
+    @property
+    def selected(self):
+        """List of selected layers."""
+        return self._children.selected
+
+    def index(self, key):
+        return self._children.index(key)
+
+    def remove_selected(self):
+        """Removes selected items from list."""
+        self._children.remove_selected()
+
+    def select_all(self):
+        """Selects all layers."""
+        self._children.select_all()
+
+    def unselect_all(self, ignore=None):
+        """Unselects all layers expect any specified in ignore."""
+        self._children.unselect_all(ignore=ignore)
 
     def remove(self, item):
         item._parent = None
-        return self._children.remove(item)
+        self._children.remove(item)
 
     def pop(self, index):
         self._children[index]._parent = None
@@ -95,7 +130,7 @@ class Layergroup(Layer):
 
     def __len__(self):
         """Number of all non-group layers contained in the layergroup."""
-        return sum([1 for _ in self])
+        return len(self._children)
 
     def _get_extent(self):
         """Combined extent bounding all the individual layergroup layers.
@@ -178,5 +213,4 @@ class Layergroup(Layer):
         )
 
     def save(self):
-        for layer in self:
-            yield layer.save()
+        raise NotImplementedError()
