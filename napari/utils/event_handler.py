@@ -36,20 +36,19 @@ class EventHandler:
             that carries the data associated with the event. These are
             automatically added by our event emitters.
         """
-        type = event.type
-        logger.debug(f"event: {type}")
+        logger.debug(f"event: {event.type}")
         # until refactor on all layers is complete, not all events will have a
         # value property
         try:
             value = event.value
             logger.debug(f" value: {value}")
         except AttributeError:
-            logger.debug(f" did not handle event {type}")
+            logger.debug(f" did not handle event {event.type}")
             return
 
         # Update based on event value
         for component in self.components_to_update:
-            update_method_name = f"_on_{type}_change"
+            update_method_name = f"_on_{event.type}_change"
             update_method = getattr(component, update_method_name, None)
             if update_method:
                 update_method(value)

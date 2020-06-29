@@ -283,7 +283,7 @@ class Layer(KeymapProvider, ABC):
     def _on_opacity_change(self, value):
         if not 0.0 <= value <= 1.0:
             raise ValueError(
-                'Opacity must be between 0.0 and 1.0; ' f'got {value}.'
+                f'Opacity must be between 0.0 and 1.0; got {value}.'
             )
 
         self._opacity = value

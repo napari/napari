@@ -164,7 +164,7 @@ class VispyBaseLayer(ABC):
         text : str
            Blending mode used by VisPy. Must be one of our supported
            modes:
-           'transluenct', 'additive', 'opaque'
+           'translucent', 'additive', 'opaque'
         """
         self.node.set_gl_state(text)
         self.node.update()

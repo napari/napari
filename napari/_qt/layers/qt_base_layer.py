@@ -93,7 +93,7 @@ class QtLayerControls(QFrame):
         text : str
            Blending mode used by VisPy. Must be one of our supported
            modes:
-           'transluenct', 'additive', 'opaque'
+           'translucent', 'additive', or 'opaque'
         """
         index = self.blendComboBox.findText(text, Qt.MatchFixedString)
         self.blendComboBox.setCurrentIndex(index)

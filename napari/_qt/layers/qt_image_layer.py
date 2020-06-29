@@ -199,7 +199,7 @@ class QtImageControls(QtBaseImageControls):
             self.attenuationLabel.hide()
 
     def _update_interpolation_combo(self, ndisplay):
-        """Set allowed interploation modes for dimensionality of display.
+        """Set allowed interpolation modes for dimensionality of display.
 
         Parameters
         ----------

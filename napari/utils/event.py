@@ -459,8 +459,7 @@ class EventEmitter(object):
         return callback
 
     def __call__(self, *args, **kwargs):
-        """ __call__(*args, **kwargs)
-        Invoke all callbacks for this emitter.
+        """Invoke all callbacks for this emitter.
 
         Emit a new event object, created with the given keyword
         arguments, which must match with the input arguments of the
