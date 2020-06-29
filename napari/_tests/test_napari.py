@@ -23,7 +23,7 @@ def test_view_multichannel(qtbot):
     """Test adding image."""
     np.random.seed(0)
     data = np.random.random((15, 10, 5))
-    viewer = napari.view_image(data, channel_axis=-1)
+    viewer = napari.view_image(data, channel_axis=-1, show=False)
     assert len(viewer.layers) == data.shape[-1]
     for i in range(data.shape[-1]):
         assert np.all(viewer.layers[i].data == data.take(i, axis=-1))

@@ -1,9 +1,32 @@
+import os
 import sys
 from contextlib import contextmanager
 from os.path import dirname, join
 
+from qtpy.QtCore import Qt
 from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import QApplication, QSplashScreen
+
+
+def _create_application(argv) -> QApplication:
+    """Create our QApplication.
+
+    Notes
+    -----
+
+    We substitute QApplicationWithTiming when using perfmon.
+
+    Note that in Viewer we call convert_app_for_timing() which will create a
+    QApplicationWithTiming. However that's only for IPython/Jupyter. When using
+    gui_qt we need to create it up front here before any QWidget objects are
+    created, like the splash screen.
+    """
+    if os.getenv("NAPARI_PERFMON", "0") != "0":
+        from .qt_event_timing import QApplicationWithTiming
+
+        return QApplicationWithTiming(argv)
+    else:
+        return QApplication(argv)
 
 
 @contextmanager
@@ -25,14 +48,23 @@ def gui_qt(*, startup_logo=False):
     splash_widget = None
     app = QApplication.instance()
     if not app:
+        # automatically determine monitor DPI.
+        # Note: this MUST be set before the QApplication is instantiated
+        QApplication.setAttribute(Qt.AA_EnableHighDpiScaling)
         # if this is the first time the Qt app is being instantiated, we set
         # the name, so that we know whether to raise_ in Window.show()
-        app = QApplication(sys.argv)
+        app = _create_application(sys.argv)
         app.setApplicationName('napari')
         if startup_logo:
             logopath = join(dirname(__file__), '..', 'resources', 'logo.png')
-            splash_widget = QSplashScreen(QPixmap(logopath).scaled(400, 400))
+            pm = QPixmap(logopath).scaled(
+                360, 360, Qt.KeepAspectRatio, Qt.SmoothTransformation
+            )
+            splash_widget = QSplashScreen(pm)
             splash_widget.show()
+            app._splash_widget = splash_widget
+    else:
+        app._existed = True
     yield app
     # if the application already existed before this function was called,
     # there's no need to start it again.  By avoiding unnecessary calls to

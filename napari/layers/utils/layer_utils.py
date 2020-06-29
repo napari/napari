@@ -151,7 +151,10 @@ def dataframe_to_properties(dataframe) -> Dict[str, np.ndarray]:
     """
 
     properties = {col: np.asarray(dataframe[col]) for col in dataframe}
-    return properties
+    index = None
+    if 'index' in properties:
+        index = {i: k for k, i in enumerate(properties['index'])}
+    return properties, index
 
 
 def guess_continuous(property: np.ndarray) -> bool:

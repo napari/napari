@@ -265,7 +265,17 @@ class AddLayersMixin:
                     ]
                 else:
                     image = np.take(data, i, axis=channel_axis)
-                i_kwargs = {k: next(v) for k, v in kwargs.items()}
+                i_kwargs = {}
+                for key, val in kwargs.items():
+                    try:
+                        i_kwargs[key] = next(val)
+                    except StopIteration:
+                        raise IndexError(
+                            "Error adding multichannel image with data shape "
+                            f"{data.shape!r}.\nRequested channel_axis "
+                            f"({channel_axis}) had length {n_channels}, but "
+                            f"the '{key}' argument only provided {i} values. "
+                        )
                 layer = self.add_layer(layers.Image(image, **i_kwargs))
                 layer_list.append(layer)
             return layer_list
@@ -405,6 +415,8 @@ class AddLayersMixin:
         data,
         *,
         num_colors=50,
+        properties=None,
+        color=None,
         seed=0.5,
         name=None,
         metadata=None,
@@ -436,6 +448,13 @@ class AddLayersMixin:
             Labels data as an array or multiscale.
         num_colors : int
             Number of unique colors to use in colormap.
+        properties : dict {str: array (N,)}, DataFrame
+            Properties for each label. Each property should be an array of
+            length N, where N is the number of labels, and the first property
+            corresponds to background.
+        color : dict of int to str or array
+            Custom label to color mapping. Values must be valid color names or
+            RGBA arrays.
         seed : float
             Seed for colormap random generator.
         name : str
@@ -469,6 +488,8 @@ class AddLayersMixin:
         layer = layers.Labels(
             data,
             num_colors=num_colors,
+            properties=properties,
+            color=color,
             seed=seed,
             name=name,
             metadata=metadata,
@@ -486,10 +507,18 @@ class AddLayersMixin:
         self,
         data=None,
         *,
+        ndim=None,
+        properties=None,
         shape_type='rectangle',
         edge_width=1,
         edge_color='black',
+        edge_color_cycle=None,
+        edge_colormap='viridis',
+        edge_contrast_limits=None,
         face_color='white',
+        face_color_cycle=None,
+        face_colormap='viridis',
+        face_contrast_limits=None,
         z_index=0,
         name=None,
         metadata=None,
@@ -507,6 +536,12 @@ class AddLayersMixin:
             List of shape data, where each element is an (N, D) array of the
             N vertices of a shape in D dimensions. Can be an 3-dimensional
             array if each shape has the same number of vertices.
+        ndim : int
+            Number of dimensions for shapes. When data is not None, ndim must be D.
+            An empty shapes layer can be instantiated with arbitrary ndim.
+        properties : dict {str: array (N,)}, DataFrame
+            Properties for each shape. Each property should be an array of
+            length N, where N is the number of shapes.
         shape_type : string or list
             String of shape shape_type, must be one of "{'line', 'rectangle',
             'ellipse', 'path', 'polygon'}". If a list is supplied it must be
@@ -518,18 +553,40 @@ class AddLayersMixin:
             same length as the length of `data` and each element will be
             applied to each shape otherwise the same value will be used for all
             shapes.
-        edge_color : str or list
+        edge_color : str, array-like
             If string can be any color name recognized by vispy or hex value if
             starting with `#`. If array-like must be 1-dimensional array with 3
             or 4 elements. If a list is supplied it must be the same length as
             the length of `data` and each element will be applied to each shape
             otherwise the same value will be used for all shapes.
-        face_color : str or list
+        edge_color_cycle : np.ndarray, list
+            Cycle of colors (provided as string name, RGB, or RGBA) to map to edge_color if a
+            categorical attribute is used color the vectors.
+        edge_colormap : str, vispy.color.colormap.Colormap
+            Colormap to set edge_color if a continuous attribute is used to set face_color.
+            See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
+        edge_contrast_limits : None, (float, float)
+            clims for mapping the property to a color map. These are the min and max value
+            of the specified property that are mapped to 0 and 1, respectively.
+            The default value is None. If set the none, the clims will be set to
+            (property.min(), property.max())
+        face_color : str, array-like
             If string can be any color name recognized by vispy or hex value if
             starting with `#`. If array-like must be 1-dimensional array with 3
             or 4 elements. If a list is supplied it must be the same length as
             the length of `data` and each element will be applied to each shape
             otherwise the same value will be used for all shapes.
+        face_color_cycle : np.ndarray, list
+            Cycle of colors (provided as string name, RGB, or RGBA) to map to face_color if a
+            categorical attribute is used color the vectors.
+        face_colormap : str, vispy.color.colormap.Colormap
+            Colormap to set face_color if a continuous attribute is used to set face_color.
+            See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
+        face_contrast_limits : None, (float, float)
+            clims for mapping the property to a color map. These are the min and max value
+            of the specified property that are mapped to 0 and 1, respectively.
+            The default value is None. If set the none, the clims will be set to
+            (property.min(), property.max())
         z_index : int or list
             Specifier of z order priority. Shapes with higher z order are
             displayed ontop of others. If a list is supplied it must be the
@@ -544,7 +601,7 @@ class AddLayersMixin:
             Scale factors for the layer.
         translate : tuple of float
             Translation values for the layer.
-        opacity : float or list
+        opacity : float
             Opacity of the layer visual, between 0.0 and 1.0.
         blending : str
             One of a list of preset blending modes that determines how RGB and
@@ -559,15 +616,24 @@ class AddLayersMixin:
             The newly-created shapes layer.
         """
         if data is None:
-            ndim = max(self.dims.ndim, 2)
+            if ndim is None:
+                ndim = max(self.dims.ndim, 2)
             data = np.empty((0, 0, ndim))
 
         layer = layers.Shapes(
             data=data,
+            ndim=ndim,
+            properties=properties,
             shape_type=shape_type,
             edge_width=edge_width,
             edge_color=edge_color,
+            edge_color_cycle=edge_color_cycle,
+            edge_colormap=edge_colormap,
+            edge_contrast_limits=edge_contrast_limits,
             face_color=face_color,
+            face_color_cycle=face_color_cycle,
+            face_colormap=face_colormap,
+            face_contrast_limits=face_contrast_limits,
             z_index=z_index,
             name=name,
             metadata=metadata,

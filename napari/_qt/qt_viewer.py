@@ -9,7 +9,6 @@ from qtpy.QtWidgets import (
     QMessageBox,
 )
 from qtpy.QtGui import QCursor, QGuiApplication
-from qtpy.QtCore import QThreadPool
 from ..utils.io import imsave
 from vispy.scene import SceneCanvas, PanZoomCamera, ArcballCamera
 from vispy.visuals.transforms import ChainTransform
@@ -25,12 +24,14 @@ from ..utils.interactions import (
     mouse_release_callbacks,
 )
 from ..utils.key_bindings import components_to_key_combo
+from ..utils import perf
 
 from .utils import QImg2array, square_pixmap
 from .qt_controls import QtControls
 from .qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .qt_viewer_dock_widget import QtViewerDockWidget
 from .qt_about_key_bindings import QtAboutKeyBindings
+from .qt_performance import QtPerformance
 from .._vispy import create_vispy_visual
 
 
@@ -66,8 +67,6 @@ class QtViewer(QSplitter):
         Qt view for LayerList controls.
     layer_to_visual : dict
         Dictionary mapping napari layers with their corresponding vispy_layers.
-    pool : qtpy.QtCore.QThreadPool
-        Pool of worker threads.
     view : vispy scene widget
         View displayed by vispy canvas. Adds a vispy ViewBox as a child widget.
     viewer : napari.components.ViewerModel
@@ -81,7 +80,6 @@ class QtViewer(QSplitter):
     def __init__(self, viewer):
         super().__init__()
         self.setAttribute(Qt.WA_DeleteOnClose)
-        self.pool = QThreadPool()
 
         QCoreApplication.setAttribute(
             Qt.AA_UseStyleSheetPropagationInWidgetStyles, True
@@ -134,6 +132,8 @@ class QtViewer(QSplitter):
         self.dockLayerControls.visibilityChanged.connect(self._constrain_width)
         self.dockLayerList.setMaximumWidth(258)
         self.dockLayerList.setMinimumWidth(258)
+
+        self.dockPerformance = self._create_performance_dock_widget()
 
         # This dictionary holds the corresponding vispy visual for each layer
         self.layer_to_visual = {}
@@ -192,6 +192,20 @@ class QtViewer(QSplitter):
         self.viewer.events.layers_change.connect(lambda x: self.dims.stop())
 
         self.setAcceptDrops(True)
+
+    def _create_performance_dock_widget(self):
+        """Create the dock widget that shows performance metrics.
+        """
+        if not perf.USE_PERFMON:
+            return None
+
+        return QtViewerDockWidget(
+            self,
+            QtPerformance(),
+            name='performance',
+            area='bottom',
+            shortcut='Ctrl+Shift+P',
+        )
 
     @property
     def console(self):
@@ -571,7 +585,11 @@ class QtViewer(QSplitter):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
-        if event.key is None:
+        if event.key is None or (
+            # on linux press down is treated as multiple press and release
+            event.native is not None
+            and event.native.isAutoRepeat()
+        ):
             return
         combo = components_to_key_combo(event.key.name, event.modifiers)
         self.viewer.release_key(combo)
@@ -633,7 +651,7 @@ class QtViewer(QSplitter):
         self.viewer.open(filenames, stack=bool(shift_down))
 
     def closeEvent(self, event):
-        """Clear pool of worker threads and close.
+        """Cleanup and close.
 
         Parameters
         ----------
@@ -649,8 +667,6 @@ class QtViewer(QSplitter):
         if self._console is not None:
             self.console.close()
         self.dockConsole.deleteLater()
-        if not self.pool.waitForDone(10000):
-            raise TimeoutError("Timed out waiting for QtViewer.pool to finish")
         event.accept()
 
 

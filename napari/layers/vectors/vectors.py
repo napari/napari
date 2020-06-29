@@ -186,7 +186,7 @@ class Vectors(Layer):
             self._properties = {}
             self._property_choices = {}
         elif len(data) > 0:
-            properties = dataframe_to_properties(properties)
+            properties, _ = dataframe_to_properties(properties)
             self._properties = self._validate_properties(properties)
             self._property_choices = {
                 k: np.unique(v) for k, v in properties.items()
@@ -253,7 +253,7 @@ class Vectors(Layer):
     @properties.setter
     def properties(self, properties: Dict[str, np.ndarray]):
         if not isinstance(properties, dict):
-            properties = dataframe_to_properties(properties)
+            properties, _ = dataframe_to_properties(properties)
         self._properties = self._validate_properties(properties)
         if self._edge_color_property and (
             self._edge_color_property not in self._properties
@@ -312,7 +312,7 @@ class Vectors(Layer):
             maxs = np.max(data, axis=(0, 1))
             mins = np.min(data, axis=(0, 1))
 
-        return [(min, max, 1) for min, max in zip(mins, maxs)]
+        return [(min, max) for min, max in zip(mins, maxs)]
 
     @property
     def edge_width(self) -> Union[int, float]:

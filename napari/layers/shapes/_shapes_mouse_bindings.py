@@ -28,7 +28,7 @@ def select(layer, event):
                 shapes = layer.selected_data
                 layer._selected_box = layer.interaction_box(shapes)
             else:
-                layer.selected_data.append(shape_under_cursor)
+                layer.selected_data.add(shape_under_cursor)
                 shapes = layer.selected_data
                 layer._selected_box = layer.interaction_box(shapes)
         elif shape_under_cursor is not None:

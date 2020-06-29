@@ -61,3 +61,21 @@ def test_cli_raises(monkeypatch):
         with pytest.raises(SystemExit) as e:
             __main__.main()
         assert str(e.value) == 'error: argument --gamma expected one argument'
+
+
+def test_cli_runscript(monkeypatch, tmp_path):
+    """Test that running napari script.py runs a script"""
+    script = tmp_path / 'test.py'
+    script.write_text('1/0')  # raise error so we can assert it ran
+
+    with monkeypatch.context() as m:
+        m.setattr(sys, 'argv', ['napari', str(script)])
+        with pytest.raises(ZeroDivisionError):
+            __main__.main()
+
+    script.write_text('import napari; v = napari.Viewer(show=False)')
+
+    with monkeypatch.context() as m:
+        m.setattr(sys, 'argv', ['napari', str(script)])
+        with pytest.raises(SystemExit):
+            __main__.main()

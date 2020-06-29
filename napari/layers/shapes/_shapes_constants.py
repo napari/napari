@@ -35,6 +35,22 @@ class Mode(StringEnum):
     VERTEX_REMOVE = auto()
 
 
+class ColorMode(StringEnum):
+    """
+    ColorMode: Color setting mode.
+
+    DIRECT (default mode) allows each shape to be set arbitrarily
+
+    CYCLE allows the color to be set via a color cycle over an attribute
+
+    COLORMAP allows color to be set via a color map over an attribute
+    """
+
+    DIRECT = auto()
+    CYCLE = auto()
+    COLORMAP = auto()
+
+
 class Box:
     """Box: Constants associated with the vertices of the interaction box
     """

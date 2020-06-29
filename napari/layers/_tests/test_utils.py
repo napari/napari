@@ -2,7 +2,7 @@ import numpy as np
 import pytest
 from skimage.util import img_as_ubyte
 
-from ..utils.layer_utils import convert_to_uint8
+from napari.layers.utils.layer_utils import convert_to_uint8
 
 
 @pytest.mark.parametrize("dtype", [np.uint8, np.uint16, np.uint32, np.uint64])
