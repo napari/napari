@@ -62,6 +62,9 @@ def gui_qt(*, startup_logo=False):
             )
             splash_widget = QSplashScreen(pm)
             splash_widget.show()
+            app._splash_widget = splash_widget
+    else:
+        app._existed = True
     yield app
     # if the application already existed before this function was called,
     # there's no need to start it again.  By avoiding unnecessary calls to
