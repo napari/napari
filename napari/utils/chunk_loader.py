@@ -31,7 +31,7 @@ LOGGER = logging.getLogger("ChunkLoader")
 # Use SyncChunkLoader which is hard-coded to be synchronous. It cannot
 # switch between sync and async. For testing or debugging when you don't
 # want the thread pool or cache at all.
-USE_SYNC_LOADER = True
+USE_SYNC_LOADER = False
 
 
 def _log_to_file(path):
