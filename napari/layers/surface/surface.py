@@ -123,7 +123,7 @@ class Surface(IntensityVisualizationMixin, Layer):
             visible=visible,
         )
 
-        self.events.add(interpolation=Event, rendering=Event)
+        self.events.add(vertices=Event, vertex_values=Event, faces=Event)
 
         # Set contrast_limits and colormaps
         self._gamma = gamma
@@ -165,6 +165,9 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     @vertices.setter
     def vertices(self, vertices):
+        self.events.vertices(vertices)
+
+    def on_vertices_change(self, vertices):
         """Array of vertices of mesh triangles."""
 
         self._vertices = vertices
@@ -180,6 +183,9 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     @vertex_values.setter
     def vertex_values(self, vertex_values: np.ndarray):
+        self.events.vertex_values(vertex_values)
+
+    def _on_vertex_values_change(self, vertex_values: np.ndarray):
         """Array of values used to color vertices.."""
 
         self._vertex_values = vertex_values
@@ -194,9 +200,12 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     @faces.setter
     def faces(self, faces: np.ndarray):
+        self.events.faces(faces)
+
+    def _on_faces_change(self, faces: np.ndarray):
         """Array of indices of mesh triangles.."""
 
-        self.faces = faces
+        self._faces = faces
 
         self.refresh()
         self.events.data()
