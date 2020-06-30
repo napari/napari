@@ -389,3 +389,33 @@ def test_add_delete_layers():
     viewer.layers.remove_selected()
     assert len(viewer.layers) == 1
     assert viewer.dims.ndim == 4
+
+
+def test_active_layer():
+    """Test active layer is correct as layer selections change."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    # Check no active layer present
+    assert viewer.active_layer is None
+
+    # Check added layer is active
+    viewer.add_image(np.random.random((5, 5, 10, 15)))
+    assert len(viewer.layers) == 1
+    assert viewer.active_layer == viewer.layers[0]
+
+    # Check newly added layer is active
+    viewer.add_image(np.random.random((5, 6, 5, 10, 15)))
+    assert len(viewer.layers) == 2
+    assert viewer.active_layer == viewer.layers[1]
+
+    # Check no active layer after unselecting all
+    viewer.layers.unselect_all()
+    assert viewer.active_layer is None
+
+    # Check selected layer is active
+    viewer.layers[0].selected = True
+    assert viewer.active_layer == viewer.layers[0]
+
+    # Check no layer is active if both layers are selected
+    viewer.layers[1].selected = True
+    assert viewer.active_layer is None
