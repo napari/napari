@@ -66,7 +66,7 @@ If this ```EventEmitterGroup``` was connected to an ```EventHandler``` then
 the ```EventHandler``` will receive this event and its payload and then will
 call any corresponding update methods on any object that has been registered
 as a listener. Update methods are linked to particular emitters via a naming
-convention ```_on_*change``` where the ```*``` corresponds to the name of the
+convention ```_on_*_change``` where the ```*``` corresponds to the name of the
 emitter, ```colormap``` in the example above. These update methods take one
 variable as an input argument, which is always the payload carried by its
 corresponding event.
