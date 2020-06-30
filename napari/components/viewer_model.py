@@ -5,7 +5,7 @@ import numpy as np
 from .add_layers_mixin import AddLayersMixin
 from .dims import Dims
 from .layerlist import LayerList
-from ..utils.event import EmitterGroup, Event
+from ..utils.event import Event, EmitterGroup
 from ..utils.key_bindings import KeymapHandler, KeymapProvider
 from ..utils.theme import palettes
 
@@ -359,7 +359,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         """
         # iteration goes backwards to find top most selected layer if any
         # if multiple layers are selected sets the active layer to None
-
         active_layer = None
         for layer in self.layers:
             if active_layer is None and layer.selected:
@@ -437,25 +436,61 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
 
         return max_dims
 
-    def _update_status(self, event):
-        """Set the viewer status with the `event.status` string."""
-        self.status = event.status
+    def _on_selected_change(self, selected):
+        self._update_active_layer(None)
 
-    def _update_help(self, event):
-        """Set the viewer help with the `event.help` string."""
-        self.help = event.help
+    def _on_data_change(self, data):
+        self._on_layers_change(None)
 
-    def _update_interactive(self, event):
-        """Set the viewer interactivity with the `event.interactive` bool."""
-        self.interactive = event.interactive
+    def _on_status_change(self, status):
+        """Receive layer status change event and update viewer status.
 
-    def _update_cursor(self, event):
-        """Set the viewer cursor with the `event.cursor` string."""
-        self.cursor = event.cursor
+        Parameters
+        ----------
+        status : str
+            Viewer status.
+        """
+        self.status = status
 
-    def _update_cursor_size(self, event):
-        """Set the viewer cursor_size with the `event.cursor_size` int."""
-        self.cursor_size = event.cursor_size
+    def _on_help_change(self, help):
+        """Receive layer help change event and update viewer help.
+
+        Parameters
+        ----------
+        help : str
+            Viewer help.
+        """
+        self.help = help
+
+    def _on_interactive_change(self, interactive):
+        """Receive layer interactivity event and update viewer interactivity.
+
+        Parameters
+        ----------
+        interactive : bool
+            Viewer interactivity.
+        """
+        self.interactive = interactive
+
+    def _on_cursor_change(self, cursor):
+        """Receive layer cursor change event and update viewer cursor.
+
+        Parameters
+        ----------
+        cursor : str
+            Cursor name.
+        """
+        self.cursor = cursor
+
+    def _on_cursor_size_change(self, cursor_size):
+        """Receive layer cursor size change and update viewer cursor size.
+
+        Parameters
+        ----------
+        cursor_size : int
+            Cursor size.
+        """
+        self.cursor_size = cursor_size
 
     def grid_view(self, n_row=None, n_column=None, stride=1):
         """Arrange the current layers is a 2D grid.

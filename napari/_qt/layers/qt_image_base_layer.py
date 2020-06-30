@@ -10,6 +10,9 @@ from ..qt_range_slider import QHRangeSlider
 from ..qt_range_slider_popup import QRangeSliderPopup
 from ..utils import qt_signals_blocked
 from .qt_base_layer import QtLayerControls
+from ...utils.event import Event
+from ...utils.status_messages import format_float
+from ...utils.colormaps import ensure_colormap_tuple, make_colorbar
 
 
 class QtBaseImageControls(QtLayerControls):
@@ -43,28 +46,27 @@ class QtBaseImageControls(QtLayerControls):
     def __init__(self, layer):
         super().__init__(layer)
 
-        self.layer.events.colormap.connect(self._on_colormap_change)
-        self.layer.events.gamma.connect(self.gamma_slider_update)
-        self.layer.events.contrast_limits.connect(self._on_clims_change)
+        self.events.add(
+            colormap=Event,
+            contrast_limits=Event,
+            contrast_limits_range=Event,
+            gamma=Event,
+        )
 
         comboBox = QComboBox(self)
         comboBox.setObjectName("colormapComboBox")
-        comboBox.addItems(self.layer.colormaps)
-        comboBox._allitems = set(self.layer.colormaps)
-        comboBox.activated[str].connect(self.changeColor)
+        comboBox.activated[str].connect(self.events.colormap)
         self.colormapComboBox = comboBox
 
         # Create contrast_limits slider
-        self.contrastLimitsSlider = QHRangeSlider(
-            self.layer.contrast_limits,
-            self.layer.contrast_limits_range,
-            parent=self,
-        )
+        self.contrastLimitsSlider = QHRangeSlider(parent=self)
         self.contrastLimitsSlider.mousePressEvent = self._clim_mousepress
-        set_clim = partial(setattr, self.layer, 'contrast_limits')
-        set_climrange = partial(setattr, self.layer, 'contrast_limits_range')
-        self.contrastLimitsSlider.valuesChanged.connect(set_clim)
-        self.contrastLimitsSlider.rangeChanged.connect(set_climrange)
+        self.contrastLimitsSlider.valuesChanged.connect(
+            self.events.contrast_limits
+        )
+        self.contrastLimitsSlider.rangeChanged.connect(
+            self.events.contrast_limits_range
+        )
 
         # gamma slider
         sld = QSlider(Qt.Horizontal, parent=self)
@@ -73,25 +75,35 @@ class QtBaseImageControls(QtLayerControls):
         sld.setMaximum(200)
         sld.setSingleStep(2)
         sld.setValue(100)
-        sld.valueChanged.connect(self.gamma_slider_changed)
+        sld.valueChanged.connect(lambda value: self.events.gamma(value / 100))
         self.gammaSlider = sld
-        self.gamma_slider_update()
 
         self.colorbarLabel = QLabel(parent=self)
         self.colorbarLabel.setObjectName('colorbar')
         self.colorbarLabel.setToolTip('Colorbar')
 
-        self._on_colormap_change()
+        # Once EVH refactor is done, these can be moved to an initialization
+        # outside of this object
+        self._on_gamma_change(self.layer.gamma)
+        self._set_colormaps(self.layer.colormaps)
+        self._on_colormap_change(self.layer.colormap[0])
+        self._on_contrast_limits_range_change(self.layer.contrast_limits_range)
+        self._on_contrast_limits_change(self.layer.contrast_limits)
 
-    def changeColor(self, text):
-        """Change colormap on the layer model.
+    def _set_colormaps(self, colormaps):
+        """Initialize colormaps for comboBox.
 
         Parameters
         ----------
-        text : str
-            Colormap name.
+        colormaps : list of str
+            Available colormaps.
         """
-        self.layer.colormap = text
+        # Note this is not dynamically updated if the list of available
+        # colormaps changes during a session. We should probably maintain that
+        # list as an enum outside of the layer itself and have this be a
+        # full `_on_colormaps_change` method.
+        self.colormapComboBox.addItems(colormaps)
+        self.colormapComboBox._allitems = set(colormaps)
 
     def _clim_mousepress(self, event):
         """Update the slider, or, on right-click, pop-up an expanded slider.
@@ -105,6 +117,7 @@ class QtBaseImageControls(QtLayerControls):
             Event from the Qt context.
         """
         if event.button() == Qt.RightButton:
+            # To complete the EVH the popup should no longer take the layer
             self.clim_pop = create_range_popup(
                 self.layer, 'contrast_limits', parent=self
             )
@@ -120,39 +133,54 @@ class QtBaseImageControls(QtLayerControls):
                 self.contrastLimitsSlider, event
             )
 
-    def _on_clims_change(self, event=None):
+    def _on_contrast_limits_change(self, contrast_limits):
         """Receive layer model contrast limits change event and update slider.
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context, by default None.
+        contrast_limits : 2-tuple
+            Contrast limits.
         """
         with qt_signals_blocked(self.contrastLimitsSlider):
-            self.contrastLimitsSlider.setRange(
-                self.layer.contrast_limits_range
-            )
-            self.contrastLimitsSlider.setValues(self.layer.contrast_limits)
+            self.contrastLimitsSlider.setValues(contrast_limits)
 
         # clim_popup will throw an AttributeError if not yet created
         # and a RuntimeError if it has already been cleaned up.
         # we only want to update the slider if it's active
         with suppress(AttributeError, RuntimeError):
-            self.clim_pop.slider.setRange(self.layer.contrast_limits_range)
             with qt_signals_blocked(self.clim_pop.slider):
-                clims = self.layer.contrast_limits
-                self.clim_pop.slider.setValues(clims)
-                self.clim_pop._on_values_change(clims)
+                self.clim_pop.slider.setValues(contrast_limits)
+                self.clim_pop._on_values_change(contrast_limits)
 
-    def _on_colormap_change(self, event=None):
+    def _on_contrast_limits_range_change(self, contrast_limits_range):
+        """Receive layer model contrast limits range change and update slider.
+
+        Parameters
+        ----------
+        contrast_limits_range : 2-tuple
+            Valid contrast limits range.
+        """
+        with qt_signals_blocked(self.contrastLimitsSlider):
+            self.contrastLimitsSlider.setRange(contrast_limits_range)
+
+        # clim_popup will throw an AttributeError if not yet created
+        # and a RuntimeError if it has already been cleaned up.
+        # we only want to update the slider if it's active
+        with suppress(AttributeError, RuntimeError):
+            with qt_signals_blocked(self.clim_pop.slider):
+                self.clim_pop.slider.setRange(contrast_limits_range)
+
+    def _on_colormap_change(self, colormap):
         """Receive layer model colormap change event and update dropdown menu.
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context, by default None.
+        colormap : str or tuple
+            Colormap name or tuple of (name, vispy.color.Colormap).
         """
-        name = self.layer.colormap[0]
+        name, cmap = ensure_colormap_tuple(colormap)
+        colorbar = make_colorbar(cmap)
+
         if name not in self.colormapComboBox._allitems:
             self.colormapComboBox._allitems.add(name)
             self.colormapComboBox.addItem(name)
@@ -161,37 +189,27 @@ class QtBaseImageControls(QtLayerControls):
 
         # Note that QImage expects the image width followed by height
         image = QImage(
-            self.layer._colorbar,
-            self.layer._colorbar.shape[1],
-            self.layer._colorbar.shape[0],
+            colorbar,
+            colorbar.shape[1],
+            colorbar.shape[0],
             QImage.Format_RGBA8888,
         )
         self.colorbarLabel.setPixmap(QPixmap.fromImage(image))
 
-    def gamma_slider_changed(self, value):
-        """Change gamma value on the layer model.
-
-        Parameters
-        ----------
-        value : float
-            Gamma adjustment value.
-            https://en.wikipedia.org/wiki/Gamma_correction
-        """
-        self.layer.gamma = value / 100
-
-    def gamma_slider_update(self, event=None):
+    def _on_gamma_change(self, gamma):
         """Receive the layer model gamma change event and update the slider.
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context, by default None.
+        gamma : float
+            Gamma value.
         """
-        with qt_signals_blocked(self.gammaSlider):
-            self.gammaSlider.setValue(int(self.layer.gamma * 100))
+        self.gammaSlider.setValue(gamma * 100)
 
     def mouseMoveEvent(self, event):
-        self.layer.status = self.layer._contrast_limits_msg
+        clims = self.contrastLimitsSlider.values()
+        clims_msg = format_float(clims[0]) + ', ' + format_float(clims[1])
+        self.events.status(clims_msg)
 
     def closeEvent(self, event):
         self.deleteLater()

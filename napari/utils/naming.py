@@ -75,3 +75,27 @@ def magic_name(value, *, path_prefix):
     for name in names:
         if name.isidentifier() and name in varmap and varmap[name] is value:
             return name
+
+
+def force_unique_name(name, names):
+    """Force a given name to be made unique in the list of names.
+
+    The name is made unique by appending an index to it, for example
+    'Image' -> 'Image [1]' or adding to the index, say 'Image [2]'.
+
+    Parameters
+    ----------
+    name : str
+        Name to be checked if unique.
+    names : list of str
+        List of names to be checked against.
+
+    Returns
+    -------
+    name : str
+        Name that is not present in the list of names.
+    """
+    if name not in names:
+        return name
+    else:
+        return force_unique_name(inc_name_count(name), names)
