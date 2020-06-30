@@ -267,9 +267,8 @@ class Points(Layer):
             n_dimensional=Event,
             highlight=Event,
         )
-        # update highlights when the layer is selected/deselected
-        self.events.select.connect(self._set_highlight)
-        self.events.deselect.connect(self._set_highlight)
+        # update highlights when the layer is selected/ deselected
+        self.events.selected.connect(self._set_highlight)
 
         self._colors = get_color_namelist()
 
@@ -440,7 +439,7 @@ class Points(Layer):
         if len(data) < cur_npoints:
             # If there are now fewer points, remove the size and colors of the
             # extra ones
-            with self.events.set_data.blocker():
+            with self.events.slice_data.blocker():
                 self._edge_color = self.edge_color[: len(data)]
                 self._face_color = self.face_color[: len(data)]
                 self._size = self._size[: len(data)]
@@ -451,7 +450,7 @@ class Points(Layer):
         elif len(data) > cur_npoints:
             # If there are now more points, add the size and colors of the
             # new ones
-            with self.events.set_data.blocker():
+            with self.events.slice_data.blocker():
                 adding = len(data) - cur_npoints
                 if len(self._size) > 0:
                     new_size = copy(self._size[-1])
@@ -482,7 +481,8 @@ class Points(Layer):
                 self.selected_data = set(np.arange(cur_npoints, len(data)))
 
         self._update_dims()
-        self.events.data()
+        self._update_editable()
+        self.events.data(self.data)
 
     def _add_point_color(self, adding: int, attribute: str):
         """Add the edge or face colors for new points.
@@ -1335,16 +1335,10 @@ class Points(Layer):
         """
         return self.edge_color[self._indices_view]
 
-    def _set_editable(self, editable=None):
-        """Set editable mode based on layer properties."""
-        if editable is None:
-            if self.dims.ndisplay == 3:
-                self.editable = False
-            else:
-                self.editable = True
-
-        if not self.editable:
+    def _on_editable_change(self, value):
+        if not value:
             self.mode = Mode.PAN_ZOOM
+        self._editable = value
 
     def _slice_data(
         self, dims_indices

@@ -183,10 +183,24 @@ def test_multichannel_dask_array():
         assert isinstance(viewer.layers[i].data, da.Array)
 
 
-def test_multichannel_error_hint():
+def test_forgot_multichannel_error_hint():
+    """Test that a helpful error is raised when channel_axis is not used."""
     viewer = ViewerModel()
     np.random.seed(0)
     data = da.random.random((15, 10, 5))
     with pytest.raises(TypeError) as e:
         viewer.add_image(data, name=['a', 'b', 'c'])
     assert "did you mean to specify a 'channel_axis'" in str(e)
+
+
+def test_multichannel_index_error_hint():
+    """Test multichannel error when arg length != n_channels."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    data = da.random.random((5, 10, 5))
+    with pytest.raises(IndexError) as e:
+        viewer.add_image(data, channel_axis=0, name=['a', 'b'])
+    assert (
+        "Requested channel_axis (0) had length 5, but the "
+        "'name' argument only provided 2 values." in str(e)
+    )

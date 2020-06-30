@@ -48,17 +48,12 @@ class AddLayersMixin:
         layer : :class:`napari.layers.Layer` or list
             The layer that was added (same as input).
         """
-        layer.events.select.connect(self._update_active_layer)
-        layer.events.deselect.connect(self._update_active_layer)
-        layer.events.status.connect(self._update_status)
-        layer.events.help.connect(self._update_help)
-        layer.events.interactive.connect(self._update_interactive)
-        layer.events.cursor.connect(self._update_cursor)
-        layer.events.cursor_size.connect(self._update_cursor_size)
-        layer.events.data.connect(self._on_layers_change)
+        layer.event_handler.register_listener(self)
+
         layer.dims.events.ndisplay.connect(self._on_layers_change)
         layer.dims.events.order.connect(self._on_layers_change)
         layer.dims.events.range.connect(self._on_layers_change)
+
         self.layers.append(layer)
         self._update_layers(layers=[layer])
 
@@ -265,7 +260,17 @@ class AddLayersMixin:
                     ]
                 else:
                     image = np.take(data, i, axis=channel_axis)
-                i_kwargs = {k: next(v) for k, v in kwargs.items()}
+                i_kwargs = {}
+                for key, val in kwargs.items():
+                    try:
+                        i_kwargs[key] = next(val)
+                    except StopIteration:
+                        raise IndexError(
+                            "Error adding multichannel image with data shape "
+                            f"{data.shape!r}.\nRequested channel_axis "
+                            f"({channel_axis}) had length {n_channels}, but "
+                            f"the '{key}' argument only provided {i} values. "
+                        )
                 layer = self.add_layer(layers.Image(image, **i_kwargs))
                 layer_list.append(layer)
             return layer_list
