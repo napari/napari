@@ -167,7 +167,7 @@ class Surface(IntensityVisualizationMixin, Layer):
     def vertices(self, vertices):
         self.events.vertices(vertices)
 
-    def on_vertices_change(self, vertices):
+    def _on_vertices_change(self, vertices):
         """Array of vertices of mesh triangles."""
 
         self._vertices = vertices
