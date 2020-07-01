@@ -12,7 +12,10 @@ class EventHandler:
         from the data, controls, or visual interface and updates all associated
         components.
         """
-        self.components_to_update = [component] if component else []
+        if component is None:
+            self.components = []
+        else:
+            self.components = [component]
 
     def register_listener(self, component):
         """Register a component to listen to emitted events.
@@ -23,7 +26,7 @@ class EventHandler:
             Object that contains callbacks for specific events. These are
             methods named according to an '_on_*_change' convention.
         """
-        self.components_to_update.append(component)
+        self.components.append(component)
 
     def on_change(self, event=None):
         """Process an event from any of our event emitters.
@@ -40,6 +43,7 @@ class EventHandler:
         # until refactor on all layers is complete, not all events will have a
         # value property
         try:
+            # print(event.type, event.value, self.components)
             value = event.value
             logger.debug(f" value: {value}")
         except AttributeError:
@@ -47,7 +51,7 @@ class EventHandler:
             return
 
         # Update based on event value
-        for component in self.components_to_update:
+        for component in self.components:
             update_method_name = f"_on_{event.type}_change"
             update_method = getattr(component, update_method_name, None)
             if update_method:

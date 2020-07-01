@@ -6,6 +6,7 @@ from qtpy.QtWidgets import (
     QListWidgetItem,
 )
 from .qt_layer_widget import QtLayerWidget
+from ..utils.event import Event, EmitterGroup
 
 
 class QtLayerList(QListWidget):
@@ -25,16 +26,21 @@ class QtLayerList(QListWidget):
     def __init__(self, layers):
         super().__init__()
 
+        self.events = EmitterGroup(
+            source=self, auto_connect=False, selection=Event,
+        )
+
         # When the EVH refactor is fully done we can do the initialization
         # and registering of the listener outside of this class and no longer
         # pass the layers object.
         self.layers = layers
         self.layers.event_handler.register_listener(self)
+        self.events.connect(self.layers.event_handler.on_change)
 
         self.model().rowsMoved[
             QModelIndex, int, int, QModelIndex, int
         ].connect(self._reorder)
-        # self.itemSelectionChanged.connect(self.)
+        self.itemSelectionChanged.connect(self._selection_changed)
 
         # Enable drag and drop and widget rearrangement
         self.setSortingEnabled(True)
@@ -52,6 +58,15 @@ class QtLayerList(QListWidget):
     def _reorder(self, parent, start, end, destination, row):
         print(start, end, row)
 
+    def _selection_changed(self):
+        """Emit an event when selection changes in list widget."""
+        total = self.count() - 1
+        selected = [total - self.row(item) for item in self.selectedItems()]
+        self.events.selection(selected)
+
+    def _on_selection_change(self, value):
+        print('selection', value)
+
     def _on_added_change(self, value):
         """Insert widget for layer at desired location.
 
@@ -61,7 +76,7 @@ class QtLayerList(QListWidget):
             Tuple of layer and index where layer is being added.
         """
         layer, index = value
-        total = self.count()
+        total = self.count() - 1
         widget = QtLayerWidget(layer)
         item = QListWidgetItem(self)
         item.setSizeHint(QSize(228, 32))  # should get height from widget / qss
@@ -77,7 +92,7 @@ class QtLayerList(QListWidget):
             Tuple of layer and index where layer is being removed.
         """
         _, index = value
-        total = self.count()
+        total = self.count() - 1
         item = self.item(total - index)
         self.removeItemWidget(item)
         del item
@@ -91,7 +106,7 @@ class QtLayerList(QListWidget):
             Tuple of old indices and new indices of layers and new indices
         """
         old_indices, new_indices = value
-        total = self.count()
+        total = self.count() - 1
 
         for old_index, new_index in zip(old_indices, new_indices):
             item = self.takeItem(total - old_index)

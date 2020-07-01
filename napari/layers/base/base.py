@@ -544,11 +544,11 @@ class Layer(KeymapProvider, ABC):
 
     @selected.setter
     def selected(self, selected):
+        if self.selected == selected:
+            return
         self.events.selected(selected)
 
     def _on_selected_change(self, selected):
-        if selected == self.selected:
-            return
         self._selected = selected
 
     @property

@@ -51,6 +51,20 @@ class LayerList(ListModel):
         # Unselect all other layers
         self.unselect_all(ignore=layer)
 
+    def _on_selection_change(self, selection):
+        """When layers selection is changed update the layers
+
+        Parmeters
+        ---------
+        selection : list
+            List of selected indices.
+        """
+        for i, layer in enumerate(self):
+            if i in selection:
+                layer.selected = True
+            else:
+                layer.selected = False
+
     def _on_name_unique_change(self, names):
         """Receive layer name tuple and update the name if is already in list.
 
