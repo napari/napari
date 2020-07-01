@@ -9,14 +9,11 @@ class QtLayerTreeModel(QAbstractItemModel):
     def __init__(self, layergroup: LayerGroup = None, parent=None):
         super().__init__(parent)
         self._root = layergroup or LayerGroup()
-        self._root._children.events.added.connect(self._add)
-
-    def _add(self, event):
-        print(vars(event))
+        self._root.events.changed.connect(self._refresh)
 
     def rowCount(self, index: QModelIndex) -> int:
         if index.isValid():
-            return len(self.getItem(index))
+            return len(self.itemAt(index))
         return len(self._root)
 
     def columnCount(self, QModelIndex) -> int:
@@ -28,8 +25,13 @@ class QtLayerTreeModel(QAbstractItemModel):
             return None
         if role == Qt.DisplayRole:
             # TODO: not supposed to use internal pointer for data
-            return str(self.getItem(index).name)
+            return str(self.itemAt(index).name)
         return None
+
+    def _refresh(self, e=None):
+        print()
+        super().beginInsertRows(QModelIndex(), 0, 0)
+        super().endInsertRows()
 
     def flags(self, index: QModelIndex):
         if not index.isValid():
@@ -73,29 +75,27 @@ class QtLayerTreeModel(QAbstractItemModel):
         if not index.isValid():
             return QModelIndex()
 
-        parent_item = self.getItem(index).parent
+        parent: Layer = self.itemAt(index).parent
 
-        if not parent_item or parent_item == self._root:
+        if not parent or parent == self._root:
             return QModelIndex()
 
-        return super().createIndex(
-            parent_item.row, 0, weakref.ref(parent_item)
-        )
+        return super().createIndex(parent.row, 0, weakref.ref(parent))
 
     def insertRow(self, row: int, parent: QModelIndex = None) -> bool:
-        parent_item: LayerGroup = self.getItem(parent)
+        parent_item: LayerGroup = self.itemAt(parent)
         if not parent_item:
             return False
 
         super().beginInsertRows(parent, row, row)
-        parent_item.insert(row)
+        # parent_item.insert(row)
         super().endInsertRows()
         return True
 
-    def getItem(self, index: QModelIndex) -> Layer:
+    def itemAt(self, index: QModelIndex) -> Layer:
         if index and index.isValid():
             item = index.internalPointer()()
-            if item:
+            if item is not None:
                 return item
         return self._root
 

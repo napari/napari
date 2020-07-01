@@ -12,7 +12,10 @@ class LayerGroup(Layer):
 
         self._children = LayerList()
         self.events.add(**{n: None for n in self._children.events.emitters})
-        self._children.events.connect(self._reemit)
+        self._children.events.added.connect(self.events.added)
+        self._children.events.removed.connect(self.events.removed)
+        self._children.events.reordered.connect(self.events.reordered)
+        self._children.events.changed.connect(self.events.changed)
         self.extend(children or [])
 
     def _coerce_name(self, name, layer=None):
@@ -90,6 +93,7 @@ class LayerGroup(Layer):
         # FIXME - add a check for unique layergroup names in the tree
         # FIXME - update ndim property on layergroup with self._get_ndim()
         self._children.append(item)
+        self.events.added(item=item, index=len(self) - 1)
 
     def insert(self, index, item):
         self._children.insert(index, item)

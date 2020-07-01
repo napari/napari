@@ -12,7 +12,9 @@ class EventHandler:
         from the data, controls, or visual interface and updates all associated
         components.
         """
-        self.components_to_update = [component] if component else []
+        self.components_to_update = (
+            [component] if component is not None else []
+        )
 
     def register_listener(self, component):
         """Register a component to listen to emitted events.
