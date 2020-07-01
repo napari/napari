@@ -11,7 +11,9 @@ def test_data_change_ndisplay_image(make_test_viewer):
     layer = viewer.add_image(data)
     visual = viewer.window.qt_viewer.layer_to_visual[layer]
 
-    @patch.object(visual, '_on_data_change', wraps=visual._on_data_change)
+    @patch.object(
+        visual, '_on_slice_data_change', wraps=visual._on_slice_data_change
+    )
     def test_ndisplay_change(mocked_method, ndisplay=3):
         viewer.dims.ndisplay = ndisplay
         mocked_method.assert_called_once()
@@ -31,7 +33,9 @@ def test_data_change_ndisplay_labels(make_test_viewer):
 
     visual = viewer.window.qt_viewer.layer_to_visual[layer]
 
-    @patch.object(visual, '_on_data_change', wraps=visual._on_data_change)
+    @patch.object(
+        visual, '_on_slice_data_change', wraps=visual._on_slice_data_change
+    )
     def test_ndisplay_change(mocked_method, ndisplay=3):
         viewer.dims.ndisplay = ndisplay
         mocked_method.assert_called_once()
@@ -50,7 +54,9 @@ def test_data_change_ndisplay_points(make_test_viewer):
     layer = viewer.add_points(data)
     visual = viewer.window.qt_viewer.layer_to_visual[layer]
 
-    @patch.object(visual, '_on_data_change', wraps=visual._on_data_change)
+    @patch.object(
+        visual, '_on_slice_data_change', wraps=visual._on_slice_data_change
+    )
     def test_ndisplay_change(mocked_method, ndisplay=3):
         viewer.dims.ndisplay = ndisplay
         mocked_method.assert_called_once()
@@ -69,7 +75,9 @@ def test_data_change_ndisplay_vectors(make_test_viewer):
     layer = viewer.add_vectors(data)
     visual = viewer.window.qt_viewer.layer_to_visual[layer]
 
-    @patch.object(visual, '_on_data_change', wraps=visual._on_data_change)
+    @patch.object(
+        visual, '_on_slice_data_change', wraps=visual._on_slice_data_change
+    )
     def test_ndisplay_change(mocked_method, ndisplay=3):
         viewer.dims.ndisplay = ndisplay
         mocked_method.assert_called_once()
@@ -89,7 +97,9 @@ def test_data_change_ndisplay_shapes(make_test_viewer):
 
     visual = viewer.window.qt_viewer.layer_to_visual[layer]
 
-    @patch.object(visual, '_on_data_change', wraps=visual._on_data_change)
+    @patch.object(
+        visual, '_on_slice_data_change', wraps=visual._on_slice_data_change
+    )
     def test_ndisplay_change(mocked_method, ndisplay=3):
         viewer.dims.ndisplay = ndisplay
         mocked_method.assert_called_once()
@@ -112,7 +122,9 @@ def test_data_change_ndisplay_surface(make_test_viewer):
 
     visual = viewer.window.qt_viewer.layer_to_visual[layer]
 
-    @patch.object(visual, '_on_data_change', wraps=visual._on_data_change)
+    @patch.object(
+        visual, '_on_slice_data_change', wraps=visual._on_slice_data_change
+    )
     def test_ndisplay_change(mocked_method, ndisplay=3):
         viewer.dims.ndisplay = ndisplay
         mocked_method.assert_called_once()

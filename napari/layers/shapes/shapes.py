@@ -379,7 +379,7 @@ class Shapes(Layer):
         self._status = self.mode
         self._help = 'enter a selection mode to edit shape properties'
 
-        self.events.deselect.connect(self._finish_drawing)
+        self.events.selected.connect(self._finish_drawing)
         self.events.face_color.connect(self._update_thumbnail)
         self.events.edge_color.connect(self._update_thumbnail)
 
@@ -486,7 +486,8 @@ class Shapes(Layer):
         self._data_view = ShapeList()
         self.add(data, shape_type=shape_type)
         self._update_dims()
-        self.events.data()
+        self._update_editable()
+        self.events.data(self.data)
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
@@ -1303,16 +1304,10 @@ class Shapes(Layer):
             self._finish_drawing()
         self.refresh()
 
-    def _set_editable(self, editable=None):
-        """Set editable mode based on layer properties."""
-        if editable is None:
-            if self.dims.ndisplay == 3:
-                self.editable = False
-            else:
-                self.editable = True
-
-        if not self.editable:
+    def _on_editable_change(self, value):
+        if not value:
             self.mode = Mode.PAN_ZOOM
+        self._editable = value
 
     def add(
         self,
@@ -1364,6 +1359,10 @@ class Shapes(Layer):
         """
         if edge_width is None:
             edge_width = self.current_edge_width
+
+        if len(data) > 0 and np.array(data[0]).ndim == 1:
+            # If a single array for a shape has been passed turn into list
+            data = [data]
 
         n_new_shapes = len(data)
 
@@ -1451,6 +1450,9 @@ class Shapes(Layer):
             applied to each shape otherwise the same value will be used for all
             shapes.
         """
+        if len(data) > 0 and np.array(data[0]).ndim == 1:
+            # If a single array for a shape has been passed turn into list
+            data = [data]
 
         n_shapes = len(data)
         with self.block_update_properties():
@@ -1550,7 +1552,6 @@ class Shapes(Layer):
             if np.array(data[0]).ndim == 1:
                 # If a single array for a shape has been passed turn into list
                 data = [data]
-
             # transform the colors
             transformed_ec = transform_color_with_defaults(
                 num_entries=len(data),
