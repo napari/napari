@@ -49,17 +49,17 @@ class ListModel(MultiIndexList, TypedList):
             )
 
         super().__setitem__(indices, new_indices)
-        self.events.reordered()
+        self.events.reordered((indices, new_indices))
 
     def insert(self, index, obj):
         super().insert(index, obj)
-        self.events.added(item=obj, index=self.__locitem__(index))
+        self.events.added((obj, self.__locitem__(index)))
 
     def append(self, obj):
         TypedList.append(self, obj)
-        self.events.added(item=obj, index=len(self) - 1)
+        self.events.added((obj, len(self) - 1))
 
     def pop(self, key):
         obj = super().pop(key)
-        self.events.removed(item=obj, index=key)
+        self.events.removed((obj, key))
         return obj

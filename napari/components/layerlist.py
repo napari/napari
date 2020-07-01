@@ -2,18 +2,7 @@ from typing import Optional, List
 from ..layers import Layer
 from ..utils.naming import force_unique_name
 from ..utils.list import ListModel
-
-
-def _add(event):
-    """When a layer is added, set its name."""
-    layers = event.source
-    layer = event.item
-    # Coerce name into being unique in layer list
-    layer.name = force_unique_name(layer.name, [l.name for l in layers[:-1]])
-    # Register layer event handler
-    layer.event_handler.register_listener(layers)
-    # Unselect all other layers
-    layers.unselect_all(ignore=layer)
+from ..utils.event_handler import EventHandler
 
 
 class LayerList(ListModel):
@@ -28,9 +17,9 @@ class LayerList(ListModel):
     ----------
     events : vispy.util.event.EmitterGroup
         Event hooks:
-            * added(item, index): whenever an item is added
-            * removed(item): whenever an item is removed
-            * reordered(): whenever the list is reordered
+            * added((item, index)): whenever an item is added
+            * removed((item, index)): whenever an item is removed
+            * reordered((indices, new_indices)): whenever the list is reordered
     """
 
     def __init__(self, iterable=()):
@@ -40,10 +29,21 @@ class LayerList(ListModel):
             lookup={str: lambda q, e: q == e.name},
         )
 
-        self.events.added.connect(_add)
+        self.event_handler = EventHandler(component=self)
+        self.events.connect(self.event_handler.on_change)
 
     def __newlike__(self, iterable):
         return ListModel(self._basetype, iterable, self._lookup)
+
+    def _on_add_change(self, value):
+        """When a layer is added, set its name."""
+        layer = value[0]
+        # Coerce name into being unique in layer list
+        layer.name = force_unique_name(layer.name, [l.name for l in self[:-1]])
+        # Register layer event handler
+        layer.event_handler.register_listener(self)
+        # Unselect all other layers
+        self.unselect_all(ignore=layer)
 
     def _on_name_unique_change(self, names):
         """Receive layer name tuple and update the name if is already in list.

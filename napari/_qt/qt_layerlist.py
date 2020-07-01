@@ -18,12 +18,8 @@ class QtLayerList(QListWidget):
 
     Attributes
     ----------
-    centers : list
-        List of layer widgets center coordinates.
     layers : napari.components.LayerList
         The layer list to track and display.
-    vbox_layout : QVBoxLayout
-        The layout instance in which the layouts appear.
     """
 
     def __init__(self, layers):
@@ -53,9 +49,9 @@ class QtLayerList(QListWidget):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
-        layer = event.item
+        layer = event.value[0]
         total = len(self.layers)
-        index = total - event.index
+        index = total - event.value[1]
         widget = QtLayerWidget(layer)
         item = QListWidgetItem(self)
         item.setSizeHint(QSize(228, 32))  # should get height from widget
@@ -71,7 +67,7 @@ class QtLayerList(QListWidget):
             Event from the Qt context.
         """
         total = len(self.layers)
-        index = total - event.index
+        index = total - event.value[0]
         item = self.item(index)
         self.removeItemWidget(item)
         del item

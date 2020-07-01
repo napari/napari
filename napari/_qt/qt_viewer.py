@@ -244,11 +244,10 @@ class QtViewer(QSplitter):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
-        layers = event.source
-        layer = event.item
+        layer = event.value[0]
         vispy_layer = create_vispy_visual(layer)
         vispy_layer.node.parent = self.view.scene
-        vispy_layer.order = len(layers)
+        vispy_layer.order = len(self.layers.layers)
         self.canvas.connect(vispy_layer.on_draw)
         self.layer_to_visual[layer] = vispy_layer
 
@@ -260,7 +259,7 @@ class QtViewer(QSplitter):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
-        layer = event.item
+        layer = event.value[0]
         vispy_layer = self.layer_to_visual[layer]
         self.canvas.events.draw.disconnect(vispy_layer.on_draw)
         vispy_layer.node.transforms = ChainTransform()
