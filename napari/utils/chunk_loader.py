@@ -266,6 +266,7 @@ class ChunkLoader:
             The satisfied ChunkRequest or None indicating an async load.
         """
         if self.synchronous:
+            LOGGER.info("[sync] ChunkLoader.load_chunk")
             # Load it immediately right here in the GUI thread.
             request.array = np.asarray(request.array)
             return request
@@ -283,7 +284,7 @@ class ChunkLoader:
         request : ChunkRequest
             Contains the array to load from and related info.
         """
-        LOGGER.info("ChunkLoader._load_async: %s", request.key)
+        LOGGER.info("[async] ChunkLoader._load_async: %s", request.key)
 
         # Clear any existing futures for this specific data_id. We only
         # support non-multi-scale so far and there can only be one load in
@@ -294,11 +295,15 @@ class ChunkLoader:
         array = self.cache.get_chunk(request)
 
         if array is not None:
-            LOGGER.info("ChunkLoader._load_async: cache hit %s", request.key)
+            LOGGER.info(
+                "[async] ChunkLoader._load_async: cache hit %s", request.key
+            )
             request.array = array
             return request
 
-        LOGGER.info("ChunkLoader.load_chunk: cache miss %s", request.key)
+        LOGGER.info(
+            "[async] ChunkLoader.load_chunk: cache miss %s", request.key
+        )
 
         future = self.executor.submit(_chunk_loader_worker, request)
         future.add_done_callback(self._done)
@@ -320,7 +325,7 @@ class ChunkLoader:
         thread.
         """
         request = future.result()
-        LOGGER.info("ChunkLoader._done: %s", request.key)
+        LOGGER.info("[async] ChunkLoader._done: %s", request.key)
 
         # Do this from worker thread for now. It's safe for now.
         # TODO_ASYNC: Ultimately we might want to this to happen from the
@@ -350,10 +355,10 @@ class ChunkLoader:
         num_cleared = num_before - num_after
 
         if num_before == 0:
-            LOGGER.info("ChunkLoader.clear_pending: empty")
+            LOGGER.info("[async] ChunkLoader.clear_pending: empty")
         else:
             LOGGER.info(
-                "ChunkLoader.clear_pending: %d of %d cleared -> %d remain",
+                "[async] ChunkLoader.clear_pending: %d of %d cleared -> %d remain",
                 num_cleared,
                 num_before,
                 num_after,
