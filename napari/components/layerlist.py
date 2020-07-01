@@ -35,8 +35,14 @@ class LayerList(ListModel):
     def __newlike__(self, iterable):
         return ListModel(self._basetype, iterable, self._lookup)
 
-    def _on_add_change(self, value):
-        """When a layer is added, set its name."""
+    def _on_added_change(self, value):
+        """When a layer is added, set its name.
+
+        Parmeters
+        ---------
+        value : 2-tuple
+            Tuple of layer and index where layer is being added.
+        """
         layer = value[0]
         # Coerce name into being unique in layer list
         layer.name = force_unique_name(layer.name, [l.name for l in self[:-1]])

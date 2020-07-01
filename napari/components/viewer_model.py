@@ -80,13 +80,13 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self._palette = None
         self.theme = 'dark'
 
+        # These connections will be removed once the EVH reaches the Dims
         self.dims.events.camera.connect(self.reset_view)
-        self.dims.events.ndisplay.connect(self._update_layers)
-        self.dims.events.order.connect(self._update_layers)
-        self.dims.events.axis.connect(self._update_layers)
-        self.layers.events.changed.connect(self._update_active_layer)
-        self.layers.events.changed.connect(self._update_grid)
-        self.layers.events.changed.connect(self._on_layers_change)
+        self.dims.events.ndisplay.connect(lambda e: self._update_layers())
+        self.dims.events.order.connect(lambda e: self._update_layers())
+        self.dims.events.axis.connect(lambda e: self._update_layers())
+
+        self.layers.event_handler.register_listener(self)
 
         self.keymap_providers = [self]
 
@@ -308,7 +308,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         empty_labels = np.zeros(dims, dtype=int)
         self.add_labels(empty_labels)
 
-    def _update_layers(self, event=None, layers=None):
+    def _update_layers(self, layers=None):
         """Updates the contained layers.
 
         Parameters
@@ -347,15 +347,12 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         cur_theme = theme_names.index(self.theme)
         self.theme = theme_names[(cur_theme + 1) % len(theme_names)]
 
-    def _update_active_layer(self, event):
-        """Set the active layer by iterating over the layers list and
+    def _update_active_layer(self):
+        """Set the active layer.
+
+        Do this by iterating over the layers list and
         finding the first selected layer. If multiple layers are selected the
         iteration stops and the active layer is set to be None
-
-        Parameters
-        ----------
-        event : Event
-            No Event parameters are used
         """
         # iteration goes backwards to find top most selected layer if any
         # if multiple layers are selected sets the active layer to None
@@ -380,7 +377,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             self.interactive = active_layer.interactive
             self.active_layer = active_layer
 
-    def _on_layers_change(self, event):
+    def _update_layer_dims(self):
         if len(self.layers) == 0:
             self.dims.ndim = 2
             self.dims.reset()
@@ -437,10 +434,22 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         return max_dims
 
     def _on_selected_change(self, selected):
-        self._update_active_layer(None)
+        self._update_active_layer()
 
     def _on_data_change(self, data):
-        self._on_layers_change(None)
+        self._update_layer_dims()
+
+    def _on_changed_change(self, value):
+        """Receive layers list change event and update viewer.
+
+        Parameters
+        ----------
+        value : None
+            Null value.
+        """
+        self._update_layer_dims()
+        self._update_grid()
+        self._update_active_layer()
 
     def _on_status_change(self, status):
         """Receive layer status change event and update viewer status.
@@ -539,7 +548,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         """
         self.grid_view(n_row=1, n_column=1, stride=1)
 
-    def _update_grid(self, event=None):
+    def _update_grid(self):
         """Update grid with current grid values.
         """
         self.grid_view(

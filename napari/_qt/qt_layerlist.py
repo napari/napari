@@ -1,4 +1,4 @@
-from qtpy.QtCore import QSize
+from qtpy.QtCore import QSize, QModelIndex
 from qtpy.QtWidgets import (
     QListWidget,
     QSizePolicy,
@@ -25,10 +25,15 @@ class QtLayerList(QListWidget):
     def __init__(self, layers):
         super().__init__()
 
+        # When the EVH refactor is fully done we can do the initialization
+        # and registering of the listener outside of this class and no longer
+        # pass the layers object.
         self.layers = layers
-        self.layers.events.added.connect(self._add)
-        self.layers.events.removed.connect(self._remove)
-        # self.layers.events.reordered.connect(self._reorder)
+        self.layers.event_handler.register_listener(self)
+
+        self.model().rowsMoved[
+            QModelIndex, int, int, QModelIndex, int
+        ].connect(self._reorder)
         # self.itemSelectionChanged.connect(self.)
 
         # Enable drag and drop and widget rearrangement
@@ -38,70 +43,59 @@ class QtLayerList(QListWidget):
         self.setDragEnabled(True)
         self.setDragDropMode(QAbstractItemView.InternalMove)
 
+        # Set selection mode
+        self.setSelectionMode(QAbstractItemView.ExtendedSelection)
+
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
         self.setToolTip('Layer list')
 
-    def _add(self, event):
-        """Insert widget for layer `event.item` at index `event.index`.
+    def _reorder(self, parent, start, end, destination, row):
+        print(start, end, row)
+
+    def _on_added_change(self, value):
+        """Insert widget for layer at desired location.
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        value : 2-tuple
+            Tuple of layer and index where layer is being added.
         """
-        layer = event.value[0]
-        total = len(self.layers)
-        index = total - event.value[1]
+        layer, index = value
+        total = self.count()
         widget = QtLayerWidget(layer)
         item = QListWidgetItem(self)
-        item.setSizeHint(QSize(228, 32))  # should get height from widget
-        self.insertItem(index, item)
+        item.setSizeHint(QSize(228, 32))  # should get height from widget / qss
+        self.insertItem(total - index, item)
         self.setItemWidget(item, widget)
 
-    def _remove(self, event):
-        """Remove widget for layer at index `event.index`.
+    def _on_removed_change(self, value):
+        """Remove widget for layer at desired location.
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        value : 2-tuple
+            Tuple of layer and index where layer is being removed.
         """
-        total = len(self.layers)
-        index = total - event.value[0]
-        item = self.item(index)
+        _, index = value
+        total = self.count()
+        item = self.item(total - index)
         self.removeItemWidget(item)
         del item
 
-    # def _reorder(self, event=None):
-    #     """Reorder list of layer widgets.
-    #
-    #     Loops through all widgets in list, sequentially removing them
-    #     and inserting them into the correct place in the final list.
-    #
-    #     Parameters
-    #     ----------
-    #     event : qtpy.QtCore.QEvent, optional
-    #         Event from the Qt context.
-    #     """
-    #     total = len(self.layers)
-    #
-    #     # Create list of layers in order of their widgets
-    #     layer_widgets = [self.item(i).widget().layer for i in range(total)]
-    #
-    #     # Move through the layers in order
-    #     for i in range(total):
-    #         # Find index of property widget in list of the current layer
-    #         index = 2 * indices.index(i)
-    #         widget = widgets[index]
-    #         divider = widgets[index + 1]
-    #         # Check if current index does not match new index
-    #         index_current = self.indexOf(widget)
-    #         index_new = 2 * (total - i) - 1
-    #         if index_current != index_new:
-    #             # Remove that property widget and divider
-    #             self.removeItemWidget(item)
-    #             # Insert the property widget and divider into new location
-    #             self.insertItem(index_new, item)
+    def _on_reordered_change(self, value):
+        """Reorder widgets for layer at desired location.
+
+        Parameters
+        ----------
+        value : 2-tuple
+            Tuple of old indices and new indices of layers and new indices
+        """
+        old_indices, new_indices = value
+        total = self.count()
+
+        for old_index, new_index in zip(old_indices, new_indices):
+            item = self.takeItem(total - old_index)
+            self.insertItem(total - new_index, item)
 
     def keyPressEvent(self, event):
         """Ignore a key press event.
