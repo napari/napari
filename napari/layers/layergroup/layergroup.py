@@ -2,15 +2,6 @@ from ..base import Layer
 from ..utils.layer_utils import combine_extents
 
 
-def _add(event):
-    """When a layer is added, set its name."""
-    layers = event.source
-    layer = event.item
-    # layer.name = layers._coerce_name(layer.name, layer)
-    layer.events.name.connect(lambda e: layers._update_name(e))
-    layers.unselect_all(ignore=layer)
-
-
 class LayerGroup(Layer):
     def __init__(
         self, children=None, *, name='LayerGroup', ndim=2, visible=True
@@ -20,8 +11,12 @@ class LayerGroup(Layer):
         from ...components.layerlist import LayerList
 
         self._children = LayerList()
-        self.events = self._children.events
+        self.events.add(**{n: None for n in self._children.events.emitters})
+        self._children.events.connect(self._reemit)
         self.extend(children or [])
+
+    def _coerce_name(self, name, layer=None):
+        return self._children._coerce_name(name, layer)
 
     def _render(self):
         """Recursively return list of strings that can render ascii tree."""
@@ -96,14 +91,12 @@ class LayerGroup(Layer):
         # FIXME - update ndim property on layergroup with self._get_ndim()
         self._children.append(item)
 
+    def insert(self, index, item):
+        self._children.insert(index, item)
+
     def extend(self, items):
         for item in items:
             self.append(item)
-
-    @property
-    def selected(self):
-        """List of selected layers."""
-        return self._children.selected
 
     def index(self, key):
         return self._children.index(key)
@@ -205,12 +198,6 @@ class LayerGroup(Layer):
     @property
     def blending(self):
         return None
-
-    @blending.setter
-    def blending(self, value):
-        raise NotImplementedError(
-            "You may not set a blending mode on a Layergroup."
-        )
 
     def save(self):
         raise NotImplementedError()

@@ -404,12 +404,18 @@ class Layer(KeymapProvider, ABC):
         self._update_coordinates()
 
     @property
-    def parent(self):
+    def parent(self) -> Optional['Layer']:
         return self._parent
 
     @parent.setter
     def parent(self, parent):
         self._parent = parent
+
+    @property
+    def row(self) -> int:
+        if self.parent:
+            return self.parent._children.index(self)
+        return 0
 
     def _update_dims(self, event=None):
         """Updates dims model, which is useful after data has been changed."""
@@ -787,3 +793,7 @@ class Layer(KeymapProvider, ABC):
         from ...plugins.io import save_layers
 
         return save_layers(path, [self], plugin=plugin)
+
+    def __len__(self):
+        """Number of all non-group layers contained in the layergroup."""
+        return 0
