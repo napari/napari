@@ -57,11 +57,7 @@ class QtLayerList(QListWidget):
 
         # Once EVH refactor is done, this can be moved to an initialization
         # outside of this object
-        selection = [
-            i for i, layer in enumerate(self.layers) if layer.selected
-        ]
-        print(selection)
-        self._on_selection_change(selection)
+        self._on_selection_change(self.layers.selected)
 
     def _reorder(self, parent, start, end, destination, row):
         print(start, end, row)
@@ -80,11 +76,9 @@ class QtLayerList(QListWidget):
         selection : list
             List of selected indices.
         """
-        print('asdfasdfsaf', selection, self.count())
         total = self.count() - 1
         for index in range(self.count()):
             item = self.item(index)
-            print('rrrr', total - index, selection)
             item.setSelected(total - index in selection)
 
     def _on_added_change(self, value):
@@ -95,7 +89,6 @@ class QtLayerList(QListWidget):
         value : 2-tuple
             Tuple of layer and index where layer is being added.
         """
-        print('qqqqqqq', value[1])
         layer, index = value
         total = self.count() - 1
         widget = QtLayerWidget(layer)
@@ -103,7 +96,6 @@ class QtLayerList(QListWidget):
         item.setSizeHint(QSize(228, 32))  # should get height from widget / qss
         self.insertItem(total - index, item)
         self.setItemWidget(item, widget)
-        print('asdf', layer.selected)
         item.setSelected(layer.selected)
 
     def _on_removed_change(self, value):
@@ -116,8 +108,7 @@ class QtLayerList(QListWidget):
         """
         _, index = value
         total = self.count() - 1
-        item = self.item(total - index)
-        self.removeItemWidget(item)
+        item = self.takeItem(total - index)
         del item
 
     def _on_reordered_change(self, value):
