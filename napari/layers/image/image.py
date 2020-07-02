@@ -254,26 +254,17 @@ class Image(IntensityVisualizationMixin, Layer):
         # Trigger generation of view slice and thumbnail
         self._update_dims()
 
-    def _get_slice_shape(self):
-        """Return shape of the slice we going to display.
-        """
-        shape = self.data[self.dims.indices].shape
-
-        if self.rgb:
-            shape += (self.data.shape[-1],)
-
-        return shape
-
     def _get_empty_image(self):
         """Get minimal empty image with just one pixel/voxel.
         """
         if not self.multiscale:
             # Create blank image exactly the size it should be, this is
             # what want for async loading, and it works for non-async too.
-            return np.zeros(self._get_slice_shape())
+            shape = self.data[self.dims.indices].shape
+            return np.zeros(shape)
 
         # For multi-scale create a tiny 1 pixel/voxel image, this is what
-        # we've always done. Multiscale does not support asyn yet.
+        # we've always done. Multiscale does not support async yet.
         if self.rgb:
             return np.zeros((1,) * self.dims.ndisplay + (self.shape[-1],))
         else:
@@ -499,10 +490,8 @@ class Image(IntensityVisualizationMixin, Layer):
         return image
 
     def _create_image_slice(self):
-        """Create an ImageSlice to show the current data"""
-        # indices = self.dims.indices
-        # if self._slice is None or self._slice.current_indices != indices:
-        # We need a new slice showing an empty image.
+        """Create an ImageSlice to show the current data.
+        """
         empty_image = self._get_empty_image()
         properties = ImageProperties(
             self.multiscale, self.rgb, self._get_ndim(), self._get_order(),
