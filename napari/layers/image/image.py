@@ -255,16 +255,14 @@ class Image(IntensityVisualizationMixin, Layer):
         self._update_dims()
 
     def _get_slice_shape(self):
-        """Return shape of the slice we are displaying.
+        """Return shape of the slice we going to display.
         """
-        # TODO_ASYNC: is this shape already available somewhere so
-        # we don't have to produce it here?
-        displayed_shape = tuple(self.shape[x] for x in self.dims.displayed)
+        shape = self.data[self.dims.indices].shape
 
         if self.rgb:
-            displayed_shape += (self.data.shape[-1],)
+            shape += (self.data.shape[-1],)
 
-        return displayed_shape
+        return shape
 
     def _get_empty_image(self):
         """Get minimal empty image with just one pixel/voxel.
