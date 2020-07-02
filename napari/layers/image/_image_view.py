@@ -48,7 +48,7 @@ class ImageView:
 
     @view.setter
     def view(self, view_image: ArrayLike):
-        """Set the viewed and draw images.
+        """Set the viewed and raw image.
 
         Parameters
         ----------
