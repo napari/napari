@@ -25,12 +25,18 @@ lint_task:
 linux_task:
   auto_cancellation: true
 
-  env:
-    matrix:
+  
+  matrix:
+    env:
       PY_VER: "3.6"
+    env:
       PY_VER: "3.7"
+    env:
       PY_VER: "3.8"
-
+    env:
+      PY_VER: "3.8"
+      ASYNC: 1
+  
   name: linux ${PY_VER}
 
   container:
@@ -82,6 +88,10 @@ linux_task:
     - python -m pip uninstall -y pyside2
     - python -m pip install -e .[pyqt5]
     - pytest -v
+
+  test_pyqt5_script:
+    - only_if: $ASYNC == 1
+    - pytest napari -v --async_only  
 
 
 mac_task:
