@@ -1,9 +1,12 @@
-import numpy as np
+import copy
+
 import dask.array as da
+import numpy as np
+import pytest
+
 from napari.components import ViewerModel
 from napari.utils.colormaps import colormaps, ensure_colormap_tuple
 from napari.utils.misc import ensure_sequence_of_iterables, ensure_iterable
-import pytest
 
 base_colormaps = colormaps.CYMRGB
 two_colormaps = colormaps.MAGENTA_GREEN
@@ -87,6 +90,7 @@ def test_multichannel(shape, kwargs):
     viewer = ViewerModel()
     np.random.seed(0)
     data = np.random.random(shape or (15, 10, 5))
+    kwargs = copy.deepcopy(kwargs)  # since we pop
     channel_axis = kwargs.pop('channel_axis', -1)
     viewer.add_image(data, channel_axis=channel_axis, **kwargs)
 
