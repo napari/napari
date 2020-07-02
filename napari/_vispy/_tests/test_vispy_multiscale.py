@@ -126,6 +126,7 @@ def test_multiscale_screenshot_zoomed(make_test_viewer):
     )
 
 
+@pytest.mark.sync_only
 @pytest.mark.skipif(
     sys.platform.startswith('win') or not os.getenv("CI"),
     reason='Screenshot tests are not supported on napari windows CI.',
