@@ -15,6 +15,7 @@ class VispySurfaceLayer(VispyBaseLayer):
 
     def __init__(self, layer):
         node = Mesh()
+        self._gamma = 1
 
         super().__init__(layer, node)
 
@@ -87,7 +88,16 @@ class VispySurfaceLayer(VispyBaseLayer):
             New gamma value.
         """
 
-        self._on_colormap_change(self.layer.colormap)
+        # Once #1842 and #1844 from vispy are released and gamma adjustment is
+        # done on the GPU this can be dropped
+        if gamma != 1:
+            # when gamma!=1, we instantiate a new colormap with 256 control
+            # points from 0-1
+            cmap = Colormap(self._raw_cmap[np.linspace(0, 1, 256) ** gamma])
+        else:
+            cmap = self._raw_cmap
+        self._gamma = gamma
+        self.node.cmap = cmap
 
     def reset(self, event=None):
         self._reset_base()
