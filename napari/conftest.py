@@ -318,28 +318,25 @@ def single_tiff():
     return [image_fetcher.fetch('data/multipage.tif')]
 
 
-@pytest.fixture(
-    params=[True, False], ids=["sync", "async"], scope="session", autouse=True
-)
+# Currently we cannot run async and async in the invocation of pytest
+# because we get a segfault for unknown reasons. So for now:
+# "pytest" runs sync_only
+# "pytest napari --async_only" runs async only
+@pytest.fixture(scope="session", autouse=True)
 def configure_loading(request):
-    """We do two passes through the test: sync and then async."""
-    with synchronous_loading(request.param):
+    """Configure async/async loading."""
+    sync_mode = not request.config.getoption("--async_only")
+    with synchronous_loading(sync_mode):
         yield
 
 
 @pytest.fixture(autouse=True)
 def skip_sync_async(request):
     """Skip tests depending on our sync/async settings."""
-    if CHUNK_LOADER.synchronous:
-        if request.config.getoption("--async_only"):
-            # Currently sync, but user asked for async only so skip.
-            pytest.skip("running with --async_only")
-    elif request.node.get_closest_marker('sync_only'):
-        # Currently async, but this test is sync only so skip.
-        pytest.skip("test is sync only")
-    elif request.config.getoption("--sync_only"):
-        # Currently async, but user asked for sync only so skip.
-        pytest.skip("running with --sync_only")
+    async_mode = not CHUNK_LOADER.synchronous
+    sync_only_test = request.node.get_closest_marker('sync_only')
+    if async_mode and sync_only_test:
+        pytest.skip("running with --async_only")
 
 
 # _PYTEST_RAISE=1 will prevent pytest from handling exceptions.
