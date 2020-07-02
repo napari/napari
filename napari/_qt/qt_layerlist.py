@@ -40,7 +40,7 @@ class QtLayerList(QListWidget):
         self.model().rowsMoved[
             QModelIndex, int, int, QModelIndex, int
         ].connect(self._reorder)
-        self.itemSelectionChanged.connect(self._selection_changed)
+        self.itemSelectionChanged.connect(self._selectionChanged)
 
         # Enable drag and drop and widget rearrangement
         self.setSortingEnabled(True)
@@ -55,17 +55,37 @@ class QtLayerList(QListWidget):
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
         self.setToolTip('Layer list')
 
+        # Once EVH refactor is done, this can be moved to an initialization
+        # outside of this object
+        selection = [
+            i for i, layer in enumerate(self.layers) if layer.selected
+        ]
+        print(selection)
+        self._on_selection_change(selection)
+
     def _reorder(self, parent, start, end, destination, row):
         print(start, end, row)
 
-    def _selection_changed(self):
+    def _selectionChanged(self):
         """Emit an event when selection changes in list widget."""
         total = self.count() - 1
         selected = [total - self.row(item) for item in self.selectedItems()]
         self.events.selection(selected)
 
-    def _on_selection_change(self, value):
-        print('selection', value)
+    def _on_selection_change(self, selection):
+        """When layers selection is changed update the layers list view
+
+        Parmeters
+        ---------
+        selection : list
+            List of selected indices.
+        """
+        print('asdfasdfsaf', selection, self.count())
+        total = self.count() - 1
+        for index in range(self.count()):
+            item = self.item(index)
+            print('rrrr', total - index, selection)
+            item.setSelected(total - index in selection)
 
     def _on_added_change(self, value):
         """Insert widget for layer at desired location.
@@ -75,6 +95,7 @@ class QtLayerList(QListWidget):
         value : 2-tuple
             Tuple of layer and index where layer is being added.
         """
+        print('qqqqqqq', value[1])
         layer, index = value
         total = self.count() - 1
         widget = QtLayerWidget(layer)
@@ -82,6 +103,8 @@ class QtLayerList(QListWidget):
         item.setSizeHint(QSize(228, 32))  # should get height from widget / qss
         self.insertItem(total - index, item)
         self.setItemWidget(item, widget)
+        print('asdf', layer.selected)
+        item.setSelected(layer.selected)
 
     def _on_removed_change(self, value):
         """Remove widget for layer at desired location.
@@ -111,31 +134,3 @@ class QtLayerList(QListWidget):
         for old_index, new_index in zip(old_indices, new_indices):
             item = self.takeItem(total - old_index)
             self.insertItem(total - new_index, item)
-
-    def keyPressEvent(self, event):
-        """Ignore a key press event.
-
-        Allows the event to pass through a parent widget to its child widget
-        without doing anything. If we did not use event.ignore() then the
-        parent widget would catch the event and not pass it on to the child.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
-        """
-        event.ignore()
-
-    def keyReleaseEvent(self, event):
-        """Ignore key relase event.
-
-        Allows the event to pass through a parent widget to its child widget
-        without doing anything. If we did not use event.ignore() then the
-        parent widget would catch the event and not pass it on to the child.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
-        """
-        event.ignore()
