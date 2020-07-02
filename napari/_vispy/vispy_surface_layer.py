@@ -46,6 +46,14 @@ class VispySurfaceLayer(VispyBaseLayer):
         self._on_translate_change()
 
     def _on_colormap_change(self, colormap):
+        """Receive layer model colormap change event and update visual.
+
+        Parameters
+        ----------
+        colormap : tuple
+            colormap name and colormap
+        """
+
         cmap = colormap[1]
         if self.layer.gamma != 1:
             # when gamma!=1, we instantiate a new colormap with 256 control
@@ -58,9 +66,25 @@ class VispySurfaceLayer(VispyBaseLayer):
         self.node.cmap = cmap
 
     def _on_contrast_limits_change(self, contrast_limits):
+        """Receive layer model contrast limits change event and update visual.
+
+        Parameters
+        ----------
+        contrast_limits : tuple
+            Contrast limits.
+        """
+
         self.node.clim = contrast_limits
 
     def _on_gamma_change(self, gamma):
+        """Receive layer model gamma change event and update visual.
+
+        Parameters
+        ----------
+        gamma : float
+            New gamma value.
+        """
+
         self._on_colormap_change(self.layer.colormap)
 
     def reset(self, event=None):

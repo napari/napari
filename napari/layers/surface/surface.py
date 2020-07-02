@@ -168,7 +168,13 @@ class Surface(IntensityVisualizationMixin, Layer):
         self.events.vertices(vertices)
 
     def _on_vertices_change(self, vertices):
-        """Array of vertices of mesh triangles."""
+        """Receive vertices change event and update the model.
+
+        Parameters
+        ----------
+            vertices : array
+                 Array of vertices of mesh triangles.
+        """
 
         self._vertices = vertices
 
@@ -186,7 +192,13 @@ class Surface(IntensityVisualizationMixin, Layer):
         self.events.vertex_values(vertex_values)
 
     def _on_vertex_values_change(self, vertex_values: np.ndarray):
-        """Array of values used to color vertices.."""
+        """Receive vertex value change event and update the model.
+
+        Parameters
+        ----------
+            vertex_values : ndarray
+                 Array of values used to color vertices.
+        """
 
         self._vertex_values = vertex_values
 
@@ -203,7 +215,13 @@ class Surface(IntensityVisualizationMixin, Layer):
         self.events.faces(faces)
 
     def _on_faces_change(self, faces: np.ndarray):
-        """Array of indices of mesh triangles.."""
+        """Receive face change event and update the model.
+
+        Parameters
+        ----------
+            faces : ndarray
+                 Array of indices of mesh triangles.
+        """
 
         self._faces = faces
 
