@@ -84,7 +84,7 @@ linux_task:
     - python -c "import napari; print(napari.__version__)"
 
   test_pyside2_with_coverage_script:
-    - pytest -v --cov-report=xml --cov=./napari $PYTEST_FLAGS
+    - pytest napari -v --cov-report=xml --cov=./napari $PYTEST_FLAGS
     - codecov
 
   test_pyqt5_script:
