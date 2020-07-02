@@ -113,6 +113,7 @@ def test_screenshot(make_test_viewer):
     assert screenshot.ndim == 3
 
 
+@pytest.mark.sync_only
 def test_update(make_test_viewer):
     data = np.random.random((512, 512))
     viewer = make_test_viewer()
