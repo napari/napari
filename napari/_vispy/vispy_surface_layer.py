@@ -2,6 +2,7 @@ from vispy.scene.visuals import Mesh
 from vispy.color import Colormap
 from .vispy_base_layer import VispyBaseLayer
 import numpy as np
+from ..utils.colormaps import ensure_colormap_tuple
 
 
 class VispySurfaceLayer(VispyBaseLayer):
@@ -54,16 +55,17 @@ class VispySurfaceLayer(VispyBaseLayer):
             colormap name and colormap
         """
 
-        cmap = colormap[1]
-        if self.layer.gamma != 1:
+        name, cmap = ensure_colormap_tuple(colormap)
+        # Once #1842 and #1844 from vispy are released and gamma adjustment is
+        # done on the GPU this can be dropped
+        self._raw_cmap = cmap
+        if self._gamma != 1:
             # when gamma!=1, we instantiate a new colormap with 256 control
             # points from 0-1
-            cmap = Colormap(cmap[np.linspace(0, 1, 256) ** self.layer.gamma])
-        if self.layer.dims.ndisplay == 3:
-            self.node.view_program['texture2D_LUT'] = (
-                cmap.texture_lut() if (hasattr(cmap, 'texture_lut')) else None
-            )
-        self.node.cmap = cmap
+            node_cmap = Colormap(cmap[np.linspace(0, 1, 256) ** self._gamma])
+        else:
+            node_cmap = cmap
+        self.node.cmap = node_cmap
 
     def _on_contrast_limits_change(self, contrast_limits):
         """Receive layer model contrast limits change event and update visual.
