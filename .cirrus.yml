@@ -89,7 +89,7 @@ linux_task:
     - python -m pip install -e .[pyqt5]
     - pytest -v
 
-  test_pyqt5_script:
+  test_pyqt5_asnc_script:
     - only_if: $ASYNC == 1
     - pytest napari -v --async_only  
 
