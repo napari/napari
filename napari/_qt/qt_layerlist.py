@@ -1,4 +1,4 @@
-from qtpy.QtCore import QSize, QModelIndex
+from qtpy.QtCore import QEvent, QSize, Qt, Signal
 from qtpy.QtWidgets import (
     QListWidget,
     QSizePolicy,
@@ -7,6 +7,7 @@ from qtpy.QtWidgets import (
 )
 from .qt_layer_widget import QtLayerWidget
 from ..utils.event import Event, EmitterGroup
+from .utils import drag_with_pixmap
 
 
 class QtLayerList(QListWidget):
@@ -23,11 +24,13 @@ class QtLayerList(QListWidget):
         The layer list to track and display.
     """
 
+    orderChanged = Signal(tuple)  # emitted when user changes order.
+
     def __init__(self, layers):
         super().__init__()
 
         self.events = EmitterGroup(
-            source=self, auto_connect=False, selection=Event,
+            source=self, auto_connect=False, selection=Event, reordered=Event,
         )
 
         # When the EVH refactor is fully done we can do the initialization
@@ -37,10 +40,8 @@ class QtLayerList(QListWidget):
         self.layers.event_handler.register_listener(self)
         self.events.connect(self.layers.event_handler.on_change)
 
-        self.model().rowsMoved[
-            QModelIndex, int, int, QModelIndex, int
-        ].connect(self._reorder)
         self.itemSelectionChanged.connect(self._selectionChanged)
+        self.orderChanged.connect(self.events.reordered)
 
         # Enable drag and drop and widget rearrangement
         self.setSortingEnabled(True)
@@ -58,9 +59,6 @@ class QtLayerList(QListWidget):
         # Once EVH refactor is done, this can be moved to an initialization
         # outside of this object
         self._on_selection_change(self.layers.selected)
-
-    def _reorder(self, parent, start, end, destination, row):
-        print(start, end, row)
 
     def _selectionChanged(self):
         """Emit an event when selection changes in list widget."""
@@ -119,9 +117,30 @@ class QtLayerList(QListWidget):
         value : 2-tuple
             Tuple of old indices and new indices of layers and new indices
         """
+        print('reordered call')
         old_indices, new_indices = value
         total = self.count() - 1
 
         for old_index, new_index in zip(old_indices, new_indices):
             item = self.takeItem(total - old_index)
             self.insertItem(total - new_index, item)
+
+    def dropEvent(self, event: QEvent):
+        """Triggered when the user moves & drops one of the items in the list.
+
+        Parameters
+        ----------
+        event : QEvent
+            The event that triggered the dropEvent.
+        """
+        print('drop call')
+        total = self.count() - 1
+        old_indices = [total - self.row(item) for item in self.selectedItems()]
+        super().dropEvent(event)
+        new_indices = [total - self.row(item) for item in self.selectedItems()]
+        if old_indices != new_indices:
+            self.orderChanged.emit((old_indices, new_indices))
+
+    def startDrag(self, supportedActions: Qt.DropActions):
+        drag = drag_with_pixmap(self)
+        drag.exec_(supportedActions, Qt.MoveAction)
