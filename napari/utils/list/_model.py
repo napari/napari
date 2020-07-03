@@ -51,12 +51,6 @@ class ListModel(MultiIndexList, TypedList):
         self.events.reordered((old_indices, new_indices))
         self.events.changed(None)
 
-    def _on_reordered_change(self, indices):
-        old_indices, new_indices = indices
-        values = tuple(self[i] for i in old_indices)
-        print('list model reordered', new_indices, values)
-        super().__setitem__(new_indices, values)
-
     def insert(self, index, obj):
         self.events.added((obj, index))
         self.events.changed(None)
@@ -65,18 +59,30 @@ class ListModel(MultiIndexList, TypedList):
         self.events.added((obj, len(self)))
         self.events.changed(None)
 
+    def pop(self, key):
+        obj = self[key]
+        self.events.removed((obj, key))
+        self.events.changed(None)
+        return obj
+
+    def clear(self):
+        while len(self) > 0:
+            obj = self[0]
+            self.events.removed((obj, 0))
+        self.events.changed(None)
+
+    def _on_reordered_change(self, indices):
+        old_indices, new_indices = indices
+        values = tuple(self[i] for i in old_indices)
+        print('list model reordered', new_indices, values)
+        super().__setitem__(new_indices, values)
+
     def _on_added_change(self, value):
         obj, index = value
         if index == len(self):
             TypedList.append(self, obj)
         else:
             super().insert(index, obj)
-
-    def pop(self, key):
-        obj = self[key]
-        self.events.removed((obj, key))
-        self.events.changed(None)
-        return obj
 
     def _on_removed_change(self, value):
         obj, key = value
