@@ -56,7 +56,6 @@ class List(list):
         indices : int or iterable of int
             Key parsed into indices.
         """
-        print('ddddd')
         if isinstance(key, slice):
             start = key.start
             stop = key.stop
@@ -78,7 +77,6 @@ class List(list):
 
             return range(*slice(start, stop, step).indices(len(self)))
         else:
-            print('rrrrrrr')
             return self.__locitem__(key)
 
     def __locitem__(self, key):
@@ -103,7 +101,6 @@ class List(list):
         KeyError
             When the key is otherwise invalid.
         """
-        print('hellloooo', key)
         if not isinstance(key, int):
             raise TypeError(f'expected int; got {type(key)}')
 
@@ -114,7 +111,6 @@ class List(list):
             raise IndexError(
                 f'expected index to be in [0, {len(self)}); got {key}'
             )
-        print('byyyy', key)
         return key
 
     def __newlike__(self, iterable):

@@ -7,11 +7,8 @@ class MultiIndexList(List):
     """
 
     def __prsitem__(self, keys):
-        print('222222')
         if not isinstance(keys, tuple):
-            print('pppppp')
             return super().__prsitem__(keys)
-        print('asfsadfsdfs')
         indices = []
 
         for key in keys:
