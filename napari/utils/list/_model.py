@@ -1,4 +1,5 @@
-from ...utils.event import EmitterGroup
+from ..event import EmitterGroup, Event
+from ..event_handler import EventHandler
 
 from ._multi import MultiIndexList
 from ._typed import TypedList
@@ -28,39 +29,55 @@ class ListModel(MultiIndexList, TypedList):
         super().__init__(basetype, iterable, lookup)
         self.events = EmitterGroup(
             source=self,
-            auto_connect=True,
-            added=None,
-            removed=None,
-            reordered=None,
-            changed=None,
+            auto_connect=False,
+            added=Event,
+            removed=Event,
+            reordered=Event,
+            changed=Event,
         )
+        self.event_handler = EventHandler(component=self)
+        self.events.connect(self.event_handler.on_change)
 
     def __setitem__(self, query, values):
-        indices = tuple(self.__prsitem__(query))
-        new_indices = tuple(values)
+        new_indices = tuple(self.__prsitem__(query))
+        old_indices = tuple(self.index(v) for v in tuple(values))
 
-        if sorted(indices) != sorted(self.index(v) for v in new_indices):
+        if sorted(new_indices) != sorted(old_indices):
             raise TypeError(
                 'must be a reordering of indices; '
                 'setting of list items not allowed'
             )
 
-        super().__setitem__(indices, new_indices)
-        self.events.reordered((indices, new_indices))
+        self.events.reordered((old_indices, new_indices))
         self.events.changed(None)
 
+    def _on_reordered_change(self, indices):
+        old_indices, new_indices = indices
+        values = tuple(self[i] for i in old_indices)
+        print('list model reordered', new_indices, values)
+        super().__setitem__(new_indices, values)
+
     def insert(self, index, obj):
-        super().insert(index, obj)
-        self.events.added((obj, self.__locitem__(index)))
+        self.events.added((obj, index))
         self.events.changed(None)
 
     def append(self, obj):
-        TypedList.append(self, obj)
-        self.events.added((obj, len(self) - 1))
+        self.events.added((obj, len(self)))
         self.events.changed(None)
 
+    def _on_added_change(self, value):
+        obj, index = value
+        if index == len(self):
+            TypedList.append(self, obj)
+        else:
+            super().insert(index, obj)
+
     def pop(self, key):
-        obj = super().pop(key)
+        obj = self[key]
         self.events.removed((obj, key))
         self.events.changed(None)
         return obj
+
+    def _on_removed_change(self, value):
+        obj, key = value
+        super().pop(key)

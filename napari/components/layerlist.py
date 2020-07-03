@@ -2,7 +2,6 @@ from typing import Optional, List
 from ..layers import Layer
 from ..utils.naming import force_unique_name
 from ..utils.list import ListModel
-from ..utils.event_handler import EventHandler
 from ..utils.event import Event
 
 
@@ -21,6 +20,7 @@ class LayerList(ListModel):
             * added((item, index)): whenever an item is added
             * removed((item, index)): whenever an item is removed
             * reordered((indices, new_indices)): whenever the list is reordered
+            * changed(None): after the list is changed in any way
     """
 
     def __init__(self, iterable=()):
@@ -29,10 +29,7 @@ class LayerList(ListModel):
             iterable=iterable,
             lookup={str: lambda q, e: q == e.name},
         )
-
-        self.event_handler = EventHandler(component=self)
         self.events.add(selection=Event,)
-        self.events.connect(self.event_handler.on_change)
 
     def __newlike__(self, iterable):
         return ListModel(self._basetype, iterable, self._lookup)
@@ -45,6 +42,7 @@ class LayerList(ListModel):
         value : 2-tuple
             Tuple of layer and index where layer is being added.
         """
+        super()._on_added_change(value)
         layer = value[0]
         # Coerce name into being unique in layer list
         layer.name = force_unique_name(layer.name, [l.name for l in self[:-1]])

@@ -1,4 +1,4 @@
-from qtpy.QtCore import QEvent, QSize, Qt, Signal
+from qtpy.QtCore import QEvent, QSize, Qt
 from qtpy.QtWidgets import (
     QListWidget,
     QSizePolicy,
@@ -24,8 +24,6 @@ class QtLayerList(QListWidget):
         The layer list to track and display.
     """
 
-    orderChanged = Signal(tuple)  # emitted when user changes order.
-
     def __init__(self, layers):
         super().__init__()
 
@@ -41,7 +39,6 @@ class QtLayerList(QListWidget):
         self.events.connect(self.layers.event_handler.on_change)
 
         self.itemSelectionChanged.connect(self._selectionChanged)
-        self.orderChanged.connect(self.events.reordered)
 
         # Enable drag and drop and widget rearrangement
         self.setSortingEnabled(True)
@@ -135,11 +132,15 @@ class QtLayerList(QListWidget):
         """
         print('drop call')
         total = self.count() - 1
-        old_indices = [total - self.row(item) for item in self.selectedItems()]
+        old_indices = tuple(
+            total - self.row(item) for item in self.selectedItems()
+        )
         super().dropEvent(event)
-        new_indices = [total - self.row(item) for item in self.selectedItems()]
+        new_indices = tuple(
+            total - self.row(item) for item in self.selectedItems()
+        )
         if old_indices != new_indices:
-            self.orderChanged.emit((old_indices, new_indices))
+            self.events.reordered((old_indices, new_indices))
 
     def startDrag(self, supportedActions: Qt.DropActions):
         drag = drag_with_pixmap(self)
