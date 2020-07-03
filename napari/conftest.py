@@ -44,11 +44,8 @@ def pytest_addoption(parser):
         Show viewers during tests, they are hidden by default. Showing viewers
         decreases test speed by about %18.
 
-    --sync_only
-        Run only synchronous tests, instead of both types.
-
-    --async_only
-        Run only asynchronous tests, instead of both types.
+    --aysnc_only
+        Run only asynchronous tests, not sync ones.
 
     Example
     -------
@@ -62,13 +59,6 @@ def pytest_addoption(parser):
         action="store_true",
         default=False,
         help="don't show viewer during tests",
-    )
-
-    parser.addoption(
-        "--sync_only",
-        action="store_true",
-        default=False,
-        help="run only synchronous tests",
     )
 
     parser.addoption(
