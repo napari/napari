@@ -247,7 +247,7 @@ class Layer(KeymapProvider, ABC):
         cls = type(self)
         return f"<{cls.__name__} layer {repr(self.name)} at {hex(id(self))}>"
 
-    def __iter__(self):
+    def iter_layers(self):
         yield self
 
     def _up_through_parents(self):
@@ -443,7 +443,7 @@ class Layer(KeymapProvider, ABC):
     @property
     def row(self) -> int:
         if self.parent:
-            return self.parent._children.index(self)
+            return self.parent.index(self)
         return 0
 
     def _update_dims(self, event=None):

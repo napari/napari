@@ -1,32 +1,26 @@
 from ..base import Layer
 from ..utils.layer_utils import combine_extents
+from ...utils.list._evented_list import EventedList
 
 
-class LayerGroup(Layer):
+class LayerGroup(EventedList, Layer):
     def __init__(
         self, children=None, *, name='LayerGroup', ndim=2, visible=True
     ) -> None:
-        super().__init__(None, ndim)
+        Layer.__init__(self, None, ndim)
+        EventedList.__init__(self)
         self._name = name
-        from ...components.layerlist import LayerList
-
-        self._children = LayerList()
-        self.events.add(**{n: None for n in self._children.events.emitters})
-        self._children.events.added.connect(self.events.added)
-        self._children.events.removed.connect(self.events.removed)
-        self._children.events.reordered.connect(self.events.reordered)
-        self._children.events.changed.connect(self.events.changed)
         self.extend(children or [])
 
-    def _coerce_name(self, name, layer=None):
-        return self._children._coerce_name(name, layer)
+    # def _coerce_name(self, name, layer=None):
+    #     return self._coerce_name(name, layer)
 
     def _render(self):
         """Recursively return list of strings that can render ascii tree."""
         lines = []
         lines.append(self.name)
 
-        for n, child in enumerate(self._children):
+        for n, child in enumerate(self):
             try:
                 child_tree = child._render()
             except AttributeError:
@@ -47,7 +41,7 @@ class LayerGroup(Layer):
         cls = type(self)
         lines.append(f"<{cls.__name__} '{self.name}' at {hex(id(self))}>")
 
-        for n, child in enumerate(self._children):
+        for n, child in enumerate(self):
             try:
                 child_tree = child._render_repr()
             except AttributeError:
@@ -66,68 +60,61 @@ class LayerGroup(Layer):
         """Render unambiguous tree string representation of this layer group"""
         return "\n".join(self._render_repr())
 
-    def __iter__(self):
+    # LIST-LIKE METHODS
+
+    def iter_layers(self):
         """Iteration yields every non-group layer with a depth first search."""
-        for child in self._children:
-            yield from child
+        for child in self:
+            yield from child.iter_layers()
+
+    def __setitem__(self, key, value):
+        raise NotImplementedError("LayerGroup assignment is not allowed")
+
+    def __delitem__(self, key):
+        item = self._list.pop(key)
+        item._parent = None
+        if key < 0:
+            # always emit a positive index
+            key += len(self._list) + 1
+        self.events.removed((key, item))
+
+    def insert(self, index, item):
+        item._parent = self
+        super().insert(index, item)
 
     def traverse(self):
         "Recursively traverse all nodes and leaves of the LayerGroup tree."
         yield self
-        for child in self._children:
-            if child._children is not None:
+        for child in self:
+            try:
                 yield from child.traverse()
-            else:
+            except AttributeError:
                 yield child
 
-    def __getitem__(self, idx):
-        """Allows indexing into Layergroup, similar to a list of lists."""
-        return self._children.__getitem__(idx)
-
-    # We need more & better list handling methods
-    # moving a layer from one position to another
-    # moving a layer up/down heirarchy branches when moving its position
-    # removing a layer from a group (should remove the parent attribute)
-    def append(self, item):
-        item._parent = self
-        # FIXME - add a check for unique layergroup names in the tree
-        # FIXME - update ndim property on layergroup with self._get_ndim()
-        self._children.append(item)
-        self.events.added(item=item, index=len(self) - 1)
-
-    def insert(self, index, item):
-        self._children.insert(index, item)
-
-    def extend(self, items):
-        for item in items:
-            self.append(item)
-
-    def index(self, key):
-        return self._children.index(key)
+    @property
+    def selected_children(self):
+        return filter(lambda x: getattr(x, 'selected', False), self)
 
     def remove_selected(self):
         """Removes selected items from list."""
-        self._children.remove_selected()
+        selected = list(self.selected_children)
+        [self.remove(i) for i in selected]
+        if selected and self:
+            self[-1].selected = True
 
     def select_all(self):
         """Selects all layers."""
-        self._children.select_all()
+        for layer in self:
+            if not layer.selected:
+                layer.selected = True
 
     def unselect_all(self, ignore=None):
         """Unselects all layers expect any specified in ignore."""
-        self._children.unselect_all(ignore=ignore)
+        for layer in self:
+            if layer.selected and layer != ignore:
+                layer.selected = False
 
-    def remove(self, item):
-        item._parent = None
-        self._children.remove(item)
-
-    def pop(self, index):
-        self._children[index]._parent = None
-        return self._children.pop(index)
-
-    def __len__(self):
-        """Number of all non-group layers contained in the layergroup."""
-        return len(self._children)
+    # LAYER-LIKE METHODS
 
     def _get_extent(self):
         """Combined extent bounding all the individual layergroup layers.
@@ -137,11 +124,11 @@ class LayerGroup(Layer):
         tuple
             Extent returned as tuple, ndim x 2 (min, max)
         """
-        return combine_extents([c._get_extent() for c in self._children])
+        return combine_extents([c._get_extent() for c in self])
 
     def _get_ndim(self):
         try:
-            self._ndim = max([c._get_ndim() for c in self._children])
+            self._ndim = max([c._get_ndim() for c in self])
         except ValueError:
             self._ndim = 2
         return self._ndim
@@ -156,8 +143,8 @@ class LayerGroup(Layer):
         """
         state = []
         state.append(self._get_base_state())
-        if self._children is not None:
-            for layer in self._children:
+        if self is not None:
+            for layer in self:
                 state.append(layer._get_state())
         return state
 
@@ -192,7 +179,7 @@ class LayerGroup(Layer):
     def refresh(self, event=None):
         """Refresh all layer data if visible."""
         if self.visible:
-            for child in self._children:
+            for child in self:
                 child.refresh()
 
     @property

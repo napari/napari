@@ -182,7 +182,7 @@ class QtViewer(QSplitter):
         self.viewer.events.cursor.connect(self._on_cursor)
         self.viewer.events.reset_view.connect(self._on_reset_view)
         self.viewer.events.palette.connect(self._update_palette)
-        self.viewer.layers.events.reordered.connect(self._reorder_layers)
+        self.viewer.layers.events.changed.connect(self._reorder_layers)
         self.viewer.layers.events.added.connect(self._add_layer)
         self.viewer.layers.events.removed.connect(self._remove_layer)
         self.viewer.dims.events.camera.connect(
@@ -245,12 +245,12 @@ class QtViewer(QSplitter):
             Event from the Qt context.
         """
         layers = event.source
-        layer = event.item
-        vispy_layer = create_vispy_visual(layer)
-        vispy_layer.node.parent = self.view.scene
-        vispy_layer.order = len(layers)
-        self.canvas.connect(vispy_layer.on_draw)
-        self.layer_to_visual[layer] = vispy_layer
+        for idx, layer in event.value:
+            vispy_layer = create_vispy_visual(layer)
+            vispy_layer.node.parent = self.view.scene
+            vispy_layer.order = len(layers)
+            self.canvas.connect(vispy_layer.on_draw)
+            self.layer_to_visual[layer] = vispy_layer
 
     def _remove_layer(self, event):
         """When a layer is removed, remove its parent.
@@ -260,7 +260,7 @@ class QtViewer(QSplitter):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
-        layer = event.item
+        idx, layer = event.value
         vispy_layer = self.layer_to_visual[layer]
         self.canvas.events.draw.disconnect(vispy_layer.on_draw)
         vispy_layer.node.transforms = ChainTransform()
@@ -275,7 +275,7 @@ class QtViewer(QSplitter):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
-        for i, layer in enumerate(self.viewer.layers):
+        for i, layer in enumerate(list(self.viewer.layers)):
             vispy_layer = self.layer_to_visual[layer]
             vispy_layer.order = i
         self.canvas._draw_order.clear()

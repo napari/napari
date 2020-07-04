@@ -1,19 +1,44 @@
-from qtpy.QtWidgets import QTreeView
-from qtpy.QtCore import QAbstractItemModel, QModelIndex, Qt
-from napari.layers import LayerGroup, Layer
 import weakref
+from typing import Union
+
+from napari.layers import Layer, LayerGroup
+from qtpy.QtCore import QAbstractItemModel, QModelIndex, Qt
+from qtpy.QtWidgets import QTreeView
 
 
 # https://doc.qt.io/qt-5/model-view-programming.html#model-subclassing-reference
 class QtLayerTreeModel(QAbstractItemModel):
+    ID_ROLE = 9999
+
     def __init__(self, layergroup: LayerGroup = None, parent=None):
         super().__init__(parent)
         self._root = layergroup or LayerGroup()
-        self._root.events.changed.connect(self._refresh)
+        self._root.events.added.connect(self._on_added)
+        self._root.events.removed.connect(self._on_removed)
+
+    def _on_added(self, event):
+        """Notify view when data is added to the model."""
+        if not event.sources:
+            return
+
+        source_index = self.indexFromItem(event.sources[0])
+        for idx, item in event.value:
+            super().beginInsertRows(source_index, idx, idx)
+            super().endInsertRows()
+
+    def _on_removed(self, event):
+        """Notify view when data is removed from the model."""
+        if not event.sources:
+            return
+
+        source_index = self.indexFromItem(event.sources[0])
+        idx, item = event.value
+        super().beginRemoveRows(source_index, idx, idx)
+        super().endRemoveRows()
 
     def rowCount(self, index: QModelIndex) -> int:
         if index.isValid():
-            return len(self.itemAt(index))
+            return len(self.itemFromIndex(index))
         return len(self._root)
 
     def columnCount(self, QModelIndex) -> int:
@@ -23,23 +48,27 @@ class QtLayerTreeModel(QAbstractItemModel):
         """Return data stored under ``role`` for the item at ``index``."""
         if not index.isValid():
             return None
+        if role == self.ID_ROLE:
+            return id(self.itemFromIndex(index))
         if role == Qt.DisplayRole:
             # TODO: not supposed to use internal pointer for data
-            return str(self.itemAt(index).name)
+            return str(self.itemFromIndex(index).name)
         return None
 
-    def _refresh(self, e=None):
-        print()
-        super().beginInsertRows(QModelIndex(), 0, 0)
-        super().endInsertRows()
+    def flags(self, index: QModelIndex) -> Union[Qt.ItemFlag, Qt.ItemFlags]:
+        """Returns the item flags for the given index.
 
-    def flags(self, index: QModelIndex):
+        The base class implementation returns a combination of flags that
+        enables the item (ItemIsEnabled) and allows it to be selected
+        (ItemIsSelectable).
+        """
+        # https://doc.qt.io/qt-5/qt.html#ItemFlag-enum
         if not index.isValid():
             return Qt.NoItemFlags
         return super().flags(index)
 
     def index(
-        self, row: int, col: int, parent: QModelIndex = None
+        self, row: int, col: int = 0, parent: QModelIndex = None
     ) -> QModelIndex:
         """Return index of the item specified by row, column and parent index.
 
@@ -75,29 +104,41 @@ class QtLayerTreeModel(QAbstractItemModel):
         if not index.isValid():
             return QModelIndex()
 
-        parent: Layer = self.itemAt(index).parent
+        parent: Layer = self.itemFromIndex(index).parent
 
         if not parent or parent == self._root:
             return QModelIndex()
 
         return super().createIndex(parent.row, 0, weakref.ref(parent))
 
-    def insertRow(self, row: int, parent: QModelIndex = None) -> bool:
-        parent_item: LayerGroup = self.itemAt(parent)
-        if not parent_item:
-            return False
-
-        super().beginInsertRows(parent, row, row)
-        # parent_item.insert(row)
-        super().endInsertRows()
-        return True
-
-    def itemAt(self, index: QModelIndex) -> Layer:
+    def itemFromIndex(self, index: QModelIndex) -> Layer:
+        """Return Layer (or LayerGroup) associated with the given index."""
         if index and index.isValid():
             item = index.internalPointer()()
             if item is not None:
                 return item
         return self._root
+
+    def indexFromItem(self, item: Layer) -> QModelIndex:
+        """Return QModelIndex for an item in the model (recursive).
+
+        Raises
+        ------
+        IndexError
+            If the item is not in the model
+        """
+        if item == self._root:
+            return QModelIndex()
+        hits = self.match(
+            self.index(0),
+            self.ID_ROLE,
+            id(item),
+            1,
+            Qt.MatchExactly | Qt.MatchRecursive,
+        )
+        if hits:
+            return hits[0]
+        raise IndexError(f"item {item} not found in model")
 
 
 class QtLayerTree(QTreeView):
@@ -105,3 +146,18 @@ class QtLayerTree(QTreeView):
         super().__init__(parent)
         self.layergroup = layergroup
         self.setModel(QtLayerTreeModel(layergroup, self))
+        self.setHeaderHidden(True)
+
+
+if __name__ == '__main__':
+    from napari.layers import Points, Shapes, LayerGroup
+    from napari import gui_qt
+
+    with gui_qt():
+        pts = Points()
+        lg2 = LayerGroup([Shapes()])
+        lg1 = LayerGroup([lg2, Points(), pts])
+        root = LayerGroup([lg1, Points(), Shapes()])
+        tree = QtLayerTree(root)
+        model = tree.model()
+        tree.show()
