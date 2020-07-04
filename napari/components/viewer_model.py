@@ -363,18 +363,18 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         cur_theme = theme_names.index(self.theme)
         self.theme = theme_names[(cur_theme + 1) % len(theme_names)]
 
-    def _on_selection_change(self, selection):
-        """When layers selection is changed update the active layer.
+    def _on_selected_layers_change(self, selected_layers):
+        """When selected layers are changed update the active layer.
 
         Only one layer can be selected for that layer to be the  active layer.
 
         Parmeters
         ---------
-        selection : list
+        selected_layers : list
             List of selected indices.
         """
-        if len(selection) == 1:
-            self.active_layer = self.layers[selection[-1]]
+        if len(selected_layers) == 1:
+            self.active_layer = self.layers[selected_layers[0]]
         else:
             self.active_layer = None
 

@@ -29,7 +29,7 @@ class LayerList(ListModel):
             iterable=iterable,
             lookup={str: lambda q, e: q == e.name},
         )
-        self.events.add(selection=Event,)
+        self.events.add(selected_layers=Event,)
 
     def __newlike__(self, iterable):
         return ListModel(self._basetype, iterable, self._lookup)
@@ -79,7 +79,7 @@ class LayerList(ListModel):
     @selected.setter
     def selected(self, selected):
         """List: Indices of layers to select layers."""
-        self.events.selection(selected)
+        self.events.selected_layers(selected)
 
     def unselect_all(self, ignore=None):
         """Unselects all layers expect any specified in ignore.
@@ -99,26 +99,29 @@ class LayerList(ListModel):
         """Select all layers."""
         self.selected = list(range(len(self)))
 
-    def _on_selection_change(self, selection):
-        """When layers selection is changed update the layers.
+    def _on_selected_layers_change(self, selected_layers):
+        """When selected layers are changed update the actual layers.
 
         Parmeters
         ---------
-        selection : list
+        selected_layers : list
             List of selected indices.
         """
         for i, layer in enumerate(self):
-            layer.selected = i in selection
+            layer.selected = i in selected_layers
 
     def _on_selected_change(self, selected):
-        """When the selection state of any layer changes emit selection event.
+        """When selected state of any layer changes emit selected layers event.
 
         Parmeters
         ---------
         selected : bool
             Whether layer is selected or not.
         """
-        self.events.selection(self.selected)
+        # The fact that we are emitting a new event inside the callback of
+        # this event is probably bad, as we don't actually know that the
+        # selected state has been update when this event gets emitted
+        self.events.selected_layers(self.selected)
 
     def remove_selected(self):
         """Removes selected items from list."""

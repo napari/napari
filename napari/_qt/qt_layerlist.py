@@ -7,7 +7,7 @@ from qtpy.QtWidgets import (
 )
 from .qt_layer_widget import QtLayerWidget
 from ..utils.event import Event, EmitterGroup
-from .utils import drag_with_pixmap
+from .utils import drag_with_pixmap, qt_signals_blocked
 
 
 class QtLayerList(QListWidget):
@@ -28,7 +28,10 @@ class QtLayerList(QListWidget):
         super().__init__()
 
         self.events = EmitterGroup(
-            source=self, auto_connect=False, selection=Event, reordered=Event,
+            source=self,
+            auto_connect=False,
+            selected_layers=Event,
+            reordered=Event,
         )
 
         # When the EVH refactor is fully done we can do the initialization
@@ -57,26 +60,26 @@ class QtLayerList(QListWidget):
 
         # Once EVH refactor is done, this can be moved to an initialization
         # outside of this object
-        self._on_selection_change(self.layers.selected)
+        self._on_selected_layers_change(self.layers.selected)
 
     def _selectionChanged(self):
         """Emit an event when selection changes in list widget."""
         total = self.count() - 1
         selected = [total - self.row(item) for item in self.selectedItems()]
-        self.events.selection(selected)
+        self.events.selected_layers(selected)
 
-    def _on_selection_change(self, selection):
+    def _on_selected_layers_change(self, selected_layers):
         """When layers selection is changed update the layers list view
 
         Parmeters
         ---------
-        selection : list
+        selected_layers : list
             List of selected indices.
         """
         total = self.count() - 1
         for index in range(self.count()):
             item = self.item(index)
-            item.setSelected(total - index in selection)
+            item.setSelected(total - index in selected_layers)
 
     def _on_added_change(self, value):
         """Insert widget for layer at desired location.
@@ -90,10 +93,13 @@ class QtLayerList(QListWidget):
         total = self.count() - 1
         widget = QtLayerWidget(layer)
         item = QListWidgetItem(self)
+        item.layer = layer
         item.setSizeHint(QSize(228, 32))  # should get height from widget / qss
         self.insertItem(total - index, item)
         self.setItemWidget(item, widget)
-        item.setSelected(layer.selected)
+        # Block signals to prevent unnecessary selection change calls
+        with qt_signals_blocked(self):
+            item.setSelected(layer.selected)
 
     def _on_removed_change(self, value):
         """Remove widget for layer at desired location.
@@ -108,24 +114,34 @@ class QtLayerList(QListWidget):
         item = self.takeItem(total - index)
         del item
 
-    def _on_reordered_change(self, value):
+    def _on_reordered_change(self, indices):
         """Reorder widgets for layer at desired location.
 
         Parameters
         ----------
-        value : 2-tuple
+        indices : 2-tuple
             Tuple of old indices and new indices of layers and new indices
         """
-        old_indices, new_indices = value
+        old_indices, new_indices = indices
         total = self.count() - 1
-        print('reordered call', old_indices, new_indices, total)
 
-        widgets = [self.itemWidget(self.item(total - i)) for i in old_indices]
-        for index, widget in zip(new_indices, widgets):
-            item = self.item(total - index)
-            self.removeItemWidget(item)
-            print('item widget', item, widget)
-            self.setItemWidget(item, widget)
+        # Block signals to prevent unnecessary selection change calls
+        old_items = [self.item(total - old_index) for old_index in old_indices]
+        sorted(new_indices)
+        with qt_signals_blocked(self):
+            for new_index, old_item in sorted(
+                zip(new_indices, old_items), reverse=False
+            ):
+                widget = self.itemWidget(old_item)
+                selected = old_item.isSelected()
+
+                new_item = old_item.clone()
+                self.insertItem(total - new_index + 1, new_item)
+                self.setItemWidget(new_item, widget)
+                new_item.setSelected(selected)
+
+            for old_item in old_items:
+                self.takeItem(self.row(old_item))
 
     def dropEvent(self, event: QEvent):
         """Triggered when the user moves & drops one of the items in the list.
@@ -142,7 +158,7 @@ class QtLayerList(QListWidget):
         insert = total - self.indexAt(event.pos()).row()
         indices = move_indices(total + 1, moving, insert)
 
-        print('aaa', indices)
+        print('dropppppp', indices)
         self.events.reordered((tuple(range(total + 1)), indices))
 
     def startDrag(self, supportedActions: Qt.DropActions):
