@@ -41,13 +41,6 @@ class ListModel(MultiIndexList, TypedList):
     def __setitem__(self, query, values):
         new_indices = tuple(self.__prsitem__(query))
         old_indices = tuple(self.index(v) for v in tuple(values))
-
-        if sorted(new_indices) != sorted(old_indices):
-            raise TypeError(
-                'must be a reordering of indices; '
-                'setting of list items not allowed'
-            )
-
         self.events.reordered((old_indices, new_indices))
         self.events.changed(None)
 
@@ -81,6 +74,11 @@ class ListModel(MultiIndexList, TypedList):
 
     def _on_reordered_change(self, indices):
         old_indices, new_indices = indices
+        if sorted(new_indices) != sorted(old_indices):
+            raise TypeError(
+                'must be a reordering of indices; '
+                'setting of list items not allowed'
+            )
         values = tuple(self[i] for i in old_indices)
         super().__setitem__(new_indices, values)
 

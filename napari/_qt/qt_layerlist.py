@@ -45,10 +45,12 @@ class QtLayerList(QListWidget):
         self.setDropIndicatorShown(True)
         self.setAcceptDrops(True)
         self.setDragEnabled(True)
-        self.setDragDropMode(QAbstractItemView.InternalMove)
+        # self.setDragDropMode(QAbstractItemView.NoDragDrop)
 
         # Set selection mode
         self.setSelectionMode(QAbstractItemView.ExtendedSelection)
+
+        self.sortItems(Qt.DescendingOrder)
 
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
         self.setToolTip('Layer list')
@@ -114,13 +116,16 @@ class QtLayerList(QListWidget):
         value : 2-tuple
             Tuple of old indices and new indices of layers and new indices
         """
-        print('reordered call')
         old_indices, new_indices = value
         total = self.count() - 1
+        print('reordered call', old_indices, new_indices, total)
 
-        for old_index, new_index in zip(old_indices, new_indices):
-            item = self.takeItem(total - old_index)
-            self.insertItem(total - new_index, item)
+        widgets = [self.itemWidget(self.item(total - i)) for i in old_indices]
+        for index, widget in zip(new_indices, widgets):
+            item = self.item(total - index)
+            self.removeItemWidget(item)
+            print('item widget', item, widget)
+            self.setItemWidget(item, widget)
 
     def dropEvent(self, event: QEvent):
         """Triggered when the user moves & drops one of the items in the list.
@@ -131,17 +136,36 @@ class QtLayerList(QListWidget):
             The event that triggered the dropEvent.
         """
         print('drop call')
+        event.accept()
         total = self.count() - 1
-        old_indices = tuple(
-            total - self.row(item) for item in self.selectedItems()
-        )
-        super().dropEvent(event)
-        new_indices = tuple(
-            total - self.row(item) for item in self.selectedItems()
-        )
-        if old_indices != new_indices:
-            self.events.reordered((old_indices, new_indices))
+        moving = tuple(total - self.row(item) for item in self.selectedItems())
+        insert = total - self.indexAt(event.pos()).row()
+        indices = move_indices(total + 1, moving, insert)
+
+        print('aaa', indices)
+        self.events.reordered((tuple(range(total + 1)), indices))
 
     def startDrag(self, supportedActions: Qt.DropActions):
         drag = drag_with_pixmap(self)
         drag.exec_(supportedActions, Qt.MoveAction)
+
+
+def move_indices(total, moving, insert):
+    print(total, moving, insert)
+    index = moving[0]
+
+    # List all indices
+    indices = list(range(total))
+
+    # remove all moving to be indices
+    for i in moving:
+        indices.remove(i)
+
+    # adjust offset based on moving
+    offset = sum([i < insert and i != index for i in moving])
+
+    # insert indices to be moved at correct start
+    for insert_idx, elem_idx in enumerate(moving, start=insert - offset):
+        indices.insert(insert_idx, elem_idx)
+
+    return tuple(indices)
