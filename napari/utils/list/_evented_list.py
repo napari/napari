@@ -7,22 +7,17 @@ class EventedList(abc.MutableSequence):
     def __init__(self, data: Sequence = None):
         self._list = data or []
 
+        _events = {
+            'added': None,  # List[Tuple[int, Any]]  - item(s) have been added
+            'removed': None,  # Tuple[int, Any]  - item has been removed
+            'set': None,  # Tuple[int, Any]  - single item has changed
+            'changed': None,  # List  - Any change at all
+        }
         # For multiple inheritance
-        if isinstance(getattr(self, 'events', None), EmitterGroup):
-            self.events.add(
-                added=None,  # List[Tuple[int, Any]]  - item(s) have been added
-                removed=None,  # Tuple[int, Any]  - item has been removed
-                set=None,  # Tuple[int, Any]  - single item has changed
-                changed=None,  # List  - Any change at all
-            )
+        if hasattr(self, 'events') and isinstance(self.events, EmitterGroup):
+            self.events.add(**_events)
         else:
-            self.events = EmitterGroup(
-                source=self,
-                added=None,  # List[Tuple[int, Any]]  - item(s) have been added
-                removed=None,  # Tuple[int, Any]  - item has been removed
-                set=None,  # Tuple[int, Any]  - single item has changed
-                changed=None,  # List  - Any change at all
-            )
+            self.events = EmitterGroup(source=self, **_events)
         # if we directly connect with self.events.connect... too many
         # events are added to the event.sources list
         for emitter in self.events.emitters.values():
@@ -65,7 +60,9 @@ class EventedList(abc.MutableSequence):
     def _bubble_event(self, event):
         if event.source != self and event.type != 'bubble':
             with self.events.changed.blocker():
-                getattr(self.events, event.type)(event)
+                emitter = getattr(self.events, event.type, None)
+                if emitter:
+                    emitter(event)
 
     def _connect_child_emitters(self, child):
         if hasattr(child, 'events') and isinstance(child.events, EmitterGroup):

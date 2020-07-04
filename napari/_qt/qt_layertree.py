@@ -3,16 +3,16 @@ from typing import Union
 
 from napari.layers import Layer, LayerGroup
 from qtpy.QtCore import QAbstractItemModel, QModelIndex, Qt
-from qtpy.QtWidgets import QTreeView
+from qtpy.QtWidgets import QTreeView, QWidget
 
 
 # https://doc.qt.io/qt-5/model-view-programming.html#model-subclassing-reference
 class QtLayerTreeModel(QAbstractItemModel):
     ID_ROLE = 9999
 
-    def __init__(self, layergroup: LayerGroup = None, parent=None):
+    def __init__(self, layergroup: LayerGroup = None, parent: QWidget = None):
         super().__init__(parent)
-        self._root = layergroup or LayerGroup()
+        self._root = layergroup if layergroup is not None else LayerGroup()
         self._root.events.added.connect(self._on_added)
         self._root.events.removed.connect(self._on_removed)
 
@@ -142,9 +142,8 @@ class QtLayerTreeModel(QAbstractItemModel):
 
 
 class QtLayerTree(QTreeView):
-    def __init__(self, layergroup, parent=None):
+    def __init__(self, layergroup: LayerGroup = None, parent: QWidget = None):
         super().__init__(parent)
-        self.layergroup = layergroup
         self.setModel(QtLayerTreeModel(layergroup, self))
         self.setHeaderHidden(True)
 
