@@ -45,12 +45,33 @@ def mocked_integer_list_model():
 
 
 def test_create_integer_list_model():
-    """Create a list model from list."""
+    """Create a list model from list of integers."""
     numbers = list(range(6))
     my_list = ListModel(int, numbers)
 
     values = [i for i in my_list]
     assert values == numbers
+
+
+def test_create_string_list_model_with_lookup():
+    """Create a list model from list from list of strings."""
+    letters = ['a', 'b', 'c', 'd', 'e', 'f']
+    my_list = ListModel(str, letters, lookup={str: lambda q, e: q == e})
+
+    values = [i for i in my_list]
+    assert values == letters
+    assert my_list['a'] == 'a'
+
+
+def test_rearrange_string_list_model_with_lookup():
+    """Create a list model from list from list of strings."""
+    letters = ['a', 'b', 'c', 'd', 'e', 'f']
+    my_list = ListModel(str, letters, lookup={str: lambda q, e: q == e})
+
+    my_list['a', 'b'] = my_list['b', 'a']
+
+    values = [i for i in my_list]
+    assert values == ['b', 'a'] + letters[2:]
 
 
 def test_append_integer_list(mocked_integer_list_model):
@@ -129,23 +150,36 @@ def test_clear_integer_list(mocked_integer_list_model):
     mock['changed'].method.assert_called_once()
 
 
-def test_reorder_integer_list(mocked_integer_list_model):
-    """Reorder a list model."""
+def test_reorder_integer_list_with_swap(mocked_integer_list_model):
+    """Reorder a list model with a swap."""
     my_list, numbers, mock = mocked_integer_list_model
 
-    my_list[0], my_list[2] = my_list[2], my_list[0]
+    my_list[0, 2] = my_list[2, 0]
 
-    values = [i for i in my_list[::-1]]
-    assert values == numbers[2] + numbers[1] + numbers[0] + numbers[3:]
+    values = [i for i in my_list]
+    assert values == [numbers[2], numbers[1], numbers[0]] + numbers[3:]
     mock['added'].method.assert_not_called()
     mock['added'].method.assert_not_called()
     mock['reordered'].method.assert_called_once()
     mock['changed'].method.assert_called_once()
 
 
-@pytest.mark.skip('Reverse does not emit a reordered event')
+def test_reorder_integer_list_with_tuple(mocked_integer_list_model):
+    """Reorder a list model with a tuple."""
+    my_list, numbers, mock = mocked_integer_list_model
+
+    my_list[(0, 1, 2)] = my_list[(1, 2, 0)]
+
+    values = [i for i in my_list]
+    assert values == [numbers[1], numbers[2], numbers[0]] + numbers[3:]
+    mock['added'].method.assert_not_called()
+    mock['added'].method.assert_not_called()
+    mock['reordered'].method.assert_called_once()
+    mock['changed'].method.assert_called_once()
+
+
 def test_reverse_integer_list(mocked_integer_list_model):
-    """Clear a list model."""
+    """Reverse a list model."""
     my_list, numbers, mock = mocked_integer_list_model
 
     my_list.reverse()

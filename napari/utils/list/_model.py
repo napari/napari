@@ -71,10 +71,17 @@ class ListModel(MultiIndexList, TypedList):
             self.events.removed((obj, 0))
         self.events.changed(None)
 
+    def reverse(self):
+        old_indices = tuple(range(len(self)))
+        new_indices_list = list(range(len(self)))
+        new_indices_list.reverse()
+        new_indices = tuple(new_indices_list)
+        self.events.reordered((old_indices, new_indices))
+        self.events.changed(None)
+
     def _on_reordered_change(self, indices):
         old_indices, new_indices = indices
         values = tuple(self[i] for i in old_indices)
-        print('list model reordered', new_indices, values)
         super().__setitem__(new_indices, values)
 
     def _on_added_change(self, value):
