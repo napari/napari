@@ -93,8 +93,6 @@ class QtViewer(QSplitter):
         self.viewerButtons = QtViewerButtons(self.viewer)
         self._console = None
 
-        self.w = QtLayerTree(self.viewer.layers)
-        self.w.show()
         layerList = QWidget()
         layerList.setObjectName('layerList')
         layerListLayout = QVBoxLayout()

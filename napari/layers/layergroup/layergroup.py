@@ -114,6 +114,11 @@ class LayerGroup(EventedList, Layer):
             if layer.selected and layer != ignore:
                 layer.selected = False
 
+    def find_id(self, mem_id: int):
+        for item in self.traverse():
+            if id(item) == mem_id:
+                return item
+
     # LAYER-LIKE METHODS
 
     def _get_extent(self):

@@ -1,5 +1,5 @@
 from collections import abc
-from typing import Sequence, Any, List
+from typing import Sequence, Any, List, Optional
 from napari.utils.event import EmitterGroup
 
 
@@ -51,7 +51,7 @@ class EventedList(abc.MutableSequence):
     def move(self, old_index, new_index):
         if new_index > old_index:
             new_index -= 1
-        self.insert(new_index, self.pop(old_index))
+        self._list.insert(new_index, self._list.pop(old_index))
 
     def reverse(self) -> None:
         # reimplementing to emit a change event
@@ -74,8 +74,13 @@ class EventedList(abc.MutableSequence):
             for emitter in child.events.emitters.values():
                 emitter.connect(self._bubble_event)
 
-    # by disabling these to overrides, all additions go through insert
+    def find_id(self, mem_id: int) -> Optional[int]:
+        for i, x in enumerate(self):
+            if id(x) == mem_id:
+                return i
+        return None
 
+    # by disabling this override, all additions go through insert
     # def extend(self, values: Iterable):
     #     """extend sequence by appending elements from the iterable."""
     #     # reimplementing to emit a single event

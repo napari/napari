@@ -3,8 +3,20 @@ import weakref
 from typing import List, Union
 
 from napari.layers import Layer, LayerGroup
-from qtpy.QtCore import QAbstractItemModel, QMimeData, QModelIndex, Qt
+from qtpy.QtCore import (
+    QAbstractItemModel,
+    QMimeData,
+    QModelIndex,
+    Qt,
+    QItemSelection,
+)
 from qtpy.QtWidgets import QAbstractItemView, QTreeView, QWidget
+
+
+class Placeholder:
+    def __init__(self, parent=None):
+        self.parent = parent
+        self.name = 'placeholder'
 
 
 # https://doc.qt.io/qt-5/model-view-programming.html#model-subclassing-reference
@@ -26,6 +38,7 @@ class QtLayerTreeModel(QAbstractItemModel):
         for idx, item in event.value:
             super().beginInsertRows(source_index, idx, idx)
             super().endInsertRows()
+            self.dataChanged.emit(source_index, source_index)
 
     def _on_removed(self, event):
         """Notify view when data is removed from the model."""
@@ -36,6 +49,7 @@ class QtLayerTreeModel(QAbstractItemModel):
         idx, item = event.value
         super().beginRemoveRows(source_index, idx, idx)
         super().endRemoveRows()
+        self.dataChanged.emit(source_index, source_index)
 
     def rowCount(self, index: QModelIndex) -> int:
         if index.isValid():
@@ -80,9 +94,6 @@ class QtLayerTreeModel(QAbstractItemModel):
         if isinstance(item, LayerGroup):
             return base_flags | Qt.ItemIsAutoTristate
         return base_flags | Qt.ItemNeverHasChildren
-
-    def canDropMimeData(self, *args):
-        return isinstance(self.itemFromIndex(args[-1]), LayerGroup)
 
     def index(
         self, row: int, col: int = 0, parent: QModelIndex = None
@@ -162,11 +173,14 @@ class QtLayerTreeModel(QAbstractItemModel):
         except IndexError:
             raise IndexError(f"item {item} not found in model")
 
+    def canDropMimeData(self, *args):
+        return isinstance(self.itemFromIndex(args[-1]), LayerGroup)
+
     def supportedDropActions(self) -> Qt.DropActions:
         return Qt.MoveAction
 
     def mimeTypes(self):
-        return ['application/x-layertree']
+        return ['application/x-layertree', 'text/plain']
 
     def mimeData(self, indices: List[QModelIndex]) -> QMimeData:
         """Return object containing serialized data corresponding to indexes.
@@ -179,6 +193,7 @@ class QtLayerTreeModel(QAbstractItemModel):
             (i.row(), i.column(), self.data(i, self.ID_ROLE)) for i in indices
         ]
         mimedata.setData('application/x-layertree', pickle.dumps(data))
+        mimedata.setText(" ".join(str(x[2]) for x in data))
         return mimedata
 
     def dropMimeData(
@@ -231,15 +246,60 @@ class QtLayerTreeModel(QAbstractItemModel):
                     new_parent.insert(row, item)  # type: ignore
         return True
 
+    # def removeRows(self, row: int, count: int, parent: QModelIndex) -> bool:
+    #     print("remove", row, count, self.itemFromIndex(parent).name)
+    #     super().beginRemoveRows(parent, row, row + count - 1)
+    #     item = self.itemFromIndex(parent)
+    #     del item[row]
+    #     super().endRemoveRows()
+    #     return True
+
+    # def setItemData(self, index: QModelIndex, roles: dict) -> bool:
+    #     _id = roles.get(self.ID_ROLE)
+    #     item = self._root.find_id(_id)
+    #     if item is None:
+    #         raise IndexError("No ITEM!")
+
+    #     parent = self.itemFromIndex(self.parent(index))
+    #     parent._list[index.row()] = item
+    #     print(f"set it to {item.name}")
+    #     self.dataChanged.emit(index, index)
+    #     return True
+
+    # def insertRows(self, row: int, count: int, parent: QModelIndex) -> bool:
+    #     print("insert")
+    #     item = self.itemFromIndex(parent)
+    #     if row < 0 or row > len(item):
+    #         return False
+
+    #     self.beginInsertRows(parent, row, row + count - 1)
+    #     for i in range(count):
+    #         p = Points(name='d')
+    #         with item.events.blocker():
+    #             item.insert(row, p)
+    #         row += 1
+    #     self.endInsertRows()
+    #     return True
+
+    def setSelection(
+        self, selected: QItemSelection, deselected: QItemSelection
+    ):
+        for idx in selected.indexes():
+            self.itemFromIndex(idx).selected = True
+        for idx in deselected.indexes():
+            self.itemFromIndex(idx).selected = False
+
 
 class QtLayerTree(QTreeView):
     def __init__(self, layergroup: LayerGroup = None, parent: QWidget = None):
         super().__init__(parent)
-        self.setModel(QtLayerTreeModel(layergroup, self))
+        _model = QtLayerTreeModel(layergroup, self)
+        self.setModel(_model)
         self.setHeaderHidden(True)
         self.setDragDropMode(QAbstractItemView.InternalMove)
         self.setDragDropOverwriteMode(False)
         self.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.selectionModel().selectionChanged.connect(_model.setSelection)
 
 
 if __name__ == '__main__':
