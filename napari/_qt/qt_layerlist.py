@@ -7,6 +7,7 @@ from qtpy.QtWidgets import (
 )
 from .qt_layer_widget import QtLayerWidget
 from ..utils.event import Event, EmitterGroup
+from ..utils.misc import move_indices
 from .utils import drag_with_pixmap, qt_signals_blocked
 
 
@@ -44,6 +45,7 @@ class QtLayerList(QListWidget):
         self.itemSelectionChanged.connect(self._selectionChanged)
 
         # Enable drag and drop and widget rearrangement
+        self.setSortingEnabled(True)
         self.setDropIndicatorShown(True)
         self.setAcceptDrops(True)
         self.setDragEnabled(True)
@@ -88,10 +90,9 @@ class QtLayerList(QListWidget):
             Tuple of layer and index where layer is being added.
         """
         layer, index = value
-        total = self.count() - 1
+        total = self.count()
         widget = QtLayerWidget(layer)
         item = QListWidgetItem(self)
-        item.layer = layer
         item.setSizeHint(QSize(228, 32))  # should get height from widget / qss
         self.insertItem(total - index, item)
         self.setItemWidget(item, widget)
@@ -174,23 +175,3 @@ class QtLayerList(QListWidget):
     def startDrag(self, supportedActions: Qt.DropActions):
         drag = drag_with_pixmap(self)
         drag.exec_(supportedActions, Qt.MoveAction)
-
-
-def move_indices(total, moving, insert):
-    index = moving[0]
-
-    # List all indices
-    indices = list(range(total))
-
-    # remove all moving to be indices
-    for i in moving:
-        indices.remove(i)
-
-    # adjust offset based on moving
-    offset = sum([i < insert and i != index for i in moving])
-
-    # insert indices to be moved at correct start
-    for insert_idx, elem_idx in enumerate(moving, start=insert - offset):
-        indices.insert(insert_idx, elem_idx)
-
-    return tuple(indices)

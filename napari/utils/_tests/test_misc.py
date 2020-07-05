@@ -10,6 +10,7 @@ from napari.utils.misc import (
     ensure_sequence_of_iterables,
     ensure_iterable,
     abspath_or_url,
+    move_indices,
 )
 
 ITERABLE = (0, 1, 2)
@@ -187,3 +188,27 @@ def test_abspath_or_url():
 
     with pytest.raises(TypeError):
         abspath_or_url({'a', '~'})
+
+
+def test_move_indices():
+    """Test moving indices."""
+    indices = move_indices(3, [0], 2)
+    assert indices == (1, 2, 0)
+
+    indices = move_indices(5, [0], 2)
+    assert indices == (1, 2, 0, 3, 4)
+
+    indices = move_indices(5, [4], 2)
+    assert indices == (0, 1, 4, 2, 3)
+
+    indices = move_indices(5, [4], 0)
+    assert indices == (4, 0, 1, 2, 3)
+
+    indices = move_indices(5, [2, 4], 0)
+    assert indices == (2, 4, 0, 1, 3)
+
+    indices = move_indices(5, [4, 2], 0)
+    assert indices == (4, 2, 0, 1, 3)
+
+    indices = move_indices(5, [4, 2], 3)
+    assert indices == (0, 1, 4, 2, 3)
