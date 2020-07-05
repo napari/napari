@@ -1,4 +1,5 @@
 import numpy as np
+from napari._tests.utils import assert_layout_layers
 
 
 def test_4D_5D_images(make_test_viewer):
@@ -191,7 +192,7 @@ def test_changing_display_surface(make_test_viewer):
     )
 
     assert len(viewer.layers) == 1
-    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
+    assert_layout_layers(view.layers, viewer.layers)
 
     assert viewer.dims.ndim == 3
     assert view.dims.nsliders == viewer.dims.ndim

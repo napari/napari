@@ -45,16 +45,18 @@ class QtLayerList(QListWidget):
         self.itemSelectionChanged.connect(self._selectionChanged)
 
         # Enable drag and drop and widget rearrangement
-        self.setSortingEnabled(True)
         self.setDropIndicatorShown(True)
         self.setAcceptDrops(True)
         self.setDragEnabled(True)
 
+        # Set sorting order enabled
+        self.setSortingEnabled(True)
+        self.sortItems(Qt.DescendingOrder)
+
         # Set selection mode
         self.setSelectionMode(QAbstractItemView.ExtendedSelection)
 
-        self.sortItems(Qt.DescendingOrder)
-
+        # Set sizing
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
         self.setToolTip('Layer list')
 
@@ -90,11 +92,12 @@ class QtLayerList(QListWidget):
             Tuple of layer and index where layer is being added.
         """
         layer, index = value
-        total = self.count()
         widget = QtLayerWidget(layer)
         item = QListWidgetItem(self)
+        # Use the text property of the item for ordering
+        item.setText(str(index))
         item.setSizeHint(QSize(228, 32))  # should get height from widget / qss
-        self.insertItem(total - index, item)
+        self.addItem(item)
         self.setItemWidget(item, widget)
         # Block signals to prevent unnecessary selection change calls
         with qt_signals_blocked(self):
@@ -112,6 +115,10 @@ class QtLayerList(QListWidget):
         total = self.count() - 1
         item = self.takeItem(total - index)
         del item
+        # Change indices of all items added after item removed from list
+        for i in range(index + 1, total + 1):
+            item = self.item(total - i)
+            item.setText(str(i - 1))
 
     def _on_reordered_change(self, indices):
         """Reorder widgets for layer at desired location.
@@ -124,23 +131,10 @@ class QtLayerList(QListWidget):
         old_indices, new_indices = indices
         total = self.count() - 1
 
-        # Block signals to prevent unnecessary selection change calls
         old_items = [self.item(total - old_index) for old_index in old_indices]
-        sorted(new_indices)
-        with qt_signals_blocked(self):
-            for new_index, old_item in sorted(
-                zip(new_indices, old_items), reverse=False
-            ):
-                widget = self.itemWidget(old_item)
-                selected = old_item.isSelected()
-
-                new_item = old_item.clone()
-                self.insertItem(total - new_index + 1, new_item)
-                self.setItemWidget(new_item, widget)
-                new_item.setSelected(selected)
-
-            for old_item in old_items:
-                self.takeItem(self.row(old_item))
+        # Reorder items by changing their text property
+        for new_index, old_item in zip(new_indices, old_items):
+            old_item.setText(str(new_index))
 
     def dropEvent(self, event: QEvent):
         """Triggered when the user moves & drops one of the items in the list.

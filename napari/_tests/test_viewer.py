@@ -10,6 +10,7 @@ from napari._tests.utils import (
     check_viewer_functioning,
     check_view_transform_consistency,
     layer_test_data,
+    assert_layout_layers,
 )
 
 
@@ -22,7 +23,7 @@ def test_viewer(make_test_viewer):
     assert view.viewer == viewer
 
     assert len(viewer.layers) == 0
-    assert view.layers.vbox_layout.count() == 2
+    assert_layout_layers(view.layers, viewer.layers)
 
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim
