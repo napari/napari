@@ -48,6 +48,11 @@ class EventedList(abc.MutableSequence):
         self.events.added([(index, value)])
         self._connect_child_emitters(value)
 
+    def move(self, old_index, new_index):
+        if new_index > old_index:
+            new_index -= 1
+        self.insert(new_index, self.pop(old_index))
+
     def reverse(self) -> None:
         # reimplementing to emit a change event
         self._list.reverse()
