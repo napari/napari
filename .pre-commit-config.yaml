@@ -10,4 +10,4 @@ repos:
     - id: flake8
       pass_filenames: true
       # this seems to need to be here in addition to setup.cfg
-      exclude: vendored|__init__.py|examples
+      exclude: vendored|__init__.py|examples|base_volume_visual.py
