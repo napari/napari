@@ -2,6 +2,7 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QSlider, QGridLayout, QFrame, QComboBox
 
 from ...layers.base._base_constants import Blending
+from ...utils.event import Event, EmitterGroup
 
 
 class QtLayerControls(QFrame):
@@ -29,9 +30,23 @@ class QtLayerControls(QFrame):
     def __init__(self, layer):
         super().__init__()
 
+        self.events = EmitterGroup(
+            source=self,
+            auto_connect=False,
+            blending=Event,
+            opacity=Event,
+            status=Event,
+        )
+
+        # When the EVH refactor #1376 is done we might not even need the layer
+        # attribute anymore as all data updates will be through the handler.
+        # At that point we could remove the attribute and do the registering
+        # and connecting outside this class and never even need to pass the
+        # layer to this class.
         self.layer = layer
-        layer.events.blending.connect(self._on_blending_change)
-        layer.events.opacity.connect(self._on_opacity_change)
+        self.layer.event_handler.register_listener(self)
+        self.events.connect(self.layer.event_handler.on_change)
+
         self.setObjectName('layer')
         self.setMouseTracking(True)
 
@@ -47,62 +62,38 @@ class QtLayerControls(QFrame):
         sld.setMinimum(0)
         sld.setMaximum(100)
         sld.setSingleStep(1)
-        sld.valueChanged.connect(self.changeOpacity)
+        sld.valueChanged.connect(lambda v: self.events.opacity(v / 100))
         self.opacitySlider = sld
-        self._on_opacity_change()
 
         blend_comboBox = QComboBox(self)
         blend_comboBox.addItems(Blending.keys())
-        index = blend_comboBox.findText(
-            self.layer.blending, Qt.MatchFixedString
-        )
-        blend_comboBox.setCurrentIndex(index)
-        blend_comboBox.activated[str].connect(self.changeBlending)
+        blend_comboBox.activated[str].connect(self.events.blending)
         self.blendComboBox = blend_comboBox
 
-    def changeOpacity(self, value):
-        """Change opacity value on the layer model.
+        # Once EVH refactor is done, these can be moved to an initialization
+        # outside of this object
+        self._on_opacity_change(self.layer.opacity)
+        self._on_blending_change(self.layer.blending)
 
-        Parameters
-        ----------
-        value : float
-            Opacity value for shapes.
-            Input range 0 - 100 (transparent to fully opaque).
-        """
-        with self.layer.events.blocker(self._on_opacity_change):
-            self.layer.opacity = value / 100
-
-    def changeBlending(self, text):
-        """Change blending mode on the layer model.
-
-        Parameters
-        ----------
-        text : str
-            Name of blending mode, eg: 'translucent', 'additive', 'opaque'.
-        """
-        self.layer.blending = text
-
-    def _on_opacity_change(self, event=None):
+    def _on_opacity_change(self, opacity):
         """Receive layer model opacity change event and update opacity slider.
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context, by default None.
+        opacity : float
+            Opacity value between 0 and 1.
         """
-        with self.layer.events.opacity.blocker():
-            self.opacitySlider.setValue(self.layer.opacity * 100)
+        self.opacitySlider.setValue(opacity * 100)
 
-    def _on_blending_change(self, event=None):
+    def _on_blending_change(self, blending):
         """Receive layer model blending mode change event and update slider.
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context, by default None.
+        blending : str
+           Blending mode used by VisPy. Must be one of our supported
+           modes:
+           'translucent', 'additive', or 'opaque'
         """
-        with self.layer.events.blending.blocker():
-            index = self.blendComboBox.findText(
-                self.layer.blending, Qt.MatchFixedString
-            )
-            self.blendComboBox.setCurrentIndex(index)
+        index = self.blendComboBox.findText(blending, Qt.MatchFixedString)
+        self.blendComboBox.setCurrentIndex(index)

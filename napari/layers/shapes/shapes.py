@@ -37,7 +37,7 @@ from ._shapes_constants import (
     ColorMode,
 )
 from ._shape_list import ShapeList
-from ._shapes_utils import create_box
+from ._shapes_utils import create_box, get_shape_ndim
 from ._shapes_models import Rectangle, Ellipse, Polygon
 from ._shapes_mouse_bindings import (
     highlight,
@@ -63,6 +63,9 @@ class Shapes(Layer):
         List of shape data, where each element is an (N, D) array of the
         N vertices of a shape in D dimensions. Can be an 3-dimensional
         array if each shape has the same number of vertices.
+    ndim : int
+        Number of dimensions for shapes. When data is not None, ndim must be D.
+        An empty shapes layer can be instantiated with arbitrary ndim.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each shape. Each property should be an array of length N,
         where N is the number of shapes.
@@ -260,6 +263,7 @@ class Shapes(Layer):
         self,
         data=None,
         *,
+        ndim=None,
         properties=None,
         shape_type='rectangle',
         edge_width=1,
@@ -281,19 +285,18 @@ class Shapes(Layer):
         visible=True,
     ):
         if data is None:
-            data = np.empty((0, 0, 2))
-        if np.array(data).ndim == 3:
-            ndim = np.array(data).shape[2]
-        elif len(data) == 0:
-            ndim = 2
-        elif np.array(data[0]).ndim == 1:
-            ndim = np.array(data).shape[1]
+            if ndim is None:
+                ndim = 2
+            data = np.empty((0, 0, ndim))
         else:
-            ndim = np.array(data[0]).shape[1]
+            data_ndim = get_shape_ndim(data)
+            if ndim is not None and ndim != data_ndim:
+                raise ValueError("Shape dimensions must be equal to ndim")
+            ndim = data_ndim
 
         super().__init__(
             data,
-            ndim,
+            ndim=ndim,
             name=name,
             metadata=metadata,
             scale=scale,
@@ -376,7 +379,7 @@ class Shapes(Layer):
         self._status = self.mode
         self._help = 'enter a selection mode to edit shape properties'
 
-        self.events.deselect.connect(self._finish_drawing)
+        self.events.selected.connect(self._finish_drawing)
         self.events.face_color.connect(self._update_thumbnail)
         self.events.edge_color.connect(self._update_thumbnail)
 
@@ -483,7 +486,8 @@ class Shapes(Layer):
         self._data_view = ShapeList()
         self.add(data, shape_type=shape_type)
         self._update_dims()
-        self.events.data()
+        self._update_editable()
+        self.events.data(self.data)
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
@@ -1173,6 +1177,7 @@ class Shapes(Layer):
         state = self._get_base_state()
         state.update(
             {
+                'ndim': self.ndim,
                 'properties': self.properties,
                 'shape_type': self.shape_type,
                 'opacity': self.opacity,
@@ -1299,16 +1304,10 @@ class Shapes(Layer):
             self._finish_drawing()
         self.refresh()
 
-    def _set_editable(self, editable=None):
-        """Set editable mode based on layer properties."""
-        if editable is None:
-            if self.dims.ndisplay == 3:
-                self.editable = False
-            else:
-                self.editable = True
-
-        if not self.editable:
+    def _on_editable_change(self, value):
+        if not value:
             self.mode = Mode.PAN_ZOOM
+        self._editable = value
 
     def add(
         self,
@@ -1360,6 +1359,10 @@ class Shapes(Layer):
         """
         if edge_width is None:
             edge_width = self.current_edge_width
+
+        if len(data) > 0 and np.array(data[0]).ndim == 1:
+            # If a single array for a shape has been passed turn into list
+            data = [data]
 
         n_new_shapes = len(data)
 
@@ -1447,6 +1450,9 @@ class Shapes(Layer):
             applied to each shape otherwise the same value will be used for all
             shapes.
         """
+        if len(data) > 0 and np.array(data[0]).ndim == 1:
+            # If a single array for a shape has been passed turn into list
+            data = [data]
 
         n_shapes = len(data)
         with self.block_update_properties():
@@ -1546,7 +1552,6 @@ class Shapes(Layer):
             if np.array(data[0]).ndim == 1:
                 # If a single array for a shape has been passed turn into list
                 data = [data]
-
             # transform the colors
             transformed_ec = transform_color_with_defaults(
                 num_entries=len(data),

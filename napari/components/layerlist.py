@@ -1,6 +1,6 @@
 from typing import Optional, List
 from ..layers import Layer
-from ..utils.naming import inc_name_count
+from ..utils.naming import force_unique_name
 from ..utils.list import ListModel
 
 
@@ -8,8 +8,11 @@ def _add(event):
     """When a layer is added, set its name."""
     layers = event.source
     layer = event.item
-    layer.name = layers._coerce_name(layer.name, layer)
-    layer.events.name.connect(lambda e: layers._update_name(e))
+    # Coerce name into being unique in layer list
+    layer.name = force_unique_name(layer.name, [l.name for l in layers[:-1]])
+    # Register layer event handler
+    layer.event_handler.register_listener(layers)
+    # Unselect all other layers
     layers.unselect_all(ignore=layer)
 
 
@@ -42,33 +45,25 @@ class LayerList(ListModel):
     def __newlike__(self, iterable):
         return ListModel(self._basetype, iterable, self._lookup)
 
-    def _coerce_name(self, name, layer=None):
-        """Coerce a name into a unique equivalent.
+    def _on_name_unique_change(self, names):
+        """Receive layer name tuple and update the name if is already in list.
+
+        As the layer list can be indexed by name each layer must have a unique
+        name to ensure that there is only one layer corresponding to every
+        name. This method updates the name to be unique if it is not already.
+
+        The name is made unique by appending an index to it, for example
+        'Image' -> 'Image [1]' or adding to the index, say 'Image [2]'.
 
         Parameters
         ----------
-        name : str
-            Original name.
-        layer : napari.layers.Layer, optional
-            Layer for which name is generated.
-
-        Returns
-        -------
-        new_name : str
-            Coerced, unique name.
+        names : 2-tuple of str
+            Tuple of old name and new name.
         """
-        for l in self:
-            if l is layer:
-                continue
-            if l.name == name:
-                name = inc_name_count(name)
-
-        return name
-
-    def _update_name(self, event):
-        """Coerce name of the layer in `event.layer`."""
-        layer = event.source
-        layer.name = self._coerce_name(layer.name, layer)
+        old_name, new_name = names
+        unique_name = force_unique_name(new_name, [l.name for l in self])
+        # Re-emit unique name
+        self[old_name].events.name(unique_name)
 
     @property
     def selected(self):

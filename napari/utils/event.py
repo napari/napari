@@ -459,13 +459,14 @@ class EventEmitter(object):
         return callback
 
     def __call__(self, *args, **kwargs):
-        """ __call__(**kwargs)
-        Invoke all callbacks for this emitter.
+        """Invoke all callbacks for this emitter.
 
         Emit a new event object, created with the given keyword
         arguments, which must match with the input arguments of the
         corresponding event class. Note that the 'type' argument is
-        filled in by the emitter.
+        filled in by the emitter. If no kwargs and only a single arg is
+        passed (that is not an instance of self.event_class), then assume that
+        that argument is a value emitted with the 'value' kwarg.
 
         Alternatively, the emitter can also be called with an Event
         instance as the only argument. In this case, the specified
@@ -537,16 +538,23 @@ class EventEmitter(object):
             event = args[0]
             # Ensure that the given event matches what we want to emit
             assert isinstance(event, self.event_class)
-        elif not args:
-            args = self.default_args.copy()
-            args.update(kwargs)
-            event = self.event_class(**args)
-        else:
-            raise ValueError(
-                "Event emitters can be called with an Event "
-                "instance or with keyword arguments only."
-            )
-        return event
+            return event
+
+        if len(args) == 1:
+            if not kwargs:
+                # if an EventEmitter is called with a single argument (that is
+                # not an instance of self.event_class), assume that that
+                # argument is a value to be emitted.
+                kwargs['value'] = args[0]
+            else:
+                raise ValueError(
+                    "Event emitters may be called with an Event instance, "
+                    "a single argument, or with keyword arguments only."
+                    f"\ngot: args={args}, kwargs={kwargs} "
+                )
+        args = self.default_args.copy()
+        args.update(kwargs)
+        return self.event_class(**args)
 
     def blocked(self, callback=None):
         """Return boolean indicating whether the emitter is blocked for

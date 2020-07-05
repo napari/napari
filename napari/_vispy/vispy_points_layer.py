@@ -20,13 +20,13 @@ class VispyPointsLayer(VispyBaseLayer):
 
         super().__init__(layer, node)
 
-        self.layer.events.symbol.connect(self._on_data_change)
-        self.layer.events.edge_width.connect(self._on_data_change)
-        self.layer.events.edge_color.connect(self._on_data_change)
-        self.layer.events.face_color.connect(self._on_data_change)
+        self.layer.events.symbol.connect(self._on_slice_data_change)
+        self.layer.events.edge_width.connect(self._on_slice_data_change)
+        self.layer.events.edge_color.connect(self._on_slice_data_change)
+        self.layer.events.face_color.connect(self._on_slice_data_change)
         self.layer.events.highlight.connect(self._on_highlight_change)
         self._on_display_change()
-        self._on_data_change()
+        self._on_slice_data_change()
 
     def _on_display_change(self):
         parent = self.node.parent
@@ -40,7 +40,7 @@ class VispyPointsLayer(VispyBaseLayer):
         self.node.parent = parent
         self._reset_base()
 
-    def _on_data_change(self, event=None):
+    def _on_slice_data_change(self, event=None):
         # Check if ndisplay has changed current node type needs updating
         if (
             self.layer.dims.ndisplay == 3 and len(self.node._subvisuals) != 2
