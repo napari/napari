@@ -44,11 +44,9 @@ class QtLayerList(QListWidget):
         self.itemSelectionChanged.connect(self._selectionChanged)
 
         # Enable drag and drop and widget rearrangement
-        self.setSortingEnabled(True)
         self.setDropIndicatorShown(True)
         self.setAcceptDrops(True)
         self.setDragEnabled(True)
-        # self.setDragDropMode(QAbstractItemView.NoDragDrop)
 
         # Set selection mode
         self.setSelectionMode(QAbstractItemView.ExtendedSelection)
@@ -151,15 +149,27 @@ class QtLayerList(QListWidget):
         event : QEvent
             The event that triggered the dropEvent.
         """
-        print('drop call')
         event.accept()
+        if self.dropIndicatorPosition() == QAbstractItemView.OnViewport:
+            return
+
         total = self.count() - 1
         moving = tuple(total - self.row(item) for item in self.selectedItems())
-        insert = total - self.indexAt(event.pos()).row()
-        indices = move_indices(total + 1, moving, insert)
 
-        print('dropppppp', indices)
-        self.events.reordered((tuple(range(total + 1)), indices))
+        insert = self.indexAt(event.pos()).row()
+        current = self.currentRow()
+
+        if self.dropIndicatorPosition() == QAbstractItemView.BelowItem:
+            insert = insert + 1
+
+        if current == insert or current + 1 == insert:
+            return
+
+        if current <= insert:
+            insert -= 1
+
+        indices = move_indices(total + 1, moving, total - insert)
+        self.events.reordered((indices, tuple(range(total + 1))))
 
     def startDrag(self, supportedActions: Qt.DropActions):
         drag = drag_with_pixmap(self)
@@ -167,7 +177,6 @@ class QtLayerList(QListWidget):
 
 
 def move_indices(total, moving, insert):
-    print(total, moving, insert)
     index = moving[0]
 
     # List all indices
