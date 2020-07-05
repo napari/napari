@@ -29,7 +29,7 @@ class VispyImageLayer(VispyBaseLayer):
 
         # Until we add a specific attenuation parameter to vispy we have to
         # track both iso_threshold and attenuation ourselves.
-        self._iso_threshold = 1
+        self._iso_threshold = 0.5
         self._attenuation = 1
 
         self._on_display_change()
@@ -141,6 +141,11 @@ class VispyImageLayer(VispyBaseLayer):
             elif Rendering(rendering) == Rendering.ATTENUATED_MIP:
                 self.node.threshold = float(self._attenuation)
 
+            # Fix for #1399, should be fixed in the VisPy threshold setter
+            if 'u_threshold' not in self.node.shared_program:
+                self.node.shared_program['u_threshold'] = self.node._threshold
+                self.node.update()
+
     def _on_colormap_change(self, colormap):
         """Receive layer model colormap change event and update the visual.
 
@@ -202,12 +207,17 @@ class VispyImageLayer(VispyBaseLayer):
         iso_threshold : float
             Iso surface threshold value, between 0 and 1.
         """
+        self._iso_threshold = iso_threshold
         if (
             isinstance(self.node, VolumeNode)
             and Rendering(self.node.method) == Rendering.ISO
         ):
-            self._iso_threshold = iso_threshold
             self.node.threshold = float(iso_threshold)
+
+            # Fix for #1399, should be fixed in the VisPy threshold setter
+            if 'u_threshold' not in self.node.shared_program:
+                self.node.shared_program['u_threshold'] = self.node._threshold
+                self.node.update()
 
     def _on_attenuation_change(self, attenuation):
         """Receive layer model attenuation change event and update the visual.
@@ -217,17 +227,24 @@ class VispyImageLayer(VispyBaseLayer):
         attenuation : float
             Attenuation value, between 0 and 2.
         """
+        self._attenuation = attenuation
         if (
             isinstance(self.node, VolumeNode)
             and Rendering(self.node.method) == Rendering.ATTENUATED_MIP
         ):
-            self._attenuation = attenuation
             self.node.threshold = float(attenuation)
+
+            # Fix for #1399, should be fixed in the VisPy threshold setter
+            if 'u_threshold' not in self.node.shared_program:
+                self.node.shared_program['u_threshold'] = self.node._threshold
+                self.node.update()
 
     def reset(self, event=None):
         self._reset_base()
         self._on_colormap_change(self.layer.colormap)
         self._on_rendering_change(self.layer.rendering)
+        self._on_iso_threshold_change(self.layer.iso_threshold)
+        self._on_attenuation_change(self.layer.attenuation)
         if isinstance(self.node, ImageNode):
             self._on_contrast_limits_change(self.layer.contrast_limits)
 
