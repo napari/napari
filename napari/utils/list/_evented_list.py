@@ -1,11 +1,11 @@
 from collections import abc
-from typing import Sequence, Any
+from typing import Sequence, Any, List
 from napari.utils.event import EmitterGroup
 
 
 class EventedList(abc.MutableSequence):
     def __init__(self, data: Sequence = None):
-        self._list = data or []
+        self._list: List = list(data) if data else []
 
         _events = {
             'added': None,  # List[Tuple[int, Any]]  - item(s) have been added
