@@ -115,6 +115,16 @@ QtLayerList QScrollBar:down-arrow {
   max-width: 6px;
 }
 
+QtLayerList {
+  background: {{ background }};
+}
+
+QtLayerList::item {
+  background: {{ foreground }};
+  min-height: 32px;
+  max-height: 32px;
+}
+
 QtLayerList::item:selected {
   background: {{ current }};
 }
@@ -142,7 +152,7 @@ QtLayerWidget {
 QtLayerWidget > QLabel {
   background-color: transparent;
   padding: 0px;
-  qproperty-alignment: AlignCenter;
+  qproperty-alignment: AlignVCenter;
 }
 
 

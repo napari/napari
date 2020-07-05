@@ -1,4 +1,4 @@
-from qtpy.QtCore import QEvent, QSize, Qt
+from qtpy.QtCore import QEvent, Qt
 from qtpy.QtWidgets import (
     QListWidget,
     QSizePolicy,
@@ -25,8 +25,8 @@ class QtLayerList(QListWidget):
         The layer list to track and display.
     """
 
-    def __init__(self, layers):
-        super().__init__()
+    def __init__(self, layers, parent=None):
+        super().__init__(parent=parent)
 
         self.events = EmitterGroup(
             source=self,
@@ -58,6 +58,8 @@ class QtLayerList(QListWidget):
 
         # Set sizing
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
+        self.setSpacing(1)
+
         self.setToolTip('Layer list')
 
         # Once EVH refactor is done, this can be moved to an initialization
@@ -92,11 +94,10 @@ class QtLayerList(QListWidget):
             Tuple of layer and index where layer is being added.
         """
         layer, index = value
-        widget = QtLayerWidget(layer)
+        widget = QtLayerWidget(layer, parent=self)
         item = QListWidgetItem(self)
         # Use the text property of the item for ordering
         item.setText(str(index))
-        item.setSizeHint(QSize(228, 32))  # should get height from widget / qss
         self.addItem(item)
         self.setItemWidget(item, widget)
         # Block signals to prevent unnecessary selection change calls
@@ -144,6 +145,7 @@ class QtLayerList(QListWidget):
         event : QEvent
             The event that triggered the dropEvent.
         """
+        self.setDropIndicatorShown(False)
         event.accept()
         if self.dropIndicatorPosition() == QAbstractItemView.OnViewport:
             return
@@ -167,5 +169,6 @@ class QtLayerList(QListWidget):
         self.events.reordered((indices, tuple(range(total + 1))))
 
     def startDrag(self, supportedActions: Qt.DropActions):
+        self.setDropIndicatorShown(True)
         drag = drag_with_pixmap(self)
         drag.exec_(supportedActions, Qt.MoveAction)

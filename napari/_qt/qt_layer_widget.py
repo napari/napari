@@ -29,8 +29,8 @@ class QtLayerWidget(QFrame):
         Checkbox to toggle layer visibility.
     """
 
-    def __init__(self, layer):
-        super().__init__()
+    def __init__(self, layer, parent=None):
+        super().__init__(parent=parent)
 
         self.events = EmitterGroup(
             source=self,

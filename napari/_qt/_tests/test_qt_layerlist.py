@@ -16,7 +16,6 @@ def test_creating_empty_view(qtbot):
     # Check that the layers model has been appended to the layers view
     assert view.layers == layers
     assert_layout_layers(view, layers)
-    view.close()
 
 
 def test_adding_layers(qtbot):
@@ -40,7 +39,6 @@ def test_adding_layers(qtbot):
     layers.append(layer_d)
     assert_layout_layers(view, layers)
     assert view.layers == layers
-    view.close()
 
 
 def test_removing_layers(qtbot):
@@ -75,7 +73,6 @@ def test_removing_layers(qtbot):
     layers.remove_selected()
     assert_layout_layers(view, layers)
     assert view.layers == layers
-    view.close()
 
 
 def test_reordering_layers(qtbot):
@@ -106,4 +103,3 @@ def test_reordering_layers(qtbot):
     layers.reverse()
     assert_layout_layers(view, layers)
     assert view.layers == layers
-    view.close()
