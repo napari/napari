@@ -112,7 +112,24 @@ def stack_to_images(
 
 
 def images_to_stack(
-    images: List[Union[Image, Labels]], axis: int = 0
+    images: List[Union[Image, Labels]],
+    axis: int = 0,
+    rgb: bool = None,
+    colormap: Union[str, Colormap] = None,
+    contrast_limits: List[int] = None,
+    gamma: float = 1,
+    interpolation: str = 'nearest',
+    rendering: str = 'mip',
+    iso_threshold: float = 0.5,
+    attenuation: float = 0.5,
+    name: str = None,
+    metadata: dict = None,
+    scale: Tuple[float] = None,
+    translate: Tuple[float] = None,
+    opacity: float = 1,
+    blending: str = 'translucent',
+    visible: bool = True,
+    multiscale: bool = None,
 ) -> Image:
     """Function to combine selected image layers in one layer
 
@@ -129,8 +146,26 @@ def images_to_stack(
         Combined image stack
     """
 
+    kwargs = {
+        'rgb': rgb,
+        'colormap': colormap,
+        'blending': blending,
+        'contrast_limits': contrast_limits,
+        'gamma': gamma,
+        'interpolation': interpolation,
+        'rendering': rendering,
+        'iso_threshold': iso_threshold,
+        'attenuation': attenuation,
+        'name': name,
+        'metadata': metadata,
+        'scale': scale,
+        'translate': translate,
+        'opacity': opacity,
+        'visible': visible,
+        'multiscale': multiscale,
+    }
     new_list = [image.data for image in images]
     new_data = np.stack(new_list, axis=axis)
-    stack = Image(new_data)
+    stack = Image(new_data, **kwargs)
 
     return stack

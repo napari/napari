@@ -23,7 +23,9 @@ def test_images_to_stack():
         Image(np.random.randint(0, 255, (10, 128, 128))) for _ in range(3)
     ]
 
-    stack = images_to_stack(images, 1)
+    stack = images_to_stack(images, 1, colormap='green', scale=(3, 1, 1, 1))
 
     assert isinstance(stack, Image)
     assert stack.data.shape == (10, 3, 128, 128)
+    assert stack.colormap[0] == 'green'
+    assert list(stack.scale) == [3, 1, 1, 1]
