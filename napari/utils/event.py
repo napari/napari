@@ -52,10 +52,11 @@ For more information see http://github.com/vispy/vispy/wiki/API_Events
 
 from __future__ import division
 
-from collections import OrderedDict
 import inspect
 import traceback
 import weakref
+from collections import OrderedDict
+from typing import Any
 
 from vispy.util.logs import logger, _handle_exception
 from vispy.ext.six import string_types
@@ -682,6 +683,10 @@ class EmitterGroup(EventEmitter):
         # whether the sub-emitters have been connected to the group:
         self._emitters_connected = False
         self.add(**emitters)
+
+    # mypy fix for dynamic attribute access
+    def __getattr__(self, name: str) -> Any:
+        return object.__getattribute__(self, name)
 
     def __getitem__(self, name):
         """
