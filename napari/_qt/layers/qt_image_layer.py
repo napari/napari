@@ -114,7 +114,6 @@ class QtImageControls(QtBaseImageControls):
         self._on_rendering_change(self.layer.rendering)
         self._on_iso_threshold_change(self.layer.iso_threshold)
         self._on_attenuation_change(self.layer.attenuation)
-        # self._on_ndisplay_change(self.layer.dims.ndisplay)
 
     def _on_interpolation_change(self, text):
         """Change interpolation mode for image display.

@@ -4,6 +4,7 @@ import sys
 import pytest
 
 
+@pytest.mark.skip('Skip all multiscale')
 def test_multiscale(make_test_viewer):
     """Test rendering of multiscale data."""
     viewer = make_test_viewer()
@@ -42,6 +43,7 @@ def test_multiscale(make_test_viewer):
     assert value[1] is None
 
 
+@pytest.mark.skip('Skip all multiscale')
 def test_3D_multiscale_image(make_test_viewer):
     """Test rendering of 3D multiscale image uses lowest resolution."""
     viewer = make_test_viewer()
@@ -59,6 +61,7 @@ def test_3D_multiscale_image(make_test_viewer):
     list(viewer.window.qt_viewer.layer_to_visual.values())[0].on_draw(None)
 
 
+@pytest.mark.skip('Skip all multiscale')
 @pytest.mark.skipif(
     sys.platform.startswith('win') or not os.getenv("CI"),
     reason='Screenshot tests are not supported on napari windows CI.',
@@ -89,6 +92,7 @@ def test_multiscale_screenshot(make_test_viewer):
     )
 
 
+@pytest.mark.skip('Skip all multiscale')
 @pytest.mark.skipif(
     sys.platform.startswith('win') or not os.getenv("CI"),
     reason='Screenshot tests are not supported on napari windows CI.',
@@ -126,6 +130,7 @@ def test_multiscale_screenshot_zoomed(make_test_viewer):
     )
 
 
+@pytest.mark.skip('Skip all multiscale')
 @pytest.mark.skipif(
     sys.platform.startswith('win') or not os.getenv("CI"),
     reason='Screenshot tests are not supported on napari windows CI.',

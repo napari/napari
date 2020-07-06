@@ -556,7 +556,7 @@ class Image(IntensityVisualizationMixin, Layer):
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""
         image = self._slice.thumbnail.view
-        if self.dims.ndisplay == 3 and self.dims.ndim > 2:
+        if self.dims.ndisplay == 3 and self.dims.ndim > 2 and image.ndim > 2:
             image = np.max(image, axis=0)
 
         # float16 not supported by ndi.zoom

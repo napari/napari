@@ -27,17 +27,17 @@ class VispyImageLayer(VispyBaseLayer):
         data = self.layer._data_view
 
         # Make sure data is correct dtype
-        # dtype = np.dtype(data.dtype)
-        # if dtype not in texture_dtypes:
-        #     try:
-        #         dtype = dict(
-        #             i=np.int16, f=np.float32, u=np.uint16, b=np.uint8
-        #         )[dtype.kind]
-        #     except KeyError:  # not an int or float
-        #         raise TypeError(
-        #             f'type {dtype} not allowed for texture; must be one of {set(texture_dtypes)}'  # noqa: E501
-        #         )
-        #     data = data.astype(dtype)
+        dtype = np.dtype(data.dtype)
+        if dtype not in texture_dtypes:
+            try:
+                dtype = dict(
+                    i=np.int16, f=np.float32, u=np.uint16, b=np.uint8
+                )[dtype.kind]
+            except KeyError:  # not an int or float
+                raise TypeError(
+                    f'type {dtype} not allowed for texture; must be one of {set(texture_dtypes)}'  # noqa: E501
+                )
+            data = data.astype(dtype)
 
         if self.layer.dims.ndisplay == 3 and self.layer.dims.ndim == 2:
             data = np.expand_dims(data, axis=0)

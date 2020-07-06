@@ -317,11 +317,11 @@ def test_interpolation():
     layer = Image(data)
     assert layer.interpolation == 'nearest'
 
-    layer = Image(data, interpolation='bicubic')
-    assert layer.interpolation == 'bicubic'
+    layer = Image(data, interpolation='linear')
+    assert layer.interpolation == 'linear'
 
-    layer.interpolation = 'bilinear'
-    assert layer.interpolation == 'bilinear'
+    layer.interpolation = 'nearest'
+    assert layer.interpolation == 'nearest'
 
 
 def test_colormaps():
