@@ -2,7 +2,6 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QComboBox, QHBoxLayout, QLabel, QSlider
 
 from ...layers.image._image_constants import (
-    Interpolation,
     Interpolation3D,
     Rendering,
 )
@@ -51,11 +50,9 @@ class QtImageControls(QtBaseImageControls):
             iso_threshold=Event,
             attenuation=Event,
         )
-        self.layer.dims.events.ndisplay.connect(
-            lambda e: self._on_ndisplay_change(self.layer.dims.ndisplay)
-        )
 
         self.interpComboBox = QComboBox(self)
+        self.interpComboBox.addItems(Interpolation3D.keys())
         self.interpComboBox.activated[str].connect(self.events.interpolation)
         self.interpLabel = QLabel('interpolation:')
 
@@ -117,7 +114,7 @@ class QtImageControls(QtBaseImageControls):
         self._on_rendering_change(self.layer.rendering)
         self._on_iso_threshold_change(self.layer.iso_threshold)
         self._on_attenuation_change(self.layer.attenuation)
-        self._on_ndisplay_change(self.layer.dims.ndisplay)
+        # self._on_ndisplay_change(self.layer.dims.ndisplay)
 
     def _on_interpolation_change(self, text):
         """Change interpolation mode for image display.
@@ -197,39 +194,3 @@ class QtImageControls(QtBaseImageControls):
         else:
             self.attenuationSlider.hide()
             self.attenuationLabel.hide()
-
-    def _update_interpolation_combo(self, ndisplay):
-        """Set allowed interpolation modes for dimensionality of display.
-
-        Parameters
-        ----------
-        ndisplay : int
-            Number of dimesnions to be displayed, must be `2` or `3`.
-        """
-        interp_enum = Interpolation if ndisplay == 2 else Interpolation3D
-        self.interpComboBox.clear()
-        self.interpComboBox.addItems(interp_enum.keys())
-        # To finish EVH refactor we need to revisit the coupling of 2D and
-        # 3D interpolation modes into one attribute
-        self._on_interpolation_change(self.layer.interpolation)
-
-    def _on_ndisplay_change(self, value):
-        """Toggle between 2D and 3D visualization modes.
-
-        Parameters
-        ----------
-        value : int
-            Number of dimesnions to be displayed, must be `2` or `3`.
-        """
-        self._update_interpolation_combo(value)
-        if value == 2:
-            self.isoThresholdSlider.hide()
-            self.isoThresholdLabel.hide()
-            self.attenuationSlider.hide()
-            self.attenuationLabel.hide()
-            self.renderComboBox.hide()
-            self.renderLabel.hide()
-        else:
-            self.renderComboBox.show()
-            self.renderLabel.show()
-            self._toggle_rendering_parameter_visbility()

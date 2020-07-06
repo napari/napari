@@ -9,7 +9,7 @@ from ...utils.status_messages import format_float
 from ..base import Layer
 from ..utils.layer_utils import calc_data_range
 from ..intensity_mixin import IntensityVisualizationMixin
-from ._image_constants import Interpolation, Interpolation3D, Rendering
+from ._image_constants import Interpolation3D, Rendering
 from ._image_utils import guess_rgb, guess_multiscale
 from ._image_slice import ImageSlice
 
@@ -227,14 +227,7 @@ class Image(IntensityVisualizationMixin, Layer):
             self.contrast_limits_range = contrast_limits
         self._contrast_limits = tuple(self.contrast_limits_range)
 
-        self._interpolation = {
-            2: Interpolation.NEAREST,
-            3: (
-                Interpolation3D.NEAREST
-                if self.__class__.__name__ == 'Labels'
-                else Interpolation3D.LINEAR
-            ),
-        }
+        self._interpolation = Interpolation3D.NEAREST
 
         self._on_colormap_change(colormap)
         self._on_contrast_limits_change(self._contrast_limits)
@@ -386,7 +379,7 @@ class Image(IntensityVisualizationMixin, Layer):
         str
             The current interpolation mode
         """
-        return str(self._interpolation[self.dims.ndisplay])
+        return str(self._interpolation)
 
     @interpolation.setter
     def interpolation(self, interpolation):
@@ -394,14 +387,7 @@ class Image(IntensityVisualizationMixin, Layer):
         self.events.interpolation(interpolation)
 
     def _on_interpolation_change(self, interpolation):
-        if self.dims.ndisplay == 3:
-            self._interpolation[self.dims.ndisplay] = Interpolation3D(
-                interpolation
-            )
-        else:
-            self._interpolation[self.dims.ndisplay] = Interpolation(
-                interpolation
-            )
+        self._interpolation = Interpolation3D(interpolation)
 
     @property
     def rendering(self):
