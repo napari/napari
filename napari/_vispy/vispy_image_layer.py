@@ -63,6 +63,7 @@ class VispyImageLayer(VispyBaseLayer):
             data = np.expand_dims(data, axis=0)
 
         self.node.set_data(data)
+        self.node.update()
 
     def _on_interpolation_change(self, interpolation):
         """Receive layer model isosurface change event and update the visual.
