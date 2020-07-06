@@ -159,6 +159,13 @@ class VispyImageLayer(VispyBaseLayer):
             node_cmap = Colormap(cmap[np.linspace(0, 1, 256) ** self._gamma])
         else:
             node_cmap = cmap
+        # Following should be added to cmap setter in VisPy volume visual
+        if isinstance(self.node, VolumeNode):
+            self.node.view_program['texture2D_LUT'] = (
+                node_cmap.texture_lut()
+                if (hasattr(node_cmap, 'texture_lut'))
+                else None
+            )
         self.node.cmap = node_cmap
 
     def _on_contrast_limits_change(self, contrast_limits):
@@ -192,6 +199,11 @@ class VispyImageLayer(VispyBaseLayer):
         else:
             cmap = self._raw_cmap
         self._gamma = gamma
+        # Following should be added to cmap setter in VisPy volume visual
+        if isinstance(self.node, VolumeNode):
+            self.node.view_program['texture2D_LUT'] = (
+                cmap.texture_lut() if (hasattr(cmap, 'texture_lut')) else None
+            )
         self.node.cmap = cmap
 
     def _on_iso_threshold_change(self, iso_threshold):
