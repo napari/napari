@@ -321,7 +321,7 @@ def configure_loading(request):
 
 
 @pytest.fixture(autouse=True)
-def skip_sync_async(request):
+def skip_sync_only(request):
     """Skip tests depending on our sync/async settings."""
     async_mode = not CHUNK_LOADER.synchronous
     sync_only_test = request.node.get_closest_marker('sync_only')
