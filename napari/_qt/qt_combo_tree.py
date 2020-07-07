@@ -14,7 +14,7 @@ from typing import (
     Union,
 )
 
-from napari.utils.list._evented_list import EventedList
+from napari.utils.list._evented_list import NestableEventedList
 from qtpy.QtCore import QAbstractItemModel, QMimeData, QModelIndex, Qt
 from qtpy.QtWidgets import QAbstractItemView, QTreeView, QWidget
 
@@ -67,14 +67,14 @@ class Leaf(Node):
     pass
 
 
-class Group(Node, EventedList):
-    def __init__(self, name='Group', children: Iterable = None) -> None:
+class Group(Node, NestableEventedList):
+    def __init__(self, name='Group', children: Iterable[Node] = None) -> None:
         Node.__init__(self, name=name)
-        EventedList.__init__(self)
+        NestableEventedList.__init__(self)
         self.extend(children or [])
 
     def __len__(self) -> int:
-        return EventedList.__len__(self)
+        return NestableEventedList.__len__(self)
 
     def __delitem__(self, key: Union[int, slice]):
         if isinstance(key, int):
@@ -84,11 +84,11 @@ class Group(Node, EventedList):
                 item.parent = None
         super().__delitem__(key)
 
-    def insert(self, index: int, value: Node):
+    def insert(self, index: int, value):
         value.parent = self
         super().insert(index, value)
 
-    def extend(self, values: Iterable[Node]):
+    def extend(self, values: Iterable):
         for v in values:
             v.parent = self
         super().extend(values)
@@ -358,6 +358,10 @@ class QtNodeTree(QTreeView):
         self.setDragDropMode(QAbstractItemView.InternalMove)
         self.setDragDropOverwriteMode(False)
         self.setSelectionMode(QAbstractItemView.ExtendedSelection)
+
+        self.setStyleSheet(
+            "QTreeView::item {" "padding: 15px;" "color: red;" "}"
+        )
 
 
 if __name__ == '__main__':
