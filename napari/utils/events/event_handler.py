@@ -1,5 +1,5 @@
 import logging
-
+import weakref
 
 logger = logging.getLogger(__name__)
 
@@ -13,7 +13,7 @@ class EventHandler:
         components.
         """
         self.components_to_update = (
-            [component] if component is not None else []
+            [weakref.ref(component)] if component is not None else []
         )
 
     def register_listener(self, component):
@@ -25,7 +25,7 @@ class EventHandler:
             Object that contains callbacks for specific events. These are
             methods named according to an '_on_*_change' convention.
         """
-        self.components_to_update.append(component)
+        self.components_to_update.append(weakref.ref(component))
 
     def on_change(self, event=None):
         """Process an event from any of our event emitters.
@@ -49,8 +49,15 @@ class EventHandler:
             return
 
         # Update based on event value
-        for component in self.components_to_update:
-            update_method_name = f"_on_{event.type}_change"
-            update_method = getattr(component, update_method_name, None)
-            if update_method:
-                update_method(value)
+        for componentref in self.components_to_update:
+            component = componentref()
+            if component is None:
+                self.components_to_update.remove(componentref)
+                continue
+            try:
+                update_method_name = f"_on_{event.type}_change"
+                update_method = getattr(component, update_method_name, None)
+                if update_method:
+                    update_method(value)
+            except RuntimeError:
+                self.components_to_update.remove(componentref)
