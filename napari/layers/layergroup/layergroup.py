@@ -93,6 +93,20 @@ class LayerGroup(Layer, Group):
     def save(self):
         raise NotImplementedError()
 
+    # TODO: Selection model
+
+    @property
+    def selected_children(self):
+        return filter(lambda x: getattr(x, 'selected', False), self)
+
+    def remove_selected(self):
+        """Removes selected items from list."""
+        selected = list(self.selected_children)
+        print("selected", selected)
+        [self.remove(i) for i in selected]
+        if selected and self:
+            self[-1].selected = True
+
 
 # class ___LayerGroup(EventedList, Layer):
 #     def __init__(

@@ -76,9 +76,10 @@ class QtControls(QStackedWidget):
         event : Event
             Event with the target layer at `event.item`.
         """
-        idx, layer = event.value
-        controls = self.widgets[layer]
-        self.removeWidget(controls)
-        controls.deleteLater()
-        controls = None
-        del self.widgets[layer]
+        for idx, layer in event.value:
+            controls = self.widgets[layer]
+            self.removeWidget(controls)
+            controls.deleteLater()
+            print("deleting", controls)
+            controls = None
+            del self.widgets[layer]
