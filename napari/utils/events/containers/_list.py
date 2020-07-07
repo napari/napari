@@ -1,5 +1,5 @@
 from typing import List, Iterable, MutableSequence, TypeVar, Union, overload
-from napari.utils.event import EmitterGroup, Event
+from napari.utils.events import EmitterGroup, Event
 
 T = TypeVar('T')
 
@@ -11,7 +11,6 @@ class EventedList(MutableSequence[T]):
     """
 
     def __init__(self, data: Iterable[T] = None):
-        print("evented list init")
         self._list: List[T] = []
         self.events: EmitterGroup
 

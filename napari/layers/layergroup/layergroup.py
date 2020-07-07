@@ -1,13 +1,12 @@
-from ..base import Layer
-from ..node import Group
-from ..utils.layer_utils import combine_extents
-
 from typing import Iterable
+
+from ...utils.tree import Group
+from ..base import Layer
+from ..utils.layer_utils import combine_extents
 
 
 class LayerGroup(Layer, Group):
     def __init__(self, children: Iterable[Layer] = None, name='Group') -> None:
-        print("layergroup init")
         Layer.__init__(self, None, 2, name=name)
         Group.__init__(self, children)
 
@@ -86,6 +85,10 @@ class LayerGroup(Layer, Group):
     @property
     def blending(self):
         return None
+
+    @blending.setter
+    def blending(self, val):
+        raise NotImplementedError()
 
     def save(self):
         raise NotImplementedError()

@@ -14,7 +14,7 @@ from vispy.scene import SceneCanvas, PanZoomCamera, ArcballCamera
 from vispy.visuals.transforms import ChainTransform
 
 from .qt_dims import QtDims
-from .qt_combo_tree import QtNodeTree
+from .tree import QtNodeTreeView
 from ..resources import get_stylesheet
 from ..utils.theme import template
 from ..utils.interactions import (
@@ -88,7 +88,7 @@ class QtViewer(QSplitter):
         self.viewer = viewer
         self.dims = QtDims(self.viewer.dims)
         self.controls = QtControls(self.viewer)
-        self.layers = QtNodeTree(self.viewer.layers, self)
+        self.layers = QtNodeTreeView(self.viewer.layers, self)
         self.layerButtons = QtLayerButtons(self.viewer)
         self.viewerButtons = QtViewerButtons(self.viewer)
         self._console = None

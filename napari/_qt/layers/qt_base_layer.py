@@ -2,7 +2,7 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QSlider, QGridLayout, QFrame, QComboBox
 
 from ...layers.base._base_constants import Blending
-from ...utils.event import Event, EmitterGroup
+from ...utils.events import Event, EmitterGroup
 
 
 class QtLayerControls(QFrame):

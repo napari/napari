@@ -7,7 +7,7 @@ from ...layers.image._image_constants import (
     Rendering,
 )
 from .qt_image_base_layer import QtBaseImageControls
-from ...utils.event import Event
+from ...utils.events import Event
 
 
 class QtImageControls(QtBaseImageControls):

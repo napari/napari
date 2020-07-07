@@ -1,20 +1,9 @@
 from __future__ import annotations
 
 import pickle
-from abc import ABC
 from collections import defaultdict
-from typing import (
-    Any,
-    DefaultDict,
-    Generator,
-    Iterable,
-    List,
-    Optional,
-    Tuple,
-    Union,
-)
+from typing import Any, DefaultDict, List, Tuple, Union
 
-from napari.utils.list._evented_list import NestableEventedList
 from qtpy.QtCore import (
     QAbstractItemModel,
     QMimeData,
@@ -22,110 +11,8 @@ from qtpy.QtCore import (
     Qt,
     QItemSelection,
 )
-from qtpy.QtWidgets import QAbstractItemView, QTreeView, QWidget
-
-
-class Node(ABC):
-    def __init__(self, name: str = 'Node'):
-        self._parent: Optional[Group] = None
-        self.name = name
-
-    def __len__(self) -> int:
-        return 0
-
-    @property
-    def parent(self) -> Optional[Group]:
-        return self._parent
-
-    @parent.setter
-    def parent(self, parent: Group):
-        self._parent = parent
-
-    def is_group(self) -> bool:
-        return False
-
-    def index_in_parent(self) -> int:
-        if self.parent is not None:
-            return self.parent.index(self)
-        return 0
-
-    def index_from_root(self) -> Tuple[int, ...]:
-        indices: List[int] = []
-        item = self
-        while item.parent is not None:
-            indices.insert(0, item.index_in_parent())
-            item = item.parent
-        return tuple(indices)
-
-    def traverse(self):
-        yield self
-
-    def __str__(self):
-        """Render ascii tree string representation of this node"""
-        return "\n".join(self._render())
-
-    def _render(self):
-        """Recursively return list of strings that can render ascii tree."""
-        return [self.name]
-
-
-class Leaf(Node):
-    pass
-
-
-class Group(Node, NestableEventedList):
-    def __init__(self, name='Group', children: Iterable[Node] = None) -> None:
-        Node.__init__(self, name=name)
-        NestableEventedList.__init__(self)
-        self.extend(children or [])
-
-    def __len__(self) -> int:
-        return NestableEventedList.__len__(self)
-
-    def __delitem__(self, key: Union[int, slice]):
-        if isinstance(key, int):
-            self[key].parent = None
-        else:
-            for item in self[key]:
-                item.parent = None
-        super().__delitem__(key)
-
-    def insert(self, index: int, value):
-        value.parent = self
-        super().insert(index, value)
-
-    def extend(self, values: Iterable):
-        for v in values:
-            v.parent = self
-        super().extend(values)
-
-    def is_group(self) -> bool:
-        return True
-
-    def traverse(self) -> Generator[Node, None, None]:
-        "Recursively traverse all nodes and leaves of the Group tree."
-        yield self
-        for child in self:
-            yield from child.traverse()
-
-    def get_nested_index(self, indices: Tuple[int, ...]) -> Node:
-        item: Group = self
-        for idx in indices:
-            item = item[idx]
-        return item
-
-    def _render(self):
-        """Recursively return list of strings that can render ascii tree."""
-        lines = []
-        lines.append(self.name)
-
-        for n, child in enumerate(self):
-            child_tree = child._render()
-            lines.append('  +--' + child_tree.pop(0))
-            spacer = '   ' if n == len(self) - 1 else '  |'
-            lines.extend([spacer + l for l in child_tree])
-
-        return lines
+from qtpy.QtWidgets import QWidget
+from ...utils.tree import Group, Node
 
 
 # https://doc.qt.io/qt-5/model-view-programming.html#model-subclassing-reference
@@ -191,7 +78,7 @@ class QtNodeTreeModel(QAbstractItemModel):
 
         self.beginInsertRows(parent, pos, pos + count - 1)
         for i in range(count):
-            item = Leaf()
+            item = Node()
             parentItem.insert(pos, item)
         self.endInsertRows()
 
@@ -281,7 +168,7 @@ class QtNodeTreeModel(QAbstractItemModel):
         for index in indices:
             item = self.getItem(index)
             data.append(item.index_from_root())
-            text.append(str(id(item)))
+            text.append(item.name)
         mimedata.setData(self.mimeTypes()[0], pickle.dumps(data))
         mimedata.setText(" ".join(text))
         return mimedata
@@ -352,7 +239,7 @@ class QtNodeTreeModel(QAbstractItemModel):
     def get_nested_index(self, indices: Tuple[int, ...]) -> QModelIndex:
         parentIndex = QModelIndex()
         for idx in indices:
-            parentIndex = model.index(idx, 0, parentIndex)
+            parentIndex = self.index(idx, 0, parentIndex)
         return parentIndex
 
     def setSelection(
@@ -362,44 +249,3 @@ class QtNodeTreeModel(QAbstractItemModel):
             self.getItem(idx).selected = True
         for idx in deselected.indexes():
             self.getItem(idx).selected = False
-
-
-class QtNodeTree(QTreeView):
-    def __init__(self, root, parent: QWidget = None):
-        super().__init__(parent)
-        _model = QtNodeTreeModel(root, self)
-        self.setModel(_model)
-        self.setHeaderHidden(True)
-        self.setDragDropMode(QAbstractItemView.InternalMove)
-        self.setDragDropOverwriteMode(False)
-        self.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        self.selectionModel().selectionChanged.connect(_model.setSelection)
-
-        self.setStyleSheet(r"QTreeView::item {padding: 10px;}")
-
-
-if __name__ == '__main__':
-    from napari import gui_qt
-
-    with gui_qt():
-        tip = Leaf(name='tip')
-        lg2 = Group(name="g2", children=[Leaf(name='2')])
-        lg1 = Group(
-            name="g1", children=[lg2, Leaf(name='3'), tip, Leaf(name='1')]
-        )
-        root = Group(
-            name="root",
-            children=[
-                lg1,
-                Leaf(name='4'),
-                Leaf(name='5'),
-                Leaf(name='6'),
-                Leaf(name='7'),
-                Leaf(name='8'),
-                Leaf(name='9'),
-            ],
-        )
-        tree = QtNodeTree(root)
-        model = tree.model()
-        root.events.connect(lambda e: model.layoutChanged.emit())
-        tree.show()

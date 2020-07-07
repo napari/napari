@@ -1,54 +1,7 @@
-from __future__ import annotations
+from .node import Node
+from ..events import NestableEventedList
 
-from abc import ABC
-from typing import Generator, Iterable, List, Optional, Tuple, Union
-
-from ..utils.list._evented_list import NestableEventedList
-
-
-class Node(ABC):
-    def __init__(self, name: str = 'Node'):
-        print("node init")
-        self._parent: Optional['Group'] = None
-        self._name = name
-
-    def __len__(self) -> int:
-        return 0
-
-    @property
-    def parent(self) -> Optional['Group']:
-        return self._parent
-
-    @parent.setter
-    def parent(self, parent):
-        self._parent = parent
-
-    def is_group(self) -> bool:
-        return False
-
-    def index_in_parent(self) -> int:
-        if self.parent is not None:
-            return self.parent.index(self)
-        return 0
-
-    def index_from_root(self) -> Tuple[int, ...]:
-        indices: List[int] = []
-        item = self
-        while item.parent is not None:
-            indices.insert(0, item.index_in_parent())
-            item = item.parent
-        return tuple(indices)
-
-    def traverse(self):
-        yield self
-
-    def __str__(self):
-        """Render ascii tree string representation of this node"""
-        return "\n".join(self._render())
-
-    def _render(self):
-        """Recursively return list of strings that can render ascii tree."""
-        return [self.name]
+from typing import Generator, Iterable, Tuple, Union
 
 
 class Group(Node, NestableEventedList):
@@ -62,19 +15,23 @@ class Group(Node, NestableEventedList):
 
     def __delitem__(self, key: Union[int, slice]):
         if isinstance(key, int):
+            print('removing', self[key])
             self[key].parent = None
         else:
             for item in self[key]:
+                print('removing', item)
                 item.parent = None
         super().__delitem__(key)
 
     def insert(self, index: int, value):
         value.parent = self
+        print('inserted', value)
         super().insert(index, value)
 
     def extend(self, values: Iterable):
         for v in values:
             v.parent = self
+            print('inserted', v)
         super().extend(values)
 
     def is_group(self) -> bool:

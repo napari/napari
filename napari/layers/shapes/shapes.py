@@ -18,7 +18,7 @@ from ...utils.colormaps.standardize_color import (
     rgb_to_hex,
 )
 from ..utils.color_transformations import transform_color_cycle, ColorType
-from ...utils.event import Event
+from ...utils.events import Event
 from ..utils.layer_utils import (
     dataframe_to_properties,
     guess_continuous,

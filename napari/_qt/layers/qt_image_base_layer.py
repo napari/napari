@@ -10,7 +10,7 @@ from ..qt_range_slider import QHRangeSlider
 from ..qt_range_slider_popup import QRangeSliderPopup
 from ..utils import qt_signals_blocked
 from .qt_base_layer import QtLayerControls
-from ...utils.event import Event
+from ...utils.events import Event
 from ...utils.status_messages import format_float
 from ...utils.colormaps import ensure_colormap_tuple, make_colorbar
 

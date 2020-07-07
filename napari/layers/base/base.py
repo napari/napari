@@ -1,23 +1,22 @@
 import warnings
 from abc import ABC, abstractmethod
-from ..node import Node
 from contextlib import contextmanager
+from copy import copy
 from functools import reduce
 from typing import List, Optional
-from copy import copy
 
 import numpy as np
 
 from ...components import Dims
 from ...utils.dask_utils import configure_dask
-from ...utils.event import EmitterGroup, Event
+from ...utils.events import EmitterGroup, Event, EventHandler
 from ...utils.key_bindings import KeymapProvider
 from ...utils.misc import ROOT_DIR
 from ...utils.naming import magic_name
 from ...utils.status_messages import format_float, status_format
-from ...utils.event_handler import EventHandler
-from ..utils.layer_utils import compute_multiscale_level, convert_to_uint8
+from ...utils.tree import Node
 from ..transforms import ScaleTranslate, TransformChain
+from ..utils.layer_utils import compute_multiscale_level, convert_to_uint8
 from ._base_constants import Blending
 
 

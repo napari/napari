@@ -10,7 +10,7 @@ from ...utils.colormaps import ensure_colormap_tuple
 from ...types import ValidColormapArg
 
 from ..base import Layer
-from ...utils.event import Event
+from ...utils.events import Event
 from ...utils.status_messages import format_float
 from ...utils.colormaps.standardize_color import (
     transform_color,

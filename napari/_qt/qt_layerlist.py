@@ -14,7 +14,7 @@ from qtpy.QtWidgets import (
 from qtpy.QtGui import QDrag, QImage, QPixmap
 import numpy as np
 from .utils import qt_signals_blocked
-from ..utils.event import Event, EmitterGroup
+from ..utils.events import Event, EmitterGroup
 
 
 class QtLayerList(QScrollArea):

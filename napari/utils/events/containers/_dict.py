@@ -1,5 +1,5 @@
 from collections import abc
-from napari.utils.event import EmitterGroup, Event
+from ..event import EmitterGroup, Event
 from typing import Any, Iterator
 
 
