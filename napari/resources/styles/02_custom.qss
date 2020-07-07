@@ -98,6 +98,7 @@ QtConsole > QPlainTextEdit, QTextEdit {
 QtLayerList QScrollBar:vertical {
   max-width: 8px;
   margin: 12px 0px;
+  padding: 2px;
 }
 
 QtLayerList QScrollBar::add-line:vertical,
@@ -123,6 +124,7 @@ QtLayerList::item {
   background: {{ foreground }};
   min-height: 32px;
   max-height: 32px;
+  border-radius: 2px;
 }
 
 QtLayerList::item:selected {
@@ -144,8 +146,6 @@ QtLayerWidget {
   border-radius: 2px;
   min-height: 32px;
   max-height: 32px;
-  min-width: 228px;
-  max-width: 228px;
 }
 
 

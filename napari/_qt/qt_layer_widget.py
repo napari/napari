@@ -70,13 +70,11 @@ class QtLayerWidget(QFrame):
         self.visibleCheckBox = cb
         self.layout.addWidget(cb)
 
-        textbox = QLineEdit(self)
-        textbox.setAcceptDrops(False)
-        textbox.setEnabled(True)
-        textbox.editingFinished.connect(self.changeText)
-        self.nameTextBox = textbox
+        self.nameTextBox = QLineEditDraggable(self)
+        self.nameTextBox.setAcceptDrops(False)
+        self.nameTextBox.editingFinished.connect(self.changeText)
         self.nameTextBox.old_name = ''
-        self.layout.addWidget(textbox)
+        self.layout.addWidget(self.nameTextBox)
 
         ltb = QLabel(self)
         ltb.setProperty('layer_type_label', True)
@@ -213,3 +211,16 @@ class QtLayerWidget(QFrame):
             QImage.Format_RGBA8888,
         )
         self.thumbnailLabel.setPixmap(QPixmap.fromImage(image))
+
+
+class QLineEditDraggable(QLineEdit):
+    """Draggable QLineEdit for better use inside a QListWidget."""
+
+    def __init__(self, parent=None):
+        super().__init__(parent=parent)
+
+    def mouseMoveEvent(self, event):
+        if self.hasFocus():
+            super().mouseMoveEvent(event)
+        else:
+            event.ignore()
