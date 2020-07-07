@@ -15,7 +15,13 @@ from typing import (
 )
 
 from napari.utils.list._evented_list import NestableEventedList
-from qtpy.QtCore import QAbstractItemModel, QMimeData, QModelIndex, Qt
+from qtpy.QtCore import (
+    QAbstractItemModel,
+    QMimeData,
+    QModelIndex,
+    Qt,
+    QItemSelection,
+)
 from qtpy.QtWidgets import QAbstractItemView, QTreeView, QWidget
 
 
@@ -349,19 +355,27 @@ class QtNodeTreeModel(QAbstractItemModel):
             parentIndex = model.index(idx, 0, parentIndex)
         return parentIndex
 
+    def setSelection(
+        self, selected: QItemSelection, deselected: QItemSelection
+    ):
+        for idx in selected.indexes():
+            self.getItem(idx).selected = True
+        for idx in deselected.indexes():
+            self.getItem(idx).selected = False
+
 
 class QtNodeTree(QTreeView):
     def __init__(self, root, parent: QWidget = None):
         super().__init__(parent)
-        self.setModel(QtNodeTreeModel(root, self))
+        _model = QtNodeTreeModel(root, self)
+        self.setModel(_model)
         self.setHeaderHidden(True)
         self.setDragDropMode(QAbstractItemView.InternalMove)
         self.setDragDropOverwriteMode(False)
         self.setSelectionMode(QAbstractItemView.ExtendedSelection)
+        self.selectionModel().selectionChanged.connect(_model.setSelection)
 
-        self.setStyleSheet(
-            "QTreeView::item {" "padding: 15px;" "color: red;" "}"
-        )
+        self.setStyleSheet(r"QTreeView::item {padding: 10px;}")
 
 
 if __name__ == '__main__':

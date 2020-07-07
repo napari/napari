@@ -1,5 +1,6 @@
 import warnings
 from abc import ABC, abstractmethod
+from ..node import Node
 from contextlib import contextmanager
 from functools import reduce
 from typing import List, Optional
@@ -20,7 +21,7 @@ from ..transforms import ScaleTranslate, TransformChain
 from ._base_constants import Blending
 
 
-class Layer(KeymapProvider, ABC):
+class Layer(KeymapProvider, Node, ABC):
     """Base layer class.
 
     Parameters
@@ -196,8 +197,7 @@ class Layer(KeymapProvider, ABC):
         self._thumbnail_shape = (32, 32, 4)
         self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         self._update_properties = True
-        self._parent = None
-        self._children = None
+
         if not name:
             self._name = self._basename()
         else:
@@ -238,10 +238,6 @@ class Layer(KeymapProvider, ABC):
         self.mouse_drag_callbacks = []
         self._persisted_mouse_event = {}
         self._mouse_drag_gen = {}
-
-    def __str__(self):
-        """Return self.name."""
-        return self.name
 
     def __repr__(self):
         cls = type(self)
@@ -431,20 +427,6 @@ class Layer(KeymapProvider, ABC):
             return
         self._position = position
         self._update_coordinates()
-
-    @property
-    def parent(self) -> Optional['Layer']:
-        return self._parent
-
-    @parent.setter
-    def parent(self, parent):
-        self._parent = parent
-
-    @property
-    def row(self) -> int:
-        if self.parent:
-            return self.parent.index(self)
-        return 0
 
     def _update_dims(self, event=None):
         """Updates dims model, which is useful after data has been changed."""
@@ -823,7 +805,3 @@ class Layer(KeymapProvider, ABC):
         from ...plugins.io import save_layers
 
         return save_layers(path, [self], plugin=plugin)
-
-    def __len__(self):
-        """Number of all non-group layers contained in the layergroup."""
-        return 0

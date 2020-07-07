@@ -64,9 +64,9 @@ class QtLayerTreeModel(QAbstractItemModel):
         if not index.isValid():
             return None
         if role == self.ID_ROLE:
+            print("ID ROLE!")
             return id(self.itemFromIndex(index))
         if role == Qt.DisplayRole:
-            # TODO: not supposed to use internal pointer for data
             return str(self.itemFromIndex(index).name)
         if role == Qt.UserRole:
             return 1
@@ -232,17 +232,17 @@ class QtLayerTreeModel(QAbstractItemModel):
             # appending to new parent
             for cur_row, cur_col, item_id in reversed(dragged_items):
                 item = self._itemFromID(item_id)
-                item._parent.remove(item)
+                item.parent.remove(item)
                 new_parent.append(item)  # type: ignore
         else:
             for cur_row, cur_col, item_id in reversed(dragged_items):
                 item = self._itemFromID(item_id)
-                if new_parent == item._parent:
+                if new_parent == item.parent:
                     # internal move
-                    item._parent.move(cur_row, row)
+                    item.parent.move(cur_row, row)
                 else:
                     # moving to precise position in new parent
-                    item._parent.remove(item)
+                    item.parent.remove(item)
                     new_parent.insert(row, item)  # type: ignore
         return True
 

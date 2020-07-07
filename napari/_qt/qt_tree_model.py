@@ -10,11 +10,13 @@ from qtpy.QtCore import (
     QMimeData,
 )
 from qtpy.QtWidgets import QAbstractItemView, QTreeView, QWidget
+from napari.utils.list._evented_list import EventedList
+from typing import MutableSequence
 
 
 class Component(ABC):
     def __init__(self, name='Component', children=None) -> None:
-        self._children: List[Component] = []
+        self._children: MutableSequence[Component] = EventedList()
         self._parent: Optional[Component] = None
         self.name = name
         for child in children or []:
@@ -138,6 +140,9 @@ class Composite(Component):
         yield self
         for child in self:
             yield from child.traverse()
+
+    def __getitem__(self, key) -> Component:
+        return self._children[key]
 
 
 # https://doc.qt.io/qt-5/model-view-programming.html#model-subclassing-reference

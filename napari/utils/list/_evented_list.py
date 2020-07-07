@@ -11,6 +11,7 @@ class EventedList(MutableSequence[T]):
     """
 
     def __init__(self, data: Iterable[T] = None):
+        print("evented list init")
         self._list: List[T] = []
         self.events: EmitterGroup
 
