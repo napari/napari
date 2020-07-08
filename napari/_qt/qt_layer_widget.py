@@ -1,3 +1,4 @@
+from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QFrame,
     QLineEdit,
@@ -219,6 +220,26 @@ class QLineEditDraggable(QLineEdit):
 
     def __init__(self, parent=None):
         super().__init__(parent=parent)
+        self.setFocusPolicy(Qt.NoFocus)
+        # Use the _pressed property to only transfer focus to the QLineEdit
+        # on a release event after there has been a click event on the widget.
+        # This extra step allows for the initial drag on the QLineEdit to move
+        # the widget instead of select the text. After release the text would
+        # become selectable if there was no drag and drop.
+        self._pressed = False
+
+    def mousePressEvent(self, event):
+        self._pressed = True
+        if self.hasFocus():
+            super().mousePressEvent(event)
+        else:
+            event.accept()
+
+    def mouseReleaseEvent(self, event):
+        if self._pressed:
+            self.setFocus()
+        self._pressed = False
+        super().mouseReleaseEvent(event)
 
     def mouseMoveEvent(self, event):
         if self.hasFocus():

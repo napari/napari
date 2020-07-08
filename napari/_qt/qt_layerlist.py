@@ -171,5 +171,5 @@ class QtLayerList(QListWidget):
 
     def startDrag(self, supportedActions: Qt.DropActions):
         self.setDropIndicatorShown(True)
-        drag = drag_with_pixmap(self, opacity=0.7)
+        drag = drag_with_pixmap(self, opacity=0.5)
         drag.exec_(supportedActions, Qt.MoveAction)
