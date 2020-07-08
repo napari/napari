@@ -166,7 +166,7 @@ class QtLayerList(QListWidget):
         if current <= insert:
             insert -= 1
 
-        indices = move_indices(total + 1, moving, total - insert)
+        indices = move_indices(total + 1, moving[::-1], total - insert)
         self.events.reordered((indices, tuple(range(total + 1))))
 
     def startDrag(self, supportedActions: Qt.DropActions):
