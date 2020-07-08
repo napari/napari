@@ -36,9 +36,11 @@ USE_SYNC_LOADER = False
 
 def _log_to_file(path):
     """Write ChunkLoader log message to the own file."""
-    fh = logging.FileHandler('chunk_loader.log')
-    LOGGER.addHandler(fh)
-    LOGGER.setLevel(logging.INFO)
+    path = os.getenv("NAPARI_ASYNC_LOG")
+    if path is not None:
+        fh = logging.FileHandler(path)
+        LOGGER.addHandler(fh)
+        LOGGER.setLevel(logging.INFO)
 
 
 # Always on for now. ASYNC_TODO: command line option for this?
