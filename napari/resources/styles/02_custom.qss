@@ -118,7 +118,6 @@ QtLayerList QScrollBar:down-arrow {
 
 QtLayerList {
   background: {{ background }};
-  padding: 0px 0px 10px 0px;
 }
 
 QtLayerList::item {
@@ -156,6 +155,7 @@ QtLayerWidget > QLabel {
   padding: 0px;
   qproperty-alignment: AlignVCenter;
 }
+
 
 /* The name of the layer*/
 QtLayerWidget > QLineEdit {
