@@ -1,7 +1,9 @@
-from .node import Node
-from ..events import NestableEventedList
-
 from typing import Generator, Iterable, Tuple, Union
+
+from ..events import NestableEventedList
+from .node import Node
+
+NestedIndex = Tuple[int, ...]
 
 
 class Group(Node, NestableEventedList):
@@ -15,23 +17,19 @@ class Group(Node, NestableEventedList):
 
     def __delitem__(self, key: Union[int, slice]):
         if isinstance(key, int):
-            print('removing', self[key])
             self[key].parent = None
         else:
             for item in self[key]:
-                print('removing', item)
                 item.parent = None
         super().__delitem__(key)
 
     def insert(self, index: int, value):
         value.parent = self
-        print('inserted', value)
         super().insert(index, value)
 
     def extend(self, values: Iterable):
         for v in values:
             v.parent = self
-            print('inserted', v)
         super().extend(values)
 
     def is_group(self) -> bool:
@@ -42,12 +40,6 @@ class Group(Node, NestableEventedList):
         yield self
         for child in self:
             yield from child.traverse()
-
-    def get_nested_index(self, indices: Tuple[int, ...]) -> Node:
-        item: Group = self
-        for idx in indices:
-            item = item[idx]
-        return item
 
     def _render(self):
         """Recursively return list of strings that can render ascii tree."""

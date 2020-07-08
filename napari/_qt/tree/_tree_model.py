@@ -1,16 +1,9 @@
 from __future__ import annotations
 
 import pickle
-from collections import defaultdict
-from typing import Any, DefaultDict, List, Tuple, Union
+from typing import Any, List, Tuple, Union
 
-from qtpy.QtCore import (
-    QAbstractItemModel,
-    QMimeData,
-    QModelIndex,
-    Qt,
-    QItemSelection,
-)
+from qtpy.QtCore import QAbstractItemModel, QMimeData, QModelIndex, Qt
 from qtpy.QtWidgets import QWidget
 from ...utils.tree import Group, Node
 
@@ -20,6 +13,38 @@ class QtNodeTreeModel(QAbstractItemModel):
     def __init__(self, root: Group, parent: QWidget = None):
         super().__init__(parent)
         self.root_item = root
+        self.root_item.events.removing.connect(self._on_begin_removing)
+        self.root_item.events.removed.connect(lambda x: self.endRemoveRows())
+        self.root_item.events.inserting.connect(self._on_begin_inserting)
+        self.root_item.events.inserted.connect(lambda x: self.endInsertRows())
+        # self.root_item.events.added.connect(self._on_added)
+
+    def _on_begin_removing(self, event):
+        par, idx = QModelIndex(), event.value
+        self.beginRemoveRows(par, idx, idx)
+
+    def _on_begin_inserting(self, event):
+        par, idx = QModelIndex(), event.value
+        self.beginInsertRows(par, idx, idx)
+
+    # def _on_added(self, event):
+    #     for idx, _ in event.value:
+    #         par, idx = self._split_nested_index(idx)
+    #         self.beginInsertRows(par, idx, idx)
+    #         self.endInsertRows()
+    #     return True
+
+    # def _split_nested_index(
+    #     self, nested_index: Union[int, Tuple[int, ...]]
+    # ) -> Tuple[QModelIndex, int]:
+    #     """Given a nested index, return (nested_parent_index, row)."""
+    #     if isinstance(nested_index, int):
+    #         return QModelIndex(), nested_index
+    #     par = QModelIndex()
+    #     *_p, idx = nested_index
+    #     for i in _p:
+    #         par = self.index(i, 0, par)
+    #     return par, idx
 
     def canDropMimeData(self, *args):
         return self.getItem(args[-1]).is_group()
@@ -71,18 +96,18 @@ class QtNodeTreeModel(QAbstractItemModel):
             return self.createIndex(row, column, parentItem[row])
         return QModelIndex()
 
-    def insertRows(self, pos: int, count: int, parent: QModelIndex) -> bool:
-        parentItem = self.getItem(parent)
-        if pos < 0 or pos > len(parentItem):
-            return False
+    # def insertRows(self, pos: int, count: int, parent: QModelIndex) -> bool:
+    #     parentItem = self.getItem(parent)
+    #     if pos < 0 or pos > len(parentItem):
+    #         return False
 
-        self.beginInsertRows(parent, pos, pos + count - 1)
-        for i in range(count):
-            item = Node()
-            parentItem.insert(pos, item)
-        self.endInsertRows()
+    #     self.beginInsertRows(parent, pos, pos + count - 1)
+    #     for i in range(count):
+    #         item = Node()
+    #         parentItem.insert(pos, item)
+    #     self.endInsertRows()
 
-        return True
+    #     return True
 
     def moveRows(
         self,
@@ -134,18 +159,18 @@ class QtNodeTreeModel(QAbstractItemModel):
 
         return self.createIndex(parentItem.index_in_parent(), 0, parentItem)
 
-    def removeRows(self, pos: int, count: int, parent: QModelIndex):
-        print("RemoveRows")
-        parentItem = self.getItem(parent)
-        if pos < 0 or (pos + count) > len(parentItem):
-            return False
+    # def removeRows(self, pos: int, count: int, parent: QModelIndex):
+    #     print("RemoveRows")
+    #     parentItem = self.getItem(parent)
+    #     if pos < 0 or (pos + count) > len(parentItem):
+    #         return False
 
-        self.beginRemoveRows(parent, pos, pos + count - 1)
-        for i in range(count):
-            parentItem.pop(pos)
-        self.endRemoveRows()
+    #     self.beginRemoveRows(parent, pos, pos + count - 1)
+    #     for i in range(count):
+    #         parentItem.pop(pos)
+    #     self.endRemoveRows()
 
-        return True
+    #     return True
 
     def rowCount(self, parent: QModelIndex) -> int:
         return len(self.getItem(parent))
@@ -173,6 +198,81 @@ class QtNodeTreeModel(QAbstractItemModel):
         mimedata.setText(" ".join(text))
         return mimedata
 
+    # def dropMimeData(
+    #     self,
+    #     data: QMimeData,
+    #     action: Qt.DropAction,
+    #     destRow: int,
+    #     col: int,
+    #     parent: QModelIndex,
+    # ) -> bool:
+    #     """Handles dropped data that ended with ``action``.
+
+    #     Returns true if the data and action were handled by the model;
+    #     otherwise returns false.
+
+    #     """
+    #     if not data or action != Qt.MoveAction:
+    #         return False
+    #     default_format = self.mimeTypes()[0]
+    #     if not data.hasFormat(default_format):
+    #         return False
+
+    #     dest_parent_item = self.getItem(parent)
+    #     dest_tup = dest_parent_item.index_from_root()
+    #     if destRow == -1:
+    #         destRow = len(dest_parent_item)
+
+    #     dragged_indices = pickle.loads(data.data(default_format))
+    #     if len(dragged_indices) <= 1:
+    #         # simpler task
+    #         for *p, srcRow in dragged_indices:
+    #             src_parent = self.get_nested_index(p)
+    #             self.moveRows(src_parent, srcRow, 1, parent, destRow)
+    #         return False
+
+    #     # more complicated when moving multiple objects.
+    #     # don't assume selection adjacency ... so move one at a time
+    #     # need to update indices as we pop, so we keep track of the indices
+    #     # we have previously popped
+    #     popped: DefaultDict[Tuple[int, ...], List[int]] = defaultdict(list)
+    #     # we iterate indices from the end first, so pop() always works
+    #     for i, (*p, srcRow) in enumerate(
+    #         sorted(dragged_indices, reverse=True)
+    #     ):
+    #         src_tup = tuple(p)  # index of parent relative to root
+    #         src_parent = self.get_nested_index(src_tup)
+
+    #         # we need to decrement the srcRow by 1 for each time we have
+    #         # previously pulled items out from in front of the srcRow
+    #         sdec = sum(map(lambda x: x <= srcRow, popped.get(src_tup, [])))
+    #         # if item is being moved within the same parent,
+    #         # we need to increase the srcRow by 1 for each time we have
+    #         # previously inserted items in front of the srcRow
+    #         if src_tup == dest_tup:
+    #             sdec -= (destRow <= srcRow) * i
+    #         # we need to decrement the destRow by 1 for each time we have
+    #         # previously pulled items out from in front of the destRow
+    #         ddec = sum(map(lambda x: x <= destRow, popped.get(dest_tup, [])))
+
+    #         self.moveRows(src_parent, srcRow - sdec, 1, parent, destRow - ddec)
+    #         popped[src_tup].append(srcRow)
+
+    #     # If we return true, removeRows is called!?
+    #     return False
+
+    def get_nested_index(self, indices: Tuple[int, ...]) -> QModelIndex:
+        parentIndex = QModelIndex()
+        for idx in indices:
+            parentIndex = self.index(idx, 0, parentIndex)
+        return parentIndex
+
+    # def iter_indices(self, parent: QModelIndex = QModelIndex()):
+    #     if parent.isValid():
+    #         yield parent
+    #     for c in range(self.rowCount(parent)):
+    #         yield from self.iter_indices(self.index(c, 0, parent))
+
     def dropMimeData(
         self,
         data: QMimeData,
@@ -192,60 +292,45 @@ class QtNodeTreeModel(QAbstractItemModel):
         default_format = self.mimeTypes()[0]
         if not data.hasFormat(default_format):
             return False
-
-        dest_parent_item = self.getItem(parent)
-        dest_tup = dest_parent_item.index_from_root()
-        if destRow == -1:
-            destRow = len(dest_parent_item)
-
         dragged_indices = pickle.loads(data.data(default_format))
-        if len(dragged_indices) <= 1:
-            # simpler task
-            for *p, srcRow in dragged_indices:
-                src_parent = self.get_nested_index(p)
-                self.moveRows(src_parent, srcRow, 1, parent, destRow)
-            return False
 
-        # more complicated when moving multiple objects.
-        # don't assume selection adjacency ... so move one at a time
-        # need to update indices as we pop, so we keep track of the indices
-        # we have previously popped
-        popped: DefaultDict[Tuple[int, ...], List[int]] = defaultdict(list)
-        # we iterate indices from the end first, so pop() always works
-        for i, (*p, srcRow) in enumerate(
-            sorted(dragged_indices, reverse=True)
-        ):
-            src_tup = tuple(p)  # index of parent relative to root
-            src_parent = self.get_nested_index(src_tup)
+        dest_idx = list(self.getItem(parent).index_from_root())
+        dest_idx.append(destRow)
 
-            # we need to decrement the srcRow by 1 for each time we have
-            # previously pulled items out from in front of the srcRow
-            sdec = sum(map(lambda x: x <= srcRow, popped.get(src_tup, [])))
-            # if item is being moved within the same parent,
-            # we need to increase the srcRow by 1 for each time we have
-            # previously inserted items in front of the srcRow
-            if src_tup == dest_tup:
-                sdec -= (destRow <= srcRow) * i
-            # we need to decrement the destRow by 1 for each time we have
-            # previously pulled items out from in front of the destRow
-            ddec = sum(map(lambda x: x <= destRow, popped.get(dest_tup, [])))
-
-            self.moveRows(src_parent, srcRow - sdec, 1, parent, destRow - ddec)
-            popped[src_tup].append(srcRow)
+        self.root_item.move_multiple_nested(dragged_indices, tuple(dest_idx))
 
         # If we return true, removeRows is called!?
         return False
 
-    def get_nested_index(self, indices: Tuple[int, ...]) -> QModelIndex:
-        parentIndex = QModelIndex()
-        for idx in indices:
-            parentIndex = self.index(idx, 0, parentIndex)
-        return parentIndex
 
-    def setSelection(
-        self, selected: QItemSelection, deselected: QItemSelection
-    ):
-        for idx in selected.indexes():
-            self.getItem(idx).selected = True
-        for idx in deselected.indexes():
-            self.getItem(idx).selected = False
+if __name__ == '__main__':
+    from napari import gui_qt
+    from ._tree_view import QtNodeTreeView
+
+    with gui_qt():
+        tip = Node(name='tip')
+        lg2 = Group(name="g2", children=[Node(name='2')])
+        lg1 = Group(
+            name="g1",
+            children=[
+                lg2,
+                Node(name='3'),
+                tip,
+                Node(name='1'),
+                Node(name='4'),
+                Node(name='5'),
+            ],
+        )
+        root = Group(
+            name="root",
+            children=[
+                lg1,
+                Node(name='6'),
+                Node(name='7'),
+                Node(name='8'),
+                Node(name='9'),
+            ],
+        )
+        tree = QtNodeTreeView(root)
+        model = tree.model()
+        tree.show()

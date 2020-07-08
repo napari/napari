@@ -7,15 +7,40 @@ class QtNodeTreeView(QTreeView):
     def __init__(self, root, parent: QWidget = None):
         super().__init__(parent)
         _model = QtNodeTreeModel(root, self)
-        root.events.connect(lambda e: _model.layoutChanged.emit())
+        # root.events.connect(self._update_view_selection)
         root.events.connect(lambda e: print(f"Root event: {e.type} {e.value}"))
         self.setModel(_model)
         self.setHeaderHidden(True)
         self.setDragDropMode(QAbstractItemView.InternalMove)
         self.setDragDropOverwriteMode(False)
         self.setSelectionMode(QAbstractItemView.ExtendedSelection)
-        self.selectionModel().selectionChanged.connect(_model.setSelection)
+        # self.selectionModel().selectionChanged.connect(
+        #     self._update_model_selection
+        # )
         self.setStyleSheet(r"QTreeView::item {padding: 4px;}")
+        # self._update_view_selection()
+
+    # def _update_model_selection(
+    #     self, selected: QItemSelection, deselected: QItemSelection
+    # ):
+    #     model = self.model()
+    #     for idx in selected.indexes():
+    #         model.getItem(idx).selected = True
+    #     for idx in deselected.indexes():
+    #         model.getItem(idx).selected = False
+
+    # def _update_view_selection(self, event=None):
+    #     model = self.model()
+    #     model.layoutChanged.emit()
+    #     # TODO: optimize by not recursing the whole tree.
+    #     selection = QItemSelection()
+    #     for idx in model.iter_indices():
+    #         if model.getItem(idx).selected:
+    #             selection.select(idx, idx)
+
+    #     sel_model = self.selectionModel()
+    #     with qt_signals_blocked(sel_model):
+    #         sel_model.select(selection, QItemSelectionModel.ClearAndSelect)
 
 
 if __name__ == '__main__':

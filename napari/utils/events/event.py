@@ -185,6 +185,10 @@ class Event(object):
         """Shorter string representation"""
         return self.__class__.__name__
 
+    # mypy fix for dynamic attribute access
+    def __getattr__(self, name: str) -> Any:
+        return object.__getattribute__(self, name)
+
 
 _event_repr_depth = 0
 

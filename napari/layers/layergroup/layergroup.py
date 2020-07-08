@@ -6,7 +6,9 @@ from ..utils.layer_utils import combine_extents
 
 
 class LayerGroup(Layer, Group):
-    def __init__(self, children: Iterable[Layer] = None, name='Group') -> None:
+    def __init__(
+        self, children: Iterable[Layer] = None, name='LayerGroup'
+    ) -> None:
         Layer.__init__(self, None, 2, name=name)
         Group.__init__(self, children)
 
@@ -302,3 +304,31 @@ class LayerGroup(Layer, Group):
 
 #     def save(self):
 #         raise NotImplementedError()
+
+
+if __name__ == '__main__':
+    from napari import gui_qt
+    from napari.layers import Points
+    from napari._qt.tree._tree_view import QtNodeTreeView
+
+    with gui_qt():
+        tip = Points(name='tip')
+        lg2 = LayerGroup(name="g2", children=[Points(name='2')])
+        lg1 = LayerGroup(
+            name="g1", children=[lg2, Points(name='3'), tip, Points(name='1')]
+        )
+        root = LayerGroup(
+            name="root",
+            children=[
+                lg1,
+                Points(name='4'),
+                Points(name='5'),
+                Points(name='6'),
+                Points(name='7'),
+                Points(name='8'),
+                Points(name='9'),
+            ],
+        )
+        tree = QtNodeTreeView(root)
+        model = tree.model()
+        tree.show()
