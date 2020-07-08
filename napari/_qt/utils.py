@@ -85,7 +85,7 @@ def square_pixmap(size):
     return pixmap
 
 
-def drag_with_pixmap(list_widget: QListWidget) -> QDrag:
+def drag_with_pixmap(list_widget: QListWidget, opacity=1) -> QDrag:
     """Create a QDrag object with a pixmap of the currently select list item.
 
     This method is useful when you have a QListWidget that displays custom
@@ -98,6 +98,8 @@ def drag_with_pixmap(list_widget: QListWidget) -> QDrag:
     ----------
     list_widget : QListWidget
         The QListWidget for which to create a QDrag object.
+    opacity : float
+        Additional opacity scaling of pixmap.
 
     Returns
     -------
@@ -118,6 +120,7 @@ def drag_with_pixmap(list_widget: QListWidget) -> QDrag:
     pixmap = QPixmap(size)
     pixmap.fill(Qt.transparent)
     painter = QPainter(pixmap)
+    painter.setOpacity(opacity)
     for index in list_widget.selectedIndexes():
         rect = list_widget.visualRect(index)
         painter.drawPixmap(rect, list_widget.viewport().grab(rect))
