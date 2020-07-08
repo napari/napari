@@ -25,6 +25,7 @@ import numpy as np
 
 from ..types import ArrayLike
 from ..utils.event import EmitterGroup
+from ..utils.perf import perf_func, perf_timer
 
 LOGGER = logging.getLogger("ChunkLoader")
 
@@ -135,7 +136,8 @@ def _chunk_loader_worker(request: ChunkRequest):
     This np.array() call might lead to IO or computation via dask or
     similar means which is why we are doing it in a worker thread!
     """
-    request.array = np.asarray(request.array)
+    with perf_timer("np.asarray"):
+        request.array = np.asarray(request.array)
     return request
 
 
@@ -248,6 +250,7 @@ class ChunkLoader:
             source=self, auto_connect=True, chunk_loaded=None
         )
 
+    @perf_func
     def load_chunk(self, request: ChunkRequest) -> Optional[ChunkRequest]:
         """Load the array in the given ChunkRequest.
 
@@ -278,6 +281,7 @@ class ChunkLoader:
         # will be called with the loaded chunk.
         return self._load_async(request)
 
+    @perf_func
     def _load_async(self, request: ChunkRequest) -> None:
         """Initiate an asynchronous load of the given request.
 
@@ -316,6 +320,7 @@ class ChunkLoader:
         # Async load was started, nothing is available yet.
         return None
 
+    @perf_func
     def _done(self, future: futures.Future) -> None:
         """The given future finished with success or was cancelled.
 
@@ -341,6 +346,7 @@ class ChunkLoader:
 
         self.events.chunk_loaded(request=request)
 
+    @perf_func
     def _clear_pending(self, data_id: int) -> None:
         """Clear any pending requests for this data_id.
 
