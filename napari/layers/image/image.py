@@ -258,18 +258,21 @@ class Image(IntensityVisualizationMixin, Layer):
     def _get_empty_image(self):
         """Get minimal empty image with just one pixel/voxel.
         """
-        if not self.multiscale:
-            # Create blank image exactly the size it should be, this is
-            # what want for async loading, and it works for non-async too.
-            shape = self.data[self.dims.indices].shape
-            return np.zeros(shape)
+        axes = (1,) * self.dims.ndisplay
 
-        # For multi-scale create a tiny 1 pixel/voxel image, this is what
-        # we've always done. Multiscale does not support async yet.
+        if not self.multiscale:
+            if self.rgb:
+                # Multiscale uses self.shape[-1] but we seem to need
+                # self.data.shape[-1] to get the rgb part.
+                return np.zeros(axes + (self.data.shape[-1],))
+            else:
+                return np.zeros(axes)
+
+        # For multi-scale this is unchanged since not async yet.
         if self.rgb:
-            return np.zeros((1,) * self.dims.ndisplay + (self.shape[-1],))
+            return np.zeros(axes + (self.shape[-1],))
         else:
-            return np.zeros((1,) * self.dims.ndisplay)
+            return np.zeros(axes)
 
     def _get_order(self):
         """Return the order of the displayed dimensions."""
@@ -616,6 +619,9 @@ class Image(IntensityVisualizationMixin, Layer):
     @perf_func
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""
+        if not self._slice.loaded:
+            return
+
         image = self._slice.thumbnail.view
         if self.dims.ndisplay == 3 and self.dims.ndim > 2:
             image = np.max(image, axis=0)

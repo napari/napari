@@ -71,8 +71,9 @@ class ImageSlice:
         # We're showing the slice at these indices.
         self.current_indices = None
 
-        # If set we're showing this placeholder while loading.
-        self.placeholder = None
+        # With async there can be a long gap between when the ImageSlice
+        # is created and the data is actually loaded.
+        self.loaded = False
 
     def set_raw_images(self, image: ArrayLike, thumbnail: ArrayLike) -> None:
         """Set the image and its thumbnail.
@@ -91,7 +92,6 @@ class ImageSlice:
             thumbnail = np.clip(thumbnail, 0, 1)
         self.image.raw = image
         self.thumbnail.raw = thumbnail
-        self.placeholder = None
 
     def load_chunk(self, request: ChunkRequest) -> None:
         """Load the requested chunk asynchronously.
@@ -145,3 +145,4 @@ class ImageSlice:
 
         # Show the new data, show this slice.
         self.set_raw_images(image, thumbnail)
+        self.loaded = True
