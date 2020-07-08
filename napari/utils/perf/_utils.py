@@ -16,15 +16,17 @@ from ._timers import timers
 if USE_PERFMON:
 
     @contextlib.contextmanager
-    def perf_timer(name: str, category: Optional[str] = None):
+    def perf_timer(name: str, category: Optional[str] = None, **kwargs):
         """Time a block of code.
 
         Parameters
         ----------
         name : str
             The name of this timer.
-        category : str, optional
-            Category for this timer.
+        category :str
+            Comma separated categories such has "render,update".
+        **kwargs : dict
+            Additional keyword arguments for the "args" field of the event.
 
         Example
         -------
@@ -34,7 +36,7 @@ if USE_PERFMON:
         start_ns = perf_counter_ns()
         yield
         end_ns = perf_counter_ns()
-        event = PerfEvent(category, name, start_ns, end_ns)
+        event = PerfEvent(name, start_ns, end_ns, **kwargs)
         timers.add_event(event)
 
     def perf_func(func):
@@ -53,13 +55,18 @@ if USE_PERFMON:
         def draw(self):
             draw_stuff()
         """
-        # Put bar name first so GUI shows that, then the full name.
-        timer_name = f"{func.__name__} - {func.__module__}.{func.__qualname__}"
+        # Name is just the bare function name.
+        timer_name = f"{func.__name__}"
+
+        # Full name is included as an arg since it can be really long, we can
+        # see the full name by clicking on an event in the GUI but it does
+        # not clutter the timeline view.
+        full_name = f"{func.__module__}.{func.__qualname__}"
 
         @functools.wraps(func)
         def wrapper(*args, **kwargs):
 
-            with perf_timer(timer_name, "decorator"):
+            with perf_timer(timer_name, function=full_name):
                 return func(*args, **kwargs)
 
         return wrapper
@@ -92,7 +99,7 @@ if USE_PERFMON:
 
 else:
     # Not using perfmon so disable the perf context object and the
-    # decorators with hopefully negligible run-time overhead.
+    # decorators leaving hopefully negligible run-time overhead.
     if PYTHON_3_7:
         perf_timer = contextlib.nullcontext
     else:

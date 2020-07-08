@@ -29,8 +29,6 @@ class PerfTraceFile:
         perf_counter_ns() time when we started the trace.
     pid : int
         Process ID.
-    tid : int
-        Thread ID.
     outf : file handle
         JSON file we are writing to.
 
@@ -54,10 +52,8 @@ class PerfTraceFile:
         # So the events we write start at t=0.
         self.zero_ns = perf_counter_ns()
 
-        # PID and TID go in every event. We are assuming one process and
-        # one thread for now, otherwise we'll have to add these to PerfEvent.
+        # Assume all events are from the same process for now.
         self.pid = os.getpid()
-        self.tid = threading.get_ident()
 
         # Start writing the file with an open bracket, per JSON Array format.
         self.outf = open(path, "w")
@@ -77,11 +73,13 @@ class PerfTraceFile:
         # know the duration. The format wants times in micro-seconds.
         data = {
             "pid": self.pid,
+            "tid": threading.get_ident(),
             "name": event.name,
             "cat": category,
             "ph": "X",
             "ts": event.start_us,
             "dur": event.duration_us,
+            "args": event.args,
         }
         json_str = json.dumps(data)
 
