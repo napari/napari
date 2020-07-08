@@ -147,14 +147,15 @@ class QtLayerList(QListWidget):
         """
         self.setDropIndicatorShown(False)
         event.accept()
-        if self.dropIndicatorPosition() == QAbstractItemView.OnViewport:
-            return
 
         total = self.count() - 1
         moving = tuple(total - self.row(item) for item in self.selectedItems())
-
-        insert = self.indexAt(event.pos()).row()
         current = self.currentRow()
+
+        if self.dropIndicatorPosition() == QAbstractItemView.OnViewport:
+            return
+        else:
+            insert = self.indexAt(event.pos()).row()
 
         if self.dropIndicatorPosition() == QAbstractItemView.BelowItem:
             insert = insert + 1

@@ -368,8 +368,8 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
 
         Only one layer can be selected for that layer to be the  active layer.
 
-        Parmeters
-        ---------
+        Parameters
+        ----------
         selected_layers : list
             List of selected indices.
         """

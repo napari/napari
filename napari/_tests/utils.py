@@ -91,7 +91,7 @@ def check_viewer_functioning(viewer, view=None, data=None, ndim=2):
     viewer.dims.ndisplay = 2
     assert np.all(viewer.layers[0].data == data)
     assert len(viewer.layers) == 1
-    assert_layout_layers(view.layers, viewer.layers)
+    assert_layerlist_model_view_synced(view.layers, viewer.layers)
 
     assert viewer.dims.ndim == ndim
     assert view.dims.nsliders == viewer.dims.ndim
@@ -153,7 +153,7 @@ def check_view_transform_consistency(layer, viewer, transf_dict):
         assert (vis_vals == correct_vals).all()
 
 
-def assert_layout_layers(widget, layers):
+def assert_layerlist_model_view_synced(widget, layers):
     """Assert the layer list widget and layers match.
 
     Parameters

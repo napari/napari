@@ -82,7 +82,7 @@ class LayerList(ListModel):
         self.events.selected_layers(selected)
 
     def unselect_all(self, ignore=None):
-        """Unselects all layers expect any specified in ignore.
+        """Unselects all layers except any specified in ignore.
 
         Parameters
         ----------

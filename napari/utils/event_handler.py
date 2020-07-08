@@ -26,6 +26,9 @@ class EventHandler:
             Object that contains callbacks for specific events. These are
             methods named according to an '_on_*_change' convention.
         """
+        # We need to use weak references here to ensure QWigdets that are
+        # registered as listeners are not leaked. See this discussion
+        # https://github.com/napari/napari/pull/1391#issuecomment-653939143
         self.components.append(weakref.ref(component))
 
     def on_change(self, event=None):
@@ -43,7 +46,6 @@ class EventHandler:
         # until refactor on all layers is complete, not all events will have a
         # value property
         try:
-            # print(event.type, event.value, self.components)
             value = event.value
             logger.debug(f" value: {value}")
         except AttributeError:
@@ -52,6 +54,8 @@ class EventHandler:
 
         # Update based on event value
         for componentref in self.components:
+            # We use weak references here for reasons discussed inside the
+            # register_listener method above
             component = componentref()
             if component is not None:
                 update_method_name = f"_on_{event.type}_change"

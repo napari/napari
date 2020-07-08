@@ -86,7 +86,8 @@ class QtLayerWidget(QFrame):
         self.setToolTip(msg)
 
         # Once EVH refactor is done, these can be moved to an initialization
-        # outside of this object
+        # outside of this object. This initialization could be done in the
+        # EVH itself or the object that creates this one.
         self._set_layer_type(type(self.layer).__name__)
         self._on_selected_change(self.layer.selected)
         self._on_thumbnail_change(self.layer.thumbnail)

@@ -29,9 +29,9 @@ def test_adding_layer():
     layer = Image(np.random.random((10, 10)))
     layers.append(layer)
 
-    # # LayerList should err if you add anything other than a layer
-    # with pytest.raises(TypeError):
-    #     layers.append('something')
+    # LayerList should err if you add anything other than a layer
+    with pytest.raises(TypeError):
+        layers.append('something')
 
     assert len(layers) == 1
 
