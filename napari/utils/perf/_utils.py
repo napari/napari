@@ -1,7 +1,7 @@
-"""Utilities to support performance monitoring:
+"""Performance monitoring utilities.
 
-1) context manager: perf_timer times a block of code.
-2) decorator: perf_func times a function.
+1) perf_timer contex manager times a block of code.
+2) perf_func decorators time functions.
 """
 import contextlib
 import functools
@@ -53,16 +53,16 @@ if USE_PERFMON:
         def draw(self):
             draw_stuff()
         """
-        # Name alone first so that's visible in the GUI first.
+        # Put bar name first so GUI shows that, then the full name.
         timer_name = f"{func.__name__} - {func.__module__}.{func.__qualname__}"
 
         @functools.wraps(func)
-        def time_function(*args, **kwargs):
+        def wrapper(*args, **kwargs):
 
             with perf_timer(timer_name, "decorator"):
                 return func(*args, **kwargs)
 
-        return time_function
+        return wrapper
 
     def perf_func_named(timer_name: str):
         """Decorator to time a function where we specify the timer name.
@@ -81,29 +81,31 @@ if USE_PERFMON:
 
         def decorator(func):
             @functools.wraps(func)
-            def time_function(*args, **kwargs):
+            def wrapper(*args, **kwargs):
                 with perf_timer(timer_name, "decorator"):
                     return func(*args, **kwargs)
 
-            return time_function
+            return wrapper
 
         return decorator
 
 
 else:
-    # Disable both with hopefully zero run-time overhead.
+    # Not using perfmon so disable the perf context object and the
+    # decorators with hopefully negligible run-time overhead.
     if PYTHON_3_7:
-        perf_timer = contextlib.nullcontext()
+        perf_timer = contextlib.nullcontext
     else:
 
         @contextlib.contextmanager
-        def perf_timer(name: str):
+        def perf_timer(name: str, category: Optional[str] = None):
             yield
 
-    def perf_func():
-        def decorator(func):
-            return func
+    def perf_func(func):
+        return func
 
     def perf_func_named(timer_name: str):
         def decorator(func):
             return func
+
+        return decorator
