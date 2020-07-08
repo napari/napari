@@ -315,6 +315,17 @@ class Vectors(Layer):
 
         return [(min, max) for min, max in zip(mins, maxs)]
 
+    def refresh_vector(self):
+        vertices, triangles = generate_vector_meshes(
+            self.data[:, :, list(self.dims.displayed)],
+            self._edge_width,
+            self._length,
+        )
+        self._mesh_vertices = vertices
+        self._mesh_triangles = triangles
+        self._displayed_stored = copy(self.dims.displayed)
+        self.refresh()
+
     @property
     def edge_width(self) -> Union[int, float]:
         """float: Width for all vectors in pixels."""
@@ -322,19 +333,13 @@ class Vectors(Layer):
 
     @edge_width.setter
     def edge_width(self, edge_width: Union[int, float]):
+        self.events.edge_width(edge_width)
+
+    def _on_edge_width_change(self, edge_width: Union[int, float]):
         self._edge_width = edge_width
 
-        vertices, triangles = generate_vector_meshes(
-            self.data[:, :, list(self.dims.displayed)],
-            self._edge_width,
-            self.length,
-        )
-        self._mesh_vertices = vertices
-        self._mesh_triangles = triangles
-        self._displayed_stored = copy(self.dims.displayed)
+        self.refresh_vector()
 
-        self.events.edge_width()
-        self.refresh()
         self.status = format_float(self.edge_width)
 
     @property
@@ -344,19 +349,13 @@ class Vectors(Layer):
 
     @length.setter
     def length(self, length: Union[int, float]):
+        self.events.length(length)
+
+    def _on_length_change(self, length: Union[int, float]):
         self._length = length
 
-        vertices, triangles = generate_vector_meshes(
-            self.data[:, :, list(self.dims.displayed)],
-            self.edge_width,
-            self._length,
-        )
-        self._mesh_vertices = vertices
-        self._mesh_triangles = triangles
-        self._displayed_stored = copy(self.dims.displayed)
+        self.refresh_vector()
 
-        self.events.length()
-        self.refresh()
         self.status = format_float(self.length)
 
     @property
@@ -395,12 +394,18 @@ class Vectors(Layer):
             self._edge_color_mode = new_mode
             self._edge_color_property = ''
 
-            self.events.edge_color()
+            self.events.edge_color(
+                {
+                    'edge_color_mode': self._edge_color_mode,
+                    'edge_color': self.edge_color,
+                    'edge_color_property': self._edge_color_property,
+                }
+            )
 
             if self.visible:
                 self._update_thumbnail()
         if new_mode != old_mode:
-            self.events.edge_color_mode()
+            self.events.edge_color_mode(self.edge_color_mode)
 
     def refresh_colors(self, update_color_mapping: bool = False):
         """Calculate and update edge colors if using a cycle or color map
@@ -476,7 +481,13 @@ class Vectors(Layer):
                 else:
                     edge_colors = np.empty((0, 4))
                 self._edge_color = edge_colors
-            self.events.edge_color()
+            self.events.edge_color(
+                {
+                    'edge_color_mode': self._edge_color_mode,
+                    'edge_color': self.edge_color,
+                    'edge_color_property': self._edge_color_property,
+                }
+            )
             if self.visible:
                 self._update_thumbnail()
 
@@ -537,7 +548,7 @@ class Vectors(Layer):
 
             self._edge_color_mode = edge_color_mode
             self.refresh_colors()
-        self.events.edge_color_mode()
+        self.events.edge_color_mode(self.edge_color_mode)
 
     @property
     def edge_color_cycle(self) -> np.ndarray:

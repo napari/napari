@@ -5,6 +5,7 @@ from .qt_base_layer import QtLayerControls
 from ..qt_color_dialog import QColorSwatchEdit
 from ..utils import qt_signals_blocked
 from ...layers.vectors._vectors_constants import ColorMode
+from ...utils.event import Event
 
 
 class QtVectorsControls(QtLayerControls):
@@ -43,12 +44,9 @@ class QtVectorsControls(QtLayerControls):
     def __init__(self, layer):
         super().__init__(layer)
 
-        self.layer.events.edge_width.connect(self._on_width_change)
-        self.layer.events.length.connect(self._on_len_change)
-        self.layer.events.edge_color_mode.connect(
-            self._on_edge_color_mode_change
+        self.events.add(
+            edge_width=Event, length=Event, edge_color_mode=Event,
         )
-        self.layer.events.edge_color.connect(self._on_edge_color_change)
 
         # dropdown to select the property for mapping edge_color
         color_properties = self._get_property_values()
@@ -65,28 +63,24 @@ class QtVectorsControls(QtLayerControls):
         )
         self.edgeColorEdit.color_changed.connect(self.change_edge_color_direct)
         self.edge_color_label = QLabel('edge color:')
-        self._on_edge_color_change()
 
         # dropdown to select the edge color mode
         colorModeComboBox = QComboBox(self)
         colorModeComboBox.addItems(ColorMode.keys())
         colorModeComboBox.activated[str].connect(self.change_edge_color_mode)
         self.color_mode_comboBox = colorModeComboBox
-        self._on_edge_color_mode_change()
 
         # line width in pixels
         self.widthSpinBox = QDoubleSpinBox()
         self.widthSpinBox.setKeyboardTracking(False)
         self.widthSpinBox.setSingleStep(0.1)
         self.widthSpinBox.setMinimum(0.1)
-        self.widthSpinBox.setValue(self.layer.edge_width)
         self.widthSpinBox.valueChanged.connect(self.change_width)
 
         # line length
         self.lengthSpinBox = QDoubleSpinBox()
         self.lengthSpinBox.setKeyboardTracking(False)
         self.lengthSpinBox.setSingleStep(0.1)
-        self.lengthSpinBox.setValue(self.layer.length)
         self.lengthSpinBox.setMinimum(0.1)
         self.lengthSpinBox.valueChanged.connect(self.change_length)
 
@@ -110,6 +104,17 @@ class QtVectorsControls(QtLayerControls):
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
 
+        self._on_length_change(self.layer.length)
+        self._on_width_change(self.layer.edge_width)
+        self._on_edge_color_mode_change(self.layer.edge_color_mode)
+        self._on_edge_color_change(
+            {
+                'edge_color_mode': self.layer._edge_color_mode,
+                'edge_color': self.layer.edge_color,
+                'edge_color_property': '',
+            }
+        )
+
     def change_edge_color_property(self, property: str):
         """Change edge_color_property of vectors on the layer model.
         This property is the property the edge color is mapped to.
@@ -122,11 +127,11 @@ class QtVectorsControls(QtLayerControls):
         mode = self.layer.edge_color_mode
         try:
             self.layer.edge_color = property
-            self.layer.edge_color_mode = mode
+            self.events.edge_color_mode(mode)
         except TypeError:
             # if the selected property is the wrong type for the current color mode
             # the color mode will be changed to the appropriate type, so we must update
-            self._on_edge_color_mode_change()
+            self._on_edge_color_mode_change(mode)
             raise
 
     def change_edge_color_mode(self, mode: str):
@@ -138,15 +143,14 @@ class QtVectorsControls(QtLayerControls):
             Edge color for vectors. Must be: 'direct', 'cycle', or 'colormap'
         """
         old_mode = self.layer.edge_color_mode
-        with self.layer.events.edge_color_mode.blocker():
-            try:
-                self.layer.edge_color_mode = mode
-                self._update_edge_color_gui(mode)
+        try:
+            self.events.edge_color_mode(mode)
+            self._update_edge_color_gui(mode)
 
-            except ValueError:
-                # if the color mode was invalid, revert to the old mode
-                self.layer.edge_color_mode = old_mode
-                raise
+        except ValueError:
+            # if the color mode was invalid, revert to the old mode
+            self.events.edge_color_mode(old_mode)
+            raise
 
     def change_edge_color_direct(self, color: np.ndarray):
         """Change edge color of vectors on the layer model.
@@ -166,7 +170,7 @@ class QtVectorsControls(QtLayerControls):
         value : float
             Line width of vectors.
         """
-        self.layer.edge_width = value
+        self.events.edge_width(value)
         self.widthSpinBox.clearFocus()
         self.setFocus()
 
@@ -180,7 +184,7 @@ class QtVectorsControls(QtLayerControls):
         value : float
             Length of vectors.
         """
-        self.layer.length = value
+        self.events.length(value)
         self.lengthSpinBox.clearFocus()
         self.setFocus()
 
@@ -222,61 +226,58 @@ class QtVectorsControls(QtLayerControls):
 
         return property_values
 
-    def _on_len_change(self, event=None):
+    def _on_length_change(self, length):
         """Change length of vectors.
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context, by default None.
+        length : int or float
+            New length of the vector.
         """
-        with self.layer.events.length.blocker():
-            self.lengthSpinBox.setValue(self.layer.length)
+        self.lengthSpinBox.setValue(length)
 
-    def _on_width_change(self, event=None):
+    def _on_width_change(self, edge_width):
         """"Receive layer model width change event and update width spinbox.
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context, by default None.
+        edge_width : int or float.
+            New edge width of the vector.
         """
-        with self.layer.events.edge_width.blocker():
-            self.widthSpinBox.setValue(self.layer.edge_width)
+        self.widthSpinBox.setValue(edge_width)
 
-    def _on_edge_color_mode_change(self, event=None):
+    def _on_edge_color_mode_change(self, edge_color_mode):
         """"Receive layer model edge color mode change event & update dropdown.
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context, by default None.
+        edge_color_mode : str
+            Edge color setting mode
         """
         with qt_signals_blocked(self.color_mode_comboBox):
-            mode = self.layer.edge_color_mode
             index = self.color_mode_comboBox.findText(
-                mode, Qt.MatchFixedString
+                edge_color_mode, Qt.MatchFixedString
             )
             self.color_mode_comboBox.setCurrentIndex(index)
 
-            self._update_edge_color_gui(mode)
+            self._update_edge_color_gui(edge_color_mode)
 
-    def _on_edge_color_change(self, event=None):
+    def _on_edge_color_change(self, edge_color_dict):
         """"Receive layer model edge color  change event & update dropdown.
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context, by default None.
+        edge_color_dict : dict.
+            Edge color information including color mode, color, and property.
         """
-        if self.layer._edge_color_mode == ColorMode.DIRECT:
+        if edge_color_dict['edge_color_mode'] == ColorMode.DIRECT:
             with qt_signals_blocked(self.edgeColorEdit):
-                self.edgeColorEdit.setColor(self.layer.edge_color[0])
-        elif self.layer._edge_color_mode in (
+                self.edgeColorEdit.setColor(edge_color_dict['edge_color'])
+        elif edge_color_dict['edge_color_mode'] in (
             ColorMode.CYCLE,
             ColorMode.COLORMAP,
         ):
             with qt_signals_blocked(self.color_prop_box):
-                prop = self.layer._edge_color_property
+                prop = edge_color_dict['edge_color_property']
                 index = self.color_prop_box.findText(prop, Qt.MatchFixedString)
                 self.color_prop_box.setCurrentIndex(index)
