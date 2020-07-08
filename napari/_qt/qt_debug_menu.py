@@ -8,6 +8,8 @@ Current Items
 Trace File -> Start Tracing...
 Trace File -> Stop Tracking
 """
+import os
+
 from qtpy.QtCore import QTimer
 from qtpy.QtWidgets import QAction, QFileDialog
 
@@ -48,6 +50,13 @@ class PerformanceSubMenu:
         self.stop = self._add_stop()
         self._set_recording(False)
 
+        # If NAPARI_TRACE_FILE is set we immediately start tracing. This is
+        # easier than manually starting the trace from the debug menu in
+        # some cases.
+        path = os.getenv("NAPARI_TRACE_FILE")
+        if path is not None:
+            self._start_trace(path)
+
     def _set_recording(self, recording: bool):
         """Toggle which are enabled/disabled.
 
@@ -65,7 +74,7 @@ class PerformanceSubMenu:
         start = QAction('Start Recording...', self.main_window._qt_window)
         start.setShortcut('Alt+T')
         start.setStatusTip('Start recording a trace file')
-        start.triggered.connect(self._start_trace)
+        start.triggered.connect(self._start_trace_dialog)
         self.sub_menu.addAction(start)
         return start
 
@@ -79,8 +88,8 @@ class PerformanceSubMenu:
         self.sub_menu.addAction(stop)
         return stop
 
-    def _start_trace(self):
-        """Start recording a trace file."""
+    def _start_trace_dialog(self):
+        """Open Save As dialog to start recording a trace file."""
         viewer = self.main_window.qt_viewer
 
         filename, _ = QFileDialog.getSaveFileName(
@@ -93,12 +102,15 @@ class PerformanceSubMenu:
             filename = _ensure_extension(filename, '.json')
 
             def start_trace():
-                perf.timers.start_trace_file(filename)
-                self._set_recording(True)
+                self._start_trace(filename)
 
             # Schedule this to avoid bogus "MetaCall" event for the entire
             # time the file dialog was up.
             QTimer.singleShot(0, start_trace)
+
+    def _start_trace(self, path: str):
+        perf.timers.start_trace_file(path)
+        self._set_recording(True)
 
     def _stop_trace(self):
         """Stop recording a trace file.
