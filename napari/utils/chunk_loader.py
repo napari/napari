@@ -226,7 +226,7 @@ class ChunkLoader:
         asynchronously in a worker thread.
     """
 
-    NUM_WORKER_THREADS = 1
+    NUM_WORKER_THREADS = 6
 
     def __init__(self):
         self.synchronous = _get_synchronous_default()
@@ -324,7 +324,12 @@ class ChunkLoader:
         be called in. On MacOS it seems to always be called in the worker
         thread.
         """
-        request = future.result()
+        try:
+            request = future.result()
+        except futures.CancelledError:
+            LOGGER.info("[async] ChunkLoader._done: cancelled")
+            return
+
         LOGGER.info("[async] ChunkLoader._done: %s", request.key)
 
         # Do this from worker thread for now. It's safe for now.
