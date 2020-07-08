@@ -229,11 +229,11 @@ class QLineEditDraggable(QLineEdit):
         self._pressed = False
 
     def mousePressEvent(self, event):
-        self._pressed = True
-        if self.hasFocus():
+        if self.hasFocus() and self._pressed:
             super().mousePressEvent(event)
         else:
             event.accept()
+        self._pressed = True
 
     def mouseReleaseEvent(self, event):
         if self._pressed:
@@ -242,7 +242,7 @@ class QLineEditDraggable(QLineEdit):
         super().mouseReleaseEvent(event)
 
     def mouseMoveEvent(self, event):
-        if self.hasFocus():
+        if self.hasFocus() and self._pressed:
             super().mouseMoveEvent(event)
         else:
             event.ignore()

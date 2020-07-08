@@ -58,7 +58,7 @@ class QtLayerList(QListWidget):
 
         # Set sizing
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
-        self.setSpacing(1)
+        self.setSpacing(0)
 
         self.setToolTip('Layer list')
 

@@ -122,10 +122,11 @@ QtLayerList {
 
 QtLayerList::item {
   background: {{ foreground }};
-  margin: 0px 10px px 0px;
+  border: 2px solid {{ background }};
+  margin: 0px 10px 0px 0px;
   min-height: 32px;
   max-height: 32px;
-  border-radius: 2px;
+  border-radius: 4px;
 }
 
 QtLayerList::item:selected {
