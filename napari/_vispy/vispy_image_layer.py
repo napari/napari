@@ -5,6 +5,7 @@ from vispy.color import Colormap
 import numpy as np
 from .vispy_base_layer import VispyBaseLayer
 from ..layers.image._image_constants import Rendering
+from ..utils.perf import perf_func, perf_timer
 
 
 texture_dtypes = [
@@ -48,6 +49,7 @@ class VispyImageLayer(VispyBaseLayer):
         self.node.parent = parent
         self.reset()
 
+    @perf_func
     def _on_data_change(self, event=None):
         data = self.layer._data_view
         dtype = np.dtype(data.dtype)
@@ -96,7 +98,8 @@ class VispyImageLayer(VispyBaseLayer):
         # Call to update order of translation values with new dims:
         self._on_scale_change()
         self._on_translate_change()
-        self.node.update()
+        with perf_timer("node.update()"):
+            self.node.update()
 
     def _on_interpolation_change(self, event=None):
         self.node.interpolation = self.layer.interpolation
