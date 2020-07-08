@@ -4,6 +4,7 @@ import numpy as np
 
 from .dims_constants import DimsMode
 from ..utils.event import EmitterGroup
+from ..utils.perf import perf_func
 
 
 class Dims:
@@ -343,6 +344,7 @@ class Dims:
             self._range[axis] = _range
             self.events.range(axis=axis)
 
+    @perf_func
     def set_point(self, axis: int, value: Union[int, float]):
         """Sets the point at which to slice this dimension.
 
