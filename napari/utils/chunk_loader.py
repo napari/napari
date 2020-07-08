@@ -356,12 +356,13 @@ class ChunkLoader:
 
         Long term we could maybe allow the user to create special
         "cancellable" tasks or dask-arrays somehow, if they periodically
-        checked a flag and gracefully exited. They would perform slightly
-        better then opaque non-cancellable task.
+        checked a flag and gracefully exited. They might perform better
+        than the default opaque tasks that we cannot cancel.
         """
         future_list = self.futures[data_id]
 
-        # Try to cancel them all, cancel() will return false if running.
+        # Try to cancel them all, but cancel() will return False if the
+        # task already started running.
         num_before = len(future_list)
         future_list[:] = [x for x in future_list if x.cancel()]
         num_after = len(future_list)
