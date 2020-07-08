@@ -192,7 +192,9 @@ class Labels(Image):
             contiguous=Event,
             brush_size=Event,
             selected_label=Event,
+            selected_color=Event,
             color_mode=Event,
+            seed=Event,
         )
 
         self._n_dimensional = False
@@ -227,8 +229,10 @@ class Labels(Image):
 
     @contiguous.setter
     def contiguous(self, contiguous):
+        self.events.contiguous(contiguous)
+
+    def _on_contiguous_change(self, contiguous):
         self._contiguous = contiguous
-        self.events.contiguous()
 
     @property
     def n_dimensional(self):
@@ -237,8 +241,10 @@ class Labels(Image):
 
     @n_dimensional.setter
     def n_dimensional(self, n_dimensional):
+        self.events.n_dimensional(n_dimensional)
+
+    def _on_n_dimensional_change(self, n_dimensional):
         self._n_dimensional = n_dimensional
-        self.events.n_dimensional()
 
     @property
     def brush_size(self):
@@ -247,10 +253,12 @@ class Labels(Image):
 
     @brush_size.setter
     def brush_size(self, brush_size):
+        self.events.brush_size(brush_size)
+
+    def _on_brush_size_change(self, brush_size):
         self._brush_size = int(brush_size)
         self.cursor_size = self._brush_size / self.scale_factor
         self.status = format_float(self.brush_size)
-        self.events.brush_size()
 
     @property
     def seed(self):
@@ -259,10 +267,12 @@ class Labels(Image):
 
     @seed.setter
     def seed(self, seed):
+        self.events.seed(seed)
+
+    def _on_seed_change(self, seed):
         self._seed = seed
-        self._selected_color = self.get_color(self.selected_label)
         self.refresh()
-        self.events.selected_label()
+        self.events.selected_label(self.selected_label)
 
     @property
     def num_colors(self):
@@ -277,8 +287,7 @@ class Labels(Image):
             colormaps.label_colormap(num_colors),
         )
         self.refresh()
-        self._selected_color = self.get_color(self.selected_label)
-        self.events.selected_label()
+        self.events.selected_label(self.selected_label)
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
@@ -372,14 +381,27 @@ class Labels(Image):
 
     @selected_label.setter
     def selected_label(self, selected_label):
+        self.events.selected_label(selected_label)
+
+    def _on_selected_label_change(self, selected_label):
         if selected_label < 0:
             raise ValueError('cannot reduce selected label below 0')
         if selected_label == self.selected_label:
             return
 
         self._selected_label = selected_label
-        self._selected_color = self.get_color(selected_label)
-        self.events.selected_label()
+        self.selected_color = self.get_color(selected_label)
+
+    @property
+    def selected_color(self):
+        return self._selected_color
+
+    @selected_color.setter
+    def selected_color(self, selected_color):
+        self.events.selected_color(selected_color)
+
+    def _on_selected_color_change(self, selected_color):
+        self._selected_color = selected_color
 
     @property
     def color_mode(self):
@@ -393,6 +415,9 @@ class Labels(Image):
 
     @color_mode.setter
     def color_mode(self, color_mode: Union[str, LabelColorMode]):
+        self.events.color_mode(color_mode)
+
+    def _on_color_mode_change(self, color_mode: Union[str, LabelColorMode]):
         color_mode = LabelColorMode(color_mode)
         if color_mode == LabelColorMode.DIRECT:
             (
@@ -408,10 +433,8 @@ class Labels(Image):
             raise ValueError("Unsupported Color Mode")
 
         self._color_mode = color_mode
-        self._selected_color = self.get_color(self.selected_label)
-        self.events.color_mode()
-        self.events.colormap()
-        self.events.selected_label()
+        self.events.colormap(self.colormap)
+        self.events.selected_label(self.selected_label)
         self.refresh()
 
     @property
@@ -494,7 +517,7 @@ class Labels(Image):
         self.status = str(mode)
         self._mode = mode
 
-        self.events.mode(mode=mode)
+        self.events.mode(mode)
         self.refresh()
 
     @property
@@ -508,8 +531,10 @@ class Labels(Image):
 
     @preserve_labels.setter
     def preserve_labels(self, preserve_labels: bool):
+        self.events.preserve_labels(preserve_labels)
+
+    def _on_preserve_labels_change(self, preserve_labels):
         self._preserve_labels = preserve_labels
-        self.events.preserve_labels(preserve_labels=preserve_labels)
 
     @property
     def _is_editable(self):
@@ -555,9 +580,6 @@ class Labels(Image):
         else:
             raise ValueError("Unsupported Color Mode")
         return image
-
-    def new_colormap(self):
-        self.seed = np.random.rand()
 
     def get_color(self, label):
         """Return the color corresponding to a specific label."""

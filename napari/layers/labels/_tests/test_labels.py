@@ -245,7 +245,7 @@ def test_colormap():
     assert layer.colormap[0] == 'random'
     assert type(layer.colormap[1]) == Colormap
 
-    layer.new_colormap()
+    layer.events.seed(np.random.rand())
     assert type(layer.colormap) == tuple
     assert layer.colormap[0] == 'random'
     assert type(layer.colormap[1]) == Colormap
