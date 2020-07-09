@@ -20,6 +20,25 @@ T = TypeVar('T')
 NestedIndex = Tuple[int, ...]
 
 
+"""
+Note for future developers: Be cautious about re-implementing typical list-like
+methods here (e.g. extend, pop, clear, etc...).  By not re-implementing those
+methods, we force ALL "CRUD" (create, read, update, delete) operations to go
+through a few key methods defined by the abc.MutableSequence interface.
+
+Specifically:
+
+- ``insert`` = "create" : add a new item/index to the list
+- ``__getitem__`` = "read" : get the value of an existing index
+- ``__setitem__`` = "update" : update the value of an existing index
+- ``__delitem__`` = "delete" : remove an existing index from the list
+
+All of the additional list-like methods are provided by the MutableSequence
+interface, and call one of those 4 methods.  So if you override a method, you
+MUST make sure that all the appropriate events are emitted.
+"""
+
+
 class EventedList(MutableSequence[T]):
     """Mutable Sequence that emits events when altered
 
