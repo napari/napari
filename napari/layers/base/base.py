@@ -11,7 +11,6 @@ from ...utils.event import EmitterGroup, Event
 from ...utils.key_bindings import KeymapProvider
 from ...utils.misc import ROOT_DIR
 from ...utils.naming import magic_name
-from ...utils.perf import perf_func
 from ...utils.status_messages import format_float, status_format
 from ..transforms import ScaleTranslate, TransformChain
 from ..utils.layer_utils import compute_multiscale_level, convert_to_uint8
@@ -372,7 +371,6 @@ class Layer(KeymapProvider, ABC):
         self._position = position
         self._update_coordinates()
 
-    @perf_func
     def _update_dims(self, event=None):
         """Updates dims model, which is useful after data has been changed."""
         ndim = self._get_ndim()
@@ -583,7 +581,6 @@ class Layer(KeymapProvider, ABC):
         self.events.cursor_size(cursor_size=cursor_size)
         self._cursor_size = cursor_size
 
-    @perf_func
     def set_view_slice(self):
         with self.dask_optimized_slicing():
             self._set_view_slice()
@@ -629,7 +626,6 @@ class Layer(KeymapProvider, ABC):
         """
         pass
 
-    @perf_func
     def refresh(self, event=None):
         """Refresh all layer data based on current view slice.
         """
