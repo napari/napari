@@ -3,6 +3,7 @@ from typing import Iterable
 from ...utils.tree import Group
 from ..base import Layer
 from ..utils.layer_utils import combine_extents
+from ...utils.naming import force_unique_name
 
 
 class LayerGroup(Layer, Group):
@@ -11,6 +12,20 @@ class LayerGroup(Layer, Group):
     ) -> None:
         Layer.__init__(self, None, 2, name=name)
         Group.__init__(self, children)
+        self.events.inserted.connect(self._on_layer_inserted)
+
+    # TODO: do we need an event for this?  can't this just be in the insert() method?
+    def _on_layer_inserted(self, event):
+        """When a layer is added, set its name."""
+        layer = event.value
+        # # Coerce name into being unique in layer list
+        # TODO: have discussion about this.  While we do need a unique id
+        # for each layer. I'm not convinced that it needs to be the name
+        layer.name = force_unique_name(layer.name, [l.name for l in self[:-1]])
+        # # Register layer event handler
+        # layer.event_handler.register_listener(self)
+        # # Unselect all other layers
+        self.unselect_all(ignore=event.value)
 
     # LAYER METHODS
 
@@ -99,15 +114,20 @@ class LayerGroup(Layer, Group):
 
     @property
     def selected_children(self):
-        return filter(lambda x: getattr(x, 'selected', False), self)
+        return [l for l in self if l.selected]
 
     def remove_selected(self):
         """Removes selected items from list."""
-        selected = list(self.selected_children)
-        print("selected", selected)
+        selected = self.selected_children
         [self.remove(i) for i in selected]
         if selected and self:
             self[-1].selected = True
+
+    def unselect_all(self, ignore=None):
+        """Unselects all layers expect any specified in ignore."""
+        for layer in self:
+            if layer.selected != ignore:
+                layer.selected = False
 
 
 # class ___LayerGroup(EventedList, Layer):
