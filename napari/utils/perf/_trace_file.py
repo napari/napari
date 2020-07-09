@@ -58,6 +58,28 @@ class PerfTraceFile:
         # Start writing the file with an open bracket, per JSON Array format.
         self.outf = open(path, "w")
         self.outf.write("[\n")
+        self.outf.flush()
+
+        # Accumulate events in a list and only write at the end so the cost
+        # of writing to a file does not bloat our timings.
+        self.events = []
+
+    def add_event(self, event: PerfEvent) -> None:
+        """Add one perf event to the file.
+
+        Parameters
+        ----------
+        event : PerfEvent
+            Event to add
+        """
+        self.events.append(event)
+
+    def close(self):
+        """Write all stored events.
+        """
+        for event in self.events:
+            self.write_event(event)
+        self.outf.flush()
 
     def write_event(self, event: PerfEvent) -> None:
         """Write one perf event.
@@ -87,6 +109,3 @@ class PerfTraceFile:
         # way to write JSON that can be cut off, but chrome://tracing probably
         # predates that convention.
         self.outf.write(f"{json_str},\n")
-
-        # Write as we go in case we exit without closing.
-        self.outf.flush()

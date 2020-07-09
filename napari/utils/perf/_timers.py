@@ -59,9 +59,9 @@ class PerfTimers:
         event : PerfEvent
             Add this event.
         """
-        # Write if actively tracing.
+        # Add event if tracing.
         if self.trace_file is not None:
-            self.trace_file.write_event(event)
+            self.trace_file.add_event(event)
 
         # Update our self.timers (in milliseconds).
         name = event.name
@@ -92,7 +92,7 @@ class PerfTimers:
         """Stop recording a trace file.
         """
         if self.trace_file is not None:
-            self.trace_file.outf.close()
+            self.trace_file.close()
             self.trace_file = None
 
 
