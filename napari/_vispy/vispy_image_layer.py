@@ -7,7 +7,6 @@ from .vispy_base_layer import VispyBaseLayer
 from ..layers.image._image_constants import Rendering
 from ..utils.perf import perf_func, perf_timer
 
-
 texture_dtypes = [
     np.dtype(np.int8),
     np.dtype(np.uint8),
@@ -35,6 +34,7 @@ class VispyImageLayer(VispyBaseLayer):
         self._on_display_change()
         self._on_data_change()
 
+    @perf_func
     def _on_display_change(self, data=None):
         parent = self.node.parent
         self.node.parent = None
@@ -62,7 +62,8 @@ class VispyImageLayer(VispyBaseLayer):
                 raise TypeError(
                     f'type {dtype} not allowed for texture; must be one of {set(texture_dtypes)}'  # noqa: E501
                 )
-            data = data.astype(dtype)
+            with perf_timer("data.astype"):
+                data = data.astype(dtype)
 
         if self.layer.dims.ndisplay == 3 and self.layer.dims.ndim == 2:
             data = np.expand_dims(data, axis=0)
@@ -98,8 +99,7 @@ class VispyImageLayer(VispyBaseLayer):
         # Call to update order of translation values with new dims:
         self._on_scale_change()
         self._on_translate_change()
-        with perf_timer("node.update()"):
-            self.node.update()
+        self.node.update()
 
     def _on_interpolation_change(self, event=None):
         self.node.interpolation = self.layer.interpolation
@@ -149,6 +149,7 @@ class VispyImageLayer(VispyBaseLayer):
         if self.layer.dims.ndisplay == 2:
             self._on_contrast_limits_change()
 
+    @perf_func
     def downsample_texture(self, data, MAX_TEXTURE_SIZE):
         """Downsample data based on maximum allowed texture size.
 

@@ -273,7 +273,8 @@ class ChunkLoader:
         if self.synchronous:
             LOGGER.info("[sync] ChunkLoader.load_chunk")
             # Load it immediately right here in the GUI thread.
-            request.array = np.asarray(request.array)
+            with perf_timer("np.asarray"):
+                request.array = np.asarray(request.array)
             return request
 
         # This will be synchronous if it's a cache hit. Otherwise it will

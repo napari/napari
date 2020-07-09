@@ -5,6 +5,8 @@ from vispy.app import Canvas
 from vispy.gloo import gl
 from vispy.visuals.transforms import STTransform
 
+from ..utils.perf import perf_func
+
 
 class VispyBaseLayer(ABC):
     """Base object for individual layer views
@@ -61,6 +63,7 @@ class VispyBaseLayer(ABC):
         self.layer.events.blending.connect(self._on_blending_change)
         self.layer.events.scale.connect(self._on_scale_change)
         self.layer.events.translate.connect(self._on_translate_change)
+        self.layer.events.loaded.connect(self._on_loaded_change)
 
     @property
     def _master_transform(self):
@@ -138,7 +141,7 @@ class VispyBaseLayer(ABC):
         raise NotImplementedError()
 
     def _on_visible_change(self, event=None):
-        self.node.visible = self.layer.visible
+        self.node.visible = self.layer.visible and self.layer.loaded
 
     def _on_opacity_change(self, event=None):
         self.node.opacity = self.layer.opacity
@@ -147,6 +150,7 @@ class VispyBaseLayer(ABC):
         self.node.set_gl_state(self.layer.blending)
         self.node.update()
 
+    @perf_func
     def _on_scale_change(self, event=None):
         scale = self.layer._transforms.simplified.set_slice(
             self.layer.dims.displayed
@@ -156,6 +160,7 @@ class VispyBaseLayer(ABC):
         self.layer.corner_pixels = self.coordinates_of_canvas_corners()
         self.layer.position = self._transform_position(self._position)
 
+    @perf_func
     def _on_translate_change(self, event=None):
         translate = self.layer._transforms.simplified.set_slice(
             self.layer.dims.displayed
@@ -164,6 +169,9 @@ class VispyBaseLayer(ABC):
         self.translate = translate[::-1]
         self.layer.corner_pixels = self.coordinates_of_canvas_corners()
         self.layer.position = self._transform_position(self._position)
+
+    def _on_loaded_change(self, event=None):
+        self.node.visible = self.layer.visible and self.layer.loaded
 
     def _transform_position(self, position):
         """Transform cursor position from canvas space (x, y) into image space.

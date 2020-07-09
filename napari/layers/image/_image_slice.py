@@ -6,6 +6,7 @@ import numpy as np
 from ._image_view import ImageView
 from ...types import ArrayLike, ImageConverter
 from ...utils.chunk_loader import ChunkRequest, CHUNK_LOADER
+from ...utils.perf import perf_func
 
 LOGGER = logging.getLogger("ChunkLoader")
 
@@ -57,6 +58,7 @@ class ImageSlice:
     >> draw_thumbnail(image_slice.thumbnail.view)
     """
 
+    @perf_func
     def __init__(
         self,
         view_image: ArrayLike,
@@ -71,10 +73,11 @@ class ImageSlice:
         # We're showing the slice at these indices.
         self.current_indices = None
 
-        # With async there can be a long gap between when the ImageSlice
-        # is created and the data is actually loaded.
+        # With async there can be a gap between when the ImageSlice is
+        # created and the data is actually loaded.
         self.loaded = False
 
+    @perf_func
     def set_raw_images(self, image: ArrayLike, thumbnail: ArrayLike) -> None:
         """Set the image and its thumbnail.
 
@@ -93,6 +96,7 @@ class ImageSlice:
         self.image.raw = image
         self.thumbnail.raw = thumbnail
 
+    @perf_func
     def load_chunk(self, request: ChunkRequest) -> None:
         """Load the requested chunk asynchronously.
 
@@ -115,8 +119,9 @@ class ImageSlice:
         satisfied_request = CHUNK_LOADER.load_chunk(request)
 
         if satisfied_request is not None:
-            self.chunk_loaded(satisfied_request)  # Use it right away.
+            self.chunk_loaded(satisfied_request)
 
+    @perf_func
     def chunk_loaded(self, request: ChunkRequest) -> None:
         """Chunk was loaded, show this new data.
 
