@@ -1,5 +1,6 @@
 """PerfEvent class.
 """
+import threading
 from typing import Optional
 
 
@@ -38,6 +39,7 @@ class PerfEvent:
         self.end_ns = end_ns
         self.category = category
         self.args = kwargs
+        self.tid = threading.get_ident()
 
     @property
     def start_us(self):

@@ -1,8 +1,7 @@
-"""PerfTraceFile class to write JSON files in the chrome://tracing format.
+"""PerfTraceFile class to write the chrome://tracing file format (JSON)
 """
 import json
 import os
-import threading
 
 from ._compat import perf_counter_ns
 from ._event import PerfEvent
@@ -79,7 +78,7 @@ class PerfTraceFile:
         """
         for event in self.events:
             self.write_event(event)
-        self.outf.flush()
+        self.outf.close()
 
     def write_event(self, event: PerfEvent) -> None:
         """Write one perf event.
@@ -95,7 +94,7 @@ class PerfTraceFile:
         # know the duration. The format wants times in micro-seconds.
         data = {
             "pid": self.pid,
-            "tid": threading.get_ident(),
+            "tid": event.tid,
             "name": event.name,
             "cat": category,
             "ph": "X",
