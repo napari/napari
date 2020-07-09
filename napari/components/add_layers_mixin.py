@@ -55,6 +55,10 @@ class AddLayersMixin:
         layer.dims.events.range.connect(self._on_layers_change)
 
         self.layers.append(layer)
+        # TODO: this should be refined.  We shouldn't necessarily always change
+        # the selection when a new layer is added.  Perhaps it should be done
+        # for the GUI buttons...
+        layer.selected = True
         # TODO: will these get called if someone just appends a layer to viewer.layers?
         # this should probably be connected to viewer.layers.events rather than done here.
         self._update_layers(layers=[layer])

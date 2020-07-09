@@ -145,7 +145,7 @@ class Layer(KeymapProvider, Node, ABC):
         self._opacity = opacity
         self._blending = Blending(blending)
         self._visible = visible
-        self._selected = True
+        self._selected = False
         self._freeze = False
         self._status = 'Ready'
         self._help = ''
