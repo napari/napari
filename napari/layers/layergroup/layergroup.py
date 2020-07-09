@@ -121,7 +121,8 @@ class LayerGroup(Layer, Group):
         selected = self.selected_children
         [self.remove(i) for i in selected]
         if selected and self:
-            self[-1].selected = True
+            # changing 1 -> assuming we won't reverse sort the layerlist anymore
+            self[0].selected = True
 
     def unselect_all(self, ignore=None):
         """Unselects all layers expect any specified in ignore."""

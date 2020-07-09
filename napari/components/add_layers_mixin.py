@@ -54,7 +54,11 @@ class AddLayersMixin:
         layer.dims.events.order.connect(self._on_layers_change)
         layer.dims.events.range.connect(self._on_layers_change)
 
-        self.layers.append(layer)
+        # TODO: discuss this.  The old behavior was to append to the layer list
+        # but REVERSE the display of the layers in the QtLayerlist.
+        # I think what you see in viewer.layers should reflect what you see in
+        # the Gui
+        self.layers.insert(0, layer)
         # TODO: this should be refined.  We shouldn't necessarily always change
         # the selection when a new layer is added.  Perhaps it should be done
         # for the GUI buttons...
