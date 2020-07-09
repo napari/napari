@@ -182,9 +182,9 @@ class QtViewer(QSplitter):
         self.viewer.events.cursor.connect(self._on_cursor)
         self.viewer.events.reset_view.connect(self._on_reset_view)
         self.viewer.events.palette.connect(self._update_palette)
-        self.viewer.layers.events.changed.connect(self._reorder_layers)
-        self.viewer.layers.events.added.connect(self._add_layer)
-        self.viewer.layers.events.removed.connect(self._remove_layer)
+        self.viewer.layers.events.reordered.connect(self._on_layers_reordered)
+        self.viewer.layers.events.inserted.connect(self._on_layer_inserted)
+        self.viewer.layers.events.removed.connect(self._on_layer_removed)
         self.viewer.dims.events.camera.connect(
             lambda event: self._update_camera()
         )
@@ -236,7 +236,7 @@ class QtViewer(QSplitter):
         else:
             self.controls.setMaximumWidth(220)
 
-    def _add_layer(self, event):
+    def _on_layer_inserted(self, event):
         """When a layer is added, set its parent and order.
 
         Parameters
@@ -245,14 +245,14 @@ class QtViewer(QSplitter):
             Event from the Qt context.
         """
         layers = event.source
-        for idx, layer in event.value:
-            vispy_layer = create_vispy_visual(layer)
-            vispy_layer.node.parent = self.view.scene
-            vispy_layer.order = len(layers)
-            self.canvas.connect(vispy_layer.on_draw)
-            self.layer_to_visual[layer] = vispy_layer
+        layer = event.value
+        vispy_layer = create_vispy_visual(layer)
+        vispy_layer.node.parent = self.view.scene
+        vispy_layer.order = len(layers)
+        self.canvas.connect(vispy_layer.on_draw)
+        self.layer_to_visual[layer] = vispy_layer
 
-    def _remove_layer(self, event):
+    def _on_layer_removed(self, event):
         """When a layer is removed, remove its parent.
 
         Parameters
@@ -260,14 +260,14 @@ class QtViewer(QSplitter):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
-        for idx, layer in event.value:
-            vispy_layer = self.layer_to_visual[layer]
-            self.canvas.events.draw.disconnect(vispy_layer.on_draw)
-            vispy_layer.node.transforms = ChainTransform()
-            vispy_layer.node.parent = None
-            del vispy_layer
+        layer = event.value
+        vispy_layer = self.layer_to_visual[layer]
+        self.canvas.events.draw.disconnect(vispy_layer.on_draw)
+        vispy_layer.node.transforms = ChainTransform()
+        vispy_layer.node.parent = None
+        del vispy_layer
 
-    def _reorder_layers(self, event):
+    def _on_layers_reordered(self, event):
         """When the list is reordered, propagate changes to draw order.
 
         Parameters
@@ -275,9 +275,9 @@ class QtViewer(QSplitter):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
-        for i, layer in enumerate(list(self.viewer.layers)):
-            vispy_layer = self.layer_to_visual[layer]
-            vispy_layer.order = i
+        layers = event.value
+        for i, layer in enumerate(layers):
+            self.layer_to_visual[layer].order = i
         self.canvas._draw_order.clear()
         self.canvas.update()
 

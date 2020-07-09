@@ -8,6 +8,24 @@ from qtpy.QtWidgets import QWidget
 from ...utils.tree import Group, Node
 
 
+# TODO: cleanup stuff related to MIME formats and convenience methods
+class NodeMimeData(QMimeData):
+    def __init__(self, nodes: List[Node] = None):
+        super().__init__()
+        self.nodes = nodes or []
+        if nodes:
+            self.setData(
+                'application/x-tree-node', pickle.dumps(self.node_indices())
+            )
+            self.setText(" ".join([node.name for node in nodes]))
+
+    def formats(self) -> List[str]:
+        return ['application/x-tree-node', 'text/plain']
+
+    def node_indices(self) -> List[Tuple[int, ...]]:
+        return [node.index_from_root() for node in self.nodes]
+
+
 # https://doc.qt.io/qt-5/model-view-programming.html#model-subclassing-reference
 class QtNodeTreeModel(QAbstractItemModel):
     def __init__(self, root: Group, parent: QWidget = None):
@@ -58,11 +76,10 @@ class QtNodeTreeModel(QAbstractItemModel):
         if not data.hasFormat(self._defaultMimeType):
             return False
 
-        dragged_indices = pickle.loads(data.data(self._defaultMimeType))
         dest_idx = list(self.getItem(parent).index_from_root())
         dest_idx.append(destRow)
 
-        self._root.move_multiple(dragged_indices, tuple(dest_idx))
+        self._root.move_multiple(data.node_indices(), tuple(dest_idx))
         # If we return true, removeRows is called!?
         return False
 
@@ -116,7 +133,7 @@ class QtNodeTreeModel(QAbstractItemModel):
         return QModelIndex()
 
     def mimeTypes(self):
-        return ['application/x-layertree', 'text/plain']
+        return ['application/x-tree-node', 'text/plain']
 
     @property
     def _defaultMimeType(self):
@@ -128,16 +145,7 @@ class QtNodeTreeModel(QAbstractItemModel):
         if not indices:
             return 0
 
-        mimedata = QMimeData()
-        data = []
-        text = []
-        for index in indices:
-            item = self.getItem(index)
-            data.append(item.index_from_root())
-            text.append(item.name)
-        mimedata.setData(self._defaultMimeType, pickle.dumps(data))
-        mimedata.setText(" ".join(text))
-        return mimedata
+        return NodeMimeData([self.getItem(i) for i in indices])
 
     def _on_begin_removing(self, event):
         par, idx = self._split_nested_index(event.index)

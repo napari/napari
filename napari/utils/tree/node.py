@@ -52,3 +52,9 @@ class Node:
     def _render(self):
         """Recursively return list of strings that can render ascii tree."""
         return [self.name]
+
+    def emancipate(self):
+        if self.parent is not None:
+            self.parent.remove(self)
+            return self
+        raise IndexError('Cannot emancipate orphaned Node: {self!r}')

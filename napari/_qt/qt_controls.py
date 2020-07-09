@@ -32,8 +32,8 @@ class QtControls(QStackedWidget):
         self.addWidget(self.empty_widget)
         self._display(None)
 
-        self.viewer.layers.events.added.connect(self._add)
-        self.viewer.layers.events.removed.connect(self._remove)
+        self.viewer.layers.events.inserted.connect(self._on_layer_inserted)
+        self.viewer.layers.events.removed.connect(self._on_layer_removed)
         self.viewer.events.active_layer.connect(self._display)
 
     def _display(self, event):
@@ -55,7 +55,7 @@ class QtControls(QStackedWidget):
             controls = self.widgets[layer]
             self.setCurrentWidget(controls)
 
-    def _add(self, event):
+    def _on_layer_inserted(self, event):
         """Add the controls target layer to the list of control widgets.
 
         Parameters
@@ -63,12 +63,12 @@ class QtControls(QStackedWidget):
         event : Event
             Event with the target layer at `event.item`.
         """
-        for idx, layer in event.value:
-            controls = create_qt_controls(layer)
-            self.addWidget(controls)
-            self.widgets[layer] = controls
+        layer = event.value
+        controls = create_qt_controls(layer)
+        self.addWidget(controls)
+        self.widgets[layer] = controls
 
-    def _remove(self, event):
+    def _on_layer_removed(self, event):
         """Remove the controls target layer from the list of control widgets.
 
         Parameters
@@ -76,10 +76,9 @@ class QtControls(QStackedWidget):
         event : Event
             Event with the target layer at `event.item`.
         """
-        for idx, layer in event.value:
-            controls = self.widgets[layer]
-            self.removeWidget(controls)
-            controls.deleteLater()
-            print("deleting", controls)
-            controls = None
-            del self.widgets[layer]
+        layer = event.value
+        controls = self.widgets[layer]
+        self.removeWidget(controls)
+        controls.deleteLater()
+        controls = None
+        del self.widgets[layer]
