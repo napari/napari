@@ -834,7 +834,7 @@ class EmitterGroup(EventEmitter):
 
     @property
     def ignore_callback_errors(self):
-        return super(EventEmitter, self).ignore_callback_errors
+        return super().ignore_callback_errors
 
     @ignore_callback_errors.setter
     def ignore_callback_errors(self, ignore):
