@@ -27,11 +27,6 @@ class Group(Node, NestableEventedList):
         value.parent = self
         super().insert(index, value)
 
-    def extend(self, values: Iterable):
-        for v in values:
-            v.parent = self
-        super().extend(values)
-
     def is_group(self) -> bool:
         return True
 
