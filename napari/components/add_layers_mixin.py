@@ -55,6 +55,8 @@ class AddLayersMixin:
         layer.dims.events.range.connect(self._on_layers_change)
 
         self.layers.append(layer)
+        # TODO: will these get called if someone just appends a layer to viewer.layers?
+        # this should probably be connected to viewer.layers.events rather than done here.
         self._update_layers(layers=[layer])
 
         if len(self.layers) == 1:
