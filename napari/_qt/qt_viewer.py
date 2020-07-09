@@ -182,9 +182,7 @@ class QtViewer(QSplitter):
         self.viewer.events.cursor.connect(self._on_cursor)
         self.viewer.events.reset_view.connect(self._on_reset_view)
         self.viewer.events.palette.connect(self._update_palette)
-        self.viewer.layers.events.reordered.connect(self._reorder_layers)
-        self.viewer.layers.events.added.connect(self._add_layer)
-        self.viewer.layers.events.removed.connect(self._remove_layer)
+        self.viewer.layers.event_handler.register_listener(self)
         self.viewer.dims.events.camera.connect(
             lambda event: self._update_camera()
         )
@@ -236,48 +234,49 @@ class QtViewer(QSplitter):
         else:
             self.controls.setMaximumWidth(220)
 
-    def _add_layer(self, event):
+    def _on_added_change(self, value):
         """When a layer is added, set its parent and order.
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        value : 2-tuple
+            Tuple of layer and index where layer is being added.
         """
-        layers = event.source
-        layer = event.item
+        layer, index = value
         vispy_layer = create_vispy_visual(layer)
         vispy_layer.node.parent = self.view.scene
-        vispy_layer.order = len(layers)
+        vispy_layer.order = len(self.layer_to_visual)
         self.canvas.connect(vispy_layer.on_draw)
         self.layer_to_visual[layer] = vispy_layer
 
-    def _remove_layer(self, event):
+    def _on_removed_change(self, value):
         """When a layer is removed, remove its parent.
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        value : 2-tuple
+            Tuple of layer and index where layer is being removed.
         """
-        layer = event.item
+        layer, _ = value
         vispy_layer = self.layer_to_visual[layer]
         self.canvas.events.draw.disconnect(vispy_layer.on_draw)
         vispy_layer.node.transforms = ChainTransform()
         vispy_layer.node.parent = None
         del vispy_layer
 
-    def _reorder_layers(self, event):
+    def _on_reordered_change(self, indices):
         """When the list is reordered, propagate changes to draw order.
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        indices : 2-tuple
+            Tuple of old indices and new indices of layers and new indices
         """
-        for i, layer in enumerate(self.viewer.layers):
-            vispy_layer = self.layer_to_visual[layer]
-            vispy_layer.order = i
+        old_indices, new_indices = indices
+        for visual in self.layer_to_visual.values():
+            if visual.order in old_indices:
+                index = old_indices.index(visual.order)
+                visual.order = new_indices[index]
         self.canvas._draw_order.clear()
         self.canvas.update()
 
@@ -507,7 +506,7 @@ class QtViewer(QSplitter):
         mouse_press_callbacks(self.viewer, event)
 
         layer = self.viewer.active_layer
-        if layer is not None:
+        if layer is not None and layer in self.layer_to_visual:
             # update cursor position in visual and layer
             visual = self.layer_to_visual[layer]
             visual._position = list(event.pos)
@@ -528,7 +527,7 @@ class QtViewer(QSplitter):
         mouse_move_callbacks(self.viewer, event)
 
         layer = self.viewer.active_layer
-        if layer is not None:
+        if layer is not None and layer in self.layer_to_visual:
             # update cursor position in visual and layer
             visual = self.layer_to_visual[layer]
             visual._position = list(event.pos)
@@ -549,7 +548,7 @@ class QtViewer(QSplitter):
         mouse_release_callbacks(self.viewer, event)
 
         layer = self.viewer.active_layer
-        if layer is not None:
+        if layer is not None and layer in self.layer_to_visual:
             # update cursor position in visual and layer
             visual = self.layer_to_visual[layer]
             visual._position = list(event.pos)
