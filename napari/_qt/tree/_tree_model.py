@@ -17,34 +17,47 @@ class QtNodeTreeModel(QAbstractItemModel):
         self.root_item.events.removed.connect(lambda x: self.endRemoveRows())
         self.root_item.events.inserting.connect(self._on_begin_inserting)
         self.root_item.events.inserted.connect(lambda x: self.endInsertRows())
-        # self.root_item.events.added.connect(self._on_added)
+        self.root_item.events.moving.connect(self._on_begin_moving)
+        self.root_item.events.moved.connect(lambda x: self.endMoveRows())
+
+        self.root_item.events.connect(
+            lambda e: print(
+                f"event: {id(e.source)} {e.type} {e.index} {getattr(e, 'value', '')}"
+            )
+        )
 
     def _on_begin_removing(self, event):
-        par, idx = QModelIndex(), event.value
+        print("removing")
+        par, idx = self._split_nested_index(event.index)
         self.beginRemoveRows(par, idx, idx)
 
     def _on_begin_inserting(self, event):
-        par, idx = QModelIndex(), event.value
+        print("inserting")
+        par, idx = self._split_nested_index(event.index)
         self.beginInsertRows(par, idx, idx)
 
-    # def _on_added(self, event):
-    #     for idx, _ in event.value:
-    #         par, idx = self._split_nested_index(idx)
-    #         self.beginInsertRows(par, idx, idx)
-    #         self.endInsertRows()
-    #     return True
+    def _on_begin_moving(self, event):
+        src_par, src_idx = self._split_nested_index(event.index)
+        dest_par, dest_idx = self._split_nested_index(event.new_index)
+        print()
+        srcParentItem = self.getItem(src_par)
+        destParentItem = self.getItem(dest_par)
+        print(
+            f"   emitting beginMoveRows({srcParentItem.name}, {src_idx}, {destParentItem.name}, {dest_idx})"
+        )
+        self.beginMoveRows(src_par, src_idx, src_idx, dest_par, dest_idx)
 
-    # def _split_nested_index(
-    #     self, nested_index: Union[int, Tuple[int, ...]]
-    # ) -> Tuple[QModelIndex, int]:
-    #     """Given a nested index, return (nested_parent_index, row)."""
-    #     if isinstance(nested_index, int):
-    #         return QModelIndex(), nested_index
-    #     par = QModelIndex()
-    #     *_p, idx = nested_index
-    #     for i in _p:
-    #         par = self.index(i, 0, par)
-    #     return par, idx
+    def _split_nested_index(
+        self, nested_index: Union[int, Tuple[int, ...]]
+    ) -> Tuple[QModelIndex, int]:
+        """Given a nested index, return (nested_parent_index, row)."""
+        if isinstance(nested_index, int):
+            return QModelIndex(), nested_index
+        par = QModelIndex()
+        *_p, idx = nested_index
+        for i in _p:
+            par = self.index(i, 0, par)
+        return par, idx
 
     def canDropMimeData(self, *args):
         return self.getItem(args[-1]).is_group()
@@ -120,12 +133,20 @@ class QtNodeTreeModel(QAbstractItemModel):
         """moves count rows starting with the sourceRow under sourceParent
         to row destinationChild under destinationParent."""
         destParentItem = self.getItem(destinationParent)
+        srcParentItem = self.getItem(sourceParent)
+        print()
+        print(
+            f"   called MoveRows {srcParentItem.name}[{sourceRow}] > {destParentItem.name}[{destinationChild}]"
+        )
+
         if destinationChild > len(destParentItem):
             return False
         if destinationChild < 0:
             destinationChild = len(destParentItem)
 
-        srcParentItem = self.getItem(sourceParent)
+        print(
+            f"   emitting beginMoveRows({srcParentItem.name}, {sourceRow}, {destParentItem.name}, {destinationChild})"
+        )
         self.beginMoveRows(
             sourceParent,
             sourceRow,
@@ -141,8 +162,12 @@ class QtNodeTreeModel(QAbstractItemModel):
                 return False
         for i in range(count):
             with srcParentItem.events.removed.blocker():
+                print(f"   {srcParentItem.name}.pop({sourceRow})")
                 item = srcParentItem.pop(sourceRow)
-            with destParentItem.events.added.blocker():
+            with destParentItem.events.inserted.blocker():
+                print(
+                    f"   {destParentItem.name}.insert({destinationChild}, {item.name})"
+                )
                 destParentItem.insert(destinationChild, item)
         self.endMoveRows()
 
@@ -224,6 +249,11 @@ class QtNodeTreeModel(QAbstractItemModel):
     #         destRow = len(dest_parent_item)
 
     #     dragged_indices = pickle.loads(data.data(default_format))
+    #     print()
+    #     print(
+    #         f"WORKING DROP: {dragged_indices} -> {dest_parent_item.name}[{destRow}]"
+    #     )
+    #     print("------------------------")
     #     if len(dragged_indices) <= 1:
     #         # simpler task
     #         for *p, srcRow in dragged_indices:
@@ -235,6 +265,9 @@ class QtNodeTreeModel(QAbstractItemModel):
     #     # don't assume selection adjacency ... so move one at a time
     #     # need to update indices as we pop, so we keep track of the indices
     #     # we have previously popped
+    #     from typing import DefaultDict
+    #     from collections import defaultdict
+
     #     popped: DefaultDict[Tuple[int, ...], List[int]] = defaultdict(list)
     #     # we iterate indices from the end first, so pop() always works
     #     for i, (*p, srcRow) in enumerate(
@@ -294,11 +327,18 @@ class QtNodeTreeModel(QAbstractItemModel):
             return False
         dragged_indices = pickle.loads(data.data(default_format))
 
+        print()
+        dest_parent_item = self.getItem(parent)
+        print(
+            f"BROKEN DROP: {dragged_indices} -> {dest_parent_item.name}[{destRow}]"
+        )
+        print("------------------------")
+
         dest_idx = list(self.getItem(parent).index_from_root())
         dest_idx.append(destRow)
 
-        self.root_item.move_multiple_nested(dragged_indices, tuple(dest_idx))
-
+        self.root_item.move_multiple(dragged_indices, tuple(dest_idx))
+        # print(self.root_item)
         # If we return true, removeRows is called!?
         return False
 

@@ -8,7 +8,7 @@ class QtNodeTreeView(QTreeView):
         super().__init__(parent)
         _model = QtNodeTreeModel(root, self)
         # root.events.connect(self._update_view_selection)
-        root.events.connect(lambda e: print(f"Root event: {e.type} {e.value}"))
+        # root.events.connect(lambda e: print(f"Root event: {e.type} {e.value}"))
         self.setModel(_model)
         self.setHeaderHidden(True)
         self.setDragDropMode(QAbstractItemView.InternalMove)

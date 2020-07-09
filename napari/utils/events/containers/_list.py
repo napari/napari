@@ -127,6 +127,9 @@ class EventedList(MutableSequence[T]):
         self._list.reverse()
         self.events.reordered()
 
+    def copy(self) -> EventedList:
+        return self.__class__(self._list)
+
 
 class NestableEventedList(EventedList[T]):
     # fmt: off
@@ -152,9 +155,8 @@ class NestableEventedList(EventedList[T]):
     # fmt: on
 
     def __setitem__(self, key, value):  # noqa: F811
-        if isinstance(value, list):
-            print("coerce")
-            value = NestableEventedList(value)  # type: ignore
+        if isinstance(value, MutableSequence):
+            value = NestableEventedList(value)
         if isinstance(key, tuple):
             parent_i, index = self._split_nested_index(key)
             self[parent_i].__setitem__(index, value)
@@ -171,6 +173,12 @@ class NestableEventedList(EventedList[T]):
         elif isinstance(key, (int, slice)):
             return super()._delitem_indices(key)
         raise TypeError("Deletion index must be int, slice, or tuple")
+
+    def __delitem__(self, key: Union[int, slice]):
+        # delete from the end
+        for parent, index in self._delitem_indices(key):
+            self._disconnect_child_emitters(parent[index])
+        super().__delitem__(key)
 
     def insert(self, index: int, value: T):
         if isinstance(value, list):
@@ -192,6 +200,11 @@ class NestableEventedList(EventedList[T]):
                 setattr(event, attr, (source_index,) + cur_index)
 
         emitter(event)
+
+    def _disconnect_child_emitters(self, child: T):
+        if isinstance(child, EventedList):
+            for emitter in child.events.emitters.values():
+                emitter.disconnect(self._bubble_event)
 
     def _connect_child_emitters(self, child: T):
         if isinstance(child, EventedList):
@@ -280,7 +293,14 @@ class NestableEventedList(EventedList[T]):
                 return False
 
         self.events.moving(index=old_index, new_index=new_index)
-        value = self[src_par]._list.pop(src_i)  # type: ignore
-        self[dest_par]._list.insert(dest_i, value)  # type: ignore
+
+        silenced = ['removed', 'removing', 'inserted', 'inserting']
+        for event_name in silenced:
+            getattr(self.events, event_name).block()
+        value = self[src_par].pop(src_i)  # type: ignore
+        self[dest_par].insert(dest_i, value)  # type: ignore
+        for event_name in silenced:
+            getattr(self.events, event_name).unblock()
         self.events.moved(index=old_index, new_index=new_index, value=value)
+
         return True
