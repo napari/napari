@@ -23,7 +23,29 @@ NestedIndex = Tuple[int, ...]
 class EventedList(MutableSequence[T]):
     """Mutable Sequence that emits events when altered
 
-    To avoid emitting events, directly access EventedList._list
+    Parameters
+    ----------
+    data : Iterable, optional
+        Initil data, by default None
+
+    Events
+    ------
+    inserting (index: int)
+        emitted before an item is inserted at ``index``
+    inserted (index: int, value: T)
+        emitted after ``value`` is inserted at ``index``
+    removing (index: int)
+        emitted before an item is removed at ``index``
+    removed (index: int, value: T)
+        emitted after ``value`` is removed at ``index``
+    moving (index: int, new_index: int)
+        emitted before an item is moved from ``index`` to ``new_index``
+    moved (index: int, new_index: int, value: T)
+        emitted after ``value`` is moved from ``index`` to ``new_index``
+    changed (index: int, old_value: T, new_value: T)
+        emitted when ``index`` is set from ``old_value`` to ``new_value``
+    reordered (value: self)
+        emitted when the list is reordered (eg. moved/reversed).
     """
 
     def __init__(self, data: Iterable[T] = None):
@@ -46,7 +68,6 @@ class EventedList(MutableSequence[T]):
         else:
             self.events = EmitterGroup(source=self, **_events)
 
-        # self.events.connect(lambda e: print(f"event: {id(e.source)} {e.type} {e.index} {getattr(e, 'value', '')}"))
         if data is not None:
             self.extend(data)
 
@@ -76,7 +97,7 @@ class EventedList(MutableSequence[T]):
     def _delitem_indices(
         self, key: Union[int, slice]
     ) -> Iterable[Tuple[EventedList, int]]:
-        # returning a tuple of List, int allows subclasses to pass nested members
+        # returning List[(self, int)] allows subclasses to pass nested members
         if isinstance(key, int):
             return [(self, key if key >= 0 else key + len(self))]
         elif isinstance(key, slice):
@@ -108,30 +129,71 @@ class EventedList(MutableSequence[T]):
         self._list.insert(index, value)
         self.events.inserted(index=index, value=value)
 
-    # def extend(self, values: Iterable[T]):
-    #     """extend sequence by appending elements from the iterable."""
-    #     # reimplementing to emit a single event
-    #     _len = len(self._list)
-    #     self._list.extend(values)
-    #     self.events.inserted([(_len + i, v) for i, v in enumerate(values)])
-
     def move(self, old_index: int, new_index: int,) -> bool:
         if new_index > old_index:
             new_index -= 1
-        self._list.insert(new_index, self._list.pop(old_index))
-        self.events.reordered()
+
+        self.events.moving(index=old_index, new_index=new_index)
+        item = self._list.pop(old_index)
+        self._list.insert(new_index, item)
+        self.events.moved(index=old_index, new_index=new_index, value=item)
+        self.events.reordered(value=self)
         return True
 
     def reverse(self) -> None:
         # reimplementing to emit a change event
+        # If this method were removed, it would just emit a "changed" event
+        # for each moved index in the list
         self._list.reverse()
-        self.events.reordered()
+        self.events.reordered(value=self)
 
     def copy(self) -> EventedList:
         return self.__class__(self._list)
 
 
 class NestableEventedList(EventedList[T]):
+    """Nestable Mutable Sequence that emits recursive events when altered.
+
+    A key property of this class is that when new mutable sequences are added
+    to the list, they are themselves converted to a ``NestableEventedList``,
+    and all of the ``EventEmitter`` objects in the child are connect to the
+    parent object's ``_bubble_event`` method. When ``_bubble_event`` receives
+    an event from a child object, it remits the event, but changes any
+    ``index`` keys in the event to a ``NestedIndex`` (a tuple of ``int``) such
+    that indices emitted by any given ``NestableEventedList`` are always
+    relative to itself.
+
+    ``NestableEventedList`` instances can be indexed with a ``tuple`` of
+    ``int`` (e.g. ``mylist[0, 2, 1]``) to retrieve nested child objects.
+
+    Parameters
+    ----------
+    data : Iterable, optional
+        Initil data, by default None
+
+    Events
+    ------
+    types used:
+        Index = Union[int, Tuple[int, ...]]
+
+    inserting (index: Index)
+        emitted before an item is inserted at ``index``
+    inserted (index: Index, value: T)
+        emitted after ``value`` is inserted at ``index``
+    removing (index: Index)
+        emitted before an item is removed at ``index``
+    removed (index: Index, value: T)
+        emitted after ``value`` is removed at ``index``
+    moving (index: Index, new_index: Index)
+        emitted before an item is moved from ``index`` to ``new_index``
+    moved (index: Index, new_index: Index, value: T)
+        emitted after ``value`` is moved from ``index`` to ``new_index``
+    changed (index: Index, old_value: T, new_value: T)
+        emitted when ``index`` is set from ``old_value`` to ``new_value``
+    reordered (value: self)
+        emitted when the list is reordered (eg. moved/reversed).
+    """
+
     # fmt: off
     @overload
     def __getitem__(self, key: Union[int, NestedIndex]) -> T: ...  # noqa: E704
@@ -244,6 +306,7 @@ class NestableEventedList(EventedList[T]):
         else:
             dest_i = min(dest_i, len(destination_group))
 
+        self.events.reordered.block()
         moved = 0
         # more complicated when moving multiple objects.
         # don't assume index adjacency ... so move one at a time
@@ -276,6 +339,7 @@ class NestableEventedList(EventedList[T]):
                     continue
             moved += self.move(src_par + (src_i,), dest_par + (dest_i - ddec,))
             popped[src_par].append(src_i)
+        self.events.reordered.unblock()
         return moved
 
     def move(
@@ -301,6 +365,7 @@ class NestableEventedList(EventedList[T]):
         self[dest_par].insert(dest_i, value)  # type: ignore
         for event_name in silenced:
             getattr(self.events, event_name).unblock()
-        self.events.moved(index=old_index, new_index=new_index, value=value)
 
+        self.events.moved(index=old_index, new_index=new_index, value=value)
+        self.events.reordered()
         return True
