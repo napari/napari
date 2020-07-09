@@ -32,14 +32,7 @@ class QtNodeTreeModel(QAbstractItemModel):
         super().__init__(parent)
         self.setRoot(root)
 
-    def setRoot(self, root: Group):
-        self._root = root
-        self._root.events.removing.connect(self._on_begin_removing)
-        self._root.events.removed.connect(lambda x: self.endRemoveRows())
-        self._root.events.inserting.connect(self._on_begin_inserting)
-        self._root.events.inserted.connect(lambda x: self.endInsertRows())
-        self._root.events.moving.connect(self._on_begin_moving)
-        self._root.events.moved.connect(lambda x: self.endMoveRows())
+    # ########## Reimplemented Public Qt Functions ##################
 
     def canDropMimeData(self, *args):
         parent: QModelIndex = args[-1]
@@ -73,7 +66,7 @@ class QtNodeTreeModel(QAbstractItemModel):
         """
         if not data or action != Qt.MoveAction:
             return False
-        if not data.hasFormat(self._defaultMimeType):
+        if not data.hasFormat(self.mimeTypes()[0]):
             return False
 
         dest_idx = list(self.getItem(parent).index_from_root())
@@ -100,6 +93,57 @@ class QtNodeTreeModel(QAbstractItemModel):
             return base_flags
         return base_flags | Qt.ItemNeverHasChildren
 
+    def index(
+        self, row: int, column: int = 0, parent: QModelIndex = QModelIndex()
+    ) -> QModelIndex:
+        """Return index of the item specified by row, column and parent index.
+        """
+        if not self.hasIndex(row, column, parent):
+            return QModelIndex()
+
+        parentItem = cast(Group, self.getItem(parent))
+        if parentItem.is_group():
+            return self.createIndex(row, column, parentItem[row])
+        return QModelIndex()
+
+    def mimeData(self, indices: List[QModelIndex]) -> QMimeData:
+        """Return object containing serialized data corresponding to indexes.
+        """
+        if not indices:
+            return 0
+
+        return NodeMimeData([self.getItem(i) for i in indices])
+
+    def mimeTypes(self):
+        return ['application/x-tree-node', 'text/plain']
+
+    def parent(self, index: QModelIndex) -> QModelIndex:
+        if not index.isValid():
+            return QModelIndex()
+
+        parentItem = self.getItem(index).parent
+        if parentItem is None or parentItem == self._root:
+            return QModelIndex()
+
+        return self.createIndex(parentItem.index_in_parent(), 0, parentItem)
+
+    def rowCount(self, parent: QModelIndex) -> int:
+        return len(self.getItem(parent))
+
+    def supportedDropActions(self) -> Qt.DropActions:
+        return Qt.MoveAction
+
+    # ########## New methods added for our model ##################
+
+    def setRoot(self, root: Group):
+        self._root = root
+        self._root.events.removing.connect(self._on_begin_removing)
+        self._root.events.removed.connect(lambda x: self.endRemoveRows())
+        self._root.events.inserting.connect(self._on_begin_inserting)
+        self._root.events.inserted.connect(lambda x: self.endInsertRows())
+        self._root.events.moving.connect(self._on_begin_moving)
+        self._root.events.moved.connect(lambda x: self.endMoveRows())
+
     def getItem(self, index: QModelIndex) -> Node:
         if index.isValid():
             item = index.internalPointer()
@@ -119,19 +163,6 @@ class QtNodeTreeModel(QAbstractItemModel):
             return hits[0]
         raise IndexError(f"Could not find node {obj!r} in the model")
 
-    def index(
-        self, row: int, column: int = 0, parent: QModelIndex = QModelIndex()
-    ) -> QModelIndex:
-        """Return index of the item specified by row, column and parent index.
-        """
-        if not self.hasIndex(row, column, parent):
-            return QModelIndex()
-
-        parentItem = cast(Group, self.getItem(parent))
-        if parentItem.is_group():
-            return self.createIndex(row, column, parentItem[row])
-        return QModelIndex()
-
     def nestedIndex(self, nested_index: Tuple[int, ...]) -> QModelIndex:
         parent = QModelIndex()
         if isinstance(nested_index, tuple):
@@ -146,21 +177,6 @@ class QtNodeTreeModel(QAbstractItemModel):
             raise TypeError("nested_index must be an int or tuple of int.")
         return self.index(child, 0, parent)
 
-    def mimeTypes(self):
-        return ['application/x-tree-node', 'text/plain']
-
-    @property
-    def _defaultMimeType(self):
-        return self.mimeTypes()[0]
-
-    def mimeData(self, indices: List[QModelIndex]) -> QMimeData:
-        """Return object containing serialized data corresponding to indexes.
-        """
-        if not indices:
-            return 0
-
-        return NodeMimeData([self.getItem(i) for i in indices])
-
     def _on_begin_removing(self, event):
         par, idx = self._split_nested_index(event.index)
         self.beginRemoveRows(par, idx, idx)
@@ -174,22 +190,6 @@ class QtNodeTreeModel(QAbstractItemModel):
         dest_par, dest_idx = self._split_nested_index(event.new_index)
         self.beginMoveRows(src_par, src_idx, src_idx, dest_par, dest_idx)
 
-    def parent(self, index: QModelIndex) -> QModelIndex:
-        if not index.isValid():
-            return QModelIndex()
-
-        parentItem = self.getItem(index).parent
-        if parentItem is None or parentItem == self._root:
-            return QModelIndex()
-
-        return self.createIndex(parentItem.index_in_parent(), 0, parentItem)
-
-    def rowCount(self, parent: QModelIndex) -> int:
-        return len(self.getItem(parent))
-
-    def supportedDropActions(self) -> Qt.DropActions:
-        return Qt.MoveAction
-
     def _split_nested_index(
         self, nested_index: Union[int, Tuple[int, ...]]
     ) -> Tuple[QModelIndex, int]:
@@ -202,36 +202,3 @@ class QtNodeTreeModel(QAbstractItemModel):
         for i in _p:
             par = self.index(i, 0, par)
         return par, idx
-
-
-if __name__ == '__main__':
-    from napari import gui_qt
-    from ._tree_view import QtNodeTreeView
-
-    with gui_qt():
-        tip = Node(name='tip')
-        lg2 = Group(name="g2", children=[Node(name='2')])
-        lg1 = Group(
-            name="g1",
-            children=[
-                lg2,
-                Node(name='3'),
-                tip,
-                Node(name='1'),
-                Node(name='4'),
-                Node(name='5'),
-            ],
-        )
-        root = Group(
-            name="root",
-            children=[
-                lg1,
-                Node(name='6'),
-                Node(name='7'),
-                Node(name='8'),
-                Node(name='9'),
-            ],
-        )
-        tree = QtNodeTreeView(root)
-        model = tree.model()
-        tree.show()
