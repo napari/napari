@@ -132,6 +132,20 @@ class QtNodeTreeModel(QAbstractItemModel):
             return self.createIndex(row, column, parentItem[row])
         return QModelIndex()
 
+    def nestedIndex(self, nested_index: Tuple[int, ...]) -> QModelIndex:
+        parent = QModelIndex()
+        if isinstance(nested_index, tuple):
+            if not nested_index:
+                return parent
+            *parents, child = nested_index
+            for i in parents:
+                parent = self.index(i, 0, parent)
+        elif isinstance(nested_index, int):
+            child = nested_index
+        else:
+            raise TypeError("nested_index must be an int or tuple of int.")
+        return self.index(child, 0, parent)
+
     def mimeTypes(self):
         return ['application/x-tree-node', 'text/plain']
 
@@ -180,6 +194,7 @@ class QtNodeTreeModel(QAbstractItemModel):
         self, nested_index: Union[int, Tuple[int, ...]]
     ) -> Tuple[QModelIndex, int]:
         """Given a nested index, return (nested_parent_index, row)."""
+        # TODO: split after using nestedIndex?
         if isinstance(nested_index, int):
             return QModelIndex(), nested_index
         par = QModelIndex()
