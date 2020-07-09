@@ -293,25 +293,51 @@ def test_grid():
     np.random.seed(0)
     # Add image
     for i in range(6):
-        data = np.random.random((10, 15))
+        data = np.random.random((15, 15))
         viewer.add_image(data)
     assert np.all(viewer.grid_size == (1, 1))
     assert viewer.grid_stride == 1
+    translations = [layer.translate_grid for layer in viewer.layers]
+    expected_translations = np.zeros((6, 2))
+    np.testing.assert_allclose(translations, expected_translations)
 
     # enter grid view
     viewer.grid_view()
     assert np.all(viewer.grid_size == (3, 3))
     assert viewer.grid_stride == 1
+    translations = [layer.translate_grid for layer in viewer.layers]
+    expected_translations = [
+        [0, 0],
+        [0, 15],
+        [0, 30],
+        [15, 0],
+        [15, 15],
+        [15, 30],
+    ]
+    np.testing.assert_allclose(translations, expected_translations[::-1])
 
     # retun to stack view
     viewer.stack_view()
     assert np.all(viewer.grid_size == (1, 1))
     assert viewer.grid_stride == 1
+    translations = [layer.translate_grid for layer in viewer.layers]
+    expected_translations = np.zeros((6, 2))
+    np.testing.assert_allclose(translations, expected_translations)
 
     # reenter grid view
     viewer.grid_view(n_column=2, n_row=3, stride=-2)
     assert np.all(viewer.grid_size == (3, 2))
     assert viewer.grid_stride == -2
+    translations = [layer.translate_grid for layer in viewer.layers]
+    expected_translations = [
+        [0, 0],
+        [0, 0],
+        [0, 15],
+        [0, 15],
+        [15, 0],
+        [15, 0],
+    ]
+    np.testing.assert_allclose(translations, expected_translations)
 
 
 def test_add_remove_layer_dims_change():

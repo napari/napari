@@ -66,3 +66,94 @@ def test_changing_image_gamma(make_test_viewer):
     viewer.dims.ndisplay = 2
     screenshot = viewer.screenshot(canvas_only=True)
     assert screenshot[center + (0,)] < 80
+
+
+@pytest.mark.skipif(
+    sys.platform.startswith('win') or not os.getenv("CI"),
+    reason='Screenshot tests are not supported on napari windows CI.',
+)
+def test_grid_mode(make_test_viewer):
+    """Test changing gamma changes rendering."""
+    viewer = make_test_viewer(show=True)
+
+    # Add images
+    data = np.ones((6, 15, 15))
+    viewer.add_image(data, channel_axis=0, blending='translucent')
+
+    assert np.all(viewer.grid_size == (1, 1))
+    assert viewer.grid_stride == 1
+    translations = [layer.translate_grid for layer in viewer.layers]
+    expected_translations = np.zeros((6, 2))
+    np.testing.assert_allclose(translations, expected_translations)
+
+    # check screenshot
+    screenshot = viewer.screenshot(canvas_only=True)
+    center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
+    np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
+
+    # enter grid view
+    viewer.grid_view()
+    assert np.all(viewer.grid_size == (3, 3))
+    assert viewer.grid_stride == 1
+    translations = [layer.translate_grid for layer in viewer.layers]
+    expected_translations = [
+        [0, 0],
+        [0, 15],
+        [0, 30],
+        [15, 0],
+        [15, 15],
+        [15, 30],
+    ]
+    np.testing.assert_allclose(translations, expected_translations[::-1])
+
+    # check screenshot
+    screenshot = viewer.screenshot(canvas_only=True)
+    # sample 6 squares of the grid and check they have right colors
+    pos = [(3, 3), (3, 2), (3, 6 / 5), (5 / 3, 3), (5 / 3, 2), (5 / 3, 6 / 5)]
+    # BGRMYC color order
+    color = [
+        [0, 0, 255, 255],
+        [0, 255, 0, 255],
+        [255, 0, 0, 255],
+        [255, 0, 255, 255],
+        [255, 255, 0, 255],
+        [0, 255, 255, 255],
+    ]
+    for c, p in zip(color, pos):
+        coord = tuple(np.round(np.divide(screenshot.shape[:2], p)).astype(int))
+        print(coord, screenshot.shape)
+        np.testing.assert_almost_equal(screenshot[coord], c)
+
+    # reorder layers
+    viewer.layers[0, 5] = viewer.layers[5, 0]
+
+    # check screenshot
+    screenshot = viewer.screenshot(canvas_only=True)
+    # sample 6 squares of the grid and check they have right colors
+    pos = [(3, 3), (3, 2), (3, 6 / 5), (5 / 3, 3), (5 / 3, 2), (5 / 3, 6 / 5)]
+    # CGRMYB color order
+    color = [
+        [0, 255, 255, 255],
+        [0, 255, 0, 255],
+        [255, 0, 0, 255],
+        [255, 0, 255, 255],
+        [255, 255, 0, 255],
+        [0, 0, 255, 255],
+    ]
+    for c, p in zip(color, pos):
+        coord = tuple(np.round(np.divide(screenshot.shape[:2], p)).astype(int))
+        print(coord, screenshot.shape)
+        np.testing.assert_almost_equal(screenshot[coord], c)
+
+    # retun to stack view
+    viewer.stack_view()
+    assert np.all(viewer.grid_size == (1, 1))
+    assert viewer.grid_stride == 1
+    translations = [layer.translate_grid for layer in viewer.layers]
+    expected_translations = np.zeros((6, 2))
+    np.testing.assert_allclose(translations, expected_translations)
+
+    # check screenshot
+    screenshot = viewer.screenshot(canvas_only=True)
+    center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
+    np.testing.assert_almost_equal(screenshot[center], [0, 255, 255, 255])
