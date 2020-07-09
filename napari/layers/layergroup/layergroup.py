@@ -21,9 +21,9 @@ class LayerGroup(Layer, Group):
         # # Coerce name into being unique in layer list
         # TODO: have discussion about this.  While we do need a unique id
         # for each layer. I'm not convinced that it needs to be the name
-        layer.name = force_unique_name(layer.name, [l.name for l in self[:-1]])
-        # # Register layer event handler
-        # layer.event_handler.register_listener(self)
+        layer.name = force_unique_name(
+            layer.name, [lay.name for lay in self if lay != layer]
+        )
         # # Unselect all other layers
         self.unselect_all(ignore=event.value)
 
