@@ -255,22 +255,28 @@ class NestableEventedList(EventedList[T]):
         if not emitter:
             return
 
+        source_index = self.index(event.source)
         for attr in ('index', 'new_index'):
             if hasattr(event, attr):
                 cur_index = self._ensure_tuple_index(event.index)
-                source_index = self.index(event.source)
                 setattr(event, attr, (source_index,) + cur_index)
+        if not hasattr(event, 'index'):
+            setattr(event, 'index', source_index)
 
         emitter(event)
 
     def _disconnect_child_emitters(self, child: T):
-        if isinstance(child, EventedList):
-            for emitter in child.events.emitters.values():
+        # IMPORTANT!! this is currently assuming that all emitter groups
+        # are named "events"
+        if isinstance(getattr(child, 'events', None), EmitterGroup):
+            for emitter in child.events.emitters.values():  # type: ignore
                 emitter.disconnect(self._bubble_event)
 
     def _connect_child_emitters(self, child: T):
-        if isinstance(child, EventedList):
-            for emitter in child.events.emitters.values():
+        # IMPORTANT!! this is currently assuming that all emitter groups
+        # are named "events"
+        if isinstance(getattr(child, 'events', None), EmitterGroup):
+            for emitter in child.events.emitters.values():  # type: ignore
                 emitter.connect(self._bubble_event)
 
     def _ensure_tuple_index(
