@@ -244,11 +244,11 @@ class QtViewer(QSplitter):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
-        layers = event.source
         layer = event.value
         vispy_layer = create_vispy_visual(layer)
         vispy_layer.node.parent = self.view.scene
-        vispy_layer.order = len(layers)
+        # TODO: vispy layer order would be better taken directly from the model
+        vispy_layer.order = 0
         self.canvas.connect(vispy_layer.on_draw)
         self.layer_to_visual[layer] = vispy_layer
 
@@ -276,7 +276,8 @@ class QtViewer(QSplitter):
             Event from the Qt context.
         """
         layers = event.value
-        for i, layer in enumerate(layers):
+        # FIXME: this probably won't work with Trees
+        for i, layer in enumerate(reversed(layers)):
             self.layer_to_visual[layer].order = i
         self.canvas._draw_order.clear()
         self.canvas.update()

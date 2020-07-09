@@ -365,6 +365,7 @@ class NestableEventedList(EventedList[T]):
             moved += self.move(src_par + (src_i,), dest_par + (dest_i - ddec,))
             popped[src_par].append(src_i)
         self.events.reordered.unblock()
+        self.events.reordered(value=self)
         return moved
 
     def move(
@@ -392,5 +393,5 @@ class NestableEventedList(EventedList[T]):
             getattr(self.events, event_name).unblock()
 
         self.events.moved(index=old_index, new_index=new_index, value=value)
-        self.events.reordered()
+        self.events.reordered(value=self)
         return True
