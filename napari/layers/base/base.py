@@ -212,6 +212,7 @@ class Layer(KeymapProvider, ABC):
             selected=Event,
             scale=Event,
             translate=Event,
+            translate_grid=Event,
             data=Event,
             name=Event,
             name_unique=Event,
@@ -383,7 +384,7 @@ class Layer(KeymapProvider, ABC):
     def translate_grid(self, translate_grid):
         if np.all(self.translate_grid == translate_grid):
             return
-        self.events.translate(np.array(translate_grid))
+        self.events.translate_grid(np.array(translate_grid))
 
     def _on_translate_grid_change(self, translate_grid):
         self._transforms['world2grid'].translate = translate_grid

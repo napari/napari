@@ -187,6 +187,9 @@ class VispyBaseLayer(ABC):
         self.layer.corner_pixels = self.coordinates_of_canvas_corners()
         self.layer.position = self._transform_position(self._position)
 
+    def _on_translate_grid_change(self, event=None):
+        self._on_translate_change(event)
+
     def _transform_position(self, position):
         """Transform cursor position from canvas space (x, y) into image space.
 

@@ -33,6 +33,7 @@ class QtLayerList(QListWidget):
             auto_connect=False,
             selected_layers=Event,
             reordered=Event,
+            changed=Event,
         )
 
         # When the EVH refactor is fully done we can do the initialization
@@ -168,6 +169,7 @@ class QtLayerList(QListWidget):
 
         indices = move_indices(total + 1, moving[::-1], total - insert)
         self.events.reordered((indices, tuple(range(total + 1))))
+        self.events.changed(None)
 
     def startDrag(self, supportedActions: Qt.DropActions):
         self.setDropIndicatorShown(True)
