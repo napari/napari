@@ -55,12 +55,11 @@ if USE_PERFMON:
         def draw(self):
             draw_stuff()
         """
-        # Name is just the bare function name.
-        timer_name = f"{func.__name__}"
+        # Name is class.method
+        timer_name = f"{func.__qualname__}"
 
-        # Full name is included as an arg since it can be really long, we can
-        # see the full name by clicking on an event in the GUI but it does
-        # not clutter the timeline view.
+        # Full name is included as an arg, so it does not clutter the main
+        # timeline view. Viewable when you click on the event.
         full_name = f"{func.__module__}.{func.__qualname__}"
 
         @functools.wraps(func)
