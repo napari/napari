@@ -178,6 +178,9 @@ class EventedList(MutableSequence[T]):
     def __repr__(self) -> str:
         return repr(self._list)
 
+    def __eq__(self, other):
+        return self._list == other
+
     def insert(self, index: int, value: T):
         self.events.inserting(index=index)
         self._list.insert(index, value)
@@ -307,6 +310,8 @@ class NestableEventedList(EventedList[T]):
         for parent, index in self._delitem_indices(key):
             self._disconnect_child_emitters(parent[index])
         super().__delitem__(key)
+
+    # TODO: implement __eq__
 
     def insert(self, index: int, value: T):
         # TODO: figure out proper way to deal with this type error

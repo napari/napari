@@ -79,8 +79,8 @@ def test_copy(test_list, regular_list):
     """Copying an evented list should return a same-class evented list."""
     new_test = test_list.copy()
     new_reg = regular_list.copy()
-    assert new_test != test_list
     assert id(new_test) != id(test_list)
+    assert new_test == test_list
     assert tuple(new_test) == tuple(test_list) == tuple(new_reg)
     assert not test_list._events
 
@@ -186,7 +186,36 @@ def test_nested_events(meth, group_index):
 
 def test_setting_nested_slice():
     ne_list = NestableEventedList(NEST)
+    ne_list[(1, 1, 1, slice(2))] = [9, 10]
+    assert tuple(ne_list[1, 1, 1]) == (9, 10, 1112)
+
+
+@pytest.mark.parametrize(
+    'param',
+    [
+        # NEST = [0, [10, [110, [1110, 1111, 1112], 112], 12], 2]
+        [
+            ((1, 0), (1, 1, 1, 0), (1, 2)),
+            (),
+            [0, [[110, [1111, 1112], 112]], 2, 10, 1110, 12],
+        ],
+        [
+            ((1, 0), (1, 1, 1), (1, 2)),
+            (1, -2),
+            [0, [[110, 112], 10, [1110, 1111, 1112], 12], 2],
+        ],
+        [
+            ((1, 0), (1, -2),),
+            (),
+            [0, [[110, [1110, 1111, 1112], 112]], 2, 12, 10],
+        ],
+    ],
+    ids=lambda x: str(x),
+)
+def test_nested_move_multiple(param):
+    source, dest, expectation = param
+    ne_list = NestableEventedList(NEST)
     ne_list._events = []
     ne_list.events.connect(ne_list._events.append)
-
-    ne_list[(1, 1, 1, slice(2))] = [9, 10]
+    ne_list.move_multiple(source, dest)
+    assert tuple(flatten((ne_list))) == tuple(flatten(expectation))
