@@ -40,7 +40,25 @@ from typing import (
 from napari.utils.events import EmitterGroup, Event
 
 T = TypeVar('T')
-NestedIndex = Tuple[int, ...]
+Index = Union[int, slice]
+NestedIndex = Tuple[Index, ...]
+
+
+def ensure_tuple_index(index: Union[NestedIndex, int, slice]) -> NestedIndex:
+    if isinstance(index, (slice, int)):
+        return (index,)  # single integer inserts to self
+    elif isinstance(index, tuple):
+        return index
+    raise TypeError(f"Invalid nested index: {index}. Must be an int or tuple")
+
+
+def split_nested_index(index: NestedIndex) -> Tuple[NestedIndex, Index]:
+    """Given a nested index, return (nested_parent_index, row)."""
+    index = ensure_tuple_index(index)
+    if index:
+        *par, i = index
+        return tuple(par), i
+    return (), -1  # empty tuple appends to self
 
 
 class EventedList(MutableSequence[T]):
@@ -49,7 +67,7 @@ class EventedList(MutableSequence[T]):
     Parameters
     ----------
     data : Iterable, optional
-        Initil data, by default None
+        Initial data, by default None
 
     Events
     ------
@@ -66,6 +84,8 @@ class EventedList(MutableSequence[T]):
     moved (index: int, new_index: int, value: T)
         emitted after ``value`` is moved from ``index`` to ``new_index``
     changed (index: int, old_value: T, new_value: T)
+        emitted when ``index`` is set from ``old_value`` to ``new_value``
+    changed <OVERLOAD> (index: slice, old_value: List[T], new_value: List[T])
         emitted when ``index`` is set from ``old_value`` to ``new_value``
     reordered (value: self)
         emitted when the list is reordered (eg. moved/reversed).
@@ -111,7 +131,7 @@ class EventedList(MutableSequence[T]):
 
     def __getitem__(self, key):  # noqa: F811
         result = self._list[key]
-        if isinstance(result, MutableSequence):
+        if isinstance(result, list):
             return self.__class__(result)
         return result
 
@@ -129,7 +149,7 @@ class EventedList(MutableSequence[T]):
             self.events.changed(index=key, old_value=old, new_value=value)
 
     def _delitem_indices(
-        self, key: Union[int, slice]
+        self, key: Index
     ) -> Iterable[Tuple[EventedList, int]]:
         # returning List[(self, int)] allows subclasses to pass nested members
         if isinstance(key, int):
@@ -145,7 +165,7 @@ class EventedList(MutableSequence[T]):
             return [(self, i) for i in range(_start, _stop, _step)]
         raise TypeError("Deletion index must be int, or slice")
 
-    def __delitem__(self, key: Union[int, slice]):
+    def __delitem__(self, key: Index):
         # delete from the end
         for parent, index in sorted(self._delitem_indices(key), reverse=True):
             parent.events.removing(index=index)
@@ -163,14 +183,14 @@ class EventedList(MutableSequence[T]):
         self._list.insert(index, value)
         self.events.inserted(index=index, value=value)
 
-    def move(self, old_index: int, new_index: int,) -> bool:
-        if new_index > old_index:
-            new_index -= 1
+    def move(self, cur_index: int, insert_at: int,) -> bool:
+        if insert_at > cur_index:
+            insert_at -= 1
 
-        self.events.moving(index=old_index, new_index=new_index)
-        item = self._list.pop(old_index)
-        self._list.insert(new_index, item)
-        self.events.moved(index=old_index, new_index=new_index, value=item)
+        self.events.moving(index=cur_index, insert_at=insert_at)
+        item = self._list.pop(cur_index)
+        self._list.insert(insert_at, item)
+        self.events.moved(index=cur_index, insert_at=insert_at, value=item)
         self.events.reordered(value=self)
         return True
 
@@ -203,7 +223,7 @@ class NestableEventedList(EventedList[T]):
     Parameters
     ----------
     data : Iterable, optional
-        Initil data, by default None
+        Initial data, by default None
 
     Events
     ------
@@ -224,6 +244,8 @@ class NestableEventedList(EventedList[T]):
         emitted after ``value`` is moved from ``index`` to ``new_index``
     changed (index: Index, old_value: T, new_value: T)
         emitted when ``index`` is set from ``old_value`` to ``new_value``
+    changed <OVERLOAD> (index: slice, old_value: List[T], new_value: List[T])
+        emitted when slice ``index`` is set from ``old_value`` to ``new_value``
     reordered (value: self)
         emitted when the list is reordered (eg. moved/reversed).
     """
@@ -254,23 +276,33 @@ class NestableEventedList(EventedList[T]):
         if isinstance(value, MutableSequence):
             value = NestableEventedList(value)
         if isinstance(key, tuple):
-            parent_i, index = self._split_nested_index(key)
+            parent_i, index = split_nested_index(key)
             self[parent_i].__setitem__(index, value)
             return
         self._connect_child_emitters(value)
         EventedList.__setitem__(self, key, value)
 
+    @overload
     def _delitem_indices(
-        self, key: Union[int, slice, NestedIndex]
+        self, key: Index
     ) -> Iterable[Tuple[EventedList, int]]:
+        ...
+
+    @overload
+    def _delitem_indices(  # noqa: F811
+        self, key: NestedIndex
+    ) -> Iterable[Tuple[EventedList, Index]]:
+        ...
+
+    def _delitem_indices(self, key):  # noqa: F811
         if isinstance(key, tuple):
-            parent_i, index = self._split_nested_index(key)
+            parent_i, index = split_nested_index(key)
             return [(cast(NestableEventedList, self[parent_i]), index)]
         elif isinstance(key, (int, slice)):
             return super()._delitem_indices(key)
         raise TypeError("Deletion index must be int, slice, or tuple")
 
-    def __delitem__(self, key: Union[int, slice]):
+    def __delitem__(self, key: Index):
         # delete from the end
         for parent, index in self._delitem_indices(key):
             self._disconnect_child_emitters(parent[index])
@@ -284,8 +316,6 @@ class NestableEventedList(EventedList[T]):
         self._connect_child_emitters(value)
 
     def _reemit_nested_event(self, event: Event):
-        if event.source == self:
-            return
         emitter = getattr(self.events, event.type, None)
         if not emitter:
             return
@@ -293,7 +323,7 @@ class NestableEventedList(EventedList[T]):
         source_index = self.index(event.source)
         for attr in ('index', 'new_index'):
             if hasattr(event, attr):
-                cur_index = self._ensure_tuple_index(event.index)
+                cur_index = ensure_tuple_index(event.index)
                 setattr(event, attr, (source_index,) + cur_index)
         if not hasattr(event, 'index'):
             setattr(event, 'index', source_index)
@@ -314,33 +344,13 @@ class NestableEventedList(EventedList[T]):
             for emitter in child.events.emitters.values():  # type: ignore
                 emitter.connect(self._reemit_nested_event)
 
-    def _ensure_tuple_index(
-        self, index: Union[NestedIndex, int]
-    ) -> NestedIndex:
-        if isinstance(index, int):
-            return (index,)  # single integer inserts to self
-        elif isinstance(index, tuple):
-            return index
-        raise TypeError(
-            f"Invalid nested index: {index}. Must be an int or tuple"
-        )
-
-    def _split_nested_index(
-        self, index: Union[NestedIndex, int]
-    ) -> Tuple[NestedIndex, int]:
-        """Given a nested index, return (nested_parent_index, row)."""
-        index = self._ensure_tuple_index(index)
-        if index:
-            *par, i = index
-            return tuple(par), i
-        return (), -1  # empty tuple appends to self
-
     def move_multiple(
         self, sources: Sequence[NestedIndex], dest_index: NestedIndex,
     ) -> int:
         """Move a batch of nested indices, to a single destination."""
-        dest_par, dest_i = self._split_nested_index(dest_index)
-
+        dest_par, dest_i = split_nested_index(dest_index)
+        if isinstance(dest_i, slice):
+            raise ValueError("Destination index may not be a slice")
         destination_group = cast(NestableEventedList, self[dest_par])
         if dest_i < 0:
             dest_i += len(destination_group) + 1
@@ -358,7 +368,10 @@ class NestableEventedList(EventedList[T]):
         for i, idx in enumerate(sorted(sources, reverse=True)):
             if idx == ():
                 raise IndexError("Group cannot move itself")
-            src_par, src_i = self._split_nested_index(idx)
+            src_par, src_i = split_nested_index(idx)
+
+            if isinstance(src_i, slice):
+                raise ValueError("Terminal source index may not be a slice")
 
             if src_i < 0:
                 src_i += len(cast(NestableEventedList, self[src_par]))
@@ -386,11 +399,11 @@ class NestableEventedList(EventedList[T]):
 
     def move(
         self,
-        old_index: Union[int, NestedIndex],
-        new_index: Union[int, NestedIndex],
+        cur_index: Union[int, NestedIndex],
+        insert_at: Union[int, NestedIndex],
     ) -> bool:
-        src_par, src_i = self._split_nested_index(old_index)
-        dest_par, dest_i = self._split_nested_index(new_index)
+        src_par, src_i = split_nested_index(cur_index)
+        dest_par, dest_i = split_nested_index(insert_at)
 
         if src_par == dest_par:
             if dest_i > src_i:
@@ -398,7 +411,7 @@ class NestableEventedList(EventedList[T]):
             if src_i == dest_i:
                 return False
 
-        self.events.moving(index=old_index, new_index=new_index)
+        self.events.moving(index=cur_index, insert_at=insert_at)
 
         silenced = ['removed', 'removing', 'inserted', 'inserting']
         for event_name in silenced:
@@ -408,6 +421,6 @@ class NestableEventedList(EventedList[T]):
         for event_name in silenced:
             getattr(self.events, event_name).unblock()
 
-        self.events.moved(index=old_index, new_index=new_index, value=value)
+        self.events.moved(index=cur_index, insert_at=insert_at, value=value)
         self.events.reordered(value=self)
         return True

@@ -72,7 +72,11 @@ class QtNodeTreeModel(QAbstractItemModel):
         dest_idx = list(self.getItem(parent).index_from_root())
         dest_idx.append(destRow)
 
-        self._root.move_multiple(data.node_indices(), tuple(dest_idx))
+        moving_indices = data.node_indices()
+        if len(moving_indices) == 1:
+            self._root.move(moving_indices[0], tuple(dest_idx))
+        else:
+            self._root.move_multiple(moving_indices, tuple(dest_idx))
         # If we return true, removeRows is called!?
         return False
 
