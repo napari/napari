@@ -95,6 +95,30 @@ def remove_all_layers(viewer):
     viewer.layers.remove_selected()
 
 
+@Viewer.bind_key('Up')
+def select_layer_above(viewer):
+    """Select layer above."""
+    viewer.layers.select_next()
+
+
+@Viewer.bind_key('Down')
+def select_layer_below(viewer):
+    """Select layer below."""
+    viewer.layers.select_previous()
+
+
+@Viewer.bind_key('Shift-Up')
+def also_select_layer_above(viewer):
+    """Also select layer above."""
+    viewer.layers.select_next(shift=True)
+
+
+@Viewer.bind_key('Shift-Down')
+def also_select_layer_below(viewer):
+    """Also select layer below."""
+    viewer.layers.select_previous(shift=True)
+
+
 @Viewer.bind_key('Control-R')
 def reset_view(viewer):
     """Reset view to original state."""

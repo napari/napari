@@ -227,7 +227,7 @@ def vertex_insert(layer, event):
 
     # Insert new vertex at appropriate place in vertices of target shape
     vertices = np.insert(vertices, ind, [layer.displayed_coordinates], axis=0)
-    with layer.events.slice_data.blocker():
+    with layer.events.set_data.blocker():
         data_full = layer.expand_shape(vertices)
         layer._data_view.edit(index, data_full, new_type=new_type)
         layer._selected_box = layer.interaction_box(layer.selected_data)
@@ -256,7 +256,7 @@ def vertex_remove(layer, event):
     ]
     if len(vertices) <= 2:
         # If only 2 vertices present, remove whole shape
-        with layer.events.slice_data.blocker():
+        with layer.events.set_data.blocker():
             if shape_under_cursor in layer.selected_data:
                 layer.selected_data.remove(shape_under_cursor)
             layer._data_view.remove(shape_under_cursor)
@@ -264,7 +264,7 @@ def vertex_remove(layer, event):
             layer._selected_box = layer.interaction_box(shapes)
     elif shape_type == Polygon and len(vertices) == 3:
         # If only 3 vertices of a polygon present remove
-        with layer.events.slice_data.blocker():
+        with layer.events.set_data.blocker():
             if shape_under_cursor in layer.selected_data:
                 layer.selected_data.remove(shape_under_cursor)
             layer._data_view.remove(shape_under_cursor)
@@ -278,7 +278,7 @@ def vertex_remove(layer, event):
             new_type = None
         # Remove clicked on vertex
         vertices = np.delete(vertices, vertex_under_cursor, axis=0)
-        with layer.events.slice_data.blocker():
+        with layer.events.set_data.blocker():
             data_full = layer.expand_shape(vertices)
             layer._data_view.edit(
                 shape_under_cursor, data_full, new_type=new_type

@@ -111,6 +111,7 @@ class List(list):
             raise IndexError(
                 f'expected index to be in [0, {len(self)}); got {key}'
             )
+
         return key
 
     def __newlike__(self, iterable):

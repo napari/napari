@@ -147,6 +147,50 @@ class QtDeleteButton(QPushButton):
         self.setAcceptDrops(True)
         self.clicked.connect(lambda: self.viewer.layers.remove_selected())
 
+    def dragEnterEvent(self, event):
+        """The cursor enters the widget during a drag and drop operation.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
+        event.accept()
+        self.hover = True
+        self.update()
+
+    def dragLeaveEvent(self, event):
+        """The cursor leaves the widget during a drag and drop operation.
+
+        Using event.ignore() here allows the event to pass through the
+        parent widget to its child widget, otherwise the parent widget
+        would catch the event and not pass it on to the child widget.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
+        event.ignore()
+        self.hover = False
+        self.update()
+
+    def dropEvent(self, event):
+        """The drag and drop mouse event is completed.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
+        event.accept()
+        layer_name = event.mimeData().text()
+        layer = self.viewer.layers[layer_name]
+        if not layer.selected:
+            self.viewer.layers.remove(layer)
+        else:
+            self.viewer.layers.remove_selected()
+
 
 class QtViewerPushButton(QPushButton):
     """Push button.

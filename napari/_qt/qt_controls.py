@@ -63,7 +63,7 @@ class QtControls(QStackedWidget):
         event : Event
             Event with the target layer at `event.item`.
         """
-        layer = event.value[0]
+        layer = event.item
         controls = create_qt_controls(layer)
         self.addWidget(controls)
         self.widgets[layer] = controls
@@ -76,7 +76,7 @@ class QtControls(QStackedWidget):
         event : Event
             Event with the target layer at `event.item`.
         """
-        layer = event.value[0]
+        layer = event.item
         controls = self.widgets[layer]
         self.removeWidget(controls)
         controls.deleteLater()

@@ -91,7 +91,7 @@ def check_viewer_functioning(viewer, view=None, data=None, ndim=2):
     viewer.dims.ndisplay = 2
     assert np.all(viewer.layers[0].data == data)
     assert len(viewer.layers) == 1
-    assert_layerlist_model_view_synced(view.layers, viewer.layers)
+    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
 
     assert viewer.dims.ndim == ndim
     assert view.dims.nsliders == viewer.dims.ndim
@@ -151,26 +151,3 @@ def check_view_transform_consistency(layer, viewer, transf_dict):
             # expected translate values
             correct_vals = np.add(transf[disp_dims], tile_transf)
         assert (vis_vals == correct_vals).all()
-
-
-def assert_layerlist_model_view_synced(widget, layers):
-    """Assert the layer list widget and layers match.
-
-    Parameters
-    ----------
-    widget : Qt.Widgets.QListWidget
-        Widget to test
-    layers : napari.components.LayerList
-        LayersList to compare to
-    """
-    layers_widget = [
-        widget.itemWidget(widget.item(i)).layer for i in range(widget.count())
-    ]
-    widget_locations = [
-        int(widget.item(i).text()) for i in range(widget.count())
-    ]
-    layers_widget.reverse()
-    widget_locations.reverse()
-
-    assert layers_widget == list(layers)
-    assert widget_locations == list(range(len(layers)))

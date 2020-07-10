@@ -9,7 +9,6 @@ from napari._tests.utils import (
     add_layer_by_type,
     check_viewer_functioning,
     layer_test_data,
-    assert_layerlist_model_view_synced,
 )
 
 
@@ -24,7 +23,7 @@ def test_qt_viewer(make_test_viewer):
     assert view._console is None
 
     assert len(viewer.layers) == 0
-    assert_layerlist_model_view_synced(view.layers, viewer.layers)
+    assert view.layers.vbox_layout.count() == 2
 
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim
@@ -72,7 +71,7 @@ def test_new_labels(make_test_viewer):
     viewer._new_labels()
     assert np.max(viewer.layers[0].data) == 0
     assert len(viewer.layers) == 1
-    assert_layerlist_model_view_synced(view.layers, viewer.layers)
+    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
 
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim
@@ -88,7 +87,7 @@ def test_new_labels(make_test_viewer):
     viewer._new_labels()
     assert np.max(viewer.layers[1].data) == 0
     assert len(viewer.layers) == 2
-    assert_layerlist_model_view_synced(view.layers, viewer.layers)
+    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
 
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim
@@ -104,7 +103,7 @@ def test_new_points(make_test_viewer):
     viewer.add_points()
     assert len(viewer.layers[0].data) == 0
     assert len(viewer.layers) == 1
-    assert_layerlist_model_view_synced(view.layers, viewer.layers)
+    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
 
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim
@@ -120,7 +119,7 @@ def test_new_points(make_test_viewer):
     viewer.add_points()
     assert len(viewer.layers[1].data) == 0
     assert len(viewer.layers) == 2
-    assert_layerlist_model_view_synced(view.layers, viewer.layers)
+    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
 
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim
@@ -136,7 +135,7 @@ def test_new_shapes_empty_viewer(make_test_viewer):
     viewer.add_shapes()
     assert len(viewer.layers[0].data) == 0
     assert len(viewer.layers) == 1
-    assert_layerlist_model_view_synced(view.layers, viewer.layers)
+    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
 
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim
@@ -152,7 +151,7 @@ def test_new_shapes_empty_viewer(make_test_viewer):
     viewer.add_shapes()
     assert len(viewer.layers[1].data) == 0
     assert len(viewer.layers) == 2
-    assert_layerlist_model_view_synced(view.layers, viewer.layers)
+    assert view.layers.vbox_layout.count() == 2 * len(viewer.layers) + 2
 
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim
