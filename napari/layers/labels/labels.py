@@ -502,7 +502,7 @@ class Labels(Image):
         """Defines if painting should preserve existing labels.
 
         Default to false to allow paint on existing labels. When
-        set to true, existing labels will be replaced during painting.
+        set to true, existing labels will be preserved during painting.
         """
         return self._preserve_labels
 
