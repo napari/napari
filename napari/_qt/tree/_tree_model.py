@@ -69,14 +69,14 @@ class QtNodeTreeModel(QAbstractItemModel):
         if not data.hasFormat(self.mimeTypes()[0]):
             return False
 
-        dest_idx = list(self.getItem(parent).index_from_root())
-        dest_idx.append(destRow)
+        dest_idx = self.getItem(parent).index_from_root()
+        dest_idx = dest_idx + (destRow,)
 
         moving_indices = data.node_indices()
         if len(moving_indices) == 1:
-            self._root.move(moving_indices[0], tuple(dest_idx))
+            self._root.move(moving_indices[0], dest_idx)
         else:
-            self._root.move_multiple(moving_indices, tuple(dest_idx))
+            self._root.move_multiple(moving_indices, dest_idx)
         # If we return true, removeRows is called!?
         return False
 
@@ -191,12 +191,18 @@ class QtNodeTreeModel(QAbstractItemModel):
 
     def _on_begin_moving(self, event):
         src_par, src_idx = self._split_nested_index(event.index)
-        dest_par, dest_idx = self._split_nested_index(event.insert_at)
+        dest_par, dest_idx = self._split_nested_index(event.new_index)
         self.beginMoveRows(src_par, src_idx, src_idx, dest_par, dest_idx)
 
     def _split_nested_index(
         self, nested_index: Union[int, Tuple[int, ...]]
     ) -> Tuple[QModelIndex, int]:
         """Given a nested index, return (nested_parent_index, row)."""
-        idx = self.nestedIndex(nested_index)
-        return idx.parent(), idx.row()
+        # TODO: split after using nestedIndex?
+        if isinstance(nested_index, int):
+            return QModelIndex(), nested_index
+        par = QModelIndex()
+        *_p, idx = nested_index
+        for i in _p:
+            par = self.index(i, 0, par)
+        return par, idx

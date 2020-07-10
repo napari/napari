@@ -193,28 +193,16 @@ def test_setting_nested_slice():
 @pytest.mark.parametrize(
     'param',
     [
-        # NEST = [0, [10, [110, [1110, 1111, 1112], 112], 12], 2]
-        [
-            ((1, 0), (1, 1, 1, 0), (1, 2)),
-            (),
-            [0, [[110, [1111, 1112], 112]], 2, 10, 1110, 12],
-        ],
-        [
-            ((1, 0), (1, 1, 1), (1, 2)),
-            (1, -2),
-            [0, [[110, 112], 10, [1110, 1111, 1112], 12], 2],
-        ],
-        [
-            ((1, 0), (1, -2),),
-            (),
-            [0, [[110, [1110, 1111, 1112], 112]], 2, 12, 10],
-        ],
+        #                   2       (2, 1)
+        # original = [0, 1, [(2,0), [(2,1,0), (2,1,1)], (2,2)], 3, 4]
+        [((2, 0), (2, 1, 1), (3,)), (-2), [0, 1, [[210], 22], 20, 211, 3, 4]],
+        [((2, 0), (2, 1, 1), (3,)), (1), [0, 20, 211, 3, 1, [[210], 22], 4]],
     ],
     ids=lambda x: str(x),
 )
 def test_nested_move_multiple(param):
     source, dest, expectation = param
-    ne_list = NestableEventedList(NEST)
+    ne_list = NestableEventedList([0, 1, [20, [210, 211], 22], 3, 4])
     ne_list._events = []
     ne_list.events.connect(ne_list._events.append)
     ne_list.move_multiple(source, dest)

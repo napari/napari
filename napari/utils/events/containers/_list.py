@@ -186,14 +186,14 @@ class EventedList(MutableSequence[T]):
         self._list.insert(index, value)
         self.events.inserted(index=index, value=value)
 
-    def move(self, cur_index: int, insert_at: int,) -> bool:
-        if insert_at > cur_index:
-            insert_at -= 1
+    def move(self, cur_index: int, new_index: int) -> bool:
+        if new_index > cur_index:
+            new_index -= 1
 
-        self.events.moving(index=cur_index, insert_at=insert_at)
+        self.events.moving(index=cur_index, new_index=new_index)
         item = self._list.pop(cur_index)
-        self._list.insert(insert_at, item)
-        self.events.moved(index=cur_index, insert_at=insert_at, value=item)
+        self._list.insert(new_index, item)
+        self.events.moved(index=cur_index, new_index=new_index, value=item)
         self.events.reordered(value=self)
         return True
 
@@ -276,7 +276,11 @@ class NestableEventedList(EventedList[T]):
     # fmt: on
 
     def __setitem__(self, key, value):  # noqa: F811
-        if isinstance(value, MutableSequence):
+        # FIXME: !!!!
+        # this is delicate, we want to preserve the evented list when nesting
+        # but there is a high risk here of clobbering attributes of a special
+        # child class
+        if isinstance(value, list):
             value = self.__class__(value)
         if isinstance(key, tuple):
             parent_i, index = split_nested_index(key)
@@ -314,8 +318,11 @@ class NestableEventedList(EventedList[T]):
     # TODO: implement __eq__
 
     def insert(self, index: int, value: T):
-        # TODO: figure out proper way to deal with this type error
-        if isinstance(value, MutableSequence):
+        # FIXME: !!!!
+        # this is delicate, we want to preserve the evented list when nesting
+        # but there is a high risk here of clobbering attributes of a special
+        # child class
+        if isinstance(value, list):
             value = self.__class__(value)
         super().insert(index, value)
         self._connect_child_emitters(value)
@@ -388,6 +395,15 @@ class NestableEventedList(EventedList[T]):
             # previously pulled items out from in front of the dest_i
             ddec = sum(map(lambda x: x <= dest_i, popped.get(dest_par, [])))
 
+            # FIXME:
+            # there is still a bug and a failing test... if we are moving items
+            # from a lower level nested group up to a higher level, and inserting
+            # into a position is higher than the *parent* of that nested group
+            # we have an index error.  ie:
+
+            # i.e. we need to increase the (src_par, ...) by 1 for each time
+            # we have previously inserted items in front of the (src_par, ...)
+
             # if item is being moved within the same parent,
             # we need to increase the src_i by 1 for each time we have
             # previously inserted items in front of the src_i
@@ -405,27 +421,29 @@ class NestableEventedList(EventedList[T]):
     def move(
         self,
         cur_index: Union[int, NestedIndex],
-        insert_at: Union[int, NestedIndex],
+        new_index: Union[int, NestedIndex],
     ) -> bool:
-        src_par, src_i = split_nested_index(cur_index)
-        dest_par, dest_i = split_nested_index(insert_at)
-
-        if src_par == dest_par:
+        src_par_i, src_i = split_nested_index(cur_index)
+        dest_par_i, dest_i = split_nested_index(new_index)
+        if src_par_i == dest_par_i:
             if dest_i > src_i:
                 dest_i -= 1
             if src_i == dest_i:
                 return False
 
-        self.events.moving(index=cur_index, insert_at=insert_at)
+        self.events.moving(index=cur_index, new_index=new_index)
 
         silenced = ['removed', 'removing', 'inserted', 'inserting']
         for event_name in silenced:
             getattr(self.events, event_name).block()
-        value = self[src_par].pop(src_i)  # type: ignore
-        self[dest_par].insert(dest_i, value)  # type: ignore
+
+        dest_par = self[dest_par_i]
+        value = self[src_par_i].pop(src_i)  # type: ignore
+        dest_par.insert(dest_i, value)  # type: ignore
+
         for event_name in silenced:
             getattr(self.events, event_name).unblock()
 
-        self.events.moved(index=cur_index, insert_at=insert_at, value=value)
+        self.events.moved(index=cur_index, new_index=new_index, value=value)
         self.events.reordered(value=self)
         return True
