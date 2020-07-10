@@ -1,3 +1,26 @@
+"""MutableSequences that emit events when altered.
+
+Note For Developers
+===================
+
+Be cautious when re-implementing typical list-like methods here (e.g. extend,
+pop, clear, etc...).  By not re-implementing those methods, we force ALL "CRUD"
+(create, read, update, delete) operations to go through a few key methods
+defined by the abc.MutableSequence interface.
+
+Specifically:
+
+- ``insert`` = "create" : add a new item/index to the list
+- ``__getitem__`` = "read" : get the value of an existing index
+- ``__setitem__`` = "update" : update the value of an existing index
+- ``__delitem__`` = "delete" : remove an existing index from the list
+
+All of the additional list-like methods are provided by the MutableSequence
+interface, and call one of those 4 methods.  So if you override a method, you
+MUST make sure that all the appropriate events are emitted.  (Tests should
+cover this in test_evented_list.py)
+"""
+
 from __future__ import annotations
 
 from collections import defaultdict
@@ -20,27 +43,8 @@ T = TypeVar('T')
 NestedIndex = Tuple[int, ...]
 
 
-"""
-Note for future developers: Be cautious about re-implementing typical list-like
-methods here (e.g. extend, pop, clear, etc...).  By not re-implementing those
-methods, we force ALL "CRUD" (create, read, update, delete) operations to go
-through a few key methods defined by the abc.MutableSequence interface.
-
-Specifically:
-
-- ``insert`` = "create" : add a new item/index to the list
-- ``__getitem__`` = "read" : get the value of an existing index
-- ``__setitem__`` = "update" : update the value of an existing index
-- ``__delitem__`` = "delete" : remove an existing index from the list
-
-All of the additional list-like methods are provided by the MutableSequence
-interface, and call one of those 4 methods.  So if you override a method, you
-MUST make sure that all the appropriate events are emitted.
-"""
-
-
 class EventedList(MutableSequence[T]):
-    """Mutable Sequence that emits events when altered
+    """Mutable Sequence that emits events when altered.
 
     Parameters
     ----------
@@ -81,7 +85,8 @@ class EventedList(MutableSequence[T]):
             'changed': None,  # Tuple[int, Any, Any] - (idx, old, new)
             'reordered': None,  # None
         }
-        # For multiple inheritance
+        # In case of inheritance we add to an existing EmitterGroup
+        # TODO: can we express this with typing.Protocol?
         if hasattr(self, 'events') and isinstance(self.events, EmitterGroup):
             self.events.add(**_events)
         else:
@@ -90,15 +95,25 @@ class EventedList(MutableSequence[T]):
         if data is not None:
             self.extend(data)
 
+    # WAIT!! ... Read the module docstring before reimplement these classes
+    # def append(self, item): ...
+    # def clear(self): ...
+    # def pop(self, index=-1): ...
+    # def extend(self, value: Iterable[T]): ...
+    # def remove(self, value: T): ...
+
     # fmt: off
     @overload
     def __getitem__(self, key: int) -> T: ...  # noqa: E704
 
     @overload
-    def __getitem__(self, key: slice) -> List[T]: ...  # noqa
+    def __getitem__(self, key: slice) -> EventedList[T]: ...  # noqa
 
     def __getitem__(self, key):  # noqa: F811
-        return self._list[key]
+        result = self._list[key]
+        if isinstance(result, MutableSequence):
+            return self.__class__(result)
+        return result
 
     @overload
     def __setitem__(self, key: int, value: T): ...  # noqa: E704
@@ -176,11 +191,11 @@ class NestableEventedList(EventedList[T]):
     A key property of this class is that when new mutable sequences are added
     to the list, they are themselves converted to a ``NestableEventedList``,
     and all of the ``EventEmitter`` objects in the child are connect to the
-    parent object's ``_bubble_event`` method. When ``_bubble_event`` receives
-    an event from a child object, it remits the event, but changes any
-    ``index`` keys in the event to a ``NestedIndex`` (a tuple of ``int``) such
-    that indices emitted by any given ``NestableEventedList`` are always
-    relative to itself.
+    parent object's ``_reemit_nested_event`` method. When
+    ``_reemit_nested_event`` receives an event from a child object, it remits
+    the event, but changes any ``index`` keys in the event to a ``NestedIndex``
+    (a tuple of ``int``) such that indices emitted by any given
+    ``NestableEventedList`` are always relative to itself.
 
     ``NestableEventedList`` instances can be indexed with a ``tuple`` of
     ``int`` (e.g. ``mylist[0, 2, 1]``) to retrieve nested child objects.
@@ -218,7 +233,7 @@ class NestableEventedList(EventedList[T]):
     def __getitem__(self, key: Union[int, NestedIndex]) -> T: ...  # noqa: E704
 
     @overload
-    def __getitem__(self, key: slice) -> List[T]: ...  # noqa
+    def __getitem__(self, key: slice) -> NestableEventedList[T]: ...  # noqa
 
     def __getitem__(self, key):  # noqa: F811
         if isinstance(key, tuple):
@@ -262,12 +277,13 @@ class NestableEventedList(EventedList[T]):
         super().__delitem__(key)
 
     def insert(self, index: int, value: T):
-        if isinstance(value, list):
-            value = NestableEventedList(value)  # type: ignore
+        # TODO: figure out proper way to deal with this type error
+        if isinstance(value, MutableSequence):
+            value = NestableEventedList(value)
         super().insert(index, value)
         self._connect_child_emitters(value)
 
-    def _bubble_event(self, event: Event):
+    def _reemit_nested_event(self, event: Event):
         if event.source == self:
             return
         emitter = getattr(self.events, event.type, None)
@@ -289,14 +305,14 @@ class NestableEventedList(EventedList[T]):
         # are named "events"
         if isinstance(getattr(child, 'events', None), EmitterGroup):
             for emitter in child.events.emitters.values():  # type: ignore
-                emitter.disconnect(self._bubble_event)
+                emitter.disconnect(self._reemit_nested_event)
 
     def _connect_child_emitters(self, child: T):
         # IMPORTANT!! this is currently assuming that all emitter groups
         # are named "events"
         if isinstance(getattr(child, 'events', None), EmitterGroup):
             for emitter in child.events.emitters.values():  # type: ignore
-                emitter.connect(self._bubble_event)
+                emitter.connect(self._reemit_nested_event)
 
     def _ensure_tuple_index(
         self, index: Union[NestedIndex, int]
