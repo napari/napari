@@ -277,7 +277,7 @@ class NestableEventedList(EventedList[T]):
 
     def __setitem__(self, key, value):  # noqa: F811
         if isinstance(value, MutableSequence):
-            value = NestableEventedList(value)
+            value = self.__class__(value)
         if isinstance(key, tuple):
             parent_i, index = split_nested_index(key)
             self[parent_i].__setitem__(index, value)
@@ -316,7 +316,7 @@ class NestableEventedList(EventedList[T]):
     def insert(self, index: int, value: T):
         # TODO: figure out proper way to deal with this type error
         if isinstance(value, MutableSequence):
-            value = NestableEventedList(value)
+            value = self.__class__(value)
         super().insert(index, value)
         self._connect_child_emitters(value)
 
