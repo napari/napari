@@ -6,6 +6,7 @@ from typing import Any, List, Tuple, Union, cast
 from qtpy.QtCore import QAbstractItemModel, QMimeData, QModelIndex, Qt
 from qtpy.QtWidgets import QWidget
 from ...utils.tree import Group, Node
+from ...layers import Layer, LayerGroup
 
 
 # TODO: cleanup stuff related to MIME formats and convenience methods
@@ -88,6 +89,8 @@ class QtNodeTreeModel(QAbstractItemModel):
 
         base_flags = (
             Qt.ItemIsSelectable
+            | Qt.ItemIsEditable
+            | Qt.ItemIsUserCheckable
             | Qt.ItemIsDragEnabled
             | Qt.ItemIsEnabled
             | Qt.ItemIsDropEnabled
@@ -206,3 +209,23 @@ class QtNodeTreeModel(QAbstractItemModel):
         for i in _p:
             par = self.index(i, 0, par)
         return par, idx
+
+
+class QtLayerTreeModel(QtNodeTreeModel):
+    def __init__(self, root: LayerGroup, parent: QWidget = None):
+        super().__init__(root, parent)
+        self.setRoot(root)
+
+    def getItem(self, index: QModelIndex) -> Layer:
+        return cast(Layer, super().getItem(index))
+
+    def data(self, index: QModelIndex, role: Qt.ItemDataRole):
+        """Return data stored under ``role`` for the item at ``index``."""
+        item = self.getItem(index)
+        if role == Qt.DisplayRole:
+            return item.name
+        # if role == Qt.CheckStateRole:
+        #     return item.visible
+        if role == Qt.UserRole:
+            return self.getItem(index)
+        return None

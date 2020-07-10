@@ -3,12 +3,14 @@ from qtpy.QtWidgets import (
     QTreeView,
     QWidget,
     QStyledItemDelegate,
+    QStyleOptionViewItem,
 )
-from qtpy.QtCore import QItemSelection, QItemSelectionModel
+from qtpy.QtCore import QItemSelection, QItemSelectionModel, QModelIndex
+from qtpy.QtGui import QPainter
 
 from ...utils.tree.group import Group, NestedIndex
 from ...layers.layergroup import LayerGroup
-from ._tree_model import QtNodeTreeModel
+from ._tree_model import QtNodeTreeModel, QtLayerTreeModel
 
 
 class QtNodeTreeView(QTreeView):
@@ -27,7 +29,17 @@ class QtNodeTreeView(QTreeView):
 
 
 class LayerDelegate(QStyledItemDelegate):
-    pass
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+    def paint(
+        self,
+        painter: QPainter,
+        option: QStyleOptionViewItem,
+        index: QModelIndex,
+    ):
+        # layer = index.internalPointer()
+        super().paint(painter, option, index)
 
 
 class QtLayerTreeView(QtNodeTreeView):
@@ -36,7 +48,7 @@ class QtLayerTreeView(QtNodeTreeView):
         self.setItemDelegate(LayerDelegate())
 
     def setRoot(self, root):
-        super().setRoot(root)
+        self.setModel(QtLayerTreeModel(root, self))
         root.events.selected.connect(lambda e: self._select(e.index, e.value))
         # initialize selection model
         for child in root.traverse():
