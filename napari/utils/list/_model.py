@@ -1,5 +1,4 @@
-from ..event import EmitterGroup, Event
-from ..event_handler import EventHandler
+from ...utils.event import EmitterGroup
 
 from ._multi import MultiIndexList
 from ._typed import TypedList
@@ -29,66 +28,38 @@ class ListModel(MultiIndexList, TypedList):
         super().__init__(basetype, iterable, lookup)
         self.events = EmitterGroup(
             source=self,
-            auto_connect=False,
-            added=Event,
-            removed=Event,
-            reordered=Event,
-            changed=Event,
+            auto_connect=True,
+            added=None,
+            removed=None,
+            reordered=None,
+            changed=None,
         )
-        self.event_handler = EventHandler(component=self)
-        self.events.connect(self.event_handler.on_change)
+        self.events.added.connect(self.events.changed)
+        self.events.removed.connect(self.events.changed)
+        self.events.reordered.connect(self.events.changed)
 
     def __setitem__(self, query, values):
-        new_indices = tuple(self.__prsitem__(query))
-        old_indices = tuple(self.index(v) for v in tuple(values))
-        self.events.reordered((old_indices, new_indices))
-        self.events.changed(None)
+        indices = tuple(self.__prsitem__(query))
+        new_indices = tuple(values)
 
-    def insert(self, index, obj):
-        self.events.added((obj, index))
-        self.events.changed(None)
-
-    def append(self, obj):
-        self.events.added((obj, len(self)))
-        self.events.changed(None)
-
-    def pop(self, key):
-        obj = self[key]
-        self.events.removed((obj, key))
-        self.events.changed(None)
-        return obj
-
-    def clear(self):
-        while len(self) > 0:
-            obj = self[0]
-            self.events.removed((obj, 0))
-        self.events.changed(None)
-
-    def reverse(self):
-        old_indices = tuple(range(len(self)))
-        new_indices_list = list(range(len(self)))
-        new_indices_list.reverse()
-        new_indices = tuple(new_indices_list)
-        self.events.reordered((old_indices, new_indices))
-        self.events.changed(None)
-
-    def _on_reordered_change(self, indices):
-        old_indices, new_indices = indices
-        if sorted(new_indices) != sorted(old_indices):
+        if sorted(indices) != sorted(self.index(v) for v in new_indices):
             raise TypeError(
                 'must be a reordering of indices; '
                 'setting of list items not allowed'
             )
-        values = tuple(self[i] for i in old_indices)
-        super().__setitem__(new_indices, values)
 
-    def _on_added_change(self, value):
-        obj, index = value
-        if index == len(self):
-            TypedList.append(self, obj)
-        else:
-            super().insert(index, obj)
+        super().__setitem__(indices, new_indices)
+        self.events.reordered()
 
-    def _on_removed_change(self, value):
-        obj, key = value
-        super().pop(key)
+    def insert(self, index, obj):
+        super().insert(index, obj)
+        self.events.added(item=obj, index=self.__locitem__(index))
+
+    def append(self, obj):
+        TypedList.append(self, obj)
+        self.events.added(item=obj, index=len(self) - 1)
+
+    def pop(self, key):
+        obj = super().pop(key)
+        self.events.removed(item=obj, index=key)
+        return obj

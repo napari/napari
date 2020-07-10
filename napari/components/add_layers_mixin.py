@@ -50,10 +50,9 @@ class AddLayersMixin:
         """
         layer.event_handler.register_listener(self)
 
-        # These connections will be removed once the EVH reaches the Dims
-        layer.dims.events.ndisplay.connect(lambda e: self._update_layer_dims())
-        layer.dims.events.order.connect(lambda e: self._update_layer_dims())
-        layer.dims.events.range.connect(lambda e: self._update_layer_dims())
+        layer.dims.events.ndisplay.connect(self._on_layers_change)
+        layer.dims.events.order.connect(self._on_layers_change)
+        layer.dims.events.range.connect(self._on_layers_change)
 
         self.layers.append(layer)
         self._update_layers(layers=[layer])

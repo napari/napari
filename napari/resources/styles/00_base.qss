@@ -1,4 +1,4 @@
-/*
+/* 
 Styles in this file should only refer to built-in QtWidgets
 It will be imported first, and styles declared in other files
 may override these styles, but should only do so on
@@ -32,7 +32,7 @@ QWidget[emphasized="true"] > QFrame {
 
 /* ------------ QAbstractScrollArea ------------- */
 
-/* QAbstractScrollArea is the superclass */
+/* QAbstractScrollArea is the superclass */ 
 
 QTextEdit {
   background-color: {{ console }};
@@ -118,7 +118,7 @@ QComboBox:on {
 }
 
 QListView {
-  /* controls the color of the open dropdown menu */
+  /* controls the color of the open dropdown menu */ 
   background-color: {{ foreground }};
   color: {{ text }};
   border-radius: 2px;
@@ -431,7 +431,7 @@ QScrollBar::add-line, QScrollBar::sub-line {
     subcontrol-origin: margin;
 }
 
-QWidget[emphasized="true"] QScrollBar::add-line,
+QWidget[emphasized="true"] QScrollBar::add-line, 
 QWidget[emphasized="true"] QScrollBar::sub-line {
     background: {{ primary }};
 }
@@ -456,12 +456,12 @@ QScrollBar::sub-line:vertical {
     subcontrol-position: top;
 }
 
-QScrollBar::add-line:horizontal:pressed,
+QScrollBar::add-line:horizontal:pressed, 
 QScrollBar::sub-line:horizontal:pressed {
     background: {{ highlight }};
 }
 
-QWidget[emphasized="true"] QScrollBar::add-line:horizontal:pressed,
+QWidget[emphasized="true"] QScrollBar::add-line:horizontal:pressed, 
 QWidget[emphasized="true"] QScrollBar::sub-line:horizontal:pressed {
     background: {{ secondary }};
 }

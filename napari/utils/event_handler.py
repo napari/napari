@@ -1,5 +1,4 @@
 import logging
-import weakref
 
 
 logger = logging.getLogger(__name__)
@@ -13,9 +12,7 @@ class EventHandler:
         from the data, controls, or visual interface and updates all associated
         components.
         """
-        self.components = []
-        if component is not None:
-            self.register_listener(component)
+        self.components_to_update = [component] if component else []
 
     def register_listener(self, component):
         """Register a component to listen to emitted events.
@@ -26,10 +23,7 @@ class EventHandler:
             Object that contains callbacks for specific events. These are
             methods named according to an '_on_*_change' convention.
         """
-        # We need to use weak references here to ensure QWigdets that are
-        # registered as listeners are not leaked. See this discussion
-        # https://github.com/napari/napari/pull/1391#issuecomment-653939143
-        self.components.append(weakref.ref(component))
+        self.components_to_update.append(component)
 
     def on_change(self, event=None):
         """Process an event from any of our event emitters.
@@ -53,12 +47,8 @@ class EventHandler:
             return
 
         # Update based on event value
-        for componentref in self.components:
-            # We use weak references here for reasons discussed inside the
-            # register_listener method above
-            component = componentref()
-            if component is not None:
-                update_method_name = f"_on_{event.type}_change"
-                update_method = getattr(component, update_method_name, None)
-                if update_method:
-                    update_method(value)
+        for component in self.components_to_update:
+            update_method_name = f"_on_{event.type}_change"
+            update_method = getattr(component, update_method_name, None)
+            if update_method:
+                update_method(value)

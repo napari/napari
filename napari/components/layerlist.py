@@ -2,7 +2,18 @@ from typing import Optional, List
 from ..layers import Layer
 from ..utils.naming import force_unique_name
 from ..utils.list import ListModel
-from ..utils.event import Event
+
+
+def _add(event):
+    """When a layer is added, set its name."""
+    layers = event.source
+    layer = event.item
+    # Coerce name into being unique in layer list
+    layer.name = force_unique_name(layer.name, [l.name for l in layers[:-1]])
+    # Register layer event handler
+    layer.event_handler.register_listener(layers)
+    # Unselect all other layers
+    layers.unselect_all(ignore=layer)
 
 
 class LayerList(ListModel):
@@ -17,10 +28,9 @@ class LayerList(ListModel):
     ----------
     events : vispy.util.event.EmitterGroup
         Event hooks:
-            * added((item, index)): whenever an item is added
-            * removed((item, index)): whenever an item is removed
-            * reordered((indices, new_indices)): whenever the list is reordered
-            * changed(None): after the list is changed in any way
+            * added(item, index): whenever an item is added
+            * removed(item): whenever an item is removed
+            * reordered(): whenever the list is reordered
     """
 
     def __init__(self, iterable=()):
@@ -29,27 +39,11 @@ class LayerList(ListModel):
             iterable=iterable,
             lookup={str: lambda q, e: q == e.name},
         )
-        self.events.add(selected_layers=Event,)
+
+        self.events.added.connect(_add)
 
     def __newlike__(self, iterable):
         return ListModel(self._basetype, iterable, self._lookup)
-
-    def _on_added_change(self, value):
-        """When a layer is added, set its name.
-
-        Parmeters
-        ---------
-        value : 2-tuple
-            Tuple of layer and index where layer is being added.
-        """
-        super()._on_added_change(value)
-        layer = value[0]
-        # Coerce name into being unique in layer list
-        layer.name = force_unique_name(layer.name, [l.name for l in self[:-1]])
-        # Register layer event handler
-        layer.event_handler.register_listener(self)
-        # Unselect all other layers
-        self.selected = [len(self) - 1]
 
     def _on_name_unique_change(self, names):
         """Receive layer name tuple and update the name if is already in list.
@@ -73,55 +67,61 @@ class LayerList(ListModel):
 
     @property
     def selected(self):
-        """List of indices of selected layers."""
-        return [i for i, layer in enumerate(self) if layer.selected]
+        """List of selected layers."""
+        return [layer for layer in self if layer.selected]
 
-    @selected.setter
-    def selected(self, selected):
-        """List: Indices of layers to select layers."""
-        self.events.selected_layers(selected)
+    def move_selected(self, index, insert):
+        """Reorder list by moving the item at index and inserting it
+        at the insert index. If additional items are selected these will
+        get inserted at the insert index too. This allows for rearranging
+        the list based on dragging and dropping a selection of items, where
+        index is the index of the primary item being dragged, and insert is
+        the index of the drop location, and the selection indicates if
+        multiple items are being dragged. If the moved layer is not selected
+        select it.
+
+        Parameters
+        ----------
+        index : int
+            Index of primary item to be moved
+        insert : int
+            Index that item(s) will be inserted at
+        """
+        total = len(self)
+        indices = list(range(total))
+        if not self[index].selected:
+            self.unselect_all()
+            self[index].selected = True
+        selected = [i for i in range(total) if self[i].selected]
+
+        # remove all indices to be moved
+        for i in selected:
+            indices.remove(i)
+        # adjust offset based on selected indices to move
+        offset = sum([i < insert and i != index for i in selected])
+        # insert indices to be moved at correct start
+        for insert_idx, elem_idx in enumerate(selected, start=insert - offset):
+            indices.insert(insert_idx, elem_idx)
+        # reorder list
+        self[:] = self[tuple(indices)]
 
     def unselect_all(self, ignore=None):
-        """Unselects all layers except any specified in ignore.
+        """Unselects all layers expect any specified in ignore.
 
         Parameters
         ----------
         ignore : Layer | None
             Layer that should not be unselected if specified.
         """
-        if ignore is not None:
-            index = self.index(ignore)
-            self.selected = [index]
-        else:
-            self.selected = []
+        for layer in self:
+            if layer.selected and layer != ignore:
+                layer.selected = False
 
     def select_all(self):
-        """Select all layers."""
-        self.selected = list(range(len(self)))
-
-    def _on_selected_layers_change(self, selected_layers):
-        """When selected layers are changed update the actual layers.
-
-        Parmeters
-        ---------
-        selected_layers : list
-            List of selected indices.
-        """
-        for i, layer in enumerate(self):
-            layer.selected = i in selected_layers
-
-    def _on_selected_change(self, selected):
-        """When selected state of any layer changes emit selected layers event.
-
-        Parmeters
-        ---------
-        selected : bool
-            Whether layer is selected or not.
-        """
-        # The fact that we are emitting a new event inside the callback of
-        # this event is probably bad, as we don't actually know that the
-        # selected state has been update when this event gets emitted
-        self.events.selected_layers(self.selected)
+        """Selects all layers."""
+        for layer in self:
+            if not layer.selected:
+                layer.selected = True
 
     def remove_selected(self):
         """Removes selected items from list."""
@@ -138,6 +138,42 @@ class LayerList(ListModel):
                 self[0].selected = True
             elif first_to_delete > 0:
                 self[first_to_delete - 1].selected = True
+
+    def select_next(self, shift=False):
+        """Selects next item from list.
+        """
+        selected = []
+        for i in range(len(self)):
+            if self[i].selected:
+                selected.append(i)
+        if len(selected) > 0:
+            if selected[-1] == len(self) - 1:
+                if shift is False:
+                    self.unselect_all(ignore=self[selected[-1]])
+            elif selected[-1] < len(self) - 1:
+                if shift is False:
+                    self.unselect_all(ignore=self[selected[-1] + 1])
+                self[selected[-1] + 1].selected = True
+        elif len(self) > 0:
+            self[-1].selected = True
+
+    def select_previous(self, shift=False):
+        """Selects previous item from list.
+        """
+        selected = []
+        for i in range(len(self)):
+            if self[i].selected:
+                selected.append(i)
+        if len(selected) > 0:
+            if selected[0] == 0:
+                if shift is False:
+                    self.unselect_all(ignore=self[0])
+            elif selected[0] > 0:
+                if shift is False:
+                    self.unselect_all(ignore=self[selected[0] - 1])
+                self[selected[0] - 1].selected = True
+        elif len(self) > 0:
+            self[0].selected = True
 
     def toggle_selected_visibility(self):
         """Toggle visibility of selected layers"""
@@ -206,11 +242,7 @@ class LayerList(ListModel):
         """
         from ..plugins.io import save_layers
 
-        layers = (
-            [layer for layer in self if layer.selected]
-            if selected
-            else list(self)
-        )
+        layers = self.selected if selected else list(self)
 
         if not layers:
             import warnings

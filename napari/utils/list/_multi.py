@@ -9,6 +9,7 @@ class MultiIndexList(List):
     def __prsitem__(self, keys):
         if not isinstance(keys, tuple):
             return super().__prsitem__(keys)
+
         indices = []
 
         for key in keys:
