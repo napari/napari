@@ -191,18 +191,12 @@ class QtNodeTreeModel(QAbstractItemModel):
 
     def _on_begin_moving(self, event):
         src_par, src_idx = self._split_nested_index(event.index)
-        dest_par, dest_idx = self._split_nested_index(event.new_index)
+        dest_par, dest_idx = self._split_nested_index(event.insert_at)
         self.beginMoveRows(src_par, src_idx, src_idx, dest_par, dest_idx)
 
     def _split_nested_index(
         self, nested_index: Union[int, Tuple[int, ...]]
     ) -> Tuple[QModelIndex, int]:
         """Given a nested index, return (nested_parent_index, row)."""
-        # TODO: split after using nestedIndex?
-        if isinstance(nested_index, int):
-            return QModelIndex(), nested_index
-        par = QModelIndex()
-        *_p, idx = nested_index
-        for i in _p:
-            par = self.index(i, 0, par)
-        return par, idx
+        idx = self.nestedIndex(nested_index)
+        return idx.parent(), idx.row()

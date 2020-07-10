@@ -1,4 +1,9 @@
-from qtpy.QtWidgets import QAbstractItemView, QTreeView, QWidget
+from qtpy.QtWidgets import (
+    QAbstractItemView,
+    QTreeView,
+    QWidget,
+    QStyledItemDelegate,
+)
 from qtpy.QtCore import QItemSelection, QItemSelectionModel
 
 from ...utils.tree.group import Group, NestedIndex
@@ -21,8 +26,16 @@ class QtNodeTreeView(QTreeView):
         self.setModel(QtNodeTreeModel(root, self))
 
 
+class LayerDelegate(QStyledItemDelegate):
+    pass
+
+
 class QtLayerTreeView(QtNodeTreeView):
-    def setRoot(self, root: LayerGroup):
+    def __init__(self, root: LayerGroup = None, parent: QWidget = None):
+        super().__init__(root, parent)
+        self.setItemDelegate(LayerDelegate())
+
+    def setRoot(self, root):
         super().setRoot(root)
         root.events.selected.connect(lambda e: self._select(e.index, e.value))
         # initialize selection model
