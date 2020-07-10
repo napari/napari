@@ -98,6 +98,7 @@ QtConsole > QPlainTextEdit, QTextEdit {
 QtLayerList QScrollBar:vertical {
   max-width: 8px;
   margin: 12px 0px;
+  padding: 2px;
 }
 
 QtLayerList QScrollBar::add-line:vertical,
@@ -115,6 +116,22 @@ QtLayerList QScrollBar:down-arrow {
   max-width: 6px;
 }
 
+QtLayerList {
+  background: {{ background }};
+}
+
+QtLayerList::item {
+  background: {{ foreground }};
+  border: 2px solid {{ background }};
+  margin: 0px 10px 0px 0px;
+  min-height: 32px;
+  max-height: 32px;
+  border-radius: 4px;
+}
+
+QtLayerList::item:selected {
+  background: {{ current }};
+}
 
 /* controls the area around the canvas */
 QSplitter {
@@ -123,47 +140,21 @@ QSplitter {
   margin: 0px;
 }
 
-QtDivider {
-  spacing: 0px;
-  padding: 0px;
-  border: 0px;
-  margin: 0px 3px 0px 3px;
-  min-width: 214px;
-  max-width: 214px;
-  min-height: 1px;
-  max-height: 1px;
-}
-
-QtDivider[selected=true] {
-  background-color: {{ text }};
-}
-
-QtDivider[selected=false] {
-  background-color: {{ background }};
-}
-
-
 /* --------------- QtLayerWidget -------------------- */
 
 QtLayerWidget {
   padding: 0px;
-  background-color: {{ foreground }};
+  background-color: transparent;
   border-radius: 2px;
   min-height: 32px;
   max-height: 32px;
-  min-width: 228px;
-  max-width: 228px;
-}
-
-QtLayerWidget[selected="true"] {
-  background-color: {{ current }};
 }
 
 
 QtLayerWidget > QLabel {
   background-color: transparent;
   padding: 0px;
-  qproperty-alignment: AlignCenter;
+  qproperty-alignment: AlignVCenter;
 }
 
 
