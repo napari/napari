@@ -1,4 +1,5 @@
 from qtpy.QtCore import Qt, QMimeData, QTimer
+from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -11,10 +12,8 @@ from qtpy.QtWidgets import (
     QHBoxLayout,
     QSizePolicy,
 )
-from qtpy.QtGui import QDrag, QImage, QPixmap
+from qtpy.QtGui import QDrag
 import numpy as np
-from .utils import qt_signals_blocked
-from ..utils.event import Event, EmitterGroup
 
 
 class QtLayerList(QScrollArea):
@@ -83,7 +82,7 @@ class QtLayerList(QScrollArea):
         widget = QtLayerWidget(layer)
         self.vbox_layout.insertWidget(index, widget)
         self.vbox_layout.insertWidget(index + 1, QtDivider())
-        layer.events.selected.connect(self._scroll_on_select)
+        layer.events.select.connect(self._scroll_on_select)
 
     def _remove(self, event):
         """Remove widget for layer at index `event.index`.
@@ -458,7 +457,6 @@ class QtDivider(QFrame):
             self.style().polish(self)
 
 
-# TODO: Move this class to layers/qt_layer_widget.py in follow-up refactor
 class QtLayerWidget(QFrame):
     """Qt view for Layer model.
 
@@ -481,23 +479,12 @@ class QtLayerWidget(QFrame):
     def __init__(self, layer):
         super().__init__()
 
-        self.events = EmitterGroup(
-            source=self,
-            auto_connect=False,
-            selected=Event,
-            name=Event,
-            name_unique=Event,
-            visible=Event,
-        )
-
-        # When the EVH refactor #1376 is done we might not even need the layer
-        # attribute anymore as all data updates will be through the handler.
-        # At that point we could remove the attribute and do the registering
-        # and connecting outside this class and never even need to pass the
-        # layer to this class.
         self.layer = layer
-        self.layer.event_handler.register_listener(self)
-        self.events.connect(self.layer.event_handler.on_change)
+        layer.events.select.connect(lambda v: self.setSelected(True))
+        layer.events.deselect.connect(lambda v: self.setSelected(False))
+        layer.events.name.connect(self._on_layer_name_change)
+        layer.events.visible.connect(self._on_visible_change)
+        layer.events.thumbnail.connect(self._on_thumbnail_change)
 
         self.setObjectName('layer')
 
@@ -509,25 +496,31 @@ class QtLayerWidget(QFrame):
         tb.setObjectName('thumbnail')
         tb.setToolTip('Layer thumbnail')
         self.thumbnailLabel = tb
+        self._on_thumbnail_change()
         self.layout.addWidget(tb)
 
         cb = QCheckBox(self)
         cb.setObjectName('visibility')
         cb.setToolTip('Layer visibility')
+        cb.setChecked(self.layer.visible)
         cb.setProperty('mode', 'visibility')
-        cb.stateChanged[int].connect(self.events.visible)
+        cb.stateChanged.connect(self.changeVisible)
         self.visibleCheckBox = cb
         self.layout.addWidget(cb)
 
         textbox = QLineEdit(self)
+        textbox.setText(layer.name)
+        textbox.home(False)
+        textbox.setToolTip(self.layer.name)
         textbox.setAcceptDrops(False)
         textbox.setEnabled(True)
         textbox.editingFinished.connect(self.changeText)
         self.nameTextBox = textbox
-        self.nameTextBox.old_name = ''
         self.layout.addWidget(textbox)
 
         ltb = QLabel(self)
+        layer_type = type(layer).__name__
+        ltb.setObjectName(layer_type)
         ltb.setProperty('layer_type_label', True)
         ltb.setToolTip('Layer type')
         self.typeLabel = ltb
@@ -535,51 +528,38 @@ class QtLayerWidget(QFrame):
 
         msg = 'Click to select\nDrag to rearrange'
         self.setToolTip(msg)
+        self.setSelected(self.layer.selected)
 
-        # Once EVH refactor is done, these can be moved to an initialization
-        # outside of this object
-        self._set_layer_type(type(self.layer).__name__)
-        self._on_selected_change(self.layer.selected)
-        self._on_thumbnail_change(self.layer.thumbnail)
-        self._on_visible_change(self.layer.visible)
-        self._on_name_change(self.layer.name)
-
-    def _set_layer_type(self, layer_type):
-        """Set layer type.
+    def setSelected(self, state):
+        """Select layer widget.
 
         Parameters
         ----------
-        layer_type : str
-            Type of layer, must be one of the napari supported layer types.
+        state : bool
         """
-        self.typeLabel.setObjectName(layer_type)
-
-    def _on_selected_change(self, selected):
-        """Update selected status of the layer widget.
-
-        Parameters
-        ----------
-        selected : bool
-            Layer selected status.
-        """
-        self.setProperty('selected', selected)
-        self.nameTextBox.setEnabled(selected)
+        self.setProperty('selected', state)
+        self.nameTextBox.setEnabled(state)
         self.style().unpolish(self)
         self.style().polish(self)
 
+    def changeVisible(self, state):
+        """Toggle visibility of the layer.
+
+        Parameters
+        ----------
+        state : bool
+        """
+        if state == Qt.Checked:
+            self.layer.visible = True
+        else:
+            self.layer.visible = False
+
     def changeText(self):
         """Update layer name attribute using layer name textbox contents."""
-        name = self.nameTextBox.text()
-        old_name = self.nameTextBox.old_name
-        if old_name == name:
-            return
-        self.events.name_unique((old_name, name))
-        self.nameTextBox.old_name = self.nameTextBox.text()
-
-        # Prevent retriggering during clearing of focus
-        with qt_signals_blocked(self.nameTextBox):
-            self.nameTextBox.clearFocus()
-            self.setFocus()
+        self.layer.name = self.nameTextBox.text()
+        self.nameTextBox.setToolTip(self.layer.name)
+        self.nameTextBox.clearFocus()
+        self.setFocus()
 
     def mouseReleaseEvent(self, event):
         """Ignores mouse release event.
@@ -623,37 +603,38 @@ class QtLayerWidget(QFrame):
         """
         event.ignore()
 
-    def _on_name_change(self, name):
+    def _on_layer_name_change(self, event=None):
         """Update text displaying name of layer.
 
         Parameters
         ----------
-        text : str
-            Name of the layer.
+        event : qtpy.QtCore.QEvent, optional
+            Event from the Qt context.
         """
-        self.nameTextBox.setText(name)
-        self.nameTextBox.setToolTip(name)
-        self.nameTextBox.home(False)
-        self.nameTextBox.old_name = name
+        with self.layer.events.name.blocker():
+            self.nameTextBox.setText(self.layer.name)
+            self.nameTextBox.home(False)
 
-    def _on_visible_change(self, visible):
+    def _on_visible_change(self, event=None):
         """Toggle visibility of the layer.
 
         Parameters
         ----------
-        visible : bool
-            Layer visibility.
+        event : qtpy.QtCore.QEvent, optional
+            Event from the Qt context.
         """
-        self.visibleCheckBox.setChecked(visible)
+        with self.layer.events.visible.blocker():
+            self.visibleCheckBox.setChecked(self.layer.visible)
 
-    def _on_thumbnail_change(self, thumbnail):
+    def _on_thumbnail_change(self, event=None):
         """Update thumbnail image on the layer widget.
 
         Parameters
         ----------
-        thumbnail : ndarray
-            Thumbnail in RGBA unit8 format.
+        event : qtpy.QtCore.QEvent, optional
+            Event from the Qt context.
         """
+        thumbnail = self.layer.thumbnail
         # Note that QImage expects the image width followed by height
         image = QImage(
             thumbnail,
