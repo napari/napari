@@ -379,7 +379,7 @@ class Shapes(Layer):
         self._status = self.mode
         self._help = 'enter a selection mode to edit shape properties'
 
-        self.events.deselect.connect(self._finish_drawing)
+        self.events.selection.connect(self._finish_drawing)
         self.events.face_color.connect(self._update_thumbnail)
         self.events.edge_color.connect(self._update_thumbnail)
 
