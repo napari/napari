@@ -204,8 +204,7 @@ class Layer(KeymapProvider, Node, ABC):
             blending=Event,
             opacity=Event,
             visible=Event,
-            select=Event,
-            deselect=Event,
+            selection=Event,
             scale=Event,
             translate=Event,
             data=Event,
@@ -543,11 +542,7 @@ class Layer(KeymapProvider, Node, ABC):
         if selected == self.selected:
             return
         self._selected = selected
-
-        if selected:
-            self.events.select()
-        else:
-            self.events.deselect()
+        self.events.selection(value=selected)
 
     @property
     def status(self):

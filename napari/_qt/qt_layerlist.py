@@ -82,7 +82,7 @@ class QtLayerList(QScrollArea):
         widget = QtLayerWidget(layer)
         self.vbox_layout.insertWidget(index, widget)
         self.vbox_layout.insertWidget(index + 1, QtDivider())
-        layer.events.select.connect(self._scroll_on_select)
+        layer.events.selection.connect(self._scroll_on_select)
 
     def _remove(self, event):
         """Remove widget for layer at index `event.index`.
@@ -480,8 +480,7 @@ class QtLayerWidget(QFrame):
         super().__init__()
 
         self.layer = layer
-        layer.events.select.connect(lambda v: self.setSelected(True))
-        layer.events.deselect.connect(lambda v: self.setSelected(False))
+        layer.events.selection.connect(lambda e: self.setSelected(e.value))
         layer.events.name.connect(self._on_layer_name_change)
         layer.events.visible.connect(self._on_visible_change)
         layer.events.thumbnail.connect(self._on_thumbnail_change)

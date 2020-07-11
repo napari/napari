@@ -268,8 +268,7 @@ class Points(Layer):
             highlight=Event,
         )
         # update highlights when the layer is selected/deselected
-        self.events.select.connect(self._set_highlight)
-        self.events.deselect.connect(self._set_highlight)
+        self.events.selection.connect(lambda e: self._set_highlight())
 
         self._colors = get_color_namelist()
 

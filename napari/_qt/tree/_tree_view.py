@@ -49,7 +49,7 @@ class QtLayerTreeView(QtNodeTreeView):
 
     def setRoot(self, root):
         self.setModel(QtLayerTreeModel(root, self))
-        root.events.selected.connect(lambda e: self._select(e.index, e.value))
+        root.events.selection.connect(lambda e: self._select(e.index, e.value))
         # initialize selection model
         for child in root.traverse():
             selected = getattr(child, 'selected', False)

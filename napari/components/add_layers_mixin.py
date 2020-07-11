@@ -48,8 +48,7 @@ class AddLayersMixin:
         layer : :class:`napari.layers.Layer` or list
             The layer that was added (same as input).
         """
-        layer.events.select.connect(self._update_active_layer)
-        layer.events.deselect.connect(self._update_active_layer)
+        layer.events.selection.connect(self._update_active_layer)
         layer.events.status.connect(self._update_status)
         layer.events.help.connect(self._update_help)
         layer.events.interactive.connect(self._update_interactive)
