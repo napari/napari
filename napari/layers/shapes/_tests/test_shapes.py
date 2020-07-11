@@ -1286,3 +1286,41 @@ def test_to_labels_3D():
     labels = layer.to_labels(labels_shape=labels_shape)
     assert np.all(labels.shape == labels_shape)
     assert np.all(np.unique(labels) == [0, 1, 2, 3])
+
+
+def test_add_single_shape_consistent_properties():
+    """Test adding a single shape ensures correct number of added properties"""
+    data = [
+        np.array([[100, 200], [200, 300]]),
+        np.array([[300, 400], [400, 500]]),
+    ]
+    properties = {'index': [1, 2]}
+    layer = Shapes(
+        np.array(data), shape_type='rectangle', properties=properties
+    )
+
+    layer.add(np.array([[500, 600], [700, 800]]))
+    assert len(layer.properties['index']) == 3
+    assert layer.properties['index'][2] == 2
+
+
+def test_add_shapes_consistent_properties():
+    """Test adding multiple shapes ensures correct number of added properties"""
+    data = [
+        np.array([[100, 200], [200, 300]]),
+        np.array([[300, 400], [400, 500]]),
+    ]
+    properties = {'index': [1, 2]}
+    layer = Shapes(
+        np.array(data), shape_type='rectangle', properties=properties
+    )
+
+    layer.add(
+        [
+            np.array([[500, 600], [700, 800]]),
+            np.array([[700, 800], [800, 900]]),
+        ]
+    )
+    assert len(layer.properties['index']) == 4
+    assert layer.properties['index'][2] == 2
+    assert layer.properties['index'][3] == 2
