@@ -33,7 +33,7 @@ from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
 
 # FIXME: figure out the underlying problem causing circular imports here.
 from .._vispy import create_vispy_visual  # isort:skip
-from .layers import QtLayerControlsContainer
+from .layers import QtLayerControlsContainer  # isort:skip
 
 
 class QtViewer(QSplitter):
