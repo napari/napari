@@ -1,13 +1,16 @@
+from collections import OrderedDict
+
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
+    QComboBox,
     QDialog,
-    QVBoxLayout,
     QHBoxLayout,
     QTextEdit,
-    QComboBox,
+    QVBoxLayout,
 )
-from collections import OrderedDict
+
 import napari
+
 from ...utils.interactions import get_key_bindings_summary
 
 

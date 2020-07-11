@@ -1,6 +1,6 @@
-from qtpy.QtWidgets import QHBoxLayout, QPushButton, QFrame, QCheckBox
-from qtpy.QtCore import Qt
 import numpy as np
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QCheckBox, QFrame, QHBoxLayout, QPushButton
 
 
 class QtLayerButtons(QFrame):

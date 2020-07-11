@@ -1,12 +1,12 @@
 from functools import partial
 
-from qtpy.QtCore import Qt, QPoint
-from qtpy.QtGui import QDoubleValidator, QFontMetrics, QFont
+from qtpy.QtCore import QPoint, Qt
+from qtpy.QtGui import QDoubleValidator, QFont, QFontMetrics
 from qtpy.QtWidgets import QHBoxLayout, QLineEdit
 
+from ..utils import qt_signals_blocked
 from .qt_modal import QtPopup
 from .qt_range_slider import QHRangeSlider, QVRangeSlider
-from ..utils import qt_signals_blocked
 
 
 class LabelEdit(QLineEdit):

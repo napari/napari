@@ -1,5 +1,5 @@
-from qtpy.QtWidgets import QScrollBar, QStyleOptionSlider, QStyle
 from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QScrollBar, QStyle, QStyleOptionSlider
 
 
 # https://stackoverflow.com/questions/29710327/how-to-override-qscrollbar-onclick-default-behaviour

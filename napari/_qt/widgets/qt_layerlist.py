@@ -1,19 +1,18 @@
-from qtpy.QtCore import Qt, QMimeData, QTimer
-from qtpy.QtGui import QImage, QPixmap
-from qtpy.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QFrame,
-    QScrollArea,
-    QApplication,
-    QLineEdit,
-    QLabel,
-    QCheckBox,
-    QHBoxLayout,
-    QSizePolicy,
-)
-from qtpy.QtGui import QDrag
 import numpy as np
+from qtpy.QtCore import QMimeData, Qt, QTimer
+from qtpy.QtGui import QDrag, QImage, QPixmap
+from qtpy.QtWidgets import (
+    QApplication,
+    QCheckBox,
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QLineEdit,
+    QScrollArea,
+    QSizePolicy,
+    QVBoxLayout,
+    QWidget,
+)
 
 
 class QtLayerList(QScrollArea):

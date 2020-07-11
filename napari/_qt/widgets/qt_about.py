@@ -1,15 +1,15 @@
 from qtpy import QtGui
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
-    QVBoxLayout,
-    QTextEdit,
     QDialog,
+    QHBoxLayout,
     QLabel,
     QPushButton,
-    QHBoxLayout,
+    QTextEdit,
+    QVBoxLayout,
 )
 
-from ...utils import sys_info, citation_text
+from ...utils import citation_text, sys_info
 
 
 class QtAbout(QDialog):

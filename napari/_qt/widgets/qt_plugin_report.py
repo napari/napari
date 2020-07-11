@@ -2,6 +2,7 @@
 """
 from typing import Optional
 
+from napari_plugin_engine import PluginManager, standard_metadata
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QGuiApplication
 from qtpy.QtWidgets import (
@@ -16,7 +17,6 @@ from qtpy.QtWidgets import (
 )
 
 from ...plugins.exceptions import format_exceptions
-from napari_plugin_engine import PluginManager, standard_metadata
 
 
 class QtPluginErrReporter(QDialog):

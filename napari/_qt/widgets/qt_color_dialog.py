@@ -2,7 +2,7 @@ import re
 from typing import Optional, Union
 
 import numpy as np
-from qtpy.QtCore import Qt, Signal, Slot, QEvent
+from qtpy.QtCore import QEvent, Qt, Signal, Slot
 from qtpy.QtGui import QColor, QKeyEvent
 from qtpy.QtWidgets import (
     QColorDialog,
@@ -13,6 +13,7 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
+from vispy.color import get_color_dict
 
 from ...layers.utils.color_transformations import ColorType
 from ...utils.colormaps.standardize_color import (
@@ -21,7 +22,6 @@ from ...utils.colormaps.standardize_color import (
     transform_color,
 )
 from .qt_modal import QtPopup
-from vispy.color import get_color_dict
 
 # matches any 3- or 4-tuple of int or float, with or without parens
 # captures the numbers into groups.

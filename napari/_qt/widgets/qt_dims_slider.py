@@ -9,20 +9,20 @@ from qtpy.QtWidgets import (
     QComboBox,
     QDoubleSpinBox,
     QFormLayout,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QPushButton,
     QWidget,
-    QFrame,
 )
 
 from ...components.dims_constants import DimsMode
 from ...utils.event import Event
 from .._constants import LoopMode
+from ..threading import _new_worker_qthread
 from .qt_modal import QtPopup
 from .qt_scrollbar import ModifiedScrollBar
-from ..threading import _new_worker_qthread
 
 
 class QtDimSliderWidget(QWidget):

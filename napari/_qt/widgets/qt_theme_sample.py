@@ -40,13 +40,12 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from ...utils.io import imsave
 
-from .qt_range_slider import QHRangeSlider
 from ...resources import get_stylesheet
+from ...utils.io import imsave
 from ...utils.theme import palettes, template
-
 from ..utils import QImg2array
+from .qt_range_slider import QHRangeSlider
 
 raw_stylesheet = get_stylesheet()
 
