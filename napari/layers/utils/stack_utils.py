@@ -56,19 +56,33 @@ def stack_to_images(
     if colormap is None:
         if n_channels == 2:
             colormap = iter(colormaps.MAGENTA_GREEN)
-        if n_channels > 2:
+        elif n_channels > 2:
             colormap = itertools.cycle(colormaps.CYMRGB)
+        else:
+            colormap = itertools.repeat('gray')
     else:
-        colormap = iter(colormap)
+        colormap = itertools.cycle(colormap)
 
     if blending not in ['additive', 'translucent', 'opaque']:
         blending = 'additive'
 
     if scale is None:
-        scale = np.delete(stack.scale, axis)
+        if stack.rgb:
+            if axis == (num_dim - 1) or axis == -1:
+                scale = stack.scale
+            else:
+                scale = np.delete(stack.scale, axis)
+        else:
+            scale = np.delete(stack.scale, axis)
 
     if translate is None:
-        translate = np.delete(stack.translate, axis)
+        if stack.rgb:
+            if axis == (num_dim - 1) or axis == -1:
+                translate = stack.translate
+            else:
+                translate = np.delete(stack.translate, axis)
+        else:
+            translate = np.delete(stack.translate, axis)
 
     if contrast_limits is None:
         contrast_limits = n_channels * [None]
@@ -76,8 +90,16 @@ def stack_to_images(
     if gamma is None:
         gamma = n_channels * [1]
 
+    if stack.rgb:
+        if axis == (num_dim - 1) or axis == -1:
+            rgb = False  # split channels as grayscale
+        else:
+            rgb = True  # split some other axis, remain rgb
+    else:
+        rgb = False
+
     kwargs = {
-        'rgb': stack.rgb,
+        'rgb': rgb,
         'blending': blending,
         'interpolation': stack.interpolation,
         'rendering': stack.rendering,
@@ -95,14 +117,10 @@ def stack_to_images(
 
     for i in range(n_channels):
         layer_name = f'{name} layer {i}'
-        try:
-            color = next(colormap)
-        except IndexError:
-            color = 'gray'
 
         kwargs['contrast_limits'] = contrast_limits[i]
         kwargs['gamma'] = gamma[i]
-        kwargs['colormap'] = color
+        kwargs['colormap'] = next(colormap)
 
         image = Image(np.take(data, i, axis=axis), name=layer_name, **kwargs)
 
@@ -115,7 +133,7 @@ def images_to_stack(
     images: List[Union[Image, Labels]],
     axis: int = 0,
     rgb: bool = None,
-    colormap: Union[str, Colormap] = None,
+    colormap: Union[str, Colormap] = 'gray',
     contrast_limits: List[int] = None,
     gamma: float = 1,
     interpolation: str = 'nearest',
