@@ -4,7 +4,7 @@ import numpy as np
 
 from .dims_constants import DimsMode
 from ..utils.event import EmitterGroup
-from ..utils.perf import perf_func
+from ..utils.perf import perf_func, perf_timer
 
 
 class Dims:
@@ -356,9 +356,13 @@ class Dims:
             Value of the point.
         """
         axis = self._assert_axis_in_bounds(axis)
-        if self.point[axis] != value:
-            self._point[axis] = value
-            self.events.axis(axis=axis, value=value)
+        with perf_timer(f"axis={axis} value={value}", axis=axis, value=value):
+            if self.point[axis] != value:
+                with perf_timer(
+                    f"set axis={axis} value={value}", axis=axis, value=value
+                ):
+                    self._point[axis] = value
+                    self.events.axis(axis=axis, value=value)
 
     def set_interval(self, axis: int, interval: Sequence[Union[int, float]]):
         """Sets the interval used for cropping and projecting this dimension.
