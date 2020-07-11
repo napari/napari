@@ -1,5 +1,6 @@
 """PerfEvent class.
 """
+import os
 import threading
 from typing import Optional
 
@@ -39,7 +40,9 @@ class PerfEvent:
         self.end_ns = end_ns
         self.category = category
         self.args = kwargs
+        self.pid = os.getpid()
         self.tid = threading.get_ident()
+        self.type = "X"  # completed event
 
     @property
     def start_us(self):
@@ -60,3 +63,9 @@ class PerfEvent:
     @property
     def duration_ms(self):
         return self.duration_ns / 1e6
+
+
+class InstantEvent(PerfEvent):
+    def __init__(self, name: str, time_ns: int, **kwargs):
+        super().__init__(name, time_ns, time_ns, **kwargs)
+        self.type = "I"  # instant event

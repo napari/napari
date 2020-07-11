@@ -1,7 +1,6 @@
 """PerfTraceFile class to write the chrome://tracing file format (JSON)
 """
 import json
-import os
 
 from ._compat import perf_counter_ns
 from ._event import PerfEvent
@@ -51,9 +50,6 @@ class PerfTraceFile:
         # So the events we write start at t=0.
         self.zero_ns = perf_counter_ns()
 
-        # Assume all events are from the same process for now.
-        self.pid = os.getpid()
-
         # Start writing the file with an open bracket, per JSON Array format.
         self.outf = open(path, "w")
         self.outf.write("[\n")
@@ -93,15 +89,25 @@ class PerfTraceFile:
         # Event type "X" denotes a completed event. Meaning we already
         # know the duration. The format wants times in micro-seconds.
         data = {
-            "pid": self.pid,
+            "pid": event.pid,
             "tid": event.tid,
             "name": event.name,
             "cat": category,
-            "ph": "X",
+            "ph": event.type,
             "ts": event.start_us,
-            "dur": event.duration_us,
             "args": event.args,
         }
+
+        if event.type == "X":
+            data["dur"] = event.duration_us
+        else:
+            assert event.type == "I"
+            # For instant events the scope "s" is one of:
+            #     "g" - global
+            #     "p" - process
+            #     "t" - thread
+            data["s"] = "p"
+
         json_str = json.dumps(data)
 
         # Write comma separated JSON objects. Note jsonlines is really a better

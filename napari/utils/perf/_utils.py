@@ -16,7 +16,12 @@ from ._timers import timers
 if USE_PERFMON:
 
     @contextlib.contextmanager
-    def perf_timer(name: str, category: Optional[str] = None, **kwargs):
+    def perf_timer(
+        name: str,
+        category: Optional[str] = None,
+        print_time: bool = False,
+        **kwargs,
+    ):
         """Time a block of code.
 
         Parameters
@@ -38,6 +43,9 @@ if USE_PERFMON:
         end_ns = perf_counter_ns()
         event = PerfEvent(name, start_ns, end_ns, **kwargs)
         timers.add_event(event)
+        if print_time:
+            ms = (end_ns - start_ns) / 1e6
+            print(f"{name} {ms}ms")
 
     def perf_func(func):
         """Decorator to time a function.
