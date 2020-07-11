@@ -254,7 +254,7 @@ QLabel#Vectors {
 
 /* ------------------------------------------------------ */
 
-QtControls {
+QtLayerControlsContainer {
     border-radius: 2px;
     padding: 0px;
     margin: 10px;
@@ -267,7 +267,7 @@ QtControls {
     margin-bottom: 4px;
 }
 
-QtControls > QFrame {
+QtLayerControlsContainer > QFrame {
   padding: 5px;
   padding-right: 8px;
   border-radius: 2px;

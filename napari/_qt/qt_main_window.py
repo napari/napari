@@ -8,13 +8,13 @@ import time
 from ..utils.io import imsave
 
 from .qt_viewer import QtViewer
-from .qt_about import QtAbout
-from .qt_plugin_report import QtPluginErrReporter
-from .qt_plugin_sorter import QtPluginSorter
-from .qt_plugin_table import QtPluginTable
-from .qt_debug_menu import DebugMenu
+from .widgets.qt_about import QtAbout
+from .widgets.qt_plugin_report import QtPluginErrReporter
+from .widgets.qt_plugin_sorter import QtPluginSorter
+from .widgets.qt_plugin_table import QtPluginTable
+from .perfmon.qt_debug_menu import DebugMenu
 
-from .qt_viewer_dock_widget import QtViewerDockWidget
+from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
 from ..resources import get_stylesheet
 from ..utils import perf
 

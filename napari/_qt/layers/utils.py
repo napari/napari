@@ -1,10 +1,10 @@
 from ...layers import Image, Labels, Points, Shapes, Surface, Vectors
-from .qt_image_layer import QtImageControls
-from .qt_points_layer import QtPointsControls
-from .qt_shapes_layer import QtShapesControls
-from .qt_labels_layer import QtLabelsControls
-from .qt_surface_layer import QtSurfaceControls
-from .qt_vectors_layer import QtVectorsControls
+from .qt_image_controls import QtImageControls
+from .qt_points_controls import QtPointsControls
+from .qt_shapes_controls import QtShapesControls
+from .qt_labels_controls import QtLabelsControls
+from .qt_surface_controls import QtSurfaceControls
+from .qt_vectors_controls import QtVectorsControls
 
 
 layer_to_controls = {
@@ -17,7 +17,7 @@ layer_to_controls = {
 }
 
 
-def create_qt_controls(layer):
+def create_qt_layer_controls(layer):
     """
     Create a qt controls widget for a layer based on its layer type.
 
