@@ -389,7 +389,7 @@ def wait_for_workers_to_quit(msecs: int = None):
         timeout is ignored (waits for the last thread to exit).
 
     Raises
-    -------
+    ------
     RuntimeError
         If a timeout is provided and workers do not quit successfully within
         the time alotted.
@@ -468,7 +468,6 @@ def create_worker(
 
     Examples
     --------
-
     .. code-block:: python
 
         def long_function(duration):
@@ -566,7 +565,6 @@ def thread_worker(
         - *send*: send a value into the generator.  (This requires that your
           decorator function uses the ``value = yield`` syntax)
 
-
     Parameters
     ----------
     func : callable
@@ -596,7 +594,6 @@ def thread_worker(
 
     Examples
     --------
-
     .. code-block:: python
 
         @thread_worker

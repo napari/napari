@@ -128,7 +128,6 @@ def register_cmap(name=None, cmap=None, data=None, lut=None):
     In the second case, the three arguments are passed to
     the :class:`~matplotlib.colors.LinearSegmentedColormap` initializer,
     and the resulting colormap is registered.
-
     """
     if name is None:
         try:

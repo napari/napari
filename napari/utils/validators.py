@@ -6,7 +6,6 @@ def validate_n_seq(n: int, dtype=None):
 
     Currently does **not** validate generators (will always validate true).
 
-
     Parameters
     ----------
     n : int
@@ -22,7 +21,6 @@ def validate_n_seq(n: int, dtype=None):
 
     Examples
     --------
-
     >>> validate = validate_N_seq(2)
     >>> validate(8)  # raises TypeError
     >>> validate([1, 2, 3])  # raises ValueError

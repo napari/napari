@@ -187,7 +187,7 @@ def get_key_bindings_summary(keymap, col='rgb(134, 142, 147)'):
         keypress combination.
 
     Returns
-    ---------
+    -------
     key_bindings_str : str
         String with summary of all key_bindings and their functions.
     """

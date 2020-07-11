@@ -75,7 +75,6 @@ def napari_get_reader(path: Union[str, List[str]]) -> Optional[ReaderFunction]:
     <napari.components.add_layers_mixin.AddLayersMixin._add_layer_from_data>`
     method, respectively.
 
-
     .. important::
 
        ``path`` may be either a ``str`` or a ``list`` of ``str``.  If a
