@@ -1,38 +1,39 @@
 from pathlib import Path
 
-from qtpy.QtCore import QCoreApplication, Qt, QSize
-from qtpy.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QFileDialog,
-    QSplitter,
-    QMessageBox,
-)
+from qtpy.QtCore import QCoreApplication, QSize, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
-from ..utils.io import imsave
-from vispy.scene import SceneCanvas, PanZoomCamera, ArcballCamera
+from qtpy.QtWidgets import (
+    QFileDialog,
+    QMessageBox,
+    QSplitter,
+    QVBoxLayout,
+    QWidget,
+)
+from vispy.scene import ArcballCamera, PanZoomCamera, SceneCanvas
 from vispy.visuals.transforms import ChainTransform
 
-from .widgets.qt_dims import QtDims
-from .widgets.qt_layerlist import QtLayerList
 from ..resources import get_stylesheet
-from ..utils.theme import template
+from ..utils import perf
 from ..utils.interactions import (
     ReadOnlyWrapper,
-    mouse_press_callbacks,
     mouse_move_callbacks,
+    mouse_press_callbacks,
     mouse_release_callbacks,
 )
+from ..utils.io import imsave
 from ..utils.key_bindings import components_to_key_combo
-from ..utils import perf
-
+from ..utils.theme import template
+from .perfmon.qt_performance import QtPerformance
 from .utils import QImg2array, square_pixmap
-from .layers.qt_layer_controls import QtLayerControlsContainer
+from .widgets.qt_about_key_bindings import QtAboutKeyBindings
+from .widgets.qt_dims import QtDims
+from .widgets.qt_layerlist import QtLayerList
 from .widgets.qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
-from .widgets.qt_about_key_bindings import QtAboutKeyBindings
-from .perfmon.qt_performance import QtPerformance
-from .._vispy import create_vispy_visual
+
+# FIXME: figure out the underlying problem causing circular imports here.
+from .._vispy import create_vispy_visual  # isort:skip
+from .layers import QtLayerControlsContainer
 
 
 class QtViewer(QSplitter):

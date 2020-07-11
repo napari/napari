@@ -11,7 +11,7 @@ import sys
 from qtpy.QtCore import QEvent
 from qtpy.QtWidgets import QApplication, QWidget
 
-from ..utils import perf
+from ...utils import perf
 
 
 def convert_app_for_timing(app: QApplication) -> QApplication:

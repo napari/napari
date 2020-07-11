@@ -1,12 +1,14 @@
 from collections.abc import Iterable
+
 import numpy as np
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QButtonGroup, QLabel, QSlider, QGridLayout
-from .qt_layer_controls_base import QtLayerControls
-from ..widgets.qt_color_dialog import QColorSwatchEdit
+from qtpy.QtWidgets import QButtonGroup, QGridLayout, QLabel, QSlider
+
 from ...layers.shapes._shapes_constants import Mode
-from ..widgets.qt_mode_buttons import QtModeRadioButton, QtModePushButton
 from ..utils import disable_with_opacity, qt_signals_blocked
+from ..widgets.qt_color_dialog import QColorSwatchEdit
+from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
+from .qt_layer_controls_base import QtLayerControls
 
 
 class QtShapesControls(QtLayerControls):

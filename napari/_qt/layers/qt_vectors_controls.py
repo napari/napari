@@ -1,10 +1,11 @@
 import numpy as np
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QLabel, QComboBox, QDoubleSpinBox
-from .qt_layer_controls_base import QtLayerControls
-from ..widgets.qt_color_dialog import QColorSwatchEdit
-from ..utils import qt_signals_blocked
+from qtpy.QtWidgets import QComboBox, QDoubleSpinBox, QLabel
+
 from ...layers.vectors._vectors_constants import ColorMode
+from ..utils import qt_signals_blocked
+from ..widgets.qt_color_dialog import QColorSwatchEdit
+from .qt_layer_controls_base import QtLayerControls
 
 
 class QtVectorsControls(QtLayerControls):

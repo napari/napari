@@ -1,1 +1,1 @@
-from .utils import create_qt_layer_controls
+from .qt_layer_controls_container import QtLayerControlsContainer
