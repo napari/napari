@@ -15,8 +15,10 @@ The ChunkLoader is a shared resource like the network or the filesystem.
 from collections import defaultdict
 from contextlib import contextmanager
 from concurrent import futures
+import ctypes
 import logging
 import os
+import time
 from typing import Dict, List, Optional, Tuple, Union
 import weakref
 
@@ -52,6 +54,8 @@ SliceTuple = Tuple[int, int, int]
 
 # ChunkCache size as a fraction of total RAM.
 CACHE_MEM_FRACTION = 0.1
+
+NUM_WORKERS = int(os.getenv("NAPARI_ASYNC_THREADS", "6"))
 
 
 def _index_to_tuple(index: Union[int, slice]) -> Union[int, SliceTuple]:
@@ -95,6 +99,17 @@ def _get_synchronous_default() -> bool:
     return synchronous_loading
 
 
+def _hold_gil(seconds: float):
+    """Hold the GIL for some number of seconds.
+    """
+    usec = seconds * 1000000
+    _libc_name = ctypes.util.find_library("c")
+    if _libc_name is None:
+        raise RuntimeError("Cannot find libc")
+    libc_py = ctypes.PyDLL(_libc_name)
+    libc_py.usleep(usec)
+
+
 class ChunkRequest:
     """A ChunkLoader request: please load this chunk.
 
@@ -122,6 +137,7 @@ class ChunkRequest:
         self.data_id = id(layer.data)
         self.indices = indices
         self.array = array
+        self.delay_seconds = 0
 
         # Slice objects are not hashable, so turn them into tuples.
         indices_tuple = tuple(_index_to_tuple(x) for x in self.indices)
@@ -136,6 +152,9 @@ def _chunk_loader_worker(request: ChunkRequest):
     This np.array() call might lead to IO or computation via dask or
     similar means which is why we are doing it in a worker thread!
     """
+    if request.delay_seconds > 0:
+        time.sleep(request.delay_seconds)
+
     with perf_timer("np.asarray"):
         request.array = np.asarray(request.array)
     return request
@@ -193,8 +212,6 @@ class SyncChunkLoader:
         This exists for compatibility with ChunkLoader but it is ignored.
     """
 
-    NUM_WORKER_THREADS = 1
-
     def __init__(self):
         self.synchronous = True  # ignored, we are always sync
         self.events = EmitterGroup(
@@ -230,15 +247,11 @@ class ChunkLoader:
         asynchronously in a worker thread.
     """
 
-    NUM_WORKER_THREADS = 6
-
     def __init__(self):
         self.synchronous = _get_synchronous_default()
 
         LOGGER.info("ChunkLoader.__init__ synchronous=%d", self.synchronous)
-        self.executor = futures.ThreadPoolExecutor(
-            max_workers=self.NUM_WORKER_THREADS
-        )
+        self.executor = futures.ProcessPoolExecutor(max_workers=NUM_WORKERS)
 
         # Maps data_id to futures for that layer.
         self.futures: Dict[int, List[futures.Future]] = defaultdict(list)
@@ -270,12 +283,21 @@ class ChunkLoader:
         ChunkRequest, optional
             The satisfied ChunkRequest or None indicating an async load.
         """
-        if self.synchronous:
+        # TODO_ASYNC: There's no point using threading for ndarray since
+        # they are already raw data in memory, right?
+        in_memory = isinstance(request.array, np.ndarray)
+
+        if self.synchronous or in_memory:
             LOGGER.info("[sync] ChunkLoader.load_chunk")
             # Load it immediately right here in the GUI thread.
             with perf_timer("np.asarray"):
                 request.array = np.asarray(request.array)
             return request
+
+        # TODO_ASYNC: if we don't do this the slider gets timers events
+        # as if it were held down too long, and the MouseRelease event
+        # gets pushed way out. Need a real fix for this.
+        request.delay_seconds = 0.1
 
         # This will be synchronous if it's a cache hit. Otherwise it will
         # initiate an asynchronous load and sometime later Layer.load_chunk
