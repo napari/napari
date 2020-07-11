@@ -221,12 +221,16 @@ class Image(IntensityVisualizationMixin, Layer):
         )
 
         # Set contrast_limits and colormaps
+        self._gamma = gamma
+        self._iso_threshold = iso_threshold
+        self._attenuation = attenuation
         if contrast_limits is None:
             self.contrast_limits_range = self._calc_data_range()
         else:
             self.contrast_limits_range = contrast_limits
         self._contrast_limits = tuple(self.contrast_limits_range)
-
+        self.colormap = colormap
+        self.contrast_limits = self._contrast_limits
         self._interpolation = {
             2: Interpolation.NEAREST,
             3: (
@@ -235,14 +239,8 @@ class Image(IntensityVisualizationMixin, Layer):
                 else Interpolation3D.LINEAR
             ),
         }
-
-        self._on_colormap_change(colormap)
-        self._on_contrast_limits_change(self._contrast_limits)
-        self._on_interpolation_change(interpolation)
-        self._on_rendering_change(rendering)
-        self._on_gamma_change(gamma)
-        self._on_iso_threshold_change(iso_threshold)
-        self._on_attenuation_change(attenuation)
+        self.interpolation = interpolation
+        self.rendering = rendering
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -297,8 +295,7 @@ class Image(IntensityVisualizationMixin, Layer):
     def data(self, data):
         self._data = data
         self._update_dims()
-        self._update_editable()
-        self.events.data(data)
+        self.events.data()
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
@@ -313,10 +310,10 @@ class Image(IntensityVisualizationMixin, Layer):
         return self._data_level
 
     @data_level.setter
-    def data_level(self, data_level):
-        if self._data_level == data_level:
+    def data_level(self, level):
+        if self._data_level == level:
             return
-        self._data_level = data_level
+        self._data_level = level
         self.refresh()
 
     @property
@@ -345,13 +342,11 @@ class Image(IntensityVisualizationMixin, Layer):
         return self._iso_threshold
 
     @iso_threshold.setter
-    def iso_threshold(self, iso_threshold):
-        self.events.iso_threshold(iso_threshold)
-
-    def _on_iso_threshold_change(self, iso_threshold):
-        self.status = format_float(iso_threshold)
-        self._iso_threshold = iso_threshold
+    def iso_threshold(self, value):
+        self.status = format_float(value)
+        self._iso_threshold = value
         self._update_thumbnail()
+        self.events.iso_threshold()
 
     @property
     def attenuation(self):
@@ -359,13 +354,11 @@ class Image(IntensityVisualizationMixin, Layer):
         return self._attenuation
 
     @attenuation.setter
-    def attenuation(self, attenuation):
-        self.events.attenuation(attenuation)
-
-    def _on_attenuation_change(self, attenuation):
-        self.status = format_float(attenuation)
-        self._attenuation = attenuation
+    def attenuation(self, value):
+        self.status = format_float(value)
+        self._attenuation = value
         self._update_thumbnail()
+        self.events.attenuation()
 
     @property
     def interpolation(self):
@@ -391,9 +384,6 @@ class Image(IntensityVisualizationMixin, Layer):
     @interpolation.setter
     def interpolation(self, interpolation):
         """Set current interpolation mode."""
-        self.events.interpolation(interpolation)
-
-    def _on_interpolation_change(self, interpolation):
         if self.dims.ndisplay == 3:
             self._interpolation[self.dims.ndisplay] = Interpolation3D(
                 interpolation
@@ -402,6 +392,7 @@ class Image(IntensityVisualizationMixin, Layer):
             self._interpolation[self.dims.ndisplay] = Interpolation(
                 interpolation
             )
+        self.events.interpolation()
 
     @property
     def rendering(self):
@@ -434,10 +425,8 @@ class Image(IntensityVisualizationMixin, Layer):
     @rendering.setter
     def rendering(self, rendering):
         """Set current rendering mode."""
-        self.events.rendering(rendering)
-
-    def _on_rendering_change(self, rendering):
         self._rendering = Rendering(rendering)
+        self.events.rendering()
 
     def _get_state(self):
         """Get dictionary of layer state.

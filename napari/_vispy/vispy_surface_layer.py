@@ -24,9 +24,9 @@ class VispySurfaceLayer(VispyBaseLayer):
         self.layer.events.gamma.connect(self._on_gamma_change)
 
         self.reset()
-        self._on_slice_data_change()
+        self._on_data_change()
 
-    def _on_slice_data_change(self, event=None):
+    def _on_data_change(self, event=None):
         if len(self.layer._data_view) == 0 or len(self.layer._view_faces) == 0:
             vertices = None
             faces = None
