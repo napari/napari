@@ -683,6 +683,7 @@ class Labels(Image):
         if refresh is True:
             self._save_history()
         brush_shape = "square"
+        brush_shape = "circle"
         brush_size_dims = [self.brush_size] * self.ndim
         if not self.n_dimensional and self.ndim > 2:
             for i in self.dims.not_displayed:
@@ -701,6 +702,34 @@ class Labels(Image):
                 )
                 for c, s, brush_size in zip(coord, self.shape, brush_size_dims)
             )
+        elif brush_shape == "circle":
+            slice_coord = [np.round(c) for c in coord]
+            if not self.n_dimensional and self.ndim > 2:
+                displayed_coord = [coord[i] for i in self.dims.displayed]
+                coord = displayed_coord
+
+            r = np.ceil(self.brush_size / 2)
+            sliced_index = [
+                slice(np.round(c) - r, np.round(c) + r) for c in coord
+            ]
+            sliced_dist = [slice(-r, r) for c in coord]
+
+            indices = np.mgrid[sliced_index].T.reshape(-1, len(coord))
+            distances = np.mgrid[sliced_dist].T.reshape(-1, len(coord))
+
+            distances = distances ** 2
+            distances = np.sqrt(np.sum(distances, axis=1))
+
+            mask_indices = indices[distances <= r].astype(int)
+
+            slice_coord_temp = [m for m in mask_indices.T]
+            if not self.n_dimensional and self.ndim > 2:
+                for j, i in enumerate(self.dims.displayed):
+                    slice_coord[i] = slice_coord_temp[j]
+            else:
+                slice_coord = slice_coord_temp
+
+            slice_coord = tuple(slice_coord)
 
         # update the labels image
 
