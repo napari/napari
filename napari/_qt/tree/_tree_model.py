@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import pickle
 from typing import Any, List, Tuple, Union, cast
 
@@ -7,6 +8,9 @@ from qtpy.QtCore import QAbstractItemModel, QMimeData, QModelIndex, Qt
 from qtpy.QtWidgets import QWidget
 from ...utils.tree import Group, Node
 from ...layers import Layer, LayerGroup
+
+
+logger = logging.getLogger(__name__)
 
 
 # TODO: cleanup stuff related to MIME formats and convenience methods
@@ -25,6 +29,9 @@ class NodeMimeData(QMimeData):
 
     def node_indices(self) -> List[Tuple[int, ...]]:
         return [node.index_from_root() for node in self.nodes]
+
+    def node_names(self) -> List[str]:
+        return [node.name for node in self.nodes]
 
 
 # https://doc.qt.io/qt-5/model-view-programming.html#model-subclassing-reference
@@ -74,6 +81,9 @@ class QtNodeTreeModel(QAbstractItemModel):
         dest_idx = dest_idx + (destRow,)
 
         moving_indices = data.node_indices()
+
+        logger.debug(f"dropMimeData: indices {moving_indices} ➡ {dest_idx}")
+
         if len(moving_indices) == 1:
             self._root.move(moving_indices[0], dest_idx)
         else:
@@ -119,7 +129,10 @@ class QtNodeTreeModel(QAbstractItemModel):
         if not indices:
             return 0
 
-        return NodeMimeData([self.getItem(i) for i in indices])
+        data = NodeMimeData([self.getItem(i) for i in indices])
+        logger.debug(f"\n")
+        logger.debug(f"dragging: {data.node_indices()} ({data.node_names()})")
+        return data
 
     def mimeTypes(self):
         return ['application/x-tree-node', 'text/plain']
@@ -195,6 +208,11 @@ class QtNodeTreeModel(QAbstractItemModel):
     def _on_begin_moving(self, event):
         src_par, src_idx = self._split_nested_index(event.index)
         dest_par, dest_idx = self._split_nested_index(event.new_index)
+        logger.debug(
+            f"beginMoveRows({self.getItem(src_par).name}, {src_idx}, "
+            f"{self.getItem(dest_par).name}, {dest_idx})"
+        )
+
         self.beginMoveRows(src_par, src_idx, src_idx, dest_par, dest_idx)
 
     def _split_nested_index(

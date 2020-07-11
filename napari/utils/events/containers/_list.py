@@ -23,6 +23,7 @@ cover this in test_evented_list.py)
 
 from __future__ import annotations
 
+import logging
 from collections import defaultdict
 from typing import (
     DefaultDict,
@@ -39,12 +40,13 @@ from typing import (
 
 from napari.utils.events import EmitterGroup, Event
 
+logger = logging.getLogger(__name__)
 T = TypeVar('T')
 Index = Union[int, slice]
 NestedIndex = Tuple[Index, ...]
 
 
-def ensure_tuple_index(index: Union[NestedIndex, int, slice]) -> NestedIndex:
+def ensure_tuple_index(index: Union[NestedIndex, Index]) -> NestedIndex:
     if isinstance(index, (slice, int)):
         return (index,)  # single integer inserts to self
     elif isinstance(index, tuple):
@@ -52,7 +54,9 @@ def ensure_tuple_index(index: Union[NestedIndex, int, slice]) -> NestedIndex:
     raise TypeError(f"Invalid nested index: {index}. Must be an int or tuple")
 
 
-def split_nested_index(index: NestedIndex) -> Tuple[NestedIndex, Index]:
+def split_nested_index(
+    index: Union[NestedIndex, Index]
+) -> Tuple[NestedIndex, Index]:
     """Given a nested index, return (nested_parent_index, row)."""
     index = ensure_tuple_index(index)
     if index:
@@ -356,18 +360,31 @@ class NestableEventedList(EventedList[T]):
             for emitter in child.events.emitters.values():  # type: ignore
                 emitter.connect(self._reemit_nested_event)
 
+    def _non_negative_index(
+        self, parent_index: NestedIndex, dest_index: Index
+    ) -> Index:
+        destination_group = cast(NestableEventedList, self[parent_index])
+        if isinstance(dest_index, int):
+            if dest_index < 0:
+                dest_index += len(destination_group) + 1
+            else:
+                # TODO: Necessary?
+                dest_index = min(dest_index, len(destination_group))
+        return dest_index
+
     def move_multiple(
         self, sources: Sequence[NestedIndex], dest_index: NestedIndex,
     ) -> int:
         """Move a batch of nested indices, to a single destination."""
+        logger.debug(
+            f"move_multiple(sources={sources}, dest_index={dest_index})"
+        )
         dest_par, dest_i = split_nested_index(dest_index)
         if isinstance(dest_i, slice):
             raise ValueError("Destination index may not be a slice")
-        destination_group = cast(NestableEventedList, self[dest_par])
-        if dest_i < 0:
-            dest_i += len(destination_group) + 1
-        else:
-            dest_i = min(dest_i, len(destination_group))
+        dest_i = self._non_negative_index(dest_par, dest_i)
+        dest_i = cast(int, dest_i)
+        logger.debug(f"destination: {dest_par}[{dest_i}]")
 
         self.events.reordered.block()
         moved = 0
@@ -377,6 +394,7 @@ class NestableEventedList(EventedList[T]):
         # we have previously popped
         popped: DefaultDict[NestedIndex, List[int]] = defaultdict(list)
         # we iterate indices from the end first, so pop() always works
+
         for i, idx in enumerate(sorted(sources, reverse=True)):
             if idx == ():
                 raise IndexError("Group cannot move itself")
@@ -384,6 +402,7 @@ class NestableEventedList(EventedList[T]):
 
             if isinstance(src_i, slice):
                 raise ValueError("Terminal source index may not be a slice")
+            src_i = cast(int, src_i)
 
             if src_i < 0:
                 src_i += len(cast(NestableEventedList, self[src_par]))
@@ -423,13 +442,18 @@ class NestableEventedList(EventedList[T]):
         cur_index: Union[int, NestedIndex],
         new_index: Union[int, NestedIndex],
     ) -> bool:
+        logger.debug(f"move(cur_index={cur_index}, new_index={new_index})")
         src_par_i, src_i = split_nested_index(cur_index)
         dest_par_i, dest_i = split_nested_index(new_index)
+        dest_i = self._non_negative_index(dest_par_i, dest_i)
+        new_index = dest_par_i + (dest_i,)
+
         if src_par_i == dest_par_i:
-            if dest_i > src_i:
-                dest_i -= 1
-            if src_i == dest_i:
-                return False
+            if isinstance(dest_i, int):
+                if dest_i > src_i:  # type: ignore
+                    dest_i -= 1
+                if src_i == dest_i:
+                    return False
 
         self.events.moving(index=cur_index, new_index=new_index)
 
@@ -438,6 +462,10 @@ class NestableEventedList(EventedList[T]):
             getattr(self.events, event_name).block()
 
         dest_par = self[dest_par_i]
+        logger.debug(
+            f"moving {self[src_par_i].name}[{src_i}] "
+            f"to {dest_par.name}[{dest_i}]"
+        )
         value = self[src_par_i].pop(src_i)  # type: ignore
         dest_par.insert(dest_i, value)  # type: ignore
 

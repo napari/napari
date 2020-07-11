@@ -45,14 +45,7 @@ class VispyBaseLayer(ABC):
     def __init__(self, layer, node):
         super().__init__()
 
-        # When the EVH refactor #1376 is done we might not even need the layer
-        # attribute anymore as all data updates will be through the handler.
-        # At that point we could remove the attribute and do the registering
-        # outside this class and never even need to pass the layer to this
-        # class.
         self.layer = layer
-        self.layer.event_handler.register_listener(self)
-
         self.node = node
 
         MAX_TEXTURE_SIZE_2D, MAX_TEXTURE_SIZE_3D = get_max_texture_sizes()
@@ -60,6 +53,14 @@ class VispyBaseLayer(ABC):
         self.MAX_TEXTURE_SIZE_3D = MAX_TEXTURE_SIZE_3D
 
         self._position = (0,) * self.layer.dims.ndisplay
+
+        self.layer.events.refresh.connect(lambda e: self.node.update())
+        self.layer.events.set_data.connect(self._on_data_change)
+        self.layer.events.visible.connect(self._on_visible_change)
+        self.layer.events.opacity.connect(self._on_opacity_change)
+        self.layer.events.blending.connect(self._on_blending_change)
+        self.layer.events.scale.connect(self._on_scale_change)
+        self.layer.events.translate.connect(self._on_translate_change)
 
     @property
     def _master_transform(self):
@@ -133,40 +134,17 @@ class VispyBaseLayer(ABC):
             return 1
 
     @abstractmethod
-    def _on_slice_data_change(self, event=None):
+    def _on_data_change(self, event=None):
         raise NotImplementedError()
 
-    def _on_visible_change(self, visible):
-        """Receive layer model visibiliy and update the visual.
+    def _on_visible_change(self, event=None):
+        self.node.visible = self.layer.visible
 
-        Parameters
-        ----------
-        visible : bool
-            Layer visibility
-        """
-        self.node.visible = visible
+    def _on_opacity_change(self, event=None):
+        self.node.opacity = self.layer.opacity
 
-    def _on_opacity_change(self, opacity):
-        """Receive layer model opacity and update the visual.
-
-        Parameters
-        ----------
-        opacity : float
-            Layer opacity between 0 and 1.
-        """
-        self.node.opacity = opacity
-
-    def _on_blending_change(self, blending):
-        """Receive layer model blending mode and update the visual.
-
-        Parameters
-        ----------
-        blending : str
-           Blending mode used by VisPy. Must be one of our supported
-           modes:
-           'translucent', 'additive', 'opaque'
-        """
-        self.node.set_gl_state(blending)
+    def _on_blending_change(self, event=None):
+        self.node.set_gl_state(self.layer.blending)
         self.node.update()
 
     def _on_scale_change(self, event=None):
@@ -210,9 +188,9 @@ class VispyBaseLayer(ABC):
             return (0,) * nd
 
     def _reset_base(self):
-        self._on_visible_change(self.layer.visible)
-        self._on_opacity_change(self.layer.opacity)
-        self._on_blending_change(self.layer.blending)
+        self._on_visible_change()
+        self._on_opacity_change()
+        self._on_blending_change()
         self._on_scale_change()
         self._on_translate_change()
 

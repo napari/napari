@@ -1,7 +1,16 @@
 from napari import gui_qt
 from napari._qt.tree._tree_view import QtNodeTreeView
 from napari.utils.tree import Node, Group
+import logging
 
+end = "\033[0m"
+Bold = "\033[1m"
+Dim = "\033[2m"
+ResetDim = "\033[22m"
+red = "\033[0;31m"
+green = "\033[0;32m"
+colorlog_format = f'{green}%(levelname)9s:{end} {Dim}%(name)36s.{ResetDim}{red}%(funcName)-18s{end}{"%(message)s"}'
+logging.basicConfig(level=logging.DEBUG, format=colorlog_format)
 
 with gui_qt():
     tip = Node(name='tip')

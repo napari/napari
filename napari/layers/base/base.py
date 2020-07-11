@@ -1,15 +1,15 @@
 import warnings
 from abc import ABC, abstractmethod
 from contextlib import contextmanager
-from copy import copy
-from functools import reduce
 from typing import List, Optional
+from functools import reduce
+
 
 import numpy as np
 
 from ...components import Dims
 from ...utils.dask_utils import configure_dask
-from ...utils.events import EmitterGroup, Event, EventHandler
+from ...utils.events import EmitterGroup, Event
 from ...utils.key_bindings import KeymapProvider
 from ...utils.misc import ROOT_DIR
 from ...utils.naming import magic_name
@@ -191,32 +191,25 @@ class Layer(KeymapProvider, Node, ABC):
         self._position = (0,) * self.dims.ndisplay
         self.corner_pixels = np.zeros((2, ndim), dtype=int)
         self._editable = True
-        self._editable_history = True
 
         self._thumbnail_shape = (32, 32, 4)
         self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         self._update_properties = True
-
-        if not name:
-            self._name = self._basename()
-        else:
-            self._name = name
-
-        self.event_handler = EventHandler(component=self)
-
+        self._name = ''
         self.events = EmitterGroup(
             source=self,
-            auto_connect=False,
-            slice_data=Event,
+            auto_connect=True,
+            refresh=Event,
+            set_data=Event,
             blending=Event,
             opacity=Event,
             visible=Event,
-            selected=Event,
+            select=Event,
+            deselect=Event,
             scale=Event,
             translate=Event,
             data=Event,
             name=Event,
-            name_unique=Event,
             thumbnail=Event,
             status=Event,
             help=Event,
@@ -225,9 +218,10 @@ class Layer(KeymapProvider, Node, ABC):
             cursor_size=Event,
             editable=Event,
         )
-        self.events.connect(self.event_handler.on_change)
+        self.name = name
 
-        self.dims.events.ndisplay.connect(lambda e: self._update_editable())
+        self.events.data.connect(lambda e: self._set_editable())
+        self.dims.events.ndisplay.connect(lambda e: self._set_editable())
         self.dims.events.order.connect(self.refresh)
         self.dims.events.ndisplay.connect(self._update_dims)
         self.dims.events.order.connect(self._update_dims)
@@ -263,20 +257,12 @@ class Layer(KeymapProvider, Node, ABC):
 
     @name.setter
     def name(self, name):
-        if self.name == name:
+        if name == self.name:
             return
-        # When the layer is used in the layer list the name must be unique.
-        # Emitting the name_unique event first allows the layer list to check
-        # if the name is unique and change it if necessary.
-        old_name = copy(self.name)
-        self.events.name_unique((old_name, name))
-        # If the name is unchanged that means no name_unique listener was
-        # present and so emit a normal name change event
-        if self.name == old_name:
-            self.events.name(name)
-
-    def _on_name_change(self, name):
+        if not name:
+            name = self._basename()
         self._name = name
+        self.events.name()
 
     @property
     def opacity(self) -> float:
@@ -286,17 +272,15 @@ class Layer(KeymapProvider, Node, ABC):
 
     @opacity.setter
     def opacity(self, opacity):
-        self.events.opacity(opacity)
-
-    def _on_opacity_change(self, opacity):
         if not 0.0 <= opacity <= 1.0:
             raise ValueError(
-                f'Opacity must be between 0.0 and 1.0; got {opacity}.'
+                'opacity must be between 0.0 and 1.0; ' f'got {opacity}'
             )
 
         self._opacity = opacity
         self._update_thumbnail()
         self.status = format_float(self.opacity)
+        self.events.opacity()
 
     @property
     def effective_opacity(self) -> float:
@@ -329,10 +313,8 @@ class Layer(KeymapProvider, Node, ABC):
 
     @blending.setter
     def blending(self, blending):
-        self.events.blending(blending)
-
-    def _on_blending_change(self, blending):
         self._blending = Blending(blending)
+        self.events.blending()
 
     @property
     def visible(self) -> bool:
@@ -340,14 +322,12 @@ class Layer(KeymapProvider, Node, ABC):
         return self._visible
 
     @visible.setter
-    def visible(self, visible):
-        self.events.visible(visible)
-
-    def _on_visible_change(self, visible):
-        self._visible = visible
+    def visible(self, visibility):
+        self._visible = visibility
         self.refresh()
+        self.events.visible()
         if self.visible:
-            self._update_editable()
+            self.editable = self._set_editable()
         else:
             self.editable = False
 
@@ -367,13 +347,11 @@ class Layer(KeymapProvider, Node, ABC):
 
     @editable.setter
     def editable(self, editable):
-        self.events.editable(editable)
-
-    def _on_editable_change(self, editable):
+        if self._editable == editable:
+            return
         self._editable = editable
-
-    def _update_editable(self):
-        self.editable = self._is_editable
+        self._set_editable(editable=editable)
+        self.events.editable()
 
     @property
     def scale(self):
@@ -382,11 +360,9 @@ class Layer(KeymapProvider, Node, ABC):
 
     @scale.setter
     def scale(self, scale):
-        self.events.scale(np.array(scale))
-
-    def _on_scale_change(self, scale):
-        self._transforms['data2world'].scale = scale
+        self._transforms['data2world'].scale = np.array(scale)
         self._update_dims()
+        self.events.scale()
 
     @property
     def translate(self):
@@ -395,11 +371,9 @@ class Layer(KeymapProvider, Node, ABC):
 
     @translate.setter
     def translate(self, translate):
-        self.events.translate(np.array(translate))
-
-    def _on_translate_change(self, translate):
         self._transforms['data2world'].translate = np.array(translate)
         self._update_dims()
+        self.events.translate()
 
     @property
     def translate_grid(self):
@@ -410,10 +384,8 @@ class Layer(KeymapProvider, Node, ABC):
     def translate_grid(self, translate_grid):
         if np.all(self.translate_grid == translate_grid):
             return
-        self.events.translate(np.array(translate_grid))
-
-    def _on_translate_grid_change(self, translate_grid):
-        self._transforms['world2grid'].translate = translate_grid
+        self._transforms['world2grid'].translate = np.array(translate_grid)
+        self.events.translate()
 
     @property
     def position(self):
@@ -467,7 +439,7 @@ class Layer(KeymapProvider, Node, ABC):
 
     @data.setter
     @abstractmethod
-    def data(self, value):
+    def data(self, data):
         raise NotImplementedError()
 
     @abstractmethod
@@ -478,10 +450,9 @@ class Layer(KeymapProvider, Node, ABC):
     def _get_ndim(self):
         raise NotImplementedError()
 
-    @property
-    def _is_editable(self):
-        """Determine if editable based on layer properties."""
-        return not self.dims.ndisplay == 3
+    def _set_editable(self, editable=None):
+        if editable is None:
+            self.editable = True
 
     def _get_range(self):
         extent = self._get_extent()
@@ -547,10 +518,8 @@ class Layer(KeymapProvider, Node, ABC):
         f_source = 1 - f_dest
         thumbnail = thumbnail * f_dest + background * f_source
 
-        self.events.thumbnail(thumbnail.astype(np.uint8))
-
-    def _on_thumbnail_change(self, thumbnail):
-        self._thumbnail = thumbnail
+        self._thumbnail = thumbnail.astype(np.uint8)
+        self.events.thumbnail()
 
     @property
     def ndim(self):
@@ -571,12 +540,14 @@ class Layer(KeymapProvider, Node, ABC):
 
     @selected.setter
     def selected(self, selected):
-        self.events.selected(selected)
-
-    def _on_selected_change(self, selected):
         if selected == self.selected:
             return
         self._selected = selected
+
+        if selected:
+            self.events.select()
+        else:
+            self.events.deselect()
 
     @property
     def status(self):
@@ -585,9 +556,9 @@ class Layer(KeymapProvider, Node, ABC):
 
     @status.setter
     def status(self, status):
-        self.events.status(status)
-
-    def _on_status_change(self, status):
+        if status == self.status:
+            return
+        self.events.status(status=status)
         self._status = status
 
     @property
@@ -597,9 +568,9 @@ class Layer(KeymapProvider, Node, ABC):
 
     @help.setter
     def help(self, help):
-        self.events.help(help)
-
-    def _on_help_change(self, help):
+        if help == self.help:
+            return
+        self.events.help(help=help)
         self._help = help
 
     @property
@@ -609,9 +580,9 @@ class Layer(KeymapProvider, Node, ABC):
 
     @interactive.setter
     def interactive(self, interactive):
-        self.events.interactive(interactive)
-
-    def _on_interactive_change(self, interactive):
+        if interactive == self.interactive:
+            return
+        self.events.interactive(interactive=interactive)
         self._interactive = interactive
 
     @property
@@ -621,9 +592,9 @@ class Layer(KeymapProvider, Node, ABC):
 
     @cursor.setter
     def cursor(self, cursor):
-        self.events.cursor(cursor)
-
-    def _on_cursor_change(self, cursor):
+        if cursor == self.cursor:
+            return
+        self.events.cursor(cursor=cursor)
         self._cursor = cursor
 
     @property
@@ -633,9 +604,9 @@ class Layer(KeymapProvider, Node, ABC):
 
     @cursor_size.setter
     def cursor_size(self, cursor_size):
-        self.events.cursor_size(cursor_size)
-
-    def _on_cursor_size_change(self, cursor_size):
+        if cursor_size == self.cursor_size:
+            return
+        self.events.cursor_size(cursor_size=cursor_size)
         self._cursor_size = cursor_size
 
     def set_view_slice(self):
@@ -688,7 +659,7 @@ class Layer(KeymapProvider, Node, ABC):
         """
         if self.visible:
             self.set_view_slice()
-            self.events.slice_data(None)
+            self.events.set_data()
             self._update_thumbnail()
             self._update_coordinates()
             self._set_highlight(force=True)

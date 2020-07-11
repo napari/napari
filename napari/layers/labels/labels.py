@@ -214,7 +214,7 @@ class Labels(Image):
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
-        self._update_editable()
+        self._set_editable()
 
         self.dims.events.ndisplay.connect(self._reset_history)
         self.dims.events.order.connect(self._reset_history)
@@ -511,16 +511,17 @@ class Labels(Image):
         self._preserve_labels = preserve_labels
         self.events.preserve_labels(preserve_labels=preserve_labels)
 
-    @property
-    def _is_editable(self):
-        """Determine if editable based on layer properties."""
-        return not (self.multiscale or self.dims.ndisplay == 3)
+    def _set_editable(self, editable=None):
+        """Set editable mode based on layer properties."""
+        if editable is None:
+            if self.multiscale or self.dims.ndisplay == 3:
+                self.editable = False
+            else:
+                self.editable = True
 
-    def _on_editable_change(self, value):
-        if not value:
+        if not self.editable:
             self.mode = Mode.PAN_ZOOM
             self._reset_history()
-        self._editable = value
 
     def _raw_to_displayed(self, raw):
         """Determine displayed image from a saved raw image and a saved seed.

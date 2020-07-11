@@ -1,7 +1,7 @@
 import numpy as np
 
-from ..utils.colormaps import ensure_colormap_tuple
-from ..utils.events import Event
+from ..utils.colormaps import ensure_colormap_tuple, make_colorbar
+from ..utils.event import Event
 from ..utils.status_messages import format_float
 from ..utils.validators import validate_n_seq
 
@@ -21,12 +21,7 @@ class IntensityVisualizationMixin:
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
 
-        self.events.add(
-            contrast_limits=Event,
-            contrast_limits_range=Event,
-            gamma=Event,
-            colormap=Event,
-        )
+        self.events.add(contrast_limits=Event, gamma=Event, colormap=Event)
         self._gamma = 1
         self._colormap_name = ''
         self._contrast_limits_msg = ''
@@ -56,13 +51,12 @@ class IntensityVisualizationMixin:
 
     @colormap.setter
     def colormap(self, colormap):
-        self.events.colormap(colormap)
-
-    def _on_colormap_change(self, colormap):
         name, cmap = ensure_colormap_tuple(colormap)
         self._colormap_name = name
         self._cmap = cmap
+        self._colorbar = make_colorbar(self._cmap)
         self._update_thumbnail()
+        self.events.colormap()
 
     @property
     def colormaps(self):
@@ -76,28 +70,21 @@ class IntensityVisualizationMixin:
 
     @contrast_limits.setter
     def contrast_limits(self, contrast_limits):
-        self.events.contrast_limits(contrast_limits)
-
-    def _on_contrast_limits_change(self, value):
-        """Set the contrast limits.
-
-        Parameters
-        ----------
-        value : tuple
-            Contrast limits, (min, max).
-        """
-        # validate_2_tuple(value)
-        current_range = self.contrast_limits
-        if list(value) == current_range:
-            return
-        self._contrast_limits = value
-        self.status = format_float(value[0]) + ', ' + format_float(value[1])
+        validate_2_tuple(contrast_limits)
+        self._contrast_limits_msg = (
+            format_float(contrast_limits[0])
+            + ', '
+            + format_float(contrast_limits[1])
+        )
+        self.status = self._contrast_limits_msg
+        self._contrast_limits = contrast_limits
         # make sure range slider is big enough to fit range
         newrange = list(self.contrast_limits_range)
-        newrange[0] = min(newrange[0], value[0])
-        newrange[1] = max(newrange[1], value[1])
+        newrange[0] = min(newrange[0], contrast_limits[0])
+        newrange[1] = max(newrange[1], contrast_limits[1])
         self.contrast_limits_range = newrange
         self._update_thumbnail()
+        self.events.contrast_limits()
 
     @property
     def contrast_limits_range(self):
@@ -105,23 +92,14 @@ class IntensityVisualizationMixin:
         return list(self._contrast_limits_range)
 
     @contrast_limits_range.setter
-    def contrast_limits_range(self, contrast_limits_range):
-        self.events.contrast_limits_range(contrast_limits_range)
-
-    def _on_contrast_limits_range_change(self, value):
-        """Set the valid range of the contrast limits.
-
-        Parameters
-        ----------
-        value : tuple
-            Valid range of contrast limits, (min, max).
-        """
-        # validate_2_tuple(value)
-        current_range = self.contrast_limits_range
-        if list(value) == current_range:
+    def contrast_limits_range(self, value):
+        """Set the valid range of the contrast limits"""
+        validate_2_tuple(value)
+        if list(value) == self.contrast_limits_range:
             return
 
         # if either value is "None", it just preserves the current range
+        current_range = self.contrast_limits_range
         value = list(value)  # make sure it is mutable
         for i in range(2):
             value[i] = current_range[i] if value[i] is None else value[i]
@@ -135,6 +113,7 @@ class IntensityVisualizationMixin:
             new_min = min(max(value[0], cur_min), value[1])
             new_max = max(min(value[1], cur_max), value[0])
             self.contrast_limits = (new_min, new_max)
+            self.events.contrast_limits()
 
     @property
     def gamma(self):
@@ -142,9 +121,7 @@ class IntensityVisualizationMixin:
 
     @gamma.setter
     def gamma(self, value):
-        self.events.gamma(value)
-
-    def _on_gamma_change(self, value):
         self.status = format_float(value)
         self._gamma = value
         self._update_thumbnail()
+        self.events.gamma()

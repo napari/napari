@@ -243,8 +243,7 @@ class Vectors(Layer):
         self._displayed_stored = copy(self.dims.displayed)
 
         self._update_dims()
-        self._update_editable()
-        self.events.data(self.data)
+        self.events.data()
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:

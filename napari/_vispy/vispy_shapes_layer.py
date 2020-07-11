@@ -15,16 +15,16 @@ class VispyShapesLayer(VispyBaseLayer):
 
         super().__init__(layer, node)
 
-        self.layer.events.edge_width.connect(self._on_slice_data_change)
-        self.layer.events.edge_color.connect(self._on_slice_data_change)
-        self.layer.events.face_color.connect(self._on_slice_data_change)
+        self.layer.events.edge_width.connect(self._on_data_change)
+        self.layer.events.edge_color.connect(self._on_data_change)
+        self.layer.events.face_color.connect(self._on_data_change)
         self.layer.events.highlight.connect(self._on_highlight_change)
 
         self._reset_base()
-        self._on_slice_data_change()
+        self._on_data_change()
         self._on_highlight_change()
 
-    def _on_slice_data_change(self, event=None):
+    def _on_data_change(self, event=None):
         faces = self.layer._data_view._mesh.displayed_triangles
         colors = self.layer._data_view._mesh.displayed_triangles_colors
         vertices = self.layer._data_view._mesh.vertices
