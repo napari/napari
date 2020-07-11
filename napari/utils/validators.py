@@ -20,13 +20,13 @@ def validate_n_seq(n: int, dtype=None):
         Function that can be called on an object to validate that is a sequence
         of len `n` and (optionally) each item in the sequence has type `dtype`
 
-    Example
-    -------
+    Examples
+    --------
 
-    validate = validate_N_seq(2)
-    validate(8)  # raises TypeError
-    validate([1, 2, 3])  # raises ValueError
-    validate([4, 5])  # just fine, thank you very much
+    >>> validate = validate_N_seq(2)
+    >>> validate(8)  # raises TypeError
+    >>> validate([1, 2, 3])  # raises ValueError
+    >>> validate([4, 5])  # just fine, thank you very much
     """
 
     def func(obj):
