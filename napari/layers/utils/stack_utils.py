@@ -164,6 +164,14 @@ def images_to_stack(
         Combined image stack
     """
 
+    print(scale, translate)
+    print(type(images[0].scale), type(images[0].translate))
+    if scale is None:
+        scale = np.insert(images[0].scale, axis, 1)
+    if translate is None:
+        translate = np.insert(images[0].translate, axis, 0)
+
+    print(scale, translate)
     kwargs = {
         'rgb': rgb,
         'colormap': colormap,
@@ -182,6 +190,7 @@ def images_to_stack(
         'visible': visible,
         'multiscale': multiscale,
     }
+
     new_list = [image.data for image in images]
     new_data = np.stack(new_list, axis=axis)
     stack = Image(new_data, **kwargs)
