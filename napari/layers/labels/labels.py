@@ -682,45 +682,25 @@ class Labels(Image):
         """
         if refresh is True:
             self._save_history()
+        brush_shape = "square"
+        brush_size_dims = [self.brush_size] * self.ndim
+        if not self.n_dimensional and self.ndim > 2:
+            for i in self.dims.not_displayed:
+                brush_size_dims[i] = 1
 
-        if self.n_dimensional or self.ndim == 2:
+        if brush_shape == "square":
             slice_coord = tuple(
-                [
-                    slice(
-                        np.round(
-                            np.clip(c - self.brush_size / 2 + 0.5, 0, s)
-                        ).astype(int),
-                        np.round(
-                            np.clip(c + self.brush_size / 2 + 0.5, 0, s)
-                        ).astype(int),
-                        1,
-                    )
-                    for c, s in zip(coord, self.shape)
-                ]
-            )
-        else:
-            slice_coord = [0] * self.ndim
-            for i in self.dims.displayed:
-                slice_coord[i] = slice(
-                    np.round(
-                        np.clip(
-                            coord[i] - self.brush_size / 2 + 0.5,
-                            0,
-                            self.shape[i],
-                        )
-                    ).astype(int),
-                    np.round(
-                        np.clip(
-                            coord[i] + self.brush_size / 2 + 0.5,
-                            0,
-                            self.shape[i],
-                        )
-                    ).astype(int),
+                slice(
+                    np.round(np.clip(c - brush_size / 2 + 0.5, 0, s)).astype(
+                        int
+                    ),
+                    np.round(np.clip(c + brush_size / 2 + 0.5, 0, s)).astype(
+                        int
+                    ),
                     1,
                 )
-            for i in self.dims.not_displayed:
-                slice_coord[i] = np.round(coord[i]).astype(int)
-            slice_coord = tuple(slice_coord)
+                for c, s, brush_size in zip(coord, self.shape, brush_size_dims)
+            )
 
         # update the labels image
 
