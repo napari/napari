@@ -128,11 +128,7 @@ class QtNodeTreeModel(QAbstractItemModel):
         """
         if not indices:
             return 0
-
-        data = NodeMimeData([self.getItem(i) for i in indices])
-        logger.debug(f"\n")
-        logger.debug(f"dragging: {data.node_indices()} ({data.node_names()})")
-        return data
+        return NodeMimeData([self.getItem(i) for i in indices])
 
     def mimeTypes(self):
         return ['application/x-tree-node', 'text/plain']
@@ -158,11 +154,20 @@ class QtNodeTreeModel(QAbstractItemModel):
     def setRoot(self, root: Group):
         self._root = root
         self._root.events.removing.connect(self._on_begin_removing)
-        self._root.events.removed.connect(lambda x: self.endRemoveRows())
+        self._root.events.removed.connect(self._on_end_remove)
         self._root.events.inserting.connect(self._on_begin_inserting)
-        self._root.events.inserted.connect(lambda x: self.endInsertRows())
+        self._root.events.inserted.connect(self._on_end_insert)
         self._root.events.moving.connect(self._on_begin_moving)
-        self._root.events.moved.connect(lambda x: self.endMoveRows())
+        self._root.events.moved.connect(self._on_end_move)
+
+    def _on_end_remove(self, e):
+        self.endRemoveRows()
+
+    def _on_end_insert(self, e):
+        self.endInsertRows()
+
+    def _on_end_move(self, e):
+        self.endMoveRows()
 
     def getItem(self, index: QModelIndex) -> Node:
         if index.isValid():
@@ -242,8 +247,8 @@ class QtLayerTreeModel(QtNodeTreeModel):
         item = self.getItem(index)
         if role == Qt.DisplayRole:
             return item.name
-        # if role == Qt.CheckStateRole:
-        #     return item.visible
+        if role == Qt.CheckStateRole:
+            return item.visible
         if role == Qt.UserRole:
             return self.getItem(index)
         return None

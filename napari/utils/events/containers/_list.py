@@ -446,6 +446,7 @@ class NestableEventedList(EventedList[T]):
         src_par_i, src_i = split_nested_index(cur_index)
         dest_par_i, dest_i = split_nested_index(new_index)
         dest_i = self._non_negative_index(dest_par_i, dest_i)
+        new_index = dest_par_i + (dest_i,)
 
         if src_par_i == dest_par_i:
             if isinstance(dest_i, int):
@@ -454,8 +455,6 @@ class NestableEventedList(EventedList[T]):
                 if src_i == dest_i:
                     return False
 
-        new_index = dest_par_i + (dest_i,)
-        logger.debug(f"emit moving(index={cur_index}, new_index={new_index})")
         self.events.moving(index=cur_index, new_index=new_index)
 
         silenced = ['removed', 'removing', 'inserted', 'inserting']
@@ -463,10 +462,6 @@ class NestableEventedList(EventedList[T]):
             getattr(self.events, event_name).block()
 
         dest_par = self[dest_par_i]
-        logger.debug(
-            f"moving {self[src_par_i].name}[{src_i}] "
-            f"to {dest_par.name}[{dest_i}]"
-        )
         value = self[src_par_i].pop(src_i)  # type: ignore
         dest_par.insert(dest_i, value)  # type: ignore
 
