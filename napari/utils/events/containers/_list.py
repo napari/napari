@@ -185,6 +185,9 @@ class EventedList(MutableSequence[T]):
     def __eq__(self, other):
         return self._list == other
 
+    def __hash__(self) -> int:
+        return id(self)
+
     def insert(self, index: int, value: T):
         self.events.inserting(index=index)
         self._list.insert(index, value)
