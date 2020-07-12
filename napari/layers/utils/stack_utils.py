@@ -9,7 +9,7 @@ from ...utils import colormaps
 
 
 def stack_to_images(
-    stack: Union[Image, Labels],
+    stack: Image,
     axis: int,
     colormap: List[Union[str, Colormap]] = None,
     contrast_limits: List[List[int]] = None,

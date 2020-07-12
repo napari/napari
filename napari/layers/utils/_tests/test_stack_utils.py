@@ -1,13 +1,11 @@
-from napari.layers.image.image import Image
+from napari.layers import Image
 from napari.layers.utils.stack_utils import stack_to_images, images_to_stack
 import numpy as np
 
 
 def test_stack_to_images_basic():
 
-    '''
-    Test 2 channels, no colormap
-    '''
+    '''Test the a 2 channel zcyx stack is split into 2 image layers'''
     data = np.random.randint(0, 100, (10, 2, 128, 128))
     stack = Image(data)
     images = stack_to_images(stack, 1, colormap=None)
@@ -22,10 +20,7 @@ def test_stack_to_images_basic():
 
 
 def test_stack_to_images_rgb():
-    '''
-    Test 3 channels, last index, no colormap - RGB
-    from rgb to single channels
-    '''
+    '''Test 3 channel RGB image (channel axis = -1) into single channels.'''
     data = np.random.randint(0, 100, (10, 128, 128, 3))
     stack = Image(data)
     images = stack_to_images(stack, -1, colormap=None)
@@ -41,9 +36,8 @@ def test_stack_to_images_rgb():
 
 
 def test_stack_to_images_4_channels():
-    '''
-    Test 4 channels, first index, colormap
-    '''
+    '''Test 4 channel stack with channel as the first index is split
+    into mutliple channels and colormap keyword'''
     data = np.random.randint(0, 100, (4, 128, 128))
     stack = Image(data)
     images = stack_to_images(stack, 0, colormap=['red', 'blue'])
@@ -57,9 +51,7 @@ def test_stack_to_images_4_channels():
 
 
 def test_stack_to_images_0_rgb():
-    '''
-    Split on axis 0 when rgb
-    '''
+    '''Split RGB along the first axis (z or t) so the images remain rgb'''
     data = np.random.randint(0, 100, (10, 128, 128, 3))
     stack = Image(data)
     images = stack_to_images(stack, 0, colormap=None)
@@ -73,9 +65,7 @@ def test_stack_to_images_0_rgb():
 
 
 def test_stack_to_images_1_channel():
-    '''
-    Split when only one channel
-    '''
+    '''Split when only one channel'''
     data = np.random.randint(0, 100, (10, 1, 128, 128))
     stack = Image(data)
     images = stack_to_images(stack, 1, colormap=['magma'])
@@ -89,7 +79,7 @@ def test_stack_to_images_1_channel():
 
 
 def test_images_to_stack_with_scale():
-
+    '''Test that input images are combined to a stack with scale and translate.'''
     images = [
         Image(np.random.randint(0, 255, (10, 128, 128))) for _ in range(3)
     ]
@@ -106,6 +96,7 @@ def test_images_to_stack_with_scale():
 
 
 def test_images_to_stack_none_scale():
+    '''Test combining images using scale and translate from first image in list'''
     images = [
         Image(
             np.random.randint(0, 255, (10, 128, 128)),
