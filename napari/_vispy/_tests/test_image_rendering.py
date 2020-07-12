@@ -1,9 +1,9 @@
 import numpy as np
 
 
-def test_image_rendering(viewer_factory):
+def test_image_rendering(make_test_viewer):
     """Test 3D image with different rendering."""
-    view, viewer = viewer_factory()
+    viewer = make_test_viewer()
 
     data = np.random.random((20, 20, 20))
     layer = viewer.add_image(data)

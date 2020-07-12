@@ -2,9 +2,9 @@ import pytest
 from qtpy.QtWidgets import QDockWidget, QHBoxLayout, QPushButton, QVBoxLayout
 
 
-def test_add_dock_widget(viewer_factory):
+def test_add_dock_widget(make_test_viewer):
     """Test basic add_dock_widget functionality"""
-    view, viewer = viewer_factory()
+    viewer = make_test_viewer()
     widg = QPushButton('button')
     dwidg = viewer.window.add_dock_widget(widg, name='test')
     assert not dwidg.is_vertical
@@ -36,9 +36,9 @@ def test_add_dock_widget(viewer_factory):
         )
 
 
-def test_add_dock_widget_from_list(viewer_factory):
+def test_add_dock_widget_from_list(make_test_viewer):
     """Test that we can add a list of widgets and they will be combined"""
-    view, viewer = viewer_factory()
+    viewer = make_test_viewer()
     widg = QPushButton('button')
     widg2 = QPushButton('button')
 
@@ -55,9 +55,9 @@ def test_add_dock_widget_from_list(viewer_factory):
     assert isinstance(dwidg.widget.layout, QHBoxLayout)
 
 
-def test_add_dock_widget_raises(viewer_factory):
+def test_add_dock_widget_raises(make_test_viewer):
     """Test that the widget passed must be a DockWidget."""
-    view, viewer = viewer_factory()
+    viewer = make_test_viewer()
     widg = object()
 
     with pytest.raises(TypeError):

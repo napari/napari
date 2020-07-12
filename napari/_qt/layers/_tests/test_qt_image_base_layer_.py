@@ -1,16 +1,16 @@
 import os
-from sys import platform
+from unittest.mock import patch
 
 import numpy as np
 import pytest
-from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QPushButton
-
 from napari._qt.layers.qt_image_base_layer import (
+    QRangeSliderPopup,
     QtBaseImageControls,
     create_range_popup,
 )
 from napari.layers import Image, Surface
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QPushButton
 
 _IMAGE = np.arange(100).astype(np.uint16).reshape((10, 10))
 _SURF = (
@@ -32,16 +32,18 @@ def test_base_controls_creation(qtbot, layer):
     assert tuple(slider_clims) == original_clims
 
 
+@patch.object(QRangeSliderPopup, 'show')
 @pytest.mark.parametrize('layer', [Image(_IMAGE), Surface(_SURF)])
-def test_clim_right_click_shows_popup(qtbot, layer):
+def test_clim_right_click_shows_popup(mock_show, qtbot, layer):
     """Right clicking on the contrast limits slider should show a popup."""
     qtctrl = QtBaseImageControls(layer)
     qtbot.addWidget(qtctrl)
     qtbot.mousePress(qtctrl.contrastLimitsSlider, Qt.RightButton)
     assert hasattr(qtctrl, 'clim_pop')
-    # virtualized tests on windows CI are failing on isVisible()
-    if not (os.environ.get('CI') and platform == 'win32'):
-        assert qtctrl.clim_pop.isVisible()
+    # this mock doesn't seem to be working on cirrus windows
+    # but it works on local windows tests...
+    if not (os.name == 'nt' and os.getenv("CI")):
+        mock_show.assert_called_once()
 
 
 @pytest.mark.parametrize('layer', [Image(_IMAGE), Surface(_SURF)])
@@ -54,8 +56,9 @@ def test_changing_model_updates_view(qtbot, layer):
     assert tuple(qtctrl.contrastLimitsSlider.values()) == new_clims
 
 
+@patch.object(QRangeSliderPopup, 'show')
 @pytest.mark.parametrize('layer', [Image(_IMAGE), Surface(_SURF)])
-def test_range_popup_clim_buttons(qtbot, layer):
+def test_range_popup_clim_buttons(mock_show, qtbot, layer):
     """The buttons in the clim_popup should adjust the contrast limits value"""
     qtctrl = QtBaseImageControls(layer)
     qtbot.addWidget(qtctrl)
