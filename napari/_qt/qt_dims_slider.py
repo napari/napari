@@ -18,7 +18,7 @@ from qtpy.QtWidgets import (
 )
 
 from ..components.dims_constants import DimsMode
-from ..utils.event import Event
+from ..utils.events import Event
 from ._constants import LoopMode
 from .qt_modal import QtPopup
 from .qt_scrollbar import ModifiedScrollBar

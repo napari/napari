@@ -6,7 +6,7 @@ from scipy import ndimage as ndi
 from ..image import Image
 from ...utils.colormaps import colormaps
 from ..utils.color_transformations import transform_color
-from ...utils.event import Event
+from ...utils.events import Event
 from ...utils.status_messages import format_float
 from ._labels_constants import Mode, LabelColorMode
 from ._labels_mouse_bindings import draw, pick
