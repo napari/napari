@@ -741,6 +741,9 @@ class Labels(Image):
 
             slice_coord = tuple(slice_coord)
 
+        # slice_coord from square brush is tuple of slices per dimension
+        # slice_coord from circle brush is tuple of coord. arrays per dimension
+
         # update the labels image
 
         if not self.preserve_labels:
@@ -750,7 +753,13 @@ class Labels(Image):
                 keep_coords = self.data[slice_coord] == self.selected_label
             else:
                 keep_coords = self.data[slice_coord] == self._background_label
-            self.data[slice_coord][keep_coords] = new_label
+            if self.brush_shape == "circle":
+                slice_coord = tuple(
+                    sc for sc, kc in zip(slice_coord, keep_coords) if kc
+                )
+                self.data[slice_coord] = new_label
+            else:
+                self.data[slice_coord][keep_coords] = new_label
 
         if refresh is True:
             self.refresh()
