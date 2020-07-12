@@ -337,10 +337,8 @@ class QtLabelsControls(QtLayerControls):
         Parameters
         ----------
         brush_shape : str
-
-        SQUARE (default) uses square paintbrush.
-
-        CIRCLE uses circle paintbrush.
+            SQUARE (default) uses square paintbrush.
+            CIRCLE uses circle paintbrush.
         """
         self.layer.brush_shape = brush_shape
 

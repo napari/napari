@@ -418,7 +418,7 @@ class Labels(Image):
 
     @property
     def brush_shape(self):
-        """float: Paintbrush shape"""
+        """str: Paintbrush shape"""
         return str(self._brush_shape)
 
     @brush_shape.setter
