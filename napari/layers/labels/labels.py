@@ -728,6 +728,14 @@ class Labels(Image):
             indices = np.mgrid[sliced_index].T.reshape(-1, len(coord))
             distances = np.mgrid[sliced_dist].T.reshape(-1, len(coord))
 
+            # discard candidate coordinates that are out of bounds
+            discard_coords = np.logical_and(
+                ~np.any(indices < 0, axis=1),
+                ~np.any(indices > np.array(self.shape), axis=1),
+            )
+            distances = distances[discard_coords]
+            indices = indices[discard_coords]
+
             distances = distances ** 2
             distances = np.sqrt(np.sum(distances, axis=1))
 
