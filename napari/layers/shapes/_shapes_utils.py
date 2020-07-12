@@ -158,7 +158,7 @@ def lines_intersect(p1, q1, p2, q2):
     """Determines if line segment p1q1 intersects line segment p2q2
 
     Parameters
-    -------
+    ----------
     p1 : (2,) array
         Array of first point of first line segment
     q1 : (2,) array
@@ -208,7 +208,7 @@ def on_segment(p, q, r):
     """Checks if q is on the segment from p to r
 
     Parameters
-    -------
+    ----------
     p : (2,) array
         Array of first point of segment
     q : (2,) array
@@ -238,7 +238,7 @@ def orientation(p, q, r):
     """Determines oritentation of ordered triplet (p, q, r)
 
     Parameters
-    -------
+    ----------
     p : (2,) array
         Array of first point of triplet
     q : (2,) array
@@ -262,7 +262,7 @@ def is_collinear(points):
     """Determines if a list of 2D points are collinear.
 
     Parameters
-    -------
+    ----------
     points : (N, 2) array
         Points to be tested for collinearity
 

@@ -308,10 +308,8 @@ class QtLabelsControls(QtLayerControls):
         Parameters
         ----------
         new_mode : str
-
-        AUTO (default) allows color to be set via a hash function with a seed.
-
-        DIRECT allows color of each label to be set directly by a color dictionary.
+            AUTO (default) allows color to be set via a hash function with a seed.
+            DIRECT allows color of each label to be set directly by a color dictionary.
         """
         self.layer.color_mode = new_mode
 

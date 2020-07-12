@@ -13,15 +13,15 @@ from napari.utils.colormaps.standardize_color import transform_color
 def _make_cycled_properties(values, length):
     """Helper function to make property values
 
-    Parameters:
-    -----------
+    Parameters
+    ----------
     values :
         The values to be cycled.
     length : int
         The length of the resulting property array
 
-    Returns:
-    --------
+    Returns
+    -------
     cycled_properties : np.ndarray
         The property array comprising the cycled values.
     """

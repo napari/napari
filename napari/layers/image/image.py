@@ -621,7 +621,7 @@ class Image(IntensityVisualizationMixin, Layer):
         and set of indices.
 
         Returns
-        ----------
+        -------
         value : tuple
             Value of the data at the coord.
         """

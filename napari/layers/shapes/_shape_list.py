@@ -658,7 +658,7 @@ class ShapeList:
             list of int
 
         Returns
-        ----------
+        -------
         centers :np.ndarray
             Nx2 array of centers of outline
         offsets :np.ndarray
@@ -718,7 +718,7 @@ class ShapeList:
             aligned box.
 
         Returns
-        ----------
+        -------
         shapes : list
             List of shapes that are inside the box.
         """
@@ -740,7 +740,7 @@ class ShapeList:
             Image coordinates to check if any shapes are at.
 
         Returns
-        ----------
+        -------
         shape : int | None
             Index of shape if any that is at the coordinates. Returns `None`
             if no shape is found.
@@ -774,7 +774,7 @@ class ShapeList:
             zoom_factor. Used for putting negative coordinates into the mask.
 
         Returns
-        ----------
+        -------
         masks : (N, M, P) np.ndarray
             Array where there is one binary mask of shape MxP for each of
             N shapes
@@ -810,7 +810,7 @@ class ShapeList:
             zoom_factor. Used for putting negative coordinates into the mask.
 
         Returns
-        ----------
+        -------
         labels : np.ndarray
             MxP integer array where each value is either 0 for background or an
             integer up to N for points inside the corresponding shape.
@@ -848,7 +848,7 @@ class ShapeList:
             zoom_factor. Used for putting negative coordinates into the mask.
 
         Returns
-        ----------
+        -------
         colors : (N, M, 4) array
             rgba array where each value is either 0 for background or the rgba
             value of the shape for points inside the corresponding shape.

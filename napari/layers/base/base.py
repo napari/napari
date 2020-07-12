@@ -704,7 +704,7 @@ class Layer(KeymapProvider, ABC):
         """Generate a status message based on the coordinates and value
 
         Returns
-        ----------
+        -------
         msg : string
             String containing a message that can be used as a status update.
         """

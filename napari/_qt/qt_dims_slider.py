@@ -234,8 +234,8 @@ class QtDimSliderWidget(QWidget):
     def fps(self, value):
         """Frames per second for animation.
 
-        Paramters
-        ---------
+        Parameters
+        ----------
         value : float
             Frames per second for animation.
         """
@@ -267,8 +267,8 @@ class QtDimSliderWidget(QWidget):
     def loop_mode(self, value):
         """Loop mode for animation.
 
-        Paramters
-        ---------
+        Parameters
+        ----------
         value : napari._qt._constants.LoopMode
             Loop mode for animation.
             Available options for the loop mode string enumeration are:
@@ -298,8 +298,8 @@ class QtDimSliderWidget(QWidget):
     def frame_range(self, value):
         """Frame range for animation, as (minimum_frame, maximum_frame).
 
-        Paramters
-        ---------
+        Parameters
+        ----------
         value : tuple(int, int)
             Frame range as tuple/list with range (minimum_frame, maximum_frame)
         """
@@ -427,8 +427,8 @@ class QtCustomDoubleSpinBox(QDoubleSpinBox):
     def textFromValue(self, value):
         """This removes the decimal places if the float is an integer.
 
-        Paramters
-        ---------
+        Parameters
+        ----------
         value : float
             The value of this custom double spin box.
         """
