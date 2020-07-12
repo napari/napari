@@ -36,6 +36,27 @@ LOGGER = logging.getLogger("ChunkLoader")
 # want the thread pool or cache at all.
 USE_SYNC_LOADER = False
 
+# We convert slices to tuple for hashing.
+SliceTuple = Tuple[int, int, int]
+
+# ChunkCache size as a fraction of total RAM.
+CACHE_MEM_FRACTION = 0.1
+
+NUM_WORKERS = int(os.getenv("NAPARI_ASYNC_THREADS", "6"))
+
+
+def _hold_gil(seconds: float):
+    """Hold the GIL for some number of seconds.
+
+    This is used for debugging and performance testing only.
+    """
+    usec = seconds * 1000000
+    _libc_name = ctypes.util.find_library("c")
+    if _libc_name is None:
+        raise RuntimeError("Cannot find libc")
+    libc_py = ctypes.PyDLL(_libc_name)
+    libc_py.usleep(usec)
+
 
 def _log_to_file(path):
     """Write ChunkLoader log message to the own file."""
@@ -48,14 +69,6 @@ def _log_to_file(path):
 
 # Always on for now. ASYNC_TODO: command line option for this?
 _log_to_file('chunk_loader.log')
-
-# We convert slices to tuple for hashing.
-SliceTuple = Tuple[int, int, int]
-
-# ChunkCache size as a fraction of total RAM.
-CACHE_MEM_FRACTION = 0.1
-
-NUM_WORKERS = int(os.getenv("NAPARI_ASYNC_THREADS", "6"))
 
 
 def _index_to_tuple(index: Union[int, slice]) -> Union[int, SliceTuple]:
@@ -99,19 +112,8 @@ def _get_synchronous_default() -> bool:
     return synchronous_loading
 
 
-def _hold_gil(seconds: float):
-    """Hold the GIL for some number of seconds.
-    """
-    usec = seconds * 1000000
-    _libc_name = ctypes.util.find_library("c")
-    if _libc_name is None:
-        raise RuntimeError("Cannot find libc")
-    libc_py = ctypes.PyDLL(_libc_name)
-    libc_py.usleep(usec)
-
-
 class ChunkRequest:
-    """A ChunkLoader request: please load this chunk.
+    """A request asking the ChunkLoader to load an array.
 
     Parameters
     ----------
@@ -133,7 +135,7 @@ class ChunkRequest:
     """
 
     def __init__(self, layer, indices, array: ArrayLike):
-        self.layer_ref = weakref.ref(layer)
+        self.layer_id = id(layer)
         self.data_id = id(layer.data)
         self.indices = indices
         self.array = array
@@ -263,6 +265,22 @@ class ChunkLoader:
             source=self, auto_connect=True, chunk_loaded=None
         )
 
+        # Maps layer_id to weakref of a Layer. ChunkRequest cannot hold a
+        # layer reference or even a weakref because if using worker
+        # processes those cannot be pickled. So ChunkRequest just holds
+        # a layer_id that we can map back to a weakref.
+        self.layer_map = {}
+
+    def create_request(self, layer, indices, array: ArrayLike):
+        """Create a ChunkRequest for submission to load_chunk.
+        """
+        # Update the layer_id to weakref mapping.
+        layer_id = id(layer)
+        self.layer_map[layer_id] = weakref.ref(layer)
+
+        # Return the new request.
+        return ChunkRequest(layer, indices, array)
+
     @perf_func
     def load_chunk(self, request: ChunkRequest) -> Optional[ChunkRequest]:
         """Load the array in the given ChunkRequest.
@@ -316,8 +334,8 @@ class ChunkLoader:
         LOGGER.info("[async] ChunkLoader._load_async: %s", request.key)
 
         # Clear any existing futures for this specific data_id. We only
-        # support non-multi-scale so far and there can only be one load in
-        # progress per layer.
+        # support single-scale so there can only be one load in progress
+        # per layer.
         self._clear_pending(request.data_id)
 
         # Check the cache first.
@@ -344,43 +362,18 @@ class ChunkLoader:
         return None
 
     @perf_func
-    def _done(self, future: futures.Future) -> None:
-        """The given future finished with success or was cancelled.
-
-        Notes
-        -----
-        This method may be called in the worker thread. The documentation
-        very intentionally does not specify which thread the callback will
-        be called in. On MacOS it seems to always be called in the worker
-        thread.
-        """
-        try:
-            request = future.result()
-        except futures.CancelledError:
-            LOGGER.info("[async] ChunkLoader._done: cancelled")
-            return
-
-        LOGGER.info("[async] ChunkLoader._done: %s", request.key)
-
-        # Do this from worker thread for now. It's safe for now.
-        # TODO_ASYNC: Ultimately we might want to this to happen from the
-        # GUI thread so all cache access is from the same thread.
-        self.cache.add_chunk(request)
-
-        self.events.chunk_loaded(request=request)
-
-    @perf_func
     def _clear_pending(self, data_id: int) -> None:
         """Clear any pending requests for this data_id.
 
         We can't clear in-progress requests that are already running in the
-        worker thread. This is too bad since subsequent requests might have
-        to wait behind them. Terminating threads is considered unsafe.
+        worker. This is too bad since subsequent requests might have to
+        wait behind requests whose results we don't care about. Terminating
+        threads is not kosher, terminating processes is probably too
+        heavyweight.
 
-        Long term we could maybe allow the user to create special
-        "cancellable" tasks or dask-arrays somehow, if they periodically
-        checked a flag and gracefully exited. They might perform better
-        than the default opaque tasks that we cannot cancel.
+        Long term we could potentially give users a way to create
+        "cancellable" tasks that perform better than the default opaque
+        tasks that we cannot cancel.
         """
         future_list = self.futures[data_id]
 
@@ -400,6 +393,58 @@ class ChunkLoader:
                 num_before,
                 num_after,
             )
+
+    @perf_func
+    def _done(self, future: futures.Future) -> None:
+        """Called when a future finished with success or was cancelled.
+
+        Notes
+        -----
+        This method may be called in the worker thread. The documentation
+        very intentionally does not specify which thread the callback will
+        be called in, only that it will be called in the same process. On
+        MacOS it seems to always be called in the worker thread with a
+        thread pool.
+        """
+        try:
+            request = future.result()
+        except futures.CancelledError:
+            LOGGER.info("[async] ChunkLoader._done: cancelled")
+            return
+
+        LOGGER.info("[async] ChunkLoader._done: %s", request.key)
+
+        # Do this from worker thread for now. It's safe for now.
+        # TODO_ASYNC: Ultimately we might want to this to happen from the
+        # GUI thread so all cache access is from the same thread.
+        self.cache.add_chunk(request)
+
+        layer = self._get_layer_for_request(request)
+
+        if layer is None:
+            LOGGER.info(
+                "[async] ChunkLoader._done: layer was deleted %d",
+                request.layer_id,
+            )
+            return
+
+        # Signal the chunk was loaded. QtChunkReceiver listens for this
+        # and will forward the chunk to the layer in the GUI thread.
+        self.events.chunk_loaded(layer=layer, request=request)
+
+    def _get_layer_for_request(self, request: ChunkRequest):
+        """Return Layer associated with this request or None.
+        """
+        layer_id = request.layer_id
+
+        try:
+            layer_ref = self.layer_map[layer_id]
+        except KeyError:
+            LOGGER.warn("[async] ChunkLoader._done: no layer_id %d", layer_id)
+            return None
+
+        # Could return None if Layer was deleted.
+        return layer_ref()
 
 
 @contextmanager
