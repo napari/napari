@@ -308,9 +308,10 @@ class Points(Layer):
         if type(text) in (list, np.ndarray, str) or text is None:
             self._text = TextManager(text, len(data), self.properties)
         elif isinstance(text, dict):
-            text['properties'] = self.properties
-            text['n_text'] = len(data)
-            self._text = TextManager(**text)
+            copied_text = deepcopy(text)
+            copied_text['properties'] = self.properties
+            copied_text['n_text'] = len(data)
+            self._text = TextManager(**copied_text)
         else:
             raise TypeError('text should be a string, array, or dict')
 
