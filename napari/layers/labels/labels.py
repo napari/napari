@@ -694,8 +694,6 @@ class Labels(Image):
         """
         if refresh is True:
             self._save_history()
-        brush_shape = "square"
-        brush_shape = "circle"
         brush_size_dims = [self.brush_size] * self.ndim
         if not self.n_dimensional and self.ndim > 2:
             for i in self.dims.not_displayed:
