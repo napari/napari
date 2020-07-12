@@ -37,6 +37,7 @@ from ..utils.layer_utils import (
     guess_continuous,
     map_property,
 )
+from ..utils.text_utils import get_text_anchors
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
@@ -303,6 +304,16 @@ class Points(Layer):
             }
             self._properties = empty_properties
 
+        # make the text
+        if type(text) in (list, np.ndarray, str) or text is None:
+            self._text = TextManager(text, len(data), self.properties)
+        elif isinstance(text, dict):
+            text['properties'] = self.properties
+            text['n_text'] = len(data)
+            self._text = TextManager(**text)
+        else:
+            raise TypeError('text should be a string, array, or dict')
+
         # Save the point style params
         self.symbol = symbol
         self._n_dimensional = n_dimensional
@@ -383,16 +394,6 @@ class Points(Layer):
             self._current_edge_color = self.edge_color[-1]
             self._current_face_color = self.face_color[-1]
             self.current_properties = {}
-
-        # make the text
-        if type(text) in (list, np.ndarray, str) or text is None:
-            self._text = TextManager(text, len(data), self.properties)
-        elif isinstance(text, dict):
-            text['properties'] = self.properties
-            text['n_text'] = len(data)
-            self._text = TextManager(**text)
-        else:
-            raise TypeError('text should be a string, array, or dict')
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
@@ -1323,7 +1324,10 @@ class Points(Layer):
     def _view_text(self) -> np.ndarray:
 
         if len(self._indices_view) > 0:
-            text = self._text.text[self._indices_view]
+            if self._text._mode in [TextMode.FORMATTED, TextMode.PROPERTY]:
+                text = self._text.text[self._indices_view]
+            else:
+                text = np.array([''])
         else:
             # if no points in this slice send dummy data
             text = np.array([''])
@@ -1332,8 +1336,13 @@ class Points(Layer):
 
     @property
     def _view_text_coords(self) -> np.ndarray:
-
-        return self._view_data + self._text.translation
+        if self._text._mode in [TextMode.FORMATTED, TextMode.PROPERTY]:
+            text_coords = (
+                get_text_anchors(self._view_data) + self._text.translation
+            )
+        else:
+            text_coords = np.zeros((0, self.dims.ndisplay))
+        return text_coords
 
     @property
     def _view_size(self) -> np.ndarray:

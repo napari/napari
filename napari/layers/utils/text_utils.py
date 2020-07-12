@@ -1,8 +1,21 @@
+from enum import Enum, auto
 import re
 
 import numpy as np
 
 from ._text_constants import TextMode
+
+
+class Anchor(Enum):
+    CENTER = auto()
+
+
+def get_text_anchors(view_data, anchor_pos=Anchor.CENTER) -> np.ndarray:
+    if anchor_pos == Anchor.CENTER:
+        if view_data.ndim == 2:
+            return view_data
+        else:
+            return np.mean(view_data, axis=0)
 
 
 def format_text_properties(text: str, n_text: int, properties: dict = {}):
