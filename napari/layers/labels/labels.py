@@ -425,6 +425,7 @@ class Labels(Image):
     def brush_shape(self, brush_shape):
         """Set current brush shape."""
         self._brush_shape = LabelBrushShape(brush_shape)
+        self.cursor = self.brush_shape
 
     @property
     def mode(self):
@@ -479,7 +480,7 @@ class Labels(Image):
             self.mouse_drag_callbacks.append(pick)
         elif mode == Mode.PAINT:
             self.cursor_size = self.brush_size / self.scale_factor
-            self.cursor = 'square'
+            self.cursor = self.brush_shape
             self.interactive = False
             self.help = (
                 'hold <space> to pan/zoom, '

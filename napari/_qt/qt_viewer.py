@@ -427,11 +427,10 @@ class QtViewer(QSplitter):
             ):
                 q_cursor = self._cursors['cross']
             else:
-                layer = self.viewer.active_layer
-                if layer.brush_shape == "square":
-                    q_cursor = QCursor(square_pixmap(size))
-                elif layer.brush_shape == "circle":
-                    q_cursor = QCursor(circle_pixmap(size))
+                q_cursor = QCursor(square_pixmap(size))
+        elif cursor == 'circle':
+            size = self.viewer.cursor_size
+            q_cursor = QCursor(circle_pixmap(size))
         else:
             q_cursor = self._cursors[cursor]
         self.canvas.native.setCursor(q_cursor)
