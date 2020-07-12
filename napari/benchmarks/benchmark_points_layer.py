@@ -82,3 +82,17 @@ class Points3DSuite:
     def mem_data(self, n):
         """Memory used by raw data."""
         return self.data
+
+
+class PointsSlicingSuite:
+    """Benchmarks for slicing the Points layer with 3D data."""
+
+    def setup(self):
+        np.random.seed(0)
+        self.data = np.random.uniform(size=(20_000_000, 3), low=0, high=500)
+        self.layer = Points(self.data)
+        self.slice = np.s_[249, :, :]
+
+    def time_slice_points(self):
+        """Time to take one slice of points"""
+        self.layer._slice_data(self.slice)
