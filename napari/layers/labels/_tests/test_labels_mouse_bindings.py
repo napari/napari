@@ -23,11 +23,12 @@ def Event():
     return collections.namedtuple('Event', field_names=['type', 'is_dragging'])
 
 
-def test_paint(Event):
+def test_paint_square(Event):
     """Test painting labels with different brush sizes."""
     data = np.ones((20, 20))
     layer = Labels(data)
     layer.brush_size = 10
+    layer.brush_shape = 'square'
     layer.mode = 'paint'
     layer.selected_label = 3
     layer.position = (0, 0)
