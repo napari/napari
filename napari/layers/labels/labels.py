@@ -720,8 +720,11 @@ class Labels(Image):
                 coord = [coord[i] for i in self.dims.displayed]
                 shape = [shape[i] for i in self.dims.displayed]
 
+            # Create multi-dimensional grid to check for
+            # circle/membership around center
             vol_radius = np.ceil(self.brush_size / 2)
-            # ensure circle doesn't have spurious poit on edge by keeping radius as x.5
+            # Ensure circle doesn't have spurious point
+            # on edge by keeping radius as ##.5
             r = np.floor(self.brush_size / 2) + 0.5
             sliced_index = [
                 slice(np.round(c) - vol_radius, np.round(c) + vol_radius + 1)
@@ -742,9 +745,11 @@ class Labels(Image):
 
             distances = distances ** 2
             distances = np.sqrt(np.sum(distances, axis=1))
-
+            # Use distances within desired radius to mask indices in grid
             mask_indices = indices[distances <= r].astype(int)
 
+            # Transfer valid coordinates to slice_coord,
+            # or expand coordinate if 3rd dim in 2D image
             slice_coord_temp = [m for m in mask_indices.T]
             if not self.n_dimensional and self.ndim > 2:
                 for j, i in enumerate(self.dims.displayed):
