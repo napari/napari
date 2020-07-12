@@ -716,14 +716,16 @@ class Labels(Image):
         elif self.brush_shape == "circle":
             slice_coord = [int(np.round(c)) for c in coord]
             if not self.n_dimensional and self.ndim > 2:
-                displayed_coord = [coord[i] for i in self.dims.displayed]
-                coord = displayed_coord
+                coord = [coord[i] for i in self.dims.displayed]
 
-            r = np.ceil(self.brush_size / 2)
+            vol_radius = np.ceil(self.brush_size / 2)
+            # ensure circle doesn't have spurious poit on edge by keeping radius as x.5
+            r = np.floor(self.brush_size / 2) + 0.5
             sliced_index = [
-                slice(np.round(c) - r, np.round(c) + r) for c in coord
+                slice(np.round(c) - vol_radius, np.round(c) + vol_radius + 1)
+                for c in coord
             ]
-            sliced_dist = [slice(-r, r) for c in coord]
+            sliced_dist = [slice(-vol_radius, vol_radius + 1) for c in coord]
 
             indices = np.mgrid[sliced_index].T.reshape(-1, len(coord))
             distances = np.mgrid[sliced_dist].T.reshape(-1, len(coord))
