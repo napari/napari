@@ -7,6 +7,8 @@ def update_text(layer, text_node):
         text = []
     else:
         text_coords = layer._view_text_coords
+        if len(text_coords) == 0:
+            text_coords = np.zeros((1, layer.dims.ndisplay))
         text = layer._view_text
 
     if layer.dims.ndisplay == 2:
