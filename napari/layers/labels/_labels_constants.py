@@ -48,4 +48,17 @@ class LabelColorMode(StringEnum):
     DIRECT = auto()
 
 
+class LabelBrushShape(StringEnum):
+    """
+    LabelBrushShape: Labelling brush shape.
+
+    SQUARE (default) uses square paintbrush.
+
+    CIRCLE uses circle paintbrush.
+    """
+
+    SQUARE = auto()
+    CIRCLE = auto()
+
+
 BACKSPACE = 'delete' if sys.platform == 'darwin' else 'backspace'

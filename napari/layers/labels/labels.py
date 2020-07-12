@@ -8,7 +8,7 @@ from ...utils.colormaps import colormaps
 from ..utils.color_transformations import transform_color
 from ...utils.event import Event
 from ...utils.status_messages import format_float
-from ._labels_constants import Mode, LabelColorMode
+from ._labels_constants import Mode, LabelColorMode, LabelBrushShape
 from ._labels_mouse_bindings import draw, pick
 
 from ..utils.layer_utils import dataframe_to_properties
@@ -152,6 +152,7 @@ class Labels(Image):
             colormaps.label_colormap(self.num_colors),
         )
         self._color_mode = LabelColorMode.AUTO
+        self._brush_shape = LabelBrushShape.SQUARE
 
         if properties is None:
             self._properties = {}
@@ -193,6 +194,7 @@ class Labels(Image):
             brush_size=Event,
             selected_label=Event,
             color_mode=Event,
+            brush_shape=Event,
         )
 
         self._n_dimensional = False
@@ -413,6 +415,16 @@ class Labels(Image):
         self.events.colormap()
         self.events.selected_label()
         self.refresh()
+
+    @property
+    def brush_shape(self):
+        """float: Paintbrush shape"""
+        return str(self._brush_shape)
+
+    @brush_shape.setter
+    def brush_shape(self, brush_shape):
+        """Set current brush shape."""
+        self._brush_shape = LabelBrushShape(brush_shape)
 
     @property
     def mode(self):
