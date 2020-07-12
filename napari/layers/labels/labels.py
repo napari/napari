@@ -701,7 +701,7 @@ class Labels(Image):
             for i in self.dims.not_displayed:
                 brush_size_dims[i] = 1
 
-        if brush_shape == "square":
+        if self.brush_shape == "square":
             slice_coord = tuple(
                 slice(
                     np.round(np.clip(c - brush_size / 2 + 0.5, 0, s)).astype(
@@ -714,8 +714,8 @@ class Labels(Image):
                 )
                 for c, s, brush_size in zip(coord, self.shape, brush_size_dims)
             )
-        elif brush_shape == "circle":
-            slice_coord = [np.round(c) for c in coord]
+        elif self.brush_shape == "circle":
+            slice_coord = [int(np.round(c)) for c in coord]
             if not self.n_dimensional and self.ndim > 2:
                 displayed_coord = [coord[i] for i in self.dims.displayed]
                 coord = displayed_coord
