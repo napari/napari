@@ -269,6 +269,7 @@ class Points(Layer):
             current_edge_color=Event,
             current_properties=Event,
             symbol=Event,
+            text=Event,
             n_dimensional=Event,
             highlight=Event,
         )
@@ -624,6 +625,7 @@ class Points(Layer):
         self._text.set_text(
             text, n_text=len(self.data), properties=self.properties
         )
+        self.events.text()
 
     def _get_ndim(self) -> int:
         """Determine number of dimensions of the layer."""
