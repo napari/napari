@@ -57,7 +57,7 @@ def test_paint_square(Event):
 
 def test_paint_circle_2d(Event):
     """Test painting labels with circle brush."""
-    data = np.ones((40, 40))
+    data = np.zeros((40, 40))
     layer = Labels(data)
     layer.brush_size = 12
     layer.brush_shape = 'circle'
@@ -92,7 +92,7 @@ def test_paint_circle_2d(Event):
 
 def test_paint_circle_3d(Event):
     """Test painting labels with circle brush on 3D image."""
-    data = np.ones((30, 40, 40))
+    data = np.zeros((30, 40, 40))
     layer = Labels(data)
     layer.brush_size = 12
     layer.brush_shape = 'circle'
@@ -112,8 +112,18 @@ def test_paint_circle_3d(Event):
     event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
     mouse_press_callbacks(layer, event)
 
+    layer.n_dimensional = True
+    layer.selected_label = 5
+    layer.preserve_labels = True
+    layer.coordinates = (10, 15, 15)
+
+    # Simulate click
+    event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
+    mouse_press_callbacks(layer, event)
+
     assert np.sum(layer.data == 3) == 137
     assert np.sum(layer.data == 4) == 1189
+    assert np.sum(layer.data == 5) == 1103
 
 
 def test_erase(Event):
