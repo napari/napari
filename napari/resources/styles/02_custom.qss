@@ -393,10 +393,6 @@ QtDimSliderWidget > QLineEdit {
   border: 1px solid {{ primary }};
 }
 
-QtDimSliderWidget > QLabel {
-  padding: 4px 0 0 1px;
-}
-
 
 /* ------------ Special Dialogs ------------ */
 
