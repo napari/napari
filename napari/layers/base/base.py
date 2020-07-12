@@ -226,6 +226,7 @@ class Layer(KeymapProvider, ABC):
 
         self.mouse_move_callbacks = []
         self.mouse_drag_callbacks = []
+        self.mouse_wheel_callbacks = []
         self._persisted_mouse_event = {}
         self._mouse_drag_gen = {}
 

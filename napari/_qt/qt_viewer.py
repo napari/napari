@@ -22,6 +22,7 @@ from ..utils.interactions import (
     mouse_press_callbacks,
     mouse_move_callbacks,
     mouse_release_callbacks,
+    mouse_wheel_callbacks,
 )
 from ..utils.key_bindings import components_to_key_combo
 from ..utils import perf
@@ -152,6 +153,7 @@ class QtViewer(QSplitter):
         self.canvas.connect(self.on_mouse_release)
         self.canvas.connect(self.on_key_press)
         self.canvas.connect(self.on_key_release)
+        self.canvas.connect(self.on_mouse_wheel)
 
         self.view = self.canvas.central_widget.add_view()
         self._update_camera()
@@ -491,6 +493,26 @@ class QtViewer(QSplitter):
     def show_key_bindings_dialog(self, event=None):
         dialog = QtAboutKeyBindings(self.viewer, parent=self)
         dialog.show()
+
+    def on_mouse_wheel(self, event):
+        """Called whenever mouse wheel activated in canvas.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+        """
+        if event.pos is None:
+            return
+
+        event = ReadOnlyWrapper(event)
+        mouse_wheel_callbacks(self.viewer, event)
+
+        layer = self.viewer.active_layer
+        if layer is not None:
+            visual = self.layer_to_visual[layer]
+            visual._position = list(event.pos)
+            layer.position = visual._transform_position(visual._position)
+            mouse_wheel_callbacks(layer, event)
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.

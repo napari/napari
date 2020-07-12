@@ -94,8 +94,21 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self.mouse_move_callbacks = []
         # Hold callbacks for when mouse is pressed, dragged, and released
         self.mouse_drag_callbacks = []
+        # Hold callbacks for when mouse wheel is scrolled
+
+        def _scroll(viewer, event):
+            if 'Control' not in event.modifiers:
+                return
+            if abs(event.delta[1]) >= 1:
+                viewer.dims.set_point(
+                    0, viewer.dims.point[0] + int(event.delta[1])
+                )
+            print(event.delta)
+
+        self.mouse_wheel_callbacks = [_scroll]
         self._persisted_mouse_event = {}
         self._mouse_drag_gen = {}
+        self._mouse_wheel_gen = {}
 
     @property
     def palette(self):
