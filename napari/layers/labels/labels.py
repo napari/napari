@@ -715,8 +715,10 @@ class Labels(Image):
             )
         elif self.brush_shape == "circle":
             slice_coord = [int(np.round(c)) for c in coord]
+            shape = self.shape
             if not self.n_dimensional and self.ndim > 2:
                 coord = [coord[i] for i in self.dims.displayed]
+                shape = [shape[i] for i in self.dims.displayed]
 
             vol_radius = np.ceil(self.brush_size / 2)
             # ensure circle doesn't have spurious poit on edge by keeping radius as x.5
@@ -733,7 +735,7 @@ class Labels(Image):
             # discard candidate coordinates that are out of bounds
             discard_coords = np.logical_and(
                 ~np.any(indices < 0, axis=1),
-                ~np.any(indices > np.array(self.shape), axis=1),
+                ~np.any(indices > np.array(shape), axis=1),
             )
             distances = distances[discard_coords]
             indices = indices[discard_coords]
