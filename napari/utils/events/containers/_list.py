@@ -6,7 +6,8 @@ Note For Developers
 Be cautious when re-implementing typical list-like methods here (e.g. extend,
 pop, clear, etc...).  By not re-implementing those methods, we force ALL "CRUD"
 (create, read, update, delete) operations to go through a few key methods
-defined by the abc.MutableSequence interface.
+defined by the abc.MutableSequence interface, where we can emit the necessary
+events.
 
 Specifically:
 
