@@ -24,7 +24,7 @@ def Event():
 
 
 def test_paint_square(Event):
-    """Test painting labels with different brush sizes."""
+    """Test painting labels with square brush."""
     data = np.ones((20, 20))
     layer = Labels(data)
     layer.brush_size = 10
@@ -48,11 +48,46 @@ def test_paint_square(Event):
     mouse_release_callbacks(layer, event)
 
     # Painting goes from (0, 0) to (19, 19) with a brush size of 10, changing
-    # all pixels along that path, but non outside it.
+    # all pixels along that path, but none outside it.
     assert np.unique(layer.data[:5, :5]) == 3
     assert np.unique(layer.data[-5:, -5:]) == 3
     assert np.unique(layer.data[:5, -5:]) == 1
     assert np.unique(layer.data[-5:, :5]) == 1
+
+
+def test_paint_circle_2d(Event):
+    """Test painting labels with circle brush."""
+    data = np.ones((40, 40))
+    layer = Labels(data)
+    layer.brush_size = 12
+    layer.brush_shape = 'circle'
+    layer.mode = 'paint'
+    layer.selected_label = 3
+    layer.position = (0, 0)
+
+    # Simulate click
+    event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
+    mouse_press_callbacks(layer, event)
+
+    layer.brush_size = 12
+    layer.selected_label = 4
+    layer.position = (13, 13)
+
+    # Simulate click
+    event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
+    mouse_press_callbacks(layer, event)
+
+    layer.brush_size = 13
+    layer.selected_label = 5
+    layer.position = (30, 13)
+
+    # Simulate click
+    event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
+    mouse_press_callbacks(layer, event)
+
+    assert np.sum(layer.data == 3) == 41
+    assert np.sum(layer.data == 4) == 137
+    assert np.sum(layer.data == 5) == 137
 
 
 def test_erase(Event):
