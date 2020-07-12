@@ -98,13 +98,23 @@ def test_paint_circle_3d(Event):
     layer.brush_shape = 'circle'
     layer.mode = 'paint'
     layer.selected_label = 3
-    layer.position = (10, 10, 10)
+    layer.coordinates = (10, 10, 10)
 
     # Simulate click
     event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
     mouse_press_callbacks(layer, event)
 
-    assert False
+    layer.n_dimensional = True
+    layer.selected_label = 4
+    layer.coordinates = (10, 25, 10)
+
+    # Simulate click
+    event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
+    mouse_press_callbacks(layer, event)
+
+    assert np.sum(layer.data == 3) == 137
+    assert np.sum(layer.data == 4) == 1189
+
 
 def test_erase(Event):
     """Test erasing labels with different brush sizes."""
