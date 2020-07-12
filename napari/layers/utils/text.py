@@ -54,7 +54,7 @@ class TextManager:
     ):
 
         self.events = EmitterGroup(
-            source=self, auto_connect=True, changed=Event
+            source=self, auto_connect=True, visible=Event
         )
 
         self.rotation = rotation
@@ -145,7 +145,7 @@ class TextManager:
     @visible.setter
     def visible(self, visible):
         self._visible = visible
-        self.events.changed()
+        self.events.visible()
 
     @property
     def mode(self):
