@@ -254,7 +254,7 @@ def test_multiscale_properties():
     assert layer.properties == properties
     assert layer._label_index == label_index
 
-    current_label = layer.get_value()
+    current_label = layer.get_value()[1]
     layer_message = layer.get_message()
     assert layer_message.endswith(f'Class {current_label - 1}')
 
