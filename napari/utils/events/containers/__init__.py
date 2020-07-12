@@ -1,2 +1,2 @@
-from ._dict import EventedDict
-from ._list import EventedList, NestableEventedList
+from ._list import EventedList
+from ._nested_list import NestableEventedList
