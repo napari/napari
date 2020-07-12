@@ -201,7 +201,7 @@ def ansi2html(
         by default ANSI_STYLES
 
     Yields
-    -------
+    ------
     str
         HTML strings that can be joined to form the final html
     """

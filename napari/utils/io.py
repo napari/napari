@@ -38,7 +38,7 @@ def imsave_extensions() -> Tuple[str, ...]:
     """Valid extensions of files that imsave can write to.
 
     Returns
-    ----------
+    -------
     tuple
         Valid extensions of files that imsave can write to.
     """

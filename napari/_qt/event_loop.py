@@ -13,7 +13,6 @@ def _create_application(argv) -> QApplication:
 
     Notes
     -----
-
     We substitute QApplicationWithTiming when using perfmon.
 
     Note that in Viewer we call convert_app_for_timing() which will create a

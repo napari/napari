@@ -794,7 +794,7 @@ def generate_tube_meshes(path, closed=False, tube_points=10):
         tube's cross section.
 
     Returns
-    ----------
+    -------
     centers : (M, 3) array
         Vertices of all triangles for the lines
     offsets : (M, D) array
@@ -860,7 +860,7 @@ def path_to_mask(mask_shape, vertices):
         Vertices of the path.
 
     Returns
-    ----------
+    -------
     mask : np.ndarray
         Boolean array with `True` for points along the path
     """
@@ -892,7 +892,7 @@ def poly_to_mask(mask_shape, vertices):
         Nx2 array of the vertices of the polygon.
 
     Returns
-    ----------
+    -------
     mask : np.ndarray
         Boolean array with `True` for points inside the polygon
     """
@@ -920,7 +920,7 @@ def grid_points_in_poly(shape, vertices):
         Nx2 array of the vertices of the polygon.
 
     Returns
-    ----------
+    -------
     mask : np.ndarray
         Boolean array with `True` for points inside the polygon
     """
@@ -943,7 +943,7 @@ def points_in_poly(points, vertices):
         Nx2 array of the vertices of the polygon.
 
     Returns
-    ----------
+    -------
     inside : np.ndarray
         Length M boolean array with `True` for points inside the polygon
     """
@@ -989,7 +989,7 @@ def get_shape_ndim(data):
         N vertices of a shape in D dimensions.
 
     Returns
-    ----------
+    -------
     ndim : int
         Dimensionality of the shape/s in data
     """

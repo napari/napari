@@ -147,7 +147,6 @@ def to_rgba(c, alpha=None):
     Parameters
     ----------
     c : Matplotlib color
-
     alpha : scalar, optional
         If *alpha* is not ``None``, it forces the alpha value, except if *c* is
         ``"none"`` (case-insensitive), which always maps to ``(0, 0, 0, 0)``.
@@ -1224,12 +1223,12 @@ def rgb_to_hsv(arr):
     Parameters
     ----------
     arr : (..., 3) array-like
-       All values must be in the range [0, 1]
+        All values must be in the range [0, 1]
 
     Returns
     -------
     hsv : (..., 3) ndarray
-       Colors converted to hsv values in range [0, 1]
+        Colors converted to hsv values in range [0, 1]
     """
     arr = np.asarray(arr)
 
@@ -1275,12 +1274,12 @@ def hsv_to_rgb(hsv):
     Parameters
     ----------
     hsv : (..., 3) array-like
-       All values assumed to be in range [0, 1]
+        All values assumed to be in range [0, 1]
 
     Returns
     -------
     rgb : (..., 3) ndarray
-       Colors converted to RGB values in range [0, 1]
+        Colors converted to RGB values in range [0, 1]
     """
     hsv = np.asarray(hsv)
 

@@ -25,7 +25,7 @@ def create_vispy_visual(layer):
         Layer that needs its propetry widget created.
 
     Returns
-    ----------
+    -------
     visual : vispy.scene.visuals.VisualNode
         Vispy visual node
     """

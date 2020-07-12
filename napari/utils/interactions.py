@@ -41,7 +41,7 @@ def mouse_press_callbacks(obj, event):
             print('goodbye world ;(')
 
     Parameters
-    ---------
+    ----------
     obj : ViewerModel or Layer
         Layer or Viewer object to run callbacks on
     event : Event
@@ -179,7 +179,7 @@ def get_key_bindings_summary(keymap, col='rgb(134, 142, 147)'):
     """Get summary of key bindings in keymap.
 
     Parameters
-    ---------
+    ----------
     keymap : dict
         Dictionary of key bindings.
     col : str
@@ -187,7 +187,7 @@ def get_key_bindings_summary(keymap, col='rgb(134, 142, 147)'):
         keypress combination.
 
     Returns
-    ---------
+    -------
     key_bindings_str : str
         String with summary of all key_bindings and their functions.
     """
