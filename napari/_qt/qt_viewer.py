@@ -26,7 +26,7 @@ from ..utils.interactions import (
 from ..utils.key_bindings import components_to_key_combo
 from ..utils import perf
 
-from .utils import QImg2array, square_pixmap
+from .utils import QImg2array, square_pixmap, circle_pixmap
 from .qt_controls import QtControls
 from .qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .qt_viewer_dock_widget import QtViewerDockWidget
@@ -427,7 +427,11 @@ class QtViewer(QSplitter):
             ):
                 q_cursor = self._cursors['cross']
             else:
-                q_cursor = QCursor(square_pixmap(size))
+                layer = self.viewer.active_layer
+                if layer.brush_shape == "square":
+                    q_cursor = QCursor(square_pixmap(size))
+                elif layer.brush_shape == "circle":
+                    q_cursor = QCursor(circle_pixmap(size))
         else:
             q_cursor = self._cursors[cursor]
         self.canvas.native.setCursor(q_cursor)
