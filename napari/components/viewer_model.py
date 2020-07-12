@@ -97,13 +97,20 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         # Hold callbacks for when mouse wheel is scrolled
 
         def _scroll(viewer, event):
+            from .._viewer_key_bindings import (
+                increment_dims_left,
+                increment_dims_right,
+            )
+
             if 'Control' not in event.modifiers:
                 return
-            if abs(event.delta[1]) >= 1:
-                viewer.dims.set_point(
-                    0, viewer.dims.point[0] + int(event.delta[1])
-                )
-            print(event.delta)
+            delta = int(event.delta[1])
+            if abs(delta) >= 1:
+                for i in range(abs(delta)):
+                    if delta < 0:
+                        increment_dims_left(self)
+                    else:
+                        increment_dims_right(self)
 
         self.mouse_wheel_callbacks = [_scroll]
         self._persisted_mouse_event = {}
