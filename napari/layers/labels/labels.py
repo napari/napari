@@ -749,6 +749,10 @@ class Labels(Image):
             if not self.n_dimensional and self.ndim > 2:
                 for j, i in enumerate(self.dims.displayed):
                     slice_coord[i] = slice_coord_temp[j]
+                for i in self.dims.not_displayed:
+                    slice_coord[i] = slice_coord[i] * np.ones(
+                        mask_indices.shape[0], dtype=int
+                    )
             else:
                 slice_coord = slice_coord_temp
 
@@ -767,9 +771,7 @@ class Labels(Image):
             else:
                 keep_coords = self.data[slice_coord] == self._background_label
             if self.brush_shape == "circle":
-                slice_coord = tuple(
-                    sc for sc, kc in zip(slice_coord, keep_coords) if kc
-                )
+                slice_coord = tuple(sc[keep_coords] for sc in slice_coord)
                 self.data[slice_coord] = new_label
             else:
                 self.data[slice_coord][keep_coords] = new_label
