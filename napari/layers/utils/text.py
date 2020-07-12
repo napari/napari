@@ -5,6 +5,7 @@ import numpy as np
 from ._text_constants import TextMode
 from .text_utils import format_text_direct, format_text_properties
 from ...utils.colormaps.standardize_color import transform_color
+from ...utils.event import EmitterGroup, Event
 
 
 class TextManager:
@@ -51,6 +52,10 @@ class TextManager:
         font='OpenSans',
         visible=True,
     ):
+
+        self.events = EmitterGroup(
+            source=self, auto_connect=True, changed=Event
+        )
 
         self.rotation = rotation
         self.translation = translation
@@ -140,6 +145,7 @@ class TextManager:
     @visible.setter
     def visible(self, visible):
         self._visible = visible
+        self.events.changed()
 
     @property
     def mode(self):

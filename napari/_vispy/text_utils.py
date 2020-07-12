@@ -2,7 +2,7 @@ import numpy as np
 
 
 def update_text(layer, text_node):
-    if len(layer._indices_view) == 0:
+    if (len(layer._indices_view) == 0) or (layer._text.visible is False):
         text_coords = np.zeros((1, layer.dims.ndisplay))
         text = []
     else:
