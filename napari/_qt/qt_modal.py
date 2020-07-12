@@ -87,7 +87,7 @@ class QtPopup(QDialog):
             window = self.parent().window() if self.parent() else None
             if not window:
                 raise ValueError(
-                    "Specifying position as a string is only posible if "
+                    "Specifying position as a string is only possible if "
                     "the popup has a parent"
                 )
             left = window.pos().x()

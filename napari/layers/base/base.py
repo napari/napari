@@ -47,7 +47,7 @@ class Layer(KeymapProvider, ABC):
     ----------
     name : str
         Unique name of the layer.
-    opacity : flaot
+    opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     visible : bool
         Whether the layer visual is currently being displayed.
@@ -732,7 +732,7 @@ class Layer(KeymapProvider, ABC):
         ----------
         path : str
             A filepath, directory, or URL to open.  Extensions may be used to
-            specify output format (provided a plugin is avaiable for the
+            specify output format (provided a plugin is available for the
             requested format).
         plugin : str, optional
             Name of the plugin to use for saving. If ``None`` then all plugins

@@ -125,7 +125,7 @@ def test_name():
 
 
 def test_visiblity():
-    """Test setting layer visiblity."""
+    """Test setting layer visibility."""
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)

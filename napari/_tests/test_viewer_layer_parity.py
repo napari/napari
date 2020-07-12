@@ -137,7 +137,7 @@ def test_signature(layer):
         args = 'data, ' + re.sub(r"['\"]([^'\"]+)['\"]:\s?", '\\1=', args)
     else:
         args = re.search(rf'layer = layers\.{name}\((.+?)\)', code, flags=re.S)
-        # get the arguments & normalize whitepsace
+        # get the arguments & normalize whitespace
         args = ' '.join(args.group(1).split())
 
     if args.endswith(','):  # remove tailing comma if present

@@ -231,7 +231,7 @@ class LayerList(ListModel):
         ----------
         path : str
             A filepath, directory, or URL to open.  Extensions may be used to
-            specify output format (provided a plugin is avaiable for the
+            specify output format (provided a plugin is available for the
             requested format).
         selected : bool
             Optional flag to only save selected layers. False by default.

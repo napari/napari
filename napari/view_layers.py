@@ -169,7 +169,7 @@ def view_path(
     plugin : str, optional
         Name of a plugin to use.  If provided, will force ``path`` to be
         read with the specified ``plugin``.  If the requested plugin cannot
-        read ``path``, an execption will be raised.
+        read ``path``, an exception will be raised.
     layer_type : str, optional
         If provided, will force data read from ``path`` to be passed to the
         corresponding ``add_<layer_type>`` method (along with any

@@ -401,7 +401,7 @@ class QtCustomDoubleSpinBox(QDoubleSpinBox):
     the valueChanged event is emitted AND the left mouse button is down.
 
     The original use case here was the FPS spinbox in the play button, where
-    hooking to the actual valueChanged event is undesireable, because if the
+    hooking to the actual valueChanged event is undesirable, because if the
     user clears the LineEdit to type, for example, "0.5", then play back
     will temporarily pause when "0" is typed (if the animation is currently
     running).  However, the editingFinished event ignores mouse click events on

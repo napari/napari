@@ -171,7 +171,7 @@ class VispyBaseLayer(ABC):
         Parameters
         -------
         position : 2-tuple
-            Cursor position in canvase (x, y).
+            Cursor position in canvas (x, y).
 
         Returns
         -------

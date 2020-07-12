@@ -42,7 +42,7 @@ def register_types_with_magicgui():
 
 
 def find_viewer_ancestor(widget: QWidget) -> Optional[Viewer]:
-    """Return the Viewer object if it is an ancestory of ``widget``, else None.
+    """Return the Viewer object if it is an ancestor of ``widget``, else None.
 
     Parameters
     ----------
