@@ -24,6 +24,9 @@ from ..utils.layer_utils import (
     guess_continuous,
     map_property,
 )
+from ..utils.text import TextManager
+from ..utils._text_constants import TextMode
+from ..utils.text_utils import get_text_anchors
 from ...utils.misc import ensure_iterable
 from ...utils.status_messages import format_float
 from ..base import Layer
@@ -69,6 +72,8 @@ class Shapes(Layer):
     properties : dict {str: array (N,)}, DataFrame
         Properties for each shape. Each property should be an array of length N,
         where N is the number of shapes.
+    text : str, array, dict
+        Text to be displayed with the points.
     shape_type : string or list
         String of shape shape_type, must be one of "{'line', 'rectangle',
         'ellipse', 'path', 'polygon'}". If a list is supplied it must be
@@ -265,6 +270,7 @@ class Shapes(Layer):
         *,
         ndim=None,
         properties=None,
+        text=None,
         shape_type='rectangle',
         edge_width=1,
         edge_color='black',
@@ -315,6 +321,7 @@ class Shapes(Layer):
             current_face_color=Event,
             current_properties=Event,
             highlight=Event,
+            text=Event,
         )
 
         self._display_order_stored = []
@@ -340,6 +347,17 @@ class Shapes(Layer):
                 for k, v in self._property_choices.items()
             }
             self._properties = empty_properties
+
+        # make the text
+        if type(text) in (list, np.ndarray, str) or text is None:
+            self._text = TextManager(text, len(data), self.properties)
+        elif isinstance(text, dict):
+            copied_text = deepcopy(text)
+            copied_text['properties'] = self.properties
+            copied_text['n_text'] = len(data)
+            self._text = TextManager(**copied_text)
+        else:
+            raise TypeError('text should be a string, array, or dict')
 
         # The following shape properties are for the new shapes that will
         # be drawn. Each shape has a corresponding property with the
@@ -485,6 +503,14 @@ class Shapes(Layer):
         self._finish_drawing()
         self._data_view = ShapeList()
         self.add(data, shape_type=shape_type)
+
+        if self._text._mode is not TextMode.NONE:
+            adding = len(data)
+            # handle case where data is just a single shape
+            if np.asarray(data[0]).ndim == 1:
+                adding = 1
+            self._text.add(self.current_properties, adding)
+
         self._update_dims()
         self.events.data()
 
@@ -1178,6 +1204,7 @@ class Shapes(Layer):
             {
                 'ndim': self.ndim,
                 'properties': self.properties,
+                'text': self._text._get_state(),
                 'shape_type': self.shape_type,
                 'opacity': self.opacity,
                 'z_index': self.z_index,
@@ -1194,6 +1221,34 @@ class Shapes(Layer):
             }
         )
         return state
+
+    @property
+    def _indices_view(self):
+        return np.where(self._data_view._displayed)[0]
+
+    @property
+    def _view_text(self) -> np.ndarray:
+        if len(self._indices_view) > 0:
+            if self._text._mode in [TextMode.FORMATTED, TextMode.PROPERTY]:
+                text = self._text.text[self._indices_view]
+            else:
+                text = np.array([''])
+        else:
+            # if no points in this slice send dummy data
+            text = np.array([''])
+
+        return text
+
+    @property
+    def _view_text_coords(self) -> np.ndarray:
+        if self._text._mode in [TextMode.FORMATTED, TextMode.PROPERTY]:
+            text_coords = (
+                get_text_anchors(self._data_view.data) + self._text.translation
+            )
+
+        else:
+            text_coords = np.zeros((0, self.dims.ndisplay))
+        return text_coords
 
     @property
     def mode(self):
@@ -1618,6 +1673,17 @@ class Shapes(Layer):
 
         return properties
 
+    @property
+    def text(self):
+        return self._text.text
+
+    @text.setter
+    def text(self, text):
+        self._text.set_text(
+            text, n_text=len(self.data), properties=self.properties
+        )
+        self.events.text()
+
     def _set_view_slice(self):
         """Set the view given the slicing indices."""
         if not self.dims.ndisplay == self._ndisplay_stored:
@@ -1910,6 +1976,7 @@ class Shapes(Layer):
                 self.properties[k] = np.delete(
                     self.properties[k], index, axis=0
                 )
+            self._text.remove(index)
             self._data_view._edge_color = np.delete(
                 self._data_view._edge_color, index, axis=0
             )
@@ -2102,6 +2169,10 @@ class Shapes(Layer):
                 },
                 'indices': self.dims.indices,
             }
+            if self._text is None:
+                self._clipboard['text'] = None
+            else:
+                self._clipboard['text'] = deepcopy(self._text.text[index])
         else:
             self._clipboard = {}
 
@@ -2138,6 +2209,11 @@ class Shapes(Layer):
             self.selected_data = set(
                 range(cur_shapes, cur_shapes + len(self._clipboard['data']))
             )
+
+            if self._clipboard['text'] is not None:
+                self._text._text = np.concatenate(
+                    (self.text, self._clipboard['text']), axis=0
+                )
             self.move_to_front()
 
     def _move(self, coord):

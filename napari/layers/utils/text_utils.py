@@ -11,11 +11,15 @@ class Anchor(Enum):
 
 
 def get_text_anchors(view_data, anchor_pos=Anchor.CENTER) -> np.ndarray:
-    if anchor_pos == Anchor.CENTER:
-        if view_data.ndim == 2:
-            return view_data
-        else:
-            return np.mean(view_data, axis=0)
+    if type(view_data) == np.ndarray:
+        if anchor_pos == Anchor.CENTER:
+            if view_data.ndim == 2:
+                return view_data
+            else:
+                return np.mean(view_data, axis=0)
+    else:  # assume list
+        if anchor_pos == Anchor.CENTER:
+            return np.array([np.mean(coords, axis=0) for coords in view_data])
 
 
 def format_text_properties(text: str, n_text: int, properties: dict = {}):

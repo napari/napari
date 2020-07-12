@@ -513,6 +513,7 @@ class AddLayersMixin:
         *,
         ndim=None,
         properties=None,
+        text=None,
         shape_type='rectangle',
         edge_width=1,
         edge_color='black',
@@ -546,6 +547,8 @@ class AddLayersMixin:
         properties : dict {str: array (N,)}, DataFrame
             Properties for each shape. Each property should be an array of
             length N, where N is the number of shapes.
+        text : str, array, dict
+            Text to be displayed with the points.
         shape_type : string or list
             String of shape shape_type, must be one of "{'line', 'rectangle',
             'ellipse', 'path', 'polygon'}". If a list is supplied it must be
@@ -628,6 +631,7 @@ class AddLayersMixin:
             data=data,
             ndim=ndim,
             properties=properties,
+            text=text,
             shape_type=shape_type,
             edge_width=edge_width,
             edge_color=edge_color,

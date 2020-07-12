@@ -1,5 +1,6 @@
-from vispy.scene.visuals import Line, Compound, Mesh, Markers
+from vispy.scene.visuals import Line, Compound, Mesh, Markers, Text
 from .vispy_base_layer import VispyBaseLayer
+from .text_utils import update_text
 import numpy as np
 
 
@@ -11,13 +12,14 @@ class VispyShapesLayer(VispyBaseLayer):
         # Lines: The lines of the interaction box used for highlights.
         # Mesh: The mesh of the outlines for each shape used for highlights.
         # Mesh: The actual meshes of the shape faces and edges
-        node = Compound([Mesh(), Mesh(), Line(), Markers()])
+        node = Compound([Mesh(), Mesh(), Line(), Markers(), Text()])
 
         super().__init__(layer, node)
 
         self.layer.events.edge_width.connect(self._on_data_change)
         self.layer.events.edge_color.connect(self._on_data_change)
         self.layer.events.face_color.connect(self._on_data_change)
+        self.layer.events.text.connect(self._on_text_change)
         self.layer.events.highlight.connect(self._on_highlight_change)
 
         self._reset_base()
@@ -45,9 +47,11 @@ class VispyShapesLayer(VispyBaseLayer):
         self.node._subvisuals[0].set_data(
             vertices=vertices, faces=faces, face_colors=colors
         )
+
         # Call to update order of translation values with new dims:
         self._on_scale_change()
         self._on_translate_change()
+        self._on_text_change(update_node=False)
         self.node.update()
 
     def _on_highlight_change(self, event=None):
@@ -100,3 +104,14 @@ class VispyShapesLayer(VispyBaseLayer):
         self.node._subvisuals[2].set_data(
             pos=pos, color=edge_color, width=width
         )
+
+    def _on_text_change(self, update_node=True):
+        text_node = self._get_text_node()
+        update_text(self.layer, text_node)
+        if update_node:
+            self.node.update()
+
+    def _get_text_node(self):
+        """Function to get the text node from the Compound visual"""
+        text_node = self.node._subvisuals[-1]
+        return text_node
