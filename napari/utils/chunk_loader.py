@@ -27,7 +27,13 @@ import numpy as np
 
 from ..types import ArrayLike
 from ..utils.event import EmitterGroup
-from ..utils.perf import perf_func, perf_timer
+from ..utils.perf import (
+    perf_counter_ns,
+    perf_func,
+    perf_timer,
+    PerfEvent,
+    timers,
+)
 
 LOGGER = logging.getLogger("ChunkLoader")
 
@@ -147,18 +153,38 @@ class ChunkRequest:
         # Key is data_id + indices as a tuples.
         self.key = tuple([self.data_id, indices_tuple])
 
+        # Worker process will fill this is then it processes the request.
+        self.pid = None
+
+    def start(self):
+        self.start_ns = perf_counter_ns()
+
+    def end(self):
+        self.end_ns = perf_counter_ns()
+        if timers is not None:
+            event = PerfEvent(
+                "ChunkRequest", self.start_ns, self.end_ns, pid=self.pid
+            )
+            timers.add_event(event)
+
 
 def _chunk_loader_worker(request: ChunkRequest):
-    """Worker thread that loads the array.
+    """Worker thread or process that loads the array.
 
-    This np.array() call might lead to IO or computation via dask or
-    similar means which is why we are doing it in a worker thread!
     """
+    # Note what worker we are.
+    request.pid = os.getpid()
+
+    # This delay is hopefully temporary, but it avoids some nasty
+    # problems with the slider timer firing *prior* to the mouse release,
+    # even though it was a single click lasting < 100ms.
     if request.delay_seconds > 0:
         time.sleep(request.delay_seconds)
 
-    with perf_timer("np.asarray"):
-        request.array = np.asarray(request.array)
+    # This np.asarray() call might lead to IO or computation via dask
+    # or similar means which is why we are doing it in a worker, so
+    # that it does not block the GUI thread.
+    request.array = np.asarray(request.array)
     return request
 
 
@@ -352,6 +378,8 @@ class ChunkLoader:
             "[async] ChunkLoader.load_chunk: cache miss %s", request.key
         )
 
+        request.start()
+
         future = self.executor.submit(_chunk_loader_worker, request)
         future.add_done_callback(self._done)
 
@@ -412,6 +440,9 @@ class ChunkLoader:
             LOGGER.info("[async] ChunkLoader._done: cancelled")
             return
 
+        # Mark the end time.
+        request.end()
+
         LOGGER.info("[async] ChunkLoader._done: %s", request.key)
 
         # Do this from worker thread for now. It's safe for now.
@@ -421,6 +452,7 @@ class ChunkLoader:
 
         layer = self._get_layer_for_request(request)
 
+        # layer_id was not found weakref failed to resolve.
         if layer is None:
             LOGGER.info(
                 "[async] ChunkLoader._done: layer was deleted %d",

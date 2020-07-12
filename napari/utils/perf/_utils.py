@@ -8,7 +8,7 @@ import functools
 from typing import Optional
 
 from ._compat import perf_counter_ns
-from ._config import USE_PERFMON, PYTHON_3_7
+from ._config import USE_PERFMON
 from ._event import PerfEvent
 from ._timers import timers
 
@@ -28,7 +28,7 @@ if USE_PERFMON:
         ----------
         name : str
             The name of this timer.
-        category :str
+        category : str
             Comma separated categories such has "render,update".
         **kwargs : dict
             Additional keyword arguments for the "args" field of the event.
@@ -105,15 +105,10 @@ if USE_PERFMON:
 
 
 else:
-    # Not using perfmon so disable the perf context object and the
-    # decorators leaving hopefully negligible run-time overhead.
-    if PYTHON_3_7:
-        perf_timer = contextlib.nullcontext
-    else:
-
-        @contextlib.contextmanager
-        def perf_timer(name: str, category: Optional[str] = None):
-            yield
+    # contextlib.nullcontext does not work with kwargs?
+    @contextlib.contextmanager
+    def perf_timer(name: str, category: Optional[str] = None, **kwargs):
+        yield
 
     def perf_func(func):
         return func

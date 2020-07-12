@@ -111,6 +111,14 @@ class PerfTimers:
 if USE_PERFMON:
     # The one global instance
     timers = PerfTimers()
+
+    def add_instant_event(name: str, **kwargs):
+        timers.add_instant_event(name, **kwargs)
+
+
 else:
     # No one should be access this since they are disabled.
     timers = None
+
+    def add_instant_event(name: str, **kwargs):
+        pass

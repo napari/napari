@@ -1,7 +1,7 @@
 from qtpy.QtWidgets import QScrollBar, QStyleOptionSlider, QStyle
 from qtpy.QtCore import Qt
 
-from ..utils.perf import timers
+from ..utils.perf import add_instant_event
 
 
 # https://stackoverflow.com/questions/29710327/how-to-override-qscrollbar-onclick-default-behaviour
@@ -62,12 +62,12 @@ class ModifiedScrollBar(QScrollBar):
         return super().mouseMoveEvent(event)
 
     def mousePressEvent(self, event):
-        timers.add_instant_event("mousePress")
+        add_instant_event("mousePress")
         if event.button() == Qt.LeftButton:
             # clicking the mouse button should move slider to the clicked point
             self._move_to_mouse_position(event)
         return super().mousePressEvent(event)
 
     def mouseReleaseEvent(self, event):
-        timers.add_instant_event("mouseRelease")
+        add_instant_event("mouseRelease")
         return super().mouseReleaseEvent(event)
