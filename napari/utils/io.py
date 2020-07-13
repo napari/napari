@@ -174,9 +174,11 @@ def magic_imread(filenames, *, use_dask=None, stack=True):
     # replace folders with their contents
     filenames_expanded = []
     for filename in filenames:
-        ext = os.path.splitext(filename)[-1]
+        is_zarr_path = any(
+            part.endswith(".zarr") for part in Path(filename).parts
+        )
         # zarr files are folders, but should be read as 1 file
-        if os.path.isdir(filename) and not ext == '.zarr':
+        if os.path.isdir(filename) and not is_zarr_path:
             dir_contents = sorted(
                 glob(os.path.join(filename, '*.*')), key=_alphanumeric_key
             )
@@ -200,8 +202,10 @@ def magic_imread(filenames, *, use_dask=None, stack=True):
     images = []
     shape = None
     for filename in filenames_expanded:
-        ext = os.path.splitext(filename)[-1]
-        if ext == '.zarr':
+        is_zarr_path = any(
+            part.endswith(".zarr") for part in Path(filename).parts
+        )
+        if is_zarr_path:
             image, zarr_shape = read_zarr_dataset(filename)
             if shape is None:
                 shape = zarr_shape

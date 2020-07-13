@@ -124,6 +124,19 @@ def test_zarr():
 
 
 @pytest.mark.skipif(not zarr_available, reason='zarr not installed')
+def test_zarr_nested(tmp_path):
+    image = np.random.random((10, 20, 20))
+    image_name = 'my_image'
+    root_path = tmp_path / 'dataset.zarr'
+    grp = zarr.open(str(root_path), mode='a')
+    grp.create_dataset(image_name, data=image)
+    image_in = io.magic_imread([str(root_path / image_name)])
+    # Note: due to lazy loading, the next line needs to happen within
+    # the context manager. Alternatively, we could convert to NumPy here.
+    np.testing.assert_array_equal(image, image_in)
+
+
+@pytest.mark.skipif(not zarr_available, reason='zarr not installed')
 def test_zarr_multiscale():
     multiscale = [
         np.random.random((20, 20)),
