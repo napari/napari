@@ -742,8 +742,12 @@ class Labels(Image):
         if self._label_index and self._properties:
             # if the cursor is not outside the image or on the background
             if self._value is not None:
-                if self._value in self._label_index:
-                    idx = self._label_index[self._value]
+                if self.multiscale:
+                    value = self._value[1]
+                else:
+                    value = self._value
+                if value in self._label_index:
+                    idx = self._label_index[value]
                     for k, v in self._properties.items():
                         if k != 'index':
                             msg += f', {k}: {v[idx]}'
