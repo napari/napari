@@ -21,7 +21,8 @@ Single Layers IO
 
 The following hook specifications will be called when a user saves a single
 layer in napari, and should save the layer to the requested format and return
-``True`` if successful, or ``False`` if unable.  They each accept a ``path``.
+the save path if the data are successfully written. Otherwise, if nothing was saved, return ``None``.
+They each accept a ``path``.
 It is up to plugins to inspect and obey the extension of the path (and return
 ``False`` if it is an unsupported extension).  The ``data`` argument will come
 from ``Layer.data``, and a ``meta`` dict that will correspond to the layer's
