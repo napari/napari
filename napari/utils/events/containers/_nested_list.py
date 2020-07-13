@@ -219,7 +219,10 @@ class NestableEventedList(EventedList[T]):
                 setattr(event, attr, (source_index,) + cur_index)
         if not hasattr(event, 'index'):
             setattr(event, 'index', source_index)
-        self.events(event)
+
+        # reemit with this object's EventEmitter of the same type if present
+        # otherwise just emit with the EmitterGroup itself
+        getattr(self.events, event.type, self.events)(event)
 
     def _disconnect_child_emitters(self, child: T):
         """Disconnect all events from the child from the reemitter."""

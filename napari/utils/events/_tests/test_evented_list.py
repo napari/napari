@@ -1,6 +1,9 @@
-from napari.utils.events import EmitterGroup, EventedList, NestableEventedList
 from collections.abc import MutableSequence
+from unittest.mock import Mock
+
 import pytest
+
+from napari.utils.events import EmitterGroup, EventedList, NestableEventedList
 
 
 @pytest.fixture
@@ -19,8 +22,7 @@ def flatten(_lst):
 @pytest.fixture(params=[EventedList, NestableEventedList])
 def test_list(request, regular_list):
     test_list = request.param(regular_list)
-    test_list._events = []
-    test_list.events.connect(test_list._events.append)
+    test_list.events = Mock(wraps=test_list.events)
     return test_list
 
 
@@ -51,13 +53,16 @@ def test_list(request, regular_list):
     ids=lambda x: x[0],
 )
 def test_list_interface_parity(test_list, regular_list, meth):
-    method_name, args, expected_events = meth
+    method_name, args, expected = meth
     test_list_method = getattr(test_list, method_name)
     regular_list_method = getattr(regular_list, method_name)
     assert tuple(test_list) == tuple(regular_list)
     assert test_list_method(*args) == regular_list_method(*args)
     assert tuple(test_list) == tuple(regular_list)
-    assert tuple(e.type for e in test_list._events) == expected_events
+
+    for call, expect in zip(test_list.events.call_args_list, expected):
+        event = call.args[0]
+        assert event.type == expect
 
 
 def test_list_interface_exceptions(test_list):
@@ -82,7 +87,7 @@ def test_copy(test_list, regular_list):
     assert id(new_test) != id(test_list)
     assert new_test == test_list
     assert tuple(new_test) == tuple(test_list) == tuple(new_reg)
-    assert not test_list._events
+    test_list.events.assert_not_called()
 
 
 def test_move(test_list):
@@ -153,8 +158,7 @@ def test_nested_indexing():
 )
 def test_nested_events(meth, group_index):
     ne_list = NestableEventedList(NEST)
-    ne_list._events = []
-    ne_list.events.connect(ne_list._events.append)
+    ne_list.events = Mock(wraps=ne_list.events)
 
     method_name, args, expected_events = meth
     method = getattr(ne_list[group_index], method_name)
@@ -167,21 +171,14 @@ def test_nested_events(meth, group_index):
         method(*args)
 
     # make sure the correct event type and number was emitted
-    assert tuple(e.type for e in ne_list._events) == expected_events
-
-    # IMPORTANT: make sure that all of the events emitted by the root level
-    # NestableEventedList show the nested (tuple form) index of the object
-    # that emitted the original event
-    for event in ne_list._events:
-        if isinstance(group_index, int):
-            group_index = (group_index,)
+    for call, expected in zip(ne_list.events.call_args_list, expected_events):
+        event = call.args[0]
+        assert event.type == expected
         if group_index == ():
             # in the root group, the index will be an int relative to root
             assert isinstance(event.index, int)
         else:
             assert event.index[:-1] == group_index
-
-        ('__setitem__', (slice(2), [1, 2]), ('changed',)),  # update slice
 
 
 def test_setting_nested_slice():
@@ -193,7 +190,7 @@ def test_setting_nested_slice():
 @pytest.mark.parametrize(
     'param',
     [
-        #                   2       (2, 1)
+        # indices           2       (2, 1)
         # original = [0, 1, [(2,0), [(2,1,0), (2,1,1)], (2,2)], 3, 4]
         [((2, 0), (2, 1, 1), (3,)), (-1), [0, 1, [[210], 22], 20, 211, 3, 4]],
         [((2, 0), (2, 1, 1), (3,)), (1), [0, 20, 211, 3, 1, [[210], 22], 4]],
@@ -223,12 +220,8 @@ def test_arbitrary_child_events():
         events = EmitterGroup(test=None)
 
     e_obj = E()
-    e_obj.name = 'e_obj'
-
     root = NestableEventedList()
-    root.name = 'root'
     b = NestableEventedList()
-    b.name = 'b'
 
     observed = []
     root.events.connect(observed.append)
