@@ -211,10 +211,6 @@ class NestableEventedList(EventedList[T]):
         self._connect_child_emitters(value)
 
     def _reemit_nested_event(self, event: Event):
-        emitter = getattr(self.events, event.type, None)
-        if not emitter:
-            return
-
         source_index = self.index(event.source)
         for attr in ('index', 'new_index'):
             if hasattr(event, attr):
@@ -222,24 +218,20 @@ class NestableEventedList(EventedList[T]):
                 setattr(event, attr, (source_index,) + cur_index)
         if not hasattr(event, 'index'):
             setattr(event, 'index', source_index)
-
-        emitter(event)
+        self.events(event)
 
     def _disconnect_child_emitters(self, child: T):
         """Disconnect all events from the child from the reemitter."""
-        # IMPORTANT!! this is currently assuming that all emitter groups
-        # are named "events"
         if isinstance(child, SupportsEvents):
-            for emitter in child.events.emitters.values():
-                emitter.disconnect(self._reemit_nested_event)
+            child.events.disconnect(self._reemit_nested_event)
 
     def _connect_child_emitters(self, child: T):
         """Connect all events from the child to be reemitted."""
-        # IMPORTANT!! this is currently assuming that all emitter groups
-        # are named "events"
         if isinstance(child, SupportsEvents):
-            for emitter in child.events.emitters.values():
-                emitter.connect(self._reemit_nested_event)
+            # make sure the event source has been set on the child
+            if child.events.source is None:
+                child.events.source = child
+            child.events.connect(self._reemit_nested_event)
 
     def _non_negative_index(
         self, parent_index: NestedIndex, dest_index: Index
@@ -385,17 +377,10 @@ class NestableEventedList(EventedList[T]):
                     return False
 
         self.events.moving(index=cur_index, new_index=new_index)
-
-        silenced = ['removed', 'removing', 'inserted', 'inserting']
-        for event_name in silenced:
-            getattr(self.events, event_name).block()
-
-        dest_par = self[dest_par_i]
-        value = self[src_par_i].pop(src_i)
-        dest_par.insert(dest_i, value)
-
-        for event_name in silenced:
-            getattr(self.events, event_name).unblock()
+        with self.events.blocker():
+            dest_par = self[dest_par_i]  # grab this before popping src_i
+            value = self[src_par_i].pop(src_i)  # type: ignore
+            dest_par.insert(dest_i, value)  # type: ignore
 
         self.events.moved(index=cur_index, new_index=new_index, value=value)
         self.events.reordered(value=self)

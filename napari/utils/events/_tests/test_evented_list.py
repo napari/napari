@@ -1,4 +1,4 @@
-from napari.utils.events.containers import EventedList, NestableEventedList
+from napari.utils.events import EmitterGroup, EventedList, NestableEventedList
 from collections.abc import MutableSequence
 import pytest
 
@@ -195,15 +195,55 @@ def test_setting_nested_slice():
     [
         #                   2       (2, 1)
         # original = [0, 1, [(2,0), [(2,1,0), (2,1,1)], (2,2)], 3, 4]
-        [((2, 0), (2, 1, 1), (3,)), (-2), [0, 1, [[210], 22], 20, 211, 3, 4]],
+        [((2, 0), (2, 1, 1), (3,)), (-1), [0, 1, [[210], 22], 20, 211, 3, 4]],
         [((2, 0), (2, 1, 1), (3,)), (1), [0, 20, 211, 3, 1, [[210], 22], 4]],
     ],
     ids=lambda x: str(x),
 )
 def test_nested_move_multiple(param):
+    """Test that moving multiple indices works and emits right events."""
     source, dest, expectation = param
     ne_list = NestableEventedList([0, 1, [20, [210, 211], 22], 3, 4])
-    ne_list._events = []
-    ne_list.events.connect(ne_list._events.append)
+    events = {'moving': [], 'moved': [], 'reordered': []}
+    ne_list.events.connect(
+        lambda e: events[e.type].append(getattr(e, 'index', None))
+    )
     ne_list.move_multiple(source, dest)
     assert tuple(flatten((ne_list))) == tuple(flatten(expectation))
+    assert events['moving'] == sorted(source, reverse=True)
+    assert events['moved'] == sorted(source, reverse=True)
+    assert len(events['reordered']) == 1
+
+
+def test_arbitrary_child_events():
+    """Test that any object that supports the events protocol bubbles events.
+    """
+
+    class E:
+        events = EmitterGroup(test=None)
+
+    e_obj = E()
+    e_obj.name = 'e_obj'
+
+    root = NestableEventedList()
+    root.name = 'root'
+    b = NestableEventedList()
+    b.name = 'b'
+
+    observed = []
+    root.events.connect(observed.append)
+
+    root.append(b)
+    b.append(e_obj)
+    e_obj.events.test(value="hi")
+
+    obs = [(e.type, e.index, getattr(e, 'value', None)) for e in observed]
+    expected = [
+        ('inserting', 0, None),
+        ('inserted', 0, b),
+        ('inserting', (0, 0), None),
+        ('inserted', (0, 0), e_obj),
+        ('test', (0, 0), 'hi'),
+    ]
+    for o, e in zip(obs, expected):
+        assert o == e
