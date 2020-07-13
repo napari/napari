@@ -168,7 +168,7 @@ class QtPointsControls(QtLayerControls):
         self.grid_layout.addWidget(self.faceColorEdit, 5, 1)
         self.grid_layout.addWidget(QLabel('edge color:'), 6, 0)
         self.grid_layout.addWidget(self.edgeColorEdit, 6, 1)
-        self.grid_layout.addWidget(QLabel('Text:'), 7, 0)
+        self.grid_layout.addWidget(QLabel('display text:'), 7, 0)
         self.grid_layout.addWidget(self.textDispCheckBox, 7, 1)
         self.grid_layout.addWidget(QLabel('n-dim:'), 8, 0)
         self.grid_layout.addWidget(self.ndimCheckBox, 8, 1)

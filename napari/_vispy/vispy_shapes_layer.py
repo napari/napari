@@ -20,6 +20,7 @@ class VispyShapesLayer(VispyBaseLayer):
         self.layer.events.edge_color.connect(self._on_data_change)
         self.layer.events.face_color.connect(self._on_data_change)
         self.layer.events.text.connect(self._on_text_change)
+        self.layer._text.events.visible.connect(self._on_text_change)
         self.layer.events.highlight.connect(self._on_highlight_change)
 
         self._reset_base()
