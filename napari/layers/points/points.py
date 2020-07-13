@@ -381,6 +381,22 @@ class Points(Layer):
         # Trigger generation of view slice and thumbnail
         self._update_dims()
 
+        self._plane_indices = {}
+        self.dims.events.order.connect(self._set_plane_indices)
+
+    def _set_plane_indices(self, event=None):
+        """Assign each point to an integer key for slicing
+
+        Parameters:
+        -----------
+        event: Event
+            event triggered by reordering displayed dimensions
+        """
+        # assign points to integer keys according to slices in
+        # not displayed dims
+
+        # Change: slice_data, add point, move point
+
     def _initialize_current_color_for_empty_layer(
         self, color: ColorType, attribute: str
     ):
