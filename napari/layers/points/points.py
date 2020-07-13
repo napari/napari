@@ -1,3 +1,4 @@
+from collections import defaultdict
 from typing import Union, Dict, Tuple, List
 from copy import copy, deepcopy
 from itertools import cycle
@@ -358,6 +359,12 @@ class Points(Layer):
 
         self.refresh_colors()
 
+        self._tree = None
+        self._trees = {}
+        self._build_tree()
+        self.dims.events.order.connect(self._build_tree)
+        self.dims.events.range.connect(self._clear_trees)
+
         self.size = size
         # set the current_* properties
         if len(data) > 0:
@@ -381,12 +388,6 @@ class Points(Layer):
         # Trigger generation of view slice and thumbnail
         self._update_dims()
 
-        self._tree = None
-        self._trees = {}
-        self._build_tree()
-        self.dims.events.order.connect(self._build_tree)
-        self.dims.events.range.connect(self._clear_trees)
-
     def _build_tree(self, event=None):
         """Assign each point to an integer key for slicing, for each dimension
 
@@ -405,13 +406,7 @@ class Points(Layer):
             for i, (start, stop, step) in enumerate(self.dims.range)
             if i in not_displayed
         ]
-        # get bounding grid shape for all points and number of slices
-        grid_shape = np.meshgrid(
-            *[np.arange(*r) for r in ranges], indexing='ij'
-        )[0].shape
-        moss = np.empty(grid_shape, dtype=object)
-        for idx in range(moss.size):
-            moss.flat[idx] = []
+        moss = defaultdict(list)
         indices = []
         # allocate each point to a bin along each not displayed dimension
         for i, ax in enumerate(not_displayed):
@@ -423,8 +418,6 @@ class Points(Layer):
         # assign the newly computed points into the grid at the correct slice
         for i, idx in enumerate(zip(*indices)):
             moss[idx].append(i)
-        for idx in range(moss.size):
-            moss.flat[idx] = np.array(moss.flat[idx])
 
         self._tree = moss
         self._trees[not_displayed] = moss
@@ -1447,7 +1440,7 @@ class Points(Layer):
             else:
                 # ranges = [r for i, r in enumerate(self.dims.range) if i in not_disp]
                 # key = tuple(np.digitize(idx, np.arange(*ranges[i])) for i, idx in enumerate(indices))
-                slice_indices = self._tree[tuple(indices[not_disp])]
+                slice_indices = np.array(self._tree[tuple(indices[not_disp])])
                 return slice_indices, 1
         else:
             return [], []
