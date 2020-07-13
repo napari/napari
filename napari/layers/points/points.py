@@ -402,8 +402,8 @@ class Points(Layer):
             return
 
         ranges = [
-            (start, stop + 1, step)
-            for i, (start, stop, step) in enumerate(self.dims.range)
+            (start, stop + 1)
+            for i, (start, stop) in enumerate(self._get_extent())
             if i in not_displayed
         ]
         moss = defaultdict(list)
@@ -658,8 +658,8 @@ class Points(Layer):
         """Determine number of dimensions of the layer."""
         return self.data.shape[1]
 
-    def _get_extent(self) -> List[Tuple[int, int, int]]:
-        """Determine ranges for slicing given by (min, max, step)."""
+    def _get_extent(self) -> List[Tuple[int, int]]:
+        """Determine ranges for slicing given by (min, max)."""
         if len(self.data) == 0:
             maxs = np.ones(self.data.shape[1], dtype=int)
             mins = np.zeros(self.data.shape[1], dtype=int)
