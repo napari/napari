@@ -344,7 +344,7 @@ class ShapeList:
             Location in list of the shape to be removed.
         renumber : bool
             Bool to indicate whether to renumber all shapes or not. If not the
-            expectation is that this shape is being immediately read to the
+            expectation is that this shape is being immediately added back to the
             list using `add_shape`.
         """
         indices = self._index != index
