@@ -1,3 +1,6 @@
+"""Nestable MutableSequence that emits events when altered.
+"""
+
 from __future__ import annotations
 
 import logging
@@ -22,6 +25,23 @@ NestedIndex = Tuple[Index, ...]
 
 
 def ensure_tuple_index(index: Union[NestedIndex, Index]) -> NestedIndex:
+    """Return index as a tuple of ints or slices.
+
+    Parameters
+    ----------
+    index : Tuple[Union[int, slice], ...] or int or slice
+        An index as an int, tuple, or slice
+
+    Returns
+    -------
+    NestedIndex
+        The index, guaranteed to be a tuple.
+
+    Raises
+    ------
+    TypeError
+        If the input ``index`` is not an ``int``, ``slice``, or ``tuple``.
+    """
     if isinstance(index, (slice, int)):
         return (index,)  # single integer inserts to self
     elif isinstance(index, tuple):
@@ -32,7 +52,27 @@ def ensure_tuple_index(index: Union[NestedIndex, Index]) -> NestedIndex:
 def split_nested_index(
     index: Union[NestedIndex, Index]
 ) -> Tuple[NestedIndex, Index]:
-    """Given a nested index, return (nested_parent_index, row)."""
+    """ Given a nested index, return (nested_parent_index, row).
+
+    Parameters
+    ----------
+    index : Union[NestedIndex, Index]
+        An index as an int, tuple, or slice
+
+    Returns
+    -------
+    Tuple[NestedIndex, Index]
+        A tuple of ``parent_index``, ``row``
+
+    Examples
+    --------
+    >>> split_nested_index((1, 2, 3, 4))
+    ((1, 2, 3), 4)
+    >>> split_nested_index(1)
+    ((), 1)
+    >>> split_nested_index(())
+    ((), -1)
+    """
     index = ensure_tuple_index(index)
     if index:
         *par, i = index
@@ -43,17 +83,19 @@ def split_nested_index(
 class NestableEventedList(EventedList[T]):
     """Nestable Mutable Sequence that emits recursive events when altered.
 
+    ``NestableEventedList`` instances can be indexed with a ``tuple`` of
+    ``int`` (e.g. ``mylist[0, 2, 1]``) to retrieve nested child objects.
+
     A key property of this class is that when new mutable sequences are added
     to the list, they are themselves converted to a ``NestableEventedList``,
     and all of the ``EventEmitter`` objects in the child are connect to the
-    parent object's ``_reemit_nested_event`` method. When
-    ``_reemit_nested_event`` receives an event from a child object, it remits
-    the event, but changes any ``index`` keys in the event to a ``NestedIndex``
-    (a tuple of ``int``) such that indices emitted by any given
+    parent object's ``_reemit_nested_event`` method (assuming the child has
+    an attribute called ``events`` that is an instance of ``EmitterGroup``).
+    When ``_reemit_nested_event`` receives an event from a child object, it
+    remits the event, but changes any ``index`` keys in the event to a
+    ``NestedIndex`` (a tuple of ``int``) such that indices emitted by any given
     ``NestableEventedList`` are always relative to itself.
 
-    ``NestableEventedList`` instances can be indexed with a ``tuple`` of
-    ``int`` (e.g. ``mylist[0, 2, 1]``) to retrieve nested child objects.
 
     Parameters
     ----------
@@ -92,12 +134,13 @@ class NestableEventedList(EventedList[T]):
     # def extend(self, value: Iterable[T]): ...
     # def remove(self, value: T): ...
 
-    # fmt: off
     @overload
-    def __getitem__(self, key: Union[int, NestedIndex]) -> T: ...  # noqa: E704
+    def __getitem__(self, key: Union[int, NestedIndex]) -> T:
+        ...
 
     @overload
-    def __getitem__(self, key: slice) -> NestableEventedList[T]: ...  # noqa
+    def __getitem__(self, key: slice) -> NestableEventedList[T]:  # noqa: F811
+        ...
 
     def __getitem__(self, key):  # noqa: F811
         if isinstance(key, tuple):
@@ -108,22 +151,23 @@ class NestableEventedList(EventedList[T]):
         return super().__getitem__(key)
 
     @overload
-    def __setitem__(self, key: Union[int, NestedIndex], value: T): ...  # noqa
+    def __setitem__(self, key: Union[int, NestedIndex], value: T):
+        ...
 
     @overload
-    def __setitem__(self, key: slice, value: Iterable[T]): ...  # noqa
-    # fmt: on
+    def __setitem__(self, key: slice, value: Iterable[T]):  # noqa: F811
+        ...
 
     def __setitem__(self, key, value):  # noqa: F811
-        # FIXME: !!!!
-        # this is delicate, we want to preserve the evented list when nesting
-        # but there is a high risk here of clobbering attributes of a special
-        # child class
+        # NOTE: if we check isinstance(..., MutableList), then we'll actually
+        # clobber object of specialized classes being inserted into the list
+        # (for instance, subclasses of NestableEventedList)
+        # this check is more conservative, but will miss some "nestable" things
         if isinstance(value, list):
             value = self.__class__(value)
         if isinstance(key, tuple):
             parent_i, index = split_nested_index(key)
-            self[parent_i].__setitem__(index, value)
+            self[parent_i].__setitem__(index, value)  # type: ignore
             return
         self._connect_child_emitters(value)
         EventedList.__setitem__(self, key, value)
@@ -157,7 +201,7 @@ class NestableEventedList(EventedList[T]):
     # TODO: implement __eq__
 
     def insert(self, index: int, value: T):
-        # FIXME: !!!!
+        """Insert object before index."""
         # this is delicate, we want to preserve the evented list when nesting
         # but there is a high risk here of clobbering attributes of a special
         # child class
@@ -182,6 +226,7 @@ class NestableEventedList(EventedList[T]):
         emitter(event)
 
     def _disconnect_child_emitters(self, child: T):
+        """Disconnect all events from the child from the reemitter."""
         # IMPORTANT!! this is currently assuming that all emitter groups
         # are named "events"
         if isinstance(child, SupportsEvents):
@@ -189,6 +234,7 @@ class NestableEventedList(EventedList[T]):
                 emitter.disconnect(self._reemit_nested_event)
 
     def _connect_child_emitters(self, child: T):
+        """Connect all events from the child to be reemitted."""
         # IMPORTANT!! this is currently assuming that all emitter groups
         # are named "events"
         if isinstance(child, SupportsEvents):
@@ -198,19 +244,44 @@ class NestableEventedList(EventedList[T]):
     def _non_negative_index(
         self, parent_index: NestedIndex, dest_index: Index
     ) -> Index:
+        """Make sure dest_index is a positive index inside parent_index."""
         destination_group = cast(NestableEventedList[T], self[parent_index])
+        # not handling slice indexes
         if isinstance(dest_index, int):
             if dest_index < 0:
                 dest_index += len(destination_group) + 1
-            else:
-                # TODO: Necessary?
-                dest_index = min(dest_index, len(destination_group))
         return dest_index
 
     def move_multiple(
         self, sources: Sequence[NestedIndex], dest_index: NestedIndex,
     ) -> int:
-        """Move a batch of nested indices, to a single destination."""
+        """Move a batch of nested indices, to a single destination.
+
+        This handles the complications of changing the removal and insertion
+        indices while poping and inserting items from arbitrary nested
+        locations in the tree.
+
+        Parameters
+        ----------
+        sources : Sequence[NestedIndex]
+            A sequence of indices in nested index form.
+        dest_index : NestedIndex
+            The destination index.  All sources will be inserted before this
+            index.
+
+        Returns
+        -------
+        int
+            The number of successful move operations completed.
+
+        Raises
+        ------
+        ValueError
+            If either the destination index or one of the terminal source
+            indices are ``slice``.
+        IndexError
+            If one of the source indices is this group itself.
+        """
         logger.debug(
             f"move_multiple(sources={sources}, dest_index={dest_index})"
         )
@@ -223,7 +294,6 @@ class NestableEventedList(EventedList[T]):
 
         self.events.reordered.block()
         moved = 0
-        # more complicated when moving multiple objects.
         # don't assume index adjacency ... so move one at a time
         # need to update indices as we pop, so we keep track of the indices
         # we have previously popped
@@ -276,6 +346,26 @@ class NestableEventedList(EventedList[T]):
         cur_index: Union[int, NestedIndex],
         new_index: Union[int, NestedIndex],
     ) -> bool:
+        """Move a single item from ``cur_index`` to ``new_index``.
+
+        Parameters
+        ----------
+        cur_index : Union[int, NestedIndex]
+            The index of the object to move
+        new_index : Union[int, NestedIndex]
+            The destination.  Object will be inserted before ``new_index.``
+
+        Returns
+        -------
+        bool
+            Whether the operation completed successfully
+
+        Raises
+        ------
+        ValueError
+            If the terminal source is a slice, or if the source is this root
+            object
+        """
         logger.debug(f"move(cur_index={cur_index}, new_index={new_index})")
         src_par_i, src_i = split_nested_index(cur_index)
         dest_par_i, dest_i = split_nested_index(new_index)
@@ -284,6 +374,8 @@ class NestableEventedList(EventedList[T]):
 
         if isinstance(src_i, slice):
             raise ValueError("Terminal source index may not be a slice")
+        if src_i == ():
+            raise ValueError("Group cannot move itself")
 
         if src_par_i == dest_par_i:
             if isinstance(dest_i, int):

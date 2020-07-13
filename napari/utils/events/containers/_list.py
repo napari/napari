@@ -1,4 +1,4 @@
-"""MutableSequences that emit events when altered.
+"""MutableSequence that emits events when altered.
 
 Note For Developers
 ===================
@@ -52,6 +52,10 @@ class SupportsEvents(Protocol):
 class EventedList(SupportsEvents, MutableSequence[T]):
     """Mutable Sequence that emits events when altered.
 
+    This class is designed to behave exactly like the builtin ``list``, but
+    will emit events before and after all mutations (insertion, removal,
+    setting, and moving).
+
     Parameters
     ----------
     data : Iterable, optional
@@ -93,8 +97,8 @@ class EventedList(SupportsEvents, MutableSequence[T]):
             'changed': None,  # Tuple[int, Any, Any] - (idx, old, new)
             'reordered': None,  # None
         }
-        # In case of inheritance we add to an existing EmitterGroup
-        # TODO: can we express this with typing.Protocol?
+
+        # If the superclass already has an EmitterGroup, add to it
         if hasattr(self, 'events') and isinstance(self.events, EmitterGroup):
             self.events.add(**_events)
         else:
@@ -110,27 +114,29 @@ class EventedList(SupportsEvents, MutableSequence[T]):
     # def extend(self, value: Iterable[T]): ...
     # def remove(self, value: T): ...
 
-    # fmt: off
     @overload
-    def __getitem__(self, key: int) -> T: ...  # noqa: E704
+    def __getitem__(self, key: int) -> T:
+        ...
 
     @overload
-    def __getitem__(self, key: slice) -> EventedList[T]: ...  # noqa
+    def __getitem__(self, key: slice) -> EventedList[T]:  # noqa: F811 (redef)
+        ...
 
-    def __getitem__(self, key):  # noqa: F811
+    def __getitem__(self, key):  # noqa: F811 (redefinition)
         result = self._list[key]
         if isinstance(result, list):
             return self.__class__(result)
         return result
 
     @overload
-    def __setitem__(self, key: int, value: T): ...  # noqa: E704
+    def __setitem__(self, key: int, value: T):
+        ...
 
     @overload
-    def __setitem__(self, key: slice, value: Iterable[T]): ...  # noqa
-    # fmt: on
+    def __setitem__(self, key: slice, value: Iterable[T]):  # noqa: F811
+        ...
 
-    def __setitem__(self, key, value):  # noqa: F811
+    def __setitem__(self, key, value):  # noqa: F811 (redefinition)
         old = self._list[key]
         self._list[key] = value
         if value != old:
@@ -170,14 +176,21 @@ class EventedList(SupportsEvents, MutableSequence[T]):
         return self._list == other
 
     def __hash__(self) -> int:
+        # it's important to add this to allow this object to be hashable
+        # given that we've also reimplemented __eq__
         return id(self)
 
     def insert(self, index: int, value: T):
+        """Insert ``value`` before index."""
         self.events.inserting(index=index)
         self._list.insert(index, value)
         self.events.inserted(index=index, value=value)
 
     def move(self, cur_index: int, new_index: int) -> bool:
+        """Insert object at ``cur_index`` before ``new_index``.
+
+        Both indices refer to the list prior to any object removal
+        """
         if new_index > cur_index:
             new_index -= 1
 
@@ -189,11 +202,13 @@ class EventedList(SupportsEvents, MutableSequence[T]):
         return True
 
     def reverse(self) -> None:
-        # reimplementing to emit a change event
-        # If this method were removed, it would just emit a "changed" event
-        # for each moved index in the list
+        """Reverse list *IN PLACE*."""
+        # reimplementing this method to emit a change event
+        # If this method were removed, .reverse() would still be availalbe,
+        # it would just emit a "changed" event for each moved index in the list
         self._list.reverse()
         self.events.reordered(value=self)
 
     def copy(self) -> EventedList[T]:
+        """Return a shallow copy of the list."""
         return self.__class__(self._list)
