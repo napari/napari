@@ -111,6 +111,13 @@ def test_single_filename(single_tiff):
     assert images.shape == (2, 15, 10)
 
 
+def test_guess_zarr_path():
+    assert io.guess_zarr_path('dataset.zarr')
+    assert io.guess_zarr_path('dataset.zarr/some/long/path')
+    assert not io.guess_zarr_path('data.tif')
+    assert not io.guess_zarr_path('no_zarr_suffix/data.png')
+
+
 @pytest.mark.skipif(not zarr_available, reason='zarr not installed')
 def test_zarr():
     image = np.random.random((10, 20, 20))

@@ -174,11 +174,8 @@ def magic_imread(filenames, *, use_dask=None, stack=True):
     # replace folders with their contents
     filenames_expanded = []
     for filename in filenames:
-        is_zarr_path = any(
-            part.endswith(".zarr") for part in Path(filename).parts
-        )
         # zarr files are folders, but should be read as 1 file
-        if os.path.isdir(filename) and not is_zarr_path:
+        if os.path.isdir(filename) and not guess_zarr_path(filename):
             dir_contents = sorted(
                 glob(os.path.join(filename, '*.*')), key=_alphanumeric_key
             )
@@ -202,10 +199,7 @@ def magic_imread(filenames, *, use_dask=None, stack=True):
     images = []
     shape = None
     for filename in filenames_expanded:
-        is_zarr_path = any(
-            part.endswith(".zarr") for part in Path(filename).parts
-        )
-        if is_zarr_path:
+        if guess_zarr_path(filename):
             image, zarr_shape = read_zarr_dataset(filename)
             if shape is None:
                 shape = zarr_shape
@@ -244,6 +238,22 @@ def magic_imread(filenames, *, use_dask=None, stack=True):
         else:
             image = images  # return a list
     return image
+
+
+def guess_zarr_path(path):
+    """Guess whether string path is for zarr hierarchy.
+
+    Parameters
+    ----------
+    path: str
+        Path to a file or directory.
+
+    Returns
+    -------
+    bool
+        Whether path is for zarr.
+    """
+    return any(part.endswith(".zarr") for part in Path(path).parts)
 
 
 def read_zarr_dataset(path):
