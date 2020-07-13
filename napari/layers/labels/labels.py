@@ -1,17 +1,18 @@
 from collections import deque
-from typing import Union, Dict
+from functools import lru_cache
+from typing import Dict, Union
 
 import numpy as np
 from scipy import ndimage as ndi
-from ..image import Image
+
 from ...utils.colormaps import colormaps
-from ..utils.color_transformations import transform_color
 from ...utils.event import Event
 from ...utils.status_messages import format_float
-from ._labels_constants import Mode, LabelColorMode, LabelBrushShape
-from ._labels_mouse_bindings import draw, pick
-
+from ..image import Image
+from ..utils.color_transformations import transform_color
 from ..utils.layer_utils import dataframe_to_properties
+from ._labels_constants import LabelBrushShape, LabelColorMode, Mode
+from ._labels_mouse_bindings import draw, pick
 
 
 class Labels(Image):
@@ -678,6 +679,44 @@ class Labels(Image):
         if refresh is True:
             self.refresh()
 
+    @lru_cache(maxsize=64)
+    def sphere_indices(self, radius, sphere_dims):
+        """Generate centered indices within circle or n-dim sphere.
+
+
+        Parameters
+        -------
+        radius : float
+            Radius of circle/sphere
+        sphere_dims : int
+            Number of circle/sphere dimensions
+
+        Returns
+        -------
+        mask_indices : array
+            Centered indices within circle/sphere
+        """
+        # Create multi-dimensional grid to check for
+        # circle/membership around center
+        vol_radius = radius + 0.5
+
+        sliced_index = [
+            slice(-vol_radius, vol_radius + 1) for __ in range(sphere_dims)
+        ]
+        sliced_dist = [
+            slice(-vol_radius, vol_radius + 1) for __ in range(sphere_dims)
+        ]
+
+        indices = np.mgrid[sliced_index].T.reshape(-1, sphere_dims)
+        distances = np.mgrid[sliced_dist].T.reshape(-1, sphere_dims)
+
+        distances = distances ** 2
+        distances = np.sqrt(np.sum(distances, axis=1))
+        # Use distances within desired radius to mask indices in grid
+        mask_indices = indices[distances <= radius].astype(int)
+
+        return mask_indices
+
     def paint(self, coord, new_label, refresh=True):
         """Paint over existing labels with a new label, using the selected
         brush shape and size, either only on the visible slice or in all
@@ -720,33 +759,20 @@ class Labels(Image):
                 coord = [coord[i] for i in self.dims.displayed]
                 shape = [shape[i] for i in self.dims.displayed]
 
-            # Create multi-dimensional grid to check for
-            # circle/membership around center
-            vol_radius = np.ceil(self.brush_size / 2)
+            sphere_dims = len(coord)
             # Ensure circle doesn't have spurious point
             # on edge by keeping radius as ##.5
-            r = np.floor(self.brush_size / 2) + 0.5
-            sliced_index = [
-                slice(np.round(c) - vol_radius, np.round(c) + vol_radius + 1)
-                for c in coord
-            ]
-            sliced_dist = [slice(-vol_radius, vol_radius + 1) for c in coord]
+            radius = np.floor(self.brush_size / 2) + 0.5
+            mask_indices = self.sphere_indices(radius, sphere_dims)
 
-            indices = np.mgrid[sliced_index].T.reshape(-1, len(coord))
-            distances = np.mgrid[sliced_dist].T.reshape(-1, len(coord))
+            mask_indices = mask_indices + np.round(np.array(coord)).astype(int)
 
             # discard candidate coordinates that are out of bounds
             discard_coords = np.logical_and(
-                ~np.any(indices < 0, axis=1),
-                ~np.any(indices > np.array(shape), axis=1),
+                ~np.any(mask_indices < 0, axis=1),
+                ~np.any(mask_indices > np.array(shape), axis=1),
             )
-            distances = distances[discard_coords]
-            indices = indices[discard_coords]
-
-            distances = distances ** 2
-            distances = np.sqrt(np.sum(distances, axis=1))
-            # Use distances within desired radius to mask indices in grid
-            mask_indices = indices[distances <= r].astype(int)
+            mask_indices = mask_indices[discard_coords]
 
             # Transfer valid coordinates to slice_coord,
             # or expand coordinate if 3rd dim in 2D image

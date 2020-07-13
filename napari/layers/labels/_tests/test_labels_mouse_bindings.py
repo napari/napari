@@ -79,7 +79,7 @@ def test_paint_circle_2d(Event):
 
     layer.brush_size = 13
     layer.selected_label = 5
-    layer.position = (30, 13)
+    layer.position = (30.2, 12.8)
 
     # Simulate click
     event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
