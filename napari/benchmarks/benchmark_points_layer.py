@@ -89,7 +89,7 @@ class PointsSlicingSuite:
 
     params = [True, False]
 
-    def setup(self, flatten_slice_axis=True):
+    def setup(self, flatten_slice_axis):
         np.random.seed(0)
         self.data = np.random.uniform(size=(20_000_000, 3), low=0, high=500)
         if flatten_slice_axis:
@@ -97,6 +97,6 @@ class PointsSlicingSuite:
         self.layer = Points(self.data)
         self.slice = np.s_[249, :, :]
 
-    def time_slice_points(self, flatten_slice_axis=True):
+    def time_slice_points(self, flatten_slice_axis):
         """Time to take one slice of points"""
         self.layer._slice_data(self.slice)
