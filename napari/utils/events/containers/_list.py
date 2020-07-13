@@ -29,24 +29,18 @@ from typing import (
     Iterable,
     List,
     MutableSequence,
-    Protocol,
     Tuple,
     TypeVar,
     Union,
     overload,
-    runtime_checkable,
 )
 
 from ..event import EmitterGroup
+from ..types import SupportsEvents
 
 logger = logging.getLogger(__name__)
 T = TypeVar('T')
 Index = Union[int, slice]
-
-
-@runtime_checkable
-class SupportsEvents(Protocol):
-    events: EmitterGroup
 
 
 class EventedList(SupportsEvents, MutableSequence[T]):

@@ -17,7 +17,8 @@ from typing import (
 )
 
 from ..event import Event
-from ._list import EventedList, Index, SupportsEvents, T
+from ..types import SupportsEvents
+from ._list import EventedList, Index, T
 
 logger = logging.getLogger(__name__)
 
