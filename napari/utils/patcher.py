@@ -1,17 +1,11 @@
-"""Patch functions and method for tracing, performance monitoring.
+"""Patch functions and methods for tracing or anything.
 
-Config file specifies which functions and methods to trace:
-
-{
-    "trace": [
-        "module.module.ClassName.method_name",
-        "module.function_name"
-    ]
-}
+See patch_callables() below.
 """
 
 from importlib import import_module
-import json
+import types
+from typing import Callable, List, Union
 
 
 class PatchError(Exception):
@@ -123,20 +117,42 @@ class Target:
         return True
 
 
-def patch_callables(config_path: str, patch_func) -> bool:
-    """Load config file and patch perf_timer into all callables.
+# The parent of a callable is a module or a class, class is of type "type".
+CallableParent = Union[types.ModuleType, type]
+
+# An example PatchFunction is:
+# def _patch_perf_timer(parent, callable: str, label: str) -> None
+PatchFunction = Callable[[CallableParent, str, str], None]
+
+
+def patch_callables(callables: List[str], patch_func: PatchFunction) -> None:
+    """Patch the given list of callables.
+
+    Parameters
+    ----------
+    callables : List[str]
+        Patch all of these callables (functions or methods).
+    patch_func : PatchFunction
+        Called on every callable to patch it.
+
+    Notes
+    -----
+    The callables list list is like this:
+    [
+        "module.module.ClassName.method_name",
+        "module.function_name"
+        ...
+    ]
+
+    Nested classes and methods not allow but support could be added.
+
+    An example patch_func is:
+
+    def _my_patcher(parent: CallableParent, callable: str, label: str) -> None:
+        @wrapt.patch_function_wrapper(parent, callable)
+        def my_announcer(wrapped, instance, args, kwargs):
+            print(f"Announce {label}")
+            return wrapped(*args, **kwargs)
     """
-    # Home for now...
-
-    print(f"Patcher: loading {config_path}")
-    with open(config_path, "r") as config_file:
-        data = json.load(config_file)
-        for trace_set in data["active"]:
-            if trace_set not in data["trace_sets"]:
-                print(f"ERROR: {config_path} has no trace set '{trace_set}'")
-                return False
-            for target_str in data["trace_sets"][trace_set]:
-                if not Target(target_str).patch(patch_func):
-                    return False  # stop on error
-
-    return True
+    for target_str in callables:
+        Target(target_str).patch(patch_func)

@@ -1,10 +1,13 @@
 """PerfTimers class and global instance.
 """
+import os
+
 from ._compat import perf_counter_ns
-from ._config import USE_PERFMON
 from ._event import InstantEvent, PerfEvent
 from ._stat import Stat
 from ._trace_file import PerfTraceFile
+
+USE_PERFMON = os.getenv("NAPARI_PERFMON", "0") != "0"
 
 
 class PerfTimers:

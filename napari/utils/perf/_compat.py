@@ -1,11 +1,11 @@
-"""Compatibility functions.
+"""Perfmon related compatibility functions.
 """
+import sys
 import time
 
-from ._config import PYTHON_3_7
+PYTHON_3_7_OR_NEWER = sys.version_info[:2] >= (3, 7)
 
-
-if PYTHON_3_7:
+if PYTHON_3_7_OR_NEWER:
     # Use the real perf_counter_ns
     perf_counter_ns = time.perf_counter_ns
 else:

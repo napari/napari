@@ -5,15 +5,14 @@
 """
 import contextlib
 import functools
+import os
 from typing import Optional
 
-import wrapt
-
 from ._compat import perf_counter_ns
-from ._config import USE_PERFMON
 from ._event import PerfEvent
 from ._timers import timers
 
+USE_PERFMON = os.getenv("NAPARI_PERFMON", "0") != "0"
 
 if USE_PERFMON:
 
@@ -120,13 +119,3 @@ else:
             return func
 
         return decorator
-
-
-def patch_perf_timer(parent, callable_str, label):
-    """Patch to run callable with perf_timer.
-    """
-
-    @wrapt.patch_function_wrapper(parent, callable_str)
-    def new_init(wrapped, instance, args, kwargs):
-        with perf_timer(f"{label}"):
-            return wrapped(*args, **kwargs)

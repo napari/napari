@@ -12,8 +12,15 @@ timers is an instance of PerfTimers with these methods:
 Use perf_timer to time blocks of code.
 Use perf_func to time functions.
 """
-from ._config import USE_PERFMON
+import os
+
+from ._compat import perf_counter_ns
+from ._config import perf_config
 from ._event import PerfEvent
 from ._timers import timers, add_instant_event
-from ._utils import perf_timer, perf_func, patch_perf_timer
-from ._compat import perf_counter_ns
+from ._utils import perf_timer, perf_func
+
+
+# If not using perfmon timers will be 100% disable with hopefully zero
+# run-time impact.
+USE_PERFMON = os.getenv("NAPARI_PERFMON", "0") != "0"
