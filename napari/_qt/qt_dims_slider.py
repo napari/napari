@@ -115,6 +115,10 @@ class QtDimSliderWidget(QWidget):
         self.axis_label = label
 
     def _value_changed(self, value):
+        """Slider changed to this new value.
+
+        We split this out as a separate function for perfmon.
+        """
         self.dims.set_point(self.axis, value)
 
     def _create_range_slider_widget(self):
