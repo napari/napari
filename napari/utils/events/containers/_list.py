@@ -22,8 +22,6 @@ MUST make sure that all the appropriate events are emitted.  (Tests should
 cover this in test_evented_list.py)
 """
 
-from __future__ import annotations
-
 import logging
 from typing import (
     Iterable,
@@ -113,7 +111,7 @@ class EventedList(SupportsEvents, MutableSequence[T]):
         ...
 
     @overload
-    def __getitem__(self, key: slice) -> EventedList[T]:  # noqa: F811 (redef)
+    def __getitem__(self, key: slice) -> 'EventedList[T]':  # noqa: F811
         ...
 
     def __getitem__(self, key):  # noqa: F811 (redefinition)
@@ -138,7 +136,7 @@ class EventedList(SupportsEvents, MutableSequence[T]):
 
     def _delitem_indices(
         self, key: Index
-    ) -> Iterable[Tuple[EventedList[T], int]]:
+    ) -> Iterable[Tuple['EventedList[T]', int]]:
         # returning List[(self, int)] allows subclasses to pass nested members
         if isinstance(key, int):
             return [(self, key if key >= 0 else key + len(self))]
@@ -203,6 +201,6 @@ class EventedList(SupportsEvents, MutableSequence[T]):
         self._list.reverse()
         self.events.reordered(value=self)
 
-    def copy(self) -> EventedList[T]:
+    def copy(self) -> 'EventedList[T]':
         """Return a shallow copy of the list."""
         return self.__class__(self._list)

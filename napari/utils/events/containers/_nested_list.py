@@ -1,8 +1,5 @@
 """Nestable MutableSequence that emits events when altered.
 """
-
-from __future__ import annotations
-
 import logging
 from typing import Iterable, Sequence, Tuple, Union, cast, overload
 
@@ -130,7 +127,7 @@ class NestableEventedList(EventedList[T]):
         ...
 
     @overload
-    def __getitem__(self, key: slice) -> NestableEventedList[T]:  # noqa: F811
+    def __getitem__(self, key: slice) -> 'NestableEventedList[T]':  # noqa
         ...
 
     def __getitem__(self, key):  # noqa: F811
