@@ -26,7 +26,6 @@ from ..utils.layer_utils import (
 )
 from ..utils.text import TextManager
 from ..utils._text_constants import TextMode
-from ..utils.text_utils import get_text_anchors
 from ...utils.misc import ensure_iterable
 from ...utils.status_messages import format_float
 from ..base import Layer
@@ -1241,14 +1240,16 @@ class Shapes(Layer):
 
     @property
     def _view_text_coords(self) -> np.ndarray:
-        if self._text._mode in [TextMode.FORMATTED, TextMode.PROPERTY]:
-            text_coords = (
-                get_text_anchors(self._data_view.data) + self._text.translation
-            )
+        """Get the coordinates of the text elements in view
 
-        else:
-            text_coords = np.zeros((0, self.dims.ndisplay))
-        return text_coords
+        Returns
+       -------
+       text_coords : (N x D) np.ndarray
+           Array of coordindates for the N text elements in view
+        """
+        return self._text.compute_text_coords(
+            self._data_view.data, self.dims.ndisplay
+        )
 
     @property
     def mode(self):

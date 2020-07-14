@@ -3,7 +3,11 @@ from typing import Union
 import numpy as np
 
 from ._text_constants import TextMode
-from .text_utils import format_text_direct, format_text_properties
+from .text_utils import (
+    format_text_direct,
+    format_text_properties,
+    get_text_anchors,
+)
 from ...utils.colormaps.standardize_color import transform_color
 from ...utils.event import EmitterGroup, Event
 
@@ -171,6 +175,13 @@ class TextManager:
             selected_indices = list(indices_to_remove)
             if len(selected_indices) > 0:
                 self._text = np.delete(self.text, selected_indices, axis=0)
+
+    def compute_text_coords(self, view_data, ndisplay):
+        if self._mode in [TextMode.FORMATTED, TextMode.PROPERTY]:
+            text_coords = get_text_anchors(view_data) + self.translation
+        else:
+            text_coords = np.zeros((0, ndisplay))
+        return text_coords
 
     def _view_text(self, selected_data):
         selected_data = list(selected_data)

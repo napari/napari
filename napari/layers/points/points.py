@@ -37,7 +37,6 @@ from ..utils.layer_utils import (
     guess_continuous,
     map_property,
 )
-from ..utils.text_utils import get_text_anchors
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
@@ -1337,13 +1336,16 @@ class Points(Layer):
 
     @property
     def _view_text_coords(self) -> np.ndarray:
-        if self._text._mode in [TextMode.FORMATTED, TextMode.PROPERTY]:
-            text_coords = (
-                get_text_anchors(self._view_data) + self._text.translation
-            )
-        else:
-            text_coords = np.zeros((0, self.dims.ndisplay))
-        return text_coords
+        """Get the coordinates of the text elements in view
+
+        Returns
+       -------
+       text_coords : (N x D) np.ndarray
+           Array of coordindates for the N text elements in view
+        """
+        return self._text.compute_text_coords(
+            self._view_data, self.dims.ndisplay
+        )
 
     @property
     def _view_size(self) -> np.ndarray:
