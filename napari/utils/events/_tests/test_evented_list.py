@@ -195,7 +195,6 @@ def test_setting_nested_slice():
         [((2, 0), (2, 1, 1), (3,)), (-1), [0, 1, [[210], 22], 4, 20, 211, 3]],
         [((2, 0), (2, 1, 1), (3,)), (1), [0, 20, 211, 3, 1, [[210], 22], 4]],
     ],
-    ids=lambda x: str(x),
 )
 def test_nested_move_multiple(param):
     """Test that moving multiple indices works and emits right events."""
@@ -203,11 +202,7 @@ def test_nested_move_multiple(param):
     ne_list = NestableEventedList([0, 1, [20, [210, 211], 22], 3, 4])
     ne_list.events = Mock(wraps=ne_list.events)
     ne_list.move_multiple(source, dest)
-    assert tuple(flatten((ne_list))) == tuple(flatten(expectation))
-    print(ne_list.events.moving.call_args_list)
-    # assert events['moving'] == sorted(source, reverse=True)
-    # assert events['moved'] == sorted(source, reverse=True)
-    # assert len(events['reordered']) == 1
+    ne_list.events.reordered.assert_called_with(value=expectation)
 
 
 def test_arbitrary_child_events():
