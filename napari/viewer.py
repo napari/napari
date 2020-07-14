@@ -67,9 +67,7 @@ class Viewer(ViewerModel):
         # have the special one, and this is a noop. When running inside IPython
         # or Jupyter however this is where we switch out the QApplication.
         if os.getenv("NAPARI_PERFMON", "0") != "0":
-            from ._qt.qt_event_timing import convert_app_for_timing
-
-            app = convert_app_for_timing(app)
+            app = _setup_perfmon(app)
 
         if (
             platform.system() == "Windows"
@@ -161,3 +159,19 @@ class Viewer(ViewerModel):
     def __str__(self):
         """Simple string representation"""
         return f'napari.Viewer: {self.title}'
+
+
+def _setup_perfmon(app):
+    """Patch callables and convert the QApplication for perfmon.
+    """
+    import Path
+    from ._qt.qt_event_timing import convert_app_for_timing
+    from .utils.patcher import patch_callables
+
+    # Only check home directory for now.
+    config_path = Path.home() / ".napari-trace-config"
+
+    if not patch_callables(config_path,):
+        sys.exit(1)  # for now so we see the error
+
+    return convert_app_for_timing(app)
