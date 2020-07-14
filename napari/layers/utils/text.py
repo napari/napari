@@ -183,10 +183,29 @@ class TextManager:
             text_coords = np.zeros((0, ndisplay))
         return text_coords
 
-    def _view_text(self, selected_data):
-        selected_data = list(selected_data)
+    def view_text(self, indices_view: np.ndarray) -> np.ndarray:
+        """Get the values of the text elements in view
 
-        return self.text[selected_data]
+        Parameters
+        ----------
+        indices_view : (N x 1) np.ndarray
+            Indices of the text elements in view
+
+        Returns
+       -------
+       text : (N x 1) np.ndarray
+           Array of text strings for the N text elements in view
+        """
+        if len(indices_view) > 0:
+            if self._mode in [TextMode.FORMATTED, TextMode.PROPERTY]:
+                text = self.text[indices_view]
+            else:
+                text = np.array([''])
+        else:
+            # if no points in this slice send dummy data
+            text = np.array([''])
+
+        return text
 
     def _get_state(self):
 

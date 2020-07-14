@@ -1322,17 +1322,14 @@ class Points(Layer):
 
     @property
     def _view_text(self) -> np.ndarray:
+        """Get the values of the text elements in view
 
-        if len(self._indices_view) > 0:
-            if self._text._mode in [TextMode.FORMATTED, TextMode.PROPERTY]:
-                text = self._text.text[self._indices_view]
-            else:
-                text = np.array([''])
-        else:
-            # if no points in this slice send dummy data
-            text = np.array([''])
-
-        return text
+        Returns
+       -------
+       text : (N x 1) np.ndarray
+           Array of text strings for the N text elements in view
+        """
+        return self._text.view_text(self._indices_view)
 
     @property
     def _view_text_coords(self) -> np.ndarray:
