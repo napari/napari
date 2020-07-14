@@ -64,11 +64,12 @@ class Viewer(ViewerModel):
             )
             raise RuntimeError(message)
 
-        if perf_config and perf_config.trace_qt_events:
-            app = _convert_app_for_tracing(app)
+        if perf_config:
+            if perf_config.trace_qt_events:
+                app = _convert_app_for_tracing(app)
 
-        # Will only patch if enabled and config file specifies it.
-        perf_config.patch_callables()
+            # Will patch based on config file.
+            perf_config.patch_callables()
 
         if (
             platform.system() == "Windows"
