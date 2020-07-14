@@ -700,20 +700,11 @@ class Labels(Image):
         # circle/membership around center
         vol_radius = radius + 0.5
 
-        sliced_index = [
-            slice(-vol_radius, vol_radius + 1) for __ in range(sphere_dims)
-        ]
-        sliced_dist = [
-            slice(-vol_radius, vol_radius + 1) for __ in range(sphere_dims)
-        ]
-
-        indices = np.mgrid[sliced_index].T.reshape(-1, sphere_dims)
-        distances = np.mgrid[sliced_dist].T.reshape(-1, sphere_dims)
-
-        distances = distances ** 2
-        distances = np.sqrt(np.sum(distances, axis=1))
+        indices_slice = [slice(-vol_radius, vol_radius + 1),] * sphere_dims
+        indices = np.mgrid[indices_slice].T.reshape(-1, sphere_dims)
+        distances_sq = np.sum(indices ** 2, axis=1)
         # Use distances within desired radius to mask indices in grid
-        mask_indices = indices[distances <= radius].astype(int)
+        mask_indices = indices[distances_sq <= radius ** 2].astype(int)
 
         return mask_indices
 
