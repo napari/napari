@@ -85,9 +85,20 @@ def test_paint_circle_2d(Event):
     event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
     mouse_press_callbacks(layer, event)
 
+    layer.brush_size = 12
+    layer.brush_shape = 'circle'
+    layer.mode = 'paint'
+    layer.selected_label = 6
+    layer.position = (39, 39)
+
+    # Simulate click
+    event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
+    mouse_press_callbacks(layer, event)
+
     assert np.sum(layer.data == 3) == 41
     assert np.sum(layer.data == 4) == 137
     assert np.sum(layer.data == 5) == 137
+    assert np.sum(layer.data == 6) == 41
 
 
 def test_paint_circle_3d(Event):
