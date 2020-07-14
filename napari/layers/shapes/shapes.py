@@ -2169,7 +2169,7 @@ class Shapes(Layer):
                 },
                 'indices': self.dims.indices,
             }
-            if self._text is None:
+            if self.text is None:
                 self._clipboard['text'] = None
             else:
                 self._clipboard['text'] = deepcopy(self._text.text[index])
