@@ -1365,7 +1365,11 @@ class Shapes(Layer):
         if edge_width is None:
             edge_width = self.current_edge_width
 
-        n_new_shapes = len(data)
+        if np.array(data[0]).ndim == 1:
+            # If a single array for a shape
+            n_new_shapes = 1
+        else:
+            n_new_shapes = len(data)
 
         if edge_color is None:
             edge_color = self._get_new_shape_color(
