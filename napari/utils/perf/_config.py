@@ -70,6 +70,10 @@ class PerfmonConfig:
     """
 
     def __init__(self, config_path: Optional[str]):
+        # Should only patch once, but it can't be on module load, user
+        # should patch once main() as started running during startup.
+        self.patched = False
+
         self.config_path = config_path
         if config_path is None:
             return  # Legacy mode, trace Qt events only.
@@ -83,8 +87,6 @@ class PerfmonConfig:
         with path.open() as infile:
             self.data = json.load(infile)
 
-        self.patched = False
-
     def patch_callables(self):
         """Patch callables according to the config file.
 
@@ -92,6 +94,9 @@ class PerfmonConfig:
         call at module init or you will likely get circular dependencies.
         This function potentially imports a lot of your modules.
         """
+        if self.config_path is None:
+            return  # disabled
+
         assert self.patched is False
         self._patch_callables()
         self.patched = True
