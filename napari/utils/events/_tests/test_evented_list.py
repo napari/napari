@@ -217,7 +217,7 @@ def test_arbitrary_child_events():
     b = NestableEventedList()
 
     observed = []
-    root.events.connect(observed.append)
+    root.events.connect(lambda e: observed.append(e))
 
     root.append(b)
     b.append(e_obj)
