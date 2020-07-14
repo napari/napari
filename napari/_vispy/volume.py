@@ -114,7 +114,7 @@ vec4 calculateColor(vec4 betterColor, vec3 loc, vec3 step)
     int nlights = 1;
     for (int i=0; i<nlights; i++)
     {{
-        // Get light direction (make sure to prevent zero devision)
+        // Get light direction (make sure to prevent zero division)
         vec3 L = normalize(view_ray);  //lightDirs[i];
         float lightEnabled = float( length(L) > 0.0 );
         L = normalize(L+(1.0-lightEnabled));
@@ -366,7 +366,7 @@ class Volume(BaseVolume):
 
             * translucent: voxel colors are blended along the view ray until
               the result is opaque.
-            * mip: maxiumum intensity projection. Cast a ray and display the
+            * mip: maximum intensity projection. Cast a ray and display the
               maximum value that was encountered.
             * additive: voxel colors are added along the view ray until
               the result is saturated.

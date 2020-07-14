@@ -1920,7 +1920,7 @@ class Shapes(Layer):
         self._finish_drawing()
 
     def _rotate_box(self, angle, center=[0, 0]):
-        """Perfrom a rotation on the selected box.
+        """Perform a rotation on the selected box.
 
         Parameters
         ----------
@@ -1937,7 +1937,7 @@ class Shapes(Layer):
         self._selected_box = box @ transform.T + center
 
     def _scale_box(self, scale, center=[0, 0]):
-        """Perfrom a scaling on the selected box.
+        """Perform a scaling on the selected box.
 
         Parameters
         ----------
@@ -1958,7 +1958,7 @@ class Shapes(Layer):
         self._selected_box = box + center
 
     def _transform_box(self, transform, center=[0, 0]):
-        """Perfrom a linear transformation on the selected box.
+        """Perform a linear transformation on the selected box.
 
         Parameters
         ----------

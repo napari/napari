@@ -125,7 +125,7 @@ class QtViewerSingleImageSuite:
 
 
 class QtViewerSingleInvisbleImageSuite:
-    """Benchmarks for a invisble single image layer in the viewer."""
+    """Benchmarks for a invisible single image layer in the viewer."""
 
     def setup(self):
         _ = QApplication.instance() or QApplication([])

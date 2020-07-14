@@ -53,7 +53,7 @@ class QtLabelsControls(QtLayerControls):
     erase_button : qtpy.QtWidgets.QtModeRadioButton
         Button to select ERASE mode on Labels layer.
     selectionSpinBox : qtpy.QtWidgets.QSpinBox
-        Widget to select a specfic label by its index.
+        Widget to select a specific label by its index.
 
     Raises
     ------

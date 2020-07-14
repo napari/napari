@@ -344,7 +344,7 @@ class ShapeList:
             Location in list of the shape to be removed.
         renumber : bool
             Bool to indicate whether to renumber all shapes or not. If not the
-            expectation is that this shape is being immediately readded to the
+            expectation is that this shape is being immediately added back to the
             list using `add_shape`.
         """
         indices = self._index != index
@@ -571,7 +571,7 @@ class ShapeList:
         self._update_z_order()
 
     def shift(self, index, shift):
-        """Perfroms a 2D shift on a single shape located at index
+        """Performs a 2D shift on a single shape located at index
 
         Parameters
         ----------
@@ -584,7 +584,7 @@ class ShapeList:
         self._update_mesh_vertices(index, edge=True, face=True)
 
     def scale(self, index, scale, center=None):
-        """Perfroms a scaling on a single shape located at index
+        """Performs a scaling on a single shape located at index
 
         Parameters
         ----------
@@ -602,7 +602,7 @@ class ShapeList:
         self._update_z_order()
 
     def rotate(self, index, angle, center=None):
-        """Perfroms a rotation on a single shape located at index
+        """Performs a rotation on a single shape located at index
 
         Parameters
         ----------
@@ -617,7 +617,7 @@ class ShapeList:
         self._update_mesh_vertices(index, edge=True, face=True)
 
     def flip(self, index, axis, center=None):
-        """Perfroms an vertical flip on a single shape located at index
+        """Performs an vertical flip on a single shape located at index
 
         Parameters
         ----------
@@ -633,7 +633,7 @@ class ShapeList:
         self._update_mesh_vertices(index, edge=True, face=True)
 
     def transform(self, index, transform):
-        """Perfroms a linear transform on a single shape located at index
+        """Performs a linear transform on a single shape located at index
 
         Parameters
         ----------

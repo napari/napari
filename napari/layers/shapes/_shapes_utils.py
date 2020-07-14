@@ -15,7 +15,7 @@ def inside_triangles(triangles):
     Returns
     -------
     inside : (N,) array of bool
-        Array with `True` values for trinagles containg the origin
+        Array with `True` values for trinagles containing the origin
     """
 
     AB = triangles[:, 1, :] - triangles[:, 0, :]
@@ -416,7 +416,7 @@ def rectangle_to_box(data):
 
 
 def find_corners(data):
-    """Finds the four corners of the interaction box definied by an array of
+    """Finds the four corners of the interaction box defined by an array of
     points
 
     Parameters
@@ -461,7 +461,7 @@ def center_radii_to_corners(center, radii):
 
 def triangulate_ellipse(corners, num_segments=100):
     """Determines the triangulation of a path. The resulting `offsets` can
-    mulitplied by a `width` scalar and be added to the resulting `centers`
+    multiplied by a `width` scalar and be added to the resulting `centers`
     to generate the vertices of the triangles for the triangulation, i.e.
     `vertices = centers + width*offsets`. Using the `centers` and `offsets`
     representation thus allows for the computed triangulation to be
@@ -560,7 +560,7 @@ def triangulate_face(data):
 
 def triangulate_edge(path, closed=False):
     """Determines the triangulation of a path. The resulting `offsets` can
-    mulitplied by a `width` scalar and be added to the resulting `centers`
+    multiplied by a `width` scalar and be added to the resulting `centers`
     to generate the vertices of the triangles for the triangulation, i.e.
     `vertices = centers + width*offsets`. Using the `centers` and `offsets`
     representation thus allows for the computed triangulation to be
@@ -613,7 +613,7 @@ def triangulate_edge(path, closed=False):
 
 def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
     """Determines the triangulation of a path in 2D. The resulting `offsets`
-    can be mulitplied by a `width` scalar and be added to the resulting
+    can be multiplied by a `width` scalar and be added to the resulting
     `centers` to generate the vertices of the triangles for the triangulation,
     i.e. `vertices = centers + width*offsets`. Using the `centers` and
     `offsets` representation thus allows for the computed triangulation to be

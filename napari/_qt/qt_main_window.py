@@ -215,7 +215,7 @@ class Window:
                 QApplication.quit()
             # otherwise, something else created the QApp before us (such as
             # %gui qt IPython magic).  If we quit the app in this case, then
-            # *later* attemps to instantiate a napari viewer won't work until
+            # *later* attempts to instantiate a napari viewer won't work until
             # the event loop is restarted with app.exec_().  So rather than
             # quit just close all the windows (and clear our app icon).
             else:

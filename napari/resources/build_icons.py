@@ -1,5 +1,5 @@
 """Utility script to generate copies of icons with colors based
-on our themes. Neccessary workaround because qt does not allow
+on our themes. Necessary workaround because qt does not allow
 for styling svg elements using qss
 """
 
