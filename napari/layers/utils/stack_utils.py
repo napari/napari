@@ -5,7 +5,6 @@ import itertools
 
 import numpy as np
 from napari.layers import Image, Labels
-from vispy.color import Colormap
 from napari.utils.colormaps import colormaps
 from napari.layers.image._image_utils import guess_multiscale
 from napari.utils.misc import ensure_iterable, ensure_sequence_of_iterables
@@ -153,22 +152,23 @@ class StackUtils(AddLayersMixin):
         self,
         images: List[Union[Image, Labels]],
         axis: int = 0,
-        rgb: bool = None,
-        colormap: Union[str, Colormap] = 'gray',
-        contrast_limits: List[int] = None,
-        gamma: float = 1,
-        interpolation: str = 'nearest',
-        rendering: str = 'mip',
-        iso_threshold: float = 0.5,
-        attenuation: float = 0.5,
-        name: str = None,
-        metadata: dict = None,
-        scale: Tuple[float] = None,
-        translate: Tuple[float] = None,
-        opacity: float = 1,
-        blending: str = 'translucent',
-        visible: bool = True,
-        multiscale: bool = None,
+        **kwargs: Dict,
+        # rgb: bool = None,
+        # colormap: Union[str, Colormap] = 'gray',
+        # contrast_limits: List[int] = None,
+        # gamma: float = 1,
+        # interpolation: str = 'nearest',
+        # rendering: str = 'mip',
+        # iso_threshold: float = 0.5,
+        # attenuation: float = 0.5,
+        # name: str = None,
+        # metadata: dict = None,
+        # scale: Tuple[float] = None,
+        # translate: Tuple[float] = None,
+        # opacity: float = 1,
+        # blending: str = 'translucent',
+        # visible: bool = True,
+        # multiscale: bool = None,
     ) -> Image:
         """Function to combine selected image layers in one layer
 
@@ -185,36 +185,17 @@ class StackUtils(AddLayersMixin):
             Combined image stack
         """
 
-        print(scale, translate)
-        print(type(images[0].scale), type(images[0].translate))
-        if scale is None:
-            scale = np.insert(images[0].scale, axis, 1)
-        if translate is None:
-            translate = np.insert(images[0].translate, axis, 0)
+        data, meta, _ = images[0].as_layer_data_tuple()
 
-        print(scale, translate)
-        kwargs = {
-            'rgb': rgb,
-            'colormap': colormap,
-            'blending': blending,
-            'contrast_limits': contrast_limits,
-            'gamma': gamma,
-            'interpolation': interpolation,
-            'rendering': rendering,
-            'iso_threshold': iso_threshold,
-            'attenuation': attenuation,
-            'name': name,
-            'metadata': metadata,
-            'scale': scale,
-            'translate': translate,
-            'opacity': opacity,
-            'visible': visible,
-            'multiscale': multiscale,
-        }
+        if 'scale' not in kwargs:
+            kwargs['scale'] = np.insert(meta['scale'], axis, 1)
+        if 'translate' not in kwargs:
+            kwargs['translate'] = np.insert(meta['translate'], axis, 0)
 
+        meta.update(kwargs)
         new_list = [image.data for image in images]
         new_data = np.stack(new_list, axis=axis)
-        stack = Image(new_data, **kwargs)
+        stack = Image(new_data, **meta)
 
         return stack
 
