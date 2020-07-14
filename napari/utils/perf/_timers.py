@@ -1,9 +1,13 @@
 """PerfTimers class and global instance.
 """
-from ._config import USE_PERFMON
-from ._event import PerfEvent
+import os
+
+from ._compat import perf_counter_ns
+from ._event import InstantEvent, PerfEvent
 from ._stat import Stat
 from ._trace_file import PerfTraceFile
+
+USE_PERFMON = os.getenv("NAPARI_PERFMON", "0") != "0"
 
 
 class PerfTimers:
@@ -52,24 +56,35 @@ class PerfTimers:
         self.trace_file = None
 
     def add_event(self, event: PerfEvent):
-        """Add one timing event.
+        """Add one completed event.
 
         Parameters
         ----------
         event : PerfEvent
             Add this event.
         """
-        # Write if actively tracing.
+        # Add event if tracing.
         if self.trace_file is not None:
-            self.trace_file.write_event(event)
+            self.trace_file.add_event(event)
 
-        # Update our self.timers (in milliseconds).
-        name = event.name
-        duration_ms = event.duration_ms
-        if name in self.timers:
-            self.timers[name].add(duration_ms)
-        else:
-            self.timers[name] = Stat(duration_ms)
+        if event.type == "X":
+            # Update our self.timers (in milliseconds).
+            name = event.name
+            duration_ms = event.duration_ms
+            if name in self.timers:
+                self.timers[name].add(duration_ms)
+            else:
+                self.timers[name] = Stat(duration_ms)
+
+    def add_instant_event(self, name: str, **kwargs):
+        """Add one instant event.
+
+        Parameters
+        ----------
+        event : PerfEvent
+            Add this event.
+        """
+        self.add_event(InstantEvent(name, perf_counter_ns(), **kwargs))
 
     def clear(self):
         """Clear all timers.
@@ -92,13 +107,21 @@ class PerfTimers:
         """Stop recording a trace file.
         """
         if self.trace_file is not None:
-            self.trace_file.outf.close()
+            self.trace_file.close()
             self.trace_file = None
 
 
 if USE_PERFMON:
     # The one global instance
     timers = PerfTimers()
+
+    def add_instant_event(name: str, **kwargs):
+        timers.add_instant_event(name, **kwargs)
+
+
 else:
     # No one should be access this since they are disabled.
     timers = None
+
+    def add_instant_event(name: str, **kwargs):
+        pass

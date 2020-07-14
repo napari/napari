@@ -114,6 +114,9 @@ class QtDimSliderWidget(QWidget):
         label.editingFinished.connect(self._clear_label_focus)
         self.axis_label = label
 
+    def _value_changed(self, value):
+        self.dims.set_point(self.axis, value)
+
     def _create_range_slider_widget(self):
         """Creates a range slider widget for a given axis."""
         _range = self.dims.range[self.axis]
@@ -132,9 +135,7 @@ class QtDimSliderWidget(QWidget):
         slider.setValue(point)
 
         # Listener to be used for sending events back to model:
-        slider.valueChanged.connect(
-            lambda value: self.dims.set_point(self.axis, value)
-        )
+        slider.valueChanged.connect(self._value_changed)
 
         def slider_focused_listener():
             self.qt_dims.last_used = self.axis

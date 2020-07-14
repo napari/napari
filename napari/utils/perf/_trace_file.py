@@ -1,8 +1,6 @@
-"""PerfTraceFile class to write JSON files in the chrome://tracing format.
+"""PerfTraceFile class to write the chrome://tracing file format (JSON)
 """
 import json
-import os
-import threading
 
 from ._compat import perf_counter_ns
 from ._event import PerfEvent
@@ -29,8 +27,6 @@ class PerfTraceFile:
         perf_counter_ns() time when we started the trace.
     pid : int
         Process ID.
-    tid : int
-        Thread ID.
     outf : file handle
         JSON file we are writing to.
 
@@ -54,14 +50,31 @@ class PerfTraceFile:
         # So the events we write start at t=0.
         self.zero_ns = perf_counter_ns()
 
-        # PID and TID go in every event. We are assuming one process and
-        # one thread for now, otherwise we'll have to add these to PerfEvent.
-        self.pid = os.getpid()
-        self.tid = threading.get_ident()
-
         # Start writing the file with an open bracket, per JSON Array format.
         self.outf = open(path, "w")
         self.outf.write("[\n")
+        self.outf.flush()
+
+        # Accumulate events in a list and only write at the end so the cost
+        # of writing to a file does not bloat our timings.
+        self.events = []
+
+    def add_event(self, event: PerfEvent) -> None:
+        """Add one perf event to the file.
+
+        Parameters
+        ----------
+        event : PerfEvent
+            Event to add
+        """
+        self.events.append(event)
+
+    def close(self):
+        """Write all stored events.
+        """
+        for event in self.events:
+            self.write_event(event)
+        self.outf.close()
 
     def write_event(self, event: PerfEvent) -> None:
         """Write one perf event.
@@ -71,22 +84,33 @@ class PerfTraceFile:
         event : PerfEvent
             Event to write.
         """
+        category = "none" if event.category is None else event.category
+
         # Event type "X" denotes a completed event. Meaning we already
         # know the duration. The format wants times in micro-seconds.
         data = {
-            "pid": self.pid,
+            "pid": event.pid,
+            "tid": event.tid,
             "name": event.name,
-            "cat": event.category,
-            "ph": "X",
+            "cat": category,
+            "ph": event.type,
             "ts": event.start_us,
-            "dur": event.duration_us,
+            "args": event.args,
         }
+
+        if event.type == "X":
+            data["dur"] = event.duration_us
+        else:
+            assert event.type == "I"
+            # For instant events the scope "s" is one of:
+            #     "g" - global
+            #     "p" - process
+            #     "t" - thread
+            data["s"] = "p"
+
         json_str = json.dumps(data)
 
         # Write comma separated JSON objects. Note jsonlines is really a better
         # way to write JSON that can be cut off, but chrome://tracing probably
         # predates that convention.
         self.outf.write(f"{json_str},\n")
-
-        # Write as we go in case we exit without closing.
-        self.outf.flush()
