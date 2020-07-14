@@ -136,14 +136,14 @@ def patch_callables(callables: List[str], patch_func: PatchFunction) -> None:
 
     Notes
     -----
-    The callables list list is like this:
+    The callables list is like this:
     [
         "module.module.ClassName.method_name",
         "module.function_name"
         ...
     ]
 
-    Nested classes and methods not allow but support could be added.
+    Nested classes and methods not allowed, but support could be added.
 
     An example patch_func is:
 
