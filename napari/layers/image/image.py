@@ -6,7 +6,6 @@ from scipy import ndimage as ndi
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.event import Event
-from ...utils.perf import perf_func, perf_timer
 from ...utils.status_messages import format_float
 from ..base import Layer
 from ..utils.layer_utils import calc_data_range
@@ -504,7 +503,6 @@ class Image(IntensityVisualizationMixin, Layer):
             empty_image, properties, self._raw_to_displayed
         )
 
-    @perf_func
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
 
@@ -590,7 +588,6 @@ class Image(IntensityVisualizationMixin, Layer):
     def loaded(self):
         return self._slice.loaded
 
-    @perf_func
     def _load_single_scale(self) -> None:
         """Load non-multiscale image.
         """
@@ -602,13 +599,11 @@ class Image(IntensityVisualizationMixin, Layer):
         self._slice.load_chunk(request)
 
         # Might be loaded or not loaded, update either way
-        with perf_timer("events.loaded()"):
-            self.events.loaded()
+        self.events.loaded()
 
         # TODO_ASYNC: where should do this? Seems out of place here.
         self._transforms['tile2data'].scale = np.ones(self.dims.ndim)
 
-    @perf_func
     def chunk_loaded(self, request):
         """Notify Image that an async request was satisfied.
 
@@ -625,7 +620,6 @@ class Image(IntensityVisualizationMixin, Layer):
         # Update vispy, draw the new slice
         self.events.set_data()
 
-    @perf_func
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""
         if not self._slice.loaded:

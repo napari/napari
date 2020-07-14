@@ -5,8 +5,6 @@ from vispy.app import Canvas
 from vispy.gloo import gl
 from vispy.visuals.transforms import STTransform
 
-from ..utils.perf import perf_func
-
 
 class VispyBaseLayer(ABC):
     """Base object for individual layer views
@@ -150,7 +148,6 @@ class VispyBaseLayer(ABC):
         self.node.set_gl_state(self.layer.blending)
         self.node.update()
 
-    @perf_func
     def _on_scale_change(self, event=None):
         scale = self.layer._transforms.simplified.set_slice(
             self.layer.dims.displayed
@@ -160,7 +157,6 @@ class VispyBaseLayer(ABC):
         self.layer.corner_pixels = self.coordinates_of_canvas_corners()
         self.layer.position = self._transform_position(self._position)
 
-    @perf_func
     def _on_translate_change(self, event=None):
         translate = self.layer._transforms.simplified.set_slice(
             self.layer.dims.displayed

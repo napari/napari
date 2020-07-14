@@ -27,13 +27,7 @@ import numpy as np
 
 from ..types import ArrayLike
 from ..utils.event import EmitterGroup
-from ..utils.perf import (
-    perf_counter_ns,
-    perf_func,
-    perf_timer,
-    PerfEvent,
-    timers,
-)
+from ..utils.perf import perf_counter_ns, PerfEvent, timers
 
 LOGGER = logging.getLogger("ChunkLoader")
 
@@ -48,7 +42,7 @@ SliceTuple = Tuple[int, int, int]
 # ChunkCache size as a fraction of total RAM.
 CACHE_MEM_FRACTION = 0.1
 
-NUM_WORKERS = int(os.getenv("NAPARI_ASYNC_THREADS", "6"))
+NUM_WORKERS = int(os.getenv("NAPARI_CHUNK_WORKERS", "6"))
 
 
 def _hold_gil(seconds: float):
@@ -66,7 +60,7 @@ def _hold_gil(seconds: float):
 
 def _log_to_file(path):
     """Write ChunkLoader log message to the own file."""
-    path = os.getenv("NAPARI_ASYNC_LOG")
+    path = os.getenv("NAPARI_CHUNK_LOG")
     if path is not None:
         fh = logging.FileHandler(path)
         LOGGER.addHandler(fh)
@@ -109,7 +103,7 @@ def _get_synchronous_default() -> bool:
     # Async is off by default for now. Must opt-in with NAPARI_ASYNC_LOAD.
     synchronous_loading = True
 
-    env_var = os.getenv("NAPARI_ASYNC_LOAD")
+    env_var = os.getenv("NAPARI_CHUNK_ASYNC")
 
     if env_var is not None:
         # Overide the deafult with the env var's setting.
@@ -307,7 +301,10 @@ class ChunkLoader:
         # Return the new request.
         return ChunkRequest(layer, indices, array)
 
-    @perf_func
+    def _asarray(self, array):
+        """Broken out for perfmon timing."""
+        return np.asarray(array)
+
     def load_chunk(self, request: ChunkRequest) -> Optional[ChunkRequest]:
         """Load the array in the given ChunkRequest.
 
@@ -333,9 +330,9 @@ class ChunkLoader:
 
         if self.synchronous or in_memory:
             LOGGER.info("[sync] ChunkLoader.load_chunk")
+
             # Load it immediately right here in the GUI thread.
-            with perf_timer("np.asarray"):
-                request.array = np.asarray(request.array)
+            request.array = self._asarray(request.array)
             return request
 
         # TODO_ASYNC: if we don't do this the slider gets timers events
@@ -348,7 +345,6 @@ class ChunkLoader:
         # will be called with the loaded chunk.
         return self._load_async(request)
 
-    @perf_func
     def _load_async(self, request: ChunkRequest) -> None:
         """Initiate an asynchronous load of the given request.
 
@@ -389,7 +385,6 @@ class ChunkLoader:
         # Async load was started, nothing is available yet.
         return None
 
-    @perf_func
     def _clear_pending(self, data_id: int) -> None:
         """Clear any pending requests for this data_id.
 
@@ -422,7 +417,6 @@ class ChunkLoader:
                 num_after,
             )
 
-    @perf_func
     def _done(self, future: futures.Future) -> None:
         """Called when a future finished with success or was cancelled.
 

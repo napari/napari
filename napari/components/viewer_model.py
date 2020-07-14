@@ -7,7 +7,6 @@ from .dims import Dims
 from .layerlist import LayerList
 from ..utils.event import EmitterGroup, Event
 from ..utils.key_bindings import KeymapHandler, KeymapProvider
-from ..utils.perf import perf_func
 from ..utils.theme import palettes
 
 
@@ -309,7 +308,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         empty_labels = np.zeros(dims, dtype=int)
         self.add_labels(empty_labels)
 
-    @perf_func
     def _update_layers(self, event=None, layers=None):
         """Updates the contained layers.
 

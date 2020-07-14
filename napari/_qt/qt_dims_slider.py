@@ -23,7 +23,6 @@ from ._constants import LoopMode
 from .qt_modal import QtPopup
 from .qt_scrollbar import ModifiedScrollBar
 from .threading import _new_worker_qthread
-from ..utils.perf import perf_func
 
 
 class QtDimSliderWidget(QWidget):
@@ -114,7 +113,6 @@ class QtDimSliderWidget(QWidget):
         label.editingFinished.connect(self._clear_label_focus)
         self.axis_label = label
 
-    @perf_func
     def _value_changed(self, value):
         self.dims.set_point(self.axis, value)
 

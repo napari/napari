@@ -2,7 +2,7 @@ from qtpy.QtCore import QObject, Signal
 
 from ..layers.base import Layer
 from ..utils.chunk_loader import ChunkRequest, CHUNK_LOADER
-from ..utils.perf import perf_func, add_instant_event
+from ..utils.perf import add_instant_event
 
 
 class QtChunkReceiver(QObject):
@@ -30,13 +30,11 @@ class QtChunkReceiver(QObject):
         # We signal ourself to switch things to the GUI thread (if necessary).
         self.chunk_loaded_gui.connect(self._chunk_loaded_gui)
 
-    @perf_func
     def _chunk_loaded_worker(self, event) -> None:
         """A chunk was loaded (worker thread)."""
         add_instant_event("_chunk_loaded_worker")
         self.chunk_loaded_gui.emit(event.layer, event.request)
 
-    @perf_func
     def _chunk_loaded_gui(self, layer, request: ChunkRequest) -> None:
         """A chunk was loaded (gui thread) pass it to the layer.
         """

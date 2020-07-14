@@ -5,7 +5,6 @@ from vispy.color import Colormap
 import numpy as np
 from .vispy_base_layer import VispyBaseLayer
 from ..layers.image._image_constants import Rendering
-from ..utils.perf import perf_func, perf_timer
 
 texture_dtypes = [
     np.dtype(np.int8),
@@ -34,7 +33,6 @@ class VispyImageLayer(VispyBaseLayer):
         self._on_display_change()
         self._on_data_change()
 
-    @perf_func
     def _on_display_change(self, data=None):
         parent = self.node.parent
         self.node.parent = None
@@ -49,7 +47,10 @@ class VispyImageLayer(VispyBaseLayer):
         self.node.parent = parent
         self.reset()
 
-    @perf_func
+    def _data_astype(self, data, dtype):
+        """Broken out as a separate function for perfmon reasons."""
+        return data.astype(dtype)
+
     def _on_data_change(self, event=None):
         data = self.layer._data_view
         dtype = np.dtype(data.dtype)
@@ -62,8 +63,7 @@ class VispyImageLayer(VispyBaseLayer):
                 raise TypeError(
                     f'type {dtype} not allowed for texture; must be one of {set(texture_dtypes)}'  # noqa: E501
                 )
-            with perf_timer("data.astype"):
-                data = data.astype(dtype)
+            data = self._data_astype(data, dtype)
 
         if self.layer.dims.ndisplay == 3 and self.layer.dims.ndim == 2:
             data = np.expand_dims(data, axis=0)
@@ -149,7 +149,6 @@ class VispyImageLayer(VispyBaseLayer):
         if self.layer.dims.ndisplay == 2:
             self._on_contrast_limits_change()
 
-    @perf_func
     def downsample_texture(self, data, MAX_TEXTURE_SIZE):
         """Downsample data based on maximum allowed texture size.
 
