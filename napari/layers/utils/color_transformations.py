@@ -43,7 +43,7 @@ def transform_color_with_defaults(
     except (AttributeError, ValueError, KeyError):
         warnings.warn(
             f"The provided {elem_name} parameter contained illegal values, "
-            f"reseting all {elem_name} values to {default}."
+            f"resetting all {elem_name} values to {default}."
         )
         transformed = transform_color(default)
     else:

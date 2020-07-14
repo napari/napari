@@ -22,7 +22,7 @@ def create_vispy_visual(layer):
     Parameters
     ----------
     layer : napari.layers._base_layer.Layer
-        Layer that needs its propetry widget created.
+        Layer that needs its property widget created.
 
     Returns
     -------

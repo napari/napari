@@ -124,7 +124,7 @@ def test_thread_worker_in_main_thread():
     thread_func = threading.thread_worker(func)
     worker = thread_func(2)
     # NOTE: you shouldn't normally call worker.work()!  If you do, it will NOT
-    # be run in a seperate thread (as it would for worker.start().
+    # be run in a separate thread (as it would for worker.start().
     # This is for the sake of testing it in the main thread.
     assert worker.work() == 2
 
@@ -171,7 +171,7 @@ def test_thread_generator_worker_in_main_thread():
     worker.yielded.connect(test_yield)
     worker.aborted.connect(handle_abort)
     # NOTE: you shouldn't normally call worker.work()!  If you do, it will NOT
-    # be run in a seperate thread (as it would for worker.start().
+    # be run in a separate thread (as it would for worker.start().
     # This is for the sake of testing it in the main thread.
     assert worker.work() is None  # because we aborted it
     assert not worker.is_paused

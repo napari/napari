@@ -80,7 +80,7 @@ def read_data_with_plugins(
         result = hook_caller.call_with_result_obj(
             path=path, _skip_impls=skip_impls
         )
-        reader = result.result  # will raise exceptions if any occured
+        reader = result.result  # will raise exceptions if any occurred
         if not reader:
             # we're all out of reader plugins
             break
@@ -110,7 +110,7 @@ def read_data_with_plugins(
     if errors:
         names = set([repr(e.plugin_name) for e in errors])
         err_msg = f"({len(errors)}) error{'s' if len(errors) > 1 else ''} "
-        err_msg += f"occured in plugins: {', '.join(names)}. "
+        err_msg += f"occurred in plugins: {', '.join(names)}. "
         err_msg += 'See full error logs in "Plugins → Plugin Errors..."'
         logger.error(err_msg)
 

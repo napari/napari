@@ -81,7 +81,7 @@ def get_tb_formatter() -> Callable[[ExcInfo, bool], str]:
         A function that accepts a 3-tuple and a boolean ``(exc_info, as_html)``
         and returns a formatted traceback string. The ``exc_info`` tuple is of
         the ``(type, value, traceback)`` format returned by sys.exc_info().
-        The ``as_html`` determines whether the traceback is formated in html
+        The ``as_html`` determines whether the traceback is formatted in html
         or plain text.
     """
     try:

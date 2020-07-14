@@ -250,7 +250,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         """Get shape of currently viewed dimensions.
 
         Returns
-        ----------
+        -------
         centroid : list
             List of center coordinates of scene, length 2 or 3 if displayed
             view is 2D or 3D.

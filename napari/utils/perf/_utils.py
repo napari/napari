@@ -26,8 +26,8 @@ if USE_PERFMON:
         category : str, optional
             Category for this timer.
 
-        Example
-        -------
+        Examples
+        --------
         with perf_timer("draw"):
             draw_stuff()
         """
@@ -47,8 +47,8 @@ if USE_PERFMON:
         func
             The function we are wrapping.
 
-        Example
-        -------
+        Examples
+        --------
         @perf_func
         def draw(self):
             draw_stuff()
@@ -72,8 +72,8 @@ if USE_PERFMON:
         timer_name : str
             The name to give this timer.
 
-        Example
-        -------
+        Examples
+        --------
         @perf_func_name("important draw")
         def draw(self):
             draw_stuff()

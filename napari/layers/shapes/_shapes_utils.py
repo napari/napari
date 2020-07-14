@@ -15,7 +15,7 @@ def inside_triangles(triangles):
     Returns
     -------
     inside : (N,) array of bool
-        Array with `True` values for trinagles containg the origin
+        Array with `True` values for trinagles containing the origin
     """
 
     AB = triangles[:, 1, :] - triangles[:, 0, :]
@@ -158,7 +158,7 @@ def lines_intersect(p1, q1, p2, q2):
     """Determines if line segment p1q1 intersects line segment p2q2
 
     Parameters
-    -------
+    ----------
     p1 : (2,) array
         Array of first point of first line segment
     q1 : (2,) array
@@ -208,7 +208,7 @@ def on_segment(p, q, r):
     """Checks if q is on the segment from p to r
 
     Parameters
-    -------
+    ----------
     p : (2,) array
         Array of first point of segment
     q : (2,) array
@@ -238,7 +238,7 @@ def orientation(p, q, r):
     """Determines oritentation of ordered triplet (p, q, r)
 
     Parameters
-    -------
+    ----------
     p : (2,) array
         Array of first point of triplet
     q : (2,) array
@@ -262,7 +262,7 @@ def is_collinear(points):
     """Determines if a list of 2D points are collinear.
 
     Parameters
-    -------
+    ----------
     points : (N, 2) array
         Points to be tested for collinearity
 
@@ -416,7 +416,7 @@ def rectangle_to_box(data):
 
 
 def find_corners(data):
-    """Finds the four corners of the interaction box definied by an array of
+    """Finds the four corners of the interaction box defined by an array of
     points
 
     Parameters
@@ -461,7 +461,7 @@ def center_radii_to_corners(center, radii):
 
 def triangulate_ellipse(corners, num_segments=100):
     """Determines the triangulation of a path. The resulting `offsets` can
-    mulitplied by a `width` scalar and be added to the resulting `centers`
+    multiplied by a `width` scalar and be added to the resulting `centers`
     to generate the vertices of the triangles for the triangulation, i.e.
     `vertices = centers + width*offsets`. Using the `centers` and `offsets`
     representation thus allows for the computed triangulation to be
@@ -560,7 +560,7 @@ def triangulate_face(data):
 
 def triangulate_edge(path, closed=False):
     """Determines the triangulation of a path. The resulting `offsets` can
-    mulitplied by a `width` scalar and be added to the resulting `centers`
+    multiplied by a `width` scalar and be added to the resulting `centers`
     to generate the vertices of the triangles for the triangulation, i.e.
     `vertices = centers + width*offsets`. Using the `centers` and `offsets`
     representation thus allows for the computed triangulation to be
@@ -613,7 +613,7 @@ def triangulate_edge(path, closed=False):
 
 def generate_2D_edge_meshes(path, closed=False, limit=3, bevel=False):
     """Determines the triangulation of a path in 2D. The resulting `offsets`
-    can be mulitplied by a `width` scalar and be added to the resulting
+    can be multiplied by a `width` scalar and be added to the resulting
     `centers` to generate the vertices of the triangles for the triangulation,
     i.e. `vertices = centers + width*offsets`. Using the `centers` and
     `offsets` representation thus allows for the computed triangulation to be
