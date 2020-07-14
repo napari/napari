@@ -5,7 +5,7 @@ from ...utils.misc import StringEnum
 
 class TextMode(StringEnum):
     """
-    Text: Text setting mode.
+    TextMode: Text setting mode.
 
     NONE (default mode) no text is displayed
 
@@ -17,3 +17,13 @@ class TextMode(StringEnum):
     NONE = auto()
     PROPERTY = auto()
     FORMATTED = auto()
+
+
+class Anchor(StringEnum):
+    """
+    Anchor: The anchor position for text
+
+    CENTER The text origin is centered on the layer item bounding box.
+    """
+
+    CENTER = auto()

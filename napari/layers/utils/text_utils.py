@@ -1,13 +1,8 @@
-from enum import Enum, auto
 import re
 
 import numpy as np
 
-from ._text_constants import TextMode
-
-
-class Anchor(Enum):
-    CENTER = auto()
+from ._text_constants import TextMode, Anchor
 
 
 def get_text_anchors(view_data, anchor_pos=Anchor.CENTER) -> np.ndarray:
