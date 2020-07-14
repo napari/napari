@@ -757,7 +757,7 @@ class AddLayersMixin:
         edge_width : float
             Width for all vectors in pixels.
         length : float
-             Multiplicative factor on projections for length of all vectors.
+            Multiplicative factor on projections for length of all vectors.
         edge_color : str
             Color of all of the vectors.
         edge_color_cycle : np.ndarray, list
@@ -982,8 +982,8 @@ class AddLayersMixin:
         >>> viewer = napari.Viewer()
         >>> data = (
         ...     np.random.random((10, 2)) * 20,
-        ...     {'face_color': 'blue'},
-        ...     'points',
+        ...     {"face_color": "blue"},
+        ...     "points",
         ... )
         >>> viewer._add_layer_from_data(*data)
 
@@ -1164,15 +1164,15 @@ def prune_kwargs(kwargs: Dict[str, Any], layer_type: str) -> Dict[str, Any]:
     Examples
     --------
     >>> test_kwargs = {
-            'scale': (0.75, 1),
-            'blending': 'additive',
-            'num_colors': 10,
-        }
-    >>> prune_kwargs(test_kwargs, 'image')
+    ...     "scale": (0.75, 1),
+    ...     "blending": "additive",
+    ...     "num_colors": 10,
+    ... }
+    >>> prune_kwargs(test_kwargs, "image")
     {'scale': (0.75, 1), 'blending': 'additive'}
 
     >>> # only labels has the ``num_colors`` argument
-    >>> prune_kwargs(test_kwargs, 'labels')
+    >>> prune_kwargs(test_kwargs, "labels")
     {'scale': (0.75, 1), 'blending': 'additive', 'num_colors': 10}
     """
     add_method = getattr(AddLayersMixin, 'add_' + layer_type, None)
