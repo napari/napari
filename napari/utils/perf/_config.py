@@ -131,7 +131,7 @@ class PerfmonConfig:
 
 
 def _create_perf_config():
-    value = os.getenv("NAPARI_PERFMON", "0")
+    value = os.getenv("NAPARI_PERFMON")
 
     if value is None:
         # Totally disabled

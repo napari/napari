@@ -22,7 +22,7 @@ def _create_application(argv) -> QApplication:
     crash. We'll crash because QWidgets had been creating, if nothing else
     for the splash screen.
     """
-    if perf_config.trace_qt_events:
+    if perf_config and perf_config.trace_qt_events:
         from .qt_event_tracing import QApplicationWithTracing
 
         return QApplicationWithTracing(argv)
