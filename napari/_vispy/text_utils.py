@@ -1,19 +1,20 @@
 import numpy as np
+from vispy.scene.visuals import Text
 
 
-def update_text(layer, text_node):
-    if (len(layer._indices_view) == 0) or (layer._text.visible is False):
-        text_coords = np.zeros((1, layer.dims.ndisplay))
-        text = []
-    else:
-        text_coords = layer._view_text_coords
-        if len(text_coords) == 0:
-            text_coords = np.zeros((1, layer.dims.ndisplay))
-        text = layer._view_text
+def update_text(
+    text_values: np.ndarray,
+    text_coords: np.ndarray,
+    text_rotation: float,
+    text_color: np.ndarray,
+    text_size: float,
+    ndisplay: int,
+    text_node: Text,
+):
 
-    if layer.dims.ndisplay == 2:
+    if ndisplay == 2:
         positions = np.flip(text_coords, axis=1)
-    elif layer.dims.ndisplay == 3:
+    elif ndisplay == 3:
         raw_positions = np.flip(text_coords, axis=1)
         n_positions, position_dims = raw_positions.shape
 
@@ -24,8 +25,8 @@ def update_text(layer, text_node):
         else:
             positions = raw_positions
 
-    text_node.text = text
+    text_node.text = text_values
     text_node.pos = positions
-    text_node.rotation = layer._text.rotation
-    text_node.color = layer._text.color
-    text_node.font_size = layer._text.size
+    text_node.rotation = text_rotation
+    text_node.color = text_color
+    text_node.font_size = text_size

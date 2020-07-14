@@ -131,8 +131,28 @@ class VispyPointsLayer(VispyBaseLayer):
         self.node.update()
 
     def _on_text_change(self, update_node=True):
+        ndisplay = self.layer.dims.ndisplay
+        if (len(self.layer._indices_view) == 0) or (
+            self.layer._text.visible is False
+        ):
+            text_coords = np.zeros((1, ndisplay))
+            text = []
+        else:
+            text_coords = self.layer._view_text_coords
+            if len(text_coords) == 0:
+                text_coords = np.zeros((1, ndisplay))
+            text = self.layer._view_text
         text_node = self._get_text_node()
-        update_text(self.layer, text_node)
+        update_text(
+            text_values=text,
+            text_coords=text_coords,
+            text_rotation=self.layer._text.rotation,
+            text_color=self.layer._text.color,
+            text_size=self.layer._text.size,
+            ndisplay=ndisplay,
+            text_node=text_node,
+        )
+
         if update_node:
             self.node.update()
 
