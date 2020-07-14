@@ -18,9 +18,9 @@ def _create_application(argv) -> QApplication:
 
     With IPython/Jupyter we call convert_app_for_tracing() which deletes
     the QApplication and creates a new one. However here with gui_qt we
-    need to create the correct QApplication here up front, or we will
-    crash. We'll crash because QWidgets had been creating, if nothing else
-    for the splash screen.
+    need to create the correct QApplication up front, or we will crash.
+    We'll crash because we'd be deleting the QApplication after we created
+    QWidgets with it, such as we do for the splash screen.
     """
     if perf_config and perf_config.trace_qt_events:
         from .qt_event_tracing import QApplicationWithTracing
