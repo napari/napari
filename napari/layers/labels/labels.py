@@ -530,7 +530,7 @@ class Labels(Image):
         pixel.
 
         Parameters
-        -------
+        ----------
         raw : array or int
             Raw integer input image.
 

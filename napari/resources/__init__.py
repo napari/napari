@@ -65,6 +65,7 @@ def import_resources(version: str = '', overwrite: bool = False) -> str:
         Version string, by default the resources will be written to a file that
         encodes the current napari version, as well as Qt backend and version:
         ``_qt_resources_{napari.__version__}_{API}_{QT_VERSION}.py``
+
     overwrite : bool, optional
         Whether to recompile and overwrite the resources.
         Resources will be rebuilt if any of the following are True:

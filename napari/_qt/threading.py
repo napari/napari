@@ -129,7 +129,6 @@ class WorkerBase(QRunnable):
 
         Examples
         --------
-
         .. code-block:: python
 
             class MyWorker(WorkerBase):

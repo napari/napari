@@ -757,7 +757,7 @@ class AddLayersMixin:
         edge_width : float
             Width for all vectors in pixels.
         length : float
-             Multiplicative factor on projections for length of all vectors.
+            Multiplicative factor on projections for length of all vectors.
         edge_color : str
             Color of all of the vectors.
         edge_color_cycle : np.ndarray, list

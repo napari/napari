@@ -388,8 +388,8 @@ class Window:
 
         Parameters
         ----------
-            widget : QWidget | str
-                If widget == 'all', all docked widgets will be removed.
+        widget : QWidget | str
+            If widget == 'all', all docked widgets will be removed.
         """
         if widget == 'all':
             for dw in self._qt_window.findChildren(QDockWidget):

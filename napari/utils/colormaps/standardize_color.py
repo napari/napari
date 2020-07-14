@@ -43,19 +43,19 @@ def transform_color(colors: Any) -> np.ndarray:
     calling this function.
 
     Parameters
-    --------
+    ----------
     colors : string and array-like.
         The color(s) to interpret and convert
 
     Returns
-    ------
+    -------
     colors : np.ndarray
         An instance of np.ndarray with a data type of float32, 4 columns in
         RGBA order and N rows, with N being the number of colors. The array
         will always be 2D even if a single color is passed.
 
     Raises
-    -----
+    ------
     ValueError, AttributeError, KeyError
         invalid inputs
     """
@@ -70,13 +70,13 @@ def _handle_str(color: str) -> np.ndarray:
     The function uses an LRU cache to enhance performance.
 
     Parameters
-    --------
+    ----------
     color : str
         A single string as an input color. Can be a color name or a
         hex representation of a color, with either 6 or 8 hex digits.
 
     Returns
-    ------
+    -------
     colorarray : np.ndarray
         1x4 array
 
@@ -105,13 +105,13 @@ def _handle_list_like(colors: Sequence) -> np.ndarray:
     Generators should first visit _handle_generator before arriving as input.
 
     Parameters
-    --------
+    ----------
     colors : Sequence
         A list-like container of colors. The colors inside should be homogeneuous
         in their representation.
 
     Returns
-    ------
+    -------
     color_array : np.ndarray
         Nx4 numpy array, with N being the length of ``colors``.
     """
@@ -242,12 +242,12 @@ def _convert_array_to_correct_format(colors: np.ndarray) -> np.ndarray:
     data type of float32.
 
     Parameters
-    --------
+    ----------
     colors : np.ndarray
         Input color array, perhaps un-normalized and without the alpha channel.
 
     Returns
-    ------
+    -------
     colors : np.ndarray
         Nx4, float32 color array with values in the range [0, 1]
     """
@@ -274,12 +274,12 @@ def _handle_str_list_like(colors: Sequence) -> np.ndarray:
     format.
 
     Parameters
-    ---------
+    ----------
     colors : list-like
         A sequence of string colors
 
     Returns
-    ------
+    -------
     color_array : np.ndarray
         Nx4, float32 color array
     """
@@ -296,12 +296,12 @@ def _handle_none(color) -> np.ndarray:
     """Converts color given as None to black.
 
     Parameters
-    --------
+    ----------
     color : NoneType
         None value given as a color
 
     Returns
-    ------
+    -------
     arr : np.ndarray
         1x4 numpy array of float32 zeros
 
@@ -351,7 +351,7 @@ def _create_hex_to_name_dict():
     'official' name.
 
     Returns
-    -----
+    -------
     hex_to_rgb : dict
         Mapping from hexadecimal RGB ('#ff0000') to name ('red').
     """
@@ -369,7 +369,7 @@ def get_color_namelist():
     function is no longer necessary.
 
     Returns
-    ------
+    -------
     color_dict : list
         A list of all valid vispy color names plus "transparent".
     """
