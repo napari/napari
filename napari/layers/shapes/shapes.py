@@ -435,8 +435,8 @@ class Shapes(Layer):
     ):
         """Initialize current_{edge,face}_color when starting with empty layer.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         color : (N, 4) array or str
             The value for setting edge or face_color
         attribute : str in {'edge', 'face'}
@@ -1099,7 +1099,7 @@ class Shapes(Layer):
     def _get_new_shape_color(self, adding: int, attribute: str):
         """Get the color for the shape(s) to be added.
 
-        Parameters:
+        Parameters
         ----------
         adding : int
             the number of shapes that were added
@@ -1108,8 +1108,8 @@ class Shapes(Layer):
             The name of the attribute to set the color of.
             Should be 'edge' for edge_color_mode or 'face' for face_color_mode.
 
-        Returns:
-        --------
+        Returns
+        -------
         new_colors : (N, 4) array
             (Nx4) RGBA array of colors for the N new shapes
         """
@@ -1651,7 +1651,7 @@ class Shapes(Layer):
             construct the interaction box
 
         Returns
-        ----------
+        -------
         box : np.ndarray
             10x2 array of vertices of the interaction box. The first 8 points
             are the corners and midpoints of the box in clockwise order
@@ -1691,7 +1691,7 @@ class Shapes(Layer):
         """Find outlines of any selected or hovered shapes.
 
         Returns
-        ----------
+        -------
         vertices : None | np.ndarray
             Nx2 array of any vertices of outline or None
         triangles : None | np.ndarray
@@ -1727,7 +1727,7 @@ class Shapes(Layer):
         """Compute location of highlight vertices and box for rendering.
 
         Returns
-        ----------
+        -------
         vertices : np.ndarray
             Nx2 array of any vertices to be rendered as Markers
         face_color : str
@@ -1920,7 +1920,7 @@ class Shapes(Layer):
         self._finish_drawing()
 
     def _rotate_box(self, angle, center=[0, 0]):
-        """Perfrom a rotation on the selected box.
+        """Perform a rotation on the selected box.
 
         Parameters
         ----------
@@ -1937,7 +1937,7 @@ class Shapes(Layer):
         self._selected_box = box @ transform.T + center
 
     def _scale_box(self, scale, center=[0, 0]):
-        """Perfrom a scaling on the selected box.
+        """Perform a scaling on the selected box.
 
         Parameters
         ----------
@@ -1958,7 +1958,7 @@ class Shapes(Layer):
         self._selected_box = box + center
 
     def _transform_box(self, transform, center=[0, 0]):
-        """Perfrom a linear transformation on the selected box.
+        """Perform a linear transformation on the selected box.
 
         Parameters
         ----------
@@ -1980,12 +1980,12 @@ class Shapes(Layer):
         """Expand shape from 2D to the full data dims.
 
         Parameters
-        --------
+        ----------
         data : array
             2D data array of shape to be expanded.
 
         Returns
-        --------
+        -------
         data_full : array
             Full D dimensional data array of the shape.
         """
@@ -2007,7 +2007,7 @@ class Shapes(Layer):
         Getting value is not supported yet for 3D meshes
 
         Returns
-        ----------
+        -------
         shape : int | None
             Index of shape if any that is at the coordinates. Returns `None`
             if no shape is found.
@@ -2331,7 +2331,7 @@ class Shapes(Layer):
             takes the max of all the vertiecs
 
         Returns
-        ----------
+        -------
         masks : np.ndarray
             Array where there is one binary mask for each shape
         """
@@ -2353,7 +2353,7 @@ class Shapes(Layer):
             specified, takes the max of all the vertiecs
 
         Returns
-        ----------
+        -------
         labels : np.ndarray
             Integer array where each value is either 0 for background or an
             integer up to N for points inside the shape at the index value - 1.

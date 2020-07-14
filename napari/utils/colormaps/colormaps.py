@@ -58,16 +58,16 @@ def _validate_rgb(colors, *, tolerance=0.0):
     colors : array of float, shape (N, 3)
         Input colors in RGB space.
 
+    Returns
+    -------
+    filtered_colors : array of float, shape (M, 3), M <= N
+        The subset of colors that are in valid RGB space.
+
     Other Parameters
     ----------------
     tolerance : float, optional
         Values outside of the range by less than ``tolerance`` are allowed and
         clipped to be within the range.
-
-    Returns
-    -------
-    filtered_colors : array of float, shape (M, 3), M <= N
-        The subset of colors that are in valid RGB space.
 
     Examples
     --------

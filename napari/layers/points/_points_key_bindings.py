@@ -62,6 +62,6 @@ def select_all(layer):
 @Points.bind_key('Backspace')
 @Points.bind_key('Delete')
 def delete_selected(layer):
-    """Delet all selected points."""
+    """Delete all selected points."""
     if layer._mode in (Mode.SELECT, Mode.ADD):
         layer.remove_selected()

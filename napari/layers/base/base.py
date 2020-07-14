@@ -705,7 +705,7 @@ class Layer(KeymapProvider, ABC):
         """Generate a status message based on the coordinates and value
 
         Returns
-        ----------
+        -------
         msg : string
             String containing a message that can be used as a status update.
         """
@@ -733,7 +733,7 @@ class Layer(KeymapProvider, ABC):
         ----------
         path : str
             A filepath, directory, or URL to open.  Extensions may be used to
-            specify output format (provided a plugin is avaiable for the
+            specify output format (provided a plugin is available for the
             requested format).
         plugin : str, optional
             Name of the plugin to use for saving. If ``None`` then all plugins

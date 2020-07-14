@@ -304,7 +304,7 @@ def test_grid():
     assert np.all(viewer.grid_size == (3, 3))
     assert viewer.grid_stride == 1
 
-    # retun to stack view
+    # return to stack view
     viewer.stack_view()
     assert np.all(viewer.grid_size == (1, 1))
     assert viewer.grid_stride == 1

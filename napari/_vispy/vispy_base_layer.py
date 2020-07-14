@@ -173,9 +173,9 @@ class VispyBaseLayer(ABC):
         """Transform cursor position from canvas space (x, y) into image space.
 
         Parameters
-        -------
+        ----------
         position : 2-tuple
-            Cursor position in canvase (x, y).
+            Cursor position in canvas (x, y).
 
         Returns
         -------
@@ -205,7 +205,7 @@ class VispyBaseLayer(ABC):
         depends on the current pan and zoom position.
 
         Returns
-        ----------
+        -------
         corner_pixels : array
             Coordinates of top left and bottom right canvas pixel in the data.
         """

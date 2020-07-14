@@ -15,7 +15,7 @@ def make_colorbar(cmap, size=(18, 28), horizontal=True):
         vertical.
 
     Returns
-    ----------
+    -------
     cbar : array
         Array of colorbar.
     """

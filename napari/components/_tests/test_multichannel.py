@@ -112,7 +112,7 @@ def test_multichannel(shape, kwargs):
         if 'blending' not in kwargs:
             assert viewer.layers[i].blending == 'additive'
         for key, expectation in kwargs.items():
-            # broadcast expections
+            # broadcast exceptions
             if key in {'scale', 'translate', 'contrast_limits', 'metadata'}:
                 expectation = ensure_sequence_of_iterables(expectation)
             elif key == 'colormap' and expectation is not None:

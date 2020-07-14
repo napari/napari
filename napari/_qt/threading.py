@@ -129,7 +129,6 @@ class WorkerBase(QRunnable):
 
         Examples
         --------
-
         .. code-block:: python
 
             class MyWorker(WorkerBase):
@@ -389,10 +388,10 @@ def wait_for_workers_to_quit(msecs: int = None):
         timeout is ignored (waits for the last thread to exit).
 
     Raises
-    -------
+    ------
     RuntimeError
         If a timeout is provided and workers do not quit successfully within
-        the time alotted.
+        the time allotted.
     """
     for worker in WorkerBase._worker_set:
         worker.quit()
@@ -400,7 +399,7 @@ def wait_for_workers_to_quit(msecs: int = None):
     msecs = msecs if msecs is not None else -1
     if not QThreadPool.globalInstance().waitForDone(msecs):
         raise RuntimeError(
-            f"Workers did not quit gracefully in the time alotted ({msecs} ms)"
+            f"Workers did not quit gracefully in the time allotted ({msecs} ms)"
         )
 
 
@@ -468,7 +467,6 @@ def create_worker(
 
     Examples
     --------
-
     .. code-block:: python
 
         def long_function(duration):
@@ -534,7 +532,7 @@ def thread_worker(
     worker_class: Optional[Type[WorkerBase]] = None,
     ignore_errors: bool = False,
 ) -> Callable:
-    """Decorator that runs a function in a seperate thread when called.
+    """Decorator that runs a function in a separate thread when called.
 
     When called, the decorated function returns a :class:`WorkerBase`.  See
     :func:`create_worker` for additional keyword arguments that can be used
@@ -566,7 +564,6 @@ def thread_worker(
         - *send*: send a value into the generator.  (This requires that your
           decorator function uses the ``value = yield`` syntax)
 
-
     Parameters
     ----------
     func : callable
@@ -596,7 +593,6 @@ def thread_worker(
 
     Examples
     --------
-
     .. code-block:: python
 
         @thread_worker

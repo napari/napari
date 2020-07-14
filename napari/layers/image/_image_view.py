@@ -22,7 +22,7 @@ class ImageView:
         The raw image.
 
     _view : ArrayLike
-        The viewable image, dervied from raw.
+        The viewable image, derived from raw.
 
     Examples
     --------
