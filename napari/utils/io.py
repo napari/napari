@@ -241,7 +241,7 @@ def magic_imread(filenames, *, use_dask=None, stack=True):
 
 
 def guess_zarr_path(path):
-    """Guess whether string path is for zarr hierarchy.
+    """Guess whether string path is part of a zarr hierarchy.
 
     Parameters
     ----------
@@ -252,6 +252,13 @@ def guess_zarr_path(path):
     -------
     bool
         Whether path is for zarr.
+
+    >>> guess_zarr_path('dataset.zarr')
+    True
+    >>> guess_zarr_path('dataset.zarr/path/to/array')
+    True
+    >>> guess_zarr_path('dataset.zarr/component.png')
+    True
     """
     return any(part.endswith(".zarr") for part in Path(path).parts)
 
