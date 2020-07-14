@@ -16,3 +16,5 @@ from ._config import USE_PERFMON
 from ._event import PerfEvent
 from ._timers import timers
 from ._utils import perf_timer, perf_func
+
+# perfmon2
