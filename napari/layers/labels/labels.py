@@ -700,7 +700,7 @@ class Labels(Image):
         # circle/membership around center
         vol_radius = radius + 0.5
 
-        indices_slice = [slice(-vol_radius, vol_radius + 1),] * sphere_dims
+        indices_slice = [slice(-vol_radius, vol_radius + 1)] * sphere_dims
         indices = np.mgrid[indices_slice].T.reshape(-1, sphere_dims)
         distances_sq = np.sum(indices ** 2, axis=1)
         # Use distances within desired radius to mask indices in grid
@@ -761,7 +761,7 @@ class Labels(Image):
             # discard candidate coordinates that are out of bounds
             discard_coords = np.logical_and(
                 ~np.any(mask_indices < 0, axis=1),
-                ~np.any(mask_indices > np.array(shape), axis=1),
+                ~np.any(mask_indices >= np.array(shape), axis=1),
             )
             mask_indices = mask_indices[discard_coords]
 
