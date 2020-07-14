@@ -70,9 +70,8 @@ def _import_modules(target_str):
 def _patch_attribute(module: Module, attribute_str, patch_func):
     """Patch the function class.method in this module.
     """
-    # We expected attribute_str is <function> or <class>.<method>
-    # for now. We could allow nested classes and functions if
-    # we wanted to extend this some.
+    # We expecte attribute_str is <function> or <class>.<method>. We could
+    # allow nested classes and functions if we wanted to extend this some.
     if attribute_str.count('.') > 1:
         raise PatchError(f"Module {module} has no attribute {attribute_str}")
 
