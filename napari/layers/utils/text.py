@@ -2,7 +2,7 @@ from typing import Union
 
 import numpy as np
 
-from ._text_constants import TextMode
+from ._text_constants import TextMode, Anchor
 from .text_utils import (
     format_text_direct,
     format_text_properties,
@@ -21,6 +21,9 @@ class TextManager:
         the strings to be displayed
     rotation : float
         Angle of the text elements around the data point. Default value is 0.
+    anchor : str
+        The location of the text origin relative to the bounding box.
+        Should be 'center' or 'upper_left'.
     color : array or str
         Font color for the text
     size : float
@@ -36,6 +39,9 @@ class TextManager:
         the strings to be displayed
     rotation : float
         Angle of the text elements around the data point. Default value is 0.
+    anchor : str
+        The location of the text origin relative to the bounding box.
+        Should be 'center' or 'upper_left'.
     size : float
         Font size of the text. Default value is 12.
     font : str
@@ -51,6 +57,7 @@ class TextManager:
         properties={},
         rotation=0,
         translation=0,
+        anchor='center',
         color='black',
         size=12,
         font='OpenSans',
@@ -62,6 +69,7 @@ class TextManager:
         )
 
         self.rotation = rotation
+        self.anchor = anchor
         self.translation = translation
         self.color = color
         self.size = size
@@ -98,6 +106,14 @@ class TextManager:
                 self._text_format_string = ''
             self.text = formatted_text
             self._mode = text_mode
+
+    @property
+    def anchor(self):
+        return str(self._anchor)
+
+    @anchor.setter
+    def anchor(self, anchor):
+        self._anchor = Anchor(anchor)
 
     @property
     def rotation(self):
@@ -178,10 +194,15 @@ class TextManager:
 
     def compute_text_coords(self, view_data, ndisplay):
         if self._mode in [TextMode.FORMATTED, TextMode.PROPERTY]:
-            text_coords = get_text_anchors(view_data) + self.translation
+            anchor_coords, anchor_x, anchor_y = get_text_anchors(
+                view_data, self._anchor
+            )
+            text_coords = anchor_coords + self.translation
         else:
             text_coords = np.zeros((0, ndisplay))
-        return text_coords
+            anchor_x = 'center'
+            anchor_y = 'center'
+        return text_coords, anchor_x, anchor_y
 
     def view_text(self, indices_view: np.ndarray) -> np.ndarray:
         """Get the values of the text elements in view

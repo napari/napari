@@ -137,8 +137,10 @@ class VispyPointsLayer(VispyBaseLayer):
         ):
             text_coords = np.zeros((1, ndisplay))
             text = []
+            anchor_x = 'center'
+            anchor_y = 'center'
         else:
-            text_coords = self.layer._view_text_coords
+            text_coords, anchor_x, anchor_y = self.layer._view_text_coords
             if len(text_coords) == 0:
                 text_coords = np.zeros((1, ndisplay))
             text = self.layer._view_text
@@ -146,6 +148,8 @@ class VispyPointsLayer(VispyBaseLayer):
         update_text(
             text_values=text,
             text_coords=text_coords,
+            anchor_x=anchor_x,
+            anchor_y=anchor_y,
             text_rotation=self.layer._text.rotation,
             text_color=self.layer._text.color,
             text_size=self.layer._text.size,
@@ -160,3 +164,13 @@ class VispyPointsLayer(VispyBaseLayer):
         """Function to get the text node from the Compound visual"""
         text_node = self.node._subvisuals[-1]
         return text_node
+
+    def _on_blending_change(self, event=None):
+        """Function to set the blending mode"""
+        self.node.set_gl_state(self.layer.blending)
+
+        # the text blending mode should always be additive
+        # see: https://github.com/napari/napari/pull/600#issuecomment-554142225
+        text_node = self._get_text_node()
+        text_node.set_gl_state('additive')
+        self.node.update()

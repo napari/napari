@@ -15,72 +15,41 @@ with napari.gui_qt():
 
     # create a list of polygons
     polygons = [
-        np.array([[11, 13], [111, 113], [22, 246]]),
-        np.array(
-            [
-                [505, 60],
-                [402, 71],
-                [383, 42],
-                [251, 95],
-                [212, 59],
-                [131, 137],
-                [126, 187],
-                [191, 204],
-                [171, 248],
-                [211, 260],
-                [273, 243],
-                [264, 225],
-                [430, 173],
-                [512, 160],
-            ]
-        ),
-        np.array(
-            [
-                [310, 382],
-                [229, 381],
-                [209, 401],
-                [221, 411],
-                [258, 411],
-                [300, 412],
-                [306, 435],
-                [268, 434],
-                [265, 454],
-                [298, 461],
-                [307, 461],
-                [307, 507],
-                [349, 510],
-                [352, 369],
-                [330, 366],
-                [330, 366],
-            ]
-        ),
+        np.array([[225, 146], [283, 146], [283, 211], [225, 211]]),
+        np.array([[67, 182], [167, 182], [167, 268], [67, 268]]),
+        np.array([[111, 336], [220, 336], [220, 240], [111, 240]]),
     ]
 
     # create properties
     properties = {
-        'likelihood': [0.2, 0.5, 1],
-        'class': ['sky', 'person', 'building'],
+        'likelihood': [21.23423, 51.2315, 100],
+        'class': ['hand', 'face', 'camera'],
     }
-    face_color_cycle = ['blue', 'magenta', 'green']
+    edge_color_cycle = ['blue', 'magenta', 'green']
+
+    text_properties = {
+        'text': '{class}: {likelihood:0.1f}%',
+        'anchor': 'upper_left',
+        'translation': [-5, 0],
+        'size': 8,
+        'color': 'green',
+    }
 
     # add polygons
-    layer = viewer.add_shapes(
+    shapes_layer = viewer.add_shapes(
         polygons,
         properties=properties,
         shape_type='polygon',
-        edge_width=1,
+        edge_width=3,
         edge_color='likelihood',
-        edge_colormap='gray',
-        face_color='class',
-        face_color_cycle=face_color_cycle,
-        text='class',
+        edge_color_cycle=edge_color_cycle,
+        face_color='transparent',
+        text=text_properties,
         name='shapes',
     )
 
     # change some properties of the layer
-    layer.selected_data = set(range(layer.nshapes))
-    layer.current_edge_width = 5
-    layer.selected_data = set()
+    shapes_layer.opacity = 1
 
     # To save layers to svg:
     # viewer.layers.save('viewer.svg', plugin='svg')

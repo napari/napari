@@ -5,6 +5,8 @@ from vispy.scene.visuals import Text
 def update_text(
     text_values: np.ndarray,
     text_coords: np.ndarray,
+    anchor_x: str,
+    anchor_y: str,
     text_rotation: float,
     text_color: np.ndarray,
     text_size: float,
@@ -27,6 +29,7 @@ def update_text(
 
     text_node.text = text_values
     text_node.pos = positions
+    text_node.anchors = (anchor_x, anchor_y)
     text_node.rotation = text_rotation
     text_node.color = text_color
     text_node.font_size = text_size
