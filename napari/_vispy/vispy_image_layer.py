@@ -40,13 +40,13 @@ class VispyImageLayer(VispyBaseLayer):
         self.node.parent = None
 
         if self.layer.dims.ndisplay == 2:
+            self._image_node.set_data(data)
             self.node = self._image_node
-            self.node.set_data(data)
         else:
             if data is None:
                 data = np.zeros((1, 1, 1))
+            self._volume_node.set_data(data, clim=self.layer.contrast_limits)
             self.node = self._volume_node
-            self.node.set_data(data, clim=self.layer.contrast_limits)
 
         self.node.parent = parent
         self.reset()
