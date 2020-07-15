@@ -2223,14 +2223,15 @@ class Shapes(Layer):
                     shape, face_color=face_color, edge_color=edge_color
                 )
 
-            self.selected_data = set(
-                range(cur_shapes, cur_shapes + len(self._clipboard['data']))
-            )
-
             if self._clipboard['text'] is not None:
                 self._text._text = np.concatenate(
                     (self.text, self._clipboard['text']), axis=0
                 )
+
+            self.selected_data = set(
+                range(cur_shapes, cur_shapes + len(self._clipboard['data']))
+            )
+
             self.move_to_front()
 
     def _move(self, coord):
