@@ -131,6 +131,13 @@ class VispyPointsLayer(VispyBaseLayer):
         self.node.update()
 
     def _on_text_change(self, update_node=True):
+        """Function to update the text node properties
+
+        Parameters
+        ----------
+        update_node : bool
+            If true, update the node after setting the properties
+        """
         ndisplay = self.layer.dims.ndisplay
         if (len(self.layer._indices_view) == 0) or (
             self.layer._text.visible is False
