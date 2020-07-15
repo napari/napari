@@ -41,7 +41,7 @@ with napari.gui_qt():
         properties=properties,
         shape_type='polygon',
         edge_width=3,
-        edge_color='likelihood',
+        edge_color='class',
         edge_color_cycle=edge_color_cycle,
         face_color='transparent',
         text=text_properties,

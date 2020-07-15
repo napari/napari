@@ -1678,7 +1678,7 @@ class Shapes(Layer):
 
     @text.setter
     def text(self, text):
-        self._text.set_text(
+        self._text._set_text(
             text, n_text=len(self.data), properties=self.properties
         )
         self.events.text()

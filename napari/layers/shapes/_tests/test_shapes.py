@@ -133,6 +133,63 @@ def test_properties_dataframe():
     np.testing.assert_equal(layer.properties, properties)
 
 
+@pytest.mark.parametrize("properties", [properties_array, properties_list])
+def test_text_from_property_value(properties):
+    """Test setting text from a property value"""
+    shape = (10, 4, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Shapes(data, properties=copy(properties), text='shape_type')
+
+    np.testing.assert_equal(layer.text, properties['shape_type'])
+
+
+@pytest.mark.parametrize("properties", [properties_array, properties_list])
+def test_text_from_property_fstring(properties):
+    """Test setting text with an f-string from the property value"""
+    shape = (10, 4, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Shapes(
+        data, properties=copy(properties), text='type: {shape_type}'
+    )
+
+    expected_text = ['type: ' + v for v in properties['shape_type']]
+    np.testing.assert_equal(layer.text, expected_text)
+
+    # test updating the text
+    layer.text = 'type-ish: {shape_type}'
+    expected_text_2 = ['type-ish: ' + v for v in properties['shape_type']]
+    np.testing.assert_equal(layer.text, expected_text_2)
+
+
+@pytest.mark.parametrize("properties", [properties_array, properties_list])
+def test_set_text_with_kwarg_dict(properties):
+    text_kwargs = {
+        'text': 'type: {shape_type}',
+        'color': [0, 0, 0, 1],
+        'rotation': 10,
+        'translation': [5, 5],
+        'anchor': 'upper_left',
+        'size': 10,
+        'font': 'OpenSans',
+        'visible': True,
+    }
+    shape = (10, 4, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Shapes(data, properties=copy(properties), text=text_kwargs)
+
+    expected_text = ['type: ' + v for v in properties['shape_type']]
+    np.testing.assert_equal(layer.text, expected_text)
+
+    for property, value in text_kwargs.items():
+        if property == 'text':
+            continue
+        layer_value = getattr(layer._text, property)
+        np.testing.assert_equal(layer_value, value)
+
+
 def test_rectangles():
     """Test instantiating Shapes layer with a random 2D rectangles."""
     # Test a single four corner rectangle
