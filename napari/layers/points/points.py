@@ -51,8 +51,13 @@ class Points(Layer):
     properties : dict {str: array (N,)}, DataFrame
         Properties for each point. Each property should be an array of length N,
         where N is the number of points.
-    text : str, array, dict
-        Text to be displayed with the points.
+    text : str, dict
+        Text to be displayed with the points. If text is set to a key in properties,
+        the value of that property will be displayed. Multiple properties can be
+        composed using f-string-like syntax (e.g., '{property_1}, {float_property:.2f}).
+        A dictionary can be provided with keyword arguments to set the text values
+        and display properties. See TextManager.__init__() for the valid keyword arguments.
+        For example usage, see /napari/examples/add_points_with_text.py.
     symbol : str
         Symbol to be used for the point markers. Must be one of the
         following: arrow, clobber, cross, diamond, disc, hbar, ring,
@@ -116,6 +121,11 @@ class Points(Layer):
     properties : dict {str: array (N,)}
         Annotations for each point. Each property should be an array of length N,
         where N is the number of points.
+    text : str
+        Text to be displayed with the points. If text is set to a key in properties, the value of
+        that property will be displayed. Multiple properties can be composed using f-string-like
+        syntax (e.g., '{property_1}, {float_property:.2f}).
+        For example usage, see /napari/examples/add_points_with_text.py.
     symbol : str
         Symbol used for all point markers.
     size : array (N, D)
