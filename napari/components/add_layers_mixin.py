@@ -553,7 +553,12 @@ class AddLayersMixin:
             Properties for each shape. Each property should be an array of
             length N, where N is the number of shapes.
         text : str, array, dict
-            Text to be displayed with the points.
+            Text to be displayed with the shapes. If text is set to a key in properties,
+            the value of that property will be displayed. Multiple properties can be
+            composed using f-string-like syntax (e.g., '{property_1}, {float_property:.2f}).
+            A dictionary can be provided with keyword arguments to set the text values
+            and display properties. See TextManager.__init__() for the valid keyword arguments.
+            For example usage, see /napari/examples/add_shapes_with_text.py.
         shape_type : string or list
             String of shape shape_type, must be one of "{'line', 'rectangle',
             'ellipse', 'path', 'polygon'}". If a list is supplied it must be
