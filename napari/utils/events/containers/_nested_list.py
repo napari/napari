@@ -1,7 +1,7 @@
 """Nestable MutableSequence that emits events when altered.
 """
 import logging
-from typing import Iterable, Sequence, Tuple, Union, cast, overload
+from typing import Iterable, Sequence, Tuple, Union, cast, overload, NewType
 
 from ..event import Event
 from ..types import SupportsEvents
@@ -10,6 +10,7 @@ from ._list import EventedList, Index, T
 logger = logging.getLogger(__name__)
 
 NestedIndex = Tuple[Index, ...]
+ParentIndex = NewType('ParentIndex', Tuple[int, ...])
 
 
 def ensure_tuple_index(index: Union[NestedIndex, Index]) -> NestedIndex:
@@ -39,7 +40,7 @@ def ensure_tuple_index(index: Union[NestedIndex, Index]) -> NestedIndex:
 
 def split_nested_index(
     index: Union[NestedIndex, Index]
-) -> Tuple[NestedIndex, Index]:
+) -> Tuple[ParentIndex, Index]:
     """ Given a nested index, return (nested_parent_index, row).
 
     Parameters
@@ -52,6 +53,11 @@ def split_nested_index(
     Tuple[NestedIndex, Index]
         A tuple of ``parent_index``, ``row``
 
+    Raises
+    ------
+    ValueError
+        If any of the items in the returned ParentIndex tuple are not ``int``.
+
     Examples
     --------
     >>> split_nested_index((1, 2, 3, 4))
@@ -63,9 +69,11 @@ def split_nested_index(
     """
     index = ensure_tuple_index(index)
     if index:
-        *par, i = index
-        return tuple(par), i
-    return (), -1  # empty tuple appends to self
+        *first, last = index
+        if any(not isinstance(p, int) for p in first):
+            raise ValueError('The parent index must be a tuple of int')
+        return cast(ParentIndex, tuple(first)), last
+    return ParentIndex(()), -1  # empty tuple appends to self
 
 
 class NestableEventedList(EventedList[T]):
@@ -123,11 +131,23 @@ class NestableEventedList(EventedList[T]):
     # def remove(self, value: T): ...
 
     @overload
-    def __getitem__(self, key: Union[int, NestedIndex]) -> T:
+    def __getitem__(self, key: int) -> T:
+        ...
+
+    @overload
+    def __getitem__(  # noqa: F811
+        self, key: ParentIndex
+    ) -> 'NestableEventedList[T]':
         ...
 
     @overload
     def __getitem__(self, key: slice) -> 'NestableEventedList[T]':  # noqa
+        ...
+
+    @overload
+    def __getitem__(  # noqa: F811
+        self, key: NestedIndex
+    ) -> Union[T, 'NestableEventedList[T]']:
         ...
 
     def __getitem__(self, key):  # noqa: F811
@@ -155,7 +175,7 @@ class NestableEventedList(EventedList[T]):
             value = self.__class__(value)
         if isinstance(key, tuple):
             parent_i, index = split_nested_index(key)
-            self[parent_i].__setitem__(index, value)  # type: ignore
+            self[parent_i].__setitem__(index, value)
             return
         self._connect_child_emitters(value)
         EventedList.__setitem__(self, key, value)
@@ -225,7 +245,7 @@ class NestableEventedList(EventedList[T]):
             child.events.connect(self._reemit_nested_event)
 
     def _non_negative_index(
-        self, parent_index: NestedIndex, dest_index: Index
+        self, parent_index: ParentIndex, dest_index: Index
     ) -> Index:
         """Make sure dest_index is a positive index inside parent_index."""
         destination_group = cast(NestableEventedList[T], self[parent_index])
@@ -337,6 +357,8 @@ class NestableEventedList(EventedList[T]):
 
         if isinstance(src_i, slice):
             raise ValueError("Terminal source index may not be a slice")
+        if isinstance(dest_i, slice):
+            raise ValueError("Destination index may not be a slice")
         if src_i == ():
             raise ValueError("Group cannot move itself")
 
@@ -350,8 +372,8 @@ class NestableEventedList(EventedList[T]):
         self.events.moving(index=cur_index, new_index=new_index)
         with self.events.blocker():
             dest_par = self[dest_par_i]  # grab this before popping src_i
-            value = self[src_par_i].pop(src_i)  # type: ignore
-            dest_par.insert(dest_i, value)  # type: ignore
+            value = self[src_par_i].pop(src_i)
+            dest_par.insert(dest_i, value)
 
         self.events.moved(index=cur_index, new_index=new_index, value=value)
         self.events.reordered(value=self)
