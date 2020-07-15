@@ -141,6 +141,11 @@ class VispyImageLayer(VispyBaseLayer):
         elif rendering == Rendering.ATTENUATED_MIP:
             self.node.threshold = float(self.layer.attenuation)
 
+        # Fix for #1399, should be fixed in the VisPy threshold setter
+        if 'u_threshold' not in self.node.shared_program:
+            self.node.shared_program['u_threshold'] = self.node._threshold
+            self.node.update()
+
     def reset(self, event=None):
         self._reset_base()
         self._on_interpolation_change()
