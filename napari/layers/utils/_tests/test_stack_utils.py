@@ -1,10 +1,11 @@
 import numpy as np
 
 from napari.layers import Image
-from napari.layers.utils.stack_utils import StackUtils
-
-
-s = StackUtils()
+from napari.layers.utils.stack_utils import (
+    split_channels,
+    stack_to_images,
+    images_to_stack,
+)
 
 
 def test_stack_to_images_basic():
@@ -12,7 +13,7 @@ def test_stack_to_images_basic():
     '''Test the a 2 channel zcyx stack is split into 2 image layers'''
     data = np.random.randint(0, 100, (10, 2, 128, 128))
     stack = Image(data)
-    images = s.stack_to_images(stack, 1, colormap=None)
+    images = stack_to_images(stack, 1, colormap=None)
 
     assert isinstance(images, list)
     assert images[0].colormap[0] == 'magenta'
@@ -27,7 +28,7 @@ def test_stack_to_images_rgb():
     '''Test 3 channel RGB image (channel axis = -1) into single channels.'''
     data = np.random.randint(0, 100, (10, 128, 128, 3))
     stack = Image(data)
-    images = s.stack_to_images(stack, -1, colormap=None)
+    images = stack_to_images(stack, -1, colormap=None)
 
     assert isinstance(images, list)
     assert len(images) == 3
@@ -44,7 +45,7 @@ def test_stack_to_images_4_channels():
     into mutliple channels and colormap keyword'''
     data = np.random.randint(0, 100, (4, 128, 128))
     stack = Image(data)
-    images = s.stack_to_images(stack, 0, colormap=['red', 'blue'])
+    images = stack_to_images(stack, 0, colormap=['red', 'blue'])
 
     assert isinstance(images, list)
     assert len(images) == 4
@@ -58,7 +59,7 @@ def test_stack_to_images_0_rgb():
     '''Split RGB along the first axis (z or t) so the images remain rgb'''
     data = np.random.randint(0, 100, (10, 128, 128, 3))
     stack = Image(data)
-    images = s.stack_to_images(stack, 0, colormap=None)
+    images = stack_to_images(stack, 0, colormap=None)
 
     assert isinstance(images, list)
     assert len(images) == 10
@@ -72,7 +73,7 @@ def test_stack_to_images_1_channel():
     '''Split when only one channel'''
     data = np.random.randint(0, 100, (10, 1, 128, 128))
     stack = Image(data)
-    images = s.stack_to_images(stack, 1, colormap=['magma'])
+    images = stack_to_images(stack, 1, colormap=['magma'])
 
     assert isinstance(images, list)
     assert len(images) == 1
@@ -88,7 +89,7 @@ def test_images_to_stack_with_scale():
         Image(np.random.randint(0, 255, (10, 128, 128))) for _ in range(3)
     ]
 
-    stack = s.images_to_stack(
+    stack = images_to_stack(
         images, 1, colormap='green', scale=(3, 1, 1, 1), translate=(1, 0, 2, 3)
     )
 
@@ -110,7 +111,7 @@ def test_images_to_stack_none_scale():
         for _ in range(3)
     ]
 
-    stack = s.images_to_stack(images, 1, colormap='green')
+    stack = images_to_stack(images, 1, colormap='green')
 
     assert isinstance(stack, Image)
     assert stack.data.shape == (10, 3, 128, 128)
@@ -146,7 +147,7 @@ def test_split_channels():
     expecting 3 (128,128) arrays'''
     kwargs = getkwargs()
     data = np.random.randint(0, 200, (3, 128, 128))
-    result_list = s.split_channels(data, 0, **kwargs)
+    result_list = split_channels(data, 0, **kwargs)
 
     assert len(result_list) == 3
     for d, meta, _ in result_list:
@@ -162,7 +163,7 @@ def test_split_channels_multiscale():
     data.append(np.random.randint(0, 200, (3, 64, 64)))
     data.append(np.random.randint(0, 200, (3, 32, 32)))
     data.append(np.random.randint(0, 200, (3, 16, 16)))
-    result_list = s.split_channels(data, 0, **kwargs)
+    result_list = split_channels(data, 0, **kwargs)
 
     assert len(result_list) == 3
     for ds, m, _ in result_list:

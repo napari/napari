@@ -8,7 +8,7 @@ import numpy as np
 
 from .. import layers
 from ..layers.image._image_utils import guess_labels
-from ..layers.utils.stack_utils import StackUtils
+from ..layers.utils.stack_utils import split_channels
 from ..plugins.io import read_data_with_plugins
 from ..types import FullLayerData, LayerData
 from ..utils.colormaps import ensure_colormap_tuple
@@ -224,9 +224,7 @@ class AddLayersMixin:
 
             return self.add_layer(layers.Image(data, **kwargs))
         else:
-            layerdata_list = StackUtils().split_channels(
-                data, channel_axis, **kwargs
-            )
+            layerdata_list = split_channels(data, channel_axis, **kwargs)
 
             layer_list = list()
             for image, i_kwargs, _ in layerdata_list:
