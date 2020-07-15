@@ -204,6 +204,17 @@ def test_set_text_with_kwarg_dict(properties):
         np.testing.assert_equal(layer_value, value)
 
 
+@pytest.mark.parametrize("properties", [properties_array, properties_list])
+def test_text_error(properties):
+    """creating a layer with text as the wrong type should raise an error"""
+    shape = (10, 4, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    # try adding text as the wrong type
+    with pytest.raises(TypeError):
+        Shapes(data, properties=copy(properties), text=123)
+
+
 def test_rectangles():
     """Test instantiating Shapes layer with a random 2D rectangles."""
     # Test a single four corner rectangle
