@@ -19,6 +19,7 @@ def test_view(qtbot, layer_type, data, ndim):
     viewer.close()
 
 
+@pytest.mark.sync_only
 def test_view_multichannel(qtbot):
     """Test adding image."""
     np.random.seed(0)

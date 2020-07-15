@@ -214,6 +214,7 @@ class Layer(KeymapProvider, ABC):
             cursor=Event,
             cursor_size=Event,
             editable=Event,
+            loaded=Event,
         )
         self.name = name
 

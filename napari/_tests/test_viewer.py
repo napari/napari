@@ -113,6 +113,7 @@ def test_screenshot(make_test_viewer):
     assert screenshot.ndim == 3
 
 
+@pytest.mark.sync_only
 def test_update(make_test_viewer):
     data = np.random.random((512, 512))
     viewer = make_test_viewer()
@@ -164,7 +165,7 @@ def test_changing_theme(make_test_viewer):
 
 
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
-def test_roll_traspose_update(make_test_viewer, layer_class, data, ndim):
+def test_roll_transpose_update(make_test_viewer, layer_class, data, ndim):
     """Check that transpose and roll preserve correct transform sequence."""
 
     viewer = make_test_viewer()

@@ -11,7 +11,8 @@ from ..utils.layer_utils import calc_data_range
 from ..intensity_mixin import IntensityVisualizationMixin
 from ._image_constants import Interpolation, Interpolation3D, Rendering
 from ._image_utils import guess_rgb, guess_multiscale
-from ._image_slice import ImageSlice
+from ._image_slice import ImageProperties, ImageSlice
+from ...utils.chunk_loader import CHUNK_LOADER
 
 
 # Mixin must come before Layer
@@ -197,6 +198,18 @@ class Image(IntensityVisualizationMixin, Layer):
         # Set data
         self.rgb = rgb
         self._data = data
+
+        self._slice = None
+
+        # TODO_ASYNC: creating self._slice here seems totally wrong. This
+        # echoes how we did things before, and it's currently needed because
+        # stuff in _init_ requires it.
+        #
+        # We should get rid of this somehow and not create the slice
+        # until _update_dims() is called at the end of __init__ which
+        # will call refresh() and _set_view_slice().
+        self._create_image_slice()
+
         if self.multiscale:
             self._data_level = len(self.data) - 1
             # Determine which level of the multiscale to use for the thumbnail.
@@ -214,11 +227,6 @@ class Image(IntensityVisualizationMixin, Layer):
             self._data_level = 0
             self._thumbnail_level = 0
         self.corner_pixels[1] = self.level_shapes[self._data_level]
-
-        # Initialize the current slice to an empty image.
-        self._slice = ImageSlice(
-            self._get_empty_image(), self._raw_to_displayed
-        )
 
         # Set contrast_limits and colormaps
         self._gamma = gamma
@@ -246,12 +254,23 @@ class Image(IntensityVisualizationMixin, Layer):
         self._update_dims()
 
     def _get_empty_image(self):
-        """Get empty image to use as the default before data is loaded.
+        """Get minimal empty image with just one pixel/voxel.
         """
+        axes = (1,) * self.dims.ndisplay
+
+        if not self.multiscale:
+            if self.rgb:
+                # Multiscale uses self.shape[-1] but we seem to need
+                # self.data.shape[-1] to get the rgb part.
+                return np.zeros(axes + (self.data.shape[-1],))
+            else:
+                return np.zeros(axes)
+
+        # For multi-scale this is unchanged since not async yet.
         if self.rgb:
-            return np.zeros((1,) * self.dims.ndisplay + (self.shape[-1],))
+            return np.zeros(axes + (self.shape[-1],))
         else:
-            return np.zeros((1,) * self.dims.ndisplay)
+            return np.zeros(axes)
 
     def _get_order(self):
         """Return the order of the displayed dimensions."""
@@ -294,6 +313,7 @@ class Image(IntensityVisualizationMixin, Layer):
     @data.setter
     def data(self, data):
         self._data = data
+        self._slice = None  # Create a new one for this data.
         self._update_dims()
         self.events.data()
 
@@ -471,12 +491,27 @@ class Image(IntensityVisualizationMixin, Layer):
         image = raw
         return image
 
+    def _create_image_slice(self):
+        """Create an ImageSlice to show the current data.
+        """
+        empty_image = self._get_empty_image()
+        properties = ImageProperties(
+            self.multiscale, self.rgb, self._get_ndim(), self._get_order(),
+        )
+        self._slice = ImageSlice(
+            empty_image, properties, self._raw_to_displayed
+        )
+
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
-        not_disp = self.dims.not_displayed
-        order = self._get_order()
+
+        # Create new slice if we need one.
+        self._create_image_slice()
 
         if self.multiscale:
+            order = self._get_order()
+            not_disp = self.dims.not_displayed
+
             # If 3d redering just show lowest level of multiscale
             if self.dims.ndisplay == 3:
                 self.data_level = len(self.data) - 1
@@ -540,24 +575,55 @@ class Image(IntensityVisualizationMixin, Layer):
             thumbnail_source = np.asarray(
                 self.data[self._thumbnail_level][tuple(indices)]
             ).transpose(order)
-        else:
-            self._transforms['tile2data'].scale = np.ones(self.dims.ndim)
-            image = np.asarray(self.data[self.dims.indices]).transpose(order)
-            thumbnail_source = image
 
-        if self.rgb and image.dtype.kind == 'f':
-            self._slice.image.raw = np.clip(image, 0, 1)
-            self._slice.thumbnail.raw = np.clip(thumbnail_source, 0, 1)
-        else:
-            self._slice.image.raw = image
-            self._slice.thumbnail.raw = thumbnail_source
+            self._slice.set_raw_images(image, thumbnail_source)
 
-        if self.multiscale:
             self.events.scale()
             self.events.translate()
+        else:
+            self._load_single_scale()
+
+    @property
+    def loaded(self):
+        return self._slice.loaded
+
+    def _load_single_scale(self) -> None:
+        """Load non-multiscale image.
+        """
+        indices = self.dims.indices
+        array = self.data[indices]
+
+        # Load the array, could sync or async.
+        request = CHUNK_LOADER.create_request(self, indices, array)
+        self._slice.load_chunk(request)
+
+        # Might be loaded or not loaded, update either way
+        self.events.loaded()
+
+        # TODO_ASYNC: where should do this? Seems out of place here.
+        self._transforms['tile2data'].scale = np.ones(self.dims.ndim)
+
+    def chunk_loaded(self, request):
+        """Notify Image that an async request was satisfied.
+
+        The request.array has been turned into an ndarray in the worker thread.
+        """
+        # Ultimately this check should not be needed, but for now.
+        if request.data_id != id(self.data):
+            return  # ignore, chunk was not for us
+
+        # Tell the slice its data is ready to show.
+        self._slice.chunk_loaded(request)
+        self.events.loaded()
+
+        # Update vispy, draw the new slice
+        self.events.set_data()
 
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""
+        if not self._slice.loaded:
+            return
+
         image = self._slice.thumbnail.view
         if self.dims.ndisplay == 3 and self.dims.ndim > 2:
             image = np.max(image, axis=0)

@@ -1,7 +1,20 @@
-from typing import Optional
+import logging
+from typing import NamedTuple, Tuple
+
+import numpy as np
 
 from ._image_view import ImageView
 from ...types import ArrayLike, ImageConverter
+from ...utils.chunk_loader import ChunkRequest, CHUNK_LOADER
+
+LOGGER = logging.getLogger("ChunkLoader")
+
+
+class ImageProperties(NamedTuple):
+    multiscale: bool
+    rgb: bool
+    ndim: int
+    displayed_order: Tuple[slice, ...]
 
 
 class ImageSlice:
@@ -13,8 +26,10 @@ class ImageSlice:
     Parameters
     ----------
     view_image : ArrayLike
-        The default image for the time and its thumbail.
-    image_converter : ImageConverter, optional
+        The initial image for the time and its thumbail.
+    properties : Image_Properties
+        We are displaying a sliced from an Image with the properties.
+    image_converter : ImageConverter
         ImageView uses this to convert from raw to viewable.
 
     Attributes
@@ -23,7 +38,7 @@ class ImageSlice:
         The main image for this slice.
 
     thumbnail : ImageView
-        The smaller thumbnail image for this slice.
+        The source image used to compute the smaller thumbnail image.
 
     Examples
     --------
@@ -45,10 +60,89 @@ class ImageSlice:
     def __init__(
         self,
         view_image: ArrayLike,
-        image_converter: Optional[ImageConverter] = None,
+        properties: ImageProperties,
+        image_converter: ImageConverter,
     ):
-        """
-        Create an ImageSlice with some default viewable image.
-        """
+        LOGGER.info("ImageSlice.__init__")
         self.image: ImageView = ImageView(view_image, image_converter)
         self.thumbnail: ImageView = ImageView(view_image, image_converter)
+        self.properties = properties
+
+        # We're showing the slice at these indices.
+        self.current_indices = None
+
+        # With async there can be a gap between when the ImageSlice is
+        # created and the data is actually loaded.
+        self.loaded = False
+
+    def set_raw_images(self, image: ArrayLike, thumbnail: ArrayLike) -> None:
+        """Set the image and its thumbnail.
+
+        If floating point / grayscale then clip to [0..1].
+
+        Parameters
+        ----------
+        image : ArrayLike
+            Set this as the main image.
+        thumbnail : ArrayLike
+            Set this as the thumbnail.
+        """
+        if self.properties.rgb and image.dtype.kind == 'f':
+            image = np.clip(image, 0, 1)
+            thumbnail = np.clip(thumbnail, 0, 1)
+        self.image.raw = image
+        self.thumbnail.raw = thumbnail
+
+    def load_chunk(self, request: ChunkRequest) -> None:
+        """Load the requested chunk asynchronously.
+
+        Parameters
+        ----------
+        request : ChunkRequest
+            Load this chunk sync or async.
+        """
+        LOGGER.info("ImageSlice.load_chunk: %s", request.key)
+
+        # Async not supported for multiscale yet
+        assert not self.properties.multiscale
+
+        # Now "showing" this slice, even if it hasn't loaded yet.
+        self.current_indices = request.indices
+
+        # If ChunkLoader is synchronous or the chunk is cached, this will
+        # satisfy the request right away, otherwise it will initiate an
+        # async load in a worker thread.
+        satisfied_request = CHUNK_LOADER.load_chunk(request)
+
+        if satisfied_request is not None:
+            self.chunk_loaded(satisfied_request)
+
+    def chunk_loaded(self, request: ChunkRequest) -> None:
+        """Chunk was loaded, show this new data.
+
+        Parameters
+        ----------
+        request : ChunkRequest
+            This chunk was successfully loaded.
+        """
+        LOGGER.info("ImageSlice.chunk_loaded: %s", request.key)
+
+        # Async not supported for multiscale yet
+        assert not self.properties.multiscale
+
+        # Is this the chunk we requested?
+        if self.current_indices != request.indices:
+            LOGGER.info(
+                "ImageSlice.chunk_loaded: IGNORE CHUNK %s", request.key
+            )
+            return
+
+        # Could worker do the transpose? Does it take any time?
+        image = request.array.transpose(self.properties.displayed_order)
+
+        # Thumbnail is just the same image for non-multiscale.
+        thumbnail = image
+
+        # Show the new data, show this slice.
+        self.set_raw_images(image, thumbnail)
+        self.loaded = True

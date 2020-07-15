@@ -1,5 +1,8 @@
 import numpy as np
+import pytest
+
 from vispy.color import Colormap
+
 from napari.layers import Labels
 
 
@@ -203,6 +206,7 @@ def test_num_colors():
     assert layer.num_colors == 60
 
 
+@pytest.mark.sync_only
 def test_properties():
     """Test adding labels with properties."""
     np.random.seed(0)
@@ -214,6 +218,7 @@ def test_properties():
 
     properties = {'class': ['Background'] + [f'Class {i}' for i in range(20)]}
     label_index = {i: i for i in range(len(properties['class']))}
+
     layer = Labels(data, properties=properties)
     assert isinstance(layer.properties, dict)
     assert layer.properties == properties
@@ -428,6 +433,7 @@ def test_fill():
     assert np.unique(layer.data[5:10, 5:10]) == 2
 
 
+@pytest.mark.sync_only
 def test_value():
     """Test getting the value of the data at the current coordinates."""
     np.random.seed(0)

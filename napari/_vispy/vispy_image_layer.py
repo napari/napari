@@ -48,6 +48,10 @@ class VispyImageLayer(VispyBaseLayer):
         self.node.parent = parent
         self.reset()
 
+    def _data_astype(self, data, dtype):
+        """Broken out as a separate function for perfmon reasons."""
+        return data.astype(dtype)
+
     def _on_data_change(self, event=None):
         data = self.layer._data_view
         dtype = np.dtype(data.dtype)
@@ -60,7 +64,7 @@ class VispyImageLayer(VispyBaseLayer):
                 raise TypeError(
                     f'type {dtype} not allowed for texture; must be one of {set(texture_dtypes)}'  # noqa: E501
                 )
-            data = data.astype(dtype)
+            data = self._data_astype(data, dtype)
 
         if self.layer.dims.ndisplay == 3 and self.layer.dims.ndim == 2:
             data = np.expand_dims(data, axis=0)
