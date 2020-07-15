@@ -85,7 +85,7 @@ def mouse_move_callbacks(obj, event):
             print('goodbye world ;(')
 
     Parameters
-    ---------
+    ----------
     obj : ViewerModel or Layer
         Layer or Viewer object to run callbacks on
     event : Event
@@ -131,7 +131,7 @@ def mouse_release_callbacks(obj, event):
             print('goodbye world ;(')
 
     Parameters
-    ---------
+    ----------
     obj : ViewerModel or Layer
         Layer or Viewer object to run callbacks on
     event : Event

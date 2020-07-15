@@ -18,8 +18,9 @@ texture_dtypes = [
 
 class VispyImageLayer(VispyBaseLayer):
     def __init__(self, layer):
-        node = ImageNode(None, method='auto')
-        super().__init__(layer, node)
+        self._image_node = ImageNode(None, method='auto')
+        self._volume_node = VolumeNode(np.zeros((1, 1, 1)), clim=[0, 1])
+        super().__init__(layer, self._image_node)
 
         self.layer.events.rendering.connect(self._on_rendering_change)
         self.layer.events.interpolation.connect(self._on_interpolation_change)
@@ -39,11 +40,13 @@ class VispyImageLayer(VispyBaseLayer):
         self.node.parent = None
 
         if self.layer.dims.ndisplay == 2:
-            self.node = ImageNode(data, method='auto')
+            self._image_node.set_data(data)
+            self.node = self._image_node
         else:
             if data is None:
                 data = np.zeros((1, 1, 1))
-            self.node = VolumeNode(data, clim=self.layer.contrast_limits)
+            self._volume_node.set_data(data, clim=self.layer.contrast_limits)
+            self.node = self._volume_node
 
         self.node.parent = parent
         self.reset()
@@ -137,6 +140,11 @@ class VispyImageLayer(VispyBaseLayer):
             self.node.threshold = float(self.layer.iso_threshold)
         elif rendering == Rendering.ATTENUATED_MIP:
             self.node.threshold = float(self.layer.attenuation)
+
+        # Fix for #1399, should be fixed in the VisPy threshold setter
+        if 'u_threshold' not in self.node.shared_program:
+            self.node.shared_program['u_threshold'] = self.node._threshold
+            self.node.update()
 
     def reset(self, event=None):
         self._reset_base()

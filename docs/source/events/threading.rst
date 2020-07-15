@@ -192,7 +192,7 @@ Additionally, generator ``workers`` will also have a few additional methods:
 * ``quit`` - send a request to abort the worker
 
 
-Retreiving Intermediate Results
+Retrieving Intermediate Results
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The most obvious benefit of using a generator is that you can monitor
@@ -239,7 +239,7 @@ the ``large_random_images`` function (**25**).  We also connected the
 ``yielded`` event in the :func:`@thread_worker
 <napari.qt.threading.thread_worker>` decorator to the previously-defined
 ``update_layer`` function (**19**).  The result is that the image in the viewer
-is updated everytime a new image is yielded.
+is updated every time a new image is yielded.
 
 Any time you can break up a long-running function into a stream of
 shorter-running yield statements like this, you not only benefit from the

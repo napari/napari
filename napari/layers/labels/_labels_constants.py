@@ -9,7 +9,7 @@ class Mode(StringEnum):
     allows for normal interactivity with the canvas.
 
     In PICK mode the cursor functions like a color picker, setting the
-    clicked on label to be the curent label. If the background is picked it
+    clicked on label to be the current label. If the background is picked it
     will select the background label `0`.
 
     In PAINT mode the cursor functions like a paint brush changing any pixels

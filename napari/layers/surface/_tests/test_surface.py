@@ -100,7 +100,7 @@ def test_random_3D_multitimeseries_surface():
 
 
 def test_visiblity():
-    """Test setting layer visiblity."""
+    """Test setting layer visibility."""
     np.random.seed(0)
     vertices = np.random.random((10, 3))
     faces = np.random.randint(10, size=(6, 3))

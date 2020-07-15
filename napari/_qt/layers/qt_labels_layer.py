@@ -53,7 +53,7 @@ class QtLabelsControls(QtLayerControls):
     erase_button : qtpy.QtWidgets.QtModeRadioButton
         Button to select ERASE mode on Labels layer.
     selectionSpinBox : qtpy.QtWidgets.QSpinBox
-        Widget to select a specfic label by its index.
+        Widget to select a specific label by its index.
 
     Raises
     ------
@@ -308,10 +308,8 @@ class QtLabelsControls(QtLayerControls):
         Parameters
         ----------
         new_mode : str
-
-        AUTO (default) allows color to be set via a hash function with a seed.
-
-        DIRECT allows color of each label to be set directly by a color dictionary.
+            AUTO (default) allows color to be set via a hash function with a seed.
+            DIRECT allows color of each label to be set directly by a color dictionary.
         """
         self.layer.color_mode = new_mode
 
