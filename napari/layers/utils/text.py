@@ -20,32 +20,34 @@ class TextManager:
     text : array or str
         the strings to be displayed
     rotation : float
-        Angle of the text elements around the data point. Default value is 0.
+        Angle of the text elements around the anchor point. Default value is 0.
     anchor : str
         The location of the text origin relative to the bounding box.
-        Should be 'center' or 'upper_left'.
+        Should be 'center', 'upper_left', 'upper_right', 'lower_left', or 'lower_right'
+    translation : np.ndarray
+        Offset from the anchor point.
     color : array or str
         Font color for the text
     size : float
         Font size of the text. Default value is 12.
-    font : str
-        Font to use for the text.
     visible : bool
         Set to true of the text should be displayed.
 
     Attributes
     ----------
-    text : array or str
+    text : array
         the strings to be displayed
     rotation : float
-        Angle of the text elements around the data point. Default value is 0.
+        Angle of the text elements around the anchor point. Default value is 0.
     anchor : str
         The location of the text origin relative to the bounding box.
-        Should be 'center' or 'upper_left'.
+        Should be 'center', 'upper_left', 'upper_right', 'lower_left', or 'lower_right'.
+    translation : np.ndarray
+        Offset from the anchor point.
+    color : array
+        Font color for the text
     size : float
         Font size of the text. Default value is 12.
-    font : str
-        Font to use for the text.
     visible : bool
         Set to true of the text should be displayed.
     """
@@ -60,32 +62,41 @@ class TextManager:
         anchor='center',
         color='black',
         size=12,
-        font='OpenSans',
         visible=True,
     ):
 
         self.events = EmitterGroup(
-            source=self, auto_connect=True, visible=Event
+            source=self,
+            auto_connect=True,
+            text=Event,
+            rotation=Event,
+            translation=Event,
+            anchor=Event,
+            color=Event,
+            size=Event,
+            visible=Event,
         )
 
+        self.events.block_all()
         self.rotation = rotation
         self.anchor = anchor
         self.translation = translation
         self.color = color
         self.size = size
-        self.font = font
         self.visible = visible
 
         self._set_text(text, n_text, properties)
+        self.events.unblock_all()
 
     @property
     def text(self):
+        """np.ndarray: the text values to be displayed"""
         return self._text
 
-    @text.setter
-    def text(self, text):
-
-        self._text = text
+    # @text.setter
+    # def text(self, text):
+    #
+    #     self._text = text
 
     def _set_text(self, text, n_text: int, properties: dict = {}):
         if len(properties) == 0 or n_text == 0 or text is None:
@@ -104,62 +115,65 @@ class TextManager:
             else:
                 formatted_text, text_mode = format_text_direct(text, n_text)
                 self._text_format_string = ''
-            self.text = formatted_text
+            self._text = formatted_text
             self._mode = text_mode
+        self.events.text()
 
     @property
     def anchor(self):
+        """str: The location of the text origin relative to the bounding box.
+        Should be 'center', 'upper_left', 'upper_right', 'lower_left', or 'lower_right
+        '"""
         return str(self._anchor)
 
     @anchor.setter
     def anchor(self, anchor):
         self._anchor = Anchor(anchor)
+        self.events.anchor()
 
     @property
     def rotation(self):
+        """float: angle of the text elements around the anchor point."""
         return self._rotation
 
     @rotation.setter
     def rotation(self, rotation):
         self._rotation = rotation
+        self.events.rotation()
 
     @property
     def translation(self):
+        """np.ndarray: offset from the anchor point"""
         return self._translation
 
     @translation.setter
     def translation(self, translation):
-        self._translation = translation
+        self._translation = np.asarray(translation)
+        self.events.translation()
 
     @property
     def color(self):
-
+        """np.ndarray: Font color for the text"""
         return self._color
 
     @color.setter
     def color(self, color):
         self._color = transform_color(color)[0]
+        self.events.color()
 
     @property
     def size(self):
+        """float: Font size of the text."""
         return self._size
 
     @size.setter
     def size(self, size):
-
         self._size = size
-
-    @property
-    def font(self):
-
-        return self._font
-
-    @font.setter
-    def font(self, font):
-        self._font = font
+        self.events.size()
 
     @property
     def visible(self):
+        """bool: Set to true of the text should be displayed."""
         return self._visible
 
     @visible.setter
@@ -175,10 +189,10 @@ class TextManager:
     def mode(self, mode):
         self._mode = TextMode(mode)
 
-    def add(self, text, n_text):
+    def add(self, properties, n_text):
         if self._mode in (TextMode.PROPERTY, TextMode.FORMATTED):
             new_text, _ = format_text_properties(
-                self._text_format_string, n_text=n_text, properties=text
+                self._text_format_string, n_text=n_text, properties=properties
             )
         elif self._mode == TextMode.NONE:
             new_text = np.repeat([''], n_text)
@@ -236,8 +250,18 @@ class TextManager:
             'color': self.color,
             'translation': self.translation,
             'size': self.size,
-            'font': self.font,
             'visible': self.visible,
         }
 
         return state
+
+    def _connect_update_events(self, update_function):
+        """Function to connect all property update events to the update callback.
+        This is typically used in the vispy view file.
+        """
+        self.events.rotation.connect(update_function)
+        self.events.translation.connect(update_function)
+        self.events.anchor.connect(update_function)
+        self.events.color.connect(update_function)
+        self.events.size.connect(update_function)
+        self.events.visible.connect(update_function)

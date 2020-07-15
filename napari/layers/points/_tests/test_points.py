@@ -608,7 +608,6 @@ def test_set_text_with_kwarg_dict(properties):
         'translation': [5, 5],
         'anchor': 'upper_left',
         'size': 10,
-        'font': 'OpenSans',
         'visible': True,
     }
     shape = (10, 2)

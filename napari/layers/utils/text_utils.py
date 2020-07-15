@@ -51,7 +51,7 @@ def _calculate_anchor_upper_left(
     text_anchors = np.array([bbox_min[:, 0], bbox_min[:, 1]]).T
 
     anchor_x = 'left'
-    anchor_y = 'baseline'
+    anchor_y = 'top'
 
     return text_anchors, anchor_x, anchor_y
 
@@ -64,7 +64,7 @@ def _calculate_anchor_upper_right(
     text_anchors = np.array([bbox_min[:, 0], bbox_max[:, 1]]).T
 
     anchor_x = 'right'
-    anchor_y = 'baseline'
+    anchor_y = 'top'
 
     return text_anchors, anchor_x, anchor_y
 
@@ -77,7 +77,7 @@ def _calculate_anchor_lower_left(
     text_anchors = np.array([bbox_max[:, 0], bbox_min[:, 1]]).T
 
     anchor_x = 'left'
-    anchor_y = 'top'
+    anchor_y = 'bottom'
 
     return text_anchors, anchor_x, anchor_y
 
@@ -90,7 +90,7 @@ def _calculate_anchor_lower_right(
     text_anchors = np.array([bbox_max[:, 0], bbox_max[:, 1]]).T
 
     anchor_x = 'right'
-    anchor_y = 'top'
+    anchor_y = 'bottom'
 
     return text_anchors, anchor_x, anchor_y
 
