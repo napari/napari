@@ -1442,6 +1442,9 @@ class Shapes(Layer):
                 self.properties[k] = np.concatenate(
                     (self.properties[k], new_property), axis=0
                 )
+            if self._text._mode is not TextMode.NONE:
+                self._text.add(self.current_properties, n_new_shapes)
+
             self._add_shapes(
                 data,
                 shape_type=shape_type,

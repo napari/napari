@@ -162,6 +162,20 @@ def test_text_from_property_fstring(properties):
     expected_text_2 = ['type-ish: ' + v for v in properties['shape_type']]
     np.testing.assert_equal(layer.text, expected_text_2)
 
+    # copy/paste
+    layer.selected_data = {0}
+    layer._copy_data()
+    layer._paste_data()
+    expected_text_3 = expected_text_2 + ['type-ish: A']
+    np.testing.assert_equal(layer.text, expected_text_3)
+
+    # add shape
+    layer.selected_data = {0}
+    new_shape = np.random.random((1, 4, 2))
+    layer.add(new_shape)
+    expected_text_4 = expected_text_3 + ['type-ish: A']
+    np.testing.assert_equal(layer.text, expected_text_4)
+
 
 @pytest.mark.parametrize("properties", [properties_array, properties_list])
 def test_set_text_with_kwarg_dict(properties):
