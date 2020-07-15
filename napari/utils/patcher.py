@@ -1,6 +1,7 @@
-"""Patch functions and methods for tracing or anything.
+"""Patch functions and methods. Our perfmon system using this to patch in
+perf_timers, but this can be used for any type of patching.
 
-See patch_callables() below.
+See patch_callables() below as the main entrypoint.
 """
 
 from importlib import import_module
@@ -186,12 +187,16 @@ def patch_callables(callables: List[str], patch_func: PatchFunction) -> None:
 
     An example patch_func is:
 
+    import wrapt
     def _my_patcher(parent: CallableParent, callable: str, label: str) -> None:
         @wrapt.patch_function_wrapper(parent, callable)
         def my_announcer(wrapped, instance, args, kwargs):
             print(f"Announce {label}")
             return wrapped(*args, **kwargs)
+
+    Stop on error is nice so the user knows they have a mistake in their
+    config file. But if you run different branches with the same config,
+    you'd kind of like it to ignore errors, since some things might
+    not exist in one of the branches. So not sure which is best.
     """
-    # Stop on error is nice to use knows they have a mistake. But if you are
-    # running different branches it can be annoying.
     Patcher(patch_func, stop_on_error=False).patch_all(callables)
