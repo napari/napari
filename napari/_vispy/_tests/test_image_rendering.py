@@ -5,10 +5,16 @@ def test_image_rendering(make_test_viewer):
     """Test 3D image with different rendering."""
     viewer = make_test_viewer()
 
+    viewer.dims.ndisplay = 3
+
     data = np.random.random((20, 20, 20))
     layer = viewer.add_image(data)
 
     assert layer.rendering == 'mip'
+
+    # Change the interpolation property
+    layer.interpolation = 'linear'
+    assert layer.interpolation == 'linear'
 
     # Change rendering property
     layer.rendering = 'translucent'

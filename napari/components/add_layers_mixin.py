@@ -775,7 +775,7 @@ class AddLayersMixin:
         edge_width : float
             Width for all vectors in pixels.
         length : float
-             Multiplicative factor on projections for length of all vectors.
+            Multiplicative factor on projections for length of all vectors.
         edge_color : str
             Color of all of the vectors.
         edge_color_cycle : np.ndarray, list
@@ -858,7 +858,7 @@ class AddLayersMixin:
         plugin : str, optional
             Name of a plugin to use.  If provided, will force ``path`` to be
             read with the specified ``plugin``.  If the requested plugin cannot
-            read ``path``, an execption will be raised.
+            read ``path``, an exception will be raised.
         layer_type : str, optional
             If provided, will force data read from ``path`` to be passed to the
             corresponding ``add_<layer_type>`` method (along with any
@@ -920,7 +920,7 @@ class AddLayersMixin:
         plugin : str, optional
             Name of a plugin to use.  If provided, will force ``path`` to be
             read with the specified ``plugin``.  If the requested plugin cannot
-            read ``path``, an execption will be raised.
+            read ``path``, an exception will be raised.
         layer_type : str, optional
             If provided, will force data read from ``path`` to be passed to the
             corresponding ``add_<layer_type>`` method (along with any

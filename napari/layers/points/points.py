@@ -413,8 +413,8 @@ class Points(Layer):
     ):
         """Initialize current_{edge,face}_color when starting with empty layer.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         color : (N, 4) array or str
             The value for setting edge or face_color
         attribute : str in {'edge', 'face'}
@@ -517,7 +517,7 @@ class Points(Layer):
     def _add_point_color(self, adding: int, attribute: str):
         """Add the edge or face colors for new points.
 
-        Parameters:
+        Parameters
         ----------
         adding : int
             the number of points that were added
@@ -743,7 +743,6 @@ class Points(Layer):
     def edge_color_cycle(self) -> np.ndarray:
         """Union[list, np.ndarray] :  Color cycle for edge_color.
         Can be a list of colors defined by name, RGB or RGBA
-
         """
         return self._edge_color_cycle_values
 
@@ -1233,7 +1232,7 @@ class Points(Layer):
             List of points around which to construct the interaction box.
 
         Returns
-        ----------
+        -------
         box : np.ndarray
             4x2 array of corners of the interaction box in clockwise order
             starting in the upper-left corner.
@@ -1358,10 +1357,10 @@ class Points(Layer):
     def _view_size(self) -> np.ndarray:
         """Get the sizes of the points in view
 
-       Returns
-       -------
-       view_size : (N x D) np.ndarray
-           Array of sizes for the N points in view
+        Returns
+        -------
+        view_size : (N x D) np.ndarray
+            Array of sizes for the N points in view
         """
         if len(self._indices_view) > 0:
             # Get the point sizes and scale for ndim display
@@ -1423,7 +1422,7 @@ class Points(Layer):
             Indices to slice with.
 
         Returns
-        ----------
+        -------
         slice_indices : list
             Indices of points in the currently viewed slice.
         scale : float, (N, ) array
@@ -1458,7 +1457,7 @@ class Points(Layer):
         """Determine if points at current coordinates.
 
         Returns
-        ----------
+        -------
         selection : int or None
             Index of point that is at the current coordinate if any.
         """

@@ -104,8 +104,8 @@ def drag_with_pixmap(list_widget: QListWidget) -> QDrag:
     QDrag
         A QDrag instance with a pixmap of the currently selected item.
 
-    Example
-    -------
+    Examples
+    --------
     >>> class QListWidget:
     ...     def startDrag(self, supportedActions):
     ...         drag = drag_with_pixmap(self)

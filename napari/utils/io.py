@@ -38,7 +38,7 @@ def imsave_extensions() -> Tuple[str, ...]:
     """Valid extensions of files that imsave can write to.
 
     Returns
-    ----------
+    -------
     tuple
         Valid extensions of files that imsave can write to.
     """
@@ -144,7 +144,7 @@ def magic_imread(filenames, *, use_dask=None, stack=True):
     The files are assumed to all have the same shape.
 
     Parameters
-    -------
+    ----------
     filenames : list
         List of filenames or directories to be opened.
         A list of `pathlib.Path` objects and a single filename or `Path` object
@@ -246,7 +246,7 @@ def read_zarr_dataset(path):
     """Read a zarr dataset, including an array or a group of arrays.
 
     Parameters
-    --------
+    ----------
     path : str
         Path to directory ending in '.zarr'. Path can contain either an array
         or a group of arrays in the case of multiscale data.

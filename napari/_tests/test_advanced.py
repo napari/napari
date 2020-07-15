@@ -4,7 +4,7 @@ import numpy as np
 def test_4D_5D_images(make_test_viewer):
     """Test adding 4D followed by 5D image layers to the viewer.
 
-    Intially only 2 sliders should be present, then a third slider should be
+    Initially only 2 sliders should be present, then a third slider should be
     created.
     """
     np.random.seed(0)
@@ -129,7 +129,7 @@ def test_range_one_image(make_test_viewer):
 def test_range_one_images_and_points(make_test_viewer):
     """Test adding images with range one dimensions and points.
 
-    Intially no sliders should be present as the images have range one
+    Initially no sliders should be present as the images have range one
     dimensions. On adding the points the sliders should be displayed.
     """
     np.random.seed(0)
@@ -254,6 +254,6 @@ def test_labels_undo_redo(make_test_viewer):
     labels.undo()
     assert np.array_equal(l2, labels.data)
 
-    # cannot undo as limit exceded
+    # cannot undo as limit exceeded
     labels.undo()
     assert np.array_equal(l2, labels.data)

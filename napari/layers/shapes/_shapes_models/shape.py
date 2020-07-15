@@ -373,7 +373,7 @@ class Shape(ABC):
             zoom_factor. Used for putting negative coordinates into the mask.
 
         Returns
-        ----------
+        -------
         mask : np.ndarray
             Boolean array with `True` for points inside the shape
         """

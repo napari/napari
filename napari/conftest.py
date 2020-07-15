@@ -42,8 +42,8 @@ def pytest_addoption(parser):
     placement of this conftest.py file, you must specify the napari folder (in
     the pytest command) to use this flag.
 
-    Example
-    -------
+    Examples
+    --------
     $ pytest napari --show-viewer
     """
     parser.addoption(
