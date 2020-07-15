@@ -12,6 +12,20 @@ from napari.utils.misc import ensure_iterable, ensure_sequence_of_iterables
 def split_channels(
     data: np.ndarray, channel_axis: int, **kwargs,
 ) -> List[Tuple]:
+    """Function to split the data array into seperate arrays along an axis
+
+    Parameters
+    ----------
+    data : array or list of array
+    channel_axis : int
+        Axis to split the image along.
+    kwargs: keyword arguments
+
+    Returns
+    -------
+    List of LayerData tuples: [(data: array, metadata: Dict, type: str )]
+
+    """
 
     # Determine if data is a multiscale
     multiscale = kwargs['multiscale']
@@ -82,8 +96,8 @@ def stack_to_images(stack: Image, axis: int, **kwargs: Dict,) -> List[Image]:
 
     Returns
     -------
-    list
-        List of images
+    imagelist: list
+        List of Image objects
     """
 
     data, meta, _ = stack.as_layer_data_tuple()
@@ -142,32 +156,14 @@ def stack_to_images(stack: Image, axis: int, **kwargs: Dict,) -> List[Image]:
 
 
 def images_to_stack(
-    images: List[Union[Image, Labels]],
-    axis: int = 0,
-    **kwargs: Dict,
-    # rgb: bool = None,
-    # colormap: Union[str, Colormap] = 'gray',
-    # contrast_limits: List[int] = None,
-    # gamma: float = 1,
-    # interpolation: str = 'nearest',
-    # rendering: str = 'mip',
-    # iso_threshold: float = 0.5,
-    # attenuation: float = 0.5,
-    # name: str = None,
-    # metadata: dict = None,
-    # scale: Tuple[float] = None,
-    # translate: Tuple[float] = None,
-    # opacity: float = 1,
-    # blending: str = 'translucent',
-    # visible: bool = True,
-    # multiscale: bool = None,
+    images: List[Union[Image, Labels]], axis: int = 0, **kwargs: Dict,
 ) -> Image:
     """Function to combine selected image layers in one layer
 
     Parameters
     ----------
-    viewer : napari.viewer.Viewer
-        The viewer with the selected image
+    images : List
+        List of Image Layers
     axis : int
         Index to to insert the new axis
 
