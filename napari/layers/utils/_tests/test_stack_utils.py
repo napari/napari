@@ -1,6 +1,8 @@
+import numpy as np
+
 from napari.layers import Image
 from napari.layers.utils.stack_utils import StackUtils
-import numpy as np
+
 
 s = StackUtils()
 
@@ -115,3 +117,57 @@ def test_images_to_stack_none_scale():
     assert stack.colormap[0] == 'green'
     assert list(stack.scale) == [4, 1, 1, 1]
     assert list(stack.translate) == [0, 0, -1, 2]
+
+
+def getkwargs():
+    kwargs = {
+        'rgb': None,
+        'colormap': None,
+        'contrast_limits': None,
+        'gamma': 1,
+        'interpolation': 'nearest',
+        'rendering': 'mip',
+        'iso_threshold': 0.5,
+        'attenuation': 0.5,
+        'name': None,
+        'metadata': None,
+        'scale': None,
+        'translate': None,
+        'opacity': 1,
+        'blending': None,
+        'visible': True,
+        'multiscale': None,
+    }
+    return kwargs
+
+
+def test_split_channels():
+    '''Test split_channels with shape (3,128,128)
+    expecting 3 (128,128) arrays'''
+    kwargs = getkwargs()
+    data = np.random.randint(0, 200, (3, 128, 128))
+    result_list = s.split_channels(data, 0, **kwargs)
+
+    assert len(result_list) == 3
+    for d, meta, _ in result_list:
+        assert d.shape == (128, 128)
+
+
+def test_split_channels_multiscale():
+    '''Test split_channels with multiscale
+    expecting a list of LayerData tuples'''
+    kwargs = getkwargs()
+    data = list()
+    data.append(np.random.randint(0, 200, (3, 128, 128)))
+    data.append(np.random.randint(0, 200, (3, 64, 64)))
+    data.append(np.random.randint(0, 200, (3, 32, 32)))
+    data.append(np.random.randint(0, 200, (3, 16, 16)))
+    result_list = s.split_channels(data, 0, **kwargs)
+
+    assert len(result_list) == 3
+    for ds, m, _ in result_list:
+        assert m['multiscale'] is True
+        assert ds[0].shape == (128, 128)
+        assert ds[1].shape == (64, 64)
+        assert ds[2].shape == (32, 32)
+        assert ds[3].shape == (16, 16)

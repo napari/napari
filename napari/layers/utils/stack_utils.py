@@ -1,4 +1,3 @@
-from napari.components.add_layers_mixin import AddLayersMixin
 import warnings
 from typing import Union, List, Tuple, Dict
 import itertools
@@ -10,10 +9,7 @@ from napari.layers.image._image_utils import guess_multiscale
 from napari.utils.misc import ensure_iterable, ensure_sequence_of_iterables
 
 
-class StackUtils(AddLayersMixin):
-    def __init__(self):
-        super().__init__()
-
+class StackUtils:
     def split_channels(
         self, data: np.ndarray, channel_axis: int, **kwargs,
     ) -> List[Tuple]:
