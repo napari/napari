@@ -1,11 +1,20 @@
 import numpy as np
 import pytest
 
+from napari.layers.utils._text_constants import Anchor
 from napari.layers.utils.text_utils import (
     _get_format_keys,
     _format_text_f_string,
     format_text_properties,
     format_text_direct,
+    _calculate_anchor_center,
+    _calculate_anchor_upper_left,
+    _calculate_anchor_upper_right,
+    _calculate_anchor_lower_left,
+    _calculate_anchor_lower_right,
+    _calculate_bbox_extents,
+    _calculate_bbox_centers,
+    get_text_anchors,
 )
 
 
@@ -120,3 +129,92 @@ def test_format_text_properties_f_string():
 
     np.testing.assert_equal(formatted_text, expected_text)
     assert isinstance(formatted_text, np.ndarray)
+
+
+coords = np.array([[0, 0], [10, 0], [0, 10], [10, 10]])
+view_data_list = [coords]
+view_data_ndarray = coords
+
+
+@pytest.mark.parametrize(
+    "view_data,expected_coords",
+    [(view_data_list, [[5, 5]]), (view_data_ndarray, coords)],
+)
+def test_bbox_center(view_data, expected_coords):
+    """Unit test for _calculate_anchor_center. Roundtrip test in test_get_text_anchors"""
+    anchor_data = _calculate_anchor_center(view_data)
+    expected_anchor_data = (expected_coords, 'center', 'center')
+    np.testing.assert_equal(anchor_data, expected_anchor_data)
+
+
+@pytest.mark.parametrize(
+    "view_data,expected_coords",
+    [(view_data_list, [[0, 0]]), (view_data_ndarray, coords)],
+)
+def test_bbox_upper_left(view_data, expected_coords):
+    """Unit test for _calculate_anchor_upper_left. Roundtrip test in test_get_text_anchors"""
+    expected_anchor_data = (expected_coords, 'left', 'baseline')
+    anchor_data = _calculate_anchor_upper_left(view_data)
+    np.testing.assert_equal(anchor_data, expected_anchor_data)
+
+
+@pytest.mark.parametrize(
+    "view_data,expected_coords",
+    [(view_data_list, [[0, 10]]), (view_data_ndarray, coords)],
+)
+def test_bbox_upper_right(view_data, expected_coords):
+    """Unit test for _calculate_anchor_upper_right. Roundtrip test in test_get_text_anchors"""
+    expected_anchor_data = (expected_coords, 'right', 'baseline')
+    anchor_data = _calculate_anchor_upper_right(view_data)
+    np.testing.assert_equal(anchor_data, expected_anchor_data)
+
+
+@pytest.mark.parametrize(
+    "view_data,expected_coords",
+    [(view_data_list, [[10, 0]]), (view_data_ndarray, coords)],
+)
+def test_bbox_lower_left(view_data, expected_coords):
+    """Unit test for _calculate_anchor_lower_left. Roundtrip test in test_get_text_anchors"""
+    expected_anchor_data = (expected_coords, 'left', 'top')
+    anchor_data = _calculate_anchor_lower_left(view_data)
+    np.testing.assert_equal(anchor_data, expected_anchor_data)
+
+
+@pytest.mark.parametrize(
+    "view_data,expected_coords",
+    [(view_data_list, [[10, 10]]), (view_data_ndarray, coords)],
+)
+def test_bbox_lower_right(view_data, expected_coords):
+    """Unit test for _calculate_anchor_lower_right. Roundtrip test in test_get_text_anchors"""
+    expected_anchor_data = (expected_coords, 'right', 'top')
+    anchor_data = _calculate_anchor_lower_right(view_data)
+    np.testing.assert_equal(anchor_data, expected_anchor_data)
+
+
+@pytest.mark.parametrize(
+    "anchor_type,expected_coords",
+    [
+        (Anchor.CENTER, [[5, 5]]),
+        (Anchor.UPPER_LEFT, [[0, 0]]),
+        (Anchor.UPPER_RIGHT, [[0, 10]]),
+        (Anchor.LOWER_LEFT, [[10, 0]]),
+        (Anchor.LOWER_RIGHT, [[10, 10]]),
+    ],
+)
+def test_get_text_anchors(anchor_type, expected_coords):
+    """Round trip tests for getting anchor coordinates."""
+    coords = [np.array([[0, 0], [10, 0], [0, 10], [10, 10]])]
+    anchor_coords, _, _ = get_text_anchors(coords, anchor=anchor_type)
+    np.testing.assert_equal(anchor_coords, expected_coords)
+
+
+def test_bbox_centers_exception():
+    """_calculate_bbox_centers should raise a TypeError for non ndarray or list inputs"""
+    with pytest.raises(TypeError):
+        _ = _calculate_bbox_centers({'bad_data_type': True})
+
+
+def test_bbox_extents_exception():
+    """_calculate_bbox_extents should raise a TypeError for non ndarray or list inputs"""
+    with pytest.raises(TypeError):
+        _ = _calculate_bbox_extents({'bad_data_type': True})
