@@ -621,10 +621,11 @@ class Image(IntensityVisualizationMixin, Layer):
 
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""
-        if not self._slice.loaded:
+        if self._slice is None or not self._slice.loaded:
             return
 
         image = self._slice.thumbnail.view
+        rgb = guess_rgb(image.shape)  # TODO_ASYNC what about self.rgb?
         if self.dims.ndisplay == 3 and self.dims.ndim > 2:
             image = np.max(image, axis=0)
 
@@ -642,7 +643,7 @@ class Image(IntensityVisualizationMixin, Layer):
             self._thumbnail_shape[:2],
         )
         zoom_factor = tuple(new_shape / image.shape[:2])
-        if self.rgb:
+        if rgb:
             # warning filter can be removed with scipy 1.4
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
@@ -668,9 +669,12 @@ class Image(IntensityVisualizationMixin, Layer):
             # warning filter can be removed with scipy 1.4
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                downsampled = ndi.zoom(
-                    image, zoom_factor, prefilter=False, order=0
-                )
+                try:
+                    downsampled = ndi.zoom(
+                        image, zoom_factor, prefilter=False, order=0
+                    )
+                except RuntimeError:
+                    return
             low, high = self.contrast_limits
             downsampled = np.clip(downsampled, low, high)
             color_range = high - low

@@ -28,6 +28,7 @@ from ...utils.event import EmitterGroup
 
 from ._cache import ChunkCache
 from ._request import ChunkRequest
+from ..perf import perf_timer
 
 LOGGER = logging.getLogger("ChunkLoader")
 
@@ -192,7 +193,10 @@ class ChunkLoader:
         # Clear any existing futures for this specific data_id. We only
         # support single-scale so there can only be one load in progress
         # per layer.
-        self._clear_pending(request.data_id)
+        with perf_timer(
+            "clear_pending", data_id=request.data_id, my_value="pizza"
+        ):
+            self._clear_pending(request.data_id)
 
         # Check the cache first.
         array = self.cache.get_chunk(request)
