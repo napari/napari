@@ -4,7 +4,6 @@ import numpy as np
 
 from ._text_constants import TextMode, Anchor
 from .text_utils import (
-    format_text_direct,
     format_text_properties,
     get_text_anchors,
 )
@@ -93,28 +92,18 @@ class TextManager:
         """np.ndarray: the text values to be displayed"""
         return self._text
 
-    # @text.setter
-    # def text(self, text):
-    #
-    #     self._text = text
-
-    def _set_text(self, text, n_text: int, properties: dict = {}):
+    def _set_text(
+        self, text: Union[None, str], n_text: int, properties: dict = {}
+    ):
         if len(properties) == 0 or n_text == 0 or text is None:
             self._mode = TextMode.NONE
             self._text_format_string = ''
             self._text = None
         else:
-            if isinstance(text, str):
-                formatted_text, text_mode = format_text_properties(
-                    text, n_text, properties
-                )
-                if text_mode in (TextMode.PROPERTY, TextMode.FORMATTED):
-                    self._text_format_string = text
-                else:
-                    self._text_format_string = ''
-            else:
-                formatted_text, text_mode = format_text_direct(text, n_text)
-                self._text_format_string = ''
+            formatted_text, text_mode = format_text_properties(
+                text, n_text, properties
+            )
+            self._text_format_string = text
             self._text = formatted_text
             self._mode = text_mode
         self.events.text()
