@@ -486,7 +486,7 @@ def test_attenuation():
     np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
-    assert layer.attenuation == 0.25
+    assert layer.attenuation == 0.05
 
     # Change attenuation property
     attenuation = 0.07
