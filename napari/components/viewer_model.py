@@ -518,7 +518,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
 
         Parameters
         ----------
-        layer : napar.layers.Layer
+        layer : napari.layers.Layer
             Layer that is to be moved.
         position : 2-tuple of int
             New position of layer in grid.
