@@ -329,7 +329,6 @@ class Shapes(Layer):
             current_face_color=Event,
             current_properties=Event,
             highlight=Event,
-            text=Event,
         )
 
         self._display_order_stored = []
@@ -546,6 +545,9 @@ class Shapes(Layer):
             warnings.warn(
                 'property used for edge_color dropped', RuntimeWarning
             )
+
+        if self.text.values is not None:
+            self.refresh_text()
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
@@ -1696,7 +1698,12 @@ class Shapes(Layer):
         self._text._set_text(
             text, n_text=len(self.data), properties=self.properties
         )
-        self.events.text()
+
+    def refresh_text(self):
+        """Refresh the text values.
+        This is generally used if the properties were updated without changing the data
+        """
+        self.text.refresh_text(self.properties)
 
     def _set_view_slice(self):
         """Set the view given the slicing indices."""

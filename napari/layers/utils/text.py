@@ -1,4 +1,4 @@
-from typing import Union
+from typing import Tuple, Union
 
 import numpy as np
 
@@ -109,7 +109,7 @@ class TextManager:
         self.events.text()
 
     @property
-    def anchor(self):
+    def anchor(self) -> str:
         """str: The location of the text origin relative to the bounding box.
         Should be 'center', 'upper_left', 'upper_right', 'lower_left', or 'lower_right
         '"""
@@ -121,7 +121,7 @@ class TextManager:
         self.events.anchor()
 
     @property
-    def rotation(self):
+    def rotation(self) -> float:
         """float: angle of the text elements around the anchor point."""
         return self._rotation
 
@@ -131,7 +131,7 @@ class TextManager:
         self.events.rotation()
 
     @property
-    def translation(self):
+    def translation(self) -> np.ndarray:
         """np.ndarray: offset from the anchor point"""
         return self._translation
 
@@ -141,7 +141,7 @@ class TextManager:
         self.events.translation()
 
     @property
-    def color(self):
+    def color(self) -> np.ndarray:
         """np.ndarray: Font color for the text"""
         return self._color
 
@@ -151,7 +151,7 @@ class TextManager:
         self.events.color()
 
     @property
-    def size(self):
+    def size(self) -> float:
         """float: Font size of the text."""
         return self._size
 
@@ -161,7 +161,7 @@ class TextManager:
         self.events.size()
 
     @property
-    def visible(self):
+    def visible(self) -> bool:
         """bool: Set to true of the text should be displayed."""
         return self._visible
 
@@ -171,10 +171,34 @@ class TextManager:
         self.events.visible()
 
     @property
-    def mode(self):
+    def mode(self) -> str:
+        """str: The current text setting mode."""
         return str(self._mode)
 
-    def add(self, properties, n_text):
+    def refresh_text(self, properties: dict):
+        """Refresh all of the current text elements using updated properties values
+
+        Parameters
+        ----------
+        properties : dict
+            The new properties from the layer
+        """
+        self._set_text(
+            self._text_format_string,
+            n_text=len(self.values),
+            properties=properties,
+        )
+
+    def add(self, properties: dict, n_text: int):
+        """Add a text element using the current format string
+
+        Parameters
+        ----------
+        properties : dict
+            The properties to draw the text from
+        n_text : int
+            The number of text elements to add
+        """
         if self._mode in (TextMode.PROPERTY, TextMode.FORMATTED):
             new_text, _ = format_text_properties(
                 self._text_format_string, n_text=n_text, properties=properties
@@ -183,13 +207,39 @@ class TextManager:
             self._values = np.concatenate((self.values, new_text))
 
     def remove(self, indices_to_remove: Union[set, list, np.ndarray]):
-        """Remove the selected text elements"""
+        """Remove the indicated text elements
+
+        Parameters
+        ----------
+        indices_to_remove : set, list, np.ndarray
+            The indices of the text elements to remove.
+        """
         if self._mode != TextMode.NONE:
             selected_indices = list(indices_to_remove)
             if len(selected_indices) > 0:
                 self._values = np.delete(self.values, selected_indices, axis=0)
 
-    def compute_text_coords(self, view_data, ndisplay):
+    def compute_text_coords(
+        self, view_data: np.ndarray, ndisplay: int
+    ) -> Tuple[np.ndarray, str, str]:
+        """Calculate the coordinates for each text element in view
+
+        Parameters
+        ----------
+        view_data : np.ndarray
+            The in view data from the layer
+        ndisplay : int
+            The number of dimensions being displayed in the viewer
+
+        Returns
+        -------
+        text_coords : np.ndarray
+            The coordinates of the text elements
+        anchor_x : str
+            The vispy text anchor for the x axis
+        anchor_y : str
+            THe vispy text anchor for the y axis
+        """
         if self._mode in [TextMode.FORMATTED, TextMode.PROPERTY]:
             anchor_coords, anchor_x, anchor_y = get_text_anchors(
                 view_data, ndisplay, self._anchor
@@ -242,6 +292,7 @@ class TextManager:
         """Function to connect all property update events to the update callback.
         This is typically used in the vispy view file.
         """
+        self.events.text.connect(update_function)
         self.events.rotation.connect(update_function)
         self.events.translation.connect(update_function)
         self.events.anchor.connect(update_function)

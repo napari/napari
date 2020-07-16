@@ -214,6 +214,19 @@ def test_text_error(properties):
         Shapes(data, properties=copy(properties), text=123)
 
 
+def test_refresh_text():
+    """Test refreshing the text after setting new properties"""
+    shape = (10, 4, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    properties = {'shape_type': ['A'] * shape[0]}
+    layer = Shapes(data, properties=copy(properties), text='shape_type')
+
+    new_properties = {'shape_type': ['B'] * shape[0]}
+    layer.properties = new_properties
+    np.testing.assert_equal(layer.text.values, new_properties['shape_type'])
+
+
 def test_rectangles():
     """Test instantiating Shapes layer with a random 2D rectangles."""
     # Test a single four corner rectangle

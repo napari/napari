@@ -59,6 +59,22 @@ def test_text_manager_format():
     np.testing.assert_equal(text_manager.values, expected_text_2[1::])
 
 
+def test_refresh_text():
+    n_text = 3
+    text = 'class'
+    classes = np.array(['A', 'B', 'C'])
+    properties = {'class': classes, 'confidence': np.array([0.5, 0.3, 1])}
+    text_manager = TextManager(text=text, n_text=n_text, properties=properties)
+
+    new_classes = np.array(['D', 'E', 'F'])
+    new_properties = {
+        'class': new_classes,
+        'confidence': np.array([0.5, 0.3, 1]),
+    }
+    text_manager.refresh_text(new_properties)
+    np.testing.assert_equal(new_classes, text_manager.values)
+
+
 def test_equality():
     n_text = 3
     text = 'class'

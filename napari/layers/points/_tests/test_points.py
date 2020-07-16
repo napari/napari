@@ -636,6 +636,19 @@ def test_text_error(properties):
         Points(data, properties=copy(properties), text=123)
 
 
+def test_refresh_text():
+    """Test refreshing the text after setting new properties"""
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    properties = {'point_type': ['A'] * shape[0]}
+    layer = Points(data, properties=copy(properties), text='point_type')
+
+    new_properties = {'point_type': ['B'] * shape[0]}
+    layer.properties = new_properties
+    np.testing.assert_equal(layer.text.values, new_properties['point_type'])
+
+
 def test_points_errors():
     shape = (3, 2)
     np.random.seed(0)

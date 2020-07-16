@@ -278,7 +278,6 @@ class Points(Layer):
             current_edge_color=Event,
             current_properties=Event,
             symbol=Event,
-            text=Event,
             n_dimensional=Event,
             highlight=Event,
         )
@@ -588,6 +587,9 @@ class Points(Layer):
                 'property used for edge_color dropped', RuntimeWarning
             )
 
+        if self.text.values is not None:
+            self.refresh_text()
+
     @property
     def current_properties(self) -> Dict[str, np.ndarray]:
         """dict{str: np.ndarray(1,)}: properties for the next added point."""
@@ -635,7 +637,12 @@ class Points(Layer):
         self._text._set_text(
             text, n_text=len(self.data), properties=self.properties
         )
-        self.events.text()
+
+    def refresh_text(self):
+        """Refresh the text values.
+        This is generally used if the properties were updated without changing the data
+        """
+        self.text.refresh_text(self.properties)
 
     def _get_ndim(self) -> int:
         """Determine number of dimensions of the layer."""
