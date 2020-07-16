@@ -200,7 +200,7 @@ class QtLayerList(QScrollArea):
         event.ignore()
 
     def keyReleaseEvent(self, event):
-        """Ignore key relase event.
+        """Ignore key release event.
 
         Allows the event to pass through a parent widget to its child widget
         without doing anything. If we did not use event.ignore() then the
@@ -217,7 +217,7 @@ class QtLayerList(QScrollArea):
         """Register mouse click if it happens on a layer widget.
 
         Checks if mouse press happens on a layer properties widget or
-        a child of such a widget. If not, the press has happended on the
+        a child of such a widget. If not, the press has happened on the
         Layers Widget itself and should be ignored.
 
         Parameters

@@ -108,7 +108,7 @@ committers = set()
 reviewers = set()
 users = {}
 
-for commit in tqdm(all_commits, desc="Getting commiters and authors"):
+for commit in tqdm(all_commits, desc="Getting committers and authors"):
     if commit.committer is not None:
         add_to_users(users, commit.committer)
         committers.add(commit.committer.login)

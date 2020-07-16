@@ -36,14 +36,13 @@ def register_types_with_magicgui():
             if a return is annotated as a subclass of Layer, then the
             corresponding layer type will be added.
             see `show_layer_result` for detail
-
     """
     _magictype(Layer, choices=get_layers, return_callback=show_layer_result)
     _magictype(Viewer, choices=get_viewers)
 
 
 def find_viewer_ancestor(widget: QWidget) -> Optional[Viewer]:
-    """Return the Viewer object if it is an ancestory of ``widget``, else None.
+    """Return the Viewer object if it is an ancestor of ``widget``, else None.
 
     Parameters
     ----------
@@ -92,8 +91,8 @@ def get_layers(gui, layer_type: Type[Layer]) -> Tuple[Layer, ...]:
     tuple
         Tuple of layers of type ``layer_type``
 
-    Example
-    -------
+    Examples
+    --------
     This allows the user to do this, and get a dropdown box in their GUI
     that shows the available image layers.
 

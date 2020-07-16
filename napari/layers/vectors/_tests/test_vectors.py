@@ -214,7 +214,7 @@ def test_name():
 
 
 def test_visiblity():
-    """Test setting layer visiblity."""
+    """Test setting layer visibility."""
     np.random.seed(0)
     data = np.random.random((10, 2, 2))
     data[:, 0, :] = 20 * data[:, 0, :]

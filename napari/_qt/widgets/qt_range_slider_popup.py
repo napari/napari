@@ -169,8 +169,8 @@ class QRangeSliderPopup(QtPopup):
     def _numformat(self, number):
         """Format float value to a specific number of decimal places.
 
-        Paramters
-        ---------
+        Parameters
+        ----------
         number : float
             Number value formatted to a specific number of decimal places.
         """

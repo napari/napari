@@ -8,7 +8,7 @@ def calc_data_range(data):
     """Calculate range of data values. If all values are equal return [0, 1].
 
     Parameters
-    -------
+    ----------
     data : array
         Data to calculate range of values over.
 

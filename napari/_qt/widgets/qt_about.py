@@ -78,8 +78,8 @@ class QtAbout(QDialog):
     def showAbout(qt_viewer):
         """Display the 'About napari' dialog box.
 
-        Paramters
-        ---------
+        Parameters
+        ----------
         qt_viewer : QtViewer
             QtViewer instance that the `About napari` dialog box belongs to.
         """

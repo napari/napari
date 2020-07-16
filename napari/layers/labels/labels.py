@@ -96,7 +96,7 @@ class Labels(Image):
         allows for normal interactivity with the canvas.
 
         In PICK mode the cursor functions like a color picker, setting the
-        clicked on label to be the curent label. If the background is picked it
+        clicked on label to be the current label. If the background is picked it
         will select the background label `0`.
 
         In PAINT mode the cursor functions like a paint brush changing any
@@ -420,7 +420,7 @@ class Labels(Image):
         allows for normal interactivity with the canvas.
 
         In PICK mode the cursor functions like a color picker, setting the
-        clicked on label to be the curent label. If the background is picked it
+        clicked on label to be the current label. If the background is picked it
         will select the background label `0`.
 
         In PAINT mode the cursor functions like a paint brush changing any
@@ -502,7 +502,7 @@ class Labels(Image):
         """Defines if painting should preserve existing labels.
 
         Default to false to allow paint on existing labels. When
-        set to true, existing labels will be replaced during painting.
+        set to true, existing labels will be preserved during painting.
         """
         return self._preserve_labels
 
@@ -530,7 +530,7 @@ class Labels(Image):
         pixel.
 
         Parameters
-        -------
+        ----------
         raw : array or int
             Raw integer input image.
 
@@ -742,8 +742,12 @@ class Labels(Image):
         if self._label_index and self._properties:
             # if the cursor is not outside the image or on the background
             if self._value is not None:
-                if self._value in self._label_index:
-                    idx = self._label_index[self._value]
+                if self.multiscale:
+                    value = self._value[1]
+                else:
+                    value = self._value
+                if value in self._label_index:
+                    idx = self._label_index[value]
                     for k, v in self._properties.items():
                         if k != 'index':
                             msg += f', {k}: {v[idx]}'

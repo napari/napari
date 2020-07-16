@@ -19,7 +19,7 @@ def check_layout_layers(layout, layers):
         LayersList to compare to
 
     Returns
-    ----------
+    -------
     match : bool
         Boolean if layout matches layers
     """
@@ -42,7 +42,7 @@ def check_layout_dividers(layout, nlayers):
         Number of layers that should be present
 
     Returns
-    ----------
+    -------
     match : bool
         Boolean if layout contains dividers in the right places
     """
