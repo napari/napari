@@ -52,9 +52,9 @@ class LabelBrushShape(StringEnum):
     """
     LabelBrushShape: Labelling brush shape.
 
-    CIRCLE (default) uses circle paintbrush.
+    CIRCLE (default) uses circle paintbrush (case insensitive).
 
-    SQUARE uses square paintbrush.
+    SQUARE uses square paintbrush (case insensitive).
     """
 
     CIRCLE = auto()
