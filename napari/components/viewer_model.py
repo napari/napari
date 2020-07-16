@@ -321,7 +321,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         for layer in layers:
             # adjust the order of the global dims based on the number of
             # dimensions that a layer has - for example a global order of
-            # [2, 1, 0, 3] -> [0, 1] for a layer that only has two dimesnions
+            # [2, 1, 0, 3] -> [0, 1] for a layer that only has two dimensions
             # or -> [1, 0, 2] for a layer with three as that corresponds to
             # the relative order of the last two and three dimensions
             # respectively
