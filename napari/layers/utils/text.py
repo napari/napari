@@ -3,7 +3,7 @@ from typing import Union
 import numpy as np
 
 from ._text_constants import TextMode, Anchor
-from .text_utils import (
+from ._text_utils import (
     format_text_properties,
     get_text_anchors,
 )

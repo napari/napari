@@ -1,6 +1,6 @@
 from vispy.scene.visuals import Line, Compound, Mesh, Markers, Text
 from .vispy_base_layer import VispyBaseLayer
-from .text_utils import update_text
+from ._text_utils import update_text
 import numpy as np
 
 

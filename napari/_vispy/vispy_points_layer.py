@@ -5,7 +5,7 @@ from vispy.visuals.transforms import ChainTransform
 
 from .vispy_base_layer import VispyBaseLayer
 from ..utils.colormaps.standardize_color import transform_color
-from .text_utils import update_text
+from ._text_utils import update_text
 
 
 class VispyPointsLayer(VispyBaseLayer):
