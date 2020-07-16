@@ -153,7 +153,7 @@ class Labels(Image):
             colormaps.label_colormap(self.num_colors),
         )
         self._color_mode = LabelColorMode.AUTO
-        self._brush_shape = LabelBrushShape.SQUARE
+        self._brush_shape = LabelBrushShape.CIRCLE
 
         if properties is None:
             self._properties = {}

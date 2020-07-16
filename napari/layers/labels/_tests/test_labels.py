@@ -338,11 +338,12 @@ def test_label_color():
 
 
 def test_paint():
-    """Test painting labels with different brush sizes."""
+    """Test painting labels with different square brush sizes."""
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     data[:10, :10] = 1
     layer = Labels(data)
+    layer.brush_shape = 'square'
     assert np.unique(layer.data[:5, :5]) == 1
     assert np.unique(layer.data[5:10, 5:10]) == 1
 
@@ -363,10 +364,11 @@ def test_paint():
 
 
 def test_paint_with_preserve_labels():
-    """Test painting labels while preserving existing labels"""
+    """Test painting labels with square brush while preserving existing labels"""
     data = np.zeros((15, 10))
     data[:3, :3] = 1
     layer = Labels(data)
+    layer.brush_shape = 'square'
     layer.preserve_labels = True
     assert np.unique(layer.data[:3, :3]) == 1
 

@@ -52,13 +52,13 @@ class LabelBrushShape(StringEnum):
     """
     LabelBrushShape: Labelling brush shape.
 
-    SQUARE (default) uses square paintbrush.
+    CIRCLE (default) uses circle paintbrush.
 
-    CIRCLE uses circle paintbrush.
+    SQUARE uses square paintbrush.
     """
 
-    SQUARE = auto()
     CIRCLE = auto()
+    SQUARE = auto()
 
 
 BACKSPACE = 'delete' if sys.platform == 'darwin' else 'backspace'
