@@ -1,3 +1,5 @@
+from typing import Tuple
+
 import numpy as np
 from vispy.scene.visuals import Text
 
@@ -5,8 +7,7 @@ from vispy.scene.visuals import Text
 def update_text(
     text_values: np.ndarray,
     coords: np.ndarray,
-    anchor_x: str,
-    anchor_y: str,
+    anchor: Tuple[str, str],
     rotation: float,
     color: np.ndarray,
     size: float,
@@ -21,12 +22,10 @@ def update_text(
         The array of text strings to display.
     coords : np.ndarray
         The coordinates for each text element.
-    anchor_x : str
-        The name of the vispy anchor position in the x axis.
-        Should be one of: 'left', 'center', 'right'.
-    anchor_y: str
-        The name of the vispy anchor position in the y axis.
-        Should be one of: 'top', 'center', 'middle', 'baseline', 'bottom'.
+    anchor : Tuple[str, str]
+        The name of the vispy anchor positions provided as (anchor_x, anchor_y).
+        anchor_x should be one of: 'left', 'center', 'right'.
+        anchor_y should be one of: 'top', 'center', 'middle', 'baseline', 'bottom'.
     rotation : float
         The rotation (degrees) of the text element around it's coordinate.
     color : np.ndarray
@@ -54,7 +53,7 @@ def update_text(
 
     text_node.text = text_values
     text_node.pos = positions
-    text_node.anchors = (anchor_x, anchor_y)
+    text_node.anchors = anchor
     text_node.rotation = rotation
     text_node.color = color
     text_node.font_size = size
