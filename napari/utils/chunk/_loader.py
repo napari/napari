@@ -15,39 +15,24 @@ The ChunkLoader is a shared resource like the network or the filesystem.
 from collections import defaultdict
 from contextlib import contextmanager
 from concurrent import futures
-import ctypes
 import logging
 import os
 import time
 from typing import Dict, List, Optional
 import weakref
 
-from cachetools import LRUCache
 import numpy as np
 
-from ._request import ChunkRequest
 from ...types import ArrayLike
 from ...utils.event import EmitterGroup
 
+from ._cache import ChunkCache
+from ._request import ChunkRequest
+
 LOGGER = logging.getLogger("ChunkLoader")
 
-# ChunkCache size as a fraction of total RAM.
-CACHE_MEM_FRACTION = 0.1
 
 NUM_WORKERS = int(os.getenv("NAPARI_CHUNK_WORKERS", "6"))
-
-
-def _hold_gil(seconds: float):
-    """Hold the GIL for some number of seconds.
-
-    This is used for debugging and performance testing only.
-    """
-    usec = seconds * 1000000
-    _libc_name = ctypes.util.find_library("c")
-    if _libc_name is None:
-        raise RuntimeError("Cannot find libc")
-    libc_py = ctypes.PyDLL(_libc_name)
-    libc_py.usleep(usec)
 
 
 def _log_to_file(path):
@@ -104,45 +89,6 @@ def _chunk_loader_worker(request: ChunkRequest):
     return request
 
 
-def _get_cache_size_bytes(mem_fraction):
-    import psutil
-
-    # Sizing approach borrowed from our create_dask_cache()
-    return psutil.virtual_memory().total * mem_fraction
-
-
-def _getsizeof_chunk(array: np.ndarray):
-    return array.nbytes
-
-
-class ChunkCache:
-    """Cache of previously loaded chunks.
-    """
-
-    def __init__(self):
-        nbytes = _get_cache_size_bytes(CACHE_MEM_FRACTION)
-        self.chunks = LRUCache(maxsize=nbytes, getsizeof=_getsizeof_chunk)
-
-    def add_chunk(self, request: ChunkRequest) -> None:
-        """Add this chunk to the cache.
-
-        Parameters
-        ----------
-        request : ChunkRequest
-            Add the data in this request to the cache.
-        """
-        LOGGER.info("ChunkCache.add_chunk: %s", request.key)
-        self.chunks[request.key] = request.array
-
-    def get_chunk(self, request: ChunkRequest) -> Optional[ArrayLike]:
-        """Get the cached data for this chunk request.
-
-        TODO_ASYNC: assumes there's just one layer....
-        """
-        LOGGER.info("ChunkCache.get_chunk: %s", request.key)
-        return self.chunks.get(request.key)
-
-
 class ChunkLoader:
     """Load chunks for rendering.
 
@@ -161,7 +107,7 @@ class ChunkLoader:
         self.synchronous = _get_synchronous_default()
 
         LOGGER.info("ChunkLoader.__init__ synchronous=%d", self.synchronous)
-        self.executor = futures.ProcessPoolExecutor(max_workers=NUM_WORKERS)
+        self.executor = futures.ThreadPoolExecutor(max_workers=NUM_WORKERS)
 
         # Maps data_id to futures for that layer.
         self.futures: Dict[int, List[futures.Future]] = defaultdict(list)
