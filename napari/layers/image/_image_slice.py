@@ -6,6 +6,7 @@ import numpy as np
 from ._image_view import ImageView
 from ...types import ArrayLike, ImageConverter
 from ...utils.chunk import ChunkRequest, chunk_loader
+from ...utils.perf import perf_timer
 
 LOGGER = logging.getLogger("ChunkLoader")
 
@@ -138,7 +139,8 @@ class ImageSlice:
             return
 
         # Could worker do the transpose? Does it take any time?
-        image = request.array.transpose(self.properties.displayed_order)
+        with perf_timer("transpose"):
+            image = request.array.transpose(self.properties.displayed_order)
 
         # Thumbnail is just the same image for non-multiscale.
         thumbnail = image
