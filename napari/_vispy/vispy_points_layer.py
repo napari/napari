@@ -154,12 +154,12 @@ class VispyPointsLayer(VispyBaseLayer):
         text_node = self._get_text_node()
         update_text(
             text_values=text,
-            text_coords=text_coords,
+            coords=text_coords,
             anchor_x=anchor_x,
             anchor_y=anchor_y,
-            text_rotation=self.layer._text.rotation,
-            text_color=self.layer._text.color,
-            text_size=self.layer._text.size,
+            rotation=self.layer._text.rotation,
+            color=self.layer._text.color,
+            size=self.layer._text.size,
             ndisplay=ndisplay,
             text_node=text_node,
         )

@@ -4,20 +4,45 @@ from vispy.scene.visuals import Text
 
 def update_text(
     text_values: np.ndarray,
-    text_coords: np.ndarray,
+    coords: np.ndarray,
     anchor_x: str,
     anchor_y: str,
-    text_rotation: float,
-    text_color: np.ndarray,
-    text_size: float,
+    rotation: float,
+    color: np.ndarray,
+    size: float,
     ndisplay: int,
     text_node: Text,
 ):
+    """ Update the vispy text node with the current text and display parameters
+
+    Parameters
+    ----------
+    text_values : np.ndarray
+        The array of text strings to display.
+    coords : np.ndarray
+        The coordinates for each text element.
+    anchor_x : str
+        The name of the vispy anchor position in the x axis.
+        Should be one of: 'left', 'center', 'right'.
+    anchor_y: str
+        The name of the vispy anchor position in the y axis.
+        Should be one of: 'top', 'center', 'middle', 'baseline', 'bottom'.
+    rotation : float
+        The rotation (degrees) of the text element around it's coordinate.
+    color : np.ndarray
+        The color of the text in an RGBA array.
+    size : float
+        The size of the font in points.
+    ndisplay : int
+        The number of dimensions displayed in the viewer.
+    text_node : vispy.scene.visuals.Text
+        The text node to be updated.
+    """
 
     if ndisplay == 2:
-        positions = np.flip(text_coords, axis=1)
+        positions = np.flip(coords, axis=1)
     elif ndisplay == 3:
-        raw_positions = np.flip(text_coords, axis=1)
+        raw_positions = np.flip(coords, axis=1)
         n_positions, position_dims = raw_positions.shape
 
         if position_dims < 3:
@@ -30,6 +55,6 @@ def update_text(
     text_node.text = text_values
     text_node.pos = positions
     text_node.anchors = (anchor_x, anchor_y)
-    text_node.rotation = text_rotation
-    text_node.color = text_color
-    text_node.font_size = text_size
+    text_node.rotation = rotation
+    text_node.color = color
+    text_node.font_size = size
