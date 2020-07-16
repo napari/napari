@@ -31,11 +31,6 @@ from ...utils.event import EmitterGroup
 
 LOGGER = logging.getLogger("ChunkLoader")
 
-# Use SyncChunkLoader which is hard-coded to be synchronous. It cannot
-# switch between sync and async. For testing or debugging when you don't
-# want the thread pool or cache at all.
-USE_SYNC_LOADER = False
-
 # ChunkCache size as a fraction of total RAM.
 CACHE_MEM_FRACTION = 0.1
 
@@ -146,40 +141,6 @@ class ChunkCache:
         """
         LOGGER.info("ChunkCache.get_chunk: %s", request.key)
         return self.chunks.get(request.key)
-
-
-class SyncChunkLoader:
-    """Loads chunks synchronously for rendering.
-
-    For testing purposes, this bare-bones loader has no thread pool and no
-    cache. It can only do synchronous loads so matter what self.synchronous
-    is set to.
-
-    Attributes
-    ----------
-    synchronous : bool
-        This exists for compatibility with ChunkLoader but it is ignored.
-    """
-
-    def __init__(self):
-        self.synchronous = True  # ignored, we are always sync
-        self.events = EmitterGroup(
-            source=self, auto_connect=True, chunk_loaded=None
-        )
-
-    def load_chunk(self, request: ChunkRequest) -> ChunkRequest:
-        """Load chunk synchronously in this thread.
-
-        Parameters
-        ----------
-        request : ChunkRequest
-            Contains the array to load from and related info.
-
-        ChunkRequest
-            The satisfied ChunkRequest.
-        """
-        request.array = np.asarray(request.array)
-        return request
 
 
 class ChunkLoader:
@@ -415,4 +376,4 @@ def synchronous_loading(enabled):
 
 
 # Global instance
-chunk_loader = SyncChunkLoader() if USE_SYNC_LOADER else ChunkLoader()
+chunk_loader = ChunkLoader()
