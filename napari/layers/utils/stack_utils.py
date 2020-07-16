@@ -3,10 +3,10 @@ from typing import Union, List, Tuple, Dict
 import itertools
 
 import numpy as np
-from napari.layers import Image, Labels
-from napari.utils.colormaps import colormaps
-from napari.layers.image._image_utils import guess_multiscale
-from napari.utils.misc import ensure_iterable, ensure_sequence_of_iterables
+from ...layers import Image, Labels
+from ...utils.colormaps import colormaps
+from ...layers.image._image_utils import guess_multiscale
+from ...utils.misc import ensure_iterable, ensure_sequence_of_iterables
 
 
 def split_channels(
