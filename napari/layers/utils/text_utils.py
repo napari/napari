@@ -7,15 +7,17 @@ from ._text_constants import TextMode, Anchor
 
 
 def get_text_anchors(
-    view_data: Union[np.ndarray, list], anchor: Anchor = Anchor.CENTER
+    view_data: Union[np.ndarray, list],
+    ndisplay: int,
+    anchor: Anchor = Anchor.CENTER,
 ) -> np.ndarray:
     text_anchor_func = TEXT_ANCHOR_CALCULATION[anchor]
-    text_coords, anchor_x, anchor_y = text_anchor_func(view_data)
+    text_coords, anchor_x, anchor_y = text_anchor_func(view_data, ndisplay)
     return text_coords, anchor_x, anchor_y
 
 
 def _calculate_anchor_center(
-    view_data: Union[np.ndarray, list]
+    view_data: Union[np.ndarray, list], ndisplay: int
 ) -> Tuple[np.ndarray, str, str]:
     text_coords = _calculate_bbox_centers(view_data)
 
@@ -44,53 +46,75 @@ def _calculate_bbox_centers(view_data: Union[np.ndarray, list]) -> np.ndarray:
 
 
 def _calculate_anchor_upper_left(
-    view_data: Union[np.ndarray, list]
+    view_data: Union[np.ndarray, list], ndisplay: int
 ) -> Tuple[np.ndarray, str, str]:
 
-    bbox_min, bbox_max = _calculate_bbox_extents(view_data)
-    text_anchors = np.array([bbox_min[:, 0], bbox_min[:, 1]]).T
+    if ndisplay == 2:
+        bbox_min, bbox_max = _calculate_bbox_extents(view_data)
+        text_anchors = np.array([bbox_min[:, 0], bbox_min[:, 1]]).T
 
-    anchor_x = 'left'
-    anchor_y = 'top'
+        anchor_x = 'left'
+        anchor_y = 'top'
+    else:
+        # in 3D, use centered anchor
+        text_anchors, anchor_x, anchor_y = _calculate_anchor_center(
+            view_data, ndisplay
+        )
 
     return text_anchors, anchor_x, anchor_y
 
 
 def _calculate_anchor_upper_right(
-    view_data: Union[np.ndarray, list]
+    view_data: Union[np.ndarray, list], ndisplay: int
 ) -> Tuple[np.ndarray, str, str]:
 
-    bbox_min, bbox_max = _calculate_bbox_extents(view_data)
-    text_anchors = np.array([bbox_min[:, 0], bbox_max[:, 1]]).T
+    if ndisplay == 2:
+        bbox_min, bbox_max = _calculate_bbox_extents(view_data)
+        text_anchors = np.array([bbox_min[:, 0], bbox_max[:, 1]]).T
 
-    anchor_x = 'right'
-    anchor_y = 'top'
+        anchor_x = 'right'
+        anchor_y = 'top'
+    else:
+        # in 3D, use centered anchor
+        text_anchors, anchor_x, anchor_y = _calculate_anchor_center(
+            view_data, ndisplay
+        )
 
     return text_anchors, anchor_x, anchor_y
 
 
 def _calculate_anchor_lower_left(
-    view_data: Union[np.ndarray, list]
+    view_data: Union[np.ndarray, list], ndisplay: int
 ) -> Tuple[np.ndarray, str, str]:
+    if ndisplay == 2:
+        bbox_min, bbox_max = _calculate_bbox_extents(view_data)
+        text_anchors = np.array([bbox_max[:, 0], bbox_min[:, 1]]).T
 
-    bbox_min, bbox_max = _calculate_bbox_extents(view_data)
-    text_anchors = np.array([bbox_max[:, 0], bbox_min[:, 1]]).T
-
-    anchor_x = 'left'
-    anchor_y = 'bottom'
+        anchor_x = 'left'
+        anchor_y = 'bottom'
+    else:
+        # in 3D, use centered anchor
+        text_anchors, anchor_x, anchor_y = _calculate_anchor_center(
+            view_data, ndisplay
+        )
 
     return text_anchors, anchor_x, anchor_y
 
 
 def _calculate_anchor_lower_right(
-    view_data: Union[np.ndarray, list]
+    view_data: Union[np.ndarray, list], ndisplay: int
 ) -> Tuple[np.ndarray, str, str]:
+    if ndisplay == 2:
+        bbox_min, bbox_max = _calculate_bbox_extents(view_data)
+        text_anchors = np.array([bbox_max[:, 0], bbox_max[:, 1]]).T
 
-    bbox_min, bbox_max = _calculate_bbox_extents(view_data)
-    text_anchors = np.array([bbox_max[:, 0], bbox_max[:, 1]]).T
-
-    anchor_x = 'right'
-    anchor_y = 'bottom'
+        anchor_x = 'right'
+        anchor_y = 'bottom'
+    else:
+        # in 3D, use centered anchor
+        text_anchors, anchor_x, anchor_y = _calculate_anchor_center(
+            view_data, ndisplay
+        )
 
     return text_anchors, anchor_x, anchor_y
 

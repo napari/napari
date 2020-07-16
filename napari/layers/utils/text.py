@@ -209,7 +209,7 @@ class TextManager:
     def compute_text_coords(self, view_data, ndisplay):
         if self._mode in [TextMode.FORMATTED, TextMode.PROPERTY]:
             anchor_coords, anchor_x, anchor_y = get_text_anchors(
-                view_data, self._anchor
+                view_data, ndisplay, self._anchor
             )
             text_coords = anchor_coords + self.translation
         else:

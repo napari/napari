@@ -142,7 +142,7 @@ view_data_ndarray = coords
 )
 def test_bbox_center(view_data, expected_coords):
     """Unit test for _calculate_anchor_center. Roundtrip test in test_get_text_anchors"""
-    anchor_data = _calculate_anchor_center(view_data)
+    anchor_data = _calculate_anchor_center(view_data, ndisplay=2)
     expected_anchor_data = (expected_coords, 'center', 'center')
     np.testing.assert_equal(anchor_data, expected_anchor_data)
 
@@ -154,7 +154,7 @@ def test_bbox_center(view_data, expected_coords):
 def test_bbox_upper_left(view_data, expected_coords):
     """Unit test for _calculate_anchor_upper_left. Roundtrip test in test_get_text_anchors"""
     expected_anchor_data = (expected_coords, 'left', 'top')
-    anchor_data = _calculate_anchor_upper_left(view_data)
+    anchor_data = _calculate_anchor_upper_left(view_data, ndisplay=2)
     np.testing.assert_equal(anchor_data, expected_anchor_data)
 
 
@@ -165,7 +165,7 @@ def test_bbox_upper_left(view_data, expected_coords):
 def test_bbox_upper_right(view_data, expected_coords):
     """Unit test for _calculate_anchor_upper_right. Roundtrip test in test_get_text_anchors"""
     expected_anchor_data = (expected_coords, 'right', 'top')
-    anchor_data = _calculate_anchor_upper_right(view_data)
+    anchor_data = _calculate_anchor_upper_right(view_data, ndisplay=2)
     np.testing.assert_equal(anchor_data, expected_anchor_data)
 
 
@@ -176,7 +176,7 @@ def test_bbox_upper_right(view_data, expected_coords):
 def test_bbox_lower_left(view_data, expected_coords):
     """Unit test for _calculate_anchor_lower_left. Roundtrip test in test_get_text_anchors"""
     expected_anchor_data = (expected_coords, 'left', 'bottom')
-    anchor_data = _calculate_anchor_lower_left(view_data)
+    anchor_data = _calculate_anchor_lower_left(view_data, ndisplay=2)
     np.testing.assert_equal(anchor_data, expected_anchor_data)
 
 
@@ -187,7 +187,7 @@ def test_bbox_lower_left(view_data, expected_coords):
 def test_bbox_lower_right(view_data, expected_coords):
     """Unit test for _calculate_anchor_lower_right. Roundtrip test in test_get_text_anchors"""
     expected_anchor_data = (expected_coords, 'right', 'bottom')
-    anchor_data = _calculate_anchor_lower_right(view_data)
+    anchor_data = _calculate_anchor_lower_right(view_data, ndisplay=2)
     np.testing.assert_equal(anchor_data, expected_anchor_data)
 
 
@@ -204,7 +204,9 @@ def test_bbox_lower_right(view_data, expected_coords):
 def test_get_text_anchors(anchor_type, expected_coords):
     """Round trip tests for getting anchor coordinates."""
     coords = [np.array([[0, 0], [10, 0], [0, 10], [10, 10]])]
-    anchor_coords, _, _ = get_text_anchors(coords, anchor=anchor_type)
+    anchor_coords, _, _ = get_text_anchors(
+        coords, anchor=anchor_type, ndisplay=2
+    )
     np.testing.assert_equal(anchor_coords, expected_coords)
 
 
