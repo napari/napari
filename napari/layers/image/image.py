@@ -612,6 +612,13 @@ class Image(IntensityVisualizationMixin, Layer):
         if request.data_id != id(self.data):
             return  # ignore, chunk was not for us
 
+        # ASYNC_TODO: Complain if the loaded data's shape's rgb status was
+        # different from what we inferred it to be on load. Basically if
+        # the user lied about the shape of their array. Not sure if we want
+        # to handle this better somehow?
+        if self.rgb != guess_rgb(request.array.shape):
+            raise RuntimeError("Loaded chunk was the wrong shape.")
+
         # Tell the slice its data is ready to show.
         self._slice.chunk_loaded(request)
         self.events.loaded()
@@ -625,7 +632,7 @@ class Image(IntensityVisualizationMixin, Layer):
             return
 
         image = self._slice.thumbnail.view
-        rgb = guess_rgb(image.shape)  # TODO_ASYNC what about self.rgb?
+
         if self.dims.ndisplay == 3 and self.dims.ndim > 2:
             image = np.max(image, axis=0)
 
@@ -643,7 +650,7 @@ class Image(IntensityVisualizationMixin, Layer):
             self._thumbnail_shape[:2],
         )
         zoom_factor = tuple(new_shape / image.shape[:2])
-        if rgb:
+        if self.rgb:
             # warning filter can be removed with scipy 1.4
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")

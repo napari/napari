@@ -3,10 +3,11 @@ from typing import NamedTuple, Tuple
 
 import numpy as np
 
-from ._image_view import ImageView
 from ...types import ArrayLike, ImageConverter
 from ...utils.chunk import ChunkRequest, chunk_loader
 from ...utils.perf import perf_timer
+
+from ._image_view import ImageView
 
 LOGGER = logging.getLogger("ChunkLoader")
 
@@ -140,7 +141,8 @@ class ImageSlice:
 
         # Could worker do the transpose? Does it take any time?
         with perf_timer("transpose"):
-            image = request.array.transpose(self.properties.displayed_order)
+            order = self.properties.displayed_order
+            image = request.array.transpose(order)
 
         # Thumbnail is just the same image for non-multiscale.
         thumbnail = image
