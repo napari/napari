@@ -250,6 +250,10 @@ class TextManager:
         self.events.visible.connect(update_function)
 
     def __eq__(self, other):
+        """Method to test equivalence
+
+        called by: text_manager_1 == text_manager_2
+        """
         if isinstance(other, TextManager):
             my_state = self._get_state()
             other_state = other._get_state()
@@ -264,3 +268,10 @@ class TextManager:
             equal = False
 
         return equal
+
+    def ne(self, other):
+        """Method to test not equal
+
+        called by: text_manager_1 != text_manager_2
+        """
+        return not (self.__eq__(other))

@@ -57,3 +57,23 @@ def test_text_manager_format():
     # remove the first text element
     text_manager.remove({0})
     np.testing.assert_equal(text_manager.values, expected_text_2[1::])
+
+
+def test_equality():
+    n_text = 3
+    text = 'class'
+    classes = np.array(['A', 'B', 'C'])
+    properties = {'class': classes, 'confidence': np.array([0.5, 0.3, 1])}
+    text_manager_1 = TextManager(
+        text=text, n_text=n_text, properties=properties, color='red'
+    )
+    text_manager_2 = TextManager(
+        text=text, n_text=n_text, properties=properties, color='red'
+    )
+
+    assert text_manager_1 == text_manager_2
+    assert not (text_manager_1 != text_manager_2)
+
+    text_manager_2.color = 'blue'
+    assert text_manager_1 != text_manager_2
+    assert not (text_manager_1 == text_manager_2)
