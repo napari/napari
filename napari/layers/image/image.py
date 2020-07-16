@@ -12,7 +12,7 @@ from ..intensity_mixin import IntensityVisualizationMixin
 from ._image_constants import Interpolation, Interpolation3D, Rendering
 from ._image_utils import guess_rgb, guess_multiscale
 from ._image_slice import ImageProperties, ImageSlice
-from ...utils.chunk_loader import CHUNK_LOADER
+from ...utils.chunk import chunk_loader
 
 
 # Mixin must come before Layer
@@ -594,7 +594,7 @@ class Image(IntensityVisualizationMixin, Layer):
         array = self.data[indices]
 
         # Load the array, could sync or async.
-        request = CHUNK_LOADER.create_request(self, indices, array)
+        request = chunk_loader.create_request(self, indices, array)
         self._slice.load_chunk(request)
 
         # Might be loaded or not loaded, update either way

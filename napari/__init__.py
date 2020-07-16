@@ -76,7 +76,7 @@ from .utils import sys_info, _magicgui
 _magicgui.register_types_with_magicgui()
 
 # Context object to disable asynchronous loads.
-from .utils.chunk_loader import synchronous_loading
+from .utils.chunk import synchronous_loading
 
 # this unused import is here to fix a very strange bug.
 # there is some mysterious magical goodness in scipy stats that needs

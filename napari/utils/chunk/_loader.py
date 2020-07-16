@@ -1,6 +1,6 @@
 """ChunkLoader and related classes.
 
-There is one global CHUNK_LOADER instance to handle async loading for any
+There is one global chunk_loader instance to handle async loading for any
 and all Viewer instances that are running. There are two main reasons we
 just have one ChunkLoader and not one per Viewer:
 
@@ -19,15 +19,15 @@ import ctypes
 import logging
 import os
 import time
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Dict, List, Optional
 import weakref
 
 from cachetools import LRUCache
 import numpy as np
 
-from ..types import ArrayLike
-from ..utils.event import EmitterGroup
-from ..utils.perf import perf_counter_ns, PerfEvent, timers
+from ._request import ChunkRequest
+from ...types import ArrayLike
+from ...utils.event import EmitterGroup
 
 LOGGER = logging.getLogger("ChunkLoader")
 
@@ -35,9 +35,6 @@ LOGGER = logging.getLogger("ChunkLoader")
 # switch between sync and async. For testing or debugging when you don't
 # want the thread pool or cache at all.
 USE_SYNC_LOADER = False
-
-# We convert slices to tuple for hashing.
-SliceTuple = Tuple[int, int, int]
 
 # ChunkCache size as a fraction of total RAM.
 CACHE_MEM_FRACTION = 0.1
@@ -71,26 +68,6 @@ def _log_to_file(path):
 _log_to_file('chunk_loader.log')
 
 
-def _index_to_tuple(index: Union[int, slice]) -> Union[int, SliceTuple]:
-    """Get hashable object for the given index.
-
-    Slice is not hashable so we convert slices to tuples.
-
-    Parameters
-    ----------
-    index
-        Integer index or a slice.
-
-    Returns
-    -------
-    Union[int, SliceTuple]
-        Hashable object that can be used for the index.
-    """
-    if isinstance(index, slice):
-        return (index.start, index.stop, index.step)
-    return index
-
-
 def _get_synchronous_default() -> bool:
     """
     Return True if ChunkManager should load data synchronously.
@@ -110,56 +87,6 @@ def _get_synchronous_default() -> bool:
         synchronous_loading = env_var == "0"
 
     return synchronous_loading
-
-
-class ChunkRequest:
-    """A request asking the ChunkLoader to load an array.
-
-    Parameters
-    ----------
-    layer_id : int
-        Python id() for the Layer requesting the chunk.
-    data_id : int
-        Python id() for the Layer._data requesting the chunk.
-    indices
-        The tuple of slices index into the data.
-    array : ArrayLike
-        Load the data from this array.
-
-    Attributes
-    ----------
-    layer_ref : weakref
-        Reference to the layer that submitted the request.
-    data_id : int
-        Python id() of the data in the layer.
-    """
-
-    def __init__(self, layer, indices, array: ArrayLike):
-        self.layer_id = id(layer)
-        self.data_id = id(layer.data)
-        self.indices = indices
-        self.array = array
-        self.delay_seconds = 0
-
-        # Slice objects are not hashable, so turn them into tuples.
-        indices_tuple = tuple(_index_to_tuple(x) for x in self.indices)
-
-        # Key is data_id + indices as a tuples.
-        self.key = tuple([self.data_id, indices_tuple])
-
-        # Worker process will fill this is then it processes the request.
-        self.pid = None
-
-    def start(self):
-        self.start_ns = perf_counter_ns()
-
-    def end(self):
-        self.end_ns = perf_counter_ns()
-        if timers is not None:
-            event = PerfEvent(
-                "ChunkRequest", self.start_ns, self.end_ns, pid=self.pid
-            )
-            timers.add_event(event)
 
 
 def _chunk_loader_worker(request: ChunkRequest):
@@ -481,10 +408,11 @@ def synchronous_loading(enabled):
         layer = Image(data)
         ... use layer ...
     """
-    previous = CHUNK_LOADER.synchronous
-    CHUNK_LOADER.synchronous = enabled
+    previous = chunk_loader.synchronous
+    chunk_loader.synchronous = enabled
     yield
-    CHUNK_LOADER.synchronous = previous
+    chunk_loader.synchronous = previous
 
 
-CHUNK_LOADER = SyncChunkLoader() if USE_SYNC_LOADER else ChunkLoader()
+# Global instance
+chunk_loader = SyncChunkLoader() if USE_SYNC_LOADER else ChunkLoader()

@@ -1,7 +1,7 @@
 from qtpy.QtCore import QObject, Signal
 
 from ..layers.base import Layer
-from ..utils.chunk_loader import ChunkRequest, CHUNK_LOADER
+from ..utils.chunk import ChunkRequest, chunk_loader
 from ..utils.perf import add_instant_event
 
 
@@ -25,7 +25,7 @@ class QtChunkReceiver(QObject):
         super().__init__()
 
         # ChunkLoader signals us when a chunk has been loaded.
-        CHUNK_LOADER.events.chunk_loaded.connect(self._chunk_loaded_worker)
+        chunk_loader.events.chunk_loaded.connect(self._chunk_loaded_worker)
 
         # We signal ourself to switch things to the GUI thread (if necessary).
         self.chunk_loaded_gui.connect(self._chunk_loaded_gui)
@@ -45,4 +45,4 @@ class QtChunkReceiver(QObject):
         """Viewer is closing.
         """
         self.chunk_loaded_gui.disconnect()
-        CHUNK_LOADER.events.chunk_loaded.disconnect()
+        chunk_loader.events.chunk_loaded.disconnect()

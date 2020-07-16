@@ -5,7 +5,7 @@ import numpy as np
 
 from ._image_view import ImageView
 from ...types import ArrayLike, ImageConverter
-from ...utils.chunk_loader import ChunkRequest, CHUNK_LOADER
+from ...utils.chunk import ChunkRequest, chunk_loader
 
 LOGGER = logging.getLogger("ChunkLoader")
 
@@ -112,7 +112,7 @@ class ImageSlice:
         # If ChunkLoader is synchronous or the chunk is cached, this will
         # satisfy the request right away, otherwise it will initiate an
         # async load in a worker thread.
-        satisfied_request = CHUNK_LOADER.load_chunk(request)
+        satisfied_request = chunk_loader.load_chunk(request)
 
         if satisfied_request is not None:
             self.chunk_loaded(satisfied_request)

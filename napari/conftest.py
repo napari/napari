@@ -18,7 +18,7 @@ from napari.plugins._builtins import (
 )
 from napari.utils import io
 from napari import synchronous_loading
-from napari.utils.chunk_loader import CHUNK_LOADER
+from napari.utils.chunk import chunk_loader
 
 try:
     from skimage.data import image_fetcher
@@ -204,7 +204,7 @@ def layer_data_and_types():
         ),
     ]
     extensions = ['.tif', '.tif', '.csv', '.csv']
-    layer_data = [l.as_layer_data_tuple() for l in layers]
+    layer_data = [layer.as_layer_data_tuple() for layer in layers]
     layer_types = [layer._type_string for layer in layers]
     filenames = [l.name + e for l, e in zip(layers, extensions)]
     return layers, layer_data, layer_types, filenames
@@ -323,7 +323,7 @@ def configure_loading(request):
 @pytest.fixture(autouse=True)
 def skip_sync_only(request):
     """Skip tests depending on our sync/async settings."""
-    async_mode = not CHUNK_LOADER.synchronous
+    async_mode = not chunk_loader.synchronous
     sync_only_test = request.node.get_closest_marker('sync_only')
     if async_mode and sync_only_test:
         pytest.skip("running with --async_only")
