@@ -138,15 +138,12 @@ class PerfmonConfig:
 def _create_perf_config():
     value = os.getenv("NAPARI_PERFMON")
 
-    if value is None:
-        # Totally disabled
-        return None
+    if value is None or value == "0":
+        return None  # Totally disabled
     elif value == "1":
-        # Legacy mode, no config file, trace Qt events only.
-        return PerfmonConfig(None)
+        return PerfmonConfig(None)  # Legacy no config, Qt events only.
     else:
-        # Normal mode, parse the config file.
-        return PerfmonConfig(value)
+        return PerfmonConfig(value)  # Normal parse the config file.
 
 
 # The global instance
