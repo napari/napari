@@ -603,3 +603,12 @@ def test_image_translate(translate):
     np.random.seed(0)
     data = np.random.random((10, 15))
     Image(data, translate=translate)
+
+
+def test_grid_translate():
+    np.random.seed(0)
+    data = np.random.random((10, 15))
+    layer = Image(data)
+    translate = np.array([15, 15])
+    layer.translate_grid = translate
+    np.testing.assert_allclose(layer.translate_grid, translate)
