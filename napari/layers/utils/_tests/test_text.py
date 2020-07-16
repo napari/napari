@@ -41,6 +41,19 @@ def test_text_manager_format():
     expected_text_2 = np.concatenate([expected_text, ['confidence: 0.50']])
     np.testing.assert_equal(text_manager.text, expected_text_2)
 
+    # test getting the text elements when there are none in view
+    text_view = text_manager.view_text([])
+    np.testing.assert_equal(text_view, [''])
+
+    # test getting the text elememnts when the first two elements are in view
+    text_view = text_manager.view_text([0, 1])
+    np.testing.assert_equal(text_view, expected_text_2[0:2])
+
+    text_manager.anchor = 'center'
+    coords = np.array([[0, 0], [10, 10], [20, 20]])
+    text_coords = text_manager.compute_text_coords(coords, ndisplay=3)
+    np.testing.assert_equal(text_coords, (coords, 'center', 'center'))
+
     # remove the first text element
     text_manager.remove({0})
     np.testing.assert_equal(text_manager.text, expected_text_2[1::])
