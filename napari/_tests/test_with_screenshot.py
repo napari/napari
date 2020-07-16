@@ -189,7 +189,7 @@ def test_changing_image_attenuation(make_test_viewer):
     viewer.add_image(data, contrast_limits=[0, 1])
     viewer.layers[0].rendering = 'attenuated_mip'
 
-    viewer.layers[0].attenuation = 2.0
+    viewer.layers[0].attenuation = 0.5
     screenshot = viewer.screenshot(canvas_only=True)
     center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
     # Check that rendering has not been attenuated

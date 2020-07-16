@@ -78,7 +78,7 @@ class AddLayersMixin:
         interpolation='nearest',
         rendering='mip',
         iso_threshold=0.5,
-        attenuation=0.5,
+        attenuation=0.25,
         name=None,
         metadata=None,
         scale=None,
