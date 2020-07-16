@@ -192,20 +192,25 @@ def test_bbox_lower_right(view_data, expected_coords):
 
 
 @pytest.mark.parametrize(
-    "anchor_type,expected_coords",
+    "anchor_type,ndisplay,expected_coords",
     [
-        (Anchor.CENTER, [[5, 5]]),
-        (Anchor.UPPER_LEFT, [[0, 0]]),
-        (Anchor.UPPER_RIGHT, [[0, 10]]),
-        (Anchor.LOWER_LEFT, [[10, 0]]),
-        (Anchor.LOWER_RIGHT, [[10, 10]]),
+        (Anchor.CENTER, 2, [[5, 5]]),
+        (Anchor.UPPER_LEFT, 2, [[0, 0]]),
+        (Anchor.UPPER_RIGHT, 2, [[0, 10]]),
+        (Anchor.LOWER_LEFT, 2, [[10, 0]]),
+        (Anchor.LOWER_RIGHT, 2, [[10, 10]]),
+        (Anchor.CENTER, 3, [[5, 5]]),
+        (Anchor.UPPER_LEFT, 3, [[5, 5]]),
+        (Anchor.UPPER_RIGHT, 3, [[5, 5]]),
+        (Anchor.LOWER_LEFT, 3, [[5, 5]]),
+        (Anchor.LOWER_RIGHT, 3, [[5, 5]]),
     ],
 )
-def test_get_text_anchors(anchor_type, expected_coords):
+def test_get_text_anchors(anchor_type, ndisplay, expected_coords):
     """Round trip tests for getting anchor coordinates."""
     coords = [np.array([[0, 0], [10, 0], [0, 10], [10, 10]])]
     anchor_coords, _, _ = get_text_anchors(
-        coords, anchor=anchor_type, ndisplay=2
+        coords, anchor=anchor_type, ndisplay=ndisplay
     )
     np.testing.assert_equal(anchor_coords, expected_coords)
 
