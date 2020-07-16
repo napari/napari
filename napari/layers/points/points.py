@@ -507,7 +507,7 @@ class Points(Layer):
                 self.size = np.concatenate((self._size, size), axis=0)
                 self.selected_data = set(np.arange(cur_npoints, len(data)))
 
-                self._text.add(self.current_properties, adding)
+                self.text.add(self.current_properties, adding)
 
         self._update_dims()
         self.events.data()
@@ -626,8 +626,9 @@ class Points(Layer):
         return properties
 
     @property
-    def text(self):
-        return self._text.text
+    def text(self) -> TextManager:
+        """TextManager: the TextManager object containing containing the text properties"""
+        return self._text
 
     @text.setter
     def text(self, text):
@@ -1164,7 +1165,7 @@ class Points(Layer):
                 'edge_colormap': self.edge_colormap[0],
                 'edge_contrast_limits': self.edge_contrast_limits,
                 'properties': self.properties,
-                'text': self._text._get_state(),
+                'text': self.text._get_state(),
                 'n_dimensional': self.n_dimensional,
                 'size': self.size,
                 'data': self.data,
@@ -1336,7 +1337,7 @@ class Points(Layer):
        text : (N x 1) np.ndarray
            Array of text strings for the N text elements in view
         """
-        return self._text.view_text(self._indices_view)
+        return self.text.view_text(self._indices_view)
 
     @property
     def _view_text_coords(self) -> np.ndarray:
@@ -1347,7 +1348,7 @@ class Points(Layer):
        text_coords : (N x D) np.ndarray
            Array of coordindates for the N text elements in view
         """
-        return self._text.compute_text_coords(
+        return self.text.compute_text_coords(
             self._view_data, self.dims.ndisplay
         )
 
@@ -1620,7 +1621,7 @@ class Points(Layer):
                 self.properties[k] = np.delete(
                     self.properties[k], index, axis=0
                 )
-            self._text.remove(index)
+            self.text.remove(index)
             if self._value in self.selected_data:
                 self._value = None
             self.selected_data = set()
@@ -1691,8 +1692,8 @@ class Points(Layer):
             )
 
             if self._clipboard['text'] is not None:
-                self._text._text = np.concatenate(
-                    (self.text, self._clipboard['text']), axis=0
+                self.text._values = np.concatenate(
+                    (self.text.values, self._clipboard['text']), axis=0
                 )
 
             self.refresh()
@@ -1712,11 +1713,11 @@ class Points(Layer):
                 'indices': self.dims.indices,
             }
 
-            if self.text is None:
+            if self.text.values is None:
                 self._clipboard['text'] = None
 
             else:
-                self._clipboard['text'] = deepcopy(self._text.text[index])
+                self._clipboard['text'] = deepcopy(self.text.values[index])
 
         else:
             self._clipboard = {}

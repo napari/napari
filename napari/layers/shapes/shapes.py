@@ -25,7 +25,6 @@ from ..utils.layer_utils import (
     map_property,
 )
 from ..utils.text import TextManager
-from ..utils._text_constants import TextMode
 from ...utils.misc import ensure_iterable
 from ...utils.status_messages import format_float
 from ..base import Layer
@@ -517,7 +516,7 @@ class Shapes(Layer):
         # handle case where data is just a single shape
         if np.asarray(data[0]).ndim == 1:
             adding = 1
-        self._text.add(self.current_properties, adding)
+        self.text.add(self.current_properties, adding)
 
         self._update_dims()
         self.events.data()
@@ -1212,7 +1211,7 @@ class Shapes(Layer):
             {
                 'ndim': self.ndim,
                 'properties': self.properties,
-                'text': self._text._get_state(),
+                'text': self.text._get_state(),
                 'shape_type': self.shape_type,
                 'opacity': self.opacity,
                 'z_index': self.z_index,
@@ -1243,7 +1242,7 @@ class Shapes(Layer):
        text : (N x 1) np.ndarray
            Array of text strings for the N text elements in view
         """
-        return self._text.view_text(self._indices_view)
+        return self.text.view_text(self._indices_view)
 
     @property
     def _view_text_coords(self) -> np.ndarray:
@@ -1254,7 +1253,7 @@ class Shapes(Layer):
        text_coords : (N x D) np.ndarray
            Array of coordindates for the N text elements in view
         """
-        return self._text.compute_text_coords(
+        return self.text.compute_text_coords(
             self._data_view.data, self.dims.ndisplay
         )
 
@@ -1455,8 +1454,7 @@ class Shapes(Layer):
                 self.properties[k] = np.concatenate(
                     (self.properties[k], new_property), axis=0
                 )
-            if self._text._mode is not TextMode.NONE:
-                self._text.add(self.current_properties, n_new_shapes)
+            self.text.add(self.current_properties, n_new_shapes)
 
             self._add_shapes(
                 data,
@@ -1689,9 +1687,9 @@ class Shapes(Layer):
         return properties
 
     @property
-    def text(self):
-        """np.ndarray: text value for each shape"""
-        return self._text.text
+    def text(self) -> TextManager:
+        """TextManager: The TextManager object containing the text properties"""
+        return self._text
 
     @text.setter
     def text(self, text):
@@ -1992,7 +1990,7 @@ class Shapes(Layer):
                 self.properties[k] = np.delete(
                     self.properties[k], index, axis=0
                 )
-            self._text.remove(index)
+            self.text.remove(index)
             self._data_view._edge_color = np.delete(
                 self._data_view._edge_color, index, axis=0
             )
@@ -2185,10 +2183,10 @@ class Shapes(Layer):
                 },
                 'indices': self.dims.indices,
             }
-            if self.text is None:
+            if self.text.values is None:
                 self._clipboard['text'] = None
             else:
-                self._clipboard['text'] = deepcopy(self._text.text[index])
+                self._clipboard['text'] = deepcopy(self.text.values[index])
         else:
             self._clipboard = {}
 
@@ -2223,8 +2221,8 @@ class Shapes(Layer):
                 )
 
             if self._clipboard['text'] is not None:
-                self._text._text = np.concatenate(
-                    (self.text, self._clipboard['text']), axis=0
+                self.text._values = np.concatenate(
+                    (self.text.values, self._clipboard['text']), axis=0
                 )
 
             self.selected_data = set(

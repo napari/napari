@@ -563,7 +563,7 @@ def test_text_from_property_value(properties):
     data = 20 * np.random.random(shape)
     layer = Points(data, properties=copy(properties), text='point_type')
 
-    np.testing.assert_equal(layer.text, properties['point_type'])
+    np.testing.assert_equal(layer.text.values, properties['point_type'])
 
 
 @pytest.mark.parametrize("properties", [properties_array, properties_list])
@@ -577,26 +577,26 @@ def test_text_from_property_fstring(properties):
     )
 
     expected_text = ['type: ' + v for v in properties['point_type']]
-    np.testing.assert_equal(layer.text, expected_text)
+    np.testing.assert_equal(layer.text.values, expected_text)
 
     # test updating the text
     layer.text = 'type-ish: {point_type}'
     expected_text_2 = ['type-ish: ' + v for v in properties['point_type']]
-    np.testing.assert_equal(layer.text, expected_text_2)
+    np.testing.assert_equal(layer.text.values, expected_text_2)
 
     # copy/paste
     layer.selected_data = {0}
     layer._copy_data()
     layer._paste_data()
     expected_text_3 = expected_text_2 + ['type-ish: A']
-    np.testing.assert_equal(layer.text, expected_text_3)
+    np.testing.assert_equal(layer.text.values, expected_text_3)
 
-    # add shape
+    # add point
     layer.selected_data = {0}
     new_shape = np.random.random((1, 2))
     layer.add(new_shape)
     expected_text_4 = expected_text_3 + ['type-ish: A']
-    np.testing.assert_equal(layer.text, expected_text_4)
+    np.testing.assert_equal(layer.text.values, expected_text_4)
 
 
 @pytest.mark.parametrize("properties", [properties_array, properties_list])
@@ -616,7 +616,7 @@ def test_set_text_with_kwarg_dict(properties):
     layer = Points(data, properties=copy(properties), text=text_kwargs)
 
     expected_text = ['type: ' + v for v in properties['point_type']]
-    np.testing.assert_equal(layer.text, expected_text)
+    np.testing.assert_equal(layer.text.values, expected_text)
 
     for property, value in text_kwargs.items():
         if property == 'text':

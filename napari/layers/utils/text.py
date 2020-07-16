@@ -77,20 +77,20 @@ class TextManager:
         )
 
         self.events.block_all()
-        self.rotation = rotation
-        self.anchor = anchor
-        self.translation = translation
-        self.color = color
-        self.size = size
-        self.visible = visible
+        self._rotation = rotation
+        self._anchor = Anchor(anchor)
+        self._translation = translation
+        self._color = transform_color(color)[0]
+        self._size = size
+        self._visible = visible
 
         self._set_text(text, n_text, properties)
         self.events.unblock_all()
 
     @property
-    def text(self):
+    def values(self):
         """np.ndarray: the text values to be displayed"""
-        return self._text
+        return self._values
 
     def _set_text(
         self, text: Union[None, str], n_text: int, properties: dict = {}
@@ -98,13 +98,13 @@ class TextManager:
         if len(properties) == 0 or n_text == 0 or text is None:
             self._mode = TextMode.NONE
             self._text_format_string = ''
-            self._text = None
+            self._values = None
         else:
             formatted_text, text_mode = format_text_properties(
                 text, n_text, properties
             )
             self._text_format_string = text
-            self._text = formatted_text
+            self._values = formatted_text
             self._mode = text_mode
         self.events.text()
 
@@ -180,14 +180,14 @@ class TextManager:
                 self._text_format_string, n_text=n_text, properties=properties
             )
 
-            self._text = np.concatenate((self.text, new_text))
+            self._values = np.concatenate((self.values, new_text))
 
     def remove(self, indices_to_remove: Union[set, list, np.ndarray]):
         """Remove the selected text elements"""
         if self._mode != TextMode.NONE:
             selected_indices = list(indices_to_remove)
             if len(selected_indices) > 0:
-                self._text = np.delete(self.text, selected_indices, axis=0)
+                self._values = np.delete(self.values, selected_indices, axis=0)
 
     def compute_text_coords(self, view_data, ndisplay):
         if self._mode in [TextMode.FORMATTED, TextMode.PROPERTY]:
@@ -216,7 +216,7 @@ class TextManager:
         """
         if len(indices_view) > 0:
             if self._mode in [TextMode.FORMATTED, TextMode.PROPERTY]:
-                text = self.text[indices_view]
+                text = self.values[indices_view]
             else:
                 text = np.array([''])
         else:
@@ -228,7 +228,7 @@ class TextManager:
     def _get_state(self):
 
         state = {
-            'text': self.text,
+            'text': self.values,
             'rotation': self.rotation,
             'color': self.color,
             'translation': self.translation,
@@ -248,3 +248,19 @@ class TextManager:
         self.events.color.connect(update_function)
         self.events.size.connect(update_function)
         self.events.visible.connect(update_function)
+
+    def __eq__(self, other):
+        if isinstance(other, TextManager):
+            my_state = self._get_state()
+            other_state = other._get_state()
+            equal = np.all(
+                [
+                    np.all(value == other_state[key])
+                    for key, value in my_state.items()
+                ]
+            )
+
+        else:
+            equal = False
+
+        return equal
