@@ -513,12 +513,11 @@ class Shapes(Layer):
         self._data_view = ShapeList()
         self.add(data, shape_type=shape_type)
 
-        if self._text._mode is not TextMode.NONE:
-            adding = len(data)
-            # handle case where data is just a single shape
-            if np.asarray(data[0]).ndim == 1:
-                adding = 1
-            self._text.add(self.current_properties, adding)
+        adding = len(data)
+        # handle case where data is just a single shape
+        if np.asarray(data[0]).ndim == 1:
+            adding = 1
+        self._text.add(self.current_properties, adding)
 
         self._update_dims()
         self.events.data()

@@ -174,19 +174,13 @@ class TextManager:
     def mode(self):
         return str(self._mode)
 
-    @mode.setter
-    def mode(self, mode):
-        self._mode = TextMode(mode)
-
     def add(self, properties, n_text):
         if self._mode in (TextMode.PROPERTY, TextMode.FORMATTED):
             new_text, _ = format_text_properties(
                 self._text_format_string, n_text=n_text, properties=properties
             )
-        elif self._mode == TextMode.NONE:
-            new_text = np.repeat([''], n_text)
 
-        self._text = np.concatenate((self.text, new_text))
+            self._text = np.concatenate((self.text, new_text))
 
     def remove(self, indices_to_remove: Union[set, list, np.ndarray]):
         """Remove the selected text elements"""

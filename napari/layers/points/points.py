@@ -25,7 +25,6 @@ from ..utils.color_transformations import (
     ColorType,
 )
 from ..utils.text import TextManager
-from ..utils._text_constants import TextMode
 from ._points_constants import Symbol, SYMBOL_ALIAS, Mode, ColorMode
 from ._points_mouse_bindings import add, select, highlight
 from ._points_utils import (
@@ -508,8 +507,7 @@ class Points(Layer):
                 self.size = np.concatenate((self._size, size), axis=0)
                 self.selected_data = set(np.arange(cur_npoints, len(data)))
 
-                if self._text._mode is not TextMode.NONE:
-                    self._text.add(self.current_properties, adding)
+                self._text.add(self.current_properties, adding)
 
         self._update_dims()
         self.events.data()
