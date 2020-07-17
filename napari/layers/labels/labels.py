@@ -498,7 +498,7 @@ class Labels(Image):
             self.mouse_drag_callbacks.append(draw)
         elif mode == Mode.ERASE:
             self.cursor_size = self.brush_size / self.scale_factor
-            self.cursor = 'square'
+            self.cursor = self.brush_shape
             self.interactive = False
             self.help = 'hold <space> to pan/zoom, drag to erase a label'
             self.mouse_drag_callbacks.append(draw)
