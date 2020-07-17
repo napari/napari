@@ -1,4 +1,4 @@
-from typing import Union, List, Dict
+from typing import List, Dict
 import itertools
 
 import numpy as np
@@ -48,8 +48,8 @@ def split_channels(
 
     n_channels = (data[0] if multiscale else data).shape[channel_axis]
 
-    kwargs['blending'] = kwargs.get('blending') or 'additive'
-    kwargs['colormap'] = kwargs.get('colormap')
+    kwargs.setdefault("blending", "additive")
+    kwargs.setdefault("colormap", None)
     # these arguments are *already* iterables in the single-channel case.
     iterable_kwargs = {'scale', 'translate', 'contrast_limits', 'metadata'}
 
@@ -137,7 +137,6 @@ def stack_to_images(stack: Image, axis: int, **kwargs: Dict,) -> List[Image]:
         raise ValueError(
             "The image needs more than 2 dimensions for splitting",
         )
-        return None
 
     if axis >= num_dim:
         raise ValueError(
@@ -145,9 +144,8 @@ def stack_to_images(stack: Image, axis: int, **kwargs: Dict,) -> List[Image]:
                 axis, num_dim
             )
         )
-        return None
 
-    if 'colormap' in kwargs and kwargs['colormap'] is not None:
+    if kwargs.get("colormap"):
         kwargs['colormap'] = itertools.cycle(kwargs['colormap'])
 
     if meta['rgb']:
@@ -170,15 +168,13 @@ def stack_to_images(stack: Image, axis: int, **kwargs: Dict,) -> List[Image]:
         layer_name = f'{name} layer {i}'
         imeta['name'] = layer_name
 
-        image = Image(idata, **imeta)
-
-        imagelist.append(image)
+        imagelist.append(Image(idata, **imeta))
 
     return imagelist
 
 
 def images_to_stack(
-    images: List[Union[Image]], axis: int = 0, **kwargs: Dict,
+    images: List[Image], axis: int = 0, **kwargs: Dict,
 ) -> Image:
     """Combines a list of Image layers into one layer stacked along axis
 
@@ -206,14 +202,11 @@ def images_to_stack(
 
     data, meta, _ = images[0].as_layer_data_tuple()
 
-    if 'scale' not in kwargs:
-        kwargs['scale'] = np.insert(meta['scale'], axis, 1)
-    if 'translate' not in kwargs:
-        kwargs['translate'] = np.insert(meta['translate'], axis, 0)
+    kwargs.setdefault("scale", np.insert(meta['scale'], axis, 1))
+    kwargs.setdefault("translate", np.insert(meta['translate'], axis, 0))
 
     meta.update(kwargs)
-    new_list = [image.data for image in images]
-    new_data = np.stack(new_list, axis=axis)
+    new_data = np.stack([image.data for image in images], axis=axis)
     stack = Image(new_data, **meta)
 
     return stack
