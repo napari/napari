@@ -414,13 +414,18 @@ def test_paint_2d(brush_shape, expected_sum):
     assert np.sum(layer.data[5:26, 17:38] == 7) == expected_sum[4]
 
 
-def test_paint_circle_3d():
-    """Test painting labels with circle brush on 3D image."""
+@pytest.mark.parametrize(
+    "brush_shape, expected_sum",
+    [("circle", [137, 1189, 1103]), ("square", [144, 1728, 1548])],
+)
+def test_paint_3d(brush_shape, expected_sum):
+    """Test painting labels with circle/square brush on 3D image."""
     data = np.zeros((30, 40, 40))
     layer = Labels(data)
     layer.brush_size = 12
-    layer.brush_shape = 'circle'
+    layer.brush_shape = brush_shape
     layer.mode = 'paint'
+
     # Paint in 2D
     layer.paint((10, 10, 10), 3)
 
@@ -433,9 +438,9 @@ def test_paint_circle_3d():
     layer.preserve_labels = True
     layer.paint((10, 15, 15), 5)
 
-    assert np.sum(layer.data == 3) == 137
-    assert np.sum(layer.data == 4) == 1189
-    assert np.sum(layer.data == 5) == 1103
+    assert np.sum(layer.data[4:17, 4:17, 4:17] == 3) == expected_sum[0]
+    assert np.sum(layer.data[4:17, 19:32, 4:17] == 4) == expected_sum[1]
+    assert np.sum(layer.data[4:17, 9:32, 9:32] == 5) == expected_sum[2]
 
 
 def test_fill():
