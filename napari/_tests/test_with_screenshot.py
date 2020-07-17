@@ -8,6 +8,114 @@ import pytest
     sys.platform.startswith('win') or not os.getenv("CI"),
     reason='Screenshot tests are not supported on napari windows CI.',
 )
+def test_z_order_images(make_test_viewer):
+    """Test changing order of images changes z order in display."""
+    data = np.ones((10, 10))
+
+    viewer = make_test_viewer(show=True)
+    viewer.add_image(data, colormap='red')
+    viewer.add_image(data, colormap='blue')
+    screenshot = viewer.screenshot(canvas_only=True)
+    center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
+    # Check that blue is visible
+    np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
+
+    viewer.layers[0, 1] = viewer.layers[1, 0]
+    screenshot = viewer.screenshot(canvas_only=True)
+    center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
+    # Check that red is now visible
+    np.testing.assert_almost_equal(screenshot[center], [255, 0, 0, 255])
+
+
+@pytest.mark.skipif(
+    sys.platform.startswith('win') or not os.getenv("CI"),
+    reason='Screenshot tests are not supported on napari windows CI.',
+)
+def test_z_order_image_points(make_test_viewer):
+    """Test changing order of image and points changes z order in display."""
+    data = np.ones((10, 10))
+
+    viewer = make_test_viewer(show=True)
+    viewer.add_image(data, colormap='red')
+    viewer.add_points([5, 5], face_color='blue', size=10)
+    screenshot = viewer.screenshot(canvas_only=True)
+    center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
+    # Check that blue is visible
+    np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
+
+    viewer.layers[0, 1] = viewer.layers[1, 0]
+    screenshot = viewer.screenshot(canvas_only=True)
+    center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
+    # Check that red is now visible
+    np.testing.assert_almost_equal(screenshot[center], [255, 0, 0, 255])
+
+
+@pytest.mark.skipif(
+    sys.platform.startswith('win') or not os.getenv("CI"),
+    reason='Screenshot tests are not supported on napari windows CI.',
+)
+def test_z_order_images_after_ndisplay(make_test_viewer):
+    """Test z order of images remanins constant after chaning ndisplay."""
+    data = np.ones((10, 10))
+
+    viewer = make_test_viewer(show=True)
+    viewer.add_image(data, colormap='red')
+    viewer.add_image(data, colormap='blue')
+    screenshot = viewer.screenshot(canvas_only=True)
+    center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
+    # Check that blue is visible
+    np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
+
+    # Switch to 3D rendering
+    viewer.dims.ndisplay = 3
+    screenshot = viewer.screenshot(canvas_only=True)
+    center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
+    # Check that blue is still visible
+    np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
+
+    # Switch back to 2D rendering
+    viewer.dims.ndisplay = 2
+    screenshot = viewer.screenshot(canvas_only=True)
+    center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
+    # Check that blue is still visible
+    np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
+
+
+@pytest.mark.skipif(
+    sys.platform.startswith('win') or not os.getenv("CI"),
+    reason='Screenshot tests are not supported on napari windows CI.',
+)
+def test_z_order_image_points_after_ndisplay(make_test_viewer):
+    """Test z order of image and points remanins constant after chaning ndisplay."""
+    data = np.ones((10, 10))
+
+    viewer = make_test_viewer(show=True)
+    viewer.add_image(data, colormap='red')
+    viewer.add_points([5, 5], face_color='blue', size=10)
+    screenshot = viewer.screenshot(canvas_only=True)
+    center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
+    # Check that blue is visible
+    np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
+
+    # Switch to 3D rendering
+    viewer.dims.ndisplay = 3
+    screenshot = viewer.screenshot(canvas_only=True)
+    center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
+    # Check that blue is still visible
+    np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
+
+    # Switch back to 2D rendering
+    viewer.dims.ndisplay = 2
+    screenshot = viewer.screenshot(canvas_only=True)
+    center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
+    # Check that blue is still visible
+    np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
+
+
+@pytest.mark.skipif(
+    sys.platform.startswith('win') or not os.getenv("CI"),
+    reason='Screenshot tests are not supported on napari windows CI.',
+)
 def test_changing_image_colormap(make_test_viewer):
     """Test changing colormap changes rendering."""
     viewer = make_test_viewer(show=True)
