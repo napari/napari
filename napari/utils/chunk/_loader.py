@@ -27,47 +27,11 @@ from ...types import ArrayLike
 from ...utils.event import EmitterGroup
 
 from ._cache import ChunkCache
+from ._config import async_config
 from ._request import ChunkRequest
 from ..perf import perf_timer
 
 LOGGER = logging.getLogger("ChunkLoader")
-
-
-NUM_WORKERS = int(os.getenv("NAPARI_CHUNK_WORKERS", "6"))
-
-
-def _log_to_file(path):
-    """Write ChunkLoader log message to the own file."""
-    path = os.getenv("NAPARI_CHUNK_LOG")
-    if path is not None:
-        fh = logging.FileHandler(path)
-        LOGGER.addHandler(fh)
-        LOGGER.setLevel(logging.INFO)
-
-
-# Always on for now. ASYNC_TODO: command line option for this?
-_log_to_file('chunk_loader.log')
-
-
-def _get_synchronous_default() -> bool:
-    """
-    Return True if ChunkManager should load data synchronously.
-
-    Returns
-    -------
-    bool
-        True if loading should be synchronous.
-    """
-    # Async is off by default for now. Must opt-in with NAPARI_ASYNC_LOAD.
-    synchronous_loading = True
-
-    env_var = os.getenv("NAPARI_CHUNK_ASYNC")
-
-    if env_var is not None:
-        # Overide the deafult with the env var's setting.
-        synchronous_loading = env_var == "0"
-
-    return synchronous_loading
 
 
 def _chunk_loader_worker(request: ChunkRequest):
@@ -105,10 +69,12 @@ class ChunkLoader:
     """
 
     def __init__(self):
-        self.synchronous = _get_synchronous_default()
+        self.synchronous = async_config.synchronous
 
         LOGGER.info("ChunkLoader.__init__ synchronous=%d", self.synchronous)
-        self.executor = futures.ThreadPoolExecutor(max_workers=NUM_WORKERS)
+        self.executor = futures.ThreadPoolExecutor(
+            max_workers=async_config.num_workers
+        )
 
         # Maps data_id to futures for that layer.
         self.futures: Dict[int, List[futures.Future]] = defaultdict(list)
