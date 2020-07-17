@@ -14,6 +14,7 @@ DEFAULT_ASYNC_CONFIG = {
     "synchronous": False,
     "num_workers": 6,
     "log_path": None,
+    "use_procesess": False,
 }
 
 LOGGER = logging.getLogger("ChunkLoader")
@@ -46,6 +47,10 @@ class AsyncConfig:
     @property
     def log_path(self):
         return self.data.get("log_path")
+
+    @property
+    def use_processes(self):
+        return self.data.get("use_processes", False)
 
 
 def _load_config(config_path: str):

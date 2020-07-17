@@ -71,10 +71,14 @@ class ChunkLoader:
     def __init__(self):
         self.synchronous = async_config.synchronous
 
-        LOGGER.info("ChunkLoader.__init__ synchronous=%d", self.synchronous)
-        self.executor = futures.ThreadPoolExecutor(
-            max_workers=async_config.num_workers
+        executor_class = (
+            futures.ProcessPoolExecutor
+            if async_config.use_processes
+            else futures.ThreadPoolExecutor
         )
+
+        LOGGER.info("ChunkLoader.__init__ synchronous=%d", self.synchronous)
+        self.executor = executor_class(max_workers=async_config.num_workers)
 
         # Maps data_id to futures for that layer.
         self.futures: Dict[int, List[futures.Future]] = defaultdict(list)
