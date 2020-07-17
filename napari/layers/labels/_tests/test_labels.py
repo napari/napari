@@ -364,7 +364,7 @@ def test_paint():
 
 
 def test_paint_with_preserve_labels():
-    """Test painting labels with square brush while preserving existing labels"""
+    """Test painting labels with square brush while preserving existing labels."""
     data = np.zeros((15, 10))
     data[:3, :3] = 1
     layer = Labels(data)
@@ -378,6 +378,54 @@ def test_paint_with_preserve_labels():
     assert np.unique(layer.data[3:5, 0:5]) == 2
     assert np.unique(layer.data[0:5, 3:5]) == 2
     assert np.unique(layer.data[:3, :3]) == 1
+
+
+def test_paint_circle_2d():
+    """Test painting labels with circle brush."""
+    data = np.zeros((40, 40))
+    layer = Labels(data)
+    layer.brush_size = 12
+    layer.brush_shape = 'circle'
+    layer.mode = 'paint'
+    layer.paint((0, 0), 3)
+
+    layer.brush_size = 12
+    layer.paint((13, 13), 4)
+
+    layer.brush_size = 13
+    layer.paint((30.2, 12.8), 5)
+
+    layer.brush_size = 12
+    layer.paint((39, 39), 6)
+
+    assert np.sum(layer.data == 3) == 41
+    assert np.sum(layer.data == 4) == 137
+    assert np.sum(layer.data == 5) == 137
+    assert np.sum(layer.data == 6) == 41
+
+
+def test_paint_circle_3d():
+    """Test painting labels with circle brush on 3D image."""
+    data = np.zeros((30, 40, 40))
+    layer = Labels(data)
+    layer.brush_size = 12
+    layer.brush_shape = 'circle'
+    layer.mode = 'paint'
+    # Paint in 2D
+    layer.paint((10, 10, 10), 3)
+
+    # Paint in 3D
+    layer.n_dimensional = True
+    layer.paint((10, 25, 10), 4)
+
+    # Paint in 3D, preserve labels
+    layer.n_dimensional = True
+    layer.preserve_labels = True
+    layer.paint((10, 15, 15), 5)
+
+    assert np.sum(layer.data == 3) == 137
+    assert np.sum(layer.data == 4) == 1189
+    assert np.sum(layer.data == 5) == 1103
 
 
 def test_fill():
