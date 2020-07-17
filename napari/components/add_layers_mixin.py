@@ -1164,10 +1164,10 @@ def prune_kwargs(kwargs: Dict[str, Any], layer_type: str) -> Dict[str, Any]:
     Examples
     --------
     >>> test_kwargs = {
-            'scale': (0.75, 1),
-            'blending': 'additive',
-            'num_colors': 10,
-        }
+    ...     'scale': (0.75, 1),
+    ...     'blending': 'additive',
+    ...     'num_colors': 10,
+    ... }
     >>> prune_kwargs(test_kwargs, 'image')
     {'scale': (0.75, 1), 'blending': 'additive'}
 
