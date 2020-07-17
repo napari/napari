@@ -15,16 +15,16 @@ def split_channels(
     """Split the data array into separate arrays along an axis.
 
     Keyword arguments will override any parameters altered or set in this
-    function. If colormap, blending, or multiscale are passed as None in kwargs
-    they will be set as:
+    function. If colormap, blending, or multiscale are set as follows if not
+    overridden by a keyword:
     - colormap : (magenta, green) for 2 channels, (CYMRGB) for more than 2
     - blending : additive
     - multiscale : determined by layers.image._image_utils.guess_multiscale.
 
-    Blending and multiscale will be set and returned in meta if not in kwargs.
+    Colormap, blending and multiscale will be set and returned in meta if not in kwargs.
     If any other key is not present in kwargs it will not be returned in the meta
-    dictionary of the returned LaterData tuple. For example, if colormap is not in
-    kwargs then meta will not have a colormap key.
+    dictionary of the returned LaterData tuple. For example, if gamma is not in
+    kwargs then meta will not have a gamma key.
 
     Parameters
     ----------
@@ -49,7 +49,7 @@ def split_channels(
     n_channels = (data[0] if multiscale else data).shape[channel_axis]
 
     kwargs['blending'] = kwargs.get('blending') or 'additive'
-
+    kwargs['colormap'] = kwargs.get('colormap')
     # these arguments are *already* iterables in the single-channel case.
     iterable_kwargs = {'scale', 'translate', 'contrast_limits', 'metadata'}
 
