@@ -38,7 +38,9 @@ def _chunk_loader_worker(request: ChunkRequest):
     """Worker thread or process that loads the array.
 
     """
-    # Note what worker we are.
+    request.start_timer()
+
+    # Record the pid in case we are in a worker process.
     request.pid = os.getpid()
 
     # This delay is hopefully temporary, but it avoids some nasty
@@ -47,10 +49,12 @@ def _chunk_loader_worker(request: ChunkRequest):
     if request.delay_seconds > 0:
         time.sleep(request.delay_seconds)
 
-    # This np.asarray() call might lead to IO or computation via dask
-    # or similar means which is why we are doing it in a worker, so
-    # that it does not block the GUI thread.
+    # This np.asarray() call might lead to IO or computation via Dask or
+    # something similar, which is why we are doing it in a worker.
     request.array = np.asarray(request.array)
+
+    request.end_timer()
+
     return request
 
 
@@ -69,7 +73,8 @@ class ChunkLoader:
     """
 
     def __init__(self):
-        self.synchronous = async_config.synchronous
+        self.synchronous: bool = async_config.synchronous
+        self.force_delay_seconds: float = async_config.force_delay_seconds
 
         executor_class = (
             futures.ProcessPoolExecutor
@@ -129,21 +134,16 @@ class ChunkLoader:
         ChunkRequest, optional
             The satisfied ChunkRequest or None indicating an async load.
         """
-        # TODO_ASYNC: There's no point using threading for ndarray since
-        # they are already raw data in memory, right?
         in_memory = isinstance(request.array, np.ndarray)
 
-        if self.synchronous or in_memory:
+        if self.synchronous or in_memory and not self.force_delay_seconds:
             LOGGER.info("[sync] ChunkLoader.load_chunk")
 
             # Load it immediately right here in the GUI thread.
             request.array = self._asarray(request.array)
             return request
 
-        # TODO_ASYNC: if we don't do this the slider gets timers events
-        # as if it were held down too long, and the MouseRelease event
-        # gets pushed way out. Need a real fix for this.
-        request.delay_seconds = 0.1
+        request.delay_seconds = self.force_delay_seconds
 
         # This will be synchronous if it's a cache hit. Otherwise it will
         # initiate an asynchronous load and sometime later Layer.load_chunk
@@ -181,8 +181,6 @@ class ChunkLoader:
         LOGGER.info(
             "[async] ChunkLoader.load_chunk: cache miss %s", request.key
         )
-
-        request.start()
 
         future = self.executor.submit(_chunk_loader_worker, request)
         future.add_done_callback(self._done)
@@ -241,9 +239,6 @@ class ChunkLoader:
         except futures.CancelledError:
             LOGGER.info("[async] ChunkLoader._done: cancelled")
             return
-
-        # Mark the end time.
-        request.end()
 
         LOGGER.info("[async] ChunkLoader._done: %s", request.key)
 

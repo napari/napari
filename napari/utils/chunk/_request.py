@@ -48,10 +48,10 @@ class ChunkRequest:
         # Worker process will fill this is then it processes the request.
         self.pid = None
 
-    def start(self):
+    def start_timer(self):
         self.start_ns = perf_counter_ns()
 
-    def end(self):
+    def end_timer(self):
         self.end_ns = perf_counter_ns()
         if timers is not None:
             event = PerfEvent(
