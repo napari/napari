@@ -7,7 +7,7 @@ See patch_callables() below as the main entrypoint.
 from importlib import import_module
 import sys
 import types
-from typing import Callable, Dict, List, Tuple, Union
+from typing import Callable, Dict, List, Set, Tuple, Union
 
 # The parent of a callable is a module or a class, class is of type "type".
 CallableParent = Union[types.ModuleType, type]
@@ -136,6 +136,7 @@ class Patcher:
         self._importer = Importer()
         self._patch_func = patch_func
         self._stop_on_error = stop_on_error
+        self.patched: Set[str] = set()
 
     def patch_all(self, callables: List[str]) -> None:
         """Patch all the functions/methods in the list.
@@ -152,7 +153,16 @@ class Patcher:
 
         """
         for target_str in callables:
+            if target_str in self.patched:
+                # Ignore duplicate targets in the config file. However you
+                # can patch the same callables multiple times by creating a
+                # second Patcher, with a new or even the same patch_func.
+                print(f"Patcher: [WARN] skipping duplicate {target_str}")
+                continue
+
+            # Patch the target and note that we did.
             self._patch_target(target_str)
+            self.patched.add(target_str)
 
     def _patch_target(self, target_str: str) -> None:
         try:
