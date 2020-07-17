@@ -42,7 +42,7 @@ class AsyncConfig:
 
     @property
     def num_workers(self):
-        return self.data.get("num_workers")
+        return self.data.get("num_workers", 6)
 
     @property
     def log_path(self):

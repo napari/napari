@@ -1,6 +1,9 @@
 """ChunkCache stores loaded chunks.
 
-NOTE: we might end up just using the Dask cache even for chunks...
+NOTE: we might end up just using the Dask cache instead of our own
+ChunkCache. The reason is we need the Dask cache for non-image layers,
+but having 2 caches is not good. So using the Dask cache for everything
+is the only obvious way to have on single cache.
 """
 import logging
 from typing import Optional
