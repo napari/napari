@@ -1,5 +1,7 @@
 import numpy as np
+import pytest
 from vispy.color import Colormap
+
 from napari.layers import Labels
 
 
@@ -380,28 +382,36 @@ def test_paint_with_preserve_labels():
     assert np.unique(layer.data[:3, :3]) == 1
 
 
-def test_paint_circle_2d():
-    """Test painting labels with circle brush."""
+@pytest.mark.parametrize(
+    "brush_shape, expected_sum",
+    [("circle", [41, 137, 137, 41, 349]), ("square", [36, 144, 169, 36, 400])],
+)
+def test_paint_2d(brush_shape, expected_sum):
+    """Test painting labels with circle/square brush."""
     data = np.zeros((40, 40))
     layer = Labels(data)
     layer.brush_size = 12
-    layer.brush_shape = 'circle'
+    layer.brush_shape = brush_shape
     layer.mode = 'paint'
     layer.paint((0, 0), 3)
 
     layer.brush_size = 12
-    layer.paint((13, 13), 4)
+    layer.paint((15, 8), 4)
 
     layer.brush_size = 13
-    layer.paint((30.2, 12.8), 5)
+    layer.paint((30.2, 7.8), 5)
 
     layer.brush_size = 12
     layer.paint((39, 39), 6)
 
-    assert np.sum(layer.data == 3) == 41
-    assert np.sum(layer.data == 4) == 137
-    assert np.sum(layer.data == 5) == 137
-    assert np.sum(layer.data == 6) == 41
+    layer.brush_size = 20
+    layer.paint((15, 27), 7)
+
+    assert np.sum(layer.data[:8, :8] == 3) == expected_sum[0]
+    assert np.sum(layer.data[9:22, 2:15] == 4) == expected_sum[1]
+    assert np.sum(layer.data[24:37, 2:15] == 5) == expected_sum[2]
+    assert np.sum(layer.data[33:, 33:] == 6) == expected_sum[3]
+    assert np.sum(layer.data[5:26, 17:38] == 7) == expected_sum[4]
 
 
 def test_paint_circle_3d():
