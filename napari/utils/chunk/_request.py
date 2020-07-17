@@ -1,5 +1,6 @@
 """ChunkRequest is used to ask the ChunkLoader to load a chunk.
 """
+import time
 from typing import Tuple, Union
 
 from ...types import ArrayLike
@@ -48,16 +49,36 @@ class ChunkRequest:
         # Worker process will fill this is then it processes the request.
         self.pid = None
 
+        # If worker is in another process its "timers" object is not the
+        # one in the main process. So store up perf events here and
+        # submit them back in the main process.
+        self.perf_events = []
+
     def start_timer(self):
-        self.start_ns = perf_counter_ns()
+        """Start timer timing the array load.
+        """
+        self.start_seconds = time.time()
 
     def end_timer(self):
-        self.end_ns = perf_counter_ns()
-        if timers is not None:
-            event = PerfEvent(
-                "ChunkRequest", self.start_ns, self.end_ns, pid=self.pid
-            )
-            timers.add_event(event)
+        """End timer and record the perf event.
+        """
+        self.end_seconds = time.time()
+
+    def add_perf_event(self):
+        """Add perf event for this request.
+        """
+        # We use time.time() in case the request is being run in a separate
+        # process, because perf_counter_ns() is not always synchronized
+        # across processes/cpus.
+        #
+        # Since chunk request are "long" time.time() is accurate enough
+        # and we convert back to perf_counter_ns here.
+        delta_ns = perf_counter_ns() - (time.time() * 1e9)
+        start_ns = self.start_seconds * 1e9 + delta_ns
+        end_ns = self.end_seconds * 1e9 + delta_ns
+        timers.add_event(
+            PerfEvent("ChunkRequest", start_ns, end_ns, pid=self.pid)
+        )
 
 
 def _index_to_tuple(index: Union[int, slice]) -> Union[int, SliceTuple]:

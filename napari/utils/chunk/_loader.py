@@ -162,10 +162,8 @@ class ChunkLoader:
 
         # Clear any existing futures for this specific data_id. We only
         # support single-scale so there can only be one load in progress
-        # per layer.
-        with perf_timer(
-            "clear_pending", data_id=request.data_id, my_value="pizza"
-        ):
+        # per data_id.
+        with perf_timer("clear_pending"):
             self._clear_pending(request.data_id)
 
         # Check the cache first.
@@ -241,6 +239,10 @@ class ChunkLoader:
             return
 
         LOGGER.info("[async] ChunkLoader._done: %s", request.key)
+
+        # Now that we are back in this process (if we were using processes)
+        # we can add the perf event.
+        request.add_perf_event()
 
         # Do this from worker thread for now. It's safe for now.
         # TODO_ASYNC: Ultimately we might want to this to happen from the
