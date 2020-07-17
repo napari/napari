@@ -15,7 +15,7 @@ def split_channels(
     """Split the data array into separate arrays along an axis.
 
     Keyword arguments will override any parameters altered or set in this
-    function. If colormap, blending, or multiscale are set as follows if not
+    function. Colormap, blending, or multiscale are set as follows if not
     overridden by a keyword:
     - colormap : (magenta, green) for 2 channels, (CYMRGB) for more than 2
     - blending : additive
