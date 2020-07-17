@@ -247,6 +247,15 @@ class Layer(KeymapProvider, ABC):
         """str: Unique name of the layer."""
         return self._name
 
+    @property
+    def loaded(self):
+        """Has layer been fully loaded into memory.
+
+        By default this is always true, but layers that load asynchrously
+        can override this and modify it as needed.
+        """
+        return True
+
     @name.setter
     def name(self, name):
         if name == self.name:
