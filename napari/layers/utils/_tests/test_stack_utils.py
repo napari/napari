@@ -1,15 +1,16 @@
 import numpy as np
+import pytest
 
 from napari.layers import Image
 from napari.layers.utils.stack_utils import (
+    images_to_stack,
     split_channels,
     stack_to_images,
-    images_to_stack,
 )
 
 
 def test_stack_to_images_basic():
-    '''Test the a 2 channel zcyx stack is split into 2 image layers'''
+    """Test that a 2 channel zcyx stack is split into 2 image layers"""
     data = np.random.randint(0, 100, (10, 2, 128, 128))
     stack = Image(data)
     images = stack_to_images(stack, 1, colormap=None)
@@ -24,8 +25,7 @@ def test_stack_to_images_basic():
 
 
 def test_stack_to_images_multiscale():
-    '''Test that a 4 layer, 3 channel mutliscale image returns
-    3 multiscale images'''
+    """Test that a 3 channel multiscale image returns 3 multiscale images."""
     data = list()
     data.append(np.random.randint(0, 200, (3, 128, 128)))
     data.append(np.random.randint(0, 200, (3, 64, 64)))
@@ -43,7 +43,7 @@ def test_stack_to_images_multiscale():
 
 
 def test_stack_to_images_rgb():
-    '''Test 3 channel RGB image (channel axis = -1) into single channels.'''
+    """Test 3 channel RGB image (channel axis = -1) into single channels."""
     data = np.random.randint(0, 100, (10, 128, 128, 3))
     stack = Image(data)
     images = stack_to_images(stack, -1, colormap=None)
@@ -59,8 +59,7 @@ def test_stack_to_images_rgb():
 
 
 def test_stack_to_images_4_channels():
-    '''Test 4 channel stack with channel as the first index is split
-    into mutliple channels and colormap keyword'''
+    """Test 4x128x128 stack is split into 4 channels w/ colormap keyword"""
     data = np.random.randint(0, 100, (4, 128, 128))
     stack = Image(data)
     images = stack_to_images(stack, 0, colormap=['red', 'blue'])
@@ -74,7 +73,7 @@ def test_stack_to_images_4_channels():
 
 
 def test_stack_to_images_0_rgb():
-    '''Split RGB along the first axis (z or t) so the images remain rgb'''
+    """Split RGB along the first axis (z or t) so the images remain rgb"""
     data = np.random.randint(0, 100, (10, 128, 128, 3))
     stack = Image(data)
     images = stack_to_images(stack, 0, colormap=None)
@@ -88,7 +87,7 @@ def test_stack_to_images_0_rgb():
 
 
 def test_stack_to_images_1_channel():
-    '''Split when only one channel'''
+    """Split when only one channel"""
     data = np.random.randint(0, 100, (10, 1, 128, 128))
     stack = Image(data)
     images = stack_to_images(stack, 1, colormap=['magma'])
@@ -102,7 +101,7 @@ def test_stack_to_images_1_channel():
 
 
 def test_images_to_stack_with_scale():
-    '''Test that input images are combined to a stack with scale and translate.'''
+    """Test that 3-Image list is combined to stack with scale and translate."""
     images = [
         Image(np.random.randint(0, 255, (10, 128, 128))) for _ in range(3)
     ]
@@ -119,7 +118,7 @@ def test_images_to_stack_with_scale():
 
 
 def test_images_to_stack_none_scale():
-    '''Test combining images using scale and translate from first image in list'''
+    """Test combining images using scale & translate from 1st image in list"""
     images = [
         Image(
             np.random.randint(0, 255, (10, 128, 128)),
@@ -138,32 +137,47 @@ def test_images_to_stack_none_scale():
     assert list(stack.translate) == [0, 0, -1, 2]
 
 
-def getkwargs():
-    kwargs = {
-        'rgb': None,
-        'colormap': None,
-        'contrast_limits': None,
-        'gamma': 1,
-        'interpolation': 'nearest',
-        'rendering': 'mip',
-        'iso_threshold': 0.5,
-        'attenuation': 0.5,
-        'name': None,
-        'metadata': None,
-        'scale': None,
-        'translate': None,
-        'opacity': 1,
-        'blending': None,
-        'visible': True,
-        'multiscale': None,
-    }
-    return kwargs
+@pytest.fixture(
+    params=[
+        {
+            'rgb': None,
+            'colormap': None,
+            'contrast_limits': None,
+            'gamma': 1,
+            'interpolation': 'nearest',
+            'rendering': 'mip',
+            'iso_threshold': 0.5,
+            'attenuation': 0.5,
+            'name': None,
+            'metadata': None,
+            'scale': None,
+            'translate': None,
+            'opacity': 1,
+            'blending': None,
+            'visible': True,
+            'multiscale': None,
+        },
+        {
+            'rgb': None,
+            'colormap': None,
+            'rendering': 'mip',
+            'attenuation': 0.5,
+            'metadata': None,
+            'scale': None,
+            'opacity': 1,
+            'visible': True,
+            'multiscale': None,
+        },
+        {},
+    ],
+    ids=['full-kwargs', 'partial-kwargs', 'empty-kwargs'],
+)
+def kwargs(request):
+    return request.param
 
 
-def test_split_channels():
-    '''Test split_channels with shape (3,128,128)
-    expecting 3 (128,128) arrays'''
-    kwargs = getkwargs()
+def test_split_channels(kwargs):
+    """Test split_channels with shape (3,128,128) expecting 3 (128,128)"""
     data = np.random.randint(0, 200, (3, 128, 128))
     result_list = split_channels(data, 0, **kwargs)
 
@@ -172,10 +186,8 @@ def test_split_channels():
         assert d.shape == (128, 128)
 
 
-def test_split_channels_multiscale():
-    '''Test split_channels with multiscale
-    expecting a list of LayerData tuples'''
-    kwargs = getkwargs()
+def test_split_channels_multiscale(kwargs):
+    """Test split_channels with multiscale expecting List[LayerData]"""
     data = list()
     data.append(np.random.randint(0, 200, (3, 128, 128)))
     data.append(np.random.randint(0, 200, (3, 64, 64)))
@@ -192,10 +204,8 @@ def test_split_channels_multiscale():
         assert ds[3].shape == (16, 16)
 
 
-def test_split_channels_blending():
-    '''Test split_channels with shape (3,128,128)
-    expecting 3 (128,128) arrays'''
-    kwargs = getkwargs()
+def test_split_channels_blending(kwargs):
+    """Test split_channels with shape (3,128,128) expecting 3 (128,128)"""
     kwargs['blending'] = 'translucent'
     data = np.random.randint(0, 200, (3, 128, 128))
     result_list = split_channels(data, 0, **kwargs)
