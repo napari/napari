@@ -3,11 +3,12 @@ from unittest.mock import Mock
 from vispy import keys
 
 
-def test_viewer_key_bindings(viewer_factory):
+def test_viewer_key_bindings(make_test_viewer):
     """Test adding key bindings to the viewer
     """
     np.random.seed(0)
-    view, viewer = viewer_factory()
+    viewer = make_test_viewer()
+    view = viewer.window.qt_viewer
 
     mock_press = Mock()
     mock_release = Mock()
@@ -71,11 +72,12 @@ def test_viewer_key_bindings(viewer_factory):
     mock_shift_release.reset_mock()
 
 
-def test_layer_key_bindings(viewer_factory):
+def test_layer_key_bindings(make_test_viewer):
     """Test adding key bindings to a layer
     """
     np.random.seed(0)
-    view, viewer = viewer_factory()
+    viewer = make_test_viewer()
+    view = viewer.window.qt_viewer
 
     layer = viewer.add_image(np.random.random((10, 20)))
     layer.selected = True

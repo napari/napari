@@ -15,7 +15,6 @@ def _create_application(argv) -> QApplication:
 
     Notes
     -----
-
     We substitute QApplicationWithTiming when using perfmon.
 
     Note that in Viewer we call convert_app_for_timing() which will create a
@@ -64,6 +63,9 @@ def gui_qt(*, startup_logo=False):
             )
             splash_widget = QSplashScreen(pm)
             splash_widget.show()
+            app._splash_widget = splash_widget
+    else:
+        app._existed = True
 
     # instantiate the execption handler
     exception_handler = ExceptionHandler()

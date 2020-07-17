@@ -16,7 +16,7 @@ def interpolate_coordinates(old_coord, new_coord, brush_size):
         Size of brush, which determines spacing of interpolation.
 
     Returns
-    ----------
+    -------
     coords : np.array, Nx2
         List of coordinates to ensure painting is continuous
     """

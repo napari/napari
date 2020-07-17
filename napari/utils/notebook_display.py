@@ -45,7 +45,7 @@ class NotebookScreenshot:
     """
 
     def __init__(self, viewer, *, canvas_only=False):
-        """Initalize screenshot object.
+        """Initialize screenshot object.
 
         Parameters
         ----------

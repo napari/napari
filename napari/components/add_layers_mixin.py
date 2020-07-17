@@ -265,7 +265,17 @@ class AddLayersMixin:
                     ]
                 else:
                     image = np.take(data, i, axis=channel_axis)
-                i_kwargs = {k: next(v) for k, v in kwargs.items()}
+                i_kwargs = {}
+                for key, val in kwargs.items():
+                    try:
+                        i_kwargs[key] = next(val)
+                    except StopIteration:
+                        raise IndexError(
+                            "Error adding multichannel image with data shape "
+                            f"{data.shape!r}.\nRequested channel_axis "
+                            f"({channel_axis}) had length {n_channels}, but "
+                            f"the '{key}' argument only provided {i} values. "
+                        )
                 layer = self.add_layer(layers.Image(image, **i_kwargs))
                 layer_list.append(layer)
             return layer_list
@@ -497,6 +507,7 @@ class AddLayersMixin:
         self,
         data=None,
         *,
+        ndim=None,
         properties=None,
         shape_type='rectangle',
         edge_width=1,
@@ -525,6 +536,9 @@ class AddLayersMixin:
             List of shape data, where each element is an (N, D) array of the
             N vertices of a shape in D dimensions. Can be an 3-dimensional
             array if each shape has the same number of vertices.
+        ndim : int
+            Number of dimensions for shapes. When data is not None, ndim must be D.
+            An empty shapes layer can be instantiated with arbitrary ndim.
         properties : dict {str: array (N,)}, DataFrame
             Properties for each shape. Each property should be an array of
             length N, where N is the number of shapes.
@@ -602,11 +616,13 @@ class AddLayersMixin:
             The newly-created shapes layer.
         """
         if data is None:
-            ndim = max(self.dims.ndim, 2)
+            if ndim is None:
+                ndim = max(self.dims.ndim, 2)
             data = np.empty((0, 0, ndim))
 
         layer = layers.Shapes(
             data=data,
+            ndim=ndim,
             properties=properties,
             shape_type=shape_type,
             edge_width=edge_width,
@@ -741,7 +757,7 @@ class AddLayersMixin:
         edge_width : float
             Width for all vectors in pixels.
         length : float
-             Multiplicative factor on projections for length of all vectors.
+            Multiplicative factor on projections for length of all vectors.
         edge_color : str
             Color of all of the vectors.
         edge_color_cycle : np.ndarray, list
@@ -824,7 +840,7 @@ class AddLayersMixin:
         plugin : str, optional
             Name of a plugin to use.  If provided, will force ``path`` to be
             read with the specified ``plugin``.  If the requested plugin cannot
-            read ``path``, an execption will be raised.
+            read ``path``, an exception will be raised.
         layer_type : str, optional
             If provided, will force data read from ``path`` to be passed to the
             corresponding ``add_<layer_type>`` method (along with any
@@ -886,7 +902,7 @@ class AddLayersMixin:
         plugin : str, optional
             Name of a plugin to use.  If provided, will force ``path`` to be
             read with the specified ``plugin``.  If the requested plugin cannot
-            read ``path``, an execption will be raised.
+            read ``path``, an exception will be raised.
         layer_type : str, optional
             If provided, will force data read from ``path`` to be passed to the
             corresponding ``add_<layer_type>`` method (along with any
@@ -1148,10 +1164,10 @@ def prune_kwargs(kwargs: Dict[str, Any], layer_type: str) -> Dict[str, Any]:
     Examples
     --------
     >>> test_kwargs = {
-            'scale': (0.75, 1),
-            'blending': 'additive',
-            'num_colors': 10,
-        }
+    ...     'scale': (0.75, 1),
+    ...     'blending': 'additive',
+    ...     'num_colors': 10,
+    ... }
     >>> prune_kwargs(test_kwargs, 'image')
     {'scale': (0.75, 1), 'blending': 'additive'}
 

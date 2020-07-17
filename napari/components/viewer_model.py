@@ -250,7 +250,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         """Get shape of currently viewed dimensions.
 
         Returns
-        ----------
+        -------
         centroid : list
             List of center coordinates of scene, length 2 or 3 if displayed
             view is 2D or 3D.
@@ -321,7 +321,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         for layer in layers:
             # adjust the order of the global dims based on the number of
             # dimensions that a layer has - for example a global order of
-            # [2, 1, 0, 3] -> [0, 1] for a layer that only has two dimesnions
+            # [2, 1, 0, 3] -> [0, 1] for a layer that only has two dimensions
             # or -> [1, 0, 2] for a layer with three as that corresponds to
             # the relative order of the last two and three dimensions
             # respectively
@@ -518,7 +518,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
 
         Parameters
         ----------
-        layer : napar.layers.Layer
+        layer : napari.layers.Layer
             Layer that is to be moved.
         position : 2-tuple of int
             New position of layer in grid.

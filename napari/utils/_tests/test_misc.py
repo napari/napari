@@ -102,7 +102,7 @@ def test_callsignature():
     # arg + default arg + arbitrary kwargs
     assert str(callsignature(lambda a, b=42, **kw: None)) == '(a, b=b, **kw)'
 
-    # arbitary args + arbitrary kwargs
+    # arbitrary args + arbitrary kwargs
     assert str(callsignature(lambda *args, **kw: None)) == '(*args, **kw)'
 
     # arg + default arg + arbitrary kwargs

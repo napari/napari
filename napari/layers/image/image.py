@@ -215,7 +215,7 @@ class Image(IntensityVisualizationMixin, Layer):
             self._thumbnail_level = 0
         self.corner_pixels[1] = self.level_shapes[self._data_level]
 
-        # Intitialize the current slice to an empty image.
+        # Initialize the current slice to an empty image.
         self._slice = ImageSlice(
             self._get_empty_image(), self._raw_to_displayed
         )
@@ -403,14 +403,14 @@ class Image(IntensityVisualizationMixin, Layer):
 
         * ``translucent``: voxel colors are blended along the view ray until
           the result is opaque.
-        * ``mip``: maxiumum intensity projection. Cast a ray and display the
+        * ``mip``: maximum intensity projection. Cast a ray and display the
           maximum value that was encountered.
         * ``additive``: voxel colors are added along the view ray until the
           result is saturated.
         * ``iso``: isosurface. Cast a ray until a certain threshold is
           encountered. At that location, lighning calculations are performed to
           give the visual appearance of a surface.
-        * ``attenuated_mip``: attenuated maxiumum intensity projection. Cast a
+        * ``attenuated_mip``: attenuated maximum intensity projection. Cast a
           ray and attenuate values based on integral of encountered values,
           display the maximum value that was encountered after attenuation.
           This will make nearer objects appear more prominent.
@@ -621,7 +621,7 @@ class Image(IntensityVisualizationMixin, Layer):
         and set of indices.
 
         Returns
-        ----------
+        -------
         value : tuple
             Value of the data at the coord.
         """

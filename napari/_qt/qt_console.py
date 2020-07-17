@@ -139,7 +139,7 @@ class QtConsole(RichJupyterWidget):
             Color palette with which to style the viewer.
             Property of napari.components.viewer_model.ViewerModel.
         themed_stylesheet : str
-            Stylesheet that has already been themed with the current pallete.
+            Stylesheet that has already been themed with the current palette.
         """
         self.style_sheet = themed_stylesheet
         self.syntax_style = palette['syntax_style']

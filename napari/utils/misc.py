@@ -76,6 +76,18 @@ def ensure_sequence_of_iterables(obj, length: Optional[int] = None):
     If length is provided and the object is already a sequence of iterables,
     a ValueError will be raised if ``len(obj) != length``.
 
+    Parameters
+    ----------
+    obj : Any
+        the object to check
+    length : int, optional
+        If provided, assert that obj has len ``length``, by default None
+
+    Returns
+    -------
+    iterable
+        nested sequence of iterables, or an itertools.repeat instance
+
     Examples
     --------
     In [1]: ensure_sequence_of_iterables([1, 2])
@@ -89,18 +101,6 @@ def ensure_sequence_of_iterables(obj, length: Optional[int] = None):
 
     In [4]: ensure_sequence_of_iterables(None)
     Out[4]: repeat(None)
-
-    Parameters
-    ----------
-    obj : Any
-        the object to check
-    length : int, optional
-        If provided, assert that obj has len ``length``, by default None
-
-    Returns
-    -------
-    iterable
-        nested sequence of iterables, or an itertools.repeat instance
     """
     if obj and is_sequence(obj) and is_iterable(obj[0]):
         if length is not None and len(obj) != length:

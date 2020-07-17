@@ -37,7 +37,7 @@ from ._shapes_constants import (
     ColorMode,
 )
 from ._shape_list import ShapeList
-from ._shapes_utils import create_box
+from ._shapes_utils import create_box, get_shape_ndim
 from ._shapes_models import Rectangle, Ellipse, Polygon
 from ._shapes_mouse_bindings import (
     highlight,
@@ -63,6 +63,9 @@ class Shapes(Layer):
         List of shape data, where each element is an (N, D) array of the
         N vertices of a shape in D dimensions. Can be an 3-dimensional
         array if each shape has the same number of vertices.
+    ndim : int
+        Number of dimensions for shapes. When data is not None, ndim must be D.
+        An empty shapes layer can be instantiated with arbitrary ndim.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each shape. Each property should be an array of length N,
         where N is the number of shapes.
@@ -260,6 +263,7 @@ class Shapes(Layer):
         self,
         data=None,
         *,
+        ndim=None,
         properties=None,
         shape_type='rectangle',
         edge_width=1,
@@ -281,19 +285,18 @@ class Shapes(Layer):
         visible=True,
     ):
         if data is None:
-            data = np.empty((0, 0, 2))
-        if np.array(data).ndim == 3:
-            ndim = np.array(data).shape[2]
-        elif len(data) == 0:
-            ndim = 2
-        elif np.array(data[0]).ndim == 1:
-            ndim = np.array(data).shape[1]
+            if ndim is None:
+                ndim = 2
+            data = np.empty((0, 0, ndim))
         else:
-            ndim = np.array(data[0]).shape[1]
+            data_ndim = get_shape_ndim(data)
+            if ndim is not None and ndim != data_ndim:
+                raise ValueError("Shape dimensions must be equal to ndim")
+            ndim = data_ndim
 
         super().__init__(
             data,
-            ndim,
+            ndim=ndim,
             name=name,
             metadata=metadata,
             scale=scale,
@@ -432,8 +435,8 @@ class Shapes(Layer):
     ):
         """Initialize current_{edge,face}_color when starting with empty layer.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         color : (N, 4) array or str
             The value for setting edge or face_color
         attribute : str in {'edge', 'face'}
@@ -562,7 +565,7 @@ class Shapes(Layer):
             for i in self.selected_data:
                 self._data_view.update_edge_color(i, self._current_edge_color)
         self.events.edge_color()
-        self.events.current_face_color()
+        self.events.current_edge_color()
 
     @property
     def current_face_color(self):
@@ -1096,7 +1099,7 @@ class Shapes(Layer):
     def _get_new_shape_color(self, adding: int, attribute: str):
         """Get the color for the shape(s) to be added.
 
-        Parameters:
+        Parameters
         ----------
         adding : int
             the number of shapes that were added
@@ -1105,8 +1108,8 @@ class Shapes(Layer):
             The name of the attribute to set the color of.
             Should be 'edge' for edge_color_mode or 'face' for face_color_mode.
 
-        Returns:
-        --------
+        Returns
+        -------
         new_colors : (N, 4) array
             (Nx4) RGBA array of colors for the N new shapes
         """
@@ -1173,6 +1176,7 @@ class Shapes(Layer):
         state = self._get_base_state()
         state.update(
             {
+                'ndim': self.ndim,
                 'properties': self.properties,
                 'shape_type': self.shape_type,
                 'opacity': self.opacity,
@@ -1361,7 +1365,11 @@ class Shapes(Layer):
         if edge_width is None:
             edge_width = self.current_edge_width
 
-        n_new_shapes = len(data)
+        if np.array(data[0]).ndim == 1:
+            # If a single array for a shape
+            n_new_shapes = 1
+        else:
+            n_new_shapes = len(data)
 
         if edge_color is None:
             edge_color = self._get_new_shape_color(
@@ -1647,7 +1655,7 @@ class Shapes(Layer):
             construct the interaction box
 
         Returns
-        ----------
+        -------
         box : np.ndarray
             10x2 array of vertices of the interaction box. The first 8 points
             are the corners and midpoints of the box in clockwise order
@@ -1687,7 +1695,7 @@ class Shapes(Layer):
         """Find outlines of any selected or hovered shapes.
 
         Returns
-        ----------
+        -------
         vertices : None | np.ndarray
             Nx2 array of any vertices of outline or None
         triangles : None | np.ndarray
@@ -1723,7 +1731,7 @@ class Shapes(Layer):
         """Compute location of highlight vertices and box for rendering.
 
         Returns
-        ----------
+        -------
         vertices : np.ndarray
             Nx2 array of any vertices to be rendered as Markers
         face_color : str
@@ -1916,7 +1924,7 @@ class Shapes(Layer):
         self._finish_drawing()
 
     def _rotate_box(self, angle, center=[0, 0]):
-        """Perfrom a rotation on the selected box.
+        """Perform a rotation on the selected box.
 
         Parameters
         ----------
@@ -1933,7 +1941,7 @@ class Shapes(Layer):
         self._selected_box = box @ transform.T + center
 
     def _scale_box(self, scale, center=[0, 0]):
-        """Perfrom a scaling on the selected box.
+        """Perform a scaling on the selected box.
 
         Parameters
         ----------
@@ -1954,7 +1962,7 @@ class Shapes(Layer):
         self._selected_box = box + center
 
     def _transform_box(self, transform, center=[0, 0]):
-        """Perfrom a linear transformation on the selected box.
+        """Perform a linear transformation on the selected box.
 
         Parameters
         ----------
@@ -1976,12 +1984,12 @@ class Shapes(Layer):
         """Expand shape from 2D to the full data dims.
 
         Parameters
-        --------
+        ----------
         data : array
             2D data array of shape to be expanded.
 
         Returns
-        --------
+        -------
         data_full : array
             Full D dimensional data array of the shape.
         """
@@ -2003,7 +2011,7 @@ class Shapes(Layer):
         Getting value is not supported yet for 3D meshes
 
         Returns
-        ----------
+        -------
         shape : int | None
             Index of shape if any that is at the coordinates. Returns `None`
             if no shape is found.
@@ -2327,7 +2335,7 @@ class Shapes(Layer):
             takes the max of all the vertiecs
 
         Returns
-        ----------
+        -------
         masks : np.ndarray
             Array where there is one binary mask for each shape
         """
@@ -2349,7 +2357,7 @@ class Shapes(Layer):
             specified, takes the max of all the vertiecs
 
         Returns
-        ----------
+        -------
         labels : np.ndarray
             Integer array where each value is either 0 for background or an
             integer up to N for points inside the shape at the index value - 1.
