@@ -266,6 +266,7 @@ class QtViewer(QSplitter):
         vispy_layer.node.transforms = ChainTransform()
         vispy_layer.node.parent = None
         del vispy_layer
+        self._reorder_layers(None)
 
     def _reorder_layers(self, event):
         """When the list is reordered, propagate changes to draw order.

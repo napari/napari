@@ -8,6 +8,52 @@ import pytest
     sys.platform.startswith('win') or not os.getenv("CI"),
     reason='Screenshot tests are not supported on napari windows CI.',
 )
+def test_z_order_adding_removing_images(make_test_viewer):
+    """Test z order is correct after adding/ removing images."""
+    data = np.ones((10, 10))
+
+    viewer = make_test_viewer(show=True)
+    viewer.add_image(data, colormap='red', name='red')
+    viewer.add_image(data, colormap='green', name='green')
+    viewer.add_image(data, colormap='blue', name='blue')
+
+    # Check that blue is visible
+    screenshot = viewer.screenshot(canvas_only=True)
+    center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
+    np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
+
+    # Remove and re-add image
+    viewer.layers.remove('red')
+    viewer.add_image(data, colormap='red', name='red')
+    # Check that red is visible
+    screenshot = viewer.screenshot(canvas_only=True)
+    np.testing.assert_almost_equal(screenshot[center], [255, 0, 0, 255])
+
+    # Remove two other images
+    viewer.layers.remove('green')
+    viewer.layers.remove('blue')
+    # Check that red is still visible
+    screenshot = viewer.screenshot(canvas_only=True)
+    np.testing.assert_almost_equal(screenshot[center], [255, 0, 0, 255])
+
+    # Add two other layers back
+    viewer.add_image(data, colormap='green', name='green')
+    viewer.add_image(data, colormap='blue', name='blue')
+    # Check that blue is visible
+    screenshot = viewer.screenshot(canvas_only=True)
+    np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
+
+    # Hide blue
+    viewer.layers['blue'].visible = False
+    # Check that green is visible. Note this assert was failing before #1463
+    screenshot = viewer.screenshot(canvas_only=True)
+    np.testing.assert_almost_equal(screenshot[center], [0, 255, 0, 255])
+
+
+@pytest.mark.skipif(
+    sys.platform.startswith('win') or not os.getenv("CI"),
+    reason='Screenshot tests are not supported on napari windows CI.',
+)
 def test_z_order_images(make_test_viewer):
     """Test changing order of images changes z order in display."""
     data = np.ones((10, 10))
