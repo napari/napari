@@ -1,5 +1,4 @@
 from collections import deque
-from functools import lru_cache
 from typing import Dict, Union
 
 import numpy as np
@@ -13,6 +12,7 @@ from ..utils.color_transformations import transform_color
 from ..utils.layer_utils import dataframe_to_properties
 from ._labels_constants import LabelBrushShape, LabelColorMode, Mode
 from ._labels_mouse_bindings import draw, pick
+from ._labels_utils import sphere_indices
 
 
 class Labels(Image):
@@ -679,35 +679,6 @@ class Labels(Image):
         if refresh is True:
             self.refresh()
 
-    @lru_cache(maxsize=64)
-    def sphere_indices(self, radius, sphere_dims):
-        """Generate centered indices within circle or n-dim sphere.
-
-
-        Parameters
-        -------
-        radius : float
-            Radius of circle/sphere
-        sphere_dims : int
-            Number of circle/sphere dimensions
-
-        Returns
-        -------
-        mask_indices : array
-            Centered indices within circle/sphere
-        """
-        # Create multi-dimensional grid to check for
-        # circle/membership around center
-        vol_radius = radius + 0.5
-
-        indices_slice = [slice(-vol_radius, vol_radius + 1)] * sphere_dims
-        indices = np.mgrid[indices_slice].T.reshape(-1, sphere_dims)
-        distances_sq = np.sum(indices ** 2, axis=1)
-        # Use distances within desired radius to mask indices in grid
-        mask_indices = indices[distances_sq <= radius ** 2].astype(int)
-
-        return mask_indices
-
     def paint(self, coord, new_label, refresh=True):
         """Paint over existing labels with a new label, using the selected
         brush shape and size, either only on the visible slice or in all
@@ -754,7 +725,7 @@ class Labels(Image):
             # Ensure circle doesn't have spurious point
             # on edge by keeping radius as ##.5
             radius = np.floor(self.brush_size / 2) + 0.5
-            mask_indices = self.sphere_indices(radius, sphere_dims)
+            mask_indices = sphere_indices(radius, sphere_dims)
 
             mask_indices = mask_indices + np.round(np.array(coord)).astype(int)
 
