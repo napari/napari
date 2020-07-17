@@ -85,7 +85,6 @@ def convert_fields_to_properties(obj):
 @tz.curry
 def dataclass(
     cls: Type[T],
-    /,  # noqa need to update flake8 in precommit
     *,
     init: bool = True,
     repr: bool = True,
