@@ -9,7 +9,6 @@ from napari.layers.utils.stack_utils import (
 
 
 def test_stack_to_images_basic():
-
     '''Test the a 2 channel zcyx stack is split into 2 image layers'''
     data = np.random.randint(0, 100, (10, 2, 128, 128))
     stack = Image(data)
@@ -172,3 +171,27 @@ def test_split_channels_multiscale():
         assert ds[1].shape == (64, 64)
         assert ds[2].shape == (32, 32)
         assert ds[3].shape == (16, 16)
+
+
+def test_split_channels_blending():
+    '''Test split_channels with shape (3,128,128)
+    expecting 3 (128,128) arrays'''
+    kwargs = getkwargs()
+    kwargs['blending'] = 'translucent'
+    data = np.random.randint(0, 200, (3, 128, 128))
+    result_list = split_channels(data, 0, **kwargs)
+
+    assert len(result_list) == 3
+    for d, meta, _ in result_list:
+        assert d.shape == (128, 128)
+        assert meta['blending'] == 'translucent'
+
+
+def test_split_channels_missing_keywords():
+    data = np.random.randint(0, 200, (3, 128, 128))
+    result_list = split_channels(data, 0)
+
+    assert len(result_list) == 3
+    for d, meta, _ in result_list:
+        assert d.shape == (128, 128)
+        assert meta['blending'] == 'additive'

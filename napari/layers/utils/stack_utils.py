@@ -1,39 +1,54 @@
-import warnings
-from typing import Union, List, Tuple, Dict
+from typing import Union, List, Dict
 import itertools
 
 import numpy as np
-from ...layers import Image, Labels
+from ...layers import Image
 from ...utils.colormaps import colormaps
 from ...layers.image._image_utils import guess_multiscale
 from ...utils.misc import ensure_iterable, ensure_sequence_of_iterables
+from ...types import FullLayerData
 
 
 def split_channels(
     data: np.ndarray, channel_axis: int, **kwargs,
-) -> List[Tuple]:
-    """Function to split the data array into seperate arrays along an axis
+) -> List[FullLayerData]:
+    """Split the data array into seperate arrays along an axis.
+
+    Keyword arguments will override any parameters altered or set in this
+    function. If colormap, blending, or mutliscale are passed as None in kwargs
+    they will be set as:
+    - colormap : (magenta, green) for 2 channels, (CYMRGB) for more than 2
+    - blending : additive
+    - multiscale : determined by layers.image._image_utils.guess_multiscale.
+
+    Blending and multiscale will be set and returnred in meta if not in kwargs.
+    If any other key is not present in kwargs it will not be returned in the meta
+    dictionary of the returned LaterData tuple. For exampe, if colormap is not in
+    kwargs then meta will not have a colormap key.
 
     Parameters
     ----------
     data : array or list of array
     channel_axis : int
         Axis to split the image along.
-    kwargs: keyword arguments
+    kwargs: dict
+        Keyword arguments will override the default image meta keys
+        returned in each layer data tuple.
 
     Returns
     -------
-    List of LayerData tuples: [(data: array, metadata: Dict, type: str )]
-
+    List of LayerData tuples: [(data: array, meta: Dict, type: str )]
     """
 
     # Determine if data is a multiscale
-    multiscale = kwargs['multiscale']
-    if multiscale is None:
+    multiscale = kwargs.get('multiscale')
+    if not multiscale:
         multiscale, data = guess_multiscale(data)
-    kwargs['multiscale'] = multiscale
+        kwargs['multiscale'] = multiscale
+
     n_channels = (data[0] if multiscale else data).shape[channel_axis]
-    kwargs['blending'] = kwargs['blending'] or 'additive'
+
+    kwargs['blending'] = kwargs.get('blending') or 'additive'
 
     # these arguments are *already* iterables in the single-channel case.
     iterable_kwargs = {'scale', 'translate', 'contrast_limits', 'metadata'}
@@ -85,7 +100,7 @@ def split_channels(
 
 
 def stack_to_images(stack: Image, axis: int, **kwargs: Dict,) -> List[Image]:
-    """Function to split the active layer into separate layers along an axis
+    """Splits a single Image layer into a list layers along axis
 
     Parameters
     ----------
@@ -103,25 +118,22 @@ def stack_to_images(stack: Image, axis: int, **kwargs: Dict,) -> List[Image]:
     data, meta, _ = stack.as_layer_data_tuple()
 
     for key in ("contrast_limits", "colormap", "blending"):
-        meta[key] = None
+        del meta[key]
 
     name = stack.name
     num_dim = len(data.shape)
-    # n_channels = data.shape[axis]
 
     if num_dim < 3:
-        warnings.warn(
+        raise ValueError(
             "The image needs more than 2 dimensions for splitting",
-            UserWarning,
         )
         return None
 
     if axis >= num_dim:
-        warnings.warn(
+        raise ValueError(
             "Can't split along axis {}. The image has {} dimensions".format(
                 axis, num_dim
-            ),
-            UserWarning,
+            )
         )
         return None
 
@@ -156,9 +168,12 @@ def stack_to_images(stack: Image, axis: int, **kwargs: Dict,) -> List[Image]:
 
 
 def images_to_stack(
-    images: List[Union[Image, Labels]], axis: int = 0, **kwargs: Dict,
+    images: List[Union[Image]], axis: int = 0, **kwargs: Dict,
 ) -> Image:
-    """Function to combine selected image layers in one layer
+    """Combines a list of Image layers into one layers stacked along axis
+
+    The new image layer will get the meta data properties of the first
+    image layer in the list unless specified in kwargs
 
     Parameters
     ----------
@@ -166,12 +181,18 @@ def images_to_stack(
         List of Image Layers
     axis : int
         Index to to insert the new axis
+    kwargs : dict
+        Dictionary of parameters values to override parameters
+        from the first image in images list.
 
     Returns
     -------
     stack : napari.layers.Image
         Combined image stack
     """
+
+    if len(images) == 0:
+        raise IndexError("images list is emptry")
 
     data, meta, _ = images[0].as_layer_data_tuple()
 
