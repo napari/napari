@@ -24,10 +24,6 @@ def calc_data_range(data):
     """
     if data.dtype == np.uint8:
         return [0, 255]
-
-    # TODO_ASYNC temporarily disable for speed
-    return [0, 1]
-
     if np.prod(data.shape) > 1e6:
         # If data is very large take the average of the top, bottom, and
         # middle slices
