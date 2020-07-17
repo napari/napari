@@ -23,6 +23,25 @@ def test_stack_to_images_basic():
         assert i.data.shape == (10, 128, 128)
 
 
+def test_stack_to_images_multiscale():
+    '''Test that a 4 layer, 3 channel mutliscale image returns
+    3 multiscale images'''
+    data = list()
+    data.append(np.random.randint(0, 200, (3, 128, 128)))
+    data.append(np.random.randint(0, 200, (3, 64, 64)))
+    data.append(np.random.randint(0, 200, (3, 32, 32)))
+    data.append(np.random.randint(0, 200, (3, 16, 16)))
+
+    stack = Image(data)
+    images = stack_to_images(stack, 0)
+
+    assert len(images) == 3
+    assert len(images[0].data) == 4
+    assert images[0].data[-1].shape[-1] == 16
+    assert images[1].data[-1].shape[-1] == 16
+    assert images[2].data[-1].shape[-1] == 16
+
+
 def test_stack_to_images_rgb():
     '''Test 3 channel RGB image (channel axis = -1) into single channels.'''
     data = np.random.randint(0, 100, (10, 128, 128, 3))

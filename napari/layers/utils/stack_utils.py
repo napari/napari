@@ -12,18 +12,18 @@ from ...types import FullLayerData
 def split_channels(
     data: np.ndarray, channel_axis: int, **kwargs,
 ) -> List[FullLayerData]:
-    """Split the data array into seperate arrays along an axis.
+    """Split the data array into separate arrays along an axis.
 
     Keyword arguments will override any parameters altered or set in this
-    function. If colormap, blending, or mutliscale are passed as None in kwargs
+    function. If colormap, blending, or multiscale are passed as None in kwargs
     they will be set as:
     - colormap : (magenta, green) for 2 channels, (CYMRGB) for more than 2
     - blending : additive
     - multiscale : determined by layers.image._image_utils.guess_multiscale.
 
-    Blending and multiscale will be set and returnred in meta if not in kwargs.
+    Blending and multiscale will be set and returned in meta if not in kwargs.
     If any other key is not present in kwargs it will not be returned in the meta
-    dictionary of the returned LaterData tuple. For exampe, if colormap is not in
+    dictionary of the returned LaterData tuple. For example, if colormap is not in
     kwargs then meta will not have a colormap key.
 
     Parameters
@@ -100,7 +100,17 @@ def split_channels(
 
 
 def stack_to_images(stack: Image, axis: int, **kwargs: Dict,) -> List[Image]:
-    """Splits a single Image layer into a list layers along axis
+    """Splits a single Image layer into a list layers along axis.
+
+    Some image layer properties will be changed unless specified as an item in
+    kwargs. Properties such as colormap and contrast_limits are set on individual
+    channels. Properties will be changed as follows (unless overridden with a kwarg):
+    - colormap : (magenta, green) for 2 channels, (CYMRGB) for more than 2
+    - blending : additive
+    - contrast_limits : min and max of the image
+
+    All other properties, such as scale and translate will be propagated from the
+    original stack, unless a keyword argument passed for that property.
 
     Parameters
     ----------
@@ -121,7 +131,7 @@ def stack_to_images(stack: Image, axis: int, **kwargs: Dict,) -> List[Image]:
         del meta[key]
 
     name = stack.name
-    num_dim = len(data.shape)
+    num_dim = stack.dims.ndim
 
     if num_dim < 3:
         raise ValueError(
@@ -170,10 +180,10 @@ def stack_to_images(stack: Image, axis: int, **kwargs: Dict,) -> List[Image]:
 def images_to_stack(
     images: List[Union[Image]], axis: int = 0, **kwargs: Dict,
 ) -> Image:
-    """Combines a list of Image layers into one layers stacked along axis
+    """Combines a list of Image layers into one layer stacked along axis
 
-    The new image layer will get the meta data properties of the first
-    image layer in the list unless specified in kwargs
+    The new image layer will get the meta properties of the first
+    image layer in the input list unless specified in kwargs
 
     Parameters
     ----------
@@ -185,14 +195,14 @@ def images_to_stack(
         Dictionary of parameters values to override parameters
         from the first image in images list.
 
-    Returns
+    Returns.
     -------
     stack : napari.layers.Image
         Combined image stack
     """
 
     if len(images) == 0:
-        raise IndexError("images list is emptry")
+        raise IndexError("images list is empty")
 
     data, meta, _ = images[0].as_layer_data_tuple()
 
