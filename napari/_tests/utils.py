@@ -67,7 +67,7 @@ def add_layer_by_type(viewer, layer_type, data, visible=True):
     ----------
     layer_type : LayerTypes
         Layer type to add
-    data :
+    data
         The layer data to view
     """
     return layer2addmethod[layer_type](viewer, data, visible=visible)
@@ -81,7 +81,7 @@ def view_layer_type(layer_type, data):
     ----------
     layer_type : LayerTypes
         Layer type to view
-    data :
+    data
         The layer data to view
     """
     return layer2viewmethod[layer_type](data, show=False)
