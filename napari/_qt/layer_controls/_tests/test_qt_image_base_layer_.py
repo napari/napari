@@ -3,7 +3,7 @@ from unittest.mock import patch
 
 import numpy as np
 import pytest
-from napari._qt.layers.qt_image_controls_base import (
+from napari._qt.layer_controls.qt_image_controls_base import (
     QRangeSliderPopup,
     QtBaseImageControls,
     create_range_popup,
