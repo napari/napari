@@ -36,6 +36,8 @@ class AsyncConfig:
     def __init__(self, data: dict):
         self.data = data
         _log_to_file(self.log_path)
+        LOGGER.info("AsyncConfig.__init__ data = ")
+        LOGGER.info(json.dumps(data, indent=4, sort_keys=True))
 
     @property
     def synchronous(self):
