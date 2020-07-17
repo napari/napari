@@ -23,8 +23,10 @@ def Event():
     return collections.namedtuple('Event', field_names=['type', 'is_dragging'])
 
 
-@pytest.mark.parametrize("brush_shape", ["circle", "square"])
-def test_paint(Event, brush_shape):
+@pytest.mark.parametrize(
+    "brush_shape, expected_sum", [("circle", 244), ("square", 274)]
+)
+def test_paint(Event, brush_shape, expected_sum):
     """Test painting labels with circle/square brush."""
     data = np.ones((20, 20))
     layer = Labels(data)
@@ -54,6 +56,7 @@ def test_paint(Event, brush_shape):
     assert np.unique(layer.data[-8:, -8:]) == 3
     assert np.unique(layer.data[:5, -5:]) == 1
     assert np.unique(layer.data[-5:, :5]) == 1
+    assert np.sum(layer.data == 3) == expected_sum
 
 
 def test_erase(Event):
