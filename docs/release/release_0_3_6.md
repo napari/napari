@@ -15,11 +15,11 @@ This release contains the long awaited addition of text to both the points and
 shapes layers (#1374). Checkout our `examples/*_with_text.py` for simple usage
 and this great [segmentation annotation tutorial](https://napari.org/tutorials/applications/annotate_segmentation) for a more real-world use case.
 
-We've also added support for a circular
-paintbrush for easier labels painting, and moved more of our contrast limits
-and gamma setting to the GPU for faster rendering and interactivity with
-3D rendered datasets. As always this release contains various bug fixes and
-other improvements.
+We've also added support for a circular paintbrush for easier labels painting,
+and moved more of our contrast limits and gamma setting to the GPU for faster
+rendering and interactivity with 3D rendered datasets. As always this release
+contains various bug fixes and other improvements, including some automated
+reformatting and fixes to our docstrings.
 
 
 ## New Features
@@ -71,6 +71,7 @@ other improvements.
 - Preserve tests from EVH revert (#1452)
 - Fix typos (#1468)
 - DOC: minor doc reformatting. (#1469)
+- DOC: update param names to match function signature. (#1479)
 - Fix events docstring type (#1481)
 - Don't look for release notes in pre-releases (#1483)
 
