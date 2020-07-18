@@ -171,7 +171,7 @@ class QtImageControls(QtBaseImageControls):
         Parameters
         ----------
         event : napari.utils.event.Event
-            Event from the Qt context.
+            The napari event that triggered this method.
         """
         with self.layer.events.iso_threshold.blocker():
             self.isoThresholdSlider.setValue(self.layer.iso_threshold * 100)
@@ -193,7 +193,7 @@ class QtImageControls(QtBaseImageControls):
         Parameters
         ----------
         event : napari.utils.event.Event
-            Event from the Qt context.
+            The napari event that triggered this method.
         """
         with self.layer.events.attenuation.blocker():
             self.attenuationSlider.setValue(self.layer.attenuation * 200)
@@ -204,7 +204,7 @@ class QtImageControls(QtBaseImageControls):
         Parameters
         ----------
         event : napari.utils.event.Event
-            Event from the Qt context.
+            The napari event that triggered this method.
         """
         with self.layer.events.interpolation.blocker():
             index = self.interpComboBox.findText(
@@ -218,7 +218,7 @@ class QtImageControls(QtBaseImageControls):
         Parameters
         ----------
         event : napari.utils.event.Event
-            Event from the Qt context.
+            The napari event that triggered this method.
         """
         with self.layer.events.rendering.blocker():
             index = self.renderComboBox.findText(

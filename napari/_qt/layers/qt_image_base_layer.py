@@ -102,7 +102,7 @@ class QtBaseImageControls(QtLayerControls):
         Parameters
         ----------
         event : napari.utils.event.Event
-            Event from the Qt context.
+            The napari event that triggered this method.
         """
         if event.button() == Qt.RightButton:
             self.clim_pop = create_range_popup(

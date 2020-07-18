@@ -74,7 +74,7 @@ class QtLayerList(QScrollArea):
         Parameters
         ----------
         event : napari.utils.event.Event
-            Event from the Qt context.
+            The napari event that triggered this method.
         """
         layer = event.item
         total = len(self.layers)
@@ -90,7 +90,7 @@ class QtLayerList(QScrollArea):
         Parameters
         ----------
         event : napari.utils.event.Event
-            Event from the Qt context.
+            The napari event that triggered this method.
         """
         layer_index = event.index
         total = len(self.layers)
@@ -165,7 +165,7 @@ class QtLayerList(QScrollArea):
         Parameters
         ----------
         event : napari.utils.event.Event
-            Event from the Qt context.
+            The napari event that triggered this method.
         """
         layer = event.source
         self._ensure_visible(layer)

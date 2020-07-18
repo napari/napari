@@ -235,7 +235,7 @@ class QtShapesControls(QtLayerControls):
         Parameters
         ----------
         event : napari.utils.event.Event
-            Event from the Qt context.
+            The napari event that triggered this method.
 
         Raises
         ------

@@ -231,7 +231,7 @@ class QtLabelsControls(QtLayerControls):
         Parameters
         ----------
         event : napari.utils.event.Event
-            Event from the Qt context.
+            The napari event that triggered this method.
 
         Raises
         ------
@@ -418,7 +418,7 @@ class QtLabelsControls(QtLayerControls):
         Parameters
         ----------
         event : napari.utils.event.Event
-            Event from the Qt context.
+            The napari event that triggered this method.
         """
         with self.layer.events.brush_shape.blocker():
             index = self.brushShapeComboBox.findText(
@@ -467,7 +467,7 @@ class QtColorBox(QWidget):
         Parameters
         ----------
         event : napari.utils.event.Event
-            Event from the Qt context.
+            The napari event that triggered this method.
         """
         self.update()
 

@@ -188,7 +188,7 @@ class QtPointsControls(QtLayerControls):
         Parameters
         ----------
         event : napari.utils.event.Event
-            Event from the Qt context.
+            The napari event that triggered this method.
 
         Raises
         ------
@@ -244,7 +244,7 @@ class QtPointsControls(QtLayerControls):
         Parameters
         ----------
         event : napari.utils.event.Event
-            Event from the Qt context.
+            The napari event that triggered this method.
         """
         with self.layer.events.n_dimensional.blocker():
             self.ndimCheckBox.setChecked(self.layer.n_dimensional)
@@ -255,7 +255,7 @@ class QtPointsControls(QtLayerControls):
         Parameters
         ----------
         event : napari.utils.event.Event
-            Event from the Qt context.
+            The napari event that triggered this method.
         """
         with self.layer.events.symbol.blocker():
             index = self.symbolComboBox.findText(

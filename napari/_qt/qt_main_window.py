@@ -451,7 +451,7 @@ class Window:
         Parameters
         ----------
         event : napari.utils.event.Event
-            Event from the Qt context.
+            The napari event that triggered this method.
         """
         self._status_bar.showMessage(event.text)
 
@@ -461,7 +461,7 @@ class Window:
         Parameters
         ----------
         event : napari.utils.event.Event
-            Event from the Qt context.
+            The napari event that triggered this method.
         """
         self._qt_window.setWindowTitle(event.text)
 
@@ -471,7 +471,7 @@ class Window:
         Parameters
         ----------
         event : napari.utils.event.Event
-            Event from the Qt context.
+            The napari event that triggered this method.
         """
         self._help.setText(event.text)
 
