@@ -115,6 +115,6 @@ def test_blending_modes():
     assert text_manager.blending == 'additive'
 
     # set to opaque, which is not allowed
-    with pytest.warns(RuntimeWarning):
+    with pytest.warns(UserWarning):
         text_manager.blending = 'opaque'
         assert text_manager.blending == 'translucent'

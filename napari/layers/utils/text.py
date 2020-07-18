@@ -1,30 +1,32 @@
-from typing import Tuple, Union
 import warnings
+from dataclasses import field
+from typing import Dict, Tuple, Union
 
 import numpy as np
 
-from ..base._base_constants import Blending
-from ._text_constants import TextMode, Anchor
-from ._text_utils import (
-    format_text_properties,
-    get_text_anchors,
-)
 from ...utils.colormaps.standardize_color import transform_color
-from ...utils.event import EmitterGroup, Event
+from ...utils.dataclass import dataclass
+from ..base._base_constants import Blending
+from ._text_constants import Anchor, TextMode
+from ._text_utils import format_text_properties, get_text_anchors
 
 
+@dataclass(events=True, properties=True)
 class TextManager:
     """Manages properties related to text displayed in conjunction with the layer.
 
     Parameters
     ----------
     text : array or str
-        the strings to be displayed
+        The strings to be displayed
+    n_text : int
+        The length of data being annotated.
     rotation : float
         Angle of the text elements around the anchor point. Default value is 0.
     anchor : str
         The location of the text origin relative to the bounding box.
-        Should be 'center', 'upper_left', 'upper_right', 'lower_left', or 'lower_right'
+        Should be 'center', 'upper_left', 'upper_right', 'lower_left', or
+        'lower_right'
     translation : np.ndarray
         Offset from the anchor point.
     color : array or str
@@ -39,73 +41,67 @@ class TextManager:
         The default value is 'translucent'
     visible : bool
         Set to true of the text should be displayed.
-
-    Attributes
-    ----------
-    text : array
-        the strings to be displayed
-    rotation : float
-        Angle of the text elements around the anchor point. Default value is 0.
-    anchor : str
-        The location of the text origin relative to the bounding box.
-        Should be 'center', 'upper_left', 'upper_right', 'lower_left', or 'lower_right'.
-    translation : np.ndarray
-        Offset from the anchor point.
-    color : array
-        Font color for the text
-    size : float
-        Font size of the text. Default value is 12.
-    The blending mode that determines how RGB and
-        alpha values of the layer visual get mixed. Allowed values are
-        {'opaque', 'translucent', and 'additive'}. Note that 'opaque` blending
-        is not recommended, as colors the bounding box surrounding the text.
-    visible : bool
-        Set to true of the text should be displayed.
     """
 
-    def __init__(
-        self,
-        text,
-        n_text,
-        properties={},
-        rotation=0,
-        translation=0,
-        anchor='center',
-        color='cyan',
-        size=12,
-        blending='translucent',
-        visible=True,
-    ):
+    text: Union[np.ndarray, str]
+    n_text: int
+    properties: Dict[str, np.ndarray] = field(default_factory=dict)
+    rotation: float = 0.0
+    translation: np.ndarray = np.asarray(0)
+    anchor: Anchor = Anchor.CENTER
+    color: Union[np.ndarray, str] = 'cyan'
+    size: float = 12.0
+    blending: Blending = Blending.TRANSLUCENT
+    visible: bool = True
 
-        self.events = EmitterGroup(
-            source=self,
-            auto_connect=True,
-            text=Event,
-            rotation=Event,
-            translation=Event,
-            anchor=Event,
-            color=Event,
-            size=Event,
-            blending=Event,
-            visible=Event,
-        )
-
-        self.events.block_all()
-        self._rotation = rotation
-        self._anchor = Anchor(anchor)
-        self._translation = translation
-        self._color = transform_color(color)[0]
-        self._size = size
-        self._blending = self._check_blending_mode(blending)
-        self._visible = visible
-
-        self._set_text(text, n_text, properties)
-        self.events.unblock_all()
+    def __post_init__(self):
+        # private attributes not in dataclass
+        self._text_format_string: str = ''
+        self._values = None
+        self._mode: TextMode = TextMode.NONE
+        self.anchor = Anchor(self.anchor)
+        self.blending = Blending(self.blending)
+        with self.events.text.blocker():
+            self._set_text(self.text, self.n_text, self.properties)
 
     @property
     def values(self):
         """np.ndarray: the text values to be displayed"""
         return self._values
+
+    @property
+    def mode(self) -> str:
+        """str: The current text setting mode."""
+        return str(self._mode)
+
+    # Things that need to modify the value on set
+
+    def _on_translation_set(self, translation):
+        if not isinstance(translation, np.ndarray):
+            self.translation = np.asarray(translation)
+            return True
+
+    def _on_color_set(self, color):
+        if color != self.color:
+            self.color = transform_color(color)[0]
+        return True
+
+    def _on_blending_set(self, blending):
+        if Blending(blending) == Blending.OPAQUE:
+            warnings.warn(
+                'opaque blending mode is not allowed for text. '
+                'setting to translucent.'
+            )
+            self.blending = Blending.TRANSLUCENT
+            return True
+
+    # Things that need to modify the value on get
+
+    def _on_blending_get(self, blending):
+        return str(blending)
+
+    def _on_anchor_get(self, anchor):
+        return str(anchor)
 
     def _set_text(
         self, text: Union[None, str], n_text: int, properties: dict = {}
@@ -121,110 +117,7 @@ class TextManager:
             self._text_format_string = text
             self._values = formatted_text
             self._mode = text_mode
-        self.events.text()
-
-    @property
-    def anchor(self) -> str:
-        """str: The location of the text origin relative to the bounding box.
-        Should be 'center', 'upper_left', 'upper_right', 'lower_left', or 'lower_right
-        '"""
-        return str(self._anchor)
-
-    @anchor.setter
-    def anchor(self, anchor):
-        self._anchor = Anchor(anchor)
-        self.events.anchor()
-
-    @property
-    def rotation(self) -> float:
-        """float: angle of the text elements around the anchor point."""
-        return self._rotation
-
-    @rotation.setter
-    def rotation(self, rotation):
-        self._rotation = rotation
-        self.events.rotation()
-
-    @property
-    def translation(self) -> np.ndarray:
-        """np.ndarray: offset from the anchor point"""
-        return self._translation
-
-    @translation.setter
-    def translation(self, translation):
-        self._translation = np.asarray(translation)
-        self.events.translation()
-
-    @property
-    def color(self) -> np.ndarray:
-        """np.ndarray: Font color for the text"""
-        return self._color
-
-    @color.setter
-    def color(self, color):
-        self._color = transform_color(color)[0]
-        self.events.color()
-
-    @property
-    def size(self) -> float:
-        """float: Font size of the text."""
-        return self._size
-
-    @size.setter
-    def size(self, size):
-        self._size = size
-        self.events.size()
-
-    @property
-    def blending(self) -> str:
-        """Blending mode: Determines how RGB and alpha values get mixed.
-
-            Blending.TRANSLUCENT
-                Allows for multiple layers to be blended with different opacity
-                and corresponds to depth_test=True, cull_face=False,
-                blend=True, blend_func=('src_alpha', 'one_minus_src_alpha').
-            Blending.ADDITIVE
-                Allows for multiple layers to be blended together with
-                different colors and opacity. Useful for creating overlays. It
-                corresponds to depth_test=False, cull_face=False, blend=True,
-                blend_func=('src_alpha', 'one').
-        """
-        return str(self._blending)
-
-    @blending.setter
-    def blending(self, blending):
-
-        self._blending = self._check_blending_mode(blending)
-        self.events.blending()
-
-    def _check_blending_mode(self, blending):
-        blending_mode = Blending(blending)
-
-        # the opaque blending mode is not allowed for text
-        # see: https://github.com/napari/napari/pull/600#issuecomment-554142225
-        if blending_mode == Blending.OPAQUE:
-            blending_mode = Blending.TRANSLUCENT
-            warnings.warn(
-                'opaque blending mode is not allowed for text. setting to translucent.',
-                category=RuntimeWarning,
-            )
-
-        return blending_mode
-
-    @property
-    def visible(self) -> bool:
-        """bool: Set to true of the text should be displayed."""
-        return self._visible
-
-    @visible.setter
-    def visible(self, visible):
-        self._visible = visible
-        self.events.visible()
-
-    @property
-    def mode(self) -> str:
-        """str: The current text setting mode."""
-        return str(self._mode)
+        self.events.text(value=self.text)
 
     def refresh_text(self, properties: dict):
         """Refresh all of the current text elements using updated properties values
@@ -325,62 +218,3 @@ class TextManager:
             text = np.array([''])
 
         return text
-
-    def _get_state(self):
-
-        state = {
-            'text': self.values,
-            'rotation': self.rotation,
-            'color': self.color,
-            'translation': self.translation,
-            'size': self.size,
-            'visible': self.visible,
-        }
-
-        return state
-
-    def _connect_update_events(
-        self, text_update_function, blending_update_function
-    ):
-        """Function to connect all property update events to the update callback.
-
-        This is typically used in the vispy view file.
-        """
-        # connect the function for updating the text node
-        self.events.text.connect(text_update_function)
-        self.events.rotation.connect(text_update_function)
-        self.events.translation.connect(text_update_function)
-        self.events.anchor.connect(text_update_function)
-        self.events.color.connect(text_update_function)
-        self.events.size.connect(text_update_function)
-        self.events.visible.connect(text_update_function)
-
-        # connect the function for updating the text node blending
-        self.events.blending.connect(blending_update_function)
-
-    def __eq__(self, other):
-        """Method to test equivalence
-
-        called by: text_manager_1 == text_manager_2
-        """
-        if isinstance(other, TextManager):
-            my_state = self._get_state()
-            other_state = other._get_state()
-            equal = np.all(
-                [
-                    np.all(value == other_state[key])
-                    for key, value in my_state.items()
-                ]
-            )
-
-        else:
-            equal = False
-
-        return equal
-
-    def __ne__(self, other):
-        """Method to test not equal
-
-        called by: text_manager_1 != text_manager_2
-        """
-        return not (self.__eq__(other))

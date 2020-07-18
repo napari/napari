@@ -1,12 +1,36 @@
 import dataclasses as _dataclasses  # builtin private for ease of tab complete
-from typing import Any, Callable, Type, TypeVar
+from typing import Any, Callable, Type, TypeVar, Optional
+from enum import EnumMeta
 
 import toolz as tz
 
 from .event import EmitterGroup
 
-WHEN_SET = "_on_{name}_set"
+ON_SET = "_on_{name}_set"
+ON_GET = "_on_{name}_get"
 T = TypeVar("T")
+
+
+def coerce(value: Any, type_: Optional[Type]):
+    """Attempt to coerce value to a particular type.
+
+    Parameters
+    ----------
+    value : Any
+        The value being coerced
+    type_ : Type
+        The output type
+
+    Returns
+    -------
+    value : Any
+        possibly coerced value
+    """
+    if not type_:
+        return value
+    if isinstance(type_, EnumMeta):
+        return type_(value)
+    return value
 
 
 def setattr_with_events(self: T, name: str, value: Any) -> None:
@@ -41,18 +65,41 @@ def setattr_with_events(self: T, name: str, value: Any) -> None:
     value : Any
         The new value for the attribute.
     """
-    object.__setattr__(self, name, value)
+    _value = coerce(value, self.__annotations__.get(name))
+    object.__setattr__(self, name, _value)
     if name in self.__annotations__:
         # if custom set method `_on_<name>_set` exists, call it
-        setter_method = getattr(self, WHEN_SET.format(name=name), None)
+        setter_method = getattr(self, ON_SET.format(name=name), None)
         if callable(setter_method):
             # the method can return True, if it wants to handle its own events
             if setter_method(getattr(self, name)):
                 return
         # otherwise, we emit the event
-        if name in self.events:  # type: ignore # (needs SupportsEvents)
+        if hasattr(self, 'events') and name in self.events:
             # use gettattr again in case `_on_name_set` has modified it
             getattr(self.events, name)(value=getattr(self, name))  # type: ignore
+
+
+def getattr_with_conversion(self: T, name: str) -> Any:
+    """Modified __getattr__ method that allows class override.
+    Parameters
+    ----------
+    self : T
+        An instance of the decorated dataclass of Type[T]
+    name : str
+        The name of the attribute being retrieved.
+
+    Returns
+    -------
+    value : Any
+        The value being retrieved
+    """
+    val = object.__getattribute__(self, name)
+    name = name.lstrip("_")
+    getter_method = getattr(self, ON_GET.format(name=name), None)
+    if callable(getter_method):
+        return getter_method(val)
+    return val
 
 
 def make_post_init(
@@ -96,8 +143,6 @@ def make_post_init(
             # This should happen after initialization to allow default
             # factories to be handled by the dataclass
             convert_fields_to_properties(self)
-        # release self.__setattr__ to emit events.
-        object.__setattr__(self, '_is_initialized', True)
 
         if events:
             # modify __setattr__ with version that emits an event when setting
@@ -110,7 +155,7 @@ def make_getter(name):
     """Make an fget function for creating a property descriptor."""
 
     def fget(self):
-        return getattr(self, name)
+        return getattr_with_conversion(self, name)
 
     return fget
 
@@ -237,4 +282,9 @@ def dataclass(
     _cls = _dataclasses._process_class(
         cls, init, repr, eq, order, unsafe_hash, frozen
     )
+    setattr(_cls, '_get_state', _get_state)
     return _cls
+
+
+def _get_state(self):
+    return _dataclasses.asdict(self)
