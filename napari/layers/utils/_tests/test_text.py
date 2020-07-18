@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 from napari.layers.utils.text import TextManager
 
@@ -93,3 +94,27 @@ def test_equality():
     text_manager_2.color = 'blue'
     assert text_manager_1 != text_manager_2
     assert not (text_manager_1 == text_manager_2)
+
+
+def test_blending_modes():
+    n_text = 3
+    text = 'class'
+    classes = np.array(['A', 'B', 'C'])
+    properties = {'class': classes, 'confidence': np.array([0.5, 0.3, 1])}
+    text_manager = TextManager(
+        text=text,
+        n_text=n_text,
+        properties=properties,
+        color='red',
+        blending='translucent',
+    )
+    assert text_manager.blending == 'translucent'
+
+    # set to another valid blending mode
+    text_manager.blending = 'additive'
+    assert text_manager.blending == 'additive'
+
+    # set to opaque, which is not allowed
+    with pytest.warns(RuntimeWarning):
+        text_manager.blending = 'opaque'
+        assert text_manager.blending == 'translucent'

@@ -96,7 +96,7 @@ class TextManager:
         self._translation = translation
         self._color = transform_color(color)[0]
         self._size = size
-        self._blending = Blending(blending)
+        self._blending = self._check_blending_mode(blending)
         self._visible = visible
 
         self._set_text(text, n_text, properties)
@@ -193,6 +193,11 @@ class TextManager:
 
     @blending.setter
     def blending(self, blending):
+
+        self._blending = self._check_blending_mode(blending)
+        self.events.blending()
+
+    def _check_blending_mode(self, blending):
         blending_mode = Blending(blending)
 
         # the opaque blending mode is not allowed for text
@@ -200,10 +205,11 @@ class TextManager:
         if blending_mode == Blending.OPAQUE:
             blending_mode = Blending.TRANSLUCENT
             warnings.warn(
-                'opaque blending mode is not allowed for text. setting to translucent.'
+                'opaque blending mode is not allowed for text. setting to translucent.',
+                category=RuntimeWarning,
             )
-        self._blending = blending_mode
-        self.events.blending()
+
+        return blending_mode
 
     @property
     def visible(self) -> bool:
