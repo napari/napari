@@ -245,14 +245,13 @@ def guess_zarr_path(path):
 
     Parameters
     ----------
-    path: str
+    path : str
         Path to a file or directory.
 
     Returns
     -------
     bool
         Whether path is for zarr.
-
     >>> guess_zarr_path('dataset.zarr')
     True
     >>> guess_zarr_path('dataset.zarr/path/to/array')
