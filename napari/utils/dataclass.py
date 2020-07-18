@@ -9,46 +9,6 @@ WHEN_SET = "_on_{name}_set"
 T = TypeVar("T")
 
 
-def make_post_init(
-    cls: Type[T], events=False, properties=False
-) -> Callable[..., None]:
-    """Return a new __post_init__ method wrapper with events & properties.
-
-    Parameters
-    ----------
-    cls : type
-        The class being decorated as a dataclass
-    events : bool, optional
-        Whether to add an `EmitterGroup` to the class, by default False
-    properties : bool, optional
-        Whether to convert the dataclass fields to properties, by default False
-
-    Returns
-    -------
-    Callable[..., None]
-        A modified __post_init__ method that wraps the original.
-    """
-
-    orig_post_init: Callable[..., None] = getattr(cls, '__post_init__', None)
-
-    def _event_post_init(self: T, *initvars) -> None:
-        emitter_group = EmitterGroup(
-            source=self,
-            auto_connect=False,
-            **{n: None for n in getattr(self, '__dataclass_fields__', {})},
-        )
-        object.__setattr__(self, 'events', emitter_group)
-        if orig_post_init is not None:
-            orig_post_init(self, *initvars)
-        if properties:
-            # This should happen after initialization to handle default
-            # factories in dataclasses
-            convert_fields_to_properties(self)
-        object.__setattr__(self, '_is_initialized', True)
-
-    return _event_post_init
-
-
 def setattr_with_events(self: T, name: str, value: Any) -> None:
     """Modified __setattr__ method that emits an event when set.
 
@@ -82,9 +42,7 @@ def setattr_with_events(self: T, name: str, value: Any) -> None:
         The new value for the attribute.
     """
     object.__setattr__(self, name, value)
-    if name in self.__annotations__ and getattr(
-        self, '_is_initialized', False
-    ):
+    if name in self.__annotations__:
         # if custom set method `_on_<name>_set` exists, call it
         setter_method = getattr(self, WHEN_SET.format(name=name), None)
         if callable(setter_method):
@@ -95,6 +53,57 @@ def setattr_with_events(self: T, name: str, value: Any) -> None:
         if name in self.events:  # type: ignore # (needs SupportsEvents)
             # use gettattr again in case `_on_name_set` has modified it
             getattr(self.events, name)(value=getattr(self, name))  # type: ignore
+
+
+def make_post_init(
+    cls: Type[T], events=False, properties=False
+) -> Callable[..., None]:
+    """Return a new __post_init__ method wrapper with events & properties.
+
+    Parameters
+    ----------
+    cls : type
+        The class being decorated as a dataclass
+    events : bool, optional
+        Whether to add an `EmitterGroup` to the class, by default False
+    properties : bool, optional
+        Whether to convert the dataclass fields to properties, by default False
+
+    Returns
+    -------
+    Callable[..., None]
+        A modified __post_init__ method that wraps the original.
+    """
+
+    # get a handle to the original __post_init__ method if present
+    orig_post_init: Callable[..., None] = getattr(cls, '__post_init__', None)
+
+    def _event_post_init(self: T, *initvars) -> None:
+        # create an EmitterGroup with an EventEmitter for each field
+        # in the dataclass
+        if events:
+            emitter_group = EmitterGroup(
+                source=self,
+                auto_connect=False,
+                **{n: None for n in getattr(self, '__dataclass_fields__', {})},
+            )
+            object.__setattr__(self, 'events', emitter_group)
+        # call original __post_init__
+        if orig_post_init is not None:
+            orig_post_init(self, *initvars)
+        # if requested, convert dataclass fields to property descriptors.
+        if properties:
+            # This should happen after initialization to allow default
+            # factories to be handled by the dataclass
+            convert_fields_to_properties(self)
+        # release self.__setattr__ to emit events.
+        object.__setattr__(self, '_is_initialized', True)
+
+        if events:
+            # modify __setattr__ with version that emits an event when setting
+            setattr(cls, '__setattr__', setattr_with_events)
+
+    return _event_post_init
 
 
 def make_getter(name):
@@ -150,6 +159,8 @@ def convert_fields_to_properties(obj: T):
             param = params[field.name]
             doc = "\n".join(param.desc)
             # TODO: could compare param.type to field.type here for consistency
+            # alternatively, we may just want to use pydantic for type
+            # validation.
 
         prop = property(fget=fget, fset=fset, fdel=None, doc=doc)
         setattr(cls, field.name, prop)
@@ -171,7 +182,8 @@ def dataclass(
     """Enhanced dataclass decorator with events and property descriptors.
 
     Examines PEP 526 __annotations__ to determine fields.  Fields are defined
-    as class attributes with a type annotation.
+    as class attributes with a type annotation.  Everything but ``events`` and
+    ``properties`` are defined on the builtin dataclass decorator.
 
     Parameters
     ----------
@@ -225,9 +237,4 @@ def dataclass(
     _cls = _dataclasses._process_class(
         cls, init, repr, eq, order, unsafe_hash, frozen
     )
-
-    if events:
-        setattr(_cls, '_is_initialized', False)  # made true in __post_init__
-        # modify __setattr__ with version that emits an event when setting
-        _cls.__setattr__ = setattr_with_events
     return _cls

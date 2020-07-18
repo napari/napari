@@ -35,6 +35,8 @@ def test_dataclass_with_properties(props, events):
         c: List[int] = field(default_factory=list)
 
         def _on_b_set(self, value):
+            # NB: if you want to set value again, you must check that it is
+            # actually different from ``value``!
             if value != 'bossy':
                 self.b = 'bossy'
 
@@ -89,3 +91,5 @@ def test_dataclass_with_properties(props, events):
         m.c = [1, 2]
         assert m.c == [1, 2]
         m.events.c.assert_not_called()
+    else:
+        assert not hasattr(m, 'events')
