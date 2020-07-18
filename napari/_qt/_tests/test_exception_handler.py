@@ -2,6 +2,8 @@ import logging
 from napari._qt.exceptions import ExceptionHandler
 
 
+# caplog fixture comes from pytest
+# https://docs.pytest.org/en/stable/logging.html#caplog-fixture
 def test_exception_handler(qtbot, caplog):
     """Test exception handler logs to console and emits a signal."""
     handler = ExceptionHandler()
