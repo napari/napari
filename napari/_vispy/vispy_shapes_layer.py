@@ -19,7 +19,9 @@ class VispyShapesLayer(VispyBaseLayer):
         self.layer.events.edge_width.connect(self._on_data_change)
         self.layer.events.edge_color.connect(self._on_data_change)
         self.layer.events.face_color.connect(self._on_data_change)
-        self.layer.text._connect_update_events(self._on_text_change)
+        self.layer.text._connect_update_events(
+            self._on_text_change, self._on_blending_change
+        )
         self.layer.events.highlight.connect(self._on_highlight_change)
 
         self._reset_base()
@@ -149,8 +151,6 @@ class VispyShapesLayer(VispyBaseLayer):
         """Function to set the blending mode"""
         self.node.set_gl_state(self.layer.blending)
 
-        # the text blending mode should always be additive
-        # see: https://github.com/napari/napari/pull/600#issuecomment-554142225
         text_node = self._get_text_node()
-        text_node.set_gl_state('additive')
+        text_node.set_gl_state(self.layer.text.blending)
         self.node.update()

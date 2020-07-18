@@ -1,7 +1,9 @@
 from typing import Tuple, Union
+import warnings
 
 import numpy as np
 
+from ..base._base_constants import Blending
 from ._text_constants import TextMode, Anchor
 from ._text_utils import (
     format_text_properties,
@@ -29,6 +31,12 @@ class TextManager:
         Font color for the text
     size : float
         Font size of the text. Default value is 12.
+    blending : str
+        The blending mode that determines how RGB and
+        alpha values of the layer visual get mixed. Allowed values are
+        {'opaque', 'translucent', and 'additive'}. Note that 'opaque` blending
+        is not recommended, as colors the bounding box surrounding the text.
+        The default value is 'translucent'
     visible : bool
         Set to true of the text should be displayed.
 
@@ -47,6 +55,10 @@ class TextManager:
         Font color for the text
     size : float
         Font size of the text. Default value is 12.
+    The blending mode that determines how RGB and
+        alpha values of the layer visual get mixed. Allowed values are
+        {'opaque', 'translucent', and 'additive'}. Note that 'opaque` blending
+        is not recommended, as colors the bounding box surrounding the text.
     visible : bool
         Set to true of the text should be displayed.
     """
@@ -59,8 +71,9 @@ class TextManager:
         rotation=0,
         translation=0,
         anchor='center',
-        color='black',
+        color='cyan',
         size=12,
+        blending='translucent',
         visible=True,
     ):
 
@@ -73,6 +86,7 @@ class TextManager:
             anchor=Event,
             color=Event,
             size=Event,
+            blending=Event,
             visible=Event,
         )
 
@@ -82,6 +96,7 @@ class TextManager:
         self._translation = translation
         self._color = transform_color(color)[0]
         self._size = size
+        self._blending = Blending(blending)
         self._visible = visible
 
         self._set_text(text, n_text, properties)
@@ -159,6 +174,36 @@ class TextManager:
     def size(self, size):
         self._size = size
         self.events.size()
+
+    @property
+    def blending(self) -> str:
+        """Blending mode: Determines how RGB and alpha values get mixed.
+
+            Blending.TRANSLUCENT
+                Allows for multiple layers to be blended with different opacity
+                and corresponds to depth_test=True, cull_face=False,
+                blend=True, blend_func=('src_alpha', 'one_minus_src_alpha').
+            Blending.ADDITIVE
+                Allows for multiple layers to be blended together with
+                different colors and opacity. Useful for creating overlays. It
+                corresponds to depth_test=False, cull_face=False, blend=True,
+                blend_func=('src_alpha', 'one').
+        """
+        return str(self._blending)
+
+    @blending.setter
+    def blending(self, blending):
+        blending_mode = Blending(blending)
+
+        # the opaque blending mode is not allowed for text
+        # see: https://github.com/napari/napari/pull/600#issuecomment-554142225
+        if blending_mode == Blending.OPAQUE:
+            blending_mode = Blending.TRANSLUCENT
+            warnings.warn(
+                'opaque blending mode is not allowed for text. setting to translucent.'
+            )
+        self._blending = blending_mode
+        self.events.blending()
 
     @property
     def visible(self) -> bool:
@@ -288,17 +333,23 @@ class TextManager:
 
         return state
 
-    def _connect_update_events(self, update_function):
+    def _connect_update_events(
+        self, text_update_function, blending_update_function
+    ):
         """Function to connect all property update events to the update callback.
         This is typically used in the vispy view file.
         """
-        self.events.text.connect(update_function)
-        self.events.rotation.connect(update_function)
-        self.events.translation.connect(update_function)
-        self.events.anchor.connect(update_function)
-        self.events.color.connect(update_function)
-        self.events.size.connect(update_function)
-        self.events.visible.connect(update_function)
+        # connect the function for updating the text node
+        self.events.text.connect(text_update_function)
+        self.events.rotation.connect(text_update_function)
+        self.events.translation.connect(text_update_function)
+        self.events.anchor.connect(text_update_function)
+        self.events.color.connect(text_update_function)
+        self.events.size.connect(text_update_function)
+        self.events.visible.connect(text_update_function)
+
+        # connect the function for updating the text node blending
+        self.events.blending.connect(blending_update_function)
 
     def __eq__(self, other):
         """Method to test equivalence
