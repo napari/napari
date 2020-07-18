@@ -640,6 +640,7 @@ class Points(Layer):
 
     def refresh_text(self):
         """Refresh the text values.
+
         This is generally used if the properties were updated without changing the data
         """
         self.text.refresh_text(self.properties)
@@ -1340,9 +1341,9 @@ class Points(Layer):
         """Get the values of the text elements in view
 
         Returns
-       -------
-       text : (N x 1) np.ndarray
-           Array of text strings for the N text elements in view
+        -------
+        text : (N x 1) np.ndarray
+            Array of text strings for the N text elements in view
         """
         return self.text.view_text(self._indices_view)
 
@@ -1351,9 +1352,9 @@ class Points(Layer):
         """Get the coordinates of the text elements in view
 
         Returns
-       -------
-       text_coords : (N x D) np.ndarray
-           Array of coordindates for the N text elements in view
+        -------
+        text_coords : (N x D) np.ndarray
+            Array of coordindates for the N text elements in view
         """
         return self.text.compute_text_coords(
             self._view_data, self.dims.ndisplay

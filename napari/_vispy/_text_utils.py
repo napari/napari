@@ -14,7 +14,7 @@ def update_text(
     ndisplay: int,
     text_node: Text,
 ):
-    """ Update the vispy text node with the current text and display parameters
+    """Update the vispy text node with the current text and display parameters.
 
     Parameters
     ----------
@@ -27,7 +27,7 @@ def update_text(
         anchor_x should be one of: 'left', 'center', 'right'.
         anchor_y should be one of: 'top', 'center', 'middle', 'baseline', 'bottom'.
     rotation : float
-        The rotation (degrees) of the text element around it's coordinate.
+        The rotation (degrees) of the text element around its anchor.
     color : np.ndarray
         The color of the text in an RGBA array.
     size : float

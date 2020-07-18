@@ -11,7 +11,7 @@ class TextMode(StringEnum):
 
     PROPERTY the text value is a property value
 
-    FORMATTED allows text to be set with an f string like syntax
+    FORMATTED allows text to be set with an f-string like syntax
     """
 
     NONE = auto()

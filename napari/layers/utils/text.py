@@ -14,7 +14,7 @@ from ...utils.event import EmitterGroup, Event
 
 
 class TextManager:
-    """ Manages properties related to text displayed in conjunction with the layer
+    """Manages properties related to text displayed in conjunction with the layer.
 
     Parameters
     ----------
@@ -311,9 +311,9 @@ class TextManager:
             Indices of the text elements in view
 
         Returns
-       -------
-       text : (N x 1) np.ndarray
-           Array of text strings for the N text elements in view
+        -------
+        text : (N x 1) np.ndarray
+            Array of text strings for the N text elements in view
         """
         if len(indices_view) > 0:
             if self._mode in [TextMode.FORMATTED, TextMode.PROPERTY]:
