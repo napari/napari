@@ -6,7 +6,7 @@ import numpy as np
 from skimage import data
 from skimage.filters import threshold_otsu
 from skimage.segmentation import clear_border
-from skimage.measure import label, regionprops
+from skimage.measure import label, regionprops_table
 from skimage.morphology import closing, square, remove_small_objects
 import napari
 
@@ -44,9 +44,9 @@ def make_bbox(bbox_extents):
 
     Parameters
     ----------
-    bbox_extents : Tuple[int]
-        The extents of the bounding box.
-        Should be ordered: min_row, min_column, max_row, max_column
+    bbox_extents : list (4xN)
+        List of the extents of the bounding boxes for each of the N regions.
+        Should be ordered: [min_row, min_column, max_row, max_column]
 
     Returns
     -------
@@ -62,11 +62,12 @@ def make_bbox(bbox_extents):
     bbox_rect = np.array(
         [[minr, minc], [maxr, minc], [maxr, maxc], [minr, maxc]]
     )
+    bbox_rect = np.moveaxis(bbox_rect, 2, 0)
 
     return bbox_rect
 
 
-def calculate_circularity(perimeter, area):
+def circularity(perimeter, area):
     """Calculate the circularity of the region
 
     Parameters
@@ -90,19 +91,16 @@ def calculate_circularity(perimeter, area):
 image = data.coins()[50:-50, 50:-50]
 label_image = segment(image)
 
-# get the properties of the segmentation
-regions = regionprops(label_image)
-bbox_rects = [make_bbox(reg.bbox) for reg in regions]
-labels = [reg.label for reg in regions]
-circularity = [
-    calculate_circularity(reg.perimeter, reg.area) for reg in regions
-]
-
 # create the properties dictionary
-properties = {
-    'label': labels,
-    'circularity': circularity,
-}
+properties = regionprops_table(
+    label_image, properties=('label', 'bbox', 'perimeter', 'area')
+)
+properties['circularity'] = circularity(
+    properties['perimeter'], properties['area']
+)
+
+# create the bounding box rectangles
+bbox_rects = make_bbox([properties[f'bbox-{i}'] for i in range(4)])
 
 # specify the display parameters for the text
 text_parameters = {
