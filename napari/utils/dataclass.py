@@ -125,7 +125,7 @@ def dataclass(
         If true, field attributes will be converted to property descriptors.
         If the class has a class docstring in numpydocs format, docs for each
         property will be taken from the ``Parameters`` section for the
-        corresponding parameter. by default False
+        corresponding parameter, by default False
 
     Returns
     -------
