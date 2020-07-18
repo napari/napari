@@ -10,6 +10,12 @@ from napari.utils.event import EmitterGroup
 
 @pytest.mark.parametrize("props, events", [(1, 1), (0, 1), (0, 0), (1, 0)])
 def test_dataclass_with_properties(props, events):
+    """Test that the @dataclass decorator works.
+
+    The parameters test all combinations of props and events to make sure they
+    work alone as well as together.
+    """
+
     @dataclass(properties=props, events=events)
     class M:
         """Just a test.
@@ -28,6 +34,14 @@ def test_dataclass_with_properties(props, events):
         b: str = 'hi'
         c: List[int] = field(default_factory=list)
 
+        def _on_b_set(self, value):
+            if value != 'bossy':
+                self.b = 'bossy'
+
+        def _on_c_set(self, value):
+            if value == [1, 2]:
+                return True
+
     # currently, properties will only be added to the class during post_init
     m = M(a=1)
     # basic functionality
@@ -42,21 +56,36 @@ def test_dataclass_with_properties(props, events):
     assert isinstance(m.a, int)
     assert isinstance(m.b, str)
     if props:
+        # The fields should have been converted to property descriptors
         assert isinstance(M.a, property)
         assert isinstance(M.b, property)
+        # and their docstrings pulled from the class (numpy) docstring
         assert M.a.__doc__ == "Description of parameter `a`."
         assert M.b.__doc__ == "Description of parameter `b`. by default 'hi'"
         assert M.c.__doc__ == "Description of parameter `c`. by default empty."
     else:
+        # otherwise fields should not be property descriptors
         assert not hasattr(M, 'a')
 
     if events:
+        # an EmmiterGroup named `events` should have been added to the class.
         assert isinstance(m.events, EmitterGroup)
         assert 'a' in m.events
         assert 'b' in m.events
-        m.events.b = Mock(m.events.b)
+        # mocking EventEmitters to spy on events
         m.events.a = Mock(m.events.a)
+        m.events.b = Mock(m.events.b)
+        m.events.c = Mock(m.events.c)
+        # setting an attribute should, by default, emit an event with the value
         m.a = 4
         m.events.a.assert_called_with(value=4)
+
+        # test that our _on_b_set override worked, and emitted the right event
         m.b = 'howdie'
-        m.events.b.assert_called_with(value='howdie')
+        assert m.b == 'bossy'
+        m.events.b.assert_called_with(value='bossy')
+
+        # test that _on_c_set prevented an event by returning True
+        m.c = [1, 2]
+        assert m.c == [1, 2]
+        m.events.c.assert_not_called()
