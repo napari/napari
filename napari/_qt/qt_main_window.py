@@ -450,7 +450,7 @@ class Window:
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : napari.utils.event.Event
             Event from the Qt context.
         """
         self._status_bar.showMessage(event.text)
@@ -460,7 +460,7 @@ class Window:
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : napari.utils.event.Event
             Event from the Qt context.
         """
         self._qt_window.setWindowTitle(event.text)
@@ -470,7 +470,7 @@ class Window:
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : napari.utils.event.Event
             Event from the Qt context.
         """
         self._help.setText(event.text)

@@ -187,7 +187,7 @@ class QtPointsControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : napari.utils.event.Event
             Event from the Qt context.
 
         Raises
@@ -243,7 +243,7 @@ class QtPointsControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : napari.utils.event.Event
             Event from the Qt context.
         """
         with self.layer.events.n_dimensional.blocker():
@@ -254,7 +254,7 @@ class QtPointsControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : napari.utils.event.Event
             Event from the Qt context.
         """
         with self.layer.events.symbol.blocker():
@@ -268,7 +268,7 @@ class QtPointsControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
+        event : napari.utils.event.Event, optional.
             Event from the Qt context.
         """
         with self.layer.events.size.blocker():
@@ -302,7 +302,7 @@ class QtPointsControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
+        event : napari.utils.event.Event, optional.
             Event from the Qt context, by default None.
         """
         disable_with_opacity(

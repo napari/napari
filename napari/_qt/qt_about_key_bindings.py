@@ -117,7 +117,7 @@ class QtAboutKeyBindings(QDialog):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
+        event : napari.utils.event.Event, optional.
             Event from the Qt context, by default None.
         """
         col = self.viewer.palette['secondary']

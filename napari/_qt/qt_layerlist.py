@@ -73,7 +73,7 @@ class QtLayerList(QScrollArea):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : napari.utils.event.Event
             Event from the Qt context.
         """
         layer = event.item
@@ -89,7 +89,7 @@ class QtLayerList(QScrollArea):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : napari.utils.event.Event
             Event from the Qt context.
         """
         layer_index = event.index
@@ -111,7 +111,7 @@ class QtLayerList(QScrollArea):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional
+        event : napari.utils.event.Event, optional
             Event from the Qt context.
         """
         total = len(self.layers)
@@ -164,7 +164,7 @@ class QtLayerList(QScrollArea):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : napari.utils.event.Event
             Event from the Qt context.
         """
         layer = event.source
@@ -608,7 +608,7 @@ class QtLayerWidget(QFrame):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional
+        event : napari.utils.event.Event, optional
             Event from the Qt context.
         """
         with self.layer.events.name.blocker():
@@ -620,7 +620,7 @@ class QtLayerWidget(QFrame):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional
+        event : napari.utils.event.Event, optional
             Event from the Qt context.
         """
         with self.layer.events.visible.blocker():
@@ -631,7 +631,7 @@ class QtLayerWidget(QFrame):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional
+        event : napari.utils.event.Event, optional
             Event from the Qt context.
         """
         thumbnail = self.layer.thumbnail

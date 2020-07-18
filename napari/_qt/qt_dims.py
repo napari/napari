@@ -149,7 +149,7 @@ class QtDims(QWidget):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional
+        event : napari.utils.event.Event, optional
             Event from the Qt context, by default None.
         """
         widgets = reversed(list(enumerate(self.slider_widgets)))
@@ -177,7 +177,7 @@ class QtDims(QWidget):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional
+        event : napari.utils.event.Event, optional
             Event from the Qt context, by default None.
         """
         self._trim_sliders(0)

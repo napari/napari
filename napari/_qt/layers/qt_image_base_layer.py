@@ -101,7 +101,7 @@ class QtBaseImageControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : napari.utils.event.Event
             Event from the Qt context.
         """
         if event.button() == Qt.RightButton:
@@ -125,7 +125,7 @@ class QtBaseImageControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
+        event : napari.utils.event.Event, optional.
             Event from the Qt context, by default None.
         """
         with qt_signals_blocked(self.contrastLimitsSlider):
@@ -149,7 +149,7 @@ class QtBaseImageControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
+        event : napari.utils.event.Event, optional.
             Event from the Qt context, by default None.
         """
         name = self.layer.colormap[0]
@@ -184,7 +184,7 @@ class QtBaseImageControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
+        event : napari.utils.event.Event, optional.
             Event from the Qt context, by default None.
         """
         with qt_signals_blocked(self.gammaSlider):

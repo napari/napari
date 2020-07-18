@@ -228,7 +228,7 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : napari.utils.event.Event
             Event from the Qt context.
         """
         if self.dockLayerControls.isFloating():
@@ -241,7 +241,7 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : napari.utils.event.Event
             Event from the Qt context.
         """
         layers = event.source
@@ -257,7 +257,7 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : napari.utils.event.Event
             Event from the Qt context.
         """
         layer = event.item
@@ -272,7 +272,7 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : napari.utils.event.Event
             Event from the Qt context.
         """
         for i, layer in enumerate(self.viewer.layers):
@@ -405,7 +405,7 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : napari.utils.event.Event
             Event from the Qt context.
         """
         self.view.interactive = self.viewer.interactive
@@ -415,7 +415,7 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : napari.utils.event.Event
             Event from the Qt context.
         """
         cursor = self.viewer.cursor
@@ -440,7 +440,7 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : napari.utils.event.Event
             Event from the Qt context.
         """
         if isinstance(self.view.camera, ArcballCamera):
@@ -500,7 +500,7 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : napari.utils.event.Event
             Event from the Qt context.
         """
         if event.pos is None:
@@ -522,7 +522,7 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : napari.utils.event.Event
             Event from the Qt context.
         """
         if event.pos is None:
@@ -543,7 +543,7 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : napari.utils.event.Event
             Event from the Qt context.
         """
         if event.pos is None:
@@ -564,7 +564,7 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : napari.utils.event.Event
             Event from the Qt context.
         """
         if (
@@ -585,7 +585,7 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : napari.utils.event.Event
             Event from the Qt context.
         """
         if event.key is None or (
@@ -678,7 +678,7 @@ def viewbox_key_event(event):
 
     Parameters
     ----------
-    event : qtpy.QtCore.QEvent
+    event : napari.utils.event.Event
         Event from the Qt context.
     """
     return

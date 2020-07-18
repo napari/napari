@@ -234,7 +234,7 @@ class QtShapesControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : napari.utils.event.Event
             Event from the Qt context.
 
         Raises
@@ -299,7 +299,7 @@ class QtShapesControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
+        event : napari.utils.event.Event, optional.
             Event from the Qt context, by default None.
         """
         with self.layer.events.edge_width.blocker():
@@ -312,7 +312,7 @@ class QtShapesControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
+        event : napari.utils.event.Event, optional.
             Event from the Qt context, by default None.
         """
         with qt_signals_blocked(self.edgeColorEdit):
@@ -323,7 +323,7 @@ class QtShapesControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
+        event : napari.utils.event.Event, optional.
             Event from the Qt context, by default None.
         """
         with qt_signals_blocked(self.faceColorEdit):
@@ -334,7 +334,7 @@ class QtShapesControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
+        event : napari.utils.event.Event, optional.
             Event from the Qt context, by default None.
         """
         disable_with_opacity(

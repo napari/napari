@@ -230,7 +230,7 @@ class QtLabelsControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : napari.utils.event.Event
             Event from the Qt context.
 
         Raises
@@ -345,7 +345,7 @@ class QtLabelsControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
+        event : napari.utils.event.Event, optional.
             Event from the Qt context.
         """
         with self.layer.events.selected_label.blocker():
@@ -357,7 +357,7 @@ class QtLabelsControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
+        event : napari.utils.event.Event, optional.
             Event from the Qt context.
         """
         with self.layer.events.brush_size.blocker():
@@ -370,7 +370,7 @@ class QtLabelsControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
+        event : napari.utils.event.Event, optional.
             Event from the Qt context.
         """
         with self.layer.events.n_dimensional.blocker():
@@ -381,7 +381,7 @@ class QtLabelsControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
+        event : napari.utils.event.Event, optional.
             Event from the Qt context.
         """
         with self.layer.events.contiguous.blocker():
@@ -392,7 +392,7 @@ class QtLabelsControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
+        event : napari.utils.event.Event, optional.
             Event from the Qt context.
         """
         with self.layer.events.preserve_labels.blocker():
@@ -403,7 +403,7 @@ class QtLabelsControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
+        event : napari.utils.event.Event, optional.
             Event from the Qt context.
         """
         with self.layer.events.color_mode.blocker():
@@ -417,7 +417,7 @@ class QtLabelsControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : napari.utils.event.Event
             Event from the Qt context.
         """
         with self.layer.events.brush_shape.blocker():
@@ -431,7 +431,7 @@ class QtLabelsControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
+        event : napari.utils.event.Event, optional.
             Event from the Qt context.
         """
         disable_with_opacity(
@@ -466,7 +466,7 @@ class QtColorBox(QWidget):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : napari.utils.event.Event
             Event from the Qt context.
         """
         self.update()

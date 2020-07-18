@@ -87,7 +87,7 @@ class QtLayerControls(QFrame):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
+        event : napari.utils.event.Event, optional.
             Event from the Qt context, by default None.
         """
         with self.layer.events.opacity.blocker():
@@ -98,7 +98,7 @@ class QtLayerControls(QFrame):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
+        event : napari.utils.event.Event, optional.
             Event from the Qt context, by default None.
         """
         with self.layer.events.blending.blocker():

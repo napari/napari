@@ -227,7 +227,7 @@ class QtVectorsControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
+        event : napari.utils.event.Event, optional.
             Event from the Qt context, by default None.
         """
         with self.layer.events.length.blocker():
@@ -238,7 +238,7 @@ class QtVectorsControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
+        event : napari.utils.event.Event, optional.
             Event from the Qt context, by default None.
         """
         with self.layer.events.edge_width.blocker():
@@ -249,7 +249,7 @@ class QtVectorsControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
+        event : napari.utils.event.Event, optional.
             Event from the Qt context, by default None.
         """
         with qt_signals_blocked(self.color_mode_comboBox):
@@ -266,7 +266,7 @@ class QtVectorsControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
+        event : napari.utils.event.Event, optional.
             Event from the Qt context, by default None.
         """
         if self.layer._edge_color_mode == ColorMode.DIRECT:

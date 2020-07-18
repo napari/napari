@@ -170,7 +170,7 @@ class QtImageControls(QtBaseImageControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : napari.utils.event.Event
             Event from the Qt context.
         """
         with self.layer.events.iso_threshold.blocker():
@@ -192,7 +192,7 @@ class QtImageControls(QtBaseImageControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : napari.utils.event.Event
             Event from the Qt context.
         """
         with self.layer.events.attenuation.blocker():
@@ -203,7 +203,7 @@ class QtImageControls(QtBaseImageControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : napari.utils.event.Event
             Event from the Qt context.
         """
         with self.layer.events.interpolation.blocker():
@@ -217,7 +217,7 @@ class QtImageControls(QtBaseImageControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
+        event : napari.utils.event.Event
             Event from the Qt context.
         """
         with self.layer.events.rendering.blocker():
@@ -259,7 +259,7 @@ class QtImageControls(QtBaseImageControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional
+        event : napari.utils.event.Event, optional
             Event from the Qt context, default is None.
         """
         self._update_interpolation_combo()
