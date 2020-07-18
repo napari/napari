@@ -679,6 +679,6 @@ def viewbox_key_event(event):
     Parameters
     ----------
     event : napari.utils.event.Event
-        Event from the Qt context.
+        The napari event that triggered this method.
     """
     return
