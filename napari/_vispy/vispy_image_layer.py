@@ -47,6 +47,7 @@ class VispyImageLayer(VispyBaseLayer):
 
         self.node.set_data(data)
         self.node.parent = parent
+        self.node.order = self.order
         self.reset()
 
     def _on_data_change(self, event=None):

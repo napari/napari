@@ -24,6 +24,7 @@ from ..utils.layer_utils import (
     guess_continuous,
     map_property,
 )
+from ..utils.text import TextManager
 from ...utils.misc import ensure_iterable
 from ...utils.status_messages import format_float
 from ..base import Layer
@@ -69,6 +70,13 @@ class Shapes(Layer):
     properties : dict {str: array (N,)}, DataFrame
         Properties for each shape. Each property should be an array of length N,
         where N is the number of shapes.
+    text : str, dict
+        Text to be displayed with the shapes. If text is set to a key in properties,
+        the value of that property will be displayed. Multiple properties can be
+        composed using f-string-like syntax (e.g., '{property_1}, {float_property:.2f}).
+        A dictionary can be provided with keyword arguments to set the text values
+        and display properties. See TextManager.__init__() for the valid keyword arguments.
+        For example usage, see /napari/examples/add_shapes_with_text.py.
     shape_type : string or list
         String of shape shape_type, must be one of "{'line', 'rectangle',
         'ellipse', 'path', 'polygon'}". If a list is supplied it must be
@@ -145,6 +153,11 @@ class Shapes(Layer):
     properties : dict {str: array (N,)}, DataFrame
         Properties for each shape. Each property should be an array of length N,
         where N is the number of shapes.
+    text : str, dict
+        Text to be displayed with the shapes. If text is set to a key in properties,
+        the value of that property will be displayed. Multiple properties can be
+        composed using f-string-like syntax (e.g., '{property_1}, {float_property:.2f}).
+        For example usage, see /napari/examples/add_shapes_with_text.py.
     shape_type : (N, ) list of str
         Name of shape type for each shape.
     edge_color : str, array-like
@@ -265,6 +278,7 @@ class Shapes(Layer):
         *,
         ndim=None,
         properties=None,
+        text=None,
         shape_type='rectangle',
         edge_width=1,
         edge_color='black',
@@ -340,6 +354,17 @@ class Shapes(Layer):
                 for k, v in self._property_choices.items()
             }
             self._properties = empty_properties
+
+        # make the text
+        if text is None or isinstance(text, (list, np.ndarray, str)):
+            self._text = TextManager(text, len(data), self.properties)
+        elif isinstance(text, dict):
+            copied_text = deepcopy(text)
+            copied_text['properties'] = self.properties
+            copied_text['n_text'] = len(data)
+            self._text = TextManager(**copied_text)
+        else:
+            raise TypeError('text should be a string, array, or dict')
 
         # The following shape properties are for the new shapes that will
         # be drawn. Each shape has a corresponding property with the
@@ -485,6 +510,13 @@ class Shapes(Layer):
         self._finish_drawing()
         self._data_view = ShapeList()
         self.add(data, shape_type=shape_type)
+
+        adding = len(data)
+        # handle case where data is just a single shape
+        if np.asarray(data[0]).ndim == 1:
+            adding = 1
+        self.text.add(self.current_properties, adding)
+
         self._update_dims()
         self.events.data()
 
@@ -513,6 +545,9 @@ class Shapes(Layer):
             warnings.warn(
                 'property used for edge_color dropped', RuntimeWarning
             )
+
+        if self.text.values is not None:
+            self.refresh_text()
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""
@@ -1178,6 +1213,7 @@ class Shapes(Layer):
             {
                 'ndim': self.ndim,
                 'properties': self.properties,
+                'text': self.text._get_state(),
                 'shape_type': self.shape_type,
                 'opacity': self.opacity,
                 'z_index': self.z_index,
@@ -1194,6 +1230,34 @@ class Shapes(Layer):
             }
         )
         return state
+
+    @property
+    def _indices_view(self):
+        return np.where(self._data_view._displayed)[0]
+
+    @property
+    def _view_text(self) -> np.ndarray:
+        """Get the values of the text elements in view
+
+        Returns
+        -------
+        text : (N x 1) np.ndarray
+            Array of text strings for the N text elements in view
+        """
+        return self.text.view_text(self._indices_view)
+
+    @property
+    def _view_text_coords(self) -> np.ndarray:
+        """Get the coordinates of the text elements in view
+
+        Returns
+        -------
+        text_coords : (N x D) np.ndarray
+            Array of coordindates for the N text elements in view
+        """
+        return self.text.compute_text_coords(
+            self._data_view.data, self.dims.ndisplay
+        )
 
     @property
     def mode(self):
@@ -1392,6 +1456,8 @@ class Shapes(Layer):
                 self.properties[k] = np.concatenate(
                     (self.properties[k], new_property), axis=0
                 )
+            self.text.add(self.current_properties, n_new_shapes)
+
             self._add_shapes(
                 data,
                 shape_type=shape_type,
@@ -1621,6 +1687,24 @@ class Shapes(Layer):
                 properties[k] = np.asarray(v)
 
         return properties
+
+    @property
+    def text(self) -> TextManager:
+        """TextManager: The TextManager object containing the text properties"""
+        return self._text
+
+    @text.setter
+    def text(self, text):
+        self._text._set_text(
+            text, n_text=len(self.data), properties=self.properties
+        )
+
+    def refresh_text(self):
+        """Refresh the text values.
+
+        This is generally used if the properties were updated without changing the data
+        """
+        self.text.refresh_text(self.properties)
 
     def _set_view_slice(self):
         """Set the view given the slicing indices."""
@@ -1914,6 +1998,7 @@ class Shapes(Layer):
                 self.properties[k] = np.delete(
                     self.properties[k], index, axis=0
                 )
+            self.text.remove(index)
             self._data_view._edge_color = np.delete(
                 self._data_view._edge_color, index, axis=0
             )
@@ -2106,6 +2191,10 @@ class Shapes(Layer):
                 },
                 'indices': self.dims.indices,
             }
+            if self.text.values is None:
+                self._clipboard['text'] = None
+            else:
+                self._clipboard['text'] = deepcopy(self.text.values[index])
         else:
             self._clipboard = {}
 
@@ -2139,9 +2228,15 @@ class Shapes(Layer):
                     shape, face_color=face_color, edge_color=edge_color
                 )
 
+            if self._clipboard['text'] is not None:
+                self.text._values = np.concatenate(
+                    (self.text.values, self._clipboard['text']), axis=0
+                )
+
             self.selected_data = set(
                 range(cur_shapes, cur_shapes + len(self._clipboard['data']))
             )
+
             self.move_to_front()
 
     def _move(self, coord):

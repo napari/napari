@@ -4,20 +4,15 @@ import os
 from functools import lru_cache
 from logging import getLogger
 from typing import Any, Dict, List, Optional, Sequence, Set, Union
-
 import numpy as np
 
 from .. import layers
-from ..layers.image._image_utils import guess_labels, guess_multiscale
+from ..layers.image._image_utils import guess_labels
+from ..layers.utils.stack_utils import split_channels
 from ..plugins.io import read_data_with_plugins
 from ..types import FullLayerData, LayerData
-from ..utils import colormaps
 from ..utils.colormaps import ensure_colormap_tuple
-from ..utils.misc import (
-    ensure_iterable,
-    ensure_sequence_of_iterables,
-    is_sequence,
-)
+from ..utils.misc import is_sequence
 
 logger = getLogger(__name__)
 
@@ -78,7 +73,7 @@ class AddLayersMixin:
         interpolation='nearest',
         rendering='mip',
         iso_threshold=0.5,
-        attenuation=0.5,
+        attenuation=0.05,
         name=None,
         metadata=None,
         scale=None,
@@ -229,55 +224,13 @@ class AddLayersMixin:
 
             return self.add_layer(layers.Image(data, **kwargs))
         else:
-            # Determine if data is a multiscale
-            if multiscale is None:
-                multiscale, data = guess_multiscale(data)
-            n_channels = (data[0] if multiscale else data).shape[channel_axis]
-            kwargs['blending'] = kwargs['blending'] or 'additive'
+            layerdata_list = split_channels(data, channel_axis, **kwargs)
 
-            # turn the kwargs dict into a mapping of {key: iterator}
-            # so that we can use {k: next(v) for k, v in kwargs.items()} below
-            for key, val in kwargs.items():
-                if key == 'colormap' and val is None:
-                    if n_channels == 1:
-                        kwargs[key] = iter(['gray'])
-                    elif n_channels == 2:
-                        kwargs[key] = iter(colormaps.MAGENTA_GREEN)
-                    else:
-                        kwargs[key] = itertools.cycle(colormaps.CYMRGB)
-
-                # make sure that iterable_kwargs are a *sequence* of iterables
-                # for the multichannel case.  For example: if scale == (1, 2) &
-                # n_channels = 3, then scale should == [(1, 2), (1, 2), (1, 2)]
-                elif key in iterable_kwargs:
-                    kwargs[key] = iter(
-                        ensure_sequence_of_iterables(val, n_channels)
-                    )
-                else:
-                    kwargs[key] = iter(ensure_iterable(val))
-
-            layer_list = []
-            for i in range(n_channels):
-                if multiscale:
-                    image = [
-                        np.take(data[j], i, axis=channel_axis)
-                        for j in range(len(data))
-                    ]
-                else:
-                    image = np.take(data, i, axis=channel_axis)
-                i_kwargs = {}
-                for key, val in kwargs.items():
-                    try:
-                        i_kwargs[key] = next(val)
-                    except StopIteration:
-                        raise IndexError(
-                            "Error adding multichannel image with data shape "
-                            f"{data.shape!r}.\nRequested channel_axis "
-                            f"({channel_axis}) had length {n_channels}, but "
-                            f"the '{key}' argument only provided {i} values. "
-                        )
+            layer_list = list()
+            for image, i_kwargs, _ in layerdata_list:
                 layer = self.add_layer(layers.Image(image, **i_kwargs))
                 layer_list.append(layer)
+
             return layer_list
 
     def add_points(
@@ -285,6 +238,7 @@ class AddLayersMixin:
         data=None,
         *,
         properties=None,
+        text=None,
         symbol='o',
         size=10,
         edge_width=1,
@@ -314,6 +268,13 @@ class AddLayersMixin:
         properties : dict {str: array (N,)}, DataFrame
             Properties for each point. Each property should be an array of length N,
             where N is the number of points.
+        text : str, dict
+            Text to be displayed with the points. If text is set to a key in properties,
+            the value of that property will be displayed. Multiple properties can be
+            composed using f-string-like syntax (e.g., '{property_1}, {float_property:.2f}).
+            A dictionary can be provided with keyword arguments to set the text values
+            and display properties. See TextManager.__init__() for the valid keyword arguments.
+            For example usage, see /napari/examples/add_points_with_text.py.
         symbol : str
             Symbol to be used for the point markers. Must be one of the
             following: arrow, clobber, cross, diamond, disc, hbar, ring,
@@ -387,6 +348,7 @@ class AddLayersMixin:
         layer = layers.Points(
             data=data,
             properties=properties,
+            text=text,
             symbol=symbol,
             size=size,
             edge_width=edge_width,
@@ -509,6 +471,7 @@ class AddLayersMixin:
         *,
         ndim=None,
         properties=None,
+        text=None,
         shape_type='rectangle',
         edge_width=1,
         edge_color='black',
@@ -542,6 +505,13 @@ class AddLayersMixin:
         properties : dict {str: array (N,)}, DataFrame
             Properties for each shape. Each property should be an array of
             length N, where N is the number of shapes.
+        text : str, dict
+            Text to be displayed with the shapes. If text is set to a key in properties,
+            the value of that property will be displayed. Multiple properties can be
+            composed using f-string-like syntax (e.g., '{property_1}, {float_property:.2f}).
+            A dictionary can be provided with keyword arguments to set the text values
+            and display properties. See TextManager.__init__() for the valid keyword arguments.
+            For example usage, see /napari/examples/add_shapes_with_text.py.
         shape_type : string or list
             String of shape shape_type, must be one of "{'line', 'rectangle',
             'ellipse', 'path', 'polygon'}". If a list is supplied it must be
@@ -624,6 +594,7 @@ class AddLayersMixin:
             data=data,
             ndim=ndim,
             properties=properties,
+            text=text,
             shape_type=shape_type,
             edge_width=edge_width,
             edge_color=edge_color,

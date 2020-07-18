@@ -502,7 +502,7 @@ class VolumeVisual(Visual):
         self.freeze()
 
     def set_data(self, vol, clim=None, copy=True):
-        """ Set the volume data. 
+        """ Set the volume data.
 
         Parameters
         ----------
@@ -678,7 +678,7 @@ class VolumeVisual(Visual):
         """The interpolation method to use
 
         Current options are:
-        
+
             * linear: this method is appropriate for most volumes as it creates
               nice looking visuals.
             * nearest: this method is appropriate for volumes with discrete
@@ -703,7 +703,7 @@ class VolumeVisual(Visual):
         """The render method to use
 
         Current options are:
-        
+
             * translucent: voxel colors are blended along the view ray until
               the result is opaque.
             * mip: maxiumum intensity projection. Cast a ray and display the
@@ -712,7 +712,7 @@ class VolumeVisual(Visual):
               the result is saturated.
             * iso: isosurface. Cast a ray until a certain threshold is
               encountered. At that location, lighning calculations are
-              performed to give the visual appearance of a surface.  
+              performed to give the visual appearance of a surface.
         """
         return self._method
 
@@ -757,7 +757,7 @@ class VolumeVisual(Visual):
     @property
     def relative_step_size(self):
         """ The relative step size used during raycasting.
-        
+
         Larger values yield higher performance at reduced quality. If
         set > 2.0 the ray skips entire voxels. Recommended values are
         between 0.5 and 1.5. The amount of quality degredation depends
@@ -775,7 +775,7 @@ class VolumeVisual(Visual):
 
     def _create_vertex_data(self):
         """ Create and set positions and texture coords from the given shape
-        
+
         We have six faces with 1 quad (2 triangles) each, resulting in
         6*2*3 = 36 vertices in total.
         """

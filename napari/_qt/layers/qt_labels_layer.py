@@ -14,7 +14,11 @@ from qtpy.QtCore import Qt
 
 import numpy as np
 from .qt_base_layer import QtLayerControls
-from ...layers.labels._labels_constants import Mode, LabelColorMode
+from ...layers.labels._labels_constants import (
+    Mode,
+    LabelColorMode,
+    LabelBrushShape,
+)
 from ..qt_mode_buttons import QtModeRadioButton, QtModePushButton
 from ..utils import disable_with_opacity
 
@@ -160,6 +164,16 @@ class QtLabelsControls(QtLayerControls):
         button_row.setSpacing(4)
         button_row.setContentsMargins(0, 0, 0, 5)
 
+        brush_shape_comboBox = QComboBox(self)
+        brush_shape_comboBox.addItems(LabelBrushShape.keys())
+        index = brush_shape_comboBox.findText(
+            self.layer.brush_shape, Qt.MatchFixedString
+        )
+        brush_shape_comboBox.setCurrentIndex(index)
+        brush_shape_comboBox.activated[str].connect(self.change_brush_shape)
+        self.brushShapeComboBox = brush_shape_comboBox
+        self._on_brush_shape_change()
+
         color_mode_comboBox = QComboBox(self)
         color_mode_comboBox.addItems(LabelColorMode.keys())
         index = color_mode_comboBox.findText(
@@ -183,17 +197,19 @@ class QtLabelsControls(QtLayerControls):
         self.grid_layout.addWidget(self.opacitySlider, 2, 1, 1, 3)
         self.grid_layout.addWidget(QLabel('brush size:'), 3, 0, 1, 1)
         self.grid_layout.addWidget(self.brushSizeSlider, 3, 1, 1, 3)
-        self.grid_layout.addWidget(QLabel('blending:'), 4, 0, 1, 1)
-        self.grid_layout.addWidget(self.blendComboBox, 4, 1, 1, 3)
-        self.grid_layout.addWidget(QLabel('color mode:'), 5, 0, 1, 1)
-        self.grid_layout.addWidget(self.colorModeComboBox, 5, 1, 1, 3)
-        self.grid_layout.addWidget(QLabel('contiguous:'), 6, 0, 1, 1)
-        self.grid_layout.addWidget(self.contigCheckBox, 6, 1, 1, 1)
-        self.grid_layout.addWidget(QLabel('n-dim:'), 6, 2, 1, 1)
-        self.grid_layout.addWidget(self.ndimCheckBox, 6, 3, 1, 1)
-        self.grid_layout.addWidget(QLabel('preserve labels:'), 7, 0, 1, 2)
-        self.grid_layout.addWidget(self.preserveLabelsCheckBox, 7, 1, 1, 1)
-        self.grid_layout.setRowStretch(8, 1)
+        self.grid_layout.addWidget(QLabel('brush shape:'), 4, 0, 1, 1)
+        self.grid_layout.addWidget(self.brushShapeComboBox, 4, 1, 1, 3)
+        self.grid_layout.addWidget(QLabel('blending:'), 5, 0, 1, 1)
+        self.grid_layout.addWidget(self.blendComboBox, 5, 1, 1, 3)
+        self.grid_layout.addWidget(QLabel('color mode:'), 6, 0, 1, 1)
+        self.grid_layout.addWidget(self.colorModeComboBox, 6, 1, 1, 3)
+        self.grid_layout.addWidget(QLabel('contiguous:'), 7, 0, 1, 1)
+        self.grid_layout.addWidget(self.contigCheckBox, 7, 1, 1, 1)
+        self.grid_layout.addWidget(QLabel('n-dim:'), 7, 2, 1, 1)
+        self.grid_layout.addWidget(self.ndimCheckBox, 7, 3, 1, 1)
+        self.grid_layout.addWidget(QLabel('preserve labels:'), 8, 0, 1, 2)
+        self.grid_layout.addWidget(self.preserveLabelsCheckBox, 8, 1, 1, 1)
+        self.grid_layout.setRowStretch(9, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
 
@@ -214,8 +230,8 @@ class QtLabelsControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
 
         Raises
         ------
@@ -313,13 +329,24 @@ class QtLabelsControls(QtLayerControls):
         """
         self.layer.color_mode = new_mode
 
+    def change_brush_shape(self, brush_shape):
+        """Change paintbrush shape of label layer.
+
+        Parameters
+        ----------
+        brush_shape : str
+            CIRCLE (default) uses circle paintbrush (case insensitive).
+            SQUARE uses square paintbrush (case insensitive).
+        """
+        self.layer.brush_shape = brush_shape
+
     def _on_selection_change(self, event=None):
         """Receive layer model label selection change event and update spinbox.
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method.
         """
         with self.layer.events.selected_label.blocker():
             value = self.layer.selected_label
@@ -330,8 +357,8 @@ class QtLabelsControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method.
         """
         with self.layer.events.brush_size.blocker():
             value = self.layer.brush_size
@@ -343,8 +370,8 @@ class QtLabelsControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method.
         """
         with self.layer.events.n_dimensional.blocker():
             self.ndimCheckBox.setChecked(self.layer.n_dimensional)
@@ -354,8 +381,8 @@ class QtLabelsControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method.
         """
         with self.layer.events.contiguous.blocker():
             self.contigCheckBox.setChecked(self.layer.contiguous)
@@ -365,8 +392,8 @@ class QtLabelsControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method.
         """
         with self.layer.events.preserve_labels.blocker():
             self.preserveLabelsCheckBox.setChecked(self.layer.preserve_labels)
@@ -376,8 +403,8 @@ class QtLabelsControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method.
         """
         with self.layer.events.color_mode.blocker():
             index = self.colorModeComboBox.findText(
@@ -385,13 +412,27 @@ class QtLabelsControls(QtLayerControls):
             )
             self.blendComboBox.setCurrentIndex(index)
 
+    def _on_brush_shape_change(self, event=None):
+        """Receive brush shape change event and update dropdown menu.
+
+        Parameters
+        ----------
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
+        """
+        with self.layer.events.brush_shape.blocker():
+            index = self.brushShapeComboBox.findText(
+                self.layer.brush_shape, Qt.MatchFixedString
+            )
+            self.brushShapeComboBox.setCurrentIndex(index)
+
     def _on_editable_change(self, event=None):
         """Receive layer model editable change event & enable/disable buttons.
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method.
         """
         disable_with_opacity(
             self,
@@ -425,8 +466,8 @@ class QtColorBox(QWidget):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         self.update()
 

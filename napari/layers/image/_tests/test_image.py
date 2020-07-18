@@ -486,10 +486,10 @@ def test_attenuation():
     np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
-    assert layer.attenuation == 0.5
+    assert layer.attenuation == 0.05
 
-    # Change iso_threshold property
-    attenuation = 0.7
+    # Change attenuation property
+    attenuation = 0.07
     layer.attenuation = attenuation
     assert layer.attenuation == attenuation
 

@@ -23,8 +23,8 @@ def test_image_rendering(make_test_viewer):
     # Change rendering property
     layer.rendering = 'attenuated_mip'
     assert layer.rendering == 'attenuated_mip'
-    layer.attenuation = 0.2
-    assert layer.attenuation == 0.2
+    layer.attenuation = 0.15
+    assert layer.attenuation == 0.15
 
     # Change rendering property
     layer.rendering = 'iso'

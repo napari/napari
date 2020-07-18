@@ -1,7 +1,13 @@
 from collections.abc import Iterable
 import numpy as np
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QButtonGroup, QLabel, QSlider, QGridLayout
+from qtpy.QtWidgets import (
+    QButtonGroup,
+    QCheckBox,
+    QLabel,
+    QSlider,
+    QGridLayout,
+)
 from .qt_base_layer import QtLayerControls
 from ..qt_color_dialog import QColorSwatchEdit
 from ...layers.shapes._shapes_constants import Mode
@@ -80,6 +86,9 @@ class QtShapesControls(QtLayerControls):
         )
         self.layer.events.current_face_color.connect(
             self._on_face_color_change
+        )
+        self.layer._text.events.visible.connect(
+            self._on_text_visibility_change
         )
         self.layer.events.editable.connect(self._on_editable_change)
 
@@ -190,6 +199,12 @@ class QtShapesControls(QtLayerControls):
         self.faceColorEdit.color_changed.connect(self.changeFaceColor)
         self.edgeColorEdit.color_changed.connect(self.changeEdgeColor)
 
+        text_disp_cb = QCheckBox()
+        text_disp_cb.setToolTip('toggle text visibility')
+        text_disp_cb.setChecked(self.layer._text.visible)
+        text_disp_cb.stateChanged.connect(self.change_text_visibility)
+        self.textDispCheckBox = text_disp_cb
+
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
         self.grid_layout.addLayout(button_grid, 0, 0, 1, 2)
@@ -203,7 +218,9 @@ class QtShapesControls(QtLayerControls):
         self.grid_layout.addWidget(self.faceColorEdit, 4, 1)
         self.grid_layout.addWidget(QLabel('edge color:'), 5, 0)
         self.grid_layout.addWidget(self.edgeColorEdit, 5, 1)
-        self.grid_layout.setRowStretch(6, 1)
+        self.grid_layout.addWidget(QLabel('display text:'), 6, 0)
+        self.grid_layout.addWidget(self.textDispCheckBox, 6, 1)
+        self.grid_layout.setRowStretch(7, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
 
@@ -234,8 +251,8 @@ class QtShapesControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
 
         Raises
         ------
@@ -294,13 +311,49 @@ class QtShapesControls(QtLayerControls):
         """
         self.layer.current_edge_width = float(value) / 2
 
+    def changeOpacity(self, value):
+        """Change opacity value of shapes on the layer model.
+
+        Parameters
+        ----------
+        value : float
+            Opacity value for shapes.
+            Input range 0 - 100 (transparent to fully opaque).
+        """
+        with self.layer.events.blocker(self._on_opacity_change):
+            self.layer.opacity = value / 100
+
+    def change_text_visibility(self, state):
+        """Toggle the visibiltiy of the text.
+
+        Parameters
+        ----------
+        state : QCheckBox
+            Checkbox indicating if text is visible.
+        """
+        if state == Qt.Checked:
+            self.layer._text.visible = True
+        else:
+            self.layer._text.visible = False
+
+    def _on_text_visibility_change(self, event):
+        """Receive layer model text visibiltiy change change event and update checkbox.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
+        with self.layer._text.events.visible.blocker():
+            self.textDispCheckBox.setChecked(self.layer._text.visible)
+
     def _on_edge_width_change(self, event=None):
         """Receive layer model edge line width change event and update slider.
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context, by default None.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method, by default None.
         """
         with self.layer.events.edge_width.blocker():
             value = self.layer.current_edge_width
@@ -312,8 +365,8 @@ class QtShapesControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context, by default None.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method, by default None.
         """
         with qt_signals_blocked(self.edgeColorEdit):
             self.edgeColorEdit.setColor(self.layer.current_edge_color)
@@ -323,8 +376,8 @@ class QtShapesControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context, by default None.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method, by default None.
         """
         with qt_signals_blocked(self.faceColorEdit):
             self.faceColorEdit.setColor(self.layer.current_face_color)
@@ -334,8 +387,8 @@ class QtShapesControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context, by default None.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method, by default None.
         """
         disable_with_opacity(
             self,
