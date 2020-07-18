@@ -115,7 +115,7 @@ def dataclass(
     unsafe_hash : bool, optional
         If true, a __hash__() method function is added, by default False
     frozen : bool, optional
-        If true, fields may not be assigned to after instance creation., by
+        If true, fields may not be assigned to after instance creation, by
         default False
     events : bool, optional
         If true, an ``EmmitterGroup`` instance is added as attribute "events".
