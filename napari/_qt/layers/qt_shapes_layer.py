@@ -382,17 +382,6 @@ class QtShapesControls(QtLayerControls):
         with qt_signals_blocked(self.faceColorEdit):
             self.faceColorEdit.setColor(self.layer.current_face_color)
 
-    def _on_opacity_change(self, event=None):
-        """Receive layer model opacity change event and update opacity slider.
-
-        Parameters
-        ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context, by default None.
-        """
-        with self.layer.events.opacity.blocker():
-            self.opacitySlider.setValue(self.layer.opacity * 100)
-
     def _on_editable_change(self, event=None):
         """Receive layer model editable change event & enable/disable buttons.
 

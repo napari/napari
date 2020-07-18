@@ -600,7 +600,7 @@ class Shapes(Layer):
             for i in self.selected_data:
                 self._data_view.update_edge_color(i, self._current_edge_color)
         self.events.edge_color()
-        self.events.current_face_color()
+        self.events.current_edge_color()
 
     @property
     def current_face_color(self):

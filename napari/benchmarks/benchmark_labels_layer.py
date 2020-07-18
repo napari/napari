@@ -44,8 +44,14 @@ class Labels2DSuite:
         """Time to convert raw to displayed."""
         self.layer._raw_to_displayed(self.layer._data_raw)
 
-    def time_paint(self, n):
-        """Time to paint."""
+    def time_paint_square(self, n):
+        """Time to paint square."""
+        self.layer.brush_shape = 'square'
+        self.layer.paint(self.layer.coordinates, self.layer.selected_label)
+
+    def time_paint_circle(self, n):
+        """Time to paint circle."""
+        self.layer.brush_shape = 'circle'
         self.layer.paint(self.layer.coordinates, self.layer.selected_label)
 
     def time_fill(self, n):
@@ -103,8 +109,14 @@ class Labels3DSuite:
         """Time to convert raw to displayed."""
         self.layer._raw_to_displayed(self.layer._data_raw)
 
-    def time_paint(self, n):
-        """Time to paint."""
+    def time_paint_square(self, n):
+        """Time to paint square."""
+        self.layer.brush_shape = 'square'
+        self.layer.paint(self.layer.coordinates, self.layer.selected_label)
+
+    def time_paint_circle(self, n):
+        """Time to paint circle."""
+        self.layer.brush_shape = 'circle'
         self.layer.paint(self.layer.coordinates, self.layer.selected_label)
 
     def time_fill(self, n):
