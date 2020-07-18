@@ -260,7 +260,7 @@ class QtImageControls(QtBaseImageControls):
         Parameters
         ----------
         event : napari.utils.event.Event, optional
-            Event from the Qt context, default is None.
+            The napari event that triggered this method, default is None.
         """
         self._update_interpolation_combo()
         if self.layer.dims.ndisplay == 2:

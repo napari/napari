@@ -268,8 +268,8 @@ class QtPointsControls(QtLayerControls):
 
         Parameters
         ----------
-        event : napari.utils.event.Event, optional.
-            Event from the Qt context.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method.
         """
         with self.layer.events.size.blocker():
             value = self.layer.current_size
@@ -302,8 +302,8 @@ class QtPointsControls(QtLayerControls):
 
         Parameters
         ----------
-        event : napari.utils.event.Event, optional.
-            Event from the Qt context, by default None.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method, by default None.
         """
         disable_with_opacity(
             self,
