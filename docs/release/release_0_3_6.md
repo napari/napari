@@ -71,6 +71,7 @@ other improvements.
 - Fix typos (#1468)
 - DOC: minor doc reformatting. (#1469)
 - Fix events docstring type (#1481)
+- Don't look for release notes in pre-releases (#1483)
 
 
 ## 14 authors added to this release (alphabetical)
