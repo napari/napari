@@ -1,5 +1,5 @@
 import numpy as np
-from napari._qt.layers.qt_shapes_layer import QtShapesControls
+from napari._qt.layer_controls.qt_shapes_controls import QtShapesControls
 from napari.layers import Shapes
 from napari.utils.colormaps.standardize_color import transform_color
 

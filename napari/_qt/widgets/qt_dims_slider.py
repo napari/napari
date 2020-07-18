@@ -20,7 +20,7 @@ from qtpy.QtWidgets import (
 from ...components.dims_constants import DimsMode
 from ...utils.event import Event
 from .._constants import LoopMode
-from ..threading import _new_worker_qthread
+from ..qthreading import _new_worker_qthread
 from .qt_modal import QtPopup
 from .qt_scrollbar import ModifiedScrollBar
 

@@ -8,7 +8,7 @@ from qtpy.QtWidgets import QApplication
 
 from ._qt.qt_main_window import Window
 from ._qt.qt_viewer import QtViewer
-from ._qt.threading import wait_for_workers_to_quit, create_worker
+from ._qt.qthreading import wait_for_workers_to_quit, create_worker
 from .components import ViewerModel
 from . import __version__
 
