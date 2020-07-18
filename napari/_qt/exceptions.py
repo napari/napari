@@ -7,7 +7,7 @@ from qtpy.QtCore import QObject, Signal
 
 
 class ExceptionHandler(QObject):
-    """General class to handle all raise exception errors in the GUI"""
+    """General class to handle all uncaught exceptions in the Qt event loop"""
 
     error = Signal(tuple)
 
@@ -17,7 +17,7 @@ class ExceptionHandler(QObject):
         value: BaseException,
         tb: TracebackType,
     ):
-        """Our sys.excepthook handler.
+        """Our sys.excepthook override.
 
         This function handles uncaught exceptions and can delegate to a
         secondary handler, whether it be a GUI dialog, or an IPython traceback
