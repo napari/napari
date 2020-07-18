@@ -8,7 +8,7 @@ with napari.gui_qt():
         length=100, blob_size_fraction=0.05, n_dim=3, volume_fraction=0.03
     ).astype(float)
 
-    viewer = napari.view_image(blobs.astype(float))
+    viewer = napari.view_image(blobs.astype(float), ndisplay=3)
 
     n = 50
     shape = [[[n, 40, 40], [n, 40, 60], [n + 20, 60, 60], [n + 20, 60, 40]]]
