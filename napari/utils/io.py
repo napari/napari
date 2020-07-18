@@ -102,7 +102,7 @@ def imread(filename: str) -> np.ndarray:
     """
     filename = abspath_or_url(filename)
     ext = os.path.splitext(filename)[1]
-    if ext in [".tif", ".tiff", ".lsm"]:
+    if ext.lower() in [".tif", ".tiff", ".lsm"]:
         import tifffile
 
         return tifffile.imread(filename)

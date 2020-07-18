@@ -101,8 +101,8 @@ class QtBaseImageControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         if event.button() == Qt.RightButton:
             self.clim_pop = create_range_popup(
@@ -125,8 +125,8 @@ class QtBaseImageControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context, by default None.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method, by default None.
         """
         with qt_signals_blocked(self.contrastLimitsSlider):
             self.contrastLimitsSlider.setRange(
@@ -149,8 +149,8 @@ class QtBaseImageControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context, by default None.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method, by default None.
         """
         name = self.layer.colormap[0]
         if name not in self.colormapComboBox._allitems:
@@ -184,8 +184,8 @@ class QtBaseImageControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context, by default None.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method, by default None.
         """
         with qt_signals_blocked(self.gammaSlider):
             self.gammaSlider.setValue(int(self.layer.gamma * 100))

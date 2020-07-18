@@ -1,9 +1,10 @@
 import numpy as np
-from vispy.scene.visuals import Line, Compound
+from vispy.scene.visuals import Line, Compound, Text
 from .markers import Markers
 
 from .vispy_base_layer import VispyBaseLayer
 from ..utils.colormaps.standardize_color import transform_color
+from ._text_utils import update_text
 
 
 class VispyPointsLayer(VispyBaseLayer):
@@ -15,7 +16,7 @@ class VispyPointsLayer(VispyBaseLayer):
         # Lines: The lines of the interaction box used for highlights.
         # Markers: The the outlines for each point used for highlights.
         # Markers: The actual markers of each point.
-        node = Compound([Markers(), Markers(), Line()])
+        node = Compound([Markers(), Markers(), Line(), Text()])
 
         super().__init__(layer, node)
 
@@ -23,6 +24,9 @@ class VispyPointsLayer(VispyBaseLayer):
         self.layer.events.edge_width.connect(self._on_data_change)
         self.layer.events.edge_color.connect(self._on_data_change)
         self.layer.events.face_color.connect(self._on_data_change)
+        self.layer.text._connect_update_events(
+            self._on_text_change, self._on_blending_change
+        )
         self.layer.events.highlight.connect(self._on_highlight_change)
         self._on_data_change()
 
@@ -55,7 +59,10 @@ class VispyPointsLayer(VispyBaseLayer):
             face_color=face_color,
             scaling=True,
         )
+
+        self._on_text_change()
         self.node.update()
+
         # Call to update order of translation values with new dims:
         self._on_scale_change()
         self._on_translate_change()
@@ -103,4 +110,53 @@ class VispyPointsLayer(VispyBaseLayer):
                 pos=np.zeros((1, self.layer.dims.ndisplay)), width=0,
             )
 
+        self.node.update()
+
+    def _on_text_change(self, update_node=True):
+        """Function to update the text node properties
+
+        Parameters
+        ----------
+        update_node : bool
+            If true, update the node after setting the properties
+        """
+        ndisplay = self.layer.dims.ndisplay
+        if (len(self.layer._indices_view) == 0) or (
+            self.layer._text.visible is False
+        ):
+            text_coords = np.zeros((1, ndisplay))
+            text = []
+            anchor_x = 'center'
+            anchor_y = 'center'
+        else:
+            text_coords, anchor_x, anchor_y = self.layer._view_text_coords
+            if len(text_coords) == 0:
+                text_coords = np.zeros((1, ndisplay))
+            text = self.layer._view_text
+        text_node = self._get_text_node()
+        update_text(
+            text_values=text,
+            coords=text_coords,
+            anchor=(anchor_x, anchor_y),
+            rotation=self.layer._text.rotation,
+            color=self.layer._text.color,
+            size=self.layer._text.size,
+            ndisplay=ndisplay,
+            text_node=text_node,
+        )
+
+        if update_node:
+            self.node.update()
+
+    def _get_text_node(self):
+        """Function to get the text node from the Compound visual"""
+        text_node = self.node._subvisuals[-1]
+        return text_node
+
+    def _on_blending_change(self, event=None):
+        """Function to set the blending mode"""
+        self.node.set_gl_state(self.layer.blending)
+
+        text_node = self._get_text_node()
+        text_node.set_gl_state(self.layer.text.blending)
         self.node.update()

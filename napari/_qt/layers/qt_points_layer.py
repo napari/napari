@@ -68,6 +68,9 @@ class QtPointsControls(QtLayerControls):
 
         self.layer.events.mode.connect(self.set_mode)
         self.layer.events.n_dimensional.connect(self._on_n_dim_change)
+        self.layer._text.events.visible.connect(
+            self._on_text_visibility_change
+        )
         self.layer.events.symbol.connect(self._on_symbol_change)
         self.layer.events.size.connect(self._on_size_change)
         self.layer.events.current_edge_color.connect(
@@ -130,6 +133,12 @@ class QtPointsControls(QtLayerControls):
             tooltip='Delete selected points',
         )
 
+        text_disp_cb = QCheckBox()
+        text_disp_cb.setToolTip('toggle text visibility')
+        text_disp_cb.setChecked(self.layer._text.visible)
+        text_disp_cb.stateChanged.connect(self.change_text_visibility)
+        self.textDispCheckBox = text_disp_cb
+
         self.button_group = QButtonGroup(self)
         self.button_group.addButton(self.select_button)
         self.button_group.addButton(self.addition_button)
@@ -159,9 +168,11 @@ class QtPointsControls(QtLayerControls):
         self.grid_layout.addWidget(self.faceColorEdit, 5, 1)
         self.grid_layout.addWidget(QLabel('edge color:'), 6, 0)
         self.grid_layout.addWidget(self.edgeColorEdit, 6, 1)
-        self.grid_layout.addWidget(QLabel('n-dim:'), 7, 0)
-        self.grid_layout.addWidget(self.ndimCheckBox, 7, 1)
-        self.grid_layout.setRowStretch(8, 1)
+        self.grid_layout.addWidget(QLabel('display text:'), 7, 0)
+        self.grid_layout.addWidget(self.textDispCheckBox, 7, 1)
+        self.grid_layout.addWidget(QLabel('n-dim:'), 8, 0)
+        self.grid_layout.addWidget(self.ndimCheckBox, 8, 1)
+        self.grid_layout.setRowStretch(9, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
 
@@ -187,8 +198,8 @@ class QtPointsControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
 
         Raises
         ------
@@ -238,13 +249,37 @@ class QtPointsControls(QtLayerControls):
         else:
             self.layer.n_dimensional = False
 
-    def _on_n_dim_change(self, event):
-        """Receive layer model n-dimensional change event and update checkbox.
+    def change_text_visibility(self, state):
+        """Toggle the visibiltiy of the text.
+
+        Parameters
+        ----------
+        state : QCheckBox
+            Checkbox indicating if text is visible.
+        """
+        if state == Qt.Checked:
+            self.layer._text.visible = True
+        else:
+            self.layer._text.visible = False
+
+    def _on_text_visibility_change(self, event):
+        """Receive layer model text visibiltiy change change event and update checkbox.
 
         Parameters
         ----------
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
+        """
+        with self.layer._text.events.visible.blocker():
+            self.textDispCheckBox.setChecked(self.layer._text.visible)
+
+    def _on_n_dim_change(self, event):
+        """Receive layer model n-dimensional change event and update checkbox.
+
+        Parameters
+        ----------
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         with self.layer.events.n_dimensional.blocker():
             self.ndimCheckBox.setChecked(self.layer.n_dimensional)
@@ -254,8 +289,8 @@ class QtPointsControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         with self.layer.events.symbol.blocker():
             index = self.symbolComboBox.findText(
@@ -268,8 +303,8 @@ class QtPointsControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method.
         """
         with self.layer.events.size.blocker():
             value = self.layer.current_size
@@ -302,8 +337,8 @@ class QtPointsControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context, by default None.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method, by default None.
         """
         disable_with_opacity(
             self,
