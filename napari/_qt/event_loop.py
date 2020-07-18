@@ -69,7 +69,7 @@ def gui_qt(*, startup_logo=False):
 
     # instantiate the execption handler
     exception_handler = ExceptionHandler()
-    sys.excepthook = exception_handler.handler
+    sys.excepthook = exception_handler.handle
 
     yield app
     # if the application already existed before this function was called,

@@ -11,10 +11,7 @@ class ExceptionHandler(QObject):
 
     error = Signal(tuple)
 
-    def __init__(self):
-        super().__init__()
-
-    def handler(
+    def handle(
         self,
         etype: Type[BaseException],
         value: BaseException,
@@ -22,9 +19,11 @@ class ExceptionHandler(QObject):
     ):
         """Our sys.excepthook handler.
 
-        This function handles uncaught exceptions and can delegates to a
+        This function handles uncaught exceptions and can delegate to a
         secondary handler, whether it be a GUI dialog, or an IPython traceback
-        printout.
+        printout.  The override to ``sys.excepthook`` happens in
+        :func:`napari.gui_qt`, and therefore this is only active when the qt
+        event loop has been started by napari.
 
         The three parameters here are what would be returned from
         :func:`sys.exc_info()`.
