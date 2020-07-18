@@ -90,14 +90,14 @@ other improvements.
 - [Nicholas Sofroniew](https://github.com/napari/napari/commits?author=sofroniewn) - @sofroniewn
 - [Talley Lambert](https://github.com/napari/napari/commits?author=tlambert03) - @tlambert03
 - [Trevor Manz](https://github.com/napari/napari/commits?author=manzt) - @manzt
-- [ziyangczi](https://github.com/napari/napari/commits?author=ziyangczi) - @ziyangczi
+- [Ziyang Liu](https://github.com/napari/napari/commits?author=ziyangczi) - @ziyangczi
 
 
 ## 12 reviewers added to this release (alphabetical)
 
 - [Chris Wood](https://github.com/napari/napari/commits?author=cwood1967) - @cwood1967
 - [Genevieve Buckley](https://github.com/napari/napari/commits?author=GenevieveBuckley) - @GenevieveBuckley
-- [Hector](https://github.com/napari/napari/commits?author=hectormz) - @hectormz
+- [Hector Munoz](https://github.com/napari/napari/commits?author=hectormz) - @hectormz
 - [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - @jni
 - [Justin Kiggins](https://github.com/napari/napari/commits?author=neuromusic) - @neuromusic
 - [Kevin Yamauchi](https://github.com/napari/napari/commits?author=kevinyamauchi) - @kevinyamauchi
@@ -106,4 +106,4 @@ other improvements.
 - [Nicholas Sofroniew](https://github.com/napari/napari/commits?author=sofroniewn) - @sofroniewn
 - [Talley Lambert](https://github.com/napari/napari/commits?author=tlambert03) - @tlambert03
 - [Trevor Manz](https://github.com/napari/napari/commits?author=manzt) - @manzt
-- [ziyangczi](https://github.com/napari/napari/commits?author=ziyangczi) - @ziyangczi
+- [Ziyang Liu](https://github.com/napari/napari/commits?author=ziyangczi) - @ziyangczi
