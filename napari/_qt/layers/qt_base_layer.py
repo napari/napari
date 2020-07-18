@@ -87,8 +87,8 @@ class QtLayerControls(QFrame):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context, by default None.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method, by default None.
         """
         with self.layer.events.opacity.blocker():
             self.opacitySlider.setValue(self.layer.opacity * 100)
@@ -98,8 +98,8 @@ class QtLayerControls(QFrame):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context, by default None.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method, by default None.
         """
         with self.layer.events.blending.blocker():
             index = self.blendComboBox.findText(

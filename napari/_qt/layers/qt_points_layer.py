@@ -198,8 +198,8 @@ class QtPointsControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
 
         Raises
         ------
@@ -278,8 +278,8 @@ class QtPointsControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         with self.layer.events.n_dimensional.blocker():
             self.ndimCheckBox.setChecked(self.layer.n_dimensional)
@@ -289,8 +289,8 @@ class QtPointsControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         with self.layer.events.symbol.blocker():
             index = self.symbolComboBox.findText(
@@ -303,8 +303,8 @@ class QtPointsControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method.
         """
         with self.layer.events.size.blocker():
             value = self.layer.current_size
@@ -337,8 +337,8 @@ class QtPointsControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context, by default None.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method, by default None.
         """
         disable_with_opacity(
             self,

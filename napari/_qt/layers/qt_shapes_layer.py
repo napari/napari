@@ -251,8 +251,8 @@ class QtShapesControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
 
         Raises
         ------
@@ -352,8 +352,8 @@ class QtShapesControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context, by default None.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method, by default None.
         """
         with self.layer.events.edge_width.blocker():
             value = self.layer.current_edge_width
@@ -365,8 +365,8 @@ class QtShapesControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context, by default None.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method, by default None.
         """
         with qt_signals_blocked(self.edgeColorEdit):
             self.edgeColorEdit.setColor(self.layer.current_edge_color)
@@ -376,8 +376,8 @@ class QtShapesControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context, by default None.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method, by default None.
         """
         with qt_signals_blocked(self.faceColorEdit):
             self.faceColorEdit.setColor(self.layer.current_face_color)
@@ -387,8 +387,8 @@ class QtShapesControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context, by default None.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method, by default None.
         """
         disable_with_opacity(
             self,
