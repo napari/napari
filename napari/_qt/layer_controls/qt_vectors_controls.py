@@ -228,8 +228,8 @@ class QtVectorsControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context, by default None.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method, by default None.
         """
         with self.layer.events.length.blocker():
             self.lengthSpinBox.setValue(self.layer.length)
@@ -239,8 +239,8 @@ class QtVectorsControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context, by default None.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method, by default None.
         """
         with self.layer.events.edge_width.blocker():
             self.widthSpinBox.setValue(self.layer.edge_width)
@@ -250,8 +250,8 @@ class QtVectorsControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context, by default None.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method, by default None.
         """
         with qt_signals_blocked(self.color_mode_comboBox):
             mode = self.layer.edge_color_mode
@@ -267,8 +267,8 @@ class QtVectorsControls(QtLayerControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context, by default None.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method, by default None.
         """
         if self.layer._edge_color_mode == ColorMode.DIRECT:
             with qt_signals_blocked(self.edgeColorEdit):

@@ -170,8 +170,8 @@ class QtImageControls(QtBaseImageControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         with self.layer.events.iso_threshold.blocker():
             self.isoThresholdSlider.setValue(self.layer.iso_threshold * 100)
@@ -192,8 +192,8 @@ class QtImageControls(QtBaseImageControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         with self.layer.events.attenuation.blocker():
             self.attenuationSlider.setValue(self.layer.attenuation * 200)
@@ -203,8 +203,8 @@ class QtImageControls(QtBaseImageControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         with self.layer.events.interpolation.blocker():
             index = self.interpComboBox.findText(
@@ -217,8 +217,8 @@ class QtImageControls(QtBaseImageControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         with self.layer.events.rendering.blocker():
             index = self.renderComboBox.findText(
@@ -259,8 +259,8 @@ class QtImageControls(QtBaseImageControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional
-            Event from the Qt context, default is None.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method, default is None.
         """
         self._update_interpolation_combo()
         if self.layer.dims.ndisplay == 2:
