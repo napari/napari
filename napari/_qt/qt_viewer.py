@@ -24,7 +24,7 @@ from ..utils.io import imsave
 from ..utils.key_bindings import components_to_key_combo
 from ..utils.theme import template
 from .perfmon.qt_performance import QtPerformance
-from .utils import QImg2array, square_pixmap
+from .utils import QImg2array, circle_pixmap, square_pixmap
 from .widgets.qt_about_key_bindings import QtAboutKeyBindings
 from .widgets.qt_dims import QtDims
 from .widgets.qt_layerlist import QtLayerList
@@ -429,6 +429,9 @@ class QtViewer(QSplitter):
                 q_cursor = self._cursors['cross']
             else:
                 q_cursor = QCursor(square_pixmap(size))
+        elif cursor == 'circle':
+            size = self.viewer.cursor_size
+            q_cursor = QCursor(circle_pixmap(size))
         else:
             q_cursor = self._cursors[cursor]
         self.canvas.native.setCursor(q_cursor)
