@@ -356,7 +356,7 @@ class Shapes(Layer):
             self._properties = empty_properties
 
         # make the text
-        if type(text) in (list, np.ndarray, str) or text is None:
+        if text is None or isinstance(text, (list, np.ndarray, str)):
             self._text = TextManager(text, len(data), self.properties)
         elif isinstance(text, dict):
             copied_text = deepcopy(text)
