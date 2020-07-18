@@ -377,7 +377,7 @@ class TextManager:
 
         return equal
 
-    def ne(self, other):
+    def __ne__(self, other):
         """Method to test not equal
 
         called by: text_manager_1 != text_manager_2
