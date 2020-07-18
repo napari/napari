@@ -1,14 +1,17 @@
+from typing import Tuple, Union, Dict
 import warnings
-from dataclasses import field
-from typing import Dict, Tuple, Union
 
 import numpy as np
 
+from ..base._base_constants import Blending
+from ._text_constants import TextMode, Anchor
+from ._text_utils import (
+    format_text_properties,
+    get_text_anchors,
+)
 from ...utils.colormaps.standardize_color import transform_color
 from ...utils.dataclass import dataclass
-from ..base._base_constants import Blending
-from ._text_constants import Anchor, TextMode
-from ._text_utils import format_text_properties, get_text_anchors
+from dataclasses import field
 
 
 @dataclass(events=True, properties=True)
@@ -18,15 +21,14 @@ class TextManager:
     Parameters
     ----------
     text : array or str
-        The strings to be displayed
+        the strings to be displayed
     n_text : int
         The length of data being annotated.
     rotation : float
         Angle of the text elements around the anchor point. Default value is 0.
     anchor : str
         The location of the text origin relative to the bounding box.
-        Should be 'center', 'upper_left', 'upper_right', 'lower_left', or
-        'lower_right'
+        Should be 'center', 'upper_left', 'upper_right', 'lower_left', or 'lower_right'
     translation : np.ndarray
         Offset from the anchor point.
     color : array or str
@@ -117,7 +119,7 @@ class TextManager:
             self._text_format_string = text
             self._values = formatted_text
             self._mode = text_mode
-        self.events.text(value=self.text)
+        self.events.text()
 
     def refresh_text(self, properties: dict):
         """Refresh all of the current text elements using updated properties values
