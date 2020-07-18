@@ -42,11 +42,11 @@ other improvements.
 ## Bug Fixes
 - Revert "remove scipy.stats import (#1250)" (#1371)
 - Fix vispy volume colormap changing (#1402)
-- Fix vertical aligment of QLabel in QtDimSliderWidget (#1415)
+- Fix vertical alignment of QLabel in QtDimSliderWidget (#1415)
 - Fix adding single shape duplicating properties (#1427)
-- Fix viewing properties for mutliscale labels layers (#1433)
+- Fix viewing properties for multiscale labels layers (#1433)
 - Fix trim of layer number (#1439)
-- Hide statatusbar line on windows (#1440)
+- Hide status bar line on windows (#1440)
 - Handle nested zarr path (#1441)
 - Toggle image/ volume nodes on ndisplay change (#1445)
 - Fix attenuation setting (#1454)
@@ -105,4 +105,3 @@ other improvements.
 - [Talley Lambert](https://github.com/napari/napari/commits?author=tlambert03) - @tlambert03
 - [Trevor Manz](https://github.com/napari/napari/commits?author=manzt) - @manzt
 - [ziyangczi](https://github.com/napari/napari/commits?author=ziyangczi) - @ziyangczi
-
