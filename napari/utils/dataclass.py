@@ -96,8 +96,6 @@ def make_post_init(
             # This should happen after initialization to allow default
             # factories to be handled by the dataclass
             convert_fields_to_properties(self)
-        # release self.__setattr__ to emit events.
-        object.__setattr__(self, '_is_initialized', True)
 
         if events:
             # modify __setattr__ with version that emits an event when setting
