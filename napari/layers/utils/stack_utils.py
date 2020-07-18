@@ -48,8 +48,8 @@ def split_channels(
 
     n_channels = (data[0] if multiscale else data).shape[channel_axis]
 
-    kwargs["blending"] = kwargs.get('blending') or 'additive'
-    kwargs.setdefault("colormap", None)
+    kwargs['blending'] = kwargs.get('blending') or 'additive'
+    kwargs.setdefault('colormap', None)
     # these arguments are *already* iterables in the single-channel case.
     iterable_kwargs = {'scale', 'translate', 'contrast_limits', 'metadata'}
 
