@@ -120,7 +120,7 @@ def dataclass(
     events : bool, optional
         If true, an ``EmmitterGroup`` instance is added as attribute "events".
         Events will be emitted each time one of the dataclass fields are
-        altered. by default False
+        altered, by default False
     properties : bool, optional
         If true, field attributes will be converted to property descriptors.
         If the class has a class docstring in numpydocs format, docs for each
