@@ -42,5 +42,5 @@ class ExceptionHandler(QObject):
         # Custom exception classes can have different behavior
         # can add custom exception handlers here ...
         text = "".join(traceback.format_exception(etype, value, tb))
-        logging.error("Unhandled exception: %s", text)
+        logging.error("Unhandled exception:\n%s", text)
         self.error.emit((etype, value, tb))
