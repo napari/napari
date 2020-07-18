@@ -343,6 +343,7 @@ class TextManager:
         self, text_update_function, blending_update_function
     ):
         """Function to connect all property update events to the update callback.
+
         This is typically used in the vispy view file.
         """
         # connect the function for updating the text node
