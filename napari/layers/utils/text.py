@@ -1,4 +1,4 @@
-from typing import Tuple, Union, Dict
+from typing import Tuple, Union, Dict, ClassVar, Optional
 import warnings
 
 import numpy as np
@@ -57,15 +57,14 @@ class TextManager:
     blending: Annotated[Blending, str] = Blending.TRANSLUCENT
     visible: bool = True
 
+    # private attributes not in dataclass
+    _text_format_string: ClassVar[str] = ''
+    _values: ClassVar[Optional[np.ndarray]] = None
+    _mode: ClassVar[TextMode] = TextMode.NONE
+
     def __post_init__(self):
-        # private attributes not in dataclass
-        self._text_format_string: str = ''
-        self._values = None
-        self._mode: TextMode = TextMode.NONE
-        self.anchor = Anchor(self.anchor)
-        self.blending = Blending(self.blending)
-        with self.events.text.blocker():
-            self._set_text(self.text, self.n_text, self.properties)
+        # called after __init__
+        self._set_text(self.text, self.n_text, self.properties)
 
     @property
     def values(self):

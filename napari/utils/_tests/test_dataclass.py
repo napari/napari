@@ -1,5 +1,5 @@
 from dataclasses import asdict, field
-from typing import List
+from typing import List, ClassVar
 from unittest.mock import Mock
 
 import pytest
@@ -33,6 +33,7 @@ def test_dataclass_with_properties(props, events):
         a: int
         b: str = 'hi'
         c: List[int] = field(default_factory=list)
+        d: ClassVar[int] = 1
 
         def _on_b_set(self, value):
             # NB: if you want to set value again, you must check that it is
@@ -44,7 +45,6 @@ def test_dataclass_with_properties(props, events):
             if value == [1, 2]:
                 return True
 
-    # currently, properties will only be added to the class during post_init
     m = M(a=1)
     # basic functionality
     assert m.a == 1
@@ -52,7 +52,7 @@ def test_dataclass_with_properties(props, events):
     assert m.c == []
     m.a = 7
     m.c.append(9)
-    # nice function
+    # nice function ... note the ClassVar is missing
     assert asdict(m) == {'a': 7, 'b': 'hi', 'c': [9]}
 
     assert isinstance(m.a, int)
@@ -78,6 +78,7 @@ def test_dataclass_with_properties(props, events):
         m.events.a = Mock(m.events.a)
         m.events.b = Mock(m.events.b)
         m.events.c = Mock(m.events.c)
+        m.events.d = Mock(m.events.d)
         # setting an attribute should, by default, emit an event with the value
         m.a = 4
         m.events.a.assert_called_with(value=4)
@@ -91,5 +92,42 @@ def test_dataclass_with_properties(props, events):
         m.c = [1, 2]
         assert m.c == [1, 2]
         m.events.c.assert_not_called()
+
+        # ClassVars are also exempt from events
+        m.d = 8
+        assert m.d == 8
+        m.events.d.assert_not_called()
+
     else:
         assert not hasattr(m, 'events')
+
+
+def test_dataclass_missing_vars_raises():
+    @dataclass(properties=True)
+    class M:
+        a: int
+        b: list = field(default_factory=list)
+        c: str = field(default='asdf')
+        d: int = 9
+        # ClassVars are ignored entirely by dataclasses
+        e: ClassVar[int] = 1
+        f: ClassVar[str]
+
+    with pytest.raises(TypeError) as excinfo:
+        _ = M()  # missing `a`
+    assert "missing required positional argument" in str(excinfo.value)
+    assert M(1).a == 1
+    m = M(a=2)
+    assert m.a == 2
+    assert m.b == []
+    assert m.c == 'asdf'
+    assert m.d == 9
+    # Classvars and _private property names are left out of dict
+    assert asdict(m) == {'a': 2, 'b': [], 'c': 'asdf', 'd': 9}
+    # ClassVars must have a default value to be seen as attributes.
+    assert m.e == 1
+    assert M.e == 1
+    # Otherwise they are just annotations
+    assert not hasattr(m, 'f')
+    assert not hasattr(M, 'f')
+    assert 'f' in M.__annotations__
