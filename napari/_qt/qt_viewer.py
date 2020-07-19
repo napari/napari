@@ -36,7 +36,11 @@ from .qt_performance import QtPerformance
 from .._vispy import create_vispy_visual
 
 
-class OurSceneCanvas(SceneCanvas):
+class KeyModifierFilterSceneCanvas(SceneCanvas):
+    """SceneCanvas which overrides default vispy behaviour for events with key modifiers.F
+
+    """
+
     def _process_mouse_event(self, event):
         if event.type == 'mouse_wheel' and len(event.modifiers) > 0:
             return
@@ -149,7 +153,9 @@ class QtViewer(QSplitter):
             self.toggle_console_visibility
         )
 
-        self.canvas = OurSceneCanvas(keys=None, vsync=True, parent=self)
+        self.canvas = KeyModifierFilterSceneCanvas(
+            keys=None, vsync=True, parent=self
+        )
         self.canvas.events.ignore_callback_errors = False
         self.canvas.events.draw.connect(self.dims.enable_play)
         self.canvas.native.setMinimumSize(QSize(200, 200))
