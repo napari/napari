@@ -13,13 +13,19 @@ https://github.com/napari/napari
 ## Highlights
 This release contains the long awaited addition of text to both the points and
 shapes layers (#1374). Checkout our `examples/*_with_text.py` for simple usage
-and this great [segmentation annotation tutorial](https://napari.org/tutorials/applications/annotate_segmentation) for a more real-world use case.
+and this [segmentation annotation tutorial](https://napari.org/tutorials/applications/annotate_segmentation)
+for a more real-world use case.
 
-We've also added support for a circular paintbrush for easier labels painting,
+We've added support for a circular paintbrush for easier labels painting,
 and moved more of our contrast limits and gamma setting to the GPU for faster
 rendering and interactivity with 3D rendered datasets. As always this release
 contains various bug fixes and other improvements, including some automated
 reformatting and fixes to our docstrings.
+
+This release also contains a number of contributions from new authors thanks
+to the SciPy conference sprints. We’re delighted to welcome new contributors to
+the codebase. If you want help contributing to napari, reach out to us on our chat
+room at https://napari.zulipchat.com!
 
 
 ## New Features
