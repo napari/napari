@@ -73,12 +73,13 @@ class ChunkRequest:
         #
         # Since chunk request are "long" time.time() is accurate enough
         # and we convert back to perf_counter_ns here.
-        delta_ns = perf_counter_ns() - (time.time() * 1e9)
-        start_ns = self.start_seconds * 1e9 + delta_ns
-        end_ns = self.end_seconds * 1e9 + delta_ns
-        timers.add_event(
-            PerfEvent("ChunkRequest", start_ns, end_ns, pid=self.pid)
-        )
+        if timers:  # if using perfmon
+            delta_ns = perf_counter_ns() - (time.time() * 1e9)
+            start_ns = self.start_seconds * 1e9 + delta_ns
+            end_ns = self.end_seconds * 1e9 + delta_ns
+            timers.add_event(
+                PerfEvent("ChunkRequest", start_ns, end_ns, pid=self.pid)
+            )
 
 
 def _index_to_tuple(index: Union[int, slice]) -> Union[int, SliceTuple]:
