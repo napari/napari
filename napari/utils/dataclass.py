@@ -1,6 +1,6 @@
 import dataclasses as _pydcls
 import typing
-from typing import Any, Callable, ClassVar, Type, TypeVar
+from typing import Any, Callable, ClassVar, Type, TypeVar, Set
 
 import toolz as tz
 
@@ -10,7 +10,8 @@ WHEN_SET = "_on_{name}_set"
 T = TypeVar("T")
 
 
-def setattr_with_events(self: T, name: str, value: Any) -> None:
+@tz.curry
+def set_with_events(self: T, name: str, value: Any, fields: Set[str]) -> None:
     """Modified __setattr__ method that emits an event when set.
 
     Events will *only* be emitted if the ``name`` of the attribute being set
@@ -41,9 +42,12 @@ def setattr_with_events(self: T, name: str, value: Any) -> None:
         The name of the attribute being set.
     value : Any
         The new value for the attribute.
+    fields : set of str
+        Only emit events for field names in this set.
     """
+    # first call the original
     object.__setattr__(self, name, value)
-    if name in self.__annotations__:
+    if name in fields:
         # if custom set method `_on_<name>_set` exists, call it
         setter_method = getattr(self, WHEN_SET.format(name=name), None)
         if callable(setter_method):
@@ -56,15 +60,13 @@ def setattr_with_events(self: T, name: str, value: Any) -> None:
             getattr(self.events, name)(value=getattr(self, name))  # type: ignore
 
 
-def make_post_init(cls: Type[T], events=False) -> Callable[..., None]:
+def add_events_to_class(cls: Type[T]) -> Callable[..., None]:
     """Return a new __post_init__ method wrapper with events.
 
     Parameters
     ----------
     cls : type
         The class being decorated as a dataclass
-    events : bool, optional
-        Whether to add an `EmitterGroup` to the class, by default False
 
     Returns
     -------
@@ -75,24 +77,23 @@ def make_post_init(cls: Type[T], events=False) -> Callable[..., None]:
     # get a handle to the original __post_init__ method if present
     orig_post_init: Callable[..., None] = getattr(cls, '__post_init__', None)
 
-    def _event_post_init(self: T, *initvars) -> None:
+    def evented_post_init(self: T, *initvars) -> None:
         # create an EmitterGroup with an EventEmitter for each field
         # in the dataclass
-        if events:
-            emitter_group = EmitterGroup(
-                source=self,
-                auto_connect=False,
-                **{n: None for n in getattr(self, '__dataclass_fields__', {})},
-            )
-            object.__setattr__(self, 'events', emitter_group)
+        emitter_group = EmitterGroup(
+            source=self,
+            auto_connect=False,
+            **{n: None for n in getattr(self, '__dataclass_fields__', {})},
+        )
+        object.__setattr__(self, 'events', emitter_group)
         # call original __post_init__
         if orig_post_init is not None:
             orig_post_init(self, *initvars)
-        if events:
-            # modify __setattr__ with version that emits an event when setting
-            setattr(cls, '__setattr__', setattr_with_events)
+        # modify __setattr__ with version that emits an event when setting
+        setter = set_with_events(fields={f.name for f in _pydcls.fields(cls)})
+        setattr(cls, '__setattr__', setter)
 
-    return _event_post_init
+    setattr(cls, '__post_init__', evented_post_init)
 
 
 def convert_fields_to_properties(cls: Type[T]):
@@ -116,37 +117,55 @@ def convert_fields_to_properties(cls: Type[T]):
     """
     from numpydoc.docscrape import ClassDoc
 
+    # grab docstring to populate properties docs
     cls_doc = ClassDoc(cls)
     params = {p.name: p for p in cls_doc["Parameters"]}
 
+    # loop through annotated members of the glass
     for name, type_ in list(cls.__dict__.get('__annotations__', {}).items()):
-        if name.startswith("_") or _pydcls._is_classvar(type_, typing):
+        # ClassVar types are exempt from dataclasses and @properties
+        # https://docs.python.org/3/library/dataclasses.html#class-variables
+        if _pydcls._is_classvar(type_, typing):
             continue
         private_name = f"_{name}"
+        # store the original value for the property
         default = getattr(cls, name, _pydcls.MISSING)
-        # set the private attribute as a class variable
-        # annotations of type ClassVar are ignored by the dataclass
+
+        # add the private_name as a ClassVar annotation on the original class
+        # (annotations of type ClassVar are ignored by the dataclass)
         cls.__annotations__[private_name] = ClassVar[type_]
 
+        # make the actual getter/setter functions that the property will use
         def fget(self, key=private_name):
             return getattr(self, key)
 
         def fset(self, value, key=private_name, default=default):
+            # during __init__, the dataclass will try to set the instance
+            # attribute to the property itself!  So we intervene and set it
+            # to the default value from the dataclass declaration
             if type(value) is property:
                 value = default
+                # dataclasses may define attributes as field(...)
+                # so we need to get the default value from the field
                 if isinstance(default, _pydcls.Field):
+                    # there will only ever be default_factory OR default
+                    # otherwise an exception will have been raised earlier.
                     if default.default_factory is not _pydcls.MISSING:
                         value = default.default_factory()
                     elif default.default is not _pydcls.MISSING:
                         value = default.default
+                # If the value is still missing, then it means that the user
+                # failed to provide a required positional argument when
+                # instantiating the dataclass.
                 if value is _pydcls.MISSING:
                     _name = key.lstrip("_")
                     raise TypeError(
-                        "__init__() missing 1 required "
+                        "__init__() missing required "
                         f"positional argument: '{_name}'"
                     )
             setattr(self, key, value)
 
+        # bring the docstring from the class to the property
         doc = None
         if name in params:
             param = params[name]
@@ -155,6 +174,7 @@ def convert_fields_to_properties(cls: Type[T]):
             # alternatively, we may just want to use pydantic for type
             # validation.
 
+        # create the actual property descriptor
         prop = property(fget=fget, fset=fset, fdel=None, doc=doc)
         setattr(cls, name, prop)
 
@@ -217,17 +237,17 @@ def dataclass(
         If both ``properties`` and ``frozen`` are True
     """
 
-    if properties and frozen:
-        raise ValueError("`properties=True` cannot be used with `frozen=True`")
-
     if properties:
+        if frozen:
+            raise ValueError(
+                "`properties=True` cannot be used with `frozen=True`"
+            )
+        # convert public dataclass fields to properties
         convert_fields_to_properties(cls)
 
     if events:
-        # create a modified __post_init__ method that will create the
-        # EmitterGroup
-        post_init = make_post_init(cls, events)
-        setattr(cls, '__post_init__', post_init)
+        # create a modified __post_init__ method that creates an EmitterGroup
+        add_events_to_class(cls)
 
     # if neither events or properties are True, this function is exactly like
     # the builtin `dataclasses.dataclass`

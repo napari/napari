@@ -33,6 +33,7 @@ def test_dataclass_with_properties(props, events):
         a: int
         b: str = 'hi'
         c: List[int] = field(default_factory=list)
+        d: ClassVar[int] = 1
 
         def _on_b_set(self, value):
             # NB: if you want to set value again, you must check that it is
@@ -51,7 +52,7 @@ def test_dataclass_with_properties(props, events):
     assert m.c == []
     m.a = 7
     m.c.append(9)
-    # nice function
+    # nice function ... note the ClassVar is missing
     assert asdict(m) == {'a': 7, 'b': 'hi', 'c': [9]}
 
     assert isinstance(m.a, int)
@@ -77,6 +78,7 @@ def test_dataclass_with_properties(props, events):
         m.events.a = Mock(m.events.a)
         m.events.b = Mock(m.events.b)
         m.events.c = Mock(m.events.c)
+        m.events.d = Mock(m.events.d)
         # setting an attribute should, by default, emit an event with the value
         m.a = 4
         m.events.a.assert_called_with(value=4)
@@ -90,6 +92,12 @@ def test_dataclass_with_properties(props, events):
         m.c = [1, 2]
         assert m.c == [1, 2]
         m.events.c.assert_not_called()
+
+        # ClassVars are also exempt from events
+        m.d = 8
+        assert m.d == 8
+        m.events.d.assert_not_called()
+
     else:
         assert not hasattr(m, 'events')
 
@@ -105,8 +113,9 @@ def test_dataclass_missing_vars_raises():
         e: ClassVar[int] = 1
         f: ClassVar[str]
 
-    with pytest.raises(TypeError):
+    with pytest.raises(TypeError) as excinfo:
         _ = M()  # missing `a`
+    assert "missing required positional argument" in str(excinfo.value)
     assert M(1).a == 1
     m = M(a=2)
     assert m.a == 2
