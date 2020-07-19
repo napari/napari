@@ -12,6 +12,7 @@ from ._text_utils import (
 from ...utils.colormaps.standardize_color import transform_color
 from ...utils.dataclass import dataclass
 from dataclasses import field
+from typing_extensions import Annotated
 
 
 @dataclass(events=True, properties=True)
@@ -50,10 +51,10 @@ class TextManager:
     properties: Dict[str, np.ndarray] = field(default_factory=dict)
     rotation: float = 0.0
     translation: np.ndarray = np.asarray(0)
-    anchor: Anchor = Anchor.CENTER
+    anchor: Annotated[Anchor, str] = Anchor.CENTER
     color: Union[np.ndarray, str] = 'cyan'
     size: float = 12.0
-    blending: Blending = Blending.TRANSLUCENT
+    blending: Annotated[Blending, str] = Blending.TRANSLUCENT
     visible: bool = True
 
     def __post_init__(self):
@@ -96,14 +97,6 @@ class TextManager:
             )
             self.blending = Blending.TRANSLUCENT
             return True
-
-    # Things that need to modify the value on get
-
-    def _on_blending_get(self, blending):
-        return str(blending)
-
-    def _on_anchor_get(self, anchor):
-        return str(anchor)
 
     def _set_text(
         self, text: Union[None, str], n_text: int, properties: dict = {}

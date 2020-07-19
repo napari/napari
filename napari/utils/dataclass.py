@@ -1,5 +1,6 @@
 import dataclasses as _dataclasses  # builtin private for ease of tab complete
 from typing import Any, Callable, Type, TypeVar, Optional
+from typing_extensions import get_type_hints
 from enum import EnumMeta
 
 import toolz as tz
@@ -30,6 +31,12 @@ def coerce(value: Any, type_: Optional[Type]):
         return value
     if isinstance(type_, EnumMeta):
         return type_(value)
+    try:
+        # convert simple types
+        if type_.__module__ == 'builtins':
+            value = type_(value)
+    except Exception:
+        pass
     return value
 
 
@@ -65,7 +72,7 @@ def setattr_with_events(self: T, name: str, value: Any) -> None:
     value : Any
         The new value for the attribute.
     """
-    _value = coerce(value, self.__annotations__.get(name))
+    _value = coerce(value, get_type_hints(self).get(name))
     object.__setattr__(self, name, _value)
     if name in self.__annotations__:
         # if custom set method `_on_<name>_set` exists, call it
@@ -96,6 +103,9 @@ def getattr_with_conversion(self: T, name: str) -> Any:
     """
     val = object.__getattribute__(self, name)
     name = name.lstrip("_")
+    hint = get_type_hints(self, include_extras=True).get(name)
+    if hasattr(hint, '__metadata__') and hint.__metadata__:
+        val = coerce(val, hint.__metadata__[0])
     getter_method = getattr(self, ON_GET.format(name=name), None)
     if callable(getter_method):
         return getter_method(val)
