@@ -137,3 +137,39 @@ def test_surface_gamma():
     # Set gamma as keyword argument
     layer = Surface(data, gamma=gamma)
     assert layer.gamma == gamma
+
+
+def test_world_data_extent():
+    """Test extent after applying transforms."""
+    data = [(-5, 0), (0, 15), (30, 12)]
+    min_val = (-5, 0)
+    max_val = (30, 15)
+    layer = Surface((np.array(data), np.array((0, 1, 2)), np.array((0, 0, 0))))
+    np.testing.assert_allclose(layer._extent_data[0], min_val)
+    np.testing.assert_almost_equal(layer._extent_data[1], max_val)
+    np.testing.assert_allclose(layer._extent_world[0], min_val)
+    np.testing.assert_almost_equal(layer._extent_world[1], max_val)
+
+    # Apply scale transformation
+    scale = (3, 1)
+    layer.scale = scale
+    np.testing.assert_allclose(layer._extent_data[0], min_val)
+    np.testing.assert_allclose(layer._extent_data[1], max_val)
+    np.testing.assert_allclose(
+        layer._extent_world[0], np.multiply(min_val, scale)
+    )
+    np.testing.assert_allclose(
+        layer._extent_world[1], np.multiply(max_val, scale)
+    )
+
+    # Apply translation transformation
+    translate = (20, 5)
+    layer.translate = translate
+    np.testing.assert_allclose(layer._extent_data[0], min_val)
+    np.testing.assert_allclose(layer._extent_data[1], max_val)
+    np.testing.assert_allclose(
+        layer._extent_world[0], np.add(np.multiply(min_val, scale), translate)
+    )
+    np.testing.assert_allclose(
+        layer._extent_world[1], np.add(np.multiply(max_val, scale), translate)
+    )

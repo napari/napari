@@ -1438,3 +1438,39 @@ def test_interaction_box():
     expected_box = points_to_squares(data, size)
     box = layer.interaction_box(index)
     np.all([np.isin(p, expected_box) for p in box])
+
+
+def test_world_data_extent():
+    """Test extent after applying transforms."""
+    data = [(7, -5, 0), (-2, 0, 15), (4, 30, 12)]
+    min_val = (-2, -5, 0)
+    max_val = (7, 30, 15)
+    layer = Points(data)
+    np.testing.assert_allclose(layer._extent_data[0], min_val)
+    np.testing.assert_almost_equal(layer._extent_data[1], max_val)
+    np.testing.assert_allclose(layer._extent_world[0], min_val)
+    np.testing.assert_almost_equal(layer._extent_world[1], max_val)
+
+    # Apply scale transformation
+    scale = (3, 1, 1)
+    layer.scale = scale
+    np.testing.assert_allclose(layer._extent_data[0], min_val)
+    np.testing.assert_allclose(layer._extent_data[1], max_val)
+    np.testing.assert_allclose(
+        layer._extent_world[0], np.multiply(min_val, scale)
+    )
+    np.testing.assert_allclose(
+        layer._extent_world[1], np.multiply(max_val, scale)
+    )
+
+    # Apply translation transformation
+    translate = (10, 20, 5)
+    layer.translate = translate
+    np.testing.assert_allclose(layer._extent_data[0], min_val)
+    np.testing.assert_allclose(layer._extent_data[1], max_val)
+    np.testing.assert_allclose(
+        layer._extent_world[0], np.add(np.multiply(min_val, scale), translate)
+    )
+    np.testing.assert_allclose(
+        layer._extent_world[1], np.add(np.multiply(max_val, scale), translate)
+    )

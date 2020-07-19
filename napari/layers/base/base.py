@@ -430,8 +430,18 @@ class Layer(KeymapProvider, ABC):
     @property
     def shape(self):
         """tuple: Size of layer in world coordinates (compatibility)."""
-        # Note this should be deprecated
+
+        warnings.warn(
+            (
+                f'layer.shape is deprecated and will be removed '
+                f'in napari > 0.3.7'
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+
         extent = self._extent_world
+        # Rounding is for backwards compatibility reasons.
         return tuple(np.round(extent[1] - extent[0]).astype(int))
 
     @abstractmethod

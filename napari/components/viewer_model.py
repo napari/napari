@@ -294,11 +294,15 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
     def _new_labels(self):
         """Create new labels layer filling full world coordinates space."""
         extent = self.layers._extent_world
+        scale = self.layers._step_size
         scene_size = extent[1] - extent[0]
         corner = extent[0]
-        shape = [np.ceil(s).astype('int') if s > 0 else 1 for s in scene_size]
+        shape = [
+            np.round(s / sc).astype('int') if s > 0 else 1
+            for s, sc in zip(scene_size, scale)
+        ]
         empty_labels = np.zeros(shape, dtype=int)
-        self.add_labels(empty_labels, translate=np.array(corner))
+        self.add_labels(empty_labels, translate=np.array(corner), scale=scale)
 
     def _update_layers(self, event=None, layers=None):
         """Updates the contained layers.

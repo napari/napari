@@ -519,3 +519,35 @@ def test_thumbnail():
     layer = Labels(data)
     layer._update_thumbnail()
     assert layer.thumbnail.shape == layer._thumbnail_shape
+
+
+def test_world_data_extent():
+    """Test extent after applying transforms."""
+    np.random.seed(0)
+    shape = (6, 10, 15)
+    data = np.random.randint(20, size=(shape))
+    layer = Labels(data)
+    np.testing.assert_allclose(layer._extent_data[0], (0,) * 3)
+    np.testing.assert_almost_equal(layer._extent_data[1], shape)
+    np.testing.assert_allclose(layer._extent_world[0], (0,) * 3)
+    np.testing.assert_almost_equal(layer._extent_world[1], shape)
+
+    # Apply scale transformation
+    scale = (3, 1, 1)
+    layer.scale = scale
+    np.testing.assert_allclose(layer._extent_data[0], (0,) * 3)
+    np.testing.assert_allclose(layer._extent_data[1], shape)
+    np.testing.assert_allclose(layer._extent_world[0], (0,) * 3)
+    np.testing.assert_allclose(
+        layer._extent_world[1], np.multiply(shape, scale)
+    )
+
+    # Apply translation transformation
+    translate = (10, 20, 5)
+    layer.translate = translate
+    np.testing.assert_allclose(layer._extent_data[0], (0,) * 3)
+    np.testing.assert_allclose(layer._extent_data[1], shape)
+    np.testing.assert_allclose(layer._extent_world[0], translate)
+    np.testing.assert_allclose(
+        layer._extent_world[1], np.add(np.multiply(shape, scale), translate)
+    )
