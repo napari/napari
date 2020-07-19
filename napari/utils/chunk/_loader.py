@@ -33,6 +33,11 @@ from ..perf import perf_timer
 
 LOGGER = logging.getLogger("ChunkLoader")
 
+# This delay is hopefully temporary, but it avoids some nasty
+# problems with the slider timer firing *prior* to the mouse release,
+# even though it was a single click lasting < 100ms.
+MIN_DELAY_SECONDS = 0.1
+
 
 def _chunk_loader_worker(request: ChunkRequest):
     """Worker thread or process that loads the array.
@@ -43,9 +48,6 @@ def _chunk_loader_worker(request: ChunkRequest):
     # Record the pid in case we are in a worker process.
     request.pid = os.getpid()
 
-    # This delay is hopefully temporary, but it avoids some nasty
-    # problems with the slider timer firing *prior* to the mouse release,
-    # even though it was a single click lasting < 100ms.
     if request.delay_seconds > 0:
         time.sleep(request.delay_seconds)
 
@@ -152,7 +154,9 @@ class ChunkLoader:
             request.array = self._asarray(request.array)
             return request
 
-        request.delay_seconds = self.force_delay_seconds
+        request.delay_seconds = max(
+            MIN_DELAY_SECONDS, self.force_delay_seconds
+        )
 
         # This will be synchronous if it's a cache hit. Otherwise it will
         # initiate an asynchronous load and sometime later Layer.load_chunk
