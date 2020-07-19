@@ -137,7 +137,7 @@ def test_signature(layer):
         args = 'data, ' + re.sub(r"['\"]([^'\"]+)['\"]:\s?", '\\1=', args)
     else:
         args = re.search(rf'layer = layers\.{name}\((.+?)\)', code, flags=re.S)
-        # get the arguments & normalize whitepsace
+        # get the arguments & normalize whitespace
         args = ' '.join(args.group(1).split())
 
     if args.endswith(','):  # remove tailing comma if present
@@ -150,11 +150,8 @@ def test_signature(layer):
     )
     autogen = str(autogen)[1:-1]  # remove parentheses
 
-    try:
-        assert args == autogen
-    except AssertionError as e:
-        msg = (
-            'arguments improperly passed from convenience '
-            f'method to layer {name}'
-        )
-        raise SyntaxError(msg) from e
+    msg = (
+        'arguments improperly passed from convenience '
+        f'method to layer {name}'
+    )
+    assert args == autogen, msg

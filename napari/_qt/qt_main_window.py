@@ -11,8 +11,9 @@ from .qt_viewer import QtViewer
 from .qt_about import QtAbout
 from .qt_plugin_report import QtPluginErrReporter
 from .qt_plugin_sorter import QtPluginSorter
+from .qt_plugin_table import QtPluginTable
 from .qt_debug_menu import DebugMenu
-from .qt_dict_table import QtDictTable
+
 from .qt_viewer_dock_widget import QtViewerDockWidget
 from ..resources import get_stylesheet
 from ..utils import perf
@@ -21,18 +22,15 @@ from ..utils import perf
 # these module-level imports have to come after `app.use_app(API)`
 # see discussion on #638
 from qtpy.QtWidgets import (  # noqa: E402
-    QAbstractItemView,
     QApplication,
     QMainWindow,
     QWidget,
     QHBoxLayout,
-    QDialog,
     QDockWidget,
     QLabel,
     QAction,
     QShortcut,
     QStatusBar,
-    QVBoxLayout,
     QFileDialog,
 )
 from qtpy.QtCore import Qt  # noqa: E402
@@ -217,7 +215,7 @@ class Window:
                 QApplication.quit()
             # otherwise, something else created the QApp before us (such as
             # %gui qt IPython magic).  If we quit the app in this case, then
-            # *later* attemps to instantiate a napari viewer won't work until
+            # *later* attempts to instantiate a napari viewer won't work until
             # the event loop is restarted with app.exec_().  So rather than
             # quit just close all the windows (and clear our app icon).
             else:
@@ -286,46 +284,7 @@ class Window:
 
     def _show_plugin_list(self, plugin_manager=None):
         """Show dialog with a table of installed plugins and metadata."""
-        if not plugin_manager:
-            from ..plugins import plugin_manager
-
-        dialog = QDialog(self._qt_window)
-        dialog.setMaximumHeight(800)
-        dialog.setMaximumWidth(1280)
-        layout = QVBoxLayout()
-        # maybe someday add a search bar here?
-        title = QLabel("Installed Plugins")
-        title.setObjectName("h2")
-        layout.addWidget(title)
-        # get metadata for successfully registered plugins
-        plugin_manager.discover()
-        data = plugin_manager.list_plugin_metadata()
-        data = list(filter(lambda x: x['plugin_name'] != 'builtins', data))
-        # create a table for it
-        dialog.table = QtDictTable(
-            self._qt_window,
-            data,
-            headers=[
-                'plugin_name',
-                'package',
-                'version',
-                'url',
-                'author',
-                'license',
-            ],
-            min_section_width=60,
-        )
-        dialog.table.setObjectName("pluginTable")
-        dialog.table.horizontalHeader().setObjectName("pluginTableHeader")
-        dialog.table.verticalHeader().setObjectName("pluginTableHeader")
-        dialog.table.setGridStyle(Qt.NoPen)
-        # prevent editing of table
-        dialog.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        layout.addWidget(dialog.table)
-        dialog.setLayout(layout)
-        dialog.setAttribute(Qt.WA_DeleteOnClose)
-        self._plugin_list = dialog
-        dialog.exec_()
+        QtPluginTable(self._qt_window).exec_()
 
     def _show_plugin_sorter(self):
         """Show dialog that allows users to sort the call order of plugins."""
@@ -429,8 +388,8 @@ class Window:
 
         Parameters
         ----------
-            widget : QWidget | str
-                If widget == 'all', all docked widgets will be removed.
+        widget : QWidget | str
+            If widget == 'all', all docked widgets will be removed.
         """
         if widget == 'all':
             for dw in self._qt_window.findChildren(QDockWidget):
@@ -491,8 +450,8 @@ class Window:
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         self._status_bar.showMessage(event.text)
 
@@ -501,8 +460,8 @@ class Window:
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         self._qt_window.setWindowTitle(event.text)
 
@@ -511,8 +470,8 @@ class Window:
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         self._help.setText(event.text)
 

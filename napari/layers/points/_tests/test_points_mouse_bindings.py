@@ -31,7 +31,7 @@ def create_known_points_layer():
 
     Returns
     -------
-    layer : napar.layers.Points
+    layer : napari.layers.Points
         Points layer.
     n_points : int
         Number of points in the points layer

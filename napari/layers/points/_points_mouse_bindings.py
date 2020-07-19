@@ -97,8 +97,8 @@ def highlight(layer, event):
 def _toggle_selected(selected_data, value):
     """Add or remove value from the selected data set.
 
-    Paramerters
-    -----------
+    Parameters
+    ----------
     selected_data : set
         Set of selected data points to be modified.
     value : int

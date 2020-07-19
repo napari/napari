@@ -82,9 +82,9 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self.dims.events.ndisplay.connect(self._update_layers)
         self.dims.events.order.connect(self._update_layers)
         self.dims.events.axis.connect(self._update_layers)
-        self.layers.events.changed.connect(self._on_layers_change)
         self.layers.events.changed.connect(self._update_active_layer)
         self.layers.events.changed.connect(self._update_grid)
+        self.layers.events.changed.connect(self._on_layers_change)
 
         self.keymap_providers = [self]
 
@@ -313,7 +313,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         for layer in layers:
             # adjust the order of the global dims based on the number of
             # dimensions that a layer has - for example a global order of
-            # [2, 1, 0, 3] -> [0, 1] for a layer that only has two dimesnions
+            # [2, 1, 0, 3] -> [0, 1] for a layer that only has two dimensions
             # or -> [1, 0, 2] for a layer with three as that corresponds to
             # the relative order of the last two and three dimensions
             # respectively
@@ -467,7 +467,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
 
         Parameters
         ----------
-        layer : napar.layers.Layer
+        layer : napari.layers.Layer
             Layer that is to be moved.
         position : 2-tuple of int
             New position of layer in grid.

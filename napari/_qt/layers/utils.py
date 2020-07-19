@@ -23,13 +23,13 @@ def create_qt_controls(layer):
 
     Parameters
     ----------
-        layer : napari.layers._base_layer.Layer
-            Layer that needs its controls widget created.
+    layer : napari.layers._base_layer.Layer
+        Layer that needs its controls widget created.
 
     Returns
-    ----------
-        controls : napari.layers.base.QtLayerControls
-            Qt controls widget
+    -------
+    controls : napari.layers.base.QtLayerControls
+        Qt controls widget
     """
     controls = layer_to_controls[type(layer)](layer)
 

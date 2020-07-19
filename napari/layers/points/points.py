@@ -24,6 +24,7 @@ from ..utils.color_transformations import (
     normalize_and_broadcast_colors,
     ColorType,
 )
+from ..utils.text import TextManager
 from ._points_constants import Symbol, SYMBOL_ALIAS, Mode, ColorMode
 from ._points_mouse_bindings import add, select, highlight
 from ._points_utils import (
@@ -49,6 +50,13 @@ class Points(Layer):
     properties : dict {str: array (N,)}, DataFrame
         Properties for each point. Each property should be an array of length N,
         where N is the number of points.
+    text : str, dict
+        Text to be displayed with the points. If text is set to a key in properties,
+        the value of that property will be displayed. Multiple properties can be
+        composed using f-string-like syntax (e.g., '{property_1}, {float_property:.2f}).
+        A dictionary can be provided with keyword arguments to set the text values
+        and display properties. See TextManager.__init__() for the valid keyword arguments.
+        For example usage, see /napari/examples/add_points_with_text.py.
     symbol : str
         Symbol to be used for the point markers. Must be one of the
         following: arrow, clobber, cross, diamond, disc, hbar, ring,
@@ -112,6 +120,11 @@ class Points(Layer):
     properties : dict {str: array (N,)}
         Annotations for each point. Each property should be an array of length N,
         where N is the number of points.
+    text : str
+        Text to be displayed with the points. If text is set to a key in properties, the value of
+        that property will be displayed. Multiple properties can be composed using f-string-like
+        syntax (e.g., '{property_1}, {float_property:.2f}).
+        For example usage, see /napari/examples/add_points_with_text.py.
     symbol : str
         Symbol used for all point markers.
     size : array (N, D)
@@ -217,6 +230,7 @@ class Points(Layer):
         data=None,
         *,
         properties=None,
+        text=None,
         symbol='o',
         size=10,
         edge_width=1,
@@ -296,6 +310,17 @@ class Points(Layer):
                 for k, v in self._property_choices.items()
             }
             self._properties = empty_properties
+
+        # make the text
+        if text is None or isinstance(text, (list, np.ndarray, str)):
+            self._text = TextManager(text, len(data), self.properties)
+        elif isinstance(text, dict):
+            copied_text = deepcopy(text)
+            copied_text['properties'] = self.properties
+            copied_text['n_text'] = len(data)
+            self._text = TextManager(**copied_text)
+        else:
+            raise TypeError('text should be a string, array, or dict')
 
         # Save the point style params
         self.symbol = symbol
@@ -386,8 +411,8 @@ class Points(Layer):
     ):
         """Initialize current_{edge,face}_color when starting with empty layer.
 
-        Parameters:
-        -----------
+        Parameters
+        ----------
         color : (N, 4) array or str
             The value for setting edge or face_color
         attribute : str in {'edge', 'face'}
@@ -481,13 +506,15 @@ class Points(Layer):
                 self.size = np.concatenate((self._size, size), axis=0)
                 self.selected_data = set(np.arange(cur_npoints, len(data)))
 
+                self.text.add(self.current_properties, adding)
+
         self._update_dims()
         self.events.data()
 
     def _add_point_color(self, adding: int, attribute: str):
         """Add the edge or face colors for new points.
 
-        Parameters:
+        Parameters
         ----------
         adding : int
             the number of points that were added
@@ -560,6 +587,9 @@ class Points(Layer):
                 'property used for edge_color dropped', RuntimeWarning
             )
 
+        if self.text.values is not None:
+            self.refresh_text()
+
     @property
     def current_properties(self) -> Dict[str, np.ndarray]:
         """dict{str: np.ndarray(1,)}: properties for the next added point."""
@@ -596,6 +626,24 @@ class Points(Layer):
                 properties[k] = np.asarray(v)
 
         return properties
+
+    @property
+    def text(self) -> TextManager:
+        """TextManager: the TextManager object containing containing the text properties"""
+        return self._text
+
+    @text.setter
+    def text(self, text):
+        self._text._set_text(
+            text, n_text=len(self.data), properties=self.properties
+        )
+
+    def refresh_text(self):
+        """Refresh the text values.
+
+        This is generally used if the properties were updated without changing the data
+        """
+        self.text.refresh_text(self.properties)
 
     def _get_ndim(self) -> int:
         """Determine number of dimensions of the layer."""
@@ -702,7 +750,6 @@ class Points(Layer):
     def edge_color_cycle(self) -> np.ndarray:
         """Union[list, np.ndarray] :  Color cycle for edge_color.
         Can be a list of colors defined by name, RGB or RGBA
-
         """
         return self._edge_color_cycle_values
 
@@ -896,11 +943,13 @@ class Points(Layer):
                         new_color_property,
                     )
                     warnings.warn(
-                        '_{attribute}_color_property was not set, setting to: {new_color_property}'
+                        f'_{attribute}_color_property was not set, '
+                        f'setting to: {new_color_property}'
                     )
                 else:
                     raise ValueError(
-                        'There must be a valid Points.properties to use {color_mode}'
+                        'There must be a valid Points.properties to use '
+                        f'{color_mode}'
                     )
 
             # ColorMode.COLORMAP can only be applied to numeric properties
@@ -1124,6 +1173,7 @@ class Points(Layer):
                 'edge_colormap': self.edge_colormap[0],
                 'edge_contrast_limits': self.edge_contrast_limits,
                 'properties': self.properties,
+                'text': self.text._get_state(),
                 'n_dimensional': self.n_dimensional,
                 'size': self.size,
                 'data': self.data,
@@ -1189,7 +1239,7 @@ class Points(Layer):
             List of points around which to construct the interaction box.
 
         Returns
-        ----------
+        -------
         box : np.ndarray
             4x2 array of corners of the interaction box in clockwise order
             starting in the upper-left corner.
@@ -1287,13 +1337,37 @@ class Points(Layer):
         return data
 
     @property
+    def _view_text(self) -> np.ndarray:
+        """Get the values of the text elements in view
+
+        Returns
+        -------
+        text : (N x 1) np.ndarray
+            Array of text strings for the N text elements in view
+        """
+        return self.text.view_text(self._indices_view)
+
+    @property
+    def _view_text_coords(self) -> np.ndarray:
+        """Get the coordinates of the text elements in view
+
+        Returns
+        -------
+        text_coords : (N x D) np.ndarray
+            Array of coordindates for the N text elements in view
+        """
+        return self.text.compute_text_coords(
+            self._view_data, self.dims.ndisplay
+        )
+
+    @property
     def _view_size(self) -> np.ndarray:
         """Get the sizes of the points in view
 
-       Returns
-       -------
-       view_size : (N x D) np.ndarray
-           Array of sizes for the N points in view
+        Returns
+        -------
+        view_size : (N x D) np.ndarray
+            Array of sizes for the N points in view
         """
         if len(self._indices_view) > 0:
             # Get the point sizes and scale for ndim display
@@ -1355,7 +1429,7 @@ class Points(Layer):
             Indices to slice with.
 
         Returns
-        ----------
+        -------
         slice_indices : list
             Indices of points in the currently viewed slice.
         scale : float, (N, ) array
@@ -1390,7 +1464,7 @@ class Points(Layer):
         """Determine if points at current coordinates.
 
         Returns
-        ----------
+        -------
         selection : int or None
             Index of point that is at the current coordinate if any.
         """
@@ -1553,6 +1627,7 @@ class Points(Layer):
                 self.properties[k] = np.delete(
                     self.properties[k], index, axis=0
                 )
+            self.text.remove(index)
             if self._value in self.selected_data:
                 self._value = None
             self.selected_data = set()
@@ -1621,6 +1696,12 @@ class Points(Layer):
             self._selected_data = set(
                 range(totpoints, totpoints + len(self._clipboard['data']))
             )
+
+            if self._clipboard['text'] is not None:
+                self.text._values = np.concatenate(
+                    (self.text.values, self._clipboard['text']), axis=0
+                )
+
             self.refresh()
 
     def _copy_data(self):
@@ -1637,5 +1718,12 @@ class Points(Layer):
                 },
                 'indices': self.dims.indices,
             }
+
+            if self.text.values is None:
+                self._clipboard['text'] = None
+
+            else:
+                self._clipboard['text'] = deepcopy(self.text.values[index])
+
         else:
             self._clipboard = {}

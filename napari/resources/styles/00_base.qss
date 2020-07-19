@@ -619,3 +619,9 @@ QMenuBar::item:selected {
 QLCDNumber {
   background: none;
 }
+
+/* ----------------- QStatusBar ------------------ */
+
+QStatusBar::item{
+  border: None;
+}

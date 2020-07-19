@@ -26,7 +26,7 @@ from ..utils.interactions import (
 from ..utils.key_bindings import components_to_key_combo
 from ..utils import perf
 
-from .utils import QImg2array, square_pixmap
+from .utils import QImg2array, square_pixmap, circle_pixmap
 from .qt_controls import QtControls
 from .qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .qt_viewer_dock_widget import QtViewerDockWidget
@@ -228,8 +228,8 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         if self.dockLayerControls.isFloating():
             self.controls.setMaximumWidth(700)
@@ -241,14 +241,14 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         layers = event.source
         layer = event.item
         vispy_layer = create_vispy_visual(layer)
         vispy_layer.node.parent = self.view.scene
-        vispy_layer.order = len(layers)
+        vispy_layer.order = len(layers) - 1
         self.canvas.connect(vispy_layer.on_draw)
         self.layer_to_visual[layer] = vispy_layer
 
@@ -257,8 +257,8 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         layer = event.item
         vispy_layer = self.layer_to_visual[layer]
@@ -266,14 +266,15 @@ class QtViewer(QSplitter):
         vispy_layer.node.transforms = ChainTransform()
         vispy_layer.node.parent = None
         del vispy_layer
+        self._reorder_layers(None)
 
     def _reorder_layers(self, event):
         """When the list is reordered, propagate changes to draw order.
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         for i, layer in enumerate(self.viewer.layers):
             vispy_layer = self.layer_to_visual[layer]
@@ -336,8 +337,8 @@ class QtViewer(QSplitter):
     def screenshot(self, path=None):
         """Take currently displayed screen and convert to an image array.
 
-        Parmeters
-        ---------
+        Parameters
+        ----------
         path : str
             Filename for saving screenshot image.
 
@@ -405,8 +406,8 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         self.view.interactive = self.viewer.interactive
 
@@ -415,8 +416,8 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         cursor = self.viewer.cursor
         if cursor == 'square':
@@ -428,6 +429,9 @@ class QtViewer(QSplitter):
                 q_cursor = self._cursors['cross']
             else:
                 q_cursor = QCursor(square_pixmap(size))
+        elif cursor == 'circle':
+            size = self.viewer.cursor_size
+            q_cursor = QCursor(circle_pixmap(size))
         else:
             q_cursor = self._cursors[cursor]
         self.canvas.native.setCursor(q_cursor)
@@ -437,8 +441,8 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         if isinstance(self.view.camera, ArcballCamera):
             quat = self.view.camera._quaternion.create_from_axis_angle(
@@ -497,8 +501,8 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         if event.pos is None:
             return
@@ -519,8 +523,8 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         if event.pos is None:
             return
@@ -540,8 +544,8 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         if event.pos is None:
             return
@@ -561,8 +565,8 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         if (
             event.native is not None
@@ -582,8 +586,8 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         if event.key is None or (
             # on linux press down is treated as multiple press and release
@@ -660,7 +664,7 @@ class QtViewer(QSplitter):
         """
         # if the viewer.QtDims object is playing an axis, we need to terminate
         # the AnimationThread before close, otherwise it will cauyse a segFault
-        # or Abort trap. (calling stop() when no animation is occuring is also
+        # or Abort trap. (calling stop() when no animation is occurring is also
         # not a problem)
         self.dims.stop()
         self.canvas.native.deleteLater()
@@ -675,7 +679,7 @@ def viewbox_key_event(event):
 
     Parameters
     ----------
-    event : qtpy.QtCore.QEvent
-        Event from the Qt context.
+    event : napari.utils.event.Event
+        The napari event that triggered this method.
     """
     return

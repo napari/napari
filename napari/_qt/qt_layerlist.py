@@ -73,8 +73,8 @@ class QtLayerList(QScrollArea):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         layer = event.item
         total = len(self.layers)
@@ -89,8 +89,8 @@ class QtLayerList(QScrollArea):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         layer_index = event.index
         total = len(self.layers)
@@ -111,8 +111,8 @@ class QtLayerList(QScrollArea):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional
-            Event from the Qt context.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method.
         """
         total = len(self.layers)
 
@@ -164,8 +164,8 @@ class QtLayerList(QScrollArea):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         layer = event.source
         self._ensure_visible(layer)
@@ -201,7 +201,7 @@ class QtLayerList(QScrollArea):
         event.ignore()
 
     def keyReleaseEvent(self, event):
-        """Ignore key relase event.
+        """Ignore key release event.
 
         Allows the event to pass through a parent widget to its child widget
         without doing anything. If we did not use event.ignore() then the
@@ -218,7 +218,7 @@ class QtLayerList(QScrollArea):
         """Register mouse click if it happens on a layer widget.
 
         Checks if mouse press happens on a layer properties widget or
-        a child of such a widget. If not, the press has happended on the
+        a child of such a widget. If not, the press has happened on the
         Layers Widget itself and should be ignored.
 
         Parameters
@@ -608,8 +608,8 @@ class QtLayerWidget(QFrame):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional
-            Event from the Qt context.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method.
         """
         with self.layer.events.name.blocker():
             self.nameTextBox.setText(self.layer.name)
@@ -620,8 +620,8 @@ class QtLayerWidget(QFrame):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional
-            Event from the Qt context.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method.
         """
         with self.layer.events.visible.blocker():
             self.visibleCheckBox.setChecked(self.layer.visible)
@@ -631,8 +631,8 @@ class QtLayerWidget(QFrame):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional
-            Event from the Qt context.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method.
         """
         thumbnail = self.layer.thumbnail
         # Note that QImage expects the image width followed by height

@@ -12,7 +12,7 @@ def view_image(
     interpolation='nearest',
     rendering='mip',
     iso_threshold=0.5,
-    attenuation=0.5,
+    attenuation=0.05,
     name=None,
     metadata=None,
     scale=None,
@@ -169,7 +169,7 @@ def view_path(
     plugin : str, optional
         Name of a plugin to use.  If provided, will force ``path`` to be
         read with the specified ``plugin``.  If the requested plugin cannot
-        read ``path``, an execption will be raised.
+        read ``path``, an exception will be raised.
     layer_type : str, optional
         If provided, will force data read from ``path`` to be passed to the
         corresponding ``add_<layer_type>`` method (along with any
@@ -214,6 +214,7 @@ def view_points(
     data=None,
     *,
     properties=None,
+    text=None,
     symbol='o',
     size=10,
     edge_width=1,
@@ -248,6 +249,13 @@ def view_points(
     properties : dict {str: array (N,)}, DataFrame
         Properties for each point. Each property should be an array of length N,
         where N is the number of points.
+    text : str, dict
+        Text to be displayed with the points. If text is set to a key in properties,
+        the value of that property will be displayed. Multiple properties can be
+        composed using f-string-like syntax (e.g., '{property_1}, {float_property:.2f}).
+        A dictionary can be provided with keyword arguments to set the text values
+        and display properties. See TextManager.__init__() for the valid keyword arguments.
+        For example usage, see /napari/examples/add_points_with_text.py.
     symbol : str
         Symbol to be used for the point markers. Must be one of the
         following: arrow, clobber, cross, diamond, disc, hbar, ring,
@@ -336,6 +344,7 @@ def view_points(
     viewer.add_points(
         data=data,
         properties=properties,
+        text=text,
         symbol=symbol,
         size=size,
         edge_width=edge_width,
@@ -364,6 +373,7 @@ def view_labels(
     *,
     num_colors=50,
     properties=None,
+    color=None,
     seed=0.5,
     name=None,
     metadata=None,
@@ -402,8 +412,11 @@ def view_labels(
         Number of unique colors to use in colormap.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each label. Each property should be an array of length
-        N, where N is the number of labels, and the first property corresponds to
-        background.
+        N, where N is the number of labels, and the first property corresponds
+        to background.
+    color : dict of int to str or array
+        Custom label to color mapping. Values must be valid color names or RGBA
+        arrays.
     seed : float
         Seed for colormap random generator.
     name : str
@@ -466,6 +479,7 @@ def view_labels(
         opacity=opacity,
         blending=blending,
         visible=visible,
+        color=color,
     )
     return viewer
 
@@ -473,10 +487,19 @@ def view_labels(
 def view_shapes(
     data=None,
     *,
+    ndim=None,
+    properties=None,
+    text=None,
     shape_type='rectangle',
     edge_width=1,
     edge_color='black',
+    edge_color_cycle=None,
+    edge_colormap='viridis',
+    edge_contrast_limits=None,
     face_color='white',
+    face_color_cycle=None,
+    face_colormap='viridis',
+    face_contrast_limits=None,
     z_index=0,
     name=None,
     metadata=None,
@@ -499,6 +522,19 @@ def view_shapes(
         List of shape data, where each element is an (N, D) array of the
         N vertices of a shape in D dimensions. Can be an 3-dimensional
         array if each shape has the same number of vertices.
+    ndim : int
+        Number of dimensions for shapes. When data is not None, ndim must be D.
+        An empty shapes layer can be instantiated with arbitrary ndim.
+    properties : dict {str: array (N,)}, DataFrame
+        Properties for each shape. Each property should be an array of length N,
+        where N is the number of shapes.
+    text : str, dict
+        Text to be displayed with the shapes. If text is set to a key in properties,
+        the value of that property will be displayed. Multiple properties can be
+        composed using f-string-like syntax (e.g., '{property_1}, {float_property:.2f}).
+        A dictionary can be provided with keyword arguments to set the text values
+        and display properties. See TextManager.__init__() for the valid keyword arguments.
+        For example usage, see /napari/examples/add_shapes_with_text.py.
     shape_type : string or list
         String of shape shape_type, must be one of "{'line', 'rectangle',
         'ellipse', 'path', 'polygon'}". If a list is supplied it must be
@@ -516,12 +552,34 @@ def view_shapes(
         or 4 elements. If a list is supplied it must be the same length as
         the length of `data` and each element will be applied to each shape
         otherwise the same value will be used for all shapes.
+    edge_color_cycle : np.ndarray, list
+        Cycle of colors (provided as string name, RGB, or RGBA) to map to edge_color if a
+        categorical attribute is used color the vectors.
+    edge_colormap : str, vispy.color.colormap.Colormap
+        Colormap to set edge_color if a continuous attribute is used to set face_color.
+        See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
+    edge_contrast_limits : None, (float, float)
+        clims for mapping the property to a color map. These are the min and max value
+        of the specified property that are mapped to 0 and 1, respectively.
+        The default value is None. If set the none, the clims will be set to
+        (property.min(), property.max())
     face_color : str, array-like
         If string can be any color name recognized by vispy or hex value if
         starting with `#`. If array-like must be 1-dimensional array with 3
         or 4 elements. If a list is supplied it must be the same length as
         the length of `data` and each element will be applied to each shape
         otherwise the same value will be used for all shapes.
+    face_color_cycle : np.ndarray, list
+        Cycle of colors (provided as string name, RGB, or RGBA) to map to face_color if a
+        categorical attribute is used color the vectors.
+    face_colormap : str, vispy.color.colormap.Colormap
+        Colormap to set face_color if a continuous attribute is used to set face_color.
+        See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
+    face_contrast_limits : None, (float, float)
+        clims for mapping the property to a color map. These are the min and max value
+        of the specified property that are mapped to 0 and 1, respectively.
+        The default value is None. If set the none, the clims will be set to
+        (property.min(), property.max())
     z_index : int or list
         Specifier of z order priority. Shapes with higher z order are
         displayed ontop of others. If a list is supplied it must be the
@@ -571,10 +629,19 @@ def view_shapes(
     )
     viewer.add_shapes(
         data=data,
+        ndim=ndim,
+        properties=properties,
+        text=text,
         shape_type=shape_type,
         edge_width=edge_width,
         edge_color=edge_color,
+        edge_color_cycle=edge_color_cycle,
+        edge_colormap=edge_colormap,
+        edge_contrast_limits=edge_contrast_limits,
         face_color=face_color,
+        face_color_cycle=face_color_cycle,
+        face_colormap=face_colormap,
+        face_contrast_limits=face_contrast_limits,
         z_index=z_index,
         name=name,
         metadata=metadata,
@@ -725,7 +792,7 @@ def view_vectors(
     edge_width : float
         Width for all vectors in pixels.
     length : float
-         Multiplicative factor on projections for length of all vectors.
+        Multiplicative factor on projections for length of all vectors.
     edge_color : str
         Color of all of the vectors.
     edge_color_cycle : np.ndarray, list

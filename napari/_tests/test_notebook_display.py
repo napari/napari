@@ -3,9 +3,9 @@ import numpy as np
 from napari.utils import nbscreenshot
 
 
-def test_nbscreenshot(viewer_factory):
+def test_nbscreenshot(make_test_viewer):
     """Test taking a screenshot."""
-    view, viewer = viewer_factory()
+    viewer = make_test_viewer()
 
     np.random.seed(0)
     data = np.random.random((10, 15))

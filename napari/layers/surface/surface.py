@@ -308,7 +308,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         and set of indices.
 
         Returns
-        ----------
+        -------
         value : int, None
             Value of the data at the coord.
         """

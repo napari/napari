@@ -585,12 +585,12 @@ class EventEmitter(object):
     def blocker(self, callback=None):
         """Return an EventBlocker to be used in 'with' statements
 
-           Notes
-           -----
-           For example, one could do::
+        Notes
+        -----
+        For example, one could do::
 
-               with emitter.blocker():
-                   pass  # ..do stuff; no events will be emitted..
+            with emitter.blocker():
+                pass  # ..do stuff; no events will be emitted..
         """
         return EventBlocker(self, callback)
 

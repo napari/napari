@@ -76,11 +76,11 @@ def test_copy_paste():
 
     key_bindings.copy(layer)
     assert len(layer.data) == 3
-    assert len(layer._clipboard) == 4
+    assert len(layer._clipboard) == 6
 
     key_bindings.paste(layer)
     assert len(layer.data) == 5
-    assert len(layer._clipboard) == 4
+    assert len(layer._clipboard) == 6
 
 
 def test_select_all():

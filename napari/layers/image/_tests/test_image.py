@@ -260,7 +260,7 @@ def test_name():
 
 
 def test_visiblity():
-    """Test setting layer visiblity."""
+    """Test setting layer visibility."""
     np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
@@ -486,10 +486,10 @@ def test_attenuation():
     np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
-    assert layer.attenuation == 0.5
+    assert layer.attenuation == 0.05
 
-    # Change iso_threshold property
-    attenuation = 0.7
+    # Change attenuation property
+    attenuation = 0.07
     layer.attenuation = attenuation
     assert layer.attenuation == attenuation
 
@@ -601,3 +601,12 @@ def test_image_translate(translate):
     np.random.seed(0)
     data = np.random.random((10, 15))
     Image(data, translate=translate)
+
+
+def test_grid_translate():
+    np.random.seed(0)
+    data = np.random.random((10, 15))
+    layer = Image(data)
+    translate = np.array([15, 15])
+    layer.translate_grid = translate
+    np.testing.assert_allclose(layer.translate_grid, translate)

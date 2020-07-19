@@ -62,7 +62,7 @@ class Transform:
         ----------
         axes : Sequence[int]
             Location of axes to expand the current transform with. Passing a
-            list allows expanion to occur at specific locations and for
+            list allows expansion to occur at specific locations and for
             expand_dims to be like an inverse to the set_slice method.
 
         Returns
@@ -124,7 +124,7 @@ class TransformChain(ListModel, Transform):
         ----------
         axes : Sequence[int]
             Location of axes to expand the current transform with. Passing a
-            list allows expanion to occur at specific locations and for
+            list allows expansion to occur at specific locations and for
             expand_dims to be like an inverse to the set_slice method.
 
         Returns
@@ -207,7 +207,7 @@ class ScaleTranslate(Transform):
         ----------
         axes : Sequence[int]
             Location of axes to expand the current transform with. Passing a
-            list allows expanion to occur at specific locations and for
+            list allows expansion to occur at specific locations and for
             expand_dims to be like an inverse to the set_slice method.
 
         Returns

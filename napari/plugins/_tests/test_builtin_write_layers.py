@@ -69,7 +69,7 @@ def test_no_write_layer_bad_extension(tmpdir, layer_writer_and_data):
     # Check file does not exist
     assert not os.path.isfile(path)
 
-    # Check no data is writen
+    # Check no data is written
     assert not writer(path, layer_data[0], layer_data[1])
 
     # Check file still does not exist

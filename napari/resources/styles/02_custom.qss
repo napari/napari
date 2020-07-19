@@ -258,8 +258,8 @@ QtControls {
     border-radius: 2px;
     padding: 0px;
     margin: 10px;
-    min-height: 215px;
-    max-height: 215px;
+    min-height: 245px;
+    max-height: 245px;
     min-width: 240px;
     max-width: 240px;
     margin-left: 10px;
@@ -376,7 +376,7 @@ QtDimSliderWidget > QLineEdit {
 /* editable slice label and axis name */
 QtDimSliderWidget > QLineEdit {
   padding: 0 0 1px 2px;
-  max-height: 12px;
+  max-height: 14px;
   min-height: 12px;
   min-width: 16px;
   color: {{ text }};
@@ -391,10 +391,6 @@ QtDimSliderWidget > QLineEdit {
 #slice_label_sep{
   background-color: {{ background }};
   border: 1px solid {{ primary }};
-}
-
-QtDimSliderWidget > QLabel {
-  padding: 4px 0 0 1px;
 }
 
 

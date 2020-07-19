@@ -1,7 +1,7 @@
 """
 Display one points layer on top of one 4-D image layer using the
 add_points and add_image APIs, where the markes are visible as nD objects
-accross the dimensions, specified by their size
+across the dimensions, specified by their size
 """
 
 import numpy as np
@@ -31,4 +31,6 @@ with napari.gui_qt():
             [9, 8, 80, 100],
         ]
     )
-    viewer.add_points(points, size=[0, 6, 10, 10], face_color='blue', n_dimensional=True)
+    viewer.add_points(
+        points, size=[0, 6, 10, 10], face_color='blue', n_dimensional=True
+    )

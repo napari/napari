@@ -47,7 +47,7 @@ class Layer(KeymapProvider, ABC):
     ----------
     name : str
         Unique name of the layer.
-    opacity : flaot
+    opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     visible : bool
         Whether the layer visual is currently being displayed.
@@ -277,18 +277,18 @@ class Layer(KeymapProvider, ABC):
     def blending(self):
         """Blending mode: Determines how RGB and alpha values get mixed.
 
-            Blending.OPAQUE
-                Allows for only the top layer to be visible and corresponds to
-                depth_test=True, cull_face=False, blend=False.
-            Blending.TRANSLUCENT
-                Allows for multiple layers to be blended with different opacity
-                and corresponds to depth_test=True, cull_face=False,
-                blend=True, blend_func=('src_alpha', 'one_minus_src_alpha').
-            Blending.ADDITIVE
-                Allows for multiple layers to be blended together with
-                different colors and opacity. Useful for creating overlays. It
-                corresponds to depth_test=False, cull_face=False, blend=True,
-                blend_func=('src_alpha', 'one').
+        Blending.OPAQUE
+            Allows for only the top layer to be visible and corresponds to
+            depth_test=True, cull_face=False, blend=False.
+        Blending.TRANSLUCENT
+            Allows for multiple layers to be blended with different opacity
+            and corresponds to depth_test=True, cull_face=False,
+            blend=True, blend_func=('src_alpha', 'one_minus_src_alpha').
+        Blending.ADDITIVE
+            Allows for multiple layers to be blended together with
+            different colors and opacity. Useful for creating overlays. It
+            corresponds to depth_test=False, cull_face=False, blend=True,
+            blend_func=('src_alpha', 'one').
         """
         return str(self._blending)
 
@@ -707,7 +707,7 @@ class Layer(KeymapProvider, ABC):
         """Generate a status message based on the coordinates and value
 
         Returns
-        ----------
+        -------
         msg : string
             String containing a message that can be used as a status update.
         """
@@ -735,7 +735,7 @@ class Layer(KeymapProvider, ABC):
         ----------
         path : str
             A filepath, directory, or URL to open.  Extensions may be used to
-            specify output format (provided a plugin is avaiable for the
+            specify output format (provided a plugin is available for the
             requested format).
         plugin : str, optional
             Name of the plugin to use for saving. If ``None`` then all plugins
