@@ -1,5 +1,5 @@
 from dataclasses import asdict, field
-from typing import List
+from typing import List, ClassVar
 from unittest.mock import Mock
 
 import pytest
@@ -44,7 +44,6 @@ def test_dataclass_with_properties(props, events):
             if value == [1, 2]:
                 return True
 
-    # currently, properties will only be added to the class during post_init
     m = M(a=1)
     # basic functionality
     assert m.a == 1
@@ -99,8 +98,27 @@ def test_dataclass_missing_vars_raises():
     @dataclass(properties=True)
     class M:
         a: int
+        b: list = field(default_factory=list)
+        c: str = field(default='asdf')
+        d: int = 9
+        # ClassVars are ignored entirely by dataclasses
+        e: ClassVar[int] = 1
+        f: ClassVar[str]
 
     with pytest.raises(TypeError):
         _ = M()  # missing `a`
     assert M(1).a == 1
-    assert M(a=1).a == 1
+    m = M(a=2)
+    assert m.a == 2
+    assert m.b == []
+    assert m.c == 'asdf'
+    assert m.d == 9
+    # Classvars and _private property names are left out of dict
+    assert asdict(m) == {'a': 2, 'b': [], 'c': 'asdf', 'd': 9}
+    # ClassVars must have a default value to be seen as attributes.
+    assert m.e == 1
+    assert M.e == 1
+    # Otherwise they are just annotations
+    assert not hasattr(m, 'f')
+    assert not hasattr(M, 'f')
+    assert 'f' in M.__annotations__
