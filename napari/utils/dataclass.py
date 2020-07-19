@@ -1,5 +1,6 @@
-import dataclasses as _dataclasses  # builtin private for ease of tab complete
-from typing import Any, Callable, Type, TypeVar
+import dataclasses as _pydcls
+import typing
+from typing import Any, Callable, ClassVar, Type, TypeVar
 
 import toolz as tz
 
@@ -55,10 +56,8 @@ def setattr_with_events(self: T, name: str, value: Any) -> None:
             getattr(self.events, name)(value=getattr(self, name))  # type: ignore
 
 
-def make_post_init(
-    cls: Type[T], events=False, properties=False
-) -> Callable[..., None]:
-    """Return a new __post_init__ method wrapper with events & properties.
+def make_post_init(cls: Type[T], events=False) -> Callable[..., None]:
+    """Return a new __post_init__ method wrapper with events.
 
     Parameters
     ----------
@@ -66,8 +65,6 @@ def make_post_init(
         The class being decorated as a dataclass
     events : bool, optional
         Whether to add an `EmitterGroup` to the class, by default False
-    properties : bool, optional
-        Whether to convert the dataclass fields to properties, by default False
 
     Returns
     -------
@@ -91,12 +88,6 @@ def make_post_init(
         # call original __post_init__
         if orig_post_init is not None:
             orig_post_init(self, *initvars)
-        # if requested, convert dataclass fields to property descriptors.
-        if properties:
-            # This should happen after initialization to allow default
-            # factories to be handled by the dataclass
-            convert_fields_to_properties(self)
-
         if events:
             # modify __setattr__ with version that emits an event when setting
             setattr(cls, '__setattr__', setattr_with_events)
@@ -104,25 +95,7 @@ def make_post_init(
     return _event_post_init
 
 
-def make_getter(name):
-    """Make an fget function for creating a property descriptor."""
-
-    def fget(self):
-        return getattr(self, name)
-
-    return fget
-
-
-def make_setter(name):
-    """Make an fset function for creating a property descriptor."""
-
-    def fset(self, value):
-        setattr(self, name, value)
-
-    return fset
-
-
-def convert_fields_to_properties(obj: T):
+def convert_fields_to_properties(cls: Type[T]):
     """Convert all fields in a dataclass instance to property descriptors.
 
     Note: this modifies class Type[T] (the class that was decorated with
@@ -143,25 +116,47 @@ def convert_fields_to_properties(obj: T):
     """
     from numpydoc.docscrape import ClassDoc
 
-    cls = obj.__class__
     cls_doc = ClassDoc(cls)
     params = {p.name: p for p in cls_doc["Parameters"]}
-    for field in _dataclasses.fields(cls):
 
-        private_name = f"_{field.name}"
-        setattr(obj, private_name, getattr(obj, field.name))
-        fget = make_getter(private_name)
-        fset = make_setter(private_name)
+    for name, type_ in list(cls.__dict__.get('__annotations__', {}).items()):
+        if name.startswith("_") or _pydcls._is_classvar(type_, typing):
+            continue
+        private_name = f"_{name}"
+        default = getattr(cls, name, _pydcls.MISSING)
+        # set the private attribute as a class variable
+        # annotations of type ClassVar are ignored by the dataclass
+        cls.__annotations__[private_name] = ClassVar[type_]
+
+        def fget(self, key=private_name):
+            return getattr(self, key)
+
+        def fset(self, value, key=private_name, default=default):
+            if type(value) is property:
+                value = default
+                if isinstance(default, _pydcls.Field):
+                    if default.default_factory is not _pydcls.MISSING:
+                        value = default.default_factory()
+                    elif default.default is not _pydcls.MISSING:
+                        value = default.default
+                if value is _pydcls.MISSING:
+                    _name = key.lstrip("_")
+                    raise TypeError(
+                        "__init__() missing 1 required "
+                        f"positional argument: '{_name}'"
+                    )
+            setattr(self, key, value)
+
         doc = None
-        if field.name in params:
-            param = params[field.name]
+        if name in params:
+            param = params[name]
             doc = "\n".join(param.desc)
             # TODO: could compare param.type to field.type here for consistency
             # alternatively, we may just want to use pydantic for type
             # validation.
 
         prop = property(fget=fget, fset=fset, fdel=None, doc=doc)
-        setattr(cls, field.name, prop)
+        setattr(cls, name, prop)
 
 
 @tz.curry
@@ -224,15 +219,19 @@ def dataclass(
 
     if properties and frozen:
         raise ValueError("`properties=True` cannot be used with `frozen=True`")
-    if events or properties:
+
+    if properties:
+        convert_fields_to_properties(cls)
+
+    if events:
         # create a modified __post_init__ method that will create the
-        # EmitterGroup, and convert fields to properties (if requested)
-        post_init = make_post_init(cls, events, properties)
+        # EmitterGroup
+        post_init = make_post_init(cls, events)
         setattr(cls, '__post_init__', post_init)
 
     # if neither events or properties are True, this function is exactly like
     # the builtin `dataclasses.dataclass`
-    _cls = _dataclasses._process_class(
+    _cls = _pydcls._process_class(
         cls, init, repr, eq, order, unsafe_hash, frozen
     )
     return _cls

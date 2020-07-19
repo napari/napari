@@ -93,3 +93,14 @@ def test_dataclass_with_properties(props, events):
         m.events.c.assert_not_called()
     else:
         assert not hasattr(m, 'events')
+
+
+def test_dataclass_missing_vars_raises():
+    @dataclass(properties=True)
+    class M:
+        a: int
+
+    with pytest.raises(TypeError):
+        _ = M()  # missing `a`
+    assert M(1).a == 1
+    assert M(a=1).a == 1
