@@ -216,6 +216,7 @@ def test_new_labels_image():
     assert viewer.dims.ndim == 2
     np.testing.assert_almost_equal(viewer.layers[1].data.shape, (10, 15))
     np.testing.assert_almost_equal(viewer.layers[1].scale, (1, 1))
+    np.testing.assert_almost_equal(viewer.layers[1].translate, (0, 0))
 
 
 def test_new_labels_scaled_image():
@@ -230,6 +231,22 @@ def test_new_labels_scaled_image():
     assert viewer.dims.ndim == 2
     np.testing.assert_almost_equal(viewer.layers[1].data.shape, (10, 15))
     np.testing.assert_almost_equal(viewer.layers[1].scale, (3, 3))
+    np.testing.assert_almost_equal(viewer.layers[1].translate, (0, 0))
+
+
+def test_new_labels_scaled_translated_image():
+    """Test adding new labels layer with transformed image present."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    data = np.random.random((10, 15))
+    viewer.add_image(data, scale=(3, 3), translate=(20, -5))
+    viewer._new_labels()
+    assert len(viewer.layers) == 2
+    assert np.max(viewer.layers[1].data) == 0
+    assert viewer.dims.ndim == 2
+    np.testing.assert_almost_equal(viewer.layers[1].data.shape, (10, 15))
+    np.testing.assert_almost_equal(viewer.layers[1].scale, (3, 3))
+    np.testing.assert_almost_equal(viewer.layers[1].translate, (20, -5))
 
 
 def test_new_points():
