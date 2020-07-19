@@ -1,13 +1,44 @@
 import dataclasses as _pydcls
 import typing
-from typing import Any, Callable, ClassVar, Type, TypeVar, Set
+from enum import EnumMeta
+from typing import Any, Callable, ClassVar, Optional, Set, Type, TypeVar
 
 import toolz as tz
+from typing_extensions import get_type_hints
 
 from .event import EmitterGroup
 
-WHEN_SET = "_on_{name}_set"
+ON_SET = "_on_{name}_set"
+ON_GET = "_on_{name}_get"
 T = TypeVar("T")
+
+
+def coerce(value: Any, type_: Optional[Type]):
+    """Attempt to coerce value to a particular type.
+
+    Parameters
+    ----------
+    value : Any
+        The value being coerced
+    type_ : Type
+        The output type
+
+    Returns
+    -------
+    value : Any
+        possibly coerced value
+    """
+    if not type_ or isinstance(value, property):
+        return value
+    if isinstance(type_, EnumMeta):
+        return type_(value)
+    try:
+        # convert simple types
+        if type_.__module__ == 'builtins':
+            value = type_(value)
+    except Exception:
+        pass
+    return value
 
 
 @tz.curry
@@ -45,19 +76,45 @@ def set_with_events(self: T, name: str, value: Any, fields: Set[str]) -> None:
     fields : set of str
         Only emit events for field names in this set.
     """
+    _value = coerce(value, get_type_hints(self).get(name))
     # first call the original
-    object.__setattr__(self, name, value)
+    object.__setattr__(self, name, _value)
     if name in fields:
         # if custom set method `_on_<name>_set` exists, call it
-        setter_method = getattr(self, WHEN_SET.format(name=name), None)
+        setter_method = getattr(self, ON_SET.format(name=name), None)
         if callable(setter_method):
             # the method can return True, if it wants to handle its own events
             if setter_method(getattr(self, name)):
                 return
         # otherwise, we emit the event
-        if name in self.events:  # type: ignore # (needs SupportsEvents)
+        if hasattr(self, 'events') and name in self.events:
             # use gettattr again in case `_on_name_set` has modified it
             getattr(self.events, name)(value=getattr(self, name))  # type: ignore
+
+
+def getattr_with_conversion(self: T, name: str) -> Any:
+    """Modified __getattr__ method that allows class override.
+    Parameters
+    ----------
+    self : T
+        An instance of the decorated dataclass of Type[T]
+    name : str
+        The name of the attribute being retrieved.
+
+    Returns
+    -------
+    value : Any
+        The value being retrieved
+    """
+    val = object.__getattribute__(self, name)
+    name = name.lstrip("_")
+    hint = get_type_hints(self, include_extras=True).get(name)
+    if hasattr(hint, '__metadata__') and hint.__metadata__:
+        val = coerce(val, hint.__metadata__[0])
+    getter_method = getattr(self, ON_GET.format(name=name), None)
+    if callable(getter_method):
+        return getter_method(val)
+    return val
 
 
 def add_events_to_class(cls: Type[T]) -> Callable[..., None]:
@@ -137,7 +194,7 @@ def convert_fields_to_properties(cls: Type[T]):
 
         # make the actual getter/setter functions that the property will use
         def fget(self, key=private_name):
-            return getattr(self, key)
+            return getattr_with_conversion(self, key)
 
         def fset(self, value, key=private_name, default=default):
             # during __init__, the dataclass will try to set the instance
@@ -254,4 +311,10 @@ def dataclass(
     _cls = _pydcls._process_class(
         cls, init, repr, eq, order, unsafe_hash, frozen
     )
+    setattr(_cls, '_get_state', _get_state)
     return _cls
+
+
+def _get_state(self):
+    """Get dictionary of dataclass fiels."""
+    return _pydcls.asdict(self)
