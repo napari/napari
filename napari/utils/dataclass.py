@@ -23,6 +23,8 @@ ON_SET = "_on_{name}_set"
 ON_GET = "_on_{name}_get"
 C = TypeVar("C")
 
+NO_ATTR = object()
+
 
 @tz.curry
 def set_with_events(self: C, name: str, value: Any, fields: Set[str]) -> None:
@@ -60,6 +62,7 @@ def set_with_events(self: C, name: str, value: Any, fields: Set[str]) -> None:
         Only emit events for field names in this set.
     """
     # first call the original
+    before = getattr(self, name, NO_ATTR)
     object.__setattr__(self, name, value)
 
     if hasattr(self, 'events') and name in fields:
@@ -67,17 +70,26 @@ def set_with_events(self: C, name: str, value: Any, fields: Set[str]) -> None:
         setter_method = getattr(self, ON_SET.format(name=name), None)
         if callable(setter_method):
             # the method can return True, if it wants to handle its own events
-            # TODO: if an exception is raised in the ON_SET method, we should
-            # undo any state changes.
-            if setter_method(getattr(self, name)):
-                return
+
+            try:
+                if setter_method(getattr(self, name)):
+                    return
+            except Exception as e:
+                if before is NO_ATTR:
+                    object.__delattr__(self, name)
+                else:
+                    object.__setattr__(self, name, before)
+                meth_name = (
+                    f"{self.__class__.__name__}.{ON_SET.format(name=name)}"
+                )
+                raise type(e)(f"Error in {meth_name} (value not set): {e}")
         # otherwise, we emit the event
         # TODO: use np.all(old_val == new_val)
-        # TODO: don't emit an event if the value hasn't changed
 
-        if name in self.events:
+        after = getattr(self, name)
+        if before != after and name in self.events:
             # use gettattr again in case `_on_name_set` has modified it
-            getattr(self.events, name)(value=getattr(self, name))  # type: ignore
+            getattr(self.events, name)(value=after)  # type: ignore
 
 
 def add_events_to_class(cls: Type[C]) -> None:
@@ -325,6 +337,11 @@ def dataclass(
         If both ``properties`` and ``frozen`` are True
     """
 
+    if frozen and (events or properties):
+        raise ValueError(
+            "`frozen=True` is incompatible `properties=True` or `events=True`"
+        )
+
     # TODO: currently, events must be process first here, otherwise
     # metada={'events':False} does not work... but that should be fixed.
     if events:
@@ -332,10 +349,6 @@ def dataclass(
         add_events_to_class(cls)
 
     if properties:
-        if frozen:
-            raise ValueError(
-                "`properties=True` cannot be used with `frozen=True`"
-            )
         # convert public dataclass fields to properties
         convert_fields_to_properties(cls)
 
