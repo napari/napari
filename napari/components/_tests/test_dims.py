@@ -127,7 +127,9 @@ def test_indices():
     dims.set_range(1, (0, 4, 2))
     dims.set_point(0, 2)
     dims.set_point(1, 3)
-    assert dims.indices == (1, 2) + (slice(None, None, None),) * 2
+    assert dims.indices == (1, 1) + (slice(None, None, None),) * 2
+    dims.set_point(1, 6)
+    assert dims.indices == (1, 1) + (slice(None, None, None),) * 2
 
 
 def test_axis_labels():
