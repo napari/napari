@@ -51,10 +51,10 @@ class TextManager:
     properties: Dict[str, np.ndarray] = field(default_factory=dict)
     rotation: float = 0.0
     translation: np.ndarray = np.asarray(0)
-    anchor: Annotated[Anchor, str] = Anchor.CENTER
+    anchor: Annotated[Anchor, str, Anchor] = Anchor.CENTER
     color: Union[np.ndarray, str] = 'cyan'
     size: float = 12.0
-    blending: Annotated[Blending, str] = Blending.TRANSLUCENT
+    blending: Annotated[Blending, str, Blending] = Blending.TRANSLUCENT
     visible: bool = True
 
     # private attributes not in dataclass
