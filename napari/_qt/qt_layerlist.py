@@ -73,8 +73,8 @@ class QtLayerList(QScrollArea):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         layer = event.item
         total = len(self.layers)
@@ -89,8 +89,8 @@ class QtLayerList(QScrollArea):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         layer_index = event.index
         total = len(self.layers)
@@ -111,8 +111,8 @@ class QtLayerList(QScrollArea):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional
-            Event from the Qt context.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method.
         """
         total = len(self.layers)
 
@@ -164,8 +164,8 @@ class QtLayerList(QScrollArea):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         layer = event.source
         self._ensure_visible(layer)
@@ -608,8 +608,8 @@ class QtLayerWidget(QFrame):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional
-            Event from the Qt context.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method.
         """
         with self.layer.events.name.blocker():
             self.nameTextBox.setText(self.layer.name)
@@ -620,8 +620,8 @@ class QtLayerWidget(QFrame):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional
-            Event from the Qt context.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method.
         """
         with self.layer.events.visible.blocker():
             self.visibleCheckBox.setChecked(self.layer.visible)
@@ -631,8 +631,8 @@ class QtLayerWidget(QFrame):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional
-            Event from the Qt context.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method.
         """
         thumbnail = self.layer.thumbnail
         # Note that QImage expects the image width followed by height

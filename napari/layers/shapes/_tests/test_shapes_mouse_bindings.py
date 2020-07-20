@@ -31,7 +31,7 @@ def create_known_shapes_layer():
 
     Returns
     -------
-    layer : napar.layers.Shapes
+    layer : napari.layers.Shapes
         Shapes layer.
     n_shapes : int
         Number of shapes in the shapes layer

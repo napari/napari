@@ -92,7 +92,7 @@ def _low_discrepancy_image(image, seed=0.5, margin=1 / 256):
 
     Parameters
     ----------
-    labels : array of int
+    image : array of int
         A set of labels or label image.
     seed : float
         The seed from which to start the quasirandom sequence.

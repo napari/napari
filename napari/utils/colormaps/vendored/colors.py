@@ -481,7 +481,7 @@ class Colormap(object):
 
     def set_under(self, color='k', alpha=None):
         """Set color to be used for low out-of-range values.
-           Requires norm.clip = False
+        Requires norm.clip = False
         """
         self._rgba_under = to_rgba(color, alpha)
         if self._isinit:
@@ -489,7 +489,7 @@ class Colormap(object):
 
     def set_over(self, color='k', alpha=None):
         """Set color to be used for high out-of-range values.
-           Requires norm.clip = False
+        Requires norm.clip = False
         """
         self._rgba_over = to_rgba(color, alpha)
         if self._isinit:
@@ -585,7 +585,6 @@ class LinearSegmentedColormap(Colormap):
             row i+1: x  y0  y1
 
         Hence y0 in the first row and y1 in the last row are never used.
-
 
         .. seealso::
 
@@ -1136,8 +1135,10 @@ class BoundaryNorm(Normalize):
         ----------
         boundaries : array-like
             Monotonically increasing sequence of boundaries
+
         ncolors : int
             Number of colors in the colormap to be used
+
         clip : bool, optional
             If clip is ``True``, out of range values are mapped to 0 if they
             are below ``boundaries[0]`` or mapped to ncolors - 1 if they are

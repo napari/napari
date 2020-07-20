@@ -137,7 +137,7 @@ class QtHookImplementationListWidget(QListWidget):
 
         Parameters
         ----------
-        hook : HookCaller, optional
+        hook_caller : HookCaller, optional
             A ``HookCaller`` for which to show implementations. by default None
             (i.e. no hooks shown)
         """
