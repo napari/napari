@@ -239,8 +239,7 @@ class LayerList(ListModel):
 
         Defaults to 2 if no data is present.
         """
-        ndims = [l.ndim for l in self]
-        return max(ndims, default=2)
+        return max((l.ndim for l in self), default=2)
 
     def save(
         self,
