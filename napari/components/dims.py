@@ -268,8 +268,8 @@ class Dims:
                 if self.clip:
                     p = np.clip(
                         self.point[axis],
-                        np.round(self.range[axis][0]),
-                        np.round(self.range[axis][1]) - self.range[axis][2],
+                        self.range[axis][0],
+                        self.range[axis][1] - self.range[axis][2],
                     )
                 else:
                     p = self.point[axis]

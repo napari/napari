@@ -132,6 +132,29 @@ def test_indices():
     assert dims.indices == (1, 1) + (slice(None, None, None),) * 2
 
 
+@pytest.mark.parametrize("scale", (1, 2, 10, 100, 0.25, 0.1, 0.001))
+@pytest.mark.parametrize("layers", (1, 2, 10, 100))
+@pytest.mark.parametrize("start_layer", (0, 1, 10))
+def test_indices_range(scale, layers, start_layer):
+    dims = Dims(4)
+    dims.set_range(
+        1, (start_layer * scale, (start_layer + layers) * scale, scale)
+    )
+    dims.set_point(1, 0)
+    assert dims.indices == (0, start_layer) + (slice(None, None, None),) * 2
+    dims.set_point(1, (start_layer + 3) * scale)
+    assert (
+        dims.indices
+        == (0, start_layer + min(3, layers - 1))
+        + (slice(None, None, None),) * 2
+    )
+    dims.set_point(1, (start_layer + layers + 5) * scale)
+    assert (
+        dims.indices
+        == (0, start_layer + layers - 1) + (slice(None, None, None),) * 2
+    )
+
+
 def test_axis_labels():
     dims = Dims(4)
     assert dims.axis_labels == ['0', '1', '2', '3']
