@@ -7,7 +7,6 @@ from typing import (
     Dict,
     NamedTuple,
     Optional,
-    Set,
     Type,
     TypeVar,
     cast,
@@ -26,8 +25,7 @@ C = TypeVar("C")
 NO_ATTR = object()
 
 
-@tz.curry
-def set_with_events(self: C, name: str, value: Any, fields: Set[str]) -> None:
+def set_with_events(self: C, name: str, value: Any) -> None:
     """Modified __setattr__ method that emits an event when set.
 
     Events will *only* be emitted if the ``name`` of the attribute being set
@@ -61,35 +59,36 @@ def set_with_events(self: C, name: str, value: Any, fields: Set[str]) -> None:
     fields : set of str
         Only emit events for field names in this set.
     """
-    # first call the original
+    if name not in getattr(self, 'events', {}):
+        # fallback to default behavior
+        object.__setattr__(self, name, value)
+        return
+
+    # grab current value
     before = getattr(self, name, NO_ATTR)
     object.__setattr__(self, name, value)
 
-    if hasattr(self, 'events') and name in fields:
-        # if custom set method `_on_<name>_set` exists, call it
-        setter_method = getattr(self, ON_SET.format(name=name), None)
-        if callable(setter_method):
-            # the method can return True, if it wants to handle its own events
+    # if custom set method `_on_<name>_set` exists, call it
+    setter_method = getattr(self, ON_SET.format(name=name), None)
+    if callable(setter_method):
+        # the method can return True, if it wants to handle its own events
+        try:
+            if setter_method(getattr(self, name)):
+                return
+        except Exception as e:
+            if before is NO_ATTR:
+                object.__delattr__(self, name)
+            else:
+                object.__setattr__(self, name, before)
+            meth_name = f"{self.__class__.__name__}.{ON_SET.format(name=name)}"
+            raise type(e)(f"Error in {meth_name} (value not set): {e}")
+    # otherwise, we emit the event
+    # TODO: use np.all(old_val == new_val)
 
-            try:
-                if setter_method(getattr(self, name)):
-                    return
-            except Exception as e:
-                if before is NO_ATTR:
-                    object.__delattr__(self, name)
-                else:
-                    object.__setattr__(self, name, before)
-                meth_name = (
-                    f"{self.__class__.__name__}.{ON_SET.format(name=name)}"
-                )
-                raise type(e)(f"Error in {meth_name} (value not set): {e}")
-        # otherwise, we emit the event
-        # TODO: use np.all(old_val == new_val)
-
-        after = getattr(self, name)
-        if before != after and name in self.events:
-            # use gettattr again in case `_on_name_set` has modified it
-            getattr(self.events, name)(value=after)  # type: ignore
+    after = getattr(self, name)
+    if before != after:
+        # use gettattr again in case `_on_name_set` has modified it
+        getattr(self.events, name)(value=after)  # type: ignore
 
 
 def add_events_to_class(cls: Type[C]) -> None:
@@ -109,26 +108,33 @@ def add_events_to_class(cls: Type[C]) -> None:
     # get a handle to the original __post_init__ method if present
     orig_post_init: Callable[..., None] = getattr(cls, '__post_init__', None)
 
-    e_fields = {
+    _fields = [
         _dc._get_field(cls, name, type_)
         for name, type_ in cls.__dict__.get('__annotations__', {}).items()
-    }
+    ]
     e_fields = {
         fld.name: None
-        for fld in e_fields
+        for fld in _fields
         if fld._field_type is _dc._FIELD and fld.metadata.get("events", True)
     }
 
     def evented_post_init(self: T, *initvars) -> None:
         # create an EmitterGroup with an EventEmitter for each field
         # in the dataclass, skip those with metadata={'events' = False}
-        self.events = EmitterGroup(source=self, auto_connect=False, **e_fields)
+        if hasattr(self, 'events') and isinstance(self.events, EmitterGroup):
+            for em in self.events.emitters:
+                e_fields.pop(em, None)
+            self.events.add(**e_fields)
+        else:
+            self.events = EmitterGroup(
+                source=self, auto_connect=False, **e_fields
+            )
         # call original __post_init__
         if orig_post_init is not None:
             orig_post_init(self, *initvars)
 
     # modify __setattr__ with version that emits an event when setting
-    setattr(cls, '__setattr__', set_with_events(fields=set(e_fields)))
+    setattr(cls, '__setattr__', set_with_events)
     setattr(cls, '__post_init__', evented_post_init)
 
 

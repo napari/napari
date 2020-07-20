@@ -182,3 +182,53 @@ def test_exception_resets_value():
         m.x = 5
     assert 'Error in M._on_x_set (value not set): no can do' in str(exc)
     assert m.x == 2
+
+
+def test_event_inheritance():
+    """Test that subclasses include events from the superclass."""
+
+    @dataclass(events=True)
+    class A:
+        a: int = 4
+        x: int = 2
+
+    @dataclass(events=True)
+    class B(A):
+        a: int = 2
+        z: int = 4
+
+    b = B(1)
+    assert asdict(b) == {'a': 1, 'x': 2, 'z': 4}
+    assert set(b.events.emitters) == {'z', 'a', 'x'}
+    for key in {'z', 'a', 'x'}:
+        setattr(b.events, key, Mock(getattr(b.events, key)))
+        setattr(b, key, 10)
+        getattr(b.events, key).assert_called_with(value=10)
+
+
+def test_event_partial_inheritance():
+    """Test events only included from classes decorated with events=True."""
+
+    @dataclass
+    class A:
+        a: int = 4
+        x: int = 2
+
+    @dataclass(events=True)
+    class B(A):
+        a: int = 2
+        z: int = 4
+
+    assert set(B().events.emitters) == {'z', 'a'}
+
+    @dataclass(events=True)
+    class C:
+        a: int = 4
+        x: int = 2
+
+    @dataclass
+    class D(C):
+        a: int = 2
+        z: int = 4
+
+    assert set(D().events.emitters) == {'x', 'a'}
