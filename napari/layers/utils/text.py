@@ -1,6 +1,4 @@
 from typing import Tuple, Union, Dict, ClassVar, Optional
-import warnings
-
 import numpy as np
 
 from ..base._base_constants import Blending
@@ -10,9 +8,28 @@ from ._text_utils import (
     get_text_anchors,
 )
 from ...utils.colormaps.standardize_color import transform_color
+from ...utils.colormaps.vendored.colors import to_hex
 from ...utils.dataclass import dataclass
-from dataclasses import field
+from dataclasses import InitVar
 from typing_extensions import Annotated
+
+
+# https://github.com/napari/napari/issues/1491
+def transform_1_color(color):
+    return transform_color(color)[0]
+
+
+def no_opaque(blending):
+    val = Blending(blending)
+    if val == Blending.OPAQUE:
+        import warnings
+
+        warnings.warn(
+            'opaque blending mode is not allowed for text. '
+            'setting to translucent.'
+        )
+        return Blending.TRANSLUCENT
+    return val
 
 
 @dataclass(events=True, properties=True)
@@ -46,71 +63,45 @@ class TextManager:
         Set to true of the text should be displayed.
     """
 
-    text: Union[np.ndarray, str]
-    n_text: int
-    properties: Dict[str, np.ndarray] = field(default_factory=dict)
+    text: InitVar[Union[np.ndarray, str]]
+    n_text: InitVar[int]
+    properties: InitVar[Dict[str, np.ndarray]] = None
+
     rotation: float = 0.0
-    translation: np.ndarray = np.asarray(0)
+    translation: Annotated[np.ndarray, None, np.asarray] = np.asarray(0)
     anchor: Annotated[Anchor, str, Anchor] = Anchor.CENTER
-    color: Union[np.ndarray, str] = 'cyan'
+    color: Annotated[
+        Union[np.ndarray, str], to_hex, transform_1_color
+    ] = 'cyan'
     size: float = 12.0
-    blending: Annotated[Blending, str, Blending] = Blending.TRANSLUCENT
+    blending: Annotated[Blending, str, no_opaque] = Blending.TRANSLUCENT
     visible: bool = True
+    values: Optional[np.ndarray] = None
+    mode: TextMode = TextMode.NONE
 
     # private attributes not in dataclass
     _text_format_string: ClassVar[str] = ''
-    _values: ClassVar[Optional[np.ndarray]] = None
-    _mode: ClassVar[TextMode] = TextMode.NONE
 
-    def __post_init__(self):
+    def __post_init__(self, text, n_text, properties):
+        self.events.add(text=None)
         # called after __init__
-        self._set_text(self.text, self.n_text, self.properties)
-
-    @property
-    def values(self):
-        """np.ndarray: the text values to be displayed"""
-        return self._values
-
-    @property
-    def mode(self) -> str:
-        """str: The current text setting mode."""
-        return str(self._mode)
-
-    # Things that need to modify the value on set
-
-    def _on_translation_set(self, translation):
-        if not isinstance(translation, np.ndarray):
-            self.translation = np.asarray(translation)
-            return True
-
-    def _on_color_set(self, color):
-        if color != self.color:
-            self.color = transform_color(color)[0]
-        return True
-
-    def _on_blending_set(self, blending):
-        if Blending(blending) == Blending.OPAQUE:
-            warnings.warn(
-                'opaque blending mode is not allowed for text. '
-                'setting to translucent.'
-            )
-            self.blending = Blending.TRANSLUCENT
-            return True
+        self._set_text(text, n_text, properties or {})
 
     def _set_text(
         self, text: Union[None, str], n_text: int, properties: dict = {}
     ):
         if len(properties) == 0 or n_text == 0 or text is None:
-            self._mode = TextMode.NONE
+            self.mode = TextMode.NONE
             self._text_format_string = ''
-            self._values = None
+            self.values = None
         else:
-            formatted_text, text_mode = format_text_properties(
+            self.values, self.mode = format_text_properties(
                 text, n_text, properties
             )
             self._text_format_string = text
-            self._values = formatted_text
-            self._mode = text_mode
+        # `values` and `text` is slightly duplicated.  If this were changed to
+        # "self.events.values", then we wouldn't have to add a dedicated event
+        # (since self.text isn't actually used except for initialization)
         self.events.text()
 
     def refresh_text(self, properties: dict):
