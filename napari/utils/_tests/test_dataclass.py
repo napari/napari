@@ -154,14 +154,19 @@ def test_dataclass_coerces_types():
 
 
 def test_Property_validation():
+    # must provide at least 2 arguments
     with pytest.raises(TypeError):
         _ = Property[int]
+    # wrong syntax
     with pytest.raises(TypeError):
         _ = Property(int, None)
+    # the getter/setter must be callable
     with pytest.raises(TypeError):
-        _ = Property(int, 1)
+        _ = Property[int, 1]
     with pytest.raises(TypeError):
-        _ = Property(int, int, None)
+        _ = Property[int, None, 1]
+    # there we go
+    assert Property[int, int, None]
 
 
 def test_exception_resets_value():
