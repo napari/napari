@@ -266,10 +266,13 @@ class Dims:
                 slice_list.append(slice(None))
             else:
                 if self.clip:
-                    p = np.clip(
-                        self.point[axis],
-                        self.range[axis][0],
-                        self.range[axis][1] - self.range[axis][2],
+                    p = (
+                        np.clip(
+                            self.point[axis],
+                            self.range[axis][0],
+                            self.range[axis][1] - self.range[axis][2],
+                        )
+                        - self.range[axis][0]
                     )
                 else:
                     p = self.point[axis]

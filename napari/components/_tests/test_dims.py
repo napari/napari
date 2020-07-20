@@ -141,18 +141,14 @@ def test_indices_range(scale, layers, start_layer):
         1, (start_layer * scale, (start_layer + layers) * scale, scale)
     )
     dims.set_point(1, 0)
-    assert dims.indices == (0, start_layer) + (slice(None, None, None),) * 2
+    assert dims.indices == (0, 0) + (slice(None, None, None),) * 2
     dims.set_point(1, (start_layer + 3) * scale)
     assert (
         dims.indices
-        == (0, start_layer + min(3, layers - 1))
-        + (slice(None, None, None),) * 2
+        == (0, min(3, layers - 1)) + (slice(None, None, None),) * 2
     )
     dims.set_point(1, (start_layer + layers + 5) * scale)
-    assert (
-        dims.indices
-        == (0, start_layer + layers - 1) + (slice(None, None, None),) * 2
-    )
+    assert dims.indices == (0, layers - 1) + (slice(None, None, None),) * 2
 
 
 def test_axis_labels():
