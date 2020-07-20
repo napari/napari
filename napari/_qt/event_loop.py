@@ -67,7 +67,7 @@ def gui_qt(*, startup_logo=False):
     else:
         app._existed = True
 
-    # instantiate the execption handler
+    # instantiate the exception handler
     exception_handler = ExceptionHandler()
     sys.excepthook = exception_handler.handle
 
