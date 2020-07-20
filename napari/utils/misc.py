@@ -183,11 +183,18 @@ class StringEnum(Enum, metaclass=StringEnumMeta):
 
 
 camel_to_snake_pattern = re.compile(r'(.)([A-Z][a-z]+)')
+camel_to_spaces_pattern = re.compile(
+    r"((?<=[a-z])[A-Z]|(?<!\A)[A-R,T-Z](?=[a-z]))"
+)
 
 
 def camel_to_snake(name):
     # https://gist.github.com/jaytaylor/3660565
     return camel_to_snake_pattern.sub(r'\1_\2', name).lower()
+
+
+def camel_to_spaces(val):
+    return camel_to_spaces_pattern.sub(r" \1", val)
 
 
 T = TypeVar('T', str, Sequence[str])
