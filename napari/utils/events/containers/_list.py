@@ -215,3 +215,7 @@ class EventedList(SupportsEvents, MutableSequence[T]):
         """Add other to self in place (self += other)."""
         self.extend(other)
         return self
+
+    def __radd__(self, other: List) -> List:
+        """Add other to self in place (self += other)."""
+        return other + list(self)
