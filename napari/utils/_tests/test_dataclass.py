@@ -34,6 +34,7 @@ def test_dataclass_with_properties(props, events):
         b: str = 'hi'
         c: List[int] = field(default_factory=list)
         d: ClassVar[int] = 1
+        e: int = field(default=1, metadata={"events": False})
 
         def _on_b_set(self, value):
             # NB: if you want to set value again, you must check that it is
@@ -53,7 +54,7 @@ def test_dataclass_with_properties(props, events):
     m.a = 7
     m.c.append(9)
     # nice function ... note the ClassVar is missing
-    assert asdict(m) == {'a': 7, 'b': 'hi', 'c': [9]}
+    assert asdict(m) == {'a': 7, 'b': 'hi', 'c': [9], 'e': 1}
 
     assert isinstance(m.a, int)
     assert isinstance(m.b, str)
@@ -74,11 +75,13 @@ def test_dataclass_with_properties(props, events):
         assert isinstance(m.events, EmitterGroup)
         assert 'a' in m.events
         assert 'b' in m.events
+        # ClassVars and metadata={'events'=True} are excluded from events
+        assert 'd' not in m.events
+        assert 'e' not in m.events
         # mocking EventEmitters to spy on events
         m.events.a = Mock(m.events.a)
         m.events.b = Mock(m.events.b)
         m.events.c = Mock(m.events.c)
-        m.events.d = Mock(m.events.d)
         # setting an attribute should, by default, emit an event with the value
         m.a = 4
         m.events.a.assert_called_with(value=4)
@@ -92,11 +95,6 @@ def test_dataclass_with_properties(props, events):
         m.c = [1, 2]
         assert m.c == [1, 2]
         m.events.c.assert_not_called()
-
-        # ClassVars are also exempt from events
-        m.d = 8
-        assert m.d == 8
-        m.events.d.assert_not_called()
 
     else:
         assert not hasattr(m, 'events')

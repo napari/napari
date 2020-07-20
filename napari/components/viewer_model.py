@@ -8,7 +8,7 @@ from .layerlist import LayerList
 from ..utils.key_bindings import KeymapHandler, KeymapProvider
 from ..utils.theme import palettes
 from ..utils.dataclass import dataclass
-from dataclasses import InitVar
+from dataclasses import InitVar, field
 from typing import Tuple, Optional, Sequence, ClassVar, Dict
 
 DEFAULT_THEME = 'dark'
@@ -44,6 +44,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         Preset color palettes.
     """
 
+    # order matters!
     title: str = 'napari'
     status: str = 'Ready'
     help: str = ''
@@ -51,25 +52,30 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
     cursor_size: Optional[int] = None
     interactive: bool = True
     active_layer: Optional[int] = None
+    dims: Dims = None
+    layers: LayerList = field(
+        default_factory=LayerList, metadata={'events': False}
+    )
     grid_size: Tuple[int, int] = (1, 1)
     theme: str = DEFAULT_THEME
+    palette: Dict[str, str] = None
 
+    # ClassVar is one of many ways to excempt variables from the dataclass
+    # but it might not be strictly semantically accurate.
     grid_stride: ClassVar[int] = 1
-    palette: ClassVar[Dict[str, str]] = palettes[DEFAULT_THEME]
-    layers: ClassVar[LayerList] = []  # TODO: hack for initialization
+    keymap_providers: ClassVar
 
     ndisplay: InitVar[int] = 2  # type: ignore
     order: InitVar[Optional[Tuple[int, ...]]] = None  # type: ignore
     axis_labels: InitVar[Optional[Sequence[str]]] = None  # type: ignore
 
     def __post_init__(self, ndisplay, order, axis_labels):
-        super().__init__()  # will this work?
+        self.palette = palettes[self.theme]
+        super().__init__()
         self.events.add(reset_view=None, grid=None, layers_change=None)
-        self.layers = LayerList()
         self.dims = Dims(
             ndim=None, ndisplay=ndisplay, order=order, axis_labels=axis_labels
         )
-
         self.dims.events.camera.connect(self.reset_view)
         self.dims.events.ndisplay.connect(self._update_layers)
         self.dims.events.order.connect(self._update_layers)
@@ -77,8 +83,8 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self.layers.events.changed.connect(self._update_active_layer)
         self.layers.events.changed.connect(self._update_grid)
         self.layers.events.changed.connect(self._on_layers_change)
-
         self.keymap_providers = [self]
+
         # Hold callbacks for when mouse moves with nothing pressed
         self.mouse_move_callbacks = []
         # Hold callbacks for when mouse is pressed, dragged, and released
@@ -94,7 +100,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             raise ValueError(
                 f"Theme '{theme}' not found; " f"options are {list(palettes)}."
             )
-        # self.events.palette()  # TODO: can we just make this events.theme?
+        self.events.palette()  # TODO: can we just make this events.theme?
 
     def _on_grid_size_set(self, grid_size):
         self.reset_view()
@@ -126,13 +132,8 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         # Scale the camera to the contents in the scene
         min_shape, max_shape = self._calc_bbox()
         size = np.subtract(max_shape, min_shape)
-
-        if not hasattr(self, 'dims'):
-            dd = [0, 1]
-        else:
-            dd = self.dims.displayed
-        size = [size[i] for i in dd]
-        corner = [min_shape[i] for i in dd]
+        size = [size[i] for i in self.dims.displayed]
+        corner = [min_shape[i] for i in self.dims.displayed]
 
         return size, corner
 
@@ -148,13 +149,12 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         size = np.multiply(scene_size, grid_size)
         centroid = np.add(corner, np.divide(size, 2))
 
-        if not hasattr(self, 'dims') or self.dims.ndisplay == 2:
+        if self.dims.ndisplay == 2:
             # For a PanZoomCamera emit a 4-tuple of the rect
             corner = np.subtract(corner, np.multiply(0.05, size))[::-1]
             size = np.multiply(1.1, size)[::-1]
             rect = tuple(corner) + tuple(size)
-            if hasattr(self, 'events'):
-                self.events.reset_view(rect=rect)
+            self.events.reset_view(rect=rect)
         else:
             # For an ArcballCamera emit the center and scale_factor
             center = centroid[::-1]
@@ -290,9 +290,8 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             min_shape.append(min)
             max_shape.append(max)
         if len(min_shape) == 0:
-            nd = self.dims.ndim if hasattr(self, 'dims') else 2
-            min_shape = [0] * nd
-            max_shape = [1] * nd
+            min_shape = [0] * self.dims.ndim
+            max_shape = [1] * self.dims.ndim
 
         return min_shape, max_shape
 
