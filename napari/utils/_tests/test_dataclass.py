@@ -135,13 +135,14 @@ def test_dataclass_coerces_types():
     from napari.layers.utils._text_constants import Anchor
     from napari.layers.base._base_constants import Blending
     from typing_extensions import Annotated
-    from napari.utils.dataclass import dataclass
+    from napari.utils.dataclass import dataclass, Property
 
     @dataclass(properties=True)
     class M:
         x: int = 2
         anchor: Annotated[Anchor, str, Anchor] = Anchor.UPPER_LEFT
-        blending: Blending = Blending.OPAQUE
+        # Property is an alias for Annotated, that provides stricter checking
+        blending: Property[Blending, None, Blending] = Blending.OPAQUE
 
     m = M()
     m.anchor = 'center'
