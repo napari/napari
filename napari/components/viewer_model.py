@@ -84,6 +84,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self.layers.events.changed.connect(self._update_grid)
         self.layers.events.changed.connect(self._on_layers_change)
         self.keymap_providers = [self]
+        self.events.grid_size.connect(self.reset_view)
 
         # Hold callbacks for when mouse moves with nothing pressed
         self.mouse_move_callbacks = []
@@ -101,9 +102,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
                 f"Theme '{theme}' not found; " f"options are {list(palettes)}."
             )
         self.events.palette()  # TODO: can we just make this events.theme?
-
-    def _on_grid_size_set(self, grid_size):
-        self.reset_view()
 
     def _on_active_layer_set(self, active_layer):
         # FIXME: we need access to the OLD value
