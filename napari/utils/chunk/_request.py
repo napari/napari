@@ -78,7 +78,13 @@ class ChunkRequest:
             start_ns = self.start_seconds * 1e9 + delta_ns
             end_ns = self.end_seconds * 1e9 + delta_ns
             timers.add_event(
-                PerfEvent("ChunkRequest", start_ns, end_ns, pid=self.pid)
+                PerfEvent(
+                    "ChunkRequest",
+                    start_ns,
+                    end_ns,
+                    pid=self.pid,
+                    tid=self.tid,
+                )
             )
 
 

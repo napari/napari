@@ -18,6 +18,7 @@ from concurrent import futures
 import logging
 import os
 import time
+import threading
 from typing import Dict, List, Optional
 import weakref
 
@@ -45,7 +46,8 @@ def _chunk_loader_worker(request: ChunkRequest):
     """
     request.start_timer()
 
-    # Record the pid in case we are in a worker process.
+    # Record the tid/pid of the worker thread/process.
+    request.tid = threading.get_ident()
     request.pid = os.getpid()
 
     if request.delay_seconds > 0:

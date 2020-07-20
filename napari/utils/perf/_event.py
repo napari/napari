@@ -34,6 +34,7 @@ class PerfEvent:
         end_ns: int,
         category: Optional[str] = None,
         pid=os.getpid(),
+        tid=threading.get_ident(),
         **kwargs,
     ):
         self.name = name
@@ -42,7 +43,7 @@ class PerfEvent:
         self.category = category
         self.args = kwargs
         self.pid = pid
-        self.tid = threading.get_ident()
+        self.tid = tid
         self.type = "X"  # completed event
 
     @property
