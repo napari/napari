@@ -32,7 +32,7 @@ def increment_dims_left(viewer):
             axis_range[0],
             axis_range[1] - axis_range[2],
         )
-        viewer.dims.set_point(axis, new_point)
+        viewer.dims.point[axis] = new_point
 
 
 @Viewer.bind_key('Right')
@@ -47,7 +47,7 @@ def increment_dims_right(viewer):
             axis_range[0],
             axis_range[1] - axis_range[2],
         )
-        viewer.dims.set_point(axis, new_point)
+        viewer.dims.point[axis] = new_point
 
 
 @Viewer.bind_key('Control-E')

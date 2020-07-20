@@ -83,7 +83,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self.dims.events.camera.connect(self.reset_view)
         self.dims.events.ndisplay.connect(self._update_layers)
         self.dims.events.order.connect(self._update_layers)
-        self.dims.events.axis.connect(self._update_layers)
+        self.dims.point.events.changed.connect(self._update_layers)
         self.layers.events.changed.connect(self._update_active_layer)
         self.layers.events.changed.connect(self._update_grid)
         self.layers.events.changed.connect(self._on_layers_change)
@@ -338,7 +338,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             # the layer has
             for axis in range(layer.dims.ndim):
                 point = self.dims.point[axis + offset]
-                layer.dims.set_point(axis, point)
+                layer.dims.point[axis] = point
 
     def _toggle_theme(self):
         """Switch to next theme in list of themes
@@ -389,7 +389,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             layer_range = self._calc_layers_ranges()
             self.dims.ndim = len(layer_range)
             for i, r in enumerate(layer_range):
-                self.dims.set_range(i, r)
+                self.dims.range[i] = r
         self.events.layers_change()
 
     def _calc_layers_ranges(self):

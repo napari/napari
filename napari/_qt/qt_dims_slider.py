@@ -17,7 +17,6 @@ from qtpy.QtWidgets import (
     QFrame,
 )
 
-from ..components.dims_constants import DimsMode
 from ..utils.events import Event
 from ._constants import LoopMode
 from .qt_modal import QtPopup
@@ -97,7 +96,7 @@ class QtDimSliderWidget(QWidget):
             self.curslice_label.setText(str(val))
         self.curslice_label.clearFocus()
         self.qt_dims.setFocus()
-        self.dims.set_point(self.axis, val)
+        self.dims.point[self.axis] = val
 
     def _create_axis_label_widget(self):
         """Create the axis label widget which accompanies its slider."""
@@ -132,9 +131,10 @@ class QtDimSliderWidget(QWidget):
         slider.setValue(point)
 
         # Listener to be used for sending events back to model:
-        slider.valueChanged.connect(
-            lambda value: self.dims.set_point(self.axis, value)
-        )
+        def value_changed_listner(value):
+            self.dims.point[self.axis] = value
+
+        slider.valueChanged.connect(value_changed_listner)
 
         def slider_focused_listener():
             self.qt_dims.last_used = self.axis
@@ -213,10 +213,8 @@ class QtDimSliderWidget(QWidget):
 
     def _update_slider(self):
         """Update dimension slider."""
-        mode = self.dims.mode[self.axis]
-        if mode == DimsMode.POINT:
-            self.slider.setValue(int(self.dims.point[self.axis]))
-            self._update_slice_labels()
+        self.slider.setValue(int(self.dims.point[self.axis]))
+        self._update_slice_labels()
 
     def _update_slice_labels(self):
         """Update slice labels to match current dimension slider position."""
@@ -568,10 +566,11 @@ class AnimationWorker(QObject):
         self.set_fps(self.slider.fps)
         self.set_frame_range(slider.frame_range)
 
-        # after dims.set_point is called, it will emit a dims.events.axis()
-        # we use this to update this threads current frame (in case it
-        # was some other event that updated the axis)
-        self.dims.events.axis.connect(self._on_axis_changed)
+        # after a dims.point is change, it will emit a
+        # dims.point.events.changed() event. We use this to update this
+        # threads current frame (in case it was some other event that
+        # updated the axis)
+        self.dims.point.events.changed.connect(self._on_axis_changed)
         self.current = max(self.dims.point[self.axis], self.min_point)
         self.current = min(self.current, self.max_point)
         self.timer = QTimer()
@@ -686,7 +685,7 @@ class AnimationWorker(QObject):
                 self.current = self.min_point + self.current - self.max_point
             else:  # loop_mode == 'once'
                 return self.finish()
-        with self.dims.events.axis.blocker(self._on_axis_changed):
+        with self.dims.point.events.changed.blocker(self._on_axis_changed):
             self.frame_requested.emit(self.axis, self.current)
         # using a singleShot timer here instead of timer.start() because
         # it makes it easier to update the interval using signals/slots
@@ -700,5 +699,9 @@ class AnimationWorker(QObject):
     def _on_axis_changed(self, event):
         """Update the current frame if the axis has changed."""
         # slot for external events to update the current frame
-        if event.axis == self.axis and hasattr(event, 'value'):
-            self.current = event.value
+        if (
+            hasattr(event, 'index')
+            and event.index == self.axis
+            and hasattr(event, 'new_value')
+        ):
+            self.current = event.new_value

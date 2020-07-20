@@ -1,7 +1,6 @@
 import pytest
 
 from napari.components import Dims
-from napari.components.dims_constants import DimsMode
 
 
 def test_ndim():
@@ -75,17 +74,6 @@ def test_point():
     assert dims.point == [0, 0, 1, 4]
 
 
-def test_mode():
-    """
-    Test mode setting.
-    """
-    dims = Dims(4)
-    assert dims.mode == [DimsMode.POINT] * 4
-
-    dims.set_mode(3, DimsMode.INTERVAL)
-    assert dims.mode == [DimsMode.POINT] * 3 + [DimsMode.INTERVAL]
-
-
 def test_range():
     """
     Tests range setting.
@@ -95,17 +83,6 @@ def test_range():
 
     dims.set_range(3, (0, 4, 2))
     assert dims.range == [(0, 2, 1)] * 3 + [(0, 4, 2)]
-
-
-def test_interval():
-    """
-    Test interval setting.
-    """
-    dims = Dims(4)
-    assert dims.interval == [(0, 1)] * 4
-
-    dims.set_interval(3, (0, 3))
-    assert dims.interval == [(0, 1)] * 3 + [(0, 3)]
 
 
 def test_indices():

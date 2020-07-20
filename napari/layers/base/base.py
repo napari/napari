@@ -222,7 +222,7 @@ class Layer(KeymapProvider, ABC):
         self.dims.events.order.connect(self.refresh)
         self.dims.events.ndisplay.connect(self._update_dims)
         self.dims.events.order.connect(self._update_dims)
-        self.dims.events.axis.connect(self.refresh)
+        self.dims.point.events.changed.connect(self.refresh)
 
         self.mouse_move_callbacks = []
         self.mouse_drag_callbacks = []
@@ -398,7 +398,7 @@ class Layer(KeymapProvider, ABC):
 
         curr_range = self._get_range()
         for i, r in enumerate(curr_range):
-            self.dims.set_range(i, r)
+            self.dims.range[i] = r
 
         self.refresh()
         self._update_coordinates()
