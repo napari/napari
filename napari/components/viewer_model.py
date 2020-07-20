@@ -5,11 +5,16 @@ import numpy as np
 from .add_layers_mixin import AddLayersMixin
 from .dims import Dims
 from .layerlist import LayerList
-from ..utils.event import EmitterGroup, Event
 from ..utils.key_bindings import KeymapHandler, KeymapProvider
 from ..utils.theme import palettes
+from ..utils.dataclass import dataclass
+from dataclasses import InitVar
+from typing import Tuple, Optional, Sequence, ClassVar, Dict
+
+DEFAULT_THEME = 'dark'
 
 
+@dataclass(events=True, properties=True)
 class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
     """Viewer containing the rendered scene, layers, and controlling elements
     including dimension sliders, and control bars for color limits.
@@ -39,46 +44,31 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         Preset color palettes.
     """
 
-    themes = palettes
+    title: str = 'napari'
+    status: str = 'Ready'
+    help: str = ''
+    cursor: str = 'standard'
+    cursor_size: Optional[int] = None
+    interactive: bool = True
+    active_layer: Optional[int] = None
+    grid_size: Tuple[int, int] = (1, 1)
+    theme: str = DEFAULT_THEME
 
-    def __init__(
-        self, title='napari', ndisplay=2, order=None, axis_labels=None
-    ):
-        super().__init__()
+    grid_stride: ClassVar[int] = 1
+    palette: ClassVar[Dict[str, str]] = palettes[DEFAULT_THEME]
+    layers: ClassVar[LayerList] = []
 
-        self.events = EmitterGroup(
-            source=self,
-            auto_connect=True,
-            status=Event,
-            help=Event,
-            title=Event,
-            interactive=Event,
-            cursor=Event,
-            reset_view=Event,
-            active_layer=Event,
-            palette=Event,
-            grid=Event,
-            layers_change=Event,
-        )
+    ndisplay: InitVar[int] = 2  # type: ignore
+    order: InitVar[Optional[Tuple[int, ...]]] = None  # type: ignore
+    axis_labels: InitVar[Optional[Sequence[str]]] = None  # type: ignore
 
+    def __post_init__(self, ndisplay, order, axis_labels):
+        super().__init__()  # will this work?
+        self.events.add(reset_view=None, grid=None, layers_change=None)
+        self.layers = LayerList()
         self.dims = Dims(
             ndim=None, ndisplay=ndisplay, order=order, axis_labels=axis_labels
         )
-
-        self.layers = LayerList()
-
-        self._status = 'Ready'
-        self._help = ''
-        self._title = title
-        self._cursor = 'standard'
-        self._cursor_size = None
-        self._interactive = True
-        self._active_layer = None
-        self._grid_size = (1, 1)
-        self.grid_stride = 1
-
-        self._palette = None
-        self.theme = 'dark'
 
         self.dims.events.camera.connect(self.reset_view)
         self.dims.events.ndisplay.connect(self._update_layers)
@@ -89,7 +79,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self.layers.events.changed.connect(self._on_layers_change)
 
         self.keymap_providers = [self]
-
         # Hold callbacks for when mouse moves with nothing pressed
         self.mouse_move_callbacks = []
         # Hold callbacks for when mouse is pressed, dragged, and released
@@ -97,154 +86,27 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self._persisted_mouse_event = {}
         self._mouse_drag_gen = {}
 
-    @property
-    def palette(self):
-        """dict of str: str : Color palette with which to style the viewer.
-        """
-        return self._palette
-
-    @palette.setter
-    def palette(self, palette):
-        if palette == self.palette:
-            return
-
-        self._palette = palette
-        self.events.palette()
-
-    @property
-    def theme(self):
-        """string or None : Preset color palette.
-        """
-        for theme, palette in self.themes.items():
-            if palette == self.palette:
-                return theme
-
-    @theme.setter
-    def theme(self, theme):
-        if theme == self.theme:
-            return
-
+    def _on_theme_set(self, theme):
+        # FIXME: in dataclass, need to fallback if an exception is raised in _on_name_set
         try:
-            self.palette = self.themes[theme]
+            self.palette = palettes[theme]
         except KeyError:
             raise ValueError(
-                f"Theme '{theme}' not found; "
-                f"options are {list(self.themes)}."
+                f"Theme '{theme}' not found; " f"options are {list(palettes)}."
             )
 
-    @property
-    def grid_size(self):
-        """tuple: Size of grid
-        """
-        return self._grid_size
-
-    @grid_size.setter
-    def grid_size(self, grid_size):
-        if np.all(self.grid_size == grid_size):
-            return
-        self._grid_size = grid_size
+    def _on_grid_size_set(self, grid_size):
         self.reset_view()
-        self.events.grid()
 
-    @property
-    def status(self):
-        """string: Status string
-        """
-        return self._status
-
-    @status.setter
-    def status(self, status):
-        if status == self.status:
-            return
-        self._status = status
-        self.events.status(text=self._status)
-
-    @property
-    def help(self):
-        """string: String that can be displayed to the
-        user in the status bar with helpful usage tips.
-        """
-        return self._help
-
-    @help.setter
-    def help(self, help):
-        if help == self.help:
-            return
-        self._help = help
-        self.events.help(text=self._help)
-
-    @property
-    def title(self):
-        """string: String that is displayed in window title.
-        """
-        return self._title
-
-    @title.setter
-    def title(self, title):
-        if title == self.title:
-            return
-        self._title = title
-        self.events.title(text=self._title)
-
-    @property
-    def interactive(self):
-        """bool: Determines if canvas pan/zoom interactivity is enabled or not.
-        """
-        return self._interactive
-
-    @interactive.setter
-    def interactive(self, interactive):
-        if interactive == self.interactive:
-            return
-        self._interactive = interactive
-        self.events.interactive()
-
-    @property
-    def cursor(self):
-        """string: String identifying cursor displayed over canvas.
-        """
-        return self._cursor
-
-    @cursor.setter
-    def cursor(self, cursor):
-        if cursor == self.cursor:
-            return
-        self._cursor = cursor
-        self.events.cursor()
-
-    @property
-    def cursor_size(self):
-        """int | None: Size of cursor if custom. None is yields default size
-        """
-        return self._cursor_size
-
-    @cursor_size.setter
-    def cursor_size(self, cursor_size):
-        if cursor_size == self.cursor_size:
-            return
-        self._cursor_size = cursor_size
-        self.events.cursor()
-
-    @property
-    def active_layer(self):
-        """int: index of active_layer
-        """
-        return self._active_layer
-
-    @active_layer.setter
-    def active_layer(self, active_layer):
-        if active_layer == self.active_layer:
-            return
-
-        if self._active_layer is not None:
-            self.keymap_providers.remove(self._active_layer)
+    def _on_active_layer_set(self, active_layer):
+        # FIXME: we need access to the OLD value
+        # if self._active_layer is not None:
+        #     self.keymap_providers.remove(self._active_layer)
 
         self._active_layer = active_layer
 
         if active_layer is not None:
             self.keymap_providers.insert(0, active_layer)
-
-        self.events.active_layer(item=self._active_layer)
 
     def _scene_shape(self):
         """Get shape of currently viewed dimensions.
@@ -263,8 +125,13 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         # Scale the camera to the contents in the scene
         min_shape, max_shape = self._calc_bbox()
         size = np.subtract(max_shape, min_shape)
-        size = [size[i] for i in self.dims.displayed]
-        corner = [min_shape[i] for i in self.dims.displayed]
+
+        if not hasattr(self, 'dims'):
+            dd = [0, 1]
+        else:
+            dd = self.dims.displayed
+        size = [size[i] for i in dd]
+        corner = [min_shape[i] for i in dd]
 
         return size, corner
 
@@ -280,12 +147,13 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         size = np.multiply(scene_size, grid_size)
         centroid = np.add(corner, np.divide(size, 2))
 
-        if self.dims.ndisplay == 2:
+        if not hasattr(self, 'dims') or self.dims.ndisplay == 2:
             # For a PanZoomCamera emit a 4-tuple of the rect
             corner = np.subtract(corner, np.multiply(0.05, size))[::-1]
             size = np.multiply(1.1, size)[::-1]
             rect = tuple(corner) + tuple(size)
-            self.events.reset_view(rect=rect)
+            if hasattr(self, 'events'):
+                self.events.reset_view(rect=rect)
         else:
             # For an ArcballCamera emit the center and scale_factor
             center = centroid[::-1]
@@ -343,7 +211,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
     def _toggle_theme(self):
         """Switch to next theme in list of themes
         """
-        theme_names = list(self.themes.keys())
+        theme_names = list(palettes.keys())
         cur_theme = theme_names.index(self.theme)
         self.theme = theme_names[(cur_theme + 1) % len(theme_names)]
 
@@ -421,8 +289,9 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             min_shape.append(min)
             max_shape.append(max)
         if len(min_shape) == 0:
-            min_shape = [0] * self.dims.ndim
-            max_shape = [1] * self.dims.ndim
+            nd = self.dims.ndim if hasattr(self, 'dims') else 2
+            min_shape = [0] * nd
+            max_shape = [1] * nd
 
         return min_shape, max_shape
 

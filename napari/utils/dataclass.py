@@ -60,15 +60,21 @@ def set_with_events(self: C, name: str, value: Any, fields: Set[str]) -> None:
         Only emit events for field names in this set.
     """
     # first call the original
+    print("set", name, value)
     object.__setattr__(self, name, value)
     if name in fields:
         # if custom set method `_on_<name>_set` exists, call it
         setter_method = getattr(self, ON_SET.format(name=name), None)
         if callable(setter_method):
             # the method can return True, if it wants to handle its own events
+            # TODO: if an exception is raised in the ON_SET method, we should
+            # undo any state changes.
             if setter_method(getattr(self, name)):
                 return
         # otherwise, we emit the event
+        # TODO: use np.all(old_val == new_val)
+        # TODO: don't emit an event if the value hasn't changed
+
         if hasattr(self, 'events') and name in self.events:
             # use gettattr again in case `_on_name_set` has modified it
             getattr(self.events, name)(value=getattr(self, name))  # type: ignore
@@ -229,9 +235,9 @@ def convert_fields_to_properties(cls: Type[C]):
     coerce_funcs = parse_annotated_types(cls)
     # loop through annotated members of the glass
     for name, type_ in list(cls.__dict__.get('__annotations__', {}).items()):
-        # ClassVar types are exempt from dataclasses and @properties
+        # ClassVar and InitVar types are exempt from dataclasses and properties
         # https://docs.python.org/3/library/dataclasses.html#class-variables
-        if _dc._is_classvar(type_, typing):
+        if _dc._is_classvar(type_, typing) or _dc._is_initvar(type_, _dc):
             continue
         private_name = f"_{name}"
         # store the original value for the property

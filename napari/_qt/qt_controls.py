@@ -44,16 +44,9 @@ class QtControls(QStackedWidget):
         event : Event
             Event with the target layer at `event.item`.
         """
-        if event is None:
-            layer = None
-        else:
-            layer = event.item
-
-        if layer is None:
-            self.setCurrentWidget(self.empty_widget)
-        else:
-            controls = self.widgets[layer]
-            self.setCurrentWidget(controls)
+        layer = getattr(event, 'value', None)
+        widg = self.empty_widget if layer is None else self.widgets[layer]
+        self.setCurrentWidget(widg)
 
     def _add(self, event):
         """Add the controls target layer to the list of control widgets.
