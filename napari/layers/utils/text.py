@@ -10,7 +10,7 @@ from ._text_utils import (
     get_text_anchors,
 )
 from ...utils.colormaps.standardize_color import transform_color
-from ...utils.event import EmitterGroup, Event
+from ...utils.events import EmitterGroup, Event
 
 
 class TextManager:
