@@ -1,10 +1,13 @@
 from dataclasses import asdict, field
-from typing import List, ClassVar
+from typing import ClassVar, List
 from unittest.mock import Mock
 
 import pytest
+from typing_extensions import Annotated
 
-from napari.utils.dataclass import dataclass
+from napari.layers.base._base_constants import Blending
+from napari.layers.utils._text_constants import Anchor
+from napari.utils.dataclass import Property, dataclass
 from napari.utils.event import EmitterGroup
 
 
@@ -12,8 +15,8 @@ from napari.utils.event import EmitterGroup
 def test_dataclass_with_properties(props, events):
     """Test that the @dataclass decorator works.
 
-    The parameters test all combinations of props and events to make sure they
-    work alone as well as together.
+    This test is a bit long... but parameters test all combinations of props
+    and events to make sure they work alone as well as together.
     """
 
     @dataclass(properties=props, events=events)
@@ -85,6 +88,10 @@ def test_dataclass_with_properties(props, events):
         # setting an attribute should, by default, emit an event with the value
         m.a = 4
         m.events.a.assert_called_with(value=4)
+        # and event should only be emitted when the value has changed.
+        m.events.a.reset_mock()
+        m.a = 4
+        m.events.a.assert_not_called()
 
         # test that our _on_b_set override worked, and emitted the right event
         m.b = 'howdie'
@@ -132,19 +139,41 @@ def test_dataclass_missing_vars_raises():
 
 
 def test_dataclass_coerces_types():
-    from napari.layers.utils._text_constants import Anchor
-    from napari.layers.base._base_constants import Blending
-    from typing_extensions import Annotated
-    from napari.utils.dataclass import dataclass
-
     @dataclass(properties=True)
     class M:
         x: int = 2
         anchor: Annotated[Anchor, str, Anchor] = Anchor.UPPER_LEFT
-        blending: Blending = Blending.OPAQUE
+        # Property is an alias for Annotated, and provides stricter checking
+        blending: Property[Blending, None, Blending] = Blending.OPAQUE
 
     m = M()
     m.anchor = 'center'
     assert isinstance(m._anchor, Anchor)
     assert isinstance(m.anchor, str)
     assert isinstance(m.blending, Blending)
+
+
+def test_Property_validation():
+    with pytest.raises(TypeError):
+        _ = Property[int]
+    with pytest.raises(TypeError):
+        _ = Property(int, None)
+    with pytest.raises(TypeError):
+        _ = Property(int, 1)
+    with pytest.raises(TypeError):
+        _ = Property(int, int, None)
+
+
+def test_exception_resets_value():
+    @dataclass(events=True)
+    class M:
+        x: int = 2
+
+        def _on_x_set(self, val):
+            raise ValueError('no can do')
+
+    m = M()
+    with pytest.raises(ValueError) as exc:
+        m.x = 5
+    assert 'Error in M._on_x_set (value not set): no can do' in str(exc)
+    assert m.x == 2
