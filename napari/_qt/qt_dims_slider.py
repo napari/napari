@@ -85,7 +85,7 @@ class QtDimSliderWidget(QWidget):
         layout.setSpacing(2)
         layout.setAlignment(Qt.AlignVCenter)
         self.setLayout(layout)
-        self.dims.events.axis_labels.connect(self._pull_label)
+        self.dims.axis_labels.events.changed.connect(self._pull_label)
 
     def _set_slice_from_label(self):
         """Update the dims point based on the curslice_label."""
@@ -164,15 +164,15 @@ class QtDimSliderWidget(QWidget):
 
     def _pull_label(self, event):
         """Updates the label LineEdit from the dims model."""
-        if event.axis == self.axis:
+        if event.index == self.axis:
             label = self.dims.axis_labels[self.axis]
             self.axis_label.setText(label)
             self.axis_label_changed.emit(self.axis, label)
 
     def _update_label(self):
         """Update dimension slider label."""
-        with self.dims.events.axis_labels.blocker():
-            self.dims.set_axis_label(self.axis, self.axis_label.text())
+        with self.dims.axis_labels.events.changed.blocker():
+            self.dims.axis_labels[self.axis] = self.axis_label.text()
         self.axis_label_changed.emit(self.axis, self.axis_label.text())
 
     def _clear_label_focus(self):

@@ -55,7 +55,6 @@ class Dims:
         self.events = EmitterGroup(
             source=self,
             auto_connect=True,
-            axis_labels=None,
             ndim=None,
             ndisplay=None,
             order=None,
@@ -64,7 +63,7 @@ class Dims:
         self._range = EventedList()
         self._point = EventedList()
         self._order = []
-        self._axis_labels = []
+        self._axis_labels = EventedList()
         self.clip = True
         self._ndisplay = 2 if ndisplay is None else ndisplay
 
@@ -83,13 +82,9 @@ class Dims:
                     f" ndim is {ndim} while order is {order}."
                 )
             self._order = order
+
         if axis_labels is not None:
-            if len(axis_labels) != ndim:
-                raise ValueError(
-                    f"Length of axis labels must be identical to ndim."
-                    f" ndim is {ndim} while axis labels is {axis_labels}."
-                )
-            self._axis_labels = list(axis_labels)
+            self.axis_labels = axis_labels
 
     @property
     def range(self):
@@ -111,11 +106,11 @@ class Dims:
     @property
     def axis_labels(self):
         """List of labels for each axis."""
-        return copy(self._axis_labels)
+        return self._axis_labels
 
     @axis_labels.setter
     def axis_labels(self, labels):
-        if self._axis_labels == labels:
+        if list(self.axis_labels) == labels:
             return
 
         if len(labels) != self.ndim:
@@ -126,9 +121,8 @@ class Dims:
                 "dimensions unlabeled, use '' instead."
             )
 
-        self._axis_labels = list(labels)
-        for axis in range(self.ndim):
-            self.events.axis_labels(axis=axis)
+        for i, ax in enumerate(list(labels)):
+            self._axis_labels[i] = ax
 
     @property
     def order(self):
@@ -171,47 +165,31 @@ class Dims:
                 self.range.insert(0, (0, 2, 1))
                 # Point is the slider value
                 self.point.insert(0, 0)
+                # Insert new default axis labels
+                total = ndim - cur_ndim - 1
+                self.axis_labels.insert(0, str(total - i))
 
             self._order = list(range(ndim - cur_ndim)) + [
                 o + ndim - cur_ndim for o in self.order
             ]
-            # Append new "default" labels to existing ones
-            if self._axis_labels == list(map(str, range(cur_ndim))):
-                self._axis_labels = list(map(str, range(ndim)))
-            else:
-                self._axis_labels = (
-                    list(map(str, range(ndim - cur_ndim))) + self._axis_labels
-                )
+
+            # If axis labels were previouly ordered, preserve full ordering
+            if list(self.axis_labels[ndim - cur_ndim :]) == list(
+                map(str, range(cur_ndim))
+            ):
+                for i in range(ndim - cur_ndim, ndim):
+                    self._axis_labels[i] = str(i)
+
         elif ndim < cur_ndim:
             for i in range(cur_ndim - ndim):
                 self.range.pop(0)
                 self.point.pop(0)
+                self.axis_labels.pop(0)
 
-            self._order = self._reorder_after_dim_reduction(
-                self._order[-ndim:]
-            )
-            self._axis_labels = self._axis_labels[-ndim:]
+            self._order = reorder_after_dim_reduction(self._order[-ndim:])
 
         # Notify listeners that the number of dimensions have changed
         self.events.ndim()
-
-    def _reorder_after_dim_reduction(self, order):
-        """Ensure current dimension order is preserved after dims are dropped.
-
-        Parameters
-        ----------
-        order : list-like
-            The data to reorder.
-
-        Returns
-        -------
-        arr : list
-            The original array with the unneeded dimension
-            thrown away.
-        """
-        arr = np.array(order)
-        arr[np.argsort(arr)] = range(len(arr))
-        return arr.tolist()
 
     @property
     def indices(self):
@@ -316,10 +294,8 @@ class Dims:
         label : str
             Given label
         """
-        axis = self._assert_axis_in_bounds(axis)
-        if self.axis_labels[axis] != str(label):
-            self._axis_labels[axis] = str(label)
-            self.events.axis_labels(axis=axis)
+        warnings.warn('To be deprecated')
+        self.axis_labels[axis] = label
 
     def _assert_axis_in_bounds(self, axis: int) -> int:
         """Assert a given value is inside the existing axes of the image.
@@ -352,3 +328,22 @@ class Dims:
         order = copy(self.order)
         order[-2], order[-1] = order[-1], order[-2]
         self.order = order
+
+
+def reorder_after_dim_reduction(order):
+    """Ensure current dimension order is preserved after dims are dropped.
+
+    Parameters
+    ----------
+    order : list-like
+        The data to reorder.
+
+    Returns
+    -------
+    arr : list
+        The original array with the unneeded dimension
+        thrown away.
+    """
+    arr = np.array(order)
+    arr[np.argsort(arr)] = range(len(arr))
+    return arr.tolist()
