@@ -303,7 +303,9 @@ class QtLayerList(QScrollArea):
         drag.setMimeData(mimeData)
         drag.setHotSpot(event.pos() - self.rect().topLeft())
         drag.exec_()
-        if self._drag_name is not None:
+        # Check if dragged layer still exists or was deleted during drag
+        dragged_layer_exists = self._drag_name in [l.name for l in self.layers]
+        if self._drag_name is not None and dragged_layer_exists:
             index = self.layers.index(self._drag_name)
             layer = self.layers[index]
             self._ensure_visible(layer)
