@@ -9,9 +9,8 @@ from ._text_utils import (
 )
 from ...utils.colormaps.standardize_color import transform_color
 from ...utils.colormaps.vendored.colors import to_hex
-from ...utils.dataclass import dataclass
+from ...utils.dataclass import dataclass, Property
 from dataclasses import InitVar
-from typing_extensions import Annotated
 
 
 # https://github.com/napari/napari/issues/1491
@@ -68,13 +67,11 @@ class TextManager:
     properties: InitVar[Dict[str, np.ndarray]] = None
 
     rotation: float = 0.0
-    translation: Annotated[np.ndarray, None, np.asarray] = np.asarray(0)
-    anchor: Annotated[Anchor, str, Anchor] = Anchor.CENTER
-    color: Annotated[
-        Union[np.ndarray, str], to_hex, transform_1_color
-    ] = 'cyan'
+    translation: Property[np.ndarray, None, np.asarray] = np.asarray(0)
+    anchor: Property[Anchor, str, Anchor] = Anchor.CENTER
+    color: Property[Union[np.ndarray, str], to_hex, transform_1_color] = 'cyan'
     size: float = 12.0
-    blending: Annotated[Blending, str, no_opaque] = Blending.TRANSLUCENT
+    blending: Property[Blending, str, no_opaque] = Blending.TRANSLUCENT
     visible: bool = True
     values: Optional[np.ndarray] = None
     mode: TextMode = TextMode.NONE
