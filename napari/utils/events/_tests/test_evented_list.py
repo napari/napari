@@ -48,6 +48,8 @@ def test_list(request, regular_list):
         ('pop', (-2,), ('removing', 'removed')),
         ('remove', (3,), ('removing', 'removed')),
         ('reverse', (), ('reordered',)),
+        ('__add__', ([7, 8, 9],), ()),
+        ('__iadd__', ([7, 9],), ('inserting', 'inserted') * 2),
         # sort?
     ],
     ids=lambda x: x[0],
@@ -153,6 +155,8 @@ def test_nested_indexing():
         ('extend', ([7, 8, 9],), ('inserting', 'inserted') * 3),
         ('index', (110,), ()),
         ('pop', (-1,), ('removing', 'removed')),
+        ('__add__', ([7, 8, 9],), ()),
+        ('__iadd__', ([7, 9],), ('inserting', 'inserted') * 2),
     ],
     ids=lambda x: x[0],
 )

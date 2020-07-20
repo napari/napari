@@ -204,3 +204,14 @@ class EventedList(SupportsEvents, MutableSequence[T]):
     def copy(self) -> 'EventedList[T]':
         """Return a shallow copy of the list."""
         return self.__class__(self._list)
+
+    def __add__(self, other: Iterable[T]) -> 'EventedList[T]':
+        """Add other to self, return new object."""
+        copy = self.copy()
+        copy.extend(other)
+        return copy
+
+    def __iadd__(self, other: Iterable[T]) -> 'EventedList[T]':
+        """Add other to self in place (self += other)."""
+        self.extend(other)
+        return self
