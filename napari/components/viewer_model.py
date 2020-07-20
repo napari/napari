@@ -56,7 +56,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
 
     grid_stride: ClassVar[int] = 1
     palette: ClassVar[Dict[str, str]] = palettes[DEFAULT_THEME]
-    layers: ClassVar[LayerList] = []
+    layers: ClassVar[LayerList] = []  # TODO: hack for initialization
 
     ndisplay: InitVar[int] = 2  # type: ignore
     order: InitVar[Optional[Tuple[int, ...]]] = None  # type: ignore
@@ -94,6 +94,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             raise ValueError(
                 f"Theme '{theme}' not found; " f"options are {list(palettes)}."
             )
+        # self.events.palette()  # TODO: can we just make this events.theme?
 
     def _on_grid_size_set(self, grid_size):
         self.reset_view()
