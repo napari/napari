@@ -131,3 +131,22 @@ def test_dataclass_missing_vars_raises():
     assert not hasattr(m, 'f')
     assert not hasattr(M, 'f')
     assert 'f' in M.__annotations__
+
+
+def test_dataclass_coerces_types():
+    from napari.layers.utils._text_constants import Anchor
+    from napari.layers.base._base_constants import Blending
+    from typing_extensions import Annotated
+    from napari.utils.dataclass import dataclass
+
+    @dataclass(properties=True)
+    class M:
+        x: int = 2
+        anchor: Annotated[Anchor, str, Anchor] = Anchor.UPPER_LEFT
+        blending: Blending = Blending.OPAQUE
+
+    m = M()
+    m.anchor = 'center'
+    assert isinstance(m._anchor, Anchor)
+    assert isinstance(m.anchor, str)
+    assert isinstance(m.blending, Blending)

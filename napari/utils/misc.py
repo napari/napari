@@ -4,6 +4,7 @@ import collections.abc
 import inspect
 import itertools
 import re
+import builtins
 
 from enum import Enum, EnumMeta
 from os import PathLike, fspath, path
@@ -151,7 +152,7 @@ class StringEnumMeta(EnumMeta):
             else:
                 raise ValueError(
                     f'{cls} may only be called with a `str`'
-                    f' or an instance of {cls}'
+                    f' or an instance of {cls}. Got {builtins.type(value)}'
                 )
 
         # otherwise create new Enum class
