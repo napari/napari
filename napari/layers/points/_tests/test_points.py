@@ -15,7 +15,7 @@ def _make_cycled_properties(values, length):
 
     Parameters
     ----------
-    values :
+    values
         The values to be cycled.
     length : int
         The length of the resulting property array
@@ -549,6 +549,104 @@ def test_updating_points_properties():
     updated_properties = properties
     updated_properties['point_type'][-1] = 'A'
     np.testing.assert_equal(layer.properties, updated_properties)
+
+
+properties_array = {'point_type': _make_cycled_properties(['A', 'B'], 10)}
+properties_list = {'point_type': list(_make_cycled_properties(['A', 'B'], 10))}
+
+
+@pytest.mark.parametrize("properties", [properties_array, properties_list])
+def test_text_from_property_value(properties):
+    """Test setting text from a property value"""
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data, properties=copy(properties), text='point_type')
+
+    np.testing.assert_equal(layer.text.values, properties['point_type'])
+
+
+@pytest.mark.parametrize("properties", [properties_array, properties_list])
+def test_text_from_property_fstring(properties):
+    """Test setting text with an f-string from the property value"""
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(
+        data, properties=copy(properties), text='type: {point_type}'
+    )
+
+    expected_text = ['type: ' + v for v in properties['point_type']]
+    np.testing.assert_equal(layer.text.values, expected_text)
+
+    # test updating the text
+    layer.text = 'type-ish: {point_type}'
+    expected_text_2 = ['type-ish: ' + v for v in properties['point_type']]
+    np.testing.assert_equal(layer.text.values, expected_text_2)
+
+    # copy/paste
+    layer.selected_data = {0}
+    layer._copy_data()
+    layer._paste_data()
+    expected_text_3 = expected_text_2 + ['type-ish: A']
+    np.testing.assert_equal(layer.text.values, expected_text_3)
+
+    # add point
+    layer.selected_data = {0}
+    new_shape = np.random.random((1, 2))
+    layer.add(new_shape)
+    expected_text_4 = expected_text_3 + ['type-ish: A']
+    np.testing.assert_equal(layer.text.values, expected_text_4)
+
+
+@pytest.mark.parametrize("properties", [properties_array, properties_list])
+def test_set_text_with_kwarg_dict(properties):
+    text_kwargs = {
+        'text': 'type: {point_type}',
+        'color': [0, 0, 0, 1],
+        'rotation': 10,
+        'translation': [5, 5],
+        'anchor': 'upper_left',
+        'size': 10,
+        'visible': True,
+    }
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data, properties=copy(properties), text=text_kwargs)
+
+    expected_text = ['type: ' + v for v in properties['point_type']]
+    np.testing.assert_equal(layer.text.values, expected_text)
+
+    for property, value in text_kwargs.items():
+        if property == 'text':
+            continue
+        layer_value = getattr(layer._text, property)
+        np.testing.assert_equal(layer_value, value)
+
+
+@pytest.mark.parametrize("properties", [properties_array, properties_list])
+def test_text_error(properties):
+    """creating a layer with text as the wrong type should raise an error"""
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    # try adding text as the wrong type
+    with pytest.raises(TypeError):
+        Points(data, properties=copy(properties), text=123)
+
+
+def test_refresh_text():
+    """Test refreshing the text after setting new properties"""
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    properties = {'point_type': ['A'] * shape[0]}
+    layer = Points(data, properties=copy(properties), text='point_type')
+
+    new_properties = {'point_type': ['B'] * shape[0]}
+    layer.properties = new_properties
+    np.testing.assert_equal(layer.text.values, new_properties['point_type'])
 
 
 def test_points_errors():

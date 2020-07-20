@@ -592,10 +592,10 @@ class EventEmitter(object):
 
         Notes
         -----
-           For example, one could do::
+        For example, one could do::
 
-               with emitter.blocker():
-                   pass  # ..do stuff; no events will be emitted..
+            with emitter.blocker():
+                pass  # ..do stuff; no events will be emitted..
         """
         return EventBlocker(self, callback)
 

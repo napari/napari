@@ -12,7 +12,7 @@ def view_image(
     interpolation='nearest',
     rendering='mip',
     iso_threshold=0.5,
-    attenuation=0.5,
+    attenuation=0.05,
     name=None,
     metadata=None,
     scale=None,
@@ -214,6 +214,7 @@ def view_points(
     data=None,
     *,
     properties=None,
+    text=None,
     symbol='o',
     size=10,
     edge_width=1,
@@ -248,6 +249,13 @@ def view_points(
     properties : dict {str: array (N,)}, DataFrame
         Properties for each point. Each property should be an array of length N,
         where N is the number of points.
+    text : str, dict
+        Text to be displayed with the points. If text is set to a key in properties,
+        the value of that property will be displayed. Multiple properties can be
+        composed using f-string-like syntax (e.g., '{property_1}, {float_property:.2f}).
+        A dictionary can be provided with keyword arguments to set the text values
+        and display properties. See TextManager.__init__() for the valid keyword arguments.
+        For example usage, see /napari/examples/add_points_with_text.py.
     symbol : str
         Symbol to be used for the point markers. Must be one of the
         following: arrow, clobber, cross, diamond, disc, hbar, ring,
@@ -336,6 +344,7 @@ def view_points(
     viewer.add_points(
         data=data,
         properties=properties,
+        text=text,
         symbol=symbol,
         size=size,
         edge_width=edge_width,
@@ -480,6 +489,7 @@ def view_shapes(
     *,
     ndim=None,
     properties=None,
+    text=None,
     shape_type='rectangle',
     edge_width=1,
     edge_color='black',
@@ -518,6 +528,13 @@ def view_shapes(
     properties : dict {str: array (N,)}, DataFrame
         Properties for each shape. Each property should be an array of length N,
         where N is the number of shapes.
+    text : str, dict
+        Text to be displayed with the shapes. If text is set to a key in properties,
+        the value of that property will be displayed. Multiple properties can be
+        composed using f-string-like syntax (e.g., '{property_1}, {float_property:.2f}).
+        A dictionary can be provided with keyword arguments to set the text values
+        and display properties. See TextManager.__init__() for the valid keyword arguments.
+        For example usage, see /napari/examples/add_shapes_with_text.py.
     shape_type : string or list
         String of shape shape_type, must be one of "{'line', 'rectangle',
         'ellipse', 'path', 'polygon'}". If a list is supplied it must be
@@ -614,6 +631,7 @@ def view_shapes(
         data=data,
         ndim=ndim,
         properties=properties,
+        text=text,
         shape_type=shape_type,
         edge_width=edge_width,
         edge_color=edge_color,
