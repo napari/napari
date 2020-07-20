@@ -14,7 +14,7 @@ from typing import (
 )
 
 import toolz as tz
-from typing_extensions import Annotated, get_args, get_origin, get_type_hints
+import typing_extensions as _te
 
 
 from .event import EmitterGroup
@@ -200,10 +200,10 @@ def try_coerce(func, name, value):
 
 def parse_annotated_types(cls: Type):
     out: Dict[str, TypeGetSet] = {}
-    for name, typ in get_type_hints(cls, include_extras=True).items():
+    for name, typ in _te.get_type_hints(cls, include_extras=True).items():
         d = [typ, None, None]
-        if get_origin(typ) is Annotated:
-            args = get_args(typ)
+        if _te.get_origin(typ) is _te.Annotated:
+            args = _te.get_args(typ)
             d[: len(args)] = args
         d[1] = try_coerce(d[1], name)
         d[2] = try_coerce(d[2], name)
@@ -349,3 +349,32 @@ def dataclass(
 def _get_state(self):
     """Get dictionary of dataclass fiels."""
     return _dc.asdict(self)
+
+
+class Property:
+    """Declare a dataclass field as a property with getter/setter functions"""
+
+    def __new__(cls, *args, **kwargs):
+        raise TypeError("Type Property cannot be instantiated")
+
+    def __init_subclass__(cls, *args, **kwargs):
+        raise TypeError(f"Cannot subclass {cls.__module__}.Property")
+
+    import typing_extensions
+
+    @_te._tp_cache
+    def __class_getitem__(cls, params):
+        if not isinstance(params, tuple) or not (1 < len(params) < 4):
+            raise TypeError(
+                "Property[...] should be used with exactly two or three "
+                "arguments (a type, a getter, and an optional setter)"
+            )
+        msg = "Property[T, ...]: T must be a type."
+        origin = typing._type_check(params[0], msg)
+        if params[1] is not None and not callable(params[1]):
+            raise TypeError(f"Property getter not callable: {params[1]}")
+        if len(params) > 2:
+            if params[2] is not None and not callable(params[2]):
+                raise TypeError(f"Property getter not callable: {params[1]}")
+        metadata = tuple(params[1:])
+        return _te._AnnotatedAlias(origin, metadata)
