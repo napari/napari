@@ -61,15 +61,21 @@ def set_with_events(self: C, name: str, value: Any, fields: Set[str]) -> None:
     """
     # first call the original
     object.__setattr__(self, name, value)
-    if name in fields:
+
+    if hasattr(self, 'events') and name in fields:
         # if custom set method `_on_<name>_set` exists, call it
         setter_method = getattr(self, ON_SET.format(name=name), None)
         if callable(setter_method):
             # the method can return True, if it wants to handle its own events
+            # TODO: if an exception is raised in the ON_SET method, we should
+            # undo any state changes.
             if setter_method(getattr(self, name)):
                 return
         # otherwise, we emit the event
-        if hasattr(self, 'events') and name in self.events:
+        # TODO: use np.all(old_val == new_val)
+        # TODO: don't emit an event if the value hasn't changed
+
+        if name in self.events:
             # use gettattr again in case `_on_name_set` has modified it
             getattr(self.events, name)(value=getattr(self, name))  # type: ignore
 
@@ -91,22 +97,26 @@ def add_events_to_class(cls: Type[C]) -> None:
     # get a handle to the original __post_init__ method if present
     orig_post_init: Callable[..., None] = getattr(cls, '__post_init__', None)
 
+    e_fields = {
+        _dc._get_field(cls, name, type_)
+        for name, type_ in cls.__dict__.get('__annotations__', {}).items()
+    }
+    e_fields = {
+        fld.name: None
+        for fld in e_fields
+        if fld._field_type is _dc._FIELD and fld.metadata.get("events", True)
+    }
+
     def evented_post_init(self: T, *initvars) -> None:
         # create an EmitterGroup with an EventEmitter for each field
-        # in the dataclass
-        emitter_group = EmitterGroup(
-            source=self,
-            auto_connect=False,
-            **{n: None for n in getattr(self, '__dataclass_fields__', {})},
-        )
-        object.__setattr__(self, 'events', emitter_group)
+        # in the dataclass, skip those with metadata={'events' = False}
+        self.events = EmitterGroup(source=self, auto_connect=False, **e_fields)
         # call original __post_init__
         if orig_post_init is not None:
             orig_post_init(self, *initvars)
-        # modify __setattr__ with version that emits an event when setting
-        setter = set_with_events(fields={f.name for f in _dc.fields(cls)})
-        setattr(cls, '__setattr__', setter)
 
+    # modify __setattr__ with version that emits an event when setting
+    setattr(cls, '__setattr__', set_with_events(fields=set(e_fields)))
     setattr(cls, '__post_init__', evented_post_init)
 
 
@@ -229,9 +239,9 @@ def convert_fields_to_properties(cls: Type[C]):
     coerce_funcs = parse_annotated_types(cls)
     # loop through annotated members of the glass
     for name, type_ in list(cls.__dict__.get('__annotations__', {}).items()):
-        # ClassVar types are exempt from dataclasses and @properties
+        # ClassVar and InitVar types are exempt from dataclasses and properties
         # https://docs.python.org/3/library/dataclasses.html#class-variables
-        if _dc._is_classvar(type_, typing):
+        if _dc._is_classvar(type_, typing) or _dc._is_initvar(type_, _dc):
             continue
         private_name = f"_{name}"
         # store the original value for the property
@@ -315,6 +325,12 @@ def dataclass(
         If both ``properties`` and ``frozen`` are True
     """
 
+    # TODO: currently, events must be process first here, otherwise
+    # metada={'events':False} does not work... but that should be fixed.
+    if events:
+        # create a modified __post_init__ method that creates an EmitterGroup
+        add_events_to_class(cls)
+
     if properties:
         if frozen:
             raise ValueError(
@@ -322,10 +338,6 @@ def dataclass(
             )
         # convert public dataclass fields to properties
         convert_fields_to_properties(cls)
-
-    if events:
-        # create a modified __post_init__ method that creates an EmitterGroup
-        add_events_to_class(cls)
 
     # if neither events or properties are True, this function is exactly like
     # the builtin `dataclasses.dataclass`
