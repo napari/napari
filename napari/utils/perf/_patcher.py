@@ -23,8 +23,20 @@ class PatchError(Exception):
         self.message = message
 
 
-def _patch_attribute(module, attribute_str, patch_func):
+def _patch_attribute(
+    module: types.ModuleType, attribute_str: str, patch_func: PatchFunction
+):
     """Patch the module's callable pointed to by the attribute string.
+
+    Parameters
+    ----------
+    module : types.ModuleType
+        The module to patch.
+    attribute_str : str
+        An attribute in the module like "function" or "class.method".
+    patch_func : PatchFunction
+        This function is called to perform the patch.
+
     """
     # We expect attribute_str is <function> or <class>.<method>. We could
     # allow nested classes and functions if we wanted to extend this some.
