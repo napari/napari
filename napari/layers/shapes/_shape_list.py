@@ -2,7 +2,7 @@ import numpy as np
 from ._mesh import Mesh
 from ._shapes_models import Shape, Line, Path
 from ._shapes_utils import inside_triangles, triangles_intersect_box
-from ._shapes_constants import shape_classes, ShapeType
+from ...utils.constants import ShapeType
 
 
 class ShapeList:
@@ -453,18 +453,17 @@ class ShapeList:
             If string , must be one of "{'line', 'rectangle', 'ellipse',
             'path', 'polygon'}".
         """
+        from . import _shapes_models
+
         if new_type is not None:
             cur_shape = self.shapes[index]
             if type(new_type) == str:
                 shape_type = ShapeType(new_type)
-                if shape_type in shape_classes.keys():
-                    shape_cls = shape_classes[shape_type]
-                else:
-                    raise ValueError(
-                        f'{shape_type} must be one of {set(shape_classes)}'
-                    )
+                shape_cls = getattr(_shapes_models, shape_type.value.title())
             else:
                 shape_cls = new_type
+            if not issubclass(shape_cls, _shapes_models.Shape):
+                raise TypeError("new_type must be a string or Shape subclass")
             shape = shape_cls(
                 data,
                 edge_width=cur_shape.edge_width,

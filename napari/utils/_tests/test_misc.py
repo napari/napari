@@ -4,8 +4,8 @@ from pathlib import Path
 
 import pytest
 
+from napari.utils.constants import StringEnum
 from napari.utils.misc import (
-    StringEnum,
     callsignature,
     ensure_sequence_of_iterables,
     ensure_iterable,

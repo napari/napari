@@ -25,7 +25,7 @@ from ..utils.color_transformations import (
     ColorType,
 )
 from ..utils.text import TextManager
-from ._points_constants import Symbol, SYMBOL_ALIAS, Mode, ColorMode
+from ...utils.constants import Symbol, SYMBOL_ALIAS, PointsMode, ColorMode
 from ._points_mouse_bindings import add, select, highlight
 from ._points_utils import (
     create_box,
@@ -345,7 +345,7 @@ class Points(Layer):
         # Index of hovered point
         self._value = None
         self._value_stored = None
-        self._mode = Mode.PAN_ZOOM
+        self._mode = PointsMode.PAN_ZOOM
         self._mode_history = self._mode
         self._status = self.mode
         self._highlight_index = []
@@ -602,7 +602,7 @@ class Points(Layer):
         if (
             self._update_properties
             and len(self.selected_data) > 0
-            and self._mode != Mode.ADD
+            and self._mode != PointsMode.ADD
         ):
             props = self.properties
             for k in props:
@@ -718,7 +718,7 @@ class Points(Layer):
         if (
             self._update_properties
             and len(self.selected_data) > 0
-            and self._mode != Mode.ADD
+            and self._mode != PointsMode.ADD
         ):
             for i in self.selected_data:
                 self.size[i, :] = (self.size[i, :] > 0) * size
@@ -801,7 +801,7 @@ class Points(Layer):
         if (
             self._update_properties
             and len(self.selected_data) > 0
-            and self._mode != Mode.ADD
+            and self._mode != PointsMode.ADD
         ):
             cur_colors: np.ndarray = self.edge_color
             index = list(self.selected_data)
@@ -889,7 +889,7 @@ class Points(Layer):
         if (
             self._update_properties
             and len(self.selected_data) > 0
-            and self._mode != Mode.ADD
+            and self._mode != PointsMode.ADD
         ):
             cur_colors: np.ndarray = self.face_color
             index = list(self.selected_data)
@@ -1271,44 +1271,44 @@ class Points(Layer):
 
     @mode.setter
     def mode(self, mode):
-        mode = Mode(mode)
+        mode = PointsMode(mode)
 
         if not self.editable:
-            mode = Mode.PAN_ZOOM
+            mode = PointsMode.PAN_ZOOM
 
         if mode == self._mode:
             return
         old_mode = self._mode
 
-        if old_mode == Mode.ADD:
+        if old_mode == PointsMode.ADD:
             self.mouse_drag_callbacks.remove(add)
-        elif old_mode == Mode.SELECT:
+        elif old_mode == PointsMode.SELECT:
             # add mouse drag and move callbacks
             self.mouse_drag_callbacks.remove(select)
             self.mouse_move_callbacks.remove(highlight)
 
-        if mode == Mode.ADD:
+        if mode == PointsMode.ADD:
             self.cursor = 'pointing'
             self.interactive = False
             self.help = 'hold <space> to pan/zoom'
             self.selected_data = set()
             self._set_highlight()
             self.mouse_drag_callbacks.append(add)
-        elif mode == Mode.SELECT:
+        elif mode == PointsMode.SELECT:
             self.cursor = 'standard'
             self.interactive = False
             self.help = 'hold <space> to pan/zoom'
             # add mouse drag and move callbacks
             self.mouse_drag_callbacks.append(select)
             self.mouse_move_callbacks.append(highlight)
-        elif mode == Mode.PAN_ZOOM:
+        elif mode == PointsMode.PAN_ZOOM:
             self.cursor = 'standard'
             self.interactive = True
             self.help = ''
         else:
             raise ValueError("Mode not recognized")
 
-        if not (mode == Mode.SELECT and old_mode == Mode.SELECT):
+        if not (mode == PointsMode.SELECT and old_mode == PointsMode.SELECT):
             self._selected_data_stored = set()
 
         self.status = str(mode)
@@ -1416,7 +1416,7 @@ class Points(Layer):
                 self.editable = True
 
         if not self.editable:
-            self.mode = Mode.PAN_ZOOM
+            self.mode = PointsMode.PAN_ZOOM
 
     def _slice_data(
         self, dims_indices
@@ -1530,7 +1530,7 @@ class Points(Layer):
                     # highlight the hovered point if not in adding mode
                     if (
                         self._value in self._indices_view
-                        and self._mode == Mode.SELECT
+                        and self._mode == PointsMode.SELECT
                         and not self._is_selecting
                     ):
                         hover_point = list(self._indices_view).index(
@@ -1545,7 +1545,7 @@ class Points(Layer):
                     # only highlight hovered points in select mode
                     if (
                         self._value in self._indices_view
-                        and self._mode == Mode.SELECT
+                        and self._mode == PointsMode.SELECT
                         and not self._is_selecting
                     ):
                         hover_point = list(self._indices_view).index(

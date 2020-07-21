@@ -1,7 +1,7 @@
 import pytest
 
 from napari.components import Dims
-from napari.components.dims_constants import DimsMode
+from napari.utils.constants import DimsMode
 
 
 def test_ndim():

@@ -14,11 +14,7 @@ from qtpy.QtCore import Qt
 
 import numpy as np
 from .qt_base_layer import QtLayerControls
-from ...layers.labels._labels_constants import (
-    Mode,
-    LabelColorMode,
-    LabelBrushShape,
-)
+from ...utils.constants import LabelsMode, LabelColorMode, LabelBrushShape
 from ..qt_mode_buttons import QtModeRadioButton, QtModePushButton
 from ..utils import disable_with_opacity
 
@@ -127,22 +123,22 @@ class QtLabelsControls(QtLayerControls):
         self.panzoom_button = QtModeRadioButton(
             layer,
             'zoom',
-            Mode.PAN_ZOOM,
+            LabelsMode.PAN_ZOOM,
             tooltip='Pan/zoom mode (Space)',
             checked=True,
         )
         self.pick_button = QtModeRadioButton(
-            layer, 'picker', Mode.PICK, tooltip='Pick mode'
+            layer, 'picker', LabelsMode.PICK, tooltip='Pick mode'
         )
         self.paint_button = QtModeRadioButton(
-            layer, 'paint', Mode.PAINT, tooltip='Paint mode'
+            layer, 'paint', LabelsMode.PAINT, tooltip='Paint mode'
         )
         btn = 'Cmd' if sys.platform == 'darwin' else 'Ctrl'
         self.fill_button = QtModeRadioButton(
-            layer, 'fill', Mode.FILL, tooltip=f'Fill mode ({btn})'
+            layer, 'fill', LabelsMode.FILL, tooltip=f'Fill mode ({btn})'
         )
         self.erase_button = QtModeRadioButton(
-            layer, 'erase', Mode.ERASE, tooltip='Erase mode (Alt)'
+            layer, 'erase', LabelsMode.ERASE, tooltip='Erase mode (Alt)'
         )
 
         self.button_group = QButtonGroup(self)
@@ -240,15 +236,15 @@ class QtLabelsControls(QtLayerControls):
             FILL
         """
         mode = event.mode
-        if mode == Mode.PAN_ZOOM:
+        if mode == LabelsMode.PAN_ZOOM:
             self.panzoom_button.setChecked(True)
-        elif mode == Mode.PICK:
+        elif mode == LabelsMode.PICK:
             self.pick_button.setChecked(True)
-        elif mode == Mode.PAINT:
+        elif mode == LabelsMode.PAINT:
             self.paint_button.setChecked(True)
-        elif mode == Mode.FILL:
+        elif mode == LabelsMode.FILL:
             self.fill_button.setChecked(True)
-        elif mode == Mode.ERASE:
+        elif mode == LabelsMode.ERASE:
             self.erase_button.setChecked(True)
         else:
             raise ValueError("Mode not recognized")

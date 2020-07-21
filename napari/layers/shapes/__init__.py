@@ -1,4 +1,6 @@
 from .shapes import Shapes
+from ._shapes_models import Shape, Rectangle, Ellipse, Line, Path, Polygon
+
 from . import _shapes_key_bindings
 
 # Note that importing _shapes_key_bindings is needed as the Shapes layer gets

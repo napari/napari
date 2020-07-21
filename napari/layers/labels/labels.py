@@ -5,12 +5,12 @@ import numpy as np
 from scipy import ndimage as ndi
 
 from ...utils.colormaps import colormaps
+from ...utils.constants import LabelBrushShape, LabelColorMode, LabelsMode
 from ...utils.event import Event
 from ...utils.status_messages import format_float
 from ..image import Image
 from ..utils.color_transformations import transform_color
 from ..utils.layer_utils import dataframe_to_properties
-from ._labels_constants import LabelBrushShape, LabelColorMode, Mode
 from ._labels_mouse_bindings import draw, pick
 from ._labels_utils import sphere_indices
 
@@ -206,7 +206,7 @@ class Labels(Image):
         self._selected_color = self.get_color(self._selected_label)
         self.color = color
 
-        self._mode = Mode.PAN_ZOOM
+        self._mode = LabelsMode.PAN_ZOOM
         self._mode_history = self._mode
         self._status = self.mode
         self._preserve_labels = False
@@ -456,30 +456,34 @@ class Labels(Image):
         return str(self._mode)
 
     @mode.setter
-    def mode(self, mode: Union[str, Mode]):
-        mode = Mode(mode)
+    def mode(self, mode: Union[str, LabelsMode]):
+        mode = LabelsMode(mode)
 
         if not self.editable:
-            mode = Mode.PAN_ZOOM
+            mode = LabelsMode.PAN_ZOOM
 
         if mode == self._mode:
             return
 
-        if self._mode == Mode.PICK:
+        if self._mode == LabelsMode.PICK:
             self.mouse_drag_callbacks.remove(pick)
-        elif self._mode in [Mode.PAINT, Mode.FILL, Mode.ERASE]:
+        elif self._mode in [
+            LabelsMode.PAINT,
+            LabelsMode.FILL,
+            LabelsMode.ERASE,
+        ]:
             self.mouse_drag_callbacks.remove(draw)
 
-        if mode == Mode.PAN_ZOOM:
+        if mode == LabelsMode.PAN_ZOOM:
             self.cursor = 'standard'
             self.interactive = True
             self.help = 'enter paint or fill mode to edit labels'
-        elif mode == Mode.PICK:
+        elif mode == LabelsMode.PICK:
             self.cursor = 'cross'
             self.interactive = False
             self.help = 'hold <space> to pan/zoom, click to pick a label'
             self.mouse_drag_callbacks.append(pick)
-        elif mode == Mode.PAINT:
+        elif mode == LabelsMode.PAINT:
             self.cursor_size = self.brush_size / self.scale_factor
             self.cursor = self.brush_shape
             self.interactive = False
@@ -491,12 +495,12 @@ class Labels(Image):
                 'drag to paint a label'
             )
             self.mouse_drag_callbacks.append(draw)
-        elif mode == Mode.FILL:
+        elif mode == LabelsMode.FILL:
             self.cursor = 'cross'
             self.interactive = False
             self.help = 'hold <space> to pan/zoom, click to fill a label'
             self.mouse_drag_callbacks.append(draw)
-        elif mode == Mode.ERASE:
+        elif mode == LabelsMode.ERASE:
             self.cursor_size = self.brush_size / self.scale_factor
             self.cursor = self.brush_shape
             self.interactive = False
@@ -534,7 +538,7 @@ class Labels(Image):
                 self.editable = True
 
         if not self.editable:
-            self.mode = Mode.PAN_ZOOM
+            self.mode = LabelsMode.PAN_ZOOM
             self._reset_history()
 
     def _raw_to_displayed(self, raw):

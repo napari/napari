@@ -10,7 +10,7 @@ from qtpy.QtWidgets import (
 )
 from .qt_base_layer import QtLayerControls
 from ..qt_color_dialog import QColorSwatchEdit
-from ...layers.shapes._shapes_constants import Mode
+from ...utils.constants import ShapesMode
 from ..qt_mode_buttons import QtModeRadioButton, QtModePushButton
 from ..utils import disable_with_opacity, qt_signals_blocked
 
@@ -107,34 +107,47 @@ class QtShapesControls(QtLayerControls):
         self.widthSlider = sld
 
         self.select_button = QtModeRadioButton(
-            layer, 'select', Mode.SELECT, tooltip='Select shapes'
+            layer, 'select', ShapesMode.SELECT, tooltip='Select shapes'
         )
         self.direct_button = QtModeRadioButton(
-            layer, 'direct', Mode.DIRECT, tooltip='Select vertices'
+            layer, 'direct', ShapesMode.DIRECT, tooltip='Select vertices'
         )
         self.panzoom_button = QtModeRadioButton(
-            layer, 'zoom', Mode.PAN_ZOOM, tooltip='Pan/zoom', checked=True
+            layer,
+            'zoom',
+            ShapesMode.PAN_ZOOM,
+            tooltip='Pan/zoom',
+            checked=True,
         )
         self.rectangle_button = QtModeRadioButton(
-            layer, 'rectangle', Mode.ADD_RECTANGLE, tooltip='Add rectangles'
+            layer,
+            'rectangle',
+            ShapesMode.ADD_RECTANGLE,
+            tooltip='Add rectangles',
         )
         self.ellipse_button = QtModeRadioButton(
-            layer, 'ellipse', Mode.ADD_ELLIPSE, tooltip='Add ellipses'
+            layer, 'ellipse', ShapesMode.ADD_ELLIPSE, tooltip='Add ellipses'
         )
         self.line_button = QtModeRadioButton(
-            layer, 'line', Mode.ADD_LINE, tooltip='Add lines'
+            layer, 'line', ShapesMode.ADD_LINE, tooltip='Add lines'
         )
         self.path_button = QtModeRadioButton(
-            layer, 'path', Mode.ADD_PATH, tooltip='Add paths'
+            layer, 'path', ShapesMode.ADD_PATH, tooltip='Add paths'
         )
         self.polygon_button = QtModeRadioButton(
-            layer, 'polygon', Mode.ADD_POLYGON, tooltip='Add polygons'
+            layer, 'polygon', ShapesMode.ADD_POLYGON, tooltip='Add polygons'
         )
         self.vertex_insert_button = QtModeRadioButton(
-            layer, 'vertex_insert', Mode.VERTEX_INSERT, tooltip='Insert vertex'
+            layer,
+            'vertex_insert',
+            ShapesMode.VERTEX_INSERT,
+            tooltip='Insert vertex',
         )
         self.vertex_remove_button = QtModeRadioButton(
-            layer, 'vertex_remove', Mode.VERTEX_REMOVE, tooltip='Remove vertex'
+            layer,
+            'vertex_remove',
+            ShapesMode.VERTEX_REMOVE,
+            tooltip='Remove vertex',
         )
 
         self.move_front_button = QtModePushButton(
@@ -260,16 +273,16 @@ class QtShapesControls(QtLayerControls):
             Raise error if event.mode is not ADD, PAN_ZOOM, or SELECT.
         """
         mode_buttons = {
-            Mode.SELECT: self.select_button,
-            Mode.DIRECT: self.direct_button,
-            Mode.PAN_ZOOM: self.panzoom_button,
-            Mode.ADD_RECTANGLE: self.rectangle_button,
-            Mode.ADD_ELLIPSE: self.ellipse_button,
-            Mode.ADD_LINE: self.line_button,
-            Mode.ADD_PATH: self.path_button,
-            Mode.ADD_POLYGON: self.polygon_button,
-            Mode.VERTEX_INSERT: self.vertex_insert_button,
-            Mode.VERTEX_REMOVE: self.vertex_remove_button,
+            ShapesMode.SELECT: self.select_button,
+            ShapesMode.DIRECT: self.direct_button,
+            ShapesMode.PAN_ZOOM: self.panzoom_button,
+            ShapesMode.ADD_RECTANGLE: self.rectangle_button,
+            ShapesMode.ADD_ELLIPSE: self.ellipse_button,
+            ShapesMode.ADD_LINE: self.line_button,
+            ShapesMode.ADD_PATH: self.path_button,
+            ShapesMode.ADD_POLYGON: self.polygon_button,
+            ShapesMode.VERTEX_INSERT: self.vertex_insert_button,
+            ShapesMode.VERTEX_REMOVE: self.vertex_remove_button,
         }
 
         if event.mode in mode_buttons:

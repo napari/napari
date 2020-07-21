@@ -7,7 +7,7 @@ from qtpy.QtWidgets import QLineEdit, QSizePolicy, QVBoxLayout, QWidget
 
 from ..components.dims import Dims
 from .qt_dims_slider import QtDimSliderWidget
-from ._constants import LoopMode
+from ..utils.constants import LoopMode
 
 
 class QtDims(QWidget):

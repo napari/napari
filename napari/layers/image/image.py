@@ -4,12 +4,12 @@ import numpy as np
 from scipy import ndimage as ndi
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS
+from ...utils.constants import Interpolation, Interpolation3D, Rendering
 from ...utils.event import Event
 from ...utils.status_messages import format_float
 from ..base import Layer
 from ..utils.layer_utils import calc_data_range
 from ..intensity_mixin import IntensityVisualizationMixin
-from ._image_constants import Interpolation, Interpolation3D, Rendering
 from ._image_utils import guess_rgb, guess_multiscale
 from ._image_slice import ImageSlice
 

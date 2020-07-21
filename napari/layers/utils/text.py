@@ -3,8 +3,7 @@ import warnings
 
 import numpy as np
 
-from ..base._base_constants import Blending
-from ._text_constants import TextMode, Anchor
+from ...utils.constants import Anchor, Blending, TextMode
 from ._text_utils import (
     format_text_properties,
     get_text_anchors,

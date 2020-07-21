@@ -7,6 +7,7 @@ from vispy.color.colormap import Colormap
 
 from ...types import ValidColormapArg
 from ...utils.colormaps import ensure_colormap_tuple
+from ...utils.constants import DEFAULT_COLOR_CYCLE, ColorMode
 from ...utils.event import Event
 from ...utils.status_messages import format_float
 from ..base import Layer
@@ -21,7 +22,6 @@ from ..utils.layer_utils import (
     map_property,
 )
 from ._vector_utils import generate_vector_meshes, vectors_to_coordinates
-from ._vectors_constants import DEFAULT_COLOR_CYCLE, ColorMode
 
 
 class Vectors(Layer):

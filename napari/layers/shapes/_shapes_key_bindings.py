@@ -1,17 +1,17 @@
 import numpy as np
 
 from .shapes import Shapes
-from ._shapes_constants import Mode, Box
+from ...utils.constants import ShapesMode, Box
 
 
 @Shapes.bind_key('Space')
 def hold_to_pan_zoom(layer):
     """Hold to pan and zoom in the viewer."""
-    if layer._mode != Mode.PAN_ZOOM:
+    if layer._mode != ShapesMode.PAN_ZOOM:
         # on key press
         prev_mode = layer.mode
         prev_selected = layer.selected_data.copy()
-        layer.mode = Mode.PAN_ZOOM
+        layer.mode = ShapesMode.PAN_ZOOM
 
         yield
 
@@ -49,81 +49,81 @@ def hold_to_lock_aspect_ratio(layer):
 @Shapes.bind_key('R')
 def activate_add_rectangle_mode(layer):
     """Activate add rectangle tool."""
-    layer.mode = Mode.ADD_RECTANGLE
+    layer.mode = ShapesMode.ADD_RECTANGLE
 
 
 @Shapes.bind_key('E')
 def activate_add_ellipse_mode(layer):
     """Activate add ellipse tool."""
-    layer.mode = Mode.ADD_ELLIPSE
+    layer.mode = ShapesMode.ADD_ELLIPSE
 
 
 @Shapes.bind_key('L')
 def activate_add_line_mode(layer):
     """Activate add line tool."""
-    layer.mode = Mode.ADD_LINE
+    layer.mode = ShapesMode.ADD_LINE
 
 
 @Shapes.bind_key('T')
 def activate_add_path_mode(layer):
     """Activate add path tool."""
-    layer.mode = Mode.ADD_PATH
+    layer.mode = ShapesMode.ADD_PATH
 
 
 @Shapes.bind_key('P')
 def activate_add_polygon_mode(layer):
     """Activate add polygon tool."""
-    layer.mode = Mode.ADD_POLYGON
+    layer.mode = ShapesMode.ADD_POLYGON
 
 
 @Shapes.bind_key('D')
 def activate_direct_mode(layer):
     """Activate vertex selection tool."""
-    layer.mode = Mode.DIRECT
+    layer.mode = ShapesMode.DIRECT
 
 
 @Shapes.bind_key('S')
 def activate_select_mode(layer):
     """Activate shape selection tool."""
-    layer.mode = Mode.SELECT
+    layer.mode = ShapesMode.SELECT
 
 
 @Shapes.bind_key('Z')
 def activate_pan_zoom_mode(layer):
     """Activate pan and zoom mode."""
-    layer.mode = Mode.PAN_ZOOM
+    layer.mode = ShapesMode.PAN_ZOOM
 
 
 @Shapes.bind_key('I')
 def activate_vertex_insert_mode(layer):
     """Activate vertex insertion tool."""
-    layer.mode = Mode.VERTEX_INSERT
+    layer.mode = ShapesMode.VERTEX_INSERT
 
 
 @Shapes.bind_key('X')
 def activate_vertex_remove_mode(layer):
     """Activate vertex deletion tool."""
-    layer.mode = Mode.VERTEX_REMOVE
+    layer.mode = ShapesMode.VERTEX_REMOVE
 
 
 @Shapes.bind_key('Control-C')
 def copy(layer):
     """Copy any selected shapes."""
-    if layer._mode in (Mode.DIRECT, Mode.SELECT):
+    if layer._mode in (ShapesMode.DIRECT, ShapesMode.SELECT):
         layer._copy_data()
 
 
 @Shapes.bind_key('Control-V')
 def paste(layer):
     """Paste any copied shapes."""
-    if layer._mode in (Mode.DIRECT, Mode.SELECT):
+    if layer._mode in (ShapesMode.DIRECT, ShapesMode.SELECT):
         layer._paste_data()
 
 
 @Shapes.bind_key('A')
 def select_all(layer):
     """Select all shapes in the current view slice."""
-    if layer._mode in (Mode.DIRECT, Mode.SELECT):
+    if layer._mode in (ShapesMode.DIRECT, ShapesMode.SELECT):
         layer.selected_data = set(np.nonzero(layer._data_view._displayed)[0])
         layer._set_highlight()
 

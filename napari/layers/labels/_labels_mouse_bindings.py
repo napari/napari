@@ -1,5 +1,5 @@
 from ._labels_utils import interpolate_coordinates
-from ._labels_constants import Mode
+from ...utils.constants import LabelsMode
 
 
 def draw(layer, event):
@@ -24,14 +24,14 @@ def draw(layer, event):
     # on press
     layer._save_history()
     layer._block_saving = True
-    if layer._mode == Mode.ERASE:
+    if layer._mode == LabelsMode.ERASE:
         new_label = layer._background_label
     else:
         new_label = layer.selected_label
 
-    if layer._mode in [Mode.PAINT, Mode.ERASE]:
+    if layer._mode in [LabelsMode.PAINT, LabelsMode.ERASE]:
         layer.paint(layer.coordinates, new_label)
-    elif layer._mode == Mode.FILL:
+    elif layer._mode == LabelsMode.FILL:
         layer.fill(layer.coordinates, new_label)
 
     last_cursor_coord = layer.coordinates
@@ -43,9 +43,9 @@ def draw(layer, event):
             last_cursor_coord, layer.coordinates, layer.brush_size
         )
         for c in interp_coord:
-            if layer._mode in [Mode.PAINT, Mode.ERASE]:
+            if layer._mode in [LabelsMode.PAINT, LabelsMode.ERASE]:
                 layer.paint(c, new_label, refresh=False)
-            elif layer._mode == Mode.FILL:
+            elif layer._mode == LabelsMode.FILL:
                 layer.fill(c, new_label, refresh=False)
         layer.refresh()
         last_cursor_coord = layer.coordinates

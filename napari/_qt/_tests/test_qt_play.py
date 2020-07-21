@@ -6,7 +6,7 @@ import pytest
 from ...components import Dims
 from ..qt_dims import QtDims
 from ..qt_dims_slider import AnimationWorker
-from .._constants import LoopMode
+from napari.utils.constants import LoopMode
 
 
 @contextmanager

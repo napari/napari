@@ -1,6 +1,6 @@
 import numpy as np
 from copy import copy
-from ._shapes_constants import Mode
+from ...utils.constants import ShapesMode
 from ._shapes_models import Rectangle, Ellipse, Line, Path, Polygon
 from ._shapes_utils import point_to_lines
 
@@ -140,7 +140,7 @@ def add_path_polygon(layer, event):
     else:
         # Add to an existing path or polygon
         index = layer._moving_value[0]
-        if layer._mode == Mode.ADD_POLYGON:
+        if layer._mode == ShapesMode.ADD_POLYGON:
             new_type = Polygon
         else:
             new_type = None

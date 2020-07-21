@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from napari.layers.utils._text_constants import Anchor
+from napari.utils.constants import Anchor
 from napari.layers.utils._text_utils import (
     _get_format_keys,
     _format_text_f_string,

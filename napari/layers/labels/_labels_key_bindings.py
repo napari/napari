@@ -1,14 +1,14 @@
 from .labels import Labels
-from ._labels_constants import Mode
+from ...utils.constants import LabelsMode
 
 
 @Labels.bind_key('Space')
 def hold_to_pan_zoom(layer):
     """Hold to pan and zoom in the viewer."""
-    if layer._mode != Mode.PAN_ZOOM:
+    if layer._mode != LabelsMode.PAN_ZOOM:
         # on key press
         prev_mode = layer.mode
-        layer.mode = Mode.PAN_ZOOM
+        layer.mode = LabelsMode.PAN_ZOOM
 
         yield
 
@@ -19,31 +19,31 @@ def hold_to_pan_zoom(layer):
 @Labels.bind_key('P')
 def activate_paint_mode(layer):
     """Activate the paintbrush."""
-    layer.mode = Mode.PAINT
+    layer.mode = LabelsMode.PAINT
 
 
 @Labels.bind_key('F')
 def activate_fill_mode(layer):
     """Activate the fill bucket."""
-    layer.mode = Mode.FILL
+    layer.mode = LabelsMode.FILL
 
 
 @Labels.bind_key('Z')
 def activate_pan_zoom_mode(layer):
     """Activate pan and zoom mode."""
-    layer.mode = Mode.PAN_ZOOM
+    layer.mode = LabelsMode.PAN_ZOOM
 
 
 @Labels.bind_key('L')
 def activate_picker_mode(layer):
     """Activate the label picker."""
-    layer.mode = Mode.PICK
+    layer.mode = LabelsMode.PICK
 
 
 @Labels.bind_key('E')
 def erase(layer):
     """Activate the label eraser."""
-    layer.mode = Mode.ERASE
+    layer.mode = LabelsMode.ERASE
 
 
 @Labels.bind_key('M')
@@ -94,7 +94,7 @@ def switch_fill(layer):
     previous_mode = layer.mode
 
     # on key press
-    layer.mode = Mode.FILL
+    layer.mode = LabelsMode.FILL
 
     yield
 
@@ -108,7 +108,7 @@ def switch_erase(layer):
     previous_mode = layer.mode
 
     # on key press
-    layer.mode = Mode.ERASE
+    layer.mode = LabelsMode.ERASE
 
     yield
 

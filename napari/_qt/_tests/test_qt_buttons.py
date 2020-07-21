@@ -1,14 +1,16 @@
 from napari._qt.qt_mode_buttons import QtModePushButton, QtModeRadioButton
 from napari.layers import Points
-from napari.layers.points._points_constants import Mode
+from napari.utils.constants import PointsMode
 
 
 def test_radio_button(qtbot):
     """Make sure the QtModeRadioButton works to change layer modes"""
     layer = Points()
-    assert layer.mode != Mode.ADD
+    assert layer.mode != PointsMode.ADD
 
-    btn = QtModeRadioButton(layer, 'test_button', Mode.ADD, tooltip='tooltip')
+    btn = QtModeRadioButton(
+        layer, 'test_button', PointsMode.ADD, tooltip='tooltip'
+    )
     assert btn.property('mode') == 'test_button'
     assert btn.toolTip() == 'tooltip'
 

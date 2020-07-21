@@ -6,6 +6,7 @@ from typing import List, Optional
 import numpy as np
 
 from ...components import Dims
+from ...utils.constants import Blending
 from ...utils.dask_utils import configure_dask
 from ...utils.event import EmitterGroup, Event
 from ...utils.key_bindings import KeymapProvider
@@ -14,7 +15,6 @@ from ...utils.naming import magic_name
 from ...utils.status_messages import format_float, status_format
 from ..transforms import ScaleTranslate, TransformChain
 from ..utils.layer_utils import compute_multiscale_level, convert_to_uint8
-from ._base_constants import Blending
 
 
 class Layer(KeymapProvider, ABC):
