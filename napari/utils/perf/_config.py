@@ -95,14 +95,17 @@ class PerfmonConfig:
         self._patch_callables()
         self.patched = True
 
-    def _get_callables(self, callable_list) -> List[str]:
+    def _get_callables(self, list_name: str) -> List[str]:
         """Get the list of callables from the config file.
+
+        list_name : str
+            The name of the list to return.
         """
         try:
-            return self.data["callable_lists"][callable_list]
+            return self.data["callable_lists"][list_name]
         except KeyError:
             raise PerfmonConfigError(
-                f"{self.config_path} has no callable list '{callable_list}'"
+                f"{self.config_path} has no callable list '{list_name}'"
             )
 
     def _patch_callables(self):
