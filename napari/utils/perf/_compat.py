@@ -3,9 +3,8 @@
 import sys
 import time
 
-PYTHON_3_7_OR_NEWER = sys.version_info[:2] >= (3, 7)
 
-if PYTHON_3_7_OR_NEWER:
+if sys.version_info[:2] >= (3, 7):
     # Use the real perf_counter_ns
     perf_counter_ns = time.perf_counter_ns
 else:
