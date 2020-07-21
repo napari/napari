@@ -1,5 +1,6 @@
 import dataclasses as _dc
 import typing
+from contextlib import contextmanager
 from typing import (
     Any,
     Callable,
@@ -14,7 +15,6 @@ from typing import (
 
 import toolz as tz
 import typing_extensions as _te
-
 
 from .event import EmitterGroup
 
@@ -91,7 +91,7 @@ def set_with_events(self: C, name: str, value: Any) -> None:
         getattr(self.events, name)(value=after)  # type: ignore
 
 
-def add_events_to_class(cls: Type[C]) -> None:
+def add_events_to_class(cls: Type[C]) -> Type[C]:
     """Return a new __post_init__ method wrapper with events.
 
     Parameters
@@ -136,6 +136,7 @@ def add_events_to_class(cls: Type[C]) -> None:
     # modify __setattr__ with version that emits an event when setting
     setattr(cls, '__setattr__', set_with_events)
     setattr(cls, '__post_init__', evented_post_init)
+    return cls
 
 
 def getattr_with_conversion(self: C, name: str) -> Any:
@@ -229,7 +230,7 @@ def parse_annotated_types(cls: Type):
     return out
 
 
-def convert_fields_to_properties(cls: Type[C]):
+def convert_fields_to_properties(cls: Type[C]) -> Type[C]:
     """Convert all fields in a dataclass instance to property descriptors.
 
     Note: this modifies class Type[C] (the class that was decorated with
@@ -283,6 +284,47 @@ def convert_fields_to_properties(cls: Type[C]):
         # create the actual property descriptor
         prop = property(fget=fget, fset=fset, fdel=None, doc=doc)
         setattr(cls, name, prop)
+    return cls
+
+
+class Property:
+    """Declare a dataclass field as a property with getter/setter functions"""
+
+    def __new__(cls, *args, **kwargs):
+        raise TypeError("Type Property cannot be instantiated")
+
+    def __init_subclass__(cls, *args, **kwargs):
+        raise TypeError(f"Cannot subclass {cls.__module__}.Property")
+
+    import typing_extensions
+
+    @_te._tp_cache
+    def __class_getitem__(cls, params):
+        if not isinstance(params, tuple) or not (1 < len(params) < 4):
+            raise TypeError(
+                "Property[...] should be used with exactly two or three "
+                "arguments (a type, a getter, and an optional setter)"
+            )
+        msg = "Property[T, ...]: T must be a type."
+        origin = typing._type_check(params[0], msg)
+        if params[1] is not None and not callable(params[1]):
+            raise TypeError(f"Property getter not callable: {params[1]}")
+        if len(params) > 2:
+            if params[2] is not None and not callable(params[2]):
+                raise TypeError(f"Property getter not callable: {params[1]}")
+        metadata = tuple(params[1:])
+        return _te._AnnotatedAlias(origin, metadata)
+
+
+@contextmanager
+def stripped_annotated_types(cls):
+    """temporarily strip Annotated types (for cleaner function signatures)."""
+    original_annotations = cls.__annotations__
+    cls.__annotations__ = {
+        n: _te._strip_annotations(t) for n, t in original_annotations.items()
+    }
+    yield
+    cls.__annotations__ = original_annotations
 
 
 @tz.curry
@@ -352,48 +394,22 @@ def dataclass(
     # metada={'events':False} does not work... but that should be fixed.
     if events:
         # create a modified __post_init__ method that creates an EmitterGroup
-        add_events_to_class(cls)
-
-    if properties:
-        # convert public dataclass fields to properties
-        convert_fields_to_properties(cls)
+        cls = add_events_to_class(cls)
 
     # if neither events or properties are True, this function is exactly like
     # the builtin `dataclasses.dataclass`
-    _cls = _dc._process_class(cls, init, repr, eq, order, unsafe_hash, frozen)
-    setattr(_cls, '_get_state', _get_state)
-    return _cls
+    with stripped_annotated_types(cls):
+        cls = _dc._process_class(
+            cls, init, repr, eq, order, unsafe_hash, frozen
+        )
+
+    if properties:
+        # convert public dataclass fields to properties
+        cls = convert_fields_to_properties(cls)
+    setattr(cls, '_get_state', _get_state)
+    return cls
 
 
 def _get_state(self):
     """Get dictionary of dataclass fiels."""
     return _dc.asdict(self)
-
-
-class Property:
-    """Declare a dataclass field as a property with getter/setter functions"""
-
-    def __new__(cls, *args, **kwargs):
-        raise TypeError("Type Property cannot be instantiated")
-
-    def __init_subclass__(cls, *args, **kwargs):
-        raise TypeError(f"Cannot subclass {cls.__module__}.Property")
-
-    import typing_extensions
-
-    @_te._tp_cache
-    def __class_getitem__(cls, params):
-        if not isinstance(params, tuple) or not (1 < len(params) < 4):
-            raise TypeError(
-                "Property[...] should be used with exactly two or three "
-                "arguments (a type, a getter, and an optional setter)"
-            )
-        msg = "Property[T, ...]: T must be a type."
-        origin = typing._type_check(params[0], msg)
-        if params[1] is not None and not callable(params[1]):
-            raise TypeError(f"Property getter not callable: {params[1]}")
-        if len(params) > 2:
-            if params[2] is not None and not callable(params[2]):
-                raise TypeError(f"Property getter not callable: {params[1]}")
-        metadata = tuple(params[1:])
-        return _te._AnnotatedAlias(origin, metadata)

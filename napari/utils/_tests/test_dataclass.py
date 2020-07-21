@@ -1,14 +1,14 @@
+import inspect
 from dataclasses import asdict, field
 from typing import ClassVar, List
 from unittest.mock import Mock
 
 import pytest
-from typing_extensions import Annotated
-
 from napari.layers.base._base_constants import Blending
 from napari.layers.utils._text_constants import Anchor
 from napari.utils.dataclass import Property, dataclass
 from napari.utils.event import EmitterGroup
+from typing_extensions import Annotated
 
 
 @pytest.mark.parametrize("props, events", [(1, 1), (0, 1), (0, 0), (1, 0)])
@@ -120,7 +120,7 @@ def test_dataclass_missing_vars_raises():
 
     with pytest.raises(TypeError) as excinfo:
         _ = M()  # missing `a`
-    assert "missing required positional argument" in str(excinfo.value)
+    assert "missing 1 required positional argument" in str(excinfo.value)
     assert M(1).a == 1
     m = M(a=2)
     assert m.a == 2
@@ -232,3 +232,13 @@ def test_event_partial_inheritance():
         z: int = 4
 
     assert set(D().events.emitters) == {'x', 'a'}
+
+
+def test_dataclass_signature():
+    @dataclass(properties=True, events=True)
+    class A:
+        a: str
+        b: int = 2
+        # c: Property[Anchor, str, Anchor] = Anchor.CENTER
+
+    assert str(inspect.signature(A)) == '(a: str, b: int = 2) -> None'
