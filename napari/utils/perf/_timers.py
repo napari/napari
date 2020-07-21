@@ -67,7 +67,7 @@ class PerfTimers:
         if self.trace_file is not None:
             self.trace_file.add_event(event)
 
-        if event.type == "X":
+        if event.phase == "X":  # Complete Event
             # Update our self.timers (in milliseconds).
             name = event.name
             duration_ms = event.duration_ms

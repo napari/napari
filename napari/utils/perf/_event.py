@@ -28,8 +28,11 @@ class PerfEvent:
 
     Attributes
     ----------
-    type : str
-        The event type from the chrome://tracing Trace Event Format.
+    phase : str
+        The chrome://tracing "phase" (event type). The spec defines
+        around 20 phases we only support two right now:
+             "X" - Complete Events
+             "I" - Instant Events
     args : dict
         Keyword arguments for this event, visible when you click on the event
         in the chrome://tracing GUI.
@@ -39,6 +42,8 @@ class PerfEvent:
     The time stamps are from perf_counter_ns() and do not indicate time of
     day. The origin is arbitrary, but subtracting two counters results in
     a span of wall clock time.
+
+    Google for "Trace Event Format" for the full chrome://tracing spec.
     """
 
     def __init__(
@@ -58,12 +63,7 @@ class PerfEvent:
         self.args = kwargs
         self.process_id = process_id
         self.thread_id = thread_id
-
-        # chrome://tracing has different event types such as Duration Events,
-        # Complete Events, Instant Events, Counter Events. "X" is
-        # the Complete Event type. Google for "Trace Event Format" for
-        # the full spec.
-        self.type = "X"
+        self.phase = "X"  # Complete Event
 
     @property
     def start_us(self):
@@ -89,4 +89,4 @@ class PerfEvent:
 class InstantEvent(PerfEvent):
     def __init__(self, name: str, time_ns: int, **kwargs):
         super().__init__(name, time_ns, time_ns, **kwargs)
-        self.type = "I"  # instant event
+        self.phase = "I"  # instant event

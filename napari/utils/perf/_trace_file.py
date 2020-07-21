@@ -91,17 +91,17 @@ class PerfTraceFile:
             "tid": event.thread_id,
             "name": event.name,
             "cat": category,
-            "ph": event.type,
+            "ph": event.phase,
             "ts": event.start_us,
             "args": event.args,
         }
 
-        if event.type == "X":
+        if event.phase == "X":
             # "X" is a Complete Event, it has a duration.
             data["dur"] = event.duration_us
         else:
             # "I is an Instant Event, the only other type we support so far.
-            assert event.type == "I"
+            assert event.phase == "I"
 
             # Instant Events have a scope "s" which is one of:
             #     "g" - global
