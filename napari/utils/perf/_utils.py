@@ -1,7 +1,4 @@
-"""Performance monitoring utilities.
-
-1) perf_timer contex manager times a block of code.
-2) perf_func decorators time functions.
+"""The perf_timer context object.
 """
 import contextlib
 import os
@@ -49,7 +46,11 @@ if USE_PERFMON:
 
 
 else:
-    # contextlib.nullcontext does not work with kwargs?
+    # contextlib.nullcontext does not work with kwargs, so we just
+    # create a do-nothing context object. This is not zero overhead
+    # but it's very low, about 1 microsecond? But because it's not
+    # zero it's best practice not to commit perf_timers, think of
+    # them like debug prints.
     @contextlib.contextmanager
     def perf_timer(name: str, category: Optional[str] = None, **kwargs):
         yield
