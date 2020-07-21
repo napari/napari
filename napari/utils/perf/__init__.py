@@ -21,6 +21,6 @@ from ._timers import timers, add_instant_event
 from ._utils import perf_timer, perf_func
 
 
-# If not using perfmon timers will be 100% disable with hopefully zero
+# If not using perfmon timers will be 100% disabled with hopefully zero
 # run-time impact.
 USE_PERFMON = os.getenv("NAPARI_PERFMON", "0") != "0"
