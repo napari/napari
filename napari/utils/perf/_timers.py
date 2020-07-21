@@ -13,17 +13,22 @@ USE_PERFMON = os.getenv("NAPARI_PERFMON", "0") != "0"
 class PerfTimers:
     """Timers for performance monitoring.
 
-    For each PerfEvent recorded we do two things:
+    For each added PerfEvent we do two things:
     1) Update our self.timers dictionary (always).
-    2) Write to a trace file (optional if recording one).
+    2) Write to a trace file (optionally if recording one).
 
-    Anyone can record a timing event, but these are 3 common ways:
-    1) Our custom QtApplication times Qt Events.
-    2) Our perf_timer context object times blocks of code.
-    3) Our perf_func decorator can time functions.
+    You can add a PerfEvent completely by hand by creating a
+    PerfEvent object and calling add_event(). However typically
+    you add PerfEvents one of three more automatic ways:
 
-    The QtPerformance Widget goes through our self.timers looking for long events
-    and prints them to a log window. Then it clears the timers.
+    1) Enable timing of Qt Events using QApplicationWithTracing.
+    2) Patch in perf_timers using the perfmon config file.
+    3) Add perf_timer context objects by hand.
+
+    Methods 1 and 2 result in zero overhead if perfmon is disabled,
+    but 3 results in a tiny amount of overhead (1 usec per timer)
+    therefore best practice is remove manual perf_timers before
+    merging into master. Consider them like debug prints.
 
     Attributes
     ----------

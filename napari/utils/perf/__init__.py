@@ -10,7 +10,7 @@ timers is an instance of PerfTimers with these methods:
     stop_trace_file()
 
 Use perf_timer to time blocks of code.
-Use perf_func to time functions.
+
 """
 import os
 
@@ -18,7 +18,15 @@ from ._compat import perf_counter_ns
 from ._config import perf_config
 from ._event import PerfEvent
 from ._timers import timers, add_instant_event
-from ._utils import perf_timer, perf_func
+
+# perf_timers can be manually added to the code while debugging or
+# investigating a performance issue but they should be removed prior to
+# committing the code. Consider them like debug prints.
+#
+# An alternative to manual perf_timers is to refactor the code so the block
+# of code you want to time is in its own function. Then you can patch in
+# the timer using the config file.
+from ._utils import perf_timer
 
 
 # If not using perfmon timers will be 100% disabled with hopefully zero
