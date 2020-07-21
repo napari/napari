@@ -76,6 +76,11 @@ def _import_module(target_str: str) -> Tuple[types.ModuleType, str]:
 
     The last one fails because ChunkLoader is a class not a module.
 
+    Parameters
+    ----------
+    target_str : str
+        The fully qualified callable such as "module1.module2.function".
+
     Returns
     -------
     Tuple[types.ModuleType, str]
