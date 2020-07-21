@@ -189,7 +189,6 @@ class ScalarMappable(object):
     """
     def __init__(self, norm=None, cmap=None):
         r"""
-
         Parameters
         ----------
         norm : :class:`matplotlib.colors.Normalize` instance

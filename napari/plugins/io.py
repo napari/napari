@@ -221,7 +221,7 @@ def _write_multiple_layers_with_plugins(
         The path (file, directory, url) to write.
     layers : List of napari.layers.Layer
         List of napari layers to write.
-    plugin_name: str, optional
+    plugin_name : str, optional
         If provided, force the plugin manager to use the ``napari_get_writer``
         from the requested ``plugin_name``.  If none is available, or if it is
         incapable of handling the layers, this function will fail.

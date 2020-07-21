@@ -449,7 +449,7 @@ class ShapeList:
             Location in list of the shape to be changed.
         data : np.ndarray
             NxD array of vertices.
-        new_type: None | str | Shape
+        new_type : None | str | Shape
             If string , must be one of "{'line', 'rectangle', 'ellipse',
             'path', 'polygon'}".
         """
@@ -659,9 +659,9 @@ class ShapeList:
 
         Returns
         -------
-        centers :np.ndarray
+        centers : np.ndarray
             Nx2 array of centers of outline
-        offsets :np.ndarray
+        offsets : np.ndarray
             Nx2 array of offsets of outline
         triangles : np.ndarray
             Mx3 array of any indices of vertices for triangles of outline

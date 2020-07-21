@@ -1,10 +1,8 @@
 import warnings
-from vispy.scene.visuals import Image as ImageNode
+from .image import Image as ImageNode
 from .volume import Volume as VolumeNode
-from vispy.color import Colormap
 import numpy as np
 from .vispy_base_layer import VispyBaseLayer
-from ..layers.image._image_constants import Rendering
 
 
 texture_dtypes = [
@@ -29,8 +27,8 @@ class VispyImageLayer(VispyBaseLayer):
             self._on_contrast_limits_change
         )
         self.layer.events.gamma.connect(self._on_gamma_change)
-        self.layer.events.iso_threshold.connect(self._on_threshold_change)
-        self.layer.events.attenuation.connect(self._on_threshold_change)
+        self.layer.events.iso_threshold.connect(self._on_iso_threshold_change)
+        self.layer.events.attenuation.connect(self._on_attenuation_change)
 
         self._on_display_change()
         self._on_data_change()
@@ -40,15 +38,16 @@ class VispyImageLayer(VispyBaseLayer):
         self.node.parent = None
 
         if self.layer.dims.ndisplay == 2:
-            self._image_node.set_data(data)
             self.node = self._image_node
         else:
-            if data is None:
-                data = np.zeros((1, 1, 1))
-            self._volume_node.set_data(data, clim=self.layer.contrast_limits)
             self.node = self._volume_node
 
+        if data is None:
+            data = np.zeros((1,) * self.layer.dims.ndisplay)
+
+        self.node.set_data(data)
         self.node.parent = parent
+        self.node.order = self.order
         self.reset()
 
     def _on_data_change(self, event=None):
@@ -90,11 +89,7 @@ class VispyImageLayer(VispyBaseLayer):
         ):
             self._on_display_change(data)
         else:
-            if self.layer.dims.ndisplay == 2:
-                self.node._need_colortransform_update = True
-                self.node.set_data(data)
-            else:
-                self.node.set_data(data, clim=self.layer.contrast_limits)
+            self.node.set_data(data)
 
         # Call to update order of translation values with new dims:
         self._on_scale_change()
@@ -105,54 +100,36 @@ class VispyImageLayer(VispyBaseLayer):
         self.node.interpolation = self.layer.interpolation
 
     def _on_rendering_change(self, event=None):
-        if self.layer.dims.ndisplay == 3:
+        if isinstance(self.node, VolumeNode):
             self.node.method = self.layer.rendering
-            self._on_threshold_change()
+            self._on_attenuation_change()
+            self._on_iso_threshold_change()
 
     def _on_colormap_change(self, event=None):
-        cmap = self.layer.colormap[1]
-        if self.layer.gamma != 1:
-            # when gamma!=1, we instantiate a new colormap
-            # with 256 control points from 0-1
-            cmap = Colormap(cmap[np.linspace(0, 1, 256) ** self.layer.gamma])
-
-        # Below is fixed in #1712
-        if not self.layer.dims.ndisplay == 2:
-            self.node.view_program['texture2D_LUT'] = (
-                cmap.texture_lut() if (hasattr(cmap, 'texture_lut')) else None
-            )
-        self.node.cmap = cmap
+        self.node.cmap = self.layer.colormap[1]
 
     def _on_contrast_limits_change(self, event=None):
-        if self.layer.dims.ndisplay == 2:
-            self.node.clim = self.layer.contrast_limits
-        else:
-            self._on_data_change()
+        self.node.clim = self.layer.contrast_limits
 
     def _on_gamma_change(self, event=None):
-        self._on_colormap_change()
+        if len(self.node.shared_program.frag._set_items) > 0:
+            self.node.gamma = self.layer.gamma
 
-    def _on_threshold_change(self, event=None):
-        if self.layer.dims.ndisplay == 2:
-            return
-        rendering = Rendering(self.layer.rendering)
-        if rendering == Rendering.ISO:
-            self.node.threshold = float(self.layer.iso_threshold)
-        elif rendering == Rendering.ATTENUATED_MIP:
-            self.node.threshold = float(self.layer.attenuation)
+    def _on_iso_threshold_change(self, event=None):
+        if isinstance(self.node, VolumeNode):
+            self.node.threshold = self.layer.iso_threshold
 
-        # Fix for #1399, should be fixed in the VisPy threshold setter
-        if 'u_threshold' not in self.node.shared_program:
-            self.node.shared_program['u_threshold'] = self.node._threshold
-            self.node.update()
+    def _on_attenuation_change(self, event=None):
+        if isinstance(self.node, VolumeNode):
+            self.node.attenuation = self.layer.attenuation
 
     def reset(self, event=None):
         self._reset_base()
         self._on_interpolation_change()
         self._on_colormap_change()
+        self._on_contrast_limits_change()
+        self._on_gamma_change()
         self._on_rendering_change()
-        if self.layer.dims.ndisplay == 2:
-            self._on_contrast_limits_change()
 
     def downsample_texture(self, data, MAX_TEXTURE_SIZE):
         """Downsample data based on maximum allowed texture size.

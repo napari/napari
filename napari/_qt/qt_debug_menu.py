@@ -29,7 +29,7 @@ class DebugMenu:
 
         Parameters
         ----------
-        main_menu : qtpy.QtWidgets.QMainWindow.menuBar
+        main_window : qtpy.QtWidgets.QMainWindow.menuBar
             We add ourselves to this menu.
         """
         self.debug_menu = main_window.main_menu.addMenu('&Debug')
@@ -62,7 +62,7 @@ class PerformanceSubMenu:
 
         Parameters
         ----------
-        record : bool
+        recording : bool
             Are we currently recording a trace file.
         """
         self.start.setEnabled(not recording)

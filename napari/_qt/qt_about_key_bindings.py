@@ -117,8 +117,8 @@ class QtAboutKeyBindings(QDialog):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional.
-            Event from the Qt context, by default None.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method, by default None.
         """
         col = self.viewer.palette['secondary']
         # Add class and instance viewer key bindings
