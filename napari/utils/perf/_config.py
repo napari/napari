@@ -1,6 +1,5 @@
 """Perf configuration flags.
 """
-import errno
 import json
 import os
 from pathlib import Path
@@ -79,11 +78,6 @@ class PerfmonConfig:
             return  # Legacy mode, trace Qt events only.
 
         path = Path(config_path)
-        if not path.exists():
-            raise FileNotFoundError(
-                errno.ENOENT, f"Config file {PERFMON_ENV_VAR} not found", path,
-            )
-
         with path.open() as infile:
             self.data = json.load(infile)
 
