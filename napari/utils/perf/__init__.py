@@ -17,17 +17,25 @@ import os
 from ._compat import perf_counter_ns
 from ._config import perf_config
 from ._event import PerfEvent
-from ._timers import timers, add_instant_event
 
-# perf_timers can be manually added to the code while debugging or
-# investigating a performance issue but they should be removed prior to
-# committing the code. Consider them like debug prints.
+
+# timers
+#     The global PerfTimers instance.
 #
-# An alternative to manual perf_timers is to refactor the code so the block
-# of code you want to time is in its own function. Then you can patch in
-# the timer using the config file.
-from ._utils import perf_timer
-
+# perf_timer
+#     Context object to time a line or block of code.
+#
+# add_instant_event
+#     Instant events appear as a vertical line in the Chrome UI.
+#
+# The best way to add perf_timers is using the perfmon config file, the
+# perf_timer will be patched in only if perfmon is enabled.
+#
+# Adding perf_timers "by hand" is sometimes helpful during intensive
+# investigations, but consider them like "debug prints" something you
+# strip out before commiting. When perfmon is disabled perf_timers
+# do close to nothing, but there is still maybe 1 usec overhead.
+from ._timers import timers, perf_timer, add_instant_event
 
 # If not using perfmon timers will be 100% disabled with hopefully zero
 # run-time impact.
