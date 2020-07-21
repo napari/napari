@@ -125,14 +125,14 @@ def patch_callables(callables: List[str], patch_func: PatchFunction) -> None:
 
     Nested classes and methods not allowed, but support could be added.
 
-    An example patch_func is:
+    An example patch_func is::
 
-    import wrapt
-    def _my_patcher(parent: CallableParent, callable: str, label: str) -> None:
-        @wrapt.patch_function_wrapper(parent, callable)
-        def my_announcer(wrapped, instance, args, kwargs):
-            print(f"Announce {label}")
-            return wrapped(*args, **kwargs)
+        import wrapt
+        def _my_patcher(parent: CallableParent, callable: str, label: str):
+            @wrapt.patch_function_wrapper(parent, callable)
+            def my_announcer(wrapped, instance, args, kwargs):
+                print(f"Announce {label}")
+                return wrapped(*args, **kwargs)
     """
     patched: Set[str] = set()
 
