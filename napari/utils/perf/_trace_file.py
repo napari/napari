@@ -50,8 +50,10 @@ class PerfTraceFile:
         # So the events we write start at t=0.
         self.zero_ns = perf_counter_ns()
 
-        # Start writing the file with an open bracket, per JSON Array format.
+        # Start writing the trace file.
         self.outf = open(path, "w")
+
+        # Start file with an open bracket, per JSON Array format.
         self.outf.write("[\n")
         self.outf.flush()
 

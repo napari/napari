@@ -51,6 +51,7 @@ class PerfmonConfig:
     ------------------
     {
         "trace_qt_events": true,
+        "trace_file_on_start": "/Path/To/latest.json",
         "trace_callables": [
             "my_callables_1",
             "my_callables_2",
@@ -125,11 +126,25 @@ class PerfmonConfig:
         """Return True if we should time Qt events.
         """
         if self.config_path is None:
-            return True  # legacy mode
+            return True  # always trace qt events in legacy mode
         try:
             return self.data["trace_qt_events"]
         except KeyError:
             return False
+
+    @property
+    def trace_file_on_start(self) -> str:
+        """Return path of trace file to write or None.
+        """
+        if self.config_path is None:
+            return None  # don't trace on start in legacy mode
+        try:
+            path = self.data["trace_file_on_start"]
+
+            # Return None if it was empty string or false.
+            return path if path else None
+        except KeyError:
+            return None
 
 
 def _create_perf_config():
