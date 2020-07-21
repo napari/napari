@@ -1,4 +1,5 @@
 import logging
+import sys
 import traceback
 from types import TracebackType
 from typing import Type
@@ -42,4 +43,7 @@ class ExceptionHandler(QObject):
         # can add custom exception handlers here ...
         text = "".join(traceback.format_exception(etype, value, tb))
         logging.error("Unhandled exception:\n%s", text)
+        if isinstance(value, KeyboardInterrupt):
+            print("Close by KeyboardInterrupt", file=sys.stderr)
+            sys.exit(1)
         self.error.emit((etype, value, tb))
