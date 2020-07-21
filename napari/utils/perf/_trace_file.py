@@ -102,7 +102,11 @@ class PerfTraceFile:
             data["dur"] = event.duration_us
         else:
             assert event.type == "I"
-            # For instant events the scope "s" is one of:
+            # For instant events the scope "s" tells chrome tracing
+            # how to draw the event. Draw it for just the thread,
+            # the process, or the whole system. Ours is hard-coded
+            # to process right now until we decide we need more.
+            #
             #     "g" - global
             #     "p" - process
             #     "t" - thread
