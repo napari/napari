@@ -80,7 +80,7 @@ def _import_module(target_str: str) -> Tuple[types.ModuleType, str]:
     -------
     Tuple[types.ModuleType, str]
         Where the module is the inner most imported module, and the string
-    is the rest of target_str that was not modules.
+        is the rest of target_str that was not modules.
     """
     parts = target_str.split('.')
     module = None  # Inner-most module imported so far.
