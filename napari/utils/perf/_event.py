@@ -16,10 +16,24 @@ class PerfEvent:
         Start time in nanoseconds.
     end_ns : int
         End time in nanoseconds.
+    process_id : int
+        The process id that produced the event.
+    thread_id : int
+        The thread id that produced the event.
     category :str
         Comma separated categories such has "render,update".
     **kwargs : dict
         Additional keyword arguments for the "args" field of the event.
+
+
+    Attributes
+    ----------
+    type : str
+        The event type from the chrome://tracing Trace Event Format.
+    args : dict
+        Keyword arguments for this event, visible when you click on the event
+        in the chrome://tracing GUI.
+
     Notes
     -----
     The time stamps are from perf_counter_ns() and do not indicate time of
@@ -33,17 +47,23 @@ class PerfEvent:
         start_ns: int,
         end_ns: int,
         category: Optional[str] = None,
-        pid=os.getpid(),
-        **kwargs,
+        process_id: int = os.getpid(),
+        thread_id: int = threading.get_ident(),
+        **kwargs: dict,
     ):
         self.name = name
         self.start_ns = start_ns
         self.end_ns = end_ns
         self.category = category
         self.args = kwargs
-        self.pid = pid
-        self.tid = threading.get_ident()
-        self.type = "X"  # completed event
+        self.process_id = process_id
+        self.thread_id = thread_id
+
+        # chrome://tracing has different event types such as Duration Events,
+        # Complete Events, Instant Events, Counter Events. "X" is
+        # the Complete Event type. Google for "Trace Event Format" for
+        # the full spec.
+        self.type = "X"
 
     @property
     def start_us(self):

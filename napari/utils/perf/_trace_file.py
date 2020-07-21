@@ -86,11 +86,9 @@ class PerfTraceFile:
         """
         category = "none" if event.category is None else event.category
 
-        # Event type "X" denotes a completed event. Meaning we already
-        # know the duration. The format wants times in micro-seconds.
         data = {
-            "pid": event.pid,
-            "tid": event.tid,
+            "pid": event.process_id,
+            "tid": event.thread_id,
             "name": event.name,
             "cat": category,
             "ph": event.type,
@@ -99,17 +97,17 @@ class PerfTraceFile:
         }
 
         if event.type == "X":
+            # "X" is a Complete Event, it has a duration.
             data["dur"] = event.duration_us
         else:
+            # "I is an Instant Event, the only other type we support so far.
             assert event.type == "I"
-            # For instant events the scope "s" tells chrome tracing
-            # how to draw the event. Draw it for just the thread,
-            # the process, or the whole system. Ours is hard-coded
-            # to process right now until we decide we need more.
-            #
+
+            # Instant Events have a scope "s" which is one of:
             #     "g" - global
             #     "p" - process
             #     "t" - thread
+            # We hard code "process" right now because that's all we've used.
             data["s"] = "p"
 
         json_str = json.dumps(data)
