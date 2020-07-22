@@ -41,9 +41,9 @@ class ExceptionHandler(QObject):
         # etype.__module__ contains the module raising the error
         # Custom exception classes can have different behavior
         # can add custom exception handlers here ...
+        if isinstance(value, KeyboardInterrupt):
+            print("Closed by KeyboardInterrupt", file=sys.stderr)
+            sys.exit(1)
         text = "".join(traceback.format_exception(etype, value, tb))
         logging.error("Unhandled exception:\n%s", text)
-        if isinstance(value, KeyboardInterrupt):
-            print("Close by KeyboardInterrupt", file=sys.stderr)
-            sys.exit(1)
         self.error.emit((etype, value, tb))

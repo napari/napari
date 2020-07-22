@@ -18,6 +18,10 @@ def test_exception_handler(qtbot, caplog, capsys):
     assert record.levelname == 'ERROR'
     assert 'Unhandled exception' in record.message
     assert 'ValueError: whoops' in record.message
+
+
+def test_keyboard_interupt_handler(qtbot, capsys):
+    handler = ExceptionHandler()
     with pytest.raises(SystemExit):
         handler.handle(KeyboardInterrupt, KeyboardInterrupt(), None)
-    assert capsys.readouterr().err == "Close by KeyboardInterrupt\n"
+    assert capsys.readouterr().err == "Closed by KeyboardInterrupt\n"
