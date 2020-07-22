@@ -1,5 +1,4 @@
 import warnings
-from copy import copy
 from typing import Union, Sequence
 import numpy as np
 
@@ -62,8 +61,8 @@ class Dims:
         )
         self._range = EventedList()
         self._point = EventedList()
-        self._order = []
         self._axis_labels = EventedList()
+        self._order = ()
         self.clip = True
         self._ndisplay = 2 if ndisplay is None else ndisplay
 
@@ -75,16 +74,11 @@ class Dims:
             ndim = len(order)
         self.ndim = ndim
 
-        if order is not None:
-            if len(order) != ndim:
-                raise ValueError(
-                    f"Length of order must be identical to ndim."
-                    f" ndim is {ndim} while order is {order}."
-                )
-            self._order = order
-
         if axis_labels is not None:
             self.axis_labels = axis_labels
+
+        if order is not None:
+            self.order = order
 
     @property
     def range(self):
@@ -110,7 +104,7 @@ class Dims:
 
     @axis_labels.setter
     def axis_labels(self, labels):
-        if list(self.axis_labels) == labels:
+        if list(self.axis_labels) == list(labels):
             return
 
         if len(labels) != self.ndim:
@@ -126,20 +120,20 @@ class Dims:
 
     @property
     def order(self):
-        """List of int: Display order of dimensions."""
-        return copy(self._order)
+        """Tuple of int: Display order of dimensions."""
+        return self._order
 
     @order.setter
     def order(self, order):
-        if np.all(self._order == order):
+        if self._order == tuple(order):
             return
 
-        if not len(order) == self.ndim:
+        if not set(order) == set(range(self.ndim)):
             raise ValueError(
                 f"Invalid ordering {order} for {self.ndim} dimensions"
             )
 
-        self._order = order
+        self._order = tuple(order)
         self.events.order()
         self.events.camera()
 
@@ -169,9 +163,9 @@ class Dims:
                 total = ndim - cur_ndim - 1
                 self.axis_labels.insert(0, str(total - i))
 
-            self._order = list(range(ndim - cur_ndim)) + [
-                o + ndim - cur_ndim for o in self.order
-            ]
+            self._order = tuple(range(ndim - cur_ndim)) + tuple(
+                [o + ndim - cur_ndim for o in self.order]
+            )
 
             # If axis labels were previouly ordered, preserve full ordering
             if list(self.axis_labels[ndim - cur_ndim :]) == list(
@@ -186,7 +180,9 @@ class Dims:
                 self.point.pop(0)
                 self.axis_labels.pop(0)
 
-            self._order = reorder_after_dim_reduction(self._order[-ndim:])
+            self._order = tuple(
+                reorder_after_dim_reduction(self._order[-ndim:])
+            )
 
         # Notify listeners that the number of dimensions have changed
         self.events.ndim()
@@ -254,9 +250,9 @@ class Dims:
             self.range[axis] = (0, 2, 1)
             # Point is the slider value
             self.point[axis] = 0
-            self.order[axis] = axis
             # Default axis labels go from "-ndim" to "-1" so new axes can easily be added
             self.axis_labels[axis] = str(axis - self.ndim)
+        self.order = tuple(range(self.ndim))
 
     def set_range(self, axis: int, value: Sequence[Union[int, float]]):
         """Sets the range (min, max, step) for a given dimension.
@@ -268,7 +264,9 @@ class Dims:
         value : tuple
             Range specified as (min, max, step).
         """
-        warnings.warn('To be deprecated')
+        warnings.warn(
+            f'To be deprecated, use self.range[axis] =' f' value instead.'
+        )
         self.range[axis] = value
 
     def set_point(self, axis: int, value: Union[int, float]):
@@ -281,7 +279,9 @@ class Dims:
         value : int or float
             Value of the point.
         """
-        warnings.warn('To be deprecated')
+        warnings.warn(
+            f'To be deprecated, use self.point[axis] =' f' value instead.'
+        )
         self.point[axis] = value
 
     def set_axis_label(self, axis: int, label: str):
@@ -294,30 +294,11 @@ class Dims:
         label : str
             Given label
         """
-        warnings.warn('To be deprecated')
+        warnings.warn(
+            f'To be deprecated, use self.axis_labels[axis] ='
+            f' value instead.'
+        )
         self.axis_labels[axis] = label
-
-    def _assert_axis_in_bounds(self, axis: int) -> int:
-        """Assert a given value is inside the existing axes of the image.
-
-        Returns
-        -------
-        axis : int
-            The axis which was checked for validity.
-
-        Raises
-        ------
-        ValueError
-            The given axis index is out of bounds.
-        """
-        if axis not in range(-self.ndim, self.ndim):
-            msg = (
-                f'Axis {axis} not defined for dimensionality {self.ndim}. '
-                f'Must be in [{-self.ndim}, {self.ndim}).'
-            )
-            raise ValueError(msg)
-
-        return axis % self.ndim
 
     def _roll(self):
         """Roll order of dimensions for display."""
@@ -325,7 +306,7 @@ class Dims:
 
     def _transpose(self):
         """Transpose displayed dimensions."""
-        order = copy(self.order)
+        order = list(self.order)
         order[-2], order[-1] = order[-1], order[-2]
         self.order = order
 

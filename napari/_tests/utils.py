@@ -104,12 +104,12 @@ def check_viewer_functioning(viewer, view=None, data=None, ndim=2):
     # Flip dims order displayed
     dims_order = list(range(ndim))
     viewer.dims.order = dims_order
-    assert viewer.dims.order == dims_order
+    assert viewer.dims.order == tuple(dims_order)
 
     # Flip dims order including non-displayed
     dims_order[0], dims_order[-1] = dims_order[-1], dims_order[0]
     viewer.dims.order = dims_order
-    assert viewer.dims.order == dims_order
+    assert viewer.dims.order == tuple(dims_order)
 
     viewer.dims.ndisplay = 2
     assert viewer.dims.ndisplay == 2

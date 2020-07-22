@@ -28,16 +28,16 @@ def test_display():
     Test display setting.
     """
     dims = Dims(4)
-    assert dims.order == [0, 1, 2, 3]
+    assert dims.order == (0, 1, 2, 3)
     assert dims.ndisplay == 2
 
     dims.order = [2, 3, 1, 0]
-    assert dims.order == [2, 3, 1, 0]
+    assert dims.order == (2, 3, 1, 0)
 
 
 def test_order_with_init():
     dims = Dims(3, order=[0, 2, 1])
-    assert dims.order == [0, 2, 1]
+    assert dims.order == (0, 2, 1)
 
 
 def test_labels_with_init():
@@ -122,14 +122,14 @@ def test_order_when_changing_ndim():
     dims.ndim = 5
     # Test that new dims get appended to the beginning of lists
     assert dims.point == [0, 2, 0, 0, 0]
-    assert dims.order == [0, 1, 2, 3, 4]
+    assert dims.order == (0, 1, 2, 3, 4)
     assert dims.axis_labels == ['0', '1', '2', '3', '4']
 
     dims.set_point(2, 3)
     dims.ndim = 3
     # Test that dims get removed from the beginning of lists
     assert dims.point == [3, 0, 0]
-    assert dims.order == [0, 1, 2]
+    assert dims.order == (0, 1, 2)
     assert dims.axis_labels == ['2', '3', '4']
 
 
@@ -137,22 +137,6 @@ def test_labels_order_when_changing_dims():
     dims = Dims(4)
     dims.ndim = 5
     assert dims.axis_labels == ['0', '1', '2', '3', '4']
-
-
-@pytest.mark.parametrize(
-    "ndim, ax_input, expected", [(2, 1, 1), (2, -1, 1), (4, -3, 1)]
-)
-def test_assert_axis_in_bounds(ndim, ax_input, expected):
-    dims = Dims(ndim)
-    actual = dims._assert_axis_in_bounds(ax_input)
-    assert actual == expected
-
-
-@pytest.mark.parametrize("ndim, ax_input", [(2, 2), (2, -3)])
-def test_assert_axis_out_of_bounds(ndim, ax_input):
-    dims = Dims(ndim)
-    with pytest.raises(ValueError):
-        dims._assert_axis_in_bounds(ax_input)
 
 
 def test_axis_labels_str_to_list():
