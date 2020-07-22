@@ -16,4 +16,6 @@ RUN pip3 install napari[all]
 # library missing when using provided pyqt version, reversed to an earlier version for now
 RUN pip3 install PyQt5==5.11.3
 
-ENTRYPOINT ["python3", "napari"]
+# install scikit image for examples
+RUN pip3 install scikit-image
+COPY examples /tmp/examples
