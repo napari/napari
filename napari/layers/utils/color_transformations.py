@@ -63,7 +63,7 @@ def transform_color_cycle(
 
     Parameters
     ----------
-    colors : ColorType, cycle
+    color_cycle : ColorType, cycle
         The desired colors for each of the data points
     elem_name : str
         Whether we're trying to set the face color or edge color of the layer
@@ -104,7 +104,7 @@ def normalize_and_broadcast_colors(
     ----------
     num_entries : int
         The number of data elements in the layer
-    color : ColorType
+    colors : ColorType
         The user's input after being normalized by transform_color_with_defaults
 
     Returns

@@ -335,7 +335,7 @@ class Dims:
         ----------
         axis : int
             Dimension index.
-        range : tuple
+        _range : tuple
             Range specified as (min, max, step).
         """
         axis = self._assert_axis_in_bounds(axis)

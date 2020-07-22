@@ -25,11 +25,15 @@ def Event():
     return collections.namedtuple('Event', field_names=['type', 'is_dragging'])
 
 
-def test_paint(Event):
-    """Test painting labels with different brush sizes."""
+@pytest.mark.parametrize(
+    "brush_shape, expected_sum", [("circle", 244), ("square", 274)]
+)
+def test_paint(Event, brush_shape, expected_sum):
+    """Test painting labels with circle/square brush."""
     data = np.ones((20, 20))
     layer = Labels(data)
     layer.brush_size = 10
+    layer.brush_shape = brush_shape
     layer.mode = 'paint'
     layer.selected_label = 3
     layer.position = (0, 0)
@@ -49,19 +53,24 @@ def test_paint(Event):
     mouse_release_callbacks(layer, event)
 
     # Painting goes from (0, 0) to (19, 19) with a brush size of 10, changing
-    # all pixels along that path, but non outside it.
-    assert np.unique(layer.data[:5, :5]) == 3
-    assert np.unique(layer.data[-5:, -5:]) == 3
+    # all pixels along that path, but none outside it.
+    assert np.unique(layer.data[:8, :8]) == 3
+    assert np.unique(layer.data[-8:, -8:]) == 3
     assert np.unique(layer.data[:5, -5:]) == 1
     assert np.unique(layer.data[-5:, :5]) == 1
+    assert np.sum(layer.data == 3) == expected_sum
 
 
-def test_erase(Event):
-    """Test erasing labels with different brush sizes."""
+@pytest.mark.parametrize(
+    "brush_shape, expected_sum", [("circle", 156), ("square", 126)]
+)
+def test_erase(Event, brush_shape, expected_sum):
+    """Test erasing labels with different brush shapes."""
     data = np.ones((20, 20))
     layer = Labels(data)
     layer.brush_size = 10
     layer.mode = 'erase'
+    layer.brush_shape = brush_shape
     layer.selected_label = 3
     layer.position = (0, 0)
 
@@ -81,10 +90,11 @@ def test_erase(Event):
 
     # Painting goes from (0, 0) to (19, 19) with a brush size of 10, changing
     # all pixels along that path, but non outside it.
-    assert np.unique(layer.data[:5, :5]) == 0
-    assert np.unique(layer.data[-5:, -5:]) == 0
+    assert np.unique(layer.data[:8, :8]) == 0
+    assert np.unique(layer.data[-8:, -8:]) == 0
     assert np.unique(layer.data[:5, -5:]) == 1
     assert np.unique(layer.data[-5:, :5]) == 1
+    assert np.sum(layer.data == 1) == expected_sum
 
 
 @pytest.mark.sync_only

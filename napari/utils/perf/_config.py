@@ -1,6 +1,5 @@
 """Perf configuration flags.
 """
-import errno
 import json
 import os
 from pathlib import Path
@@ -8,8 +7,8 @@ from typing import List, Optional
 
 import wrapt
 
-from ...utils.patcher import patch_callables
-from ._utils import perf_timer
+from ._timers import perf_timer
+from ._patcher import patch_callables
 
 PERFMON_ENV_VAR = "NAPARI_PERFMON"
 
@@ -52,6 +51,7 @@ class PerfmonConfig:
     ------------------
     {
         "trace_qt_events": true,
+        "trace_file_on_start": "/Path/To/latest.json",
         "trace_callables": [
             "my_callables_1",
             "my_callables_2",
@@ -79,11 +79,6 @@ class PerfmonConfig:
             return  # Legacy mode, trace Qt events only.
 
         path = Path(config_path)
-        if not path.exists():
-            raise FileNotFoundError(
-                errno.ENOENT, f"Config file {PERFMON_ENV_VAR} not found", path,
-            )
-
         with path.open() as infile:
             self.data = json.load(infile)
 
@@ -101,14 +96,17 @@ class PerfmonConfig:
         self._patch_callables()
         self.patched = True
 
-    def _get_callables(self, callable_list) -> List[str]:
+    def _get_callables(self, list_name: str) -> List[str]:
         """Get the list of callables from the config file.
+
+        list_name : str
+            The name of the list to return.
         """
         try:
-            return self.data["callable_lists"][callable_list]
+            return self.data["callable_lists"][list_name]
         except KeyError:
             raise PerfmonConfigError(
-                f"{self.config_path} has no callable list '{callable_list}'"
+                f"{self.config_path} has no callable list '{list_name}'"
             )
 
     def _patch_callables(self):
@@ -128,11 +126,25 @@ class PerfmonConfig:
         """Return True if we should time Qt events.
         """
         if self.config_path is None:
-            return True  # legacy mode
+            return True  # always trace qt events in legacy mode
         try:
             return self.data["trace_qt_events"]
         except KeyError:
             return False
+
+    @property
+    def trace_file_on_start(self) -> str:
+        """Return path of trace file to write or None.
+        """
+        if self.config_path is None:
+            return None  # don't trace on start in legacy mode
+        try:
+            path = self.data["trace_file_on_start"]
+
+            # Return None if it was empty string or false.
+            return path if path else None
+        except KeyError:
+            return None
 
 
 def _create_perf_config():

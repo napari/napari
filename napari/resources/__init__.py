@@ -20,7 +20,7 @@ def _try_touch_file(target) -> Optional[Path]:
     If the target already exists, it will not be touched.  If it does not
     exist, this function attempts to create it and delete it (i.e. testing
     permissions).  NOTE: all parent directories required to write the file will
-    be created, but NOT deleted.  
+    be created, but NOT deleted.
 
     If successful, the path is returned, if not, return None.
 

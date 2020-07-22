@@ -77,9 +77,9 @@ class QtImageControls(QtBaseImageControls):
         sld = QSlider(Qt.Horizontal, parent=self)
         sld.setFocusPolicy(Qt.NoFocus)
         sld.setMinimum(0)
-        sld.setMaximum(200)
+        sld.setMaximum(100)
         sld.setSingleStep(1)
-        sld.setValue(int(self.layer.attenuation * 100))
+        sld.setValue(int(self.layer.attenuation * 200))
         sld.valueChanged.connect(self.changeAttenuation)
         self.attenuationSlider = sld
         self.attenuationLabel = QLabel('attenuation:')
@@ -170,8 +170,8 @@ class QtImageControls(QtBaseImageControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         with self.layer.events.iso_threshold.blocker():
             self.isoThresholdSlider.setValue(self.layer.iso_threshold * 100)
@@ -185,26 +185,26 @@ class QtImageControls(QtBaseImageControls):
             Attenuation rate for attenuated maximum intensity projection.
         """
         with self.layer.events.blocker(self._on_attenuation_change):
-            self.layer.attenuation = value / 100
+            self.layer.attenuation = value / 200
 
     def _on_attenuation_change(self, event):
         """Receive layer model attenuation change event and update the slider.
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         with self.layer.events.attenuation.blocker():
-            self.attenuationSlider.setValue(self.layer.attenuation * 100)
+            self.attenuationSlider.setValue(self.layer.attenuation * 200)
 
     def _on_interpolation_change(self, event):
         """Receive layer interpolation change event and update dropdown menu.
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         with self.layer.events.interpolation.blocker():
             index = self.interpComboBox.findText(
@@ -217,8 +217,8 @@ class QtImageControls(QtBaseImageControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         with self.layer.events.rendering.blocker():
             index = self.renderComboBox.findText(
@@ -259,8 +259,8 @@ class QtImageControls(QtBaseImageControls):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional
-            Event from the Qt context, default is None.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method, default is None.
         """
         self._update_interpolation_combo()
         if self.layer.dims.ndisplay == 2:

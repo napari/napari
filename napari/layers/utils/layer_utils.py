@@ -182,7 +182,7 @@ def map_property(
         The property to be colormapped
     colormap : vispy.color.Colormap
         The vispy colormap object to apply to the property
-    contrast_limits: Union[None, Tuple[float, float]]
+    contrast_limits : Union[None, Tuple[float, float]]
         The contrast limits for applying the colormap to the property.
         If a 2-tuple is provided, it should be provided as (lower_bound, upper_bound).
         If None is provided, the contrast limits will be set to (property.min(), property.max()).

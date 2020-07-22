@@ -50,8 +50,10 @@ class PerfTraceFile:
         # So the events we write start at t=0.
         self.zero_ns = perf_counter_ns()
 
-        # Start writing the file with an open bracket, per JSON Array format.
+        # Start writing the trace file.
         self.outf = open(path, "w")
+
+        # Start file with an open bracket, per JSON Array format.
         self.outf.write("[\n")
         self.outf.flush()
 
@@ -86,26 +88,28 @@ class PerfTraceFile:
         """
         category = "none" if event.category is None else event.category
 
-        # Event type "X" denotes a completed event. Meaning we already
-        # know the duration. The format wants times in micro-seconds.
         data = {
-            "pid": event.pid,
-            "tid": event.tid,
+            "pid": event.process_id,
+            "tid": event.thread_id,
             "name": event.name,
             "cat": category,
-            "ph": event.type,
+            "ph": event.phase,
             "ts": event.start_us,
             "args": event.args,
         }
 
-        if event.type == "X":
+        if event.phase == "X":
+            # "X" is a Complete Event, it has a duration.
             data["dur"] = event.duration_us
         else:
-            assert event.type == "I"
-            # For instant events the scope "s" is one of:
+            # "I is an Instant Event, the only other type we support so far.
+            assert event.phase == "I"
+
+            # Instant Events have a scope "s" which is one of:
             #     "g" - global
             #     "p" - process
             #     "t" - thread
+            # We hard code "process" right now because that's all we've used.
             data["s"] = "p"
 
         json_str = json.dumps(data)

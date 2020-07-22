@@ -3,13 +3,11 @@
 The debug menu is for developer-focused functionality that we want to be
 easy-to-use and discoverable, but which is not for the average user.
 
-Current Items
--------------
+Menu Items
+----------
 Trace File -> Start Tracing...
-Trace File -> Stop Tracking
+Trace File -> Stop Tracing
 """
-import os
-
 from qtpy.QtCore import QTimer
 from qtpy.QtWidgets import QAction, QFileDialog
 
@@ -29,7 +27,7 @@ class DebugMenu:
 
         Parameters
         ----------
-        main_menu : qtpy.QtWidgets.QMainWindow.menuBar
+        main_window : qtpy.QtWidgets.QMainWindow.menuBar
             We add ourselves to this menu.
         """
         self.debug_menu = main_window.main_menu.addMenu('&Debug')
@@ -50,19 +48,21 @@ class PerformanceSubMenu:
         self.stop = self._add_stop()
         self._set_recording(False)
 
-        # If NAPARI_TRACE_FILE is set we immediately start tracing. This is
-        # easier than manually starting the trace from the debug menu in
-        # some cases.
-        path = os.getenv("NAPARI_TRACE_FILE")
-        if path is not None:
-            self._start_trace(path)
+        if perf.perf_config:
+            path = perf.perf_config.trace_file_on_start
+            if path is not None:
+                # Config option "trace_file_on_start" means immediately
+                # start tracing to that file. This is very useful if you
+                # want to create a trace every time you start napari,
+                # without having to start it from the debug menu.
+                self._start_trace(path)
 
     def _set_recording(self, recording: bool):
         """Toggle which are enabled/disabled.
 
         Parameters
         ----------
-        record : bool
+        recording : bool
             Are we currently recording a trace file.
         """
         self.start.setEnabled(not recording)

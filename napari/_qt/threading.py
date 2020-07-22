@@ -566,7 +566,7 @@ def thread_worker(
 
     Parameters
     ----------
-    func : callable
+    function : callable
         Function to call in another thread.  For communication between threads
         may be a generator function.
     start_thread : bool, optional
@@ -694,7 +694,7 @@ def _new_worker_qthread(
     start_thread : bool
         If True, thread will be started immediately, otherwise, thread must
         be manually started with thread.start().
-    connections: dict, optional
+    connections : dict, optional
         Optional dictionary of {signal: function} to connect to the new worker.
         for instance:  connections = {'incremented': myfunc} will result in:
         worker.incremented.connect(myfunc)

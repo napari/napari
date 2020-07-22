@@ -149,8 +149,8 @@ class QtDims(QWidget):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional
-            Event from the Qt context, by default None.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method, by default None.
         """
         widgets = reversed(list(enumerate(self.slider_widgets)))
         for (axis, widget) in widgets:
@@ -177,8 +177,8 @@ class QtDims(QWidget):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent, optional
-            Event from the Qt context, by default None.
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method, by default None.
         """
         self._trim_sliders(0)
         self._create_sliders(self.dims.ndim)
@@ -263,7 +263,7 @@ class QtDims(QWidget):
 
         Parameters
         ----------
-        axis : int
+        index : int
             Index of slider to remove
         """
         # remove particular slider
@@ -310,14 +310,14 @@ class QtDims(QWidget):
 
         Parameters
         ----------
-        axis: int
+        axis : int
             Index of axis to play
-        fps: float
+        fps : float
             Frames per second for playback.  Negative values will play in
             reverse.  fps == 0 will stop the animation. The view is not
             guaranteed to keep up with the requested fps, and may drop frames
             at higher fps.
-        loop_mode: str
+        loop_mode : str
             Mode for animation playback.  Must be one of the following options:
                 "once": Animation will stop once movie reaches the
                     max frame (if fps > 0) or the first frame (if fps < 0).
@@ -325,7 +325,7 @@ class QtDims(QWidget):
                     after reaching the last frame, looping until stopped.
                 "back_and_forth":  Movie will loop back and forth until
                     stopped
-        frame_range: tuple | list
+        frame_range : tuple | list
             If specified, will constrain animation to loop [first, last] frames
 
         Raises

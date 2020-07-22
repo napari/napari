@@ -37,7 +37,7 @@ class VispyBaseLayer(ABC):
         Max texture size allowed by the vispy canvas during 2D rendering.
 
     Extended Summary
-    ----------
+    ----------------
     _master_transform : vispy.visuals.transforms.STTransform
         Transform positioning the layer visual inside the scenecanvas.
     """
