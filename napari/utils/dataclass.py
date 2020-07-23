@@ -25,6 +25,12 @@ C = TypeVar("C")
 NO_ATTR = object()
 
 
+class FrozenAttributeError(AttributeError):
+    """Raised when an attempt is made to modify a frozen attribute."""
+
+    pass
+
+
 def set_with_events(self: C, name: str, value: Any) -> None:
     """Modified __setattr__ method that emits an event when set.
 
