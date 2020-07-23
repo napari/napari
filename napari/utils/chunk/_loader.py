@@ -1,16 +1,17 @@
-"""ChunkLoader and related classes.
+"""ChunkLoader and the synchronous_loading context object.
 
-There is one global chunk_loader instance to handle async loading for any
-and all Viewer instances that are running. There are two main reasons we
-just have one ChunkLoader and not one per Viewer:
+There is one global chunk_loader instance to handle async loading for all
+Viewer instances that are running. There are two main reasons we just have
+one ChunkLoader and not one per Viewer:
 
 1. We size the ChunkCache as a fraction of RAM, so having more than one
    would use too much RAM.
 
 2. We (will) size the thread pool for optimal performance, and having
-   multiple pools would result in more threads than we want.
+   multiple pools would result in more workers than we want.
 
-The ChunkLoader is a shared resource like the network or the filesystem.
+Think of the ChunkLoader as a shared resource like "the filesystem" where
+multiple clients can be access it at the same time.
 """
 from collections import defaultdict
 from contextlib import contextmanager
@@ -41,7 +42,11 @@ MIN_DELAY_SECONDS = 0.1
 
 
 def _chunk_loader_worker(request: ChunkRequest):
-    """Worker thread or process that loads the array.
+    """The worker thread or process that loads the array.
+
+    We have workers because when we call np.asarray() that might lead
+    to IO or computation which could take a while. We do not want to
+    do that in the GUI thread or the UI will block.
 
     """
     request.start_timer()
@@ -53,8 +58,6 @@ def _chunk_loader_worker(request: ChunkRequest):
     if request.delay_seconds > 0:
         time.sleep(request.delay_seconds)
 
-    # This np.asarray() call might lead to IO or computation via Dask or
-    # something similar, which is why we are doing it in a worker.
     request.array = np.asarray(request.array)
 
     request.end_timer()
@@ -63,10 +66,14 @@ def _chunk_loader_worker(request: ChunkRequest):
 
 
 class ChunkLoader:
-    """Load chunks for rendering.
+    """Load chunks in workers.
 
-    Operates in synchronous or asynchronous modes depeneding on
-    self.synchronous.
+    Calling np.asarray on request.array might block, so we do it in a
+    worker thread or process.
+
+    ChunkLoader runs synchronously if ChunkLoader.synchronous is True
+    or if the chunk was found in the cache. Otherwise it's asynchronous
+    and load_chunk() will return immediately.
 
     Attributes
     ----------
@@ -74,7 +81,25 @@ class ChunkLoader:
         If True the ChunkLoader is essentially disabled, loads are done
         immediately and in the GUI thread. If False loads are done
         asynchronously in a worker thread.
+    force_delay_seconds : float
+        Tell the worker to sleep for this long before loading the chunk. Mostly
+        used when debugging to simulate latency.
+    use_processes : bool
+        If True use a process pool for the workers, otherwise use a thread pool.
+    num_workers : int
+        Create this many worker threads or processes.
+    executor : Union[ThreadPoolExecutor, ProcessPoolExecutor]
+        Our thread or process pool executor.
+    futures : FutureMap
+        In progress futures for each layer (data_id).
+    cache : ChunkCache
+        Cache of previously loaded chunks.
+    events : EmitterGroup
+        We only signal one event: chunk_loaded.
     """
+
+    FutureMap = Dict[int, List[futures.Future]]
+    LayerMap = Dict[int, weakref]
 
     def __init__(self):
         # Pull values from the config file.
@@ -99,8 +124,8 @@ class ChunkLoader:
         self.executor = executor_class(max_workers=num_workers)
 
         # Maps data_id to futures for that layer.
-        self.futures: Dict[int, List[futures.Future]] = defaultdict(list)
-        self.cache = ChunkCache()
+        self.futures: self.FutureMap = defaultdict(list)
+        self.cache: ChunkCache = ChunkCache()
 
         # We emit only one event:
         #     chunk_loaded - a chunk was loaded
@@ -109,30 +134,41 @@ class ChunkLoader:
         )
 
         # Maps layer_id to weakref of a Layer. ChunkRequest cannot hold a
-        # layer reference or even a weakref because if using worker
-        # processes those cannot be pickled. So ChunkRequest just holds
-        # a layer_id that we can map back to a weakref.
-        self.layer_map = {}
+        # layer reference or even a weakref because with worker processes
+        # those cannot be pickled. So ChunkRequest just holds a layer_id
+        # that we can map back to a weakref.
+        self.layer_map: self.LayerMap = {}
 
     def create_request(self, layer, indices, array: ArrayLike):
         """Create a ChunkRequest for submission to load_chunk.
+
+        Parameters
+        ----------
+        layer : Layer
+            The layer that's requesting the data.
+        indices : slice
+            The indices being requested.
+        array : ArrayLike
+            The array containing the data we want to load.
         """
-        # Update the layer_id to weakref mapping.
-        layer_id = id(layer)
-        self.layer_map[layer_id] = weakref.ref(layer)
+        # Set the layer_id to weakref mapping, we can't store the layer
+        # reference in the request, so we just store its id.
+        self.layer_map[id(layer)] = weakref.ref(layer)
 
         # Return the new request.
         return ChunkRequest(layer, indices, array)
 
     def _asarray(self, array):
-        """Broken out for perfmon timing."""
+        """Get the array data. We break this out for perfmon timing.
+        """
         return np.asarray(array)
 
     def load_chunk(self, request: ChunkRequest) -> Optional[ChunkRequest]:
-        """Load the array in the given ChunkRequest.
+        """Process the given ChunkRequest, load its data.
 
-        If ChunkLoader is synchronous the load is performed immediately in
-        the GUI thread and the satisfied request is returned.
+        If ChunkLoader is synchronous or the chunk is in the cache, the
+        load is performed immediately in the GUI thread and the satisfied
+        request is returned.
 
         Otherwise an asynchronous load is requested and None is returned.
         The load will be performed in a worker thread and later
@@ -146,7 +182,13 @@ class ChunkLoader:
 
         ChunkRequest, optional
             The satisfied ChunkRequest or None indicating an async load.
+
+        Returns
+        -------
+        Optional[ChunkRequest]
+            The ChunkRequest if it was satisfied otherwise None.
         """
+        # In-memory arrays do not need to be loaded asynchronously.
         in_memory = isinstance(request.array, np.ndarray)
 
         if self.synchronous or in_memory and not self.force_delay_seconds:
@@ -156,6 +198,7 @@ class ChunkLoader:
             request.array = self._asarray(request.array)
             return request
 
+        # Set the delay for this request.
         request.delay_seconds = max(
             MIN_DELAY_SECONDS, self.force_delay_seconds
         )
@@ -176,8 +219,8 @@ class ChunkLoader:
         LOGGER.info("[async] ChunkLoader._load_async: %s", request.key)
 
         # Clear any existing futures for this specific data_id. We only
-        # support single-scale so there can only be one load in progress
-        # per data_id.
+        # support single-scale today, so there can only be one load in
+        # progress per data_id.
         with perf_timer("clear_pending"):
             self._clear_pending(request.data_id)
 
@@ -207,19 +250,15 @@ class ChunkLoader:
     def _clear_pending(self, data_id: int) -> None:
         """Clear any pending requests for this data_id.
 
-        We can't clear in-progress requests that are already running in the
-        worker. This is too bad since subsequent requests might have to
-        wait behind requests whose results we don't care about. Terminating
-        threads is not kosher, terminating processes is probably too
-        heavyweight.
-
-        Long term we could potentially give users a way to create
-        "cancellable" tasks that perform better than the default opaque
-        tasks that we cannot cancel.
+        We can't clear in-progress requests that are already running in a
+        worker. This is too bad since those requests are stale, the results
+        will not be used. So they are just slowing things down. But
+        terminating threads is not kosher. Terminating processes is
+        possibly but we have not tried to do that yet.
         """
         future_list = self.futures[data_id]
 
-        # Try to cancel them all, but cancel() will return False if the
+        # Try to cancel all futures, but cancel() will return False if the
         # task already started running.
         num_before = len(future_list)
         future_list[:] = [x for x in future_list if x.cancel()]
@@ -259,17 +298,18 @@ class ChunkLoader:
         # we can add the perf event.
         request.add_perf_event()
 
-        # Do this from worker thread for now. It's safe for now.
-        # TODO_ASYNC: Ultimately we might want to this to happen from the
-        # GUI thread so all cache access is from the same thread.
+        # Add chunk to the cache in the worker thread. For now it's safe.
+        # Later we might need to arrange for this to be done in the GUI thread
+        # if cache access from other threads is not safe.
         self.cache.add_chunk(request)
 
+        # Convert the requests layer_id into a real layer reference.
         layer = self._get_layer_for_request(request)
 
-        # layer_id was not found weakref failed to resolve.
+        # The layer_id was not found or the weakref failed to resolve.
         if layer is None:
             LOGGER.info(
-                "[async] ChunkLoader._done: layer was deleted %d",
+                "[async] ChunkLoader._done: layer not found %d",
                 request.layer_id,
             )
             return
