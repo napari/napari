@@ -252,7 +252,7 @@ def test_update_dims_labels(qtbot):
     ndim = 4
     view = QtDims(Dims(ndim))
     qtbot.addWidget(view)
-    view.dims.axis_labels = list('TZYX')
+    view.dims.axis_labels[:] = list('TZYX')
     assert [w.axis_label.text() for w in view.slider_widgets] == list('TZYX')
 
     first_label = view.slider_widgets[0].axis_label
