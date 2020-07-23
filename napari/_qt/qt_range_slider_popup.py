@@ -10,19 +10,31 @@ from .utils import qt_signals_blocked
 
 
 class LabelEdit(QLineEdit):
-    def __init__(self, value='', parent=None, get_pos=None):
-        """Helper class to position LineEdits above the slider handle
+    """Helper class to position LineEdits above the slider handle
 
-        Parameters
-        ----------
-        value : str, optional
-            starting value, by default ''
-        parent : QRangeSliderPopup, optional
-            required for proper label positioning above handle, by default None
-        get_pos : callable, optional
-            function that returns the position of the appropriate slider handle
-            by default None
-        """
+    Parameters
+    ----------
+    value : str, optional
+        Starting value, by default ''
+    parent : QRangeSliderPopup, optional
+        Required for proper label positioning above handle, by default None.
+    get_pos : callable, optional
+        Function that returns the position of the appropriate slider handle
+        by default None.
+
+    Attributes
+    ----------
+    get_pos : callable or None
+        Function that returns the position of the appropriate slider handle.
+    max_width : int
+        Minimum label width.
+    min_width : int
+        Maximum label width.
+    slider : qtpy.QtWidgets.QHRangeSlider
+        Slider widget.
+    """
+
+    def __init__(self, value='', parent=None, get_pos=None):
         super().__init__(value, parent=parent)
         self.fm = QFontMetrics(QFont("", 0))
         self.setObjectName('slice_label')
@@ -40,6 +52,13 @@ class LabelEdit(QLineEdit):
             self.setAlignment(Qt.AlignCenter)
 
     def _on_text_changed(self, text):
+        """Update label text displayed above the slider handle.
+
+        Parameters
+        ----------
+        text : str
+            Label text to display above the slider handle.
+        """
         # with non mono-spaced fonts, an "n-digit" number isn't always the same
         # width... so we convert all numbers to "n 8s" before measuring width
         # so as to avoid visual jitter in the width of the label
@@ -51,11 +70,19 @@ class LabelEdit(QLineEdit):
         self.setFixedWidth(width)
 
     def update_position(self):
-        x = self.get_pos() - self.width() / 2
-        y = self.slider.handle_radius + 6
+        """Update slider position."""
+        x = self.get_pos() - self.width() // 2
+        y = self.slider.handle_radius + 12
         self.move(QPoint(x, -y) + self.slider.pos())
 
     def mouseDoubleClickEvent(self, event):
+        """Select all on mouse double click.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
         self.selectAll()
 
 
@@ -75,6 +102,25 @@ class QRangeSliderPopup(QtPopup):
             Number of decimal values in the labels, by default 0
         **kwargs
             all additional keyword arguments will be passed to the RangeSlider
+
+        Attributes
+        ----------
+        curmax_label : napari._qt.qt_range_slider_popup.LabelEdit
+            Label for the current maximum contrast limit.
+        curmin_label : napari._qt.qt_range_slider_popup.LabelEdit
+            Label for the current minimum contrast limit.
+        frame : qtpy.QtWidgets.QFrame
+            Frame of the popup dialog box.
+        layout : qtpy.QtWidgets.QHBoxLayout
+            Layout of the popup dialog box.
+        precision : int
+            Number of decimal values in numeric labels.
+        range_max_label : napari._qt.qt_range_slider_popup.LabelEdit
+            Label for maximum slider range value.
+        range_min_label : napari._qt.qt_range_slider_popup.LabelEdit
+            Label for minimum slider range value.
+        slider : qtpy.QtWidgets.QHRangeSlider
+            Slider widget.
         """
         super().__init__(parent)
         self.precision = precision
@@ -121,16 +167,31 @@ class QRangeSliderPopup(QtPopup):
         self.layout.addWidget(self.range_max_label)
 
     def _numformat(self, number):
+        """Format float value to a specific number of decimal places.
+
+        Parameters
+        ----------
+        number : float
+            Number value formatted to a specific number of decimal places.
+        """
         if round(number) == number:
             return "{:.{}f}".format(number, 0)
         else:
             return "{:.{}f}".format(number, self.precision)
 
     def _update_cur_label_positions(self):
+        """Update label positions of current minimum/maximum contrast range."""
         self.curmin_label.update_position()
         self.curmax_label.update_position()
 
     def _on_values_change(self, values):
+        """Update labels of the current contrast range.
+
+        Parameters
+        ----------
+        values : tuple(float, float)
+            Minimum and maximum values of the current contrast range.
+        """
         cmin_, cmax_ = values
         with qt_signals_blocked(self.slider):
             self.curmin_label.setText(self._numformat(cmin_))
@@ -138,6 +199,13 @@ class QRangeSliderPopup(QtPopup):
             self._update_cur_label_positions()
 
     def _on_range_change(self, values):
+        """Update values of current contrast range and display labels.
+
+        Parameters
+        ----------
+        values : tuple(float, float)
+            Minimum and maximum values of the current contrast range.
+        """
         cmin_, cmax_ = values
         with qt_signals_blocked(self.slider):
             self.range_min_label.setText(self._numformat(cmin_))
@@ -148,6 +216,7 @@ class QRangeSliderPopup(QtPopup):
             self.curmax_label.setText(self._numformat(vmax_))
 
     def _curmin_label_changed(self):
+        """Update minimum value of current contrast range."""
         cmin = float(self.curmin_label.text())
         cmax = float(self.curmax_label.text())
         if cmin > cmax:
@@ -155,6 +224,7 @@ class QRangeSliderPopup(QtPopup):
         self.slider.setValues((cmin, cmax))
 
     def _curmax_label_changed(self):
+        """Update maximum value of current contrast range."""
         cmin = float(self.curmin_label.text())
         cmax = float(self.curmax_label.text())
         if cmax < cmin:
@@ -162,6 +232,7 @@ class QRangeSliderPopup(QtPopup):
         self.slider.setValues((cmin, cmax))
 
     def _range_label_changed(self):
+        """Update values for minimum & maximum slider range to match labels."""
         rmin = float(self.range_min_label.text())
         rmax = float(self.range_max_label.text())
         if rmin >= rmax:
@@ -169,9 +240,20 @@ class QRangeSliderPopup(QtPopup):
         self.slider.setRange((rmin, rmax))
 
     def keyPressEvent(self, event):
+        """On key press lose focus of the lineEdits.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
         # we override the parent keyPressEvent so that hitting enter does not
         # hide the window... but we do want to lose focus on the lineEdits
         if event.key() in (Qt.Key_Return, Qt.Key_Enter):
             self.slider.setFocus()
             return
         super().keyPressEvent(event)
+
+    def closeEvent(self, event):
+        self.deleteLater()
+        event.accept()

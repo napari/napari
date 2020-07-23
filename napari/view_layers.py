@@ -35,6 +35,27 @@ def _build_view_function(layer_string: str) -> Callable:
     ``Viewer.add_<layer_string>``.  The returned function is compatible with
     IPython help, introspection, tab completion, and autodocs.
 
+    Here's how it works:
+    1. we define `real_func`, which is the (easier to understand) function that
+       will do the work of creating a new viewer and adding a layer to it.
+    2. we create a **string** (`fakefunc`) that represents how we _would_ have
+       typed out the original `view_*` method.
+        - `{combo_sig}` is an
+          `inspect.Signature <https://docs.python.org/3/library/inspect.html#inspect.Signature>`_
+          object (whose string representation is, conveniently, exactly how we
+          would have typed the original function).
+        - the inner `real_func({inner_sig})` part is basically how we were
+          typing the body of the `view_*` functions before, e.g.:
+          `(data=data, name=name, scale=scale ...)`
+    3. we compile that string into `view_func_code`
+    4. finally, we actually evaluate the compiled code in a (safe) empty
+       namespace, and provide a `locals()` dict that tells python that the
+       function name `real_func` in the `fakefunc` string actually corresponds
+       to the `real_func` that we defined on line 66.   (Note: evaluation at
+       this step is essentially exactly what was previously happening when
+       python hit each `def view_*` declaration when importing
+       `view_layers.py`)
+
     Parameters
     ----------
     layer_string : str

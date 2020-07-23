@@ -1,4 +1,4 @@
-from qtpy.QtCore import QPoint, Qt
+from qtpy.QtCore import QPoint, Qt, QRect
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QDialog, QFrame, QVBoxLayout
 
@@ -18,6 +18,18 @@ class QtPopup(QDialog):
     |  |  |  +-------------------------
     |  |  |  |
     |  |  |  |  (add a new layout here)
+
+    Parameters
+    ----------
+    parent : qtpy.QtWidgets:QWidget
+        Parent widget of the popup dialog box.
+
+    Attributes
+    ----------
+    frame : qtpy.QtWidgets.QFrame
+        Frame of the popup dialog box.
+    layout : qtpy.QtWidgets.QVBoxLayout
+        Layout of the popup dialog box.
     """
 
     def __init__(self, parent):
@@ -33,14 +45,22 @@ class QtPopup(QDialog):
         self.layout().setContentsMargins(0, 0, 0, 0)
 
     def show_above_mouse(self, *args):
+        """Show popup dialog above the mouse cursor position."""
         pos = QCursor().pos()  # mouse position
         szhint = self.sizeHint()
         pos -= QPoint(szhint.width() / 2, szhint.height() + 14)
         self.move(pos)
         self.show()
 
-    def show_at(self, position='top', *, win_ratio=0.9, min_length=0):
-        """Show popup at a position relative to the QMainWindow.
+    def show_right_of_mouse(self, *args):
+        pos = QCursor().pos()  # mouse position
+        szhint = self.sizeHint()
+        pos -= QPoint(-14, szhint.height() / 4)
+        self.move(pos)
+        self.show()
+
+    def move_to(self, position='top', *, win_ratio=0.9, min_length=0):
+        """Move popup to a position relative to the QMainWindow.
 
         Parameters
         ----------
@@ -67,7 +87,7 @@ class QtPopup(QDialog):
             window = self.parent().window() if self.parent() else None
             if not window:
                 raise ValueError(
-                    "Specifying position as a string is only posible if "
+                    "Specifying position as a string is only possible if "
                     "the popup has a parent"
                 )
             left = window.pos().x()
@@ -99,17 +119,41 @@ class QtPopup(QDialog):
         elif isinstance(position, (tuple, list)):
             assert len(position) == 4, '`position` argument must have length 4'
             left, top, width, height = position
+        else:
+            raise ValueError(f"Wrong type of position {position}")
 
         # necessary for transparent round corners
         self.resize(self.sizeHint())
         # make sure the popup is completely on the screen
-        screen_size = QGuiApplication.screenAt(QCursor.pos()).size()
-        left = max(min(screen_size.width() - width, left), 0)
-        top = max(min(screen_size.height() - height, top), 0)
+        # In Qt ≥5.10 we can use screenAt to know which monitor the mouse is on
+
+        if hasattr(QGuiApplication, "screenAt"):
+            screen_geometry: QRect = QGuiApplication.screenAt(
+                QCursor.pos()
+            ).geometry()
+        else:
+            # This widget is deprecated since Qt 5.11
+            from qtpy.QtWidgets import QDesktopWidget
+
+            screen_num = QDesktopWidget().screenNumber(QCursor.pos())
+            screen_geometry = QGuiApplication.screens()[screen_num].geometry()
+
+        left = max(
+            min(screen_geometry.right() - width, left), screen_geometry.left()
+        )
+        top = max(
+            min(screen_geometry.bottom() - height, top), screen_geometry.top()
+        )
         self.setGeometry(left, top, width, height)
-        self.show()
 
     def keyPressEvent(self, event):
+        """Close window on return, else pass event through to super class.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
         if event.key() in (Qt.Key_Return, Qt.Key_Enter):
             return self.close()
         super().keyPressEvent(event)

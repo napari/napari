@@ -11,21 +11,21 @@ from ._constants import LoopMode
 
 
 class QtDims(QWidget):
-    """Qt View for Dims model.
+    """Qt view for the napari Dims model.
 
     Parameters
     ----------
-    dims : Dims
-        Dims object to be passed to Qt object
+    dims : napari.components.dims.Dims
+        Dims object to be passed to Qt object.
     parent : QWidget, optional
-        QWidget that will be the parent of this widget
+        QWidget that will be the parent of this widget.
 
     Attributes
     ----------
-    dims : Dims
-        Dims object
+    dims : napari.components.dims.Dims
+        Dimensions object modeling slicing and displaying.
     slider_widgets : list[QtDimSliderWidget]
-        List of slider widgets
+        List of slider widgets.
     """
 
     def __init__(self, dims: Dims, parent=None):
@@ -64,23 +64,35 @@ class QtDims(QWidget):
 
     @property
     def nsliders(self):
-        """Returns the number of sliders displayed
+        """Returns the number of sliders displayed.
 
         Returns
         -------
         nsliders: int
-            Number of sliders displayed
+            Number of sliders displayed.
         """
         return len(self.slider_widgets)
 
     @property
     def last_used(self):
-        """int: Index of slider last used.
+        """Returns the integer index of the last used slider.
+
+        Returns
+        -------
+        int
+            Index of slider last used.
         """
         return self._last_used
 
     @last_used.setter
     def last_used(self, last_used: int):
+        """Sets the last used slider.
+
+        Parameters
+        ----------
+        last_used : int
+            Index of slider last used.
+        """
         if last_used == self.last_used:
             return
 
@@ -134,10 +146,16 @@ class QtDims(QWidget):
 
         The event parameter is there just to allow easy connection to signals,
         without using `lambda event:`
+
+        Parameters
+        ----------
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method, by default None.
         """
         widgets = reversed(list(enumerate(self.slider_widgets)))
         for (axis, widget) in widgets:
-            if axis in self.dims.displayed:
+            _range = self.dims.range[axis][1] - self.dims.range[axis][2]
+            if axis in self.dims.displayed or _range == 0:
                 # Displayed dimensions correspond to non displayed sliders
                 self._displayed_sliders[axis] = False
                 self.last_used = None
@@ -149,12 +167,18 @@ class QtDims(QWidget):
                 widget.show()
         nsliders = np.sum(self._displayed_sliders)
         self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
+        self._resize_slice_labels()
 
     def _update_nsliders(self, event=None):
         """Updates the number of sliders based on the number of dimensions.
 
         The event parameter is there just to allow easy connection to signals,
         without using `lambda event:`
+
+        Parameters
+        ----------
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method, by default None.
         """
         self._trim_sliders(0)
         self._create_sliders(self.dims.ndim)
@@ -205,7 +229,7 @@ class QtDims(QWidget):
         Parameters
         ----------
         number_of_sliders : int
-            new number of sliders
+            New number of sliders.
         """
         # add extra sliders so that number_of_sliders are present
         # add to the beginning of the list
@@ -227,7 +251,7 @@ class QtDims(QWidget):
         Parameters
         ----------
         number_of_sliders : int
-            new number of sliders
+            New number of sliders.
         """
         # remove extra sliders so that only number_of_sliders are left
         # remove from the beginning of the list
@@ -239,7 +263,7 @@ class QtDims(QWidget):
 
         Parameters
         ----------
-        axis : int
+        index : int
             Index of slider to remove
         """
         # remove particular slider
@@ -248,7 +272,7 @@ class QtDims(QWidget):
         self.layout().removeWidget(slider_widget)
         slider_widget.deleteLater()
         nsliders = np.sum(self._displayed_sliders)
-        self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
+        self.setMinimumHeight(int(nsliders * self.SLIDERHEIGHT))
         self.last_used = None
 
     def focus_up(self):
@@ -286,14 +310,14 @@ class QtDims(QWidget):
 
         Parameters
         ----------
-        axis: int
+        axis : int
             Index of axis to play
-        fps: float
+        fps : float
             Frames per second for playback.  Negative values will play in
             reverse.  fps == 0 will stop the animation. The view is not
             guaranteed to keep up with the requested fps, and may drop frames
             at higher fps.
-        loop_mode: str
+        loop_mode : str
             Mode for animation playback.  Must be one of the following options:
                 "once": Animation will stop once movie reaches the
                     max frame (if fps > 0) or the first frame (if fps < 0).
@@ -301,7 +325,7 @@ class QtDims(QWidget):
                     after reaching the last frame, looping until stopped.
                 "back_and_forth":  Movie will loop back and forth until
                     stopped
-        frame_range: tuple | list
+        frame_range : tuple | list
             If specified, will constrain animation to loop [first, last] frames
 
         Raises
@@ -377,3 +401,8 @@ class QtDims(QWidget):
         # this is mostly here to connect to the main SceneCanvas.events.draw
         # event in the qt_viewer
         self._play_ready = True
+
+    def closeEvent(self, event):
+        [w.deleteLater() for w in self.slider_widgets]
+        self.deleteLater()
+        event.accept()

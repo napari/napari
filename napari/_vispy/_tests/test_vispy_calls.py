@@ -1,19 +1,15 @@
 import numpy as np
 from unittest.mock import patch
 
-from napari import Viewer
 
-
-def test_data_change_ndisplay_image(qtbot):
+def test_data_change_ndisplay_image(make_test_viewer):
     """Test change data calls for image layer with ndisplay change."""
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
+    viewer = make_test_viewer()
 
     np.random.seed(0)
     data = np.random.random((10, 15, 8))
     layer = viewer.add_image(data)
-    visual = view.layer_to_visual[layer]
+    visual = viewer.window.qt_viewer.layer_to_visual[layer]
 
     @patch.object(visual, '_on_data_change', wraps=visual._on_data_change)
     def test_ndisplay_change(mocked_method, ndisplay=3):
@@ -24,21 +20,16 @@ def test_data_change_ndisplay_image(qtbot):
     test_ndisplay_change(ndisplay=3)
     test_ndisplay_change(ndisplay=2)
 
-    # Close the viewer
-    viewer.window.close()
 
-
-def test_data_change_ndisplay_labels(qtbot):
+def test_data_change_ndisplay_labels(make_test_viewer):
     """Test change data calls for labels layer with ndisplay change."""
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
+    viewer = make_test_viewer()
 
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15, 8))
     layer = viewer.add_labels(data)
 
-    visual = view.layer_to_visual[layer]
+    visual = viewer.window.qt_viewer.layer_to_visual[layer]
 
     @patch.object(visual, '_on_data_change', wraps=visual._on_data_change)
     def test_ndisplay_change(mocked_method, ndisplay=3):
@@ -49,20 +40,15 @@ def test_data_change_ndisplay_labels(qtbot):
     test_ndisplay_change(ndisplay=3)
     test_ndisplay_change(ndisplay=2)
 
-    # Close the viewer
-    viewer.window.close()
 
-
-def test_data_change_ndisplay_points(qtbot):
+def test_data_change_ndisplay_points(make_test_viewer):
     """Test change data calls for points layer with ndisplay change."""
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
+    viewer = make_test_viewer()
 
     np.random.seed(0)
     data = 20 * np.random.random((10, 3))
     layer = viewer.add_points(data)
-    visual = view.layer_to_visual[layer]
+    visual = viewer.window.qt_viewer.layer_to_visual[layer]
 
     @patch.object(visual, '_on_data_change', wraps=visual._on_data_change)
     def test_ndisplay_change(mocked_method, ndisplay=3):
@@ -73,20 +59,15 @@ def test_data_change_ndisplay_points(qtbot):
     test_ndisplay_change(ndisplay=3)
     test_ndisplay_change(ndisplay=2)
 
-    # Close the viewer
-    viewer.window.close()
 
-
-def test_data_change_ndisplay_vectors(qtbot):
+def test_data_change_ndisplay_vectors(make_test_viewer):
     """Test change data calls for vectors layer with ndisplay change."""
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
+    viewer = make_test_viewer()
 
     np.random.seed(0)
     data = 20 * np.random.random((10, 2, 3))
     layer = viewer.add_vectors(data)
-    visual = view.layer_to_visual[layer]
+    visual = viewer.window.qt_viewer.layer_to_visual[layer]
 
     @patch.object(visual, '_on_data_change', wraps=visual._on_data_change)
     def test_ndisplay_change(mocked_method, ndisplay=3):
@@ -97,21 +78,16 @@ def test_data_change_ndisplay_vectors(qtbot):
     test_ndisplay_change(ndisplay=3)
     test_ndisplay_change(ndisplay=2)
 
-    # Close the viewer
-    viewer.window.close()
 
-
-def test_data_change_ndisplay_shapes(qtbot):
+def test_data_change_ndisplay_shapes(make_test_viewer):
     """Test change data calls for shapes layer with ndisplay change."""
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
+    viewer = make_test_viewer()
 
     np.random.seed(0)
     data = 20 * np.random.random((10, 4, 3))
     layer = viewer.add_shapes(data)
 
-    visual = view.layer_to_visual[layer]
+    visual = viewer.window.qt_viewer.layer_to_visual[layer]
 
     @patch.object(visual, '_on_data_change', wraps=visual._on_data_change)
     def test_ndisplay_change(mocked_method, ndisplay=3):
@@ -122,15 +98,10 @@ def test_data_change_ndisplay_shapes(qtbot):
     test_ndisplay_change(ndisplay=3)
     test_ndisplay_change(ndisplay=2)
 
-    # Close the viewer
-    viewer.window.close()
 
-
-def test_data_change_ndisplay_surface(qtbot):
+def test_data_change_ndisplay_surface(make_test_viewer):
     """Test change data calls for surface layer with ndisplay change."""
-    viewer = Viewer()
-    view = viewer.window.qt_viewer
-    qtbot.addWidget(view)
+    viewer = make_test_viewer()
 
     np.random.seed(0)
     vertices = np.random.random((10, 3))
@@ -139,7 +110,7 @@ def test_data_change_ndisplay_surface(qtbot):
     data = (vertices, faces, values)
     layer = viewer.add_surface(data)
 
-    visual = view.layer_to_visual[layer]
+    visual = viewer.window.qt_viewer.layer_to_visual[layer]
 
     @patch.object(visual, '_on_data_change', wraps=visual._on_data_change)
     def test_ndisplay_change(mocked_method, ndisplay=3):
@@ -149,6 +120,3 @@ def test_data_change_ndisplay_surface(qtbot):
     # Switch to 3D rendering mode and back to 2D rendering mode
     test_ndisplay_change(ndisplay=3)
     test_ndisplay_change(ndisplay=2)
-
-    # Close the viewer
-    viewer.window.close()

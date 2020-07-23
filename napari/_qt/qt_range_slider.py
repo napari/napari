@@ -1,7 +1,6 @@
 """
 Range slider, extended QWidget slider for napari.
 """
-
 from qtpy.QtGui import QPainter, QColor
 from qtpy.QtCore import Signal, Property, Qt
 from qtpy.QtWidgets import QWidget
@@ -53,7 +52,7 @@ class QRangeSlider(QWidget):
         """
         super().__init__(parent)
         self.handle_radius = 8
-        self.slider_width = 8
+        self.slider_width = 6
         self.moving = "none"
         self.collapsible = collapsible
         self.collapsed = collapsed
@@ -374,13 +373,13 @@ class QHRangeSlider(QRangeSlider):
         """
         painter, w, h = QPainter(self), self.width(), self.height()
 
-        half_width = self.slider_width / 2
-        halfdiff = h / 2 - half_width
+        half_width = self.slider_width / 2 - 1
+        halfdiff = int(h / 2 - half_width)
 
         # Background
         painter.setPen(self.background_color)
         painter.setBrush(self.background_color)
-        painter.drawRect(0, halfdiff, w, self.slider_width)
+        painter.drawRoundedRect(0, halfdiff, w, self.slider_width, 2, 2)
 
         # Range Bar
         painter.setPen(self.bar_color)
@@ -401,15 +400,15 @@ class QHRangeSlider(QRangeSlider):
         painter.setBrush(self.handle_color)
         painter.drawEllipse(
             self.display_min - self.handle_radius,
-            h / 2 - self.handle_radius,
-            self.handle_width,
-            self.handle_width,
+            int(h / 2 - self.handle_radius + 1),
+            self.handle_width - 1,
+            self.handle_width - 1,
         )  # left
         painter.drawEllipse(
             self.display_max - self.handle_radius,
-            h / 2 - self.handle_radius,
-            self.handle_width,
-            self.handle_width,
+            int(h / 2 - self.handle_radius + 1),
+            self.handle_width - 1,
+            self.handle_width - 1,
         )  # right
 
     def rangeSliderSize(self):
@@ -470,11 +469,11 @@ class QVRangeSlider(QRangeSlider):
         painter, w, h = QPainter(self), self.width(), self.height()
 
         half_width = self.slider_width / 2
-        halfdiff = w / 2 - half_width
+        halfdiff = int(w / 2 - half_width)
         # Background
         painter.setPen(self.background_color)
         painter.setBrush(self.background_color)
-        painter.drawRect(halfdiff, 0, self.slider_width, h)
+        painter.drawRoundedRect(halfdiff, 0, self.slider_width, h, 2, 2)
 
         # Range Bar
         painter.setPen(self.bar_color)
@@ -499,13 +498,13 @@ class QVRangeSlider(QRangeSlider):
         painter.setPen(self.handle_border_color)
         painter.setBrush(self.handle_color)
         painter.drawEllipse(
-            w / 2 - self.handle_radius,
+            int(w / 2 - self.handle_radius),
             h - self.display_min - self.handle_radius,
             self.handle_width,
             self.handle_width,
         )  # upper
         painter.drawEllipse(
-            w / 2 - self.handle_radius,
+            int(w / 2 - self.handle_radius),
             h - self.display_max - self.handle_radius,
             self.handle_width,
             self.handle_width,

@@ -205,7 +205,7 @@ class Dims:
             self._range = [(0, 2, 1)] * (ndim - cur_ndim) + self._range
             # Point is the slider value if in point mode
             self._point = [0] * (ndim - cur_ndim) + self._point
-            # Interval value is the (min, max) of the slider selction
+            # Interval value is the (min, max) of the slider selection
             # if in interval mode
             self._interval = [(0, 1)] * (ndim - cur_ndim) + self._interval
             self._mode = [DimsMode.POINT] * (ndim - cur_ndim) + self._mode
@@ -320,7 +320,7 @@ class Dims:
             self._range[axis] = (0, 2, 1)
             # Point is the slider value if in point mode
             self._point[axis] = 0
-            # Interval value is the (min, max) of the slider selction
+            # Interval value is the (min, max) of the slider selection
             # if in interval mode
             self._interval[axis] = (0, 1)
             self._mode[axis] = DimsMode.POINT
@@ -335,7 +335,7 @@ class Dims:
         ----------
         axis : int
             Dimension index.
-        range : tuple
+        _range : tuple
             Range specified as (min, max, step).
         """
         axis = self._assert_axis_in_bounds(axis)

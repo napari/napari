@@ -1,3 +1,4 @@
+from typing import Optional, List
 from ..layers import Layer
 from ..utils.naming import inc_name_count
 from ..utils.list import ListModel
@@ -15,6 +16,11 @@ def _add(event):
 class LayerList(ListModel):
     """List-like layer collection with built-in reordering and callback hooks.
 
+    Parameters
+    ----------
+    iterable : iterable
+        Iterable of napari.layer.Layer
+
     Attributes
     ----------
     events : vispy.util.event.EmitterGroup
@@ -24,9 +30,11 @@ class LayerList(ListModel):
             * reordered(): whenever the list is reordered
     """
 
-    def __init__(self):
+    def __init__(self, iterable=()):
         super().__init__(
-            basetype=Layer, lookup={str: lambda q, e: q == e.name}
+            basetype=Layer,
+            iterable=iterable,
+            lookup={str: lambda q, e: q == e.name},
         )
 
         self.events.added.connect(_add)
@@ -41,7 +49,7 @@ class LayerList(ListModel):
         ----------
         name : str
             Original name.
-        layer : Layer, optional
+        layer : napari.layers.Layer, optional
             Layer for which name is generated.
 
         Returns
@@ -61,6 +69,11 @@ class LayerList(ListModel):
         """Coerce name of the layer in `event.layer`."""
         layer = event.source
         layer.name = self._coerce_name(layer.name, layer)
+
+    @property
+    def selected(self):
+        """List of selected layers."""
+        return [layer for layer in self if layer.selected]
 
     def move_selected(self, index, insert):
         """Reorder list by moving the item at index and inserting it
@@ -166,3 +179,80 @@ class LayerList(ListModel):
                 self[selected[0] - 1].selected = True
         elif len(self) > 0:
             self[0].selected = True
+
+    def toggle_selected_visibility(self):
+        """Toggle visibility of selected layers"""
+        for layer in self:
+            if layer.selected:
+                layer.visible = not layer.visible
+
+    def save(
+        self,
+        path: str,
+        *,
+        selected: bool = False,
+        plugin: Optional[str] = None,
+    ) -> List[str]:
+        """Save all or only selected layers to a path using writer plugins.
+
+        If ``plugin`` is not provided and only one layer is targeted, then we
+        directly call the corresponding``napari_write_<layer_type>`` hook (see
+        :ref:`single layer writer hookspecs <write-single-layer-hookspecs>`)
+        which will loop through implementations and stop when the first one
+        returns a non-``None`` result. The order in which implementations are
+        called can be changed with the Plugin sorter in the GUI or with the
+        corresponding hook's
+        :meth:`~napari.plugins._hook_callers._HookCaller.bring_to_front`
+        method.
+
+        If ``plugin`` is not provided and multiple layers are targeted,
+        then we call
+        :meth:`~napari.plugins.hook_specifications.napari_get_writer` which
+        loops through plugins to find the first one that knows how to handle
+        the combination of layers and is able to write the file. If no plugins
+        offer :meth:`~napari.plugins.hook_specifications.napari_get_writer` for
+        that combination of layers then the default
+        :meth:`~napari.plugins.hook_specifications.napari_get_writer` will
+        create a folder and call ``napari_write_<layer_type>`` for each layer
+        using the ``Layer.name`` variable to modify the path such that the
+        layers are written to unique files in the folder.
+
+        If ``plugin`` is provided and a single layer is targeted, then we
+        call the ``napari_write_<layer_type>`` for that plugin, and if it fails
+        we error.
+
+        If ``plugin`` is provided and multiple layers are targeted, then
+        we call we call
+        :meth:`~napari.plugins.hook_specifications.napari_get_writer` for
+        that plugin, and if it doesn’t return a ``WriterFunction`` we error,
+        otherwise we call it and if that fails if it we error.
+
+        Parameters
+        ----------
+        path : str
+            A filepath, directory, or URL to open.  Extensions may be used to
+            specify output format (provided a plugin is available for the
+            requested format).
+        selected : bool
+            Optional flag to only save selected layers. False by default.
+        plugin : str, optional
+            Name of the plugin to use for saving. If None then all plugins
+            corresponding to appropriate hook specification will be looped
+            through to find the first one that can save the data.
+
+        Returns
+        -------
+        list of str
+            File paths of any files that were written.
+        """
+        from ..plugins.io import save_layers
+
+        layers = self.selected if selected else list(self)
+
+        if not layers:
+            import warnings
+
+            warnings.warn(f"No layers {'selected' if selected else 'to save'}")
+            return []
+
+        return save_layers(path, layers, plugin=plugin)

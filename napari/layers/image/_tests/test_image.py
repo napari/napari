@@ -1,5 +1,4 @@
 import numpy as np
-from xml.etree.ElementTree import Element
 import dask.array as da
 import xarray as xr
 
@@ -19,8 +18,7 @@ def test_random_image():
     assert layer.shape == shape
     assert layer.dims.range == [(0, m, 1) for m in shape]
     assert layer.rgb is False
-    assert layer.is_pyramid is False
-    assert layer._data_pyramid is None
+    assert layer.multiscale is False
     assert layer._data_view.shape == shape[-2:]
 
 
@@ -262,7 +260,7 @@ def test_name():
 
 
 def test_visiblity():
-    """Test setting layer visiblity."""
+    """Test setting layer visibility."""
     np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
@@ -488,10 +486,10 @@ def test_attenuation():
     np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
-    assert layer.attenuation == 0.5
+    assert layer.attenuation == 0.05
 
-    # Change iso_threshold property
-    attenuation = 0.7
+    # Change attenuation property
+    attenuation = 0.07
     layer.attenuation = attenuation
     assert layer.attenuation == attenuation
 
@@ -555,17 +553,6 @@ def test_narrow_thumbnail():
     assert np.mean(thumbnail[middle_row - 1 : middle_row + 1]) > 0
 
 
-def test_xml_list():
-    """Test the xml generation."""
-    np.random.seed(0)
-    data = np.random.random((15, 30))
-    layer = Image(data)
-    xml = layer.to_xml_list()
-    assert type(xml) == list
-    assert len(xml) == 1
-    assert type(xml[0]) == Element
-
-
 @pytest.mark.parametrize('dtype', [np.float32, np.float64])
 def test_out_of_range_image(dtype):
     data = -1.7 - 0.001 * np.random.random((10, 15)).astype(dtype)
@@ -614,3 +601,12 @@ def test_image_translate(translate):
     np.random.seed(0)
     data = np.random.random((10, 15))
     Image(data, translate=translate)
+
+
+def test_grid_translate():
+    np.random.seed(0)
+    data = np.random.random((10, 15))
+    layer = Image(data)
+    translate = np.array([15, 15])
+    layer.translate_grid = translate
+    np.testing.assert_allclose(layer.translate_grid, translate)

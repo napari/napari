@@ -115,7 +115,6 @@ def test_indices():
     dims = Dims(4)
     # On instantiation the last two dims are set to sliced mode
     assert dims.indices == (0,) * 2 + (slice(None, None, None),) * 2
-    print(dims.point, dims.ndim, dims.indices)
 
     # Set the values of the first two dims in point mode outside of range
     dims.set_point(0, 2)

@@ -13,7 +13,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from .utils import qt_signals_blocked
+from .utils import combine_widgets, qt_signals_blocked
 
 
 class QtViewerDockWidget(QDockWidget):
@@ -79,8 +79,9 @@ class QtViewerDockWidget(QDockWidget):
         self.setMinimumWidth(50)
         self.setObjectName(name)
 
-        self.setWidget(widget)
-        widget.setParent(self)
+        self.widget = combine_widgets(
+            widget, vertical=area in {'left', 'right'}
+        )
         self._features = self.features()
         self.dockLocationChanged.connect(self._set_title_orientation)
 
@@ -88,6 +89,17 @@ class QtViewerDockWidget(QDockWidget):
         self.title = QtCustomTitleBar(self)
         self.setTitleBarWidget(self.title)
         self.visibilityChanged.connect(self._on_visibility_changed)
+
+    @property
+    def widget(self):
+        """QWidget: widget that will be added as QDockWidget's main widget."""
+        return self._widget
+
+    @widget.setter
+    def widget(self, widget):
+        self.setWidget(widget)
+        widget.setParent(self)
+        self._widget = widget
 
     def setFeatures(self, features):
         super().setFeatures(features)

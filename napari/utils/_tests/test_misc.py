@@ -1,7 +1,71 @@
 from enum import auto
+from os.path import expanduser, abspath, sep
+from pathlib import Path
 
 import pytest
-from napari.utils.misc import callsignature, StringEnum
+
+from napari.utils.misc import (
+    StringEnum,
+    callsignature,
+    ensure_sequence_of_iterables,
+    ensure_iterable,
+    abspath_or_url,
+)
+
+ITERABLE = (0, 1, 2)
+NESTED_ITERABLE = [ITERABLE, ITERABLE, ITERABLE]
+DICT = {'a': 1, 'b': 3, 'c': 5}
+LIST_OF_DICTS = [DICT, DICT, DICT]
+
+
+@pytest.mark.parametrize(
+    'input, expected',
+    [
+        [ITERABLE, NESTED_ITERABLE],
+        [NESTED_ITERABLE, NESTED_ITERABLE],
+        [(ITERABLE, (2,), (3, 1, 6)), (ITERABLE, (2,), (3, 1, 6))],
+        [DICT, LIST_OF_DICTS],
+        [LIST_OF_DICTS, LIST_OF_DICTS],
+        [(ITERABLE, (2,), (3, 1, 6)), (ITERABLE, (2,), (3, 1, 6))],
+        [None, (None, None, None)],
+        # BEWARE: only the first element of a nested sequence is checked.
+        [((0, 1), None, None), ((0, 1), None, None)],
+    ],
+)
+def test_sequence_of_iterables(input, expected):
+    """Test ensure_sequence_of_iterables returns a sequence of iterables."""
+    zipped = zip(range(3), ensure_sequence_of_iterables(input), expected)
+    for i, result, expectation in zipped:
+        assert result == expectation
+
+
+def test_sequence_of_iterables_raises():
+    with pytest.raises(ValueError):
+        # the length argument asserts a specific length
+        ensure_sequence_of_iterables(((0, 1),), length=4)
+
+    # BEWARE: only the first element of a nested sequence is checked.
+    with pytest.raises(AssertionError):
+        iterable = (None, (0, 1), (0, 2))
+        result = iter(ensure_sequence_of_iterables(iterable))
+        assert next(result) is None
+
+
+@pytest.mark.parametrize(
+    'input, expected',
+    [
+        [ITERABLE, ITERABLE],
+        [DICT, DICT],
+        [1, [1, 1, 1]],
+        ['foo', ['foo', 'foo', 'foo']],
+        [None, [None, None, None]],
+    ],
+)
+def test_ensure_iterable(input, expected):
+    """Test test_ensure_iterable returns an iterable."""
+    zipped = zip(range(3), ensure_iterable(input), expected)
+    for i, result, expectation in zipped:
+        assert result == expectation
 
 
 def test_callsignature():
@@ -38,7 +102,7 @@ def test_callsignature():
     # arg + default arg + arbitrary kwargs
     assert str(callsignature(lambda a, b=42, **kw: None)) == '(a, b=b, **kw)'
 
-    # arbitary args + arbitrary kwargs
+    # arbitrary args + arbitrary kwargs
     assert str(callsignature(lambda *args, **kw: None)) == '(*args, **kw)'
 
     # arg + default arg + arbitrary kwargs
@@ -75,6 +139,9 @@ def test_string_enum():
     # test setting by value mixed case
     assert TestEnum('thInG') == TestEnum.THING
 
+    # test setting by instance of self
+    assert TestEnum(TestEnum.THING) == TestEnum.THING
+
     # test setting by name correct case
     assert TestEnum['THING'] == TestEnum.THING
 
@@ -94,3 +161,29 @@ def test_string_enum():
     assert str(animals.AARDVARK) == 'aardvark'
     assert animals('BUffALO') == animals.BUFFALO
     assert animals['BUffALO'] == animals.BUFFALO
+
+    # test setting by instance of self
+    class OtherEnum(StringEnum):
+        SOMETHING = auto()
+
+    #  test setting by instance of a different StringEnum is an error
+    with pytest.raises(ValueError):
+        TestEnum(OtherEnum.SOMETHING)
+
+
+def test_abspath_or_url():
+    relpath = "~" + sep + "something"
+    assert abspath_or_url(relpath) == expanduser(relpath)
+    assert abspath_or_url('something') == abspath('something')
+    assert abspath_or_url(sep + 'something') == abspath(sep + 'something')
+    assert abspath_or_url('https://something') == 'https://something'
+    assert abspath_or_url('http://something') == 'http://something'
+    assert abspath_or_url('ftp://something') == 'ftp://something'
+    assert abspath_or_url('file://something') == 'file://something'
+    assert abspath_or_url(('a', '~')) == (abspath('a'), expanduser('~'))
+    assert abspath_or_url(['a', '~']) == [abspath('a'), expanduser('~')]
+
+    assert abspath_or_url(('a', Path('~'))) == (abspath('a'), expanduser('~'))
+
+    with pytest.raises(TypeError):
+        abspath_or_url({'a', '~'})

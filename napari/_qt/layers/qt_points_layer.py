@@ -1,25 +1,76 @@
-from qtpy.QtCore import Qt
+import numpy as np
+from qtpy.QtCore import Qt, Slot
 from qtpy.QtWidgets import (
-    QLabel,
-    QComboBox,
-    QSlider,
-    QCheckBox,
     QButtonGroup,
-    QFrame,
+    QCheckBox,
+    QComboBox,
     QHBoxLayout,
+    QLabel,
+    QSlider,
 )
 
+from ...layers.points._points_constants import Mode, Symbol
+from ..qt_color_dialog import QColorSwatchEdit
+from ..qt_mode_buttons import QtModePushButton, QtModeRadioButton
+from ..utils import qt_signals_blocked
 from .qt_base_layer import QtLayerControls
-from ...layers.points._constants import Mode, Symbol
-from ..qt_mode_buttons import QtModeRadioButton, QtModePushButton
+from ..utils import disable_with_opacity
 
 
 class QtPointsControls(QtLayerControls):
+    """Qt view and controls for the napari Points layer.
+
+    Parameters
+    ----------
+    layer : napari.layers.Points
+        An instance of a napari Points layer.
+
+    Attributes
+    ----------
+    addition_button : qtpy.QtWidgets.QtModeRadioButton
+        Button to add points to layer.
+    button_group : qtpy.QtWidgets.QButtonGroup
+        Button group of points layer modes (ADD, PAN_ZOOM, SELECT).
+    delete_button : qtpy.QtWidgets.QtModePushButton
+        Button to delete points from layer.
+    edgeColorSwatch : qtpy.QtWidgets.QFrame
+        Color swatch showing shapes edge display color.
+    edgeComboBox : qtpy.QtWidgets.QComboBox
+        Dropdown widget to select display color for shape edges.
+    faceColorSwatch : qtpy.QtWidgets.QFrame
+        Color swatch showing shapes face display color.
+    faceComboBox : qtpy.QtWidgets.QComboBox
+        Dropdown widget to select display color for shape faces.
+    grid_layout : qtpy.QtWidgets.QGridLayout
+        Layout of Qt widget controls for the layer.
+    layer : napari.layers.Points
+        An instance of a napari Points layer.
+    ndimCheckBox : qtpy.QtWidgets.QCheckBox
+        Checkbox to indicate whether layer is n-dimensional.
+    panzoom_button : qtpy.QtWidgets.QtModeRadioButton
+        Button for pan/zoom mode.
+    select_button : qtpy.QtWidgets.QtModeRadioButton
+        Button to select points from layer.
+    sizeSlider : qtpy.QtWidgets.QSlider
+        Slider controlling size of points.
+    symbolComboBox : qtpy.QtWidgets.QComboBox
+        Drop down list of symbol options for points markers.
+
+    Raises
+    ------
+    ValueError
+        Raise error if points mode is not recognized.
+        Points mode must be one of: ADD, PAN_ZOOM, or SELECT.
+    """
+
     def __init__(self, layer):
         super().__init__(layer)
 
         self.layer.events.mode.connect(self.set_mode)
         self.layer.events.n_dimensional.connect(self._on_n_dim_change)
+        self.layer._text.events.visible.connect(
+            self._on_text_visibility_change
+        )
         self.layer.events.symbol.connect(self._on_symbol_change)
         self.layer.events.size.connect(self._on_size_change)
         self.layer.events.current_edge_color.connect(
@@ -40,23 +91,16 @@ class QtPointsControls(QtLayerControls):
         sld.valueChanged.connect(self.changeSize)
         self.sizeSlider = sld
 
-        face_comboBox = QComboBox()
-        face_comboBox.addItems(self.layer._colors)
-        face_comboBox.activated[str].connect(self.changeFaceColor)
-        self.faceComboBox = face_comboBox
-        self.faceColorSwatch = QFrame()
-        self.faceColorSwatch.setObjectName('swatch')
-        self.faceColorSwatch.setToolTip('Face color swatch')
-        self._on_face_color_change()
-
-        edge_comboBox = QComboBox()
-        edge_comboBox.addItems(self.layer._colors)
-        edge_comboBox.activated[str].connect(self.changeEdgeColor)
-        self.edgeComboBox = edge_comboBox
-        self.edgeColorSwatch = QFrame()
-        self.edgeColorSwatch.setObjectName('swatch')
-        self.edgeColorSwatch.setToolTip('Edge color swatch')
-        self._on_edge_color_change()
+        self.faceColorEdit = QColorSwatchEdit(
+            initial_color=self.layer.current_face_color,
+            tooltip='click to set current face color',
+        )
+        self.edgeColorEdit = QColorSwatchEdit(
+            initial_color=self.layer.current_edge_color,
+            tooltip='click to set current edge color',
+        )
+        self.faceColorEdit.color_changed.connect(self.changeFaceColor)
+        self.edgeColorEdit.color_changed.connect(self.changeEdgeColor)
 
         symbol_comboBox = QComboBox()
         symbol_comboBox.addItems([str(s) for s in Symbol])
@@ -89,46 +133,79 @@ class QtPointsControls(QtLayerControls):
             tooltip='Delete selected points',
         )
 
+        text_disp_cb = QCheckBox()
+        text_disp_cb.setToolTip('toggle text visibility')
+        text_disp_cb.setChecked(self.layer._text.visible)
+        text_disp_cb.stateChanged.connect(self.change_text_visibility)
+        self.textDispCheckBox = text_disp_cb
+
         self.button_group = QButtonGroup(self)
         self.button_group.addButton(self.select_button)
         self.button_group.addButton(self.addition_button)
         self.button_group.addButton(self.panzoom_button)
 
         button_row = QHBoxLayout()
+        button_row.addStretch(1)
         button_row.addWidget(self.delete_button)
         button_row.addWidget(self.addition_button)
         button_row.addWidget(self.select_button)
         button_row.addWidget(self.panzoom_button)
-        button_row.addStretch(1)
+        button_row.setContentsMargins(0, 0, 0, 5)
         button_row.setSpacing(4)
 
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
-        self.grid_layout.addLayout(button_row, 0, 1, 1, 2)
+        self.grid_layout.addLayout(button_row, 0, 1)
         self.grid_layout.addWidget(QLabel('opacity:'), 1, 0)
-        self.grid_layout.addWidget(self.opacitySlider, 1, 1, 1, 2)
+        self.grid_layout.addWidget(self.opacitySlider, 1, 1)
         self.grid_layout.addWidget(QLabel('point size:'), 2, 0)
-        self.grid_layout.addWidget(self.sizeSlider, 2, 1, 1, 2)
+        self.grid_layout.addWidget(self.sizeSlider, 2, 1)
         self.grid_layout.addWidget(QLabel('blending:'), 3, 0)
-        self.grid_layout.addWidget(self.blendComboBox, 3, 1, 1, 2)
+        self.grid_layout.addWidget(self.blendComboBox, 3, 1)
         self.grid_layout.addWidget(QLabel('symbol:'), 4, 0)
-        self.grid_layout.addWidget(self.symbolComboBox, 4, 1, 1, 2)
+        self.grid_layout.addWidget(self.symbolComboBox, 4, 1)
         self.grid_layout.addWidget(QLabel('face color:'), 5, 0)
-        self.grid_layout.addWidget(self.faceComboBox, 5, 2)
-        self.grid_layout.addWidget(self.faceColorSwatch, 5, 1)
+        self.grid_layout.addWidget(self.faceColorEdit, 5, 1)
         self.grid_layout.addWidget(QLabel('edge color:'), 6, 0)
-        self.grid_layout.addWidget(self.edgeComboBox, 6, 2)
-        self.grid_layout.addWidget(self.edgeColorSwatch, 6, 1)
-        self.grid_layout.addWidget(QLabel('n-dim:'), 7, 0)
-        self.grid_layout.addWidget(self.ndimCheckBox, 7, 1)
-        self.grid_layout.setRowStretch(8, 1)
+        self.grid_layout.addWidget(self.edgeColorEdit, 6, 1)
+        self.grid_layout.addWidget(QLabel('display text:'), 7, 0)
+        self.grid_layout.addWidget(self.textDispCheckBox, 7, 1)
+        self.grid_layout.addWidget(QLabel('n-dim:'), 8, 0)
+        self.grid_layout.addWidget(self.ndimCheckBox, 8, 1)
+        self.grid_layout.setRowStretch(9, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
 
     def mouseMoveEvent(self, event):
+        """On mouse move, update layer mode status.
+
+        Modes available for points layer: ADD, PAN_ZOOM, SELECT
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
         self.layer.status = self.layer.mode
 
     def set_mode(self, event):
+        """"Update ticks in checkbox widgets when points layer mode is changed.
+
+        Available modes for points layer are:
+        * ADD
+        * SELECT
+        * PAN_ZOOM
+
+        Parameters
+        ----------
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
+
+        Raises
+        ------
+        ValueError
+            Raise error if event.mode is not ADD, PAN_ZOOM, or SELECT.
+        """
         mode = event.mode
         if mode == Mode.ADD:
             self.addition_button.setChecked(True)
@@ -139,29 +216,82 @@ class QtPointsControls(QtLayerControls):
         else:
             raise ValueError("Mode not recognized")
 
-    def changeFaceColor(self, text):
-        self.layer.current_face_color = text
-
-    def changeEdgeColor(self, text):
-        self.layer.current_edge_color = text
-
     def changeSymbol(self, text):
+        """Change marker symbol of the points on the layer model.
+
+        Parameters
+        ----------
+        text : str
+            Marker symbol of points, eg: '+', '.', etc.
+        """
         self.layer.symbol = text
 
     def changeSize(self, value):
+        """Change size of points on the layer model.
+
+        Parameters
+        ----------
+        value : float
+            Size of points.
+        """
         self.layer.current_size = value
 
     def change_ndim(self, state):
+        """Toggle n-dimensional state of label layer.
+
+        Parameters
+        ----------
+        state : QCheckBox
+            Checkbox indicating if label layer is n-dimensional.
+        """
         if state == Qt.Checked:
             self.layer.n_dimensional = True
         else:
             self.layer.n_dimensional = False
 
+    def change_text_visibility(self, state):
+        """Toggle the visibiltiy of the text.
+
+        Parameters
+        ----------
+        state : QCheckBox
+            Checkbox indicating if text is visible.
+        """
+        if state == Qt.Checked:
+            self.layer._text.visible = True
+        else:
+            self.layer._text.visible = False
+
+    def _on_text_visibility_change(self, event):
+        """Receive layer model text visibiltiy change change event and update checkbox.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+            Event from the Qt context.
+        """
+        with self.layer._text.events.visible.blocker():
+            self.textDispCheckBox.setChecked(self.layer._text.visible)
+
     def _on_n_dim_change(self, event):
+        """Receive layer model n-dimensional change event and update checkbox.
+
+        Parameters
+        ----------
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
+        """
         with self.layer.events.n_dimensional.blocker():
             self.ndimCheckBox.setChecked(self.layer.n_dimensional)
 
     def _on_symbol_change(self, event):
+        """Receive marker symbol change event and update the dropdown menu.
+
+        Parameters
+        ----------
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
+        """
         with self.layer.events.symbol.blocker():
             index = self.symbolComboBox.findText(
                 self.layer.symbol, Qt.MatchFixedString
@@ -169,49 +299,49 @@ class QtPointsControls(QtLayerControls):
             self.symbolComboBox.setCurrentIndex(index)
 
     def _on_size_change(self, event=None):
+        """Receive layer model size change event and update point size slider.
+
+        Parameters
+        ----------
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method.
+        """
         with self.layer.events.size.blocker():
             value = self.layer.current_size
             self.sizeSlider.setValue(int(value))
 
-    def _on_edge_color_change(self, event=None):
-        """Change element's edge color based on user-provided value.
+    @Slot(np.ndarray)
+    def changeFaceColor(self, color: np.ndarray):
+        """Update face color of layer model from color picker user input."""
+        with self.layer.events.current_face_color.blocker():
+            self.layer.current_face_color = color
 
-        The new color (read from layer.current_edge_color) is a string -
-        either the color's name or its hex representation. This color has
-        already been verified by "transform_color". This value has to be
-        looked up in the color list of the layer and displayed in the
-        combobox. If it's not in the combobox the method will add it and
-        then display it, for future use.
-        """
-        color = self.layer.current_edge_color
-        with self.layer.events.edge_color.blocker():
-            index = self.edgeComboBox.findText(color, Qt.MatchFixedString)
-            if index == -1:
-                self.edgeComboBox.addItem(color)
-                index = self.edgeComboBox.findText(color, Qt.MatchFixedString)
-            self.edgeComboBox.setCurrentIndex(index)
-        self.edgeColorSwatch.setStyleSheet(f"background-color: {color}")
+    @Slot(np.ndarray)
+    def changeEdgeColor(self, color: np.ndarray):
+        """Update edge color of layer model from color picker user input."""
+        with self.layer.events.current_edge_color.blocker():
+            self.layer.current_edge_color = color
 
     def _on_face_color_change(self, event=None):
-        """Change element's face color based user-provided value.
+        """Receive layer.current_face_color() change event and update view."""
+        with qt_signals_blocked(self.faceColorEdit):
+            self.faceColorEdit.setColor(self.layer.current_face_color)
 
-        The new color (read from layer.current_face_color) is a string -
-        either the color's name or its hex representation. This color has
-        already been verified by "transform_color". This value has to be
-        looked up in the color list of the layer and displayed in the
-        combobox. If it's not in the combobox the method will add it and
-        then display it, for future use.
-        """
-        color = self.layer.current_face_color
-        with self.layer.events.face_color.blocker():
-            index = self.faceComboBox.findText(color, Qt.MatchFixedString)
-            if index == -1:
-                self.faceComboBox.addItem(color)
-                index = self.faceComboBox.findText(color, Qt.MatchFixedString)
-            self.faceComboBox.setCurrentIndex(index)
-        self.faceColorSwatch.setStyleSheet(f"background-color: {color}")
+    def _on_edge_color_change(self, event=None):
+        """Receive layer.current_edge_color() change event and update view."""
+        with qt_signals_blocked(self.edgeColorEdit):
+            self.edgeColorEdit.setColor(self.layer.current_edge_color)
 
     def _on_editable_change(self, event=None):
-        self.select_button.setEnabled(self.layer.editable)
-        self.addition_button.setEnabled(self.layer.editable)
-        self.delete_button.setEnabled(self.layer.editable)
+        """Receive layer model editable change event & enable/disable buttons.
+
+        Parameters
+        ----------
+        event : napari.utils.event.Event, optional
+            The napari event that triggered this method, by default None.
+        """
+        disable_with_opacity(
+            self,
+            ['select_button', 'addition_button', 'delete_button'],
+            self.layer.editable,
+        )

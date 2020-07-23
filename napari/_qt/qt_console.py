@@ -1,5 +1,6 @@
 import sys
 
+from qtpy.QtGui import QColor
 from ipykernel.connect import get_connection_file
 from ipykernel.inprocess.ipkernel import InProcessInteractiveShell
 from ipykernel.zmqshell import ZMQInteractiveShell
@@ -8,6 +9,7 @@ from IPython.terminal.interactiveshell import TerminalInteractiveShell
 from qtconsole.client import QtKernelClient
 from qtconsole.inprocess import QtInProcessKernelManager
 from qtconsole.rich_jupyter_widget import RichJupyterWidget
+from ..utils.misc import str_to_rgb
 
 """
 set default asyncio policy to be compatible with tornado
@@ -44,7 +46,7 @@ if sys.platform.startswith("win") and sys.version_info >= (3, 8):
 
 
 class QtConsole(RichJupyterWidget):
-    """Qt view for console.
+    """Qt view for the console, an integrated iPython terminal in napari.
 
     Parameters
     ----------
@@ -128,8 +130,31 @@ class QtConsole(RichJupyterWidget):
         # TODO: Try to get console from jupyter to run without a shift click
         # self.execute_on_complete_input = True
 
-    def shutdown(self):
+    def _update_palette(self, palette, themed_stylesheet):
+        """Update the napari GUI theme.
+
+        Parameters
+        ----------
+        palette : dict of str: str
+            Color palette with which to style the viewer.
+            Property of napari.components.viewer_model.ViewerModel.
+        themed_stylesheet : str
+            Stylesheet that has already been themed with the current palette.
+        """
+        self.style_sheet = themed_stylesheet
+        self.syntax_style = palette['syntax_style']
+        bracket_color = QColor(*str_to_rgb(palette['highlight']))
+        self._bracket_matcher.format.setBackground(bracket_color)
+
+    def closeEvent(self, event):
+        """Clean up the integrated console in napari."""
         if self.kernel_client is not None:
             self.kernel_client.stop_channels()
         if self.kernel_manager is not None and self.kernel_manager.has_kernel:
             self.kernel_manager.shutdown_kernel()
+
+        # RichJupyterWidget doesn't clean these up
+        self._completion_widget.deleteLater()
+        self._call_tip_widget.deleteLater()
+        self.deleteLater()
+        event.accept()

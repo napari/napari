@@ -16,6 +16,7 @@ def make_worker(
     # sets up an AnimationWorker ready for testing, and breaks down when done
     dims = Dims(4)
     qtdims = QtDims(dims)
+    qtbot.addWidget(qtdims)
     nz = 8
     step = 1
     dims.set_range(0, (0, nz, step))
@@ -96,15 +97,15 @@ def test_animation_thread_once(qtbot):
 
 
 @pytest.fixture()
-def view(viewermodel_factory):
+def view(make_test_viewer):
     """basic viewer with data that we will use a few times"""
-    view, viewer = viewermodel_factory()
+    viewer = make_test_viewer()
 
     np.random.seed(0)
     data = np.random.random((10, 10, 15))
     viewer.add_image(data)
 
-    return view
+    return viewer.window.qt_viewer
 
 
 def test_play_raises_index_errors(qtbot, view):
@@ -161,7 +162,7 @@ def test_play_api(qtbot, view):
     assert A == view.dims._frame
 
 
-def test_playing_hidden_slider_does_nothing(qtbot, view):
+def test_playing_hidden_slider_does_nothing(view):
     """Make sure playing a dimension without a slider does nothing"""
 
     def increment(e):
@@ -171,5 +172,6 @@ def test_playing_hidden_slider_does_nothing(qtbot, view):
 
     view.dims.dims.events.axis.connect(increment)
 
-    view.dims.play(2, 20)
+    with pytest.warns(UserWarning):
+        view.dims.play(2, 20)
     assert not view.dims.is_playing

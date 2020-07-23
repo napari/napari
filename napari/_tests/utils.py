@@ -67,7 +67,7 @@ def add_layer_by_type(viewer, layer_type, data, visible=True):
     ----------
     layer_type : LayerTypes
         Layer type to add
-    data :
+    data
         The layer data to view
     """
     return layer2addmethod[layer_type](viewer, data, visible=visible)
@@ -81,10 +81,10 @@ def view_layer_type(layer_type, data):
     ----------
     layer_type : LayerTypes
         Layer type to view
-    data :
+    data
         The layer data to view
     """
-    return layer2viewmethod[layer_type](data)
+    return layer2viewmethod[layer_type](data, show=False)
 
 
 def check_viewer_functioning(viewer, view=None, data=None, ndim=2):
@@ -113,3 +113,41 @@ def check_viewer_functioning(viewer, view=None, data=None, ndim=2):
 
     viewer.dims.ndisplay = 2
     assert viewer.dims.ndisplay == 2
+
+
+def check_view_transform_consistency(layer, viewer, transf_dict):
+    """Check layer transforms have been applied to the view.
+
+    Parameters
+    ----------
+    layer : napari.layers.Layer
+        Layer model.
+    viewer : napari.Viewer
+        Viewer, including Qt elements
+    transf_dict : dict
+        Dictionary of transform properties with keys referring to the name of
+        the transform property (i.e. `scale`, `translate`) and the value
+        corresponding to the array of property values
+    """
+    # Get an handle on visual layer:
+    vis_lyr = viewer.window.qt_viewer.layer_to_visual[layer]
+
+    # Visual layer attributes should match expected from viewer dims:
+    for transf_name, transf in transf_dict.items():
+        disp_dims = viewer.dims.displayed  # dimensions displayed in 2D
+        # values of visual layer
+        vis_vals = getattr(vis_lyr, transf_name)[1::-1]
+
+        # The transform of the visual includes both values from the
+        # data2world transform and the tile2data transform and so any
+        # any additional scaling / translation from tile2data transform
+        # must be taken into account
+        transform = layer._transforms['tile2data'].set_slice(disp_dims)
+        tile_transf = getattr(transform, transf_name)
+        if transf_name == 'scale':
+            # expected scale values
+            correct_vals = np.multiply(transf[disp_dims], tile_transf)
+        else:
+            # expected translate values
+            correct_vals = np.add(transf[disp_dims], tile_transf)
+        assert (vis_vals == correct_vals).all()

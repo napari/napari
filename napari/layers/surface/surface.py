@@ -5,7 +5,7 @@ import numpy as np
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.event import Event
 from ..base import Layer
-from ..layer_utils import calc_data_range
+from ..utils.layer_utils import calc_data_range
 from ..intensity_mixin import IntensityVisualizationMixin
 
 
@@ -112,6 +112,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         ndim = data[0].shape[1]
 
         super().__init__(
+            data,
             ndim,
             name=name,
             metadata=metadata,
@@ -218,7 +219,7 @@ class Surface(IntensityVisualizationMixin, Layer):
             mins = [0] * (self.vertex_values.ndim - 1) + list(mins)
             maxs = list(self.vertex_values.shape[:-1]) + list(maxs)
 
-        return [(min, max, 1) for min, max in zip(mins, maxs)]
+        return [(min, max) for min, max in zip(mins, maxs)]
 
     def _get_state(self):
         """Get dictionary of layer state.
@@ -302,24 +303,12 @@ class Surface(IntensityVisualizationMixin, Layer):
         """Update thumbnail with current surface."""
         pass
 
-    def to_xml_list(self):
-        """Convert surface to a list of svg xml elements.
-
-        Returns
-        ----------
-        xml : list
-            List of xml elements.
-        """
-        xml_list = []
-
-        return xml_list
-
     def _get_value(self):
         """Returns coordinates, values, and a string for a given mouse position
         and set of indices.
 
         Returns
-        ----------
+        -------
         value : int, None
             Value of the data at the coord.
         """

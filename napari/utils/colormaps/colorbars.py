@@ -1,7 +1,7 @@
 import numpy as np
 
 
-def make_colorbar(cmap, size=(12, 28), horizontal=True):
+def make_colorbar(cmap, size=(18, 28), horizontal=True):
     """Make a colorbar from a colormap.
 
     Parameters
@@ -15,7 +15,7 @@ def make_colorbar(cmap, size=(12, 28), horizontal=True):
         vertical.
 
     Returns
-    ----------
+    -------
     cbar : array
         Array of colorbar.
     """

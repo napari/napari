@@ -141,11 +141,11 @@ class List(list):
         for e in iterable:
             self.append(e)
 
-    def insert(self, index, object):
-        super().insert(self.__locitem__(index), object)
+    def insert(self, index, item):
+        super().insert(self.__locitem__(index), item)
 
     def pop(self, index):
         return super().pop(self.__locitem__(index))
 
-    def remove(self, object):
-        self.pop(self.__locitem__(object))
+    def remove(self, item):
+        self.pop(self.__locitem__(item))
