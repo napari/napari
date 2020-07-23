@@ -362,6 +362,14 @@ class ChunkLoader:
         [future.result() for future in future_list]
         del self.futures[data_id]
 
+    def on_layer_deleted(self, layer):
+        """TODO_ASYNC: Temporary as a test"""
+        try:
+            del self.layer_map[id(layer)]
+        except KeyError:
+            # No chunk request was made for this layer
+            pass
+
 
 @contextmanager
 def synchronous_loading(enabled):
