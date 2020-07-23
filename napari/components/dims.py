@@ -94,10 +94,9 @@ class Dims:
     clip: bool = True
 
     def __post_init__(self):
-        if len(self.axis_labels) > 0:
-            self.ndim = len(self.axis_labels)
-        elif len(self.order) > 0:
-            self.ndim = len(self.order)
+        max_ndim = max(len(self.axis_labels), len(self.order))
+        if max_ndim > 0:
+            self.ndim = max_ndim
         else:
             self._update_lists(self.ndim)
 
@@ -144,7 +143,7 @@ class Dims:
             self._order = tuple(range(ndim - cur_ndim)) + tuple(
                 [o + ndim - cur_ndim for o in self.order]
             )
-        elif cur_ndim < ndim:
+        elif ndim < cur_ndim:
             self._order = tuple(
                 reorder_after_dim_reduction(self.order[-ndim:])
             )

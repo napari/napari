@@ -61,7 +61,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             layers_change=Event,
         )
 
-        self.dims = Dims(ndim=2, ndisplay=ndisplay)
+        self.dims = Dims(ndisplay=ndisplay)
 
         self.layers = LayerList()
 
