@@ -13,7 +13,6 @@ one ChunkLoader and not one per Viewer:
 Think of the ChunkLoader as a shared resource like "the filesystem" where
 multiple clients can be access it at the same time.
 """
-from collections import defaultdict
 from contextlib import contextmanager
 from concurrent import futures
 import logging
@@ -124,7 +123,7 @@ class ChunkLoader:
         self.executor = executor_class(max_workers=num_workers)
 
         # Maps data_id to futures for that layer.
-        self.futures: self.FutureMap = defaultdict(list)
+        self.futures: self.FutureMap = {}
         self.cache: ChunkCache = ChunkCache()
 
         # We emit only one event:
@@ -241,10 +240,10 @@ class ChunkLoader:
         future = self.executor.submit(_chunk_loader_worker, request)
         future.add_done_callback(self._done)
 
-        # Future is in progress for this layer.
-        self.futures[request.data_id].append(future)
+        # Add future as in-progress for this data_id.
+        self.futures.setdefault(request.data_id, []).append(future)
 
-        # Async load was started, nothing is available yet.
+        # Async load was started, request was not satisfied yet.
         return None
 
     def _clear_pending(self, data_id: int) -> None:
@@ -256,7 +255,7 @@ class ChunkLoader:
         terminating threads is not kosher. Terminating processes is
         possibly but we have not tried to do that yet.
         """
-        future_list = self.futures[data_id]
+        future_list = self.futures.setdefault(data_id, [])
 
         # Try to cancel all futures, but cancel() will return False if the
         # task already started running.
@@ -335,6 +334,33 @@ class ChunkLoader:
 
         # Could return None if Layer was deleted.
         return layer_ref()
+
+    def wait(self, data_id: int) -> None:
+        """Wait for the given data to be loaded.
+
+        TODO_ASYNC: not using this yet but might be needed?
+
+        Parameters
+        ----------
+        data_id : int
+            Wait on chunks for this data_id.
+        """
+        try:
+            future_list = self.futures[data_id]
+        except KeyError:
+            LOGGER.warn(
+                "[async] ChunkLoader.wait: no futures for data_id %d", data_id
+            )
+            return
+
+        LOGGER.info(
+            "[async] ChunkLoader.wait: waiting on %d futures for %d",
+            len(future_list),
+            data_id,
+        )
+
+        [future.result() for future in future_list]
+        del self.futures[data_id]
 
 
 @contextmanager
