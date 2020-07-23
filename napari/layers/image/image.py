@@ -1,6 +1,7 @@
 import logging
 import types
 import warnings
+
 import numpy as np
 from scipy import ndimage as ndi
 
@@ -594,7 +595,12 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @property
     def loaded(self):
-        return self._slice.loaded
+        """Has the data for this layer been loaded yet.
+
+        With asynchronous loading the layer might exist but its data
+        for the current slice has not been loaded.
+        """
+        return self._slice is not None and self._slice.loaded
 
     def _load_single_scale(self) -> None:
         """Load non-multiscale image.
@@ -606,10 +612,12 @@ class Image(IntensityVisualizationMixin, Layer):
         request = chunk_loader.create_request(self, indices, array)
         self._slice.load_chunk(request)
 
-        # Might be loaded or not loaded, update either way
+        # Report this event, although depending on what load_chunk did we
+        # might be in a loaded or unloaded state right now.
         self.events.loaded()
 
-        # TODO_ASYNC: where should do this? Seems out of place here.
+        # TODO_ASYNC: where should do this? Is it okay to do it now
+        # if the load was async and has not finished yet?
         self._transforms['tile2data'].scale = np.ones(self.dims.ndim)
 
     def chunk_loaded(self, request):
@@ -630,6 +638,8 @@ class Image(IntensityVisualizationMixin, Layer):
 
         # Tell the slice its data is ready to show.
         self._slice.chunk_loaded(request)
+
+        # Notify the world our loaded status changed.
         self.events.loaded()
 
         # Update vispy, draw the new slice
