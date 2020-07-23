@@ -94,6 +94,7 @@ class ImageSlice:
             thumbnail = np.clip(thumbnail, 0, 1)
         self.image.raw = image
         self.thumbnail.raw = thumbnail
+        self.loaded = True
 
     def load_chunk(self, request: ChunkRequest) -> None:
         """Load the requested chunk asynchronously.
@@ -149,4 +150,3 @@ class ImageSlice:
 
         # Show the new data, show this slice.
         self.set_raw_images(image, thumbnail)
-        self.loaded = True
