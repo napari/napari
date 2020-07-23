@@ -61,9 +61,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             layers_change=Event,
         )
 
-        self.dims = Dims(
-            ndim=None, ndisplay=ndisplay, order=order, axis_labels=axis_labels
-        )
+        self.dims = Dims(ndim=2, ndisplay=ndisplay)
 
         self.layers = LayerList()
 
@@ -80,7 +78,8 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self._palette = None
         self.theme = 'dark'
 
-        self.dims.events.camera.connect(self.reset_view)
+        self.dims.events.ndisplay.connect(self.reset_view)
+        self.dims.events.order.connect(self.reset_view)
         self.dims.events.ndisplay.connect(self._update_layers)
         self.dims.events.order.connect(self._update_layers)
         self.dims.point.events.changed.connect(self._update_layers)

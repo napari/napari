@@ -185,7 +185,10 @@ class QtViewer(QSplitter):
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
         self.viewer.layers.events.added.connect(self._add_layer)
         self.viewer.layers.events.removed.connect(self._remove_layer)
-        self.viewer.dims.events.camera.connect(
+        self.viewer.dims.events.ndisplay.connect(
+            lambda event: self._update_camera()
+        )
+        self.viewer.dims.events.order.connect(
             lambda event: self._update_camera()
         )
         # stop any animations whenever the layers change

@@ -17,7 +17,7 @@ import toolz as tz
 import typing_extensions as _te
 
 
-from .event import EmitterGroup
+from .events import EmitterGroup
 
 ON_SET = "_on_{name}_set"
 ON_GET = "_on_{name}_get"
