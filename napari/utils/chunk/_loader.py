@@ -99,7 +99,7 @@ class ChunkLoader:
     """
 
     FutureMap = Dict[int, List[futures.Future]]
-    LayerMap = Dict[int, weakref]
+    LayerMap = Dict[int, weakref.ReferenceType]
 
     def __init__(self):
         # Pull values from the config file.
@@ -265,6 +265,10 @@ class ChunkLoader:
         num_after = len(future_list)
         num_cleared = num_before - num_after
 
+        # Delete it entirely if empty
+        if num_after == 0:
+            del self.futures[data_id]
+
         if num_before == 0:
             LOGGER.info("[async] ChunkLoader.clear_pending: empty")
         else:
@@ -314,8 +318,8 @@ class ChunkLoader:
             )
             return
 
-        # Signal the chunk was loaded. QtChunkReceiver listens for this
-        # and will forward the chunk to the layer in the GUI thread.
+        # Signal the chunk was loaded. QtChunkReceiver listens for this and
+        # will forward the chunk to the layer in the GUI thread.
         self.events.chunk_loaded(layer=layer, request=request)
 
     def _get_layer_for_request(self, request: ChunkRequest):
