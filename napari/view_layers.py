@@ -3,9 +3,9 @@
 This module autogenerates a number of convenience functions, such as
 "view_image", or "view_surface", that both instantiate a new viewer instance,
 and add a new layer of a specific type to the viewer.  Each convenience
-function signature is essentially just a merged version of one of the
-``Viewer.add_<layer_type>`` methods, along with the signature of the
-``Viewer.__init__`` method.  The final generated functions follow this pattern
+function signature is a merged version of one of the ``Viewer.__init__`` method
+and the ``Viewer.add_<layer_type>`` methods.  The final generated functions
+follow this pattern
 (where <layer_type> is replaced with one of the layer types):
 
     def view_<layer_type>(*args, **kwargs):
