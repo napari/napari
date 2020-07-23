@@ -4,7 +4,6 @@ import numpy as np
 
 from ..utils.events import EventedList
 from ..utils.dataclass import dataclass, Property
-from dataclasses import field
 
 
 def only_2D_3D(ndisplay):
@@ -82,15 +81,9 @@ class Dims:
     ndim: int = 2
     ndisplay: Property[int, None, only_2D_3D] = 2
     order: Property[tuple, None, tuple] = ()
-    axis_labels: EventedList = field(
-        default_factory=EventedList, metadata={'events': False}
-    )
-    point: EventedList = field(
-        default_factory=EventedList, metadata={'events': False}
-    )
-    range: EventedList = field(
-        default_factory=EventedList, metadata={'events': False}
-    )
+    axis_labels: Property[EventedList, None, EventedList] = ()
+    point: Property[EventedList, None, EventedList] = ()
+    range: Property[EventedList, None, EventedList] = ()
     clip: bool = True
 
     def __post_init__(self):

@@ -61,7 +61,11 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             layers_change=Event,
         )
 
-        self.dims = Dims(ndisplay=ndisplay)
+        order = order if order is not None else []
+        axis_labels = axis_labels if axis_labels is not None else []
+        self.dims = Dims(
+            ndisplay=ndisplay, order=order, axis_labels=axis_labels
+        )
 
         self.layers = LayerList()
 
