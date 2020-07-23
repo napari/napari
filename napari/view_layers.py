@@ -101,7 +101,20 @@ def _build_view_function(layer_string: str) -> Callable:
 
     # evaluate the new function in a fake namespace and extract it
     fakeglobals = {}
-    eval(view_func_code, {"real_func": real_func}, fakeglobals)
+    import typing
+    import napari
+
+    eval(
+        view_func_code,
+        {
+            "real_func": real_func,
+            'typing': typing,
+            'Union': typing.Union,
+            'List': typing.List,
+            'napari': napari,
+        },
+        fakeglobals,
+    )
     view_func = fakeglobals["func"]  # this is the final function.
 
     # create combined docstring with parameters from add_* and Viewer methods
@@ -125,3 +138,73 @@ def _build_view_function(layer_string: str) -> Callable:
 module = sys.modules[__name__]
 for _layer in ['image', 'points', 'labels', 'shapes', 'surface', 'vectors']:
     setattr(module, f'view_{_layer}', _build_view_function(_layer))
+
+
+def view_path(
+    path,
+    *,
+    stack=False,
+    plugin=None,
+    layer_type=None,
+    title='napari',
+    ndisplay=2,
+    order=None,
+    axis_labels=None,
+    show=True,
+    **kwargs,
+):
+    """Create a viewer and add a layer whose type will be determined by path.
+
+    Parameters
+    ----------
+
+    path : str or list of str
+        A filepath, directory, or URL (or a list of any) to open.
+    stack : bool, optional
+        If a list of strings is passed and ``stack`` is ``True``, then the
+        entire list will be passed to plugins.  It is then up to individual
+        plugins to know how to handle a list of paths.  If ``stack`` is
+        ``False``, then the ``path`` list is broken up and passed to plugin
+        readers one by one.  by default False.
+    plugin : str, optional
+        Name of a plugin to use.  If provided, will force ``path`` to be
+        read with the specified ``plugin``.  If the requested plugin cannot
+        read ``path``, an exception will be raised.
+    layer_type : str, optional
+        If provided, will force data read from ``path`` to be passed to the
+        corresponding ``add_<layer_type>`` method (along with any
+        additional) ``kwargs`` provided to this function.  This *may*
+        result in exceptions if the data returned from the path is not
+        compatible with the layer_type.
+    title : string, optional
+        The title of the viewer window. by default 'napari'
+    ndisplay : {2, 3}, optional
+        Number of displayed dimensions, by default 2
+    order : tuple of int, optional
+        Order in which dimensions are displayed where the last two or last
+        three dimensions correspond to row x column or plane x row x column if
+        ndisplay is 2 or 3. by default None
+    axis_labels : list of str, optional
+        Dimension names. by default None
+    show : bool, optional
+        Whether to show the viewer after instantiation. by default True.
+    **kwargs
+        All other keyword arguments will be passed on to the respective
+        ``add_layer`` method.
+
+    Returns
+    -------
+    viewer : :class:`napari.Viewer`
+        The newly-created viewer.
+    """
+    viewer = Viewer(
+        title=title,
+        ndisplay=ndisplay,
+        order=order,
+        axis_labels=axis_labels,
+        show=show,
+    )
+    viewer.open(
+        path=path, stack=stack, plugin=plugin, layer_type=layer_type, **kwargs
+    )
+    return viewer
