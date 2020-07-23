@@ -1,3 +1,4 @@
+import logging
 import types
 import warnings
 import numpy as np
@@ -13,6 +14,8 @@ from ._image_constants import Interpolation, Interpolation3D, Rendering
 from ._image_utils import guess_rgb, guess_multiscale
 from ._image_slice import ImageProperties, ImageSlice
 from ...utils.chunk import chunk_loader
+
+LOGGER = logging.getLogger("ChunkLoader")
 
 
 # Mixin must come before Layer
@@ -164,6 +167,12 @@ class Image(IntensityVisualizationMixin, Layer):
             init_shape = data[0].shape
         else:
             init_shape = data.shape
+
+        LOGGER.info(
+            "Image.__init__ multiscale=%d init_shape=%s",
+            multiscale,
+            init_shape,
+        )
 
         # Determine if rgb
         if rgb is None:
