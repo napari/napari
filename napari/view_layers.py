@@ -21,12 +21,41 @@ the final functions, along with introspection, and tab autocompletion, etc...
 import inspect
 import sys
 import typing
+import textwrap
 
 
 from numpydoc.docscrape import NumpyDocString
 
 from .components.add_layers_mixin import AddLayersMixin
 from .viewer import Viewer
+
+VIEW_DOC = NumpyDocString(Viewer.__doc__)
+VIEW_PARAMS = "    " + "\n".join(VIEW_DOC._str_param_list('Parameters')[2:])
+
+DOC = """Create a viewer and add a{n} {name} layer.
+
+{params}
+
+Returns
+-------
+viewer : :class:`napari.Viewer`
+    The newly-created viewer.
+"""
+
+
+def merge_docs(add_method, layer_string):
+    # create combined docstring with parameters from add_* and Viewer methods
+    add_method_doc = NumpyDocString(add_method.__doc__)
+    params = (
+        "\n".join(add_method_doc._str_param_list('Parameters')) + VIEW_PARAMS
+    )
+    # this ugliness is because the indentation of the parsed numpydocstring
+    # is different for the first parameter :(
+    lines = params.splitlines()
+    lines = lines[:3] + textwrap.dedent("\n".join(lines[3:])).splitlines()
+    params = "\n".join(lines)
+    n = 'n' if layer_string.startswith(tuple('aeiou')) else ''
+    return DOC.format(n=n, name=layer_string, params=params)
 
 
 def _build_view_function(layer_string: str, method_name: str = None):
@@ -91,9 +120,9 @@ def _build_view_function(layer_string: str, method_name: str = None):
 
     # define the actual function that will create a new Viewer and add a layer
     def real_func(*args, **kwargs):
-view_kwargs = {
-    k: kwargs.pop(k) for k in kwargs if k in viewer_sig.parameters
-}
+        view_kwargs = {
+            k: kwargs.pop(k) for k in kwargs if k in viewer_sig.parameters
+        }
         viewer = Viewer(**view_kwargs)
         getattr(viewer, add_string)(*args, **kwargs)
         return viewer
@@ -119,20 +148,7 @@ view_kwargs = {
         globals,
     )
     view_func = globals[fname]  # this is the final function.
-
-    # create combined docstring with parameters from add_* and Viewer methods
-    add_method_doc = NumpyDocString(add_method.__doc__)
-    viewer_doc = NumpyDocString(Viewer.__doc__)
-    n = 'n' if layer_string.startswith(tuple('aeiou')) else ''
-    new_doc = f"Create a viewer and add a{n} {layer_string} layer.\n\n"
-    new_doc += "\n".join(add_method_doc._str_param_list('Parameters'))
-    new_doc += "    " + "\n".join(viewer_doc._str_param_list('Parameters')[2:])
-    new_doc += (
-        "\nReturns\n-------\n"
-        "viewer : :class:`napari.Viewer`\n"
-        "    The newly-created viewer."
-    )
-    view_func.__doc__ = new_doc
+    view_func.__doc__ = merge_docs(add_method, layer_string)
 
 
 for _layer in ('image', 'points', 'labels', 'shapes', 'surface', 'vectors'):
