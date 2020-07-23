@@ -91,10 +91,9 @@ def _build_view_function(layer_string: str, method_name: str = None):
 
     # define the actual function that will create a new Viewer and add a layer
     def real_func(*args, **kwargs):
-        view_kwargs = {}
-        for key in list(kwargs.keys()):
-            if key in viewer_sig.parameters:
-                view_kwargs[key] = kwargs.pop(key)
+view_kwargs = {
+    k: kwargs.pop(k) for k in kwargs if k in viewer_sig.parameters
+}
         viewer = Viewer(**view_kwargs)
         getattr(viewer, add_string)(*args, **kwargs)
         return viewer
