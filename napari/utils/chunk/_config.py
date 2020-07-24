@@ -23,7 +23,7 @@ LOGGER = logging.getLogger("ChunkLoader")
 
 def _log_to_file(path):
     """Write to log file specified in the config."""
-    if path is not None:
+    if path:
         fh = logging.FileHandler(path)
         LOGGER.addHandler(fh)
         LOGGER.setLevel(logging.INFO)

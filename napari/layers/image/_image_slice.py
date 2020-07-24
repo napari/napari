@@ -5,7 +5,6 @@ import numpy as np
 
 from ...types import ArrayLike, ImageConverter
 from ...utils.chunk import ChunkRequest, chunk_loader
-from ...utils.perf import perf_timer
 
 from ._image_view import ImageView
 
@@ -106,47 +105,48 @@ class ImageSlice:
         """
         LOGGER.info("ImageSlice.load_chunk: %s", request.key)
 
-        # Async not supported for multiscale yet
-        assert not self.properties.multiscale
-
         # Now "showing" this slice, even if it hasn't loaded yet.
         self.current_indices = request.indices
 
         # If ChunkLoader is synchronous or the chunk is cached, this will
         # satisfy the request right away, otherwise it will initiate an
         # async load in a worker thread.
-        satisfied_request = chunk_loader.load_chunk(request)
+        return chunk_loader.load_chunk(request)
 
-        if satisfied_request is not None:
-            self.chunk_loaded(satisfied_request)
-
-    def chunk_loaded(self, request: ChunkRequest) -> None:
+    def chunk_loaded(self, request: ChunkRequest) -> bool:
         """Chunk was loaded, show this new data.
 
         Parameters
         ----------
         request : ChunkRequest
             This chunk was successfully loaded.
+
+        Return
+        ------
+        bool
+            False if the chunk was for the wrong slice.
         """
         LOGGER.info("ImageSlice.chunk_loaded: %s", request.key)
 
-        # Async not supported for multiscale yet
-        assert not self.properties.multiscale
-
         # Is this the chunk we requested?
-        if self.current_indices != request.indices:
-            LOGGER.info(
+        if not np.all(self.current_indices == request.indices):
+            LOGGER.warn(
                 "ImageSlice.chunk_loaded: IGNORE CHUNK %s", request.key
             )
-            return
+            return False
 
-        # Could worker do the transpose? Does it take any time?
-        with perf_timer("transpose"):
-            order = self.properties.displayed_order
-            image = request.array.transpose(order)
+        order = self.properties.displayed_order
 
-        # Thumbnail is just the same image for non-multiscale.
-        thumbnail = image
+        image = request.chunks['image'].transpose(order)
+
+        try:
+            thumbnail_source = request.chunks['thumbnail_source'].transpose(
+                order
+            )
+        except KeyError:
+            # No explicit thumbnail_source so use the image (single-scale?)
+            thumbnail_source = image
 
         # Show the new data, show this slice.
-        self.set_raw_images(image, thumbnail)
+        self.set_raw_images(image, thumbnail_source)
+        return True

@@ -16,9 +16,6 @@ multiple clients can be access it at the same time.
 from contextlib import contextmanager
 from concurrent import futures
 import logging
-import os
-import time
-import threading
 from typing import Dict, List, Optional
 import weakref
 
@@ -48,19 +45,7 @@ def _chunk_loader_worker(request: ChunkRequest):
     do that in the GUI thread or the UI will block.
 
     """
-    request.start_timer()
-
-    # Record the tid/pid of the worker thread/process.
-    request.tid = threading.get_ident()
-    request.pid = os.getpid()
-
-    if request.delay_seconds > 0:
-        time.sleep(request.delay_seconds)
-
-    request.array = np.asarray(request.array)
-
-    request.end_timer()
-
+    request.load_chunks()
     return request
 
 
@@ -138,7 +123,7 @@ class ChunkLoader:
         # that we can map back to a weakref.
         self.layer_map: self.LayerMap = {}
 
-    def create_request(self, layer, indices, array: ArrayLike):
+    def create_request(self, layer, indices, chunks: Dict[str, ArrayLike]):
         """Create a ChunkRequest for submission to load_chunk.
 
         Parameters
@@ -155,7 +140,7 @@ class ChunkLoader:
         self.layer_map[id(layer)] = weakref.ref(layer)
 
         # Return the new request.
-        return ChunkRequest(layer, indices, array)
+        return ChunkRequest(layer, indices, chunks)
 
     def _asarray(self, array):
         """Get the array data. We break this out for perfmon timing.
@@ -187,14 +172,17 @@ class ChunkLoader:
         Optional[ChunkRequest]
             The ChunkRequest if it was satisfied otherwise None.
         """
-        # In-memory arrays do not need to be loaded asynchronously.
-        in_memory = isinstance(request.array, np.ndarray)
-
-        if self.synchronous or in_memory and not self.force_delay_seconds:
+        # We do an immediate load in the GUI thread in three cases:
+        # 1. We are in synchronous mode.
+        # 2. The request contains only ndarrays which are in memory.
+        # 3. We are inserting a delay in front of all requests.
+        if (
+            self.synchronous
+            or request.in_memory
+            and not self.force_delay_seconds
+        ):
             LOGGER.info("[sync] ChunkLoader.load_chunk")
-
-            # Load it immediately right here in the GUI thread.
-            request.array = self._asarray(request.array)
+            request.load_chunks_gui()
             return request
 
         # Set the delay for this request.
@@ -224,13 +212,13 @@ class ChunkLoader:
             self._clear_pending(request.data_id)
 
         # Check the cache first.
-        array = self.cache.get_chunk(request)
+        chunks = self.cache.get_chunk(request)
 
-        if array is not None:
+        if chunks is not None:
             LOGGER.info(
                 "[async] ChunkLoader._load_async: cache hit %s", request.key
             )
-            request.array = array
+            request.chunks = chunks
             return request
 
         LOGGER.info(
@@ -297,9 +285,9 @@ class ChunkLoader:
 
         LOGGER.info("[async] ChunkLoader._done: %s", request.key)
 
-        # Now that we are back in this process (if we were using processes)
-        # we can add the perf event.
-        request.add_perf_event()
+        # Now that we are back in this process we can add the perf events.
+        # If using threads it doesn't matter, but we do it the same way.
+        request.add_perf_events()
 
         # Add chunk to the cache in the worker thread. For now it's safe.
         # Later we might need to arrange for this to be done in the GUI thread
