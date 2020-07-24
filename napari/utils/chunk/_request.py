@@ -2,6 +2,7 @@
 """
 from collections import namedtuple
 import contextlib
+import logging
 import os
 import threading
 import time
@@ -12,6 +13,8 @@ import numpy as np
 from ...types import ArrayLike, Dict
 
 from ...utils.perf import perf_counter_ns, PerfEvent, timers
+
+LOGGER = logging.getLogger("ChunkLoader")
 
 # We convert slices to tuple for hashing.
 SliceTuple = Tuple[int, int, int]
@@ -132,13 +135,13 @@ class ChunkRequest:
         delta_ns = perf_counter_ns() - (time.time() * 1e9)
 
         # Add a PerfEvent for each of our time_blocks.
-        for name, (start_seconds, end_seconds) in self.time_blocks.items():
+        for name, time_span in self.time_blocks.items():
 
             # From seconds to nanoseconds
-            start_ns = start_seconds * 1e9 + delta_ns
-            end_ns = end_seconds * 1e9 + delta_ns
+            start_ns = time_span.start_seconds * 1e9 + delta_ns
+            end_ns = time_span.end_seconds * 1e9 + delta_ns
 
-            # Add the event
+            # Add the PerfEvent
             timers.add_event(
                 PerfEvent(
                     name,
