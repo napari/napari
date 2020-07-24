@@ -617,20 +617,19 @@ class Image(IntensityVisualizationMixin, Layer):
         chunks = {'image': self.data[indices]}
         request = chunk_loader.create_request(self, indices, chunks)
 
-        # Load the chunks. This could load them synchronously right here in
-        # the GUI thread or it could queue up a request for a worker thread
-        # or process and self.chunk_loaded() will be called later.
-        self._slice.load_chunk(request)
-
-        # Report this event, although depending on what load_chunk did we
-        # might be in a loaded or unloaded state right now.
-        self.events.loaded()
-
         # TODO_ASYNC: where should do this? Is it okay to do it now
         # if the load was async and has not finished yet?
         self._transforms['tile2data'].scale = np.ones(self.dims.ndim)
 
-    def chunk_loaded(self, request):
+        # Load the chunks. This could load them synchronously right here in
+        # the GUI thread or it could queue up a request for a worker thread
+        # or process and self.chunk_loaded() will be called later.
+        satisfied_request = self._slice.load_chunk(request)
+
+        if satisfied_request is not None:
+            self.chunk_loaded(satisfied_request)
+
+    def chunk_loaded(self, request) -> None:
         """Notify Image that an async request was satisfied.
 
         The request.array has been turned into an ndarray in the worker thread.
@@ -653,7 +652,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
         # Tell the slice its data is ready to show.
         if not self._slice.chunk_loaded(request):
-            return False  # was the stale/wrong chunk?
+            return  # was the stale/wrong chunk?
 
         if self.multiscale:
             self.events.scale()
