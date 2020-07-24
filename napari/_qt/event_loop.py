@@ -1,4 +1,3 @@
-import os
 import sys
 from contextlib import contextmanager
 from os.path import dirname, join
@@ -7,23 +6,27 @@ from qtpy.QtCore import Qt
 from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import QApplication, QSplashScreen
 
+from .exceptions import ExceptionHandler
+from ..utils.perf import perf_config
+
 
 def _create_application(argv) -> QApplication:
     """Create our QApplication.
 
     Notes
     -----
-    We substitute QApplicationWithTiming when using perfmon.
+    Substitute QApplicationWithTracing when using perfmon.
 
-    Note that in Viewer we call convert_app_for_timing() which will create a
-    QApplicationWithTiming. However that's only for IPython/Jupyter. When using
-    gui_qt we need to create it up front here before any QWidget objects are
-    created, like the splash screen.
+    With IPython/Jupyter we call convert_app_for_tracing() which deletes
+    the QApplication and creates a new one. However here with gui_qt we
+    need to create the correct QApplication up front, or we will crash.
+    We'll crash because we'd be deleting the QApplication after we created
+    QWidgets with it, such as we do for the splash screen.
     """
-    if os.getenv("NAPARI_PERFMON", "0") != "0":
-        from .qt_event_timing import QApplicationWithTiming
+    if perf_config and perf_config.trace_qt_events:
+        from .qt_event_tracing import QApplicationWithTracing
 
-        return QApplicationWithTiming(argv)
+        return QApplicationWithTracing(argv)
     else:
         return QApplication(argv)
 
@@ -64,6 +67,11 @@ def gui_qt(*, startup_logo=False):
             app._splash_widget = splash_widget
     else:
         app._existed = True
+
+    # instantiate the exception handler
+    exception_handler = ExceptionHandler()
+    sys.excepthook = exception_handler.handle
+
     yield app
     # if the application already existed before this function was called,
     # there's no need to start it again.  By avoiding unnecessary calls to

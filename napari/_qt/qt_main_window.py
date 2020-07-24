@@ -222,6 +222,11 @@ class Window:
                 QApplication.setWindowIcon(QIcon())
                 self.close()
 
+            if perf.USE_PERFMON:
+                # Write trace file before exit, if we were writing one.
+                # Is there a better place to make sure this is done on exit?
+                perf.timers.stop_trace_file()
+
         exitAction.triggered.connect(handle_exit)
 
         self.file_menu = self.main_menu.addMenu('&File')
