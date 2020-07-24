@@ -605,7 +605,9 @@ class Image(IntensityVisualizationMixin, Layer):
         # Load the chunks. This could load them synchronously right here in
         # the GUI thread or it could queue up a request for a worker thread
         # or process and self.chunk_loaded() will be called later.
-        self._slice.load_chunk(request)
+        satisfied_request = self._slice.load_chunk(request)
+        if satisfied_request is not None:
+            self.chunk_loaded(satisfied_request)
 
     def _load_single_scale(self) -> None:
         """Load non-multiscale image.
