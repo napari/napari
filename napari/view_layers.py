@@ -108,12 +108,12 @@ def _build_view_function(layer_string: str, method_name: str = None):
 
     # get signatures of the add_* method and Viewer.__init__
     add_sig = inspect.signature(add_method)
-    viewer_sig = inspect.signature(Viewer)
+    view_sig = inspect.signature(Viewer)
 
     # create a new combined signature
     new_params = list(add_sig.parameters.values())[1:]  # [1:] to remove self
     new_params += [
-        p.replace(kind=p.KEYWORD_ONLY) for p in viewer_sig.parameters.values()
+        p.replace(kind=p.KEYWORD_ONLY) for p in view_sig.parameters.values()
     ]
     new_params = sorted(new_params, key=lambda p: p.kind)
     combo_sig = add_sig.replace(parameters=new_params)
@@ -121,7 +121,7 @@ def _build_view_function(layer_string: str, method_name: str = None):
     # define the actual function that will create a new Viewer and add a layer
     def real_func(*args, **kwargs):
         view_kwargs = {
-            k: kwargs.pop(k) for k in kwargs if k in viewer_sig.parameters
+            k: kwargs.pop(k) for k in list(kwargs) if k in view_sig.parameters
         }
         viewer = Viewer(**view_kwargs)
         getattr(viewer, add_string)(*args, **kwargs)
