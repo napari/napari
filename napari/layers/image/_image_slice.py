@@ -106,9 +106,6 @@ class ImageSlice:
         """
         LOGGER.info("ImageSlice.load_chunk: %s", request.key)
 
-        # Async not supported for multiscale yet
-        assert not self.properties.multiscale
-
         # Now "showing" this slice, even if it hasn't loaded yet.
         self.current_indices = request.indices
 
@@ -130,24 +127,23 @@ class ImageSlice:
         """
         LOGGER.info("ImageSlice.chunk_loaded: %s", request.key)
 
-        # Async not supported for multiscale yet
-        assert not self.properties.multiscale
-
         # Is this the chunk we requested?
-        if self.current_indices != request.indices:
-            LOGGER.info(
+        if not np.all(self.current_indices == request.indices):
+            LOGGER.warn(
                 "ImageSlice.chunk_loaded: IGNORE CHUNK %s", request.key
             )
             return
 
-        # Could worker do the transpose? Does it take any time?
-        with perf_timer("transpose"):
-            order = self.properties.displayed_order
-            array = request.chunks['image']
-            image = array.transpose(order)
+        order = self.properties.displayed_order
 
-        # Thumbnail is just the same image for non-multiscale.
-        thumbnail = image
+        # Could worker do the transpose? Does it take any time?
+        with perf_timer("transpose_image"):
+            image = request.chunks['image'].transpose(order)
+
+        with perf_timer("transpose_thumbnail_source"):
+            thumbnail_source = request.chunks['thumbnail_source'].transpose(
+                order
+            )
 
         # Show the new data, show this slice.
-        self.set_raw_images(image, thumbnail)
+        self.set_raw_images(image, thumbnail_source)

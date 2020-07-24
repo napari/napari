@@ -123,7 +123,7 @@ class ChunkLoader:
         # that we can map back to a weakref.
         self.layer_map: self.LayerMap = {}
 
-    def create_request(self, layer, indices, array: ArrayLike):
+    def create_request(self, layer, indices, chunks: Dict[str, ArrayLike]):
         """Create a ChunkRequest for submission to load_chunk.
 
         Parameters
@@ -140,7 +140,7 @@ class ChunkLoader:
         self.layer_map[id(layer)] = weakref.ref(layer)
 
         # Return the new request.
-        return ChunkRequest(layer, indices, {'image': array})
+        return ChunkRequest(layer, indices, chunks)
 
     def _asarray(self, array):
         """Get the array data. We break this out for perfmon timing.

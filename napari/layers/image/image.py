@@ -519,77 +519,7 @@ class Image(IntensityVisualizationMixin, Layer):
         self._create_image_slice()
 
         if self.multiscale:
-            order = self._get_order()
-            not_disp = self.dims.not_displayed
-
-            # If 3d redering just show lowest level of multiscale
-            if self.dims.ndisplay == 3:
-                self.data_level = len(self.data) - 1
-
-            # Slice currently viewed level
-            level = self.data_level
-            indices = np.array(self.dims.indices)
-            downsampled_indices = (
-                indices[not_disp] / self.downsample_factors[level, not_disp]
-            )
-            downsampled_indices = np.round(
-                downsampled_indices.astype(float)
-            ).astype(int)
-            downsampled_indices = np.clip(
-                downsampled_indices, 0, self.level_shapes[level, not_disp] - 1
-            )
-            indices[not_disp] = downsampled_indices
-
-            scale = np.ones(self.ndim)
-            for d in self.dims.displayed:
-                scale[d] = self.downsample_factors[self.data_level][d]
-            self._transforms['tile2data'].scale = scale
-
-            if self.dims.ndisplay == 2:
-                corner_pixels = np.clip(
-                    self.corner_pixels,
-                    0,
-                    np.subtract(self.level_shapes[self.data_level], 1),
-                )
-
-                for d in self.dims.displayed:
-                    indices[d] = slice(
-                        corner_pixels[0, d], corner_pixels[1, d] + 1, 1
-                    )
-                self._transforms['tile2data'].translate = (
-                    corner_pixels[0]
-                    * self._transforms['data2world'].scale
-                    * self._transforms['tile2data'].scale
-                )
-
-            image = np.transpose(
-                np.asarray(self.data[level][tuple(indices)]), order
-            )
-
-            # Slice thumbnail
-            indices = np.array(self.dims.indices)
-            downsampled_indices = (
-                indices[not_disp]
-                / self.downsample_factors[self._thumbnail_level, not_disp]
-            )
-            downsampled_indices = np.round(
-                downsampled_indices.astype(float)
-            ).astype(int)
-            downsampled_indices = np.clip(
-                downsampled_indices,
-                0,
-                self.level_shapes[self._thumbnail_level, not_disp] - 1,
-            )
-            indices[not_disp] = downsampled_indices
-
-            thumbnail_source = np.asarray(
-                self.data[self._thumbnail_level][tuple(indices)]
-            ).transpose(order)
-
-            self._slice.set_raw_images(image, thumbnail_source)
-
-            self.events.scale()
-            self.events.translate()
+            self._load_multi_scale()
         else:
             self._load_single_scale()
 
@@ -602,14 +532,94 @@ class Image(IntensityVisualizationMixin, Layer):
         """
         return self._slice is not None and self._slice.loaded
 
+    def _load_multi_scale(self) -> None:
+        """Load multi-scale image.
+        """
+        not_disp = self.dims.not_displayed
+
+        # If 3d redering just show lowest level of multiscale
+        if self.dims.ndisplay == 3:
+            self.data_level = len(self.data) - 1
+
+        # Slice currently viewed level
+        level = self.data_level
+        indices = np.array(self.dims.indices)
+        downsampled_indices = (
+            indices[not_disp] / self.downsample_factors[level, not_disp]
+        )
+        downsampled_indices = np.round(
+            downsampled_indices.astype(float)
+        ).astype(int)
+        downsampled_indices = np.clip(
+            downsampled_indices, 0, self.level_shapes[level, not_disp] - 1
+        )
+        indices[not_disp] = downsampled_indices
+
+        scale = np.ones(self.ndim)
+        for d in self.dims.displayed:
+            scale[d] = self.downsample_factors[self.data_level][d]
+        self._transforms['tile2data'].scale = scale
+
+        if self.dims.ndisplay == 2:
+            corner_pixels = np.clip(
+                self.corner_pixels,
+                0,
+                np.subtract(self.level_shapes[self.data_level], 1),
+            )
+
+            for d in self.dims.displayed:
+                indices[d] = slice(
+                    corner_pixels[0, d], corner_pixels[1, d] + 1, 1
+                )
+            self._transforms['tile2data'].translate = (
+                corner_pixels[0]
+                * self._transforms['data2world'].scale
+                * self._transforms['tile2data'].scale
+            )
+
+        # Slice thumbnail
+        indices = np.array(self.dims.indices)
+        downsampled_indices = (
+            indices[not_disp]
+            / self.downsample_factors[self._thumbnail_level, not_disp]
+        )
+        downsampled_indices = np.round(
+            downsampled_indices.astype(float)
+        ).astype(int)
+        downsampled_indices = np.clip(
+            downsampled_indices,
+            0,
+            self.level_shapes[self._thumbnail_level, not_disp] - 1,
+        )
+        indices[not_disp] = downsampled_indices
+
+        # Ask for the image and the lower resolution thumbnail_source.
+        image_level = self.data[level]
+        thumbnail_level = self.data[self._thumbnail_level]
+        chunks = {
+            'image': image_level[tuple(indices)],
+            'thumbnail_source': thumbnail_level[tuple(indices)],
+        }
+        request = chunk_loader.create_request(self, indices, chunks)
+
+        # Load the chunks. This could load them synchronously right here in
+        # the GUI thread or it could queue up a request for a worker thread
+        # or process and self.chunk_loaded() will be called later.
+        self._slice.load_chunk(request)
+
     def _load_single_scale(self) -> None:
         """Load non-multiscale image.
         """
         indices = self.dims.indices
-        array = self.data[indices]
 
-        # Load the array, could sync or async.
-        request = chunk_loader.create_request(self, indices, array)
+        # For single-scale we just ask for the image, the thumbnail_source
+        # is derived from this as well.
+        chunks = {'image': self.data[indices]}
+        request = chunk_loader.create_request(self, indices, chunks)
+
+        # Load the chunks. This could load them synchronously right here in
+        # the GUI thread or it could queue up a request for a worker thread
+        # or process and self.chunk_loaded() will be called later.
         self._slice.load_chunk(request)
 
         # Report this event, although depending on what load_chunk did we
@@ -627,9 +637,17 @@ class Image(IntensityVisualizationMixin, Layer):
         """
         # Ultimately this check should not be needed, but for now.
         if request.data_id != id(self.data):
-            return  # ignore, chunk was not for us
+            LOGGER.warn(
+                "Loaded data_id=%d expected %d", request.data_id, id(self.data)
+            )
+            return  # request was not for us!
 
         image = request.chunks['image']
+
+        # If no thumbnail_source was request just use the image. For single-scale
+        # we just use the image.
+        if 'thumbnail_source' not in request.chunks:
+            request.chunks['thumbnail_source'] = image
 
         # ASYNC_TODO: Complain if the loaded data's shape's rgb status was
         # different from what we inferred it to be on load. Basically if
@@ -640,6 +658,10 @@ class Image(IntensityVisualizationMixin, Layer):
 
         # Tell the slice its data is ready to show.
         self._slice.chunk_loaded(request)
+
+        if self.multiscale:
+            self.events.scale()
+            self.events.translate()
 
         # Notify the world our loaded status changed.
         self.events.loaded()
