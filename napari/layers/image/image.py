@@ -644,11 +644,6 @@ class Image(IntensityVisualizationMixin, Layer):
 
         image = request.chunks['image']
 
-        # If no thumbnail_source was request just use the image. For single-scale
-        # we just use the image.
-        if 'thumbnail_source' not in request.chunks:
-            request.chunks['thumbnail_source'] = image
-
         # ASYNC_TODO: Complain if the loaded data's shape's rgb status was
         # different from what we inferred it to be on load. Basically if
         # the user lied about the shape of their array. Not sure if we want
@@ -657,7 +652,8 @@ class Image(IntensityVisualizationMixin, Layer):
             raise RuntimeError("Loaded chunk was the wrong shape.")
 
         # Tell the slice its data is ready to show.
-        self._slice.chunk_loaded(request)
+        if not self._slice.chunk_loaded(request):
+            return False  # was the stale/wrong chunk?
 
         if self.multiscale:
             self.events.scale()

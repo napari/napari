@@ -5,7 +5,6 @@ import numpy as np
 
 from ...types import ArrayLike, ImageConverter
 from ...utils.chunk import ChunkRequest, chunk_loader
-from ...utils.perf import perf_timer
 
 from ._image_view import ImageView
 
@@ -117,13 +116,18 @@ class ImageSlice:
         if satisfied_request is not None:
             self.chunk_loaded(satisfied_request)
 
-    def chunk_loaded(self, request: ChunkRequest) -> None:
+    def chunk_loaded(self, request: ChunkRequest) -> bool:
         """Chunk was loaded, show this new data.
 
         Parameters
         ----------
         request : ChunkRequest
             This chunk was successfully loaded.
+
+        Return
+        ------
+        bool
+            False if the chunk was for the wrong slice.
         """
         LOGGER.info("ImageSlice.chunk_loaded: %s", request.key)
 
@@ -132,18 +136,20 @@ class ImageSlice:
             LOGGER.warn(
                 "ImageSlice.chunk_loaded: IGNORE CHUNK %s", request.key
             )
-            return
+            return False
 
         order = self.properties.displayed_order
 
-        # Could worker do the transpose? Does it take any time?
-        with perf_timer("transpose_image"):
-            image = request.chunks['image'].transpose(order)
+        image = request.chunks['image'].transpose(order)
 
-        with perf_timer("transpose_thumbnail_source"):
+        try:
             thumbnail_source = request.chunks['thumbnail_source'].transpose(
                 order
             )
+        except KeyError:
+            # No explicit thumbnail_source so use the image (single-scale?)
+            thumbnail_source = image
 
         # Show the new data, show this slice.
         self.set_raw_images(image, thumbnail_source)
+        return True
