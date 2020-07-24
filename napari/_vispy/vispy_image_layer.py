@@ -51,7 +51,7 @@ class VispyImageLayer(VispyBaseLayer):
         self.reset()
 
     def _data_astype(self, data, dtype):
-        """Broken out as a separate function for perfmon reasons."""
+        """Broken out as a separate function so we can time with perfmon."""
         return data.astype(dtype)
 
     def _on_data_change(self, event=None):

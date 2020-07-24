@@ -27,9 +27,9 @@ class ImageSlice:
     Parameters
     ----------
     view_image : ArrayLike
-        The initial image for the time and its thumbail.
+        The initial image used as the image and the thumbnail source.
     properties : Image_Properties
-        We are displaying a sliced from an Image with the properties.
+        The Image we are slicing has these properties.
     image_converter : ImageConverter
         ImageView uses this to convert from raw to viewable.
 
@@ -108,9 +108,10 @@ class ImageSlice:
         # Now "showing" this slice, even if it hasn't loaded yet.
         self.current_indices = request.indices
 
-        # If ChunkLoader is synchronous or the chunk is cached, this will
-        # satisfy the request right away, otherwise it will initiate an
-        # async load in a worker thread.
+        # This will return a satisfied request in ChunkLoader is doing
+        # syncrhonous loading or the chunk was in the cache. If it returns
+        # None that means a request was queued and it will be loaded in a
+        # worker thread or process.
         return chunk_loader.load_chunk(request)
 
     def chunk_loaded(self, request: ChunkRequest) -> bool:
@@ -119,12 +120,12 @@ class ImageSlice:
         Parameters
         ----------
         request : ChunkRequest
-            This chunk was successfully loaded.
+            The chunk request that was loaded in a worker thread or process.
 
         Return
         ------
         bool
-            False if the chunk was for the wrong slice.
+            False if the chunk was for the wrong slice and was not used.
         """
         LOGGER.info("ImageSlice.chunk_loaded: %s", request.key)
 
@@ -136,17 +137,15 @@ class ImageSlice:
             return False
 
         order = self.properties.displayed_order
-
-        image = request.chunks['image'].transpose(order)
+        chunks = request.chunks
+        image = chunks['image'].transpose(order)
 
         try:
-            thumbnail_source = request.chunks['thumbnail_source'].transpose(
-                order
-            )
+            thumbnail_source = chunks['thumbnail_source'].transpose(order)
         except KeyError:
-            # No explicit thumbnail_source so use the image (single-scale?)
+            # We use the image as the thumbnail_source for single-scale.
             thumbnail_source = image
 
-        # Show the new data, show this slice.
+        # Display the newly loaded data.
         self.set_raw_images(image, thumbnail_source)
         return True
