@@ -143,7 +143,8 @@ class ImageSlice:
         # Could worker do the transpose? Does it take any time?
         with perf_timer("transpose"):
             order = self.properties.displayed_order
-            image = request.array.transpose(order)
+            array = request.chunks['image']
+            image = array.transpose(order)
 
         # Thumbnail is just the same image for non-multiscale.
         thumbnail = image

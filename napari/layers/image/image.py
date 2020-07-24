@@ -629,11 +629,13 @@ class Image(IntensityVisualizationMixin, Layer):
         if request.data_id != id(self.data):
             return  # ignore, chunk was not for us
 
+        image = request.chunks['image']
+
         # ASYNC_TODO: Complain if the loaded data's shape's rgb status was
         # different from what we inferred it to be on load. Basically if
         # the user lied about the shape of their array. Not sure if we want
         # to handle this better somehow?
-        if self.rgb != guess_rgb(request.array.shape):
+        if self.rgb != guess_rgb(image.shape):
             raise RuntimeError("Loaded chunk was the wrong shape.")
 
         # Tell the slice its data is ready to show.

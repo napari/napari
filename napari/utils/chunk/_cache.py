@@ -6,12 +6,10 @@ but having 2 caches is not good. So using the Dask cache for everything
 is the only obvious way to have on single cache.
 """
 import logging
-from typing import Optional
+from typing import Dict, Optional
 
 import numpy as np
 from cachetools import LRUCache
-
-from ...types import ArrayLike
 
 from ._request import ChunkRequest
 
@@ -21,6 +19,8 @@ CACHE_MEM_FRACTION = 0.1
 
 LOGGER = logging.getLogger("ChunkLoader")
 
+ChunkArrays = Dict[str, np.ndarray]
+
 
 def _get_cache_size_bytes(mem_fraction):
     import psutil
@@ -29,8 +29,8 @@ def _get_cache_size_bytes(mem_fraction):
     return psutil.virtual_memory().total * mem_fraction
 
 
-def _getsizeof_chunk(array: np.ndarray):
-    return array.nbytes
+def _getsizeof_chunks(chunks: ChunkArrays) -> int:
+    return sum(array.nbytes for array in chunks.values())
 
 
 class ChunkCache:
@@ -39,7 +39,7 @@ class ChunkCache:
 
     def __init__(self):
         nbytes = _get_cache_size_bytes(CACHE_MEM_FRACTION)
-        self.chunks = LRUCache(maxsize=nbytes, getsizeof=_getsizeof_chunk)
+        self.chunks = LRUCache(maxsize=nbytes, getsizeof=_getsizeof_chunks)
 
     def add_chunk(self, request: ChunkRequest) -> None:
         """Add this chunk to the cache.
@@ -50,9 +50,9 @@ class ChunkCache:
             Add the data in this request to the cache.
         """
         LOGGER.info("ChunkCache.add_chunk: %s", request.key)
-        self.chunks[request.key] = request.array
+        self.chunks[request.key] = request.chunks
 
-    def get_chunk(self, request: ChunkRequest) -> Optional[ArrayLike]:
+    def get_chunk(self, request: ChunkRequest) -> Optional[ChunkArrays]:
         """Get the cached data for this chunk request.
 
         TODO_ASYNC: assumes there's just one layer....

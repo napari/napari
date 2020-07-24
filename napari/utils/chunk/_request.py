@@ -1,18 +1,26 @@
-"""ChunkRequest is used to ask the ChunkLoader to load a chunk.
+"""ChunkRequest is used to ask the ChunkLoader to load chunks.
 """
+from collections import namedtuple
+import contextlib
+import os
+import threading
 import time
 from typing import Tuple, Union
 
-from ...types import ArrayLike
+import numpy as np
+
+from ...types import ArrayLike, Dict
 
 from ...utils.perf import perf_counter_ns, PerfEvent, timers
 
 # We convert slices to tuple for hashing.
 SliceTuple = Tuple[int, int, int]
 
+TimeSpan = namedtuple('TimeSpan', "start_seconds end_seconds")
+
 
 class ChunkRequest:
-    """A request asking the ChunkLoader to load an array.
+    """A request asking the ChunkLoader to load one or more arrays.
 
     Parameters
     ----------
@@ -33,11 +41,11 @@ class ChunkRequest:
         Python id() of the data in the layer.
     """
 
-    def __init__(self, layer, indices, array: ArrayLike):
+    def __init__(self, layer, indices, chunks: Dict[str, ArrayLike]):
         self.layer_id = id(layer)
         self.data_id = id(layer.data)
         self.indices = indices
-        self.array = array
+        self.chunks = chunks
         self.delay_seconds = 0
 
         # Slice objects are not hashable, so turn them into tuples.
@@ -46,44 +54,98 @@ class ChunkRequest:
         # Key is data_id + indices as a tuples.
         self.key = tuple([self.data_id, indices_tuple])
 
-        # Worker process will fill this is then it processes the request.
-        self.pid = None
+        # Worker will fill these in, so they are correct for the worker.
+        self.process_id = None
+        self.thread_id = None
 
-        # If worker is in another process its "timers" object is not the
-        # one in the main process. So store up perf events here and
-        # submit them back in the main process.
-        self.perf_events = []
+        # Record how long each load took. We do this because if we are in
+        # a worker process we cannot submit perf timers like normal. We
+        # submit them in add_perf_events().
+        self.time_blocks: Dict[str, TimeSpan] = {}
 
-    def start_timer(self):
-        """Start timer timing the array load.
+    @property
+    def in_memory(self):
+        """False if any chunk request are not ndarrays.
         """
-        self.start_seconds = time.time()
+        for array in self.chunks.values():
+            if not isinstance(array, np.ndarray):
+                return False
+        return True
 
-    def end_timer(self):
-        """End timer and record the perf event.
-        """
-        self.end_seconds = time.time()
+    @contextlib.contextmanager
+    def time_block(self, timer_name: str):
+        """Like a perf timers but using time.time().
 
-    def add_perf_event(self):
-        """Add perf event for this request.
+        perf_coutner_ns() is not necessarily synchronized across processes
+        but time.time() is okay. Since loads are relatively slow
+        time.time() is accurate enough.
+
+        Parameters
+        ----------
+        timer_name : str
+            The name of the timer.
         """
-        # We use time.time() in case the request is being run in a separate
-        # process, because perf_counter_ns() is not always synchronized
-        # across processes/cpus.
-        #
-        # Since chunk request are "long" time.time() is accurate enough
-        # and we convert back to perf_counter_ns here.
-        if timers:  # if using perfmon
-            delta_ns = perf_counter_ns() - (time.time() * 1e9)
-            start_ns = self.start_seconds * 1e9 + delta_ns
-            end_ns = self.end_seconds * 1e9 + delta_ns
+        start_seconds = time.time()
+        yield
+        end_seconds = time.time()
+        self.time_blocks[timer_name] = TimeSpan(start_seconds, end_seconds)
+
+    def load_chunks_gui(self):
+        """Load ndarray chunks immediately in the GUI thread.
+
+        This is the same as load_chunks() but we don't bother to time it
+        because these are already ndarrays.
+        """
+        for key, array in self.chunks.items():
+            self.chunks[key] = np.asarray(array)
+
+    def load_chunks(self):
+        """Load all of our chunks."""
+        # Record these now, since we are in the worker.
+        self.process_id = os.getpid()
+        self.thread_id = threading.get_ident()
+
+        # Time the loading of all the chunks.
+        with self.time_block("load_chunks"):
+
+            # Delay if requested.
+            if self.delay_seconds > 0:
+                time.sleep(self.delay_seconds)
+
+            # Time the load of every chunk.
+            for key, array in self.chunks.items():
+                with self.time_block(key):
+                    self.chunks[key] = np.asarray(array)
+
+    def add_perf_events(self):
+        """Add perf events for this request.
+
+        This should be called in the main process after the chunks were
+        loaded in the worker. All this effort is not necessary with
+        threads, but we do it the same way for processes or threads
+        since it will work fine with either.
+        """
+        if not timers:
+            return  # we're not using perfmon
+
+        # Convert from time.time() to perf_counter_ns()
+        delta_ns = perf_counter_ns() - (time.time() * 1e9)
+
+        # Add a PerfEvent for each of our time_blocks.
+        for name, (start_seconds, end_seconds) in self.time_blocks.items():
+
+            # From seconds to nanoseconds
+            start_ns = start_seconds * 1e9 + delta_ns
+            end_ns = end_seconds * 1e9 + delta_ns
+
+            # Add the event
             timers.add_event(
                 PerfEvent(
-                    "ChunkRequest",
+                    name,
                     start_ns,
                     end_ns,
-                    pid=self.pid,
-                    tid=self.tid,
+                    process_id=self.process_id,
+                    thread_id=self.thread_id,
                 )
             )
 
