@@ -212,13 +212,13 @@ class ChunkLoader:
             self._clear_pending(request.data_id)
 
         # Check the cache first.
-        array = self.cache.get_chunk(request)
+        chunks = self.cache.get_chunk(request)
 
-        if array is not None:
+        if chunks is not None:
             LOGGER.info(
                 "[async] ChunkLoader._load_async: cache hit %s", request.key
             )
-            request.array = array
+            request.chunks = chunks
             return request
 
         LOGGER.info(
