@@ -38,6 +38,7 @@ class Viewer(ViewerModel):
 
     def __init__(
         self,
+        *,
         title='napari',
         ndisplay=2,
         order=None,

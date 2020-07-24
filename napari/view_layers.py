@@ -58,7 +58,7 @@ def merge_docs(add_method, layer_string):
     return DOC.format(n=n, name=layer_string, params=params)
 
 
-def _build_view_function(layer_string: str, method_name: str = None):
+def _generate_view_function(layer_string: str, method_name: str = None):
     """Autogenerate a ``view_<layer_string>`` method.
 
     Combines the signatures and docs of ``Viewer`` and
@@ -70,8 +70,8 @@ def _build_view_function(layer_string: str, method_name: str = None):
        will do the work of creating a new viewer and adding a layer to it.
     2. we create a **string** (`fakefunc`) that represents how we _would_ have
        typed out the original `view_*` method.
-        - `{combo_sig}` is an
-          `inspect.Signature <https://docs.python.org/3/library/inspect.html#inspect.Signature>`_
+        - `{combo_sig}` is an `inspect.Signature
+          <https://docs.python.org/3/library/inspect.html#inspect.Signature>`_
           object (whose string representation is, conveniently, exactly how we
           would have typed the original function).
         - the inner `real_func({inner_sig})` part is basically how we were
@@ -112,9 +112,7 @@ def _build_view_function(layer_string: str, method_name: str = None):
 
     # create a new combined signature
     new_params = list(add_sig.parameters.values())[1:]  # [1:] to remove self
-    new_params += [
-        p.replace(kind=p.KEYWORD_ONLY) for p in view_sig.parameters.values()
-    ]
+    new_params += view_sig.parameters.values()
     new_params = sorted(new_params, key=lambda p: p.kind)
     combo_sig = add_sig.replace(parameters=new_params)
 
@@ -152,6 +150,6 @@ def _build_view_function(layer_string: str, method_name: str = None):
 
 
 for _layer in ('image', 'points', 'labels', 'shapes', 'surface', 'vectors'):
-    _build_view_function(_layer)
+    _generate_view_function(_layer)
 
-_build_view_function('path', 'open')
+_generate_view_function('path', 'open')
