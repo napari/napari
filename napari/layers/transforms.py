@@ -1,7 +1,7 @@
 import toolz as tz
 from typing import Sequence
 import numpy as np
-from ..utils.list import ListModel
+from ..utils.events.containers import TypedList
 
 
 class Transform:
@@ -73,19 +73,21 @@ class Transform:
         raise NotImplementedError('Cannot subset arbitrary transforms.')
 
 
-class TransformChain(ListModel, Transform):
+class TransformChain(TypedList, Transform):
     def __init__(self, transforms=[]):
         super().__init__(
             basetype=Transform,
-            iterable=transforms,
-            lookup={str: lambda q, e: q == e.name},
+            data=transforms,
+            lookup={str: lambda x: x.name},
         )
 
     def __call__(self, coords):
         return tz.pipe(coords, *self)
 
-    def __newlike__(self, iterable):
-        return ListModel(self._basetype, iterable, self._lookup)
+    def __newlike__(self, data):
+        return TypedList(
+            basetype=self._basetype, data=data, lookup=self._lookup
+        )
 
     @property
     def inverse(self) -> 'TransformChain':

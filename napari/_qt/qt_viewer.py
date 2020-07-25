@@ -183,7 +183,7 @@ class QtViewer(QSplitter):
         self.viewer.events.reset_view.connect(self._on_reset_view)
         self.viewer.events.palette.connect(self._update_palette)
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
-        self.viewer.layers.events.added.connect(self._add_layer)
+        self.viewer.layers.events.inserted.connect(self._add_layer)
         self.viewer.layers.events.removed.connect(self._remove_layer)
         self.viewer.dims.events.camera.connect(
             lambda event: self._update_camera()
@@ -244,11 +244,10 @@ class QtViewer(QSplitter):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        layers = event.source
-        layer = event.item
+        layer = event.value
         vispy_layer = create_vispy_visual(layer)
         vispy_layer.node.parent = self.view.scene
-        vispy_layer.order = len(layers) - 1
+        vispy_layer.order = len(self.viewer.layers) - 1
         self.canvas.connect(vispy_layer.on_draw)
         self.layer_to_visual[layer] = vispy_layer
 
@@ -260,7 +259,7 @@ class QtViewer(QSplitter):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        layer = event.item
+        layer = event.value
         vispy_layer = self.layer_to_visual[layer]
         self.canvas.events.draw.disconnect(vispy_layer.on_draw)
         vispy_layer.node.transforms = ChainTransform()

@@ -1,46 +1,36 @@
 from typing import Optional, List
 from ..layers import Layer
 from ..utils.naming import inc_name_count
-from ..utils.list import ListModel
+from ..utils.events.containers import TypedEventedList
 
 
-def _add(event):
-    """When a layer is added, set its name."""
-    layers = event.source
-    layer = event.item
-    layer.name = layers._coerce_name(layer.name, layer)
-    layer.events.name.connect(lambda e: layers._update_name(e))
-    layers.unselect_all(ignore=layer)
-
-
-class LayerList(ListModel):
+class LayerList(TypedEventedList):
     """List-like layer collection with built-in reordering and callback hooks.
 
     Parameters
     ----------
-    iterable : iterable
+    data : iterable
         Iterable of napari.layer.Layer
-
-    Attributes
-    ----------
-    events : vispy.util.event.EmitterGroup
-        Event hooks:
-            * added(item, index): whenever an item is added
-            * removed(item): whenever an item is removed
-            * reordered(): whenever the list is reordered
     """
 
-    def __init__(self, iterable=()):
+    def __init__(self, data=()):
         super().__init__(
-            basetype=Layer,
-            iterable=iterable,
-            lookup={str: lambda q, e: q == e.name},
+            basetype=Layer, data=data, lookup={str: lambda x: x.name},
         )
 
-        self.events.added.connect(_add)
+        self.events.inserted.connect(self._add)
 
     def __newlike__(self, iterable):
-        return ListModel(self._basetype, iterable, self._lookup)
+        return TypedEventedList(
+            basetype=self._basetype, data=iterable, lookup=self._lookup
+        )
+
+    def _add(self, event):
+        """When a layer is added, set its name."""
+        layer = event.value
+        layer.name = self._coerce_name(layer.name, layer)
+        layer.events.name.connect(lambda e: self._update_name(e))
+        self.unselect_all(ignore=layer)
 
     def _coerce_name(self, name, layer=None):
         """Coerce a name into a unique equivalent.

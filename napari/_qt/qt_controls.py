@@ -32,7 +32,7 @@ class QtControls(QStackedWidget):
         self.addWidget(self.empty_widget)
         self._display(None)
 
-        self.viewer.layers.events.added.connect(self._add)
+        self.viewer.layers.events.inserted.connect(self._add)
         self.viewer.layers.events.removed.connect(self._remove)
         self.viewer.events.active_layer.connect(self._display)
 
@@ -61,9 +61,9 @@ class QtControls(QStackedWidget):
         Parameters
         ----------
         event : Event
-            Event with the target layer at `event.item`.
+            Event with the target layer at `event.value`.
         """
-        layer = event.item
+        layer = event.value
         controls = create_qt_controls(layer)
         self.addWidget(controls)
         self.widgets[layer] = controls
@@ -74,9 +74,9 @@ class QtControls(QStackedWidget):
         Parameters
         ----------
         event : Event
-            Event with the target layer at `event.item`.
+            Event with the target layer at `event.value`.
         """
-        layer = event.item
+        layer = event.value
         controls = self.widgets[layer]
         self.removeWidget(controls)
         controls.deleteLater()

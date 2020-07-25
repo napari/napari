@@ -84,9 +84,9 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self.dims.events.ndisplay.connect(self._update_layers)
         self.dims.events.order.connect(self._update_layers)
         self.dims.events.axis.connect(self._update_layers)
-        self.layers.events.changed.connect(self._update_active_layer)
-        self.layers.events.changed.connect(self._update_grid)
-        self.layers.events.changed.connect(self._on_layers_change)
+        self.layers.events.inserted.connect(self._on_layers_change)
+        self.layers.events.removed.connect(self._on_layers_change)
+        self.layers.events.reordered.connect(self._on_layers_change)
 
         self.keymap_providers = [self]
 
@@ -391,6 +391,8 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             for i, r in enumerate(layer_range):
                 self.dims.set_range(i, r)
         self.events.layers_change()
+        self._update_grid()
+        self._update_active_layer(event)
 
     def _calc_layers_ranges(self):
         """Calculates the range along each axis from all present layers.
@@ -504,7 +506,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         """
         self.grid_view(n_row=1, n_column=1, stride=1)
 
-    def _update_grid(self, event=None):
+    def _update_grid(self):
         """Update grid with current grid values.
         """
         self.grid_view(
