@@ -1,7 +1,7 @@
 from typing import Optional, List
 from ..layers import Layer
 from ..utils.naming import inc_name_count
-from ..utils.events.containers import TypedEventedList
+from ..utils.events import TypedEventedList
 
 
 class LayerList(TypedEventedList):
@@ -9,28 +9,42 @@ class LayerList(TypedEventedList):
 
     Parameters
     ----------
-    data : iterable
+    iterable : iterable
         Iterable of napari.layer.Layer
+
+    Attributes
+    ----------
+    events : vispy.util.event.EmitterGroup
+        Event hooks:
+            * added(item, index): whenever an item is added
+            * removed(item): whenever an item is removed
+            * reordered(): whenever the list is reordered
     """
 
     def __init__(self, data=()):
         super().__init__(
-            basetype=Layer, data=data, lookup={str: lambda x: x.name},
+            data=data, basetype=Layer, lookup={str: lambda e: e.name},
         )
 
-        self.events.inserted.connect(self._add)
+    def _prepare_to_add_layer(self, layer: Layer):
+        if isinstance(layer, Layer):
+            layer.name = self._coerce_name(layer.name, layer)
+            layer.events.name.connect(lambda e: self._update_name(e))
 
-    def __newlike__(self, iterable):
-        return TypedEventedList(
-            basetype=self._basetype, data=iterable, lookup=self._lookup
-        )
+    def insert(self, index: int, value):
+        self._prepare_to_add_layer(value)
+        super().insert(index, value)
+        self.unselect_all(ignore=value)
 
-    def _add(self, event):
-        """When a layer is added, set its name."""
-        layer = event.value
-        layer.name = self._coerce_name(layer.name, layer)
-        layer.events.name.connect(lambda e: self._update_name(e))
-        self.unselect_all(ignore=layer)
+    def __setitem__(self, key, value):
+        self._prepare_to_add_layer(value)
+        super().__setitem__(key, value)
+        # FIXME: the behavior of unselecting everything but the last-added
+        # layer is error prone and should probably be handled elsewhere
+        # in a selection model.  Technically there is currently different
+        # behavior between doing ``layer_list.append(new_layer)`` and
+        # overwriting/changing an existing one: ``layer_list[1] = (new_layer)``
+        # self.unselect_all(ignore=value)
 
     def _coerce_name(self, name, layer=None):
         """Coerce a name into a unique equivalent.
@@ -65,6 +79,8 @@ class LayerList(TypedEventedList):
         """List of selected layers."""
         return [layer for layer in self if layer.selected]
 
+    # FIXME: refactor, and possibly move elsewhere.  we should not have
+    # logic here that worries about dragging and dropping).
     def move_selected(self, index, insert):
         """Reorder list by moving the item at index and inserting it
         at the insert index. If additional items are selected these will
@@ -98,7 +114,9 @@ class LayerList(TypedEventedList):
         for insert_idx, elem_idx in enumerate(selected, start=insert - offset):
             indices.insert(insert_idx, elem_idx)
         # reorder list
-        self[:] = self[tuple(indices)]
+        with self.events.blocker():
+            self[:] = [self[i] for i in indices]
+        self.events.reordered(value=self)
 
     def unselect_all(self, ignore=None):
         """Unselects all layers expect any specified in ignore.
