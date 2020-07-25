@@ -16,6 +16,8 @@ multiple clients can be access it at the same time.
 from contextlib import contextmanager
 from concurrent import futures
 import logging
+import threading
+import time
 from typing import Dict, List, Optional
 import weakref
 
@@ -31,11 +33,6 @@ from ..perf import perf_timer
 
 LOGGER = logging.getLogger("ChunkLoader")
 
-# This delay is hopefully temporary, but it avoids some nasty
-# problems with the slider timer firing *prior* to the mouse release,
-# even though it was a single click lasting < 100ms.
-MIN_DELAY_SECONDS = 0.1
-
 
 def _chunk_loader_worker(request: ChunkRequest):
     """The worker thread or process that loads the array.
@@ -47,6 +44,115 @@ def _chunk_loader_worker(request: ChunkRequest):
     """
     request.load_chunks()
     return request
+
+
+def _create_executor(use_processes: bool, num_workers: int):
+    """Return the thread or process pool executor.
+    """
+    executor_class = (
+        futures.ProcessPoolExecutor
+        if use_processes
+        else futures.ThreadPoolExecutor
+    )
+    return executor_class(max_workers=num_workers)
+
+
+class ChunkQueueEntry:
+    def __init__(self, request, submit_time):
+        self.request = request
+        self.submit_time = submit_time
+
+
+class ChunkDelayQueue(threading.Thread):
+    """A threaded queue that delays request submission a bit.
+
+    We delay submitting requests so that if you are zipping through slices
+    we don't end up starting a bunch of workers for stale slices where no
+    one will use the results. We can't cancel workers once they've started,
+    but we can trivially cancel requests still in this queue.
+
+    For example if the user is continuously move the slider requests will
+    got into this queue and then get immediately canceled as the user
+    goes to the next slice. Only when they pause by self.delay_seconds
+    will the request actually get submitting the worker start loading.
+
+    Attributes
+    ----------
+    executor : Union[ThreadPoolExecutor, ProcessPoolExecutor]
+        Our thread or process pool executor.
+    use_processes : bool
+        If True use a process pool for the workers, otherwise use a thread pool.
+    num_workers : int
+        Create this many worker threads or processes.
+    """
+
+    def __init__(self, delay_seconds, submit_func):
+        super().__init__(daemon=True)
+        self.delay_seconds = delay_seconds
+        self.submit_func = submit_func
+        self.use_processes: bool = async_config.use_processes
+        self.num_workers: int = async_config.num_workers
+        self.entries = []
+        self.start()
+
+    def add(self, request) -> None:
+        """Insert the request into the queue.
+
+        Parameters
+        ----------
+        request : ChunkRequest
+            Insert this request into the queue.
+        """
+        if self.delay_seconds == 0:
+            # Submit with no delay.
+            self.submit_func(request)
+        else:
+            # Add to the queue for a short period of time.
+            submit_time = time.time() + self.delay_seconds
+            self.entries.append(ChunkQueueEntry(request, submit_time))
+
+    def submit(self, entry, now):
+        """Submit the return if its time.
+
+        Parameters
+        ----------
+        entry : ChunkQueueEntry
+            The entry to potentially submit.
+        now : int
+            Current time in seconds.
+
+        Return
+        ------
+        bool
+            True if the entry was submitted.
+        """
+        if entry.submit_time < now:
+            self.submit_func(entry.request)
+            return True
+        return False
+
+    def clear(self, data_id):
+        """Remove any entires for this data_id.
+
+        Parameters
+        ----------
+        data_id : int
+            Remove entries for this data_id.
+        """
+        self.entries = [
+            x for x in self.entries if x.request.data_id != data_id
+        ]
+
+    def run(self):
+        """The thread's main method.
+
+        Submit requests after their delay is up.
+        """
+        while True:
+            # Submit all entires which are due
+            now = time.time()
+            self.entries = [x for x in self.entries if not self.submit(x, now)]
+            time.sleep(self.delay_seconds)
 
 
 class ChunkLoader:
@@ -65,13 +171,8 @@ class ChunkLoader:
         If True the ChunkLoader is essentially disabled, loads are done
         immediately and in the GUI thread. If False loads are done
         asynchronously in a worker thread.
-    force_delay_seconds : float
-        Tell the worker to sleep for this long before loading the chunk. Mostly
-        used when debugging to simulate latency.
-    use_processes : bool
-        If True use a process pool for the workers, otherwise use a thread pool.
-    num_workers : int
-        Create this many worker threads or processes.
+    load_seconds : float
+        Sleep this long in the worker during a load.
     executor : Union[ThreadPoolExecutor, ProcessPoolExecutor]
         Our thread or process pool executor.
     futures : FutureMap
@@ -86,9 +187,9 @@ class ChunkLoader:
     LayerMap = Dict[int, weakref.ReferenceType]
 
     def __init__(self):
-        # Pull values from the config file.
         self.synchronous: bool = async_config.synchronous
-        self.force_delay_seconds: float = async_config.force_delay_seconds
+        self.load_seconds: float = async_config.load_seconds
+
         use_processes: bool = async_config.use_processes
         num_workers: int = async_config.num_workers
 
@@ -99,13 +200,14 @@ class ChunkLoader:
             num_workers,
         )
 
-        # Executor for threads or processes.
-        executor_class = (
-            futures.ProcessPoolExecutor
-            if use_processes
-            else futures.ThreadPoolExecutor
+        # Executor to our concurrent.futures pool for workers.
+        self.executor = _create_executor(use_processes, num_workers)
+
+        # Delay queue prevents us from spamming the worker pool when the
+        # user is rapidly scrolling through slices.
+        self.delay_queue = ChunkDelayQueue(
+            async_config.delay_seconds, self._submit_async
         )
-        self.executor = executor_class(max_workers=num_workers)
 
         # Maps data_id to futures for that layer.
         self.futures: self.FutureMap = {}
@@ -185,33 +287,7 @@ class ChunkLoader:
             request.load_chunks_gui()
             return request
 
-        # Set the delay for this request.
-        request.delay_seconds = max(
-            MIN_DELAY_SECONDS, self.force_delay_seconds
-        )
-
-        # This will be synchronous if it's a cache hit. Otherwise it will
-        # initiate an asynchronous load and sometime later Layer.load_chunk
-        # will be called with the loaded chunk.
-        return self._load_async(request)
-
-    def _load_async(self, request: ChunkRequest) -> None:
-        """Initiate an asynchronous load of the given request.
-
-        Parameters
-        ----------
-        request : ChunkRequest
-            Contains the array to load from and related info.
-        """
-        LOGGER.info("[async] ChunkLoader._load_async: %s", request.key)
-
-        # Clear any existing futures for this specific data_id. We only
-        # support single-scale today, so there can only be one load in
-        # progress per data_id.
-        with perf_timer("clear_pending"):
-            self._clear_pending(request.data_id)
-
-        # Check the cache first.
+        # Check the cache.
         chunks = self.cache.get_chunk(request)
 
         if chunks is not None:
@@ -225,6 +301,29 @@ class ChunkLoader:
             "[async] ChunkLoader.load_chunk: cache miss %s", request.key
         )
 
+        # Clear any pending request for this specific data_id. We only
+        # support single tile images today, so there can only be one load
+        # in progress per data_id.
+        with perf_timer("clear_pending"):
+            self._clear_pending(request.data_id)
+
+        # Set the extra load sleep time if any.
+        request.load_seconds = self.load_seconds
+
+        # Add to the delay queue, it will call our _submit_async() if the
+        # delay expires without the request getting cancelled.
+        self.delay_queue.add(request)
+
+    def _submit_async(self, request: ChunkRequest) -> None:
+        """Initiate an asynchronous load of the given request.
+
+        Parameters
+        ----------
+        request : ChunkRequest
+            Contains the array to load from and related info.
+        """
+        LOGGER.info("[async] ChunkLoader._load_async: %s", request.key)
+
         future = self.executor.submit(_chunk_loader_worker, request)
         future.add_done_callback(self._done)
 
@@ -237,15 +336,18 @@ class ChunkLoader:
     def _clear_pending(self, data_id: int) -> None:
         """Clear any pending requests for this data_id.
 
-        We can't clear in-progress requests that are already running in a
-        worker. This is too bad since those requests are stale, the results
-        will not be used. So they are just slowing things down. But
-        terminating threads is not kosher. Terminating processes is
-        possibly but we have not tried to do that yet.
+        Parameters
+        ----------
+        data_id : int
+            Clear all requests associated with this data_id.
         """
+        # Clear requests that have not even been submitting to the worker pool.
+        self.delay_queue.clear(data_id)
+
+        # Get any futures that have been submitted to the pool.
         future_list = self.futures.setdefault(data_id, [])
 
-        # Try to cancel all futures, but cancel() will return False if the
+        # Try to cancel them all, but cancel() will return False if the
         # task already started running.
         num_before = len(future_list)
         future_list[:] = [x for x in future_list if x.cancel()]

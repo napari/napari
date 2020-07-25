@@ -42,6 +42,8 @@ class ChunkRequest:
         Reference to the layer that submitted the request.
     data_id : int
         Python id() of the data in the layer.
+    load_seconds : float
+        Delay for this long during the load portion.
     """
 
     def __init__(self, layer, indices, chunks: Dict[str, ArrayLike]):
@@ -49,7 +51,7 @@ class ChunkRequest:
         self.data_id = id(layer.data)
         self.indices = indices
         self.chunks = chunks
-        self.delay_seconds = 0
+        self.load_seconds = 0
 
         # Slice objects are not hashable, so turn them into tuples.
         indices_tuple = tuple(_index_to_tuple(x) for x in self.indices)
@@ -111,9 +113,9 @@ class ChunkRequest:
         # Time the loading of all the chunks.
         with self.time_block("load_chunks"):
 
-            # Delay if requested.
-            if self.delay_seconds > 0:
-                time.sleep(self.delay_seconds)
+            # Simulate latency.
+            if self.load_seconds > 0:
+                time.sleep(self.load_seconds)
 
             # Time the load of every chunk.
             for key, array in self.chunks.items():
