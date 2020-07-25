@@ -42,3 +42,9 @@ ignore = [
   "Makefile",
   "napari/_version.py",  # added during build by setuptools_scm
 ]
+
+[tool.isort]
+profile = "black"
+line_length = 79
+known_third_party = ["IPython", "dask", "github", "imageio", "ipykernel", "napari_plugin_engine", "numpy", "numpydoc", "pandas", "pytest", "qtconsole", "qtpy", "recommonmark", "scipy", "setuptools", "skimage", "toolz", "vispy", "wrapt", "xarray", "zarr"]
+skip_glob = ["*examples/*", "*vendored*"]

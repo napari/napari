@@ -11,3 +11,11 @@ repos:
       pass_filenames: true
       # this seems to need to be here in addition to setup.cfg
       exclude: vendored|__init__.py|examples
+-   repo: https://github.com/asottile/seed-isort-config
+    rev: v2.2.0
+    hooks:
+    -   id: seed-isort-config
+-   repo: https://github.com/timothycrosley/isort
+    rev: 5.1.4
+    hooks:
+    -   id: isort
