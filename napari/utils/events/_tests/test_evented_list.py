@@ -3,7 +3,13 @@ from unittest.mock import Mock
 
 import pytest
 
-from napari.utils.events import EmitterGroup, EventedList, NestableEventedList
+from napari.utils.events import (
+    EmitterGroup,
+    EventedList,
+    NestableEventedList,
+    TypedEventedList,
+    TypedNestableEventedList,
+)
 
 
 @pytest.fixture
@@ -19,7 +25,14 @@ def flatten(_lst):
     )
 
 
-@pytest.fixture(params=[EventedList, NestableEventedList])
+@pytest.fixture(
+    params=[
+        EventedList,
+        NestableEventedList,
+        TypedEventedList,
+        TypedNestableEventedList,
+    ]
+)
 def test_list(request, regular_list):
     test_list = request.param(regular_list)
     test_list.events = Mock(wraps=test_list.events)
@@ -50,6 +63,7 @@ def test_list(request, regular_list):
         ('reverse', (), ('reordered',)),
         ('__add__', ([7, 8, 9],), ()),
         ('__iadd__', ([7, 9],), ('inserting', 'inserted') * 2),
+        ('__radd__', ([7, 9],), ('inserting', 'inserted') * 2),
         # sort?
     ],
     ids=lambda x: x[0],
@@ -57,14 +71,21 @@ def test_list(request, regular_list):
 def test_list_interface_parity(test_list, regular_list, meth):
     method_name, args, expected = meth
     test_list_method = getattr(test_list, method_name)
-    regular_list_method = getattr(regular_list, method_name)
     assert tuple(test_list) == tuple(regular_list)
-    assert test_list_method(*args) == regular_list_method(*args)
-    assert tuple(test_list) == tuple(regular_list)
+    if hasattr(regular_list, method_name):
+        regular_list_method = getattr(regular_list, method_name)
+        assert test_list_method(*args) == regular_list_method(*args)
+        assert tuple(test_list) == tuple(regular_list)
+    else:
+        test_list_method(*args)  # smoke test
 
     for call, expect in zip(test_list.events.call_args_list, expected):
         event = call.args[0]
         assert event.type == expect
+
+
+def test_hash(test_list):
+    assert id(test_list) == hash(test_list)
 
 
 def test_list_interface_exceptions(test_list):
@@ -237,3 +258,18 @@ def test_arbitrary_child_events():
     ]
     for o, e in zip(obs, expected):
         assert o == e
+
+
+def test_evented_list_subclass():
+    """Test that multiple inheritance maintains events from superclass."""
+
+    class A:
+        events = EmitterGroup(boom=None)
+
+    class B(A, EventedList):
+        pass
+
+    lst = B([1, 2])
+    assert hasattr(lst, 'events')
+    assert 'boom' in lst.events.emitters
+    assert lst == [1, 2]

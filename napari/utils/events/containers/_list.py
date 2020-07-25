@@ -38,6 +38,8 @@ from ..types import SupportsEvents
 
 logger = logging.getLogger(__name__)
 T = TypeVar('T')
+
+
 Index = Union[int, slice]
 
 
@@ -108,11 +110,11 @@ class EventedList(SupportsEvents, MutableSequence[T]):
 
     @overload
     def __getitem__(self, key: int) -> T:
-        ...
+        ...  # pragma: no cover
 
     @overload
     def __getitem__(self, key: slice) -> 'EventedList[T]':  # noqa: F811
-        ...
+        ...  # pragma: no cover
 
     def __getitem__(self, key):  # noqa: F811 (redefinition)
         result = self._list[key]
@@ -122,11 +124,11 @@ class EventedList(SupportsEvents, MutableSequence[T]):
 
     @overload
     def __setitem__(self, key: int, value: T):
-        ...
+        ...  # pragma: no cover
 
     @overload
     def __setitem__(self, key: slice, value: Iterable[T]):  # noqa: F811
-        ...
+        ...  # pragma: no cover
 
     def __setitem__(self, key, value):  # noqa: F811 (redefinition)
         old = self._list[key]
@@ -203,7 +205,7 @@ class EventedList(SupportsEvents, MutableSequence[T]):
 
     def copy(self) -> 'EventedList[T]':
         """Return a shallow copy of the list."""
-        return self.__class__(self._list)
+        return self.__newlike__(self)
 
     def __add__(self, other: Iterable[T]) -> 'EventedList[T]':
         """Add other to self, return new object."""
@@ -219,3 +221,6 @@ class EventedList(SupportsEvents, MutableSequence[T]):
     def __radd__(self, other: List) -> List:
         """Add other to self in place (self += other)."""
         return other + list(self)
+
+    def __newlike__(self, iterable: Iterable[T]) -> 'EventedList[T]':
+        return self.__class__(iterable)

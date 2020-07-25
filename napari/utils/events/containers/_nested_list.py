@@ -1,7 +1,7 @@
 """Nestable MutableSequence that emits events when altered.
 """
 import logging
-from typing import Iterable, Sequence, Tuple, Union, cast, overload, NewType
+from typing import Iterable, NewType, Sequence, Tuple, Union, cast, overload
 
 from ..event import Event
 from ..types import SupportsEvents
@@ -132,23 +132,23 @@ class NestableEventedList(EventedList[T]):
 
     @overload
     def __getitem__(self, key: int) -> T:
-        ...
+        ...  # pragma: no cover
 
     @overload
     def __getitem__(  # noqa: F811
         self, key: ParentIndex
     ) -> 'NestableEventedList[T]':
-        ...
+        ...  # pragma: no cover
 
     @overload
     def __getitem__(self, key: slice) -> 'NestableEventedList[T]':  # noqa
-        ...
+        ...  # pragma: no cover
 
     @overload
     def __getitem__(  # noqa: F811
         self, key: NestedIndex
     ) -> Union[T, 'NestableEventedList[T]']:
-        ...
+        ...  # pragma: no cover
 
     def __getitem__(self, key):  # noqa: F811
         if isinstance(key, tuple):
@@ -160,11 +160,11 @@ class NestableEventedList(EventedList[T]):
 
     @overload
     def __setitem__(self, key: Union[int, NestedIndex], value: T):
-        ...
+        ...  # pragma: no cover
 
     @overload
     def __setitem__(self, key: slice, value: Iterable[T]):  # noqa: F811
-        ...
+        ...  # pragma: no cover
 
     def __setitem__(self, key, value):  # noqa: F811
         # NOTE: if we check isinstance(..., MutableList), then we'll actually
@@ -184,13 +184,13 @@ class NestableEventedList(EventedList[T]):
     def _delitem_indices(
         self, key: Index
     ) -> Iterable[Tuple[EventedList[T], int]]:
-        ...
+        ...  # pragma: no cover
 
     @overload
     def _delitem_indices(  # noqa: F811
         self, key: NestedIndex
     ) -> Iterable[Tuple[EventedList[T], Index]]:
-        ...
+        ...  # pragma: no cover
 
     def _delitem_indices(self, key):  # noqa: F811
         if isinstance(key, tuple):
