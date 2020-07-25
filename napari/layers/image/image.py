@@ -515,12 +515,10 @@ class Image(IntensityVisualizationMixin, Layer):
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
 
-        # Create new slice if we need one.
-        self._create_image_slice()
-
         if self.multiscale:
             self._load_multi_scale()
         else:
+            self._create_image_slice()
             self._load_single_scale()
 
     @property
@@ -592,6 +590,12 @@ class Image(IntensityVisualizationMixin, Layer):
             self.level_shapes[self._thumbnail_level, not_disp] - 1,
         )
         indices[not_disp] = downsampled_indices
+
+        if not self._slice:
+            self._create_image_slice()
+
+        if np.all(self._slice.current_indices == indices):
+            return  # already showing the right slice or its being loaded
 
         # Ask for the image and the lower resolution thumbnail_source.
         image_level = self.data[level]
