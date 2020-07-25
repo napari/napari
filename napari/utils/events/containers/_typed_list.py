@@ -125,6 +125,10 @@ class TypedMixin:
             i += 1
         raise ValueError(f"{value!r} is not in list")
 
+    def _ipython_key_completions_(self):
+        if str in self._lookup:
+            return (self._lookup[str](x) for x in self)
+
 
 class TypedList(TypedMixin, MutableSequence):
     def __init__(
