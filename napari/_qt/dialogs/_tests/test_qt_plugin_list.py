@@ -1,6 +1,6 @@
 import pytest
 from napari_plugin_engine.manager import temp_path_additions
-from napari._qt.widgets.qt_plugin_table import QtPluginTable
+from napari._qt.dialogs.qt_plugin_table import QtPluginTable
 
 
 GOOD_PLUGIN = """

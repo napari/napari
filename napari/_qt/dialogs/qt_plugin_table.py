@@ -1,7 +1,7 @@
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QAbstractItemView, QDialog, QLabel, QVBoxLayout
 
-from .qt_dict_table import QtDictTable
+from ..widgets.qt_dict_table import QtDictTable
 
 
 class QtPluginTable(QDialog):

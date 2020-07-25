@@ -12,7 +12,7 @@ from qtpy.QtWidgets import (
 
 from ...layers.shapes._shapes_constants import Mode
 from ..utils import disable_with_opacity, qt_signals_blocked
-from ..widgets.qt_color_dialog import QColorSwatchEdit
+from ..widgets.qt_color_swatch import QColorSwatchEdit
 from ..widgets.qt_mode_buttons import QtModePushButton, QtModeRadioButton
 from .qt_layer_controls_base import QtLayerControls
 

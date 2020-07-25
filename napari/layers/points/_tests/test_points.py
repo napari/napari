@@ -15,7 +15,7 @@ def _make_cycled_properties(values, length):
 
     Parameters
     ----------
-    values :
+    values
         The values to be cycled.
     length : int
         The length of the resulting property array

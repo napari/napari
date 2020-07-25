@@ -244,8 +244,8 @@ class QtGridViewButton(QCheckBox):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        state : qtpy.QtCore.Qt.CheckState
+            State of the checkbox.
         """
         if state == Qt.Checked:
             self.viewer.stack_view()

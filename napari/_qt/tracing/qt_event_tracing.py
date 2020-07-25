@@ -1,9 +1,9 @@
-"""A special QApplication for perfmon.
+"""A special QApplication for perfmon that traces events.
 
-This file defines QApplicationWithTiming and convert_app_for_timing(), both of
+This file defines QApplicationWithTracing and convert_app_for_tracing(), both of
 which we use when perfmon is enabled to time Qt Events.
 
-Perf timers power the debug menu's "Start Tracing" feature as well as the
+When using perfmon there is a debug menu "Start Tracing" command as well as a
 dockable QtPerformance widget.
 """
 import sys
@@ -14,38 +14,37 @@ from qtpy.QtWidgets import QApplication, QWidget
 from ...utils import perf
 
 
-def convert_app_for_timing(app: QApplication) -> QApplication:
-    """If necessary replace existing app with our special perfmon one.
+def convert_app_for_tracing(app: QApplication) -> QApplication:
+    """If necessary replace existing app with our special tracing one.
 
     Parameters
     ----------
     app : QApplication
         The existing application if any.
     """
-    if isinstance(app, QApplicationWithTiming):
-        # We're already using QApplicationWithTiming so there is nothing
+    if isinstance(app, QApplicationWithTracing):
+        # We're already using QApplicationWithTracing so there is nothing
         # to do. This happens when napari is launched from the command
-        # line because we create a QApplicationWithTiming in gui_qt.
+        # line because we create a QApplicationWithTracing in gui_qt.
         return app
 
     if app is not None:
 
-        # Because we can't monkey patch QApplication.notify, since it's a
-        # SIP wrapped C++ method, we delete the current app and create a new one.
-        # This must be done very early before any Qt objects are created.
+        # We can't monkey patch QApplication.notify, since it's a SIP
+        # wrapped C++ method. So we delete the current app and create a new
+        # one. This must be done very early before any Qt objects are
+        # created or we will crash!
         import sip
 
         sip.delete(app)
 
-    # Is it right to pass in sys.argv here? I think so if there are any
-    # Qt flags on there?
-    return QApplicationWithTiming(sys.argv)
+    return QApplicationWithTracing(sys.argv)
 
 
-class QApplicationWithTiming(QApplication):
-    """Extend QApplication to time Qt Events.
+class QApplicationWithTracing(QApplication):
+    """Extend QApplication to trace Qt Events.
 
-    This QApplication times how long the normal notify() method takes.
+    This QApplication wraps a perf_timer around the normal notify().
 
     Notes
     -----
@@ -54,12 +53,13 @@ class QApplicationWithTiming(QApplication):
 
     The hierarchy of timers is displayed correctly in the chrome://tracing GUI.
     Seeing the structure of the event handling hierarchy can be very informative
-    even apart from the actual timing numbers.
+    even apart from the actual timing numbers, which is why we call it "tracing"
+    instead of just "timing".
     """
 
     def notify(self, receiver, event):
-        """Time events while we handle them."""
-        timer_name = _get_timer_name(receiver, event)
+        """Trace events while we handle them."""
+        timer_name = _get_event_label(receiver, event)
 
         # Time the event while we handle it.
         with perf.perf_timer(timer_name, "qt_event"):
@@ -104,8 +104,8 @@ class EventTypes:
 EVENT_TYPES = EventTypes()
 
 
-def _get_timer_name(receiver: QWidget, event: QEvent) -> str:
-    """Return a name for this event.
+def _get_event_label(receiver: QWidget, event: QEvent) -> str:
+    """Return a label for this event.
 
     Parameters
     ----------
@@ -117,7 +117,7 @@ def _get_timer_name(receiver: QWidget, event: QEvent) -> str:
     Returns
     -------
     str
-        The timer's name
+        Label to display for the event.
 
     Notes
     -----

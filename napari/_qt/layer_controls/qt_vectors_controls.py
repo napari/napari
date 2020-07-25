@@ -4,7 +4,7 @@ from qtpy.QtWidgets import QComboBox, QDoubleSpinBox, QLabel
 
 from ...layers.vectors._vectors_constants import ColorMode
 from ..utils import qt_signals_blocked
-from ..widgets.qt_color_dialog import QColorSwatchEdit
+from ..widgets.qt_color_swatch import QColorSwatchEdit
 from .qt_layer_controls_base import QtLayerControls
 
 

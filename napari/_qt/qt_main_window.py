@@ -24,13 +24,13 @@ from ..resources import get_stylesheet
 from ..utils import perf
 from ..utils.io import imsave
 from ..utils.theme import template
-from .perfmon.qt_debug_menu import DebugMenu
+from .tracing.qt_debug_menu import DebugMenu
 from .qt_viewer import QtViewer
 from .utils import QImg2array
-from .widgets.qt_about import QtAbout
-from .widgets.qt_plugin_report import QtPluginErrReporter
+from .dialogs.qt_about import QtAbout
+from .dialogs.qt_plugin_report import QtPluginErrReporter
 from .widgets.qt_plugin_sorter import QtPluginSorter
-from .widgets.qt_plugin_table import QtPluginTable
+from .dialogs.qt_plugin_table import QtPluginTable
 from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
 
 
@@ -216,6 +216,11 @@ class Window:
             else:
                 QApplication.setWindowIcon(QIcon())
                 self.close()
+
+            if perf.USE_PERFMON:
+                # Write trace file before exit, if we were writing one.
+                # Is there a better place to make sure this is done on exit?
+                perf.timers.stop_trace_file()
 
         exitAction.triggered.connect(handle_exit)
 

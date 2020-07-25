@@ -21,7 +21,7 @@ from ...utils.colormaps.standardize_color import (
     rgb_to_hex,
     transform_color,
 )
-from .qt_modal import QtPopup
+from ..dialogs.qt_modal import QtPopup
 
 # matches any 3- or 4-tuple of int or float, with or without parens
 # captures the numbers into groups.

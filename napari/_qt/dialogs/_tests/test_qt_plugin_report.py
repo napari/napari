@@ -4,7 +4,7 @@ import pytest
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QGuiApplication
 
-from napari._qt.widgets import qt_plugin_report
+from napari._qt.dialogs import qt_plugin_report
 from napari_plugin_engine import PluginError
 
 

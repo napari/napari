@@ -5,7 +5,7 @@ from qtpy.QtGui import QDoubleValidator, QFont, QFontMetrics
 from qtpy.QtWidgets import QHBoxLayout, QLineEdit
 
 from ..utils import qt_signals_blocked
-from .qt_modal import QtPopup
+from ..dialogs.qt_modal import QtPopup
 from .qt_range_slider import QHRangeSlider, QVRangeSlider
 
 

@@ -23,9 +23,9 @@ from ..utils.interactions import (
 from ..utils.io import imsave
 from ..utils.key_bindings import components_to_key_combo
 from ..utils.theme import template
-from .perfmon.qt_performance import QtPerformance
+from .tracing.qt_performance import QtPerformance
 from .utils import QImg2array, circle_pixmap, square_pixmap
-from .widgets.qt_about_key_bindings import QtAboutKeyBindings
+from .dialogs.qt_about_key_bindings import QtAboutKeyBindings
 from .widgets.qt_dims import QtDims
 from .widgets.qt_layerlist import QtLayerList
 from .widgets.qt_viewer_buttons import QtLayerButtons, QtViewerButtons
@@ -249,7 +249,7 @@ class QtViewer(QSplitter):
         layer = event.item
         vispy_layer = create_vispy_visual(layer)
         vispy_layer.node.parent = self.view.scene
-        vispy_layer.order = len(layers)
+        vispy_layer.order = len(layers) - 1
         self.canvas.connect(vispy_layer.on_draw)
         self.layer_to_visual[layer] = vispy_layer
 
@@ -267,6 +267,7 @@ class QtViewer(QSplitter):
         vispy_layer.node.transforms = ChainTransform()
         vispy_layer.node.parent = None
         del vispy_layer
+        self._reorder_layers(None)
 
     def _reorder_layers(self, event):
         """When the list is reordered, propagate changes to draw order.

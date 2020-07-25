@@ -1,4 +1,3 @@
-import os
 import platform
 import sys
 from os.path import dirname, join
@@ -6,11 +5,12 @@ from os.path import dirname, join
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import QApplication
 
+from . import __version__
 from ._qt.qt_main_window import Window
 from ._qt.qt_viewer import QtViewer
-from ._qt.qthreading import wait_for_workers_to_quit, create_worker
+from ._qt.qthreading import create_worker, wait_for_workers_to_quit
 from .components import ViewerModel
-from . import __version__
+from .utils.perf import perf_config
 
 
 class Viewer(ViewerModel):
@@ -38,6 +38,7 @@ class Viewer(ViewerModel):
 
     def __init__(
         self,
+        *,
         title='napari',
         ndisplay=2,
         order=None,
@@ -63,13 +64,19 @@ class Viewer(ViewerModel):
             )
             raise RuntimeError(message)
 
-        # For perfmon we need a special QApplication. If using gui_qt we already
-        # have the special one, and this is a noop. When running inside IPython
-        # or Jupyter however this is where we switch out the QApplication.
-        if os.getenv("NAPARI_PERFMON", "0") != "0":
-            from ._qt.qt_event_timing import convert_app_for_timing
+        if perf_config:
+            if perf_config.trace_qt_events:
+                from ._qt.qt_event_tracing import convert_app_for_tracing
 
-            app = convert_app_for_timing(app)
+                # For tracing Qt events we need a special QApplication. If
+                # using `gui_qt` we already have the special one, and no
+                # conversion is done here. However when running inside
+                # IPython or Jupyter this is where we switch out the
+                # QApplication.
+                app = convert_app_for_tracing(app)
+
+            # Will patch based on config file.
+            perf_config.patch_callables()
 
         if (
             platform.system() == "Windows"
