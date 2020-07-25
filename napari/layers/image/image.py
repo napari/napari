@@ -526,7 +526,6 @@ class Image(IntensityVisualizationMixin, Layer):
         not_disp = self.dims.not_displayed
 
         if self.multiscale:
-
             # If 3d redering just show lowest level of multiscale
             if self.dims.ndisplay == 3:
                 self.data_level = len(self.data) - 1
@@ -583,30 +582,35 @@ class Image(IntensityVisualizationMixin, Layer):
             )
             indices[not_disp] = downsampled_indices
 
-            if not self._slice:
-                self._create_image_slice()
-
-            if np.all(self._slice.current_indices == indices):
-                return  # already showing the right slice or its being loaded
-
-            # Ask for the image and the lower resolution thumbnail_source.
-            image_level = self.data[level]
-            thumbnail_level = self.data[self._thumbnail_level]
-            chunks = {
-                'image': image_level[tuple(indices)],
-                'thumbnail_source': thumbnail_level[tuple(indices)],
-            }
-            request = chunk_loader.create_request(self, indices, chunks)
-
-            # Load the chunks. This could load them synchronously right here in
-            # the GUI thread or it could queue up a request for a worker thread
-            # or process and self.chunk_loaded() will be called later.
-            satisfied_request = self._slice.load_chunk(request)
-            if satisfied_request is not None:
-                self.chunk_loaded(satisfied_request)
+            self._load_multi_scale(indices, level)
         else:
             self._create_image_slice()
             self._load_single_scale()
+
+    def _load_multi_scale(self, indices, level: int) -> None:
+        """Load multi-scale image and thumbnail_source.
+        """
+        if not self._slice:
+            self._create_image_slice()
+
+        if np.all(self._slice.current_indices == indices):
+            return  # already showing the right slice or its being loaded
+
+        # Ask for the image and the lower resolution thumbnail_source.
+        image_level = self.data[level]
+        thumbnail_level = self.data[self._thumbnail_level]
+        chunks = {
+            'image': image_level[tuple(indices)],
+            'thumbnail_source': thumbnail_level[tuple(indices)],
+        }
+        request = chunk_loader.create_request(self, indices, chunks)
+
+        # Load the chunks. This could load them synchronously right here in
+        # the GUI thread or it could queue up a request for a worker thread
+        # or process and self.chunk_loaded() will be called later.
+        satisfied_request = self._slice.load_chunk(request)
+        if satisfied_request is not None:
+            self.chunk_loaded(satisfied_request)
 
     def _load_single_scale(self) -> None:
         """Load non-multiscale image.
