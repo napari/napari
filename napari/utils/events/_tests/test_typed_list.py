@@ -29,6 +29,18 @@ def test_type_enforcement(list_type):
         _ = list_type([1, 2, '3'], basetype=int)
 
 
+def test_type_enforcement_with_slices(list_type):
+    """Test that TypedLists enforce type during mutation events."""
+    a = list_type(basetype=int)
+    a[:] = list(range(10))
+    with pytest.raises(TypeError):
+        a[4:4] = ['hi']
+    with pytest.raises(ValueError):
+        a[4:8:2] = [1, 2, 3]  # not the right length
+    with pytest.raises(TypeError):
+        a[4:8:2] = [1, 2, 3, 'a']
+
+
 def test_multitype_enforcement(list_type):
     """Test that basetype also accepts/enforces a sequence of types."""
     a = list_type([1, 2, 3, 4, 5.5], basetype=(int, float))

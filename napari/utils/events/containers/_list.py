@@ -69,10 +69,10 @@ class EventedList(SupportsEvents, MutableSequence[T]):
         emitted before an item is moved from ``index`` to ``new_index``
     moved (index: int, new_index: int, value: T)
         emitted after ``value`` is moved from ``index`` to ``new_index``
-    changed (index: int, old_value: T, new_value: T)
-        emitted when ``index`` is set from ``old_value`` to ``new_value``
-    changed <OVERLOAD> (index: slice, old_value: List[T], new_value: List[T])
-        emitted when ``index`` is set from ``old_value`` to ``new_value``
+    changed (index: int, old_value: T, value: T)
+        emitted when ``index`` is set from ``old_value`` to ``value``
+    changed <OVERLOAD> (index: slice, old_value: List[T], value: List[T])
+        emitted when ``index`` is set from ``old_value`` to ``value``
     reordered (value: self)
         emitted when the list is reordered (eg. moved/reversed).
     """
@@ -132,9 +132,30 @@ class EventedList(SupportsEvents, MutableSequence[T]):
 
     def __setitem__(self, key, value):  # noqa: F811 (redefinition)
         old = self._list[key]
-        self._list[key] = value
-        if value != old:
-            self.events.changed(index=key, old_value=old, new_value=value)
+        if value == old:
+            return
+        if isinstance(key, slice):
+            if not isinstance(value, Iterable):
+                raise TypeError('Can only assign an iterable to slice')
+            indices = list(range(*key.indices(len(self))))
+            if key.step is not None:  # extended slices are more restricted
+                seq_len = len(value)
+                slice_len = len([self[i] for i in indices])
+                if not seq_len == slice_len:
+                    raise ValueError(
+                        f"attempt to assign sequence of size {seq_len} to "
+                        f"extended slice of size {slice_len}"
+                    )
+                for i, v in zip(indices, value):
+                    self.__setitem__(i, v)
+            else:
+                del self[key]
+                idx = 0 if key.start is None else key.start
+                for i, v in enumerate(value):
+                    self.insert(idx + i, v)
+        else:
+            self._list[key] = value
+            self.events.changed(index=key, old_value=old, value=value)
 
     def _delitem_indices(
         self, key: Index

@@ -115,10 +115,10 @@ class NestableEventedList(EventedList[T]):
         emitted before an item is moved from ``index`` to ``new_index``
     moved (index: Index, new_index: Index, value: T)
         emitted after ``value`` is moved from ``index`` to ``new_index``
-    changed (index: Index, old_value: T, new_value: T)
-        emitted when ``index`` is set from ``old_value`` to ``new_value``
-    changed <OVERLOAD> (index: slice, old_value: List[T], new_value: List[T])
-        emitted when slice ``index`` is set from ``old_value`` to ``new_value``
+    changed (index: Index, old_value: T, value: T)
+        emitted when ``index`` is set from ``old_value`` to ``value``
+    changed <OVERLOAD> (index: slice, old_value: List[T], value: List[T])
+        emitted when slice ``index`` is set from ``old_value`` to ``value``
     reordered (value: self)
         emitted when the list is reordered (eg. moved/reversed).
     """
@@ -178,7 +178,7 @@ class NestableEventedList(EventedList[T]):
             self[parent_i].__setitem__(index, value)
             return
         self._connect_child_emitters(value)
-        EventedList.__setitem__(self, key, value)
+        super().__setitem__(key, value)
 
     @overload
     def _delitem_indices(

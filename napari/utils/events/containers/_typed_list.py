@@ -47,7 +47,13 @@ class TypedMixin:
         super().__init__(data)
 
     def __setitem__(self, key, value):
-        super().__setitem__(key, self._type_check(value))
+        if isinstance(key, slice):
+            if not isinstance(value, Iterable):
+                raise TypeError('Can only assign an iterable to slice')
+            _value = [self._type_check(v) for v in value]
+        else:
+            _value = self._type_check(value)
+        super().__setitem__(key, _value)
 
     def insert(self, index: int, value: T):
         super().insert(index, self._type_check(value))
@@ -130,41 +136,34 @@ class TypedMixin:
             return (self._lookup[str](x) for x in self)
 
 
-class TypedList(TypedMixin, MutableSequence):
+class ConcreteMutableSequence(MutableSequence[T]):
     def __init__(
-        self,
-        data: Iterable[T] = None,
-        basetype: Union[Type[T], Sequence[Type[T]]] = (),
-        lookup: Dict[Type[L], Callable[[T], L]] = None,
+        self, data: Iterable[T] = None,
     ):
-        self._basetypes = (
-            basetype if isinstance(basetype, Sequence) else (basetype,)
-        )
-        self._lookup = lookup or {}
         self._list: List[T] = []
         self.extend(data or [])
-
-    def __setitem__(self, key, value):
-        self._list.__setitem__(key, self._type_check(value))
-
-    def insert(self, index: int, value: T):
-        self._list.insert(index, self._type_check(value))
-
-    def __getitem__(self, key):
-        if type(key) in self._lookup:
-            return self._list.__getitem__(self.index(key))
-        return self._list.__getitem__(key)
-
-    def __delitem__(self, key):
-        if type(key) in self._lookup:
-            return self._list.__delitem__(self.index(key))
-        return self._list.__delitem__(key)
 
     def __len__(self):
         return len(self._list)
 
     def __repr__(self):
         return repr(self._list)
+
+    def __setitem__(self, key, value):
+        self._list[key] = value
+
+    def insert(self, index: int, value: T):
+        self._list.insert(index, value)
+
+    def __getitem__(self, key):
+        return self._list[key]
+
+    def __delitem__(self, key):
+        del self._list[key]
+
+
+class TypedList(TypedMixin, ConcreteMutableSequence):
+    pass
 
 
 class TypedEventedList(TypedMixin, EventedList):
