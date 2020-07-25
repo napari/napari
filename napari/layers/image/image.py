@@ -524,15 +524,12 @@ class Image(IntensityVisualizationMixin, Layer):
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
 
-        if self.multiscale:
-            self._load_multi_scale()
-        else:
+        if not self.multiscale:
             self._create_image_slice()
             self._load_single_scale()
+            return
 
-    def _load_multi_scale(self) -> None:
-        """Load multi-scale image.
-        """
+        # Multiscale
         not_disp = self.dims.not_displayed
 
         # If 3d redering just show lowest level of multiscale
