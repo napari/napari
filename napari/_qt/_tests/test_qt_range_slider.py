@@ -1,8 +1,9 @@
-import numpy as np
-import pytest
 import os
 
+import numpy as np
+import pytest
 from qtpy.QtCore import QPoint, Qt
+
 from napari._qt.qt_range_slider import QHRangeSlider, QVRangeSlider
 
 

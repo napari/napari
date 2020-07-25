@@ -1,13 +1,13 @@
 import os
 from sys import platform
+from unittest.mock import patch
 
 import numpy as np
 import pytest
-from napari._qt.qt_dims import QtDims
-from napari.components import Dims
 from qtpy.QtCore import Qt
 
-from unittest.mock import patch
+from napari._qt.qt_dims import QtDims
+from napari.components import Dims
 
 
 def test_creating_view(qtbot):

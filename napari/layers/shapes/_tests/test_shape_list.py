@@ -1,7 +1,8 @@
 import numpy as np
-from napari.layers.shapes._shape_list import ShapeList
-from napari.layers.shapes._shapes_models import Rectangle, Polygon, Path
 import pytest
+
+from napari.layers.shapes._shape_list import ShapeList
+from napari.layers.shapes._shapes_models import Path, Polygon, Rectangle
 
 
 def test_empty_shape_list():

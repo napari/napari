@@ -1,18 +1,20 @@
 from collections.abc import Iterable
+
 import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import (
     QButtonGroup,
     QCheckBox,
+    QGridLayout,
     QLabel,
     QSlider,
-    QGridLayout,
 )
-from .qt_base_layer import QtLayerControls
-from ..qt_color_dialog import QColorSwatchEdit
+
 from ...layers.shapes._shapes_constants import Mode
-from ..qt_mode_buttons import QtModeRadioButton, QtModePushButton
+from ..qt_color_dialog import QColorSwatchEdit
+from ..qt_mode_buttons import QtModePushButton, QtModeRadioButton
 from ..utils import disable_with_opacity, qt_signals_blocked
+from .qt_base_layer import QtLayerControls
 
 
 class QtShapesControls(QtLayerControls):

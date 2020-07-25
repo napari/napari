@@ -1,7 +1,7 @@
 from typing import Optional
 
-from ._image_view import ImageView
 from ...types import ArrayLike, ImageConverter
+from ._image_view import ImageView
 
 
 class ImageSlice:

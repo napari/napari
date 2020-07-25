@@ -20,9 +20,8 @@ the final functions, along with introspection, and tab autocompletion, etc...
 """
 import inspect
 import sys
-import typing
 import textwrap
-
+import typing
 
 from numpydoc.docscrape import NumpyDocString
 

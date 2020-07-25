@@ -1,38 +1,39 @@
 from pathlib import Path
 
-from qtpy.QtCore import QCoreApplication, Qt, QSize
-from qtpy.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QFileDialog,
-    QSplitter,
-    QMessageBox,
-)
+from qtpy.QtCore import QCoreApplication, QSize, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
-from ..utils.io import imsave
-from vispy.scene import SceneCanvas, PanZoomCamera, ArcballCamera
+from qtpy.QtWidgets import (
+    QFileDialog,
+    QMessageBox,
+    QSplitter,
+    QVBoxLayout,
+    QWidget,
+)
+from vispy.scene import ArcballCamera, PanZoomCamera, SceneCanvas
 from vispy.visuals.transforms import ChainTransform
 
-from .qt_dims import QtDims
-from .qt_layerlist import QtLayerList
 from ..resources import get_stylesheet
-from ..utils.theme import template
+from ..utils import perf
 from ..utils.interactions import (
     ReadOnlyWrapper,
-    mouse_press_callbacks,
     mouse_move_callbacks,
+    mouse_press_callbacks,
     mouse_release_callbacks,
 )
+from ..utils.io import imsave
 from ..utils.key_bindings import components_to_key_combo
-from ..utils import perf
-
-from .utils import QImg2array, square_pixmap, circle_pixmap
-from .qt_controls import QtControls
+from ..utils.theme import template
+from .qt_about_key_bindings import QtAboutKeyBindings
+from .qt_dims import QtDims
+from .qt_layerlist import QtLayerList
+from .qt_performance import QtPerformance
 from .qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .qt_viewer_dock_widget import QtViewerDockWidget
-from .qt_about_key_bindings import QtAboutKeyBindings
-from .qt_performance import QtPerformance
-from .._vispy import create_vispy_visual
+from .utils import QImg2array, circle_pixmap, square_pixmap
+
+# FIXME: figure out the underlying problem here:
+from .._vispy import create_vispy_visual  # isort: skip
+from .qt_controls import QtControls  # isort: skip
 
 
 class QtViewer(QSplitter):

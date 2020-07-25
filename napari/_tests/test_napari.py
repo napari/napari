@@ -1,7 +1,6 @@
 import numpy as np
 import pytest
 
-
 import napari
 from napari._tests.utils import (
     check_viewer_functioning,

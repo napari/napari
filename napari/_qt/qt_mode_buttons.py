@@ -1,4 +1,4 @@
-from qtpy.QtWidgets import QRadioButton, QPushButton
+from qtpy.QtWidgets import QPushButton, QRadioButton
 
 
 class QtModeRadioButton(QRadioButton):

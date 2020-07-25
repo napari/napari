@@ -1,6 +1,8 @@
-from napari._qt.qt_console import QtConsole
-from IPython.terminal.interactiveshell import TerminalInteractiveShell
 from unittest import mock
+
+from IPython.terminal.interactiveshell import TerminalInteractiveShell
+
+from napari._qt.qt_console import QtConsole
 
 
 def test_console(qtbot):

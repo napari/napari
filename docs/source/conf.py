@@ -6,20 +6,21 @@
 
 # -- Path setup --------------------------------------------------------------
 
+import fileinput
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
-import sys
 import re
-import fileinput
+import sys
+
 import recommonmark  # noqa: F401
 from recommonmark.transform import AutoStructify
 
 sys.path.insert(0, os.path.abspath('../..'))
 from napari import __version__  # noqa: E402
-
 
 # -- Project information -----------------------------------------------------
 

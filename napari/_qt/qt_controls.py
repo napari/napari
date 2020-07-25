@@ -1,4 +1,5 @@
-from qtpy.QtWidgets import QStackedWidget, QFrame
+from qtpy.QtWidgets import QFrame, QStackedWidget
+
 from .layers import create_qt_controls
 
 

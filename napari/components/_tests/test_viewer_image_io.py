@@ -1,9 +1,10 @@
-import numpy as np
-from dask import array as da
 from tempfile import TemporaryDirectory
-import pytest
-from napari.components import ViewerModel
 
+import numpy as np
+import pytest
+from dask import array as da
+
+from napari.components import ViewerModel
 
 try:
     import zarr

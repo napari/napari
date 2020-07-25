@@ -4,9 +4,9 @@ import numpy as np
 import pytest
 
 from ...components import Dims
+from .._constants import LoopMode
 from ..qt_dims import QtDims
 from ..qt_dims_slider import AnimationWorker
-from .._constants import LoopMode
 
 
 @contextmanager

@@ -1,10 +1,10 @@
-from functools import partial
 from contextlib import suppress
+from functools import partial
 
 import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QImage, QPixmap
-from qtpy.QtWidgets import QComboBox, QLabel, QSlider, QPushButton
+from qtpy.QtWidgets import QComboBox, QLabel, QPushButton, QSlider
 
 from ..qt_range_slider import QHRangeSlider
 from ..qt_range_slider_popup import QRangeSliderPopup

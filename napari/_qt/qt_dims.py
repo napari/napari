@@ -6,8 +6,8 @@ from qtpy.QtGui import QFont, QFontMetrics
 from qtpy.QtWidgets import QLineEdit, QSizePolicy, QVBoxLayout, QWidget
 
 from ..components.dims import Dims
-from .qt_dims_slider import QtDimSliderWidget
 from ._constants import LoopMode
+from .qt_dims_slider import QtDimSliderWidget
 
 
 class QtDims(QWidget):

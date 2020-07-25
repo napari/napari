@@ -1,5 +1,5 @@
-from enum import auto
 import sys
+from enum import auto
 
 from ...utils.misc import StringEnum
 

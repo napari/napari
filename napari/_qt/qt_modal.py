@@ -1,4 +1,4 @@
-from qtpy.QtCore import QPoint, Qt, QRect
+from qtpy.QtCore import QPoint, QRect, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QDialog, QFrame, QVBoxLayout
 

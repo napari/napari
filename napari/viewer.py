@@ -5,13 +5,12 @@ from os.path import dirname, join
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import QApplication
 
-from .components import ViewerModel
+from . import __version__
 from ._qt.qt_main_window import Window
 from ._qt.qt_viewer import QtViewer
-from ._qt.threading import wait_for_workers_to_quit, create_worker
+from ._qt.threading import create_worker, wait_for_workers_to_quit
+from .components import ViewerModel
 from .utils.perf import perf_config
-
-from . import __version__
 
 
 class Viewer(ViewerModel):

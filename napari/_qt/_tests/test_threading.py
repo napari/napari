@@ -1,7 +1,9 @@
-from napari._qt import threading
 import inspect
-import pytest
 import time
+
+import pytest
+
+from napari._qt import threading
 
 
 def test_as_generator_function():

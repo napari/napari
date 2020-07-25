@@ -1,6 +1,5 @@
 import sys
 
-from qtpy.QtGui import QColor
 from ipykernel.connect import get_connection_file
 from ipykernel.inprocess.ipkernel import InProcessInteractiveShell
 from ipykernel.zmqshell import ZMQInteractiveShell
@@ -9,6 +8,8 @@ from IPython.terminal.interactiveshell import TerminalInteractiveShell
 from qtconsole.client import QtKernelClient
 from qtconsole.inprocess import QtInProcessKernelManager
 from qtconsole.rich_jupyter_widget import RichJupyterWidget
+from qtpy.QtGui import QColor
+
 from ..utils.misc import str_to_rgb
 
 """

@@ -9,12 +9,12 @@ from qtpy.QtWidgets import (
     QComboBox,
     QDoubleSpinBox,
     QFormLayout,
+    QFrame,
     QHBoxLayout,
     QLabel,
     QLineEdit,
     QPushButton,
     QWidget,
-    QFrame,
 )
 
 from ..components.dims_constants import DimsMode

@@ -1,9 +1,9 @@
-import numpy as np
 import dask.array as da
-import xarray as xr
-
+import numpy as np
 import pytest
+import xarray as xr
 from vispy.color import Colormap
+
 from napari.layers import Image
 
 

@@ -1,6 +1,7 @@
 import numpy as np
-from .shape import Shape
+
 from .._shapes_utils import find_corners, rectangle_to_box
+from .shape import Shape
 
 
 class Rectangle(Shape):

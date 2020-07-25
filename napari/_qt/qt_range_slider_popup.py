@@ -1,7 +1,7 @@
 from functools import partial
 
-from qtpy.QtCore import Qt, QPoint
-from qtpy.QtGui import QDoubleValidator, QFontMetrics, QFont
+from qtpy.QtCore import QPoint, Qt
+from qtpy.QtGui import QDoubleValidator, QFont, QFontMetrics
 from qtpy.QtWidgets import QHBoxLayout, QLineEdit
 
 from .qt_modal import QtPopup

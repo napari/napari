@@ -1,7 +1,9 @@
-from napari import __main__
 import sys
-import pytest
 from contextlib import contextmanager
+
+import pytest
+
+from napari import __main__
 
 
 def test_cli_works(monkeypatch, capsys):

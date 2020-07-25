@@ -4,7 +4,6 @@ import collections.abc
 import inspect
 import itertools
 import re
-
 from enum import Enum, EnumMeta
 from os import PathLike, fspath, path
 from typing import Optional, Sequence, Type, TypeVar

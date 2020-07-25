@@ -1,7 +1,8 @@
-from typing import Optional, List
+from typing import List, Optional
+
 from ..layers import Layer
-from ..utils.naming import inc_name_count
 from ..utils.list import ListModel
+from ..utils.naming import inc_name_count
 
 
 def _add(event):

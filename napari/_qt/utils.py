@@ -10,9 +10,9 @@ from qtpy.QtWidgets import (
     QGraphicsOpacityEffect,
     QHBoxLayout,
     QListWidget,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
-    QSizePolicy,
 )
 
 from ..utils.misc import is_sequence

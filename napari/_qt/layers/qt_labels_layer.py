@@ -1,26 +1,27 @@
 import sys
-from qtpy.QtGui import QPainter, QColor
-from qtpy.QtWidgets import (
-    QButtonGroup,
-    QWidget,
-    QSlider,
-    QCheckBox,
-    QLabel,
-    QSpinBox,
-    QHBoxLayout,
-    QComboBox,
-)
-from qtpy.QtCore import Qt
 
 import numpy as np
-from .qt_base_layer import QtLayerControls
-from ...layers.labels._labels_constants import (
-    Mode,
-    LabelColorMode,
-    LabelBrushShape,
+from qtpy.QtCore import Qt
+from qtpy.QtGui import QColor, QPainter
+from qtpy.QtWidgets import (
+    QButtonGroup,
+    QCheckBox,
+    QComboBox,
+    QHBoxLayout,
+    QLabel,
+    QSlider,
+    QSpinBox,
+    QWidget,
 )
-from ..qt_mode_buttons import QtModeRadioButton, QtModePushButton
+
+from ...layers.labels._labels_constants import (
+    LabelBrushShape,
+    LabelColorMode,
+    Mode,
+)
+from ..qt_mode_buttons import QtModePushButton, QtModeRadioButton
 from ..utils import disable_with_opacity
+from .qt_base_layer import QtLayerControls
 
 
 class QtLabelsControls(QtLayerControls):

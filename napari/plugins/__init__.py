@@ -1,8 +1,8 @@
 import sys
 
 from napari_plugin_engine import PluginManager
-from . import hook_specifications
-from . import _builtins
+
+from . import _builtins, hook_specifications
 
 # the main plugin manager instance for the `napari` plugin namespace.
 plugin_manager = PluginManager(

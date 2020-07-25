@@ -9,7 +9,8 @@ end-user annotates one of their function arguments with a type hint using one
 of those custom classes, magicgui will know what to do with it.
 
 """
-from typing import Any, Tuple, Type, Optional
+from typing import Any, Optional, Tuple, Type
+
 from qtpy.QtWidgets import QWidget
 
 from ..layers import Layer

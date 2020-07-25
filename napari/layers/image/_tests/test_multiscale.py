@@ -1,6 +1,7 @@
 import numpy as np
 from skimage.transform import pyramid_gaussian
 from vispy.color import Colormap
+
 from napari.layers import Image
 
 

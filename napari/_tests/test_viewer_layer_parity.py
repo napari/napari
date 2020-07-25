@@ -7,11 +7,11 @@ import inspect
 import re
 
 import pytest
-from numpydoc.docscrape import FunctionDoc, ClassDoc
+from numpydoc.docscrape import ClassDoc, FunctionDoc
 
-from napari import layers as module, Viewer
-from napari.utils.misc import camel_to_snake, callsignature
-
+from napari import Viewer
+from napari import layers as module
+from napari.utils.misc import callsignature, camel_to_snake
 
 layers = []
 

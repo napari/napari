@@ -1,13 +1,8 @@
 import os
-from typing import Tuple, List
+from typing import List, Tuple
 
 import numpy as np
-from vispy.color import (
-    BaseColormap,
-    Colormap,
-    get_colormap,
-    get_colormaps,
-)
+from vispy.color import BaseColormap, Colormap, get_colormap, get_colormaps
 
 from ...types import ValidColormapArg
 from .vendored import cm, colorconv

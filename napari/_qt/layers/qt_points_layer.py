@@ -12,9 +12,8 @@ from qtpy.QtWidgets import (
 from ...layers.points._points_constants import Mode, Symbol
 from ..qt_color_dialog import QColorSwatchEdit
 from ..qt_mode_buttons import QtModePushButton, QtModeRadioButton
-from ..utils import qt_signals_blocked
+from ..utils import disable_with_opacity, qt_signals_blocked
 from .qt_base_layer import QtLayerControls
-from ..utils import disable_with_opacity
 
 
 class QtPointsControls(QtLayerControls):

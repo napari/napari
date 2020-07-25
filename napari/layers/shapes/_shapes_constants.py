@@ -1,8 +1,8 @@
-from enum import auto
 import sys
+from enum import auto
 
 from ...utils.misc import StringEnum
-from ._shapes_models import Rectangle, Ellipse, Line, Path, Polygon
+from ._shapes_models import Ellipse, Line, Path, Polygon, Rectangle
 
 
 class Mode(StringEnum):

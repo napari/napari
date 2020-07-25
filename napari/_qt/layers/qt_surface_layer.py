@@ -1,5 +1,6 @@
+from qtpy.QtWidgets import QHBoxLayout, QLabel
+
 from .qt_image_base_layer import QtBaseImageControls
-from qtpy.QtWidgets import QLabel, QHBoxLayout
 
 
 class QtSurfaceControls(QtBaseImageControls):

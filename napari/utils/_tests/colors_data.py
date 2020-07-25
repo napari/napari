@@ -9,8 +9,8 @@ doesn't parse lists like [Color('red'), Color('red')]. Second, the color of
 'g' and 'green' is different. We're consistent with vispy's behavior ATM,
 but it might change in a future release.
 """
-from vispy.color import Color, ColorArray
 import numpy as np
+from vispy.color import Color, ColorArray
 
 # Apparently there are two types of greens - 'g' is represented by a
 # (0, 1, 0) tuple, while 'green' has an approximate value of

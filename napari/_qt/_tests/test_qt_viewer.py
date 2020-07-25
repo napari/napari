@@ -4,12 +4,12 @@ from unittest import mock
 import numpy as np
 import pytest
 
-from napari.utils.io import imread
 from napari._tests.utils import (
     add_layer_by_type,
     check_viewer_functioning,
     layer_test_data,
 )
+from napari.utils.io import imread
 
 
 def test_qt_viewer(make_test_viewer):

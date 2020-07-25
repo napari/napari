@@ -1,8 +1,8 @@
 import numpy as np
+
 from napari._qt.layers.qt_shapes_layer import QtShapesControls
 from napari.layers import Shapes
 from napari.utils.colormaps.standardize_color import transform_color
-
 
 _SHAPES = np.random.random((10, 4, 2))
 

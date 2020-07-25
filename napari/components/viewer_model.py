@@ -1,13 +1,14 @@
-from math import inf
 import itertools
+from math import inf
+
 import numpy as np
 
-from .add_layers_mixin import AddLayersMixin
-from .dims import Dims
-from .layerlist import LayerList
 from ..utils.event import EmitterGroup, Event
 from ..utils.key_bindings import KeymapHandler, KeymapProvider
 from ..utils.theme import palettes
+from .add_layers_mixin import AddLayersMixin
+from .dims import Dims
+from .layerlist import LayerList
 
 
 class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):

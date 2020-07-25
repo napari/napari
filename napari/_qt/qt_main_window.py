@@ -4,39 +4,39 @@ wrap.
 """
 import time
 
-# set vispy to use same backend as qtpy
-from ..utils.io import imsave
-
-from .qt_viewer import QtViewer
-from .qt_about import QtAbout
-from .qt_plugin_report import QtPluginErrReporter
-from .qt_plugin_sorter import QtPluginSorter
-from .qt_plugin_table import QtPluginTable
-from .qt_debug_menu import DebugMenu
-
-from .qt_viewer_dock_widget import QtViewerDockWidget
-from ..resources import get_stylesheet
-from ..utils import perf
+from qtpy.QtCore import Qt  # noqa: E402
+from qtpy.QtGui import QIcon, QKeySequence  # noqa: E402
 
 # these "# noqa" comments are here to skip flake8 linting (E402),
 # these module-level imports have to come after `app.use_app(API)`
 # see discussion on #638
 from qtpy.QtWidgets import (  # noqa: E402
-    QApplication,
-    QMainWindow,
-    QWidget,
-    QHBoxLayout,
-    QDockWidget,
-    QLabel,
     QAction,
+    QApplication,
+    QDockWidget,
+    QFileDialog,
+    QHBoxLayout,
+    QLabel,
+    QMainWindow,
     QShortcut,
     QStatusBar,
-    QFileDialog,
+    QWidget,
 )
-from qtpy.QtCore import Qt  # noqa: E402
-from qtpy.QtGui import QKeySequence, QIcon  # noqa: E402
-from .utils import QImg2array  # noqa: E402
+
+from ..resources import get_stylesheet
+from ..utils import perf
+
+# set vispy to use same backend as qtpy
+from ..utils.io import imsave
 from ..utils.theme import template  # noqa: E402
+from .qt_about import QtAbout
+from .qt_debug_menu import DebugMenu
+from .qt_plugin_report import QtPluginErrReporter
+from .qt_plugin_sorter import QtPluginSorter
+from .qt_plugin_table import QtPluginTable
+from .qt_viewer import QtViewer
+from .qt_viewer_dock_widget import QtViewerDockWidget
+from .utils import QImg2array  # noqa: E402
 
 
 class Window:

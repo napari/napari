@@ -4,6 +4,7 @@ repos:
     hooks:
     - id: black
       pass_filenames: true
+      exclude: vendored|examples
 -   repo: https://gitlab.com/pycqa/flake8
     rev: 3.7.9
     hooks:
@@ -14,8 +15,9 @@ repos:
 -   repo: https://github.com/asottile/seed-isort-config
     rev: v2.2.0
     hooks:
-    -   id: seed-isort-config
+    -  id: seed-isort-config
 -   repo: https://github.com/timothycrosley/isort
     rev: 5.1.4
     hooks:
-    -   id: isort
+    - id: isort
+      exclude: vendored|examples
