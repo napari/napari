@@ -458,6 +458,15 @@ class Image(IntensityVisualizationMixin, Layer):
         self._rendering = Rendering(rendering)
         self.events.rendering()
 
+    @property
+    def loaded(self):
+        """Has the data for this layer been loaded yet.
+
+        With asynchronous loading the layer might exist but its data
+        for the current slice has not been loaded.
+        """
+        return self._slice is not None and self._slice.loaded
+
     def _get_state(self):
         """Get dictionary of layer state.
 
@@ -520,15 +529,6 @@ class Image(IntensityVisualizationMixin, Layer):
         else:
             self._create_image_slice()
             self._load_single_scale()
-
-    @property
-    def loaded(self):
-        """Has the data for this layer been loaded yet.
-
-        With asynchronous loading the layer might exist but its data
-        for the current slice has not been loaded.
-        """
-        return self._slice is not None and self._slice.loaded
 
     def _load_multi_scale(self) -> None:
         """Load multi-scale image.
