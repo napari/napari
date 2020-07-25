@@ -277,12 +277,8 @@ class ChunkLoader:
         # We do an immediate load in the GUI thread in three cases:
         # 1. We are in synchronous mode.
         # 2. The request contains only ndarrays which are in memory.
-        # 3. We are inserting a delay in front of all requests.
-        if (
-            self.synchronous
-            or request.in_memory
-            and not self.force_delay_seconds
-        ):
+        # 3. We are adding a fake delay to all loads.
+        if self.synchronous or request.in_memory and not self.load_seconds:
             LOGGER.info("[sync] ChunkLoader.load_chunk")
             request.load_chunks_gui()
             return request
