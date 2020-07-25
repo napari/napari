@@ -31,10 +31,6 @@ from .qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .qt_viewer_dock_widget import QtViewerDockWidget
 from .utils import QImg2array, circle_pixmap, square_pixmap
 
-# FIXME: figure out the underlying problem here:
-from .._vispy import create_vispy_visual  # isort: skip
-from .qt_controls import QtControls  # isort: skip
-
 
 class QtViewer(QSplitter):
     """Qt view for the napari Viewer model.
@@ -79,6 +75,8 @@ class QtViewer(QSplitter):
     raw_stylesheet = get_stylesheet()
 
     def __init__(self, viewer):
+        from .qt_controls import QtControls
+
         super().__init__()
         self.setAttribute(Qt.WA_DeleteOnClose)
 
@@ -245,6 +243,8 @@ class QtViewer(QSplitter):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
+        from .._vispy import create_vispy_visual
+
         layers = event.source
         layer = event.item
         vispy_layer = create_vispy_visual(layer)
