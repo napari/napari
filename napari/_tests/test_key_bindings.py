@@ -88,8 +88,8 @@ def test_layer_key_bindings(make_test_viewer):
     mock_shift_release = Mock()
 
     @layer.bind_key('F')
-    def key_callback(l):
-        assert layer == l
+    def key_callback(_layer):
+        assert layer == _layer
         # on press
         mock_press.method()
         yield
@@ -97,8 +97,8 @@ def test_layer_key_bindings(make_test_viewer):
         mock_release.method()
 
     @layer.bind_key('Shift-F')
-    def key_shift_callback(l):
-        assert layer == l
+    def key_shift_callback(_layer):
+        assert layer == _layer
 
         # on press
         mock_shift_press.method()

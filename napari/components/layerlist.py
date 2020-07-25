@@ -57,10 +57,10 @@ class LayerList(ListModel):
         new_name : str
             Coerced, unique name.
         """
-        for l in self:
-            if l is layer:
+        for _layer in self:
+            if _layer is layer:
                 continue
-            if l.name == name:
+            if _layer.name == name:
                 name = inc_name_count(name)
 
         return name
