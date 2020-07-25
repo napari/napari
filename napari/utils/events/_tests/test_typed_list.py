@@ -40,6 +40,9 @@ def test_multitype_enforcement(list_type):
 
 
 def test_custom_lookup(list_type):
+    """Test that we can get objects by non-integer index using custom lookups.
+    """
+
     class Custom:
         def __init__(self, name='', data=()):
             self.name = name
@@ -85,6 +88,7 @@ def test_custom_lookup(list_type):
 
 
 def test_nested_type_enforcement():
+    """Test that type enforcement also works with NestableLists."""
     data = [1, 2, [3, 4, [5, 6]]]
     a = TypedNestableEventedList(data, basetype=int)
     assert a[2, 2, 1] == 6
