@@ -14,7 +14,7 @@ from ..intensity_mixin import IntensityVisualizationMixin
 from ._image_constants import Interpolation, Interpolation3D, Rendering
 from ._image_utils import guess_rgb, guess_multiscale
 from ._image_slice import ImageProperties, ImageSlice
-from ...utils.chunk import chunk_loader
+from ...utils.chunk import chunk_loader, ChunkRequest
 
 LOGGER = logging.getLogger("ChunkLoader")
 
@@ -617,8 +617,7 @@ class Image(IntensityVisualizationMixin, Layer):
         """
         indices = self.dims.indices
 
-        # For single-scale we just ask for the image, the thumbnail_source
-        # is derived from this as well.
+        # For single-scale we only request the image, no thumbnail source.
         chunks = {'image': self.data[indices]}
         request = chunk_loader.create_request(self, indices, chunks)
 
@@ -626,25 +625,27 @@ class Image(IntensityVisualizationMixin, Layer):
         # if the load was async and has not finished yet?
         self._transforms['tile2data'].scale = np.ones(self.dims.ndim)
 
-        # Load the chunks. This could load them synchronously right here in
-        # the GUI thread or it could queue up a request for a worker thread
-        # or process and self.chunk_loaded() will be called later.
+        # load_chunk() will return the request if the load was synchronous,
+        # otherwise it till return None meaning the load is in progress.
         satisfied_request = self._slice.load_chunk(request)
 
         if satisfied_request is not None:
             self.chunk_loaded(satisfied_request)
 
-    def chunk_loaded(self, request) -> None:
-        """Notify Image that an async request was satisfied.
+    def chunk_loaded(self, request: ChunkRequest) -> None:
+        """The given ChunkRequest was satisfied, we can use the data now.
 
-        The request.array has been turned into an ndarray in the worker thread.
+        Parameters
+        ----------
+        request : ChunkRequest
+            The request that was satisfied/loaded.
         """
         # Ultimately this check should not be needed, but for now.
         if request.data_id != id(self.data):
             LOGGER.warn(
                 "Loaded data_id=%d expected %d", request.data_id, id(self.data)
             )
-            return  # request was not for us!
+            return  # was not for us
 
         image = request.chunks['image']
 
