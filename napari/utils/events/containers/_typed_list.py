@@ -47,7 +47,13 @@ class TypedMixin:
         super().__init__(data)
 
     def __setitem__(self, key, value):
-        super().__setitem__(key, self._type_check(value))
+        if isinstance(key, slice):
+            if not isinstance(value, Iterable):
+                raise TypeError('Can only assign an iterable to slice')
+            _value = [self._type_check(v) for v in value]
+        else:
+            _value = self._type_check(value)
+        super().__setitem__(key, _value)
 
     def insert(self, index: int, value: T):
         super().insert(index, self._type_check(value))
