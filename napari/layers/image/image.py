@@ -719,12 +719,9 @@ class Image(IntensityVisualizationMixin, Layer):
             # warning filter can be removed with scipy 1.4
             with warnings.catch_warnings():
                 warnings.simplefilter("ignore")
-                try:
-                    downsampled = ndi.zoom(
-                        image, zoom_factor, prefilter=False, order=0
-                    )
-                except RuntimeError:
-                    return
+                downsampled = ndi.zoom(
+                    image, zoom_factor, prefilter=False, order=0
+                )
             low, high = self.contrast_limits
             downsampled = np.clip(downsampled, low, high)
             color_range = high - low
