@@ -179,23 +179,23 @@ def test_reordering_layers(qtbot):
     layers.append(layer_d)
 
     # Check layout and layers list match after rearranging layers
-    layers[:] = layers[(1, 0, 3, 2)]
+    layers[:] = [layers[i] for i in (1, 0, 3, 2)]
     assert view.vbox_layout.count() == 2 * (len(layers) + 1)
     assert check_layout_layers(view.vbox_layout, layers)
     assert check_layout_dividers(view.vbox_layout, len(layers))
 
-    # Check layout and layers list match after swapping two layers
-    layers['image_b', 'image_c'] = layers['image_c', 'image_b']
+    # Do another reorder and check layout and layers list match
+    # after swapping layers again
+    layers[:] = [layers[i] for i in (1, 0, 3, 2)]
     assert view.vbox_layout.count() == 2 * (len(layers) + 1)
     assert check_layout_layers(view.vbox_layout, layers)
     assert check_layout_dividers(view.vbox_layout, len(layers))
 
     # Check layout and layers list match after reversing list
-    # TEST CURRENTLY FAILING
-    # layers.reverse()
-    # assert view.vbox_layout.count() == 2 * (len(layers) + 1)
-    # assert check_layout_layers(view.vbox_layout, layers)
-    # assert check_layout_dividers(view.vbox_layout, len(layers))
+    layers.reverse()
+    assert view.vbox_layout.count() == 2 * (len(layers) + 1)
+    assert check_layout_layers(view.vbox_layout, layers)
+    assert check_layout_dividers(view.vbox_layout, len(layers))
 
     # Check layout and layers list match after rearranging selected layers
     layer_e = Image(np.random.random((15, 15)))

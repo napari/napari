@@ -109,11 +109,11 @@ class EventedList(SupportsEvents, MutableSequence[T]):
     # def extend(self, value: Iterable[T]): ...
     # def remove(self, value: T): ...
 
-    @overload
+    @overload  # noqa: F811
     def __getitem__(self, key: int) -> T:
         ...  # pragma: no cover
 
-    @overload
+    @overload  # noqa: F811
     def __getitem__(self, key: slice) -> 'EventedList[T]':  # noqa: F811
         ...  # pragma: no cover
 
@@ -123,11 +123,11 @@ class EventedList(SupportsEvents, MutableSequence[T]):
             return self.__class__(result)
         return result
 
-    @overload
+    @overload  # noqa: F811
     def __setitem__(self, key: int, value: T):
         ...  # pragma: no cover
 
-    @overload
+    @overload  # noqa: F811
     def __setitem__(self, key: slice, value: Iterable[T]):  # noqa: F811
         ...  # pragma: no cover
 
@@ -212,7 +212,7 @@ class EventedList(SupportsEvents, MutableSequence[T]):
             new_index -= 1
 
         self.events.moving(index=cur_index, new_index=new_index)
-        with self.events.blocker():
+        with self.events.blocker_all():
             item = self.pop(cur_index)
             self.insert(new_index, item)
         self.events.moved(index=cur_index, new_index=new_index, value=item)
@@ -260,7 +260,7 @@ class EventedList(SupportsEvents, MutableSequence[T]):
         dest_index -= len([i for i in to_move if i < dest_index])
 
         self.events.moving(index=to_move, new_index=dest_index)
-        with self.events.blocker():
+        with self.events.blocker_all():
             items = [self[i] for i in to_move]
             for i in sorted(to_move, reverse=True):
                 self.pop(i)

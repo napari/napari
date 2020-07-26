@@ -9,16 +9,8 @@ class LayerList(TypedEventedList):
 
     Parameters
     ----------
-    iterable : iterable
+    data : iterable
         Iterable of napari.layer.Layer
-
-    Attributes
-    ----------
-    events : vispy.util.event.EmitterGroup
-        Event hooks:
-            * added(item, index): whenever an item is added
-            * removed(item): whenever an item is removed
-            * reordered(): whenever the list is reordered
     """
 
     def __init__(self, data=()):
@@ -26,25 +18,33 @@ class LayerList(TypedEventedList):
             data=data, basetype=Layer, lookup={str: lambda e: e.name},
         )
 
-    def _prepare_to_add_layer(self, layer: Layer):
-        if isinstance(layer, Layer):
-            layer.name = self._coerce_name(layer.name, layer)
-            layer.events.name.connect(lambda e: self._update_name(e))
+        self.events.inserted.connect(self._inserted)
+        self.events.removed.connect(self._removed)
 
-    def insert(self, index: int, value):
-        self._prepare_to_add_layer(value)
-        super().insert(index, value)
-        self.unselect_all(ignore=value)
+    def _inserted(self, event):
+        layer = event.value
+        layer.name = self._coerce_name(layer.name, layer)
+        layer.events.name.connect(lambda e: self._update_name(e))
+        layer.selected = True
+        self.unselect_all(ignore=layer)
 
-    def __setitem__(self, key, value):
-        self._prepare_to_add_layer(value)
-        super().__setitem__(key, value)
-        # FIXME: the behavior of unselecting everything but the last-added
-        # layer is error prone and should probably be handled elsewhere
-        # in a selection model.  Technically there is currently different
-        # behavior between doing ``layer_list.append(new_layer)`` and
-        # overwriting/changing an existing one: ``layer_list[1] = (new_layer)``
-        # self.unselect_all(ignore=value)
+    def _removed(self, event):
+        # FIXME: Currently need complex logic to manage event connections
+        # when a layer gets disconnected, in case it gets connected again.
+        layer = event.value
+        layer.events.disconnect()
+        for em in layer.events.emitters.values():
+            em.disconnect()
+        layer.dims.events.disconnect()
+        for em in layer.dims.events.emitters.values():
+            em.disconnect()
+        # But then need to reconnect any events internal to the layer
+        layer.events.data.connect(lambda e: layer._set_editable())
+        layer.dims.events.ndisplay.connect(lambda e: layer._set_editable())
+        layer.dims.events.order.connect(layer.refresh)
+        layer.dims.events.ndisplay.connect(layer._update_dims)
+        layer.dims.events.order.connect(layer._update_dims)
+        layer.dims.events.axis.connect(layer.refresh)
 
     def _coerce_name(self, name, layer=None):
         """Coerce a name into a unique equivalent.
@@ -114,9 +114,7 @@ class LayerList(TypedEventedList):
         for insert_idx, elem_idx in enumerate(selected, start=insert - offset):
             indices.insert(insert_idx, elem_idx)
         # reorder list
-        with self.events.blocker():
-            self[:] = [self[i] for i in indices]
-        self.events.reordered(value=self)
+        self.move_multiple(indices, 0)
 
     def unselect_all(self, ignore=None):
         """Unselects all layers expect any specified in ignore.

@@ -130,21 +130,21 @@ class NestableEventedList(EventedList[T]):
     # def extend(self, value: Iterable[T]): ...
     # def remove(self, value: T): ...
 
-    @overload
+    @overload  # noqa: F811
     def __getitem__(self, key: int) -> T:
         ...  # pragma: no cover
 
-    @overload
+    @overload  # noqa: F811
     def __getitem__(  # noqa: F811
         self, key: ParentIndex
     ) -> 'NestableEventedList[T]':
         ...  # pragma: no cover
 
-    @overload
+    @overload  # noqa: F811
     def __getitem__(self, key: slice) -> 'NestableEventedList[T]':  # noqa
         ...  # pragma: no cover
 
-    @overload
+    @overload  # noqa: F811
     def __getitem__(  # noqa: F811
         self, key: NestedIndex
     ) -> Union[T, 'NestableEventedList[T]']:
@@ -158,11 +158,11 @@ class NestableEventedList(EventedList[T]):
             return item
         return super().__getitem__(key)
 
-    @overload
+    @overload  # noqa: F811
     def __setitem__(self, key: Union[int, NestedIndex], value: T):
         ...  # pragma: no cover
 
-    @overload
+    @overload  # noqa: F811
     def __setitem__(self, key: slice, value: Iterable[T]):  # noqa: F811
         ...  # pragma: no cover
 
@@ -180,13 +180,13 @@ class NestableEventedList(EventedList[T]):
         self._connect_child_emitters(value)
         super().__setitem__(key, value)
 
-    @overload
+    @overload  # noqa: F811
     def _delitem_indices(
         self, key: Index
     ) -> Iterable[Tuple[EventedList[T], int]]:
         ...  # pragma: no cover
 
-    @overload
+    @overload  # noqa: F811
     def _delitem_indices(  # noqa: F811
         self, key: NestedIndex
     ) -> Iterable[Tuple[EventedList[T], Index]]:
@@ -313,7 +313,7 @@ class NestableEventedList(EventedList[T]):
                 shift_dest -= 1
 
         # TODO: add the appropriate moving/moved events
-        with self.events.blocker():
+        with self.events.blocker_all():
             # delete the stored items from the list
             for idx in sorted(sources, reverse=True):
                 del self[idx]
@@ -370,7 +370,7 @@ class NestableEventedList(EventedList[T]):
                     return False
 
         self.events.moving(index=cur_index, new_index=new_index)
-        with self.events.blocker():
+        with self.events.blocker_all():
             dest_par = self[dest_par_i]  # grab this before popping src_i
             value = self[src_par_i].pop(src_i)
             dest_par.insert(dest_i, value)

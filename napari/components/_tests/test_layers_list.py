@@ -105,10 +105,6 @@ def test_reordering():
     layers[:] = [layers[i] for i in (1, 0, 2)]
     assert list(layers) == [layer_b, layer_a, layer_c]
 
-    # # Swap layers by name
-    # layers['image_b', 'image_c'] = [layers[i] for i in ('image_c', 'image_b')]
-    # assert list(layers) == [layer_c, layer_a, layer_b]
-
     # Reverse layers
     layers.reverse()
     assert list(layers) == [layer_c, layer_a, layer_b]
@@ -333,31 +329,32 @@ def test_move_selected():
     layers.move_selected(2, 2)
     assert list(layers) == [layer_b, layer_a, layer_c, layer_d]
     assert [l.selected for l in layers] == [False, True, True, False]
-    layers[:] = [layers[i] for i in (1, 0, 2, 3)]
+    layers.move_multiple((1, 0, 2, 3), 0)
 
     # Move selection together to middle
+    print('sss', [l.selected for l in layers])
     layers.move_selected(0, 1)
     assert list(layers) == [layer_b, layer_a, layer_c, layer_d]
     assert [l.selected for l in layers] == [False, True, True, False]
-    layers[:] = [layers[i] for i in (1, 0, 2, 3)]
+    layers.move_multiple((1, 0, 2, 3), 0)
 
     # Move selection together to end
     layers.move_selected(2, 3)
     assert list(layers) == [layer_b, layer_d, layer_a, layer_c]
     assert [l.selected for l in layers] == [False, False, True, True]
-    layers[:] = [layers[i] for i in (2, 0, 3, 1)]
+    layers.move_multiple((2, 0, 3, 1), 0)
 
     # Move selection together to end
     layers.move_selected(0, 2)
     assert list(layers) == [layer_b, layer_d, layer_a, layer_c]
     assert [l.selected for l in layers] == [False, False, True, True]
-    layers[:] = [layers[i] for i in (2, 0, 3, 1)]
+    layers.move_multiple((2, 0, 3, 1), 0)
 
     # Move selection together to end
     layers.move_selected(0, 3)
     assert list(layers) == [layer_b, layer_d, layer_a, layer_c]
     assert [l.selected for l in layers] == [False, False, True, True]
-    layers[:] = [layers[i] for i in (2, 0, 3, 1)]
+    layers.move_multiple((2, 0, 3, 1), 0)
 
     layer_e = Image(np.random.random((15, 15)))
     layer_f = Image(np.random.random((15, 15)))

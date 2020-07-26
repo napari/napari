@@ -84,11 +84,6 @@ class TransformChain(TypedList, Transform):
     def __call__(self, coords):
         return tz.pipe(coords, *self)
 
-    def __newlike__(self, data):
-        return TypedList(
-            basetype=self._basetype, data=data, lookup=self._lookup
-        )
-
     @property
     def inverse(self) -> 'TransformChain':
         """Return the inverse transform chain."""
