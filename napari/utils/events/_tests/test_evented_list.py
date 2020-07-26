@@ -115,22 +115,66 @@ def test_copy(test_list, regular_list):
 
 
 def test_move(test_list):
-    """Copying an evented list should return a same-class evented list."""
+    """Test the that we can move objects with the move method"""
     before = tuple(test_list)
     assert before == (0, 1, 2, 3, 4)  # from fixture
-    test_list.move(
-        0, 3
-    )  # pop the object at 0 and insert at current position 3
+    # pop the object at 0 and insert at current position 3
+    test_list.move(0, 3)
     expectation = (1, 2, 0, 3, 4)
     assert tuple(test_list) != before
     assert tuple(test_list) == expectation
 
     # move the other way
     before = tuple(test_list)
-    test_list.move(
-        3, 0
-    )  # pop the object at 3 and insert at current position 0
+    # pop the object at 3 and insert at current position 0
+    test_list.move(3, 0)
     expectation = (0, 1, 2, 3, 4)
+
+
+@pytest.mark.parametrize(
+    'sources,dest,expectation',
+    [
+        ([0, 2, 3], 6, [1, 4, 5, 0, 2, 3, 6, 7]),  # move back
+        ([4, 7], 1, [0, 4, 7, 1, 2, 3, 5, 6]),  # move forward
+        ([0, 5, 6], 3, [1, 2, 0, 5, 6, 3, 4, 7]),  # move in between
+        ([slice(None, 3)], 6, [3, 4, 5, 0, 1, 2, 6, 7]),  # move slice back
+        ([slice(5, 8)], 2, [0, 1, 5, 6, 7, 2, 3, 4]),  # move slice forward
+        ([slice(1, 8, 2)], 3, [0, 2, 1, 3, 5, 7, 4, 6]),  # move slice between
+        ([slice(None, 8, 3)], 4, [1, 2, 0, 3, 6, 4, 5, 7]),  # again
+    ],
+)
+def test_move_multiple(sources, dest, expectation):
+    """Test the that we can move objects with the move method"""
+    el = EventedList(range(8))
+    el.events = Mock(wraps=el.events)
+    assert el == [0, 1, 2, 3, 4, 5, 6, 7]
+
+    el.move_multiple(sources, dest)
+    assert el == expectation
+    el.events.moving.assert_called_once()
+    el.events.moved.assert_called_once()
+    el.events.reordered.assert_called_with(value=expectation)
+
+
+def test_move_multiple_mimics_slice_reorder():
+    """Test the that move_multiple provides the same result as slice insertion.
+    """
+    data = list(range(8))
+    el = EventedList(data)
+    el.events = Mock(wraps=el.events)
+    assert el == data
+    new_order = [1, 5, 3, 4, 6, 7, 2, 0]
+    # this syntax
+    el.move_multiple(new_order, 0)
+    # is the same as this syntax
+    data[:] = [data[i] for i in new_order]
+    assert el == new_order
+    assert el == data
+    el.events.moving.assert_called_with(index=new_order, new_index=0)
+    el.events.moved.assert_called_with(
+        index=new_order, new_index=0, value=new_order,
+    )
+    el.events.reordered.assert_called_with(value=new_order)
 
 
 def test_slice(test_list, regular_list):

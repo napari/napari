@@ -27,6 +27,7 @@ from typing import (
     Iterable,
     List,
     MutableSequence,
+    Sequence,
     Tuple,
     TypeVar,
     Union,
@@ -205,16 +206,68 @@ class EventedList(SupportsEvents, MutableSequence[T]):
         """Insert object at ``cur_index`` before ``new_index``.
 
         Both indices refer to the list prior to any object removal
+        (pre-move space).
         """
         if new_index > cur_index:
             new_index -= 1
 
         self.events.moving(index=cur_index, new_index=new_index)
-        item = self._list.pop(cur_index)
-        self._list.insert(new_index, item)
+        with self.events.blocker():
+            item = self.pop(cur_index)
+            self.insert(new_index, item)
         self.events.moved(index=cur_index, new_index=new_index, value=item)
         self.events.reordered(value=self)
         return True
+
+    def move_multiple(self, sources: Sequence[Index], dest_index: int,) -> int:
+        """Move a batch of indices, to a single destination.
+
+        Note, if the dest_index is higher than any of the source indices, then
+        the resulting position of the moved objects after the move operation
+        is complete will be lower than ``dest_index``.
+
+        Parameters
+        ----------
+        sources : Sequence[int or slice]
+            A sequence of indices
+        dest_index : int
+            The destination index.  All sources will be inserted before this
+            index (in pre-move space)
+
+        Returns
+        -------
+        int
+            The number of successful move operations completed.
+
+        Raises
+        ------
+        TypeError
+            If the destination index is a slice, or any of the source indices
+            are not ``int`` or ``slice``.
+        """
+        if isinstance(dest_index, slice):
+            raise TypeError("Destination index may not be a slice")
+
+        to_move = []
+        for idx in sources:
+            if isinstance(idx, slice):
+                to_move.extend(list(range(*idx.indices(len(self)))))
+            elif isinstance(idx, int):
+                to_move.append(idx)
+            else:
+                raise TypeError("Can only move integer or slice indices")
+
+        dest_index -= len([i for i in to_move if i < dest_index])
+
+        self.events.moving(index=to_move, new_index=dest_index)
+        with self.events.blocker():
+            items = [self[i] for i in to_move]
+            for i in sorted(to_move, reverse=True):
+                self.pop(i)
+            self[dest_index:dest_index] = items
+        self.events.moved(index=to_move, new_index=dest_index, value=items)
+        self.events.reordered(value=self)
+        return len(to_move)
 
     def reverse(self) -> None:
         """Reverse list *IN PLACE*."""
