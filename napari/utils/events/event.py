@@ -837,6 +837,18 @@ class EmitterGroup(EventEmitter):
             elif isinstance(emitter, EmitterGroup):
                 emitter.ignore_callback_errors_all(ignore)
 
+    def blocker_all(self):
+        """Return an EventBlockerAll to be used in 'with' statements
+
+        Notes
+        -----
+        For example, one could do::
+
+            with emitter.blocker_all():
+                pass  # ..do stuff; no events will be emitted..
+        """
+        return EventBlockerAll(self)
+
 
 class EventBlocker(object):
 
@@ -853,3 +865,19 @@ class EventBlocker(object):
 
     def __exit__(self, *args):
         self.target.unblock(self.callback)
+
+
+class EventBlockerAll(object):
+
+    """ Represents a block_all for an EmitterGroup to be used in a context
+    manager (i.e. 'with' statement).
+    """
+
+    def __init__(self, target):
+        self.target = target
+
+    def __enter__(self):
+        self.target.block_all()
+
+    def __exit__(self, *args):
+        self.target.unblock_all()
