@@ -303,7 +303,7 @@ def test_move_selected():
     assert [l.selected for l in layers] == [True, True, False, False]
 
     # Move first two selected to middle of list
-    layers.move_selected(0, 1)
+    layers.move_selected(0, 2)
     assert list(layers) == [layer_c, layer_a, layer_b, layer_d]
     assert [l.selected for l in layers] == [False, True, True, False]
 
@@ -332,7 +332,6 @@ def test_move_selected():
     layers.move_multiple((1, 0, 2, 3), 0)
 
     # Move selection together to middle
-    print('sss', [l.selected for l in layers])
     layers.move_selected(0, 1)
     assert list(layers) == [layer_b, layer_a, layer_c, layer_d]
     assert [l.selected for l in layers] == [False, True, True, False]
@@ -340,12 +339,6 @@ def test_move_selected():
 
     # Move selection together to end
     layers.move_selected(2, 3)
-    assert list(layers) == [layer_b, layer_d, layer_a, layer_c]
-    assert [l.selected for l in layers] == [False, False, True, True]
-    layers.move_multiple((2, 0, 3, 1), 0)
-
-    # Move selection together to end
-    layers.move_selected(0, 2)
     assert list(layers) == [layer_b, layer_d, layer_a, layer_c]
     assert [l.selected for l in layers] == [False, False, True, True]
     layers.move_multiple((2, 0, 3, 1), 0)

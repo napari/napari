@@ -869,8 +869,8 @@ class EventBlocker(object):
 
 class EventBlockerAll(object):
 
-    """ Represents a block all for an EventEmitterGroup to be
-    used in a context manager (i.e. 'with' statement).
+    """ Represents a block_all for an EmitterGroup to be used in a context
+    manager (i.e. 'with' statement).
     """
 
     def __init__(self, target):

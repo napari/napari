@@ -79,8 +79,6 @@ class LayerList(TypedEventedList):
         """List of selected layers."""
         return [layer for layer in self if layer.selected]
 
-    # FIXME: refactor, and possibly move elsewhere.  we should not have
-    # logic here that worries about dragging and dropping).
     def move_selected(self, index, insert):
         """Reorder list by moving the item at index and inserting it
         at the insert index. If additional items are selected these will
@@ -98,23 +96,14 @@ class LayerList(TypedEventedList):
         insert : int
             Index that item(s) will be inserted at
         """
-        total = len(self)
-        indices = list(range(total))
         if not self[index].selected:
             self.unselect_all()
             self[index].selected = True
-        selected = [i for i in range(total) if self[i].selected]
-
-        # remove all indices to be moved
-        for i in selected:
-            indices.remove(i)
-        # adjust offset based on selected indices to move
-        offset = sum([i < insert and i != index for i in selected])
-        # insert indices to be moved at correct start
-        for insert_idx, elem_idx in enumerate(selected, start=insert - offset):
-            indices.insert(insert_idx, elem_idx)
-        # reorder list
-        self.move_multiple(indices, 0)
+            moving = (index,)
+        else:
+            moving = [i for i, item in enumerate(self) if item.selected]
+        offset = insert >= index
+        self.move_multiple(moving, insert + offset)
 
     def unselect_all(self, ignore=None):
         """Unselects all layers expect any specified in ignore.

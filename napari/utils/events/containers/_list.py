@@ -138,22 +138,20 @@ class EventedList(SupportsEvents, MutableSequence[T]):
         if isinstance(key, slice):
             if not isinstance(value, Iterable):
                 raise TypeError('Can only assign an iterable to slice')
-            indices = list(range(*key.indices(len(self))))
             if key.step is not None:  # extended slices are more restricted
-                seq_len = len(value)
-                slice_len = len([self[i] for i in indices])
-                if not seq_len == slice_len:
+                indices = list(range(*key.indices(len(self))))
+                if not len(value) == len(indices):
                     raise ValueError(
-                        f"attempt to assign sequence of size {seq_len} to "
-                        f"extended slice of size {slice_len}"
+                        f"attempt to assign sequence of size {len(value)} to "
+                        f"extended slice of size {len(indices)}"
                     )
                 for i, v in zip(indices, value):
                     self.__setitem__(i, v)
             else:
                 del self[key]
-                idx = 0 if key.start is None else key.start
+                start = key.start or 0
                 for i, v in enumerate(value):
-                    self.insert(idx + i, v)
+                    self.insert(start + i, v)
         else:
             self._list[key] = value
             self.events.changed(index=key, old_value=old, value=value)
@@ -165,14 +163,7 @@ class EventedList(SupportsEvents, MutableSequence[T]):
         if isinstance(key, int):
             return [(self, key if key >= 0 else key + len(self))]
         elif isinstance(key, slice):
-            _start = key.start or 0
-            _stop = key.stop or len(self)
-            _step = key.step or 1
-            if _start < 0:
-                _start = len(self) + _start
-            if _stop < 0:
-                _stop = len(self) + _stop
-            return [(self, i) for i in range(_start, _stop, _step)]
+            return [(self, i) for i in range(*key.indices(len(self)))]
         raise TypeError("Deletion index must be int, or slice")
 
     def __delitem__(self, key: Index):
@@ -202,24 +193,28 @@ class EventedList(SupportsEvents, MutableSequence[T]):
         self._list.insert(index, value)
         self.events.inserted(index=index, value=value)
 
-    def move(self, cur_index: int, new_index: int) -> bool:
-        """Insert object at ``cur_index`` before ``new_index``.
+    def move(self, src_index: int, dest_index: int = 0) -> bool:
+        """Insert object at ``src_index`` before ``dest_index``.
 
         Both indices refer to the list prior to any object removal
         (pre-move space).
         """
-        if new_index > cur_index:
-            new_index -= 1
+        if dest_index < 0:
+            dest_index += len(self) + 1
+        if dest_index > src_index:
+            dest_index -= 1
 
-        self.events.moving(index=cur_index, new_index=new_index)
+        self.events.moving(index=src_index, dest_index=dest_index)
         with self.events.blocker_all():
-            item = self.pop(cur_index)
-            self.insert(new_index, item)
-        self.events.moved(index=cur_index, new_index=new_index, value=item)
+            item = self.pop(src_index)
+            self.insert(dest_index, item)
+        self.events.moved(index=src_index, dest_index=dest_index, value=item)
         self.events.reordered(value=self)
         return True
 
-    def move_multiple(self, sources: Sequence[Index], dest_index: int,) -> int:
+    def move_multiple(
+        self, sources: Sequence[Index], dest_index: int = 0
+    ) -> int:
         """Move a batch of indices, to a single destination.
 
         Note, if the dest_index is higher than any of the source indices, then
@@ -230,9 +225,11 @@ class EventedList(SupportsEvents, MutableSequence[T]):
         ----------
         sources : Sequence[int or slice]
             A sequence of indices
-        dest_index : int
+        dest_index : int, optional
             The destination index.  All sources will be inserted before this
-            index (in pre-move space)
+            index (in pre-move space), by default 0... which has the effect of
+            "bringing to front" everything in ``sources``, or acting as a
+            "reorder" method if ``sources`` contains all indices.
 
         Returns
         -------
@@ -257,13 +254,18 @@ class EventedList(SupportsEvents, MutableSequence[T]):
             else:
                 raise TypeError("Can only move integer or slice indices")
 
+        # remove duplicates while maintaing order, python 3.7+
+        to_move = list(dict.fromkeys(to_move))
+
+        if dest_index < 0:
+            dest_index += len(self) + 1
         dest_index -= len([i for i in to_move if i < dest_index])
 
         self.events.moving(index=to_move, new_index=dest_index)
         with self.events.blocker_all():
             items = [self[i] for i in to_move]
             for i in sorted(to_move, reverse=True):
-                self.pop(i)
+                del self[i]
             self[dest_index:dest_index] = items
         self.events.moved(index=to_move, new_index=dest_index, value=items)
         self.events.reordered(value=self)

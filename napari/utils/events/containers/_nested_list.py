@@ -222,8 +222,8 @@ class NestableEventedList(EventedList[T]):
         source_index = self.index(event.source)
         for attr in ('index', 'new_index'):
             if hasattr(event, attr):
-                cur_index = ensure_tuple_index(event.index)
-                setattr(event, attr, (source_index,) + cur_index)
+                src_index = ensure_tuple_index(event.index)
+                setattr(event, attr, (source_index,) + src_index)
         if not hasattr(event, 'index'):
             setattr(event, 'index', source_index)
 
@@ -256,7 +256,7 @@ class NestableEventedList(EventedList[T]):
         return dest_index
 
     def move_multiple(
-        self, sources: Sequence[NestedIndex], dest_index: NestedIndex,
+        self, sources: Sequence[NestedIndex], dest_index: NestedIndex = (0,),
     ) -> int:
         """Move a batch of nested indices, to a single destination.
 
@@ -268,9 +268,9 @@ class NestableEventedList(EventedList[T]):
         ----------
         sources : Sequence[NestedIndex]
             A sequence of indices in nested index form.
-        dest_index : NestedIndex
+        dest_index : NestedIndex, optional
             The destination index.  All sources will be inserted before this
-            index.
+            index, by default will insert at the front of the root list.
 
         Returns
         -------
@@ -326,17 +326,18 @@ class NestableEventedList(EventedList[T]):
 
     def move(
         self,
-        cur_index: Union[int, NestedIndex],
-        new_index: Union[int, NestedIndex],
+        src_index: Union[int, NestedIndex],
+        dest_index: Union[int, NestedIndex] = (0,),
     ) -> bool:
-        """Move a single item from ``cur_index`` to ``new_index``.
+        """Move a single item from ``src_index`` to ``dest_index``.
 
         Parameters
         ----------
-        cur_index : Union[int, NestedIndex]
+        src_index : Union[int, NestedIndex]
             The index of the object to move
-        new_index : Union[int, NestedIndex]
-            The destination.  Object will be inserted before ``new_index.``
+        dest_index : Union[int, NestedIndex], optional
+            The destination.  Object will be inserted before ``dest_index.``,
+            by default, will insert at the front of the root list.
 
         Returns
         -------
@@ -349,11 +350,11 @@ class NestableEventedList(EventedList[T]):
             If the terminal source is a slice, or if the source is this root
             object
         """
-        logger.debug(f"move(cur_index={cur_index}, new_index={new_index})")
-        src_par_i, src_i = split_nested_index(cur_index)
-        dest_par_i, dest_i = split_nested_index(new_index)
+        logger.debug(f"move(src_index={src_index}, dest_index={dest_index})")
+        src_par_i, src_i = split_nested_index(src_index)
+        dest_par_i, dest_i = split_nested_index(dest_index)
         dest_i = self._non_negative_index(dest_par_i, dest_i)
-        new_index = dest_par_i + (dest_i,)
+        dest_index = dest_par_i + (dest_i,)
 
         if isinstance(src_i, slice):
             raise ValueError("Terminal source index may not be a slice")
@@ -369,12 +370,12 @@ class NestableEventedList(EventedList[T]):
                 if src_i == dest_i:
                     return False
 
-        self.events.moving(index=cur_index, new_index=new_index)
+        self.events.moving(index=src_index, new_index=dest_index)
         with self.events.blocker_all():
             dest_par = self[dest_par_i]  # grab this before popping src_i
             value = self[src_par_i].pop(src_i)
             dest_par.insert(dest_i, value)
 
-        self.events.moved(index=cur_index, new_index=new_index, value=value)
+        self.events.moved(index=src_index, new_index=dest_index, value=value)
         self.events.reordered(value=self)
         return True
