@@ -40,33 +40,21 @@ class ImageSlice:
 
     thumbnail : ImageView
         The source image used to compute the smaller thumbnail image.
-
-    Examples
-    --------
-    Create with some default image:
-
-    >> image_slice = ImageSlice(default_image)
-
-    Set raw image or thumbnail, viewable is computed.:
-
-    >> image_slice.image = raw_image
-    >> image_slice.thumbnail = raw_thumbnail
-
-    Access viewable images:
-
-    >> draw_image(image_slice.image.view)
-    >> draw_thumbnail(image_slice.thumbnail.view)
     """
 
     def __init__(
         self,
         view_image: ArrayLike,
-        properties: ImageProperties,
         image_converter: ImageConverter,
+        properties: ImageProperties = None,
     ):
         LOGGER.info("ImageSlice.__init__")
         self.image: ImageView = ImageView(view_image, image_converter)
         self.thumbnail: ImageView = ImageView(view_image, image_converter)
+
+        # If None then we are in legacy mode, for the old Image.py, and
+        # it cannot call our set_raw_images() or chunk_loaded() methods
+        # which use these properties.
         self.properties = properties
 
         # We're showing the slice at these indices.

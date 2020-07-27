@@ -12,7 +12,7 @@ from ..utils.layer_utils import calc_data_range
 from ..intensity_mixin import IntensityVisualizationMixin
 from ._image_constants import Interpolation, Interpolation3D, Rendering
 from ._image_utils import guess_rgb, guess_multiscale
-from ._image_slice import ImageProperties, ImageSlice
+from ._image_slice import ImageSlice
 
 
 # Mixin must come before Layer
@@ -217,11 +217,8 @@ class Image(IntensityVisualizationMixin, Layer):
         self.corner_pixels[1] = self.level_shapes[self._data_level]
 
         # Initialize the current slice to an empty image.
-        properties = ImageProperties(
-            self.multiscale, self.rgb, self._get_ndim(), self._get_order(),
-        )
         self._slice = ImageSlice(
-            self._get_empty_image(), properties, self._raw_to_displayed
+            self._get_empty_image(), self.raw_to_displayed
         )
 
         # Set contrast_limits and colormaps

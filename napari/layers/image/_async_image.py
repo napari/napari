@@ -522,7 +522,7 @@ class AsyncImage(IntensityVisualizationMixin, Layer):
             self.multiscale, self.rgb, self._get_ndim(), self._get_order(),
         )
         self._slice = ImageSlice(
-            empty_image, properties, self._raw_to_displayed
+            empty_image, self._raw_to_displayed, properties
         )
 
     def _set_view_slice(self):
