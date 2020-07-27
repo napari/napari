@@ -134,6 +134,7 @@ def test_move(test_list):
 @pytest.mark.parametrize(
     'sources,dest,expectation',
     [
+        ((2,), 0, [2, 0, 1, 3, 4, 5, 6, 7]),  # move single item
         ([0, 2, 3], 6, [1, 4, 5, 0, 2, 3, 6, 7]),  # move back
         ([4, 7], 1, [0, 4, 7, 1, 2, 3, 5, 6]),  # move forward
         ([0, 5, 6], 3, [1, 2, 0, 5, 6, 3, 4, 7]),  # move in between
