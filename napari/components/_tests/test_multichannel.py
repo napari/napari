@@ -91,7 +91,10 @@ def test_multichannel(shape, kwargs):
     viewer = ViewerModel()
     np.random.seed(0)
     data = np.random.random(shape or (15, 10, 5))
-    kwargs = copy.deepcopy(kwargs)  # much copy since we pop, for multiple runs
+
+    # We must copy the kwargs since we pop them, in case multiple runs.
+    kwargs = copy.deepcopy(kwargs)
+
     channel_axis = kwargs.pop('channel_axis', -1)
     viewer.add_image(data, channel_axis=channel_axis, **kwargs)
 
