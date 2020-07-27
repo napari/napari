@@ -117,13 +117,26 @@ def test_copy(test_list, regular_list):
 
 def test_move(test_list):
     """Test the that we can move objects with the move method"""
-    before = tuple(test_list)
-    assert before == (0, 1, 2, 3, 4)  # from fixture
+    test_list.events = Mock(wraps=test_list.events)
+
+    def _fail(e):
+        raise AssertionError("unexpected event called")
+
+    test_list.events.removing.connect(_fail)
+    test_list.events.removed.connect(_fail)
+    test_list.events.inserting.connect(_fail)
+    test_list.events.inserted.connect(_fail)
+
+    before = list(test_list)
+    assert before == [0, 1, 2, 3, 4]  # from fixture
     # pop the object at 0 and insert at current position 3
     test_list.move(0, 3)
-    expectation = (1, 2, 0, 3, 4)
-    assert tuple(test_list) != before
-    assert tuple(test_list) == expectation
+    expectation = [1, 2, 0, 3, 4]
+    assert test_list != before
+    assert test_list == expectation
+    test_list.events.moving.assert_called_once()
+    test_list.events.moved.assert_called_once()
+    test_list.events.reordered.assert_called_with(value=expectation)
 
     # move the other way
     before = tuple(test_list)
@@ -150,6 +163,14 @@ def test_move_multiple(sources, dest, expectation):
     el = EventedList(range(8))
     el.events = Mock(wraps=el.events)
     assert el == [0, 1, 2, 3, 4, 5, 6, 7]
+
+    def _fail(e):
+        raise AssertionError("unexpected event called")
+
+    el.events.removing.connect(_fail)
+    el.events.removed.connect(_fail)
+    el.events.inserting.connect(_fail)
+    el.events.inserted.connect(_fail)
 
     el.move_multiple(sources, dest)
     assert el == expectation

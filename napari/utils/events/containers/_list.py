@@ -203,7 +203,7 @@ class EventedList(SupportsEvents, MutableSequence[T]):
             new_index -= 1
 
         self.events.moving(index=cur_index, new_index=new_index)
-        with self.events.blocker():
+        with self.events.blocker_all():
             item = self.pop(cur_index)
             self.insert(new_index, item)
         self.events.moved(index=cur_index, new_index=new_index, value=item)
@@ -251,7 +251,7 @@ class EventedList(SupportsEvents, MutableSequence[T]):
         dest_index -= len([i for i in to_move if i < dest_index])
 
         self.events.moving(index=to_move, new_index=dest_index)
-        with self.events.blocker():
+        with self.events.blocker_all():
             items = [self[i] for i in to_move]
             for i in sorted(to_move, reverse=True):
                 del self[i]

@@ -313,7 +313,7 @@ class NestableEventedList(EventedList[T]):
                 shift_dest -= 1
 
         # TODO: add the appropriate moving/moved events
-        with self.events.blocker():
+        with self.events.blocker_all():
             # delete the stored items from the list
             for idx in sorted(sources, reverse=True):
                 del self[idx]
@@ -370,7 +370,7 @@ class NestableEventedList(EventedList[T]):
                     return False
 
         self.events.moving(index=cur_index, new_index=new_index)
-        with self.events.blocker():
+        with self.events.blocker_all():
             dest_par = self[dest_par_i]  # grab this before popping src_i
             value = self[src_par_i].pop(src_i)
             dest_par.insert(dest_i, value)
