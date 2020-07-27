@@ -138,22 +138,20 @@ class EventedList(SupportsEvents, MutableSequence[T]):
         if isinstance(key, slice):
             if not isinstance(value, Iterable):
                 raise TypeError('Can only assign an iterable to slice')
-            indices = list(range(*key.indices(len(self))))
             if key.step is not None:  # extended slices are more restricted
-                seq_len = len(value)
-                slice_len = len([self[i] for i in indices])
-                if not seq_len == slice_len:
+                indices = list(range(*key.indices(len(self))))
+                if not len(value) == len(indices):
                     raise ValueError(
-                        f"attempt to assign sequence of size {seq_len} to "
-                        f"extended slice of size {slice_len}"
+                        f"attempt to assign sequence of size {len(value)} to "
+                        f"extended slice of size {len(indices)}"
                     )
                 for i, v in zip(indices, value):
                     self.__setitem__(i, v)
             else:
                 del self[key]
-                idx = 0 if key.start is None else key.start
+                start = key.start or 0
                 for i, v in enumerate(value):
-                    self.insert(idx + i, v)
+                    self.insert(start + i, v)
         else:
             self._list[key] = value
             self.events.changed(index=key, old_value=old, value=value)
@@ -165,14 +163,7 @@ class EventedList(SupportsEvents, MutableSequence[T]):
         if isinstance(key, int):
             return [(self, key if key >= 0 else key + len(self))]
         elif isinstance(key, slice):
-            _start = key.start or 0
-            _stop = key.stop or len(self)
-            _step = key.step or 1
-            if _start < 0:
-                _start = len(self) + _start
-            if _stop < 0:
-                _stop = len(self) + _stop
-            return [(self, i) for i in range(_start, _stop, _step)]
+            return [(self, i) for i in range(*key.indices(len(self)))]
         raise TypeError("Deletion index must be int, or slice")
 
     def __delitem__(self, key: Index):
@@ -263,7 +254,7 @@ class EventedList(SupportsEvents, MutableSequence[T]):
         with self.events.blocker():
             items = [self[i] for i in to_move]
             for i in sorted(to_move, reverse=True):
-                self.pop(i)
+                del self[i]
             self[dest_index:dest_index] = items
         self.events.moved(index=to_move, new_index=dest_index, value=items)
         self.events.reordered(value=self)

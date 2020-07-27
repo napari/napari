@@ -51,6 +51,7 @@ def test_list(request, regular_list):
         ('__setitem__', (slice(2, 2), [1, 2]), ('changed',)),  # update slice
         ('__delitem__', (2,), ('removing', 'removed')),  # delete
         ('__delitem__', (slice(2),), ('removing', 'removed') * 2,),
+        ('__delitem__', (slice(0, 0),), ('removing', 'removed')),
         ('__delitem__', (slice(-3),), ('removing', 'removed') * 2,),
         ('__delitem__', (slice(-2, None),), ('removing', 'removed') * 2,),
         # inherited interface
