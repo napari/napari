@@ -218,7 +218,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
         # Initialize the current slice to an empty image.
         self._slice = ImageSlice(
-            self._get_empty_image(), self.raw_to_displayed
+            self._get_empty_image(), self._raw_to_displayed
         )
 
         # Set contrast_limits and colormaps
