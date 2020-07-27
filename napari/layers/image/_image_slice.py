@@ -28,18 +28,21 @@ class ImageSlice:
     ----------
     view_image : ArrayLike
         The initial image used as the image and the thumbnail source.
-    properties : Image_Properties
-        The Image we are slicing has these properties.
     image_converter : ImageConverter
         ImageView uses this to convert from raw to viewable.
+    properties : Image_Properties, optional
+        The Image we are slicing has these properties.
 
     Attributes
     ----------
     image : ImageView
         The main image for this slice.
-
     thumbnail : ImageView
         The source image used to compute the smaller thumbnail image.
+    current_indices
+        The indices we are currently view or which is loaded.
+    loaded : bool
+        Has the data for this slice been loaded yet.
     """
 
     def __init__(

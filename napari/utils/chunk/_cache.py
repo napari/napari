@@ -1,9 +1,9 @@
 """ChunkCache stores loaded chunks.
 
-NOTE: we might end up just using the Dask cache instead of our own
-ChunkCache. The reason is we need the Dask cache for non-image layers,
-but having 2 caches is not good. So using the Dask cache for everything
-is the only obvious way to have on single cache.
+TODO_ASYNC: Do we really want this class? Can we somehow just use the Dask
+cache for all caching, even when not using Dask? Like wrap those accesses
+in a Dask delayed? Because having two caches seems problematic, how do
+you size then, etc?
 """
 import logging
 from typing import Dict, Optional

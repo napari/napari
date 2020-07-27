@@ -1,4 +1,4 @@
-"""AsyncConfig to configure ChunkLoader and related stuff.
+"""AsyncConfig to configure asynchronous loading and the ChunkLoader.
 """
 import errno
 import json
