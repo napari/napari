@@ -193,24 +193,28 @@ class EventedList(SupportsEvents, MutableSequence[T]):
         self._list.insert(index, value)
         self.events.inserted(index=index, value=value)
 
-    def move(self, cur_index: int, new_index: int) -> bool:
-        """Insert object at ``cur_index`` before ``new_index``.
+    def move(self, src_index: int, dest_index: int = 0) -> bool:
+        """Insert object at ``src_index`` before ``dest_index``.
 
         Both indices refer to the list prior to any object removal
         (pre-move space).
         """
-        if new_index > cur_index:
-            new_index -= 1
+        if dest_index < 0:
+            dest_index += len(self) + 1
+        if dest_index > src_index:
+            dest_index -= 1
 
-        self.events.moving(index=cur_index, new_index=new_index)
+        self.events.moving(index=src_index, dest_index=dest_index)
         with self.events.blocker_all():
-            item = self.pop(cur_index)
-            self.insert(new_index, item)
-        self.events.moved(index=cur_index, new_index=new_index, value=item)
+            item = self.pop(src_index)
+            self.insert(dest_index, item)
+        self.events.moved(index=src_index, dest_index=dest_index, value=item)
         self.events.reordered(value=self)
         return True
 
-    def move_multiple(self, sources: Sequence[Index], dest_index: int,) -> int:
+    def move_multiple(
+        self, sources: Sequence[Index], dest_index: int = 0
+    ) -> int:
         """Move a batch of indices, to a single destination.
 
         Note, if the dest_index is higher than any of the source indices, then
@@ -221,9 +225,11 @@ class EventedList(SupportsEvents, MutableSequence[T]):
         ----------
         sources : Sequence[int or slice]
             A sequence of indices
-        dest_index : int
+        dest_index : int, optional
             The destination index.  All sources will be inserted before this
-            index (in pre-move space)
+            index (in pre-move space), by default 0... which has the effect of
+            "bringing to front" everything in ``sources``, or acting as a
+            "reorder" method if ``sources`` contains all indices.
 
         Returns
         -------
@@ -248,6 +254,11 @@ class EventedList(SupportsEvents, MutableSequence[T]):
             else:
                 raise TypeError("Can only move integer or slice indices")
 
+        # remove duplicates while maintaing order, python 3.7+
+        to_move = list(dict.fromkeys(to_move))
+
+        if dest_index < 0:
+            dest_index += len(self) + 1
         dest_index -= len([i for i in to_move if i < dest_index])
 
         self.events.moving(index=to_move, new_index=dest_index)

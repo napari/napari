@@ -139,23 +139,30 @@ def test_move(test_list):
     test_list.events.reordered.assert_called_with(value=expectation)
 
     # move the other way
-    before = tuple(test_list)
     # pop the object at 3 and insert at current position 0
+    assert test_list == [1, 2, 0, 3, 4]
     test_list.move(3, 0)
-    expectation = (0, 1, 2, 3, 4)
+    assert test_list == [3, 1, 2, 0, 4]
+
+    # negative index destination
+    test_list.move(1, -2)
+    assert test_list == [3, 2, 0, 1, 4]
 
 
 @pytest.mark.parametrize(
     'sources,dest,expectation',
     [
         ((2,), 0, [2, 0, 1, 3, 4, 5, 6, 7]),  # move single item
+        ((2, 4), -2, [0, 1, 3, 5, 6, 2, 4, 7]),  # negative indexing
         ([0, 2, 3], 6, [1, 4, 5, 0, 2, 3, 6, 7]),  # move back
         ([4, 7], 1, [0, 4, 7, 1, 2, 3, 5, 6]),  # move forward
         ([0, 5, 6], 3, [1, 2, 0, 5, 6, 3, 4, 7]),  # move in between
         ([slice(None, 3)], 6, [3, 4, 5, 0, 1, 2, 6, 7]),  # move slice back
         ([slice(5, 8)], 2, [0, 1, 5, 6, 7, 2, 3, 4]),  # move slice forward
         ([slice(1, 8, 2)], 3, [0, 2, 1, 3, 5, 7, 4, 6]),  # move slice between
-        ([slice(None, 8, 3)], 4, [1, 2, 0, 3, 6, 4, 5, 7]),  # again
+        ([slice(None, 8, 3)], 4, [1, 2, 0, 3, 6, 4, 5, 7]),
+        ([0, 2, 3, 2, 3], 6, [1, 4, 5, 0, 2, 3, 6, 7]),  # strip dupe indices
+        ([slice(None, 8, 3), 0, 3, 6], 4, [1, 2, 0, 3, 6, 4, 5, 7]),
     ],
 )
 def test_move_multiple(sources, dest, expectation):
@@ -198,6 +205,10 @@ def test_move_multiple_mimics_slice_reorder():
         index=new_order, new_index=0, value=new_order,
     )
     el.events.reordered.assert_called_with(value=new_order)
+
+    # move_multiple also works omitting the insertion index
+    el[:] = list(range(8))
+    el.move_multiple(new_order) == [el[i] for i in new_order]
 
 
 def test_slice(test_list, regular_list):
@@ -281,17 +292,18 @@ def test_setting_nested_slice():
 
 
 @pytest.mark.parametrize(
-    'param',
+    'source, dest, expectation',
     [
         # indices           2       (2, 1)
         # original = [0, 1, [(2,0), [(2,1,0), (2,1,1)], (2,2)], 3, 4]
         [((2, 0), (2, 1, 1), (3,)), (-1), [0, 1, [[210], 22], 4, 20, 211, 3]],
         [((2, 0), (2, 1, 1), (3,)), (1), [0, 20, 211, 3, 1, [[210], 22], 4]],
+        [((2, 1, 1),), (0,), [211, 0, 1, [20, [210], 22], 3, 4]],
+        [((2, 1, 1),), (), [0, 1, [20, [210], 22], 3, 4, 211]],
     ],
 )
-def test_nested_move_multiple(param):
+def test_nested_move_multiple(source, dest, expectation):
     """Test that moving multiple indices works and emits right events."""
-    source, dest, expectation = param
     ne_list = NestableEventedList([0, 1, [20, [210, 211], 22], 3, 4])
     ne_list.events = Mock(wraps=ne_list.events)
     ne_list.move_multiple(source, dest)
