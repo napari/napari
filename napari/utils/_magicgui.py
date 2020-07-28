@@ -104,7 +104,9 @@ def get_layers(gui, layer_type: Type[Layer]) -> Tuple[Layer, ...]:
 
     viewer = find_viewer_ancestor(gui)
     if viewer:
-        return tuple(l for l in viewer.layers if isinstance(l, layer_type))
+        return tuple(
+            layer for layer in viewer.layers if isinstance(layer, layer_type)
+        )
     return ()
 
 
