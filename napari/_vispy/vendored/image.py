@@ -289,8 +289,9 @@ class ImageVisual(Visual):
             The image data.
         """
         if not self.visible:
-            # Calling asarray below could be very expensive, so we don't do it.
-            # We have to make sure it gets called when we next become visible.
+            # Do nothing if we are not visible. Calling asarray below could
+            # be very expensive. We have to make sure it gets called when
+            # we next become visible though.
             return
 
         data = np.asarray(image)

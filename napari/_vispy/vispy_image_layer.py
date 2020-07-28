@@ -58,9 +58,9 @@ class VispyImageLayer(VispyBaseLayer):
         """Our self.layer._data_view has been updated, update our node.
         """
         if not self.node.visible:
-            # Calling astype below could be very expensive, so don't do it if
-            # we are not even visible. We have to make sure it gets done
-            # when we next become visible though.
+            # Do nothing if we are not visible. Calling astype below could
+            # be very expensive. We have to make sure it gets called when
+            # we next become visible though.
             return
 
         data = self.layer._data_view

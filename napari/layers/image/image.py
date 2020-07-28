@@ -646,15 +646,14 @@ class Image(IntensityVisualizationMixin, Layer):
         # We are now in the loaded state.
         self.events.loaded()
 
-        # Update vispy, draw the new slice
+        # Update vispy so it draws the new slice.
         self.events.set_data()
 
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""
-        # ASYNC_TODO: no point in computing the thumbnail until we've
-        # loaded, but do we need to have teh caller not call this until
-        # we are ready?
         if not self._slice.loaded:
+            # ASYNC_TODO: Do not compute the thumbnail until we are loaded.
+            # Is there a nicer way to prevent this from getting called?
             return
 
         image = self._slice.thumbnail.view
