@@ -1,5 +1,4 @@
 import logging
-from typing import NamedTuple, Tuple
 
 import numpy as np
 
@@ -9,16 +8,6 @@ from ...utils.chunk import ChunkRequest, chunk_loader
 from ._image_view import ImageView
 
 LOGGER = logging.getLogger("ChunkLoader")
-
-
-class ImageProperties(NamedTuple):
-    """ImageSlice needs to know a few things about the Image its displaying.
-    """
-
-    multiscale: bool
-    rgb: bool
-    ndim: int
-    displayed_order: Tuple[slice, ...]
 
 
 class ImageSlice:
@@ -33,8 +22,8 @@ class ImageSlice:
         The initial image used as the image and the thumbnail source.
     image_converter : ImageConverter
         ImageView uses this to convert from raw to viewable.
-    properties : Image_Properties, optional
-        The Image we are slicing has these properties.
+    rgb : bool
+        Is the image in RGB or RGBA format.
 
     Attributes
     ----------
@@ -52,16 +41,12 @@ class ImageSlice:
         self,
         view_image: ArrayLike,
         image_converter: ImageConverter,
-        properties: ImageProperties = None,
+        rgb: bool = False,
     ):
         LOGGER.info("ImageSlice.__init__")
         self.image: ImageView = ImageView(view_image, image_converter)
         self.thumbnail: ImageView = ImageView(view_image, image_converter)
-
-        # If None then we are in legacy mode, for the old Image.py, and
-        # it cannot call our set_raw_images() or chunk_loaded() methods
-        # which use these properties.
-        self.properties = properties
+        self.rgb = rgb
 
         # We're showing the slice at these indices.
         self.current_indices = None
@@ -82,7 +67,7 @@ class ImageSlice:
         thumbnail : ArrayLike
             Set this as the thumbnail.
         """
-        if self.properties.rgb and image.dtype.kind == 'f':
+        if self.rgb and image.dtype.kind == 'f':
             image = np.clip(image, 0, 1)
             thumbnail = np.clip(thumbnail, 0, 1)
         self.image.raw = image
@@ -101,6 +86,7 @@ class ImageSlice:
 
         # Now "showing" this slice, even if it hasn't loaded yet.
         self.current_indices = request.indices
+        self.loaded = False
 
         # This will return a satisfied request in ChunkLoader is doing
         # syncrhonous loading or the chunk was in the cache. If it returns
@@ -130,16 +116,6 @@ class ImageSlice:
             )
             return False
 
-        order = self.properties.displayed_order
-        chunks = request.chunks
-        image = chunks['image'].transpose(order)
-
-        try:
-            thumbnail_source = chunks['thumbnail_source'].transpose(order)
-        except KeyError:
-            # We use the image as the thumbnail_source for single-scale.
-            thumbnail_source = image
-
         # Display the newly loaded data.
-        self.set_raw_images(image, thumbnail_source)
+        self.set_raw_images(request.image, request.thumbnail_source)
         return True

@@ -55,6 +55,14 @@ class VispyImageLayer(VispyBaseLayer):
         return data.astype(dtype)
 
     def _on_data_change(self, event=None):
+        """Our self.layer._data_view has been updated, update our node.
+        """
+        if not self.node.visible:
+            # Calling astype below could be very expensive, so don't do it if
+            # we are not even visible. We have to make sure it gets done
+            # when we next become visible though.
+            return
+
         data = self.layer._data_view
         dtype = np.dtype(data.dtype)
         if dtype not in texture_dtypes:

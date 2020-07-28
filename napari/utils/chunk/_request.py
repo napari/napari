@@ -47,6 +47,11 @@ class ChunkRequest:
     """
 
     def __init__(self, layer, indices, chunks: Dict[str, ArrayLike]):
+        # Make sure chunks is as expected, or things will get confusing.
+        for key, array in chunks.items():
+            assert isinstance(key, str)
+            assert array is not None
+
         self.layer_id = id(layer)
         self.data_id = id(layer.data)
         self.indices = indices
@@ -153,6 +158,33 @@ class ChunkRequest:
                     thread_id=self.thread_id,
                 )
             )
+
+    def transpose_chunks(self, order):
+        """Transpose all our chunks.
+
+        Parameters
+        ----------
+        order
+            Transpose the chunks with this order.
+        """
+        for key, array in self.chunks.items():
+            self.chunks[key] = array.transpose(order)
+
+    @property
+    def image(self):
+        """The image chunk if we have one or None.
+        """
+        return self.chunks.get('image')
+
+    @property
+    def thumbnail_source(self):
+        """The chunk to use as the thumbnail_source or None.
+        """
+        try:
+            return self.chunks['thumbnail_source']
+        except KeyError:
+            # For single-scale we use the image as the thumbnail_source.
+            return self.chunks.get('image')
 
 
 def _index_to_tuple(index: Union[int, slice]) -> Union[int, SliceTuple]:
