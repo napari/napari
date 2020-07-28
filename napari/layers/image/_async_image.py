@@ -573,21 +573,20 @@ class AsyncImage(IntensityVisualizationMixin, Layer):
             # image itself is there is no explicit thumbnail_source.
             thumbnail_source = None
 
-        self._load_async(image_indices, image, thumbnail_source)
+        self._load_images(image_indices, image, thumbnail_source)
 
-    def _load_async(self, image_indices, image, thumbnail_source=None):
+    def _load_images(self, image_indices, image, thumbnail_source=None):
         """Request the ChunkLoader to load this image and maybe thumbnail source.
 
         The load will happen synchronously if:
-        1) The array is already an ndarray.
+        1) The arrays are already ndarrays.
         2) We are in synchronous mode.
-        3) The array was found in the ChunkCache.
+        3) The arrays were found in the ChunkCache.
 
-        If the load is synchronous we immediately call our chunk_loaded() method to
-        use the new data right away.
-
-        If the the load is asynchronous then sometime later our chunk_loaded()
-        method will be called with the loaded data.
+        If the load is synchronous we immediately call our chunk_loaded()
+        method to use the new data right away. If the the load is
+        asynchronous then sometime later our chunk_loaded() method will be
+        called with the loaded data.
         """
         chunks = {'image': image}
 
