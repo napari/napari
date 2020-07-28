@@ -12,6 +12,9 @@ LOGGER = logging.getLogger("ChunkLoader")
 
 
 class ImageProperties(NamedTuple):
+    """ImageSlice needs to know a few things about the Image its displaying.
+    """
+
     multiscale: bool
     rgb: bool
     ndim: int
