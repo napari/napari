@@ -3,10 +3,10 @@
 The debug menu is for developer-focused functionality that we want to be
 easy-to-use and discoverable, but which is not for the average user.
 
-Current Items
--------------
+Menu Items
+----------
 Trace File -> Start Tracing...
-Trace File -> Stop Tracking
+Trace File -> Stop Tracing
 """
 from qtpy.QtCore import QTimer
 from qtpy.QtWidgets import QAction, QFileDialog
@@ -48,6 +48,15 @@ class PerformanceSubMenu:
         self.stop = self._add_stop()
         self._set_recording(False)
 
+        if perf.perf_config:
+            path = perf.perf_config.trace_file_on_start
+            if path is not None:
+                # Config option "trace_file_on_start" means immediately
+                # start tracing to that file. This is very useful if you
+                # want to create a trace every time you start napari,
+                # without having to start it from the debug menu.
+                self._start_trace(path)
+
     def _set_recording(self, recording: bool):
         """Toggle which are enabled/disabled.
 
@@ -65,7 +74,7 @@ class PerformanceSubMenu:
         start = QAction('Start Recording...', self.main_window._qt_window)
         start.setShortcut('Alt+T')
         start.setStatusTip('Start recording a trace file')
-        start.triggered.connect(self._start_trace)
+        start.triggered.connect(self._start_trace_dialog)
         self.sub_menu.addAction(start)
         return start
 
@@ -79,8 +88,8 @@ class PerformanceSubMenu:
         self.sub_menu.addAction(stop)
         return stop
 
-    def _start_trace(self):
-        """Start recording a trace file."""
+    def _start_trace_dialog(self):
+        """Open Save As dialog to start recording a trace file."""
         viewer = self.main_window.qt_viewer
 
         filename, _ = QFileDialog.getSaveFileName(
@@ -93,12 +102,15 @@ class PerformanceSubMenu:
             filename = _ensure_extension(filename, '.json')
 
             def start_trace():
-                perf.timers.start_trace_file(filename)
-                self._set_recording(True)
+                self._start_trace(filename)
 
             # Schedule this to avoid bogus "MetaCall" event for the entire
             # time the file dialog was up.
             QTimer.singleShot(0, start_trace)
+
+    def _start_trace(self, path: str):
+        perf.timers.start_trace_file(path)
+        self._set_recording(True)
 
     def _stop_trace(self):
         """Stop recording a trace file.
