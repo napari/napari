@@ -175,10 +175,12 @@ class ChunkLoader:
         Optional[ChunkRequest]
             The ChunkRequest if it was satisfied otherwise None.
         """
-        # We do an immediate load in the GUI thread in three cases:
-        # 1. We are in synchronous mode.
-        # 2. The request contains only ndarrays which are in memory.
-        # 3. We are adding a fake delay to all loads.
+        # We do an immediate load in the GUI thread if we are in synchronous mode
+        # or the request arrays are in memory (they are all ndarrays). There is
+        # point using a worker to load data that's already in memory.
+        #
+        # However if self.load_seconds > 0 then we cannot load in the GUI thread
+        # because we have to add that many seconds to the async load.
         if self.synchronous or request.in_memory and not self.load_seconds:
             LOGGER.info("[sync] ChunkLoader.load_chunk")
             request.load_chunks_gui()
