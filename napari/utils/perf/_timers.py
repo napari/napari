@@ -169,7 +169,8 @@ else:
     # create a do-nothing context object. This is not zero overhead
     # but it's very low, about 1 microsecond? But because it's not
     # zero it's best practice not to commit perf_timers, think of
-    # them like debug prints.
+    # them like debug prints, add while investigating a problem
+    # but then remove before committing/merging.
     @contextlib.contextmanager
     def perf_timer(name: str, category: Optional[str] = None, **kwargs):
         yield

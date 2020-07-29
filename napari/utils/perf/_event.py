@@ -43,7 +43,7 @@ class PerfEvent:
     day. The origin is arbitrary, but subtracting two counters results in
     a span of wall clock time.
 
-    Google for "Trace Event Format" for the full chrome://tracing spec.
+    Google "Trace Event Format" for the full chrome://tracing spec.
     """
 
     def __init__(
