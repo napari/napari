@@ -629,8 +629,8 @@ class Image(IntensityVisualizationMixin, Layer):
         image = request.chunks['image']
 
         # ASYNC_TODO: If the shape is wrong relative to rgb it means the user
-        # liked to Dask about the shape of their array. When you create a
-        # Dask array you tell it the same and you could be wrong.
+        # lied to Dask about the shape of their array. When you create a
+        # Dask array you tell it the shape and you could be wrong.
         if self.rgb != guess_rgb(image.shape):
             raise RuntimeError("Loaded chunk was the wrong shape.")
 
