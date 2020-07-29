@@ -177,7 +177,7 @@ class ChunkLoader:
         """
         # We do an immediate load in the GUI thread if we are in synchronous mode
         # or the request arrays are in memory (they are all ndarrays). There is
-        # point using a worker to load data that's already in memory.
+        # no point using a worker to load data that's already in memory.
         #
         # However if self.load_seconds > 0 then we cannot load in the GUI thread
         # because we have to add that many seconds to the async load.
