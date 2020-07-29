@@ -1,5 +1,6 @@
 import numpy as np
 import dask.array as da
+import pytest
 import zarr
 import xarray as xr
 
@@ -14,6 +15,7 @@ def test_dask_2D(make_test_viewer):
     assert np.all(viewer.layers[0].data == data)
 
 
+@pytest.mark.sync_only
 def test_dask_nD(make_test_viewer):
     """Test adding nD dask image."""
     viewer = make_test_viewer()

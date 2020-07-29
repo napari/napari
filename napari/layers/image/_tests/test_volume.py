@@ -1,4 +1,6 @@
 import numpy as np
+import pytest
+
 from napari.layers import Image
 
 
@@ -144,6 +146,7 @@ def test_scale():
     assert layer._data_view.shape == shape[-3:]
 
 
+@pytest.mark.sync_only
 def test_value():
     """Test getting the value of the data at the current coordinates."""
     np.random.seed(0)

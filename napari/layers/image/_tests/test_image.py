@@ -509,6 +509,7 @@ def test_metadata():
     assert layer.metadata == {'unit': 'cm'}
 
 
+@pytest.mark.sync_only
 def test_value():
     """Test getting the value of the data at the current coordinates."""
     np.random.seed(0)
@@ -537,6 +538,7 @@ def test_thumbnail():
     assert layer.thumbnail.shape == layer._thumbnail_shape
 
 
+@pytest.mark.sync_only
 def test_narrow_thumbnail():
     """Ensure that the thumbnail generation works for very narrow images.
 

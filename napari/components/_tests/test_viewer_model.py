@@ -253,6 +253,7 @@ def test_new_shapes():
     assert viewer.dims.ndim == 2
 
 
+@pytest.mark.sync_only
 def test_swappable_dims():
     """Test swapping dims after adding layers."""
     viewer = ViewerModel()

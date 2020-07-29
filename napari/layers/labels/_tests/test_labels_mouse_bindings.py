@@ -1,6 +1,8 @@
-import pytest
-import numpy as np
 import collections
+
+import numpy as np
+import pytest
+
 from napari.layers import Labels
 from napari.utils.interactions import (
     ReadOnlyWrapper,
@@ -95,11 +97,13 @@ def test_erase(Event, brush_shape, expected_sum):
     assert np.sum(layer.data == 1) == expected_sum
 
 
+@pytest.mark.sync_only
 def test_pick(Event):
     """Test picking label."""
     data = np.ones((20, 20))
     data[:5, :5] = 2
     data[-5:, -5:] = 3
+
     layer = Labels(data)
     assert layer.selected_label == 1
 
@@ -154,12 +158,14 @@ def test_fill(Event):
     assert np.unique(layer.data[-5:, :5]) == 1
 
 
+@pytest.mark.sync_only
 def test_fill_nD_plane(Event):
     """Test filling label nD plane."""
     data = np.ones((20, 20, 20))
     data[:5, :5, :5] = 2
     data[0, 8:10, 8:10] = 2
     data[-5:, -5:, -5:] = 3
+
     layer = Labels(data)
     assert np.unique(layer.data[:5, :5, :5]) == 2
     assert np.unique(layer.data[-5:, -5:, -5:]) == 3
