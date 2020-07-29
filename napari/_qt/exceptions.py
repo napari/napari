@@ -3,13 +3,15 @@ import traceback
 from types import TracebackType
 from typing import Type
 
-from qtpy.QtCore import QObject, Signal
+from qtpy.QtCore import Qt, QObject, Signal, QPoint
+from qtpy.QtWidgets import QApplication, QErrorMessage, QMainWindow
 
 
 class ExceptionHandler(QObject):
     """General class to handle all uncaught exceptions in the Qt event loop"""
 
     error = Signal(tuple)
+    message = None
 
     def handle(
         self,
@@ -42,4 +44,19 @@ class ExceptionHandler(QObject):
         # can add custom exception handlers here ...
         text = "".join(traceback.format_exception(etype, value, tb))
         logging.error("Unhandled exception:\n%s", text)
+        self._show_error_dialog(value)
         self.error.emit((etype, value, tb))
+
+    def _show_error_dialog(self, value: BaseException):
+        if self.message is None:
+            parent = None
+            for wdg in QApplication.topLevelWidgets():
+                if isinstance(wdg, QMainWindow):
+                    parent = wdg
+                    break
+            self.message = QErrorMessage(parent)
+            self.message.setModal(False)
+            self.message.move(self.message.mapToParent(QPoint(900, 600)))
+            self.message.setFocusPolicy(Qt.NoFocus)
+
+        self.message.showMessage(str(value))
