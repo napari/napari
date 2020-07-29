@@ -75,6 +75,8 @@ from .utils import sys_info, _magicgui
 # register napari object types with magicgui if it is installed
 _magicgui.register_types_with_magicgui()
 
+# Context object to disable asynchronous loads.
+from .utils.chunk import synchronous_loading
 
 # this unused import is here to fix a very strange bug.
 # there is some mysterious magical goodness in scipy stats that needs

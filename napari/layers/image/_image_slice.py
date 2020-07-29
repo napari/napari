@@ -50,5 +50,15 @@ class ImageSlice:
         """
         Create an ImageSlice with some default viewable image.
         """
-        self.image: ImageView = ImageView(view_image, image_converter)
-        self.thumbnail: ImageView = ImageView(view_image, image_converter)
+        LOGGER.info("ImageSlice.chunk_loaded: %s", request.key)
+
+        # Is this the chunk we requested?
+        if not np.all(self.current_indices == request.indices):
+            # Probably we are scrolling through slices and we are no long
+            # showing this slice, so drop it. It should have been added
+            # to the cache so the load was not totally wasted.
+            return False
+
+        # Display the newly loaded data.
+        self.set_raw_images(request.image, request.thumbnail_source)
+        return True
