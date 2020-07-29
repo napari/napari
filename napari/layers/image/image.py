@@ -577,9 +577,9 @@ class Image(IntensityVisualizationMixin, Layer):
     def _load_images(self, image_indices, image, thumbnail_source=None):
         """Request the ChunkLoader to load this image and maybe thumbnail source.
 
-        The load will happen synchronously if:
-        1) The arrays are already ndarrays.
-        2) We are in synchronous mode.
+        The load will happen synchronously if any of these are true:
+        1) The arrays are already ndarrays, or
+        2) We are in synchronous mode, or
         3) The arrays were found in the ChunkCache.
 
         If the load is synchronous we immediately call our chunk_loaded()
