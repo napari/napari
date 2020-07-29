@@ -1,47 +1,33 @@
-from typing import Optional
-
+"""ImageView class.
+"""
 from ...types import ArrayLike, ImageConverter
 
 
 class ImageView:
     """A raw image and a viewable version of it.
 
-    A very simple class that groups together two related images, the raw one and
-    the viewable one. Its primary purpose right now is just making sure the
-    viewable image is updated when the raw one is changed. And just to group
-    them together and provide convenient access.
+    Small class that groups together two related images, the raw one and
+    the viewable one. The image_converter passed in is either
+    Image._raw_to_displayed or Labels._raw_to_displayed. The Image one does
+    nothing but the Labels ones does colormapping.
 
     Parameters
     ----------
     view_image : ArrayLike
         Default viewable image, raw is set to the same thing.
-    image_converter : Optional[ImageConverter]
-        If given this is used to convert images from raw to viewable.
+    image_converter : ImageConverter
+        Used to convert images from raw to viewable.
 
     Attributes
     ----------
-    _raw : ArrayLike
+    view : ArrayLike
         The raw image.
 
-    _view : ArrayLike
-        The viewable image, derived from raw.
-
-    Examples
-    --------
-    Create ImageView with initial default:
-
-    >> image = ImageView(view_image)
-
-    Update ImageView's raw image, it will compute the new viable one:
-
-    >> image.raw = raw_image
+    image_convert : ImageConvert
+        Converts from raw to viewable.
     """
 
-    def __init__(
-        self,
-        view_image: ArrayLike,
-        image_converter: Optional[ImageConverter] = None,
-    ):
+    def __init__(self, view_image: ArrayLike, image_converter: ImageConverter):
         """Create an ImageView with some default image.
         """
         self.view = view_image
@@ -54,7 +40,7 @@ class ImageView:
 
     @view.setter
     def view(self, view_image: ArrayLike):
-        """Set the viewed and draw images.
+        """Set the viewed and raw image.
 
         Parameters
         ----------
@@ -81,7 +67,4 @@ class ImageView:
         self._raw = raw_image
 
         # Update the view image based on this new raw image.
-        has_converter = self.image_converter is not None
-        self._view = (
-            self.image_converter(raw_image) if has_converter else raw_image
-        )
+        self._view = self.image_converter(raw_image)

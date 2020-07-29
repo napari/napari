@@ -214,6 +214,7 @@ class Layer(KeymapProvider, ABC):
             cursor=Event,
             cursor_size=Event,
             editable=Event,
+            loaded=Event,
         )
         self.name = name
 
@@ -245,6 +246,15 @@ class Layer(KeymapProvider, ABC):
     def name(self):
         """str: Unique name of the layer."""
         return self._name
+
+    @property
+    def loaded(self):
+        """Has layer been fully loaded into memory.
+
+        By default layers are always loaded, but derived classes that load
+        data asynchronously can override this method to report load status.
+        """
+        return True
 
     @name.setter
     def name(self, name):
