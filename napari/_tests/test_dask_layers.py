@@ -84,6 +84,7 @@ def delayed_dask_stack():
     return output
 
 
+@pytest.mark.sync_only
 @pytest.mark.skipif(
     dask_version < (2, 15, 0), reason="requires dask 2.15.0 or higher"
 )
@@ -116,6 +117,7 @@ def test_dask_optimized_slicing(delayed_dask_stack, monkeypatch):
     assert delayed_dask_stack['calls'] == 4
 
 
+@pytest.mark.sync_only
 @pytest.mark.skipif(
     dask_version < (2, 15, 0), reason="requires dask 2.15.0 or higher"
 )
@@ -163,6 +165,7 @@ def test_dask_unoptimized_slicing(delayed_dask_stack, monkeypatch):
     assert delayed_dask_stack['calls'] == 8
 
 
+@pytest.mark.sync_only
 def test_dask_cache_resizing(delayed_dask_stack):
     """Test that we can spin up, resize, and spin down the cache."""
     # add dask stack to the viewer, making sure to pass multiscale and clims

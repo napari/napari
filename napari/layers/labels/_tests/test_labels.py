@@ -216,6 +216,7 @@ def test_properties():
 
     properties = {'class': ['Background'] + [f'Class {i}' for i in range(20)]}
     label_index = {i: i for i in range(len(properties['class']))}
+
     layer = Labels(data, properties=properties)
     assert isinstance(layer.properties, dict)
     assert layer.properties == properties

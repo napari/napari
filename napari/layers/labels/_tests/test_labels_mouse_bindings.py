@@ -1,6 +1,8 @@
-import pytest
-import numpy as np
 import collections
+
+import numpy as np
+import pytest
+
 from napari.layers import Labels
 from napari.utils.interactions import (
     ReadOnlyWrapper,
