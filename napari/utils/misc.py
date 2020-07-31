@@ -224,8 +224,6 @@ def abspath_or_url(relpath: T) -> T:
         urlp = urlparse(relpath)
         if urlp.scheme and urlp.netloc:
             return relpath
-        if relpath.startswith(('http:', 'https:', 'ftp:', 'file:')):
-            return relpath
         return path.abspath(path.expanduser(relpath))
 
     raise TypeError("Argument must be a string, PathLike, or sequence thereof")
