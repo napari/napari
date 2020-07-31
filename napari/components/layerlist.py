@@ -59,10 +59,10 @@ class LayerList(ListModel):
         new_name : str
             Coerced, unique name.
         """
-        for l in self:
-            if l is layer:
+        for _layer in self:
+            if _layer is layer:
                 continue
-            if l.name == name:
+            if _layer.name == name:
                 name = inc_name_count(name)
 
         return name
@@ -202,7 +202,7 @@ class LayerList(ListModel):
             min_v = [np.nan] * self.ndim
             max_v = [np.nan] * self.ndim
         else:
-            extrema = [l._extent_world for l in self]
+            extrema = [layer._extent_world for layer in self]
             mins = [e[0][::-1] for e in extrema]
             maxs = [e[1][::-1] for e in extrema]
 
@@ -233,7 +233,7 @@ class LayerList(ListModel):
         if len(self) == 0:
             return np.ones(self.ndim)
         else:
-            scales = [l.scale[::-1] for l in self]
+            scales = [layer.scale[::-1] for layer in self]
             full_scales = list(
                 np.array(
                     list(itertools.zip_longest(*scales, fillvalue=np.nan))
@@ -252,7 +252,7 @@ class LayerList(ListModel):
         -------
         ndim : int
         """
-        return max((l.ndim for l in self), default=2)
+        return max((layer.ndim for layer in self), default=2)
 
     def save(
         self,

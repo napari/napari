@@ -114,6 +114,13 @@ class QtDimSliderWidget(QWidget):
         label.editingFinished.connect(self._clear_label_focus)
         self.axis_label = label
 
+    def _value_changed(self, value):
+        """Slider changed to this new value.
+
+        We split this out as a separate function for perfmon.
+        """
+        self.dims.set_point(self.axis, value)
+
     def _create_range_slider_widget(self):
         """Creates a range slider widget for a given axis."""
         _range = self.dims.range[self.axis]
@@ -132,12 +139,10 @@ class QtDimSliderWidget(QWidget):
         slider.setValue(point)
 
         # Listener to be used for sending events back to model:
-        slider.valueChanged.connect(
-            lambda value: self.dims.set_point(self.axis, value)
-        )
+        slider.valueChanged.connect(self._value_changed)
 
         def slider_focused_listener():
-            self.qt_dims.last_used = self.axis
+            self.dims.last_used = self.axis
 
         # linking focus listener to the last used:
         slider.sliderPressed.connect(slider_focused_listener)
@@ -189,7 +194,7 @@ class QtDimSliderWidget(QWidget):
         if _range not in (None, (None, None, None)):
             if _range[1] == 0:
                 displayed_sliders[self.axis] = False
-                self.qt_dims.last_used = None
+                self.dims.last_used = None
                 self.hide()
             else:
                 if (
@@ -197,7 +202,7 @@ class QtDimSliderWidget(QWidget):
                     and self.axis not in self.dims.displayed
                 ):
                     displayed_sliders[self.axis] = True
-                    self.last_used = self.axis
+                    self.dims.last_used = self.axis
                     self.show()
                 self.slider.setMinimum(int(_range[0]))
                 self.slider.setMaximum(int(_range[1]))

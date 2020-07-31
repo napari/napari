@@ -36,12 +36,12 @@ room at https://napari.zulipchat.com!
 
 ## Improvements
 - Add ability to run napari script with/without gui_qt from CLI (#1373)
-- Event handler refactor for image layer (#1376)
+- Event handler refactor for image layer  "reverted by (#1416)" (#1376)
 - Add ndim as a keyword argument to shapes to support creating empty layers (#1379)
 - Add helpful error on multichannel IndexError (#1381)
-- Use qlistwidget for QtLayerList (#1391)
-- Event handler surface layer (#1396)
-- Revert event handler for now (#1416)
+- Use qlistwidget for QtLayerList "reverted by (#1416)" (#1391)
+- Event handler surface layer  "reverted by (#1416)" (#1396)
+- Revert "event handler refactors (#1376), (#1391), (#1396)" (#1416)
 - Move contrast limits and gamma to the shader by vendoring vispy code (#1456)
 - Reduce attenuation default and range (#1460)
 
