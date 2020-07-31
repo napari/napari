@@ -43,7 +43,6 @@ class QtDims(QWidget):
         # True / False if slider is or is not displayed
         self._displayed_sliders = []
 
-        self._last_used = None
         self._play_ready = True  # False if currently awaiting a draw event
         self._animation_thread = None
 
@@ -82,7 +81,7 @@ class QtDims(QWidget):
         int
             Index of slider last used.
         """
-        return self._last_used
+        return self.dims.last_used
 
     @last_used.setter
     def last_used(self, last_used: int):
@@ -93,17 +92,18 @@ class QtDims(QWidget):
         last_used : int
             Index of slider last used.
         """
-        if last_used == self.last_used:
+        dims_last_used = self.dims.last_used
+        if last_used == dims_last_used:
             return
 
-        formerly_used = self.last_used
+        formerly_used = dims_last_used
         if formerly_used is not None:
             sld = self.slider_widgets[formerly_used].slider
             sld.setProperty('last_used', False)
             sld.style().unpolish(sld)
             sld.style().polish(sld)
 
-        self._last_used = last_used
+        self.dims.last_used = last_used
         if last_used is not None:
             sld = self.slider_widgets[last_used].slider
             sld.setProperty('last_used', True)
@@ -123,7 +123,7 @@ class QtDims(QWidget):
             return
 
         self.slider_widgets[axis]._update_slider()
-        self.last_used = axis
+        self.dims.last_used = axis
 
     def _update_range(self, axis: int):
         """Updates range for a given slider.
@@ -158,12 +158,12 @@ class QtDims(QWidget):
             if axis in self.dims.displayed or _range == 0:
                 # Displayed dimensions correspond to non displayed sliders
                 self._displayed_sliders[axis] = False
-                self.last_used = None
+                self.dims.last_used = None
                 widget.hide()
             else:
                 # Non displayed dimensions correspond to displayed sliders
                 self._displayed_sliders[axis] = True
-                self.last_used = axis
+                self.dims.last_used = axis
                 widget.show()
         nsliders = np.sum(self._displayed_sliders)
         self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
@@ -273,7 +273,7 @@ class QtDims(QWidget):
         slider_widget.deleteLater()
         nsliders = np.sum(self._displayed_sliders)
         self.setMinimumHeight(int(nsliders * self.SLIDERHEIGHT))
-        self.last_used = None
+        self.dims.last_used = None
 
     def focus_up(self):
         """Shift focused dimension slider to be the next slider above."""
@@ -281,11 +281,11 @@ class QtDims(QWidget):
         if len(displayed) == 0:
             return
 
-        if self.last_used is None:
-            self.last_used = displayed[-1]
+        if self.dims.last_used is None:
+            self.dims.last_used = displayed[-1]
         else:
-            index = (displayed.index(self.last_used) + 1) % len(displayed)
-            self.last_used = displayed[index]
+            index = (displayed.index(self.dims.last_used) + 1) % len(displayed)
+            self.dims.last_used = displayed[index]
 
     def focus_down(self):
         """Shift focused dimension slider to be the next slider bellow."""
@@ -293,11 +293,11 @@ class QtDims(QWidget):
         if len(displayed) == 0:
             return
 
-        if self.last_used is None:
-            self.last_used = displayed[-1]
+        if self.dims.last_used is None:
+            self.dims.last_used = displayed[-1]
         else:
-            index = (displayed.index(self.last_used) - 1) % len(displayed)
-            self.last_used = displayed[index]
+            index = (displayed.index(self.dims.last_used) - 1) % len(displayed)
+            self.dims.last_used = displayed[index]
 
     def play(
         self,

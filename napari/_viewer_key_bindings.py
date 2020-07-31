@@ -23,15 +23,13 @@ def toggle_ndisplay(viewer):
 @Viewer.bind_key('Left')
 def increment_dims_left(viewer):
     """Increment dimensions slider to the left."""
-    axis = viewer.window.qt_viewer.dims.last_used
-    viewer.dims._increment_dims_left(axis)
+    viewer.dims._increment_dims_left()
 
 
 @Viewer.bind_key('Right')
 def increment_dims_right(viewer):
     """Increment dimensions slider to the right."""
-    axis = viewer.window.qt_viewer.dims.last_used
-    viewer.dims._increment_dims_right(axis)
+    viewer.dims._increment_dims_right()
 
 
 @Viewer.bind_key('Control-E')

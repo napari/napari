@@ -396,7 +396,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
                 self.dims.set_range(i, r)
         self.events.layers_change()
 
-    def _scroll(self, event):
+    def _scroll(self, viewer, event):
         if 'Control' not in event.modifiers:
             return
         delta = int(event.delta[1])
