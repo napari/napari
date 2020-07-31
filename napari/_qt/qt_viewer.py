@@ -37,9 +37,7 @@ from .._vispy import create_vispy_visual
 
 
 class KeyModifierFilterSceneCanvas(SceneCanvas):
-    """SceneCanvas which overrides default vispy behaviour for events with key modifiers.F
-
-    """
+    """SceneCanvas overriding VisPy when mouse wheel events have modifiers."""
 
     def _process_mouse_event(self, event):
         if event.type == 'mouse_wheel' and len(event.modifiers) > 0:
