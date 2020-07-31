@@ -203,8 +203,8 @@ class LayerList(ListModel):
             max_v = [np.nan] * self.ndim
         else:
             extrema = [l._extent_world for l in self]
-            mins = [e[0] for e in extrema]
-            maxs = [e[1] for e in extrema]
+            mins = [e[0][::-1] for e in extrema]
+            maxs = [e[1][::-1] for e in extrema]
 
             min_v = np.nanmin(
                 list(itertools.zip_longest(*mins, fillvalue=np.nan)), axis=1
@@ -213,8 +213,8 @@ class LayerList(ListModel):
                 list(itertools.zip_longest(*maxs, fillvalue=np.nan)), axis=1
             )
 
-        min_vals = np.nan_to_num(min_v, nan=0)
-        max_vals = np.nan_to_num(max_v, nan=512)
+        min_vals = np.nan_to_num(min_v[::-1], nan=0)
+        max_vals = np.nan_to_num(max_v[::-1], nan=512)
 
         return np.vstack([min_vals, max_vals])
 
@@ -233,12 +233,14 @@ class LayerList(ListModel):
         if len(self) == 0:
             return np.ones(self.ndim)
         else:
-            scales = [l.scale for l in self]
-            full_scales = np.array(
-                list(itertools.zip_longest(*scales, fillvalue=np.nan))
-            ).T
+            scales = [l.scale[::-1] for l in self]
+            full_scales = list(
+                np.array(
+                    list(itertools.zip_longest(*scales, fillvalue=np.nan))
+                ).T
+            )
             min_scales = np.nanmin(full_scales, axis=0)
-            return min_scales
+            return min_scales[::-1]
 
     @property
     def ndim(self) -> int:

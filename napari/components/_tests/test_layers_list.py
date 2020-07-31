@@ -559,6 +559,23 @@ def test_world_extent():
     np.testing.assert_allclose(layers._step_size, (3, 1, 1))
 
 
+def test_world_extent_mixed_ndim():
+    """Test world extent after adding layers of different dimensionality."""
+    np.random.seed(0)
+    layers = LayerList()
+
+    # Add 3D layer
+    layer_a = Image(np.random.random((15, 15, 15)), scale=(4, 12, 2))
+    layers.append(layer_a)
+    np.testing.assert_allclose(layers._extent_world[1], (60, 180, 30))
+
+    # Add 2D layer
+    layer_b = Image(np.random.random((10, 10)), scale=(6, 4))
+    layers.append(layer_b)
+    np.testing.assert_allclose(layers._extent_world[1], (60, 180, 40))
+    np.testing.assert_allclose(layers._step_size, (4, 6, 2))
+
+
 def test_ndim():
     """Test world extent after adding layers."""
     np.random.seed(0)
