@@ -118,7 +118,7 @@ def check_viewer_functioning(viewer, view=None, data=None, ndim=2):
 def check_view_transform_consistency(layer, viewer, transf_dict):
     """Check layer transforms have been applied to the view.
 
-    Note this check only works for non-mulitscale data.
+    Note this check only works for non-multiscale data.
 
     Parameters
     ----------

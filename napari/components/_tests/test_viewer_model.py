@@ -201,7 +201,7 @@ def test_new_labels_empyty():
     assert np.max(viewer.layers[0].data) == 0
     assert viewer.dims.ndim == 2
     # Default shape when no data is present is 512x512
-    np.testing.assert_almost_equal(viewer.layers[0].data.shape, (512, 512))
+    np.testing.assert_equal(viewer.layers[0].data.shape, (512, 512))
 
 
 def test_new_labels_image():
@@ -214,9 +214,9 @@ def test_new_labels_image():
     assert len(viewer.layers) == 2
     assert np.max(viewer.layers[1].data) == 0
     assert viewer.dims.ndim == 2
-    np.testing.assert_almost_equal(viewer.layers[1].data.shape, (10, 15))
-    np.testing.assert_almost_equal(viewer.layers[1].scale, (1, 1))
-    np.testing.assert_almost_equal(viewer.layers[1].translate, (0, 0))
+    np.testing.assert_equal(viewer.layers[1].data.shape, (10, 15))
+    np.testing.assert_equal(viewer.layers[1].scale, (1, 1))
+    np.testing.assert_equal(viewer.layers[1].translate, (0, 0))
 
 
 def test_new_labels_scaled_image():
@@ -229,9 +229,9 @@ def test_new_labels_scaled_image():
     assert len(viewer.layers) == 2
     assert np.max(viewer.layers[1].data) == 0
     assert viewer.dims.ndim == 2
-    np.testing.assert_almost_equal(viewer.layers[1].data.shape, (10, 15))
-    np.testing.assert_almost_equal(viewer.layers[1].scale, (3, 3))
-    np.testing.assert_almost_equal(viewer.layers[1].translate, (0, 0))
+    np.testing.assert_equal(viewer.layers[1].data.shape, (10, 15))
+    np.testing.assert_equal(viewer.layers[1].scale, (3, 3))
+    np.testing.assert_equal(viewer.layers[1].translate, (0, 0))
 
 
 def test_new_labels_scaled_translated_image():

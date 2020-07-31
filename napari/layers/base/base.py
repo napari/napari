@@ -397,7 +397,7 @@ class Layer(KeymapProvider, ABC):
         self.dims.ndim = ndim
 
         step_size = self.scale
-        # For now dims don't use world coordiates, but scaled data coordinates
+        # For now dims don't use world coordinates, but scaled data coordinates
         extent = np.multiply(self._extent_data, step_size)
         for i in range(self.dims.ndim):
             self.dims.set_range(i, (extent[0, i], extent[1, i], step_size[i]))
