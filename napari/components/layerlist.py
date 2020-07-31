@@ -189,10 +189,14 @@ class LayerList(ListModel):
                 layer.visible = not layer.visible
 
     @property
-    def _extent_world(self):
-        """(2, D) array: Extent of layers in world coordinates.
+    def _extent_world(self) -> np.ndarray:
+        """Extent of layers in world coordinates.
 
         Default to 2D with (0, 512) min/ max values if no data is present.
+
+        Returns
+        -------
+        extent_world : array, shape (2, D)
         """
         if len(self) == 0:
             min_v = [np.nan] * self.ndim
@@ -215,13 +219,16 @@ class LayerList(ListModel):
         return np.vstack([min_vals, max_vals])
 
     @property
-    def _step_size(self):
-        """(D, ) array: Ideal step size between planes in world coordinates.
+    def _step_size(self) -> np.ndarray:
+        """Ideal step size between planes in world coordinates.
 
         Computes the best step size that allows all data planes to be
         sampled if moving through the full range of world coordinates.
-        The current implementation just takes the minimum scale, but a
-        better approach would use something like a greatest common divisor.
+        The current implementation just takes the minimum scale.
+
+        Returns
+        -------
+        step_size : array, shape (D,)
         """
         if len(self) == 0:
             return np.ones(self.ndim)
@@ -234,10 +241,14 @@ class LayerList(ListModel):
             return min_scales
 
     @property
-    def ndim(self):
-        """int: Maximum dimensionality of layers.
+    def ndim(self) -> int:
+        """Maximum dimensionality of layers.
 
         Defaults to 2 if no data is present.
+
+        Returns
+        -------
+        ndim : int
         """
         return max((l.ndim for l in self), default=2)
 

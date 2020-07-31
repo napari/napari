@@ -245,15 +245,19 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self.events.active_layer(item=self._active_layer)
 
     @property
-    def _sliced_extent_world(self):
-        """(2, D) array: Extent of layers in world coordinates after slicing.
+    def _sliced_extent_world(self) -> np.ndarray:
+        """Extent of layers in world coordinates after slicing.
 
         D is either 2 or 3 depending on if the displayed data is 2D or 3D.
+
+        Returns
+        -------
+        sliced_extent_world : array, shape (2, D)
         """
         if len(self.layers) == 0 and self.dims.ndim != 2:
             # If no data is present and dims model has not been reset to 0
-            # It means someone has passed more than two axis labels which are
-            # being saved.
+            # than someone has passed more than two axis labels which are
+            # being saved and so default values are used.
             return np.vstack(
                 [np.zeros(self.dims.ndim), np.repeat(512, self.dims.ndim)]
             )

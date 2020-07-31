@@ -132,7 +132,7 @@ def check_view_transform_consistency(layer, viewer, transf_dict):
         corresponding to the array of property values
     """
     if layer.multiscale:
-        return
+        return None
 
     # Get an handle on visual layer:
     vis_lyr = viewer.window.qt_viewer.layer_to_visual[layer]

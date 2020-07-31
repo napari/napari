@@ -205,7 +205,12 @@ class Surface(IntensityVisualizationMixin, Layer):
 
     @property
     def _extent_data(self) -> np.ndarray:
-        """(2, D) array: Extent of layer in data coordinates."""
+        """Extent of layer in data coordinates.
+
+        Returns
+        -------
+        extent_data : array, shape (2, D)
+        """
         if len(self.vertices) == 0:
             extrema = np.full((2, self.ndim), np.nan)
         else:

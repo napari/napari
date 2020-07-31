@@ -418,27 +418,35 @@ class Layer(KeymapProvider, ABC):
 
     @property
     @abstractmethod
-    def _extent_data(self):
-        """(2, D) array: Extent of layer in data coordinates."""
+    def _extent_data(self) -> np.ndarray:
+        """Extent of layer in data coordinates.
+
+        Returns
+        -------
+        extent_data : array, shape (2, D)
+        """
         raise NotImplementedError()
 
     @property
-    def _extent_world(self):
-        """(2, D) array: Range of layer in world coordinates."""
+    def _extent_world(self) -> np.ndarray:
+        """Range of layer in world coordinates.
+
+        Returns
+        -------
+        extent_world : array, shape (2, D)
+        """
         return self._transforms['data2world'](self._extent_data)
 
     @property
     def shape(self):
-        """tuple: Size of layer in world coordinates (compatibility)."""
+        """Size of layer in world coordinates (compatibility).
 
-        warnings.warn(
-            (
-                f'layer.shape is deprecated and will be removed '
-                f'in napari > 0.3.7'
-            ),
-            category=DeprecationWarning,
-            stacklevel=2,
-        )
+        Returns
+        -------
+        shape : tuple
+        """
+        # To Do: Deprecate when full world coordinate refactor
+        # is complete
 
         extent = self._extent_world
         # Rounding is for backwards compatibility reasons.

@@ -302,8 +302,13 @@ class Image(IntensityVisualizationMixin, Layer):
         return len(self.level_shapes[0])
 
     @property
-    def _extent_data(self):
-        """(2, D) array: Extent of layer in data coordinates."""
+    def _extent_data(self) -> np.ndarray:
+        """Extent of layer in data coordinates.
+
+        Returns
+        -------
+        extent_data : array, shape (2, D)
+        """
         shape = self.level_shapes[0]
         return np.vstack([np.zeros(len(shape)), shape])
 
