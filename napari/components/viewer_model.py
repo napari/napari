@@ -94,8 +94,12 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self.mouse_move_callbacks = []
         # Hold callbacks for when mouse is pressed, dragged, and released
         self.mouse_drag_callbacks = []
+        # Hold callbacks for when mouse wheel is scrolled
+        self.mouse_wheel_callbacks = [self._scroll]
+
         self._persisted_mouse_event = {}
         self._mouse_drag_gen = {}
+        self._mouse_wheel_gen = {}
 
     @property
     def palette(self):
@@ -391,6 +395,17 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             for i, r in enumerate(layer_range):
                 self.dims.set_range(i, r)
         self.events.layers_change()
+
+    def _scroll(self, viewer, event):
+        if 'Control' not in event.modifiers:
+            return
+        delta = int(event.delta[1])
+        if abs(delta) >= 1:
+            for i in range(abs(delta)):
+                if delta < 0:
+                    self.dims._increment_dims_left()
+                else:
+                    self.dims._increment_dims_right()
 
     def _calc_layers_ranges(self):
         """Calculates the range along each axis from all present layers.

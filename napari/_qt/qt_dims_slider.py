@@ -142,7 +142,7 @@ class QtDimSliderWidget(QWidget):
         slider.valueChanged.connect(self._value_changed)
 
         def slider_focused_listener():
-            self.qt_dims.last_used = self.axis
+            self.dims.last_used = self.axis
 
         # linking focus listener to the last used:
         slider.sliderPressed.connect(slider_focused_listener)
@@ -194,7 +194,7 @@ class QtDimSliderWidget(QWidget):
         if _range not in (None, (None, None, None)):
             if _range[1] == 0:
                 displayed_sliders[self.axis] = False
-                self.qt_dims.last_used = None
+                self.dims.last_used = None
                 self.hide()
             else:
                 if (
@@ -202,7 +202,7 @@ class QtDimSliderWidget(QWidget):
                     and self.axis not in self.dims.displayed
                 ):
                     displayed_sliders[self.axis] = True
-                    self.last_used = self.axis
+                    self.dims.last_used = self.axis
                     self.show()
                 self.slider.setMinimum(int(_range[0]))
                 self.slider.setMaximum(int(_range[1]))
