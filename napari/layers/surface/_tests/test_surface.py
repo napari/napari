@@ -1,5 +1,6 @@
 import numpy as np
 from napari.layers import Surface
+from napari._tests.utils import check_layer_world_data_extent
 
 
 def test_random_surface():
@@ -145,31 +146,5 @@ def test_world_data_extent():
     min_val = (-5, 0)
     max_val = (30, 15)
     layer = Surface((np.array(data), np.array((0, 1, 2)), np.array((0, 0, 0))))
-    np.testing.assert_allclose(layer._extent_data[0], min_val)
-    np.testing.assert_almost_equal(layer._extent_data[1], max_val)
-    np.testing.assert_allclose(layer._extent_world[0], min_val)
-    np.testing.assert_almost_equal(layer._extent_world[1], max_val)
-
-    # Apply scale transformation
-    scale = (3, 1)
-    layer.scale = scale
-    np.testing.assert_allclose(layer._extent_data[0], min_val)
-    np.testing.assert_allclose(layer._extent_data[1], max_val)
-    np.testing.assert_allclose(
-        layer._extent_world[0], np.multiply(min_val, scale)
-    )
-    np.testing.assert_allclose(
-        layer._extent_world[1], np.multiply(max_val, scale)
-    )
-
-    # Apply translation transformation
-    translate = (20, 5)
-    layer.translate = translate
-    np.testing.assert_allclose(layer._extent_data[0], min_val)
-    np.testing.assert_allclose(layer._extent_data[1], max_val)
-    np.testing.assert_allclose(
-        layer._extent_world[0], np.add(np.multiply(min_val, scale), translate)
-    )
-    np.testing.assert_allclose(
-        layer._extent_world[1], np.add(np.multiply(max_val, scale), translate)
-    )
+    extent = np.array((min_val, max_val))
+    check_layer_world_data_extent(layer, extent, (3, 1), (20, 5))

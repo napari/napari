@@ -193,7 +193,7 @@ def test_mix_dims():
     assert viewer.dims.ndim == 3
 
 
-def test_new_labels_empyty():
+def test_new_labels_empty():
     """Test adding new labels layer to empty viewer."""
     viewer = ViewerModel()
     viewer._new_labels()

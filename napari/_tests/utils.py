@@ -143,3 +143,33 @@ def check_view_transform_consistency(layer, viewer, transf_dict):
         vis_vals = getattr(vis_lyr, transf_name)[1::-1]
 
         np.testing.assert_almost_equal(vis_vals, transf[disp_dims])
+
+
+def check_layer_world_data_extent(layer, extent, scale, translate):
+    """Test extents after applying transforms.
+
+    Parameters
+    ----------
+    layer : napar.layers.Layer
+        Layet to be tested.
+    extent : array, shape (2, D)
+        Extent of data in layer.
+    scale : array, shape (D,)
+        Scale to be applied to layer.
+    translate : array, shape (D,)
+        Translation to be applied to layer.
+    """
+    np.testing.assert_almost_equal(layer._extent_data, extent)
+    np.testing.assert_almost_equal(layer._extent_world, extent)
+
+    # Apply scale transformation
+    layer.scale = scale
+    scaled_extent = np.multiply(extent, scale)
+    np.testing.assert_almost_equal(layer._extent_data, extent)
+    np.testing.assert_almost_equal(layer._extent_world, scaled_extent)
+
+    # Apply translation transformation
+    layer.translate = translate
+    translated_extent = np.add(scaled_extent, translate)
+    np.testing.assert_almost_equal(layer._extent_data, extent)
+    np.testing.assert_almost_equal(layer._extent_world, translated_extent)
