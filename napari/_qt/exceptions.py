@@ -55,6 +55,7 @@ class ExceptionHandler(QObject):
                     parent = wdg
                     break
             self.message = QErrorMessage(parent)
+            self.message.setWindowFlags(Qt.Popup | Qt.FramelessWindowHint)
             self.message.setModal(False)
             self.message.move(self.message.mapToParent(QPoint(900, 600)))
             self.message.setFocusPolicy(Qt.NoFocus)
