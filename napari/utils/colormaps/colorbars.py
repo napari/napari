@@ -17,7 +17,7 @@ def make_colorbar(cmap, size=(18, 28), horizontal=True):
     Returns
     -------
     cbar : array
-        Array of colorbar.
+        Array of colorbar in uint8.
     """
 
     if horizontal:
@@ -30,4 +30,4 @@ def make_colorbar(cmap, size=(18, 28), horizontal=True):
     color_array = cmap.map(bar.ravel())
     cbar = color_array.reshape(bar.shape + (4,))
 
-    return cbar
+    return np.round(255 * cbar).astype(np.uint8).copy(order='C')

@@ -24,17 +24,17 @@ class Colormap:
     """
 
     name: str = 'undefined'
-    colors: Property[np.ndarray, None, np.asarray] = np.asarray(0)
+    colors: Property[np.ndarray, None, transform_color] = np.zeros((2, 4))
     controls: Property[np.ndarray, None, np.asarray] = np.asarray(
-        0
+        [0, 1]
     )  # Not yet implemented
     interpolation: str = 'linear'  # Only linear supported
 
     def map(self, values):
         x = np.linspace(0, 1, len(self.colors))  # Should use control points
-        y = transform_color(self.colors)  # Should be done in colors setter
         funcs = [
-            interpolate.interp1d(x, y[:, i], kind='linear') for i in range(4)
+            interpolate.interp1d(x, self.colors[:, i], kind='linear')
+            for i in range(4)
         ]
         mapped = np.array(
             [f(values) for f in funcs]
@@ -43,7 +43,4 @@ class Colormap:
 
     @property
     def colorbar(self):
-        cbar = make_colorbar(self)
-        return (
-            np.round(255 * cbar).astype(np.uint8).copy(order='C')
-        )  # Copy order 'C' needed for Qt
+        return make_colorbar(self)

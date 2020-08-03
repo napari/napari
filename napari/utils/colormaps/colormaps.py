@@ -268,7 +268,7 @@ def vispy_or_mpl_colormap(name):
         cmap = get_colormap(name)
         cmap = NapariColormap(
             name=name,
-            colors=cmap.colors,
+            colors=cmap.colors.rgba,
             controls=cmap._controls,
             interpolation=cmap.interpolation,
         )
