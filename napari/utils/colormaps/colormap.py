@@ -1,9 +1,18 @@
 import numpy as np
 from scipy import interpolate
+from enum import auto
 
 from .colorbars import make_colorbar
 from .standardize_color import transform_color
 from ...utils.dataclass import dataclass, Property
+from ...utils.misc import StringEnum
+
+
+class ColormapInterpolationMode(StringEnum):
+    """INTERPOLATION: Interpolation mode for colormaps."""
+
+    LINEAR = auto()
+    ZERO = auto()
 
 
 @dataclass(events=True, properties=True)
@@ -19,27 +28,30 @@ class Colormap:
     controls : array, shape (N,) or (N+1,)
         Control points of the colormap.
     interpolation : str
-        Colormap interpolation mode, either `linear` or
-        `zero`.
+        Colormap interpolation mode, either 'linear' or
+        'zero'. If 'linear', ncontrols = ncolors (one
+        color per control point). If 'zero', ncontrols
+        = ncolors+1 (one color per bin).
     """
 
     name: str = 'undefined'
     colors: Property[np.ndarray, None, transform_color] = np.zeros((2, 4))
-    controls: Property[np.ndarray, None, np.asarray] = np.asarray(
-        [0, 1]
-    )  # Not yet implemented
-    interpolation: str = 'linear'  # Only linear supported
+    controls: Property[np.ndarray, None, np.asarray] = np.empty((0))
+    interpolation: ColormapInterpolationMode = 'linear'
+
+    def __post_init__(self):
+        if len(self.controls) == 0:
+            N = len(self.colors) + int(self.interpolation == 'zero')
+            self.controls = np.linspace(0, 1, N)
 
     def map(self, values):
-        x = np.linspace(0, 1, len(self.colors))  # Should use control points
         funcs = [
-            interpolate.interp1d(x, self.colors[:, i], kind='linear')
+            interpolate.interp1d(
+                self.controls, self.colors[:, i], kind=self.interpolation
+            )
             for i in range(4)
         ]
-        mapped = np.array(
-            [f(values) for f in funcs]
-        ).T  # Could probably be nicer
-        return mapped
+        return np.stack([f(values) for f in funcs], axis=1)
 
     @property
     def colorbar(self):
