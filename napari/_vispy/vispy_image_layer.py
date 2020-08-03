@@ -109,6 +109,7 @@ class VispyImageLayer(VispyBaseLayer):
     def _on_colormap_change(self, event=None):
         cmap = Colormap(
             self.layer.colormap.colors,
+            controls=self.layer.colormap.controls,
             interpolation=self.layer.colormap.interpolation,
         )
         self.node.cmap = cmap
