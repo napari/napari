@@ -4,7 +4,7 @@ from types import TracebackType
 from typing import Type
 
 from qtpy.QtCore import Qt, QObject, Signal, QPoint
-from qtpy.QtWidgets import QApplication, QErrorMessage, QMainWindow
+from qtpy.QtWidgets import QApplication, QMessageBox, QMainWindow
 
 
 class ExceptionHandler(QObject):
@@ -54,10 +54,15 @@ class ExceptionHandler(QObject):
                 if isinstance(wdg, QMainWindow):
                     parent = wdg
                     break
-            self.message = QErrorMessage(parent)
+            self.message = QMessageBox(parent)
             self.message.setWindowFlags(Qt.Popup | Qt.FramelessWindowHint)
+            self.message.setStandardButtons(QMessageBox.StandardButton.Ok)
             self.message.setModal(False)
-            self.message.move(self.message.mapToParent(QPoint(900, 600)))
+            self.message.move(self.message.mapToParent(QPoint(1400, 750)))
             self.message.setFocusPolicy(Qt.NoFocus)
 
-        self.message.showMessage(str(value))
+        # TODO convert to Napari error internal attributes
+        self.message.setIcon(QMessageBox.Warning)
+        self.message.setText(value.__class__.__name__)
+        self.message.setInformativeText(str(value))
+        self.message.show()
