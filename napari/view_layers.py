@@ -122,6 +122,9 @@ def _generate_view_function(layer_string: str, method_name: str = None):
             k: kwargs.pop(k) for k in list(kwargs) if k in view_sig.parameters
         }
         viewer = Viewer(**view_kwargs)
+        # if the literal word "kwargs" is in the kwargs dict, expand it.
+        if 'kwargs' in kwargs:
+            kwargs.update(kwargs.pop("kwargs"))
         getattr(viewer, add_string)(*args, **kwargs)
         return viewer
 
