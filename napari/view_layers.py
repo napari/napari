@@ -123,7 +123,7 @@ def _generate_view_function(layer_string: str, method_name: str = None):
         view_kwargs = {
             k: _kw.pop(k) for k in list(_kw) if k in view_sig.parameters
         }
-        viewer = Viewer(**view_kwargs)
+        viewer = napari.Viewer(**view_kwargs)
         if 'kwargs' in _kw:
             _kw.update(_kw.pop("kwargs"))
     """
@@ -136,7 +136,6 @@ def _generate_view_function(layer_string: str, method_name: str = None):
             'typing': typing,
             'view_sig': view_sig,
             'Union': typing.Union,
-            'Viewer': Viewer,
             'List': typing.List,
             'NoneType': type(None),
             'Sequence': typing.Sequence,

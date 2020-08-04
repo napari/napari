@@ -187,8 +187,8 @@ def test_view_multichannel(qtbot):
 
 
 def test_kwargs_passed(monkeypatch):
-    viewer_mock = MagicMock(napari.view_layers.Viewer)
-    monkeypatch.setattr(napari.view_layers, 'Viewer', viewer_mock)
+    viewer_mock = MagicMock(napari.Viewer)
+    monkeypatch.setattr(napari, 'Viewer', viewer_mock)
     napari.view_path(
         path='some/path', title='my viewer', name='img name', scale=(1, 2, 3)
     )
