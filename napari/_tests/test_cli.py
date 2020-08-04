@@ -1,10 +1,8 @@
 import sys
 from contextlib import contextmanager
-from unittest.mock import MagicMock, call
 
 import pytest
 
-import napari
 from napari import __main__
 
 
@@ -83,28 +81,3 @@ def test_cli_runscript(monkeypatch, tmp_path):
         m.setattr(sys, 'argv', ['napari', str(script)])
         with pytest.raises(SystemExit):
             __main__.main()
-
-
-def test_cli_passes_kwargs(monkeypatch):
-    """test that we can parse layer keyword arg variants"""
-
-    @contextmanager
-    def gui_qt(**kwargs):
-        yield
-
-    viewer_mock = MagicMock(napari.view_layers.Viewer)
-    monkeypatch.setattr(napari.view_layers, 'Viewer', viewer_mock)
-    monkeypatch.setattr(__main__, 'gui_qt', gui_qt)
-    with monkeypatch.context() as m:
-        m.setattr(
-            sys, 'argv', ['n', 'file', '--name', 'some name', '--plugin', 'hi']
-        )
-        __main__.main()
-    expected = call().open(
-        path=['file'],
-        stack=False,
-        plugin='hi',
-        layer_type=None,
-        name='some name',
-    )
-    assert expected in viewer_mock.mock_calls
