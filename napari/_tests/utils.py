@@ -1,4 +1,3 @@
-import napari
 import numpy as np
 from napari import Viewer
 from napari.layers import Image, Labels, Points, Shapes, Vectors, Surface
@@ -35,9 +34,6 @@ layer2addmethod = {
     cls: getattr(Viewer, 'add_' + name) for cls, name in zip(classes, names)
 }
 
-layer2viewmethod = {
-    cls: getattr(napari, 'view_' + name) for cls, name in zip(classes, names)
-}
 
 # examples of valid tuples that might be passed to viewer._add_layer_from_data
 good_layer_data = [
@@ -71,20 +67,6 @@ def add_layer_by_type(viewer, layer_type, data, visible=True):
         The layer data to view
     """
     return layer2addmethod[layer_type](viewer, data, visible=visible)
-
-
-def view_layer_type(layer_type, data):
-    """
-    Convenience method that maps a LayerType to it's view method.
-
-    Parameters
-    ----------
-    layer_type : LayerTypes
-        Layer type to view
-    data
-        The layer data to view
-    """
-    return layer2viewmethod[layer_type](data, show=False)
 
 
 def check_viewer_functioning(viewer, view=None, data=None, ndim=2):

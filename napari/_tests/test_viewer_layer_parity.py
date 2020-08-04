@@ -5,13 +5,20 @@ have the same signatures and docstrings.
 
 import inspect
 import re
+from unittest.mock import MagicMock, call
 
+import numpy as np
 import pytest
-from numpydoc.docscrape import FunctionDoc, ClassDoc
+from numpydoc.docscrape import ClassDoc, FunctionDoc
 
-from napari import layers as module, Viewer
-from napari.utils.misc import camel_to_snake, callsignature
-
+import napari
+from napari import Viewer
+from napari import layers as module
+from napari._tests.utils import (
+    check_viewer_functioning,
+    layer_test_data,
+)
+from napari.utils.misc import callsignature, camel_to_snake
 
 layers = []
 
@@ -155,3 +162,50 @@ def test_signature(layer):
         f'method to layer {name}'
     )
     assert args == autogen, msg
+
+
+@pytest.mark.parametrize('layer_type, data, ndim', layer_test_data)
+def test_view(qtbot, layer_type, data, ndim):
+    np.random.seed(0)
+    viewer = getattr(napari, f'view_{layer_type.__name__.lower()}')(
+        data, show=False
+    )
+    view = viewer.window.qt_viewer
+    check_viewer_functioning(viewer, view, data, ndim)
+    viewer.close()
+
+
+def test_view_multichannel(qtbot):
+    """Test adding image."""
+    np.random.seed(0)
+    data = np.random.random((15, 10, 5))
+    viewer = napari.view_image(data, channel_axis=-1, show=False)
+    assert len(viewer.layers) == data.shape[-1]
+    for i in range(data.shape[-1]):
+        assert np.all(viewer.layers[i].data == data.take(i, axis=-1))
+    viewer.close()
+
+
+def test_kwargs_passed(monkeypatch):
+    viewer_mock = MagicMock(napari.view_layers.Viewer)
+    monkeypatch.setattr(napari.view_layers, 'Viewer', viewer_mock)
+    napari.view_path(
+        path='some/path', title='my viewer', name='img name', scale=(1, 2, 3)
+    )
+    assert viewer_mock.mock_calls == [
+        call(
+            title='my viewer',
+            ndisplay=2,
+            order=None,
+            axis_labels=None,
+            show=True,
+        ),
+        call().open(
+            path='some/path',
+            stack=False,
+            plugin=None,
+            layer_type=None,
+            name='img name',
+            scale=(1, 2, 3),
+        ),
+    ]
