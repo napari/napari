@@ -78,6 +78,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self._palette = None
         self.theme = 'dark'
 
+        self._dim_slider_scroll_progress = 0
         self.dims.events.camera.connect(self.reset_view)
         self.dims.events.ndisplay.connect(self._update_layers)
         self.dims.events.order.connect(self._update_layers)
@@ -401,13 +402,17 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
     def _scroll(self, viewer, event):
         if 'Control' not in event.modifiers:
             return
-        delta = int(event.delta[1])
-        if abs(delta) >= 1:
-            for i in range(abs(delta)):
-                if delta < 0:
+        if event.native.inverted():
+            self._dim_slider_scroll_progress += event.delta[1]
+        else:
+            self._dim_slider_scroll_progress -= event.delta[1]
+        if abs(self._dim_slider_scroll_progress) >= 1:
+            for i in range(int(abs(self._dim_slider_scroll_progress))):
+                if self._dim_slider_scroll_progress < 0:
                     self.dims._increment_dims_left()
                 else:
                     self.dims._increment_dims_right()
+            self._dim_slider_scroll_progress = 0
 
     def _update_status(self, event):
         """Set the viewer status with the `event.status` string."""
