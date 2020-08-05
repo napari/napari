@@ -62,7 +62,6 @@ def test_paint(mouse_event, modifiers, native, expected_dim):
         mouse_event(delta=[0, 0.6], modifiers=modifiers, native=native)
     )
     mouse_wheel_callbacks(viewer, event)
-    print(viewer.dims.point)
     assert np.equal(viewer.dims.point, expected_dim[0]).all()
 
     # Simulate tiny scroll
@@ -70,7 +69,6 @@ def test_paint(mouse_event, modifiers, native, expected_dim):
         mouse_event(delta=[0, 0.6], modifiers=modifiers, native=native)
     )
     mouse_wheel_callbacks(viewer, event)
-    print(viewer.dims.point)
     assert np.equal(viewer.dims.point, expected_dim[1]).all()
 
     # Simulate tiny scroll
@@ -78,7 +76,6 @@ def test_paint(mouse_event, modifiers, native, expected_dim):
         mouse_event(delta=[0, 0.9], modifiers=modifiers, native=native)
     )
     mouse_wheel_callbacks(viewer, event)
-    print(viewer.dims.point)
     assert np.equal(viewer.dims.point, expected_dim[2]).all()
 
     # Simulate large scroll
@@ -86,5 +83,4 @@ def test_paint(mouse_event, modifiers, native, expected_dim):
         mouse_event(delta=[0, 0.6], modifiers=modifiers, native=native)
     )
     mouse_wheel_callbacks(viewer, event)
-    print(viewer.dims.point)
     assert np.equal(viewer.dims.point, expected_dim[3]).all()
