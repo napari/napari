@@ -3,6 +3,7 @@ import numpy as np
 from .add_layers_mixin import AddLayersMixin
 from .dims import Dims
 from .layerlist import LayerList
+from ._viewer_mouse_bindings import dims_scroll
 from ..utils.event import EmitterGroup, Event
 from ..utils.key_bindings import KeymapHandler, KeymapProvider
 from ..utils.theme import palettes
@@ -78,7 +79,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self._palette = None
         self.theme = 'dark'
 
-        self._dim_slider_scroll_progress = 0
         self.dims.events.camera.connect(self.reset_view)
         self.dims.events.ndisplay.connect(self._update_layers)
         self.dims.events.order.connect(self._update_layers)
@@ -94,7 +94,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         # Hold callbacks for when mouse is pressed, dragged, and released
         self.mouse_drag_callbacks = []
         # Hold callbacks for when mouse wheel is scrolled
-        self.mouse_wheel_callbacks = [self._scroll]
+        self.mouse_wheel_callbacks = [dims_scroll]
 
         self._persisted_mouse_event = {}
         self._mouse_drag_gen = {}
@@ -398,21 +398,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             for i in range(ndim):
                 self.dims.set_range(i, (extent[0, i], extent[1, i], ss[i]))
         self.events.layers_change()
-
-    def _scroll(self, viewer, event):
-        if 'Control' not in event.modifiers:
-            return
-        if event.native.inverted():
-            self._dim_slider_scroll_progress += event.delta[1]
-        else:
-            self._dim_slider_scroll_progress -= event.delta[1]
-        if abs(self._dim_slider_scroll_progress) >= 1:
-            for i in range(int(abs(self._dim_slider_scroll_progress))):
-                if self._dim_slider_scroll_progress < 0:
-                    self.dims._increment_dims_left()
-                else:
-                    self.dims._increment_dims_right()
-            self._dim_slider_scroll_progress = 0
 
     def _update_status(self, event):
         """Set the viewer status with the `event.status` string."""
