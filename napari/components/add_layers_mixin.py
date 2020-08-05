@@ -11,7 +11,7 @@ from ..layers.image._image_utils import guess_labels
 from ..layers.utils.stack_utils import split_channels
 from ..plugins.io import read_data_with_plugins
 from ..types import FullLayerData, LayerData
-from ..utils.colormaps import ensure_colormap_tuple
+from ..utils.colormaps import ensure_colormap
 from ..utils.misc import is_sequence
 
 logger = getLogger(__name__)
@@ -178,14 +178,14 @@ class AddLayersMixin:
         """
 
         if colormap is not None:
-            # standardize colormap argument(s) to strings, and make sure they
+            # standardize colormap argument(s) to Colormaps, and make sure they
             # are in AVAILABLE_COLORMAPS.  This will raise one of many various
             # errors if the colormap argument is invalid.  See
-            # ensure_colormap_tuple for details
+            # ensure_colormap for details
             if isinstance(colormap, list):
-                colormap = [ensure_colormap_tuple(c)[0] for c in colormap]
+                colormap = [ensure_colormap(c) for c in colormap]
             else:
-                colormap, _ = ensure_colormap_tuple(colormap)
+                colormap = ensure_colormap(colormap)
 
         # doing this here for IDE/console autocompletion in add_image function.
         kwargs = {

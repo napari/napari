@@ -449,7 +449,7 @@ class Image(IntensityVisualizationMixin, Layer):
             {
                 'rgb': self.rgb,
                 'multiscale': self.multiscale,
-                'colormap': self.colormap[0],
+                'colormap': self.colormap,
                 'contrast_limits': self.contrast_limits,
                 'interpolation': self.interpolation,
                 'rendering': self.rendering,
@@ -619,8 +619,8 @@ class Image(IntensityVisualizationMixin, Layer):
             if color_range != 0:
                 downsampled = (downsampled - low) / color_range
             downsampled = downsampled ** self.gamma
-            color_array = self.colormap[1][downsampled.ravel()]
-            colormapped = color_array.rgba.reshape(downsampled.shape + (4,))
+            color_array = self.colormap.map(downsampled.ravel())
+            colormapped = color_array.reshape(downsampled.shape + (4,))
             colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 

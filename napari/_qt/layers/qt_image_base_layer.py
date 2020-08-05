@@ -152,7 +152,7 @@ class QtBaseImageControls(QtLayerControls):
         event : napari.utils.event.Event, optional
             The napari event that triggered this method, by default None.
         """
-        name = self.layer.colormap[0]
+        name = self.layer.colormap.name
         if name not in self.colormapComboBox._allitems:
             self.colormapComboBox._allitems.add(name)
             self.colormapComboBox.addItem(name)
@@ -160,11 +160,9 @@ class QtBaseImageControls(QtLayerControls):
             self.colormapComboBox.setCurrentText(name)
 
         # Note that QImage expects the image width followed by height
+        cbar = self.layer.colormap.colorbar
         image = QImage(
-            self.layer._colorbar,
-            self.layer._colorbar.shape[1],
-            self.layer._colorbar.shape[0],
-            QImage.Format_RGBA8888,
+            cbar, cbar.shape[1], cbar.shape[0], QImage.Format_RGBA8888,
         )
         self.colorbarLabel.setPixmap(QPixmap.fromImage(image))
 

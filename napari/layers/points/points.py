@@ -4,9 +4,8 @@ from itertools import cycle
 import warnings
 
 import numpy as np
-from vispy.color.colormap import Colormap
 
-from ...utils.colormaps import ensure_colormap_tuple
+from ...utils.colormaps import ensure_colormap, Colormap
 from ...types import ValidColormapArg
 
 from ..base import Layer
@@ -768,18 +767,14 @@ class Points(Layer):
 
         Returns
         -------
-        colormap_name : str
-            The name of the current colormap.
-        colormap : vispy.color.Colormap
-            The vispy colormap object.
+        colormap : napari.utils.Colormap
+            The Colormap object.
         """
-        return self._edge_colormap_name, self._edge_colormap
+        return self._edge_colormap
 
     @edge_colormap.setter
     def edge_colormap(self, colormap: ValidColormapArg):
-        name, cmap = ensure_colormap_tuple(colormap)
-        self._edge_colormap_name = name
-        self._edge_colormap = cmap
+        self._edge_colormap = ensure_colormap(colormap)
 
     @property
     def edge_contrast_limits(self) -> Tuple[float, float]:
@@ -852,22 +847,18 @@ class Points(Layer):
 
     @property
     def face_colormap(self) -> Tuple[str, Colormap]:
-        """Return the colormap to be applied to a property to get the edge color.
+        """Return the colormap to be applied to a property to get the face color.
 
         Returns
         -------
-        colormap_name : str
-            The name of the current colormap.
-        colormap : vispy.color.Colormap
-            The vispy colormap object.
+        colormap : napari.utils.Colormap
+            The Colormap object.
         """
-        return self._face_colormap_name, self._face_colormap
+        return self._edge_colormap
 
     @face_colormap.setter
     def face_colormap(self, colormap: ValidColormapArg):
-        name, cmap = ensure_colormap_tuple(colormap)
-        self._face_colormap_name = name
-        self._face_colormap = cmap
+        self._face_colormap = ensure_colormap(colormap)
 
     @property
     def face_contrast_limits(self) -> Union[None, Tuple[float, float]]:

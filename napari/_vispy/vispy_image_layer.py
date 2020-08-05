@@ -1,4 +1,5 @@
 import warnings
+from vispy.color import Colormap
 from .image import Image as ImageNode
 from .volume import Volume as VolumeNode
 import numpy as np
@@ -106,7 +107,7 @@ class VispyImageLayer(VispyBaseLayer):
             self._on_iso_threshold_change()
 
     def _on_colormap_change(self, event=None):
-        self.node.cmap = self.layer.colormap[1]
+        self.node.cmap = Colormap(*self.layer.colormap)
 
     def _on_contrast_limits_change(self, event=None):
         self.node.clim = self.layer.contrast_limits

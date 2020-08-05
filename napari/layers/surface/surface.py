@@ -237,7 +237,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         state = self._get_base_state()
         state.update(
             {
-                'colormap': self.colormap[0],
+                'colormap': self.colormap,
                 'contrast_limits': self.contrast_limits,
                 'gamma': self.gamma,
                 'data': self.data,

@@ -1,7 +1,7 @@
 import numpy as np
 import dask.array as da
 from napari.components import ViewerModel
-from napari.utils.colormaps import colormaps, ensure_colormap_tuple
+from napari.utils.colormaps import colormaps, ensure_colormap
 from napari.utils.misc import ensure_sequence_of_iterables, ensure_iterable
 import pytest
 
@@ -113,9 +113,9 @@ def test_multichannel(shape, kwargs):
                 expectation = ensure_sequence_of_iterables(expectation)
             elif key == 'colormap' and expectation is not None:
                 if isinstance(expectation, list):
-                    exp = [ensure_colormap_tuple(c)[0] for c in expectation]
+                    exp = [ensure_colormap(c) for c in expectation]
                 else:
-                    exp, _ = ensure_colormap_tuple(expectation)
+                    exp = ensure_colormap(expectation)
                 expectation = ensure_iterable(exp)
             else:
                 expectation = ensure_iterable(expectation)
