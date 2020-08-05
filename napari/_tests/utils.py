@@ -100,6 +100,8 @@ def check_viewer_functioning(viewer, view=None, data=None, ndim=2):
 def check_view_transform_consistency(layer, viewer, transf_dict):
     """Check layer transforms have been applied to the view.
 
+    Note this check only works for non-multiscale data.
+
     Parameters
     ----------
     layer : napari.layers.Layer
@@ -111,25 +113,45 @@ def check_view_transform_consistency(layer, viewer, transf_dict):
         the transform property (i.e. `scale`, `translate`) and the value
         corresponding to the array of property values
     """
+    if layer.multiscale:
+        return None
+
     # Get an handle on visual layer:
     vis_lyr = viewer.window.qt_viewer.layer_to_visual[layer]
-
     # Visual layer attributes should match expected from viewer dims:
     for transf_name, transf in transf_dict.items():
         disp_dims = viewer.dims.displayed  # dimensions displayed in 2D
         # values of visual layer
         vis_vals = getattr(vis_lyr, transf_name)[1::-1]
 
-        # The transform of the visual includes both values from the
-        # data2world transform and the tile2data transform and so any
-        # any additional scaling / translation from tile2data transform
-        # must be taken into account
-        transform = layer._transforms['tile2data'].set_slice(disp_dims)
-        tile_transf = getattr(transform, transf_name)
-        if transf_name == 'scale':
-            # expected scale values
-            correct_vals = np.multiply(transf[disp_dims], tile_transf)
-        else:
-            # expected translate values
-            correct_vals = np.add(transf[disp_dims], tile_transf)
-        assert (vis_vals == correct_vals).all()
+        np.testing.assert_almost_equal(vis_vals, transf[disp_dims])
+
+
+def check_layer_world_data_extent(layer, extent, scale, translate):
+    """Test extents after applying transforms.
+
+    Parameters
+    ----------
+    layer : napar.layers.Layer
+        Layet to be tested.
+    extent : array, shape (2, D)
+        Extent of data in layer.
+    scale : array, shape (D,)
+        Scale to be applied to layer.
+    translate : array, shape (D,)
+        Translation to be applied to layer.
+    """
+    np.testing.assert_almost_equal(layer._extent_data, extent)
+    np.testing.assert_almost_equal(layer._extent_world, extent)
+
+    # Apply scale transformation
+    layer.scale = scale
+    scaled_extent = np.multiply(extent, scale)
+    np.testing.assert_almost_equal(layer._extent_data, extent)
+    np.testing.assert_almost_equal(layer._extent_world, scaled_extent)
+
+    # Apply translation transformation
+    layer.translate = translate
+    translated_extent = np.add(scaled_extent, translate)
+    np.testing.assert_almost_equal(layer._extent_data, extent)
+    np.testing.assert_almost_equal(layer._extent_world, translated_extent)

@@ -1,3 +1,5 @@
+import numpy as np
+import itertools
 from typing import Optional, List
 from ..layers import Layer
 from ..utils.naming import inc_name_count
@@ -185,6 +187,72 @@ class LayerList(ListModel):
         for layer in self:
             if layer.selected:
                 layer.visible = not layer.visible
+
+    @property
+    def _extent_world(self) -> np.ndarray:
+        """Extent of layers in world coordinates.
+
+        Default to 2D with (0, 512) min/ max values if no data is present.
+
+        Returns
+        -------
+        extent_world : array, shape (2, D)
+        """
+        if len(self) == 0:
+            min_v = [np.nan] * self.ndim
+            max_v = [np.nan] * self.ndim
+        else:
+            extrema = [layer._extent_world for layer in self]
+            mins = [e[0][::-1] for e in extrema]
+            maxs = [e[1][::-1] for e in extrema]
+
+            min_v = np.nanmin(
+                list(itertools.zip_longest(*mins, fillvalue=np.nan)), axis=1
+            )
+            max_v = np.nanmax(
+                list(itertools.zip_longest(*maxs, fillvalue=np.nan)), axis=1
+            )
+
+        min_vals = np.nan_to_num(min_v[::-1], nan=0)
+        max_vals = np.nan_to_num(max_v[::-1], nan=512)
+
+        return np.vstack([min_vals, max_vals])
+
+    @property
+    def _step_size(self) -> np.ndarray:
+        """Ideal step size between planes in world coordinates.
+
+        Computes the best step size that allows all data planes to be
+        sampled if moving through the full range of world coordinates.
+        The current implementation just takes the minimum scale.
+
+        Returns
+        -------
+        step_size : array, shape (D,)
+        """
+        if len(self) == 0:
+            return np.ones(self.ndim)
+        else:
+            scales = [layer.scale[::-1] for layer in self]
+            full_scales = list(
+                np.array(
+                    list(itertools.zip_longest(*scales, fillvalue=np.nan))
+                ).T
+            )
+            min_scales = np.nanmin(full_scales, axis=0)
+            return min_scales[::-1]
+
+    @property
+    def ndim(self) -> int:
+        """Maximum dimensionality of layers.
+
+        Defaults to 2 if no data is present.
+
+        Returns
+        -------
+        ndim : int
+        """
+        return max((layer.ndim for layer in self), default=2)
 
     def save(
         self,

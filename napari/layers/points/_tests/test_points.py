@@ -8,6 +8,7 @@ from vispy.color import get_colormap
 from napari.layers import Points
 from napari.layers.points._points_utils import points_to_squares
 from napari.utils.colormaps.standardize_color import transform_color
+from napari._tests.utils import check_layer_world_data_extent
 
 
 def _make_cycled_properties(values, length):
@@ -1438,3 +1439,13 @@ def test_interaction_box():
     expected_box = points_to_squares(data, size)
     box = layer.interaction_box(index)
     np.all([np.isin(p, expected_box) for p in box])
+
+
+def test_world_data_extent():
+    """Test extent after applying transforms."""
+    data = [(7, -5, 0), (-2, 0, 15), (4, 30, 12)]
+    min_val = (-2, -5, 0)
+    max_val = (7, 30, 15)
+    layer = Points(data)
+    extent = np.array((min_val, max_val))
+    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))

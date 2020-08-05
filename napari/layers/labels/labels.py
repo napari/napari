@@ -636,7 +636,7 @@ class Labels(Image):
         int_coord = tuple(np.round(coord).astype(int))
         # If requested fill location is outside data shape then return
         if np.any(np.less(int_coord, 0)) or np.any(
-            np.greater_equal(int_coord, self.shape)
+            np.greater_equal(int_coord, self.data.shape)
         ):
             return
 
@@ -712,11 +712,13 @@ class Labels(Image):
                     ),
                     1,
                 )
-                for c, s, brush_size in zip(coord, self.shape, brush_size_dims)
+                for c, s, brush_size in zip(
+                    coord, self.data.shape, brush_size_dims
+                )
             )
         elif self.brush_shape == "circle":
             slice_coord = [int(np.round(c)) for c in coord]
-            shape = self.shape
+            shape = self.data.shape
             if not self.n_dimensional and self.ndim > 2:
                 coord = [coord[i] for i in self.dims.displayed]
                 shape = [shape[i] for i in self.dims.displayed]
