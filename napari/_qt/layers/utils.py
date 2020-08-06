@@ -36,4 +36,6 @@ def create_qt_controls(layer):
         if isinstance(layer, layer_type):
             return controls(layer)
 
-    raise TypeError(f'Could not find QtControls for layer of type {type(layer)}')
+    raise TypeError(
+        f'Could not find QtControls for layer of type {type(layer)}'
+    )
