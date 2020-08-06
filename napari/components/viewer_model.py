@@ -1,5 +1,6 @@
 import numpy as np
 
+from ..commands.processor import CommandProcessor
 from .add_layers_mixin import AddLayersMixin
 from .dims import Dims
 from .layerlist import LayerList
@@ -503,3 +504,11 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         translate = [0] * layer.ndim
         translate[-2:] = translate_2d
         layer.translate_grid = translate
+
+    @property
+    def cmd(self):
+        """Command processor for use in the IPython console.
+
+        For example run "viewer.cmd.help" or "viewer.cmd.layers".
+        """
+        return CommandProcessor(self.layers)
