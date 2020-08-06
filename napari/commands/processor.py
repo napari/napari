@@ -34,4 +34,4 @@ class CommandProcessor:
 
     def levels(self, layer_id):
         """Print information about a single layer."""
-        return self.layer_commands.layer_info(layer_id)
+        return self.layer_commands.levels(layer_id)
