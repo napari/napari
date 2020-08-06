@@ -2,6 +2,18 @@ import numpy as np
 from .viewer import Viewer
 
 
+@Viewer.bind_key('Control')
+def reset_scroll_progress(viewer):
+    """Reset dims scroll progress"""
+
+    # on key press
+    viewer.dims._scroll_progress = 0
+    yield
+
+    # on key release
+    viewer.dims._scroll_progress = 0
+
+
 @Viewer.bind_key('Control-F')
 def toggle_fullscreen(viewer):
     """Toggle fullscreen mode."""
