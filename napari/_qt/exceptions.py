@@ -11,6 +11,7 @@ from qtpy.QtCore import (
     QPoint,
     QPropertyAnimation,
     QEasingCurve,
+    QTimer,
 )
 from qtpy.QtWidgets import (
     QApplication,
@@ -114,6 +115,8 @@ class NapariErrorMessage(QMessageBox):
         self.geom_anim.start()
         self.opacity_anim.start()
         super().show()
+        self.timer = QTimer()
+        self.timer.singleShot(5000, self.close)
 
     def close(self):
         """Fade out then close."""
