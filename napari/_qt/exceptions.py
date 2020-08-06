@@ -83,17 +83,14 @@ class NapariErrorMessage(QMessageBox):
         self.setText(type(exception).__name__)
         self.setInformativeText(str(exception))
         self.setStandardButtons(QMessageBox.StandardButton.NoButton)
-        eff = QGraphicsOpacityEffect()
-        self.setGraphicsEffect(eff)
-        self.opacity_anim = QPropertyAnimation(eff, b"opacity", self)
+        self.opacity = QGraphicsOpacityEffect()
+        self.setGraphicsEffect(self.opacity)
+        self.opacity_anim = QPropertyAnimation(self.opacity, b"opacity", self)
         self.geom_anim = QPropertyAnimation(self, b"geometry", self)
         self.setStyleSheet("QLabel{min-width: 250px;}")
         self.close_button = QPushButton(self)
         self.close_button.setObjectName("QErrorMessageCloseButton")
         self.close_button.clicked.connect(self.close)
-
-    def mousePressEvent(self, event):
-        self.hide()
 
     def show(self):
         """Show the message with a fade and slight slide in from the bottom.
