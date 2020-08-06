@@ -38,12 +38,12 @@ class WheelEvent:
         (
             ["Control"],
             WheelEvent(False),
-            [[5, 5, 5], [5, 5, 4], [5, 5, 4], [5, 5, 3]],
+            [[5, 5, 5], [5, 5, 4], [5, 5, 3], [5, 5, 0]],
         ),
         (
             ["Control"],
             WheelEvent(True),
-            [[5, 5, 5], [5, 5, 6], [5, 5, 6], [5, 5, 7]],
+            [[5, 5, 5], [5, 5, 6], [5, 5, 7], [5, 5, 9]],
         ),
     ],
 )
@@ -80,7 +80,7 @@ def test_paint(mouse_event, modifiers, native, expected_dim):
 
     # Simulate large scroll
     event = ReadOnlyWrapper(
-        mouse_event(delta=[0, 0.6], modifiers=modifiers, native=native)
+        mouse_event(delta=[0, 3], modifiers=modifiers, native=native)
     )
     mouse_wheel_callbacks(viewer, event)
     assert np.equal(viewer.dims.point, expected_dim[3]).all()
