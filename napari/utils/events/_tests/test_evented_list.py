@@ -7,8 +7,6 @@ from napari.utils.events import (
     EmitterGroup,
     EventedList,
     NestableEventedList,
-    TypedEventedList,
-    TypedNestableEventedList,
 )
 
 
@@ -25,14 +23,7 @@ def flatten(_lst):
     )
 
 
-@pytest.fixture(
-    params=[
-        EventedList,
-        NestableEventedList,
-        TypedEventedList,
-        TypedNestableEventedList,
-    ]
-)
+@pytest.fixture(params=[EventedList, NestableEventedList])
 def test_list(request, regular_list):
     test_list = request.param(regular_list)
     test_list.events = Mock(wraps=test_list.events)

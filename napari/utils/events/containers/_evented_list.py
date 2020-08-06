@@ -24,27 +24,22 @@ cover this in test_evented_list.py)
 
 import logging
 from typing import (
+    Callable,
+    Dict,
     Iterable,
-    List,
-    MutableSequence,
     Sequence,
-    Tuple,
-    TypeVar,
+    Type,
     Union,
-    overload,
+    Tuple,
 )
 
 from ..event import EmitterGroup
-from ..types import SupportsEvents
+from ._typed import TypedMutableSequence, Index, _T, _L
 
 logger = logging.getLogger(__name__)
-T = TypeVar('T')
 
 
-Index = Union[int, slice]
-
-
-class EventedList(SupportsEvents, MutableSequence[T]):
+class EventedList(TypedMutableSequence[_T]):
     """Mutable Sequence that emits events when altered.
 
     This class is designed to behave exactly like the builtin ``list``, but
@@ -53,8 +48,13 @@ class EventedList(SupportsEvents, MutableSequence[T]):
 
     Parameters
     ----------
-    data : Iterable, optional
-        Initial data, by default None
+    data : iterable, optional
+        Elements to initialize the list with.
+    basetype : type or sequence of types, optional
+        Type of the elements in the list.
+    lookup : dict of Type[L] : function(object) -> L
+        Mapping between a type, and a function that converts items in the list
+        to that type.
 
     Events
     ------
@@ -72,16 +72,21 @@ class EventedList(SupportsEvents, MutableSequence[T]):
         emitted after ``value`` is moved from ``index`` to ``new_index``
     changed (index: int, old_value: T, value: T)
         emitted when ``index`` is set from ``old_value`` to ``value``
-    changed <OVERLOAD> (index: slice, old_value: List[T], value: List[T])
+    changed <OVERLOAD> (index: slice, old_value: List[_T], value: List[_T])
         emitted when ``index`` is set from ``old_value`` to ``value``
     reordered (value: self)
         emitted when the list is reordered (eg. moved/reversed).
     """
 
-    def __init__(self, data: Iterable[T] = None):
-        self._list: List[T] = []
-        self.events: EmitterGroup
+    events: EmitterGroup
 
+    def __init__(
+        self,
+        data: Iterable[_T] = (),
+        *,
+        basetype: Union[Type[_T], Sequence[Type[_T]]] = (),
+        lookup: Dict[Type[_L], Callable[[_T], Union[_T, _L]]] = dict(),
+    ):
         _events = {
             'inserting': None,  # int
             'inserted': None,  # Tuple[int, Any] - (idx, value)
@@ -93,51 +98,29 @@ class EventedList(SupportsEvents, MutableSequence[T]):
             'reordered': None,  # None
         }
 
-        # If the superclass already has an EmitterGroup, add to it
+        # For inheritance: If the mro already provides an EmitterGroup, add...
         if hasattr(self, 'events') and isinstance(self.events, EmitterGroup):
             self.events.add(**_events)
         else:
+            # otherwise create a new one
             self.events = EmitterGroup(source=self, **_events)
-
-        if data is not None:
-            self.extend(data)
+        super().__init__(data, basetype=basetype, lookup=lookup)
 
     # WAIT!! ... Read the module docstring before reimplement these classes
     # def append(self, item): ...
     # def clear(self): ...
     # def pop(self, index=-1): ...
-    # def extend(self, value: Iterable[T]): ...
+    # def extend(self, value: Iterable[_T]): ...
     # def remove(self, value: T): ...
 
-    @overload
-    def __getitem__(self, key: int) -> T:
-        ...  # pragma: no cover
-
-    @overload
-    def __getitem__(self, key: slice) -> 'EventedList[T]':  # noqa: F811
-        ...  # pragma: no cover
-
-    def __getitem__(self, key):  # noqa: F811 (redefinition)
-        result = self._list[key]
-        if isinstance(result, list):
-            return self.__class__(result)
-        return result
-
-    @overload
-    def __setitem__(self, key: int, value: T):
-        ...  # pragma: no cover
-
-    @overload
-    def __setitem__(self, key: slice, value: Iterable[T]):  # noqa: F811
-        ...  # pragma: no cover
-
-    def __setitem__(self, key, value):  # noqa: F811 (redefinition)
+    def __setitem__(self, key, value):
         old = self._list[key]
         if value == old:
             return
         if isinstance(key, slice):
             if not isinstance(value, Iterable):
                 raise TypeError('Can only assign an iterable to slice')
+            [self._type_check(v) for v in value]  # before we mutate the list
             if key.step is not None:  # extended slices are more restricted
                 indices = list(range(*key.indices(len(self))))
                 if not len(value) == len(indices):
@@ -153,18 +136,22 @@ class EventedList(SupportsEvents, MutableSequence[T]):
                 for i, v in enumerate(value):
                     self.insert(start + i, v)
         else:
-            self._list[key] = value
+            super().__setitem__(key, value)
             self.events.changed(index=key, old_value=old, value=value)
 
     def _delitem_indices(
         self, key: Index
-    ) -> Iterable[Tuple['EventedList[T]', int]]:
+    ) -> Iterable[Tuple['EventedList[_T]', int]]:
         # returning List[(self, int)] allows subclasses to pass nested members
         if isinstance(key, int):
             return [(self, key if key >= 0 else key + len(self))]
         elif isinstance(key, slice):
             return [(self, i) for i in range(*key.indices(len(self)))]
-        raise TypeError("Deletion index must be int, or slice")
+        elif type(key) in self._lookup:
+            return [(self, self.index(key))]
+
+        valid = set([int, slice]).union(set(self._lookup))
+        raise TypeError(f"Deletion index must be {valid!r}, got {type(key)}")
 
     def __delitem__(self, key: Index):
         # delete from the end
@@ -173,24 +160,10 @@ class EventedList(SupportsEvents, MutableSequence[T]):
             item = parent._list.pop(index)
             parent.events.removed(index=index, value=item)
 
-    def __len__(self) -> int:
-        return len(self._list)
-
-    def __repr__(self) -> str:
-        return repr(self._list)
-
-    def __eq__(self, other):
-        return self._list == other
-
-    def __hash__(self) -> int:
-        # it's important to add this to allow this object to be hashable
-        # given that we've also reimplemented __eq__
-        return id(self)
-
-    def insert(self, index: int, value: T):
+    def insert(self, index: int, value: _T):
         """Insert ``value`` before index."""
         self.events.inserting(index=index)
-        self._list.insert(index, value)
+        super().insert(index, value)
         self.events.inserted(index=index, value=value)
 
     def move(self, src_index: int, dest_index: int = 0) -> bool:
@@ -278,25 +251,3 @@ class EventedList(SupportsEvents, MutableSequence[T]):
         # it would just emit a "changed" event for each moved index in the list
         self._list.reverse()
         self.events.reordered(value=self)
-
-    def copy(self) -> 'EventedList[T]':
-        """Return a shallow copy of the list."""
-        return self.__newlike__(self)
-
-    def __add__(self, other: Iterable[T]) -> 'EventedList[T]':
-        """Add other to self, return new object."""
-        copy = self.copy()
-        copy.extend(other)
-        return copy
-
-    def __iadd__(self, other: Iterable[T]) -> 'EventedList[T]':
-        """Add other to self in place (self += other)."""
-        self.extend(other)
-        return self
-
-    def __radd__(self, other: List) -> List:
-        """Add other to self in place (self += other)."""
-        return other + list(self)
-
-    def __newlike__(self, iterable: Iterable[T]) -> 'EventedList[T]':
-        return self.__class__(iterable)

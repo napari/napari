@@ -5,7 +5,7 @@ from typing import Iterable, NewType, Sequence, Tuple, Union, cast, overload
 
 from ..event import Event
 from ..types import SupportsEvents
-from ._list import EventedList, Index, T
+from ._evented_list import EventedList, Index, _T
 
 logger = logging.getLogger(__name__)
 
@@ -76,7 +76,7 @@ def split_nested_index(
     return ParentIndex(()), -1  # empty tuple appends to self
 
 
-class NestableEventedList(EventedList[T]):
+class NestableEventedList(EventedList[_T]):
     """Nestable Mutable Sequence that emits recursive events when altered.
 
     ``NestableEventedList`` instances can be indexed with a ``tuple`` of
@@ -95,8 +95,13 @@ class NestableEventedList(EventedList[T]):
 
     Parameters
     ----------
-    data : Iterable, optional
-        Initial data, by default None
+    data : iterable, optional
+        Elements to initialize the list with. by default None.
+    basetype : type or sequence of types, optional
+        Type of the elements in the list.
+    lookup : dict of Type[L] : function(object) -> L
+        Mapping between a type, and a function that converts items in the list
+        to that type.
 
     Events
     ------
@@ -117,7 +122,7 @@ class NestableEventedList(EventedList[T]):
         emitted after ``value`` is moved from ``index`` to ``new_index``
     changed (index: Index, old_value: T, value: T)
         emitted when ``index`` is set from ``old_value`` to ``value``
-    changed <OVERLOAD> (index: slice, old_value: List[T], value: List[T])
+    changed <OVERLOAD> (index: slice, old_value: List[_T], value: List[_T])
         emitted when slice ``index`` is set from ``old_value`` to ``value``
     reordered (value: self)
         emitted when the list is reordered (eg. moved/reversed).
@@ -127,43 +132,43 @@ class NestableEventedList(EventedList[T]):
     # def append(self, item): ...
     # def clear(self): ...
     # def pop(self, index=-1): ...
-    # def extend(self, value: Iterable[T]): ...
+    # def extend(self, value: Iterable[_T]): ...
     # def remove(self, value: T): ...
 
     @overload
-    def __getitem__(self, key: int) -> T:
+    def __getitem__(self, key: int) -> _T:
         ...  # pragma: no cover
 
     @overload
     def __getitem__(  # noqa: F811
         self, key: ParentIndex
-    ) -> 'NestableEventedList[T]':
+    ) -> 'NestableEventedList[_T]':
         ...  # pragma: no cover
 
     @overload
-    def __getitem__(self, key: slice) -> 'NestableEventedList[T]':  # noqa
+    def __getitem__(self, key: slice) -> 'NestableEventedList[_T]':  # noqa
         ...  # pragma: no cover
 
     @overload
     def __getitem__(  # noqa: F811
         self, key: NestedIndex
-    ) -> Union[T, 'NestableEventedList[T]']:
+    ) -> Union[_T, 'NestableEventedList[_T]']:
         ...  # pragma: no cover
 
     def __getitem__(self, key):  # noqa: F811
         if isinstance(key, tuple):
-            item: NestableEventedList[T] = self
+            item: NestableEventedList[_T] = self
             for idx in key:
                 item = item[idx]
             return item
         return super().__getitem__(key)
 
     @overload
-    def __setitem__(self, key: Union[int, NestedIndex], value: T):
+    def __setitem__(self, key: Union[int, NestedIndex], value: _T):
         ...  # pragma: no cover
 
     @overload
-    def __setitem__(self, key: slice, value: Iterable[T]):  # noqa: F811
+    def __setitem__(self, key: slice, value: Iterable[_T]):  # noqa: F811
         ...  # pragma: no cover
 
     def __setitem__(self, key, value):  # noqa: F811
@@ -183,22 +188,20 @@ class NestableEventedList(EventedList[T]):
     @overload
     def _delitem_indices(
         self, key: Index
-    ) -> Iterable[Tuple[EventedList[T], int]]:
+    ) -> Iterable[Tuple[EventedList[_T], int]]:
         ...  # pragma: no cover
 
     @overload
     def _delitem_indices(  # noqa: F811
         self, key: NestedIndex
-    ) -> Iterable[Tuple[EventedList[T], Index]]:
+    ) -> Iterable[Tuple[EventedList[_T], Index]]:
         ...  # pragma: no cover
 
     def _delitem_indices(self, key):  # noqa: F811
         if isinstance(key, tuple):
             parent_i, index = split_nested_index(key)
-            return [(cast(NestableEventedList[T], self[parent_i]), index)]
-        elif isinstance(key, (int, slice)):
-            return super()._delitem_indices(key)
-        raise TypeError("Deletion index must be int, slice, or tuple")
+            return [(cast(NestableEventedList[_T], self[parent_i]), index)]
+        return super()._delitem_indices(key)
 
     def __delitem__(self, key):
         # delete from the end
@@ -208,13 +211,13 @@ class NestableEventedList(EventedList[T]):
 
     # TODO: implement __eq__
 
-    def insert(self, index: int, value: T):
+    def insert(self, index: int, value: _T):
         """Insert object before index."""
         # this is delicate, we want to preserve the evented list when nesting
         # but there is a high risk here of clobbering attributes of a special
         # child class
         if isinstance(value, list):
-            value = self.__class__(value)
+            value = self.__newlike__(value)
         super().insert(index, value)
         self._connect_child_emitters(value)
 
@@ -231,12 +234,12 @@ class NestableEventedList(EventedList[T]):
         # otherwise just emit with the EmitterGroup itself
         getattr(self.events, event.type, self.events)(event)
 
-    def _disconnect_child_emitters(self, child: T):
+    def _disconnect_child_emitters(self, child: _T):
         """Disconnect all events from the child from the reemitter."""
         if isinstance(child, SupportsEvents):
             child.events.disconnect(self._reemit_nested_event)
 
-    def _connect_child_emitters(self, child: T):
+    def _connect_child_emitters(self, child: _T):
         """Connect all events from the child to be reemitted."""
         if isinstance(child, SupportsEvents):
             # make sure the event source has been set on the child
@@ -248,7 +251,7 @@ class NestableEventedList(EventedList[T]):
         self, parent_index: ParentIndex, dest_index: Index
     ) -> Index:
         """Make sure dest_index is a positive index inside parent_index."""
-        destination_group = cast(NestableEventedList[T], self[parent_index])
+        destination_group = cast(NestableEventedList[_T], self[parent_index])
         # not handling slice indexes
         if isinstance(dest_index, int):
             if dest_index < 0:
@@ -379,3 +382,15 @@ class NestableEventedList(EventedList[T]):
         self.events.moved(index=src_index, new_index=dest_index, value=value)
         self.events.reordered(value=self)
         return True
+
+    def _type_check(self, e) -> _T:
+        if isinstance(e, list):
+            return self.__newlike__(e)
+        if self._basetypes:
+            _types = set(self._basetypes) | set([NestableEventedList])
+            if not any(isinstance(e, t) for t in _types):
+                raise TypeError(
+                    f'Cannot add object with type {type(e)!r} to '
+                    f'TypedList expecting type {_types!r}'
+                )
+        return e
