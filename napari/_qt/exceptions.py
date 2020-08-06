@@ -3,8 +3,22 @@ import traceback
 from types import TracebackType
 from typing import Type
 
-from qtpy.QtCore import Qt, QObject, Signal, QPoint
-from qtpy.QtWidgets import QApplication, QMessageBox, QMainWindow
+from qtpy.QtCore import (
+    Qt,
+    QObject,
+    Signal,
+    QSize,
+    QPoint,
+    QPropertyAnimation,
+    QEasingCurve,
+)
+from qtpy.QtWidgets import (
+    QApplication,
+    QMessageBox,
+    QMainWindow,
+    QGraphicsOpacityEffect,
+    QPushButton,
+)
 
 
 class ExceptionHandler(QObject):
@@ -47,22 +61,64 @@ class ExceptionHandler(QObject):
         self._show_error_dialog(value)
         self.error.emit((etype, value, tb))
 
-    def _show_error_dialog(self, value: BaseException):
-        if self.message is None:
-            parent = None
-            for wdg in QApplication.topLevelWidgets():
-                if isinstance(wdg, QMainWindow):
-                    parent = wdg
-                    break
-            self.message = QMessageBox(parent)
-            self.message.setWindowFlags(Qt.Popup | Qt.FramelessWindowHint)
-            self.message.setStandardButtons(QMessageBox.StandardButton.Ok)
-            self.message.setModal(False)
-            self.message.move(self.message.mapToParent(QPoint(1400, 750)))
-            self.message.setFocusPolicy(Qt.NoFocus)
-
-        # TODO convert to Napari error internal attributes
-        self.message.setIcon(QMessageBox.Warning)
-        self.message.setText(value.__class__.__name__)
-        self.message.setInformativeText(str(value))
+    def _show_error_dialog(self, exception: BaseException):
+        self.message = NapariErrorMessage(exception)
         self.message.show()
+
+
+class NapariErrorMessage(QMessageBox):
+    def __init__(self, exception: BaseException):
+        # FIXME: this works with command line, but not with IPython...
+        # and may not work well with multiple viewers.
+        parent = None
+        for wdg in QApplication.topLevelWidgets():
+            if isinstance(wdg, QMainWindow):
+                parent = wdg
+                break
+        super().__init__(parent)
+
+        # self.setIcon(QMessageBox.Warning)
+        self.setWindowFlags(Qt.Widget | Qt.FramelessWindowHint)
+        self.setText(type(exception).__name__)
+        self.setInformativeText(str(exception))
+        self.setStandardButtons(QMessageBox.StandardButton.NoButton)
+        eff = QGraphicsOpacityEffect()
+        self.setGraphicsEffect(eff)
+        self.opacity_anim = QPropertyAnimation(eff, b"opacity", self)
+        self.geom_anim = QPropertyAnimation(self, b"geometry", self)
+        self.setStyleSheet("QLabel{min-width: 250px;}")
+        self.close_button = QPushButton(self)
+        self.close_button.setObjectName("QErrorMessageCloseButton")
+        self.close_button.clicked.connect(self.close)
+
+    def mousePressEvent(self, event):
+        self.hide()
+
+    def show(self):
+        """Show the message with a fade and slight slide in from the bottom.
+        """
+        # move to the bottom right
+        sz = self.parent().size() - self.sizeHint() - QSize(22, 0)
+        self.move(self.mapFromParent(QPoint(sz.width(), sz.height())))
+        self.setFocusPolicy(Qt.NoFocus)
+        # slide in
+        geom = self.geometry()
+        self.geom_anim.setDuration(220)
+        self.geom_anim.setStartValue(geom)
+        self.geom_anim.setEndValue(geom.translated(0, -50))
+        self.geom_anim.setEasingCurve(QEasingCurve.OutQuad)
+        # fade in
+        self.opacity_anim.setDuration(200)
+        self.opacity_anim.setStartValue(0)
+        self.opacity_anim.setEndValue(1)
+        self.geom_anim.start()
+        self.opacity_anim.start()
+        super().show()
+
+    def close(self):
+        """Fade out then close."""
+        self.opacity_anim.setDuration(80)
+        self.opacity_anim.setStartValue(1)
+        self.opacity_anim.setEndValue(0)
+        self.opacity_anim.start()
+        self.opacity_anim.finished.connect(super().close)
