@@ -1,4 +1,6 @@
 """Nestable MutableSequence that emits events when altered.
+
+see module docstring of evented_list.py for more details
 """
 import logging
 from typing import Iterable, NewType, Sequence, Tuple, Union, cast, overload

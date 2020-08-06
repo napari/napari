@@ -35,10 +35,16 @@ class TypedMutableSequence(MutableSequence[_T]):
     data : iterable, optional
         Elements to initialize the list with.
     basetype : type or sequence of types, optional
-        Type of the elements in the list.
+        Type of the elements in the list.  If a basetype (or multiple) is
+        provided, then a TypeError will be raised when attempting to add an
+        item to this sequence if it is not an instance of one of the types in
+        ``basetype``.
     lookup : dict of Type[L] : function(object) -> L
         Mapping between a type, and a function that converts items in the list
-        to that type.
+        to that type.  This is used for custom indexing.  For example, if a
+        ``lookup`` of {str: lambda x: x.name} is provided, then you can index
+        into the list using ``list['frank']`` and it will search for an object
+        whos attribute ``.name`` equals ``'frank'``.
     """
 
     # required for inspect.sigature to be correct...
