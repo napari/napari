@@ -29,6 +29,8 @@ def create_vispy_visual(layer):
     visual : vispy.scene.visuals.VisualNode
         Vispy visual node
     """
-    visual = layer_to_visual[type(layer)](layer)
+    for layer_type, visual in layer_to_visual.items():
+        if isinstance(layer, layer_type):
+            return visual(layer)
 
-    return visual
+    raise ValueError

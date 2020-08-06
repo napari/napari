@@ -7,16 +7,6 @@ from .qt_surface_layer import QtSurfaceControls
 from .qt_vectors_layer import QtVectorsControls
 
 
-layer_to_controls = {
-    Image: QtImageControls,
-    Labels: QtLabelsControls,
-    Points: QtPointsControls,
-    Shapes: QtShapesControls,
-    Surface: QtSurfaceControls,
-    Vectors: QtVectorsControls,
-}
-
-
 def create_qt_controls(layer):
     """
     Create a qt controls widget for a layer based on its layer type.
@@ -31,6 +21,20 @@ def create_qt_controls(layer):
     controls : napari.layers.base.QtLayerControls
         Qt controls widget
     """
-    controls = layer_to_controls[type(layer)](layer)
+    if isinstance(layer, Labels):
+        controls = QtLabelsControls(layer)
+    elif isinstance(layer, Image):
+        # must be after Labels layer
+        controls = QtImageControls(layer)
+    elif isinstance(layer, Points):
+        controls = QtPointsControls(layer)
+    elif isinstance(layer, Shapes):
+        controls = QtShapesControls(layer)
+    elif isinstance(layer, Surface):
+        controls = QtSurfaceControls(layer)
+    elif isinstance(layer, Vectors):
+        controls = QtVectorsControls(layer)
+    else:
+        raise ValueError
 
     return controls
