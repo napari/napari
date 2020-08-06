@@ -32,4 +32,4 @@ def create_vispy_visual(layer):
         if isinstance(layer, layer_type):
             return visual(layer)
 
-    raise ValueError
+    raise TypeError(f'Could not find VispyLayer for layer of type {type(layer)}')
