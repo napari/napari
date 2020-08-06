@@ -129,7 +129,7 @@ class LevelsTable:
         self.layer = layer
         self.table = RowTable(["LEVEL", "SHAPE", "TOTAL"])
         self.table = RowTable(
-            [{"name": "LEVEL", "align": "left"}, "SHAPE", "TOTAL"]
+            ["LEVEL", {"name": "SHAPE", "align": "left"}, "TOTAL"]
         )
         data = layer.data
         if isinstance(data, list):
@@ -176,7 +176,7 @@ class LayerCommands:
         """Print the current list of layers."""
         ListLayersTable(self.layerlist).print()
 
-    def layer_info(self, layer_id):
+    def levels(self, layer_id):
         """Print information on a single layer.
 
         Prints summary and if multiscale prints a table of the levels:

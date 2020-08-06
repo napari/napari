@@ -7,7 +7,7 @@ HELP_STR = f"""
 {highlight("Available Commands:")}
 cmd.help
 cmd.layers
-cmd.layer_info(layer_id)
+cmd.levels(layer_id)
 """
 
 
@@ -32,6 +32,6 @@ class CommandProcessor:
         """Print a table with the current layers."""
         return self.layer_commands.layers
 
-    def layer_info(self, layer_id):
+    def levels(self, layer_id):
         """Print information about a single layer."""
         return self.layer_commands.layer_info(layer_id)

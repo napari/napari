@@ -76,6 +76,7 @@ class RowTable:
     def __init__(self, columns: List[Union[str, dict]]):
         self.columns = [ColumnSpec(x) for x in columns]
         self.rows: List[list] = []
+        self.padding = " " * self.PADDING
 
     def add_row(self, row: List[str]) -> None:
         """Add one row of data to the table.
@@ -127,7 +128,7 @@ class RowTable:
                 # Auto sized column so whichever is wider: data or header.
                 data_width = self._get_max_data_width(i)
                 width = max(data_width, len(self.columns[i].name))
-            widths.append(width + self.PADDING)
+            widths.append(width)
         return widths
 
     def get_header_str(self, widths: List[int]) -> str:
@@ -147,14 +148,14 @@ class RowTable:
         for i, spec in enumerate(self.columns):
             width = widths[i]
             value = str(spec.name)
-            header_str += f"{value:<{width}}"
+            header_str += f"{value:<{width}}" + self.padding
         return header_str
 
     def get_row_str(self, row, widths: List[int]) -> str:
         """Get string depicting one row on the table."""
         row_str = ""
         for i, spec in enumerate(self.columns):
-            row_str += spec.format(row[i], widths[i])
+            row_str += spec.format(row[i], widths[i]) + self.padding
         return row_str
 
     def print(self):
