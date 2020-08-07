@@ -43,13 +43,18 @@ def test_many_layers(make_test_viewer, capsys):
     assert out.count("(10, 15)") == num_images
 
 
-def test_level(make_test_viewer, capsys):
-    """Test cmd.level."""
+def test_levels(make_test_viewer, capsys):
+    """Test cmd.levels."""
     viewer = make_test_viewer()
     data = np.random.random((10, 15))
     viewer.add_image(data, name="pizza")
-    viewer.cmd.layer(0)
+    viewer.cmd.levels(0)
     out, _ = capsys.readouterr()
-    assert out.count("Levels: 1") == 1
-    assert out.count("Name: pizza") == 1
-    assert out.count("Shape: (10, 15)") == 1
+
+    # Output has color escape codes to have to check in pieces
+    assert out.count("Levels") == 1
+    assert out.count(": 1") == 1
+    assert out.count("Name") == 1
+    assert out.count(": pizza") == 1
+    assert out.count("Shape") == 1
+    assert out.count(": (10, 15)") == 1
