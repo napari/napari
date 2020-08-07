@@ -80,7 +80,7 @@ enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut
 aliquip ex ea commodo consequat.""".strip()
 
         self.message = NapariNotification(
-            str(msg), actions=[('hi', lambda: print('hi'))]
+            str(msg), actions=[('do something', lambda: print('hi'))]
         )
         self.message.show()
 
@@ -122,7 +122,7 @@ class NapariNotification(QDialog):
             Qt.SubWindow | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint
         )
         self.setupUi()
-        # self.setup_buttons(actions)
+        self.setup_buttons(actions)
         self.setMouseTracking(True)
 
         self.severity_icon.setText(severity.as_icon())
@@ -142,9 +142,7 @@ class NapariNotification(QDialog):
         sz = (size or self.parent().size()) - self.size() - QSize(*from_edge)
         self.move(QPoint(sz.width(), sz.height()))
 
-    def show(self):
-        """Show the message with a fade and slight slide in from the bottom.
-        """
+    def slide_in(self):
         # slide in
         geom = self.geometry()
         self.geom_anim.setDuration(220)
@@ -157,7 +155,12 @@ class NapariNotification(QDialog):
         self.opacity_anim.setEndValue(1)
         self.geom_anim.start()
         self.opacity_anim.start()
+
+    def show(self):
+        """Show the message with a fade and slight slide in from the bottom.
+        """
         super().show()
+        self.slide_in()
         self.timer = QTimer()
         self.timer.setInterval(4000)
         self.timer.setSingleShot(True)
@@ -170,32 +173,34 @@ class NapariNotification(QDialog):
 
     def close(self):
         """Fade out then close."""
-        self.opacity_anim.setDuration(80)
+        self.opacity_anim.setDuration(120)
         self.opacity_anim.setStartValue(1)
         self.opacity_anim.setEndValue(0)
         self.opacity_anim.start()
         self.opacity_anim.finished.connect(super().close)
 
     def expand(self):
-        geom = self.geometry()
+        curr = self.geometry()
         self.geom_anim.setDuration(100)
-        self.geom_anim.setStartValue(geom)
-        # FIXME
-        new_height = max(self.sizeHint().height(), 50)
-        delta = new_height - geom.height()
+        self.geom_anim.setStartValue(curr)
+        new_height = self.sizeHint().height()
+        delta = new_height - curr.height()
         self.geom_anim.setEndValue(
-            QRect(geom.x(), geom.y() - delta, geom.width(), new_height)
+            QRect(curr.x(), curr.y() - delta, curr.width(), new_height)
         )
         self.geom_anim.setEasingCurve(QEasingCurve.OutQuad)
         self.geom_anim.start()
         self.expand_button.clicked.disconnect(self.expand)
         self.expand_button.clicked.connect(self.contract)
+        self.setProperty('expanded', "true")
+        self.style().unpolish(self.expand_button)
+        self.style().polish(self.expand_button)
 
     def contract(self):
         geom = self.geometry()
         self.geom_anim.setDuration(100)
         self.geom_anim.setStartValue(geom)
-        dlt = geom.height() - 50
+        dlt = geom.height() - self.minimumHeight()
         self.geom_anim.setEndValue(
             QRect(geom.x(), geom.y() + dlt, geom.width(), geom.height() - dlt)
         )
@@ -203,9 +208,13 @@ class NapariNotification(QDialog):
         self.geom_anim.start()
         self.expand_button.clicked.disconnect(self.contract)
         self.expand_button.clicked.connect(self.expand)
+        self.setProperty('expanded', "false")
+        self.style().unpolish(self.expand_button)
+        self.style().polish(self.expand_button)
 
     def setupUi(self):
-        self.resize(400, 50)
+        self.setMinimumWidth(400)
+        self.setMinimumHeight(50)
         self.setSizeGripEnabled(False)
         self.setModal(False)
         self.verticalLayout = QVBoxLayout(self)
@@ -214,6 +223,7 @@ class NapariNotification(QDialog):
 
         self.row1_widget = QWidget(self)
         self.row1 = QHBoxLayout(self.row1_widget)
+        self.row1.setSpacing(4)
         self.severity_icon = QLabel(self.row1_widget)
         self.severity_icon.setMinimumWidth(30)
         self.severity_icon.setMaximumWidth(30)
@@ -236,14 +246,22 @@ class NapariNotification(QDialog):
         self.close_button.setFlat(True)
 
         self.row1.addWidget(self.close_button, alignment=Qt.AlignTop)
-        self.verticalLayout.addWidget(self.row1_widget, 11)
+        self.verticalLayout.addWidget(self.row1_widget, 1)
         self.row2_widget = QWidget(self)
         self.row2_widget.hide()
         self.row2 = QHBoxLayout(self.row2_widget)
         self.source_label = QLabel(self.row2_widget)
         self.row2.addWidget(self.source_label)
         self.row2.addStretch()
-        self.verticalLayout.addWidget(self.row2_widget)
+        self.row2.setContentsMargins(2, 2, 16, 8)
+        self.row2_widget.setMaximumHeight(34)
+        self.row2_widget.setStyleSheet(
+            'QPushButton{'
+            'padding: 4px 12px 4px 12px; '
+            'min-height: 18px; border-radius: 0}'
+        )
+        self.verticalLayout.addWidget(self.row2_widget, 0)
+        self.setProperty('expanded', "false")
 
     def setup_buttons(self, actions=()):
         for text, callback in actions:
@@ -253,12 +271,14 @@ class NapariNotification(QDialog):
             self.row2.addWidget(btn)
         if actions:
             self.row2_widget.show()
-            self.resize(self.sizeHint())
+            self.setMinimumHeight(
+                self.row2_widget.maximumHeight() + self.minimumHeight()
+            )
 
     def sizeHint(self):
         return QSize(
             super().sizeHint().width(),
-            self.row2_widget.height() + self.message.sizeHint().height(),
+            self.row2_widget.height() + self.message.sizeHint().height() + 15,
         )
 
 

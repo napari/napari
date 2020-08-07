@@ -459,14 +459,28 @@ NapariNotification::hover{
 
 NapariNotification QFrame{
   color: {{ text }};
-  opacity: 0.5;
 }
 
 NapariNotification #expand_button {
-  image: url(":/themes/{{ folder }}/delete_shape.svg");
+  background: none;
+  padding: 0px;
+  margin: 0px;
+  max-width: 20px;
 }
 
+NapariNotification[expanded="false"] #expand_button {
+  image: url(":/themes/{{ folder }}/chevron_up.svg");
+}
+
+NapariNotification[expanded="true"] #expand_button {
+  image: url(":/themes/{{ folder }}/chevron_down.svg");
+}
+
+
 NapariNotification #close_button {
-  opacity: 0.5;
+  background: none;
   image: url(":/themes/{{ folder }}/delete_shape.svg");
+  padding: 0px;
+  margin: 0px;
+  max-width: 20px;
 }
