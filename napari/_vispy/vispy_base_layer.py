@@ -52,7 +52,7 @@ class VispyBaseLayer(ABC):
         self.MAX_TEXTURE_SIZE_2D = MAX_TEXTURE_SIZE_2D
         self.MAX_TEXTURE_SIZE_3D = MAX_TEXTURE_SIZE_3D
 
-        self._position = (0,) * self.layer.dims.ndisplay
+        self._position = (0,) * self.layer._dims_ndisplay
 
         self.layer.events.refresh.connect(lambda e: self.node.update())
         self.layer.events.set_data.connect(self._on_data_change)
@@ -149,7 +149,7 @@ class VispyBaseLayer(ABC):
 
     def _on_scale_change(self, event=None):
         scale = self.layer._transforms.simplified.set_slice(
-            self.layer.dims.displayed
+            self.layer._dims_displayed
         ).scale
         # convert NumPy axis ordering to VisPy axis ordering
         self.scale = scale[::-1]
@@ -158,7 +158,7 @@ class VispyBaseLayer(ABC):
 
     def _on_translate_change(self, event=None):
         translate = self.layer._transforms.simplified.set_slice(
-            self.layer.dims.displayed
+            self.layer._dims_displayed
         ).translate
         # convert NumPy axis ordering to VisPy axis ordering
         self.translate = translate[::-1]
@@ -178,7 +178,7 @@ class VispyBaseLayer(ABC):
         coords : tuple
             Coordinates of cursor in image space for displayed dimensions only
         """
-        nd = self.layer.dims.ndisplay
+        nd = self.layer._dims_ndisplay
         if self.node.canvas is not None:
             transform = self.node.canvas.scene.node_transform(self.node)
             # Map and offset position so that pixel center is at 0
@@ -205,7 +205,7 @@ class VispyBaseLayer(ABC):
         corner_pixels : array
             Coordinates of top left and bottom right canvas pixel in the data.
         """
-        nd = self.layer.dims.ndisplay
+        nd = self.layer._dims_ndisplay
         # Find image coordinate of top left canvas pixel
         if self.node.canvas is not None:
             offset = self.translate[:nd] / self.scale[:nd]
@@ -219,7 +219,7 @@ class VispyBaseLayer(ABC):
 
         top_left = np.zeros(self.layer.ndim)
         bottom_right = np.zeros(self.layer.ndim)
-        for d, tl, br in zip(self.layer.dims.displayed, tl_raw, br_raw):
+        for d, tl, br in zip(self.layer._dims_displayed, tl_raw, br_raw):
             top_left[d] = tl
             bottom_right[d] = br
 
@@ -238,7 +238,7 @@ class VispyBaseLayer(ABC):
         # For 2D multiscale data determine if new data has been requested
         if (
             self.layer.multiscale
-            and self.layer.dims.ndisplay == 2
+            and self.layer._dims_ndisplay == 2
             and self.node.canvas is not None
         ):
             self.layer._update_multiscale(

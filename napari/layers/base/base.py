@@ -5,7 +5,6 @@ from typing import List, Optional
 
 import numpy as np
 
-from ...components import Dims
 from ...utils.dask_utils import configure_dask
 from ...utils.event import EmitterGroup, Event
 from ...utils.key_bindings import KeymapProvider
@@ -153,12 +152,21 @@ class Layer(KeymapProvider, ABC):
         self.scale_factor = 1
         self.multiscale = multiscale
 
-        self.dims = Dims(ndim)
-
         if scale is None:
             scale = [1] * ndim
         if translate is None:
             translate = [0] * ndim
+
+        self._dims_order = list(range(ndim))
+        self._dims_ndisplay = 2
+        self._dims_displayed = self._dims_order[-self._dims_ndisplay :]
+        self._dims_not_displayed = self._dims_order[: -self._dims_ndisplay]
+        disp_order = np.array(self._dims_displayed)
+        disp_order[np.argsort(disp_order)] = list(range(len(disp_order)))
+        self._dims_displayed_order = tuple(disp_order)
+        # Update the point values
+        self._dims_point = [0] * ndim
+        self._dims_clip = False
 
         # Create a transform chain consisting of three transforms:
         # 1. `tile2data`: An initial transform only needed displaying tiles
@@ -185,7 +193,7 @@ class Layer(KeymapProvider, ABC):
         )
 
         self.coordinates = (0,) * ndim
-        self._position = (0,) * self.dims.ndisplay
+        self._position = (0,) * self._dims_ndisplay
         self._dims_point = [0] * ndim
         self.corner_pixels = np.zeros((2, ndim), dtype=int)
         self._editable = True
@@ -219,11 +227,6 @@ class Layer(KeymapProvider, ABC):
         self.name = name
 
         self.events.data.connect(lambda e: self._set_editable())
-        self.dims.events.ndisplay.connect(lambda e: self._set_editable())
-        self.dims.events.order.connect(self.refresh)
-        self.dims.events.ndisplay.connect(self._update_dims)
-        self.dims.events.order.connect(self._update_dims)
-        self.dims.events.axis.connect(self.refresh)
 
         self.mouse_move_callbacks = []
         self.mouse_drag_callbacks = []
@@ -375,8 +378,7 @@ class Layer(KeymapProvider, ABC):
 
     def _update_dims(self, event=None):
         """Updates dims model, which is useful after data has been changed."""
-        ndim = self._get_ndim()
-        ndisplay = self.dims.ndisplay
+        ndisplay = self._dims_ndisplay
 
         # If the dimensionality is changing then if the number of dimensions
         # is becoming smaller trim the property from the beginning, and if
@@ -388,7 +390,8 @@ class Layer(KeymapProvider, ABC):
                 self.position
             )
 
-        old_ndim = self.dims.ndim
+        ndim = self.ndim
+        old_ndim = len(self._dims_point)
         if old_ndim > ndim:
             keep_axes = range(old_ndim - ndim, old_ndim)
             self._transforms = self._transforms.set_slice(keep_axes)
@@ -398,8 +401,6 @@ class Layer(KeymapProvider, ABC):
             self._transforms = self._transforms.expand_dims(new_axes)
             self.coordinates = (0,) * (ndim - old_ndim) + self.coordinates
             self._dims_point = [0] * (ndim - old_ndim) + self._dims_point
-
-        self.dims.ndim = ndim
 
         self.refresh()
         self._update_coordinates()
@@ -439,27 +440,27 @@ class Layer(KeymapProvider, ABC):
     @property
     def _slice_indices(self):
         """(D, ) array: Slice indices in data coordinates."""
-        world_pts = [self._dims_point[ax] for ax in self.dims.not_displayed]
+        world_pts = [self._dims_point[ax] for ax in self._dims_not_displayed]
         inv_transform = self._transforms['data2world'].inverse
-        data_pts = inv_transform.set_slice(self.dims.not_displayed)(world_pts)
+        data_pts = inv_transform.set_slice(self._dims_not_displayed)(world_pts)
 
-        if self.dims.clip:
+        if self._dims_clip:
             data_pts = np.clip(
                 data_pts,
-                [self._extent_data[0, ax] for ax in self.dims.not_displayed],
+                [self._extent_data[0, ax] for ax in self._dims_not_displayed],
                 [
                     self._extent_data[1, ax] - 1
-                    for ax in self.dims.not_displayed
+                    for ax in self._dims_not_displayed
                 ],
             )
         data_pts = np.round(data_pts).astype(int)
 
         indices = [slice(None)] * self.ndim
-        for i, ax in enumerate(self.dims.not_displayed):
+        for i, ax in enumerate(self._dims_not_displayed):
             indices[ax] = data_pts[i]
 
         coords = list(self.coordinates)
-        for d in self.dims.not_displayed:
+        for d in self._dims_not_displayed:
             coords[d] = indices[d]
         self.coordinates = tuple(coords)
 
@@ -552,7 +553,7 @@ class Layer(KeymapProvider, ABC):
     @property
     def ndim(self):
         """int: Number of dimensions in the data."""
-        return self.dims.ndim
+        return self._get_ndim()
 
     @property
     def selected(self):
@@ -646,7 +647,7 @@ class Layer(KeymapProvider, ABC):
         # or -> [1, 0, 2] for a layer with three as that corresponds to
         # the relative order of the last two and three dimensions
         # respectively
-        offset = ndim - self.dims.ndim
+        offset = ndim - self.ndim
         if order is None:
             order = list(range(ndim))
         order = np.array(order)
@@ -660,6 +661,10 @@ class Layer(KeymapProvider, ABC):
 
         self._dims_displayed = self._dims_order[-self._dims_ndisplay :]
         self._dims_not_displayed = self._dims_order[: -self._dims_ndisplay]
+
+        disp_order = np.array(self._dims_displayed)
+        disp_order[np.argsort(disp_order)] = list(range(len(disp_order)))
+        self._dims_displayed_order = tuple(disp_order)
 
         # Update the point values
         self._dims_point = point[offset:]
@@ -717,7 +722,7 @@ class Layer(KeymapProvider, ABC):
         tuple of indices and update the cursor coordinates.
         """
         coords = list(self.coordinates)
-        for d, p in zip(self.dims.displayed, self.position):
+        for d, p in zip(self._dims_displayed, self.position):
             coords[d] = p
         self.coordinates = tuple(coords)
         self._value = self.get_value()
@@ -737,7 +742,7 @@ class Layer(KeymapProvider, ABC):
             Requested shape of field of view in data coordinates
         """
 
-        if len(self.dims.displayed) == 3:
+        if len(self._dims_displayed) == 3:
             data_level = corner_pixels.shape[1] - 1
         else:
             # Clip corner pixels inside data shape
@@ -753,11 +758,11 @@ class Layer(KeymapProvider, ABC):
             ) * self.downsample_factors[self.data_level]
 
             downsample_factors = self.downsample_factors[
-                :, self.dims.displayed
+                :, self._dims_displayed
             ]
 
             data_level = compute_multiscale_level(
-                requested_shape[self.dims.displayed],
+                requested_shape[self._dims_displayed],
                 shape_threshold,
                 downsample_factors,
             )
@@ -774,7 +779,7 @@ class Layer(KeymapProvider, ABC):
     @property
     def displayed_coordinates(self):
         """list: List of currently displayed coordinates."""
-        return [self.coordinates[i] for i in self.dims.displayed]
+        return [self.coordinates[i] for i in self._dims_displayed]
 
     def get_message(self):
         """Generate a status message based on the coordinates and value
