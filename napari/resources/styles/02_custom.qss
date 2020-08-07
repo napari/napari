@@ -63,18 +63,6 @@ QMainWindow::separator:hover {
     image: url(":/themes/{{ folder }}/delete_shape.svg");
 }
 
-NapariErrorMessage > #QErrorMessageCloseButton{
-    background-color: none;
-    max-width: 20px;
-    max-height: 20px;
-    padding: 2;
-    image: url(":/themes/{{ folder }}/delete_shape.svg");
-}
-
-NapariErrorMessage > #QErrorMessageCloseButton:hover {
-  background-color: {{ foreground }};
-}
-
 
 #QTitleBarFloatButton{
     image: url(":/themes/{{ folder }}/pop_out.svg");
@@ -463,4 +451,22 @@ QtHookImplementationListWidget {
 QTableCornerButton::section{
   background: {{ background }};
   border: 1px solid {{ background }};
+}
+
+NapariNotification::hover{
+  background: {{ foreground }};
+}
+
+NapariNotification QFrame{
+  color: {{ text }};
+  opacity: 0.5;
+}
+
+NapariNotification #expand_button {
+  image: url(":/themes/{{ folder }}/delete_shape.svg");
+}
+
+NapariNotification #close_button {
+  opacity: 0.5;
+  image: url(":/themes/{{ folder }}/delete_shape.svg");
 }

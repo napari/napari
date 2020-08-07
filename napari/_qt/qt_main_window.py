@@ -33,10 +33,21 @@ from qtpy.QtWidgets import (  # noqa: E402
     QStatusBar,
     QFileDialog,
 )
-from qtpy.QtCore import Qt  # noqa: E402
+from qtpy.QtCore import Qt, Signal, QSize  # noqa: E402
 from qtpy.QtGui import QKeySequence, QIcon  # noqa: E402
 from .utils import QImg2array  # noqa: E402
 from ..utils.theme import template  # noqa: E402
+
+
+class MainWindow(QMainWindow):
+    resized = Signal(QSize)
+
+    def __init__(self, *args):
+        super().__init__(*args)
+
+    def resizeEvent(self, event):
+        super().resizeEvent(event)
+        self.resized.emit(self.size())
 
 
 class Window:
@@ -69,7 +80,8 @@ class Window:
 
         self.qt_viewer = qt_viewer
 
-        self._qt_window = QMainWindow()
+        self._qt_window = MainWindow()
+        self._qt_window._napari_window = self
         self._qt_window.setAttribute(Qt.WA_DeleteOnClose)
         self._qt_window.setUnifiedTitleAndToolBarOnMac(True)
         self._qt_center = QWidget(self._qt_window)
