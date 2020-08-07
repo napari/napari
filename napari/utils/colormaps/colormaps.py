@@ -133,10 +133,17 @@ def color_dict_to_colormap(colors):
         Mapping of Label to color control point within colormap
     """
 
-    colormap = Colormap([color for label, color in colors.items()])
+    control_colors = np.unique(
+        [color for label, color in colors.items()], axis=0
+    )
+    colormap = Colormap(control_colors)
     label_color_index = {}
     for i, (label, color) in enumerate(colors.items()):
-        label_color_index[label] = i / (len(colors) - 1)
+        for j, control_color in enumerate(control_colors):
+            if (control_color == color).all():
+                label_color_index[label] = j / (len(control_colors) - 1)
+                break
+
     return colormap, label_color_index
 
 
