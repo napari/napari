@@ -163,7 +163,6 @@ def test_changing_theme(make_test_viewer):
 
     screenshot_light = viewer.screenshot(canvas_only=False)
     equal = (screenshot_dark == screenshot_light)[..., :3]
-    np.count_nonzero(equal)
 
     # (less than 1 in 100,000 pixels are the same)
     assert (np.count_nonzero(equal) / equal.size) < 1e-5, "Themes are similar!"
