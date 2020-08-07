@@ -80,7 +80,9 @@ enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut
 aliquip ex ea commodo consequat.""".strip()
 
         self.message = NapariNotification(
-            str(msg), actions=[('do something', lambda: print('hi'))]
+            str(msg),
+            actions=[('do something', lambda: print('hi'))],
+            source='some plugin',
         )
         self.message.show()
 
@@ -127,7 +129,8 @@ class NapariNotification(QDialog):
 
         self.severity_icon.setText(severity.as_icon())
         self.message.setText(message)
-        self.source_label.setText(source)
+        if source:
+            self.source_label.setText(f'source: {source}')
         self.close_button.clicked.connect(self.close)
         self.expand_button.clicked.connect(self.expand)
 
@@ -162,7 +165,7 @@ class NapariNotification(QDialog):
         super().show()
         self.slide_in()
         self.timer = QTimer()
-        self.timer.setInterval(4000)
+        self.timer.setInterval(5000)
         self.timer.setSingleShot(True)
         self.timer.timeout.connect(self.close)
         self.timer.start()
@@ -214,7 +217,7 @@ class NapariNotification(QDialog):
 
     def setupUi(self):
         self.setMinimumWidth(400)
-        self.setMinimumHeight(50)
+        self.setMinimumHeight(40)
         self.setSizeGripEnabled(False)
         self.setModal(False)
         self.verticalLayout = QVBoxLayout(self)
@@ -223,6 +226,7 @@ class NapariNotification(QDialog):
 
         self.row1_widget = QWidget(self)
         self.row1 = QHBoxLayout(self.row1_widget)
+        self.row1.setContentsMargins(12, 12, 12, 8)
         self.row1.setSpacing(4)
         self.severity_icon = QLabel(self.row1_widget)
         self.severity_icon.setMinimumWidth(30)
@@ -251,14 +255,16 @@ class NapariNotification(QDialog):
         self.row2_widget.hide()
         self.row2 = QHBoxLayout(self.row2_widget)
         self.source_label = QLabel(self.row2_widget)
-        self.row2.addWidget(self.source_label)
+        self.source_label.setObjectName("source_label")
+        self.row2.addWidget(self.source_label, alignment=Qt.AlignBottom)
         self.row2.addStretch()
-        self.row2.setContentsMargins(2, 2, 16, 8)
+        self.row2.setContentsMargins(12, 2, 16, 12)
         self.row2_widget.setMaximumHeight(34)
         self.row2_widget.setStyleSheet(
             'QPushButton{'
             'padding: 4px 12px 4px 12px; '
-            'min-height: 18px; border-radius: 0}'
+            'font-size: 11px;'
+            'min-height: 18px; border-radius: 0;}'
         )
         self.verticalLayout.addWidget(self.row2_widget, 0)
         self.setProperty('expanded', "false")
@@ -278,7 +284,7 @@ class NapariNotification(QDialog):
     def sizeHint(self):
         return QSize(
             super().sizeHint().width(),
-            self.row2_widget.height() + self.message.sizeHint().height() + 15,
+            self.row2_widget.height() + self.message.sizeHint().height(),
         )
 
 

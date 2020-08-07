@@ -458,7 +458,8 @@ NapariNotification::hover{
 }
 
 NapariNotification QFrame{
-  color: {{ text }};
+  color: {{ icon }};
+  font-size: 12px;
 }
 
 NapariNotification #expand_button {
@@ -483,4 +484,9 @@ NapariNotification #close_button {
   padding: 0px;
   margin: 0px;
   max-width: 20px;
+}
+
+NapariNotification #source_label {
+  color: {{ primary }};
+  font-size: 11px;
 }
