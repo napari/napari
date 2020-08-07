@@ -2,8 +2,8 @@ from math import inf
 import itertools
 import numpy as np
 
-from ._commands import ConsoleCommands
 from .add_layers_mixin import AddLayersMixin
+from .._commands import CommandProcessor
 from .dims import Dims
 from .layerlist import LayerList
 from ..utils.event import EmitterGroup, Event
@@ -536,10 +536,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
     def cmd(self):
         """Command processor for use in the IPython console.
 
-        Usage:
-            viewer.cmd.help
-            viewer.cmd.list
-            viewer.cmd.info
-            etc.
+        For example run "viewer.cmd.help" or "viewer.cmd.layers".
         """
-        return ConsoleCommands(self.layers)
+        return CommandProcessor(self.layers)
