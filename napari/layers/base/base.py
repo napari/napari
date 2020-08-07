@@ -655,8 +655,11 @@ class Layer(KeymapProvider, ABC):
         else:
             order = list(order[order >= offset] - offset)
 
-        self.dims.order = order
-        self.dims.ndisplay = ndisplay
+        self._dims_order = order
+        self._dims_ndisplay = ndisplay
+
+        self._dims_displayed = self._dims_order[-self._dims_ndisplay :]
+        self._dims_not_displayed = self._dims_order[: -self._dims_ndisplay]
 
         # Update the point values
         self._dims_point = point[offset:]
