@@ -1,4 +1,7 @@
 """print_property_table() function and RowTable class.
+
+These are two styles of nicely formatted text tables meant for printing to
+the IPython console window.
 """
 from typing import List, Tuple, Union
 
@@ -52,15 +55,18 @@ class ColumnSpec:
 
 class RowTable:
     """A printable text table with a header and rows.
-    Usage:
+
+    Example usage:
         table = table(["NAME", "AGE"], [10, 5])
         table.add_row["Mary", "25"]
         table.add_row["Alice", "32"]
         table.print()
-    Would print:
+
+    Example output:
         NAME       AGE
         Mary       25
         Alice      32
+
     Parameters
     ----------
     headers : List[str]
@@ -69,8 +75,7 @@ class RowTable:
         Use these widths instead of automatic widths, 0 means auto for that column.
     """
 
-    # For auto-width columns, pad max width by this many columns to
-    # leave a little room between columns.
+    # Leave room between columns.
     PADDING = 2
 
     def __init__(self, columns: List[Union[str, dict]]):

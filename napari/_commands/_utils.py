@@ -3,7 +3,7 @@
 Notes
 -----
 There are many packages for text formatting such as colorit, printy,
-ansicolors. Doesn't seem needed yet, but if we want to get fancier.
+ansicolors, termcolor if we decide to use one.
 """
 
 
