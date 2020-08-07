@@ -491,7 +491,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
             # Slice currently viewed level
             level = self.data_level
-            indices = np.array(self.dims.indices)
+            indices = np.array(self._slice_indices)
             downsampled_indices = (
                 indices[not_disp] / self.downsample_factors[level, not_disp]
             )
@@ -530,7 +530,7 @@ class Image(IntensityVisualizationMixin, Layer):
             )
 
             # Slice thumbnail
-            indices = np.array(self.dims.indices)
+            indices = np.array(self._slice_indices)
             downsampled_indices = (
                 indices[not_disp]
                 / self.downsample_factors[self._thumbnail_level, not_disp]
@@ -550,7 +550,7 @@ class Image(IntensityVisualizationMixin, Layer):
             ).transpose(order)
         else:
             self._transforms['tile2data'].scale = np.ones(self.dims.ndim)
-            image = np.asarray(self.data[self.dims.indices]).transpose(order)
+            image = np.asarray(self.data[self._slice_indices]).transpose(order)
             thumbnail_source = image
 
         if self.rgb and image.dtype.kind == 'f':

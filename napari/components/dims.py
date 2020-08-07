@@ -260,26 +260,6 @@ class Dims:
         return arr.tolist()
 
     @property
-    def indices(self):
-        """Tuple of slice objects for slicing arrays on each dimension."""
-        slice_list = []
-        for axis in range(self.ndim):
-            if axis in self.displayed:
-                slice_list.append(slice(None))
-            else:
-                if self.clip:
-                    p = np.clip(
-                        self.point[axis],
-                        np.round(self.range[axis][0]),
-                        np.round(self.range[axis][1]) - 1,
-                    )
-                else:
-                    p = self.point[axis]
-                p = np.round(p / self.range[axis][2]).astype(int)
-                slice_list.append(p)
-        return tuple(slice_list)
-
-    @property
     def ndisplay(self):
         """Int: Number of displayed dimensions."""
         return self._ndisplay

@@ -108,28 +108,6 @@ def test_interval():
     assert dims.interval == [(0, 1)] * 3 + [(0, 3)]
 
 
-def test_indices():
-    """
-    Test indices values.
-    """
-    dims = Dims(4)
-    # On instantiation the last two dims are set to sliced mode
-    assert dims.indices == (0,) * 2 + (slice(None, None, None),) * 2
-
-    # Set the values of the first two dims in point mode outside of range
-    dims.set_point(0, 2)
-    dims.set_point(1, 3)
-    assert dims.indices == (1, 1) + (slice(None, None, None),) * 2
-
-    # Increase range and then set points again
-    # Note changing the step size changes the indices for the same point value
-    dims.set_range(0, (0, 4, 2))
-    dims.set_range(1, (0, 4, 2))
-    dims.set_point(0, 2)
-    dims.set_point(1, 3)
-    assert dims.indices == (1, 2) + (slice(None, None, None),) * 2
-
-
 def test_axis_labels():
     dims = Dims(4)
     assert dims.axis_labels == ['0', '1', '2', '3']

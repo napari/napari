@@ -1494,7 +1494,7 @@ class Points(Layer):
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
         # get the indices of points in view
-        indices, scale = self._slice_data(self.dims.indices)
+        indices, scale = self._slice_data(self._slice_indices)
         self._view_size_scale = scale
         self._indices_view = indices
         # get the selected points that are in view
@@ -1670,7 +1670,7 @@ class Points(Layer):
             not_disp = self.dims.not_displayed
             data = deepcopy(self._clipboard['data'])
             offset = [
-                self.dims.indices[i] - self._clipboard['indices'][i]
+                self._slice_indices[i] - self._clipboard['indices'][i]
                 for i in not_disp
             ]
             data[:, not_disp] = data[:, not_disp] + np.array(offset)
@@ -1721,7 +1721,7 @@ class Points(Layer):
                 'properties': {
                     k: deepcopy(v[index]) for k, v in self.properties.items()
                 },
-                'indices': self.dims.indices,
+                'indices': self._slice_indices,
             }
 
             if self.text.values is None:

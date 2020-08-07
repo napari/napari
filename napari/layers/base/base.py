@@ -186,6 +186,7 @@ class Layer(KeymapProvider, ABC):
 
         self.coordinates = (0,) * ndim
         self._position = (0,) * self.dims.ndisplay
+        self._dims_point = [0] * ndim
         self.corner_pixels = np.zeros((2, ndim), dtype=int)
         self._editable = True
 
@@ -391,17 +392,14 @@ class Layer(KeymapProvider, ABC):
         if old_ndim > ndim:
             keep_axes = range(old_ndim - ndim, old_ndim)
             self._transforms = self._transforms.set_slice(keep_axes)
+            self._dims_point = self._dims_point[-ndim:]
         elif old_ndim < ndim:
             new_axes = range(ndim - old_ndim)
             self._transforms = self._transforms.expand_dims(new_axes)
+            self.coordinates = (0,) * (ndim - old_ndim) + self.coordinates
+            self._dims_point = [0] * (ndim - old_ndim) + self._dims_point
 
         self.dims.ndim = ndim
-
-        step_size = self.scale
-        # For now dims don't use world coordinates, but scaled data coordinates
-        extent = np.multiply(self._extent_data, step_size)
-        for i in range(self.dims.ndim):
-            self.dims.set_range(i, (extent[0, i], extent[1, i], step_size[i]))
 
         self.refresh()
         self._update_coordinates()
@@ -437,6 +435,35 @@ class Layer(KeymapProvider, ABC):
         extent_world : array, shape (2, D)
         """
         return self._transforms['data2world'](self._extent_data)
+
+    @property
+    def _slice_indices(self):
+        """(D, ) array: Slice indices in data coordinates."""
+        world_pts = [self._dims_point[ax] for ax in self.dims.not_displayed]
+        inv_transform = self._transforms['data2world'].inverse
+        data_pts = inv_transform.set_slice(self.dims.not_displayed)(world_pts)
+
+        if self.dims.clip:
+            data_pts = np.clip(
+                data_pts,
+                [self._extent_data[0, ax] for ax in self.dims.not_displayed],
+                [
+                    self._extent_data[1, ax] - 1
+                    for ax in self.dims.not_displayed
+                ],
+            )
+        data_pts = np.round(data_pts).astype(int)
+
+        indices = [slice(None)] * self.ndim
+        for i, ax in enumerate(self.dims.not_displayed):
+            indices[ax] = data_pts[i]
+
+        coords = list(self.coordinates)
+        for d in self.dims.not_displayed:
+            coords[d] = indices[d]
+        self.coordinates = tuple(coords)
+
+        return tuple(indices)
 
     @property
     def shape(self):
@@ -611,6 +638,30 @@ class Layer(KeymapProvider, ABC):
     def _set_view_slice(self):
         raise NotImplementedError()
 
+    def slice(self, point, ndisplay=2, order=None):
+        ndim = len(point)
+        # adjust the order of the global dims based on the number of
+        # dimensions that a layer has - for example a global order of
+        # [2, 1, 0, 3] -> [0, 1] for a layer that only has two dimensions
+        # or -> [1, 0, 2] for a layer with three as that corresponds to
+        # the relative order of the last two and three dimensions
+        # respectively
+        offset = ndim - self.dims.ndim
+        if order is None:
+            order = list(range(ndim))
+        order = np.array(order)
+        if offset <= 0:
+            order = list(range(-offset)) + list(order - offset)
+        else:
+            order = list(order[order >= offset] - offset)
+
+        self.dims.order = order
+        self.dims.ndisplay = ndisplay
+
+        # Update the point values
+        self._dims_point = point[offset:]
+        self.refresh()
+
     @abstractmethod
     def _update_thumbnail(self):
         raise NotImplementedError()
@@ -662,7 +713,7 @@ class Layer(KeymapProvider, ABC):
         """Insert the cursor position into the correct position in the
         tuple of indices and update the cursor coordinates.
         """
-        coords = list(self.dims.indices)
+        coords = list(self.coordinates)
         for d, p in zip(self.dims.displayed, self.position):
             coords[d] = p
         self.coordinates = tuple(coords)
