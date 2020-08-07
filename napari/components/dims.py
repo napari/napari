@@ -74,6 +74,7 @@ class Dims:
         self._mode = []
         self._order = []
         self._axis_labels = []
+        self._scroll_progress = 0
         self.last_used = None
         self.clip = True
         self._ndisplay = 2 if ndisplay is None else ndisplay

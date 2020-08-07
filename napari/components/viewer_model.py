@@ -3,6 +3,7 @@ import numpy as np
 from .add_layers_mixin import AddLayersMixin
 from .dims import Dims
 from .layerlist import LayerList
+from ._viewer_mouse_bindings import dims_scroll
 from ..utils.event import EmitterGroup, Event
 from ..utils.key_bindings import KeymapHandler, KeymapProvider
 from ..utils.theme import palettes
@@ -93,7 +94,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         # Hold callbacks for when mouse is pressed, dragged, and released
         self.mouse_drag_callbacks = []
         # Hold callbacks for when mouse wheel is scrolled
-        self.mouse_wheel_callbacks = [self._scroll]
+        self.mouse_wheel_callbacks = [dims_scroll]
 
         self._persisted_mouse_event = {}
         self._mouse_drag_gen = {}
@@ -397,17 +398,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             for i in range(ndim):
                 self.dims.set_range(i, (extent[0, i], extent[1, i], ss[i]))
         self.events.layers_change()
-
-    def _scroll(self, viewer, event):
-        if 'Control' not in event.modifiers:
-            return
-        delta = int(event.delta[1])
-        if abs(delta) >= 1:
-            for i in range(abs(delta)):
-                if delta < 0:
-                    self.dims._increment_dims_left()
-                else:
-                    self.dims._increment_dims_right()
 
     def _update_status(self, event):
         """Set the viewer status with the `event.status` string."""

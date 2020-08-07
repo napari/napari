@@ -139,3 +139,17 @@ def test_layer_key_bindings(make_test_viewer):
     mock_shift_press.method.assert_not_called()
     mock_shift_release.method.assert_called_once()
     mock_shift_release.reset_mock()
+
+
+def test_reset_scroll_progress(make_test_viewer):
+    """Test select all key binding."""
+    viewer = make_test_viewer()
+    view = viewer.window.qt_viewer
+    assert viewer.dims._scroll_progress == 0
+
+    view.canvas.events.key_press(key=keys.Key('Control'))
+    viewer.dims._scroll_progress = 10
+    assert viewer.dims._scroll_progress == 10
+
+    view.canvas.events.key_release(key=keys.Key('Control'))
+    assert viewer.dims._scroll_progress == 0
