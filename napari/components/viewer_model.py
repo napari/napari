@@ -1,7 +1,7 @@
 import numpy as np
 
-from ..commands.processor import CommandProcessor
 from .add_layers_mixin import AddLayersMixin
+from .._commands import CommandProcessor
 from .dims import Dims
 from .layerlist import LayerList
 from ..utils.event import EmitterGroup, Event

@@ -3,8 +3,8 @@
 from typing import List
 
 import dask.array as da
-import humanize
 
+from ._humanize import naturalsize
 from ._tables import print_property_table, RowTable
 from ._utils import highlight
 from ..layers.base import Layer
@@ -26,22 +26,20 @@ def _get_type_str(data) -> str:
     str
         A string like "ndarray" or "dask".
     """
-    data_type = type(data)
-
-    if data_type == list:
+    if isinstance(data, list):
         if len(data) == 0:
             return "EMPTY"
         else:
             # Recursively get the type string of the zeroth level.
             return _get_type_str(data[0])
 
-    if data_type == da.Array:
+    if type(data) == da.Array:
         # Special case this because otherwise data_type.__name__
         # below would just return "Array".
         return "dask"
 
     # For class numpy.ndarray this returns "ndarray"
-    return data_type.__name__
+    return type(data).__name__
 
 
 def _get_size_str(data) -> str:
@@ -61,7 +59,7 @@ def _get_size_str(data) -> str:
         nbytes = sum(level.nbytes for level in data)
     else:
         nbytes = data.nbytes
-    return humanize.naturalsize(nbytes, gnu=True)
+    return naturalsize(nbytes, gnu=True)
 
 
 class ListLayersTable:
@@ -180,7 +178,7 @@ class LevelsTable:
         if isinstance(data, list):
             for i, level in enumerate(data):
                 shape_str = level.shape if level.shape else "NONE"
-                size_str = humanize.naturalsize(level.nbytes, gnu=True)
+                size_str = naturalsize(level.nbytes, gnu=True)
                 self.table.add_row([i, shape_str, size_str])
 
     def print(self):
