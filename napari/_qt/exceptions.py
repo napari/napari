@@ -103,6 +103,12 @@ class NotificationSeverity(StringEnum):
 
 
 class NapariNotification(QDialog):
+    MAX_OPACITY = 0.9
+    FADE_IN_RATE = 220
+    FADE_OUT_RATE = 120
+    DISMISS_AFTER = 5000
+    MIN_WIDTH = 400
+
     def __init__(
         self,
         message: str,
@@ -148,14 +154,14 @@ class NapariNotification(QDialog):
     def slide_in(self):
         # slide in
         geom = self.geometry()
-        self.geom_anim.setDuration(220)
+        self.geom_anim.setDuration(self.FADE_IN_RATE)
         self.geom_anim.setStartValue(geom.translated(0, 20))
         self.geom_anim.setEndValue(geom)
         self.geom_anim.setEasingCurve(QEasingCurve.OutQuad)
         # fade in
-        self.opacity_anim.setDuration(200)
+        self.opacity_anim.setDuration(self.FADE_IN_RATE)
         self.opacity_anim.setStartValue(0)
-        self.opacity_anim.setEndValue(1)
+        self.opacity_anim.setEndValue(self.MAX_OPACITY)
         self.geom_anim.start()
         self.opacity_anim.start()
 
@@ -165,7 +171,7 @@ class NapariNotification(QDialog):
         super().show()
         self.slide_in()
         self.timer = QTimer()
-        self.timer.setInterval(5000)
+        self.timer.setInterval(self.DISMISS_AFTER)
         self.timer.setSingleShot(True)
         self.timer.timeout.connect(self.close)
         self.timer.start()
@@ -176,8 +182,8 @@ class NapariNotification(QDialog):
 
     def close(self):
         """Fade out then close."""
-        self.opacity_anim.setDuration(120)
-        self.opacity_anim.setStartValue(1)
+        self.opacity_anim.setDuration(self.FADE_OUT_RATE)
+        self.opacity_anim.setStartValue(self.MAX_OPACITY)
         self.opacity_anim.setEndValue(0)
         self.opacity_anim.start()
         self.opacity_anim.finished.connect(super().close)
@@ -216,7 +222,7 @@ class NapariNotification(QDialog):
         self.style().polish(self.expand_button)
 
     def setupUi(self):
-        self.setMinimumWidth(400)
+        self.setMinimumWidth(self.MIN_WIDTH)
         self.setMinimumHeight(40)
         self.setSizeGripEnabled(False)
         self.setModal(False)
@@ -233,7 +239,7 @@ class NapariNotification(QDialog):
         self.severity_icon.setMaximumWidth(30)
         self.row1.addWidget(self.severity_icon, alignment=Qt.AlignTop)
         self.message = MultilineElidedLabel(self.row1_widget)
-        self.message.setMinimumWidth(180)
+        self.message.setMinimumWidth(self.MIN_WIDTH - 200)
         self.message.setSizePolicy(
             QSizePolicy.Expanding, QSizePolicy.Expanding
         )
