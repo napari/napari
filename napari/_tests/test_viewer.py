@@ -164,8 +164,8 @@ def test_changing_theme(make_test_viewer):
     screenshot_light = viewer.screenshot(canvas_only=False)
     equal = (screenshot_dark == screenshot_light)[..., :3]
 
-    # (less than 1 in 100,000 pixels are the same)
-    assert (np.count_nonzero(equal) / equal.size) < 1e-5, "Themes are similar!"
+    # (less than 1 in 10,000 pixels are the same)
+    assert (np.count_nonzero(equal) / equal.size) < 1e-4, "Themes are similar!"
 
     with pytest.raises(ValueError):
         viewer.theme = 'nonexistent_theme'
