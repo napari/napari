@@ -591,7 +591,7 @@ class AnimationWorker(QObject):
                 self.frame_requested.emit(self.axis, self.min_point)
             elif self.step < 0 and self.current <= self.min_point + 1:
                 self.frame_requested.emit(self.axis, self.max_point)
-            self.timer.singleShot(self.interval, self.advance)
+            self.timer.singleShot(int(self.interval), self.advance)
         else:
             # immediately advance one frame
             self.advance()
@@ -695,7 +695,7 @@ class AnimationWorker(QObject):
             self.frame_requested.emit(self.axis, self.current)
         # using a singleShot timer here instead of timer.start() because
         # it makes it easier to update the interval using signals/slots
-        self.timer.singleShot(self.interval, self.advance)
+        self.timer.singleShot(int(self.interval), self.advance)
 
     def finish(self):
         """Emit the finished event signal."""

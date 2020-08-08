@@ -723,6 +723,7 @@ def test_n_dimensional():
     assert layer.n_dimensional is True
 
 
+@pytest.mark.filterwarnings("ignore:elementwise comparison fail:FutureWarning")
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
 def test_switch_color_mode(attribute):
     """Test switching between color modes"""
@@ -804,7 +805,8 @@ def test_colormap_with_categorical_properties(attribute):
     layer = Points(data, properties=properties)
 
     with pytest.raises(TypeError):
-        setattr(layer, f'{attribute}_color_mode', 'colormap')
+        with pytest.warns(UserWarning):
+            setattr(layer, f'{attribute}_color_mode', 'colormap')
 
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])

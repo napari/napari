@@ -94,6 +94,7 @@ def test_new_labels(make_test_viewer):
     assert np.sum(view.dims._displayed_sliders) == 0
 
 
+@pytest.mark.filterwarnings("ignore:All-NaN axis encountered")
 def test_new_points(make_test_viewer):
     """Test adding new points layer."""
     # Add labels to empty viewer
@@ -126,6 +127,7 @@ def test_new_points(make_test_viewer):
     assert np.sum(view.dims._displayed_sliders) == 0
 
 
+@pytest.mark.filterwarnings("ignore:All-NaN axis encountered")
 def test_new_shapes_empty_viewer(make_test_viewer):
     """Test adding new shapes layer."""
     # Add labels to empty viewer
