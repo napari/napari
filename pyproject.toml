@@ -46,5 +46,6 @@ ignore = [
 [tool.pytest.ini_options]
 filterwarnings = [
   "ignore::DeprecationWarning:ipykernel",
-  "ignore::DeprecationWarning:skimage.util.dtype:226"
+  "ignore::DeprecationWarning:skimage.util.dtype:226",
+  "ignore:QFontMetrics.width::qtconsole"
 ]
