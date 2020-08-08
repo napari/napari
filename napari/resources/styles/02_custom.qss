@@ -458,7 +458,7 @@ NapariNotification > QWidget {
 }
 
 NapariNotification::hover{
-  background: {{ lighten(background, 3) }};
+  background: {{ lighten(background, 5) }};
 }
 
 MultilineElidedLabel{
