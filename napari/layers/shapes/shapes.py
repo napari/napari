@@ -333,7 +333,6 @@ class Shapes(Layer):
 
         self._display_order_stored = []
         self._ndisplay_stored = self.dims.ndisplay
-        self._clip = False
 
         # Save the properties
         if properties is None:

@@ -289,7 +289,6 @@ class Points(Layer):
 
         # Save the point coordinates
         self._data = np.asarray(data)
-        self._clip = False
 
         # Save the properties
         if properties is None:

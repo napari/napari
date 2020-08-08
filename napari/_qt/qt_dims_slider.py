@@ -202,6 +202,7 @@ class QtDimSliderWidget(QWidget):
             self.slider.setMaximum(nsteps)
             self.slider.setSingleStep(1)
             self.slider.setPageStep(1)
+            self.slider.setValue(self.dims.step[self.axis])
             self.totslice_label.setText(str(nsteps))
             self.totslice_label.setAlignment(Qt.AlignLeft)
             self._update_slice_labels()

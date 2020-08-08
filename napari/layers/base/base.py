@@ -154,7 +154,6 @@ class Layer(KeymapProvider, ABC):
         self.multiscale = multiscale
 
         self.dims = Dims(ndim)
-        self._clip = True
 
         if scale is None:
             scale = [1] * ndim
@@ -443,7 +442,8 @@ class Layer(KeymapProvider, ABC):
         world_pts = [self._dims_point[ax] for ax in self.dims.not_displayed]
         inv_transform = self._transforms['data2world'].inverse
         data_pts = inv_transform.set_slice(self.dims.not_displayed)(world_pts)
-        data_pts = np.round(data_pts).astype(int)
+        # A floor is taken to convert these values to slicing integers
+        data_pts = np.floor(data_pts).astype(int)
 
         indices = [slice(None)] * self.ndim
         for i, ax in enumerate(self.dims.not_displayed):
