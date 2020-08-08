@@ -75,8 +75,8 @@ class NapariNotification(QDialog):
                     break
                 except Exception:
                     pass
-
         self.setupUi()
+        self.setAttribute(Qt.WA_DeleteOnClose)
         self.setup_buttons(actions)
         self.setMouseTracking(True)
 
