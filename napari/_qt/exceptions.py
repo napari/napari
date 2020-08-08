@@ -67,7 +67,7 @@ def parse_exception(
     exception: BaseException,
 ) -> Tuple[str, str, Optional[str], Tuple]:
     msg = getattr(exception, 'message', str(exception))
-    severity = getattr(exception, 'severity', 'ERROR')
+    severity = getattr(exception, 'severity', 'WARNING')
     source = None
     actions = getattr(exception, 'actions', ())
     return msg, severity, source, actions

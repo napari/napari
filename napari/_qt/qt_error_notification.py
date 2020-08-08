@@ -56,7 +56,7 @@ class NapariNotification(QDialog):
         message: str,
         severity: Union[
             str, NotificationSeverity
-        ] = NotificationSeverity.ERROR,
+        ] = NotificationSeverity.WARNING,
         source: Optional[str] = None,
         actions: ActionSequence = (),
     ):
