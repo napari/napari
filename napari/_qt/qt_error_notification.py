@@ -26,7 +26,6 @@ from qtpy.QtWidgets import (
 from ..utils.misc import StringEnum
 from .qt_eliding_label import MultilineElidedLabel
 
-
 ActionSequence = Sequence[Tuple[str, Callable[[], None]]]
 
 
@@ -61,19 +60,22 @@ class NapariNotification(QDialog):
         source: Optional[str] = None,
         actions: ActionSequence = (),
     ):
-        # FIXME: this works with command line, but not with IPython...
-        # and may not work well with multiple viewers.
-        parent = None
+        super().__init__(None)
+        # FIXME: this does not work with multiple viewers.
+        # we need a way to detect the viewer in which the error occured.
         for wdg in QApplication.topLevelWidgets():
             if isinstance(wdg, QMainWindow):
-                parent = wdg
-                break
-        super().__init__(parent)
-        if self.parent():
-            self.parent().resized.connect(self.move_to_bottom_right)
-        self.setWindowFlags(
-            Qt.SubWindow | Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint
-        )
+                try:
+                    # TODO: making the canvas the parent makes it easier to
+                    # move/resize, but also means that the notification can get
+                    # clipped on the left if the canvas is too small.
+                    canvas = wdg.centralWidget().children()[1].canvas.native
+                    self.setParent(canvas)
+                    canvas.resized.connect(self.move_to_bottom_right)
+                    break
+                except Exception:
+                    pass
+
         self.setupUi()
         self.setup_buttons(actions)
         self.setMouseTracking(True)
@@ -81,7 +83,8 @@ class NapariNotification(QDialog):
         self.severity_icon.setText(NotificationSeverity(severity).as_icon())
         self.message.setText(message)
         if source:
-            self.source_label.setText(f'source: {source}')
+            self.source_label.setText(f'Source: {source}')
+
         self.close_button.clicked.connect(self.close)
         self.expand_button.clicked.connect(self.toggle_expansion)
 
@@ -91,9 +94,11 @@ class NapariNotification(QDialog):
         self.geom_anim = QPropertyAnimation(self, b"geometry", self)
         self.move_to_bottom_right()
 
-    def move_to_bottom_right(self, size=None, from_edge=(22, 50)):
+    def move_to_bottom_right(self, offset=(8, 8)):
         # move to the bottom right of parent
-        sz = (size or self.parent().size()) - self.size() - QSize(*from_edge)
+        if not self.parent():
+            return
+        sz = self.parent().size() - self.size() - QSize(*offset)
         self.move(QPoint(sz.width(), sz.height()))
 
     def slide_in(self):
@@ -170,7 +175,9 @@ class NapariNotification(QDialog):
         self.style().polish(self.expand_button)
 
     def setupUi(self):
+        self.setWindowFlags(Qt.SubWindow)
         self.setMinimumWidth(self.MIN_WIDTH)
+        self.setMaximumWidth(self.MIN_WIDTH)
         self.setMinimumHeight(40)
         self.setSizeGripEnabled(False)
         self.setModal(False)
@@ -195,12 +202,14 @@ class NapariNotification(QDialog):
         self.row1.addWidget(self.message, alignment=Qt.AlignTop)
         self.expand_button = QPushButton(self.row1_widget)
         self.expand_button.setObjectName("expand_button")
+        self.expand_button.setCursor(Qt.PointingHandCursor)
         self.expand_button.setMaximumWidth(20)
         self.expand_button.setFlat(True)
 
         self.row1.addWidget(self.expand_button, alignment=Qt.AlignTop)
         self.close_button = QPushButton(self.row1_widget)
         self.close_button.setObjectName("close_button")
+        self.close_button.setCursor(Qt.PointingHandCursor)
         self.close_button.setMaximumWidth(20)
         self.close_button.setFlat(True)
 
@@ -223,6 +232,7 @@ class NapariNotification(QDialog):
         )
         self.verticalLayout.addWidget(self.row2_widget, 0)
         self.setProperty('expanded', False)
+        self.resize(self.MIN_WIDTH, 40)
 
     def setup_buttons(self, actions=()):
         for text, callback in actions:
