@@ -91,7 +91,7 @@ class QtDimSliderWidget(QWidget):
     def _set_slice_from_label(self):
         """Update the dims point based on the curslice_label."""
         val = int(self.curslice_label.text())
-        max_allowed = self.dims.nsteps[self.axis]
+        max_allowed = self.dims.nsteps[self.axis] - 1
         if val > max_allowed:
             val = max_allowed
             self.curslice_label.setText(str(val))
@@ -129,7 +129,7 @@ class QtDimSliderWidget(QWidget):
         slider = ModifiedScrollBar(Qt.Horizontal)
         slider.setFocusPolicy(Qt.NoFocus)
         slider.setMinimum(0)
-        slider.setMaximum(self.dims.nsteps[self.axis])
+        slider.setMaximum(self.dims.nsteps[self.axis] - 1)
         slider.setSingleStep(1)
         slider.setPageStep(1)
         slider.setValue(self.dims.step[self.axis])
@@ -185,7 +185,7 @@ class QtDimSliderWidget(QWidget):
         """Updates range for slider."""
         displayed_sliders = self.qt_dims._displayed_sliders
 
-        nsteps = self.dims.nsteps[self.axis]
+        nsteps = self.dims.nsteps[self.axis] - 1
         if nsteps == 0:
             displayed_sliders[self.axis] = False
             self.qt_dims.last_used = None
@@ -607,7 +607,7 @@ class AnimationWorker(QObject):
         frame_range : tuple(int, int)
             Frame range as tuple/list with range (minimum_frame, maximum_frame)
         """
-        self.dimsrange = (0, self.dims.nsteps[self.axis], 1)
+        self.dimsrange = (0, self.dims.nsteps[self.axis] - 1, 1)
 
         if frame_range is not None:
             if frame_range[0] >= frame_range[1]:

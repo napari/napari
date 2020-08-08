@@ -155,7 +155,7 @@ class QtDims(QWidget):
         widgets = reversed(list(enumerate(self.slider_widgets)))
         nsteps = self.dims.nsteps
         for (axis, widget) in widgets:
-            if axis in self.dims.displayed or nsteps[axis] == 0:
+            if axis in self.dims.displayed or nsteps[axis] <= 1:
                 # Displayed dimensions correspond to non displayed sliders
                 self._displayed_sliders[axis] = False
                 self.dims.last_used = None
@@ -214,7 +214,7 @@ class QtDims(QWidget):
         width = 0
         for ax, maxi in enumerate(self.dims.nsteps):
             if self._displayed_sliders[ax]:
-                length = len(str(maxi))
+                length = len(str(maxi - 1))
                 if length > width:
                     width = length
         # gui width of a string of length `width`
