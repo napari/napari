@@ -453,11 +453,16 @@ QTableCornerButton::section{
   border: 1px solid {{ background }};
 }
 
-NapariNotification::hover{
-  background: {{ foreground }};
+NapariNotification > QWidget {
+  background: none;
 }
 
-NapariNotification QFrame{
+NapariNotification::hover{
+  background: {{ lighten(background, 3) }};
+}
+
+MultilineElidedLabel{
+  background: none;
   color: {{ icon }};
   font-size: 12px;
 }
@@ -489,4 +494,13 @@ NapariNotification #close_button {
 NapariNotification #source_label {
   color: {{ primary }};
   font-size: 11px;
+}
+
+NapariNotification #severity_icon {
+  padding: 0;
+  margin: 0 0 -3px 0;
+  min-width: 20px;
+  min-height: 18px;
+  font-size: 15px;
+  color: {{ icon }};
 }
