@@ -27,24 +27,23 @@ class Dims:
     events : EmitterGroup
         Event emitter group
     range : list of 3-tuple
-        List of tuples (min, max, step), one for each dimension
+        List of tuples (min, max, step), one for each dimension. In a world
+        coordinates space.
     point : list of float
         List of floats setting the current value of the range slider when in
-        POINT mode, one for each dimension
+        POINT mode, one for each dimension. In a world coordinates space.
     interval : list of 2-tuple
         List of tuples (min, max) setting the current selection of the range
-        slider when in INTERVAL mode, one for each dimension
+        slider when in INTERVAL mode, one for each dimension.  In a world
+        coordinates space.
+    step : tuple of int
+        Tuple the slider position for each dims slider, in slider coordinates.
+    nsteps : tuple of int
+        Number of steps available to each slider.
     mode : list of DimsMode
         List of DimsMode, one for each dimension
-    clip : bool
-        Flag if to clip indices based on range. Needed for image-like
-        layers, but prevents shape-like layers from adding new shapes
-        outside their range.
     ndim : int
         Number of dimensions.
-    indices : tuple of slice object
-        Tuple of slice objects for slicing arrays on each dimension, one for
-        each dimension
     displayed : tuple
         List of dimensions that are displayed.
     not_displayed : tuple
@@ -76,7 +75,6 @@ class Dims:
         self._axis_labels = []
         self._scroll_progress = 0
         self.last_used = None
-        self.clip = True
         self._ndisplay = 2 if ndisplay is None else ndisplay
 
         if ndim is None and order is None and axis_labels is None:
@@ -124,10 +122,24 @@ class Dims:
         return copy(self._range)
 
     @property
-    def max_indices(self):
-        """Maximum index for each dimension (in data space).
+    def nsteps(self):
+        """Number of slider steps for each dimension.
         """
-        return [((ma - st) // st) for mi, ma, st in self._range]
+        return [
+            int((max_val - min_val - step_size) // step_size)
+            for min_val, max_val, step_size in self._range
+        ]
+
+    @property
+    def step(self):
+        """Tuple of int: value of slider position for each dimension."""
+        raw_step = [
+            ((point - min_val) // step_size)
+            for (min_val, max_val, step_size), point in zip(
+                self._range, self._point
+            )
+        ]
+        return np.round(np.clip(raw_step, 0, self.nsteps)).astype(int)
 
     @property
     def point(self):
@@ -338,6 +350,23 @@ class Dims:
         axis = self._assert_axis_in_bounds(axis)
         if self.point[axis] != value:
             self._point[axis] = value
+            self.events.axis(axis=axis, value=value)
+
+    def set_step(self, axis: int, value: int):
+        """Sets the slider step at which to slice this dimension.
+
+        Parameters
+        ----------
+        axis : int
+            Dimension index.
+        value : int or float
+            Value of the point.
+        """
+        axis = self._assert_axis_in_bounds(axis)
+        if self.step[axis] != value:
+            (min_val, max_val, step_size) = self._range[axis]
+            point = min_val + step_size * value
+            self._point[axis] = point
             self.events.axis(axis=axis, value=value)
 
     def set_interval(self, axis: int, interval: Sequence[Union[int, float]]):
