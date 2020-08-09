@@ -1,6 +1,7 @@
 import numpy as np
 import itertools
 from typing import Optional, List
+import warnings
 from ..layers import Layer
 from ..utils.naming import inc_name_count
 from ..utils.list import ListModel
@@ -206,12 +207,18 @@ class LayerList(ListModel):
             mins = [e[0][::-1] for e in extrema]
             maxs = [e[1][::-1] for e in extrema]
 
-            min_v = np.nanmin(
-                list(itertools.zip_longest(*mins, fillvalue=np.nan)), axis=1
-            )
-            max_v = np.nanmax(
-                list(itertools.zip_longest(*maxs, fillvalue=np.nan)), axis=1
-            )
+            with warnings.catch_warnings():
+                warnings.filterwarnings(
+                    'ignore', message='All-NaN axis encountered'
+                )
+                min_v = np.nanmin(
+                    list(itertools.zip_longest(*mins, fillvalue=np.nan)),
+                    axis=1,
+                )
+                max_v = np.nanmax(
+                    list(itertools.zip_longest(*maxs, fillvalue=np.nan)),
+                    axis=1,
+                )
 
         min_vals = np.nan_to_num(min_v[::-1], nan=0)
         max_vals = np.nan_to_num(max_v[::-1], nan=512)
@@ -318,8 +325,6 @@ class LayerList(ListModel):
         layers = self.selected if selected else list(self)
 
         if not layers:
-            import warnings
-
             warnings.warn(f"No layers {'selected' if selected else 'to save'}")
             return []
 
