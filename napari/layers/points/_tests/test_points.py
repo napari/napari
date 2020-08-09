@@ -1361,12 +1361,12 @@ def test_view_data():
     coords = np.array([[0, 1, 1], [0, 2, 2], [1, 3, 3], [3, 3, 3]])
     layer = Points(coords)
 
-    layer.dims.set_point(0, 0)
+    layer.slice_data([0, slice(None), slice(None)])
     assert np.all(
         layer._view_data == coords[np.ix_([0, 1], layer.dims.displayed)]
     )
 
-    layer.dims.set_point(0, 1)
+    layer.slice_data([1, slice(None), slice(None)])
     assert np.all(
         layer._view_data == coords[np.ix_([2], layer.dims.displayed)]
     )
@@ -1380,12 +1380,12 @@ def test_view_size():
     sizes = np.array([[3, 5, 5], [3, 5, 5], [3, 3, 3], [2, 2, 3]])
     layer = Points(coords, size=sizes, n_dimensional=False)
 
-    layer.dims.set_point(0, 0)
+    layer.slice_data([0, slice(None), slice(None)])
     assert np.all(
         layer._view_size == sizes[np.ix_([0, 1], layer.dims.displayed)]
     )
 
-    layer.dims.set_point(0, 1)
+    layer.slice_data([1, slice(None), slice(None)])
     assert np.all(layer._view_size == sizes[np.ix_([2], layer.dims.displayed)])
 
     layer.n_dimensional = True
@@ -1393,7 +1393,7 @@ def test_view_size():
 
     # test a slice with no points
     layer.n_dimensional = False
-    layer.dims.set_point(0, 2)
+    layer.slice_data([2, slice(None), slice(None)])
     assert np.all(layer._view_size == [])
 
 
@@ -1407,18 +1407,18 @@ def test_view_colors():
     )
 
     layer = Points(coords, face_color=face_color, edge_color=edge_color)
-    layer.dims.set_point(0, 0)
+    layer.slice_data([0, slice(None), slice(None)])
     print(layer.face_color)
     print(layer._view_face_color)
     assert np.all(layer._view_face_color == face_color[[0, 1]])
     assert np.all(layer._view_edge_color == edge_color[[0, 1]])
 
-    layer.dims.set_point(0, 1)
+    layer.slice_data([1, slice(None), slice(None)])
     assert np.all(layer._view_face_color == face_color[[2]])
     assert np.all(layer._view_edge_color == edge_color[[2]])
 
     # view colors should return empty array if there are no points
-    layer.dims.set_point(0, 2)
+    layer.slice_data([2, slice(None), slice(None)])
     assert len(layer._view_face_color) == 0
     assert len(layer._view_edge_color) == 0
 

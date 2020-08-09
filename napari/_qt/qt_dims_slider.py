@@ -608,7 +608,7 @@ class AnimationWorker(QObject):
         frame_range : tuple(int, int)
             Frame range as tuple/list with range (minimum_frame, maximum_frame)
         """
-        self.dimsrange = (0, self.dims.nsteps[self.axis] - 1, 1)
+        self.dimsrange = (0, self.dims.nsteps[self.axis], 1)
 
         if frame_range is not None:
             if frame_range[0] >= frame_range[1]:

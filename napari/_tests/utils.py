@@ -19,7 +19,7 @@ layer_test_data = [
     (
         Surface,
         (
-            np.random.random((10, 3)),
+            20 * np.random.random((10, 3)),
             np.random.randint(10, size=(6, 3)),
             np.random.random(10),
         ),

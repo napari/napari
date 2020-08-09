@@ -322,9 +322,10 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             List of layers to update. If none provided updates all.
         """
         layers = layers or self.layers
-
         for layer in layers:
-            layer.slice(self.dims.point, self.dims.ndisplay, self.dims.order)
+            layer.slice_data(
+                self.dims.point, self.dims.ndisplay, self.dims.order
+            )
 
     def _toggle_theme(self):
         """Switch to next theme in list of themes

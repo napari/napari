@@ -151,23 +151,19 @@ def test_slider_range(qtbot):
     view = QtDims(Dims(ndim))
     qtbot.addWidget(view)
 
-    # Check the range of slider matches the values of the range of the dims
-    # at initialization
+    # Check the maximum allowed value of the slider is one less
+    # than the allowed nsteps of the dims at initialization
     first_slider = view.slider_widgets[0].slider
-    assert first_slider.minimum() == view.dims.range[0][0]
-    assert (
-        first_slider.maximum() == view.dims.range[0][1] - view.dims.range[0][2]
-    )
-    assert first_slider.singleStep() == view.dims.range[0][2]
+    assert first_slider.minimum() == 0
+    assert first_slider.maximum() == view.dims.nsteps[0] - 1
+    assert first_slider.singleStep() == 1
 
-    # Check the range of slider stays matched to the values of the range of
-    # the dims
+    # Check the maximum allowed value of the slider stays one less
+    # than the allowed nsteps of the dims after updates
     view.dims.set_range(0, (1, 5, 2))
-    assert first_slider.minimum() == view.dims.range[0][0]
-    assert (
-        first_slider.maximum() == view.dims.range[0][1] - view.dims.range[0][2]
-    )
-    assert first_slider.singleStep() == view.dims.range[0][2]
+    assert first_slider.minimum() == 0
+    assert first_slider.maximum() == view.dims.nsteps[0] - 1
+    assert first_slider.singleStep() == 1
 
 
 def test_singleton_dims(qtbot):

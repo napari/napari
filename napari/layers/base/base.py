@@ -219,12 +219,6 @@ class Layer(KeymapProvider, ABC):
         self.name = name
 
         self.events.data.connect(lambda e: self._set_editable())
-        self.dims.events.ndisplay.connect(lambda e: self._set_editable())
-        self.dims.events.order.connect(self.refresh)
-        self.dims.events.ndisplay.connect(self._update_dims)
-        self.dims.events.order.connect(self._update_dims)
-        self.dims.events.axis.connect(self.refresh)
-
         self.mouse_move_callbacks = []
         self.mouse_drag_callbacks = []
         self.mouse_wheel_callbacks = []
@@ -400,6 +394,15 @@ class Layer(KeymapProvider, ABC):
             self._dims_point = [0] * (ndim - old_ndim) + self._dims_point
 
         self.dims.ndim = ndim
+
+        # This setting is no longer needed and can be removed. It is kept
+        # only for backwards compatability and so test pass, but it is
+        # no longer needed
+        step_size = self.scale
+        # For now dims don't use world coordinates, but scaled data coordinates
+        extent = np.multiply(self._extent_data, step_size)
+        for i in range(self.dims.ndim):
+            self.dims.set_range(i, (extent[0, i], extent[1, i], step_size[i]))
 
         self.refresh()
         self._update_coordinates()
@@ -629,7 +632,7 @@ class Layer(KeymapProvider, ABC):
     def _set_view_slice(self):
         raise NotImplementedError()
 
-    def slice(self, point, ndisplay=2, order=None):
+    def slice_data(self, point, ndisplay=2, order=None):
         ndim = len(point)
         # adjust the order of the global dims based on the number of
         # dimensions that a layer has - for example a global order of
@@ -646,12 +649,21 @@ class Layer(KeymapProvider, ABC):
         else:
             order = list(order[order >= offset] - offset)
 
+        # If no slide data has changed, then do nothing
+        if (
+            np.all(order == self.dims.order)
+            and ndisplay == self.dims.ndisplay
+            and np.all(point[offset:] == self._dims_point)
+        ):
+            return
+
         self.dims.order = order
         self.dims.ndisplay = ndisplay
 
         # Update the point values
         self._dims_point = point[offset:]
-        self.refresh()
+        self._update_dims()
+        self._set_editable()
 
     @abstractmethod
     def _update_thumbnail(self):
