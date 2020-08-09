@@ -131,7 +131,7 @@ def stack_to_images(stack: Image, axis: int, **kwargs: Dict,) -> List[Image]:
         del meta[key]
 
     name = stack.name
-    num_dim = stack.dims.ndim
+    num_dim = stack.ndim
 
     if num_dim < 3:
         raise ValueError(

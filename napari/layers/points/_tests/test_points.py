@@ -217,7 +217,7 @@ def test_selecting_points():
     assert layer.selected_data == data_to_select
 
     # test switching to 3D
-    layer.dims.ndisplay = 3
+    layer.slice_data(ndisplay=3)
     assert layer.selected_data == data_to_select
 
     # select different points while in 3D mode
@@ -226,7 +226,7 @@ def test_selecting_points():
     assert layer.selected_data == other_data_to_select
 
     # selection should persist when going back to 2D mode
-    layer.dims.ndisplay = 2
+    layer.slice_data(ndisplay=2)
     assert layer.selected_data == other_data_to_select
 
     # selection should persist when switching between between select and pan_zoom
@@ -1352,7 +1352,7 @@ def test_thumbnail_with_n_points_greater_than_max():
     # #3D
     bigger_data_3d = np.random.randint(10, 100, (max_points, 3))
     bigger_layer_3d = Points(bigger_data_3d)
-    bigger_layer_3d.dims.ndisplay = 3
+    bigger_layer_3d.slice_data(ndisplay=3)
     bigger_layer_3d._update_thumbnail()
     assert bigger_layer_3d.thumbnail.shape == bigger_layer_3d._thumbnail_shape
 
@@ -1363,15 +1363,15 @@ def test_view_data():
 
     layer.slice_data([0, slice(None), slice(None)])
     assert np.all(
-        layer._view_data == coords[np.ix_([0, 1], layer.dims.displayed)]
+        layer._view_data == coords[np.ix_([0, 1], layer._dims.displayed)]
     )
 
     layer.slice_data([1, slice(None), slice(None)])
     assert np.all(
-        layer._view_data == coords[np.ix_([2], layer.dims.displayed)]
+        layer._view_data == coords[np.ix_([2], layer._dims.displayed)]
     )
 
-    layer.dims.ndisplay = 3
+    layer.slice_data([1, slice(None), slice(None)], ndisplay=3)
     assert np.all(layer._view_data == coords)
 
 
@@ -1382,11 +1382,13 @@ def test_view_size():
 
     layer.slice_data([0, slice(None), slice(None)])
     assert np.all(
-        layer._view_size == sizes[np.ix_([0, 1], layer.dims.displayed)]
+        layer._view_size == sizes[np.ix_([0, 1], layer._dims.displayed)]
     )
 
     layer.slice_data([1, slice(None), slice(None)])
-    assert np.all(layer._view_size == sizes[np.ix_([2], layer.dims.displayed)])
+    assert np.all(
+        layer._view_size == sizes[np.ix_([2], layer._dims.displayed)]
+    )
 
     layer.n_dimensional = True
     assert len(layer._view_size) == 3
@@ -1408,8 +1410,6 @@ def test_view_colors():
 
     layer = Points(coords, face_color=face_color, edge_color=edge_color)
     layer.slice_data([0, slice(None), slice(None)])
-    print(layer.face_color)
-    print(layer._view_face_color)
     assert np.all(layer._view_face_color == face_color[[0, 1]])
     assert np.all(layer._view_edge_color == edge_color[[0, 1]])
 
