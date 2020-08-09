@@ -208,6 +208,11 @@ class LayerList(ListModel):
             maxs = [e[1][::-1] for e in extrema]
 
             with warnings.catch_warnings():
+                # Taking the nanmin and nanmax of an axis of all nan
+                # raises a warning and returns nan for that axis
+                # as we have do an explict nan_to_num below this
+                # behaviour is acceptable and we can filter the
+                # warning
                 warnings.filterwarnings(
                     'ignore', message='All-NaN axis encountered'
                 )
