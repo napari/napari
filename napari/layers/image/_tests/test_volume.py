@@ -8,7 +8,7 @@ def test_random_volume():
     np.random.seed(0)
     data = np.random.random(shape)
     layer = Image(data)
-    layer.slice_data(ndisplay=3)
+    layer._slice_dims(ndisplay=3)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape
@@ -28,16 +28,16 @@ def test_switching_displayed_dimensions():
     # check displayed data is initially 2D
     assert layer._data_view.shape == shape[-2:]
 
-    layer.slice_data(ndisplay=3)
+    layer._slice_dims(ndisplay=3)
     # check displayed data is now 3D
     assert layer._data_view.shape == shape[-3:]
 
-    layer.slice_data(ndisplay=2)
+    layer._slice_dims(ndisplay=2)
     # check displayed data is now 2D
     assert layer._data_view.shape == shape[-2:]
 
     layer = Image(data)
-    layer.slice_data(ndisplay=3)
+    layer._slice_dims(ndisplay=3)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape
@@ -45,11 +45,11 @@ def test_switching_displayed_dimensions():
     # check displayed data is initially 3D
     assert layer._data_view.shape == shape[-3:]
 
-    layer.slice_data(ndisplay=2)
+    layer._slice_dims(ndisplay=2)
     # check displayed data is now 2D
     assert layer._data_view.shape == shape[-2:]
 
-    layer.slice_data(ndisplay=3)
+    layer._slice_dims(ndisplay=3)
     # check displayed data is now 3D
     assert layer._data_view.shape == shape[-3:]
 
@@ -59,7 +59,7 @@ def test_all_zeros_volume():
     shape = (10, 15, 20)
     data = np.zeros(shape, dtype=float)
     layer = Image(data)
-    layer.slice_data(ndisplay=3)
+    layer._slice_dims(ndisplay=3)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape
@@ -72,7 +72,7 @@ def test_integer_volume():
     np.random.seed(0)
     data = np.round(10 * np.random.random(shape)).astype(int)
     layer = Image(data)
-    layer.slice_data(ndisplay=3)
+    layer._slice_dims(ndisplay=3)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape
@@ -85,7 +85,7 @@ def test_3D_volume():
     np.random.seed(0)
     data = np.random.random(shape)
     layer = Image(data)
-    layer.slice_data(ndisplay=3)
+    layer._slice_dims(ndisplay=3)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape
@@ -98,7 +98,7 @@ def test_4D_volume():
     np.random.seed(0)
     data = np.random.random(shape)
     layer = Image(data)
-    layer.slice_data(ndisplay=3)
+    layer._slice_dims(ndisplay=3)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape
@@ -113,7 +113,7 @@ def test_changing_volume():
     data_a = np.random.random(shape_a)
     data_b = np.random.random(shape_b)
     layer = Image(data_a)
-    layer.slice_data(ndisplay=3)
+    layer._slice_dims(ndisplay=3)
     layer.data = data_b
     assert np.all(layer.data == data_b)
     assert layer.ndim == len(shape_b)
@@ -129,7 +129,7 @@ def test_scale():
     np.random.seed(0)
     data = np.random.random(shape)
     layer = Image(data, scale=scale)
-    layer.slice_data(ndisplay=3)
+    layer._slice_dims(ndisplay=3)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == full_shape
@@ -142,7 +142,7 @@ def test_value():
     np.random.seed(0)
     data = np.random.random((10, 15, 20))
     layer = Image(data)
-    layer.slice_data(ndisplay=3)
+    layer._slice_dims(ndisplay=3)
     value = layer.get_value()
     assert layer.coordinates == (0, 0, 0)
     assert value == data[0, 0, 0]
@@ -153,6 +153,6 @@ def test_message():
     np.random.seed(0)
     data = np.random.random((10, 15, 20))
     layer = Image(data)
-    layer.slice_data(ndisplay=3)
+    layer._slice_dims(ndisplay=3)
     msg = layer.get_message()
     assert type(msg) == str

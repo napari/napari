@@ -217,7 +217,7 @@ def test_selecting_points():
     assert layer.selected_data == data_to_select
 
     # test switching to 3D
-    layer.slice_data(ndisplay=3)
+    layer._slice_dims(ndisplay=3)
     assert layer.selected_data == data_to_select
 
     # select different points while in 3D mode
@@ -226,7 +226,7 @@ def test_selecting_points():
     assert layer.selected_data == other_data_to_select
 
     # selection should persist when going back to 2D mode
-    layer.slice_data(ndisplay=2)
+    layer._slice_dims(ndisplay=2)
     assert layer.selected_data == other_data_to_select
 
     # selection should persist when switching between between select and pan_zoom
@@ -1361,17 +1361,17 @@ def test_view_data():
     coords = np.array([[0, 1, 1], [0, 2, 2], [1, 3, 3], [3, 3, 3]])
     layer = Points(coords)
 
-    layer.slice_data([0, slice(None), slice(None)])
+    layer._slice_dims([0, slice(None), slice(None)])
     assert np.all(
         layer._view_data == coords[np.ix_([0, 1], layer._dims.displayed)]
     )
 
-    layer.slice_data([1, slice(None), slice(None)])
+    layer._slice_dims([1, slice(None), slice(None)])
     assert np.all(
         layer._view_data == coords[np.ix_([2], layer._dims.displayed)]
     )
 
-    layer.slice_data([1, slice(None), slice(None)], ndisplay=3)
+    layer._slice_dims([1, slice(None), slice(None)], ndisplay=3)
     assert np.all(layer._view_data == coords)
 
 
@@ -1380,12 +1380,12 @@ def test_view_size():
     sizes = np.array([[3, 5, 5], [3, 5, 5], [3, 3, 3], [2, 2, 3]])
     layer = Points(coords, size=sizes, n_dimensional=False)
 
-    layer.slice_data([0, slice(None), slice(None)])
+    layer._slice_dims([0, slice(None), slice(None)])
     assert np.all(
         layer._view_size == sizes[np.ix_([0, 1], layer._dims.displayed)]
     )
 
-    layer.slice_data([1, slice(None), slice(None)])
+    layer._slice_dims([1, slice(None), slice(None)])
     assert np.all(
         layer._view_size == sizes[np.ix_([2], layer._dims.displayed)]
     )
@@ -1395,7 +1395,7 @@ def test_view_size():
 
     # test a slice with no points
     layer.n_dimensional = False
-    layer.slice_data([2, slice(None), slice(None)])
+    layer._slice_dims([2, slice(None), slice(None)])
     assert np.all(layer._view_size == [])
 
 
@@ -1409,16 +1409,16 @@ def test_view_colors():
     )
 
     layer = Points(coords, face_color=face_color, edge_color=edge_color)
-    layer.slice_data([0, slice(None), slice(None)])
+    layer._slice_dims([0, slice(None), slice(None)])
     assert np.all(layer._view_face_color == face_color[[0, 1]])
     assert np.all(layer._view_edge_color == edge_color[[0, 1]])
 
-    layer.slice_data([1, slice(None), slice(None)])
+    layer._slice_dims([1, slice(None), slice(None)])
     assert np.all(layer._view_face_color == face_color[[2]])
     assert np.all(layer._view_edge_color == edge_color[[2]])
 
     # view colors should return empty array if there are no points
-    layer.slice_data([2, slice(None), slice(None)])
+    layer._slice_dims([2, slice(None), slice(None)])
     assert len(layer._view_face_color) == 0
     assert len(layer._view_edge_color) == 0
 

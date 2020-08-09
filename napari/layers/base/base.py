@@ -623,7 +623,21 @@ class Layer(KeymapProvider, ABC):
     def _set_view_slice(self):
         raise NotImplementedError()
 
-    def slice_data(self, point=None, ndisplay=2, order=None):
+    def _slice_dims(self, point=None, ndisplay=2, order=None):
+        """Slice data with values from a global dims model.
+
+        Note this will likely be moved off the base layer soon.
+
+        Parameters
+        ----------
+        point : list
+            Values of data to slice at in world coordinates.
+        ndisplay : int
+            Number of dimensions to be displayed.
+        order : list of int
+            Order of dimensions, where last `ndisplay` will be
+            rendered in canvas.
+        """
         if point is None:
             ndim = self.ndim
         else:

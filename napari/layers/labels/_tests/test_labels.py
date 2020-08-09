@@ -42,7 +42,7 @@ def test_3D_labels():
     assert layer._data_view.shape == shape[-2:]
     assert layer.editable is True
 
-    layer.slice_data(ndisplay=3)
+    layer._slice_dims(ndisplay=3)
     assert layer._dims.ndisplay == 3
     assert layer.editable is False
     assert layer.mode == 'pan_zoom'

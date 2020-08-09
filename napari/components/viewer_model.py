@@ -323,7 +323,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         """
         layers = layers or self.layers
         for layer in layers:
-            layer.slice_data(
+            layer._slice_dims(
                 self.dims.point, self.dims.ndisplay, self.dims.order
             )
 

@@ -39,8 +39,8 @@ class VispySurfaceLayer(VispyBaseLayer):
 
         if (
             vertices is not None
-            and self.layer.dims.ndisplay == 3
-            and self.layer.dims.ndim == 2
+            and self.layer._dims.ndisplay == 3
+            and self.layer._dims.ndim == 2
         ):
             vertices = np.pad(vertices, ((0, 0), (0, 1)))
         self.node.set_data(
@@ -57,7 +57,7 @@ class VispySurfaceLayer(VispyBaseLayer):
             # when gamma!=1, we instantiate a new colormap with 256 control
             # points from 0-1
             cmap = Colormap(cmap[np.linspace(0, 1, 256) ** self.layer.gamma])
-        if self.layer.dims.ndisplay == 3:
+        if self.layer._dims.ndisplay == 3:
             self.node.view_program['texture2D_LUT'] = (
                 cmap.texture_lut() if (hasattr(cmap, 'texture_lut')) else None
             )
