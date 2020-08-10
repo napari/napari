@@ -787,6 +787,7 @@ class AddLayersMixin:
     def open(
         self,
         path: Union[str, Sequence[str]],
+        *,
         stack: bool = False,
         plugin: Optional[str] = None,
         layer_type: Optional[str] = None,
