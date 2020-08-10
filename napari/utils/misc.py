@@ -7,6 +7,7 @@ import re
 from enum import Enum, EnumMeta
 from os import PathLike, fspath, path
 from typing import Optional, Sequence, Type, TypeVar
+from urllib.parse import urlparse
 
 import numpy as np
 
@@ -220,7 +221,8 @@ def abspath_or_url(relpath: T) -> T:
 
     if isinstance(relpath, (str, PathLike)):
         relpath = fspath(relpath)
-        if relpath.startswith(('http:', 'https:', 'ftp:', 'file:')):
+        urlp = urlparse(relpath)
+        if urlp.scheme and urlp.netloc:
             return relpath
         return path.abspath(path.expanduser(relpath))
 

@@ -7,8 +7,8 @@ from .qt_surface_layer import QtSurfaceControls
 from .qt_vectors_layer import QtVectorsControls
 
 layer_to_controls = {
-    Image: QtImageControls,
     Labels: QtLabelsControls,
+    Image: QtImageControls,  # must be after Labels layer
     Points: QtPointsControls,
     Shapes: QtShapesControls,
     Surface: QtSurfaceControls,
@@ -30,6 +30,11 @@ def create_qt_controls(layer):
     controls : napari.layers.base.QtLayerControls
         Qt controls widget
     """
-    controls = layer_to_controls[type(layer)](layer)
 
-    return controls
+    for layer_type, controls in layer_to_controls.items():
+        if isinstance(layer, layer_type):
+            return controls(layer)
+
+    raise TypeError(
+        f'Could not find QtControls for layer of type {type(layer)}'
+    )

@@ -48,3 +48,10 @@ profile = "black"
 line_length = 79
 known_third_party = ["IPython", "dask", "github", "imageio", "ipykernel", "napari_plugin_engine", "numpy", "numpydoc", "pandas", "pytest", "qtconsole", "qtpy", "recommonmark", "scipy", "setuptools", "skimage", "toolz", "vispy", "wrapt", "xarray", "zarr"]
 skip_glob = ["*examples/*", "*vendored*"]
+
+[tool.pytest.ini_options]
+filterwarnings = [
+  "ignore::DeprecationWarning:ipykernel",
+  "ignore::DeprecationWarning:skimage.util.dtype:226",
+  "ignore:QFontMetrics.width::qtconsole"
+]

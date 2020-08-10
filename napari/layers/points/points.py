@@ -645,16 +645,21 @@ class Points(Layer):
         """Determine number of dimensions of the layer."""
         return self.data.shape[1]
 
-    def _get_extent(self) -> List[Tuple[int, int, int]]:
-        """Determine ranges for slicing given by (min, max, step)."""
+    @property
+    def _extent_data(self) -> np.ndarray:
+        """Extent of layer in data coordinates.
+
+        Returns
+        -------
+        extent_data : array, shape (2, D)
+        """
         if len(self.data) == 0:
-            maxs = np.ones(self.data.shape[1], dtype=int)
-            mins = np.zeros(self.data.shape[1], dtype=int)
+            extrema = np.full((2, self.ndim), np.nan)
         else:
             maxs = np.max(self.data, axis=0)
             mins = np.min(self.data, axis=0)
-
-        return [(min, max) for min, max in zip(mins, maxs)]
+            extrema = np.vstack([mins, maxs])
+        return extrema
 
     @property
     def n_dimensional(self) -> bool:
@@ -1574,12 +1579,10 @@ class Points(Layer):
         colormapped = np.zeros(self._thumbnail_shape)
         colormapped[..., 3] = 1
         if len(self._view_data) > 0:
-            min_vals = [self.dims.range[i][0] for i in self.dims.displayed]
+            de = self._extent_data
+            min_vals = [de[0, i] for i in self.dims.displayed]
             shape = np.ceil(
-                [
-                    self.dims.range[i][1] - self.dims.range[i][0] + 1
-                    for i in self.dims.displayed
-                ]
+                [de[1, i] - de[0, i] + 1 for i in self.dims.displayed]
             ).astype(int)
             zoom_factor = np.divide(
                 self._thumbnail_shape[:2], shape[-2:]

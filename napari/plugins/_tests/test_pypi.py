@@ -27,10 +27,10 @@ txtA = (
 ).encode()
 
 txtB = (
-    f'<!DOCTYPE html>\n<html>\n  <head>\n    <title>Links for package'
-    f'</title>\n  </head>\n  <body>\n    <h1>Links for package</h1>\n'
-    f'<a href="http://pythonhosted.org/package-0.1.0.tar.gz#sha256=7">'
-    f'package-0.1.0.tar.gz</a><br/>\n </body>\n</html>'
+    '<!DOCTYPE html>\n<html>\n  <head>\n    <title>Links for package'
+    '</title>\n  </head>\n  <body>\n    <h1>Links for package</h1>\n'
+    '<a href="http://pythonhosted.org/package-0.1.0.tar.gz#sha256=7">'
+    'package-0.1.0.tar.gz</a><br/>\n </body>\n</html>'
 ).encode()
 
 

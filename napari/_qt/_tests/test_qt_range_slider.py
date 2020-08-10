@@ -21,19 +21,19 @@ def test_range_slider(qtbot, orientation):
     assert sld.moving == 'none'
     if orientation == 'h':
         pos = sld.rangeSliderSize() * sld.value_min + sld.handle_radius
-        pos = QPoint(pos, sld.height() / 2)
+        pos = QPoint(int(pos), sld.height() // 2)
         qtbot.mousePress(sld, Qt.LeftButton, pos=pos, delay=50)
         assert sld.moving == 'min'
         qtbot.mousePress(sld, Qt.LeftButton, pos=pos - QPoint(50, 0), delay=50)
         assert sld.moving == 'min'
         pos = sld.rangeSliderSize() * sld.value_max + sld.handle_radius
-        pos = QPoint(pos, sld.height() / 2)
+        pos = QPoint(int(pos), sld.height() // 2)
         qtbot.mousePress(sld, Qt.LeftButton, pos=pos, delay=50)
         assert sld.moving == 'max'
         qtbot.mousePress(sld, Qt.LeftButton, pos=pos + QPoint(50, 0), delay=50)
         assert sld.moving == 'max'
         pos = sld.rangeSliderSize() * 0.5 + sld.handle_radius
-        pos = QPoint(pos, sld.height() / 2)
+        pos = QPoint(int(pos), sld.height() // 2)
         qtbot.mousePress(sld, Qt.LeftButton, pos=pos, delay=50)
         assert sld.moving == 'bar'
     else:
@@ -45,19 +45,19 @@ def test_range_slider(qtbot, orientation):
 
         sld.show()
         pos = sld.rangeSliderSize() * sld.value_min + sld.handle_radius
-        pos = QPoint(sld.width() / 2, pos)
+        pos = QPoint(sld.width() // 2, int(pos))
         qtbot.mousePress(sld, Qt.LeftButton, pos=pos, delay=50)
         assert sld.moving == 'max'
         qtbot.mousePress(sld, Qt.LeftButton, pos=pos - QPoint(0, 50), delay=50)
         assert sld.moving == 'max'
         pos = sld.rangeSliderSize() * sld.value_max + sld.handle_radius
-        pos = QPoint(sld.width() / 2, pos)
+        pos = QPoint(sld.width() // 2, int(pos))
         qtbot.mousePress(sld, Qt.LeftButton, pos=pos, delay=50)
         assert sld.moving == 'min'
         qtbot.mousePress(sld, Qt.LeftButton, pos=pos + QPoint(0, 50), delay=50)
         assert sld.moving == 'min'
         pos = sld.rangeSliderSize() * 0.5 + sld.handle_radius
-        pos = QPoint(sld.width() / 2, pos)
+        pos = QPoint(sld.width() // 2, int(pos))
         qtbot.mousePress(sld, Qt.LeftButton, pos=pos, delay=50)
         assert sld.moving == 'bar'
 

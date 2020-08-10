@@ -6,7 +6,7 @@ repos:
       pass_filenames: true
       exclude: vendored|examples
 -   repo: https://gitlab.com/pycqa/flake8
-    rev: 3.7.9
+    rev: 3.8.3
     hooks:
     - id: flake8
       pass_filenames: true
@@ -17,7 +17,7 @@ repos:
     hooks:
     -  id: seed-isort-config
 -   repo: https://github.com/timothycrosley/isort
-    rev: 5.1.4
+    rev: 5.3.1
     hooks:
     - id: isort
       exclude: vendored|examples

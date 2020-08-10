@@ -1,10 +1,12 @@
 from unittest import mock
 
+import pytest
 from IPython.terminal.interactiveshell import TerminalInteractiveShell
 
 from napari._qt.qt_console import QtConsole
 
 
+@pytest.mark.filterwarnings("ignore:Accessing zmq Socket:DeprecationWarning")
 def test_console(qtbot):
     """Test creating the console."""
     console = QtConsole()

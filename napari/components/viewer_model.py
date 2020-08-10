@@ -1,11 +1,9 @@
-import itertools
-from math import inf
-
 import numpy as np
 
 from ..utils.event import EmitterGroup, Event
 from ..utils.key_bindings import KeymapHandler, KeymapProvider
 from ..utils.theme import palettes
+from ._viewer_mouse_bindings import dims_scroll
 from .add_layers_mixin import AddLayersMixin
 from .dims import Dims
 from .layerlist import LayerList
@@ -95,8 +93,12 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self.mouse_move_callbacks = []
         # Hold callbacks for when mouse is pressed, dragged, and released
         self.mouse_drag_callbacks = []
+        # Hold callbacks for when mouse wheel is scrolled
+        self.mouse_wheel_callbacks = [dims_scroll]
+
         self._persisted_mouse_event = {}
         self._mouse_drag_gen = {}
+        self._mouse_wheel_gen = {}
 
     @property
     def palette(self):
@@ -247,34 +249,34 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
 
         self.events.active_layer(item=self._active_layer)
 
-    def _scene_shape(self):
-        """Get shape of currently viewed dimensions.
+    @property
+    def _sliced_extent_world(self) -> np.ndarray:
+        """Extent of layers in world coordinates after slicing.
+
+        D is either 2 or 3 depending on if the displayed data is 2D or 3D.
 
         Returns
         -------
-        centroid : list
-            List of center coordinates of scene, length 2 or 3 if displayed
-            view is 2D or 3D.
-        size : list
-            List of size of scene, length 2 or 3 if displayed view is 2D or 3D.
-        corner : list
-            List of coordinates of top left corner of scene, length 2 or 3 if
-            displayed view is 2D or 3D.
+        sliced_extent_world : array, shape (2, D)
         """
-        # Scale the camera to the contents in the scene
-        min_shape, max_shape = self._calc_bbox()
-        size = np.subtract(max_shape, min_shape)
-        size = [size[i] for i in self.dims.displayed]
-        corner = [min_shape[i] for i in self.dims.displayed]
-
-        return size, corner
+        if len(self.layers) == 0 and self.dims.ndim != 2:
+            # If no data is present and dims model has not been reset to 0
+            # than someone has passed more than two axis labels which are
+            # being saved and so default values are used.
+            return np.vstack(
+                [np.zeros(self.dims.ndim), np.repeat(512, self.dims.ndim)]
+            )
+        else:
+            return self.layers._extent_world[:, self.dims.displayed]
 
     def reset_view(self, event=None):
         """Resets the camera's view using `event.rect` a 4-tuple of the x, y
         corner position followed by width and height of the camera
         """
 
-        scene_size, corner = self._scene_shape()
+        extent = self._sliced_extent_world
+        scene_size = extent[1] - extent[0]
+        corner = extent[0]
         grid_size = list(self.grid_size)
         if len(scene_size) > len(grid_size):
             grid_size = [1] * (len(scene_size) - len(grid_size)) + grid_size
@@ -299,15 +301,17 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             )
 
     def _new_labels(self):
-        if self.dims.ndim == 0:
-            dims = (512, 512)
-        else:
-            dims = self._calc_bbox()[1]
-            dims = [np.ceil(d).astype('int') if d > 0 else 1 for d in dims]
-            if len(dims) < 1:
-                dims = (512, 512)
-        empty_labels = np.zeros(dims, dtype=int)
-        self.add_labels(empty_labels)
+        """Create new labels layer filling full world coordinates space."""
+        extent = self.layers._extent_world
+        scale = self.layers._step_size
+        scene_size = extent[1] - extent[0]
+        corner = extent[0]
+        shape = [
+            np.round(s / sc).astype('int') if s > 0 else 1
+            for s, sc in zip(scene_size, scale)
+        ]
+        empty_labels = np.zeros(shape, dtype=int)
+        self.add_labels(empty_labels, translate=np.array(corner), scale=scale)
 
     def _update_layers(self, event=None, layers=None):
         """Updates the contained layers.
@@ -387,56 +391,13 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             self.dims.ndim = 2
             self.dims.reset()
         else:
-            layer_range = self._calc_layers_ranges()
-            self.dims.ndim = len(layer_range)
-            for i, r in enumerate(layer_range):
-                self.dims.set_range(i, r)
+            extent = self.layers._extent_world
+            ss = self.layers._step_size
+            ndim = extent.shape[1]
+            self.dims.ndim = ndim
+            for i in range(ndim):
+                self.dims.set_range(i, (extent[0, i], extent[1, i], ss[i]))
         self.events.layers_change()
-
-    def _calc_layers_ranges(self):
-        """Calculates the range along each axis from all present layers.
-        """
-
-        ndims = self._calc_layers_num_dims()
-        ranges = [(inf, -inf, inf)] * ndims
-
-        for layer in self.layers:
-            layer_range = layer.dims.range[::-1]
-            ranges = [
-                (min(a, b), max(c, d), min(e, f))
-                for (a, c, e), (b, d, f) in itertools.zip_longest(
-                    ranges, layer_range, fillvalue=(inf, -inf, inf)
-                )
-            ]
-
-        return ranges[::-1]
-
-    def _calc_bbox(self):
-        """Calculates the bounding box of all displayed layers.
-        This assumes that all layers are stacked.
-        """
-
-        min_shape = []
-        max_shape = []
-        for min, max, step in self._calc_layers_ranges():
-            min_shape.append(min)
-            max_shape.append(max)
-        if len(min_shape) == 0:
-            min_shape = [0] * self.dims.ndim
-            max_shape = [1] * self.dims.ndim
-
-        return min_shape, max_shape
-
-    def _calc_layers_num_dims(self):
-        """Calculates the number of maximum dimensions in the contained images.
-        """
-        max_dims = 0
-        for layer in self.layers:
-            dims = layer.ndim
-            if dims > max_dims:
-                max_dims = dims
-
-        return max_dims
 
     def _update_status(self, event):
         """Set the viewer status with the `event.status` string."""
@@ -526,7 +487,8 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         size : 2-tuple of int
             Size of the grid that is being used.
         """
-        scene_size, corner = self._scene_shape()
+        extent = self._sliced_extent_world
+        scene_size = extent[1] - extent[0]
         translate_2d = np.multiply(scene_size[-2:], position)
         translate = [0] * layer.ndim
         translate[-2:] = translate_2d

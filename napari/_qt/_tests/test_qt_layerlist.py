@@ -152,8 +152,8 @@ def test_removing_layers(qtbot):
     layers.append(layer_b)
     layers.append(layer_d)
     # Select first and third layers
-    for l, s in zip(layers, [True, True, False, False]):
-        l.selected = s
+    for layer, s in zip(layers, [True, True, False, False]):
+        layer.selected = s
     layers.remove_selected()
     assert view.vbox_layout.count() == 2 * (len(layers) + 1)
     assert check_layout_layers(view.vbox_layout, layers)
@@ -202,8 +202,8 @@ def test_reordering_layers(qtbot):
     layer_f = Image(np.random.random((15, 15)))
     layers.append(layer_e)
     layers.append(layer_f)
-    for l, s in zip(layers, [False, True, False, False, True, False]):
-        l.selected = s
+    for layer, s in zip(layers, [False, True, False, False, True, False]):
+        layer.selected = s
     layers.move_selected(1, 2)
     assert view.vbox_layout.count() == 2 * (len(layers) + 1)
     assert check_layout_layers(view.vbox_layout, layers)
