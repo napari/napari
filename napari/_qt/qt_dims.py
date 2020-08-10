@@ -203,7 +203,7 @@ class QtDims(QWidget):
             maxwidth = self.slider_widgets[0].width() * 0.2
             newwidth = min([newwidth, maxwidth])
         for labl in labels:
-            labl.setFixedWidth(newwidth + 10)
+            labl.setFixedWidth(int(newwidth) + 10)
 
     def _resize_slice_labels(self):
         """When the size of any dimension changes, we want to resize all of the
