@@ -49,7 +49,7 @@ class WorkerBase(QRunnable):
     def __getattr__(self, name):
         """Pass through attr requests to signals to simplify connection API.
 
-        The goal is to enable ``worker.signal.connect`` instead of
+        The goal is to enable ``worker.yielded.connect`` instead of
         ``worker.signals.yielded.connect``. Because multiple inheritance of Qt
         classes is not well supported in PyQt, we have to use composition here
         (signals are provided by QObjects, and QRunnable is not a QObject). So

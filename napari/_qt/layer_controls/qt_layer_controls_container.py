@@ -9,8 +9,8 @@ from .qt_surface_controls import QtSurfaceControls
 from .qt_vectors_controls import QtVectorsControls
 
 layer_to_controls = {
-    Image: QtImageControls,
     Labels: QtLabelsControls,
+    Image: QtImageControls,  # must be after Labels layer
     Points: QtPointsControls,
     Shapes: QtShapesControls,
     Surface: QtSurfaceControls,
@@ -24,17 +24,22 @@ def create_qt_layer_controls(layer):
 
     Parameters
     ----------
-        layer : napari.layers._base_layer.Layer
-            Layer that needs its controls widget created.
+    layer : napari.layers._base_layer.Layer
+        Layer that needs its controls widget created.
 
     Returns
-    ----------
-        controls : napari.layers.base.QtLayerControls
-            Qt controls widget
+    -------
+    controls : napari.layers.base.QtLayerControls
+        Qt controls widget
     """
-    controls = layer_to_controls[type(layer)](layer)
 
-    return controls
+    for layer_type, controls in layer_to_controls.items():
+        if isinstance(layer, layer_type):
+            return controls(layer)
+
+    raise TypeError(
+        f'Could not find QtControls for layer of type {type(layer)}'
+    )
 
 
 class QtLayerControlsContainer(QStackedWidget):

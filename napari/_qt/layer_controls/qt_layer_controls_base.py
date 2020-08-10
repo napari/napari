@@ -91,7 +91,7 @@ class QtLayerControls(QFrame):
             The napari event that triggered this method, by default None.
         """
         with self.layer.events.opacity.blocker():
-            self.opacitySlider.setValue(self.layer.opacity * 100)
+            self.opacitySlider.setValue(int(self.layer.opacity * 100))
 
     def _on_blending_change(self, event=None):
         """Receive layer model blending mode change event and update slider.

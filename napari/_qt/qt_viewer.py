@@ -19,6 +19,7 @@ from ..utils.interactions import (
     mouse_move_callbacks,
     mouse_press_callbacks,
     mouse_release_callbacks,
+    mouse_wheel_callbacks,
 )
 from ..utils.io import imsave
 from ..utils.key_bindings import components_to_key_combo
@@ -34,6 +35,15 @@ from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
 # FIXME: figure out the underlying problem causing circular imports here.
 from .._vispy import create_vispy_visual  # isort:skip
 from .layer_controls import QtLayerControlsContainer  # isort:skip
+
+
+class KeyModifierFilterSceneCanvas(SceneCanvas):
+    """SceneCanvas overriding VisPy when mouse wheel events have modifiers."""
+
+    def _process_mouse_event(self, event):
+        if event.type == 'mouse_wheel' and len(event.modifiers) > 0:
+            return
+        super()._process_mouse_event(event)
 
 
 class QtViewer(QSplitter):
@@ -142,7 +152,9 @@ class QtViewer(QSplitter):
             self.toggle_console_visibility
         )
 
-        self.canvas = SceneCanvas(keys=None, vsync=True, parent=self)
+        self.canvas = KeyModifierFilterSceneCanvas(
+            keys=None, vsync=True, parent=self
+        )
         self.canvas.events.ignore_callback_errors = False
         self.canvas.events.draw.connect(self.dims.enable_play)
         self.canvas.native.setMinimumSize(QSize(200, 200))
@@ -153,6 +165,7 @@ class QtViewer(QSplitter):
         self.canvas.connect(self.on_mouse_release)
         self.canvas.connect(self.on_key_press)
         self.canvas.connect(self.on_key_release)
+        self.canvas.connect(self.on_mouse_wheel)
 
         self.view = self.canvas.central_widget.add_view()
         self._update_camera()
@@ -496,6 +509,26 @@ class QtViewer(QSplitter):
     def show_key_bindings_dialog(self, event=None):
         dialog = QtAboutKeyBindings(self.viewer, parent=self)
         dialog.show()
+
+    def on_mouse_wheel(self, event):
+        """Called whenever mouse wheel activated in canvas.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+        """
+        if event.pos is None:
+            return
+
+        event = ReadOnlyWrapper(event)
+        mouse_wheel_callbacks(self.viewer, event)
+
+        layer = self.viewer.active_layer
+        if layer is not None:
+            visual = self.layer_to_visual[layer]
+            visual._position = list(event.pos)
+            layer.position = visual._transform_position(visual._position)
+            mouse_wheel_callbacks(layer, event)
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.

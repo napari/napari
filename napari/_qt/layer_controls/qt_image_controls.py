@@ -174,7 +174,9 @@ class QtImageControls(QtBaseImageControls):
             The napari event that triggered this method.
         """
         with self.layer.events.iso_threshold.blocker():
-            self.isoThresholdSlider.setValue(self.layer.iso_threshold * 100)
+            self.isoThresholdSlider.setValue(
+                int(self.layer.iso_threshold * 100)
+            )
 
     def changeAttenuation(self, value):
         """Change attenuation rate for attenuated maximum intensity projection.
@@ -196,7 +198,7 @@ class QtImageControls(QtBaseImageControls):
             The napari event that triggered this method.
         """
         with self.layer.events.attenuation.blocker():
-            self.attenuationSlider.setValue(self.layer.attenuation * 200)
+            self.attenuationSlider.setValue(int(self.layer.attenuation * 200))
 
     def _on_interpolation_change(self, event):
         """Receive layer interpolation change event and update dropdown menu.

@@ -3,6 +3,7 @@ import pytest
 from vispy.color import Colormap
 
 from napari.layers import Labels
+from napari._tests.utils import check_layer_world_data_extent
 
 
 def test_random_labels():
@@ -519,3 +520,13 @@ def test_thumbnail():
     layer = Labels(data)
     layer._update_thumbnail()
     assert layer.thumbnail.shape == layer._thumbnail_shape
+
+
+def test_world_data_extent():
+    """Test extent after applying transforms."""
+    np.random.seed(0)
+    shape = (6, 10, 15)
+    data = np.random.randint(20, size=(shape))
+    layer = Labels(data)
+    extent = np.array(((0,) * 3, shape))
+    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
