@@ -1,4 +1,9 @@
 repos:
+-   repo: https://github.com/timothycrosley/isort
+    rev: 5.3.2
+    hooks:
+    - id: isort
+      exclude: vendored|examples
 -   repo: https://github.com/python/black
     rev: 19.10b0
     hooks:
@@ -12,12 +17,3 @@ repos:
       pass_filenames: true
       # this seems to need to be here in addition to setup.cfg
       exclude: vendored|__init__.py|examples
--   repo: https://github.com/asottile/seed-isort-config
-    rev: v2.2.0
-    hooks:
-    -  id: seed-isort-config
--   repo: https://github.com/timothycrosley/isort
-    rev: 5.3.1
-    hooks:
-    - id: isort
-      exclude: vendored|examples
