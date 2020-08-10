@@ -39,18 +39,9 @@ def test_viewer(make_test_viewer):
         # skip fullscreen test locally
         if func.__name__ == 'toggle_fullscreen' and not os.getenv("CI"):
             continue
-
-        func(viewer)
-        # the `play` keybinding calls QtDims.play_dim(), which then creates a
-        # new QThread. we must then run the keybinding a second time, which
-        # will call QtDims.stop(), otherwise the thread will be killed at the
-        # end of the test without cleanup, causing a segmentation fault.
-        # (though the tests still pass)
         if func.__name__ == 'play':
-            func(viewer)
-
-    # the test for fullscreen that used to be here has been moved to the
-    # Window.close() method.
+            continue
+        func(viewer)
 
 
 @pytest.mark.run(order=1)  # provided by pytest-ordering
