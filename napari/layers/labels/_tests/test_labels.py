@@ -294,15 +294,15 @@ def test_custom_color_dict():
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(
-        data, color={1: 'white', 2: 'red', 3: 'red', 4: 'blue', 5: 'blue'}
+        data, color={1: 'white', 2: 'red', 3: 'blue', 4: 'red', 5: 'blue'}
     )
 
     # test with custom color dict
     assert type(layer.get_color(2)) == np.ndarray
     assert type(layer.get_color(1)) == np.ndarray
     assert (layer.get_color(1) == np.array([1.0, 1.0, 1.0, 1.0])).all()
-    assert (layer.get_color(2) == layer.get_color(3)).all()
-    assert (layer.get_color(4) == layer.get_color(5)).all()
+    assert (layer.get_color(2) == layer.get_color(4)).all()
+    assert (layer.get_color(3) == layer.get_color(5)).all()
 
     # test disable custom color dict
     # should not initialize as white since we are using random.seed
