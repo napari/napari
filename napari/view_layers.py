@@ -20,9 +20,8 @@ the final functions, along with introspection, and tab autocompletion, etc...
 """
 import inspect
 import sys
-import typing
 import textwrap
-
+import typing
 
 from numpydoc.docscrape import NumpyDocString
 
@@ -66,22 +65,22 @@ def _generate_view_function(layer_string: str, method_name: str = None):
     IPython help, introspection, tab completion, and autodocs.
 
     Here's how it works:
-    1. we define `real_func`, which is the (easier to understand) function that
-       will do the work of creating a new viewer and adding a layer to it.
-    2. we create a **string** (`fakefunc`) that represents how we _would_ have
+    1. we create a **string** (`fakefunc`) that represents how we _would_ have
        typed out the original `view_*` method.
         - `{combo_sig}` is an `inspect.Signature
           <https://docs.python.org/3/library/inspect.html#inspect.Signature>`_
           object (whose string representation is, conveniently, exactly how we
           would have typed the original function).
-        - the inner `real_func({inner_sig})` part is basically how we were
-          typing the body of the `view_*` functions before, e.g.:
-          `(data=data, name=name, scale=scale ...)`
-    3. we compile that string into `view_func_code`
-    4. finally, we actually evaluate the compiled code and add it to the
-       current module's namespace, and provide a `locals()` dict that tells
-       python that the function name `real_func` in the `fakefunc` string
-       actually corresponds to the `real_func` that we previuosly defined.
+        - the inner part is basically how we were typing the body of the
+          `view_*` functions before.  That is, ``Viewer`` kwargs go to the
+          ``Viewer`` constructor, and everything else goes to the ``add_*``
+          method.  Note that we use ``_kw = locals()`` to get a dict of all
+          arguments passed to the function.
+    2. we compile that string, giving ``__file__`` as the second (``filename``)
+       argument, so it appears that the compiled code comes from this file.
+    3. finally, we evaluate the compiled code and add it to the
+       current module's "globals".  The second argument in the ``eval`` call
+       is a locals() namespace required to interpret the evaluated code.
        (Note: evaluation at this step is essentially exactly what was
        previously happening when python hit each `def view_*` declaration when
        importing `view_layers.py`)
@@ -116,27 +115,25 @@ def _generate_view_function(layer_string: str, method_name: str = None):
     new_params = sorted(new_params, key=lambda p: p.kind)
     combo_sig = add_sig.replace(parameters=new_params)
 
-    # define the actual function that will create a new Viewer and add a layer
-    def real_func(*args, **kwargs):
+    # make new function string with the combined signature
+    fakefunc = f"def view_{layer_string}{combo_sig}:"
+    fakefunc += """
+        _kw = locals()
         view_kwargs = {
-            k: kwargs.pop(k) for k in list(kwargs) if k in view_sig.parameters
+            k: _kw.pop(k) for k in list(_kw) if k in view_sig.parameters
         }
-        viewer = Viewer(**view_kwargs)
-        getattr(viewer, add_string)(*args, **kwargs)
-        return viewer
-
-    # make new function string with the combined signature that calls real_func
-    fname = f'view_{layer_string}'
-    inner_sig = ", ".join([f"{p}={p}" for p in combo_sig.parameters])
-    fakefunc = f"def {fname}{combo_sig}:\n    return real_func({inner_sig})\n"
-
+        viewer = napari.Viewer(**view_kwargs)
+        if 'kwargs' in _kw:
+            _kw.update(_kw.pop("kwargs"))
+    """
+    fakefunc += f"    viewer.{add_string}(**_kw)\n        return viewer"
     # evaluate the new function into the current module namespace
     globals = sys.modules[__name__].__dict__
     eval(
-        compile(fakefunc, "fakesource", "exec"),
+        compile(fakefunc, __file__, "exec"),
         {
-            "real_func": real_func,
             'typing': typing,
+            'view_sig': view_sig,
             'Union': typing.Union,
             'List': typing.List,
             'NoneType': type(None),
@@ -145,7 +142,7 @@ def _generate_view_function(layer_string: str, method_name: str = None):
         },
         globals,
     )
-    view_func = globals[fname]  # this is the final function.
+    view_func = globals[f'view_{layer_string}']  # this is the final function.
     view_func.__doc__ = merge_docs(add_method, layer_string)
 
 

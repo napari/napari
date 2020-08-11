@@ -6,8 +6,8 @@ from qtpy.QtCore import Qt
 from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import QApplication, QSplashScreen
 
-from .exceptions import ExceptionHandler
 from ..utils.perf import perf_config
+from .exceptions import ExceptionHandler
 
 
 def _create_application(argv) -> QApplication:

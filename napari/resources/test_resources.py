@@ -1,5 +1,6 @@
-from napari.resources import import_resources
 import os
+
+from napari.resources import import_resources
 
 
 def test_resources():

@@ -1,6 +1,8 @@
 import numpy as np
+import pytest
 
 
+@pytest.mark.filterwarnings("ignore:data shape:UserWarning")
 def test_big_2D_image(make_test_viewer):
     """Test big 2D image with axis exceeding max texture size."""
     viewer = make_test_viewer()
@@ -15,6 +17,7 @@ def test_big_2D_image(make_test_viewer):
         assert np.all(layer._transforms['tile2data'].scale == s)
 
 
+@pytest.mark.filterwarnings("ignore:data shape:UserWarning")
 def test_big_3D_image(make_test_viewer):
     """Test big 3D image with axis exceeding max texture size."""
     viewer = make_test_viewer(ndisplay=3)

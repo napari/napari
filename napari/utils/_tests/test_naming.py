@@ -3,11 +3,11 @@ import inspect
 import sys
 
 from napari.utils.naming import (
-    numbered_patt,
     inc_name_count,
+    magic_name,
+    numbered_patt,
     sep,
     start,
-    magic_name,
 )
 
 

@@ -1,4 +1,5 @@
 import pytest
+
 from ..interactions import ReadOnlyWrapper
 
 
