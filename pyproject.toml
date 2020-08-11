@@ -43,9 +43,15 @@ ignore = [
   "napari/_version.py",  # added during build by setuptools_scm
 ]
 
+[tool.isort]
+profile = "black"
+line_length = 79
+skip_glob = ["*examples/*", "*vendored*"]
+
 [tool.pytest.ini_options]
 filterwarnings = [
   "ignore::DeprecationWarning:ipykernel",
   "ignore::DeprecationWarning:skimage.util.dtype:226",
-  "ignore:QFontMetrics.width::qtconsole"
+  "ignore:QFontMetrics.width::qtconsole",
+  "ignore:Accessing zmq Socket:DeprecationWarning:jupyter_client"
 ]

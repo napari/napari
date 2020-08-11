@@ -2,8 +2,8 @@ import numpy as np
 import pytest
 from vispy.color import Colormap
 
-from napari.layers import Labels
 from napari._tests.utils import check_layer_world_data_extent
+from napari.layers import Labels
 
 
 def test_random_labels():

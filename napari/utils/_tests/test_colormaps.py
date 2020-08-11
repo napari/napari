@@ -1,11 +1,11 @@
-import pytest
 import numpy as np
+import pytest
+from vispy.color.color_array import ColorArray
 
 from ..colormaps.colormaps import (
     AVAILABLE_COLORMAPS,
     increment_unnamed_colormap,
 )
-from vispy.color.color_array import ColorArray
 
 
 @pytest.mark.parametrize("name", list(AVAILABLE_COLORMAPS.keys()))

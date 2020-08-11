@@ -1,9 +1,10 @@
-import numpy as np
 import dask.array as da
+import numpy as np
+import pytest
+
 from napari.components import ViewerModel
 from napari.utils.colormaps import colormaps, ensure_colormap_tuple
-from napari.utils.misc import ensure_sequence_of_iterables, ensure_iterable
-import pytest
+from napari.utils.misc import ensure_iterable, ensure_sequence_of_iterables
 
 base_colormaps = colormaps.CYMRGB
 two_colormaps = colormaps.MAGENTA_GREEN

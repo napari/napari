@@ -1,10 +1,12 @@
-import numpy as np
 import itertools
-from typing import Optional, List
 import warnings
+from typing import List, Optional
+
+import numpy as np
+
 from ..layers import Layer
-from ..utils.naming import inc_name_count
 from ..utils.list import ListModel
+from ..utils.naming import inc_name_count
 
 
 def _add(event):

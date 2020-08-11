@@ -1,6 +1,7 @@
-import numpy as np
-from unittest.mock import Mock
 import os
+from unittest.mock import Mock
+
+import numpy as np
 
 
 def test_viewer_mouse_bindings(make_test_viewer):

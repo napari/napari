@@ -1,7 +1,8 @@
 import numpy as np
-from ..utils.layer_utils import segment_normal
 from vispy.geometry import PolygonData
 from vispy.visuals.tube import _frenet_frames
+
+from ..utils.layer_utils import segment_normal
 
 
 def inside_triangles(triangles):

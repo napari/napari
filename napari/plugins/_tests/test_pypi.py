@@ -1,4 +1,5 @@
 from unittest import mock
+
 from napari.plugins import pypi
 
 

@@ -2,6 +2,7 @@
 """
 from typing import List, Optional, Union
 
+from napari_plugin_engine import HookCaller, HookImplementation, PluginManager
 from qtpy.QtCore import QEvent, Qt, Signal, Slot
 from qtpy.QtWidgets import (
     QCheckBox,
@@ -19,7 +20,6 @@ from qtpy.QtWidgets import (
 )
 
 from ...plugins import plugin_manager as napari_plugin_manager
-from napari_plugin_engine import HookImplementation, HookCaller, PluginManager
 from ..utils import drag_with_pixmap
 
 

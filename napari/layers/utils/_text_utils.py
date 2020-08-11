@@ -1,9 +1,9 @@
 import re
-from typing import Union, Tuple
+from typing import Tuple, Union
 
 import numpy as np
 
-from ._text_constants import TextMode, Anchor
+from ._text_constants import Anchor, TextMode
 
 
 def get_text_anchors(

@@ -1,5 +1,7 @@
 from enum import auto
+
 import numpy as np
+
 from ...utils.misc import StringEnum
 
 

@@ -7,8 +7,8 @@ import pytest
 from napari import Viewer
 from napari._tests.utils import (
     add_layer_by_type,
-    check_viewer_functioning,
     check_view_transform_consistency,
+    check_viewer_functioning,
     layer_test_data,
 )
 
