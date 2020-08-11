@@ -1,10 +1,24 @@
 from qtpy.QtCore import QPoint, QRect, QSize, Qt
 from qtpy.QtGui import QFontMetrics, QPainter, QTextLayout
-from qtpy.QtWidgets import QFrame
+from qtpy.QtWidgets import QFrame, QWidget
 
 
 class MultilineElidedLabel(QFrame):
-    def __init__(self, parent=None, text=''):
+    """A multiline QLabel-like widget that elides the last line.
+
+    Behaves like a multiline QLabel, but will fill the available vertical space
+    set by the parent, and elide the last line of text (i.e. cut off with an
+    ellipses.)
+
+    Parameters
+    ----------
+    parent : QWidget, optional
+        The parent widget, by default None
+    text : str, optional
+        The text to show in the label, by default ''
+    """
+
+    def __init__(self, parent: QWidget = None, text: str = ''):
         super().__init__(parent)
         self.setText(text)
 

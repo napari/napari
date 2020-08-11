@@ -30,6 +30,9 @@ ActionSequence = Sequence[Tuple[str, Callable[[], None]]]
 
 
 class NotificationSeverity(StringEnum):
+    """Severity levels for the notification dialog.  Along with icons for each.
+    """
+
     ERROR = auto()
     WARNING = auto()
     INFO = auto()
@@ -45,10 +48,36 @@ class NotificationSeverity(StringEnum):
 
 
 class NapariNotification(QDialog):
+    """Notification dialog frame, appears at the bottom right of the canvas.
+
+    By default, only the first line of the notification is shown, and the text
+    is elided.  Double-clicking on the text (or clicking the chevron icon) will
+    expand to show the full notification.  The dialog will autmatically
+    disappear in ``DISMISS_AFTER`` milliseconds, unless hovered or clicked.
+
+    Parameters
+    ----------
+    message : str
+        The message that will appear in the notification
+    severity : str or NotificationSeverity, optional
+        Severity level {'error', 'warning', 'info', 'none'}.  Will determine
+        the icon associated with the message.
+        by default NotificationSeverity.WARNING.
+    source : str, optional
+        A source string for the notifcation (intended to show the module and
+        or package responsible for the notification), by default None
+    actions : list of tuple, optional
+        A sequence of 2-tuples, where each tuple is a string and a callable.
+        Each tuple will be used to create button in the dialog, where the text
+        on the button is determine by the first item in the tuple, and a
+        callback function to call when the button is pressed is the second item
+        in the tuple. by default ()
+    """
+
     MAX_OPACITY = 0.9
     FADE_IN_RATE = 220
     FADE_OUT_RATE = 120
-    DISMISS_AFTER = 5000
+    DISMISS_AFTER = 4000
     MIN_WIDTH = 400
 
     def __init__(
@@ -60,6 +89,10 @@ class NapariNotification(QDialog):
         source: Optional[str] = None,
         actions: ActionSequence = (),
     ):
+        """[summary]
+
+
+        """
         super().__init__(None)
         # FIXME: this does not work with multiple viewers.
         # we need a way to detect the viewer in which the error occured.
@@ -88,6 +121,7 @@ class NapariNotification(QDialog):
         self.close_button.clicked.connect(self.close)
         self.expand_button.clicked.connect(self.toggle_expansion)
 
+        self.timer = None
         self.opacity = QGraphicsOpacityEffect()
         self.setGraphicsEffect(self.opacity)
         self.opacity_anim = QPropertyAnimation(self.opacity, b"opacity", self)
@@ -95,14 +129,14 @@ class NapariNotification(QDialog):
         self.move_to_bottom_right()
 
     def move_to_bottom_right(self, offset=(8, 8)):
-        # move to the bottom right of parent
+        """Position widget at the bottom right edge of the parent."""
         if not self.parent():
             return
         sz = self.parent().size() - self.size() - QSize(*offset)
         self.move(QPoint(sz.width(), sz.height()))
 
     def slide_in(self):
-        # slide in
+        """Run animation that fades in the dialog with a slight slide up."""
         geom = self.geometry()
         self.geom_anim.setDuration(self.FADE_IN_RATE)
         self.geom_anim.setStartValue(geom.translated(0, 20))
@@ -116,8 +150,7 @@ class NapariNotification(QDialog):
         self.opacity_anim.start()
 
     def show(self):
-        """Show the message with a fade and slight slide in from the bottom.
-        """
+        """Show the message with a fade and slight slide in from the bottom."""
         super().show()
         self.slide_in()
         self.timer = QTimer()
@@ -127,10 +160,11 @@ class NapariNotification(QDialog):
         self.timer.start()
 
     def mouseMoveEvent(self, event):
-        self.close_button.show()
+        """On hover, stop the self-destruct timer"""
         self.timer.stop()
 
     def mouseDoubleClickEvent(self, event):
+        """Expand the notification on double click."""
         self.toggle_expansion()
 
     def close(self):
@@ -142,10 +176,12 @@ class NapariNotification(QDialog):
         self.opacity_anim.finished.connect(super().close)
 
     def toggle_expansion(self):
+        """Toggle the expanded state of the notification frame."""
         self.contract() if self.property('expanded') else self.expand()
         self.timer.stop()
 
     def expand(self):
+        """Expanded the notification so that the full message is visible."""
         curr = self.geometry()
         self.geom_anim.setDuration(100)
         self.geom_anim.setStartValue(curr)
@@ -161,6 +197,7 @@ class NapariNotification(QDialog):
         self.style().polish(self.expand_button)
 
     def contract(self):
+        """Contract notification to a single elided line of the message."""
         geom = self.geometry()
         self.geom_anim.setDuration(100)
         self.geom_anim.setStartValue(geom)
@@ -175,6 +212,7 @@ class NapariNotification(QDialog):
         self.style().polish(self.expand_button)
 
     def setupUi(self):
+        """Set up the UI during initialization."""
         self.setWindowFlags(Qt.SubWindow)
         self.setMinimumWidth(self.MIN_WIDTH)
         self.setMaximumWidth(self.MIN_WIDTH)
@@ -234,7 +272,21 @@ class NapariNotification(QDialog):
         self.setProperty('expanded', False)
         self.resize(self.MIN_WIDTH, 40)
 
-    def setup_buttons(self, actions=()):
+    def setup_buttons(self, actions: ActionSequence = ()):
+        """Add buttons to the dialog.
+
+
+        Parameters
+        ----------
+        actions : tuple, optional
+            A sequence of 2-tuples, where each tuple is a string and a
+            callable. Each tuple will be used to create button in the dialog,
+            where the text on the button is determine by the first item in the
+            tuple, and a callback function to call when the button is pressed
+            is the second item in the tuple. by default ()
+        """
+        if isinstance(actions, dict):
+            actions = list(actions.items())
         for text, callback in actions:
             btn = QPushButton(text)
             btn.clicked.connect(callback)
@@ -247,7 +299,19 @@ class NapariNotification(QDialog):
             )
 
     def sizeHint(self):
+        """Return the size required to show the entire message."""
         return QSize(
             super().sizeHint().width(),
             self.row2_widget.height() + self.message.sizeHint().height(),
         )
+
+    @classmethod
+    def from_exception(cls, exception: BaseException) -> 'NapariNotification':
+        """Create a NapariNotifcation dialog from an exception object."""
+        # TODO: this method could be used to recognize various exception
+        # subclasses and populate the dialog accordingly.
+        msg = getattr(exception, 'message', str(exception))
+        severity = getattr(exception, 'severity', 'WARNING')
+        source = None
+        actions = getattr(exception, 'actions', ())
+        return cls(msg, severity, source, actions)

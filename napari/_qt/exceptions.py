@@ -1,7 +1,7 @@
 import logging
 import traceback
 from types import TracebackType
-from typing import Type, Optional, Tuple
+from typing import Type
 
 from qtpy.QtCore import QObject, Signal
 
@@ -48,26 +48,17 @@ class ExceptionHandler(QObject):
             self._show_error_dialog(value)
 
     def _show_error_dialog(self, exception: BaseException):
-        self.message = NapariNotification(*parse_exception(exception))
+        self.message = NapariNotification.from_exception(exception)
         self.message.show()
 
 
 def session_is_interactive() -> bool:
-    import sys
+    """Return True if the running in an interactive or IPython session."""
     import builtins
+    import sys
 
     if '__IPYTHON__' in dir(builtins):
         return True
     if bool(getattr(sys, 'ps1', sys.flags.interactive)):
         return True
     return False
-
-
-def parse_exception(
-    exception: BaseException,
-) -> Tuple[str, str, Optional[str], Tuple]:
-    msg = getattr(exception, 'message', str(exception))
-    severity = getattr(exception, 'severity', 'WARNING')
-    source = None
-    actions = getattr(exception, 'actions', ())
-    return msg, severity, source, actions
