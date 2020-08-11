@@ -30,10 +30,10 @@ if API_NAME == 'PySide2':
         Path(PySide2.__file__).parent / 'Qt' / 'plugins'
     )
 
-from qtpy import QtCore
-
 # When QT is not the specific version, we raise a warning:
 from warnings import warn
+
+from qtpy import QtCore
 
 if StrictVersion(QtCore.__version__) < StrictVersion('5.12.3'):
     warn_message = f"""
@@ -43,8 +43,9 @@ if StrictVersion(QtCore.__version__) < StrictVersion('5.12.3'):
     """
     warn(message=warn_message)
 
-from vispy import app
 import logging
+
+from vispy import app
 
 # set vispy application to the appropriate qt backend
 app.use_app(API_NAME)
@@ -53,24 +54,23 @@ del app
 vispy_logger = logging.getLogger('vispy')
 vispy_logger.setLevel(logging.WARNING)
 
-from .viewer import Viewer
-from .plugins.io import save_layers
-
 # Note that importing _viewer_key_bindings is needed as the Viewer gets
 # decorated with keybindings during that process, but it is not directly needed
 # by our users and so is deleted below
 from . import _viewer_key_bindings  # noqa: F401
+from ._qt import gui_qt
+from .plugins.io import save_layers
+from .utils import _magicgui, sys_info
 from .view_layers import (
-    view_path,
     view_image,
     view_labels,
-    view_surface,
-    view_shapes,
+    view_path,
     view_points,
+    view_shapes,
+    view_surface,
     view_vectors,
 )
-from ._qt import gui_qt
-from .utils import sys_info, _magicgui
+from .viewer import Viewer
 
 # register napari object types with magicgui if it is installed
 _magicgui.register_types_with_magicgui()

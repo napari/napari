@@ -4,10 +4,10 @@ import collections.abc
 import inspect
 import itertools
 import re
-
 from enum import Enum, EnumMeta
 from os import PathLike, fspath, path
 from typing import Optional, Sequence, Type, TypeVar
+from urllib.parse import urlparse
 
 import numpy as np
 
@@ -182,11 +182,18 @@ class StringEnum(Enum, metaclass=StringEnumMeta):
 
 
 camel_to_snake_pattern = re.compile(r'(.)([A-Z][a-z]+)')
+camel_to_spaces_pattern = re.compile(
+    r"((?<=[a-z])[A-Z]|(?<!\A)[A-R,T-Z](?=[a-z]))"
+)
 
 
 def camel_to_snake(name):
     # https://gist.github.com/jaytaylor/3660565
     return camel_to_snake_pattern.sub(r'\1_\2', name).lower()
+
+
+def camel_to_spaces(val):
+    return camel_to_spaces_pattern.sub(r" \1", val)
 
 
 T = TypeVar('T', str, Sequence[str])
@@ -214,7 +221,8 @@ def abspath_or_url(relpath: T) -> T:
 
     if isinstance(relpath, (str, PathLike)):
         relpath = fspath(relpath)
-        if relpath.startswith(('http:', 'https:', 'ftp:', 'file:')):
+        urlp = urlparse(relpath)
+        if urlp.scheme and urlp.netloc:
             return relpath
         return path.abspath(path.expanduser(relpath))
 

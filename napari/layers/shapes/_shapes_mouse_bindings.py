@@ -1,7 +1,9 @@
-import numpy as np
 from copy import copy
+
+import numpy as np
+
 from ._shapes_constants import Mode
-from ._shapes_models import Rectangle, Ellipse, Line, Path, Polygon
+from ._shapes_models import Ellipse, Line, Path, Polygon, Rectangle
 from ._shapes_utils import point_to_lines
 
 

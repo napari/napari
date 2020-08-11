@@ -3,6 +3,7 @@
 # or the napari documentation on benchmarking
 # https://github.com/napari/napari/blob/master/docs/BENCHMARKS.md
 import numpy as np
+
 from napari.layers import Surface
 
 

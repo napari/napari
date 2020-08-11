@@ -4,6 +4,7 @@ import os
 from functools import lru_cache
 from logging import getLogger
 from typing import Any, Dict, List, Optional, Sequence, Set, Union
+
 import numpy as np
 
 from .. import layers
@@ -787,6 +788,7 @@ class AddLayersMixin:
     def open(
         self,
         path: Union[str, Sequence[str]],
+        *,
         stack: bool = False,
         plugin: Optional[str] = None,
         layer_type: Optional[str] = None,

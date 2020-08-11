@@ -9,7 +9,8 @@ end-user annotates one of their function arguments with a type hint using one
 of those custom classes, magicgui will know what to do with it.
 
 """
-from typing import Any, Tuple, Type, Optional
+from typing import Any, Optional, Tuple, Type
+
 from qtpy.QtWidgets import QWidget
 
 from ..layers import Layer
@@ -104,7 +105,9 @@ def get_layers(gui, layer_type: Type[Layer]) -> Tuple[Layer, ...]:
 
     viewer = find_viewer_ancestor(gui)
     if viewer:
-        return tuple(l for l in viewer.layers if isinstance(l, layer_type))
+        return tuple(
+            layer for layer in viewer.layers if isinstance(layer, layer_type)
+        )
     return ()
 
 

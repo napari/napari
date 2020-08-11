@@ -5,8 +5,8 @@ import numpy as np
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.event import Event
 from ..base import Layer
-from ..utils.layer_utils import calc_data_range
 from ..intensity_mixin import IntensityVisualizationMixin
+from ..utils.layer_utils import calc_data_range
 
 
 # Mixin must come before Layer
@@ -203,23 +203,28 @@ class Surface(IntensityVisualizationMixin, Layer):
         """Determine number of dimensions of the layer."""
         return self.vertices.shape[1] + (self.vertex_values.ndim - 1)
 
-    def _get_extent(self):
-        """Determine ranges for slicing given by (min, max, step)."""
+    @property
+    def _extent_data(self) -> np.ndarray:
+        """Extent of layer in data coordinates.
+
+        Returns
+        -------
+        extent_data : array, shape (2, D)
+        """
         if len(self.vertices) == 0:
-            maxs = np.ones(self.vertices.shape[1], dtype=int)
-            mins = np.zeros(self.vertices.shape[1], dtype=int)
+            extrema = np.full((2, self.ndim), np.nan)
         else:
             maxs = np.max(self.vertices, axis=0)
             mins = np.min(self.vertices, axis=0)
 
-        # The full dimensionality and shape of the layer is determined by
-        # the number of additional vertex value dimensions and the
-        # dimensionality of the vertices themselves
-        if self.vertex_values.ndim > 1:
-            mins = [0] * (self.vertex_values.ndim - 1) + list(mins)
-            maxs = list(self.vertex_values.shape[:-1]) + list(maxs)
-
-        return [(min, max) for min, max in zip(mins, maxs)]
+            # The full dimensionality and shape of the layer is determined by
+            # the number of additional vertex value dimensions and the
+            # dimensionality of the vertices themselves
+            if self.vertex_values.ndim > 1:
+                mins = [0] * (self.vertex_values.ndim - 1) + list(mins)
+                maxs = list(self.vertex_values.shape[:-1]) + list(maxs)
+            extrema = np.vstack([mins, maxs])
+        return extrema
 
     def _get_state(self):
         """Get dictionary of layer state.

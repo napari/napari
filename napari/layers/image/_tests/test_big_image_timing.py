@@ -1,8 +1,8 @@
 import dask.array as da
-import zarr
-from napari.layers import Image
 import pytest
+import zarr
 
+from napari.layers import Image
 
 data_dask = da.random.random(
     size=(100_000, 1000, 1000), chunks=(1, 1000, 1000)

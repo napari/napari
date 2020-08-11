@@ -9,18 +9,18 @@ import numpy as np
 from napari_plugin_engine import napari_hook_implementation
 
 from ..types import (
-    LayerData,
     FullLayerData,
+    LayerData,
     ReaderFunction,
     WriterFunction,
     image_reader_to_layerdata_reader,
 )
 from ..utils.io import (
+    csv_to_layer_data,
     imsave,
+    imsave_extensions,
     magic_imread,
     write_csv,
-    imsave_extensions,
-    csv_to_layer_data,
 )
 from ..utils.misc import abspath_or_url
 

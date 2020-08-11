@@ -1,56 +1,57 @@
+import warnings
 from copy import copy, deepcopy
 from itertools import cycle
 from typing import Dict, Optional, Tuple, Union
-import warnings
 
 import numpy as np
+from vispy.color import get_color_names
 from vispy.color.colormap import Colormap
 
 from ...types import ValidColormapArg
-from ..utils.color_transformations import (
-    normalize_and_broadcast_colors,
-    transform_color_with_defaults,
-)
 from ...utils.colormaps import ensure_colormap_tuple
 from ...utils.colormaps.standardize_color import (
-    transform_color,
     hex_to_name,
     rgb_to_hex,
+    transform_color,
 )
-from ..utils.color_transformations import transform_color_cycle, ColorType
 from ...utils.event import Event
+from ...utils.misc import ensure_iterable
+from ...utils.status_messages import format_float
+from ..base import Layer
+from ..utils.color_transformations import (
+    ColorType,
+    normalize_and_broadcast_colors,
+    transform_color_cycle,
+    transform_color_with_defaults,
+)
 from ..utils.layer_utils import (
     dataframe_to_properties,
     guess_continuous,
     map_property,
 )
 from ..utils.text import TextManager
-from ...utils.misc import ensure_iterable
-from ...utils.status_messages import format_float
-from ..base import Layer
-from vispy.color import get_color_names
-from ._shapes_constants import (
-    Mode,
-    Box,
-    BACKSPACE,
-    shape_classes,
-    ShapeType,
-    ColorMode,
-)
 from ._shape_list import ShapeList
-from ._shapes_utils import create_box, get_shape_ndim
-from ._shapes_models import Rectangle, Ellipse, Polygon
+from ._shapes_constants import (
+    BACKSPACE,
+    Box,
+    ColorMode,
+    Mode,
+    ShapeType,
+    shape_classes,
+)
+from ._shapes_models import Ellipse, Polygon, Rectangle
 from ._shapes_mouse_bindings import (
-    highlight,
-    select,
-    add_line,
     add_ellipse,
-    add_rectangle,
+    add_line,
     add_path_polygon,
     add_path_polygon_creating,
+    add_rectangle,
+    highlight,
+    select,
     vertex_insert,
     vertex_remove,
 )
+from ._shapes_utils import create_box, get_shape_ndim
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
@@ -557,16 +558,21 @@ class Shapes(Layer):
             ndim = self.data[0].shape[1]
         return ndim
 
-    def _get_extent(self):
-        """Determine ranges for slicing given by (min, max, step)."""
-        if self.nshapes == 0:
-            maxs = [1] * self.ndim
-            mins = [0] * self.ndim
+    @property
+    def _extent_data(self) -> np.ndarray:
+        """Extent of layer in data coordinates.
+
+        Returns
+        -------
+        extent_data : array, shape (2, D)
+        """
+        if len(self.data) == 0:
+            extrema = np.full((2, self.ndim), np.nan)
         else:
             maxs = np.max([np.max(d, axis=0) for d in self.data], axis=0)
             mins = np.min([np.min(d, axis=0) for d in self.data], axis=0)
-
-        return tuple((min, max) for min, max in zip(mins, maxs))
+            extrema = np.vstack([mins, maxs])
+        return extrema
 
     @property
     def nshapes(self):
@@ -1963,18 +1969,13 @@ class Shapes(Layer):
         # calculate min vals for the vertices and pad with 0.5
         # the offset is needed to ensure that the top left corner of the shapes
         # corresponds to the top left corner of the thumbnail
-        offset = (
-            np.array([self.dims.range[d][0] for d in self.dims.displayed])
-            + 0.5
-        )
+        de = self._extent_data
+        offset = np.array([de[0, d] for d in self.dims.displayed]) + 0.5
         # calculate range of values for the vertices and pad with 1
         # padding ensures the entire shape can be represented in the thumbnail
         # without getting clipped
         shape = np.ceil(
-            [
-                self.dims.range[d][1] - self.dims.range[d][0] + 1
-                for d in self.dims.displayed
-            ]
+            [de[1, d] - de[0, d] + 1 for d in self.dims.displayed]
         ).astype(int)
         zoom_factor = np.divide(self._thumbnail_shape[:2], shape[-2:]).min()
 
@@ -2435,7 +2436,7 @@ class Shapes(Layer):
             Array where there is one binary mask for each shape
         """
         if mask_shape is None:
-            mask_shape = self.shape
+            mask_shape = self._extent_data[1] - self._extent_data[0]
 
         mask_shape = np.ceil(mask_shape).astype('int')
         masks = self._data_view.to_masks(mask_shape=mask_shape)
@@ -2459,7 +2460,7 @@ class Shapes(Layer):
             For overlapping shapes z-ordering will be respected.
         """
         if labels_shape is None:
-            labels_shape = self.shape
+            labels_shape = self._extent_data[1] - self._extent_data[0]
 
         labels_shape = np.ceil(labels_shape).astype('int')
         labels = self._data_view.to_labels(labels_shape=labels_shape)
