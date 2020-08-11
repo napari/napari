@@ -23,14 +23,14 @@ from ..resources import get_stylesheet
 from ..utils import perf
 from ..utils.io import imsave
 from ..utils.theme import template
-from .qt_about import QtAbout
-from .qt_debug_menu import DebugMenu
-from .qt_plugin_report import QtPluginErrReporter
-from .qt_plugin_sorter import QtPluginSorter
-from .qt_plugin_table import QtPluginTable
+from .dialogs.qt_about import QtAbout
+from .dialogs.qt_plugin_report import QtPluginErrReporter
+from .dialogs.qt_plugin_table import QtPluginTable
 from .qt_viewer import QtViewer
-from .qt_viewer_dock_widget import QtViewerDockWidget
+from .tracing.qt_debug_menu import DebugMenu
 from .utils import QImg2array
+from .widgets.qt_plugin_sorter import QtPluginSorter
+from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
 
 
 class Window:

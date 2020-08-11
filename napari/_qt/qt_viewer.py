@@ -24,13 +24,13 @@ from ..utils.interactions import (
 from ..utils.io import imsave
 from ..utils.key_bindings import components_to_key_combo
 from ..utils.theme import template
-from .qt_about_key_bindings import QtAboutKeyBindings
-from .qt_dims import QtDims
-from .qt_layerlist import QtLayerList
-from .qt_performance import QtPerformance
-from .qt_viewer_buttons import QtLayerButtons, QtViewerButtons
-from .qt_viewer_dock_widget import QtViewerDockWidget
+from .dialogs.qt_about_key_bindings import QtAboutKeyBindings
+from .tracing.qt_performance import QtPerformance
 from .utils import QImg2array, circle_pixmap, square_pixmap
+from .widgets.qt_dims import QtDims
+from .widgets.qt_layerlist import QtLayerList
+from .widgets.qt_viewer_buttons import QtLayerButtons, QtViewerButtons
+from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
 
 
 class KeyModifierFilterSceneCanvas(SceneCanvas):
@@ -56,7 +56,7 @@ class QtViewer(QSplitter):
         Canvas for rendering the current view.
     console : QtConsole
         iPython console terminal integrated into the napari GUI.
-    controls : QtControls
+    controls : QtLayerControlsContainer
         Qt view for GUI controls.
     dims : napari.qt_dims.QtDims
         Dimension sliders; Qt View for Dims model.
@@ -85,7 +85,7 @@ class QtViewer(QSplitter):
     raw_stylesheet = get_stylesheet()
 
     def __init__(self, viewer):
-        from .qt_controls import QtControls
+        from .layer_controls import QtLayerControlsContainer
 
         super().__init__()
         self.setAttribute(Qt.WA_DeleteOnClose)
@@ -96,7 +96,7 @@ class QtViewer(QSplitter):
 
         self.viewer = viewer
         self.dims = QtDims(self.viewer.dims)
-        self.controls = QtControls(self.viewer)
+        self.controls = QtLayerControlsContainer(self.viewer)
         self.layers = QtLayerList(self.viewer.layers)
         self.layerButtons = QtLayerButtons(self.viewer)
         self.viewerButtons = QtViewerButtons(self.viewer)
@@ -224,7 +224,7 @@ class QtViewer(QSplitter):
         """QtConsole: iPython console terminal integrated into the napari GUI.
         """
         if self._console is None:
-            from .qt_console import QtConsole
+            from .widgets.qt_console import QtConsole
 
             self.console = QtConsole({'viewer': self.viewer})
         return self._console
