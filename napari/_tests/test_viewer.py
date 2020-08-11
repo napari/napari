@@ -143,12 +143,21 @@ def test_update(make_test_viewer):
 
 
 def test_changing_theme(make_test_viewer):
-    """Test instantiating viewer."""
+    """Test changing the theme updates the full window."""
     viewer = make_test_viewer()
+    viewer.add_points(data=None)
     assert viewer.palette['folder'] == 'dark'
+
+    screenshot_dark = viewer.screenshot(canvas_only=False)
 
     viewer.theme = 'light'
     assert viewer.palette['folder'] == 'light'
+
+    screenshot_light = viewer.screenshot(canvas_only=False)
+    equal = (screenshot_dark == screenshot_light).min(-1)
+
+    # more than 99.5% of the pixels have changed
+    assert (np.count_nonzero(equal) / equal.size) < 0.05, "Themes too similar"
 
     with pytest.raises(ValueError):
         viewer.theme = 'nonexistent_theme'

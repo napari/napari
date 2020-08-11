@@ -4,39 +4,34 @@ wrap.
 """
 import time
 
-# set vispy to use same backend as qtpy
-from ..utils.io import imsave
+from qtpy.QtCore import Qt
+from qtpy.QtGui import QIcon, QKeySequence
 
-from .qt_viewer import QtViewer
-from .qt_about import QtAbout
-from .qt_plugin_report import QtPluginErrReporter
-from .qt_plugin_sorter import QtPluginSorter
-from .qt_plugin_table import QtPluginTable
-from .qt_debug_menu import DebugMenu
-
-from .qt_viewer_dock_widget import QtViewerDockWidget
-from ..resources import get_stylesheet
-from ..utils import perf
-
-# these "# noqa" comments are here to skip flake8 linting (E402),
-# these module-level imports have to come after `app.use_app(API)`
-# see discussion on #638
-from qtpy.QtWidgets import (  # noqa: E402
-    QApplication,
-    QMainWindow,
-    QWidget,
-    QHBoxLayout,
-    QDockWidget,
-    QLabel,
+from qtpy.QtWidgets import (
     QAction,
+    QApplication,
+    QDockWidget,
+    QFileDialog,
+    QHBoxLayout,
+    QLabel,
+    QMainWindow,
     QShortcut,
     QStatusBar,
-    QFileDialog,
+    QWidget,
 )
-from qtpy.QtCore import Qt  # noqa: E402
-from qtpy.QtGui import QKeySequence, QIcon  # noqa: E402
-from .utils import QImg2array  # noqa: E402
-from ..utils.theme import template  # noqa: E402
+
+from ..resources import get_stylesheet
+from ..utils import perf
+from ..utils.io import imsave
+from ..utils.theme import template
+from .tracing.qt_debug_menu import DebugMenu
+from .qt_viewer import QtViewer
+from .utils import QImg2array
+from .dialogs.qt_about import QtAbout
+from .dialogs.qt_plugin_report import QtPluginErrReporter
+from .widgets.qt_plugin_sorter import QtPluginSorter
+from .dialogs.qt_plugin_table import QtPluginTable
+from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
 
 
 class Window:
