@@ -23,18 +23,10 @@ cover this in test_evented_list.py)
 """
 
 import logging
-from typing import (
-    Callable,
-    Dict,
-    Iterable,
-    Sequence,
-    Type,
-    Union,
-    Tuple,
-)
+from typing import Callable, Dict, Iterable, Sequence, Tuple, Type, Union
 
 from ..event import EmitterGroup
-from ._typed import TypedMutableSequence, Index, _T, _L
+from ._typed import _L, _T, Index, TypedMutableSequence
 
 logger = logging.getLogger(__name__)
 

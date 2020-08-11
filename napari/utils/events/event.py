@@ -58,8 +58,8 @@ import weakref
 from collections import OrderedDict
 from typing import Any
 
-from vispy.util.logs import logger, _handle_exception
 from vispy.ext.six import string_types
+from vispy.util.logs import _handle_exception, logger
 
 
 class Event(object):

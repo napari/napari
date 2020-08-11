@@ -1,5 +1,4 @@
 from ...utils.events import EmitterGroup
-
 from ._multi import MultiIndexList
 from ._typed import TypedList
 

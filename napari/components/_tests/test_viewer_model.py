@@ -1,8 +1,8 @@
 import numpy as np
 import pytest
 
-from napari.components import ViewerModel
 from napari._tests.utils import good_layer_data
+from napari.components import ViewerModel
 from napari.utils.colormaps import colormaps
 
 

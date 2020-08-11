@@ -7,7 +7,7 @@ from typing import Iterable, NewType, Sequence, Tuple, Union, cast, overload
 
 from ..event import Event
 from ..types import SupportsEvents
-from ._evented_list import EventedList, Index, _T
+from ._evented_list import _T, EventedList, Index
 
 logger = logging.getLogger(__name__)
 

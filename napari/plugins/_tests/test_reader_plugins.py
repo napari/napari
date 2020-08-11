@@ -3,9 +3,9 @@ from pathlib import Path
 from tempfile import NamedTemporaryFile
 
 import numpy as np
-from napari.utils import io
 
 from napari.plugins.io import read_data_with_plugins
+from napari.utils import io
 
 
 def test_builtin_reader_plugin(make_test_viewer):

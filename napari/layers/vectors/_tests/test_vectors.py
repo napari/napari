@@ -3,10 +3,9 @@ import pandas as pd
 import pytest
 from vispy.color import get_colormap
 
+from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Vectors
 from napari.utils.colormaps.standardize_color import transform_color
-from napari._tests.utils import check_layer_world_data_extent
-
 
 # Set random seed for testing
 np.random.seed(0)

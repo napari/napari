@@ -1,56 +1,57 @@
+import warnings
 from copy import copy, deepcopy
 from itertools import cycle
 from typing import Dict, Optional, Tuple, Union
-import warnings
 
 import numpy as np
+from vispy.color import get_color_names
 from vispy.color.colormap import Colormap
 
 from ...types import ValidColormapArg
-from ..utils.color_transformations import (
-    normalize_and_broadcast_colors,
-    transform_color_with_defaults,
-)
 from ...utils.colormaps import ensure_colormap_tuple
 from ...utils.colormaps.standardize_color import (
-    transform_color,
     hex_to_name,
     rgb_to_hex,
+    transform_color,
 )
-from ..utils.color_transformations import transform_color_cycle, ColorType
 from ...utils.events import Event
+from ...utils.misc import ensure_iterable
+from ...utils.status_messages import format_float
+from ..base import Layer
+from ..utils.color_transformations import (
+    ColorType,
+    normalize_and_broadcast_colors,
+    transform_color_cycle,
+    transform_color_with_defaults,
+)
 from ..utils.layer_utils import (
     dataframe_to_properties,
     guess_continuous,
     map_property,
 )
 from ..utils.text import TextManager
-from ...utils.misc import ensure_iterable
-from ...utils.status_messages import format_float
-from ..base import Layer
-from vispy.color import get_color_names
-from ._shapes_constants import (
-    Mode,
-    Box,
-    BACKSPACE,
-    shape_classes,
-    ShapeType,
-    ColorMode,
-)
 from ._shape_list import ShapeList
-from ._shapes_utils import create_box, get_shape_ndim
-from ._shapes_models import Rectangle, Ellipse, Polygon
+from ._shapes_constants import (
+    BACKSPACE,
+    Box,
+    ColorMode,
+    Mode,
+    ShapeType,
+    shape_classes,
+)
+from ._shapes_models import Ellipse, Polygon, Rectangle
 from ._shapes_mouse_bindings import (
-    highlight,
-    select,
-    add_line,
     add_ellipse,
-    add_rectangle,
+    add_line,
     add_path_polygon,
     add_path_polygon_creating,
+    add_rectangle,
+    highlight,
+    select,
     vertex_insert,
     vertex_remove,
 )
+from ._shapes_utils import create_box, get_shape_ndim
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 

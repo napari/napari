@@ -1,5 +1,6 @@
-import numpy as np
 from unittest.mock import patch
+
+import numpy as np
 
 
 def test_data_change_ndisplay_image(make_test_viewer):

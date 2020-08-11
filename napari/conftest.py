@@ -20,8 +20,9 @@ from napari.utils import io
 try:
     from skimage.data import image_fetcher
 except ImportError:
-    from skimage.data import data_dir
     import os
+
+    from skimage.data import data_dir
 
     class image_fetcher:
         def fetch(data_name):

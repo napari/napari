@@ -3,11 +3,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from napari.utils.events import (
-    EmitterGroup,
-    EventedList,
-    NestableEventedList,
-)
+from napari.utils.events import EmitterGroup, EventedList, NestableEventedList
 
 
 @pytest.fixture

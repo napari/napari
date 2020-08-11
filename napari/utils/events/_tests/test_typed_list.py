@@ -1,9 +1,10 @@
+import pytest
+
 from napari.utils.events.containers import (
     EventedList,
-    TypedMutableSequence,
     NestableEventedList,
+    TypedMutableSequence,
 )
-import pytest
 
 
 @pytest.fixture(

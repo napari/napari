@@ -5,8 +5,8 @@ import numpy as np
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
 from ..base import Layer
-from ..utils.layer_utils import calc_data_range
 from ..intensity_mixin import IntensityVisualizationMixin
+from ..utils.layer_utils import calc_data_range
 
 
 # Mixin must come before Layer
