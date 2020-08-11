@@ -74,6 +74,8 @@ class Dims:
         self._mode = []
         self._order = []
         self._axis_labels = []
+        self._scroll_progress = 0
+        self.last_used = None
         self.clip = True
         self._ndisplay = 2 if ndisplay is None else ndisplay
 
@@ -205,7 +207,7 @@ class Dims:
             self._range = [(0, 2, 1)] * (ndim - cur_ndim) + self._range
             # Point is the slider value if in point mode
             self._point = [0] * (ndim - cur_ndim) + self._point
-            # Interval value is the (min, max) of the slider selction
+            # Interval value is the (min, max) of the slider selection
             # if in interval mode
             self._interval = [(0, 1)] * (ndim - cur_ndim) + self._interval
             self._mode = [DimsMode.POINT] * (ndim - cur_ndim) + self._mode
@@ -320,7 +322,7 @@ class Dims:
             self._range[axis] = (0, 2, 1)
             # Point is the slider value if in point mode
             self._point[axis] = 0
-            # Interval value is the (min, max) of the slider selction
+            # Interval value is the (min, max) of the slider selection
             # if in interval mode
             self._interval[axis] = (0, 1)
             self._mode[axis] = DimsMode.POINT
@@ -335,7 +337,7 @@ class Dims:
         ----------
         axis : int
             Dimension index.
-        range : tuple
+        _range : tuple
             Range specified as (min, max, step).
         """
         axis = self._assert_axis_in_bounds(axis)
@@ -372,6 +374,46 @@ class Dims:
         if self.interval[axis] != interval:
             self._interval[axis] = interval
             self.events.axis(axis=axis)
+
+    def _increment_dims_right(self, axis: int = None):
+        """Increment dimensions to the right along given axis, or last used axis if None
+
+        Parameters
+        ----------
+        axis : int, optional
+            Axis along which to increment dims, by default None
+        """
+        if axis is None:
+            axis = self.last_used
+        if axis is not None:
+            cur_point = self.point[axis]
+            axis_range = self.range[axis]
+            new_point = np.clip(
+                cur_point + axis_range[2],
+                axis_range[0],
+                axis_range[1] - axis_range[2],
+            )
+            self.set_point(axis, new_point)
+
+    def _increment_dims_left(self, axis: int = None):
+        """Increment dimensions to the left along given axis, or last used axis if None
+
+        Parameters
+        ----------
+        axis : int, optional
+            Axis along which to increment dims, by default None
+        """
+        if axis is None:
+            axis = self.last_used
+        if axis is not None:
+            cur_point = self.point[axis]
+            axis_range = self.range[axis]
+            new_point = np.clip(
+                cur_point - axis_range[2],
+                axis_range[0],
+                axis_range[1] - axis_range[2],
+            )
+            self.set_point(axis, new_point)
 
     def set_mode(self, axis: int, mode: DimsMode):
         """Sets the mode: POINT or INTERVAL.

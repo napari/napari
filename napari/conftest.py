@@ -42,8 +42,8 @@ def pytest_addoption(parser):
     placement of this conftest.py file, you must specify the napari folder (in
     the pytest command) to use this flag.
 
-    Example
-    -------
+    Examples
+    --------
     $ pytest napari --show-viewer
     """
     parser.addoption(
@@ -70,7 +70,7 @@ def qtbot(qtbot):
 
 
 @pytest.fixture(scope="function")
-def viewer_factory(qtbot, request):
+def make_test_viewer(qtbot, request):
     viewers: List[Viewer] = []
 
     def actual_factory(*model_args, **model_kwargs):
@@ -79,8 +79,7 @@ def viewer_factory(qtbot, request):
         )
         viewer = Viewer(*model_args, **model_kwargs)
         viewers.append(viewer)
-        view = viewer.window.qt_viewer
-        return view, viewer
+        return viewer
 
     yield actual_factory
 
@@ -190,9 +189,9 @@ def layer_data_and_types():
         ),
     ]
     extensions = ['.tif', '.tif', '.csv', '.csv']
-    layer_data = [l.as_layer_data_tuple() for l in layers]
+    layer_data = [layer.as_layer_data_tuple() for layer in layers]
     layer_types = [layer._type_string for layer in layers]
-    filenames = [l.name + e for l, e in zip(layers, extensions)]
+    filenames = [layer.name + e for layer, e in zip(layers, extensions)]
     return layers, layer_data, layer_types, filenames
 
 

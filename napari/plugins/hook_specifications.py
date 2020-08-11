@@ -26,7 +26,7 @@ For more general background on the plugin hook calling mechanism, see the
     documentation <https://pluggy.readthedocs.io/en/latest/>`_, hook
     specification marker instances are named ``hookspec`` by convention, and
     hook implementation marker instances are named ``hookimpl``.  The
-    convention in napari is to name them more explicity:
+    convention in napari is to name them more explicitly:
     ``napari_hook_specification`` and ``napari_hook_implementation``,
     respectively.
 """
@@ -74,7 +74,6 @@ def napari_get_reader(path: Union[str, List[str]]) -> Optional[ReaderFunction]:
     :func:`Viewer._add_layer_from_data()
     <napari.components.add_layers_mixin.AddLayersMixin._add_layer_from_data>`
     method, respectively.
-
 
     .. important::
 

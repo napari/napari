@@ -59,3 +59,10 @@ ignore = [
   "Makefile",
   "napari/_version.py",  # added during build by setuptools_scm
 ]
+
+[tool.pytest.ini_options]
+filterwarnings = [
+  "ignore::DeprecationWarning:ipykernel",
+  "ignore::DeprecationWarning:skimage.util.dtype:226",
+  "ignore:QFontMetrics.width::qtconsole"
+]

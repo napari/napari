@@ -5,6 +5,7 @@ import xarray as xr
 import pytest
 from vispy.color import Colormap
 from napari.layers import Image
+from napari._tests.utils import check_layer_world_data_extent
 
 
 def test_random_image():
@@ -260,7 +261,7 @@ def test_name():
 
 
 def test_visiblity():
-    """Test setting layer visiblity."""
+    """Test setting layer visibility."""
     np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
@@ -486,10 +487,10 @@ def test_attenuation():
     np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
-    assert layer.attenuation == 0.5
+    assert layer.attenuation == 0.05
 
-    # Change iso_threshold property
-    attenuation = 0.7
+    # Change attenuation property
+    attenuation = 0.07
     layer.attenuation = attenuation
     assert layer.attenuation == attenuation
 
@@ -601,3 +602,22 @@ def test_image_translate(translate):
     np.random.seed(0)
     data = np.random.random((10, 15))
     Image(data, translate=translate)
+
+
+def test_grid_translate():
+    np.random.seed(0)
+    data = np.random.random((10, 15))
+    layer = Image(data)
+    translate = np.array([15, 15])
+    layer.translate_grid = translate
+    np.testing.assert_allclose(layer.translate_grid, translate)
+
+
+def test_world_data_extent():
+    """Test extent after applying transforms."""
+    np.random.seed(0)
+    shape = (6, 10, 15)
+    data = np.random.random(shape)
+    layer = Image(data)
+    extent = np.array(((0,) * 3, shape))
+    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))

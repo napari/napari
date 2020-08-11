@@ -1,38 +1,49 @@
 from pathlib import Path
 
-from qtpy.QtCore import QCoreApplication, Qt, QSize
-from qtpy.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QFileDialog,
-    QSplitter,
-    QMessageBox,
-)
+from qtpy.QtCore import QCoreApplication, QSize, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
-from ..utils.io import imsave
-from vispy.scene import SceneCanvas, PanZoomCamera, ArcballCamera
+from qtpy.QtWidgets import (
+    QFileDialog,
+    QMessageBox,
+    QSplitter,
+    QVBoxLayout,
+    QWidget,
+)
+from vispy.scene import ArcballCamera, PanZoomCamera, SceneCanvas
 from vispy.visuals.transforms import ChainTransform
 
-from .qt_dims import QtDims
-from .qt_layerlist import QtLayerList
 from ..resources import get_stylesheet
-from ..utils.theme import template
+from ..utils import perf
 from ..utils.interactions import (
     ReadOnlyWrapper,
-    mouse_press_callbacks,
     mouse_move_callbacks,
+    mouse_press_callbacks,
     mouse_release_callbacks,
+    mouse_wheel_callbacks,
 )
+from ..utils.io import imsave
 from ..utils.key_bindings import components_to_key_combo
-from ..utils import perf
+from ..utils.theme import template
+from .tracing.qt_performance import QtPerformance
+from .utils import QImg2array, circle_pixmap, square_pixmap
+from .dialogs.qt_about_key_bindings import QtAboutKeyBindings
+from .widgets.qt_dims import QtDims
+from .widgets.qt_layerlist import QtLayerList
+from .widgets.qt_viewer_buttons import QtLayerButtons, QtViewerButtons
+from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
 
-from .utils import QImg2array, square_pixmap
-from .qt_controls import QtControls
-from .qt_viewer_buttons import QtLayerButtons, QtViewerButtons
-from .qt_viewer_dock_widget import QtViewerDockWidget
-from .qt_about_key_bindings import QtAboutKeyBindings
-from .qt_performance import QtPerformance
-from .._vispy import create_vispy_visual
+# FIXME: figure out the underlying problem causing circular imports here.
+from .._vispy import create_vispy_visual  # isort:skip
+from .layer_controls import QtLayerControlsContainer  # isort:skip
+
+
+class KeyModifierFilterSceneCanvas(SceneCanvas):
+    """SceneCanvas overriding VisPy when mouse wheel events have modifiers."""
+
+    def _process_mouse_event(self, event):
+        if event.type == 'mouse_wheel' and len(event.modifiers) > 0:
+            return
+        super()._process_mouse_event(event)
 
 
 class QtViewer(QSplitter):
@@ -49,7 +60,7 @@ class QtViewer(QSplitter):
         Canvas for rendering the current view.
     console : QtConsole
         iPython console terminal integrated into the napari GUI.
-    controls : QtControls
+    controls : QtLayerControlsContainer
         Qt view for GUI controls.
     dims : napari.qt_dims.QtDims
         Dimension sliders; Qt View for Dims model.
@@ -87,7 +98,7 @@ class QtViewer(QSplitter):
 
         self.viewer = viewer
         self.dims = QtDims(self.viewer.dims)
-        self.controls = QtControls(self.viewer)
+        self.controls = QtLayerControlsContainer(self.viewer)
         self.layers = QtLayerList(self.viewer.layers)
         self.layerButtons = QtLayerButtons(self.viewer)
         self.viewerButtons = QtViewerButtons(self.viewer)
@@ -141,7 +152,9 @@ class QtViewer(QSplitter):
             self.toggle_console_visibility
         )
 
-        self.canvas = SceneCanvas(keys=None, vsync=True, parent=self)
+        self.canvas = KeyModifierFilterSceneCanvas(
+            keys=None, vsync=True, parent=self
+        )
         self.canvas.events.ignore_callback_errors = False
         self.canvas.events.draw.connect(self.dims.enable_play)
         self.canvas.native.setMinimumSize(QSize(200, 200))
@@ -152,6 +165,7 @@ class QtViewer(QSplitter):
         self.canvas.connect(self.on_mouse_release)
         self.canvas.connect(self.on_key_press)
         self.canvas.connect(self.on_key_release)
+        self.canvas.connect(self.on_mouse_wheel)
 
         self.view = self.canvas.central_widget.add_view()
         self._update_camera()
@@ -212,7 +226,7 @@ class QtViewer(QSplitter):
         """QtConsole: iPython console terminal integrated into the napari GUI.
         """
         if self._console is None:
-            from .qt_console import QtConsole
+            from .widgets.qt_console import QtConsole
 
             self.console = QtConsole({'viewer': self.viewer})
         return self._console
@@ -228,8 +242,8 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         if self.dockLayerControls.isFloating():
             self.controls.setMaximumWidth(700)
@@ -241,14 +255,14 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         layers = event.source
         layer = event.item
         vispy_layer = create_vispy_visual(layer)
         vispy_layer.node.parent = self.view.scene
-        vispy_layer.order = len(layers)
+        vispy_layer.order = len(layers) - 1
         self.canvas.connect(vispy_layer.on_draw)
         self.layer_to_visual[layer] = vispy_layer
 
@@ -257,8 +271,8 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         layer = event.item
         vispy_layer = self.layer_to_visual[layer]
@@ -266,14 +280,15 @@ class QtViewer(QSplitter):
         vispy_layer.node.transforms = ChainTransform()
         vispy_layer.node.parent = None
         del vispy_layer
+        self._reorder_layers(None)
 
     def _reorder_layers(self, event):
         """When the list is reordered, propagate changes to draw order.
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         for i, layer in enumerate(self.viewer.layers):
             vispy_layer = self.layer_to_visual[layer]
@@ -336,8 +351,8 @@ class QtViewer(QSplitter):
     def screenshot(self, path=None):
         """Take currently displayed screen and convert to an image array.
 
-        Parmeters
-        ---------
+        Parameters
+        ----------
         path : str
             Filename for saving screenshot image.
 
@@ -405,8 +420,8 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         self.view.interactive = self.viewer.interactive
 
@@ -415,8 +430,8 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         cursor = self.viewer.cursor
         if cursor == 'square':
@@ -428,6 +443,9 @@ class QtViewer(QSplitter):
                 q_cursor = self._cursors['cross']
             else:
                 q_cursor = QCursor(square_pixmap(size))
+        elif cursor == 'circle':
+            size = self.viewer.cursor_size
+            q_cursor = QCursor(circle_pixmap(size))
         else:
             q_cursor = self._cursors[cursor]
         self.canvas.native.setCursor(q_cursor)
@@ -437,8 +455,8 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         if isinstance(self.view.camera, ArcballCamera):
             quat = self.view.camera._quaternion.create_from_axis_angle(
@@ -492,13 +510,33 @@ class QtViewer(QSplitter):
         dialog = QtAboutKeyBindings(self.viewer, parent=self)
         dialog.show()
 
+    def on_mouse_wheel(self, event):
+        """Called whenever mouse wheel activated in canvas.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+        """
+        if event.pos is None:
+            return
+
+        event = ReadOnlyWrapper(event)
+        mouse_wheel_callbacks(self.viewer, event)
+
+        layer = self.viewer.active_layer
+        if layer is not None:
+            visual = self.layer_to_visual[layer]
+            visual._position = list(event.pos)
+            layer.position = visual._transform_position(visual._position)
+            mouse_wheel_callbacks(layer, event)
+
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         if event.pos is None:
             return
@@ -519,8 +557,8 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         if event.pos is None:
             return
@@ -540,8 +578,8 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         if event.pos is None:
             return
@@ -561,8 +599,8 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         if (
             event.native is not None
@@ -582,8 +620,8 @@ class QtViewer(QSplitter):
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         if event.key is None or (
             # on linux press down is treated as multiple press and release
@@ -660,7 +698,7 @@ class QtViewer(QSplitter):
         """
         # if the viewer.QtDims object is playing an axis, we need to terminate
         # the AnimationThread before close, otherwise it will cauyse a segFault
-        # or Abort trap. (calling stop() when no animation is occuring is also
+        # or Abort trap. (calling stop() when no animation is occurring is also
         # not a problem)
         self.dims.stop()
         self.canvas.native.deleteLater()
@@ -675,7 +713,7 @@ def viewbox_key_event(event):
 
     Parameters
     ----------
-    event : qtpy.QtCore.QEvent
-        Event from the Qt context.
+    event : napari.utils.event.Event
+        The napari event that triggered this method.
     """
     return

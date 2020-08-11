@@ -193,16 +193,19 @@ def test_mix_dims():
     assert viewer.dims.ndim == 3
 
 
-def test_new_labels():
-    """Test adding new labels layer."""
-    # Add labels to empty viewer
+def test_new_labels_empty():
+    """Test adding new labels layer to empty viewer."""
     viewer = ViewerModel()
     viewer._new_labels()
     assert len(viewer.layers) == 1
     assert np.max(viewer.layers[0].data) == 0
     assert viewer.dims.ndim == 2
+    # Default shape when no data is present is 512x512
+    np.testing.assert_equal(viewer.layers[0].data.shape, (512, 512))
 
-    # Add labels with image already present
+
+def test_new_labels_image():
+    """Test adding new labels layer with image present."""
     viewer = ViewerModel()
     np.random.seed(0)
     data = np.random.random((10, 15))
@@ -211,6 +214,39 @@ def test_new_labels():
     assert len(viewer.layers) == 2
     assert np.max(viewer.layers[1].data) == 0
     assert viewer.dims.ndim == 2
+    np.testing.assert_equal(viewer.layers[1].data.shape, (10, 15))
+    np.testing.assert_equal(viewer.layers[1].scale, (1, 1))
+    np.testing.assert_equal(viewer.layers[1].translate, (0, 0))
+
+
+def test_new_labels_scaled_image():
+    """Test adding new labels layer with scaled image present."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    data = np.random.random((10, 15))
+    viewer.add_image(data, scale=(3, 3))
+    viewer._new_labels()
+    assert len(viewer.layers) == 2
+    assert np.max(viewer.layers[1].data) == 0
+    assert viewer.dims.ndim == 2
+    np.testing.assert_equal(viewer.layers[1].data.shape, (10, 15))
+    np.testing.assert_equal(viewer.layers[1].scale, (3, 3))
+    np.testing.assert_equal(viewer.layers[1].translate, (0, 0))
+
+
+def test_new_labels_scaled_translated_image():
+    """Test adding new labels layer with transformed image present."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    data = np.random.random((10, 15))
+    viewer.add_image(data, scale=(3, 3), translate=(20, -5))
+    viewer._new_labels()
+    assert len(viewer.layers) == 2
+    assert np.max(viewer.layers[1].data) == 0
+    assert viewer.dims.ndim == 2
+    np.testing.assert_almost_equal(viewer.layers[1].data.shape, (10, 15))
+    np.testing.assert_almost_equal(viewer.layers[1].scale, (3, 3))
+    np.testing.assert_almost_equal(viewer.layers[1].translate, (20, -5))
 
 
 def test_new_points():
@@ -293,25 +329,51 @@ def test_grid():
     np.random.seed(0)
     # Add image
     for i in range(6):
-        data = np.random.random((10, 15))
+        data = np.random.random((15, 15))
         viewer.add_image(data)
     assert np.all(viewer.grid_size == (1, 1))
     assert viewer.grid_stride == 1
+    translations = [layer.translate_grid for layer in viewer.layers]
+    expected_translations = np.zeros((6, 2))
+    np.testing.assert_allclose(translations, expected_translations)
 
     # enter grid view
     viewer.grid_view()
     assert np.all(viewer.grid_size == (3, 3))
     assert viewer.grid_stride == 1
+    translations = [layer.translate_grid for layer in viewer.layers]
+    expected_translations = [
+        [0, 0],
+        [0, 15],
+        [0, 30],
+        [15, 0],
+        [15, 15],
+        [15, 30],
+    ]
+    np.testing.assert_allclose(translations, expected_translations[::-1])
 
-    # retun to stack view
+    # return to stack view
     viewer.stack_view()
     assert np.all(viewer.grid_size == (1, 1))
     assert viewer.grid_stride == 1
+    translations = [layer.translate_grid for layer in viewer.layers]
+    expected_translations = np.zeros((6, 2))
+    np.testing.assert_allclose(translations, expected_translations)
 
     # reenter grid view
     viewer.grid_view(n_column=2, n_row=3, stride=-2)
     assert np.all(viewer.grid_size == (3, 2))
     assert viewer.grid_stride == -2
+    translations = [layer.translate_grid for layer in viewer.layers]
+    expected_translations = [
+        [0, 0],
+        [0, 0],
+        [0, 15],
+        [0, 15],
+        [15, 0],
+        [15, 0],
+    ]
+    np.testing.assert_allclose(translations, expected_translations)
 
 
 def test_add_remove_layer_dims_change():
@@ -389,3 +451,57 @@ def test_add_delete_layers():
     viewer.layers.remove_selected()
     assert len(viewer.layers) == 1
     assert viewer.dims.ndim == 4
+
+
+def test_active_layer():
+    """Test active layer is correct as layer selections change."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    # Check no active layer present
+    assert viewer.active_layer is None
+
+    # Check added layer is active
+    viewer.add_image(np.random.random((5, 5, 10, 15)))
+    assert len(viewer.layers) == 1
+    assert viewer.active_layer == viewer.layers[0]
+
+    # Check newly added layer is active
+    viewer.add_image(np.random.random((5, 6, 5, 10, 15)))
+    assert len(viewer.layers) == 2
+    assert viewer.active_layer == viewer.layers[1]
+
+    # Check no active layer after unselecting all
+    viewer.layers.unselect_all()
+    assert viewer.active_layer is None
+
+    # Check selected layer is active
+    viewer.layers[0].selected = True
+    assert viewer.active_layer == viewer.layers[0]
+
+    # Check no layer is active if both layers are selected
+    viewer.layers[1].selected = True
+    assert viewer.active_layer is None
+
+
+def test_sliced_world_extent():
+    """Test world extent after adding layers and slicing."""
+    np.random.seed(0)
+    viewer = ViewerModel()
+
+    # Empty data is taken to be 512 x 512
+    np.testing.assert_allclose(viewer._sliced_extent_world[0], (0, 0))
+    np.testing.assert_allclose(viewer._sliced_extent_world[1], (512, 512))
+
+    # Add one layer
+    viewer.add_image(
+        np.random.random((6, 10, 15)), scale=(3, 1, 1), translate=(10, 20, 5)
+    )
+    np.testing.assert_allclose(viewer.layers._extent_world[0], (10, 20, 5))
+    np.testing.assert_allclose(viewer.layers._extent_world[1], (28, 30, 20))
+    np.testing.assert_allclose(viewer._sliced_extent_world[0], (20, 5))
+    np.testing.assert_allclose(viewer._sliced_extent_world[1], (30, 20))
+
+    # Change displayed dims order
+    viewer.dims.order = (1, 2, 0)
+    np.testing.assert_allclose(viewer._sliced_extent_world[0], (5, 10))
+    np.testing.assert_allclose(viewer._sliced_extent_world[1], (20, 28))

@@ -12,9 +12,10 @@ from napari._tests.utils import (
 )
 
 
-def test_qt_viewer(viewer_factory):
+def test_qt_viewer(make_test_viewer):
     """Test instantiating viewer."""
-    view, viewer = viewer_factory()
+    viewer = make_test_viewer()
+    view = viewer.window.qt_viewer
 
     assert viewer.title == 'napari'
     assert view.viewer == viewer
@@ -29,9 +30,10 @@ def test_qt_viewer(viewer_factory):
     assert np.sum(view.dims._displayed_sliders) == 0
 
 
-def test_qt_viewer_with_console(viewer_factory):
+def test_qt_viewer_with_console(make_test_viewer):
     """Test instantiating console from viewer."""
-    view, viewer = viewer_factory()
+    viewer = make_test_viewer()
+    view = viewer.window.qt_viewer
     # Check no console is present before it is requested
     assert view._console is None
     # Check console is created when requested
@@ -39,9 +41,10 @@ def test_qt_viewer_with_console(viewer_factory):
     assert view.dockConsole.widget == view.console
 
 
-def test_qt_viewer_toggle_console(viewer_factory):
+def test_qt_viewer_toggle_console(make_test_viewer):
     """Test instantiating console from viewer."""
-    view, viewer = viewer_factory()
+    viewer = make_test_viewer()
+    view = viewer.window.qt_viewer
     # Check no console is present before it is requested
     assert view._console is None
     # Check console has been created when it is supposed to be shown
@@ -51,17 +54,19 @@ def test_qt_viewer_toggle_console(viewer_factory):
 
 
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
-def test_add_layer(viewer_factory, layer_class, data, ndim):
-    view, viewer = viewer_factory(ndisplay=ndim)
+def test_add_layer(make_test_viewer, layer_class, data, ndim):
+    viewer = make_test_viewer(ndisplay=ndim)
+    view = viewer.window.qt_viewer
 
     add_layer_by_type(viewer, layer_class, data)
     check_viewer_functioning(viewer, view, data, ndim)
 
 
-def test_new_labels(viewer_factory):
+def test_new_labels(make_test_viewer):
     """Test adding new labels layer."""
     # Add labels to empty viewer
-    view, viewer = viewer_factory()
+    viewer = make_test_viewer()
+    view = viewer.window.qt_viewer
 
     viewer._new_labels()
     assert np.max(viewer.layers[0].data) == 0
@@ -73,7 +78,8 @@ def test_new_labels(viewer_factory):
     assert np.sum(view.dims._displayed_sliders) == 0
 
     # Add labels with image already present
-    view, viewer = viewer_factory()
+    viewer = make_test_viewer()
+    view = viewer.window.qt_viewer
 
     np.random.seed(0)
     data = np.random.random((10, 15))
@@ -88,10 +94,11 @@ def test_new_labels(viewer_factory):
     assert np.sum(view.dims._displayed_sliders) == 0
 
 
-def test_new_points(viewer_factory):
+def test_new_points(make_test_viewer):
     """Test adding new points layer."""
     # Add labels to empty viewer
-    view, viewer = viewer_factory()
+    viewer = make_test_viewer()
+    view = viewer.window.qt_viewer
 
     viewer.add_points()
     assert len(viewer.layers[0].data) == 0
@@ -103,7 +110,8 @@ def test_new_points(viewer_factory):
     assert np.sum(view.dims._displayed_sliders) == 0
 
     # Add points with image already present
-    view, viewer = viewer_factory()
+    viewer = make_test_viewer()
+    view = viewer.window.qt_viewer
 
     np.random.seed(0)
     data = np.random.random((10, 15))
@@ -118,10 +126,11 @@ def test_new_points(viewer_factory):
     assert np.sum(view.dims._displayed_sliders) == 0
 
 
-def test_new_shapes_empty_viewer(viewer_factory):
+def test_new_shapes_empty_viewer(make_test_viewer):
     """Test adding new shapes layer."""
     # Add labels to empty viewer
-    view, viewer = viewer_factory()
+    viewer = make_test_viewer()
+    view = viewer.window.qt_viewer
 
     viewer.add_shapes()
     assert len(viewer.layers[0].data) == 0
@@ -133,7 +142,8 @@ def test_new_shapes_empty_viewer(viewer_factory):
     assert np.sum(view.dims._displayed_sliders) == 0
 
     # Add points with image already present
-    view, viewer = viewer_factory()
+    viewer = make_test_viewer()
+    view = viewer.window.qt_viewer
 
     np.random.seed(0)
     data = np.random.random((10, 15))
@@ -148,9 +158,42 @@ def test_new_shapes_empty_viewer(viewer_factory):
     assert np.sum(view.dims._displayed_sliders) == 0
 
 
-def test_screenshot(viewer_factory):
+def test_z_order_adding_removing_images(make_test_viewer):
+    """Test z order is correct after adding/ removing images."""
+    data = np.ones((10, 10))
+
+    viewer = make_test_viewer()
+    vis = viewer.window.qt_viewer.layer_to_visual
+    viewer.add_image(data, colormap='red', name='red')
+    viewer.add_image(data, colormap='green', name='green')
+    viewer.add_image(data, colormap='blue', name='blue')
+    order = [vis[x].order for x in viewer.layers]
+    np.testing.assert_almost_equal(order, list(range(len(viewer.layers))))
+
+    # Remove and re-add image
+    viewer.layers.remove('red')
+    order = [vis[x].order for x in viewer.layers]
+    np.testing.assert_almost_equal(order, list(range(len(viewer.layers))))
+    viewer.add_image(data, colormap='red', name='red')
+    order = [vis[x].order for x in viewer.layers]
+    np.testing.assert_almost_equal(order, list(range(len(viewer.layers))))
+
+    # Remove two other images
+    viewer.layers.remove('green')
+    viewer.layers.remove('blue')
+    order = [vis[x].order for x in viewer.layers]
+    np.testing.assert_almost_equal(order, list(range(len(viewer.layers))))
+
+    # Add two other layers back
+    viewer.add_image(data, colormap='green', name='green')
+    viewer.add_image(data, colormap='blue', name='blue')
+    order = [vis[x].order for x in viewer.layers]
+    np.testing.assert_almost_equal(order, list(range(len(viewer.layers))))
+
+
+def test_screenshot(make_test_viewer):
     "Test taking a screenshot"
-    view, viewer = viewer_factory()
+    viewer = make_test_viewer()
 
     np.random.seed(0)
     # Add image
@@ -174,13 +217,13 @@ def test_screenshot(viewer_factory):
     viewer.add_shapes(data)
 
     # Take screenshot
-    screenshot = view.screenshot()
+    screenshot = viewer.window.qt_viewer.screenshot()
     assert screenshot.ndim == 3
 
 
-def test_screenshot_dialog(viewer_factory, tmpdir):
+def test_screenshot_dialog(make_test_viewer, tmpdir):
     """Test save screenshot functionality."""
-    view, viewer = viewer_factory()
+    viewer = make_test_viewer()
 
     np.random.seed(0)
     # Add image
@@ -208,19 +251,19 @@ def test_screenshot_dialog(viewer_factory, tmpdir):
     mock_return = (input_filepath, '')
     with mock.patch('napari._qt.qt_viewer.QFileDialog') as mocker:
         mocker.getSaveFileName.return_value = mock_return
-        view._screenshot_dialog()
+        viewer.window.qt_viewer._screenshot_dialog()
     # Assert behaviour is correct
     expected_filepath = input_filepath + '.png'  # add default file extension
     assert os.path.exists(expected_filepath)
     output_data = imread(expected_filepath)
-    expected_data = view.screenshot()
+    expected_data = viewer.window.qt_viewer.screenshot()
     assert np.allclose(output_data, expected_data)
 
 
 @pytest.mark.parametrize(
     "dtype", ['int8', 'uint8', 'int16', 'uint16', 'float32']
 )
-def test_qt_viewer_data_integrity(viewer_factory, dtype):
+def test_qt_viewer_data_integrity(make_test_viewer, dtype):
     """Test that the viewer doesn't change the underlying array."""
 
     image = np.random.rand(10, 32, 32)
@@ -228,7 +271,7 @@ def test_qt_viewer_data_integrity(viewer_factory, dtype):
     image = image.astype(dtype)
     imean = image.mean()
 
-    view, viewer = viewer_factory()
+    viewer = make_test_viewer()
 
     viewer.add_image(image.copy())
     datamean = viewer.layers[0].data.mean()

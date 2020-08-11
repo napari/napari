@@ -141,7 +141,7 @@ class Image(IntensityVisualizationMixin, Layer):
         interpolation='nearest',
         rendering='mip',
         iso_threshold=0.5,
-        attenuation=0.5,
+        attenuation=0.05,
         name=None,
         metadata=None,
         scale=None,
@@ -215,7 +215,7 @@ class Image(IntensityVisualizationMixin, Layer):
             self._thumbnail_level = 0
         self.corner_pixels[1] = self.level_shapes[self._data_level]
 
-        # Intitialize the current slice to an empty image.
+        # Initialize the current slice to an empty image.
         self._slice = ImageSlice(
             self._get_empty_image(), self._raw_to_displayed
         )
@@ -249,7 +249,7 @@ class Image(IntensityVisualizationMixin, Layer):
         """Get empty image to use as the default before data is loaded.
         """
         if self.rgb:
-            return np.zeros((1,) * self.dims.ndisplay + (self.shape[-1],))
+            return np.zeros((1,) * self.dims.ndisplay + (3,))
         else:
             return np.zeros((1,) * self.dims.ndisplay)
 
@@ -301,8 +301,16 @@ class Image(IntensityVisualizationMixin, Layer):
         """Determine number of dimensions of the layer."""
         return len(self.level_shapes[0])
 
-    def _get_extent(self):
-        return tuple((0, m) for m in self.level_shapes[0])
+    @property
+    def _extent_data(self) -> np.ndarray:
+        """Extent of layer in data coordinates.
+
+        Returns
+        -------
+        extent_data : array, shape (2, D)
+        """
+        shape = self.level_shapes[0]
+        return np.vstack([np.zeros(len(shape)), shape])
 
     @property
     def data_level(self):
@@ -403,14 +411,14 @@ class Image(IntensityVisualizationMixin, Layer):
 
         * ``translucent``: voxel colors are blended along the view ray until
           the result is opaque.
-        * ``mip``: maxiumum intensity projection. Cast a ray and display the
+        * ``mip``: maximum intensity projection. Cast a ray and display the
           maximum value that was encountered.
         * ``additive``: voxel colors are added along the view ray until the
           result is saturated.
         * ``iso``: isosurface. Cast a ray until a certain threshold is
           encountered. At that location, lighning calculations are performed to
           give the visual appearance of a surface.
-        * ``attenuated_mip``: attenuated maxiumum intensity projection. Cast a
+        * ``attenuated_mip``: attenuated maximum intensity projection. Cast a
           ray and attenuate values based on integral of encountered values,
           display the maximum value that was encountered after attenuation.
           This will make nearer objects appear more prominent.
@@ -621,7 +629,7 @@ class Image(IntensityVisualizationMixin, Layer):
         and set of indices.
 
         Returns
-        ----------
+        -------
         value : tuple
             Value of the data at the coord.
         """

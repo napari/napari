@@ -88,7 +88,6 @@ def guess_spatial_dimensions(image):
 def _prepare_colorarray(arr):
     """Check the shape of the array and convert it to
     floating point representation.
-
     """
     arr = np.asanyarray(arr)
 
@@ -103,7 +102,6 @@ def _prepare_colorarray(arr):
 def _prepare_rgba_array(arr):
     """Check the shape of the array to be RGBA and convert it to
     floating point representation.
-
     """
     arr = np.asanyarray(arr)
 
@@ -610,10 +608,6 @@ def rgb2gray(rgb):
         If `rgb2gray` is not a 3-D or 4-D arrays of shape
         ``(.., ..,[ ..,] 3)`` or ``(.., ..,[ ..,] 4)``.
 
-    References
-    ----------
-    .. [1] http://www.poynton.com/PDFs/ColorFAQ.pdf
-
     Notes
     -----
     The weights used in this conversion are calibrated for contemporary
@@ -622,6 +616,10 @@ def rgb2gray(rgb):
         Y = 0.2125 R + 0.7154 G + 0.0721 B
 
     If there is an alpha channel present, it is ignored.
+
+    References
+    ----------
+    .. [1] http://www.poynton.com/PDFs/ColorFAQ.pdf
 
     Examples
     --------
@@ -737,7 +735,6 @@ def lab2xyz(lab, illuminant="D65", observer="2"):
     UserWarning
         If any of the pixels are invalid (Z < 0).
 
-
     Notes
     -----
     By default Observer= 2A, Illuminant= D65. CIE XYZ tristimulus values x_ref
@@ -794,16 +791,16 @@ def rgb2lab(rgb, illuminant="D65", observer="2"):
     ValueError
         If `rgb` is not a 3- or 4-D array of shape ``(.., ..,[ ..,] 3)``.
 
-    References
-    ----------
-    .. [1] https://en.wikipedia.org/wiki/Standard_illuminant
-
     Notes
     -----
     This function uses rgb2xyz and xyz2lab.
     By default Observer= 2A, Illuminant= D65. CIE XYZ tristimulus values
     x_ref=95.047, y_ref=100., z_ref=108.883. See function `get_xyz_coords` for
     a list of supported illuminants.
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Standard_illuminant
     """
     return xyz2lab(rgb2xyz(rgb), illuminant, observer)
 
@@ -830,16 +827,16 @@ def lab2rgb(lab, illuminant="D65", observer="2"):
     ValueError
         If `lab` is not a 3-D array of shape ``(.., .., 3)``.
 
-    References
-    ----------
-    .. [1] https://en.wikipedia.org/wiki/Standard_illuminant
-
     Notes
     -----
     This function uses lab2xyz and xyz2rgb.
     By default Observer= 2A, Illuminant= D65. CIE XYZ tristimulus values
     x_ref=95.047, y_ref=100., z_ref=108.883. See function `get_xyz_coords` for
     a list of supported illuminants.
+
+    References
+    ----------
+    .. [1] https://en.wikipedia.org/wiki/Standard_illuminant
     """
     return xyz2rgb(lab2xyz(lab, illuminant, observer))
 

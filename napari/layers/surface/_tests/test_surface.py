@@ -1,5 +1,7 @@
 import numpy as np
+import pytest
 from napari.layers import Surface
+from napari._tests.utils import check_layer_world_data_extent
 
 
 def test_random_surface():
@@ -75,7 +77,8 @@ def test_random_3D_timeseries_surface():
 
     # If a values axis is made to be a displayed axis then no data should be
     # shown
-    layer.dims.order = [3, 0, 1, 2]
+    with pytest.warns(UserWarning):
+        layer.dims.order = [3, 0, 1, 2]
     assert len(layer._data_view) == 0
 
 
@@ -100,7 +103,7 @@ def test_random_3D_multitimeseries_surface():
 
 
 def test_visiblity():
-    """Test setting layer visiblity."""
+    """Test setting layer visibility."""
     np.random.seed(0)
     vertices = np.random.random((10, 3))
     faces = np.random.randint(10, size=(6, 3))
@@ -137,3 +140,13 @@ def test_surface_gamma():
     # Set gamma as keyword argument
     layer = Surface(data, gamma=gamma)
     assert layer.gamma == gamma
+
+
+def test_world_data_extent():
+    """Test extent after applying transforms."""
+    data = [(-5, 0), (0, 15), (30, 12)]
+    min_val = (-5, 0)
+    max_val = (30, 15)
+    layer = Surface((np.array(data), np.array((0, 1, 2)), np.array((0, 0, 0))))
+    extent = np.array((min_val, max_val))
+    check_layer_world_data_extent(layer, extent, (3, 1), (20, 5))

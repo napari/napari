@@ -8,20 +8,21 @@ from vispy.color import get_colormap
 
 from napari.layers import Shapes
 from napari.utils.colormaps.standardize_color import transform_color
+from napari._tests.utils import check_layer_world_data_extent
 
 
 def _make_cycled_properties(values, length):
     """Helper function to make property values
 
-    Parameters:
-    -----------
-    values :
+    Parameters
+    ----------
+    values
         The values to be cycled.
     length : int
         The length of the resulting property array
 
-    Returns:
-    --------
+    Returns
+    -------
     cycled_properties : np.ndarray
         The property array comprising the cycled values.
     """
@@ -131,6 +132,100 @@ def test_properties_dataframe():
     properties_df = properties_df.astype(properties['shape_type'].dtype)
     layer = Shapes(data, properties=properties_df)
     np.testing.assert_equal(layer.properties, properties)
+
+
+@pytest.mark.parametrize("properties", [properties_array, properties_list])
+def test_text_from_property_value(properties):
+    """Test setting text from a property value"""
+    shape = (10, 4, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Shapes(data, properties=copy(properties), text='shape_type')
+
+    np.testing.assert_equal(layer.text.values, properties['shape_type'])
+
+
+@pytest.mark.parametrize("properties", [properties_array, properties_list])
+def test_text_from_property_fstring(properties):
+    """Test setting text with an f-string from the property value"""
+    shape = (10, 4, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Shapes(
+        data, properties=copy(properties), text='type: {shape_type}'
+    )
+
+    expected_text = ['type: ' + v for v in properties['shape_type']]
+    np.testing.assert_equal(layer.text.values, expected_text)
+
+    # test updating the text
+    layer.text = 'type-ish: {shape_type}'
+    expected_text_2 = ['type-ish: ' + v for v in properties['shape_type']]
+    np.testing.assert_equal(layer.text.values, expected_text_2)
+
+    # copy/paste
+    layer.selected_data = {0}
+    layer._copy_data()
+    layer._paste_data()
+    expected_text_3 = expected_text_2 + ['type-ish: A']
+    np.testing.assert_equal(layer.text.values, expected_text_3)
+
+    # add shape
+    layer.selected_data = {0}
+    new_shape = np.random.random((1, 4, 2))
+    layer.add(new_shape)
+    expected_text_4 = expected_text_3 + ['type-ish: A']
+    np.testing.assert_equal(layer.text.values, expected_text_4)
+
+
+@pytest.mark.parametrize("properties", [properties_array, properties_list])
+def test_set_text_with_kwarg_dict(properties):
+    text_kwargs = {
+        'text': 'type: {shape_type}',
+        'color': [0, 0, 0, 1],
+        'rotation': 10,
+        'translation': [5, 5],
+        'anchor': 'upper_left',
+        'size': 10,
+        'visible': True,
+    }
+    shape = (10, 4, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Shapes(data, properties=copy(properties), text=text_kwargs)
+
+    expected_text = ['type: ' + v for v in properties['shape_type']]
+    np.testing.assert_equal(layer.text.values, expected_text)
+
+    for property, value in text_kwargs.items():
+        if property == 'text':
+            continue
+        layer_value = getattr(layer._text, property)
+        np.testing.assert_equal(layer_value, value)
+
+
+@pytest.mark.parametrize("properties", [properties_array, properties_list])
+def test_text_error(properties):
+    """creating a layer with text as the wrong type should raise an error"""
+    shape = (10, 4, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    # try adding text as the wrong type
+    with pytest.raises(TypeError):
+        Shapes(data, properties=copy(properties), text=123)
+
+
+def test_refresh_text():
+    """Test refreshing the text after setting new properties"""
+    shape = (10, 4, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    properties = {'shape_type': ['A'] * shape[0]}
+    layer = Shapes(data, properties=copy(properties), text='shape_type')
+
+    new_properties = {'shape_type': ['B'] * shape[0]}
+    layer.properties = new_properties
+    np.testing.assert_equal(layer.text.values, new_properties['shape_type'])
 
 
 def test_rectangles():
@@ -598,7 +693,7 @@ def test_name():
 
 
 def test_visiblity():
-    """Test setting layer visiblity."""
+    """Test setting layer visibility."""
     np.random.seed(0)
     data = 20 * np.random.random((10, 4, 2))
     layer = Shapes(data)
@@ -663,6 +758,7 @@ def test_blending():
     assert layer.blending == 'opaque'
 
 
+@pytest.mark.filterwarnings("ignore:elementwise comparison fail:FutureWarning")
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
 def test_switch_color_mode(attribute):
     """Test switching between color modes"""
@@ -1009,7 +1105,8 @@ def test_colormap_with_categorical_properties(attribute):
     layer = Shapes(data, properties=properties)
 
     with pytest.raises(TypeError):
-        setattr(layer, f'{attribute}_color_mode', 'colormap')
+        with pytest.warns(UserWarning):
+            setattr(layer, f'{attribute}_color_mode', 'colormap')
 
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
@@ -1181,7 +1278,7 @@ def test_copy_and_paste():
     layer.selected_data = {0, 1}
     layer._copy_data()
     layer._paste_data()
-    assert len(layer._clipboard) == 5
+    assert len(layer._clipboard) == 6
     assert len(layer.data) == shape[0] + 2
     assert np.all(
         [np.all(a == b) for a, b in zip(layer.data[:2], layer.data[-2:])]
@@ -1286,3 +1383,51 @@ def test_to_labels_3D():
     labels = layer.to_labels(labels_shape=labels_shape)
     assert np.all(labels.shape == labels_shape)
     assert np.all(np.unique(labels) == [0, 1, 2, 3])
+
+
+def test_add_single_shape_consistent_properties():
+    """Test adding a single shape ensures correct number of added properties"""
+    data = [
+        np.array([[100, 200], [200, 300]]),
+        np.array([[300, 400], [400, 500]]),
+    ]
+    properties = {'index': [1, 2]}
+    layer = Shapes(
+        np.array(data), shape_type='rectangle', properties=properties
+    )
+
+    layer.add(np.array([[500, 600], [700, 800]]))
+    assert len(layer.properties['index']) == 3
+    assert layer.properties['index'][2] == 2
+
+
+def test_add_shapes_consistent_properties():
+    """Test adding multiple shapes ensures correct number of added properties"""
+    data = [
+        np.array([[100, 200], [200, 300]]),
+        np.array([[300, 400], [400, 500]]),
+    ]
+    properties = {'index': [1, 2]}
+    layer = Shapes(
+        np.array(data), shape_type='rectangle', properties=properties
+    )
+
+    layer.add(
+        [
+            np.array([[500, 600], [700, 800]]),
+            np.array([[700, 800], [800, 900]]),
+        ]
+    )
+    assert len(layer.properties['index']) == 4
+    assert layer.properties['index'][2] == 2
+    assert layer.properties['index'][3] == 2
+
+
+def test_world_data_extent():
+    """Test extent after applying transforms."""
+    data = [(7, -5, 0), (-2, 0, 15), (4, 30, 12)]
+    layer = Shapes([data, np.add(data, [2, -3, 0])], shape_type='polygon')
+    min_val = (-2, -8, 0)
+    max_val = (9, 30, 15)
+    extent = np.array((min_val, max_val))
+    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))

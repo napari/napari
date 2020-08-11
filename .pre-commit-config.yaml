@@ -4,8 +4,9 @@ repos:
     hooks:
     - id: black
       pass_filenames: true
+      exclude: vendored|examples
 -   repo: https://gitlab.com/pycqa/flake8
-    rev: 3.7.9
+    rev: 3.8.3
     hooks:
     - id: flake8
       pass_filenames: true

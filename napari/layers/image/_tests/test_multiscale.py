@@ -2,6 +2,7 @@ import numpy as np
 from skimage.transform import pyramid_gaussian
 from vispy.color import Colormap
 from napari.layers import Image
+from napari._tests.utils import check_layer_world_data_extent
 
 
 def test_random_multiscale():
@@ -155,7 +156,7 @@ def test_name():
 
 
 def test_visiblity():
-    """Test setting layer visiblity."""
+    """Test setting layer visibility."""
     shapes = [(40, 20), (20, 10), (10, 5)]
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
@@ -381,3 +382,13 @@ def test_not_create_random_multiscale():
     layer = Image(data)
     assert np.all(layer.data == data)
     assert layer.multiscale is False
+
+
+def test_world_data_extent():
+    """Test extent after applying transforms."""
+    np.random.seed(0)
+    shapes = [(6, 40, 80), (3, 20, 40), (1, 10, 20)]
+    data = [np.random.random(s) for s in shapes]
+    layer = Image(data)
+    extent = np.array(((0,) * 3, shapes[0]))
+    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))

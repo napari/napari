@@ -8,20 +8,21 @@ from vispy.color import get_colormap
 from napari.layers import Points
 from napari.layers.points._points_utils import points_to_squares
 from napari.utils.colormaps.standardize_color import transform_color
+from napari._tests.utils import check_layer_world_data_extent
 
 
 def _make_cycled_properties(values, length):
     """Helper function to make property values
 
-    Parameters:
-    -----------
-    values :
+    Parameters
+    ----------
+    values
         The values to be cycled.
     length : int
         The length of the resulting property array
 
-    Returns:
-    --------
+    Returns
+    -------
     cycled_properties : np.ndarray
         The property array comprising the cycled values.
     """
@@ -364,7 +365,7 @@ def test_name():
 
 
 def test_visiblity():
-    """Test setting layer visiblity."""
+    """Test setting layer visibility."""
     np.random.seed(0)
     data = 20 * np.random.random((10, 2))
     layer = Points(data)
@@ -551,6 +552,104 @@ def test_updating_points_properties():
     np.testing.assert_equal(layer.properties, updated_properties)
 
 
+properties_array = {'point_type': _make_cycled_properties(['A', 'B'], 10)}
+properties_list = {'point_type': list(_make_cycled_properties(['A', 'B'], 10))}
+
+
+@pytest.mark.parametrize("properties", [properties_array, properties_list])
+def test_text_from_property_value(properties):
+    """Test setting text from a property value"""
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data, properties=copy(properties), text='point_type')
+
+    np.testing.assert_equal(layer.text.values, properties['point_type'])
+
+
+@pytest.mark.parametrize("properties", [properties_array, properties_list])
+def test_text_from_property_fstring(properties):
+    """Test setting text with an f-string from the property value"""
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(
+        data, properties=copy(properties), text='type: {point_type}'
+    )
+
+    expected_text = ['type: ' + v for v in properties['point_type']]
+    np.testing.assert_equal(layer.text.values, expected_text)
+
+    # test updating the text
+    layer.text = 'type-ish: {point_type}'
+    expected_text_2 = ['type-ish: ' + v for v in properties['point_type']]
+    np.testing.assert_equal(layer.text.values, expected_text_2)
+
+    # copy/paste
+    layer.selected_data = {0}
+    layer._copy_data()
+    layer._paste_data()
+    expected_text_3 = expected_text_2 + ['type-ish: A']
+    np.testing.assert_equal(layer.text.values, expected_text_3)
+
+    # add point
+    layer.selected_data = {0}
+    new_shape = np.random.random((1, 2))
+    layer.add(new_shape)
+    expected_text_4 = expected_text_3 + ['type-ish: A']
+    np.testing.assert_equal(layer.text.values, expected_text_4)
+
+
+@pytest.mark.parametrize("properties", [properties_array, properties_list])
+def test_set_text_with_kwarg_dict(properties):
+    text_kwargs = {
+        'text': 'type: {point_type}',
+        'color': [0, 0, 0, 1],
+        'rotation': 10,
+        'translation': [5, 5],
+        'anchor': 'upper_left',
+        'size': 10,
+        'visible': True,
+    }
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data, properties=copy(properties), text=text_kwargs)
+
+    expected_text = ['type: ' + v for v in properties['point_type']]
+    np.testing.assert_equal(layer.text.values, expected_text)
+
+    for property, value in text_kwargs.items():
+        if property == 'text':
+            continue
+        layer_value = getattr(layer._text, property)
+        np.testing.assert_equal(layer_value, value)
+
+
+@pytest.mark.parametrize("properties", [properties_array, properties_list])
+def test_text_error(properties):
+    """creating a layer with text as the wrong type should raise an error"""
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    # try adding text as the wrong type
+    with pytest.raises(TypeError):
+        Points(data, properties=copy(properties), text=123)
+
+
+def test_refresh_text():
+    """Test refreshing the text after setting new properties"""
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    properties = {'point_type': ['A'] * shape[0]}
+    layer = Points(data, properties=copy(properties), text='point_type')
+
+    new_properties = {'point_type': ['B'] * shape[0]}
+    layer.properties = new_properties
+    np.testing.assert_equal(layer.text.values, new_properties['point_type'])
+
+
 def test_points_errors():
     shape = (3, 2)
     np.random.seed(0)
@@ -624,6 +723,7 @@ def test_n_dimensional():
     assert layer.n_dimensional is True
 
 
+@pytest.mark.filterwarnings("ignore:elementwise comparison fail:FutureWarning")
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
 def test_switch_color_mode(attribute):
     """Test switching between color modes"""
@@ -705,7 +805,8 @@ def test_colormap_with_categorical_properties(attribute):
     layer = Points(data, properties=properties)
 
     with pytest.raises(TypeError):
-        setattr(layer, f'{attribute}_color_mode', 'colormap')
+        with pytest.warns(UserWarning):
+            setattr(layer, f'{attribute}_color_mode', 'colormap')
 
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
@@ -1340,3 +1441,13 @@ def test_interaction_box():
     expected_box = points_to_squares(data, size)
     box = layer.interaction_box(index)
     np.all([np.isin(p, expected_box) for p in box])
+
+
+def test_world_data_extent():
+    """Test extent after applying transforms."""
+    data = [(7, -5, 0), (-2, 0, 15), (4, 30, 12)]
+    min_val = (-2, -5, 0)
+    max_val = (7, 30, 15)
+    layer = Points(data)
+    extent = np.array((min_val, max_val))
+    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))

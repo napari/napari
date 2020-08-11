@@ -1,4 +1,4 @@
-from ..layers import Image, Labels, Points, Shapes, Surface, Vectors
+from ..layers import Image, Points, Shapes, Surface, Vectors
 from .vispy_image_layer import VispyImageLayer
 from .vispy_points_layer import VispyPointsLayer
 from .vispy_shapes_layer import VispyShapesLayer
@@ -8,7 +8,6 @@ from .vispy_surface_layer import VispySurfaceLayer
 
 layer_to_visual = {
     Image: VispyImageLayer,
-    Labels: VispyImageLayer,
     Points: VispyPointsLayer,
     Shapes: VispyShapesLayer,
     Surface: VispySurfaceLayer,
@@ -22,13 +21,17 @@ def create_vispy_visual(layer):
     Parameters
     ----------
     layer : napari.layers._base_layer.Layer
-        Layer that needs its propetry widget created.
+        Layer that needs its property widget created.
 
     Returns
-    ----------
+    -------
     visual : vispy.scene.visuals.VisualNode
         Vispy visual node
     """
-    visual = layer_to_visual[type(layer)](layer)
+    for layer_type, visual in layer_to_visual.items():
+        if isinstance(layer, layer_type):
+            return visual(layer)
 
-    return visual
+    raise TypeError(
+        f'Could not find VispyLayer for layer of type {type(layer)}'
+    )

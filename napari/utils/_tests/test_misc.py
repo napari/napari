@@ -102,7 +102,7 @@ def test_callsignature():
     # arg + default arg + arbitrary kwargs
     assert str(callsignature(lambda a, b=42, **kw: None)) == '(a, b=b, **kw)'
 
-    # arbitary args + arbitrary kwargs
+    # arbitrary args + arbitrary kwargs
     assert str(callsignature(lambda *args, **kw: None)) == '(*args, **kw)'
 
     # arg + default arg + arbitrary kwargs
@@ -179,6 +179,7 @@ def test_abspath_or_url():
     assert abspath_or_url('https://something') == 'https://something'
     assert abspath_or_url('http://something') == 'http://something'
     assert abspath_or_url('ftp://something') == 'ftp://something'
+    assert abspath_or_url('s3://something') == 's3://something'
     assert abspath_or_url('file://something') == 'file://something'
     assert abspath_or_url(('a', '~')) == (abspath('a'), expanduser('~'))
     assert abspath_or_url(['a', '~']) == [abspath('a'), expanduser('~')]

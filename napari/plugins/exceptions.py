@@ -81,7 +81,7 @@ def get_tb_formatter() -> Callable[[ExcInfo, bool], str]:
         A function that accepts a 3-tuple and a boolean ``(exc_info, as_html)``
         and returns a formatted traceback string. The ``exc_info`` tuple is of
         the ``(type, value, traceback)`` format returned by sys.exc_info().
-        The ``as_html`` determines whether the traceback is formated in html
+        The ``as_html`` determines whether the traceback is formatted in html
         or plain text.
     """
     try:
@@ -140,7 +140,7 @@ def get_tb_formatter() -> Callable[[ExcInfo, bool], str]:
                 # remove superfluous whitespace
                 html = html.replace('<br>\n', '\n')
                 # but retain it around the <small> bits
-                html = re.sub(r'(<tr><td><small.*</tr>)', f'<br>\\1<br>', html)
+                html = re.sub(r'(<tr><td><small.*</tr>)', '<br>\\1<br>', html)
                 # weird 2-part syntax is a workaround for hard-to-grep text.
                 html = html.replace(
                     "<p>A problem occurred in a Python script.  "
@@ -201,7 +201,7 @@ def ansi2html(
         by default ANSI_STYLES
 
     Yields
-    -------
+    ------
     str
         HTML strings that can be joined to form the final html
     """
