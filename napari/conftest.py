@@ -1,13 +1,13 @@
+import os
 import warnings
 from functools import partial
-import os
 from typing import List
 
 import numpy as np
 import pytest
 from qtpy.QtWidgets import QApplication
 
-from napari import Viewer
+from napari import Viewer, synchronous_loading
 from napari.components import LayerList
 from napari.layers import Image, Labels, Points, Shapes, Vectors
 from napari.plugins._builtins import (
@@ -17,7 +17,6 @@ from napari.plugins._builtins import (
     napari_write_shapes,
 )
 from napari.utils import io
-from napari import synchronous_loading
 from napari.utils.chunk import chunk_loader
 
 try:

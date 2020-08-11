@@ -5,14 +5,14 @@ from os.path import dirname, join
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import QApplication
 
-from .components import ViewerModel
-from ._qt.qt_main_window import Window
-from ._qt.qt_viewer import QtViewer
-from ._qt.threading import wait_for_workers_to_quit, create_worker
-from .utils.perf import perf_config
 from napari.utils.chunk import chunk_loader
 
 from . import __version__
+from ._qt.qt_main_window import Window
+from ._qt.qt_viewer import QtViewer
+from ._qt.qthreading import create_worker, wait_for_workers_to_quit
+from .components import ViewerModel
+from .utils.perf import perf_config
 
 
 class Viewer(ViewerModel):
@@ -68,7 +68,9 @@ class Viewer(ViewerModel):
 
         if perf_config:
             if perf_config.trace_qt_events:
-                from ._qt.qt_event_tracing import convert_app_for_tracing
+                from ._qt.tracing.qt_event_tracing import (
+                    convert_app_for_tracing,
+                )
 
                 # For tracing Qt events we need a special QApplication. If
                 # using `gui_qt` we already have the special one, and no

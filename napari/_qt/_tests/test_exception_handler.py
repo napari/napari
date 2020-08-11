@@ -1,4 +1,5 @@
 import logging
+
 from napari._qt.exceptions import ExceptionHandler
 
 

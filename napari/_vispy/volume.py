@@ -1,9 +1,9 @@
-from .vendored import VolumeVisual as BaseVolumeVisual
-from .vendored.volume import FRAG_SHADER, frag_dict
-from vispy.scene.visuals import create_visual_node
 from vispy.color import get_colormap
+from vispy.scene.visuals import create_visual_node
 from vispy.visuals.shaders import Function
 
+from .vendored import VolumeVisual as BaseVolumeVisual
+from .vendored.volume import FRAG_SHADER, frag_dict
 
 BaseVolume = create_visual_node(BaseVolumeVisual)
 

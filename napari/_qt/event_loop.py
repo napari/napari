@@ -6,8 +6,8 @@ from qtpy.QtCore import Qt
 from qtpy.QtGui import QPixmap
 from qtpy.QtWidgets import QApplication, QSplashScreen
 
-from .exceptions import ExceptionHandler
 from ..utils.perf import perf_config
+from .exceptions import ExceptionHandler
 
 
 def _create_application(argv) -> QApplication:
@@ -24,7 +24,7 @@ def _create_application(argv) -> QApplication:
     QWidgets with it, such as we do for the splash screen.
     """
     if perf_config and perf_config.trace_qt_events:
-        from .qt_event_tracing import QApplicationWithTracing
+        from .tracing.qt_event_tracing import QApplicationWithTracing
 
         return QApplicationWithTracing(argv)
     else:

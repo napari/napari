@@ -18,7 +18,6 @@ from ._compat import perf_counter_ns
 from ._config import perf_config
 from ._event import PerfEvent
 
-
 # timers
 #     The global PerfTimers instance.
 #
@@ -35,7 +34,7 @@ from ._event import PerfEvent
 # investigations, but consider them like "debug prints" something you
 # strip out before commiting. When perfmon is disabled perf_timers
 # do close to nothing, but there is still maybe 1 usec overhead.
-from ._timers import timers, perf_timer, add_instant_event
+from ._timers import add_instant_event, perf_timer, timers
 
 # If not using perfmon timers will be 100% disabled with hopefully zero
 # run-time impact.

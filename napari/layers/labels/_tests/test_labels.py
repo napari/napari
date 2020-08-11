@@ -2,6 +2,7 @@ import numpy as np
 import pytest
 from vispy.color import Colormap
 
+from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Labels
 
 
@@ -293,12 +294,16 @@ def test_custom_color_dict():
     """Test custom color dict."""
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
-    layer = Labels(data, color={1: 'white'})
+    layer = Labels(
+        data, color={2: 'white', 4: 'red', 8: 'blue', 16: 'red', 32: 'blue'}
+    )
 
     # test with custom color dict
     assert type(layer.get_color(2)) == np.ndarray
     assert type(layer.get_color(1)) == np.ndarray
-    assert (layer.get_color(1) == np.array([1.0, 1.0, 1.0, 1.0])).all()
+    assert (layer.get_color(2) == np.array([1.0, 1.0, 1.0, 1.0])).all()
+    assert (layer.get_color(4) == layer.get_color(16)).all()
+    assert (layer.get_color(8) == layer.get_color(32)).all()
 
     # test disable custom color dict
     # should not initialize as white since we are using random.seed
@@ -520,3 +525,13 @@ def test_thumbnail():
     layer = Labels(data)
     layer._update_thumbnail()
     assert layer.thumbnail.shape == layer._thumbnail_shape
+
+
+def test_world_data_extent():
+    """Test extent after applying transforms."""
+    np.random.seed(0)
+    shape = (6, 10, 15)
+    data = np.random.randint(20, size=(shape))
+    layer = Labels(data)
+    extent = np.array(((0,) * 3, shape))
+    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))

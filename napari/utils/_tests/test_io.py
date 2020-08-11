@@ -1,12 +1,13 @@
-import os
 import csv
+import os
 from pathlib import Path
-import numpy as np
-from dask import array as da
 from tempfile import TemporaryDirectory
-from napari.utils import io
-import pytest
 
+import numpy as np
+import pytest
+from dask import array as da
+
+from napari.utils import io
 
 try:
     import zarr

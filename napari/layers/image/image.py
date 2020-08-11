@@ -1,24 +1,21 @@
 """Image class.
 """
-import logging
 import types
 import warnings
 
 import numpy as np
 from scipy import ndimage as ndi
 
+from ...utils.chunk import ChunkKey, ChunkRequest, chunk_loader
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.event import Event
 from ...utils.status_messages import format_float
 from ..base import Layer
-from ..utils.layer_utils import calc_data_range
 from ..intensity_mixin import IntensityVisualizationMixin
+from ..utils.layer_utils import calc_data_range
 from ._image_constants import Interpolation, Interpolation3D, Rendering
-from ._image_utils import guess_rgb, guess_multiscale
 from ._image_slice import ImageSlice
-from ...utils.chunk import chunk_loader, ChunkKey, ChunkRequest
-
-LOGGER = logging.getLogger("ChunkLoader")
+from ._image_utils import guess_multiscale, guess_rgb
 
 
 # Mixin must come before Layer
@@ -171,12 +168,6 @@ class Image(IntensityVisualizationMixin, Layer):
         else:
             init_shape = data.shape
 
-        LOGGER.info(
-            "Image.__init__ multiscale=%d init_shape=%s",
-            multiscale,
-            init_shape,
-        )
-
         # Determine if rgb
         if rgb is None:
             rgb = guess_rgb(init_shape)
@@ -262,7 +253,7 @@ class Image(IntensityVisualizationMixin, Layer):
         """Get empty image to use as the default before data is loaded.
         """
         if self.rgb:
-            return np.zeros((1,) * self.dims.ndisplay + (self.shape[-1],))
+            return np.zeros((1,) * self.dims.ndisplay + (3,))
         else:
             return np.zeros((1,) * self.dims.ndisplay)
 
@@ -314,8 +305,16 @@ class Image(IntensityVisualizationMixin, Layer):
         """Determine number of dimensions of the layer."""
         return len(self.level_shapes[0])
 
-    def _get_extent(self):
-        return tuple((0, m) for m in self.level_shapes[0])
+    @property
+    def _extent_data(self) -> np.ndarray:
+        """Extent of layer in data coordinates.
+
+        Returns
+        -------
+        extent_data : array, shape (2, D)
+        """
+        shape = self.level_shapes[0]
+        return np.vstack([np.zeros(len(shape)), shape])
 
     @property
     def data_level(self):

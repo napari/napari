@@ -1,9 +1,10 @@
-import numpy as np
 import dask.array as da
-import xarray as xr
-
+import numpy as np
 import pytest
+import xarray as xr
 from vispy.color import Colormap
+
+from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Image
 
 
@@ -610,3 +611,13 @@ def test_grid_translate():
     translate = np.array([15, 15])
     layer.translate_grid = translate
     np.testing.assert_allclose(layer.translate_grid, translate)
+
+
+def test_world_data_extent():
+    """Test extent after applying transforms."""
+    np.random.seed(0)
+    shape = (6, 10, 15)
+    data = np.random.random(shape)
+    layer = Image(data)
+    extent = np.array(((0,) * 3, shape))
+    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))

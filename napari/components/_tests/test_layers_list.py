@@ -1,6 +1,8 @@
 import os
+
 import numpy as np
 import pytest
+
 from napari.components import LayerList
 from napari.layers import Image
 
@@ -524,3 +526,75 @@ def test_layers_save_svg(tmpdir, layers):
 
     # Check file now exists
     assert os.path.isfile(path)
+
+
+def test_world_extent():
+    """Test world extent after adding layers."""
+    np.random.seed(0)
+    layers = LayerList()
+
+    # Empty data is taken to be 512 x 512
+    np.testing.assert_allclose(layers._extent_world[0], (0, 0))
+    np.testing.assert_allclose(layers._extent_world[1], (512, 512))
+    np.testing.assert_allclose(layers._step_size, (1, 1))
+
+    # Add one layer
+    layer_a = Image(
+        np.random.random((6, 10, 15)), scale=(3, 1, 1), translate=(10, 20, 5)
+    )
+    layers.append(layer_a)
+    np.testing.assert_allclose(layer_a._extent_world[0], (10, 20, 5))
+    np.testing.assert_allclose(layer_a._extent_world[1], (28, 30, 20))
+    np.testing.assert_allclose(layers._extent_world[0], (10, 20, 5))
+    np.testing.assert_allclose(layers._extent_world[1], (28, 30, 20))
+    np.testing.assert_allclose(layers._step_size, (3, 1, 1))
+
+    # Add another layer
+    layer_b = Image(
+        np.random.random((8, 6, 15)), scale=(6, 2, 1), translate=(-5, -10, 10)
+    )
+    layers.append(layer_b)
+    np.testing.assert_allclose(layer_b._extent_world[0], (-5, -10, 10))
+    np.testing.assert_allclose(layer_b._extent_world[1], (43, 2, 25))
+    np.testing.assert_allclose(layers._extent_world[0], (-5, -10, 5))
+    np.testing.assert_allclose(layers._extent_world[1], (43, 30, 25))
+    np.testing.assert_allclose(layers._step_size, (3, 1, 1))
+
+
+def test_world_extent_mixed_ndim():
+    """Test world extent after adding layers of different dimensionality."""
+    np.random.seed(0)
+    layers = LayerList()
+
+    # Add 3D layer
+    layer_a = Image(np.random.random((15, 15, 15)), scale=(4, 12, 2))
+    layers.append(layer_a)
+    np.testing.assert_allclose(layers._extent_world[1], (60, 180, 30))
+
+    # Add 2D layer
+    layer_b = Image(np.random.random((10, 10)), scale=(6, 4))
+    layers.append(layer_b)
+    np.testing.assert_allclose(layers._extent_world[1], (60, 180, 40))
+    np.testing.assert_allclose(layers._step_size, (4, 6, 2))
+
+
+def test_ndim():
+    """Test world extent after adding layers."""
+    np.random.seed(0)
+    layers = LayerList()
+
+    assert layers.ndim == 2
+
+    # Add one layer
+    layer_a = Image(np.random.random((10, 15)))
+    layers.append(layer_a)
+    assert layers.ndim == 2
+
+    # Add another layer
+    layer_b = Image(np.random.random((8, 6, 15)))
+    layers.append(layer_b)
+    assert layers.ndim == 3
+
+    # Remove layer
+    layers.remove(layer_b)
+    assert layers.ndim == 2

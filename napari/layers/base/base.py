@@ -110,11 +110,11 @@ class Layer(KeymapProvider, ABC):
     Notes
     -----
     Must define the following:
-        * `_get_range()`: called by `range` property
+        * `_extent_data`: property
         * `data` property (setter & getter)
 
     May define the following:
-        * `_set_view_slice(indices)`: called to set currently viewed slice
+        * `_set_view_slice()`: called to set currently viewed slice
         * `_basename()`: base/default name of the layer
     """
 
@@ -227,6 +227,7 @@ class Layer(KeymapProvider, ABC):
 
         self.mouse_move_callbacks = []
         self.mouse_drag_callbacks = []
+        self.mouse_wheel_callbacks = []
         self._persisted_mouse_event = {}
         self._mouse_drag_gen = {}
 
@@ -406,9 +407,11 @@ class Layer(KeymapProvider, ABC):
 
         self.dims.ndim = ndim
 
-        curr_range = self._get_range()
-        for i, r in enumerate(curr_range):
-            self.dims.set_range(i, r)
+        step_size = self.scale
+        # For now dims don't use world coordinates, but scaled data coordinates
+        extent = np.multiply(self._extent_data, step_size)
+        for i in range(self.dims.ndim):
+            self.dims.set_range(i, (extent[0, i], extent[1, i], step_size[i]))
 
         self.refresh()
         self._update_coordinates()
@@ -424,9 +427,41 @@ class Layer(KeymapProvider, ABC):
     def data(self, data):
         raise NotImplementedError()
 
+    @property
     @abstractmethod
-    def _get_extent(self):
+    def _extent_data(self) -> np.ndarray:
+        """Extent of layer in data coordinates.
+
+        Returns
+        -------
+        extent_data : array, shape (2, D)
+        """
         raise NotImplementedError()
+
+    @property
+    def _extent_world(self) -> np.ndarray:
+        """Range of layer in world coordinates.
+
+        Returns
+        -------
+        extent_world : array, shape (2, D)
+        """
+        return self._transforms['data2world'](self._extent_data)
+
+    @property
+    def shape(self):
+        """Size of layer in world coordinates (compatibility).
+
+        Returns
+        -------
+        shape : tuple
+        """
+        # To Do: Deprecate when full world coordinate refactor
+        # is complete
+
+        extent = self._extent_world
+        # Rounding is for backwards compatibility reasons.
+        return tuple(np.round(extent[1] - extent[0]).astype(int))
 
     @abstractmethod
     def _get_ndim(self):
@@ -435,12 +470,6 @@ class Layer(KeymapProvider, ABC):
     def _set_editable(self, editable=None):
         if editable is None:
             self.editable = True
-
-    def _get_range(self):
-        extent = self._get_extent()
-        return tuple(
-            (s * e[0], s * e[1], s) for e, s in zip(extent, self.scale)
-        )
 
     def _get_base_state(self):
         """Get dictionary of attributes on base layer.
@@ -507,13 +536,6 @@ class Layer(KeymapProvider, ABC):
     def ndim(self):
         """int: Number of dimensions in the data."""
         return self.dims.ndim
-
-    @property
-    def shape(self):
-        """tuple of int: Shape of the data."""
-        return tuple(
-            np.round(r[1] - r[0]).astype(int) for r in self.dims.range
-        )
 
     @property
     def selected(self):
