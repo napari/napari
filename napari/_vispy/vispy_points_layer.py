@@ -1,10 +1,10 @@
 import numpy as np
-from vispy.scene.visuals import Line, Compound, Text
-from .markers import Markers
+from vispy.scene.visuals import Compound, Line, Text
 
-from .vispy_base_layer import VispyBaseLayer
 from ..utils.colormaps.standardize_color import transform_color
 from ._text_utils import update_text
+from .markers import Markers
+from .vispy_base_layer import VispyBaseLayer
 
 
 class VispyPointsLayer(VispyBaseLayer):

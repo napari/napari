@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from functools import lru_cache
+
 import numpy as np
 from vispy.app import Canvas
 from vispy.gloo import gl

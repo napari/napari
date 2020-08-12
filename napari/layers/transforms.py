@@ -1,6 +1,8 @@
-import toolz as tz
 from typing import Sequence
+
 import numpy as np
+import toolz as tz
+
 from ..utils.list import ListModel
 
 

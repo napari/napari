@@ -1,39 +1,36 @@
 from pathlib import Path
 
-from qtpy.QtCore import QCoreApplication, Qt, QSize
-from qtpy.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QFileDialog,
-    QSplitter,
-    QMessageBox,
-)
+from qtpy.QtCore import QCoreApplication, QSize, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
-from ..utils.io import imsave
-from vispy.scene import SceneCanvas, PanZoomCamera, ArcballCamera
+from qtpy.QtWidgets import (
+    QFileDialog,
+    QMessageBox,
+    QSplitter,
+    QVBoxLayout,
+    QWidget,
+)
+from vispy.scene import ArcballCamera, PanZoomCamera, SceneCanvas
 from vispy.visuals.transforms import ChainTransform
 
-from .qt_dims import QtDims
-from .qt_layerlist import QtLayerList
 from ..resources import get_stylesheet
-from ..utils.theme import template
+from ..utils import perf
 from ..utils.interactions import (
     ReadOnlyWrapper,
-    mouse_press_callbacks,
     mouse_move_callbacks,
+    mouse_press_callbacks,
     mouse_release_callbacks,
     mouse_wheel_callbacks,
 )
+from ..utils.io import imsave
 from ..utils.key_bindings import components_to_key_combo
-from ..utils import perf
-
-from .utils import QImg2array, square_pixmap, circle_pixmap
-from .qt_controls import QtControls
-from .qt_viewer_buttons import QtLayerButtons, QtViewerButtons
-from .qt_viewer_dock_widget import QtViewerDockWidget
-from .qt_about_key_bindings import QtAboutKeyBindings
-from .qt_performance import QtPerformance
-from .._vispy import create_vispy_visual
+from ..utils.theme import template
+from .dialogs.qt_about_key_bindings import QtAboutKeyBindings
+from .tracing.qt_performance import QtPerformance
+from .utils import QImg2array, circle_pixmap, square_pixmap
+from .widgets.qt_dims import QtDims
+from .widgets.qt_layerlist import QtLayerList
+from .widgets.qt_viewer_buttons import QtLayerButtons, QtViewerButtons
+from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
 
 
 class KeyModifierFilterSceneCanvas(SceneCanvas):
@@ -59,7 +56,7 @@ class QtViewer(QSplitter):
         Canvas for rendering the current view.
     console : QtConsole
         iPython console terminal integrated into the napari GUI.
-    controls : QtControls
+    controls : QtLayerControlsContainer
         Qt view for GUI controls.
     dims : napari.qt_dims.QtDims
         Dimension sliders; Qt View for Dims model.
@@ -88,6 +85,8 @@ class QtViewer(QSplitter):
     raw_stylesheet = get_stylesheet()
 
     def __init__(self, viewer):
+        from .layer_controls import QtLayerControlsContainer
+
         super().__init__()
         self.setAttribute(Qt.WA_DeleteOnClose)
 
@@ -97,7 +96,7 @@ class QtViewer(QSplitter):
 
         self.viewer = viewer
         self.dims = QtDims(self.viewer.dims)
-        self.controls = QtControls(self.viewer)
+        self.controls = QtLayerControlsContainer(self.viewer)
         self.layers = QtLayerList(self.viewer.layers)
         self.layerButtons = QtLayerButtons(self.viewer)
         self.viewerButtons = QtViewerButtons(self.viewer)
@@ -225,7 +224,7 @@ class QtViewer(QSplitter):
         """QtConsole: iPython console terminal integrated into the napari GUI.
         """
         if self._console is None:
-            from .qt_console import QtConsole
+            from .widgets.qt_console import QtConsole
 
             self.console = QtConsole({'viewer': self.viewer})
         return self._console
@@ -257,6 +256,8 @@ class QtViewer(QSplitter):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
+        from .._vispy import create_vispy_visual
+
         layers = event.source
         layer = event.item
         vispy_layer = create_vispy_visual(layer)

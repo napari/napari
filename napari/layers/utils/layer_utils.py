@@ -1,4 +1,4 @@
-from typing import Dict, Union, Tuple
+from typing import Dict, Tuple, Union
 
 import numpy as np
 from vispy.color import Colormap

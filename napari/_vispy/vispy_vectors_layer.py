@@ -1,6 +1,7 @@
-from vispy.scene.visuals import Mesh
-from .vispy_base_layer import VispyBaseLayer
 import numpy as np
+from vispy.scene.visuals import Mesh
+
+from .vispy_base_layer import VispyBaseLayer
 
 
 class VispyVectorsLayer(VispyBaseLayer):

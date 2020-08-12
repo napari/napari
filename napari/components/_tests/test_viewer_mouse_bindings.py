@@ -1,11 +1,10 @@
-import pytest
-import numpy as np
 import collections
+
+import numpy as np
+import pytest
+
 from napari.components import ViewerModel
-from napari.utils.interactions import (
-    ReadOnlyWrapper,
-    mouse_wheel_callbacks,
-)
+from napari.utils.interactions import ReadOnlyWrapper, mouse_wheel_callbacks
 
 
 @pytest.fixture

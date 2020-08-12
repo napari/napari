@@ -14,10 +14,7 @@ from numpydoc.docscrape import ClassDoc, FunctionDoc
 import napari
 from napari import Viewer
 from napari import layers as module
-from napari._tests.utils import (
-    check_viewer_functioning,
-    layer_test_data,
-)
+from napari._tests.utils import check_viewer_functioning, layer_test_data
 from napari.utils.misc import callsignature, camel_to_snake
 
 layers = []

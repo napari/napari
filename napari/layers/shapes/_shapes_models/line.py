@@ -1,6 +1,7 @@
 import numpy as np
-from .shape import Shape
+
 from .._shapes_utils import create_box
+from .shape import Shape
 
 
 class Line(Shape):

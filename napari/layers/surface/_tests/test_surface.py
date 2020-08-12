@@ -1,6 +1,7 @@
 import numpy as np
-from napari.layers import Surface
+
 from napari._tests.utils import check_layer_world_data_extent
+from napari.layers import Surface
 
 
 def test_random_surface():

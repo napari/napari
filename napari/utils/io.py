@@ -4,12 +4,12 @@ import re
 from glob import glob
 from pathlib import Path
 from typing import List, Optional, Tuple, Union
-from ..types import FullLayerData
 
 import numpy as np
 from dask import array as da
 from dask import delayed
 
+from ..types import FullLayerData
 from ..utils.misc import abspath_or_url
 
 

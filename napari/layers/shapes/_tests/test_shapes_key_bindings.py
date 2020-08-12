@@ -1,4 +1,5 @@
 import numpy as np
+
 from napari.layers import Shapes
 from napari.layers.shapes import _shapes_key_bindings as key_bindings
 

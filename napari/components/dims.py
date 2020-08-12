@@ -1,5 +1,6 @@
 from copy import copy
-from typing import Union, Sequence
+from typing import Sequence, Union
+
 import numpy as np
 
 from ..utils.event import EmitterGroup

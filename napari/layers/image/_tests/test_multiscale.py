@@ -1,8 +1,9 @@
 import numpy as np
 from skimage.transform import pyramid_gaussian
 from vispy.color import Colormap
-from napari.layers import Image
+
 from napari._tests.utils import check_layer_world_data_extent
+from napari.layers import Image
 
 
 def test_random_multiscale():

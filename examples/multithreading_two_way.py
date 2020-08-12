@@ -10,7 +10,7 @@ from qtpy.QtWidgets import (
 
 import napari
 import numpy as np
-from napari._qt.threading import thread_worker
+from napari.qt.threading import thread_worker
 
 
 @thread_worker

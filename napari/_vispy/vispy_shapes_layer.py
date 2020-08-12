@@ -1,7 +1,8 @@
-from vispy.scene.visuals import Line, Compound, Mesh, Markers, Text
-from .vispy_base_layer import VispyBaseLayer
-from ._text_utils import update_text
 import numpy as np
+from vispy.scene.visuals import Compound, Line, Markers, Mesh, Text
+
+from ._text_utils import update_text
+from .vispy_base_layer import VispyBaseLayer
 
 
 class VispyShapesLayer(VispyBaseLayer):

@@ -1,12 +1,13 @@
-from typing import List, Dict
 import itertools
+from typing import Dict, List
 
 import numpy as np
+
 from ...layers import Image
-from ...utils.colormaps import colormaps
 from ...layers.image._image_utils import guess_multiscale
-from ...utils.misc import ensure_iterable, ensure_sequence_of_iterables
 from ...types import FullLayerData
+from ...utils.colormaps import colormaps
+from ...utils.misc import ensure_iterable, ensure_sequence_of_iterables
 
 
 def split_channels(
