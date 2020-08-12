@@ -76,7 +76,7 @@ class ImageSlice:
         self.thumbnail.raw = thumbnail
         self.loaded = True
 
-    def load_chunk(self, request: ChunkRequest) -> None:
+    def load_chunk(self, request: ChunkRequest) -> Optional[ChunkRequest]:
         """Load the requested chunk asynchronously.
 
         Parameters
