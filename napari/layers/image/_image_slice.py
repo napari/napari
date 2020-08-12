@@ -51,7 +51,7 @@ class ImageSlice:
         self.rgb = rgb
 
         # We're showing nothing to start.
-        self.current_key: ChunkKey = None
+        self.current_key: Optional[ChunkKey] = None
 
         # With async there can be a gap between when the ImageSlice is
         # created and the data is actually loaded.
