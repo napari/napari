@@ -56,7 +56,7 @@ class QtDims(QWidget):
         # Update the number of sliders now that the dims have been added
         self._update_nsliders()
         self.dims.events.ndim.connect(self._update_nsliders)
-        self.dims.events.axis.connect(lambda ev: self._update_slider(ev.axis))
+        self.dims.events.step.connect(lambda ev: self._update_slider(ev.axis))
         self.dims.events.range.connect(lambda ev: self._update_range(ev.axis))
         self.dims.events.ndisplay.connect(self._update_display)
         self.dims.events.order.connect(self._update_display)

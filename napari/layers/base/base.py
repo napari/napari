@@ -436,8 +436,8 @@ class Layer(KeymapProvider, ABC):
         world_pts = [self._dims_point[ax] for ax in self._dims.not_displayed]
         inv_transform = self._transforms['data2world'].inverse
         data_pts = inv_transform.set_slice(self._dims.not_displayed)(world_pts)
-        # A floor is taken to convert these values to slicing integers
-        data_pts = np.floor(data_pts).astype(int)
+        # A round is taken to convert these values to slicing integers
+        data_pts = np.round(data_pts).astype(int)
 
         indices = [slice(None)] * self.ndim
         for i, ax in enumerate(self._dims.not_displayed):

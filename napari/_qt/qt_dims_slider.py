@@ -17,7 +17,6 @@ from qtpy.QtWidgets import (
     QFrame,
 )
 
-from ..components.dims_constants import DimsMode
 from ..utils.event import Event
 from ._constants import LoopMode
 from .qt_modal import QtPopup
@@ -209,10 +208,8 @@ class QtDimSliderWidget(QWidget):
 
     def _update_slider(self):
         """Update dimension slider."""
-        mode = self.dims.mode[self.axis]
-        if mode == DimsMode.POINT:
-            self.slider.setValue(self.dims.step[self.axis])
-            self._update_slice_labels()
+        self.slider.setValue(self.dims.step[self.axis])
+        self._update_slice_labels()
 
     def _update_slice_labels(self):
         """Update slice labels to match current dimension slider position."""
@@ -561,10 +558,10 @@ class AnimationWorker(QObject):
         self.set_fps(self.slider.fps)
         self.set_frame_range(slider.frame_range)
 
-        # after dims.set_step is called, it will emit a dims.events.axis()
+        # after dims.set_step is called, it will emit a dims.events.step()
         # we use this to update this threads current frame (in case it
         # was some other event that updated the axis)
-        self.dims.events.axis.connect(self._on_axis_changed)
+        self.dims.events.step.connect(self._on_axis_changed)
         self.current = max(self.dims.step[self.axis], self.min_point)
         self.current = min(self.current, self.max_point)
         self.timer = QTimer()
@@ -679,7 +676,7 @@ class AnimationWorker(QObject):
                 self.current = self.min_point + self.current - self.max_point
             else:  # loop_mode == 'once'
                 return self.finish()
-        with self.dims.events.axis.blocker(self._on_axis_changed):
+        with self.dims.events.step.blocker(self._on_axis_changed):
             self.frame_requested.emit(self.axis, self.current)
         # using a singleShot timer here instead of timer.start() because
         # it makes it easier to update the interval using signals/slots

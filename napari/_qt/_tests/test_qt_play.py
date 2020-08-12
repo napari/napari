@@ -146,7 +146,7 @@ def test_play_api(qtbot, view):
         # if we don't "enable play" again, view.dims won't request a new frame
         view.dims._play_ready = True
 
-    view.dims.dims.events.axis.connect(increment)
+    view.dims.dims.events.step.connect(increment)
 
     view.dims.play(0, 20)
     # wait for the thread to start before timing...
@@ -166,11 +166,11 @@ def test_playing_hidden_slider_does_nothing(view):
     """Make sure playing a dimension without a slider does nothing"""
 
     def increment(e):
-        view.dims._frame = e.value  # this is provided by the axis event
+        view.dims._frame = e.value  # this is provided by the step event
         # if we don't "enable play" again, view.dims won't request a new frame
         view.dims._play_ready = True
 
-    view.dims.dims.events.axis.connect(increment)
+    view.dims.dims.events.step.connect(increment)
 
     with pytest.warns(UserWarning):
         view.dims.play(2, 20)
