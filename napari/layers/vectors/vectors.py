@@ -3,10 +3,9 @@ from copy import copy
 from typing import Dict, Tuple, Union
 
 import numpy as np
-from vispy.color.colormap import Colormap
 
 from ...types import ValidColormapArg
-from ...utils.colormaps import ensure_colormap
+from ...utils.colormaps import ensure_colormap, Colormap
 from ...utils.event import Event
 from ...utils.status_messages import format_float
 from ..base import Layer
@@ -288,7 +287,7 @@ class Vectors(Layer):
                 'edge_width': self.edge_width,
                 'edge_color': self.edge_color,
                 'edge_color_cycle': self.edge_color_cycle,
-                'edge_colormap': self.edge_colormap[0],
+                'edge_colormap': self.edge_colormap,
                 'edge_contrast_limits': self.edge_contrast_limits,
                 'data': self.data,
                 'properties': self.properties,
@@ -468,13 +467,13 @@ class Vectors(Layer):
                     ):
                         edge_colors, contrast_limits = map_property(
                             prop=edge_color_properties,
-                            colormap=self.edge_colormap[1],
+                            colormap=self.edge_colormap,
                         )
                         self.edge_contrast_limits = contrast_limits
                     else:
                         edge_colors, _ = map_property(
                             prop=edge_color_properties,
-                            colormap=self.edge_colormap[1],
+                            colormap=self.edge_colormap,
                             contrast_limits=self.edge_contrast_limits,
                         )
                 else:

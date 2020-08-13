@@ -445,7 +445,7 @@ class Points(Layer):
             contrast_limits = getattr(self, f'_{attribute}_contrast_limits')
             curr_color, _ = map_property(
                 prop=prop_value,
-                colormap=colormap[1],
+                colormap=colormap,
                 contrast_limits=contrast_limits,
             )
         setattr(self, f'_current_{attribute}_color', curr_color)
@@ -553,7 +553,7 @@ class Points(Layer):
 
             fc, _ = map_property(
                 prop=color_property_value,
-                colormap=colormap[1],
+                colormap=colormap,
                 contrast_limits=contrast_limits,
             )
             new_colors = np.tile(fc, (adding, 1))
@@ -854,7 +854,7 @@ class Points(Layer):
         colormap : napari.utils.Colormap
             The Colormap object.
         """
-        return self._edge_colormap
+        return self._face_colormap
 
     @face_colormap.setter
     def face_colormap(self, colormap: ValidColormapArg):
@@ -1112,7 +1112,7 @@ class Points(Layer):
                     if update_color_mapping or contrast_limits is None:
 
                         colors, contrast_limits = map_property(
-                            prop=color_properties, colormap=colormap[1]
+                            prop=color_properties, colormap=colormap
                         )
                         setattr(
                             self,
@@ -1123,7 +1123,7 @@ class Points(Layer):
 
                         colors, _ = map_property(
                             prop=color_properties,
-                            colormap=colormap[1],
+                            colormap=colormap,
                             contrast_limits=contrast_limits,
                         )
                 else:
