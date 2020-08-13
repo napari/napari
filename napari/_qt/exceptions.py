@@ -5,6 +5,7 @@ from typing import Type
 
 from qtpy.QtCore import QObject, Signal
 
+from ..utils.misc import session_is_interactive
 from .qt_error_notification import NapariNotification
 
 
@@ -50,15 +51,3 @@ class ExceptionHandler(QObject):
     def _show_error_dialog(self, exception: BaseException):
         self.message = NapariNotification.from_exception(exception)
         self.message.show()
-
-
-def session_is_interactive() -> bool:
-    """Return True if the running in an interactive or IPython session."""
-    import builtins
-    import sys
-
-    if '__IPYTHON__' in dir(builtins):
-        return True
-    if bool(getattr(sys, 'ps1', sys.flags.interactive)):
-        return True
-    return False
