@@ -148,10 +148,7 @@ class Labels(Image):
         self._seed = seed
         self._background_label = 0
         self._num_colors = num_colors
-        self._random_colormap = (
-            'random',
-            colormaps.label_colormap(self.num_colors),
-        )
+        self._random_colormap = colormaps.label_colormap(self.num_colors)
         self._color_mode = LabelColorMode.AUTO
         self._brush_shape = LabelBrushShape.CIRCLE
 
@@ -580,8 +577,8 @@ class Labels(Image):
             col = None
         else:
             val = self._raw_to_displayed(np.array([label]))
-            col = self.colormap[1][val].rgba[0]
-        return col
+            col = self.colormap.map(val)[0]
+        return np.round(255 * col).astype(np.uint8)
 
     def _reset_history(self, event=None):
         self._undo_history = deque()

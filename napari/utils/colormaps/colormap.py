@@ -1,10 +1,10 @@
-import numpy as np
-from scipy import interpolate
 from enum import auto
 
+import numpy as np
+
+from ...utils.misc import StringEnum
 from .colorbars import make_colorbar
 from .standardize_color import transform_color
-from ...utils.misc import StringEnum
 
 
 class ColormapInterpolationMode(StringEnum):
@@ -38,7 +38,7 @@ class Colormap:
 
         self.name = name
         self.colors = transform_color(colors)
-        self.interpolation = interpolation
+        self.interpolation = ColormapInterpolationMode(interpolation)
         if controls is None:
             N = len(self.colors) + int(self.interpolation == 'zero')
             self.controls = np.linspace(0, 1, N)
@@ -46,16 +46,26 @@ class Colormap:
             self.controls = np.asarray(controls)
 
     def __iter__(self):
-        yield from (self.colors, self.controls, self.interpolation)
+        yield from (self.colors, self.controls, str(self.interpolation))
 
     def map(self, values):
-        funcs = [
-            interpolate.interp1d(
-                self.controls, self.colors[:, i], kind=self.interpolation
+        if self.interpolation == ColormapInterpolationMode.LINEAR:
+            # One color per control point
+            cols = [
+                np.interp(values, self.controls, self.colors[:, i])
+                for i in range(4)
+            ]
+            cols = np.stack(cols, axis=1)
+        elif self.interpolation == ColormapInterpolationMode.ZERO:
+            # One color per bin
+            indices = np.clip(
+                np.searchsorted(self.controls, values) - 1, 0, len(self.colors)
             )
-            for i in range(4)
-        ]
-        return np.stack([f(values) for f in funcs], axis=1)
+            cols = self.colors[indices.astype(np.int32)]
+        else:
+            raise ValueError('Unrecognized Colormap Interpolation Mode')
+
+        return cols
 
     @property
     def colorbar(self):

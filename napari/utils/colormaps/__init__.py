@@ -6,7 +6,7 @@ from .colormaps import (
     CYMRGB,
     MAGENTA_GREEN,
     RGB,
-    ensure_colormap_tuple,
+    ensure_colormap,
     matplotlib_colormaps,
     simple_colormaps,
 )

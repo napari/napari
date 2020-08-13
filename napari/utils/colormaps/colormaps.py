@@ -240,7 +240,10 @@ def label_colormap(num_colors=256, seed=0.5):
     )
     colors[0, :] = 0  # ensure alpha is 0 for label 0
     cmap = Colormap(
-        colors=colors, controls=control_points, interpolation='zero'
+        name='label_colormap',
+        colors=colors,
+        controls=control_points,
+        interpolation='zero',
     )
     return cmap
 
@@ -357,6 +360,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Tuple[str, Colormap]:
             AVAILABLE_COLORMAPS[name] = cmap
     elif isinstance(colormap, Colormap):
         AVAILABLE_COLORMAPS[colormap.name] = colormap
+        name = colormap.name
     elif isinstance(colormap, BaseColormap):
         # if a vispy colormap instance is provided, make sure we don't already
         # know about it before adding a new unnamed colormap

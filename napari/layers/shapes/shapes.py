@@ -1217,11 +1217,11 @@ class Shapes(Layer):
                 'edge_width': self.edge_width,
                 'face_color': self.face_color,
                 'face_color_cycle': self.face_color_cycle,
-                'face_colormap': self.face_colormap[0],
+                'face_colormap': self.face_colormap,
                 'face_contrast_limits': self.face_contrast_limits,
                 'edge_color': self.edge_color,
                 'edge_color_cycle': self.edge_color_cycle,
-                'edge_colormap': self.edge_colormap[0],
+                'edge_colormap': self.edge_colormap,
                 'edge_contrast_limits': self.edge_contrast_limits,
                 'data': self.data,
             }
