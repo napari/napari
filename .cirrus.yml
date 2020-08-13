@@ -98,7 +98,7 @@ mac_task:
     # is a pull request, only run python 3.8
     - only_if: $CIRRUS_PR != ""
       env:
-        PY_VER: "3.8"
+        PY_VER: "3.7"
 
   name: macos ${PY_VER}
   osx_instance:
