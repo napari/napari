@@ -1,11 +1,8 @@
-import logging
-import traceback
 from types import TracebackType
 from typing import Type
 
 from qtpy.QtCore import QObject, Signal
 
-from ..utils.misc import session_is_interactive
 from .qt_error_notification import NapariNotification
 
 
@@ -41,12 +38,8 @@ class ExceptionHandler(QObject):
         tb : TracebackType
             The traceback object associated with the error.
         """
-        text = "".join(traceback.format_exception(etype, value, tb))
         self.error.emit((etype, value, tb))
-        if session_is_interactive():
-            logging.error("Unhandled exception:\n%s", text)
-        else:
-            self._show_error_dialog(value)
+        self._show_error_dialog(value)
 
     def _show_error_dialog(self, exception: BaseException):
         self.message = NapariNotification.from_exception(exception)

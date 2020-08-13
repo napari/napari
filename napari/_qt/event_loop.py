@@ -72,7 +72,11 @@ def gui_qt(*, startup_logo=False):
     exception_handler = ExceptionHandler()
     sys.excepthook = exception_handler.handle
 
-    yield app
+    try:
+        yield app
+    except Exception:
+        exception_handler.handle(*sys.exc_info())
+
     # if the application already existed before this function was called,
     # there's no need to start it again.  By avoiding unnecessary calls to
     # ``app.exec_``, we avoid blocking.
