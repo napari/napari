@@ -1,7 +1,8 @@
-from vispy.scene.visuals import Mesh
-from vispy.color import Colormap
-from .vispy_base_layer import VispyBaseLayer
 import numpy as np
+from vispy.color import Colormap
+from vispy.scene.visuals import Mesh
+
+from .vispy_base_layer import VispyBaseLayer
 
 
 class VispySurfaceLayer(VispyBaseLayer):

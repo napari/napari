@@ -1,6 +1,8 @@
 import os
+
 import numpy as np
 import pytest
+
 from napari.components import LayerList
 from napari.layers import Image
 

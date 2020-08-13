@@ -6,7 +6,6 @@ from collections import ChainMap
 
 from .misc import formatdoc
 
-
 sep = ' '
 start = 1
 

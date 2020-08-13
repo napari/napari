@@ -18,10 +18,10 @@ white color array, since it seems unreasonable to crash the entire napari
 session due to mis-represented colors.
 """
 
-import types
-from typing import Dict, Any, Callable, Sequence
 import functools
+import types
 import warnings
+from typing import Any, Callable, Dict, Sequence
 
 import numpy as np
 from vispy.color import ColorArray, get_color_dict, get_color_names

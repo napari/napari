@@ -1,6 +1,7 @@
-from typing import Dict, Union, Tuple
+from typing import Dict, Tuple, Union
 
 import numpy as np
+
 from ...utils.colormaps import Colormap
 
 

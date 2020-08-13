@@ -3,10 +3,9 @@ import pandas as pd
 import pytest
 from vispy.color import get_colormap
 
+from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Vectors
 from napari.utils.colormaps.standardize_color import transform_color
-from napari._tests.utils import check_layer_world_data_extent
-
 
 # Set random seed for testing
 np.random.seed(0)
@@ -121,6 +120,7 @@ def test_random_3D_vectors_image():
     assert layer._view_data.shape[2] == 2
 
 
+@pytest.mark.filterwarnings("ignore:Passing `np.nan`:DeprecationWarning:numpy")
 def test_empty_3D_vectors():
     """Test instantiating Vectors layer with empty coordinate-like 3D data."""
     shape = (0, 2, 3)
@@ -409,6 +409,7 @@ def test_edge_color_map_non_numeric_property():
         layer.edge_color_mode = 'colormap'
 
 
+@pytest.mark.filterwarnings("ignore:elementwise comparis:FutureWarning:numpy")
 def test_switching_edge_color_mode():
     """Test transitioning between all color modes"""
     np.random.seed(0)

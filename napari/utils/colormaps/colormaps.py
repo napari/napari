@@ -1,16 +1,12 @@
 import os
-from typing import Tuple, List
+from typing import List, Tuple
 
 import numpy as np
-from vispy.color import (
-    BaseColormap,
-    get_colormap,
-    get_colormaps,
-)
+from vispy.color import BaseColormap, get_colormap, get_colormaps
 
 from ...types import ValidColormapArg
-from .vendored import cm, colorconv
 from .colormap import Colormap
+from .vendored import cm, colorconv
 
 _matplotlib_list_file = os.path.join(
     os.path.dirname(__file__), 'matplotlib_cmaps.txt'
@@ -133,10 +129,16 @@ def color_dict_to_colormap(colors):
         Mapping of Label to color control point within colormap
     """
 
-    colormap = Colormap(colors=[color for label, color in colors.items()])
-    label_color_index = {}
-    for i, (label, color) in enumerate(colors.items()):
-        label_color_index[label] = i / (len(colors) - 1)
+    control_colors = np.unique(list(colors.values()), axis=0)
+    colormap = Colormap(colors=control_colors)
+    control2index = {
+        tuple(ctrl): i / (len(control_colors) - 1)
+        for i, ctrl in enumerate(control_colors)
+    }
+    label_color_index = {
+        label: control2index[tuple(color)] for label, color in colors.items()
+    }
+
     return colormap, label_color_index
 
 

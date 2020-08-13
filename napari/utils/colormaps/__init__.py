@@ -1,12 +1,12 @@
-from .colormaps import (
-    matplotlib_colormaps,
-    simple_colormaps,
-    ensure_colormap,
-    AVAILABLE_COLORMAPS,
-    ALL_COLORMAPS,
-    MAGENTA_GREEN,
-    RGB,
-    CYMRGB,
-)
 from .colorbars import make_colorbar
 from .colormap import Colormap
+from .colormaps import (
+    ALL_COLORMAPS,
+    AVAILABLE_COLORMAPS,
+    CYMRGB,
+    MAGENTA_GREEN,
+    RGB,
+    ensure_colormap_tuple,
+    matplotlib_colormaps,
+    simple_colormaps,
+)

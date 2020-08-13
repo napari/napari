@@ -1,9 +1,10 @@
 from copy import copy
-from typing import Union, Sequence
+from typing import Sequence, Union
+
 import numpy as np
 
-from .dims_constants import DimsMode
 from ..utils.event import EmitterGroup
+from .dims_constants import DimsMode
 
 
 class Dims:
@@ -74,6 +75,7 @@ class Dims:
         self._mode = []
         self._order = []
         self._axis_labels = []
+        self._scroll_progress = 0
         self.last_used = None
         self.clip = True
         self._ndisplay = 2 if ndisplay is None else ndisplay

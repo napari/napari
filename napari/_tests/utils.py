@@ -1,6 +1,7 @@
 import numpy as np
+
 from napari import Viewer
-from napari.layers import Image, Labels, Points, Shapes, Vectors, Surface
+from napari.layers import Image, Labels, Points, Shapes, Surface, Vectors
 
 """
 Used as pytest params for testing layer add and view functionality (Layer class, data, ndim)

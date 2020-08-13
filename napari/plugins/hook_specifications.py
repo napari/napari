@@ -35,10 +35,11 @@ For more general background on the plugin hook calling mechanism, see the
 # developers, so comprehensive documentation with complete type annotations is
 # imperative!
 
-from napari_plugin_engine import napari_hook_specification
-from typing import Optional, Union, List, Any
-from ..types import ReaderFunction, WriterFunction
+from typing import Any, List, Optional, Union
 
+from napari_plugin_engine import napari_hook_specification
+
+from ..types import ReaderFunction, WriterFunction
 
 # -------------------------------------------------------------------------- #
 #                                 IO Hooks                                   #

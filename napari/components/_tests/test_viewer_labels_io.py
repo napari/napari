@@ -1,11 +1,12 @@
-import pytest
 import numpy as np
-from skimage.data import binary_blobs
+import pytest
 from imageio import imwrite
 from scipy import ndimage as ndi
+from skimage.data import binary_blobs
+
 from napari.components import ViewerModel
-from napari.utils.temporary_file import temporary_file
 from napari.layers import Labels
+from napari.utils.temporary_file import temporary_file
 
 
 @pytest.mark.parametrize('suffix', ['.png', '.tiff'])

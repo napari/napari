@@ -1,15 +1,16 @@
-import pytest
 import numpy as np
+import pytest
+
+from napari.utils.colormaps.standardize_color import transform_color
 
 from .colors_data import (
+    invalid_colors,
     single_color_options,
     single_colors_as_array,
     two_color_options,
     two_colors_as_array,
-    invalid_colors,
     warning_colors,
 )
-from napari.utils.colormaps.standardize_color import transform_color
 
 
 @pytest.mark.parametrize(

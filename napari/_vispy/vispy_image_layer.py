@@ -1,10 +1,11 @@
 import warnings
-from vispy.color import Colormap
-from .image import Image as ImageNode
-from .volume import Volume as VolumeNode
-import numpy as np
-from .vispy_base_layer import VispyBaseLayer
 
+import numpy as np
+from vispy.color import Colormap
+
+from .image import Image as ImageNode
+from .vispy_base_layer import VispyBaseLayer
+from .volume import Volume as VolumeNode
 
 texture_dtypes = [
     np.dtype(np.int8),
