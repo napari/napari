@@ -1,32 +1,32 @@
 """ChunkDelayQueue used by the ChunkLoader
 """
-from collections import namedtuple
+import logging
 import threading
 import time
-from typing import List
+from collections import namedtuple
+from typing import List, Optional
 
-from ._config import async_config
+LOGGER = logging.getLogger("ChunkLoader")
 
 # Each queue entry contains 1 request and the time we should submit it.
 QueueEntry = namedtuple('QueueEntry', ["request", "submit_time"])
 
 
-class ChunkDelayQueue(threading.Thread):
+class DelayQueue(threading.Thread):
     """A threaded queue that delays request submission.
 
-    We delay submitting requests so that if you are zipping through slices
-    we don't end up starting a bunch of workers to load slices we will not
-    even need. We can't cancel workers once they've started, but we can
-    trivially cancel requests still in this delay queue.
+    We have a DelayQueue because once a worker is handling a request we
+    cannot cancel or abort it. But if the user is rapidly changing slices,
+    requests need to be cancelled often, because the requests for previous
+    slices will quickly become stale.
 
-    For example if the user is continuously move the slider requests will
-    got into this queue and then get immediately canceled as the user goes
-    to the next slice. Only when the users pauses for more than
-    `delay_seconds` will the request actually get submitted the worker.
+    We could load those stale requests and just throw away the result, but
+    that will hammer the server with bogus requests, and it would mean
+    there might not be an available worker when the user finally does
+    settle on a slice they want to load.
 
-    TODO_ASYNC: when user click previous/next buttons we could have it
-    skip the delay. The delay is really only for the slider. This would
-    speed up previous/next by 100ms.
+    So the GUI thread calls DelayQueue.clear() everytime the user switches
+    to a new slice and we trivially clear quests still in this queue.
 
     Attributes
     ----------
@@ -34,28 +34,28 @@ class ChunkDelayQueue(threading.Thread):
         Delay each request by this many seconds.
     submit_func
         Call this function to submit the request.
-    use_processes : bool
-        If True use a process pool, otherwise use a thread pool.
-    num_workers : int
-        Create this many worker threads or processes.
     entries : List[QueueEntry]
         The entries in the queue
     """
 
-    def __init__(self, delay_seconds, submit_func):
+    def __init__(self, delay_seconds: float, submit_func):
         super().__init__(daemon=True)
-        self.delay_seconds = delay_seconds
+        self.delay_seconds: float = delay_seconds
         self.submit_func = submit_func
-        self.use_processes: bool = async_config.use_processes
-        self.num_workers: int = async_config.num_workers
+
+        # The entries waiting to be submitted.
         self.entries: List[QueueEntry] = []
 
-        # If we sleep exactly delay_seconds then sometimes by chance we'll
-        # delay for twice that long. Instead we only sleep for 1/5th of the
-        # delay time, then our max over-shoot is 20% of delay_seconds. Note
-        # that we never submit an entry early, all requests are delayed by
-        # at least delay_seconds.
-        self.sleep_time_seconds = delay_seconds / 4
+        # Lock access to self.entries. If we are careful we can probably rely
+        # on the just the GIL, but it was getting a little complicated because
+        # of the delay, this should be iron clad and not much slower.
+        self.lock = threading.Lock()
+
+        # Worker blocks on this if the queue is empty, so it can politely
+        # wait for entries. It seems like maybe threading.Queue could
+        # replace the lock and the event, but again with the delay that was
+        # complicated.
+        self.event = threading.Event()
 
         self.start()
 
@@ -68,12 +68,37 @@ class ChunkDelayQueue(threading.Thread):
             Insert this request into the queue.
         """
         if self.delay_seconds == 0:
-            # Submit with no delay.
-            self.submit_func(request)
-        else:
-            # Add to the queue for a short period of time.
-            submit_time = time.time() + self.delay_seconds
-            self.entries.append(QueueEntry(request, submit_time))
+            self.submit_func(request)  # Submit with no delay.
+            return
+
+        LOGGER.info("DelayQueue.add: data_id=%d", request.key.data_id)
+
+        # Create entry with the time to submit it.
+        submit_time = time.time() + self.delay_seconds
+        entry = QueueEntry(request, submit_time)
+
+        if self.lock:
+            self.entries.append(entry)
+            num_entries = len(self.entries)
+
+        # If the list was previously empty.
+        if num_entries == 1:
+            self.event.set()  # Wake up the worker
+
+    def clear(self, data_id: int) -> None:
+        """Remove any entires for this data_id.
+
+        Parameters
+        ----------
+        data_id : int
+            Remove entries for this data_id.
+        """
+        LOGGER.info("DelayQueue.clear: data_id=%d", data_id)
+
+        if self.lock:
+            self.entries[:] = [
+                x for x in self.entries if x.request.key.data_id != data_id
+            ]
 
     def submit(self, entry: QueueEntry, now: float) -> bool:
         """Submit and return True if entry is ready to be submitted.
@@ -90,30 +115,65 @@ class ChunkDelayQueue(threading.Thread):
         bool
             True if the entry was submitted.
         """
+        # If entry is due to be submitted.
         if entry.submit_time < now:
+            LOGGER.info(
+                "DelayQueue.submit: data_id=%d", entry.request.key.data_id
+            )
             self.submit_func(entry.request)
-            return True
+            return True  # We submitted this request.
         return False
 
-    def clear(self, data_id: int) -> None:
-        """Remove any entires for this data_id.
+    def run(self):
+        """The DelayQueue thread's main method.
+
+        Submit all due entires, then sleep or wait on self.event
+        for new entries.
+
+        We have a lock since DelayQueue.add() and DelayQueue.clear()
+        can be called out from under us in the GUI thread. We could
+        probably do it without a lock if we were very careful, but
+        this makes it bullet-proof and is probably not much slower.
+
+        It seems like threading.Queue might be suitable here, but it
+        was not obvious how to get the delay working with it.
+        """
+        while True:
+            now = time.time()
+
+            if self.lock:
+                seconds = self._submit_due_entries(now)
+
+            if seconds is None:
+                # There were no entries left, so wait until there is one.
+                self.event.wait()
+                self.event.clear()
+            else:
+                # Sleep until the next entry is due. This will tend to
+                # oversleep by a few milliseconds, but close enough for our
+                # purposes. Once we wake up we'll submit all due entries.
+                # So we won't miss any.
+                time.sleep(seconds)
+
+    def _submit_due_entries(self, now: float) -> Optional[float]:
+        """Submit all due entries, oldest to newest.
 
         Parameters
         ----------
-        data_id : int
-            Remove entries for this data_id.
-        """
-        self.entries = [
-            x for x in self.entries if x.request.key.data_id != data_id
-        ]
+        now : float
+            Current time in seconds.
 
-    def run(self):
-        """The thread's main method.
-
-        Submit requests after their delay is up.
+        Returns
+        -------
+        Optional[float]
+            Seconds until next entry is due, or None if no next entry.
         """
-        while True:
-            # Submit all entires which are due, then wait.
-            now = time.time()
-            self.entries = [x for x in self.entries if not self.submit(x, now)]
-            time.sleep(self.sleep_time_seconds)
+        while self.entries:
+            # Submit the oldest entry if it's due.
+            if self.submit(self.entries[0], now):
+                self.entries.pop(0)  # Remove the one we just submitted.
+            else:
+                # Oldest entry is not due, return time until it is.
+                return self.entries[0].submit_time - now
+        else:
+            return None  # There are no more entries.

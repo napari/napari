@@ -14,23 +14,22 @@ Think of the ChunkLoader as a shared resource like "the filesystem" where
 multiple clients can be access it at the same time, but it is the interface
 to just one physical resource.
 """
-from contextlib import contextmanager
-from concurrent import futures
 import logging
-from typing import Dict, List, Optional, Union
 import weakref
+from concurrent import futures
+from contextlib import contextmanager
+from typing import Dict, List, Optional, Union
 
-import numpy as np
 import dask.array as da
+import numpy as np
 
 from ...types import ArrayLike
 from ...utils.event import EmitterGroup
-
+from ..perf import perf_timer
 from ._cache import ChunkCache
 from ._config import async_config
-from ._delay_queue import ChunkDelayQueue
+from ._delay_queue import DelayQueue
 from ._request import ChunkKey, ChunkRequest
-from ..perf import perf_timer
 
 LOGGER = logging.getLogger("ChunkLoader")
 
@@ -249,7 +248,7 @@ class ChunkLoader:
 
         # Delay queue prevents us from spamming the worker pool when the
         # user is rapidly scrolling through slices.
-        self.delay_queue = ChunkDelayQueue(
+        self.delay_queue = DelayQueue(
             async_config.delay_seconds, self._submit_async
         )
 
@@ -392,6 +391,8 @@ class ChunkLoader:
         data_id : int
             Clear all requests associated with this data_id.
         """
+        LOGGER.info("ChunkLoader._clear_pending %d", data_id)
+
         # Clear delay queue first. This are trivial to clear because they
         # have not even been submitted to the worker pool.
         self.delay_queue.clear(data_id)
