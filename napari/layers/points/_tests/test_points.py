@@ -824,7 +824,7 @@ def test_add_colormap(attribute):
 
     setattr(layer, f'{attribute}_colormap', get_colormap('gray'))
     layer_colormap = getattr(layer, f'{attribute}_colormap')
-    assert 'unnamed colormap' in layer_colormap[0]
+    assert 'unnamed colormap' in layer_colormap.name
 
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
@@ -1080,7 +1080,7 @@ def test_color_colormap(attribute):
     new_colormap = 'viridis'
     setattr(layer, f'{attribute}_colormap', new_colormap)
     attribute_colormap = getattr(layer, f'{attribute}_colormap')
-    assert attribute_colormap[1] == get_colormap(new_colormap)
+    assert attribute_colormap.name == new_colormap
 
 
 def test_size():

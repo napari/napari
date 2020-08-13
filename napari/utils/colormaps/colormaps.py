@@ -46,6 +46,38 @@ LABMAX = np.array([100.0, 98.23305386, 94.47812228])
 LABRNG = LABMAX - LABMIN
 
 
+def convert_vispy_colormap(colormap, name=None):
+    """Convert a vispy colormap object to a napari colormap.
+
+    Parameters
+    ----------
+    colormap : vispy.color.Colormap
+        Vispy colormap object that should be converted.
+    name : str
+        Name of colormap, optional.
+
+    Returns
+    -------
+    napari.utils.Colormap
+    """
+    if hasattr(colormap, '_controls'):
+        controls = colormap._controls
+    else:
+        controls = None
+
+    if hasattr(colormap, 'interpolation'):
+        interpolation = colormap.interpolation
+    else:
+        interpolation = 'linear'
+
+    return Colormap(
+        name=name,
+        colors=colormap.colors.rgba,
+        controls=controls,
+        interpolation=interpolation,
+    )
+
+
 def _validate_rgb(colors, *, tolerance=0.0):
     """Return the subset of colors that is in [0, 1] for all channels.
 
@@ -269,12 +301,7 @@ def vispy_or_mpl_colormap(name):
     vispy_cmaps = get_colormaps()
     if name in vispy_cmaps:
         cmap = get_colormap(name)
-        cmap = Colormap(
-            name=name,
-            colors=cmap.colors.rgba,
-            controls=cmap._controls,
-            interpolation=cmap.interpolation,
-        )
+        cmap = convert_vispy_colormap(cmap, name=name)
     else:
         try:
             mpl_cmap = getattr(cm, name)
@@ -372,13 +399,9 @@ def ensure_colormap(colormap: ValidColormapArg) -> Tuple[str, Colormap]:
         if not name:
             name = increment_unnamed_colormap(AVAILABLE_COLORMAPS)
         # Convert from vispy colormap
-        cmap = Colormap(
-            name=name,
-            colors=colormap.colors.rgba,
-            controls=colormap._controls,
-            interpolation=colormap.interpolation,
-        )
+        cmap = convert_vispy_colormap(colormap, name=name)
         AVAILABLE_COLORMAPS[name] = cmap
+
     elif isinstance(colormap, tuple):
         if not (
             len(colormap) > 1
@@ -391,13 +414,9 @@ def ensure_colormap(colormap: ValidColormapArg) -> Tuple[str, Colormap]:
             )
         name, cmap = colormap
         # Convert from vispy colormap
-        cmap = Colormap(
-            name=name,
-            colors=cmap.colors.rgba,
-            controls=cmap._controls,
-            interpolation=cmap.interpolation,
-        )
+        cmap = convert_vispy_colormap(cmap, name=name)
         AVAILABLE_COLORMAPS[name] = cmap
+
     elif isinstance(colormap, dict):
         if not all(isinstance(i, BaseColormap) for i in colormap.values()):
             raise TypeError(
@@ -406,13 +425,7 @@ def ensure_colormap(colormap: ValidColormapArg) -> Tuple[str, Colormap]:
             )
         # Convert from vispy colormaps
         for key, cmap in colormap.items():
-            colormap[key] = Colormap(
-                name=key,
-                colors=cmap.colors.rgba,
-                controls=cmap._controls,
-                interpolation=cmap.interpolation,
-            )
-
+            colormap[key] = convert_vispy_colormap(cmap, name=key)
         AVAILABLE_COLORMAPS.update(colormap)
         if len(colormap) == 1:
             name = list(colormap)[0]  # first key in dict
