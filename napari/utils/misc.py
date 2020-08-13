@@ -297,12 +297,11 @@ def all_subclasses(cls: Type) -> set:
 
 
 def session_is_interactive() -> bool:
-    """Return True if the running in an interactive or IPython session."""
-    import builtins
+    """Return True if the running in a regular python interactive session."""
     import sys
 
-    if '__IPYTHON__' in dir(builtins):
-        return True
-    if bool(getattr(sys, 'ps1', sys.flags.interactive)):
+    # if hasattr(__builtins__, '__IPYTHON__'):
+    #     return True
+    if sys.flags.interactive:
         return True
     return False
