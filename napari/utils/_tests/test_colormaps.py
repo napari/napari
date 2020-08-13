@@ -1,6 +1,6 @@
 import numpy as np
 import pytest
-from vispy.color.color_array import ColorArray
+from vispy.color import Colormap
 
 from ..colormaps.colormaps import (
     AVAILABLE_COLORMAPS,
@@ -10,24 +10,20 @@ from ..colormaps.colormaps import (
 
 @pytest.mark.parametrize("name", list(AVAILABLE_COLORMAPS.keys()))
 def test_colormap(name):
+    np.random.seed(0)
+
     cmap = AVAILABLE_COLORMAPS[name]
 
-    # colormaps should accept a scalar with the __getitem__ method
-    # and return a ColorArray
-    assert isinstance(cmap[0.5], ColorArray)
+    # Test can map random 0-1 values
+    values = np.random.rand((50))
+    colors = cmap.map(values)
+    assert colors.shape == (len(values), 4)
 
-    # colormaps should accept a 1D array with the __getitem__ method
-    # and return a ColorArray
-    assert isinstance(cmap[np.linspace(0, 1, 256) ** 0.5], ColorArray)
-
-    # colormap.map() is a lower level API
-    # it takes a (N, 1) vector of values in [0, 1], and returns a rgba array of
-    # size (N, 4). as per the vispy documentation: This function doesn't need
-    # to implement argument checking on `item`. It can always assume that
-    # `item` is a (N, 1) array of values between 0 and 1.
-    # http://vispy.org/color.html
-    q = np.random.rand(10, 10)
-    assert cmap.map(q.reshape(-1, 1)).shape == (q.size, 4)
+    # Create vispy colormap and check current colormaps match vispy
+    # colormap
+    vispy_cmap = Colormap(*cmap)
+    vispy_colors = vispy_cmap.map(values)
+    np.testing.assert_almost_equal(colors, vispy_colors, decimal=6)
 
 
 def test_increment_unnamed_colormap():
