@@ -273,7 +273,7 @@ class ChunkLoader:
 
     def create_request(
         self, layer, key: ChunkKey, chunks: Dict[str, ArrayLike]
-    ):
+    ) -> ChunkRequest:
         """Create a ChunkRequest for submission to load_chunk.
 
         Parameters

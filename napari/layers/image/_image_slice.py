@@ -51,7 +51,7 @@ class ImageSlice:
         self.rgb = rgb
 
         # We're showing nothing to start.
-        self.current_key: ChunkKey = None
+        self.current_key: Optional[ChunkKey] = None
 
         # With async there can be a gap between when the ImageSlice is
         # created and the data is actually loaded.
@@ -76,7 +76,7 @@ class ImageSlice:
         self.thumbnail.raw = thumbnail
         self.loaded = True
 
-    def load_chunk(self, request: ChunkRequest) -> None:
+    def load_chunk(self, request: ChunkRequest) -> Optional[ChunkRequest]:
         """Load the requested chunk asynchronously.
 
         Parameters
