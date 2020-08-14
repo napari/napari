@@ -1,4 +1,5 @@
 import logging
+import os
 import traceback
 from types import TracebackType
 from typing import Type
@@ -42,7 +43,7 @@ class ExceptionHandler(QObject):
             The traceback object associated with the error.
         """
         self.error.emit((etype, value, tb))
-        if session_is_interactive():
+        if session_is_interactive() or os.getenv("NAPARI_SHOW_CONSOLE_ERRORS"):
             text = "".join(traceback.format_exception(etype, value, tb))
             logging.error("Unhandled exception:\n%s", text)
         else:
