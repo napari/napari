@@ -1,16 +1,29 @@
 """Performance Monitoring.
 
-Enable perfmon by defining NAPARI_PERFMON to be non-zero.
+To enable perfmon define the env var NAPARI_PERFMON to be non-zero.
+
+The perfmon module lets you instrument your code and visualize its run-time
+behavior and timings in Chrome's Tracing GUI.
 
 The best way to add perf_timers is using the perfmon config file. You can
 list which methods or functions you want to time, and a perf_timer will be
 monkey-patched into each callable on startup. The monkey patching
 is done only if perfmon is enabled.
 
-You can also use the "perf_timer" context object and "add_counter_event"
-and "add_instant_event", but all three of these should be removed before
-merging the PR into master. While they have almost zero overhead when
-perfmon is disable, it will still result in empty function calls.
+To record a trace define NAPARI_PERFMON and use the menu Debug ->
+Performance Trace. Or add a line to your perfmon config file like:
+
+    "trace_file_on_start": "/Path/to/my/trace.json"
+
+Perfmon will start tracing on startup. You must quit napari with the Quit
+command for napari to write trace file. See napari.utils.perf._config for
+more information.
+
+You can also manually add "perf_timer" context objects and
+"add_counter_event()" and "add_instant_event()" functions to your code. All
+three of these should be removed before merging the PR into master. While
+they have almost zero overhead when perfmon is disabled, it's still better
+not to leave them in the code.
 """
 import os
 
