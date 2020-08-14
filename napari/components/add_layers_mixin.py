@@ -3,7 +3,17 @@ import itertools
 import os
 from functools import lru_cache
 from logging import getLogger
-from typing import Any, Dict, List, Optional, Sequence, Set, Union
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    List,
+    Optional,
+    Sequence,
+    Set,
+    Tuple,
+    Union,
+)
 
 import numpy as np
 
@@ -14,6 +24,7 @@ from ..plugins.io import read_data_with_plugins
 from ..types import FullLayerData, LayerData
 from ..utils.colormaps import ensure_colormap_tuple
 from ..utils.misc import is_sequence
+from ..utils.watch_path import watch_path
 
 logger = getLogger(__name__)
 
@@ -792,6 +803,8 @@ class AddLayersMixin:
         stack: bool = False,
         plugin: Optional[str] = None,
         layer_type: Optional[str] = None,
+        watch: bool = False,
+        channel_parser: Callable[[str], Tuple[str, ...]] = None,
         **kwargs,
     ) -> List[layers.Layer]:
         """Open a path or list of paths with plugins, and add layers to viewer.
@@ -820,6 +833,16 @@ class AddLayersMixin:
             additional) ``kwargs`` provided to this function.  This *may*
             result in exceptions if the data returned from the path is not
             compatible with the layer_type.
+        watch : bool
+            If True, files added to `path` will automatically be added to the
+            viewer.
+        channel_parser : callable, optional
+            If watch is ``True``, channel parser may be supplied as a callable
+            that accepts a path (a filename added to the path) and returns a
+            tuple of channel strings found in that filename.  If not provided
+            ``watch`` will assume that every file in the watched path belongs
+            to a single channel/layer, otherwise, a new layer will be made for
+            each returned channel pattern.
         **kwargs
             All other keyword arguments will be passed on to the respective
             ``add_layer`` method.
@@ -829,6 +852,17 @@ class AddLayersMixin:
         layers : list
             A list of any layers that were added to the viewer.
         """
+        if watch:
+            return watch_path(
+                self, path, plugin=plugin, channel_parser=channel_parser
+            )
+        elif channel_parser is not None:
+            import warnings
+
+            warnings.warn(
+                '"channel_parser" argument is only valid when `watch == True`'
+            )
+
         paths = [path] if isinstance(path, str) else path
         paths = [os.fspath(path) for path in paths]  # PathObjects -> str
         if not isinstance(paths, (tuple, list)):

@@ -3,7 +3,6 @@ import numpy as np
 from ..utils.event import EmitterGroup, Event
 from ..utils.key_bindings import KeymapHandler, KeymapProvider
 from ..utils.theme import palettes
-from ..utils.watch_path import watch_path as _watch_path
 from ._viewer_mouse_bindings import dims_scroll
 from .add_layers_mixin import AddLayersMixin
 from .dims import Dims
@@ -494,6 +493,3 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         translate = [0] * layer.ndim
         translate[-2:] = translate_2d
         layer.translate_grid = translate
-
-    def watch_path(self, path, *, plugin=None, channel_parser=None):
-        _watch_path(self, path, plugin=plugin, channel_parser=channel_parser)

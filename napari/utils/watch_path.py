@@ -125,10 +125,42 @@ class Stacker:
 
 # example channel_parser = regex_parser(r'.*ch(\d{1}).*')
 def watch_path(viewer, path, *, plugin=None, channel_parser=None):
-    watcher = path_watcher('/Users/talley/Desktop/watch/')
+    """Watch a path for a new files to concatenate on existing layers.
+
+    Parameters
+    ----------
+    viewer : napari.Viewer
+        The viewer instance to which to add files.
+    path : str
+        The directory to watch
+    plugin : str, optional
+        A plugin to use when opening files, by default None (will use first
+        appropriate plugin)
+    channel_parser : callable, optional
+        A callable that accepts a path (a filename added to the path) and
+        returns a tuple of channel strings found in that filename.  If not
+        provided ``watch`` will assume that every file in the watched path
+        belongs to a single channel/layer, otherwise, a new layer will be made
+        for each returned channel pattern.
+    Returns
+    -------
+    stop : callable
+        A function that can be called to stop the watcher
+    """
+    if not (isinstance(path, str) and os.path.isdir(path)):
+        raise ValueError(
+            "'watch_path' requires that `path` be an existing directory"
+        )
+    watcher = path_watcher(path)
     reader = path_reader(plugin)
     stacker = Stacker(viewer, channel_parser)
     watcher.yielded.connect(reader.send)
     reader.yielded.connect(stacker)
     reader.start()
     watcher.start()
+
+    def stop():
+        reader.stop()
+        watcher.stop()
+
+    return stop
