@@ -272,10 +272,7 @@ class Labels(Image):
     @num_colors.setter
     def num_colors(self, num_colors):
         self._num_colors = num_colors
-        self.colormap = (
-            self._colormap_name,
-            colormaps.label_colormap(num_colors),
-        )
+        self.colormap = colormaps.label_colormap(num_colors)
         self.refresh()
         self._selected_color = self.get_color(self.selected_label)
         self.events.selected_label()
@@ -578,7 +575,7 @@ class Labels(Image):
         else:
             val = self._raw_to_displayed(np.array([label]))
             col = self.colormap.map(val)[0]
-        return np.round(255 * col).astype(np.uint8)
+        return col
 
     def _reset_history(self, event=None):
         self._undo_history = deque()

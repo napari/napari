@@ -49,8 +49,8 @@ def test_add_image_colormap_variants():
     assert viewer.add_image(data, colormap=cmap_dict)
 
     # as Colormap instance
-    fire = colormaps.AVAILABLE_COLORMAPS['fire']
-    assert viewer.add_image(data, colormap=fire)
+    blue_cmap = colormaps.AVAILABLE_COLORMAPS['blue']
+    assert viewer.add_image(data, colormap=blue_cmap)
 
     # string values must be known colormap types
     with pytest.raises(KeyError) as err:

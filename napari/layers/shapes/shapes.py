@@ -97,9 +97,8 @@ class Shapes(Layer):
     edge_color_cycle : np.ndarray, list
         Cycle of colors (provided as string name, RGB, or RGBA) to map to edge_color if a
         categorical attribute is used color the vectors.
-    edge_colormap : str, vispy.color.colormap.Colormap
+    edge_colormap : str, napari.utils.Colormap
         Colormap to set edge_color if a continuous attribute is used to set face_color.
-        See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
     edge_contrast_limits : None, (float, float)
         clims for mapping the property to a color map. These are the min and max value
         of the specified property that are mapped to 0 and 1, respectively.
@@ -114,9 +113,8 @@ class Shapes(Layer):
     face_color_cycle : np.ndarray, list
         Cycle of colors (provided as string name, RGB, or RGBA) to map to face_color if a
         categorical attribute is used color the vectors.
-    face_colormap : str, vispy.color.colormap.Colormap
+    face_colormap : str, napari.utils.Colormap
         Colormap to set face_color if a continuous attribute is used to set face_color.
-        See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
     face_contrast_limits : None, (float, float)
         clims for mapping the property to a color map. These are the min and max value
         of the specified property that are mapped to 0 and 1, respectively.
@@ -1217,11 +1215,11 @@ class Shapes(Layer):
                 'edge_width': self.edge_width,
                 'face_color': self.face_color,
                 'face_color_cycle': self.face_color_cycle,
-                'face_colormap': self.face_colormap,
+                'face_colormap': self.face_colormap.name,
                 'face_contrast_limits': self.face_contrast_limits,
                 'edge_color': self.edge_color,
                 'edge_color_cycle': self.edge_color_cycle,
-                'edge_colormap': self.edge_colormap,
+                'edge_colormap': self.edge_colormap.name,
                 'edge_contrast_limits': self.edge_contrast_limits,
                 'data': self.data,
             }

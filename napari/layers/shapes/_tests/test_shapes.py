@@ -4,7 +4,6 @@ from itertools import cycle, islice
 import numpy as np
 import pandas as pd
 import pytest
-from vispy.color import get_colormap
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Shapes
@@ -1080,7 +1079,7 @@ def test_color_colormap(attribute):
     new_colormap = 'viridis'
     setattr(layer, f'{attribute}_colormap', new_colormap)
     attribute_colormap = getattr(layer, f'{attribute}_colormap')
-    assert attribute_colormap[1] == get_colormap(new_colormap)
+    assert attribute_colormap.name == new_colormap
 
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
@@ -1121,9 +1120,9 @@ def test_add_colormap(attribute):
     args = {color_kwarg: 'shape_type', colormap_kwarg: 'viridis'}
     layer = Shapes(data, properties=annotations, **args)
 
-    setattr(layer, f'{attribute}_colormap', get_colormap('gray'))
+    setattr(layer, f'{attribute}_colormap', 'gray')
     layer_colormap = getattr(layer, f'{attribute}_colormap')
-    assert 'unnamed colormap' in layer_colormap.name
+    assert layer_colormap.name == 'gray'
 
 
 def test_edge_width():

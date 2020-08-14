@@ -5,7 +5,7 @@ from typing import Dict, Tuple, Union
 import numpy as np
 
 from ...types import ValidColormapArg
-from ...utils.colormaps import ensure_colormap, Colormap
+from ...utils.colormaps import Colormap, ensure_colormap
 from ...utils.event import Event
 from ...utils.status_messages import format_float
 from ..base import Layer
@@ -47,9 +47,8 @@ class Vectors(Layer):
     edge_color_cycle : np.ndarray, list
         Cycle of colors (provided as string name, RGB, or RGBA) to map to edge_color if a
         categorical attribute is used color the vectors.
-    edge_colormap : str, vispy.color.colormap.Colormap
+    edge_colormap : str, napari.utils.Colormap
         Colormap to set vector color if a continuous attribute is used to set edge_color.
-        See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
     edge_contrast_limits : None, (float, float)
         clims for mapping the property to a color map. These are the min and max value
         of the specified property that are mapped to 0 and 1, respectively.
@@ -88,9 +87,8 @@ class Vectors(Layer):
     edge_color_cycle : np.ndarray, list
         Cycle of colors (provided as string name, RGB, or RGBA) to map to edge_color if a
         categorical attribute is used color the vectors.
-    edge_colormap : str, vispy.color.colormap.Colormap
+    edge_colormap : str, napari.utils.Colormap
         Colormap to set vector color if a continuous attribute is used to set edge_color.
-        See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
     edge_contrast_limits : None, (float, float)
         clims for mapping the property to a color map. These are the min and max value
         of the specified property that are mapped to 0 and 1, respectively.
@@ -287,7 +285,7 @@ class Vectors(Layer):
                 'edge_width': self.edge_width,
                 'edge_color': self.edge_color,
                 'edge_color_cycle': self.edge_color_cycle,
-                'edge_colormap': self.edge_colormap,
+                'edge_colormap': self.edge_colormap.name,
                 'edge_contrast_limits': self.edge_contrast_limits,
                 'data': self.data,
                 'properties': self.properties,

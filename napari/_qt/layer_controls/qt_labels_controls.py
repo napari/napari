@@ -496,7 +496,7 @@ class QtColorBox(QWidget):
                     painter.drawRect(i * 4, j * 4, 5, 5)
         else:
             color = np.multiply(self.layer._selected_color, self.layer.opacity)
-            color = np.round(color).astype(int)
+            color = np.round(255 * color).astype(int)
             painter.setPen(QColor(*list(color)))
             painter.setBrush(QColor(*list(color)))
             painter.drawRect(0, 0, self._height, self._height)

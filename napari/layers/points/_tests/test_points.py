@@ -91,7 +91,7 @@ def test_empty_layer_with_face_colorap():
     layer = Points(
         properties=default_properties,
         face_color='point_type',
-        face_colormap='grays',
+        face_colormap='gray',
     )
 
     assert layer.face_color_mode == 'colormap'
@@ -109,7 +109,7 @@ def test_empty_layer_with_edge_colormap():
     layer = Points(
         properties=default_properties,
         edge_color='point_type',
-        edge_colormap='grays',
+        edge_colormap='gray',
     )
 
     assert layer.edge_color_mode == 'colormap'

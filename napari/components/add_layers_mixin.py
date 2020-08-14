@@ -105,7 +105,7 @@ class AddLayersMixin:
             `True`. If `False` the image is interpreted as a luminance image.
             If a list then must be same length as the axis that is being
             expanded as channels.
-        colormap : str, vispy.Color.Colormap, tuple, dict, list
+        colormap : str, napari.utils.Colormap, tuple, dict, list
             Colormaps to use for luminance images. If a string must be the name
             of a supported colormap from vispy or matplotlib. If a tuple the
             first value must be a string to assign as a name to a colormap and
@@ -291,9 +291,8 @@ class AddLayersMixin:
         edge_color_cycle : np.ndarray, list
             Cycle of colors (provided as string name, RGB, or RGBA) to map to edge_color if a
             categorical attribute is used color the vectors.
-        edge_colormap : str, vispy.color.colormap.Colormap
+        edge_colormap : str, napari.utils.Colormap
             Colormap to set edge_color if a continuous attribute is used to set face_color.
-            See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
         edge_contrast_limits : None, (float, float)
             clims for mapping the property to a color map. These are the min and max value
             of the specified property that are mapped to 0 and 1, respectively.
@@ -304,9 +303,8 @@ class AddLayersMixin:
         face_color_cycle : np.ndarray, list
             Cycle of colors (provided as string name, RGB, or RGBA) to map to face_color if a
             categorical attribute is used color the vectors.
-        face_colormap : str, vispy.color.colormap.Colormap
+        face_colormap : str, napari.utils.Colormap
             Colormap to set face_color if a continuous attribute is used to set face_color.
-            See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
         face_contrast_limits : None, (float, float)
             clims for mapping the property to a color map. These are the min and max value
             of the specified property that are mapped to 0 and 1, respectively.
@@ -533,9 +531,8 @@ class AddLayersMixin:
         edge_color_cycle : np.ndarray, list
             Cycle of colors (provided as string name, RGB, or RGBA) to map to edge_color if a
             categorical attribute is used color the vectors.
-        edge_colormap : str, vispy.color.colormap.Colormap
+        edge_colormap : str, napari.utils.Colormap
             Colormap to set edge_color if a continuous attribute is used to set face_color.
-            See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
         edge_contrast_limits : None, (float, float)
             clims for mapping the property to a color map. These are the min and max value
             of the specified property that are mapped to 0 and 1, respectively.
@@ -550,9 +547,8 @@ class AddLayersMixin:
         face_color_cycle : np.ndarray, list
             Cycle of colors (provided as string name, RGB, or RGBA) to map to face_color if a
             categorical attribute is used color the vectors.
-        face_colormap : str, vispy.color.colormap.Colormap
+        face_colormap : str, napari.utils.Colormap
             Colormap to set face_color if a continuous attribute is used to set face_color.
-            See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
         face_contrast_limits : None, (float, float)
             clims for mapping the property to a color map. These are the min and max value
             of the specified property that are mapped to 0 and 1, respectively.
@@ -643,7 +639,7 @@ class AddLayersMixin:
             of the mesh triangles. The third element is the (K0, ..., KL, N)
             array of values used to color vertices where the additional L
             dimensions are used to color the same mesh with different values.
-        colormap : str, vispy.Color.Colormap, tuple, dict
+        colormap : str, napari.utils.Colormap, tuple, dict
             Colormap to use for luminance images. If a string must be the name
             of a supported colormap from vispy or matplotlib. If a tuple the
             first value must be a string to assign as a name to a colormap and
@@ -735,9 +731,8 @@ class AddLayersMixin:
         edge_color_cycle : np.ndarray, list
             Cycle of colors (provided as string name, RGB, or RGBA) to map to edge_color if a
             categorical attribute is used color the vectors.
-        edge_colormap : str, vispy.color.colormap.Colormap
+        edge_colormap : str, napari.utils.Colormap
             Colormap to set vector color if a continuous attribute is used to set edge_color.
-            See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
         edge_contrast_limits : None, (float, float)
             clims for mapping the property to a color map. These are the min and max value
             of the specified property that are mapped to 0 and 1, respectively.

@@ -6,7 +6,7 @@ import numpy as np
 from ...layers import Image
 from ...layers.image._image_utils import guess_multiscale
 from ...types import FullLayerData
-from ...utils.colormaps import colormaps
+from ...utils.colormaps import Colormap, colormaps
 from ...utils.misc import ensure_iterable, ensure_sequence_of_iterables
 
 
@@ -68,7 +68,9 @@ def split_channels(
         # make sure that iterable_kwargs are a *sequence* of iterables
         # for the multichannel case.  For example: if scale == (1, 2) &
         # n_channels = 3, then scale should == [(1, 2), (1, 2), (1, 2)]
-        elif key in iterable_kwargs:
+        elif key in iterable_kwargs or (
+            key == 'colormap' and isinstance(val, Colormap)
+        ):
             kwargs[key] = iter(ensure_sequence_of_iterables(val, n_channels))
         else:
             kwargs[key] = iter(ensure_iterable(val))

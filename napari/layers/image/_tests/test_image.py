@@ -2,10 +2,10 @@ import dask.array as da
 import numpy as np
 import pytest
 import xarray as xr
-from vispy.color import Colormap
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Image
+from napari.utils import Colormap
 
 
 def test_random_image():
@@ -330,36 +330,36 @@ def test_colormaps():
     np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
-    assert layer.colormap[0] == 'gray'
-    assert type(layer.colormap[1]) == Colormap
+    assert layer.colormap.name == 'gray'
+    assert type(layer.colormap) == Colormap
 
     layer.colormap = 'magma'
-    assert layer.colormap[0] == 'magma'
-    assert type(layer.colormap[1]) == Colormap
+    assert layer.colormap.name == 'magma'
+    assert type(layer.colormap) == Colormap
 
     cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.3, 0.7, 0.2, 1.0]])
     layer.colormap = 'custom', cmap
-    assert layer.colormap[0] == 'custom'
-    assert layer.colormap[1] == cmap
+    assert layer.colormap.name == 'custom'
+    assert layer.colormap == cmap
 
     cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.7, 0.2, 0.6, 1.0]])
     layer.colormap = {'new': cmap}
-    assert layer.colormap[0] == 'new'
-    assert layer.colormap[1] == cmap
+    assert layer.colormap.name == 'new'
+    assert layer.colormap == cmap
 
     layer = Image(data, colormap='magma')
-    assert layer.colormap[0] == 'magma'
-    assert type(layer.colormap[1]) == Colormap
+    assert layer.colormap.name == 'magma'
+    assert type(layer.colormap) == Colormap
 
     cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.3, 0.7, 0.2, 1.0]])
     layer = Image(data, colormap=('custom', cmap))
-    assert layer.colormap[0] == 'custom'
-    assert layer.colormap[1] == cmap
+    assert layer.colormap.name == 'custom'
+    assert layer.colormap == cmap
 
     cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.7, 0.2, 0.6, 1.0]])
     layer = Image(data, colormap={'new': cmap})
-    assert layer.colormap[0] == 'new'
-    assert layer.colormap[1] == cmap
+    assert layer.colormap.name == 'new'
+    assert layer.colormap == cmap
 
 
 def test_contrast_limits():

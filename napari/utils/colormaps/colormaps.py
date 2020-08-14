@@ -404,8 +404,11 @@ def ensure_colormap(colormap: ValidColormapArg) -> Tuple[str, Colormap]:
 
     elif isinstance(colormap, tuple):
         if not (
-            len(colormap) > 1
-            and isinstance(colormap[1], BaseColormap)
+            len(colormap) == 2
+            and (
+                isinstance(colormap[1], BaseColormap)
+                or isinstance(colormap[1], Colormap)
+            )
             and isinstance(colormap[0], str)
         ):
             raise TypeError(
@@ -414,18 +417,29 @@ def ensure_colormap(colormap: ValidColormapArg) -> Tuple[str, Colormap]:
             )
         name, cmap = colormap
         # Convert from vispy colormap
-        cmap = convert_vispy_colormap(cmap, name=name)
+        if isinstance(cmap, BaseColormap):
+            cmap = convert_vispy_colormap(cmap, name=name)
+        else:
+            cmap.name = name
         AVAILABLE_COLORMAPS[name] = cmap
 
     elif isinstance(colormap, dict):
-        if not all(isinstance(i, BaseColormap) for i in colormap.values()):
+        if not all(
+            (isinstance(i, BaseColormap) or isinstance(i, Colormap))
+            for i in colormap.values()
+        ):
             raise TypeError(
                 "When providing a dict as a colormap, "
-                "all values must be BaseColormap instances"
+                "all values must be Colormap instances"
             )
         # Convert from vispy colormaps
         for key, cmap in colormap.items():
-            colormap[key] = convert_vispy_colormap(cmap, name=key)
+            # Convert from vispy colormap
+            if isinstance(cmap, BaseColormap):
+                cmap = convert_vispy_colormap(key, name=name)
+            else:
+                cmap.name = key
+            colormap[key] = cmap
         AVAILABLE_COLORMAPS.update(colormap)
         if len(colormap) == 1:
             name = list(colormap)[0]  # first key in dict
@@ -440,7 +454,8 @@ def ensure_colormap(colormap: ValidColormapArg) -> Tuple[str, Colormap]:
     else:
         raise TypeError(
             f'invalid type for colormap: {type(colormap)}. '
-            'Must be a {str, tuple, dict, vispy.colormap.Colormap}'
+            'Must be a {str, tuple, dict, napari.utils.Colormap, '
+            'vispy.colors.Colormap}'
         )
 
     return AVAILABLE_COLORMAPS[name]

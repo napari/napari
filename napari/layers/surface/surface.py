@@ -22,7 +22,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         of the mesh triangles. The third element is the (K0, ..., KL, N)
         array of values used to color vertices where the additional L
         dimensions are used to color the same mesh with different values.
-    colormap : str, vispy.Color.Colormap, tuple, dict
+    colormap : str, napari.utils.Colormap, tuple, dict
         Colormap to use for luminance images. If a string must be the name
         of a supported colormap from vispy or matplotlib. If a tuple the
         first value must be a string to assign as a name to a colormap and
@@ -66,7 +66,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         Indices of mesh triangles.
     vertex_values : (K0, ..., KL, N) array
         Values used to color vertices.
-    colormap : str, vispy.Color.Colormap, tuple, dict
+    colormap : str, napari.utils.Colormap, tuple, dict
         Colormap to use for luminance images. If a string must be the name
         of a supported colormap from vispy or matplotlib. If a tuple the
         first value must be a string to assign as a name to a colormap and
@@ -237,7 +237,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         state = self._get_base_state()
         state.update(
             {
-                'colormap': self.colormap,
+                'colormap': self.colormap.name,
                 'contrast_limits': self.contrast_limits,
                 'gamma': self.gamma,
                 'data': self.data,

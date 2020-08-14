@@ -10,7 +10,7 @@ base_colormaps = colormaps.CYMRGB
 two_colormaps = colormaps.MAGENTA_GREEN
 green_cmap = colormaps.simple_colormaps['green']
 red_cmap = colormaps.simple_colormaps['red']
-fire = colormaps.AVAILABLE_COLORMAPS['fire']
+blue_cmap = colormaps.AVAILABLE_COLORMAPS['blue']
 cmap_tuple = ("my_colormap", colormaps.Colormap(['g', 'm', 'y']))
 cmap_dict = {"your_colormap": colormaps.Colormap(['g', 'r', 'y'])}
 
@@ -45,8 +45,11 @@ multi_channel_test_data = [
     ((), {'colormap': cmap_tuple}),
     ((), {'colormap': cmap_dict}),
     ((), {'colormap': ['gray', 'blue', 'red', 'green', 'yellow']}),
-    ((), {'colormap': [green_cmap, red_cmap, fire, fire, green_cmap]}),
-    ((), {'colormap': [green_cmap, 'gray', cmap_tuple, fire, cmap_dict]}),
+    (
+        (),
+        {'colormap': [green_cmap, red_cmap, blue_cmap, blue_cmap, green_cmap]},
+    ),
+    ((), {'colormap': [green_cmap, 'gray', cmap_tuple, blue_cmap, cmap_dict]}),
     ((), {'scale': MULTI_TUPLES}),
     ((), {'translate': MULTI_TUPLES}),
     ((), {'blending': 'translucent'}),
@@ -101,11 +104,11 @@ def test_multichannel(shape, kwargs):
         # make sure colors have been assigned properly
         if 'colormap' not in kwargs:
             if n_channels == 1:
-                assert viewer.layers[i].colormap[0] == 'gray'
+                assert viewer.layers[i].colormap.name == 'gray'
             elif n_channels == 2:
-                assert viewer.layers[i].colormap[0] == two_colormaps[i]
+                assert viewer.layers[i].colormap.name == two_colormaps[i]
             else:
-                assert viewer.layers[i].colormap[0] == base_colormaps[i]
+                assert viewer.layers[i].colormap.name == base_colormaps[i]
         if 'blending' not in kwargs:
             assert viewer.layers[i].blending == 'additive'
         for key, expectation in kwargs.items():
@@ -114,9 +117,9 @@ def test_multichannel(shape, kwargs):
                 expectation = ensure_sequence_of_iterables(expectation)
             elif key == 'colormap' and expectation is not None:
                 if isinstance(expectation, list):
-                    exp = [ensure_colormap(c) for c in expectation]
+                    exp = [ensure_colormap(c).name for c in expectation]
                 else:
-                    exp = ensure_colormap(expectation)
+                    exp = ensure_colormap(expectation).name
                 expectation = ensure_iterable(exp)
             else:
                 expectation = ensure_iterable(expectation)
@@ -124,7 +127,7 @@ def test_multichannel(shape, kwargs):
 
             result = getattr(viewer.layers[i], key)
             if key == 'colormap':  # colormaps are tuples of (name, cmap)
-                result = result[0]
+                result = result.name
             assert np.all(result == expectation[i])
 
 
@@ -147,7 +150,7 @@ def test_multichannel_multiscale():
                 )
             ]
         )
-        assert viewer.layers[i].colormap[0] == base_colormaps[i]
+        assert viewer.layers[i].colormap.name == base_colormaps[i]
 
 
 def test_multichannel_implicit_multiscale():
@@ -169,7 +172,7 @@ def test_multichannel_implicit_multiscale():
                 )
             ]
         )
-        assert viewer.layers[i].colormap[0] == base_colormaps[i]
+        assert viewer.layers[i].colormap.name == base_colormaps[i]
 
 
 def test_multichannel_dask_array():
