@@ -15,28 +15,19 @@ USE_PERFMON = os.getenv("NAPARI_PERFMON", "0") != "0"
 class PerfTimers:
     """Timers for performance monitoring.
 
-    For each added PerfEvent we do two things:
-    1) Update our self.timers dictionary (always).
-    2) Write to a trace file (optionally if recording one).
+    Timers are best added using the perfmon config file, which will
+    monkey-patch the timers into the code at startup. See
+    napari.utils.perf._config for details.
 
-    You can add a PerfEvent completely by hand by creating a
-    PerfEvent object and calling add_event(). However typically
-    you add PerfEvents one of three more automatic ways:
-
-    1) Enable timing of Qt Events using QApplicationWithTracing.
-    2) Patch in perf_timers using the perfmon config file.
-    3) Add perf_timer context objects by hand.
-
-    Methods 1 and 2 result in zero overhead if perfmon is disabled,
-    but 3 results in a tiny amount of overhead (1 usec per timer)
-    therefore best practice is remove manual perf_timers before
-    merging into master. Consider them like debug prints.
+    The collecting timing information can be used in two ways:
+    1) Writing a JSON trace file in Chrome's Tracing format.
+    2) Napari's real-time QtPerformance widget.
 
     Attributes
     ----------
-    timers : dict
-        Maps a timer name to a SimpleStat object.
-    trace_file : PerfTraceFile, optional
+    timers : Dict[str, Stat]
+        Statistics are kept on each timer.
+    trace_file : Optional[PerfTraceFile]
         The tracing file we are writing to if any.
 
     Notes
@@ -57,13 +48,13 @@ class PerfTimers:
         """Create PerfTimers.
         """
         # Maps a timer name to one Stat object.
-        self.timers = {}
+        self.timers: Dict[str, Stat] = {}
 
         # Menu item "Debug -> Record Trace File..." starts a trace.
-        self.trace_file = None
+        self.trace_file: Optional[PerfTraceFile] = None
 
-    def add_event(self, event: PerfEvent):
-        """Add one completed event.
+    def add_event(self, event: PerfEvent) -> None:
+        """Add one performance event.
 
         Parameters
         ----------
@@ -177,6 +168,10 @@ if USE_PERFMON:
     ):
         """Time a block of code.
 
+        It's best to use the perfmon config file to monkey-patch this timer
+        into methods an functions. However you can manually use it to time
+        a block of code or even a single lines.
+
         Parameters
         ----------
         name : str
@@ -202,7 +197,7 @@ if USE_PERFMON:
 
 
 else:
-    # No one should be access this since they are disabled.
+    # Make sure no one accesses the timers when they are disabled.
     timers = None
 
     def add_instant_event(name: str, **kwargs) -> None:
@@ -212,11 +207,8 @@ else:
         pass
 
     # contextlib.nullcontext does not work with kwargs, so we just
-    # create a do-nothing context object. This is not zero overhead
-    # but it's very low, about 1 microsecond? But because it's not
-    # zero it's best practice not to commit perf_timers, think of
-    # them like debug prints, add while investigating a problem
-    # but then remove before committing/merging.
+    # create a do-nothing context object. Not zero overhead but
+    # very small.
     @contextlib.contextmanager
     def perf_timer(name: str, category: Optional[str] = None, **kwargs):
         yield
