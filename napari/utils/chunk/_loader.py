@@ -76,9 +76,7 @@ class ChunkLoader:
     Attributes
     ----------
     synchronous : bool
-        If True the ChunkLoader is essentially disabled, loads are done
-        synchronously in the GUI thread. If False loads are done
-        asynchronously in a worker thread.
+        If True LoadType.AUTO layers are loading synchronously in the GUI thread.
     load_seconds : float
         Sleep this long in the worker during a load.
     executor : Union[ThreadPoolExecutor, ProcessPoolExecutor]
@@ -202,8 +200,6 @@ class ChunkLoader:
         """
 
         if self._load_synchronously(request):
-            LOGGER.info("ChunkLoader.load_chunk")
-            request.load_chunks_gui()
             return request
 
         # Check the cache first.
@@ -234,22 +230,49 @@ class ChunkLoader:
         """Return True if we should load this request synchronously."""
 
         info = self._get_layer_info(request)
+        sync = self._do_sync_load(request, info)
 
+        if not sync:
+            return False  # We'll load it async.
+
+        request.load_chunks()
+        info.load_finished(request, sync=True)
+        return True  # Load was sync.
+
+    def _do_sync_load(self, request: ChunkRequest, info: LayerInfo) -> bool:
+        """Return True if thislayer should load synchronously.
+
+        Parameters
+        ----------
+        request : ChunkRequest
+            The request we are loading.
+        info : LayerInfo
+            The layer we are loading the chunk into.
+        """
         if info.load_type == LoadType.SYNC:
             return True  # Layer is forcing sync loads.
 
         if info.load_type == LoadType.ASYNC:
             return False  # Layer is forcing async loads.
 
-        assert info.load_type == LoadType.DEFAULT  # So it must be default.
+        assert info.load_type == LoadType.AUTO  # AUTO is the only other type.
 
+        # If ChunkLoader is synchronous then AUTO always means synchronous.
         if self.synchronous:
-            return True  # ChunkLoader is in sync mode.
+            return True
 
+        # We need to sleep() so must be async.
         if self.load_seconds > 0:
-            return False  # We need to sleep() so can't be async.
+            return False
 
-        return request.in_memory  # True if request has only ndarray chunks.
+        # If it's been loading "fast" then load synchronously. There's no
+        # point doing async loading if it's just as easy to load immediately.
+        if info.loads_fast:
+            return True
+
+        # Finally, load synchronously if it's an ndarray (in memory) otherwise
+        # it's Dask or something else and we load async.
+        return request.in_memory
 
     def _submit_async(self, request: ChunkRequest) -> None:
         """Initiate an asynchronous load of the given request.
@@ -379,7 +402,7 @@ class ChunkLoader:
             return  # Ignore chunks since layer was deleted.
 
         # Record LayerInfo stats.
-        info.load_finished(request)
+        info.load_finished(request, sync=False)
 
         # Fire event to tell QtChunkReceiver to forward this chunk to its
         # layer in the GUI thread.

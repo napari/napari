@@ -160,7 +160,7 @@ class ChunkRequest:
     def time_block(self, timer_name: str):
         """Like a perf timers but using time.time().
 
-        perf_coutner_ns() is not necessarily synchronized across processes
+        perf_counter_ns() is not necessarily synchronized across processes
         but time.time() is okay. Since loads are relatively slow probably
         using time.time() is accurate enough.
 
@@ -175,18 +175,8 @@ class ChunkRequest:
         end_seconds = time.time()
         self.timers[timer_name] = TimeSpan(start_seconds, end_seconds, args)
 
-    def load_chunks_gui(self):
-        """Load ndarray chunks immediately in the GUI thread.
-
-        This is the same as load_chunks() but we don't bother to time it
-        because these are already ndarrays.
-        """
-        for key, array in self.chunks.items():
-            self.chunks[key] = np.asarray(array)
-
     def load_chunks(self):
-        """Load all of our chunks."""
-        # Record these now, since we are in the worker.
+        """Load all of our chunks now in this thread."""
         self.process_id = os.getpid()
         self.thread_id = threading.get_ident()
 

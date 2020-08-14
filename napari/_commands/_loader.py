@@ -12,7 +12,7 @@ from ._tables import RowTable, print_property_table
 from ._utils import highlight
 
 LOAD_TYPE_STR = {
-    LoadType.DEFAULT: "default",
+    LoadType.AUTO: "auto",
     LoadType.SYNC: "sync",
     LoadType.ASYNC: "async",
 }
@@ -43,10 +43,9 @@ def format_bytes(num_bytes):
 class InfoDisplayer:
     """Display LayerInfo values nicely for the table.
 
-    Most values display as "--" if we don't have an info. TODO_ASYNC: is
-    there a nicer way to accomplish this? Have '--' as default for everything?
-
-    Some values require a bit of computation or formatting.
+    This mainly exist so we can have NoInfoDisplay which displays "--"
+    for all the values. Seemed like the easiest way to handle the
+    case when we have info and the case when we don't.
 
     Parameters
     ----------
@@ -57,26 +56,13 @@ class InfoDisplayer:
     def __init__(self, info: LayerInfo):
         self.info = info
         self.data_type = info.data_type
-        self.num_loads = info.num_loads
-        self.num_chunks = info.num_chunks
-
-    @property
-    def sync(self):
-        return LOAD_TYPE_STR[self.info.load_type]
-
-    @property
-    def total(self):
-        return format_bytes(self.info.num_bytes)
-
-    @property
-    def avg_ms(self):
-        ms = self.info.window_ms.average
-        return f"{ms:.1f}"
-
-    @property
-    def mbits(self):
-        mbits = self.info.mbits
-        return f"{mbits:.1f}"
+        self.num_loads = info.counts.loads
+        self.num_chunks = info.counts.chunks
+        self.sync = LOAD_TYPE_STR[self.info.load_type]
+        self.total = format_bytes(self.info.counts.bytes)
+        self.avg_ms = f"{self.info.window_ms.average:.1f}"
+        self.mbits = f"{self.info.mbits:.1f}"
+        self.load_str = self.info.recent_load_str
 
 
 class NoInfoDisplayer:
@@ -149,7 +135,8 @@ class ChunkLoaderLayers:
         self.table = RowTable(
             [
                 "ID",
-                "SYNC",
+                "MODE",
+                "LOADS",
                 {"name": "NAME", "align": "left"},
                 "LAYER",
                 "DATA",
@@ -223,6 +210,7 @@ class ChunkLoaderLayers:
             [
                 index,
                 disp.sync,
+                disp.load_str,
                 layer.name,
                 layer_type,
                 disp.data_type,
@@ -357,28 +345,34 @@ class LoaderCommands:
         if info is None:
             return
 
-        table = RowTable(["INDEX", "SIZE", "DURATION (ms)", "Mbit/s"])
+        table = RowTable(["INDEX", "TYPE", "SIZE", "DURATION (ms)", "Mbit/s"])
         for i, load in enumerate(info.recent_loads):
+            load_str = "sync" if load.sync else "async"
             duration_str = f"{load.duration_ms:.1f}"
             mbits_str = f"{load.mbits:.1f}"
-            table.add_row((i, load.num_bytes, duration_str, mbits_str))
+            table.add_row(
+                (i, load_str, load.num_bytes, duration_str, mbits_str)
+            )
 
         table.print()
 
-    def set_sync(self, layer_index):
-        info = self._get_layer_info(layer_index)
+    def _set_load_type(self, index, load_type) -> None:
+        """Set this layer to this load type."""
+        info = self._get_layer_info(index)
         if info is not None:
-            info.load_type = LoadType.SYNC
+            info.load_type = load_type
 
-    def set_async(self, layer_index):
-        info = self._get_layer_info(layer_index)
-        if info is not None:
-            info.load_type = LoadType.ASYNC
+    def set_sync(self, index) -> None:
+        """Set this layer to sync loading."""
+        self._set_load_type(index, LoadType.SYNC)
 
-    def set_default(self, layer_index):
-        info = self._get_layer_info(layer_index)
-        if info is not None:
-            info.load_type = LoadType.DEFAULT
+    def set_async(self, index) -> None:
+        """Set this layer to async loading."""
+        self._set_load_type(index, LoadType.ASYNC)
+
+    def set_auto(self, index) -> None:
+        """Set this layer to auto loading."""
+        self._set_load_type(index, LoadType.AUTO)
 
     def levels(self, layer_index: int) -> None:
         """Print information on a single layer.

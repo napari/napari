@@ -12,6 +12,13 @@ from ._utils import StatWindow
 LOGGER = logging.getLogger("ChunkLoader")
 
 
+class LoadCounts:
+    def __init__(self):
+        self.loads: int = 0
+        self.chunks: int = 0
+        self.bytes: int = 0
+
+
 def _get_type_str(data) -> str:
     """Get human readable name for the data's type.
 
@@ -50,19 +57,28 @@ def _mbits(num_bytes, duration_ms) -> float:
 class LoadType(Enum):
     """How ChunkLoader should load this layer."""
 
-    DEFAULT = 0  # let ChunkLoader decide
+    AUTO = 0  # let ChunkLoader decide
     SYNC = 1
     ASYNC = 2
 
 
 class LoadInfo:
-    """Information about one load.
+    """Information about the load of one request.
 
+    Parameters
+    ----------
+    num_bytes : int
+        How big was this load.
+    duration_ms : float
+        How long did this load take in milliseconds.
+    sync : bool
+        True if the load was synchronous.
     """
 
-    def __init__(self, num_bytes, duration_ms):
+    def __init__(self, num_bytes: int, duration_ms: float, sync: bool):
         self.num_bytes = num_bytes
         self.duration_ms = duration_ms
+        self.sync = sync
 
     @property
     def mbits(self) -> float:
@@ -87,14 +103,17 @@ class LayerInfo:
     # we could do something fancier than average long term.
     WINDOW_SIZE = 10
 
+    # If the average load speed is less than this, we consider the load
+    # speed to be "fast" and we'll load the layer synchronously if the load
+    # type is LoadType.AUTO.
+    MAX_FAST_LOAD_MS = 30
+
     def __init__(self, layer):
         self.layer_id: int = id(layer)
         self.layer_ref: weakref.ReferenceType = weakref.ref(layer)
         self.data_type: str = _get_type_str(layer.data)
 
-        self.num_loads: int = 0
-        self.num_chunks: int = 0
-        self.num_bytes: int = 0
+        self.counts: LoadCounts = LoadCounts()
 
         # Keep running averages of load time and size.
         self.window_ms: StatWindow = StatWindow(self.WINDOW_SIZE)
@@ -104,7 +123,7 @@ class LayerInfo:
         self.recent_loads: list = []
 
         # By default we let ChunkLoader decide, but we can override that.
-        self.load_type: LoadType = LoadType.DEFAULT
+        self.load_type: LoadType = LoadType.AUTO
 
     def get_layer(self):
         """Resolve our weakref to get the layer, log if not found.
@@ -126,7 +145,37 @@ class LayerInfo:
         """Return Mbit/second."""
         return _mbits(self.window_bytes.average, self.window_ms.average)
 
-    def load_finished(self, request: ChunkRequest) -> None:
+    @property
+    def loads_fast(self) -> bool:
+        """Return True if this layer has been loading very fast."""
+        avg = self.window_ms.average
+
+        # If average is zero there have been no loads yet.
+        return avg > 0 and avg <= self.MAX_FAST_LOAD_MS
+
+    @property
+    def recent_load_str(self) -> str:
+        """Return string describing the sync/async nature of recent loads.
+
+        Returns
+        -------
+        str
+            Return "sync", "async" or "mixed".
+        """
+        num_sync = num_async = 0
+        for load in self.recent_loads:
+            if load.sync:
+                num_sync += 1
+            else:
+                num_async += 1
+
+        if num_async == 0:
+            return "sync"
+        if num_sync == 0:
+            return "async"
+        return "mixed"
+
+    def load_finished(self, request: ChunkRequest, sync: bool) -> None:
         """This ChunkRequest was satisfied, record stats.
 
         Parameters
@@ -135,19 +184,21 @@ class LayerInfo:
             Record stats related to loading these chunks.
         """
         # Record the number of loads and chunks.
-        self.num_loads += 1
-        self.num_chunks += request.num_chunks
+        self.counts.loads += 1
+        self.counts.chunks += request.num_chunks
 
         # Increment total bytes loaded.
         num_bytes = request.num_bytes
-        self.num_bytes += num_bytes
+        self.counts.bytes += num_bytes
+
+        # Time to load all chunks.
+        load_ms = request.timers['load_chunks'].duration_ms
 
         # Update our StatWindows.
-        load_ms = request.timers['load_chunks'].duration_ms
-        self.window_ms.add(load_ms)
         self.window_bytes.add(num_bytes)
+        self.window_ms.add(load_ms)
 
-        # Keep at most self.NUM_RECENT_LOADS recent loads.
-        load_info = LoadInfo(num_bytes, load_ms)
+        # Add LoadInfo, keep only NUM_RECENT_LOADS of them.
+        load_info = LoadInfo(num_bytes, load_ms, sync=sync)
         keep = self.NUM_RECENT_LOADS - 1
         self.recent_loads = self.recent_loads[-keep:] + [load_info]
