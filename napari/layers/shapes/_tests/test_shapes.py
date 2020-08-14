@@ -1123,7 +1123,7 @@ def test_add_colormap(attribute):
 
     setattr(layer, f'{attribute}_colormap', get_colormap('gray'))
     layer_colormap = getattr(layer, f'{attribute}_colormap')
-    assert 'unnamed colormap' in layer_colormap[0]
+    assert 'unnamed colormap' in layer_colormap.name
 
 
 def test_edge_width():
