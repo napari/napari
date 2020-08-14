@@ -91,7 +91,7 @@ class PerfTimers:
         event : PerfEvent
             Add this event.
         kwargs
-            Arguments to display in the Args section of the Chrome Tracing GUI.
+            Arguments to display in the Args section of the Tracing GUI.
         """
         self.add_event(InstantEvent(name, perf_counter_ns(), **kwargs))
 
@@ -205,10 +205,10 @@ else:
     # No one should be access this since they are disabled.
     timers = None
 
-    def add_instant_event(name: str, **kwargs):
+    def add_instant_event(name: str, **kwargs) -> None:
         pass
 
-    def add_counter_event(name: str, **kwargs: Dict[str, float]):
+    def add_counter_event(name: str, **kwargs: Dict[str, float]) -> None:
         pass
 
     # contextlib.nullcontext does not work with kwargs, so we just
