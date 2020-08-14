@@ -1,41 +1,35 @@
-"""Performance Monitoring init.
+"""Performance Monitoring.
 
-USE_PERFMON is true only if NAPARI_PERFMON environment variable is set and not
-zero.
+To enable perfmon define the env var NAPARI_PERFMON to be non-zero.
 
-timers is an instance of PerfTimers with these methods:
-    add_event(event: PerfEvent)
-    clear()
-    start_trace_file(path: str)
-    stop_trace_file()
+The perfmon module lets you instrument your code and visualize its run-time
+behavior and timings in Chrome's Tracing GUI.
 
-Use perf_timer to time blocks of code.
+The best way to add perf_timers is using the perfmon config file. You can
+list which methods or functions you want to time, and a perf_timer will be
+monkey-patched into each callable on startup. The monkey patching
+is done only if perfmon is enabled.
 
+To record a trace define NAPARI_PERFMON and use the menu Debug ->
+Performance Trace. Or add a line to your perfmon config file like:
+
+    "trace_file_on_start": "/Path/to/my/trace.json"
+
+Perfmon will start tracing on startup. You must quit napari with the Quit
+command for napari to write trace file. See napari.utils.perf._config for
+more information.
+
+You can also manually add "perf_timer" context objects and
+"add_counter_event()" and "add_instant_event()" functions to your code. All
+three of these should be removed before merging the PR into master. While
+they have almost zero overhead when perfmon is disabled, it's still better
+not to leave them in the code.
 """
 import os
 
 from ._compat import perf_counter_ns
 from ._config import perf_config
 from ._event import PerfEvent
+from ._timers import add_counter_event, add_instant_event, perf_timer, timers
 
-# timers
-#     The global PerfTimers instance.
-#
-# perf_timer
-#     Context object to time a line or block of code.
-#
-# add_instant_event
-#     Instant events appear as a vertical line in the Chrome UI.
-#
-# The best way to add perf_timers is using the perfmon config file, the
-# perf_timer will be patched in only if perfmon is enabled.
-#
-# Adding perf_timers "by hand" is sometimes helpful during intensive
-# investigations, but consider them like "debug prints" something you
-# strip out before commiting. When perfmon is disabled perf_timers
-# do close to nothing, but there is still maybe 1 usec overhead.
-from ._timers import add_instant_event, perf_timer, timers
-
-# If not using perfmon timers will be 100% disabled with hopefully zero
-# run-time impact.
 USE_PERFMON = os.getenv("NAPARI_PERFMON", "0") != "0"
