@@ -1,45 +1,22 @@
-"""Performance Monitoring init.
+"""Performance Monitoring.
 
-USE_PERFMON is true only if NAPARI_PERFMON environment variable is set and not
-zero.
+Enable perfmon by defining NAPARI_PERFMON to be non-zero.
 
-timers is an instance of PerfTimers with these methods:
-    add_event(event: PerfEvent)
-    clear()
-    start_trace_file(path: str)
-    stop_trace_file()
+The best way to add perf_timers is using the perfmon config file. You can
+list which methods or functions you want to time, and a perf_timer will be
+monkey-patched into each callable on startup. The monkey patching
+is done only if perfmon is enabled.
 
-Use perf_timer to time blocks of code.
-
+You can also use the "perf_timer" context object and "add_counter_event"
+and "add_instant_event", but all three of these should be removed before
+merging the PR into master. While they have almost zero overhead when
+perfmon is disable, it will still result in empty function calls.
 """
 import os
 
 from ._compat import perf_counter_ns
 from ._config import perf_config
 from ._event import PerfEvent
-
-# timers
-#     The global PerfTimers instance.
-#
-# perf_timer
-#     Context object to time a line or block of code.
-#
-# add_counter_event
-#     Counter events appear as a little (stacked) bar graph.
-#
-# add_instant_event
-#     Instant events appear as a vertical line.
-#
-# The best way to add perf_timers is using the perfmon config file, the
-# perf_timer will be patched in only if perfmon is enabled.
-#
-# For now
-# Their overhead if perfmon is disabled is incredibly minimal but not zero.
 from ._timers import add_counter_event, add_instant_event, perf_timer, timers
 
-# If perfmon is disabled then no functions are monkey patched and all
-# perfmon functions are stubs that do basically nothing.
-#
-# Nevertheless for now manually added perf_timers, counter_events and
-# instant_events should be commented out or removed before merging.
 USE_PERFMON = os.getenv("NAPARI_PERFMON", "0") != "0"
