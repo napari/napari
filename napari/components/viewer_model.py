@@ -1,6 +1,6 @@
 import numpy as np
 
-from .._commands import CommandProcessor
+from .._commands import LoaderCommands
 from ..utils.event import EmitterGroup, Event
 from ..utils.key_bindings import KeymapHandler, KeymapProvider
 from ..utils.theme import palettes
@@ -496,9 +496,9 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         layer.translate_grid = translate
 
     @property
-    def cmd(self):
-        """Command processor for use in the IPython console.
+    def loader(self):
+        """Loader commands for IPython console.
 
-        For example run "viewer.cmd.help" or "viewer.cmd.layers".
+        For example run "viewer.loader.help" or "viewer.loader.layers".
         """
-        return CommandProcessor(self.layers)
+        return LoaderCommands(self.layers)

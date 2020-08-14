@@ -15,12 +15,10 @@ multiple clients can be access it at the same time, but it is the interface
 to just one physical resource.
 """
 import logging
-import weakref
 from concurrent import futures
 from contextlib import contextmanager
 from typing import Dict, List, Optional, Union
 
-import dask.array as da
 import numpy as np
 
 from ...types import ArrayLike
@@ -29,6 +27,7 @@ from ..perf import perf_timer
 from ._cache import ChunkCache
 from ._config import async_config
 from ._delay_queue import DelayQueue
+from ._info import LayerInfo, LoadType
 from ._request import ChunkKey, ChunkRequest
 
 LOGGER = logging.getLogger("ChunkLoader")
@@ -37,55 +36,11 @@ LOGGER = logging.getLogger("ChunkLoader")
 PoolExecutor = Union[futures.ThreadPoolExecutor, futures.ProcessPoolExecutor]
 
 
-class StatWindow:
-    """Maintain an average value over some rolling window.
-
-    Adding values is very efficient (once the window is full) but
-    calculating the average is O(size), although using numpy.
-
-    Parameters
-    ----------
-    size : int
-        The size of the window.
-    """
-
-    def __init__(self, size: int):
-        self.size = size
-        self.values = np.array([])  # float64 array
-        self.index = 0  # insert values here once full
-
-    def add(self, value: float):
-        """Add one value to the window.
-
-        Parameters
-        ----------
-        value : float
-            Add this value to the window.
-        """
-        if len(self.values) < self.size:
-            # This isn't super efficient but we're optimizing for the case
-            # when the array is full and we are just poking in values.
-            self.values = np.append(self.values, value)
-        else:
-            # Array is full, rotate through poking in one value at a time,
-            # this should be very fast.
-            self.values[self.index] = value
-            self.index = (self.index + 1) % self.size
-
-    @property
-    def average(self):
-        """Return the average of all values in the window."""
-        if len(self.values) == 0:
-            return 0  # Just say zero, really there is no value.
-        return np.average(self.values)
-
-
-def _chunk_loader_worker(request: ChunkRequest):
+def _chunk_loader_worker(request: ChunkRequest) -> ChunkRequest:
     """This is the worker thread or process that loads the array.
 
-    We have workers because when we call np.asarray() that might lead
-    to IO or computation which could take a while. We do not want to
-    do that in the GUI thread or the UI will block.
+    We call np.asarray() in a worker because it might lead to IO or
+    computation which would block the GUI thread.
 
     Parameters
     ----------
@@ -111,99 +66,11 @@ def _create_executor(use_processes: bool, num_workers: int) -> PoolExecutor:
     return futures.ThreadPoolExecutor(max_workers=num_workers)
 
 
-def _get_type_str(data) -> str:
-    """Get human readable name for the data's type.
-
-    Returns
-    -------
-    str
-        A string like "ndarray" or "dask".
-    """
-    data_type = type(data)
-
-    if data_type == list:
-        if len(data) == 0:
-            return "EMPTY"
-        else:
-            # Recursively get the type string of the zeroth level.
-            return _get_type_str(data[0])
-
-    if data_type == da.Array:
-        # Special case this because otherwise data_type.__name__
-        # below would just return "Array".
-        return "dask"
-
-    # For class numpy.ndarray this returns "ndarray"
-    return data_type.__name__
-
-
-class LayerInfo:
-    """Information about one layer we are tracking.
-
-    Parameters
-    ----------
-    layer : Layer
-        The layer we are loading chunks for.
-    """
-
-    # Window size for timing statistics. We use a simple average over the
-    # window. This is better than the just "last load time" because it
-    # won't jump around from one fluke. But we could do something much
-    # fancier in the future with filtering.
-    WINDOW_SIZE = 10
-
-    def __init__(self, layer):
-        self.layer_id: int = id(layer)
-        self.layer_ref: weakref.ReferenceType = weakref.ref(layer)
-        self.data_type: str = _get_type_str(layer.data)
-
-        self.num_loads: int = 0
-        self.num_chunks: int = 0
-        self.num_bytes: int = 0
-
-        # Keep running average of load times.
-        self.load_time_ms: StatWindow = StatWindow(self.WINDOW_SIZE)
-
-    def get_layer(self):
-        """Resolve our weakref to get the layer, log if not found.
-
-        Returns
-        -------
-        layer : Layer
-            The layer for this ChunkRequest.
-        """
-        layer = self.layer_ref()
-        if layer is None:
-            LOGGER.info(
-                "LayerInfo.get_layer: layer %d was deleted", self.layer_id
-            )
-        return layer
-
-    def load_finished(self, request: ChunkRequest) -> None:
-        """This ChunkRequest was satisfied, record stats.
-
-        Parameters
-        ----------
-        request : ChunkRequest
-            Record stats related to loading these chunks.
-        """
-        # Record the number of loads and chunks.
-        self.num_loads += 1
-        self.num_chunks += request.num_chunks
-
-        # Total bytes loaded.
-        self.num_bytes += request.num_bytes
-
-        # Record the load time.
-        load_ms = request.timers['load_chunks'].duration_ms
-        self.load_time_ms.add(load_ms)
-
-
 class ChunkLoader:
     """Loads chunks in worker threads or processes.
 
     We cannot call np.asarray() in the GUI thread because it might block on
-    IO or a computation. So the ChunkLoader calls np.asarry() for us in
+    IO or a computation. So the ChunkLoader calls np.asarray() for us in
     a worker thread or process.
 
     Attributes
@@ -333,11 +200,8 @@ class ChunkLoader:
         chunk_loaded() will be called in the GUI thread sometime in the future
         after the worker as performed the load.
         """
-        # We do an immediate load in the GUI thread in synchronous mode or
-        # the request is already in memory (ndarrays). However if
-        # self.load_seconds > 0 then we cannot load in the GUI thread
-        # because we have to sleep that long in the worker.
-        if self.synchronous or request.in_memory and not self.load_seconds:
+
+        if self._load_synchronously(request):
             LOGGER.info("ChunkLoader.load_chunk")
             request.load_chunks_gui()
             return request
@@ -365,6 +229,27 @@ class ChunkLoader:
         # ChunkLoader_submit_async() later on if the delay expires without
         # the request getting cancelled.
         self.delay_queue.add(request)
+
+    def _load_synchronously(self, request: ChunkRequest) -> bool:
+        """Return True if we should load this request synchronously."""
+
+        info = self._get_layer_info(request)
+
+        if info.load_type == LoadType.SYNC:
+            return True  # Layer is forcing sync loads.
+
+        if info.load_type == LoadType.ASYNC:
+            return False  # Layer is forcing async loads.
+
+        assert info.load_type == LoadType.DEFAULT  # So it must be default.
+
+        if self.synchronous:
+            return True  # ChunkLoader is in sync mode.
+
+        if self.load_seconds > 0:
+            return False  # We need to sleep() so can't be async.
+
+        return request.in_memory  # True if request has only ndarray chunks.
 
     def _submit_async(self, request: ChunkRequest) -> None:
         """Initiate an asynchronous load of the given request.
@@ -487,9 +372,6 @@ class ChunkLoader:
         # Lookup this Request's LayerInfo.
         info = self._get_layer_info(request)
 
-        if info is None:
-            return  # Ignore the chunks since no LayerInfo.
-
         # Resolve the weakref.
         layer = info.get_layer()
 
@@ -513,11 +395,10 @@ class ChunkLoader:
         """
         layer_id = request.key.layer_id
 
-        try:
-            return self.layer_map[layer_id]
-        except KeyError:
-            LOGGER.warn("ChunkLoader._done: no layer_id %d", layer_id)
-            return None
+        # Go ahead and raise KeyError if not found. This should never
+        # happen because we add the layer to the layer_map in
+        # ChunkLoader.create_request().
+        return self.layer_map[layer_id]
 
     def wait(self, data_id: int) -> None:
         """Wait for the given data to be loaded.

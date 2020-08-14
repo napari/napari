@@ -6,6 +6,8 @@ import time
 from collections import namedtuple
 from typing import List, Optional
 
+from ...utils.perf import add_counter_event
+
 LOGGER = logging.getLogger("ChunkLoader")
 
 # Each queue entry contains 1 request and the time we should submit it.
@@ -81,6 +83,8 @@ class DelayQueue(threading.Thread):
             self.entries.append(entry)
             num_entries = len(self.entries)
 
+        add_counter_event("delay_queue", entries=num_entries)
+
         # If the list was previously empty.
         if num_entries == 1:
             self.event.set()  # Wake up the worker
@@ -143,6 +147,9 @@ class DelayQueue(threading.Thread):
 
             if self.lock:
                 seconds = self._submit_due_entries(now)
+                num_entries = len(self.entries)
+
+            add_counter_event("delay_queue", entries=num_entries)
 
             if seconds is None:
                 # There were no entries left, so wait until there is one.

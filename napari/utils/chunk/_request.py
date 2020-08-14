@@ -10,8 +10,8 @@ from typing import List, Tuple, Union
 import numpy as np
 
 from ...types import ArrayLike, Dict
-from ...utils.perf import perf_counter_ns, PerfEvent, timers
-from ._util import get_data_id
+from ...utils.perf import PerfEvent, perf_counter_ns, timers
+from ._utils import get_data_id
 
 LOGGER = logging.getLogger("ChunkLoader")
 
@@ -149,9 +149,8 @@ class ChunkRequest:
         return sum(array.nbytes for array in self.chunks.values())
 
     @property
-    def in_memory(self):
-        """False if any chunk request are not ndarrays.
-        """
+    def in_memory(self) -> bool:
+        """True if all chunks are ndarrays."""
         for array in self.chunks.values():
             if not isinstance(array, np.ndarray):
                 return False

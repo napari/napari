@@ -4,19 +4,40 @@ from typing import List
 
 import dask.array as da
 
-from ._humanize import naturalsize
 from ..layers.base import Layer
-from ._tables import print_property_table, RowTable
+from ..layers.image import Image
+from ..utils.chunk import LayerInfo, LoadType, async_config, chunk_loader
+from ._humanize import naturalsize
+from ._tables import RowTable, print_property_table
 from ._utils import highlight
-from ..utils.chunk import async_config, chunk_loader, LayerInfo
 
+LOAD_TYPE_STR = {
+    LoadType.DEFAULT: "default",
+    LoadType.SYNC: "sync",
+    LoadType.ASYNC: "async",
+}
 
 HELP_STR = f"""
 {highlight("Available Commands:")}
-cmd.help
-cmd.list
-cmd.info(layer_id)
+viewer.loader.help
+viewer.loader.cache
+viewer.loader.config
+viewer.loader.layers
+viewer.loader.levels(index)
+viewer.loader.loads(index)
+viewer.loader.set_default(index)
+viewer.loader.set_sync(index)
+viewer.loader.set_async(index)
 """
+
+
+def format_bytes(num_bytes):
+    """Return formatted string like K, M, G.
+
+    The gnu=True flag produces GNU-style single letter suffixes which
+    are more compact then KiB, MiB, GiB.
+    """
+    return naturalsize(num_bytes, gnu=True)
 
 
 class InfoDisplayer:
@@ -33,30 +54,29 @@ class InfoDisplayer:
         The LayerInfo to display.
     """
 
-    def __init__(self, layer_info: LayerInfo):
-        self.info = layer_info
+    def __init__(self, info: LayerInfo):
+        self.info = info
+        self.data_type = info.data_type
+        self.num_loads = info.num_loads
+        self.num_chunks = info.num_chunks
 
     @property
-    def data_type(self):
-        return self.info.data_type
-
-    @property
-    def num_loads(self):
-        return self.info.num_loads
-
-    @property
-    def num_chunks(self):
-        return self.info.num_chunks
+    def sync(self):
+        return LOAD_TYPE_STR[self.info.load_type]
 
     @property
     def total(self):
-        # gnu=True gives the short "103M" or "92K" suffixes.
-        return naturalsize(self.info.num_bytes, gnu=True)
+        return format_bytes(self.info.num_bytes)
 
     @property
     def avg_ms(self):
-        ms = self.info.load_time_ms.average
+        ms = self.info.window_ms.average
         return f"{ms:.1f}"
+
+    @property
+    def mbits(self):
+        mbits = self.info.mbits
+        return f"{mbits:.1f}"
 
 
 class NoInfoDisplayer:
@@ -110,7 +130,7 @@ def _get_size_str(data) -> str:
     return naturalsize(nbytes, gnu=True)
 
 
-class ChunkLoaderTable:
+class ChunkLoaderLayers:
     """Table showing information about each layer.
 
     Parameters
@@ -129,6 +149,7 @@ class ChunkLoaderTable:
         self.table = RowTable(
             [
                 "ID",
+                "SYNC",
                 {"name": "NAME", "align": "left"},
                 "LAYER",
                 "DATA",
@@ -137,17 +158,23 @@ class ChunkLoaderTable:
                 "CHUNKS",
                 "TOTAL",
                 "AVG (ms)",
+                "MBIT/s",
                 "SHAPE",
             ]
         )
         for i, layer in enumerate(self.layers):
             self._add_row(i, layer)
 
-    def _get_shape_str(self, data):
+    def _get_shape_str(self, layer):
         """Get shape string for the data.
 
         Either "NONE" or a tuple like "(10, 100, 100)".
         """
+        # We only care about Image/Labels layers for now.
+        if not isinstance(layer, Image):
+            return "--"
+
+        data = layer.data
         if isinstance(data, list):
             if len(data) == 0:
                 return "NONE"  # Shape layer is empty list?
@@ -186,15 +213,16 @@ class ChunkLoaderTable:
         """
         layer_type = type(layer).__name__
         num_levels = self._get_num_levels(layer.data)
-        shape_str = self._get_shape_str(layer.data)
+        shape_str = self._get_shape_str(layer)
 
-        # Get LayerInfo and use the InfoDisplayer.
+        # Use InfoDisplayer to display LayerInfo
         info = chunk_loader.get_info(id(layer))
         disp = InfoDisplayer(info) if info is not None else NoInfoDisplayer()
 
         self.table.add_row(
             [
                 index,
+                disp.sync,
                 layer.name,
                 layer_type,
                 disp.data_type,
@@ -203,6 +231,7 @@ class ChunkLoaderTable:
                 disp.num_chunks,
                 disp.total,
                 disp.avg_ms,
+                disp.mbits,
                 shape_str,
             ]
         )
@@ -223,8 +252,7 @@ class LevelsTable:
         Show the levels of this layer.
     """
 
-    def __init__(self, layer_id: int, layer):
-        self.layer_id = layer_id
+    def __init__(self, layer):
         self.layer = layer
         self.table = RowTable(["LEVEL", "SHAPE", "TOTAL"])
         self.table = RowTable(
@@ -255,8 +283,15 @@ class LoaderCommands:
     def __init__(self, layerlist: List[Layer]):
         self.layerlist = layerlist
 
+    def __repr__(self):
+        return HELP_STR
+
     @property
-    def loader_config(self):
+    def help(self):
+        print(HELP_STR)
+
+    @property
+    def config(self):
         """Print the current list of layers."""
         src = async_config
         config = [
@@ -270,6 +305,114 @@ class LoaderCommands:
         print_property_table(config)
 
     @property
-    def loader(self):
+    def cache(self):
+        chunk_cache = chunk_loader.cache
+        cur_str = format_bytes(chunk_cache.chunks.currsize)
+        max_str = format_bytes(chunk_cache.chunks.maxsize)
+        table = [
+            ('enabled', chunk_cache.enabled),
+            ('currsize', cur_str),
+            ('maxsize', max_str),
+        ]
+        print_property_table(table)
+
+    @property
+    def layers(self):
         """Print the current list of layers."""
-        ChunkLoaderTable(self.layerlist).print()
+        ChunkLoaderLayers(self.layerlist).print()
+
+    def _get_layer(self, layer_index) -> Layer:
+        try:
+            return self.layerlist[layer_index]
+        except KeyError:
+            print(f"Layer index {layer_index} is invalid.")
+            return None
+
+    def _get_layer_info(self, layer_index) -> LayerInfo:
+        """Return the LayerInfo at this index."""
+        layer = self._get_layer(layer_index)
+
+        if layer is None:
+            return
+
+        layer_id = id(layer)
+        info = chunk_loader.get_info(layer_id)
+
+        if info is None:
+            print(f"Layer index {layer_index} has no LayerInfo.")
+            return None
+
+        return info
+
+    def loads(self, layer_index: int) -> None:
+        """Print recent loads for this layer.
+
+        Attributes
+        ----------
+        layer_index : int
+            The index from the viewer.cmd.loader table.
+        """
+        info = self._get_layer_info(layer_index)
+
+        if info is None:
+            return
+
+        table = RowTable(["INDEX", "SIZE", "DURATION (ms)", "Mbit/s"])
+        for i, load in enumerate(info.recent_loads):
+            duration_str = f"{load.duration_ms:.1f}"
+            mbits_str = f"{load.mbits:.1f}"
+            table.add_row((i, load.num_bytes, duration_str, mbits_str))
+
+        table.print()
+
+    def set_sync(self, layer_index):
+        info = self._get_layer_info(layer_index)
+        if info is not None:
+            info.load_type = LoadType.SYNC
+
+    def set_async(self, layer_index):
+        info = self._get_layer_info(layer_index)
+        if info is not None:
+            info.load_type = LoadType.ASYNC
+
+    def set_default(self, layer_index):
+        info = self._get_layer_info(layer_index)
+        if info is not None:
+            info.load_type = LoadType.DEFAULT
+
+    def levels(self, layer_index: int) -> None:
+        """Print information on a single layer.
+        Prints summary and if multiscale prints a table of the levels:
+        Layer ID: 0
+            Name: LaminB1
+          Levels: 2
+        LEVEL  SHAPE
+        0      (1, 236, 275, 271)
+        1      (1, 236, 137, 135)
+        Parameters
+        ----------
+        layer_id : int
+            ConsoleCommand's id for the layer.
+        """
+        layer = self._get_layer(layer_index)
+        if layer is None:
+            return
+
+        num_levels = len(layer.data) if layer.multiscale else 1
+
+        # Common to both multi-scale and single-scale.
+        summary = [
+            ("Layer ID", layer_index),
+            ("Name", layer.name),
+            ("Levels", num_levels),
+        ]
+
+        if layer.multiscale:
+            # Print summary and level table.
+            print_property_table(summary)
+            print("")  # blank line
+            LevelsTable(layer).print()
+        else:
+            # Print summary with shape, no level table.
+            summary.append(("Shape", layer.data.shape))
+            print_property_table(summary)

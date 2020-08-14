@@ -1,3 +1,3 @@
-"""Command for napari's IPython console."""
+"""Commands for napari's IPython console."""
 
-from ._processor import CommandProcessor
+from ._loader import LoaderCommands

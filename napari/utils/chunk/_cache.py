@@ -80,6 +80,7 @@ class ChunkCache:
     def __init__(self):
         nbytes = _get_cache_size_bytes(CACHE_MEM_FRACTION)
         self.chunks = LRUCache(maxsize=nbytes, getsizeof=_getsizeof_chunks)
+        self.enabled = True
 
     def add_chunks(self, request: ChunkRequest) -> None:
         """Add the chunks in this request to the cache.
@@ -89,6 +90,9 @@ class ChunkCache:
         request : ChunkRequest
             Add the data in this request to the cache.
         """
+        if not self.enabled:
+            LOGGER.info("ChunkCache.add_chunk: disabled")
+            return
         LOGGER.info("ChunkCache.add_chunk: %s", request.key)
         self.chunks[request.key.key] = request.chunks
 
@@ -105,5 +109,8 @@ class ChunkCache:
         ChunkArrays, optional
             The cached data or None of it was not found in the cache.
         """
+        if not self.enabled:
+            LOGGER.info("ChunkCache.get_chunk: disabled")
+            return None
         LOGGER.info("ChunkCache.get_chunk: %s", request.key)
         return self.chunks.get(request.key.key)
