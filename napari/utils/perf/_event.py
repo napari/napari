@@ -134,7 +134,7 @@ class CounterEvent(PerfEvent):
         The name of this event.
     time_ns : int
         The time in nanoseconds when the event happened.
-    kwargs : dict
+    kwargs : Dict[str, float]
         The names and values of the counters.
     """
 
