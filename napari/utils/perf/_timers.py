@@ -2,10 +2,10 @@
 """
 import contextlib
 import os
-from typing import Optional
+from typing import Dict, Optional
 
 from ._compat import perf_counter_ns
-from ._event import InstantEvent, PerfEvent
+from ._event import CounterEvent, InstantEvent, PerfEvent
 from ._stat import Stat
 from ._trace_file import PerfTraceFile
 
@@ -83,15 +83,33 @@ class PerfTimers:
             else:
                 self.timers[name] = Stat(duration_ms)
 
-    def add_instant_event(self, name: str, **kwargs):
+    def add_instant_event(self, name: str, **kwargs) -> None:
         """Add one instant event.
 
         Parameters
         ----------
         event : PerfEvent
             Add this event.
+        kwargs
+            Arguments to display in the Args section of the Chrome Tracing GUI.
         """
         self.add_event(InstantEvent(name, perf_counter_ns(), **kwargs))
+
+    def add_counter_event(self, name: str, **kwargs: Dict[str, float]) -> None:
+        """Add one counter event.
+
+        Parameters
+        ----------
+        name : str
+            The name of this event like "draw".
+        kwargs : Dict[str, float]
+            The individual counters for this event.
+
+        Notes
+        -----
+        For example add_counter_event("draw", triangles=5, squares=10).
+        """
+        self.add_event(CounterEvent(name, perf_counter_ns(), **kwargs))
 
     def clear(self):
         """Clear all timers.
@@ -123,7 +141,32 @@ if USE_PERFMON:
     timers = PerfTimers()
 
     def add_instant_event(name: str, **kwargs):
+        """Add one instant event.
+
+        Parameters
+        ----------
+        event : PerfEvent
+            Add this event.
+        kwargs
+            Arguments to display in the Args section of the Chrome Tracing GUI.
+        """
         timers.add_instant_event(name, **kwargs)
+
+    def add_counter_event(name: str, **kwargs: Dict[str, float]):
+        """Add one counter event.
+
+        Parameters
+        ----------
+        name : str
+            The name of this event like "draw".
+        kwargs : Dict[str, float]
+            The individual counters for this event.
+
+        Notes
+        -----
+        For example add_counter_event("draw", triangles=5, squares=10).
+        """
+        timers.add_counter_event(name, **kwargs)
 
     @contextlib.contextmanager
     def perf_timer(
@@ -165,11 +208,15 @@ else:
     def add_instant_event(name: str, **kwargs):
         pass
 
+    def add_counter_event(name: str, **kwargs: Dict[str, float]):
+        pass
+
     # contextlib.nullcontext does not work with kwargs, so we just
     # create a do-nothing context object. This is not zero overhead
     # but it's very low, about 1 microsecond? But because it's not
     # zero it's best practice not to commit perf_timers, think of
-    # them like debug prints.
+    # them like debug prints, add while investigating a problem
+    # but then remove before committing/merging.
     @contextlib.contextmanager
     def perf_timer(name: str, category: Optional[str] = None, **kwargs):
         yield

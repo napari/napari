@@ -24,6 +24,9 @@ from ._event import PerfEvent
 # perf_timer
 #     Context object to time a line or block of code.
 #
+# add_counter_event
+#     Counter events appear as a little bar graph over time.
+#
 # add_instant_event
 #     Instant events appear as a vertical line in the Chrome UI.
 #
@@ -34,7 +37,7 @@ from ._event import PerfEvent
 # investigations, but consider them like "debug prints" something you
 # strip out before commiting. When perfmon is disabled perf_timers
 # do close to nothing, but there is still maybe 1 usec overhead.
-from ._timers import add_instant_event, perf_timer, timers
+from ._timers import add_counter_event, add_instant_event, perf_timer, timers
 
 # If not using perfmon timers will be 100% disabled with hopefully zero
 # run-time impact.

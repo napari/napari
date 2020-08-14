@@ -89,8 +89,8 @@ class PerfTraceFile:
         category = "none" if event.category is None else event.category
 
         data = {
-            "pid": event.process_id,
-            "tid": event.thread_id,
+            "pid": event.origin.process_id,
+            "tid": event.origin.thread_id,
             "name": event.name,
             "cat": category,
             "ph": event.phase,
@@ -98,18 +98,18 @@ class PerfTraceFile:
             "args": event.args,
         }
 
+        # The three phase types we support.
+        assert event.phase in ["X", "I", "C"]
+
         if event.phase == "X":
             # "X" is a Complete Event, it has a duration.
             data["dur"] = event.duration_us
-        else:
-            # "I is an Instant Event, the only other type we support so far.
-            assert event.phase == "I"
-
-            # Instant Events have a scope "s" which is one of:
+        elif event.phase == "I":
+            # "I is an Instant Event, it has a "scope" one of:
             #     "g" - global
             #     "p" - process
             #     "t" - thread
-            # We hard code "process" right now because that's all we've used.
+            # We hard code "process" right now because that's all we've needed.
             data["s"] = "p"
 
         json_str = json.dumps(data)
