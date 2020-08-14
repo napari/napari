@@ -25,20 +25,21 @@ from ._event import PerfEvent
 #     Context object to time a line or block of code.
 #
 # add_counter_event
-#     Counter events appear as a little bar graph over time.
+#     Counter events appear as a little (stacked) bar graph.
 #
 # add_instant_event
-#     Instant events appear as a vertical line in the Chrome UI.
+#     Instant events appear as a vertical line.
 #
 # The best way to add perf_timers is using the perfmon config file, the
 # perf_timer will be patched in only if perfmon is enabled.
 #
-# Adding perf_timers "by hand" is sometimes helpful during intensive
-# investigations, but consider them like "debug prints" something you
-# strip out before commiting. When perfmon is disabled perf_timers
-# do close to nothing, but there is still maybe 1 usec overhead.
+# For now
+# Their overhead if perfmon is disabled is incredibly minimal but not zero.
 from ._timers import add_counter_event, add_instant_event, perf_timer, timers
 
-# If not using perfmon timers will be 100% disabled with hopefully zero
-# run-time impact.
+# If perfmon is disabled then no functions are monkey patched and all
+# perfmon functions are stubs that do basically nothing.
+#
+# Nevertheless for now manually added perf_timers, counter_events and
+# instant_events should be commented out or removed before merging.
 USE_PERFMON = os.getenv("NAPARI_PERFMON", "0") != "0"
