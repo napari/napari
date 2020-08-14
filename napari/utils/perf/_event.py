@@ -5,15 +5,15 @@ import threading
 from collections import namedtuple
 from typing import Dict, Optional
 
-# A span of time for an event.
+# The span of time that the event ocurred.
 Span = namedtuple("Span", "start_ns end_ns")
 
-# A origin for an event.
+# What process/thread produced the event.
 Origin = namedtuple("Origin", "process_id thread_id")
 
 
 class PerfEvent:
-    """One perf event represents a span of time.
+    """A performance related event: timer, counter, etc.
 
     Parameters
     ----------
@@ -23,12 +23,14 @@ class PerfEvent:
         Start time in nanoseconds.
     end_ns : int
         End time in nanoseconds.
+    category :str
+        Comma separated categories such has "render,update".
     process_id : int
         The process id that produced the event.
     thread_id : int
         The thread id that produced the event.
-    category :str
-        Comma separated categories such has "render,update".
+    phase : str
+        The Chrome Tracing "phase" such as "X", "I", "C".
     **kwargs : dict
         Additional keyword arguments for the "args" field of the event.
 
@@ -39,27 +41,23 @@ class PerfEvent:
         The name of this event like "draw".
     span : Span
         The time span when the event happened.
-    category :str
+    category : str
         Comma separated categories such has "render,update".
-    phase : str
-        The chrome://tracing "phase" (event type). The spec defines
-        around 20 phases we only support two right now:
-             "X" - Complete Events
-             "I" - Instant Events
-    owner : Owner
+    origin : Origin
         The process and thread that produced the event.
-    arg : dict
+    args : dict
         Arbitrary keyword arguments for this event.
+    phase : str
+        The Chrome Tracing phase: "X", "I" or "C".
 
     Notes
     -----
     The time stamps are from perf_counter_ns() and do not indicate time of
     day. The origin is arbitrary, but subtracting two counters results in a
-    valid span of wall clock time. If start is the same as end the event
-    was instant.
+    valid span of wall clock time. If start is the same as the end the
+    event was instant.
 
-    The full Chrome Tracing spec is a Google Doc called "Trace Event Format",
-    search for that phrase to find it.
+    Google the phrase "Trace Event Format" for the full Chrome Tracing spec.
     """
 
     def __init__(
@@ -107,7 +105,7 @@ class PerfEvent:
 
 
 class InstantEvent(PerfEvent):
-    """An instant event draws as a vertical line in the Chrome Tracing GUI.
+    """An instant event draws as a vertical line.
 
     Parameters
     ----------
@@ -125,7 +123,7 @@ class InstantEvent(PerfEvent):
 
 
 class CounterEvent(PerfEvent):
-    """A counter event draws as a little bar graph in the Chrome Tracing GUI.
+    """A counter event draws as a little (stacked) bar graph.
 
     It draws as a bar graph if there is one counter, or a stacked bar
     graph if there are multiple counters.
