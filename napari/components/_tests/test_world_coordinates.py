@@ -14,6 +14,9 @@ def test_translated_images():
     assert viewer.dims.range[1] == (0, 10, 1)
     assert viewer.dims.range[2] == (0, 10, 1)
     assert viewer.dims.nsteps == [20, 10, 10]
+    for i in range(viewer.dims.nsteps[0]):
+        viewer.dims.set_step(0, i)
+        assert viewer.dims.step[0] == i
 
 
 def test_scaled_images():
@@ -27,6 +30,9 @@ def test_scaled_images():
     assert viewer.dims.range[1] == (0, 10, 1)
     assert viewer.dims.range[2] == (0, 10, 1)
     assert viewer.dims.nsteps == [10, 10, 10]
+    for i in range(viewer.dims.nsteps[0]):
+        viewer.dims.set_step(0, i)
+        assert viewer.dims.step[0] == i
 
 
 def test_scaled_and_translated_images():
@@ -40,6 +46,9 @@ def test_scaled_and_translated_images():
     assert viewer.dims.range[1] == (0, 10, 1)
     assert viewer.dims.range[2] == (0, 10, 1)
     assert viewer.dims.nsteps == [20, 10, 10]
+    for i in range(viewer.dims.nsteps[0]):
+        viewer.dims.set_step(0, i)
+        assert viewer.dims.step[0] == i
 
 
 def test_both_scaled_and_translated_images():
@@ -53,3 +62,6 @@ def test_both_scaled_and_translated_images():
     assert viewer.dims.range[1] == (0, 10, 1)
     assert viewer.dims.range[2] == (0, 10, 1)
     assert viewer.dims.nsteps == [20, 10, 10]
+    for i in range(viewer.dims.nsteps[0]):
+        viewer.dims.set_step(0, i)
+        assert viewer.dims.step[0] == i
