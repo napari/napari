@@ -221,6 +221,7 @@ def flatten(container):
 def test_nested_indexing():
     """test that we can index a nested list with nl[1, 2, 3] syntax."""
     ne_list = NestableEventedList(NEST)
+    # 110 -> '110' -> (1, 1, 0)
     indices = [tuple(int(x) for x in str(n)) for n in flatten(NEST)]
     for index in indices:
         assert ne_list[index] == int("".join(map(str, index)))

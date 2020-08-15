@@ -211,8 +211,6 @@ class NestableEventedList(EventedList[_T]):
             self._disconnect_child_emitters(parent[index])
         super().__delitem__(key)
 
-    # TODO: implement __eq__
-
     def insert(self, index: int, value: _T):
         """Insert object before index."""
         # this is delicate, we want to preserve the evented list when nesting
