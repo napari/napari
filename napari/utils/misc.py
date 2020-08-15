@@ -294,14 +294,3 @@ def all_subclasses(cls: Type) -> set:
     return set(cls.__subclasses__()).union(
         [s for c in cls.__subclasses__() for s in all_subclasses(c)]
     )
-
-
-def session_is_interactive() -> bool:
-    """Return True if the running in a regular python interactive session."""
-    import sys
-
-    # if hasattr(__builtins__, '__IPYTHON__'):
-    #     return True
-    if sys.flags.interactive:
-        return True
-    return False
