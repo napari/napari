@@ -18,7 +18,7 @@ from qtpy.QtWidgets import (
 )
 
 from ...components.dims_constants import DimsMode
-from ...utils.event import Event
+from ...utils.events import Event
 from .._constants import LoopMode
 from ..dialogs.qt_modal import QtPopup
 from ..qthreading import _new_worker_qthread
