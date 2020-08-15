@@ -19,10 +19,13 @@ class ReadOnlyWrapper(wrapt.ObjectProxy):
         raise TypeError(f'cannot set item {name}')
 
 
-def mouse_press_callbacks(obj, event):
-    """Run mouse press callbacks on either layer or viewer object.
+def mouse_wheel_callbacks(obj, event):
+    """Run mouse wheel callbacks on either layer or viewer object.
 
-    Note that drag callbacks should have the following form::
+    Note that drag callbacks should have the following form:
+
+    .. code-block:: python
+
         def hello_world(layer, event):
             "dragging"
             # on press
@@ -39,7 +42,51 @@ def mouse_press_callbacks(obj, event):
 
     Parameters
     ---------
-    obj : napari.components.ViewerModel or napar.layers.Layer
+    obj : ViewerModel or Layer
+        Layer or Viewer object to run callbacks on
+    event : Event
+        Mouse event
+    """
+    # iterate through drag callback functions
+    for mouse_wheel_func in obj.mouse_wheel_callbacks:
+        # execute function to run press event code
+        gen = mouse_wheel_func(obj, event)
+        # if function returns a generator then try to iterate it
+        if inspect.isgenerator(gen):
+            try:
+                next(gen)
+                # now store iterated genenerator
+                obj._mouse_wheel_gen[mouse_wheel_func] = gen
+                # and now store event that initially triggered the press
+                obj._persisted_mouse_event[gen] = event
+            except StopIteration:
+                pass
+
+
+def mouse_press_callbacks(obj, event):
+    """Run mouse press callbacks on either layer or viewer object.
+
+    Note that drag callbacks should have the following form:
+
+    .. code-block:: python
+
+        def hello_world(layer, event):
+            "dragging"
+            # on press
+            print('hello world!')
+            yield
+
+            # on move
+            while event.type == 'mouse_move':
+                print(event.pos)
+                yield
+
+            # on release
+            print('goodbye world ;(')
+
+    Parameters
+    ----------
+    obj : ViewerModel or Layer
         Layer or Viewer object to run callbacks on
     event : Event
         Mouse event
@@ -49,7 +96,7 @@ def mouse_press_callbacks(obj, event):
         # exectute function to run press event code
         gen = mouse_drag_func(obj, event)
         # if function returns a generator then try to iterate it
-        if inspect.isgeneratorfunction(mouse_drag_func):
+        if inspect.isgenerator(gen):
             try:
                 next(gen)
                 # now store iterated genenerator
@@ -63,7 +110,10 @@ def mouse_press_callbacks(obj, event):
 def mouse_move_callbacks(obj, event):
     """Run mouse move callbacks on either layer or viewer object.
 
-    Note that drag callbacks should have the following form::
+    Note that drag callbacks should have the following form:
+
+    .. code-block:: python
+
         def hello_world(layer, event):
             "dragging"
             # on press
@@ -79,8 +129,8 @@ def mouse_move_callbacks(obj, event):
             print('goodbye world ;(')
 
     Parameters
-    ---------
-    obj : napari.components.ViewerModel or napar.layers.Layer
+    ----------
+    obj : ViewerModel or Layer
         Layer or Viewer object to run callbacks on
     event : Event
         Mouse event
@@ -106,7 +156,10 @@ def mouse_move_callbacks(obj, event):
 def mouse_release_callbacks(obj, event):
     """Run mouse release callbacks on either layer or viewer object.
 
-    Note that drag callbacks should have the following form::
+    Note that drag callbacks should have the following form:
+
+    .. code-block:: python
+
         def hello_world(layer, event):
             "dragging"
             # on press
@@ -122,8 +175,8 @@ def mouse_release_callbacks(obj, event):
             print('goodbye world ;(')
 
     Parameters
-    ---------
-    obj : napari.components.ViewerModel or napar.layers.Layer
+    ----------
+    obj : ViewerModel or Layer
         Layer or Viewer object to run callbacks on
     event : Event
         Mouse event
@@ -166,36 +219,36 @@ elif sys.platform.startswith('linux'):
     KEY_SYMBOLS.update({'Meta': 'Super'})
 
 
-def get_keybindings_summary(keymap, col='rgb(134, 142, 147)'):
-    """Get summary of keybindings in keymap.
+def get_key_bindings_summary(keymap, col='rgb(134, 142, 147)'):
+    """Get summary of key bindings in keymap.
 
     Parameters
-    ---------
+    ----------
     keymap : dict
-        Dictionary of keybindings.
+        Dictionary of key bindings.
     col : str
         Color string in format rgb(int, int, int) used for highlighting
         keypress combination.
 
     Returns
-    ---------
-    keybindings_str : str
-        String with summary of all keybindings and their functions.
+    -------
+    key_bindings_str : str
+        String with summary of all key_bindings and their functions.
     """
-    keybindings_str = '<table border="0" width="100%">'
+    key_bindings_str = '<table border="0" width="100%">'
     for key in keymap:
         keycodes = [KEY_SYMBOLS.get(k, k) for k in key.split('-')]
         keycodes = "+".join(
             [f"<span style='color: {col}'><b>{k}</b></span>" for k in keycodes]
         )
-        keybindings_str += (
+        key_bindings_str += (
             "<tr><td width='80' style='text-align: right; padding: 4px;'>"
             f"<span style='color: rgb(66, 72, 80)'>{keycodes}</span></td>"
             "<td style='text-align: left; padding: 4px; color: #CCC;'>"
             f"{get_function_summary(keymap[key])}</td></tr>"
         )
-    keybindings_str += '</table>'
-    return keybindings_str
+    key_bindings_str += '</table>'
+    return key_bindings_str
 
 
 def get_function_summary(func):

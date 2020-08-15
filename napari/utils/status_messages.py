@@ -1,4 +1,5 @@
 from collections.abc import Iterable
+
 import numpy as np
 
 
@@ -9,15 +10,18 @@ def format_float(value):
 
 def status_format(value):
     """Return a "nice" string representation of a value.
-     Parameters
+
+    Parameters
     ----------
-    value : any type
+    value : Any
         The value to be printed.
-     Returns
+
+    Returns
     -------
     formatted : str
         The string resulting from formatting.
-     Examples
+
+    Examples
     --------
     >>> values = np.array([1, 10, 100, 1000, 1e6, 6.283, 123.932021,
     ...                    1123.9392001, 2 * np.pi, np.exp(1)])

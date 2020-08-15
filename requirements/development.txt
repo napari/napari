@@ -1,3 +1,6 @@
 pre-commit>=1.16.1
-black>=19.3b0
-flake8==3.7.9
+black==19.10b0
+flake8==3.8.3
+check-manifest>=0.42
+-r test.txt
+-r docs.txt

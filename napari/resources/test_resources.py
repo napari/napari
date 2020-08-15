@@ -1,4 +1,9 @@
-def test_resources():
-    from . import qt
+import os
 
-    assert qt.QtCore.__package__ == 'qtpy'
+from napari.resources import import_resources
+
+
+def test_resources():
+    """Test that we can build icons and resources."""
+    out = import_resources(version='test')
+    os.remove(out)

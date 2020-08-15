@@ -1,6 +1,7 @@
-from vispy.scene.visuals import Mesh
-from .vispy_base_layer import VispyBaseLayer
 import numpy as np
+from vispy.scene.visuals import Mesh
+
+from .vispy_base_layer import VispyBaseLayer
 
 
 class VispyVectorsLayer(VispyBaseLayer):
@@ -8,26 +9,34 @@ class VispyVectorsLayer(VispyBaseLayer):
         node = Mesh()
         super().__init__(layer, node)
 
-        self.layer.events.edge_color.connect(lambda e: self._on_data_change())
-
+        self.layer.events.edge_color.connect(self._on_data_change)
         self._reset_base()
         self._on_data_change()
 
-    def _on_data_change(self):
+    def _on_data_change(self, event=None):
         if (
             len(self.layer._view_vertices) == 0
             or len(self.layer._view_faces) == 0
         ):
-            vertices = np.zeros((3, self.layer.dims.ndisplay))
+            vertices = np.zeros((3, self.layer._dims.ndisplay))
             faces = np.array([[0, 1, 2]])
+            face_color = np.array([[0, 0, 0, 0]])
         else:
             vertices = self.layer._view_vertices[:, ::-1] + 0.5
             faces = self.layer._view_faces
+            face_color = self.layer._view_face_color
 
-        if self.layer.dims.ndisplay == 3 and self.layer.dims.ndim == 2:
+        if self.layer._dims.ndisplay == 3 and self.layer._dims.ndim == 2:
             vertices = np.pad(vertices, ((0, 0), (0, 1)), mode='constant')
 
+        # self.node.set_data(
+        #     vertices=vertices, faces=faces, color=self.layer.current_edge_color
+        # )
         self.node.set_data(
-            vertices=vertices, faces=faces, color=self.layer.edge_color
+            vertices=vertices, faces=faces, face_colors=face_color,
         )
+
         self.node.update()
+        # Call to update order of translation values with new dims:
+        self._on_scale_change()
+        self._on_translate_change()

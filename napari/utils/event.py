@@ -52,13 +52,13 @@ For more information see http://github.com/vispy/vispy/wiki/API_Events
 
 from __future__ import division
 
-from collections import OrderedDict
 import inspect
 import traceback
 import weakref
+from collections import OrderedDict
 
-from vispy.util.logs import logger, _handle_exception
 from vispy.ext.six import string_types
+from vispy.util.logs import _handle_exception, logger
 
 
 class Event(object):
@@ -585,12 +585,12 @@ class EventEmitter(object):
     def blocker(self, callback=None):
         """Return an EventBlocker to be used in 'with' statements
 
-           Notes
-           -----
-           For example, one could do::
+        Notes
+        -----
+        For example, one could do::
 
-               with emitter.blocker():
-                   pass  # ..do stuff; no events will be emitted..
+            with emitter.blocker():
+                pass  # ..do stuff; no events will be emitted..
         """
         return EventBlocker(self, callback)
 

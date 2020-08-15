@@ -1,7 +1,7 @@
 """
-Display one points layer ontop of one 4-D image layer using the
+Display one points layer on top of one 4-D image layer using the
 add_points and add_image APIs, where the markes are visible as nD objects
-accross the dimensions, specified by their size
+across the dimensions, specified by their size
 """
 
 import numpy as np

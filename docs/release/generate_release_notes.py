@@ -13,21 +13,21 @@ python /path/to/generate_release_notes.py v.14.2 v0.14.3 --version 0.14.3
 ```
 You should probably redirect the output with:
 ```
-python /path/to/generate_release_notes.py [args] | tee release_notes.rst
+python /path/to/generate_release_notes.py [args] | tee release_notes.md
 ```
 You'll require PyGitHub and tqdm, which you can install with:
 ```
-pip install -r requirements/_release_tools.txt
+pip install -e ".[release]"
 ```
 References
 https://github.com/scikit-image/scikit-image/blob/master/tools/generate_release_notes.py
 https://github.com/scikit-image/scikit-image/issues/3404
 https://github.com/scikit-image/scikit-image/issues/3405
 """
-import os
 import argparse
-from datetime import datetime
+import os
 from collections import OrderedDict
+from datetime import datetime
 from warnings import warn
 
 from github import Github
@@ -45,6 +45,7 @@ except ImportError:
         return i
 
 
+GH = "https://github.com"
 GH_USER = 'napari'
 GH_REPO = 'napari'
 GH_TOKEN = os.environ.get('GH_TOKEN')
@@ -94,36 +95,6 @@ all_commits = list(
 )
 all_hashes = set(c.sha for c in all_commits)
 
-authors = set()
-reviewers = set()
-committers = set()
-users = dict()  # keep track of known usernames
-
-
-def find_author_info(commit):
-    """Return committer and author of a commit.
-    Parameters
-    ----------
-    commit : Github commit
-        The commit to query.
-    Returns
-    -------
-    committer : str or None
-        The git committer.
-    author : str
-        The git author.
-    """
-    committer = None
-    if commit.committer is not None:
-        committer = commit.committer.name or commit.committer.login
-    git_author = commit.raw_data['commit']['author']['name']
-    if commit.author is not None:
-        author = commit.author.name or commit.author.login + f' ({git_author})'
-    else:
-        # Users that deleted their accounts will appear as None
-        author = git_author
-    return committer, author
-
 
 def add_to_users(users, new_user):
     if new_user.name is None:
@@ -132,31 +103,32 @@ def add_to_users(users, new_user):
         users[new_user.login] = new_user.name
 
 
-for commit in tqdm(all_commits, desc='Getting commiters and authors'):
-    committer, author = find_author_info(commit)
-    if committer is not None:
-        committers.add(committer)
-        # users maps github ids to a unique name.
-        add_to_users(users, commit.committer)
-        committers.add(users[commit.committer.login])
+authors = set()
+committers = set()
+reviewers = set()
+users = {}
 
+for commit in tqdm(all_commits, desc="Getting committers and authors"):
+    if commit.committer is not None:
+        add_to_users(users, commit.committer)
+        committers.add(commit.committer.login)
     if commit.author is not None:
         add_to_users(users, commit.author)
-    authors.add(author)
+        authors.add(commit.author.login)
 
-# this gets found as a commiter
-committers.discard('GitHub Web Flow')
-authors.discard('Azure Pipelines Bot')
+# remove these bots.
+committers.discard("web-flow")
+authors.discard("azure-pipelines-bot")
 
 highlights = OrderedDict()
 
-highlights['Highlight'] = {}
-highlights['New Feature'] = {}
-highlights['Improvement'] = {}
-highlights['Bugfix'] = {}
-highlights['API Change'] = {}
-highlights['Deprecation'] = {}
-highlights['Build Tool'] = {}
+highlights['Highlights'] = {}
+highlights['New Features'] = {}
+highlights['Improvements'] = {}
+highlights['Bug Fixes'] = {}
+highlights['API Changes'] = {}
+highlights['Deprecations'] = {}
+highlights['Build Tools'] = {}
 other_pull_requests = {}
 
 for pull in tqdm(
@@ -171,9 +143,9 @@ for pull in tqdm(
     if pr.merge_commit_sha in all_hashes:
         summary = pull.title
         for review in pr.get_reviews():
-            if review.user.login not in users:
-                users[review.user.login] = review.user.name
-            reviewers.add(users[review.user.login])
+            if review.user is not None:
+                add_to_users(users, review.user)
+                reviewers.add(review.user.login)
         for key, key_dict in highlights.items():
             pr_title_prefix = (key + ': ').lower()
             if summary.lower().startswith(pr_title_prefix):
@@ -186,13 +158,12 @@ for pull in tqdm(
 
 
 # add Other PRs to the ordered dict to make doc generation easier.
-highlights['Other Pull Request'] = other_pull_requests
+highlights['Other Pull Requests'] = other_pull_requests
 
 
 # Now generate the release notes
-announcement_title = f'Announcement: napari {args.version}'
-print(announcement_title)
-print('=' * len(announcement_title))
+title = f'# napari {args.version}'
+print(title)
 
 print(
     f"""
@@ -212,7 +183,7 @@ https://github.com/napari/napari
 )
 
 for section, pull_request_dicts in highlights.items():
-    print(f'{section}s\n{"*" * (len(section)+1)}')
+    print(f'## {section}\n')
     if len(pull_request_dicts.items()) == 0:
         print()
     for number, pull_request_info in pull_request_dicts.items():
@@ -222,17 +193,22 @@ for section, pull_request_dicts in highlights.items():
 contributors = OrderedDict()
 
 contributors['authors'] = authors
-# contributors['committers'] = committers
 contributors['reviewers'] = reviewers
+# ignore committers
+# contributors['committers'] = committers
 
 for section_name, contributor_set in contributors.items():
     print()
+    if None in contributor_set:
+        contributor_set.remove(None)
     committer_str = (
-        f'{len(contributor_set)} {section_name} added to this '
-        'release [alphabetical by first name or login]'
+        f'## {len(contributor_set)} {section_name} added to this '
+        'release (alphabetical)'
     )
     print(committer_str)
-    print('-' * len(committer_str))
-    for c in sorted(contributor_set, key=str.lower):
-        print(f'- {c}')
+    print()
+
+    for c in sorted(contributor_set, key=lambda x: users[x].lower()):
+        commit_link = f"{GH}/{GH_USER}/{GH_REPO}/commits?author={c}"
+        print(f"- [{users[c]}]({commit_link}) - @{c}")
     print()

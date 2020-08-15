@@ -1,6 +1,12 @@
+import itertools
+import warnings
+from typing import List, Optional
+
+import numpy as np
+
 from ..layers import Layer
-from ..utils.naming import inc_name_count
 from ..utils.list import ListModel
+from ..utils.naming import inc_name_count
 
 
 def _add(event):
@@ -15,6 +21,11 @@ def _add(event):
 class LayerList(ListModel):
     """List-like layer collection with built-in reordering and callback hooks.
 
+    Parameters
+    ----------
+    iterable : iterable
+        Iterable of napari.layer.Layer
+
     Attributes
     ----------
     events : vispy.util.event.EmitterGroup
@@ -24,9 +35,11 @@ class LayerList(ListModel):
             * reordered(): whenever the list is reordered
     """
 
-    def __init__(self):
+    def __init__(self, iterable=()):
         super().__init__(
-            basetype=Layer, lookup={str: lambda q, e: q == e.name}
+            basetype=Layer,
+            iterable=iterable,
+            lookup={str: lambda q, e: q == e.name},
         )
 
         self.events.added.connect(_add)
@@ -41,7 +54,7 @@ class LayerList(ListModel):
         ----------
         name : str
             Original name.
-        layer : Layer, optional
+        layer : napari.layers.Layer, optional
             Layer for which name is generated.
 
         Returns
@@ -49,10 +62,10 @@ class LayerList(ListModel):
         new_name : str
             Coerced, unique name.
         """
-        for l in self:
-            if l is layer:
+        for _layer in self:
+            if _layer is layer:
                 continue
-            if l.name == name:
+            if _layer.name == name:
                 name = inc_name_count(name)
 
         return name
@@ -61,6 +74,11 @@ class LayerList(ListModel):
         """Coerce name of the layer in `event.layer`."""
         layer = event.source
         layer.name = self._coerce_name(layer.name, layer)
+
+    @property
+    def selected(self):
+        """List of selected layers."""
+        return [layer for layer in self if layer.selected]
 
     def move_selected(self, index, insert):
         """Reorder list by moving the item at index and inserting it
@@ -166,3 +184,155 @@ class LayerList(ListModel):
                 self[selected[0] - 1].selected = True
         elif len(self) > 0:
             self[0].selected = True
+
+    def toggle_selected_visibility(self):
+        """Toggle visibility of selected layers"""
+        for layer in self:
+            if layer.selected:
+                layer.visible = not layer.visible
+
+    @property
+    def _extent_world(self) -> np.ndarray:
+        """Extent of layers in world coordinates.
+
+        Default to 2D with (0, 512) min/ max values if no data is present.
+
+        Returns
+        -------
+        extent_world : array, shape (2, D)
+        """
+        if len(self) == 0:
+            min_v = [np.nan] * self.ndim
+            max_v = [np.nan] * self.ndim
+        else:
+            extrema = [layer._extent_world for layer in self]
+            mins = [e[0][::-1] for e in extrema]
+            maxs = [e[1][::-1] for e in extrema]
+
+            with warnings.catch_warnings():
+                # Taking the nanmin and nanmax of an axis of all nan
+                # raises a warning and returns nan for that axis
+                # as we have do an explict nan_to_num below this
+                # behaviour is acceptable and we can filter the
+                # warning
+                warnings.filterwarnings(
+                    'ignore', message='All-NaN axis encountered'
+                )
+                min_v = np.nanmin(
+                    list(itertools.zip_longest(*mins, fillvalue=np.nan)),
+                    axis=1,
+                )
+                max_v = np.nanmax(
+                    list(itertools.zip_longest(*maxs, fillvalue=np.nan)),
+                    axis=1,
+                )
+
+        min_vals = np.nan_to_num(min_v[::-1], nan=0)
+        max_vals = np.nan_to_num(max_v[::-1], nan=512)
+
+        return np.vstack([min_vals, max_vals])
+
+    @property
+    def _step_size(self) -> np.ndarray:
+        """Ideal step size between planes in world coordinates.
+
+        Computes the best step size that allows all data planes to be
+        sampled if moving through the full range of world coordinates.
+        The current implementation just takes the minimum scale.
+
+        Returns
+        -------
+        step_size : array, shape (D,)
+        """
+        if len(self) == 0:
+            return np.ones(self.ndim)
+        else:
+            scales = [layer.scale[::-1] for layer in self]
+            full_scales = list(
+                np.array(
+                    list(itertools.zip_longest(*scales, fillvalue=np.nan))
+                ).T
+            )
+            min_scales = np.nanmin(full_scales, axis=0)
+            return min_scales[::-1]
+
+    @property
+    def ndim(self) -> int:
+        """Maximum dimensionality of layers.
+
+        Defaults to 2 if no data is present.
+
+        Returns
+        -------
+        ndim : int
+        """
+        return max((layer.ndim for layer in self), default=2)
+
+    def save(
+        self,
+        path: str,
+        *,
+        selected: bool = False,
+        plugin: Optional[str] = None,
+    ) -> List[str]:
+        """Save all or only selected layers to a path using writer plugins.
+
+        If ``plugin`` is not provided and only one layer is targeted, then we
+        directly call the corresponding``napari_write_<layer_type>`` hook (see
+        :ref:`single layer writer hookspecs <write-single-layer-hookspecs>`)
+        which will loop through implementations and stop when the first one
+        returns a non-``None`` result. The order in which implementations are
+        called can be changed with the Plugin sorter in the GUI or with the
+        corresponding hook's
+        :meth:`~napari.plugins._hook_callers._HookCaller.bring_to_front`
+        method.
+
+        If ``plugin`` is not provided and multiple layers are targeted,
+        then we call
+        :meth:`~napari.plugins.hook_specifications.napari_get_writer` which
+        loops through plugins to find the first one that knows how to handle
+        the combination of layers and is able to write the file. If no plugins
+        offer :meth:`~napari.plugins.hook_specifications.napari_get_writer` for
+        that combination of layers then the default
+        :meth:`~napari.plugins.hook_specifications.napari_get_writer` will
+        create a folder and call ``napari_write_<layer_type>`` for each layer
+        using the ``Layer.name`` variable to modify the path such that the
+        layers are written to unique files in the folder.
+
+        If ``plugin`` is provided and a single layer is targeted, then we
+        call the ``napari_write_<layer_type>`` for that plugin, and if it fails
+        we error.
+
+        If ``plugin`` is provided and multiple layers are targeted, then
+        we call we call
+        :meth:`~napari.plugins.hook_specifications.napari_get_writer` for
+        that plugin, and if it doesn’t return a ``WriterFunction`` we error,
+        otherwise we call it and if that fails if it we error.
+
+        Parameters
+        ----------
+        path : str
+            A filepath, directory, or URL to open.  Extensions may be used to
+            specify output format (provided a plugin is available for the
+            requested format).
+        selected : bool
+            Optional flag to only save selected layers. False by default.
+        plugin : str, optional
+            Name of the plugin to use for saving. If None then all plugins
+            corresponding to appropriate hook specification will be looped
+            through to find the first one that can save the data.
+
+        Returns
+        -------
+        list of str
+            File paths of any files that were written.
+        """
+        from ..plugins.io import save_layers
+
+        layers = self.selected if selected else list(self)
+
+        if not layers:
+            warnings.warn(f"No layers {'selected' if selected else 'to save'}")
+            return []
+
+        return save_layers(path, layers, plugin=plugin)

@@ -1,21 +1,16 @@
 import numpy as np
-from math import inf
-import itertools
-from xml.etree.ElementTree import Element, tostring
 
+from ..utils.event import EmitterGroup, Event
+from ..utils.key_bindings import KeymapHandler, KeymapProvider
+from ..utils.theme import palettes
+from ._viewer_mouse_bindings import dims_scroll
+from .add_layers_mixin import AddLayersMixin
+from .camera import Camera
 from .dims import Dims
 from .layerlist import LayerList
-from .camera import Camera
-from .. import layers
-from ..utils import colormaps
-from ..utils.event import EmitterGroup, Event
-from ..utils.keybindings import KeymapMixin
-from ..utils.theme import palettes
-from ..utils.misc import ensure_iterable, is_iterable
-from ..utils import io
 
 
-class ViewerModel(KeymapMixin):
+class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
     """Viewer containing the rendered scene, layers, and controlling elements
     including dimension sliders, and control bars for color limits.
 
@@ -85,25 +80,26 @@ class ViewerModel(KeymapMixin):
         self._palette = None
         self.theme = 'dark'
 
-        self.dims.events.camera.connect(lambda e: self.reset_view())
-        self.dims.events.ndisplay.connect(lambda e: self._update_layers())
-        self.dims.events.order.connect(lambda e: self._update_layers())
-        self.dims.events.axis.connect(lambda e: self._update_layers())
-        self.layers.events.added.connect(self._on_layers_change)
-        self.layers.events.removed.connect(self._on_layers_change)
-        self.layers.events.added.connect(self._update_active_layer)
-        self.layers.events.removed.connect(self._update_active_layer)
-        self.layers.events.reordered.connect(self._update_active_layer)
-        self.layers.events.added.connect(lambda e: self._update_grid())
-        self.layers.events.removed.connect(lambda e: self._update_grid())
-        self.layers.events.reordered.connect(lambda e: self._update_grid())
+        self.dims.events.camera.connect(self.reset_view)
+        self.dims.events.ndisplay.connect(self._update_layers)
+        self.dims.events.order.connect(self._update_layers)
+        self.dims.events.step.connect(self._update_layers)
+        self.layers.events.changed.connect(self._update_active_layer)
+        self.layers.events.changed.connect(self._update_grid)
+        self.layers.events.changed.connect(self._on_layers_change)
+
+        self.keymap_providers = [self]
 
         # Hold callbacks for when mouse moves with nothing pressed
         self.mouse_move_callbacks = []
         # Hold callbacks for when mouse is pressed, dragged, and released
         self.mouse_drag_callbacks = []
+        # Hold callbacks for when mouse wheel is scrolled
+        self.mouse_wheel_callbacks = [dims_scroll]
+
         self._persisted_mouse_event = {}
         self._mouse_drag_gen = {}
+        self._mouse_wheel_gen = {}
 
     @property
     def palette(self):
@@ -117,7 +113,7 @@ class ViewerModel(KeymapMixin):
             return
 
         self._palette = palette
-        self.events.palette(palette=palette)
+        self.events.palette()
 
     @property
     def theme(self):
@@ -243,37 +239,45 @@ class ViewerModel(KeymapMixin):
     def active_layer(self, active_layer):
         if active_layer == self.active_layer:
             return
+
+        if self._active_layer is not None:
+            self.keymap_providers.remove(self._active_layer)
+
         self._active_layer = active_layer
+
+        if active_layer is not None:
+            self.keymap_providers.insert(0, active_layer)
+
         self.events.active_layer(item=self._active_layer)
 
-    def _scene_shape(self):
-        """Get shape of currently viewed dimensions.
+    @property
+    def _sliced_extent_world(self) -> np.ndarray:
+        """Extent of layers in world coordinates after slicing.
+
+        D is either 2 or 3 depending on if the displayed data is 2D or 3D.
 
         Returns
-        ----------
-        centroid : list
-            List of center coordinates of scene, length 2 or 3 if displayed
-            view is 2D or 3D.
-        size : list
-            List of size of scene, length 2 or 3 if displayed view is 2D or 3D.
-        corner : list
-            List of coordinates of top left corner of scene, length 2 or 3 if
-            displayed view is 2D or 3D.
+        -------
+        sliced_extent_world : array, shape (2, D)
         """
-        # Scale the camera to the contents in the scene
-        min_shape, max_shape = self._calc_bbox()
-        size = np.subtract(max_shape, min_shape)
-        size = [size[i] for i in self.dims.displayed]
-        corner = [min_shape[i] for i in self.dims.displayed]
+        if len(self.layers) == 0 and self.dims.ndim != 2:
+            # If no data is present and dims model has not been reset to 0
+            # than someone has passed more than two axis labels which are
+            # being saved and so default values are used.
+            return np.vstack(
+                [np.zeros(self.dims.ndim), np.repeat(512, self.dims.ndim)]
+            )
+        else:
+            return self.layers._extent_world[:, self.dims.displayed]
 
-        return size, corner
-
-    def reset_view(self):
+    def reset_view(self, event=None):
         """Resets the camera's view using `event.rect` a 4-tuple of the x, y
         corner position followed by width and height of the camera
         """
 
-        scene_size, corner = self._scene_shape()
+        extent = self._sliced_extent_world
+        scene_size = extent[1] - extent[0]
+        corner = extent[0]
         grid_size = list(self.grid_size)
         if len(scene_size) > len(grid_size):
             grid_size = [1] * (len(scene_size) - len(grid_size)) + grid_size
@@ -282,718 +286,24 @@ class ViewerModel(KeymapMixin):
 
         self.camera.update(
             center=center[-self.dims.ndisplay :],
-            scale=1.1 * np.max(size[-2:]),
+            size=1.1 * np.max(size[-2:]),
             angles=(0, 0, 90),
         )
 
-    def to_svg(self, file=None, view_box=None):
-        """Convert the viewer state to an SVG. Non visible layers will be
-        ignored.
-
-        Parameters
-        ----------
-        file : path-like object, optional
-            An object representing a file system path. A path-like object is
-            either a str or bytes object representing a path, or an object
-            implementing the `os.PathLike` protocol. If passed the svg will be
-            written to this file
-        view_box : 4-tuple, optional
-            View box of SVG canvas to be generated specified as `min-x`,
-            `min-y`, `width` and `height`. If not specified, calculated
-            from the last two dimensions of the view.
-
-        Returns
-        ----------
-        svg : string
-            SVG representation of the currently viewed layers.
-        """
-
-        if view_box is None:
-            min_shape, max_shape = self._calc_bbox()
-            min_shape = min_shape[-2:]
-            max_shape = max_shape[-2:]
-            shape = np.subtract(max_shape, min_shape)
-        else:
-            shape = view_box[2:]
-            min_shape = view_box[:2]
-
-        props = {
-            'xmlns': 'http://www.w3.org/2000/svg',
-            'xmlns:xlink': 'http://www.w3.org/1999/xlink',
-        }
-
-        xml = Element(
-            'svg',
-            height=f'{shape[0]}',
-            width=f'{shape[1]}',
-            version='1.1',
-            **props,
-        )
-
-        transform = f'translate({-min_shape[1]} {-min_shape[0]})'
-        xml_transform = Element('g', transform=transform)
-
-        for layer in self.layers:
-            if layer.visible:
-                xml_list = layer.to_xml_list()
-                for x in xml_list:
-                    xml_transform.append(x)
-        xml.append(xml_transform)
-
-        svg = (
-            '<?xml version=\"1.0\" standalone=\"no\"?>\n'
-            + '<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\"\n'
-            + '\"http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">\n'
-            + tostring(xml, encoding='unicode', method='xml')
-        )
-
-        if file:
-            # Save svg to file
-            with open(file, 'w') as f:
-                f.write(svg)
-
-        return svg
-
-    def add_layer(self, layer):
-        """Add a layer to the viewer.
-
-        Parameters
-        ----------
-        layer : Layer
-            Layer to add.
-        """
-        layer.events.select.connect(self._update_active_layer)
-        layer.events.deselect.connect(self._update_active_layer)
-        layer.events.status.connect(self._update_status)
-        layer.events.help.connect(self._update_help)
-        layer.events.interactive.connect(self._update_interactive)
-        layer.events.cursor.connect(self._update_cursor)
-        layer.events.cursor_size.connect(self._update_cursor_size)
-        layer.events.data.connect(self._on_layers_change)
-        layer.dims.events.ndisplay.connect(self._on_layers_change)
-        layer.dims.events.order.connect(self._on_layers_change)
-        layer.dims.events.range.connect(self._on_layers_change)
-        self.layers.append(layer)
-        self._update_layers(layers=[layer])
-
-        if len(self.layers) == 1:
-            self.reset_view()
-
-    def add_image(
-        self,
-        data=None,
-        *,
-        channel_axis=None,
-        rgb=None,
-        is_pyramid=None,
-        colormap=None,
-        contrast_limits=None,
-        gamma=1,
-        interpolation='nearest',
-        rendering='mip',
-        iso_threshold=0.5,
-        name=None,
-        metadata=None,
-        scale=None,
-        translate=None,
-        opacity=1,
-        blending=None,
-        visible=True,
-        path=None,
-    ):
-        """Add an image layer to the layers list.
-
-        Parameters
-        ----------
-        data : array or list of array
-            Image data. Can be N dimensional. If the last dimension has length
-            3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a
-            list and arrays are decreasing in shape then the data is treated as
-            an image pyramid.
-        channel_axis : int, optional
-            Axis to expand image along.
-        rgb : bool
-            Whether the image is rgb RGB or RGBA. If not specified by user and
-            the last dimension of the data has length 3 or 4 it will be set as
-            `True`. If `False` the image is interpreted as a luminance image.
-        is_pyramid : bool
-            Whether the data is an image pyramid or not. Pyramid data is
-            represented by a list of array like image data. If not specified by
-            the user and if the data is a list of arrays that decrease in shape
-            then it will be taken to be a pyramid. The first image in the list
-            should be the largest.
-        colormap : str, vispy.Color.Colormap, tuple, dict, list
-            Colormaps to use for luminance images. If a string must be the name
-            of a supported colormap from vispy or matplotlib. If a tuple the
-            first value must be a string to assign as a name to a colormap and
-            the second item must be a Colormap. If a dict the key must be a
-            string to assign as a name to a colormap and the value must be a
-            Colormap. If a list then must be same length as the axis that is
-            being expanded as channels, and each colormap is applied to each
-            new image layer.
-        contrast_limits : list (2,)
-            Color limits to be used for determining the colormap bounds for
-            luminance images. If not passed is calculated as the min and max of
-            the image. If list of lists then must be same length as the axis
-            that is being expanded and then each colormap is applied to each
-            image.
-        gamma : list, float
-            Gamma correction for determining colormap linearity. Defaults to 1.
-            If a list then must be same length as the axis that is being
-            expanded and then each entry in the list is applied to each image.
-        interpolation : str
-            Interpolation mode used by vispy. Must be one of our supported
-            modes.
-        iso_threshold : float
-            Threshold for isosurface.
-        name : str
-            Name of the layer.
-        metadata : dict
-            Layer metadata.
-        scale : tuple of float
-            Scale factors for the layer.
-        translate : tuple of float
-            Translation values for the layer.
-        opacity : float
-            Opacity of the layer visual, between 0.0 and 1.0.
-        blending : str
-            One of a list of preset blending modes that determines how RGB and
-            alpha values of the layer visual get mixed. Allowed values are
-            {'opaque', 'translucent', and 'additive'}.
-        visible : bool
-            Whether the layer visual is currently being displayed.
-        path : str or list of str
-            Path or list of paths to image data. Paths can be passed as strings
-            or `pathlib.Path` instances.
-
-        Returns
-        -------
-        layer : :class:`napari.layers.Image` or list
-            The newly-created image layer or list of image layers.
-        """
-        if data is None and path is None:
-            raise ValueError("One of either data or path must be provided")
-        elif data is not None and path is not None:
-            raise ValueError("Only one of data or path can be provided")
-        elif data is None:
-            data = io.magic_imread(path)
-
-        if channel_axis is None:
-            if colormap is None:
-                colormap = 'gray'
-            if blending is None:
-                blending = 'translucent'
-            layer = layers.Image(
-                data,
-                rgb=rgb,
-                is_pyramid=is_pyramid,
-                colormap=colormap,
-                contrast_limits=contrast_limits,
-                gamma=gamma,
-                interpolation=interpolation,
-                rendering=rendering,
-                iso_threshold=iso_threshold,
-                name=name,
-                metadata=metadata,
-                scale=scale,
-                translate=translate,
-                opacity=opacity,
-                blending=blending,
-                visible=visible,
-            )
-            self.add_layer(layer)
-            return layer
-        else:
-            if is_pyramid:
-                n_channels = data[0].shape[channel_axis]
-            else:
-                n_channels = data.shape[channel_axis]
-
-            name = ensure_iterable(name)
-
-            if blending is None:
-                blending = 'additive'
-
-            if colormap is None:
-                if n_channels < 3:
-                    colormap = colormaps.MAGENTA_GREEN
-                else:
-                    colormap = itertools.cycle(colormaps.CYMRGB)
-            else:
-                colormap = ensure_iterable(colormap)
-
-            # If one pair of clim values is passed then need to iterate them to
-            # all layers.
-            if contrast_limits is not None and not is_iterable(
-                contrast_limits[0]
-            ):
-                contrast_limits = itertools.repeat(contrast_limits)
-            else:
-                contrast_limits = ensure_iterable(contrast_limits)
-
-            gamma = ensure_iterable(gamma)
-
-            layer_list = []
-            zipped_args = zip(
-                range(n_channels), colormap, contrast_limits, gamma, name
-            )
-            for i, cmap, clims, _gamma, name in zipped_args:
-                if is_pyramid:
-                    image = [
-                        np.take(data[j], i, axis=channel_axis)
-                        for j in range(len(data))
-                    ]
-                else:
-                    image = np.take(data, i, axis=channel_axis)
-                layer = layers.Image(
-                    image,
-                    rgb=rgb,
-                    colormap=cmap,
-                    contrast_limits=clims,
-                    gamma=_gamma,
-                    interpolation=interpolation,
-                    rendering=rendering,
-                    name=name,
-                    metadata=metadata,
-                    scale=scale,
-                    translate=translate,
-                    opacity=opacity,
-                    blending=blending,
-                    visible=visible,
-                )
-                self.add_layer(layer)
-                layer_list.append(layer)
-            return layer_list
-
-    def add_points(
-        self,
-        data=None,
-        *,
-        symbol='o',
-        size=10,
-        edge_width=1,
-        edge_color='black',
-        face_color='white',
-        n_dimensional=False,
-        name=None,
-        metadata=None,
-        scale=None,
-        translate=None,
-        opacity=1,
-        blending='translucent',
-        visible=True,
-    ):
-        """Add a points layer to the layers list.
-
-        Parameters
-        ----------
-        data : array (N, D)
-            Coordinates for N points in D dimensions.
-        symbol : str
-            Symbol to be used for the point markers. Must be one of the
-            following: arrow, clobber, cross, diamond, disc, hbar, ring,
-            square, star, tailed_arrow, triangle_down, triangle_up, vbar, x.
-        size : float, array
-            Size of the point marker. If given as a scalar, all points are made
-            the same size. If given as an array, size must be the same
-            broadcastable to the same shape as the data.
-        edge_width : float
-            Width of the symbol edge in pixels.
-        edge_color : str
-            Color of the point marker border.
-        face_color : str
-            Color of the point marker body.
-        n_dimensional : bool
-            If True, renders points not just in central plane but also in all
-            n-dimensions according to specified point marker size.
-        name : str
-            Name of the layer.
-        metadata : dict
-            Layer metadata.
-        scale : tuple of float
-            Scale factors for the layer.
-        translate : tuple of float
-            Translation values for the layer.
-        opacity : float
-            Opacity of the layer visual, between 0.0 and 1.0.
-        blending : str
-            One of a list of preset blending modes that determines how RGB and
-            alpha values of the layer visual get mixed. Allowed values are
-            {'opaque', 'translucent', and 'additive'}.
-        visible : bool
-            Whether the layer visual is currently being displayed.
-
-        Returns
-        -------
-        layer : :class:`napari.layers.Points`
-            The newly-created points layer.
-
-        Notes
-        -----
-        See vispy's marker visual docs for more details:
-        http://api.vispy.org/en/latest/visuals.html#vispy.visuals.MarkersVisual
-        """
-        if data is None:
-            ndim = max(self.dims.ndim, 2)
-            data = np.empty([0, ndim])
-
-        layer = layers.Points(
-            data=data,
-            symbol=symbol,
-            size=size,
-            edge_width=edge_width,
-            edge_color=edge_color,
-            face_color=face_color,
-            n_dimensional=n_dimensional,
-            name=name,
-            metadata=metadata,
-            scale=scale,
-            translate=translate,
-            opacity=opacity,
-            blending=blending,
-            visible=visible,
-        )
-        self.add_layer(layer)
-        return layer
-
-    def add_labels(
-        self,
-        data=None,
-        *,
-        is_pyramid=None,
-        num_colors=50,
-        seed=0.5,
-        name=None,
-        metadata=None,
-        scale=None,
-        translate=None,
-        opacity=0.7,
-        blending='translucent',
-        visible=True,
-        path=None,
-    ):
-        """Add a labels (or segmentation) layer to the layers list.
-
-        An image-like layer where every pixel contains an integer ID
-        corresponding to the region it belongs to.
-
-        Parameters
-        ----------
-        data : array or list of array
-            Labels data as an array or pyramid.
-        is_pyramid : bool
-            Whether the data is an image pyramid or not. Pyramid data is
-            represented by a list of array like image data. If not specified by
-            the user and if the data is a list of arrays that decrease in shape
-            then it will be taken to be a pyramid. The first image in the list
-            should be the largest.
-        num_colors : int
-            Number of unique colors to use in colormap.
-        seed : float
-            Seed for colormap random generator.
-        name : str
-            Name of the layer.
-        metadata : dict
-            Layer metadata.
-        scale : tuple of float
-            Scale factors for the layer.
-        translate : tuple of float
-            Translation values for the layer.
-        opacity : float
-            Opacity of the layer visual, between 0.0 and 1.0.
-        blending : str
-            One of a list of preset blending modes that determines how RGB and
-            alpha values of the layer visual get mixed. Allowed values are
-            {'opaque', 'translucent', and 'additive'}.
-        visible : bool
-            Whether the layer visual is currently being displayed.
-        path : str or list of str
-            Path or list of paths to image data. Paths can be passed as strings
-            or `pathlib.Path` instances.
-
-        Returns
-        -------
-        layer : :class:`napari.layers.Labels`
-            The newly-created labels layer.
-        """
-        if data is None and path is None:
-            raise ValueError("One of either data or path must be provided")
-        elif data is not None and path is not None:
-            raise ValueError("Only one of data or path can be provided")
-        elif data is None:
-            data = io.magic_imread(path)
-
-        layer = layers.Labels(
-            data,
-            is_pyramid=is_pyramid,
-            num_colors=num_colors,
-            seed=seed,
-            name=name,
-            metadata=metadata,
-            scale=scale,
-            translate=translate,
-            opacity=opacity,
-            blending=blending,
-            visible=visible,
-        )
-        self.add_layer(layer)
-        return layer
-
-    def add_shapes(
-        self,
-        data=None,
-        *,
-        shape_type='rectangle',
-        edge_width=1,
-        edge_color='black',
-        face_color='white',
-        z_index=0,
-        name=None,
-        metadata=None,
-        scale=None,
-        translate=None,
-        opacity=0.7,
-        blending='translucent',
-        visible=True,
-    ):
-        """Add a shapes layer to the layers list.
-
-        Parameters
-        ----------
-        data : list or array
-            List of shape data, where each element is an (N, D) array of the
-            N vertices of a shape in D dimensions. Can be an 3-dimensional
-            array if each shape has the same number of vertices.
-        shape_type : string or list
-            String of shape shape_type, must be one of "{'line', 'rectangle',
-            'ellipse', 'path', 'polygon'}". If a list is supplied it must be
-            the same length as the length of `data` and each element will be
-            applied to each shape otherwise the same value will be used for all
-            shapes.
-        edge_width : float or list
-            Thickness of lines and edges. If a list is supplied it must be the
-            same length as the length of `data` and each element will be
-            applied to each shape otherwise the same value will be used for all
-            shapes.
-        edge_color : str or list
-            If string can be any color name recognized by vispy or hex value if
-            starting with `#`. If array-like must be 1-dimensional array with 3
-            or 4 elements. If a list is supplied it must be the same length as
-            the length of `data` and each element will be applied to each shape
-            otherwise the same value will be used for all shapes.
-        face_color : str or list
-            If string can be any color name recognized by vispy or hex value if
-            starting with `#`. If array-like must be 1-dimensional array with 3
-            or 4 elements. If a list is supplied it must be the same length as
-            the length of `data` and each element will be applied to each shape
-            otherwise the same value will be used for all shapes.
-        z_index : int or list
-            Specifier of z order priority. Shapes with higher z order are
-            displayed ontop of others. If a list is supplied it must be the
-            same length as the length of `data` and each element will be
-            applied to each shape otherwise the same value will be used for all
-            shapes.
-        name : str
-            Name of the layer.
-        metadata : dict
-            Layer metadata.
-        scale : tuple of float
-            Scale factors for the layer.
-        translate : tuple of float
-            Translation values for the layer.
-        opacity : float or list
-            Opacity of the layer visual, between 0.0 and 1.0.
-        blending : str
-            One of a list of preset blending modes that determines how RGB and
-            alpha values of the layer visual get mixed. Allowed values are
-            {'opaque', 'translucent', and 'additive'}.
-        visible : bool
-            Whether the layer visual is currently being displayed.
-
-        Returns
-        -------
-        layer : :class:`napari.layers.Shapes`
-            The newly-created shapes layer.
-        """
-        if data is None:
-            ndim = max(self.dims.ndim, 2)
-            data = np.empty((0, 0, ndim))
-
-        layer = layers.Shapes(
-            data=data,
-            shape_type=shape_type,
-            edge_width=edge_width,
-            edge_color=edge_color,
-            face_color=face_color,
-            z_index=z_index,
-            name=name,
-            metadata=metadata,
-            scale=scale,
-            translate=translate,
-            opacity=opacity,
-            blending=blending,
-            visible=visible,
-        )
-        self.add_layer(layer)
-        return layer
-
-    def add_surface(
-        self,
-        data,
-        *,
-        colormap='gray',
-        contrast_limits=None,
-        gamma=1,
-        name=None,
-        metadata=None,
-        scale=None,
-        translate=None,
-        opacity=1,
-        blending='translucent',
-        visible=True,
-    ):
-        """Add a surface layer to the layers list.
-
-        Parameters
-        ----------
-        data : 3-tuple of array
-            The first element of the tuple is an (N, D) array of vertices of
-            mesh triangles. The second is an (M, 3) array of int of indices
-            of the mesh triangles. The third element is the (K0, ..., KL, N)
-            array of values used to color vertices where the additional L
-            dimensions are used to color the same mesh with different values.
-        colormap : str, vispy.Color.Colormap, tuple, dict
-            Colormap to use for luminance images. If a string must be the name
-            of a supported colormap from vispy or matplotlib. If a tuple the
-            first value must be a string to assign as a name to a colormap and
-            the second item must be a Colormap. If a dict the key must be a
-            string to assign as a name to a colormap and the value must be a
-            Colormap.
-        contrast_limits : list (2,)
-            Color limits to be used for determining the colormap bounds for
-            luminance images. If not passed is calculated as the min and max of
-            the image.
-        gamma : float
-            Gamma correction for determining colormap linearity. Defaults to 1.
-        name : str
-            Name of the layer.
-        metadata : dict
-            Layer metadata.
-        scale : tuple of float
-            Scale factors for the layer.
-        translate : tuple of float
-            Translation values for the layer.
-        opacity : float
-            Opacity of the layer visual, between 0.0 and 1.0.
-        blending : str
-            One of a list of preset blending modes that determines how RGB and
-            alpha values of the layer visual get mixed. Allowed values are
-            {'opaque', 'translucent', and 'additive'}.
-        visible : bool
-            Whether the layer visual is currently being displayed.
-
-        Returns
-        -------
-        layer : :class:`napari.layers.Surface`
-            The newly-created surface layer.
-        """
-        layer = layers.Surface(
-            data,
-            colormap=colormap,
-            contrast_limits=contrast_limits,
-            gamma=gamma,
-            name=name,
-            metadata=metadata,
-            scale=scale,
-            translate=translate,
-            opacity=opacity,
-            blending=blending,
-            visible=visible,
-        )
-        self.add_layer(layer)
-        return layer
-
-    def add_vectors(
-        self,
-        data,
-        *,
-        edge_width=1,
-        edge_color='red',
-        length=1,
-        name=None,
-        metadata=None,
-        scale=None,
-        translate=None,
-        opacity=0.7,
-        blending='translucent',
-        visible=True,
-    ):
-        """Add a vectors layer to the layers list.
-
-        Parameters
-        ----------
-        data : (N, 2, D) or (N1, N2, ..., ND, D) array
-            An (N, 2, D) array is interpreted as "coordinate-like" data and a
-            list of N vectors with start point and projections of the vector in
-            D dimensions. An (N1, N2, ..., ND, D) array is interpreted as
-            "image-like" data where there is a length D vector of the
-            projections at each pixel.
-        edge_width : float
-            Width for all vectors in pixels.
-        length : float
-             Multiplicative factor on projections for length of all vectors.
-        edge_color : str
-            Edge color of all the vectors.
-        name : str
-            Name of the layer.
-        metadata : dict
-            Layer metadata.
-        scale : tuple of float
-            Scale factors for the layer.
-        translate : tuple of float
-            Translation values for the layer.
-        opacity : float
-            Opacity of the layer visual, between 0.0 and 1.0.
-        blending : str
-            One of a list of preset blending modes that determines how RGB and
-            alpha values of the layer visual get mixed. Allowed values are
-            {'opaque', 'translucent', and 'additive'}.
-        visible : bool
-            Whether the layer visual is currently being displayed.
-
-        Returns
-        -------
-        layer : :class:`napari.layers.Vectors`
-            The newly-created vectors layer.
-        """
-        layer = layers.Vectors(
-            data,
-            edge_width=edge_width,
-            edge_color=edge_color,
-            length=length,
-            name=name,
-            metadata=metadata,
-            scale=scale,
-            translate=translate,
-            opacity=opacity,
-            blending=blending,
-            visible=visible,
-        )
-        self.add_layer(layer)
-        return layer
-
     def _new_labels(self):
-        if self.dims.ndim == 0:
-            dims = (512, 512)
-        else:
-            dims = self._calc_bbox()[1]
-            dims = [np.ceil(d).astype('int') if d > 0 else 1 for d in dims]
-            if len(dims) < 1:
-                dims = (512, 512)
-        empty_labels = np.zeros(dims, dtype=int)
-        self.add_labels(empty_labels)
+        """Create new labels layer filling full world coordinates space."""
+        extent = self.layers._extent_world
+        scale = self.layers._step_size
+        scene_size = extent[1] - extent[0]
+        corner = extent[0]
+        shape = [
+            np.round(s / sc).astype('int') if s > 0 else 1
+            for s, sc in zip(scene_size, scale)
+        ]
+        empty_labels = np.zeros(shape, dtype=int)
+        self.add_labels(empty_labels, translate=np.array(corner), scale=scale)
 
-    def _update_layers(self, layers=None):
+    def _update_layers(self, event=None, layers=None):
         """Updates the contained layers.
 
         Parameters
@@ -1002,28 +312,17 @@ class ViewerModel(KeymapMixin):
             List of layers to update. If none provided updates all.
         """
         layers = layers or self.layers
-
         for layer in layers:
-            # adjust the order of the global dims based on the number of
-            # dimensions that a layer has - for example a global order of
-            # [2, 1, 0, 3] -> [0, 1] for a layer that only has two dimesnions
-            # or -> [1, 0, 2] for a layer with three as that corresponds to
-            # the relative order of the last two and three dimensions
-            # respectively
-            offset = self.dims.ndim - layer.dims.ndim
-            order = np.array(self.dims.order)
-            if offset <= 0:
-                order = list(range(-offset)) + list(order - offset)
-            else:
-                order = list(order[order >= offset] - offset)
-            layer.dims.order = order
-            layer.dims.ndisplay = self.dims.ndisplay
+            layer._slice_dims(
+                self.dims.point, self.dims.ndisplay, self.dims.order
+            )
 
-            # Update the point values of the layers for the dimensions that
-            # the layer has
-            for axis in range(layer.dims.ndim):
-                point = self.dims.point[axis + offset]
-                layer.dims.set_point(axis, point)
+    def _toggle_theme(self):
+        """Switch to next theme in list of themes
+        """
+        theme_names = list(self.themes.keys())
+        cur_theme = theme_names.index(self.theme)
+        self.theme = theme_names[(cur_theme + 1) % len(theme_names)]
 
     def _update_active_layer(self, event):
         """Set the active layer by iterating over the layers list and
@@ -1064,56 +363,13 @@ class ViewerModel(KeymapMixin):
             self.dims.ndim = 2
             self.dims.reset()
         else:
-            layer_range = self._calc_layers_ranges()
-            self.dims.ndim = len(layer_range)
-            for i, r in enumerate(layer_range):
-                self.dims.set_range(i, r)
+            extent = self.layers._extent_world
+            ss = self.layers._step_size
+            ndim = extent.shape[1]
+            self.dims.ndim = ndim
+            for i in range(ndim):
+                self.dims.set_range(i, (extent[0, i], extent[1, i], ss[i]))
         self.events.layers_change()
-
-    def _calc_layers_ranges(self):
-        """Calculates the range along each axis from all present layers.
-        """
-
-        ndims = self._calc_layers_num_dims()
-        ranges = [(inf, -inf, inf)] * ndims
-
-        for layer in self.layers:
-            layer_range = layer.dims.range[::-1]
-            ranges = [
-                (min(a, b), max(c, d), min(e, f))
-                for (a, c, e), (b, d, f) in itertools.zip_longest(
-                    ranges, layer_range, fillvalue=(inf, -inf, inf)
-                )
-            ]
-
-        return ranges[::-1]
-
-    def _calc_bbox(self):
-        """Calculates the bounding box of all displayed layers.
-        This assumes that all layers are stacked.
-        """
-
-        min_shape = []
-        max_shape = []
-        for min, max, step in self._calc_layers_ranges():
-            min_shape.append(min)
-            max_shape.append(max)
-        if len(min_shape) == 0:
-            min_shape = [0] * self.dims.ndim
-            max_shape = [1] * self.dims.ndim
-
-        return min_shape, max_shape
-
-    def _calc_layers_num_dims(self):
-        """Calculates the number of maximum dimensions in the contained images.
-        """
-        max_dims = 0
-        for layer in self.layers:
-            dims = layer.ndim
-            if dims > max_dims:
-                max_dims = dims
-
-        return max_dims
 
     def _update_status(self, event):
         """Set the viewer status with the `event.status` string."""
@@ -1182,7 +438,7 @@ class ViewerModel(KeymapMixin):
         """
         self.grid_view(n_row=1, n_column=1, stride=1)
 
-    def _update_grid(self):
+    def _update_grid(self, event=None):
         """Update grid with current grid values.
         """
         self.grid_view(
@@ -1196,14 +452,15 @@ class ViewerModel(KeymapMixin):
 
         Parameters
         ----------
-        layer : napar.layers.Layer
+        layer : napari.layers.Layer
             Layer that is to be moved.
         position : 2-tuple of int
             New position of layer in grid.
         size : 2-tuple of int
             Size of the grid that is being used.
         """
-        scene_size, corner = self._scene_shape()
+        extent = self._sliced_extent_world
+        scene_size = extent[1] - extent[0]
         translate_2d = np.multiply(scene_size[-2:], position)
         translate = [0] * layer.ndim
         translate[-2:] = translate_2d

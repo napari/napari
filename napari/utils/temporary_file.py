@@ -1,6 +1,6 @@
-from tempfile import NamedTemporaryFile
-from contextlib import contextmanager
 import os
+from contextlib import contextmanager
+from tempfile import NamedTemporaryFile
 
 
 @contextmanager
@@ -13,7 +13,7 @@ def temporary_file(suffix=''):
     Examples
     --------
     >>> import numpy as np
-    >>> from skimage import io
+    >>> from napari.utils import io
     >>> with temporary_file('.tif') as tempfile:
     ...     im = np.arange(25, dtype=np.uint8).reshape((5, 5))
     ...     io.imsave(tempfile, im)

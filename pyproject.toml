@@ -1,5 +1,16 @@
+[build-system]
+requires = [
+  "setuptools >= 42",
+  "wheel",
+  "setuptools_scm[toml]>=3.4"
+]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+write_to = "napari/_version.py"
+
 [tool.black]
-target-version = ['py36', 'py37']
+target-version = ['py36', 'py37', 'py38']
 skip-string-normalization = true
 line-length = 79
 exclude = '''
@@ -21,3 +32,26 @@ exclude = '''
   | napari/resources/qt.py
 )
 '''
+
+[tool.check-manifest]
+ignore = [
+  ".cirrus.yml",
+  ".pre-commit-config.yaml",
+  "asv.conf.json",
+  "codecov.yml",
+  "Makefile",
+  "napari/_version.py",  # added during build by setuptools_scm
+]
+
+[tool.isort]
+profile = "black"
+line_length = 79
+skip_glob = ["*examples/*", "*vendored*"]
+
+[tool.pytest.ini_options]
+filterwarnings = [
+  "ignore::DeprecationWarning:ipykernel",
+  "ignore::DeprecationWarning:skimage.util.dtype:226",
+  "ignore:QFontMetrics.width::qtconsole",
+  "ignore:Accessing zmq Socket:DeprecationWarning:jupyter_client"
+]
