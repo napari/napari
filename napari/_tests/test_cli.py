@@ -70,13 +70,6 @@ def test_cli_raises(monkeypatch):
 def test_cli_runscript(monkeypatch, tmp_path):
     """Test that running napari script.py runs a script"""
     script = tmp_path / 'test.py'
-    script.write_text('1/0')  # raise error so we can assert it ran
-
-    with monkeypatch.context() as m:
-        m.setattr(sys, 'argv', ['napari', str(script)])
-        with pytest.raises(ZeroDivisionError):
-            __main__.main()
-
     script.write_text('import napari; v = napari.Viewer(show=False)')
 
     with monkeypatch.context() as m:
