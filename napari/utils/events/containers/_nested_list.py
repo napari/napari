@@ -43,7 +43,7 @@ def ensure_tuple_index(index: Union[NestedIndex, Index]) -> NestedIndex:
 def split_nested_index(
     index: Union[NestedIndex, Index]
 ) -> Tuple[ParentIndex, Index]:
-    """ Given a nested index, return (nested_parent_index, row).
+    """Given a nested index, return (nested_parent_index, row).
 
     Parameters
     ----------
