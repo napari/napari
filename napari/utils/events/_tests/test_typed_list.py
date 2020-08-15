@@ -7,6 +7,9 @@ from napari.utils.events.containers import (
 )
 
 
+# this is a parametrized fixture, all tests using ``list_type`` will be run
+# once using each of the items in params
+# https://docs.pytest.org/en/stable/fixture.html#parametrizing-fixtures
 @pytest.fixture(
     params=[TypedMutableSequence, EventedList, NestableEventedList]
 )
@@ -79,7 +82,7 @@ def test_custom_lookup(list_type):
     # index with string also works
     assert a['hi'] == hi
 
-    # index with tuple will use the `tuple` type lookup
+    # index with a dict will use the `dict` type lookup
     assert a[{'some': 'data'}].data == {'some': 'data'}
     assert a.index({'some': 'data'}) == 3
     assert a[{'some': 'data'}] == dct

@@ -137,8 +137,8 @@ class NestableEventedList(EventedList[_T]):
     # def extend(self, value: Iterable[_T]): ...
     # def remove(self, value: T): ...
 
-    @overload
-    def __getitem__(self, key: int) -> _T:
+    @overload  # type: ignore
+    def __getitem__(self, key: int) -> Union[_T, 'NestableEventedList[_T]']:
         ...  # pragma: no cover
 
     @overload
