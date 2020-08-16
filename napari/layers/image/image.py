@@ -654,7 +654,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
         if not sync:
             # If this specific load itself was async we need a full refresh.
-            # Not even is async mode some loads are sync such as cache hits
+            # Note: even in async mode, some loads are sync, such as cache hits
             # and loads of ndarray data.
             self.refresh()
 
