@@ -8,8 +8,8 @@ from typing_extensions import Annotated
 
 from napari.layers.base._base_constants import Blending
 from napari.layers.utils._text_constants import Anchor
-from napari.utils.dataclass import Property, dataclass
-from napari.utils.event import EmitterGroup
+from napari.utils.events import EmitterGroup
+from napari.utils.events.dataclass import Property, dataclass
 
 
 @pytest.mark.parametrize("props, events", [(1, 1), (0, 1), (0, 0), (1, 0)])
