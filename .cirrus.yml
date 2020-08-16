@@ -62,7 +62,7 @@ linux_task:
     folder: ~/.cache/pip
     fingerprint_script:
       - echo $PYTHON_VERSION
-      - type requirements/test.txt
+      - cat requirements/test.txt
     populate_script: 
       - python -m pip install --retries 3 --upgrade pip
       - python -m pip install --retries 3 -r requirements/test.txt
@@ -120,7 +120,7 @@ mac_task:
     folder: $HOME/Library/Caches/pip
     fingerprint_script:
       - echo $PYTHON_VERSION
-      - type requirements/test.txt
+      - cat requirements/test.txt
     populate_script:
       - export MACOSX_DEPLOYMENT_TARGET=10.10
       - python -m pip install --retries 3 --upgrade pip
