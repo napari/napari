@@ -1,5 +1,5 @@
-from .labels import Labels
 from ._labels_constants import Mode
+from .labels import Labels
 
 
 @Labels.bind_key('Space')

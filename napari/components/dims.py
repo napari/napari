@@ -1,9 +1,10 @@
 from copy import copy
-from typing import Union, Sequence
+from typing import Sequence, Union
+
 import numpy as np
 
+from ..utils.events import EmitterGroup
 from .dims_constants import DimsMode
-from ..utils.event import EmitterGroup
 
 
 class Dims:
@@ -74,6 +75,8 @@ class Dims:
         self._mode = []
         self._order = []
         self._axis_labels = []
+        self._scroll_progress = 0
+        self.last_used = None
         self.clip = True
         self._ndisplay = 2 if ndisplay is None else ndisplay
 
@@ -372,6 +375,46 @@ class Dims:
         if self.interval[axis] != interval:
             self._interval[axis] = interval
             self.events.axis(axis=axis)
+
+    def _increment_dims_right(self, axis: int = None):
+        """Increment dimensions to the right along given axis, or last used axis if None
+
+        Parameters
+        ----------
+        axis : int, optional
+            Axis along which to increment dims, by default None
+        """
+        if axis is None:
+            axis = self.last_used
+        if axis is not None:
+            cur_point = self.point[axis]
+            axis_range = self.range[axis]
+            new_point = np.clip(
+                cur_point + axis_range[2],
+                axis_range[0],
+                axis_range[1] - axis_range[2],
+            )
+            self.set_point(axis, new_point)
+
+    def _increment_dims_left(self, axis: int = None):
+        """Increment dimensions to the left along given axis, or last used axis if None
+
+        Parameters
+        ----------
+        axis : int, optional
+            Axis along which to increment dims, by default None
+        """
+        if axis is None:
+            axis = self.last_used
+        if axis is not None:
+            cur_point = self.point[axis]
+            axis_range = self.range[axis]
+            new_point = np.clip(
+                cur_point - axis_range[2],
+                axis_range[0],
+                axis_range[1] - axis_range[2],
+            )
+            self.set_point(axis, new_point)
 
     def set_mode(self, axis: int, mode: DimsMode):
         """Sets the mode: POINT or INTERVAL.

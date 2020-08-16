@@ -1,7 +1,6 @@
 import inspect
 
-from .misc import camel_to_snake, callsignature
-
+from .misc import callsignature, camel_to_snake
 
 template = """def {name}(self, {signature}):
     layer = {cls_name}({call_args})

@@ -1,7 +1,7 @@
 import numpy as np
 
+from ._shapes_constants import Box, Mode
 from .shapes import Shapes
-from ._shapes_constants import Mode, Box
 
 
 @Shapes.bind_key('Space')

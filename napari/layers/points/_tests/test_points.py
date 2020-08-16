@@ -1,10 +1,12 @@
 from copy import copy
 from itertools import cycle, islice
+
 import numpy as np
 import pandas as pd
 import pytest
 from vispy.color import get_colormap
 
+from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Points
 from napari.layers.points._points_utils import points_to_squares
 from napari.utils.colormaps.standardize_color import transform_color
@@ -722,6 +724,7 @@ def test_n_dimensional():
     assert layer.n_dimensional is True
 
 
+@pytest.mark.filterwarnings("ignore:elementwise comparison fail:FutureWarning")
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
 def test_switch_color_mode(attribute):
     """Test switching between color modes"""
@@ -803,7 +806,8 @@ def test_colormap_with_categorical_properties(attribute):
     layer = Points(data, properties=properties)
 
     with pytest.raises(TypeError):
-        setattr(layer, f'{attribute}_color_mode', 'colormap')
+        with pytest.warns(UserWarning):
+            setattr(layer, f'{attribute}_color_mode', 'colormap')
 
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
@@ -1438,3 +1442,13 @@ def test_interaction_box():
     expected_box = points_to_squares(data, size)
     box = layer.interaction_box(index)
     np.all([np.isin(p, expected_box) for p in box])
+
+
+def test_world_data_extent():
+    """Test extent after applying transforms."""
+    data = [(7, -5, 0), (-2, 0, 15), (4, 30, 12)]
+    min_val = (-2, -5, 0)
+    max_val = (7, 30, 15)
+    layer = Points(data)
+    extent = np.array((min_val, max_val))
+    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
