@@ -3,17 +3,17 @@ import pytest
 
 from napari.layers.utils._text_constants import Anchor
 from napari.layers.utils._text_utils import (
-    _get_format_keys,
-    _format_text_f_string,
-    format_text_properties,
-    format_text_direct,
     _calculate_anchor_center,
-    _calculate_anchor_upper_left,
-    _calculate_anchor_upper_right,
     _calculate_anchor_lower_left,
     _calculate_anchor_lower_right,
-    _calculate_bbox_extents,
+    _calculate_anchor_upper_left,
+    _calculate_anchor_upper_right,
     _calculate_bbox_centers,
+    _calculate_bbox_extents,
+    _format_text_f_string,
+    _get_format_keys,
+    format_text_direct,
+    format_text_properties,
     get_text_anchors,
 )
 

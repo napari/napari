@@ -1,5 +1,5 @@
-import sys
 import os
+import sys
 
 from qtpy.QtCore import QProcess, QProcessEnvironment, Qt
 from qtpy.QtWidgets import (
@@ -12,8 +12,8 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
 )
 
-from ..utils.misc import running_as_bundled_app
 from ..utils._appdirs import user_plugin_dir, user_site_packages
+from ..utils.misc import running_as_bundled_app
 
 
 # TODO: this is a convenience for now, but will be superceeded by #1357

@@ -24,17 +24,13 @@ from ..utils.interactions import (
 from ..utils.io import imsave
 from ..utils.key_bindings import components_to_key_combo
 from ..utils.theme import template
+from .dialogs.qt_about_key_bindings import QtAboutKeyBindings
 from .tracing.qt_performance import QtPerformance
 from .utils import QImg2array, circle_pixmap, square_pixmap
-from .dialogs.qt_about_key_bindings import QtAboutKeyBindings
 from .widgets.qt_dims import QtDims
 from .widgets.qt_layerlist import QtLayerList
 from .widgets.qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
-
-# FIXME: figure out the underlying problem causing circular imports here.
-from .._vispy import create_vispy_visual  # isort:skip
-from .layer_controls import QtLayerControlsContainer  # isort:skip
 
 
 class KeyModifierFilterSceneCanvas(SceneCanvas):
@@ -89,6 +85,8 @@ class QtViewer(QSplitter):
     raw_stylesheet = get_stylesheet()
 
     def __init__(self, viewer):
+        from .layer_controls import QtLayerControlsContainer
+
         super().__init__()
         self.setAttribute(Qt.WA_DeleteOnClose)
 
@@ -258,6 +256,8 @@ class QtViewer(QSplitter):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
+        from .._vispy import create_vispy_visual
+
         layers = event.source
         layer = event.item
         vispy_layer = create_vispy_visual(layer)

@@ -4,8 +4,8 @@ from qtpy.QtCore import QPoint, Qt
 from qtpy.QtGui import QDoubleValidator, QFont, QFontMetrics
 from qtpy.QtWidgets import QHBoxLayout, QLineEdit
 
-from ..utils import qt_signals_blocked
 from ..dialogs.qt_modal import QtPopup
+from ..utils import qt_signals_blocked
 from .qt_range_slider import QHRangeSlider, QVRangeSlider
 
 

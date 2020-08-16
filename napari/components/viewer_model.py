@@ -1,12 +1,12 @@
 import numpy as np
 
+from ..utils.events import EmitterGroup, Event
+from ..utils.key_bindings import KeymapHandler, KeymapProvider
+from ..utils.theme import palettes
+from ._viewer_mouse_bindings import dims_scroll
 from .add_layers_mixin import AddLayersMixin
 from .dims import Dims
 from .layerlist import LayerList
-from ._viewer_mouse_bindings import dims_scroll
-from ..utils.event import EmitterGroup, Event
-from ..utils.key_bindings import KeymapHandler, KeymapProvider
-from ..utils.theme import palettes
 
 
 class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):

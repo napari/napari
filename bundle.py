@@ -122,8 +122,8 @@ def patch_wxs():
 
 
 def make_zip():
-    import zipfile
     import glob
+    import zipfile
 
     if WINDOWS:
         ext, OS = '*.msi', 'Windows'

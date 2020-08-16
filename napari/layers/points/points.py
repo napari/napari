@@ -1,41 +1,37 @@
-from typing import Union, Dict, Tuple, List
+import warnings
 from copy import copy, deepcopy
 from itertools import cycle
-import warnings
+from typing import Dict, List, Tuple, Union
 
 import numpy as np
 from vispy.color.colormap import Colormap
 
-from ...utils.colormaps import ensure_colormap_tuple
 from ...types import ValidColormapArg
-
-from ..base import Layer
-from ...utils.event import Event
-from ...utils.status_messages import format_float
+from ...utils.colormaps import ensure_colormap_tuple
 from ...utils.colormaps.standardize_color import (
-    transform_color,
-    hex_to_name,
     get_color_namelist,
+    hex_to_name,
     rgb_to_hex,
+    transform_color,
 )
+from ...utils.events import Event
+from ...utils.status_messages import format_float
+from ..base import Layer
 from ..utils.color_transformations import (
-    transform_color_with_defaults,
-    transform_color_cycle,
-    normalize_and_broadcast_colors,
     ColorType,
-)
-from ..utils.text import TextManager
-from ._points_constants import Symbol, SYMBOL_ALIAS, Mode, ColorMode
-from ._points_mouse_bindings import add, select, highlight
-from ._points_utils import (
-    create_box,
-    points_to_squares,
+    normalize_and_broadcast_colors,
+    transform_color_cycle,
+    transform_color_with_defaults,
 )
 from ..utils.layer_utils import (
     dataframe_to_properties,
     guess_continuous,
     map_property,
 )
+from ..utils.text import TextManager
+from ._points_constants import SYMBOL_ALIAS, ColorMode, Mode, Symbol
+from ._points_mouse_bindings import add, highlight, select
+from ._points_utils import create_box, points_to_squares
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 

@@ -4,8 +4,8 @@ Our perfmon system using this to patch in perf_timers, but this can be used
 for any type of patching. See patch_callables() below as the main entrypoint.
 """
 
-from importlib import import_module
 import types
+from importlib import import_module
 from typing import Callable, List, Set, Tuple, Union
 
 # The parent of a callable is a module or a class, class is of type "type".

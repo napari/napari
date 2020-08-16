@@ -1,15 +1,15 @@
 from enum import auto
-from os.path import expanduser, abspath, sep
+from os.path import abspath, expanduser, sep
 from pathlib import Path
 
 import pytest
 
 from napari.utils.misc import (
     StringEnum,
-    callsignature,
-    ensure_sequence_of_iterables,
-    ensure_iterable,
     abspath_or_url,
+    callsignature,
+    ensure_iterable,
+    ensure_sequence_of_iterables,
 )
 
 ITERABLE = (0, 1, 2)

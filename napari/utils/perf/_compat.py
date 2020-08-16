@@ -3,7 +3,6 @@
 import sys
 import time
 
-
 if sys.version_info[:2] >= (3, 7):
     # Use the real perf_counter_ns
     perf_counter_ns = time.perf_counter_ns

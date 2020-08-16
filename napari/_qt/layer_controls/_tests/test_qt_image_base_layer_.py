@@ -3,14 +3,15 @@ from unittest.mock import patch
 
 import numpy as np
 import pytest
+from qtpy.QtCore import Qt
+from qtpy.QtWidgets import QPushButton
+
 from napari._qt.layer_controls.qt_image_controls_base import (
     QRangeSliderPopup,
     QtBaseImageControls,
     create_range_popup,
 )
 from napari.layers import Image, Surface
-from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QPushButton
 
 _IMAGE = np.arange(100).astype(np.uint16).reshape((10, 10))
 _SURF = (

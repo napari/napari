@@ -1,16 +1,13 @@
-from typing import Tuple, Union
 import warnings
+from typing import Tuple, Union
 
 import numpy as np
 
-from ..base._base_constants import Blending
-from ._text_constants import TextMode, Anchor
-from ._text_utils import (
-    format_text_properties,
-    get_text_anchors,
-)
 from ...utils.colormaps.standardize_color import transform_color
-from ...utils.event import EmitterGroup, Event
+from ...utils.events import EmitterGroup, Event
+from ..base._base_constants import Blending
+from ._text_constants import Anchor, TextMode
+from ._text_utils import format_text_properties, get_text_anchors
 
 
 class TextManager:

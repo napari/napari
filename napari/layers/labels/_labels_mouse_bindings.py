@@ -1,5 +1,5 @@
-from ._labels_utils import interpolate_coordinates
 from ._labels_constants import Mode
+from ._labels_utils import interpolate_coordinates
 
 
 def draw(layer, event):

@@ -1,9 +1,10 @@
 from copy import copy
-from typing import Union, Sequence
+from typing import Sequence, Union
+
 import numpy as np
 
+from ..utils.events import EmitterGroup
 from .dims_constants import DimsMode
-from ..utils.event import EmitterGroup
 
 
 class Dims:

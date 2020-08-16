@@ -1,8 +1,8 @@
 """Dask cache utilities.
 """
+import warnings
 from contextlib import contextmanager
 from typing import Callable, ContextManager, Optional
-import warnings
 
 import dask
 import dask.array as da

@@ -1,17 +1,18 @@
 import types
 import warnings
+
 import numpy as np
 from scipy import ndimage as ndi
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS
-from ...utils.event import Event
+from ...utils.events import Event
 from ...utils.status_messages import format_float
 from ..base import Layer
-from ..utils.layer_utils import calc_data_range
 from ..intensity_mixin import IntensityVisualizationMixin
+from ..utils.layer_utils import calc_data_range
 from ._image_constants import Interpolation, Interpolation3D, Rendering
-from ._image_utils import guess_rgb, guess_multiscale
 from ._image_slice import ImageSlice
+from ._image_utils import guess_multiscale, guess_rgb
 
 
 # Mixin must come before Layer

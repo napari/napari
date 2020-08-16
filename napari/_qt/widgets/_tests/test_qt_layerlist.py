@@ -1,9 +1,9 @@
 import numpy as np
 from vispy.color import get_color_dict
 
+from napari._qt.widgets.qt_layerlist import QtDivider, QtLayerList
 from napari.components import LayerList
 from napari.layers import Image
-from napari._qt.widgets.qt_layerlist import QtLayerList, QtDivider
 from napari.utils.colormaps.standardize_color import hex_to_name
 
 

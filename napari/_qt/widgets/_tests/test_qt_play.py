@@ -3,10 +3,10 @@ from contextlib import contextmanager
 import numpy as np
 import pytest
 
-from napari.components import Dims
+from napari._qt._constants import LoopMode
 from napari._qt.widgets.qt_dims import QtDims
 from napari._qt.widgets.qt_dims_slider import AnimationWorker
-from napari._qt._constants import LoopMode
+from napari.components import Dims
 
 
 @contextmanager
