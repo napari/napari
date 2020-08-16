@@ -3,6 +3,7 @@ napari command line viewer.
 """
 import argparse
 import logging
+import os
 import runpy
 import sys
 from ast import literal_eval
@@ -79,7 +80,7 @@ def validate_unknown_args(unknown: List[str]) -> Dict[str, Any]:
     return out
 
 
-def main():
+def _run():
     kwarg_options = []
     for layer_type, keys in valid_add_kwargs().items():
         kwarg_options.append(f"  {layer_type.title()}:")
@@ -185,6 +186,47 @@ def main():
                 layer_type=args.layer_type,
                 **kwargs,
             )
+
+
+def _run_pythonw():
+    """Execute this script again through pythonw.
+    This ensures we're using a framework build of Python on macOS.
+    """
+    import pathlib
+    import subprocess
+
+    cwd = pathlib.Path.cwd()
+    python_path = pathlib.Path(sys.exec_prefix) / 'bin' / 'pythonw'
+
+    if not python_path.exists():
+        msg = (
+            'pythonw executable not found. '
+            'Please install python.app via conda.'
+        )
+        raise RuntimeError(msg)
+
+    cmd = [python_path, '-m', 'napari']
+
+    # Append command line arguments.
+    if len(sys.argv) > 1:
+        cmd.append(*sys.argv[1:])
+
+    env = os.environ.copy()
+    env["NAPARI_RUNNING_PYTHONW"] = "True"
+
+    subprocess.run(cmd, env=env, cwd=cwd)
+    sys.exit()
+
+
+def main():
+    # Ensure we're always using a "framework build" on macOS.
+    _MACOS_CONDA = sys.platform == "darwin" and "CONDA_PREFIX" in os.environ
+    _RUNNING_PYTHONW = "NAPARI_RUNNING_PYTHONW" in os.environ
+
+    if _MACOS_CONDA and not _RUNNING_PYTHONW:
+        _run_pythonw()
+    else:
+        _run()
 
 
 if __name__ == '__main__':
