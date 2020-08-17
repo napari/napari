@@ -14,7 +14,7 @@ from ...utils.colormaps.standardize_color import (
     rgb_to_hex,
     transform_color,
 )
-from ...utils.event import Event
+from ...utils.events import Event
 from ...utils.status_messages import format_float
 from ..base import Layer
 from ..utils.color_transformations import (

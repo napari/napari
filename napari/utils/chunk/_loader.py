@@ -22,7 +22,7 @@ from typing import Dict, List, Optional, Union
 import numpy as np
 
 from ...types import ArrayLike
-from ...utils.event import EmitterGroup
+from ...utils.events import EmitterGroup
 from ..perf import perf_timer
 from ._cache import ChunkCache
 from ._config import async_config

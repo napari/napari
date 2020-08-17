@@ -1,7 +1,7 @@
 import numpy as np
 
 from .._commands import LoaderCommands
-from ..utils.event import EmitterGroup, Event
+from ..utils.events import EmitterGroup, Event
 from ..utils.key_bindings import KeymapHandler, KeymapProvider
 from ..utils.theme import palettes
 from ._viewer_mouse_bindings import dims_scroll
