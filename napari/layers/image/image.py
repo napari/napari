@@ -447,7 +447,7 @@ class Image(IntensityVisualizationMixin, Layer):
         With asynchronous loading the layer might exist but its data
         for the current slice has not been loaded.
         """
-        return self._slice is not None and self._slice.loaded
+        return self._slice.loaded
 
     def _get_state(self):
         """Get dictionary of layer state.
