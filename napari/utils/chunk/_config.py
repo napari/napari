@@ -20,7 +20,7 @@ DEFAULT_ASYNC_CONFIG = {
     "synchronous": False,
     "num_workers": 6,
     "log_path": None,
-    "use_procesess": False,
+    "use_processes": False,
     "delay_seconds": 0.1,
     "load_seconds": 0,
 }
