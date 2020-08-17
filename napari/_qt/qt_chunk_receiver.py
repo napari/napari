@@ -24,8 +24,8 @@ class QtChunkReceiver(QObject):
 
     chunk_loaded_gui = Signal(Layer, ChunkRequest)
 
-    def __init__(self):
-        super().__init__()
+    def __init__(self, parent=None):
+        super().__init__(parent)
 
         # ChunkLoader signals us when a chunk has been loaded.
         chunk_loader.events.chunk_loaded.connect(self._chunk_loaded_worker)
