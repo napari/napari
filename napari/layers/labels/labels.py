@@ -383,6 +383,7 @@ class Labels(Image):
         self._selected_label = selected_label
         self._selected_color = self.get_color(selected_label)
         self.events.selected_label()
+        self.events.colormap()
 
     @property
     def color_mode(self):
@@ -407,6 +408,8 @@ class Labels(Image):
         elif color_mode == LabelColorMode.AUTO:
             self._label_color_index = {}
             self.colormap = self._random_colormap
+        elif color_mode == LabelColorMode.SELECTED:
+            pass
         else:
             raise ValueError("Unsupported Color Mode")
 
@@ -567,6 +570,21 @@ class Labels(Image):
             image = np.where(
                 raw > 0, colormaps._low_discrepancy_image(raw, self._seed), 0
             )
+        elif self._color_mode == LabelColorMode.SELECTED:
+            selected = self._selected_label
+            # we were in direct mode previously
+            if self._label_color_index:
+                image = np.where(
+                    raw == selected,
+                    self._label_color_index[selected],
+                    self._label_color_index[self._background_label],
+                )
+            else:
+                image = np.where(
+                    raw == selected,
+                    colormaps._low_discrepancy_image(selected, self._seed),
+                    0,
+                )
         else:
             raise ValueError("Unsupported Color Mode")
         return image
