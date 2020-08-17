@@ -383,7 +383,11 @@ class Labels(Image):
         self._selected_label = selected_label
         self._selected_color = self.get_color(selected_label)
         self.events.selected_label()
-        self.events.colormap()
+
+        # note: self.color_mode returns a string and this comparison fails,
+        # so use self._color_mode
+        if self._color_mode == LabelColorMode.SELECTED:
+            self.refresh()
 
     @property
     def color_mode(self):
@@ -392,6 +396,8 @@ class Labels(Image):
         AUTO (default) allows color to be set via a hash function with a seed.
 
         DIRECT allows color of each label to be set directly by a color dict.
+
+        SELECTED allows only selected labels to be visible.
         """
         return str(self._color_mode)
 
