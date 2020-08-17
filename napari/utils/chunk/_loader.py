@@ -408,19 +408,23 @@ class ChunkLoader:
         # layer in the GUI thread.
         self.events.chunk_loaded(layer=layer, request=request)
 
-    def _get_layer_info(self, request: ChunkRequest) -> Optional[LayerInfo]:
+    def _get_layer_info(self, request: ChunkRequest) -> LayerInfo:
         """Return LayerInfo associated with this request or None.
 
         Parameters
         ----------
         request : ChunkRequest
             Return Layer_info for this request.
+
+        Raises
+        ------
+        KeyError
+            If the layer is not found.
         """
         layer_id = request.key.layer_id
 
-        # Go ahead and raise KeyError if not found. This should never
-        # happen because we add the layer to the layer_map in
-        # ChunkLoader.create_request().
+        # Raises KeyError if not found. This should never happen because we
+        # add the layer to the layer_map in ChunkLoader.create_request().
         return self.layer_map[layer_id]
 
     def wait(self, data_id: int) -> None:
