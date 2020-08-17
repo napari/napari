@@ -580,10 +580,17 @@ class Labels(Image):
             selected = self._selected_label
             # we were in direct mode previously
             if self._label_color_index:
+                if selected not in self._label_color_index:
+                    selected = None
+                index = self._label_color_index
                 image = np.where(
                     raw == selected,
-                    self._label_color_index[selected],
-                    self._label_color_index[self._background_label],
+                    index[selected],
+                    np.where(
+                        raw != self._background_label,
+                        index[None],
+                        index[self._background_label],
+                    ),
                 )
             else:
                 image = np.where(
