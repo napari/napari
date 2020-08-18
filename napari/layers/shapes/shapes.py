@@ -1966,26 +1966,31 @@ class Shapes(Layer):
 
     def _update_thumbnail(self, event=None):
         """Update thumbnail with current shapes and colors."""
-        # calculate min vals for the vertices and pad with 0.5
-        # the offset is needed to ensure that the top left corner of the shapes
-        # corresponds to the top left corner of the thumbnail
-        de = self._extent_data
-        offset = np.array([de[0, d] for d in self.dims.displayed]) + 0.5
-        # calculate range of values for the vertices and pad with 1
-        # padding ensures the entire shape can be represented in the thumbnail
-        # without getting clipped
-        shape = np.ceil(
-            [de[1, d] - de[0, d] + 1 for d in self.dims.displayed]
-        ).astype(int)
-        zoom_factor = np.divide(self._thumbnail_shape[:2], shape[-2:]).min()
 
-        colormapped = self._data_view.to_colors(
-            colors_shape=self._thumbnail_shape[:2],
-            zoom_factor=zoom_factor,
-            offset=offset[-2:],
-        )
+        # don't update the thumbnail if dragging a shape
+        if self._is_moving is False:
+            # calculate min vals for the vertices and pad with 0.5
+            # the offset is needed to ensure that the top left corner of the shapes
+            # corresponds to the top left corner of the thumbnail
+            de = self._extent_data
+            offset = np.array([de[0, d] for d in self.dims.displayed]) + 0.5
+            # calculate range of values for the vertices and pad with 1
+            # padding ensures the entire shape can be represented in the thumbnail
+            # without getting clipped
+            shape = np.ceil(
+                [de[1, d] - de[0, d] + 1 for d in self.dims.displayed]
+            ).astype(int)
+            zoom_factor = np.divide(
+                self._thumbnail_shape[:2], shape[-2:]
+            ).min()
 
-        self.thumbnail = colormapped
+            colormapped = self._data_view.to_colors(
+                colors_shape=self._thumbnail_shape[:2],
+                zoom_factor=zoom_factor,
+                offset=offset[-2:],
+            )
+
+            self.thumbnail = colormapped
 
     def remove_selected(self):
         """Remove any selected shapes."""
