@@ -1,5 +1,4 @@
 import logging
-
 import pytest
 
 from napari._qt.exceptions import ExceptionHandler
@@ -28,7 +27,7 @@ def test_keyboard_interupt_handler(qtbot, capsys):
         handler.handle(KeyboardInterrupt, KeyboardInterrupt(), None)
     assert capsys.readouterr().err == "Closed by KeyboardInterrupt\n"
 
-    
+
 def test_exception_handler_gui(qtbot, make_test_viewer):
     """Test exception handler can create a NapariNotification"""
     viewer = make_test_viewer()
