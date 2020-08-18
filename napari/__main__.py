@@ -177,7 +177,7 @@ def main():
             if getattr(app, '_existed', False):
                 sys.exit()
     else:
-        with gui_qt(startup_logo=True):
+        with gui_qt(startup_logo=True, gui_exceptions=True):
             view_path(
                 args.paths,
                 stack=args.stack,
