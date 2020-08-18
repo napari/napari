@@ -60,6 +60,9 @@ linux_task:
 
   pip_cache:
     folder: ~/.cache/pip
+    fingerprint_script:
+      - echo $PYTHON_VERSION
+      - cat requirements/test.txt
     populate_script: 
       - python -m pip install --retries 3 --upgrade pip
       - python -m pip install --retries 3 -r requirements/test.txt
@@ -115,10 +118,13 @@ mac_task:
 
   pip_cache:
     folder: $HOME/Library/Caches/pip
+    fingerprint_script:
+      - echo $PYTHON_VERSION
+      - cat requirements/test.txt
     populate_script:
       - export MACOSX_DEPLOYMENT_TARGET=10.10
       - python -m pip install --retries 3 --upgrade pip
-      - python -m pip install --retries 4 -r requirements/test.txt
+      - python -m pip install --retries 3 -r requirements/test.txt
 
   install_script:
     - python -m pip install --retries 3 --upgrade pip
@@ -179,6 +185,9 @@ win_task:
 
   pip_cache:
     folder: $LOCALAPPDATA\pip\Cache
+    fingerprint_script:
+      - echo $PYTHON_VERSION
+      - type requirements\test.txt
     populate_script: 
       - python -m pip install --retries 3 --upgrade pip
       - python -m pip install --retries 3 -r requirements/test.txt
