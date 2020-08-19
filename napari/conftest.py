@@ -313,5 +313,9 @@ def perfmon_only(request):
     """If flag is set, only run the perfmon tests."""
     perfmon_flag = request.config.getoption("--perfmon-only")
     perfmon_test = request.node.get_closest_marker('perfmon')
-    if perfmon_flag and not perfmon_test:
-        pytest.skip("running with --perfmon-only")
+    if perfmon_flag:
+        if not perfmon_test:
+            pytest.skip("running with --perfmon-only")
+    else:
+        if perfmon_test:
+            pytest.skip("not running with --perfmon-only")
