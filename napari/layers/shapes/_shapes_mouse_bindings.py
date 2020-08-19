@@ -27,12 +27,8 @@ def select(layer, event):
         if shift and shape_under_cursor is not None:
             if shape_under_cursor in layer.selected_data:
                 layer.selected_data.remove(shape_under_cursor)
-                shapes = layer.selected_data
-                layer._selected_box = layer.interaction_box(shapes)
             else:
                 layer.selected_data.add(shape_under_cursor)
-                shapes = layer.selected_data
-                layer._selected_box = layer.interaction_box(shapes)
         elif shape_under_cursor is not None:
             if shape_under_cursor not in layer.selected_data:
                 layer.selected_data = {shape_under_cursor}
