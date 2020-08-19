@@ -211,7 +211,14 @@ class ShapeList:
         self.displayed_vertices = self._vertices[disp_vert]
         self.displayed_index = self._index[disp_vert]
 
-    def add(self, shape, face_color=None, edge_color=None, shape_index=None):
+    def add(
+        self,
+        shape,
+        face_color=None,
+        edge_color=None,
+        shape_index=None,
+        reindex_z=True,
+    ):
         """Adds a single Shape object
 
         Parameters
@@ -223,12 +230,19 @@ class ShapeList:
             If int then edits the shape date at current index. To be used in
             conjunction with `remove` when renumber is `False`. If None, then
             appends a new shape to end of shapes list
+        reindex_z : bool
+            If set to true, the mesh elements are reindexed with the new z order.
+            When adding a batch of shapes, set to false  and then call
+            ShapesList._update_z_order() once at the end.
         """
         if not issubclass(type(shape), Shape):
             raise ValueError('shape must be subclass of Shape')
 
         if shape_index is None:
-            z_refresh = True
+            if reindex_z is True:
+                z_refresh = True
+            else:
+                z_refresh = False
             shape_index = len(self.shapes)
             self.shapes.append(shape)
             self._z_index = np.append(self._z_index, shape.z_index)

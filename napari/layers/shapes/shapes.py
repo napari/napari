@@ -1561,8 +1561,9 @@ class Shapes(Layer):
             edge_color=edge_color,
             face_color=face_color,
             z_index=z_index,
+            reindex_z=False,
         )
-
+        self._data_view._update_z_order()
         self.refresh_colors()
 
     def _add_shapes(
@@ -1574,6 +1575,7 @@ class Shapes(Layer):
         edge_color=None,
         face_color=None,
         z_index=None,
+        reindex_z=True,
     ):
         """Add shapes to the data view.
 
@@ -1673,7 +1675,9 @@ class Shapes(Layer):
                 )
 
                 # Add shape
-                self._data_view.add(shape, edge_color=ec, face_color=fc)
+                self._data_view.add(
+                    shape, edge_color=ec, face_color=fc, reindex_z=reindex_z
+                )
 
         self._display_order_stored = copy(self.dims.order)
         self._ndisplay_stored = copy(self.dims.ndisplay)
