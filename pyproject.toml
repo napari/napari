@@ -55,3 +55,4 @@ filterwarnings = [
   "ignore:QFontMetrics.width::qtconsole",
   "ignore:Accessing zmq Socket:DeprecationWarning:jupyter_client"
 ]
+markers = "perfmon: marks tests that require perfmon to be enabled"

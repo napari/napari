@@ -37,21 +37,32 @@ except ImportError:
 
 
 def pytest_addoption(parser):
-    """An option to show viewers during tests. (Hidden by default).
+    """Add napari specific command line options.
 
-    Showing viewers decreases test speed by about %18.  Note, due to the
-    placement of this conftest.py file, you must specify the napari folder (in
-    the pytest command) to use this flag.
+    --show-viewer
+        Show viewers during tests, they are hidden by default. Showing viewers
+        decreases test speed by about %18.
 
-    Examples
-    --------
-    $ pytest napari --show-viewer
+    --perfmon-only
+        Run only perfmon test.
+
+    Notes
+    -----
+    Due to the placement of this conftest.py file, you must specifically name
+    the napair folder such as "pytest napari --show-viewer"
     """
     parser.addoption(
         "--show-viewer",
         action="store_true",
         default=False,
         help="don't show viewer during tests",
+    )
+
+    parser.addoption(
+        "--perfmon-only",
+        action="store_true",
+        default=False,
+        help="run only perfmon tests",
     )
 
 
@@ -292,3 +303,12 @@ def irregular_images():
 @pytest.fixture
 def single_tiff():
     return [image_fetcher.fetch('data/multipage.tif')]
+
+
+@pytest.fixture(autouse=True)
+def perfmon_only(request):
+    """If flag is set, only run the perfmon tests."""
+    perfmon_flag = request.config.getoption("--perfmon-only")
+    perfmon_test = request.node.get_closest_marker('perfmon')
+    if perfmon_flag and not perfmon_test:
+        pytest.skip("running with --perfmon-only")

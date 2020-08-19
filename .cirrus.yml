@@ -25,12 +25,21 @@ lint_task:
 linux_task:
   auto_cancellation: true
 
-  env:
-    matrix:
+  
+  matrix:
+    env:
       PY_VER: "3.6"
+      PYTEST_FLAGS: ""
+    env:
       PY_VER: "3.7"
+      PYTEST_FLAGS: ""
+    env:
       PY_VER: "3.8"
-
+      PYTEST_FLAGS: ""
+    env:
+      PY_VER: "3.8"
+      PYTEST_FLAGS: --perfmon-only
+  
   name: linux ${PY_VER}
 
   container:
@@ -78,14 +87,13 @@ linux_task:
     - python -c "import napari; print(napari.__version__)"
 
   test_pyside2_with_coverage_script:
-    - pytest -v --cov-report=xml --cov=./napari
+    - pytest napari -v $PYTEST_FLAGS --cov-report=xml --cov=./napari
     - codecov
 
   test_pyqt5_script:
     - python -m pip uninstall -y pyside2
     - python -m pip install -e .[pyqt5]
-    - pytest -v
-
+    - pytest napari -v $PYTEST_FLAGS
 
 mac_task:
   auto_cancellation: true
