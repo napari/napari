@@ -5,6 +5,13 @@ To enable perfmon define the env var NAPARI_PERFMON to be non-zero.
 The perfmon module lets you instrument your code and visualize its run-time
 behavior and timings in Chrome's Tracing GUI.
 
+Chrome has a nice built-in performance tool called chrome://tracing. Chrome
+can record traces of web applications. But the format is well-documented and
+anyone can create the files and use the nice GUI. And other programs accept
+the format including:
+1) https://www.speedscope.app/ which does flamegraphs (Chrome doesn't).
+2) Qt Creator's performance tools.
+
 The best way to add perf_timers is using the perfmon config file. You can
 list which methods or functions you want to time, and a perf_timer will be
 monkey-patched into each callable on startup. The monkey patching

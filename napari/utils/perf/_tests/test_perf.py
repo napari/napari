@@ -6,7 +6,8 @@ from tempfile import NamedTemporaryFile
 
 import numpy as np
 import pytest
-from utils.perf import timers
+
+from .. import timers
 
 
 @contextmanager
@@ -26,10 +27,6 @@ def temporary_file(suffix=''):
 
 def _trace_file_okay(trace_path: str) -> bool:
     """For now okay just means valid JSON and not empty."""
-    with open(trace_path) as infile:
-        print(infile.readlines())
-        data = json.load(infile)
-        return data.keys() > 1
 
 
 @pytest.mark.perfmon
@@ -45,6 +42,14 @@ def test_trace_on_start(make_test_viewer):
 
         timers.stop_trace_file()
 
+        # Make sure file exists and is not empty.
         assert Path(trace_path).exists(), "Trace file not written"
         assert Path(trace_path).stat().st_size > 0, "Trace file is empty"
-        assert _trace_file_okay(trace_path)
+
+        # Assert every event contains every important field.
+        with open(trace_path) as infile:
+            data = json.load(infile)
+            assert len(data) > 0
+            for event in data:
+                for field in ['pid', 'tid', 'name', 'ph', 'ts', 'args']:
+                    assert field in event

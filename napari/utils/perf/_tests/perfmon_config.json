@@ -1,4 +1,0 @@
-{
-    "trace_qt_events": true,
-    "trace_file_on_start": "/tmp/trace.json"
-}
