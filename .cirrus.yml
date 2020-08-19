@@ -38,7 +38,7 @@ linux_task:
       PYTEST_FLAGS: ""
     env:
       PY_VER: "3.8"
-      NAPARI_PERFMON: "napari/utils/perf/_tests/perfmon_config.json"
+      NAPARI_PERFMON: "1"
       PYTEST_FLAGS: --perfmon-only
   
   name: linux ${PY_VER}

@@ -6,6 +6,7 @@ from tempfile import NamedTemporaryFile
 
 import numpy as np
 import pytest
+from utils.perf import timers
 
 
 @contextmanager
@@ -33,14 +34,17 @@ def _trace_file_okay(trace_path: str) -> bool:
 
 @pytest.mark.perfmon
 def test_trace_on_start(make_test_viewer):
-    """Make sure napari creates a trace file when perfmon is enabled."""
-    viewer = make_test_viewer()
-    data = np.random.random((10, 15))
-    viewer.add_image(data)
-    viewer.close()
+    """Make sure napari can write a perfmon trace file."""
+    with temporary_file('json') as trace_path:
+        timers.start_trace_file(trace_path)
 
-    # From napari/utils/perfmon/_tests/config.json.
-    trace_path = "/tmp/trace.json"
+        viewer = make_test_viewer()
+        data = np.random.random((10, 15))
+        viewer.add_image(data)
+        viewer.close()
 
-    assert Path(trace_path).stat().st_size > 0, "Trace file is empty"
-    assert _trace_file_okay(trace_path)
+        timers.stop_trace_file()
+
+        assert Path(trace_path).exists(), "Trace file not written"
+        assert Path(trace_path).stat().st_size > 0, "Trace file is empty"
+        assert _trace_file_okay(trace_path)
