@@ -1370,8 +1370,10 @@ class Shapes(Layer):
 
         self.events.mode(mode=mode)
         if not (mode in draw_modes and old_mode in draw_modes):
+            # Shapes._finish_drawing() calls Shapes.refresh()
             self._finish_drawing()
-        self.refresh()
+        else:
+            self.refresh()
 
     def _set_editable(self, editable=None):
         """Set editable mode based on layer properties."""
