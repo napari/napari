@@ -50,6 +50,9 @@ def pytest_addoption(parser):
     -----
     Due to the placement of this conftest.py file, you must specifically name
     the napair folder such as "pytest napari --show-viewer"
+
+    For --perfmon-only must also enable perfmon with env var:
+    NAPARI_PERFMON=1 pytest napari --perfmon-only
     """
     parser.addoption(
         "--show-viewer",
