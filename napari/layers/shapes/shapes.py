@@ -1369,11 +1369,20 @@ class Shapes(Layer):
         ]
 
         self.events.mode(mode=mode)
-        if not (mode in draw_modes and old_mode in draw_modes):
-            # Shapes._finish_drawing() calls Shapes.refresh()
-            self._finish_drawing()
+        # only update the thumbnail if there are < 100 shapes
+        if len(self.data) > 100:
+            with self.block_thumbnail_update():
+                if not (mode in draw_modes and old_mode in draw_modes):
+                    # Shapes._finish_drawing() calls Shapes.refresh()
+                    self._finish_drawing()
+                else:
+                    self.refresh()
         else:
-            self.refresh()
+            if not (mode in draw_modes and old_mode in draw_modes):
+                # Shapes._finish_drawing() calls Shapes.refresh()
+                self._finish_drawing()
+            else:
+                self.refresh()
 
     def _set_editable(self, editable=None):
         """Set editable mode based on layer properties."""
