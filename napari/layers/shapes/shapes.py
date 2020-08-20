@@ -55,6 +55,10 @@ from ._shapes_utils import create_box, get_shape_ndim
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
+# If there are more than this number of shapes, the thumnail won't update during
+# interactive events
+INTERACTIVE_THUMBNAIL_UPDATE_THRESHOLD = 100
+
 
 class Shapes(Layer):
     """Shapes layer.
@@ -265,6 +269,9 @@ class Shapes(Layer):
         coordinates.
     _input_ndim : int
         Dimensions of shape data.
+    _thumbnail_update_thresh : int
+        If there are more than this number of shapes, the thumnail
+        won't update during interactive events
     """
 
     _colors = get_color_names()
@@ -331,6 +338,10 @@ class Shapes(Layer):
             current_properties=Event,
             highlight=Event,
         )
+
+        # If there are more than this number of shapes, the thumnail won't update during
+        # interactive events
+        self._thumbnail_update_thresh = INTERACTIVE_THUMBNAIL_UPDATE_THRESHOLD
 
         self._display_order_stored = []
         self._ndisplay_stored = self.dims.ndisplay
@@ -1370,7 +1381,7 @@ class Shapes(Layer):
 
         self.events.mode(mode=mode)
         # only update the thumbnail if there are < 100 shapes
-        if len(self.data) > 100:
+        if len(self.data) > self._thumbnail_update_thresh:
             with self.block_thumbnail_update():
                 if not (mode in draw_modes and old_mode in draw_modes):
                     # Shapes._finish_drawing() calls Shapes.refresh()

@@ -35,12 +35,17 @@ def select(layer, event):
         else:
             layer.selected_data = set()
     layer._set_highlight()
+    if len(layer.data) > layer._thumbnail_update_thresh:
+        update_thumbnail = False
+    else:
+        update_thumbnail = True
     yield
 
     # on move
     while event.type == 'mouse_move':
         # Drag any selected shapes
         layer._move(layer.displayed_coordinates)
+        update_thumbnail = True
         yield
 
     # on release
@@ -60,7 +65,9 @@ def select(layer, event):
     layer._fixed_vertex = None
     layer._moving_value = (None, None)
     layer._set_highlight()
-    layer._update_thumbnail()
+
+    if update_thumbnail:
+        layer._update_thumbnail()
 
 
 def add_line(layer, event):

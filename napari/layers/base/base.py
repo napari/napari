@@ -641,6 +641,7 @@ class Layer(KeymapProvider, ABC):
 
     @contextmanager
     def block_thumbnail_update(self):
+        """Use this context manager to block thumbnail updates"""
         self._allow_thumbnail_update = False
         yield
         self._allow_thumbnail_update = True
