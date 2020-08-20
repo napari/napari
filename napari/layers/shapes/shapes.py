@@ -1554,17 +1554,18 @@ class Shapes(Layer):
                 face_color, attribute='face', n_shapes=n_shapes
             )
 
-        self._add_shapes(
-            data,
-            shape_type=shape_type,
-            edge_width=edge_width,
-            edge_color=edge_color,
-            face_color=face_color,
-            z_index=z_index,
-            reindex_z=False,
-        )
-        self._data_view._update_z_order()
-        self.refresh_colors()
+        with self.block_thumbnail_update():
+            self._add_shapes(
+                data,
+                shape_type=shape_type,
+                edge_width=edge_width,
+                edge_color=edge_color,
+                face_color=face_color,
+                z_index=z_index,
+                reindex_z=False,
+            )
+            self._data_view._update_z_order()
+            self.refresh_colors()
 
     def _add_shapes(
         self,
@@ -1974,7 +1975,7 @@ class Shapes(Layer):
         """Update thumbnail with current shapes and colors."""
 
         # don't update the thumbnail if dragging a shape
-        if self._is_moving is False:
+        if self._is_moving is False and self._allow_thumbnail_update is True:
             # calculate min vals for the vertices and pad with 0.5
             # the offset is needed to ensure that the top left corner of the shapes
             # corresponds to the top left corner of the thumbnail
