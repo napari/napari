@@ -2,6 +2,7 @@
 """
 from typing import Dict
 
+from ...layers.base.base import Layer
 from ...types import ArrayLike
 from ._request import ChunkKey, ChunkRequest
 
@@ -10,11 +11,20 @@ class ChunkLoader:
     """Stub for future ChunkLoader that can do async loads."""
 
     def create_request(
-        self, layer, key: ChunkKey, chunks: Dict[str, ArrayLike]
+        self, layer: Layer, key: ChunkKey, chunks: Dict[str, ArrayLike]
     ) -> ChunkRequest:
         """Create a ChunkRequest for submission to load_chunk.
 
         This is a stub and will make more sense in the next version.
+
+        Parameters
+        ----------
+        layer : Layer
+            We are loading a chunk for this layer.
+        key : ChunkKey
+            This should identify the chunk uniquely.
+        chunks : Dict[str, ArrayLike]
+            The arrays we should load.
         """
         # Return the new request.
         return ChunkRequest(key, chunks)
@@ -25,12 +35,12 @@ class ChunkLoader:
         Parameters
         ----------
         request : ChunkRequest
-            Contains the array to load from and related info.
+            The request that contains the arrays we need to load.
 
         Returns
         -------
         ChunkRequest
-            The loaded request.
+            The request which contains the loaded arrays.
         """
 
         request.load_chunks()
