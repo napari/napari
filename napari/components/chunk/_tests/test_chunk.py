@@ -73,14 +73,14 @@ def test_loader():
     request = chunk_loader.load_chunk(request)
 
     # Data should only match data not data2.
-    assert np.all(data[:] == request.image.data[:])
-    assert not np.all(data2[:] == request.image.data[:])
+    assert np.all(data == request.image.data)
+    assert not np.all(data2 == request.image.data)
 
     # request.image is just short-hand for request.chunks['image']
     assert np.all(request.image.data == request.chunks['image'].data)
 
     # Since we didn't ask for a thumbnail_source it should be the image.
-    assert np.all(request.thumbnail_source.data[:] == request.image.data[:])
+    assert np.all(request.thumbnail_source.data == request.image.data)
 
     # KeyError for chunks that do not exist.
     with pytest.raises(KeyError):
