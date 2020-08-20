@@ -1,16 +1,23 @@
 """Tests for components.chunk."""
 
 import numpy as np
+import pytest
 
 from ....layers.image import Image
-from .. import ChunkKey
+from .. import ChunkKey, chunk_loader
+
+
+def _create_layer() -> Image:
+    """Return a random Image layer."""
+    data = np.random.random((16, 16))
+    return Image(data)
 
 
 def test_chunk_key():
+    """Test the ChunkKey class."""
 
-    data = np.random.random((512, 512))
-    layer1 = Image(data)
-    layer2 = Image(data)
+    layer1 = _create_layer()
+    layer2 = _create_layer()
 
     key1 = ChunkKey(layer1, (0, 0))
     key2 = ChunkKey(layer1, (0, 0))
@@ -34,3 +41,23 @@ def test_chunk_key():
     assert key2 != key5
     assert key3 != key5
     assert key4 == key5
+
+
+def test_loader():
+    """Test ChunkRequest and the ChunkLoader."""
+    layer = _create_layer()
+    key = ChunkKey(layer, (0, 0))
+    data = np.random.random((64, 64))
+
+    data2 = data * 2
+
+    request = chunk_loader.create_request(layer, key, {'image': data})
+
+    request = chunk_loader.load_chunk(request)
+    assert np.all(data[:] == request.image.data[:])
+    assert not np.all(data2[:] == request.image.data[:])
+
+    assert np.all(request.image.data == request.chunks['image'].data)
+
+    with pytest.raises(KeyError):
+        request.chunks['this_array_does_not_exist']
