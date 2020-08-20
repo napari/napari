@@ -513,7 +513,16 @@ class Window:
 
     def close(self):
         """Close the viewer window and cleanup sub-widgets."""
-        # on some versions of Darwin, exiting while fullscreen seems to tickle
+
+        # Someone is closing us twice? Only try to delete self._qt_window
+        # if we still have one.
+        if hasattr(self, '_qt_window'):
+            self.delete_qt_window()
+
+    def delete_qt_window(self):
+        """Delete our self._qt_window."""
+
+        # On some versions of Darwin, exiting while fullscreen seems to tickle
         # some bug deep in NSWindow.  This forces the fullscreen keybinding
         # test to complete its draw cycle, then pop back out of fullscreen.
         if self._qt_window.isFullScreen():
