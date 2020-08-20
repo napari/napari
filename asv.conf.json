@@ -14,7 +14,7 @@
     "repo": ".",
 
     // Install using default qt install
-    "install_command": ["in-dir={env_dir} python -mpip install {conf_dir}[all]"],
+    "install_command": ["in-dir={env_dir} python -m pip install {conf_dir}[all]"],
 
     // List of branches to benchmark
     "branches": ["master"],
