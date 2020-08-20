@@ -8,6 +8,7 @@ def _converter(array):
 
 
 def test_image_slice():
+    """Test ImageSlice and ImageView."""
     image1 = np.random.random((32, 16))
     image2 = np.random.random((32, 16))
 
