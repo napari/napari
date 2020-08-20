@@ -517,9 +517,9 @@ class Window:
         # Someone is closing us twice? Only try to delete self._qt_window
         # if we still have one.
         if hasattr(self, '_qt_window'):
-            self.delete_qt_window()
+            self._delete_qt_window()
 
-    def delete_qt_window(self):
+    def _delete_qt_window(self):
         """Delete our self._qt_window."""
 
         # On some versions of Darwin, exiting while fullscreen seems to tickle
