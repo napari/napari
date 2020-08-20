@@ -36,8 +36,8 @@ with napari.gui_qt():
                 dtype=image.dtype,
             ).reshape((1,) + image.shape)
             layer = viewer.add_image(dask_image, rendering='attenuated_mip')
-        if viewer.dims.point[0] >= layer.data.shape[0] - 1:
-            viewer.dims.set_point(0, layer.data.shape[0])
+        if viewer.dims.point[0] >= layer.data.shape[0] - 2:
+            viewer.dims.set_point(0, layer.data.shape[0] - 1)
 
     @thread_worker(connect={'yielded': append})
     def watch_path(path):
