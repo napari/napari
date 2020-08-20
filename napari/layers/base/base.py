@@ -249,11 +249,11 @@ class Layer(KeymapProvider, ABC):
         return self._name
 
     @property
-    def loaded(self):
-        """Has layer been fully loaded into memory.
+    def loaded(self) -> bool:
+        """Return True if this layer is fully loaded in memory.
 
-        By default layers are always loaded, but derived classes that load
-        data asynchronously can override this method to report load status.
+        This base class says that layers are permanently in the loaded state.
+        Derived classes that do asynchronous loading can override this.
         """
         return True
 

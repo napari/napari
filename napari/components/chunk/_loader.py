@@ -1,6 +1,4 @@
-"""Stub ChunkLoader for future async loading.
-
-Right now it's 100% synchronous only.
+"""Stub ChunkLoader: sync only so far.
 """
 from typing import Dict
 

@@ -9,22 +9,20 @@ from ...components.chunk import ChunkKey, ChunkRequest, chunk_loader
 from ...types import ArrayLike, ImageConverter
 from ._image_view import ImageView
 
-LOGGER = logging.getLogger('ChunkLoader')
+LOGGER = logging.getLogger("napari.async")
 
 
 class ImageSlice:
     """The slice of the image that we are currently viewing.
 
-    Holds the image and its thumbnail and has load_chunk() and chunk_loaded() methods.
-
     Parameters
     ----------
-    view_image : ArrayLike
+    image : ArrayLike
         The initial image used as the image and the thumbnail source.
     image_converter : ImageConverter
         ImageView uses this to convert from raw to viewable.
     rgb : bool
-        Is the image in RGB or RGBA format.
+        True if the image is RGB format. Otherwise its RGBA.
 
     Attributes
     ----------
@@ -34,7 +32,7 @@ class ImageSlice:
         The source image used to compute the smaller thumbnail image.
     rgb : bool
         Is the image in RGB or RGBA format.
-    current_key
+    current_key : Optional[ChunkKey]
         The ChunkKey we are currently showing or which is loading.
     loaded : bool
         Has the data for this slice been loaded yet.
@@ -42,13 +40,13 @@ class ImageSlice:
 
     def __init__(
         self,
-        view_image: ArrayLike,
+        image: ArrayLike,
         image_converter: ImageConverter,
         rgb: bool = False,
     ):
         LOGGER.info("ImageSlice.__init__")
-        self.image: ImageView = ImageView(view_image, image_converter)
-        self.thumbnail: ImageView = ImageView(view_image, image_converter)
+        self.image: ImageView = ImageView(image, image_converter)
+        self.thumbnail: ImageView = ImageView(image, image_converter)
         self.rgb = rgb
 
         # We're showing nothing to start.
@@ -58,7 +56,9 @@ class ImageSlice:
         # created and the data is actually loaded.
         self.loaded = False
 
-    def set_raw_images(self, image: ArrayLike, thumbnail: ArrayLike) -> None:
+    def set_raw_images(
+        self, image: ArrayLike, thumbnail_source: ArrayLike
+    ) -> None:
         """Set the image and its thumbnail.
 
         If floating point / grayscale then clip to [0..1].
@@ -68,13 +68,13 @@ class ImageSlice:
         image : ArrayLike
             Set this as the main image.
         thumbnail : ArrayLike
-            Set this as the thumbnail.
+            Derive the thumbnail from this image.
         """
         if self.rgb and image.dtype.kind == 'f':
             image = np.clip(image, 0, 1)
-            thumbnail = np.clip(thumbnail, 0, 1)
+            thumbnail_source = np.clip(thumbnail_source, 0, 1)
         self.image.raw = image
-        self.thumbnail.raw = thumbnail
+        self.thumbnail.raw = thumbnail_source
         self.loaded = True
 
     def load_chunk(self, request: ChunkRequest) -> Optional[ChunkRequest]:

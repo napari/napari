@@ -7,11 +7,12 @@ import numpy as np
 
 from ...types import ArrayLike, Dict
 
-LOGGER = logging.getLogger("ChunkLoader")
+LOGGER = logging.getLogger("napari.async")
 
 # We convert slices to tuple for hashing.
 SliceTuple = Tuple[int, int, int]
 
+# The type of Layer.data
 LayerData = Union[ArrayLike, List[ArrayLike]]
 
 
@@ -51,23 +52,19 @@ class ChunkRequest:
 
     Parameters
     ----------
-    layer_id : int
-        Python id() for the Layer requesting the chunk.
-    data_id : int
-        Python id() for the Layer._data requesting the chunk.
-    indices
-        The tuple of slices index into the data.
-    array : ArrayLike
-        Load the data from this array.
+    key : ChunkKey
+        The key of the request.
+    chunks : Dict[str, ArrayLike]
+        The chunk arrays we need to load.
 
     Attributes
     ----------
-    layer_ref : weakref
-        Reference to the layer that submitted the request.
-    data_id : int
-        Python id() of the data in the layer.
+    key : ChunkKey
+        The key of the request.
+    chunks : Dict[str, ArrayLike]
+        The chunk arrays we need to load.
     load_seconds : float
-        Delay for this long during the load portion.
+        Delay for this long during the load portion, for testing.
     """
 
     def __init__(self, key: ChunkKey, chunks: Dict[str, ArrayLike]):
@@ -115,7 +112,7 @@ class ChunkRequest:
             # For single-scale we use the image as the thumbnail_source.
             return self.chunks.get('image')
 
-    def is_compatible(self, layer) -> bool:
+    def is_compatible(self, layer: LayerData) -> bool:
         """Return True if the given data is compatible with this request.
 
         Parameters

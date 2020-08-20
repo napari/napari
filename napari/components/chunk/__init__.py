@@ -1,4 +1,4 @@
-"""Synchronous and Asynchronous Chunk Loading.
+"""Stub Async Loading: sync only so far.
 """
 import os
 
