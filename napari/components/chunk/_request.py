@@ -1,4 +1,4 @@
-"""ChunkRequest is used to ask the ChunkLoader to load chunks.
+"""ChunkRequest is passed to ChunkLoader.load_chunks().
 """
 import logging
 from typing import List, Tuple, Union
@@ -18,14 +18,25 @@ LayerData = Union[ArrayLike, List[ArrayLike]]
 
 
 class ChunkKey:
-    """The key which a ChunkRequest will load.
+    """The key for one single ChunkRequest.
 
     Parameters
     ----------
     layer : Layer
         The layer to load data for.
-    indices : ?
-        The indices to load from the layer
+    indices : Indices
+        The indices to load from the layer.
+
+    Attributes
+    ----------
+    layer_id : int
+        The id of the layer making the request.
+    data_level : int
+        The level in the data (for multi-scale).
+    indices : Indices
+        The indices of the slice.
+    key : Tuple
+        The combined key, all the identifies together.
     """
 
     def __init__(self, layer: Layer, indices):
@@ -69,7 +80,7 @@ class ChunkRequest:
     """
 
     def __init__(self, key: ChunkKey, chunks: Dict[str, ArrayLike]):
-        # Make sure chunks is str->array as expected.
+        # Make sure chunks dict is what we expect.
         for chunk_key, array in chunks.items():
             assert isinstance(chunk_key, str)
             assert array is not None
@@ -77,7 +88,7 @@ class ChunkRequest:
         self.key = key
         self.chunks = chunks
 
-        # No delay by default, ChunkLoader.load_chunk() will set this if desired.
+        # No delay by default.
         self.load_seconds = 0
 
     def load_chunks(self):
@@ -86,31 +97,30 @@ class ChunkRequest:
             loaded_array = np.asarray(array)
             self.chunks[key] = loaded_array
 
-    def transpose_chunks(self, order):
+    def transpose_chunks(self, order: tuple) -> None:
         """Transpose all our chunks.
 
         Parameters
         ----------
         order
-            Transpose the chunks with this order.
+            Transpose the chunks into this order.
         """
         for key, array in self.chunks.items():
             self.chunks[key] = array.transpose(order)
 
     @property
     def image(self):
-        """The image chunk if we have one or None.
-        """
+        """The image chunk if we have one or None."""
         return self.chunks.get('image')
 
     @property
     def thumbnail_source(self):
-        """The chunk to use as the thumbnail_source or None.
-        """
+        """The chunk to use as the thumbnail_source or None."""
         try:
             return self.chunks['thumbnail_source']
         except KeyError:
-            # For single-scale we use the image as the thumbnail_source.
+            # No thumbnail_source so return the image instead. For single-scale
+            # we use the image as the thumbnail_source.
             return self.chunks.get('image')
 
     def is_compatible(self, layer: LayerData) -> bool:
@@ -121,7 +131,7 @@ class ChunkRequest:
         data : LayerData
             Compare this data to the data_id in the request.
         """
-        return True  # stub for now
+        return True  # Stub for now, will grow in the next version.
 
 
 def _index_to_tuple(index: Union[int, slice]) -> Union[int, SliceTuple]:

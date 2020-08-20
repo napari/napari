@@ -21,6 +21,7 @@ class ChunkLoader:
         ----------
         layer : Layer
             We are loading a chunk for this layer.
+            Unused right now: will be used is next version.
         key : ChunkKey
             This should identify the chunk uniquely.
         chunks : Dict[str, ArrayLike]
@@ -43,9 +44,9 @@ class ChunkLoader:
             The request which contains the loaded arrays.
         """
 
-        request.load_chunks()
+        request.load_chunks()  # Load all chunks synchronously.
         return request
 
 
-# Global instance
+# Global Singleton instance
 chunk_loader = ChunkLoader()
