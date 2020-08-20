@@ -59,5 +59,8 @@ def test_loader():
 
     assert np.all(request.image.data == request.chunks['image'].data)
 
+    # Since we didn't ask for a thumbnail_source it should be the image.
+    assert np.all(request.thumbnail_source.data[:] == request.image.data[:])
+
     with pytest.raises(KeyError):
-        request.chunks['this_array_does_not_exist']
+        request.chunks['missing_chunk_name']
