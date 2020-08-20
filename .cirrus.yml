@@ -87,11 +87,11 @@ linux_task:
     - conda list
     - python -c "import napari; print(napari.__version__)"
 
-  test_pyside2_with_coverage_script:
-    only_if: $PYTEST_FLAGS == ""
-    script:
-      - pytest -v --cov-report=xml --cov=./napari
-      - codecov
+  test_pyside2_with_coverage_script: |
+    if [[ $PYFLAGS == "" ]]; then
+      pytest -v --cov-report=xml --cov=./napari
+      codecov
+    fi;
 
   test_pyqt5_script:
     - python -m pip uninstall -y pyside2
