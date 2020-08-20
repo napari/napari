@@ -628,12 +628,9 @@ class Image(IntensityVisualizationMixin, Layer):
         # Chunks get transposed after load.
         request.transpose_chunks(self._get_order())
 
-        # The main image chunk.
-        image = request.chunks['image']
-
         # The shape of the array after we loaded it was "wrong" in that it
         # didn't match the rgb flag that the user specified (or we inferred?).
-        if self.rgb != guess_rgb(image.shape):
+        if self.rgb != guess_rgb(request.image.shape):
             raise ValueError(
                 "Loaded chunk was the wrong shape, was rgb set correctly?"
             )
