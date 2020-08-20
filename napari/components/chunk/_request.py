@@ -82,24 +82,6 @@ class ChunkRequest:
         # No delay by default, ChunkLoader.load_chunk() will set this if desired.
         self.load_seconds = 0
 
-    @property
-    def num_chunks(self) -> int:
-        """Return the number of chunks in this request."""
-        return len(self.chunks)
-
-    @property
-    def num_bytes(self) -> int:
-        """Return the number of bytes that were loaded."""
-        return sum(array.nbytes for array in self.chunks.values())
-
-    @property
-    def in_memory(self) -> bool:
-        """True if all chunks are ndarrays."""
-        for array in self.chunks.values():
-            if not isinstance(array, np.ndarray):
-                return False
-        return True
-
     def load_chunks(self):
         """Load all of our chunks now in this thread."""
         for key, array in self.chunks.items():
