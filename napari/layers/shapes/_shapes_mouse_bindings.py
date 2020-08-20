@@ -58,6 +58,8 @@ def select(layer, event):
     elif layer._is_selecting:
         layer.selected_data = layer._data_view.shapes_in_box(layer._drag_box)
         layer._is_selecting = False
+        if len(layer.data) > layer._thumbnail_update_thresh:
+            update_thumbnail = False
         layer._set_highlight()
     layer._is_moving = False
     layer._drag_start = None
