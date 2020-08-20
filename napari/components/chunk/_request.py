@@ -1,7 +1,7 @@
 """ChunkRequest is passed to ChunkLoader.load_chunks().
 """
 import logging
-from typing import List, Tuple, Union
+from typing import Tuple, Union
 
 import numpy as np
 
@@ -12,9 +12,6 @@ LOGGER = logging.getLogger("napari.async")
 
 # We convert slices to tuple for hashing.
 SliceTuple = Tuple[int, int, int]
-
-# The type of Layer.data
-LayerData = Union[ArrayLike, List[ArrayLike]]
 
 
 class ChunkKey:
@@ -123,12 +120,12 @@ class ChunkRequest:
             # we use the image as the thumbnail_source.
             return self.chunks.get('image')
 
-    def is_compatible(self, layer: LayerData) -> bool:
+    def is_compatible(self, layer: Layer) -> bool:
         """Return True if the given data is compatible with this request.
 
         Parameters
         ----------
-        data : LayerData
+        layer : Layer
             Compare this data to the data_id in the request.
         """
         return True  # Stub for now, will grow in the next version.

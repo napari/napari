@@ -9,7 +9,7 @@ from .. import ChunkKey, chunk_loader
 
 def _create_layer() -> Image:
     """Return a small random Image layer."""
-    data = np.random.random((16, 16))
+    data = np.random.random((32, 16))
     return Image(data)
 
 
@@ -53,8 +53,11 @@ def test_loader():
     layer = _create_layer()
     key = ChunkKey(layer, (0, 0))
 
+    shape = (64, 32)
+    transpose_shape = (32, 64)
+
     # Just load one array.
-    data = np.random.random((64, 64))
+    data = np.random.random(shape)
     chunks = {'image': data}
 
     # Give data2 different data.
@@ -62,6 +65,9 @@ def test_loader():
 
     # Create the ChunkRequest.
     request = chunk_loader.create_request(layer, key, chunks)
+
+    # Should be compatible with the layer we made it from!
+    assert request.is_compatible(layer)
 
     # Load the ChunkRequest.
     request = chunk_loader.load_chunk(request)
@@ -79,3 +85,7 @@ def test_loader():
     # KeyError for chunks that do not exist.
     with pytest.raises(KeyError):
         request.chunks['missing_chunk_name']
+
+    # Test transpose_chunks()
+    request.transpose_chunks((1, 0))
+    assert request.image.shape == transpose_shape
