@@ -5,6 +5,7 @@ from typing import List, Tuple, Union
 
 import numpy as np
 
+from ...layers.base.base import Layer
 from ...types import ArrayLike, Dict
 
 LOGGER = logging.getLogger("napari.async")
@@ -27,7 +28,7 @@ class ChunkKey:
         The indices to load from the layer
     """
 
-    def __init__(self, layer, indices):
+    def __init__(self, layer: Layer, indices):
         self.layer_id = id(layer)
         self.data_level = layer._data_level
 
