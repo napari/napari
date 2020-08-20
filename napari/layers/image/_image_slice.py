@@ -44,7 +44,7 @@ class ImageSlice:
         image_converter: ImageConverter,
         rgb: bool = False,
     ):
-        LOGGER.info("ImageSlice.__init__")
+        LOGGER.debug("ImageSlice.__init__")
         self.image: ImageView = ImageView(image, image_converter)
         self.thumbnail: ImageView = ImageView(image, image_converter)
         self.rgb = rgb
@@ -85,7 +85,7 @@ class ImageSlice:
         request : ChunkRequest
             Load this chunk sync or async.
         """
-        LOGGER.info("ImageSlice.load_chunk: %s", request.key)
+        LOGGER.debug("ImageSlice.load_chunk: %s", request.key)
 
         # Now "showing" this slice, even if it hasn't loaded yet.
         self.current_key = request.key
@@ -115,10 +115,10 @@ class ImageSlice:
             # Probably we are scrolling through slices and we are no longer
             # showing this slice, so drop it. It should have been added
             # to the cache so the load was not totally wasted.
-            LOGGER.info("ImageSlice.chunk_loaded: reject %s", request.key)
+            LOGGER.debug("ImageSlice.chunk_loaded: reject %s", request.key)
             return False
 
-        LOGGER.info("ImageSlice.chunk_loaded: accept %s", request.key)
+        LOGGER.debug("ImageSlice.chunk_loaded: accept %s", request.key)
 
         # Display the newly loaded data.
         self.set_raw_images(request.image, request.thumbnail_source)
