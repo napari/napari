@@ -21,3 +21,12 @@ def test_image_slice():
     image_slice.image.raw = image2
     assert id(image_slice.image.raw) == id(image2)
     assert np.all(image_slice.image.view == image2 * 2)
+
+    # Test ImageSlice.set_raw_images().
+    image3 = np.random.random((32, 16))
+    image4 = np.random.random((32, 16))
+    image_slice.set_raw_images(image3, image4)
+    assert id(image_slice.image.raw) == id(image3)
+    assert id(image_slice.thumbnail.raw) == id(image4)
+    assert np.all(image_slice.image.view == image3 * 2)
+    assert np.all(image_slice.thumbnail.view == image4 * 2)
