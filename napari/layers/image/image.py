@@ -20,7 +20,7 @@ from ._image_utils import guess_multiscale, guess_rgb
 
 # Mixin must come before Layer
 class Image(IntensityVisualizationMixin, Layer):
-    """Image layer with async loading.
+    """Image layer.
 
     Parameters
     ----------
