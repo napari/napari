@@ -1,7 +1,7 @@
 """ChunkRequest is passed to ChunkLoader.load_chunks().
 """
 import logging
-from typing import Tuple, Union
+from typing import Optional, Tuple, Union
 
 import numpy as np
 
@@ -30,13 +30,13 @@ class ChunkKey:
         The id of the layer making the request.
     data_level : int
         The level in the data (for multi-scale).
-    indices : Indices
+    indices : Tuple[Optional[slice], ...]
         The indices of the slice.
     key : Tuple
         The combined key, all the identifies together.
     """
 
-    def __init__(self, layer: Layer, indices):
+    def __init__(self, layer: Layer, indices: Tuple[Optional[slice], ...]):
         self.layer_id = id(layer)
         self.data_level = layer._data_level
 
