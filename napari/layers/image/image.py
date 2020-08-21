@@ -620,11 +620,6 @@ class Image(IntensityVisualizationMixin, Layer):
         sync : bool
             If True the chunk was loaded synchronously.
         """
-        # Confirm this chunk is for us. We shouldn't be receiving any chunks
-        # that are not for us, but this takes no time so lets be sure.
-        if not request.is_compatible(self):
-            return  # Request was not for us, drop it.
-
         # Chunks get transposed after load.
         request.transpose_chunks(self._get_order())
 

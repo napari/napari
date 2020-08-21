@@ -11,7 +11,7 @@ from ...types import ArrayLike, Dict
 LOGGER = logging.getLogger("napari.async")
 
 # We convert slices to tuple for hashing.
-SliceTuple = Tuple[int, int, int]
+SliceTuple = Tuple[Optional[int], Optional[int], Optional[int]]
 
 
 class ChunkKey:
@@ -33,7 +33,7 @@ class ChunkKey:
     indices : Tuple[Optional[slice], ...]
         The indices of the slice.
     key : Tuple
-        The combined key, all the identifies together.
+        The combined key, all the identifiers together.
     """
 
     def __init__(self, layer: Layer, indices: Tuple[Optional[slice], ...]):
@@ -119,16 +119,6 @@ class ChunkRequest:
             # No thumbnail_source so return the image instead. For single-scale
             # we use the image as the thumbnail_source.
             return self.chunks.get('image')
-
-    def is_compatible(self, layer: Layer) -> bool:
-        """Return True if the given data is compatible with this request.
-
-        Parameters
-        ----------
-        layer : Layer
-            Compare this data to the data_id in the request.
-        """
-        return True  # Stub for now, will grow in the next version.
 
 
 def _index_to_tuple(index: Union[int, slice]) -> Union[int, SliceTuple]:

@@ -91,8 +91,8 @@ class ImageSlice:
         self.current_key = request.key
         self.loaded = False
 
-        # This will return a satisfied request in ChunkLoader is doing
-        # syncrhonous loading or the chunk was in the cache. If it returns
+        # This will return a satisfied request if ChunkLoader is doing
+        # synchronous loading or the chunk was in the cache. If it returns
         # None that means a request was queued and it will be loaded in a
         # worker thread or process.
         return chunk_loader.load_chunk(request)
