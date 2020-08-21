@@ -2,6 +2,7 @@
 Custom Qt widgets that serve as native objects that the public-facing elements
 wrap.
 """
+import os.path
 import time
 
 from qtpy.QtCore import Qt
@@ -14,6 +15,7 @@ from qtpy.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QMainWindow,
+    QMessageBox,
     QShortcut,
     QStatusBar,
     QWidget,
@@ -474,12 +476,14 @@ class Window:
         """
         self._help.setText(event.text)
 
-    def _screenshot_dialog(self):
+    def _screenshot_dialog(self, *, default_name=""):
         """Save screenshot of current display with viewer, default .png"""
         filename, _ = QFileDialog.getSaveFileName(
             parent=self.qt_viewer,
             caption='Save screenshot with viewer',
-            directory=self.qt_viewer._last_visited_dir,  # home dir by default
+            directory=os.path.join(
+                self.qt_viewer._last_visited_dir, default_name
+            ),  # home dir by default
             filter="Image files (*.png *.bmp *.gif *.tif *.tiff)",  # first one used by default
             # jpg and jpeg not included as they don't support an alpha channel
         )
@@ -487,8 +491,23 @@ class Window:
             # double check that an appropriate extension has been added as the
             # filter option does not always add an extension on linux and windows
             # see https://bugreports.qt.io/browse/QTBUG-27186
+            self.qt_viewer._last_visited_dir = os.path.dirname(filename)
             image_extensions = ('.bmp', '.gif', '.png', '.tif', '.tiff')
             if not filename.endswith(image_extensions):
+                if (
+                    QMessageBox.warning(
+                        self,
+                        "File already exist",
+                        "File already exist. Overwrite?",
+                        QMessageBox.Yes | QMessageBox.No,
+                        QMessageBox.No,
+                    )
+                    == QMessageBox.No
+                ):
+                    self._screenshot_dialog(
+                        default_name=os.path.basename(filename)
+                    )
+                    return
                 filename = filename + '.png'
             self.screenshot(path=filename)
 

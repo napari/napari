@@ -1,3 +1,4 @@
+import os.path
 from pathlib import Path
 
 from qtpy.QtCore import QCoreApplication, QSize, Qt
@@ -367,12 +368,14 @@ class QtViewer(QSplitter):
             imsave(path, QImg2array(img))  # scikit-image imsave method
         return QImg2array(img)
 
-    def _screenshot_dialog(self):
+    def _screenshot_dialog(self, *, default_name=""):
         """Save screenshot of current display, default .png"""
         filename, _ = QFileDialog.getSaveFileName(
             parent=self,
             caption='Save screenshot',
-            directory=self._last_visited_dir,  # home dir by default
+            directory=os.path.join(
+                self._last_visited_dir, default_name
+            ),  # home dir by default
             filter="Image files (*.png *.bmp *.gif *.tif *.tiff)",  # first one used by default
             # jpg and jpeg not included as they don't support an alpha channel
         )
@@ -380,8 +383,23 @@ class QtViewer(QSplitter):
             # double check that an appropriate extension has been added as the
             # filter option does not always add an extension on linux and windows
             # see https://bugreports.qt.io/browse/QTBUG-27186
+            self._last_visited_dir = os.path.dirname(filename)
             image_extensions = ('.bmp', '.gif', '.png', '.tif', '.tiff')
             if not filename.endswith(image_extensions):
+                if (
+                    QMessageBox.warning(
+                        self,
+                        "File already exist",
+                        "File already exist. Overwrite?",
+                        QMessageBox.Yes | QMessageBox.No,
+                        QMessageBox.No,
+                    )
+                    == QMessageBox.No
+                ):
+                    self._screenshot_dialog(
+                        default_name=os.path.basename(filename)
+                    )
+                    return
                 filename = filename + '.png'
             self.screenshot(path=filename)
 
