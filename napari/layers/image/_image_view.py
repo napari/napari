@@ -1,6 +1,6 @@
 """ImageView class.
 """
-from ...types import ArrayLike, ImageConverter
+from ...types import ArrayLike, Callable
 
 
 class ImageView:
@@ -15,7 +15,7 @@ class ImageView:
     ----------
     view_image : ArrayLike
         Default viewable image, raw is set to the same thing.
-    image_converter : ImageConverter
+    image_converter : Callable[[ArrayLike], ArrayLike]
         Used to convert images from raw to viewable.
 
     Attributes
@@ -27,7 +27,11 @@ class ImageView:
         Converts from raw to viewable.
     """
 
-    def __init__(self, view_image: ArrayLike, image_converter: ImageConverter):
+    def __init__(
+        self,
+        view_image: ArrayLike,
+        image_converter: Callable[[ArrayLike], ArrayLike],
+    ):
         """Create an ImageView with some default image.
         """
         self.view = view_image

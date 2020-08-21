@@ -1,12 +1,12 @@
 """ImageSlice class.
 """
 import logging
-from typing import Optional
+from typing import Callable, Optional
 
 import numpy as np
 
 from ...components.chunk import ChunkKey, ChunkRequest, chunk_loader
-from ...types import ArrayLike, ImageConverter
+from ...types import ArrayLike
 from ._image_view import ImageView
 
 LOGGER = logging.getLogger("napari.async")
@@ -19,7 +19,7 @@ class ImageSlice:
     ----------
     image : ArrayLike
         The initial image used as the image and the thumbnail source.
-    image_converter : ImageConverter
+    image_converter : Callable[[ArrayLike], ArrayLike]
         ImageView uses this to convert from raw to viewable.
     rgb : bool
         True if the image is RGB format. Otherwise its RGBA.
@@ -41,7 +41,7 @@ class ImageSlice:
     def __init__(
         self,
         image: ArrayLike,
-        image_converter: ImageConverter,
+        image_converter: Callable[[ArrayLike], ArrayLike],
         rgb: bool = False,
     ):
         LOGGER.debug("ImageSlice.__init__")
