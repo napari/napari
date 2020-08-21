@@ -97,7 +97,7 @@ class ImageSlice:
         # worker thread or process.
         return chunk_loader.load_chunk(request)
 
-    def chunk_loaded(self, request: ChunkRequest) -> bool:
+    def on_chunk_loaded(self, request: ChunkRequest) -> bool:
         """Chunk was loaded, show this new data.
 
         Parameters

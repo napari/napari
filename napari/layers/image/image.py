@@ -580,9 +580,9 @@ class Image(IntensityVisualizationMixin, Layer):
         2) We are in synchronous mode, or
         3) The arrays were found in the ChunkCache.
 
-        If the load is synchronous we immediately call our chunk_loaded()
+        If the load is synchronous we immediately call our on_chunk_loaded()
         method so that we use the new data right away. If the load is
-        asynchronous then sometime later our chunk_loaded() method will be
+        asynchronous then sometime later our on_chunk_loaded() method will be
         called with the loaded data.
         """
         # We always load the image.
@@ -604,9 +604,11 @@ class Image(IntensityVisualizationMixin, Layer):
             self.events.loaded()
         else:
             # The load was sync, it's done, so use the chunk now.
-            self.chunk_loaded(satisfied_request, sync=True)
+            self.on_chunk_loaded(satisfied_request, sync=True)
 
-    def chunk_loaded(self, request: ChunkRequest, sync: bool = False) -> None:
+    def on_chunk_loaded(
+        self, request: ChunkRequest, sync: bool = False
+    ) -> None:
         """The given ChunkRequest was satisfied, we can use the data now.
 
         This routine is called synchronously from _load_async() above, or
@@ -631,7 +633,7 @@ class Image(IntensityVisualizationMixin, Layer):
             )
 
         # Pass the loaded data to the slice.
-        if not self._slice.chunk_loaded(request):
+        if not self._slice.on_chunk_loaded(request):
             # Slice rejected it, was it for the wrong indices?
             return
 
