@@ -5,7 +5,7 @@ import numpy as np
 from scipy import ndimage as ndi
 
 from ...utils.colormaps import colormaps
-from ...utils.event import Event
+from ...utils.events import Event
 from ...utils.status_messages import format_float
 from ..image import Image
 from ..utils.color_transformations import transform_color

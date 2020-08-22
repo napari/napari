@@ -3,7 +3,7 @@ import warnings
 import numpy as np
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS
-from ...utils.event import Event
+from ...utils.events import Event
 from ..base import Layer
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range

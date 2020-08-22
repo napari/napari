@@ -6,7 +6,7 @@ import numpy as np
 
 from ...types import ValidColormapArg
 from ...utils.colormaps import Colormap, ensure_colormap
-from ...utils.event import Event
+from ...utils.events import Event
 from ...utils.status_messages import format_float
 from ..base import Layer
 from ..utils.color_transformations import (
