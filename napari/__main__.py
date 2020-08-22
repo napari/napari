@@ -10,6 +10,7 @@ import sys
 import warnings
 from ast import literal_eval
 from distutils.version import StrictVersion
+from pathlib import Path
 from textwrap import wrap
 from typing import Any, Dict, List
 
@@ -191,31 +192,20 @@ def _run():
             )
 
 
-def _run_pythonw():
+def _run_pythonw(python_path):
     """Execute this script again through pythonw.
 
-    This ensures we're using a framework build of Python on macOS.
+    This can be used to ensures we're using a framework
+    build of Python on macOS which fixes menubar issues.
+
+    Parameters
+    ----------
+    python_path : pathlib.Path
+        Path to python framework build.
     """
-    import pathlib
     import subprocess
 
-    cwd = pathlib.Path.cwd()
-    python_path = pathlib.Path(sys.exec_prefix) / 'bin' / 'pythonw'
-
-    if not python_path.exists():
-        msg = (
-            'pythonw executable not found. '
-            'The menubar might only become '
-            'functional on the macOS after '
-            'focus is toggled in and out of '
-            'napari. To fix this problem, '
-            'please install python.app via conda, '
-            'which can be done with '
-            '`conda install -c conda-forge python.app`.'
-        )
-        raise warnings.warn(msg)
-        _run()
-
+    cwd = Path.cwd()
     cmd = [python_path, '-m', 'napari']
     env = os.environ.copy()
 
@@ -241,9 +231,25 @@ def main():
     _RUNNING_PYTHONW = "PYTHONEXECUTABLE" in os.environ
 
     if _MACOS_LATEST and _RUNNING_CONDA and not _RUNNING_PYTHONW:
-        _run_pythonw()
-    else:
-        _run()
+        python_path = Path(sys.exec_prefix) / 'bin' / 'pythonw'
+
+        if python_path.exists():
+            # Running again with pythonw will exit this script
+            # and use the framework build of python.
+            _run_pythonw(python_path)
+        else:
+            msg = (
+                'pythonw executable not found. '
+                'The menubar might only become '
+                'functional on the macOS after '
+                'focus is toggled in and out of '
+                'napari. To fix this problem, '
+                'please install python.app via conda, '
+                'which can be done with '
+                '`conda install -c conda-forge python.app`.'
+            )
+            raise warnings.warn(msg)
+    _run()
 
 
 if __name__ == '__main__':
