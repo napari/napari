@@ -34,9 +34,6 @@ ExcInfo = Union[
     Tuple[None, None, None],
 ]
 
-# Converts a raw image to a displayable one.
-ImageConverter = Callable[[ArrayLike], ArrayLike]
-
 
 def image_reader_to_layerdata_reader(
     func: Callable[[PathLike], ArrayLike]

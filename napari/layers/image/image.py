@@ -1,9 +1,12 @@
+"""Image class.
+"""
 import types
 import warnings
 
 import numpy as np
 from scipy import ndimage as ndi
 
+from ...components.chunk import ChunkKey, ChunkRequest, chunk_loader
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
 from ...utils.status_messages import format_float
@@ -120,7 +123,7 @@ class Image(IntensityVisualizationMixin, Layer):
         Attenuation rate for attenuated maximum intensity projection.
 
     Extended Summary
-    ----------
+    ----------------
     _data_view : array (N, M), (N, M, 3), or (N, M, 4)
         Image data for the currently viewed slice. Must be 2D image data, but
         can be multidimensional for RGB or RGBA images if multidimensional is
@@ -218,7 +221,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
         # Initialize the current slice to an empty image.
         self._slice = ImageSlice(
-            self._get_empty_image(), self._raw_to_displayed
+            self._get_empty_image(), self._raw_to_displayed, self.rgb
         )
 
         # Set contrast_limits and colormaps
@@ -437,6 +440,15 @@ class Image(IntensityVisualizationMixin, Layer):
         self._rendering = Rendering(rendering)
         self.events.rendering()
 
+    @property
+    def loaded(self):
+        """Has the data for this layer been loaded yet.
+
+        With asynchronous loading the layer might exist but its data
+        for the current slice has not been loaded.
+        """
+        return self._slice.loaded
+
     def _get_state(self):
         """Get dictionary of layer state.
 
@@ -483,7 +495,6 @@ class Image(IntensityVisualizationMixin, Layer):
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
         not_disp = self.dims.not_displayed
-        order = self._get_order()
 
         if self.multiscale:
             # If 3d redering just show lowest level of multiscale
@@ -526,9 +537,8 @@ class Image(IntensityVisualizationMixin, Layer):
                     * self._transforms['tile2data'].scale
                 )
 
-            image = np.transpose(
-                np.asarray(self.data[level][tuple(indices)]), order
-            )
+            image = self.data[level][tuple(indices)]
+            image_indices = indices
 
             # Slice thumbnail
             indices = np.array(self.dims.indices)
@@ -546,27 +556,109 @@ class Image(IntensityVisualizationMixin, Layer):
             )
             indices[not_disp] = downsampled_indices
 
-            thumbnail_source = np.asarray(
-                self.data[self._thumbnail_level][tuple(indices)]
-            ).transpose(order)
+            thumbnail_source = self.data[self._thumbnail_level][tuple(indices)]
         else:
             self._transforms['tile2data'].scale = np.ones(self.dims.ndim)
-            image = np.asarray(self.data[self.dims.indices]).transpose(order)
-            thumbnail_source = image
+            image_indices = self.dims.indices
+            image = self.data[image_indices]
 
-        if self.rgb and image.dtype.kind == 'f':
-            self._slice.image.raw = np.clip(image, 0, 1)
-            self._slice.thumbnail.raw = np.clip(thumbnail_source, 0, 1)
+            # For single-scale we don't request a separate thumbnail_source
+            # from the ChunkLoader because in ImageSlice.chunk_loaded we
+            # call request.thumbnail_source() and it knows to just use the
+            # image itself is there is no explicit thumbnail_source.
+            thumbnail_source = None
+
+        # Load our images, might be sync or async.
+        key = ChunkKey(self, image_indices)
+        self._load_images(key, image, thumbnail_source)
+
+    def _load_images(self, key: ChunkKey, image, thumbnail_source=None):
+        """Load the image and maybe thumbnail source.
+
+        The load will happen synchronously if any of these are true:
+        1) The arrays are already ndarrays, or
+        2) We are in synchronous mode, or
+        3) The arrays were found in the ChunkCache.
+
+        If the load is synchronous we immediately call our on_chunk_loaded()
+        method so that we use the new data right away. If the load is
+        asynchronous then sometime later our on_chunk_loaded() method will be
+        called with the loaded data.
+        """
+        # We always load the image.
+        chunks = {'image': image}
+
+        # Optionally also load the thumbnail_source.
+        if thumbnail_source is not None:
+            chunks['thumbnail_source'] = thumbnail_source
+
+        # Create the ChunkRequest for the chunks we are going to load.
+        request = chunk_loader.create_request(self, key, chunks)
+
+        # Load the chunk(s), the load could happen sync or async.
+        satisfied_request = self._slice.load_chunk(request)
+
+        if satisfied_request is None:
+            # The load is going to be async, announce that a load is
+            # underway, that we are no longer in the loaded state.
+            self.events.loaded()
         else:
-            self._slice.image.raw = image
-            self._slice.thumbnail.raw = thumbnail_source
+            # The load was sync, it's done, so use the chunk now.
+            self.on_chunk_loaded(satisfied_request, sync=True)
 
+    def on_chunk_loaded(
+        self, request: ChunkRequest, sync: bool = False
+    ) -> None:
+        """The given ChunkRequest was satisfied, we can use the data now.
+
+        This routine is called synchronously from _load_async() above, or
+        it is called asynchronously sometime later when the ChunkLoader
+        finishes loading the data in a worker thread or process.
+
+        Parameters
+        ----------
+        request : ChunkRequest
+            The request that was satisfied/loaded.
+        sync : bool
+            If True the chunk was loaded synchronously.
+        """
+        # Chunks get transposed after load.
+        request.transpose_chunks(self._get_order())
+
+        # The shape of the array after we loaded it was "wrong" in that it
+        # didn't match the rgb flag that the user specified (or we inferred?).
+        if self.rgb != guess_rgb(request.image.shape):
+            raise ValueError(
+                "Loaded chunk was the wrong shape, was rgb set correctly?"
+            )
+
+        # Pass the loaded data to the slice.
+        if not self._slice.on_chunk_loaded(request):
+            # Slice rejected it, was it for the wrong indices?
+            return
+
+        # Notify the world.
         if self.multiscale:
             self.events.scale()
             self.events.translate()
 
+        # Announcing we are in the loaded state will make our node visible
+        # if it was invisible during the load.
+        self.events.loaded()
+
+        if not sync:
+            # If this specific load itself was async we need a full refresh.
+            # Note: even in async mode, some loads are sync, such as cache hits
+            # and loads of ndarray data.
+            self.refresh()
+
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""
+        if not self._slice.loaded:
+            # ASYNC_TODO: Do not compute the thumbnail until we are loaded.
+            # Is there a nicer way to prevent this from getting called?
+            return
+
         image = self._slice.thumbnail.view
         if self.dims.ndisplay == 3 and self.dims.ndim > 2:
             image = np.max(image, axis=0)
