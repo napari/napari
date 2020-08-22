@@ -4,9 +4,12 @@ napari command line viewer.
 import argparse
 import logging
 import os
+import platform
 import runpy
 import sys
+import warnings
 from ast import literal_eval
+from distutils.version import StrictVersion
 from textwrap import wrap
 from typing import Any, Dict, List
 
@@ -190,6 +193,7 @@ def _run():
 
 def _run_pythonw():
     """Execute this script again through pythonw.
+
     This ensures we're using a framework build of Python on macOS.
     """
     import pathlib
@@ -201,29 +205,42 @@ def _run_pythonw():
     if not python_path.exists():
         msg = (
             'pythonw executable not found. '
-            'Please install python.app via conda.'
+            'The menubar might only become '
+            'functional on the macOS after '
+            'focus is toggled in and out of '
+            'napari. To fix this problem, '
+            'please install python.app via conda, '
+            'which can be done with '
+            '`conda install -c conda-forge python.app`.'
         )
-        raise RuntimeError(msg)
+        raise warnings.warn(msg)
+        _run()
 
     cmd = [python_path, '-m', 'napari']
+    env = os.environ.copy()
 
     # Append command line arguments.
     if len(sys.argv) > 1:
         cmd.append(*sys.argv[1:])
 
-    env = os.environ.copy()
-    env["NAPARI_RUNNING_PYTHONW"] = "True"
-
-    subprocess.run(cmd, env=env, cwd=cwd)
-    sys.exit()
+    result = subprocess.run(cmd, env=env, cwd=cwd)
+    sys.exit(result.returncode)
 
 
 def main():
-    # Ensure we're always using a "framework build" on macOS.
-    _MACOS_CONDA = sys.platform == "darwin" and "CONDA_PREFIX" in os.environ
-    _RUNNING_PYTHONW = "NAPARI_RUNNING_PYTHONW" in os.environ
+    # Ensure we're always using a "framework build" on the latest
+    # macOS to ensure menubar works without needing to refocus napari.
+    # We try this for macOS later than the Catelina release
+    # See https://github.com/napari/napari/pull/1554 and
+    # https://github.com/napari/napari/issues/380#issuecomment-659656775
+    # and https://github.com/ContinuumIO/anaconda-issues/issues/199
+    _MACOS_LATEST = sys.platform == "darwin" and StrictVersion(
+        platform.release()
+    ) > StrictVersion('19.0.0')
+    _RUNNING_CONDA = "CONDA_PREFIX" in os.environ
+    _RUNNING_PYTHONW = "PYTHONEXECUTABLE" in os.environ
 
-    if _MACOS_CONDA and not _RUNNING_PYTHONW:
+    if _MACOS_LATEST and _RUNNING_CONDA and not _RUNNING_PYTHONW:
         _run_pythonw()
     else:
         _run()
