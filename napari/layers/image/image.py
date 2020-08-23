@@ -33,7 +33,7 @@ class Image(IntensityVisualizationMixin, Layer):
         Whether the image is rgb RGB or RGBA. If not specified by user and
         the last dimension of the data has length 3 or 4 it will be set as
         `True`. If `False` the image is interpreted as a luminance image.
-    colormap : str, vispy.Color.Colormap, tuple, dict
+    colormap : str, napari.utils.Colormap, tuple, dict
         Colormap to use for luminance images. If a string must be the name
         of a supported colormap from vispy or matplotlib. If a tuple the
         first value must be a string to assign as a name to a colormap and
@@ -97,7 +97,7 @@ class Image(IntensityVisualizationMixin, Layer):
         Whether the data is a multiscale image or not. Multiscale data is
         represented by a list of array like image data. The first image in the
         list should be the largest.
-    colormap : 2-tuple of str, vispy.color.Colormap
+    colormap : 2-tuple of str, napari.utils.Colormap
         The first is the name of the current colormap, and the second value is
         the colormap. Colormaps are used for luminance images, if the image is
         rgb the colormap is ignored.
@@ -462,7 +462,7 @@ class Image(IntensityVisualizationMixin, Layer):
             {
                 'rgb': self.rgb,
                 'multiscale': self.multiscale,
-                'colormap': self.colormap[0],
+                'colormap': self.colormap.name,
                 'contrast_limits': self.contrast_limits,
                 'interpolation': self.interpolation,
                 'rendering': self.rendering,
@@ -712,8 +712,8 @@ class Image(IntensityVisualizationMixin, Layer):
             if color_range != 0:
                 downsampled = (downsampled - low) / color_range
             downsampled = downsampled ** self.gamma
-            color_array = self.colormap[1][downsampled.ravel()]
-            colormapped = color_array.rgba.reshape(downsampled.shape + (4,))
+            color_array = self.colormap.map(downsampled.ravel())
+            colormapped = color_array.reshape(downsampled.shape + (4,))
             colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 

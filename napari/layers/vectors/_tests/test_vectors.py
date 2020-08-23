@@ -372,11 +372,11 @@ def test_edge_color_colormap():
     # change the colormap
     new_colormap = 'viridis'
     layer.edge_colormap = new_colormap
-    assert layer.edge_colormap[1] == get_colormap(new_colormap)
+    assert layer.edge_colormap.name == new_colormap
 
     # test adding a colormap with a vispy Colormap object
     layer.edge_colormap = get_colormap('gray')
-    assert 'unnamed colormap' in layer.edge_colormap[0]
+    assert 'unnamed colormap' in layer.edge_colormap.name
 
 
 def test_edge_color_map_non_numeric_property():
