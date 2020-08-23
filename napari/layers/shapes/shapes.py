@@ -266,7 +266,7 @@ class Shapes(Layer):
     _colors : list
         List of supported vispy color names.
     _vertex_size : float
-        Size of the vertices of the shapes and boudning box in Canvas
+        Size of the vertices of the shapes and bounding box in Canvas
         coordinates.
     _rotation_handle_length : float
         Length of the rotation handle of the boudning box in Canvas
