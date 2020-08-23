@@ -1,4 +1,5 @@
 import warnings
+from contextlib import contextmanager
 from copy import copy, deepcopy
 from itertools import cycle
 from typing import Dict, Optional, Tuple, Union
@@ -342,6 +343,9 @@ class Shapes(Layer):
         # If there are more than this number of shapes, the thumnail won't update during
         # interactive events
         self._thumbnail_update_thresh = INTERACTIVE_THUMBNAIL_UPDATE_THRESHOLD
+
+        # Flag set to false to block thumbnail refresh
+        self._allow_thumbnail_update = True
 
         self._display_order_stored = []
         self._ndisplay_stored = self.dims.ndisplay
@@ -1990,6 +1994,13 @@ class Shapes(Layer):
                 self._data_view.edit(index, data_full[:-1])
         self._is_creating = False
         self._update_dims()
+
+    @contextmanager
+    def block_thumbnail_update(self):
+        """Use this context manager to block thumbnail updates"""
+        self._allow_thumbnail_update = False
+        yield
+        self._allow_thumbnail_update = True
 
     def _update_thumbnail(self, event=None):
         """Update thumbnail with current shapes and colors."""

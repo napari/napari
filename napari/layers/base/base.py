@@ -192,7 +192,6 @@ class Layer(KeymapProvider, ABC):
         self._thumbnail_shape = (32, 32, 4)
         self._thumbnail = np.zeros(self._thumbnail_shape, dtype=np.uint8)
         self._update_properties = True
-        self._allow_thumbnail_update = True
         self._name = ''
         self.events = EmitterGroup(
             source=self,
@@ -638,13 +637,6 @@ class Layer(KeymapProvider, ABC):
         self._update_properties = False
         yield
         self._update_properties = True
-
-    @contextmanager
-    def block_thumbnail_update(self):
-        """Use this context manager to block thumbnail updates"""
-        self._allow_thumbnail_update = False
-        yield
-        self._allow_thumbnail_update = True
 
     def _set_highlight(self, force=False):
         """Render layer highlights when appropriate.
