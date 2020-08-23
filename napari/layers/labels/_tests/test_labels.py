@@ -279,11 +279,11 @@ def test_colormap():
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
-    assert type(layer.colormap) == Colormap
+    assert isinstance(layer.colormap, Colormap)
     assert layer.colormap.name == 'label_colormap'
 
     layer.new_colormap()
-    assert type(layer.colormap) == Colormap
+    assert isinstance(layer.colormap, Colormap)
     assert layer.colormap.name == 'label_colormap'
 
 

@@ -331,11 +331,11 @@ def test_colormaps():
     data = np.random.random((10, 15))
     layer = Image(data)
     assert layer.colormap.name == 'gray'
-    assert type(layer.colormap) == Colormap
+    assert isinstance(layer.colormap, Colormap)
 
     layer.colormap = 'magma'
     assert layer.colormap.name == 'magma'
-    assert type(layer.colormap) == Colormap
+    assert isinstance(layer.colormap, Colormap)
 
     cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.3, 0.7, 0.2, 1.0]])
     layer.colormap = 'custom', cmap
@@ -349,7 +349,7 @@ def test_colormaps():
 
     layer = Image(data, colormap='magma')
     assert layer.colormap.name == 'magma'
-    assert type(layer.colormap) == Colormap
+    assert isinstance(layer.colormap, Colormap)
 
     cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.3, 0.7, 0.2, 1.0]])
     layer = Image(data, colormap=('custom', cmap))

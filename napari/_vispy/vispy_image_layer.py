@@ -1,7 +1,7 @@
 import warnings
 
 import numpy as np
-from vispy.color import Colormap
+from vispy.color import Colormap as VispyColormap
 
 from .image import Image as ImageNode
 from .vispy_base_layer import VispyBaseLayer
@@ -108,7 +108,7 @@ class VispyImageLayer(VispyBaseLayer):
             self._on_iso_threshold_change()
 
     def _on_colormap_change(self, event=None):
-        self.node.cmap = Colormap(*self.layer.colormap)
+        self.node.cmap = VispyColormap(*self.layer.colormap)
 
     def _on_contrast_limits_change(self, event=None):
         self.node.clim = self.layer.contrast_limits

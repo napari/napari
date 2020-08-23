@@ -8,7 +8,14 @@ from .standardize_color import transform_color
 
 
 class ColormapInterpolationMode(StringEnum):
-    """INTERPOLATION: Interpolation mode for colormaps."""
+    """INTERPOLATION: Interpolation mode for colormaps.
+
+    Selects an interpolation mode for the colormap.
+            * linear: colors are defined by linear interpolation between
+              colors of neighboring controls points.
+            * zero: colors are defined by the value of the color in the
+              bin between by neighboring controls points.
+    """
 
     LINEAR = auto()
     ZERO = auto()
@@ -33,15 +40,17 @@ class Colormap:
     """
 
     def __init__(
-        self, colors, controls=None, interpolation='linear', name='undefined'
+        self, colors, *, controls=None, interpolation='linear', name='custom'
     ):
 
         self.name = name
         self.colors = transform_color(colors)
-        self.interpolation = ColormapInterpolationMode(interpolation)
+        self._interpolation = ColormapInterpolationMode(interpolation)
         if controls is None:
-            N = len(self.colors) + int(self.interpolation == 'zero')
-            self.controls = np.linspace(0, 1, N)
+            n_controls = len(self.colors) + int(
+                self._interpolation == ColormapInterpolationMode.ZERO
+            )
+            self.controls = np.linspace(0, 1, n_controls)
         else:
             self.controls = np.asarray(controls)
 
@@ -50,14 +59,14 @@ class Colormap:
 
     def map(self, values):
         values = np.atleast_1d(values)
-        if self.interpolation == ColormapInterpolationMode.LINEAR:
+        if self._interpolation == ColormapInterpolationMode.LINEAR:
             # One color per control point
             cols = [
                 np.interp(values, self.controls, self.colors[:, i])
                 for i in range(4)
             ]
             cols = np.stack(cols, axis=1)
-        elif self.interpolation == ColormapInterpolationMode.ZERO:
+        elif self._interpolation == ColormapInterpolationMode.ZERO:
             # One color per bin
             indices = np.clip(
                 np.searchsorted(self.controls, values) - 1, 0, len(self.colors)
@@ -71,3 +80,7 @@ class Colormap:
     @property
     def colorbar(self):
         return make_colorbar(self)
+
+    @property
+    def interpolation(self):
+        return str(self._interpolation)
