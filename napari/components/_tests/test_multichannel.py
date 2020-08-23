@@ -3,16 +3,23 @@ import numpy as np
 import pytest
 
 from napari.components import ViewerModel
-from napari.utils.colormaps import colormaps, ensure_colormap
+from napari.utils.colormaps import (
+    AVAILABLE_COLORMAPS,
+    CYMRGB,
+    MAGENTA_GREEN,
+    Colormap,
+    ensure_colormap,
+    simple_colormaps,
+)
 from napari.utils.misc import ensure_iterable, ensure_sequence_of_iterables
 
-base_colormaps = colormaps.CYMRGB
-two_colormaps = colormaps.MAGENTA_GREEN
-green_cmap = colormaps.simple_colormaps['green']
-red_cmap = colormaps.simple_colormaps['red']
-blue_cmap = colormaps.AVAILABLE_COLORMAPS['blue']
-cmap_tuple = ("my_colormap", colormaps.Colormap(['g', 'm', 'y']))
-cmap_dict = {"your_colormap": colormaps.Colormap(['g', 'r', 'y'])}
+base_colormaps = CYMRGB
+two_colormaps = MAGENTA_GREEN
+green_cmap = simple_colormaps['green']
+red_cmap = simple_colormaps['red']
+blue_cmap = AVAILABLE_COLORMAPS['blue']
+cmap_tuple = ("my_colormap", Colormap(['g', 'm', 'y']))
+cmap_dict = {"your_colormap": Colormap(['g', 'r', 'y'])}
 
 MULTI_TUPLES = [[0.3, 0.7], [0.1, 0.9], [0.3, 0.9], [0.4, 0.9], [0.2, 0.9]]
 

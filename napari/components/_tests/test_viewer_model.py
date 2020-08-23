@@ -3,7 +3,7 @@ import pytest
 
 from napari._tests.utils import good_layer_data
 from napari.components import ViewerModel
-from napari.utils.colormaps import colormaps
+from napari.utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 
 
 def test_viewer_model():
@@ -41,15 +41,15 @@ def test_add_image_colormap_variants():
     assert viewer.add_image(data, colormap='cubehelix')
 
     # as tuple
-    cmap_tuple = ("my_colormap", colormaps.Colormap(['g', 'm', 'y']))
+    cmap_tuple = ("my_colormap", Colormap(['g', 'm', 'y']))
     assert viewer.add_image(data, colormap=cmap_tuple)
 
     # as dict
-    cmap_dict = {"your_colormap": colormaps.Colormap(['g', 'r', 'y'])}
+    cmap_dict = {"your_colormap": Colormap(['g', 'r', 'y'])}
     assert viewer.add_image(data, colormap=cmap_dict)
 
     # as Colormap instance
-    blue_cmap = colormaps.AVAILABLE_COLORMAPS['blue']
+    blue_cmap = AVAILABLE_COLORMAPS['blue']
     assert viewer.add_image(data, colormap=blue_cmap)
 
     # string values must be known colormap types
