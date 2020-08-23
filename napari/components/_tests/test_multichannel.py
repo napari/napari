@@ -7,16 +7,16 @@ from napari.utils.colormaps import (
     AVAILABLE_COLORMAPS,
     CYMRGB,
     MAGENTA_GREEN,
+    SIMPLE_COLORMAPS,
     Colormap,
     ensure_colormap,
-    simple_colormaps,
 )
 from napari.utils.misc import ensure_iterable, ensure_sequence_of_iterables
 
 base_colormaps = CYMRGB
 two_colormaps = MAGENTA_GREEN
-green_cmap = simple_colormaps['green']
-red_cmap = simple_colormaps['red']
+green_cmap = SIMPLE_COLORMAPS['green']
+red_cmap = SIMPLE_COLORMAPS['red']
 blue_cmap = AVAILABLE_COLORMAPS['blue']
 cmap_tuple = ("my_colormap", Colormap(['g', 'm', 'y']))
 cmap_dict = {"your_colormap": Colormap(['g', 'r', 'y'])}

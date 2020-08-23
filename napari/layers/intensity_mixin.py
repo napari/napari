@@ -45,7 +45,7 @@ class IntensityVisualizationMixin:
 
     @property
     def colormap(self):
-        """napar.utils.Colormap: colormap for luminance images.
+        """napari.utils.Colormap: colormap for luminance images.
         """
         return self._colormap
 

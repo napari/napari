@@ -1,11 +1,10 @@
 import os
-from typing import List
+from typing import Dict, List, Tuple, Union
 
 import numpy as np
 from vispy.color import BaseColormap as VispyColormap
 from vispy.color import get_colormap, get_colormaps
 
-from ...types import ValidColormapArg
 from .colormap import Colormap
 from .vendored import cm, colorconv
 
@@ -16,6 +15,18 @@ with open(_matplotlib_list_file) as fin:
     matplotlib_colormaps = [line.rstrip() for line in fin]
 
 
+ValidColormapArg = Union[
+    str,
+    VispyColormap,
+    Colormap,
+    Tuple[str, VispyColormap],
+    Tuple[str, Colormap],
+    Dict[str, VispyColormap],
+    Dict[str, Colormap],
+    Dict,
+]
+
+
 primary_color_names = ['red', 'green', 'blue', 'cyan', 'magenta', 'yellow']
 primary_colors = np.array(
     [(1, 0, 0), (0, 1, 0), (0, 0, 1), (0, 1, 1), (1, 0, 1), (1, 1, 0)],
@@ -23,7 +34,7 @@ primary_colors = np.array(
 )
 
 
-simple_colormaps = {
+SIMPLE_COLORMAPS = {
     name: Colormap(name=name, colors=[[0.0, 0.0, 0.0], color])
     for name, color in zip(primary_color_names, primary_colors)
 }
@@ -73,7 +84,7 @@ def convert_vispy_colormap(colormap, name='vispy'):
     else:
         controls = None
 
-    # Not all vispy colormaps have an `_controls`
+    # Not all vispy colormaps have an `interpolation`
     # but if they do, we want to use it
     if hasattr(colormap, 'interpolation'):
         interpolation = colormap.interpolation
@@ -326,7 +337,7 @@ def vispy_or_mpl_colormap(name):
 
 # A dictionary mapping names to VisPy colormap objects
 ALL_COLORMAPS = {k: vispy_or_mpl_colormap(k) for k in matplotlib_colormaps}
-ALL_COLORMAPS.update(simple_colormaps)
+ALL_COLORMAPS.update(SIMPLE_COLORMAPS)
 
 # ... sorted alphabetically by name
 AVAILABLE_COLORMAPS = {k: v for k, v in sorted(ALL_COLORMAPS.items())}

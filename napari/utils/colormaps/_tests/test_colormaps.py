@@ -31,7 +31,7 @@ def test_colormap(name):
 def test_increment_unnamed_colormap():
     # test that unnamed colormaps are incremented
     names = [
-        '[unnamed colormap 0',
+        '[unnamed colormap 0]',
         'existing_colormap',
         'perceptually_uniform',
         '[unnamed colormap 1]',

@@ -5,8 +5,7 @@ from typing import Dict, List, Tuple, Union
 
 import numpy as np
 
-from ...types import ValidColormapArg
-from ...utils.colormaps import Colormap, ensure_colormap
+from ...utils.colormaps import Colormap, ValidColormapArg, ensure_colormap
 from ...utils.colormaps.standardize_color import (
     get_color_namelist,
     hex_to_name,

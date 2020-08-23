@@ -6,8 +6,7 @@ from typing import Dict, Optional, Tuple, Union
 import numpy as np
 from vispy.color import get_color_names
 
-from ...types import ValidColormapArg
-from ...utils.colormaps import Colormap, ensure_colormap
+from ...utils.colormaps import Colormap, ValidColormapArg, ensure_colormap
 from ...utils.colormaps.standardize_color import (
     hex_to_name,
     rgb_to_hex,

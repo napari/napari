@@ -4,8 +4,7 @@ from typing import Dict, Tuple, Union
 
 import numpy as np
 
-from ...types import ValidColormapArg
-from ...utils.colormaps import Colormap, ensure_colormap
+from ...utils.colormaps import Colormap, ValidColormapArg, ensure_colormap
 from ...utils.events import Event
 from ...utils.status_messages import format_float
 from ..base import Layer

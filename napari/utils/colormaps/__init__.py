@@ -6,10 +6,11 @@ from .colormap_utils import (
     CYMRGB,
     MAGENTA_GREEN,
     RGB,
+    SIMPLE_COLORMAPS,
+    ValidColormapArg,
     color_dict_to_colormap,
     ensure_colormap,
     label_colormap,
     low_discrepancy_image,
     matplotlib_colormaps,
-    simple_colormaps,
 )
