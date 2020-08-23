@@ -217,7 +217,7 @@ class ShapeList:
         face_color=None,
         edge_color=None,
         shape_index=None,
-        reindex_z=True,
+        z_refresh=True,
     ):
         """Adds a single Shape object
 
@@ -230,8 +230,10 @@ class ShapeList:
             If int then edits the shape date at current index. To be used in
             conjunction with `remove` when renumber is `False`. If None, then
             appends a new shape to end of shapes list
-        reindex_z : bool
+        z_refresh : bool
             If set to true, the mesh elements are reindexed with the new z order.
+            When shape_index is provided, z_refresh will be overwritten to false,
+            as the z indices will not change.
             When adding a batch of shapes, set to false  and then call
             ShapesList._update_z_order() once at the end.
         """
@@ -239,10 +241,6 @@ class ShapeList:
             raise ValueError('shape must be subclass of Shape')
 
         if shape_index is None:
-            if reindex_z is True:
-                z_refresh = True
-            else:
-                z_refresh = False
             shape_index = len(self.shapes)
             self.shapes.append(shape)
             self._z_index = np.append(self._z_index, shape.z_index)
