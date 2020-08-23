@@ -258,6 +258,9 @@ class Shapes(Layer):
         shapes when they are changed. Blocking this prevents circular loops
         when shapes are selected and the properties are changed based on that
         selection
+    _allow_thumnail_update : bool
+        Flag set to true to allow the thumbnail to be updated. Blocking the thumbnail
+        can be advantageous where responsiveness is critical.
     _clipboard : dict
         Dict of shape objects that are to be used during a copy and paste.
     _colors : list
