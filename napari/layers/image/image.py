@@ -634,7 +634,11 @@ class Image(IntensityVisualizationMixin, Layer):
         value : tuple
             Value of the data at the coord.
         """
-        coord = np.round(self._transforms.simplified(self.coordinates)).astype(int)
+        if self.multiscale:
+            coord = np.round(self.coordinates).astype(int)
+        else:
+            coord = np.round(self._transforms.simplified(self.coordinates)).astype(int)
+
         raw = self._slice.image.raw
         if self.rgb:
             shape = raw.shape[:-1]
