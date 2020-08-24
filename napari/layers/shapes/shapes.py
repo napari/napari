@@ -56,10 +56,6 @@ from ._shapes_utils import create_box, get_shape_ndim
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
-# If there are more than this number of shapes, the thumnail won't update during
-# interactive events
-INTERACTIVE_THUMBNAIL_UPDATE_THRESHOLD = 100
-
 
 class Shapes(Layer):
     """Shapes layer.
@@ -284,6 +280,10 @@ class Shapes(Layer):
     _highlight_color = (0, 0.6, 1)
     _highlight_width = 1.5
 
+    # If more shapes are present then they are randomly subsampled
+    # in the thumbnail
+    _max_shapes_thumbnail = 100
+
     def __init__(
         self,
         data=None,
@@ -342,10 +342,6 @@ class Shapes(Layer):
             current_properties=Event,
             highlight=Event,
         )
-
-        # If there are more than this number of shapes, the thumnail won't update during
-        # interactive events
-        self._thumbnail_update_thresh = INTERACTIVE_THUMBNAIL_UPDATE_THRESHOLD
 
         # Flag set to false to block thumbnail refresh
         self._allow_thumbnail_update = True
@@ -2029,6 +2025,7 @@ class Shapes(Layer):
                 colors_shape=self._thumbnail_shape[:2],
                 zoom_factor=zoom_factor,
                 offset=offset[-2:],
+                max_shapes=self._max_shapes_thumbnail,
             )
 
             self.thumbnail = colormapped

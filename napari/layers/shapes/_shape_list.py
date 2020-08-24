@@ -841,7 +841,9 @@ class ShapeList:
 
         return labels
 
-    def to_colors(self, colors_shape=None, zoom_factor=1, offset=[0, 0]):
+    def to_colors(
+        self, colors_shape=None, zoom_factor=1, offset=[0, 0], max_shapes=None
+    ):
         """Rasterize shapes to an RGBA image array.
 
         Each shape is embedded in an array of shape `colors_shape` with the
@@ -859,6 +861,11 @@ class ShapeList:
         offset : 2-tuple
             Offset subtracted from coordinates before multiplying by the
             zoom_factor. Used for putting negative coordinates into the mask.
+        max_shapes : None | int
+            If provided, this is the maximum number of shapes that will be rasterized.
+            If the number of shapes in view exceeds max_shapes, max_shapes shapes
+            will be randomly selected from the in view shapes. If set to None, no
+            maximum is applied. The default value is None.
 
         Returns
         -------
@@ -872,15 +879,25 @@ class ShapeList:
         colors = np.zeros(tuple(colors_shape) + (4,), dtype=float)
         colors[..., 3] = 1
 
-        for ind in self._z_order[::-1]:
-            if self._displayed[ind]:
-                mask = self.shapes[ind].to_mask(
-                    colors_shape, zoom_factor=zoom_factor, offset=offset
-                )
-                if type(self.shapes[ind]) in [Path, Line]:
-                    col = self._edge_color[ind]
-                else:
-                    col = self._face_color[ind]
-                colors[mask, :] = col
+        z_order = self._z_order[::-1]
+        shapes_in_view = np.argwhere(self._displayed)
+        z_order_in_view_mask = np.isin(z_order, shapes_in_view)
+        z_order_in_view = z_order[z_order_in_view_mask]
+
+        if max_shapes is not None and len(z_order_in_view) > max_shapes:
+            indices_to_use = np.random.randint(
+                0, len(z_order_in_view), max_shapes
+            )
+            z_order_in_view = z_order_in_view[indices_to_use]
+
+        for ind in z_order_in_view:
+            mask = self.shapes[ind].to_mask(
+                colors_shape, zoom_factor=zoom_factor, offset=offset
+            )
+            if type(self.shapes[ind]) in [Path, Line]:
+                col = self._edge_color[ind]
+            else:
+                col = self._face_color[ind]
+            colors[mask, :] = col
 
         return colors
