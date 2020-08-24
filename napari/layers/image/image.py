@@ -223,6 +223,7 @@ class Image(IntensityVisualizationMixin, Layer):
         self._slice = ImageSlice(
             self._get_empty_image(), self._raw_to_displayed, self.rgb
         )
+        self._empty = True
 
         # Set contrast_limits and colormaps
         self._gamma = gamma
@@ -512,7 +513,9 @@ class Image(IntensityVisualizationMixin, Layer):
         ):
             self._slice.image.raw = self._get_empty_image()
             self._slice.thumbnail.raw = self._get_empty_image()
+            self._empty = True
             return
+        self._empty = False
 
         if self.multiscale:
             # If 3d redering just show lowest level of multiscale
@@ -678,6 +681,7 @@ class Image(IntensityVisualizationMixin, Layer):
             return
 
         image = self._slice.thumbnail.view
+
         if self._dims.ndisplay == 3 and self._dims.ndim > 2:
             image = np.max(image, axis=0)
 
