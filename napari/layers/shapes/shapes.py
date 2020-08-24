@@ -1387,15 +1387,9 @@ class Shapes(Layer):
         ]
 
         self.events.mode(mode=mode)
-        # only update the thumbnail if there are < 100 shapes
-        if len(self.data) > self._thumbnail_update_thresh:
-            with self.block_thumbnail_update():
-                if not (mode in draw_modes and old_mode in draw_modes):
-                    # Shapes._finish_drawing() calls Shapes.refresh()
-                    self._finish_drawing()
-                else:
-                    self.refresh()
-        else:
+
+        # don't update thumbnail on mode changes
+        with self.block_thumbnail_update():
             if not (mode in draw_modes and old_mode in draw_modes):
                 # Shapes._finish_drawing() calls Shapes.refresh()
                 self._finish_drawing()
