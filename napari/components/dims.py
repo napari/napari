@@ -323,7 +323,6 @@ class Dims:
 
         if self._step[axis] != step:
             self._step[axis] = step
-            print('ss', self._step[axis], self.point[axis], self._range[axis])
             self.events.step(axis=axis, value=step)
 
     def _increment_dims_right(self, axis: int = None):
