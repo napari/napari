@@ -7,7 +7,7 @@ import numpy as np
 
 from ...components import Dims
 from ...utils.dask_utils import configure_dask
-from ...utils.event import EmitterGroup, Event
+from ...utils.events import EmitterGroup, Event
 from ...utils.key_bindings import KeymapProvider
 from ...utils.misc import ROOT_DIR
 from ...utils.naming import magic_name
@@ -215,6 +215,7 @@ class Layer(KeymapProvider, ABC):
             cursor=Event,
             cursor_size=Event,
             editable=Event,
+            loaded=Event,
         )
         self.name = name
 
@@ -241,6 +242,15 @@ class Layer(KeymapProvider, ABC):
     def name(self):
         """str: Unique name of the layer."""
         return self._name
+
+    @property
+    def loaded(self) -> bool:
+        """Return True if this layer is fully loaded in memory.
+
+        This base class says that layers are permanently in the loaded state.
+        Derived classes that do asynchronous loading can override this.
+        """
+        return True
 
     @name.setter
     def name(self, name):

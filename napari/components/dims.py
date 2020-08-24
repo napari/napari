@@ -3,7 +3,7 @@ from typing import Sequence, Union
 
 import numpy as np
 
-from ..utils.event import EmitterGroup
+from ..utils.events import EmitterGroup
 
 
 class Dims:
