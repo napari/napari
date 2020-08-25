@@ -3,7 +3,7 @@
 import os
 import threading
 from collections import namedtuple
-from typing import Dict, Optional
+from typing import Optional
 
 # The span of time that the event ocurred.
 Span = namedtuple("Span", "start_ns end_ns")
@@ -104,40 +104,3 @@ class PerfEvent:
     def duration_ms(self):
         """Duration in milliseconds."""
         return self.duration_ns / 1e6
-
-
-class InstantEvent(PerfEvent):
-    """An instant event draws as a vertical line.
-
-    Parameters
-    ----------
-    name : str
-        The name of this event.
-    time_ns : int
-        The time in nanoseconds when the event happened.
-    kwargs : dict
-        Arguments to display in the Args section of the GUI.
-    """
-
-    def __init__(self, name: str, time_ns: int, **kwargs):
-        super().__init__(name, time_ns, time_ns, phase="I", **kwargs)
-
-
-class CounterEvent(PerfEvent):
-    """A counter event draws as a little (stacked) bar graph.
-
-    It draws as a bar graph if there is one counter, or a stacked bar
-    graph if there are multiple counters.
-
-    Parameters
-    ----------
-    name : str
-        The name of this event.
-    time_ns : int
-        The time in nanoseconds when the event happened.
-    kwargs : Dict[str, float]
-        The names and values of the counters.
-    """
-
-    def __init__(self, name: str, time_ns: int, **kwargs: Dict[str, float]):
-        super().__init__(name, time_ns, time_ns, phase="C", **kwargs)

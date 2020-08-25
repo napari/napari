@@ -5,7 +5,7 @@ import os
 from typing import Dict, Optional
 
 from ._compat import perf_counter_ns
-from ._event import CounterEvent, InstantEvent, PerfEvent
+from ._event import PerfEvent
 from ._stat import Stat
 from ._trace_file import PerfTraceFile
 
@@ -84,7 +84,8 @@ class PerfTimers:
         kwargs
             Arguments to display in the Args section of the Tracing GUI.
         """
-        self.add_event(InstantEvent(name, perf_counter_ns(), **kwargs))
+        now = perf_counter_ns()
+        self.add_event(PerfEvent(name, now, now, phase="I", **kwargs))
 
     def add_counter_event(self, name: str, **kwargs: Dict[str, float]) -> None:
         """Add one counter event.
@@ -100,7 +101,8 @@ class PerfTimers:
         -----
         For example add_counter_event("draw", triangles=5, squares=10).
         """
-        self.add_event(CounterEvent(name, perf_counter_ns(), **kwargs))
+        now = perf_counter_ns()
+        self.add_event(PerfEvent(name, now, now, phase="C", **kwargs))
 
     def clear(self):
         """Clear all timers.
