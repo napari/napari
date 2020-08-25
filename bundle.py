@@ -47,9 +47,9 @@ def patch_toml():
         "PySide2==5.14.2.2",
     ]
 
-    print("patching pyroject.toml to version: ", VERSION)
+    print("patching pyproject.toml to version: ", VERSION)
     print(
-        "patching pyroject.toml requirements to : \n",
+        "patching pyproject.toml requirements to : \n",
         "\n".join(toml['tool']['briefcase']['app'][APP]['requires']),
     )
 
