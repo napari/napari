@@ -41,7 +41,7 @@ def pytest_addoption(parser):
 
     --show-viewer
         Show viewers during tests, they are hidden by default. Showing viewers
-        decreases test speed by about %18.
+        decreases test speed .
 
     --perfmon-only
         Run only perfmon test.
@@ -49,7 +49,7 @@ def pytest_addoption(parser):
     Notes
     -----
     Due to the placement of this conftest.py file, you must specifically name
-    the napair folder such as "pytest napari --show-viewer"
+    the napari folder such as "pytest napari --show-viewer"
 
     For --perfmon-only must also enable perfmon with env var:
     NAPARI_PERFMON=1 pytest napari --perfmon-only

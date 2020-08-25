@@ -48,8 +48,10 @@ class PerfEvent:
     args : dict
         Arbitrary keyword arguments for this event.
     phase : str
-        The Chrome Tracing phase: "X", "I" or "C".
-
+        The Chrome Tracing phase (event type):
+          "X" - Complete Events
+          "I" - Instant Events
+          "C" - Counter Events
     Notes
     -----
     The time stamps are from perf_counter_ns() and do not indicate time of
@@ -118,7 +120,6 @@ class InstantEvent(PerfEvent):
     """
 
     def __init__(self, name: str, time_ns: int, **kwargs):
-        # Instant events are phase "I" in their trace space.
         super().__init__(name, time_ns, time_ns, phase="I", **kwargs)
 
 
@@ -139,5 +140,4 @@ class CounterEvent(PerfEvent):
     """
 
     def __init__(self, name: str, time_ns: int, **kwargs: Dict[str, float]):
-        # Counter events are phase "C" in their trace space.
         super().__init__(name, time_ns, time_ns, phase="C", **kwargs)
