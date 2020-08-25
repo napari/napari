@@ -372,15 +372,8 @@ class QtViewer(QSplitter):
     def _screenshot_dialog(self, *, default_name=""):
         """Save screenshot of current display, default .png"""
         dial = ScreenshotDialog(self.screenshot, self, self._last_visited_dir)
-        while True:
-            res = dial.exec_()
-            print(res, ScreenshotDialog.Accepted, ScreenshotDialog.Rejected)
-            if res == ScreenshotDialog.Accepted:
-                self._last_visited_dir = os.path.dirname(
-                    dial.selectedFiles()[0]
-                )
-            if res in (ScreenshotDialog.Accepted, ScreenshotDialog.Rejected):
-                break
+        if dial.exec_():
+            self._last_visited_dir = os.path.dirname(dial.selectedFiles()[0])
 
     def _open_files_dialog(self):
         """Add files from the menubar."""

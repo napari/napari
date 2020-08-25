@@ -41,6 +41,7 @@ class ScreenshotDialog(QFileDialog):
                     )
                     if res != QMessageBox.Yes:
                         # standard accept return 1, reject 0. This inform that dialog should be reopened
-                        return self.done(2)
+                        super().accept()
+                        self.exec_()
         self.save_function(save_path)
         return super().accept()

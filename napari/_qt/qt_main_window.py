@@ -478,17 +478,10 @@ class Window:
     def _screenshot_dialog(self, *, default_name=""):
         """Save screenshot of current display with viewer, default .png"""
         dial = ScreenshotDialog(
-            self.screenshot, self, self.qt_viewer._last_visited_dir
+            self.screenshot, self.qt_viewer, self.qt_viewer._last_visited_dir
         )
-        while True:
-            res = dial.exec_()
-            print(res, ScreenshotDialog.Accepted, ScreenshotDialog.Rejected)
-            if res == ScreenshotDialog.Accepted:
-                self._last_visited_dir = os.path.dirname(
-                    dial.selectedFiles()[0]
-                )
-            if res in (ScreenshotDialog.Accepted, ScreenshotDialog.Rejected):
-                break
+        if dial.exec_():
+            self._last_visited_dir = os.path.dirname(dial.selectedFiles()[0])
 
     def screenshot(self, path=None):
         """Take currently displayed viewer and convert to an image array.
