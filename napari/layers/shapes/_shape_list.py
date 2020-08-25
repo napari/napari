@@ -885,10 +885,7 @@ class ShapeList:
         z_order_in_view = z_order[z_order_in_view_mask]
 
         if max_shapes is not None and len(z_order_in_view) > max_shapes:
-            indices_to_use = np.random.randint(
-                0, len(z_order_in_view), max_shapes
-            )
-            z_order_in_view = z_order_in_view[indices_to_use]
+            z_order_in_view = z_order_in_view[0:max_shapes]
 
         for ind in z_order_in_view:
             mask = self.shapes[ind].to_mask(
