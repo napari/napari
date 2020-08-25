@@ -4,7 +4,11 @@ from typing import Dict, Union
 import numpy as np
 from scipy import ndimage as ndi
 
-from ...utils.colormaps import colormaps
+from ...utils.colormaps import (
+    color_dict_to_colormap,
+    label_colormap,
+    low_discrepancy_image,
+)
 from ...utils.events import Event
 from ...utils.status_messages import format_float
 from ..image import Image
@@ -148,10 +152,7 @@ class Labels(Image):
         self._seed = seed
         self._background_label = 0
         self._num_colors = num_colors
-        self._random_colormap = (
-            'random',
-            colormaps.label_colormap(self.num_colors),
-        )
+        self._random_colormap = label_colormap(self.num_colors)
         self._color_mode = LabelColorMode.AUTO
         self._brush_shape = LabelBrushShape.CIRCLE
 
@@ -275,10 +276,7 @@ class Labels(Image):
     @num_colors.setter
     def num_colors(self, num_colors):
         self._num_colors = num_colors
-        self.colormap = (
-            self._colormap_name,
-            colormaps.label_colormap(num_colors),
-        )
+        self.colormap = label_colormap(num_colors)
         self.refresh()
         self._selected_color = self.get_color(self.selected_label)
         self.events.selected_label()
@@ -398,10 +396,9 @@ class Labels(Image):
     def color_mode(self, color_mode: Union[str, LabelColorMode]):
         color_mode = LabelColorMode(color_mode)
         if color_mode == LabelColorMode.DIRECT:
-            (
-                custom_colormap,
-                label_color_index,
-            ) = colormaps.color_dict_to_colormap(self.color)
+            (custom_colormap, label_color_index,) = color_dict_to_colormap(
+                self.color
+            )
             self.colormap = custom_colormap
             self._label_color_index = label_color_index
         elif color_mode == LabelColorMode.AUTO:
@@ -565,7 +562,7 @@ class Labels(Image):
             )[inv].reshape(raw.shape)
         elif self._color_mode == LabelColorMode.AUTO:
             image = np.where(
-                raw > 0, colormaps._low_discrepancy_image(raw, self._seed), 0
+                raw > 0, low_discrepancy_image(raw, self._seed), 0
             )
         else:
             raise ValueError("Unsupported Color Mode")
@@ -580,7 +577,7 @@ class Labels(Image):
             col = None
         else:
             val = self._raw_to_displayed(np.array([label]))
-            col = self.colormap[1][val].rgba[0]
+            col = self.colormap.map(val)[0]
         return col
 
     def _reset_history(self, event=None):
