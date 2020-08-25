@@ -26,6 +26,7 @@ from ..utils.io import imsave
 from ..utils.key_bindings import components_to_key_combo
 from ..utils.theme import template
 from .dialogs.qt_about_key_bindings import QtAboutKeyBindings
+from .dialogs.screenshot_dialog import ScreenshotDialog
 from .tracing.qt_performance import QtPerformance
 from .utils import QImg2array, circle_pixmap, square_pixmap
 from .widgets.qt_dims import QtDims
@@ -370,38 +371,16 @@ class QtViewer(QSplitter):
 
     def _screenshot_dialog(self, *, default_name=""):
         """Save screenshot of current display, default .png"""
-        filename, _ = QFileDialog.getSaveFileName(
-            parent=self,
-            caption='Save screenshot',
-            directory=os.path.join(
-                self._last_visited_dir, default_name
-            ),  # home dir by default
-            filter="Image files (*.png *.bmp *.gif *.tif *.tiff)",  # first one used by default
-            # jpg and jpeg not included as they don't support an alpha channel
-        )
-        if (filename != '') and (filename is not None):
-            # double check that an appropriate extension has been added as the
-            # filter option does not always add an extension on linux and windows
-            # see https://bugreports.qt.io/browse/QTBUG-27186
-            self._last_visited_dir = os.path.dirname(filename)
-            image_extensions = ('.bmp', '.gif', '.png', '.tif', '.tiff')
-            if not filename.endswith(image_extensions):
-                if (
-                    QMessageBox.warning(
-                        self,
-                        "File already exist",
-                        "File already exist. Overwrite?",
-                        QMessageBox.Yes | QMessageBox.No,
-                        QMessageBox.No,
-                    )
-                    == QMessageBox.No
-                ):
-                    self._screenshot_dialog(
-                        default_name=os.path.basename(filename)
-                    )
-                    return
-                filename = filename + '.png'
-            self.screenshot(path=filename)
+        dial = ScreenshotDialog(self.screenshot, self, self._last_visited_dir)
+        while True:
+            res = dial.exec_()
+            print(res, ScreenshotDialog.Accepted, ScreenshotDialog.Rejected)
+            if res == ScreenshotDialog.Accepted:
+                self._last_visited_dir = os.path.dirname(
+                    dial.selectedFiles()[0]
+                )
+            if res in (ScreenshotDialog.Accepted, ScreenshotDialog.Rejected):
+                break
 
     def _open_files_dialog(self):
         """Add files from the menubar."""

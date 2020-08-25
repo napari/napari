@@ -11,11 +11,9 @@ from qtpy.QtWidgets import (
     QAction,
     QApplication,
     QDockWidget,
-    QFileDialog,
     QHBoxLayout,
     QLabel,
     QMainWindow,
-    QMessageBox,
     QShortcut,
     QStatusBar,
     QWidget,
@@ -28,6 +26,7 @@ from ..utils.theme import template
 from .dialogs.qt_about import QtAbout
 from .dialogs.qt_plugin_report import QtPluginErrReporter
 from .dialogs.qt_plugin_table import QtPluginTable
+from .dialogs.screenshot_dialog import ScreenshotDialog
 from .qt_viewer import QtViewer
 from .tracing.qt_debug_menu import DebugMenu
 from .utils import QImg2array
@@ -478,38 +477,18 @@ class Window:
 
     def _screenshot_dialog(self, *, default_name=""):
         """Save screenshot of current display with viewer, default .png"""
-        filename, _ = QFileDialog.getSaveFileName(
-            parent=self.qt_viewer,
-            caption='Save screenshot with viewer',
-            directory=os.path.join(
-                self.qt_viewer._last_visited_dir, default_name
-            ),  # home dir by default
-            filter="Image files (*.png *.bmp *.gif *.tif *.tiff)",  # first one used by default
-            # jpg and jpeg not included as they don't support an alpha channel
+        dial = ScreenshotDialog(
+            self.screenshot, self, self.qt_viewer._last_visited_dir
         )
-        if (filename != '') and (filename is not None):
-            # double check that an appropriate extension has been added as the
-            # filter option does not always add an extension on linux and windows
-            # see https://bugreports.qt.io/browse/QTBUG-27186
-            self.qt_viewer._last_visited_dir = os.path.dirname(filename)
-            image_extensions = ('.bmp', '.gif', '.png', '.tif', '.tiff')
-            if not filename.endswith(image_extensions):
-                if (
-                    QMessageBox.warning(
-                        self,
-                        "File already exist",
-                        "File already exist. Overwrite?",
-                        QMessageBox.Yes | QMessageBox.No,
-                        QMessageBox.No,
-                    )
-                    == QMessageBox.No
-                ):
-                    self._screenshot_dialog(
-                        default_name=os.path.basename(filename)
-                    )
-                    return
-                filename = filename + '.png'
-            self.screenshot(path=filename)
+        while True:
+            res = dial.exec_()
+            print(res, ScreenshotDialog.Accepted, ScreenshotDialog.Rejected)
+            if res == ScreenshotDialog.Accepted:
+                self._last_visited_dir = os.path.dirname(
+                    dial.selectedFiles()[0]
+                )
+            if res in (ScreenshotDialog.Accepted, ScreenshotDialog.Rejected):
+                break
 
     def screenshot(self, path=None):
         """Take currently displayed viewer and convert to an image array.

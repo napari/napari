@@ -222,6 +222,7 @@ def test_screenshot(make_test_viewer):
     assert screenshot.ndim == 3
 
 
+@pytest.mark.skip("new approach")
 def test_screenshot_dialog(make_test_viewer, tmpdir):
     """Test save screenshot functionality."""
     viewer = make_test_viewer()
