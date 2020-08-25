@@ -884,6 +884,8 @@ class ShapeList:
         z_order_in_view_mask = np.isin(z_order, shapes_in_view)
         z_order_in_view = z_order[z_order_in_view_mask]
 
+        # If there are too many shapes to render responsively, just render
+        # the top max_shapes shapes
         if max_shapes is not None and len(z_order_in_view) > max_shapes:
             z_order_in_view = z_order_in_view[0:max_shapes]
 
