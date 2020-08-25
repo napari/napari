@@ -41,7 +41,7 @@ def pytest_addoption(parser):
 
     --show-viewer
         Show viewers during tests, they are hidden by default. Showing viewers
-        decreases test speed .
+        decreases test speed by around 20%.
 
     --perfmon-only
         Run only perfmon test.
