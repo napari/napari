@@ -270,8 +270,7 @@ class ChunkLoader:
         try:
             del self.layer_map[id(layer)]
         except KeyError:
-            # No chunk request was made for this layer
-            pass
+            pass  # We weren't tracking that layer yet.
 
 
 # Global instance
