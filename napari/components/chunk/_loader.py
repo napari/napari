@@ -287,32 +287,6 @@ class ChunkLoader:
         # add the layer to the layer_map in ChunkLoader.create_request().
         return self.layer_map[layer_id]
 
-    def wait(self, data_id: int) -> None:
-        """Wait for the given data to be loaded.
-
-        TODO_ASYNC: We do not use this today, but it could be useful.
-
-        Parameters
-        ----------
-        data_id : int
-            Wait on chunks for this data_id.
-        """
-        try:
-            future_list = self.futures[data_id]
-        except KeyError:
-            LOGGER.warn("ChunkLoader.wait: no futures for data_id %d", data_id)
-            return
-
-        LOGGER.debug(
-            "ChunkLoader.wait: waiting on %d futures for %d",
-            len(future_list),
-            data_id,
-        )
-
-        # Call result() will block until the future has finished or was cancelled.
-        [future.result() for future in future_list]
-        del self.futures[data_id]
-
     def on_layer_deleted(self, layer):
         """The layer was deleted, delete it from our map.
 
