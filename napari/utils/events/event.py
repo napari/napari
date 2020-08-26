@@ -667,6 +667,8 @@ class EmitterGroup(EventEmitter):
         <vispy.event.EventEmitter.connect>`.
         This provides a simple mechanism for automatically connecting a large
         group of emitters to default callbacks.
+    deprecated: dict
+        dict with mapping old emitter name to new emitter name
     emitters : keyword arguments
         See the :func:`add <vispy.event.EmitterGroup.add>` method.
     """
