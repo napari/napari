@@ -5,7 +5,7 @@ import logging
 from qtpy.QtCore import QObject, Signal
 
 from ..components.chunk import chunk_loader
-from ..utils.events import EmitterGroup, Event
+from ..utils.events import EmitterGroup, Event, EventEmitter
 
 LOGGER = logging.getLogger('napari.async')
 
@@ -17,15 +17,29 @@ class QtGuiEvent(QObject):
     Signal/Slot to fire a gui_event in the GUI thread. If the original
     event is already in the GUI thread that's fine, the gui_event will
     be immediately fired the GUI thread.
+
+    Parameters
+    ----------
+    parent : QObject
+        The Qt object parent.
+    emitter : EventEmitter
+        The event we are listening to.
+
+    Attributes
+    ----------
+    emitter : EventEmitter
+        The event we are listening to.
+    events : EmitterGroup
+        The only event we report is events.gui_event.
     """
 
     signal = Signal(Event)
 
-    def __init__(self, parent, listen_event):
+    def __init__(self, parent: QObject, emitter: EventEmitter):
         super().__init__(parent)
 
-        listen_event.connect(self._on_event)
-        self.listen_event = listen_event
+        emitter.connect(self._on_event)
+        self.emitter = emitter
 
         self.events = EmitterGroup(
             source=self, auto_connect=True, gui_event=None
@@ -44,7 +58,7 @@ class QtGuiEvent(QObject):
     def close(self):
         """Viewer is closing."""
         self.gui_event.disconnect()
-        self.listen_event.disconnect()
+        self.emitter.disconnect()
 
 
 class QtChunkReceiver:
