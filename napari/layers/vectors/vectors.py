@@ -230,13 +230,13 @@ class Vectors(Layer):
         self._data = vectors_to_coordinates(vectors)
 
         vertices, triangles = generate_vector_meshes(
-            self._data[:, :, list(self._dims.displayed)],
+            self._data[:, :, list(self.dims.displayed)],
             self.edge_width,
             self.length,
         )
         self._mesh_vertices = vertices
         self._mesh_triangles = triangles
-        self._displayed_stored = copy(self._dims.displayed)
+        self._displayed_stored = copy(self.dims.displayed)
 
         self._update_dims()
         self.events.data()
@@ -325,13 +325,13 @@ class Vectors(Layer):
         self._edge_width = edge_width
 
         vertices, triangles = generate_vector_meshes(
-            self.data[:, :, list(self._dims.displayed)],
+            self.data[:, :, list(self.dims.displayed)],
             self._edge_width,
             self.length,
         )
         self._mesh_vertices = vertices
         self._mesh_triangles = triangles
-        self._displayed_stored = copy(self._dims.displayed)
+        self._displayed_stored = copy(self.dims.displayed)
 
         self.events.edge_width()
         self.refresh()
@@ -347,13 +347,13 @@ class Vectors(Layer):
         self._length = length
 
         vertices, triangles = generate_vector_meshes(
-            self.data[:, :, list(self._dims.displayed)],
+            self.data[:, :, list(self.dims.displayed)],
             self.edge_width,
             self._length,
         )
         self._mesh_vertices = vertices
         self._mesh_triangles = triangles
-        self._displayed_stored = copy(self._dims.displayed)
+        self._displayed_stored = copy(self.dims.displayed)
 
         self.events.length()
         self.refresh()
@@ -590,7 +590,7 @@ class Vectors(Layer):
     def _view_face_color(self) -> np.ndarray:
         """" (Mx4) np.ndarray : colors for the M in view vectors"""
         face_color = np.repeat(self.edge_color[self._view_indices], 2, axis=0)
-        if self._dims.ndisplay == 3 and self.ndim > 2:
+        if self.dims.ndisplay == 3 and self.ndim > 2:
             face_color = np.vstack([face_color, face_color])
 
         return face_color
@@ -598,19 +598,19 @@ class Vectors(Layer):
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
 
-        if not self._dims.displayed == self._displayed_stored:
+        if not self.dims.displayed == self._displayed_stored:
             vertices, triangles = generate_vector_meshes(
-                self.data[:, :, list(self._dims.displayed)],
+                self.data[:, :, list(self.dims.displayed)],
                 self.edge_width,
                 self.length,
             )
             self._mesh_vertices = vertices
             self._mesh_triangles = triangles
-            self._displayed_stored = copy(self._dims.displayed)
+            self._displayed_stored = copy(self.dims.displayed)
 
         vertices = self._mesh_vertices
-        not_disp = list(self._dims.not_displayed)
-        disp = list(self._dims.displayed)
+        not_disp = list(self.dims.not_displayed)
+        disp = list(self.dims.displayed)
         indices = np.array(self._slice_indices)
 
         if len(self.data) == 0:
@@ -628,7 +628,7 @@ class Vectors(Layer):
             else:
                 keep_inds = np.repeat(2 * matches, 2)
                 keep_inds[1::2] = keep_inds[1::2] + 1
-                if self._dims.ndisplay == 3:
+                if self.dims.ndisplay == 3:
                     keep_inds = np.concatenate(
                         [
                             keep_inds,
@@ -655,14 +655,12 @@ class Vectors(Layer):
         # the offset is needed to ensure that the top left corner of the
         # vectors corresponds to the top left corner of the thumbnail
         de = self._extent_data
-        offset = (np.array([de[0, d] for d in self._dims.displayed]) + 0.5)[
-            -2:
-        ]
+        offset = (np.array([de[0, d] for d in self.dims.displayed]) + 0.5)[-2:]
         # calculate range of values for the vertices and pad with 1
         # padding ensures the entire vector can be represented in the thumbnail
         # without getting clipped
         shape = np.ceil(
-            [de[1, d] - de[0, d] + 1 for d in self._dims.displayed]
+            [de[1, d] - de[0, d] + 1 for d in self.dims.displayed]
         ).astype(int)[-2:]
         zoom_factor = np.divide(self._thumbnail_shape[:2], shape).min()
 

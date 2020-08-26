@@ -18,7 +18,7 @@ class VispyVectorsLayer(VispyBaseLayer):
             len(self.layer._view_vertices) == 0
             or len(self.layer._view_faces) == 0
         ):
-            vertices = np.zeros((3, self.layer._dims.ndisplay))
+            vertices = np.zeros((3, self.layer.dims.ndisplay))
             faces = np.array([[0, 1, 2]])
             face_color = np.array([[0, 0, 0, 0]])
         else:
@@ -26,7 +26,7 @@ class VispyVectorsLayer(VispyBaseLayer):
             faces = self.layer._view_faces
             face_color = self.layer._view_face_color
 
-        if self.layer._dims.ndisplay == 3 and self.layer._dims.ndim == 2:
+        if self.layer.dims.ndisplay == 3 and self.layer.dims.ndim == 2:
             vertices = np.pad(vertices, ((0, 0), (0, 1)), mode='constant')
 
         # self.node.set_data(
