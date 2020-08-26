@@ -93,10 +93,7 @@ class ChunkRequest:
     @property
     def in_memory(self) -> bool:
         """True if all chunks are ndarrays."""
-        for array in self.chunks.values():
-            if not isinstance(array, np.ndarray):
-                return False
-        return True
+        return all(isinstance(x, np.ndarray) for x in self.chunks.values())
 
     def load_chunks(self):
         """Load all of our chunks now in this thread."""
