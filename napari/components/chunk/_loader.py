@@ -34,11 +34,11 @@ def _chunk_loader_worker(request: ChunkRequest) -> ChunkRequest:
 
 
 class ChunkLoader:
-    """Loads chunks in worker threads.
+    """Loads chunks synchronously or asynchronously in worker threads.
 
     We cannot call np.asarray() in the GUI thread because it might block on
     IO or a computation. So the ChunkLoader calls np.asarray() in a worker
-    thread or process.
+    thread if doing async loading.
 
     Attributes
     ----------
@@ -50,6 +50,8 @@ class ChunkLoader:
         In progress futures for each layer (data_id).
     events : EmitterGroup
         We only signal one event: chunk_loaded.
+    layer_map : LayerMap
+        Stores a LayerInfo about each layer we are tracking.
     """
 
     FutureMap = Dict[int, List[futures.Future]]
@@ -57,22 +59,11 @@ class ChunkLoader:
 
     def __init__(self):
         self.synchronous = not _is_enabled("NAPARI_ASYNC")
-
-        # Executor to our concurrent.futures pool for workers.
         self.executor = futures.ThreadPoolExecutor(max_workers=6)
-
-        # Maps data_id to futures for that layer.
         self.futures: self.FutureMap = {}
-
-        # We emit only one event:
-        #     chunk_loaded - a chunk was loaded
         self.events = EmitterGroup(
             source=self, auto_connect=True, chunk_loaded=None
         )
-
-        # We track information about each layer including a weak reference
-        # to the layer. The ChunkRequest cannot hold the weak reference
-        # itself because it won't serialize if we are using proceses.
         self.layer_map: self.LayerMap = {}
 
     def get_info(self, layer_id: int) -> Optional[LayerInfo]:
@@ -88,10 +79,10 @@ class ChunkLoader:
         ----------
         layer : Layer
             The layer that's requesting the data.
-        indices : slice
-            The indices being requested.
-        array : ArrayLike
-            The array containing the data we want to load.
+        key : ChunkKey
+            The key for the request.
+        chunks : Dict[str, ArrayLike]
+            The arrays we want to load.
         """
         layer_id = key.layer_id
 
