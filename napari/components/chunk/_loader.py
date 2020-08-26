@@ -245,7 +245,10 @@ class ChunkLoader:
         callback will be called in, only that it will be called in some
         thread in the same process.
         """
-        request = self._get_request(future)
+        try:
+            request = self._get_request(future)
+        except ValueError:
+            return  # Pool not running, app exit in progress.
 
         if request is None:
             return  # Future was cancelled, nothing to do.
