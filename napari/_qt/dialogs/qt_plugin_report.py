@@ -59,7 +59,7 @@ class QtPluginErrReporter(QDialog):
     ) -> None:
         super().__init__(parent)
         if not plugin_manager:
-            from ..plugins import plugin_manager as _pm
+            from ...plugins import plugin_manager as _pm
 
             self.plugin_manager = _pm
         else:
