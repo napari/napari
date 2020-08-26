@@ -3,6 +3,8 @@
 import logging
 import weakref
 
+from ...layers.base import Layer
+
 LOGGER = logging.getLogger("napari.async")
 
 
@@ -32,8 +34,8 @@ class LayerInfo:
         self.layer_id: int = id(layer)
         self.layer_ref: weakref.ReferenceType = weakref.ref(layer)
 
-    def get_layer(self):
-        """Resolve our weakref to get the layer, log if not found.
+    def get_layer(self) -> Layer:
+        """Resolve our weakref to get the layer.
 
         Returns
         -------
