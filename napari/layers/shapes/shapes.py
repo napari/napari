@@ -344,7 +344,6 @@ class Shapes(Layer):
 
         self._display_order_stored = []
         self._ndisplay_stored = self.dims.ndisplay
-        self.dims.clip = False
 
         # Save the properties
         if properties is None:
@@ -386,7 +385,7 @@ class Shapes(Layer):
             self._current_edge_width = 1
 
         self._data_view = ShapeList(ndisplay=self.dims.ndisplay)
-        self._data_view.slice_key = np.array(self.dims.indices)[
+        self._data_view.slice_key = np.array(self._slice_indices)[
             list(self.dims.not_displayed)
         ]
 
@@ -1745,7 +1744,9 @@ class Shapes(Layer):
             # Clear clipboard if dimensions swap
             self._clipboard = {}
 
-        slice_key = np.array(self.dims.indices)[list(self.dims.not_displayed)]
+        slice_key = np.array(self._slice_indices)[
+            list(self.dims.not_displayed)
+        ]
         if not np.all(slice_key == self._data_view.slice_key):
             self.selected_data = set()
         self._data_view.slice_key = slice_key
@@ -2114,7 +2115,7 @@ class Shapes(Layer):
             data_full = data[:, self.dims.displayed_order]
         else:
             data_full = np.zeros((len(data), self.ndim), dtype=float)
-            indices = np.array(self.dims.indices)
+            indices = np.array(self._slice_indices)
             data_full[:, self.dims.not_displayed] = indices[
                 self.dims.not_displayed
             ]
@@ -2221,7 +2222,7 @@ class Shapes(Layer):
                 'properties': {
                     k: deepcopy(v[index]) for k, v in self.properties.items()
                 },
-                'indices': self.dims.indices,
+                'indices': self._slice_indices,
             }
             if self.text.values is None:
                 self._clipboard['text'] = None
@@ -2236,7 +2237,7 @@ class Shapes(Layer):
         if len(self._clipboard.keys()) > 0:
             # Calculate offset based on dimension shifts
             offset = [
-                self.dims.indices[i] - self._clipboard['indices'][i]
+                self._slice_indices[i] - self._clipboard['indices'][i]
                 for i in self.dims.not_displayed
             ]
 
