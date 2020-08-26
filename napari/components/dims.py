@@ -274,7 +274,7 @@ class Dims:
             # Range value is (min, max, step) for the entire slider
             self._range[axis] = (0, 2, 1)
             # Point is the slider value if in point mode
-            self._step[axis] = 0
+            self._current_step[axis] = 0
             self._order[axis] = axis
             # Default axis labels go from "-ndim" to "-1" so new axes can easily be added
             self._axis_labels[axis] = str(axis - self.ndim)
@@ -310,7 +310,7 @@ class Dims:
         axis = self._assert_axis_in_bounds(axis)
         (min_val, max_val, step_size) = self._range[axis]
         raw_step = (value - min_val) / step_size
-        self.set_step(axis, raw_step)
+        self.set_current_step(axis, raw_step)
 
     def set_current_step(self, axis: int, value: int):
         """Sets the slider step at which to slice this dimension.
