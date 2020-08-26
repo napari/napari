@@ -23,8 +23,9 @@ class LayerInfo:
 
     Notes
     -----
-    We store a weak reference in case the layer was deleted while the async
-    load was in progress, we can drop the chunk.
+    We store a weak reference because an in-progress request should not prevent
+    a layer from being deleted. Meanwhile once a request has finished, we can
+    de-reference to make sure the layer still exists.
     """
 
     def __init__(self, layer):
