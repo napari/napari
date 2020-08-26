@@ -96,7 +96,7 @@ class QtDimSliderWidget(QWidget):
             self.curslice_label.setText(str(val))
         self.curslice_label.clearFocus()
         self.qt_dims.setFocus()
-        self.dims.set_step(self.axis, val)
+        self.dims.set_current_step(self.axis, val)
 
     def _create_axis_label_widget(self):
         """Create the axis label widget which accompanies its slider."""
@@ -118,7 +118,7 @@ class QtDimSliderWidget(QWidget):
 
         We split this out as a separate function for perfmon.
         """
-        self.dims.set_step(self.axis, value)
+        self.dims.set_current_step(self.axis, value)
 
     def _create_range_slider_widget(self):
         """Creates a range slider widget for a given axis."""
@@ -131,7 +131,7 @@ class QtDimSliderWidget(QWidget):
         slider.setMaximum(self.dims.nsteps[self.axis] - 1)
         slider.setSingleStep(1)
         slider.setPageStep(1)
-        slider.setValue(self.dims.step[self.axis])
+        slider.setValue(self.dims.current_step[self.axis])
 
         # Listener to be used for sending events back to model:
         slider.valueChanged.connect(self._value_changed)
@@ -201,19 +201,19 @@ class QtDimSliderWidget(QWidget):
             self.slider.setMaximum(nsteps)
             self.slider.setSingleStep(1)
             self.slider.setPageStep(1)
-            self.slider.setValue(self.dims.step[self.axis])
+            self.slider.setValue(self.dims.current_step[self.axis])
             self.totslice_label.setText(str(nsteps))
             self.totslice_label.setAlignment(Qt.AlignLeft)
             self._update_slice_labels()
 
     def _update_slider(self):
         """Update dimension slider."""
-        self.slider.setValue(self.dims.step[self.axis])
+        self.slider.setValue(self.dims.current_step[self.axis])
         self._update_slice_labels()
 
     def _update_slice_labels(self):
         """Update slice labels to match current dimension slider position."""
-        self.curslice_label.setText(str(self.dims.step[self.axis]))
+        self.curslice_label.setText(str(self.dims.current_step[self.axis]))
         self.curslice_label.setAlignment(Qt.AlignRight)
 
     @property
@@ -558,11 +558,11 @@ class AnimationWorker(QObject):
         self.set_fps(self.slider.fps)
         self.set_frame_range(slider.frame_range)
 
-        # after dims.set_step is called, it will emit a dims.events.step()
+        # after dims.set_current_step is called, it will emit a dims.events.current_step()
         # we use this to update this threads current frame (in case it
         # was some other event that updated the axis)
-        self.dims.events.step.connect(self._on_axis_changed)
-        self.current = max(self.dims.step[self.axis], self.min_point)
+        self.dims.events.current_step.connect(self._on_axis_changed)
+        self.current = max(self.dims.current_step[self.axis], self.min_point)
         self.current = min(self.current, self.max_point)
         self.timer = QTimer()
 
@@ -676,7 +676,7 @@ class AnimationWorker(QObject):
                 self.current = self.min_point + self.current - self.max_point
             else:  # loop_mode == 'once'
                 return self.finish()
-        with self.dims.events.step.blocker(self._on_axis_changed):
+        with self.dims.events.current_step.blocker(self._on_axis_changed):
             self.frame_requested.emit(self.axis, self.current)
         # using a singleShot timer here instead of timer.start() because
         # it makes it easier to update the interval using signals/slots
