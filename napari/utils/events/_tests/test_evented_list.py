@@ -366,3 +366,17 @@ def test_evented_list_subclass():
     assert hasattr(lst, 'events')
     assert 'boom' in lst.events.emitters
     assert lst == [1, 2]
+
+
+def test_event_group_depr(capsys):
+    events = EmitterGroup(b=None, deprecated={"a": "b"})
+    assert events.b == events.a
+    captured = capsys.readouterr()
+    assert captured.err == "emitter a is deprecated, b provided instead\n"
+    with pytest.raises(AttributeError):
+        events.c.connect()
+    assert events["b"] == events["a"]
+    captured = capsys.readouterr()
+    assert captured.err == "emitter a is deprecated, b provided instead\n"
+    with pytest.raises(KeyError):
+        events["c"].connect()
