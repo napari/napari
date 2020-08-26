@@ -117,13 +117,9 @@ class ChunkLoader:
 
         Notes
         -----
-        load_chunk() runs synchronously if request.in_memory is True indicating
-        the array are all ndarrays, they are all in memory.
-
-        If the load is synchronous then load_chunk() returns the now-satisfied
-        request. Otherwise load_chunk() returns None and the Layer's
-        chunk_loaded() will be called in the GUI thread sometime in the future
-        after the worker has performed the load.
+        If a ChunkRequest is returned that means the load already happened.
+        If None is returned then the layer's on_chunk_loaded will be called
+        sometime in the future from the GUI thread.
         """
 
         if self._load_synchronously(request):
@@ -142,14 +138,13 @@ class ChunkLoader:
     def _load_synchronously(self, request: ChunkRequest) -> bool:
         """Return True if we loaded the request synchronously."""
 
-        if self.synchronous:
-            return True  # All requests are async.
+        # If async is enabled, loaded non-ndarray request async.
+        if not self.synchronous and not request.in_memory:
+            return False  # load async
 
-        if not request.in_memory:
-            return False  # It's all ndarray so we'll load it async.
-
+        # Load synchronously.
         request.load_chunks()
-        return True  # Load was sync.
+        return True
 
     def _submit_async(self, request: ChunkRequest) -> None:
         """Initiate an asynchronous load of the given request.
