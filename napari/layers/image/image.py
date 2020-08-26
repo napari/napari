@@ -254,9 +254,9 @@ class Image(IntensityVisualizationMixin, Layer):
         """Get empty image to use as the default before data is loaded.
         """
         if self.rgb:
-            return np.zeros((1,) * self.dims.ndisplay + (3,))
+            return np.zeros((1,) * self._dims.ndisplay + (3,))
         else:
-            return np.zeros((1,) * self.dims.ndisplay)
+            return np.zeros((1,) * self._dims.ndisplay)
 
     def _get_order(self):
         """Return the order of the displayed dimensions."""
@@ -264,11 +264,11 @@ class Image(IntensityVisualizationMixin, Layer):
             # if rgb need to keep the final axis fixed during the
             # transpose. The index of the final axis depends on how many
             # axes are displayed.
-            return self.dims.displayed_order + (
-                max(self.dims.displayed_order) + 1,
+            return self._dims.displayed_order + (
+                max(self._dims.displayed_order) + 1,
             )
         else:
-            return self.dims.displayed_order
+            return self._dims.displayed_order
 
     @property
     def _data_view(self):
@@ -392,17 +392,17 @@ class Image(IntensityVisualizationMixin, Layer):
         str
             The current interpolation mode
         """
-        return str(self._interpolation[self.dims.ndisplay])
+        return str(self._interpolation[self._dims.ndisplay])
 
     @interpolation.setter
     def interpolation(self, interpolation):
         """Set current interpolation mode."""
-        if self.dims.ndisplay == 3:
-            self._interpolation[self.dims.ndisplay] = Interpolation3D(
+        if self._dims.ndisplay == 3:
+            self._interpolation[self._dims.ndisplay] = Interpolation3D(
                 interpolation
             )
         else:
-            self._interpolation[self.dims.ndisplay] = Interpolation(
+            self._interpolation[self._dims.ndisplay] = Interpolation(
                 interpolation
             )
         self.events.interpolation()
@@ -495,7 +495,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
-        not_disp = self.dims.not_displayed
+        not_disp = self._dims.not_displayed
 
         # Check if requested slice outside of data range
         indices = np.array(self._slice_indices)
@@ -519,7 +519,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
         if self.multiscale:
             # If 3d redering just show lowest level of multiscale
-            if self.dims.ndisplay == 3:
+            if self._dims.ndisplay == 3:
                 self.data_level = len(self.data) - 1
 
             # Slice currently viewed level
@@ -537,18 +537,18 @@ class Image(IntensityVisualizationMixin, Layer):
             indices[not_disp] = downsampled_indices
 
             scale = np.ones(self.ndim)
-            for d in self.dims.displayed:
+            for d in self._dims.displayed:
                 scale[d] = self.downsample_factors[self.data_level][d]
             self._transforms['tile2data'].scale = scale
 
-            if self.dims.ndisplay == 2:
+            if self._dims.ndisplay == 2:
                 corner_pixels = np.clip(
                     self.corner_pixels,
                     0,
                     np.subtract(self.level_shapes[self.data_level], 1),
                 )
 
-                for d in self.dims.displayed:
+                for d in self._dims.displayed:
                     indices[d] = slice(
                         corner_pixels[0, d], corner_pixels[1, d] + 1, 1
                     )
@@ -682,7 +682,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
         image = self._slice.thumbnail.view
 
-        if self.dims.ndisplay == 3 and self.dims.ndim > 2:
+        if self._dims.ndisplay == 3 and self._dims.ndim > 2:
             image = np.max(image, axis=0)
 
         # float16 not supported by ndi.zoom
@@ -755,8 +755,8 @@ class Image(IntensityVisualizationMixin, Layer):
         else:
             shape = raw.shape
 
-        if all(0 <= c < s for c, s in zip(coord[self.dims.displayed], shape)):
-            value = raw[tuple(coord[self.dims.displayed])]
+        if all(0 <= c < s for c, s in zip(coord[self._dims.displayed], shape)):
+            value = raw[tuple(coord[self._dims.displayed])]
         else:
             value = None
 
