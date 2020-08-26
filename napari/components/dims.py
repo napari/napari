@@ -295,7 +295,10 @@ class Dims:
             self.events.range(axis=axis)
 
     def set_point(self, axis: int, value: Union[int, float]):
-        """Sets the point at which to slice this dimension.
+        """Sets point to slice dimension in world coordinates.
+
+        The desired point gets transformed into an integer step
+        of the slider and stored in the current_step.
 
         Parameters
         ----------
@@ -311,6 +314,9 @@ class Dims:
 
     def set_current_step(self, axis: int, value: int):
         """Sets the slider step at which to slice this dimension.
+
+        The position of the slider in world coordinates gets
+        calculated from the current_step of the slider.
 
         Parameters
         ----------
