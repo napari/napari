@@ -13,6 +13,18 @@ class LayerInfo:
     ----------
     layer : Layer
         The layer we are loading chunks for.
+
+    Attributes
+    ----------
+    layer_id : int
+        The id of the layer.
+    layer_ref : weakref
+        Weak reference to the layer.
+
+    Notes
+    -----
+    We store a weak reference in case the layer was deleted while the async
+    load was in progress, we can drop the chunk.
     """
 
     def __init__(self, layer):
