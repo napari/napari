@@ -1,62 +1,67 @@
+"""QtChunkReceiver and QtGuiEvent classes.
+"""
 import logging
 
 from qtpy.QtCore import QObject, Signal
 
-from ..components.chunk import ChunkRequest, chunk_loader
-from ..layers.base import Layer
+from ..components.chunk import chunk_loader
+from ..utils.events import EmitterGroup, Event
 
 LOGGER = logging.getLogger('napari.async')
 
 
-class QtChunkReceiver(QObject):
-    """Shuttles newly loaded chunks from the ChunkLoader to their layers.
+class QtGuiEvent(QObject):
+    """Fires an event in the GUI thread.
 
-    Notes
-    -----
-    The ChunkLoader's chunk_loaded event might be signaled in a worker
-    thread. The documentation only guarantees it will be signaled in thread
-    in this process, in theory could be any thread.
-
-    We do not want to call into model/layer code in a worker thread so we
-    signal ourselves in the GUI thread. If we are already in the GUI thread
-    this does no harm and happens instantly.
+    Listens to an event in any thread. When that event fires, it uses a Qt
+    Signal/Slot to fire a matching even in the GUI thread. If the original
+    event is already in the GUI thread that's fine, the matching event will
+    be immediately fired in the GUI threads.
     """
 
-    chunk_loaded_gui = Signal(Layer, ChunkRequest)
+    signal = Signal(Event)
 
-    def __init__(self, parent=None):
+    def __init__(self, parent, listen_event):
         super().__init__(parent)
 
-        # ChunkLoader signals us when a chunk has been loaded.
-        chunk_loader.events.chunk_loaded.connect(self._chunk_loaded_worker)
-
-        # We signal ourselves in the GUI thread.
-        self.chunk_loaded_gui.connect(self._chunk_loaded_gui)
-
-    def _chunk_loaded_worker(self, event) -> None:
-        """A chunk was loaded.
-
-        The method is probably running in a worker thread.
-        """
-        LOGGER.info(
-            "QtChunkReceiver._chunk_loaded_worker: data_id=%d",
-            event.request.key.data_id,
+        self.events = EmitterGroup(
+            source=self, auto_connect=True, gui_event=None
         )
-        self.chunk_loaded_gui.emit(event.layer, event.request)
+        listen_event.connect(self._on_event)
+        self.signal.connect(self._slot)
 
-    def _chunk_loaded_gui(self, layer, request: ChunkRequest) -> None:
-        """A chunk was loaded.
+    def _on_event(self, event) -> None:
+        """Event was fired, we could be in any thread."""
+        self.signal.emit(event)
 
-        The method is definitely running in the GUI thread.
+    def _slot(self, event) -> None:
+        """Slot is always called in the GUI thread."""
+        self.events.gui_event(event=event)
+
+
+class QtChunkReceiver:
+    """Listens for loaded chunks, passes them to their Layer.
+
+    Parameters
+    ----------
+    parent : QObject
+        Parent for QtGuiEvent.
+    """
+
+    def __init__(self, parent):
+        listen_event = chunk_loader.events.chunk_loaded
+        self.gui_event = QtGuiEvent(parent, listen_event)
+        self.gui_event.events.gui_event.connect(self._on_chunk_loaded_gui)
+
+    def _on_chunk_loaded_gui(self, event) -> None:
+        """A chunk was loaded. This method called in the GUI thread
+
+        Parameters
+        ----------
+        event : Event
+            The event object passed with the EmitterGroup event.
         """
-        LOGGER.info(
-            "QtChunkReceiver._chunk_loaded_gui: data_id=%d",
-            request.key.data_id,
-        )
+        layer = event.event.layer
+        request = event.event.request
+
         layer.on_chunk_loaded(request)  # Pass the chunk to its layer.
-
-    def close(self):
-        """Viewer is closing.
-        """
-        self.chunk_loaded_gui.disconnect()
-        chunk_loader.events.chunk_loaded.disconnect()
