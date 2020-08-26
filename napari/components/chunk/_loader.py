@@ -105,9 +105,10 @@ class ChunkLoader:
 
         Notes
         -----
-        If a ChunkRequest is returned that means the load already happened.
-        If None is returned then the layer's on_chunk_loaded() will be called
-        sometime in the future from the GUI thread.
+        We return a ChunkRequest if we performed the load synchronously,
+        otherwise we return None is indicating that an asynchronous load
+        was intitiated. When the async load finishes the layer's
+        on_chunk_loaded() will be called from the GUI thread.
         """
         if self._load_synchronously(request):
             return request
