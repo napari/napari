@@ -74,8 +74,6 @@ class ChunkRequest:
         The key of the request.
     chunks : Dict[str, ArrayLike]
         The chunk arrays we need to load.
-    load_seconds : float
-        Delay for this long during the load portion, for testing.
     """
 
     def __init__(self, key: ChunkKey, chunks: Dict[str, ArrayLike]):
@@ -86,9 +84,6 @@ class ChunkRequest:
 
         self.key = key
         self.chunks = chunks
-
-        # No delay by default.
-        self.load_seconds = 0
 
     @property
     def in_memory(self) -> bool:
