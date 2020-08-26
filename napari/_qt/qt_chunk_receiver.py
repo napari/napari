@@ -54,6 +54,11 @@ class QtChunkReceiver:
     ----------
     parent : QObject
         Parent for QtGuiEvent.
+
+    Attributes
+    ----------
+    gui_event : QtGuiEvent
+        Listens for an event and signals us in the GUI thread.
     """
 
     def __init__(self, parent):
@@ -62,15 +67,20 @@ class QtChunkReceiver:
         self.gui_event.events.gui_event.connect(self._on_chunk_loaded_gui)
 
     def _on_chunk_loaded_gui(self, event) -> None:
-        """A chunk was loaded. This method called in the GUI thread
+        """A chunk was loaded. This method is called in the GUI thread.
 
         Parameters
         ----------
         event : Event
-            The event object passed with the EmitterGroup event.
+            The event object from the original event.
         """
         layer = event.event.layer
         request = event.event.request
+
+        LOGGER.info(
+            "QtChunkReceiver._on_chunk_loaded_gui: data_id=%d",
+            request.key.data_id,
+        )
 
         layer.on_chunk_loaded(request)  # Pass the chunk to its layer.
 
