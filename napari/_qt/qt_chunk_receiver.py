@@ -21,7 +21,7 @@ class QtGuiEvent(QObject):
     Parameters
     ----------
     parent : QObject
-        The Qt object parent.
+        Parent Qt object.
     emitter : EventEmitter
         The event we are listening to.
 
@@ -62,20 +62,20 @@ class QtGuiEvent(QObject):
 
 
 class QtChunkReceiver:
-    """Listens for loaded chunks, passes them to their Layer.
+    """Passes loaded chunks to their layer.
 
     Parameters
     ----------
     parent : QObject
-        Parent for QtGuiEvent.
+        Parent Qt object.
 
     Attributes
     ----------
     gui_event : QtGuiEvent
-        Listens for an event and signals us in the GUI thread.
+        We use this to call _on_chunk_loaded_gui() in the GUI thread.
     """
 
-    def __init__(self, parent):
+    def __init__(self, parent: QObject):
         listen_event = chunk_loader.events.chunk_loaded
         self.gui_event = QtGuiEvent(parent, listen_event)
         self.gui_event.events.gui_event.connect(self._on_chunk_loaded_gui)
