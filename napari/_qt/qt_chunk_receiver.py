@@ -24,10 +24,13 @@ class QtGuiEvent(QObject):
     def __init__(self, parent, listen_event):
         super().__init__(parent)
 
+        listen_event.connect(self._on_event)
+        self.listen_event = listen_event
+
         self.events = EmitterGroup(
             source=self, auto_connect=True, gui_event=None
         )
-        listen_event.connect(self._on_event)
+
         self.signal.connect(self._slot)
 
     def _on_event(self, event) -> None:
@@ -37,6 +40,11 @@ class QtGuiEvent(QObject):
     def _slot(self, event) -> None:
         """Slot is always called in the GUI thread."""
         self.events.gui_event(event=event)
+
+    def close(self):
+        """Viewer is closing."""
+        self.gui_event.disconnect()
+        self.listen_event.disconnect()
 
 
 class QtChunkReceiver:
@@ -65,3 +73,7 @@ class QtChunkReceiver:
         request = event.event.request
 
         layer.on_chunk_loaded(request)  # Pass the chunk to its layer.
+
+    def close(self):
+        """Viewer is closing."""
+        self.gui_event.close()

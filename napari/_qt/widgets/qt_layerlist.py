@@ -649,3 +649,7 @@ class QtLayerWidget(QFrame):
             QImage.Format_RGBA8888,
         )
         self.thumbnailLabel.setPixmap(QPixmap.fromImage(image))
+
+    def close(self):
+        """Viewer is closing."""
+        self.chunk_receiver.close()
