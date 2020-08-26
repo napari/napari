@@ -14,9 +14,9 @@ class QtGuiEvent(QObject):
     """Fires an event in the GUI thread.
 
     Listens to an event in any thread. When that event fires, it uses a Qt
-    Signal/Slot to fire a matching even in the GUI thread. If the original
-    event is already in the GUI thread that's fine, the matching event will
-    be immediately fired in the GUI threads.
+    Signal/Slot to fire a gui_event in the GUI thread. If the original
+    event is already in the GUI thread that's fine, the gui_event will
+    be immediately fired the GUI thread.
     """
 
     signal = Signal(Event)
