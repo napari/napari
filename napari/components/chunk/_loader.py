@@ -46,25 +46,22 @@ class ChunkLoader:
         If True all requests are loaded synchronously.
     executor : ThreadPoolExecutor
         Our thread pool executor.
-    futures : FutureMap
+    futures : Dict[int, List[futures.Future]]
         In progress futures for each layer (data_id).
     events : EmitterGroup
         We only signal one event: chunk_loaded.
-    layer_map : LayerMap
+    layer_map : Dict[int, LayerInfo]
         Stores a LayerInfo about each layer we are tracking.
     """
-
-    FutureMap = Dict[int, List[futures.Future]]
-    LayerMap = Dict[int, LayerInfo]
 
     def __init__(self):
         self.synchronous = not _is_enabled("NAPARI_ASYNC")
         self.executor = futures.ThreadPoolExecutor(max_workers=6)
-        self.futures: self.FutureMap = {}
+        self.futures: Dict[int, List[futures.Future]] = {}
         self.events = EmitterGroup(
             source=self, auto_connect=True, chunk_loaded=None
         )
-        self.layer_map: self.LayerMap = {}
+        self.layer_map: Dict[int, LayerInfo] = {}
 
     def get_info(self, layer_id: int) -> Optional[LayerInfo]:
         """Get LayerInfo for this layer or None."""
