@@ -12,16 +12,13 @@ def get_data_id(layer) -> int:
 
     Notes
     -----
-    We use data_id rather than layer_id in case someone changes the data
-    out from under a layer.
+    We use data_id rather than just the layer_id, because if someone
+    changes the data out from under a layer, we do not want to use the
+    wrong chunks.
     """
     data = layer.data
     if isinstance(data, list):
-        # Assert for now, but shapes layers do have an empty list.
-        assert data
+        assert data  # data should not be empty for image layers.
+        return id(data[0])  # Just use the ID from the 0'th layer.
 
-        # Just use the ID from the 0'th layer.
-        return id(data[0])
-
-    # Not a list so just use its id.
-    return id(data)
+    return id(data)  # Not a list, just us it.
