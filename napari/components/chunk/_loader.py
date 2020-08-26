@@ -109,21 +109,16 @@ class ChunkLoader:
         Notes
         -----
         If a ChunkRequest is returned that means the load already happened.
-        If None is returned then the layer's on_chunk_loaded will be called
+        If None is returned then the layer's on_chunk_loaded() will be called
         sometime in the future from the GUI thread.
         """
-
         if self._load_synchronously(request):
             return request
 
-        # Clear any pending requests for this specific data_id. We don't
-        # support "tiles" so there can be only one load in progress per
-        # data_id.
+        # Clear any pending requests for this specific data_id.
         self._clear_pending(request.key.data_id)
 
-        # Add to the delay queue, the delay queue will
-        # ChunkLoader_submit_async() later on if the delay expires without
-        # the request getting cancelled.
+        # Sumbit the request asynchronously.
         self._submit_async(request)
 
     def _load_synchronously(self, request: ChunkRequest) -> bool:
@@ -143,7 +138,7 @@ class ChunkLoader:
         Parameters
         ----------
         request : ChunkRequest
-            Contains the array to load from and related info.
+            Contains the arrays to load.
         """
         LOGGER.debug("ChunkLoader._load_async: %s", request.key)
 
@@ -164,15 +159,11 @@ class ChunkLoader:
         """
         LOGGER.debug("ChunkLoader._clear_pending %d", data_id)
 
-        # Next get any futures for this data_id that have been submitted to
-        # the pool.
+        # Get list of futures we submitted to the pool.
         future_list = self.futures.setdefault(data_id, [])
 
         # Try to cancel all futures in the list, but cancel() will return
-        # False if the task already started running. We cannot cancel tasks
-        # that are already running, we just have to let them run to
-        # completion even though we probably do not care about what they
-        # are loading.
+        # False if the task already started running.
         num_before = len(future_list)
         future_list[:] = [x for x in future_list if x.cancel()]
         num_after = len(future_list)
@@ -199,7 +190,7 @@ class ChunkLoader:
 
         Parameters
         ----------
-        future futures.Future
+        future : futures.Future
             Get the request from this future.
 
         Returns
@@ -226,10 +217,10 @@ class ChunkLoader:
 
         Notes
         -----
-        This method may be called in the worker thread. The documentation
-        very intentionally does not specify which thread the future's done
-        callback will be called in, only that it will be called in some
-        thread in the same process.
+        This method may be called in the worker thread. The
+        concurrent.futures documentation very intentionally does not
+        specify which thread the future's done callback will be called in,
+        only that it will be called in some thread in the current process.
         """
         try:
             request = self._get_request(future)
