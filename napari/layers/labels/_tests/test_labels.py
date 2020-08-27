@@ -4,6 +4,7 @@ from vispy.color import Colormap
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Labels
+from napari.layers.labels._labels_constants import LabelColorMode
 
 
 def test_random_labels():
@@ -377,6 +378,40 @@ def test_label_color():
 
     col = layer.get_color(1)
     assert len(col) == 4
+
+
+def test_selected_mode_label_color():
+    """Test color of labels in selected color mode"""
+    np.random.seed(0)
+    data = np.random.randint(20, size=(10, 15))
+    layer = Labels(data)
+    original_color = layer.get_color(1)
+
+    layer.color_mode = LabelColorMode.SELECTED
+    layer.selected_label = 1
+    # color of selected label has not changed
+    assert np.allclose(layer.get_color(layer.selected_label), original_color)
+
+    background_color = layer.get_color(layer._background_label)
+    none_color = layer.get_color(None)
+    # color of background is background color
+    assert np.all(
+        np.where(
+            layer.data == layer._background_label,
+            np.allclose(layer.get_color(layer.data), background_color),
+            1,
+        )
+    )
+
+    # color of all others is none color
+    assert np.all(
+        np.where(
+            layer.data != layer.selected_label
+            and layer.data != layer._background_label,
+            np.allclose(layer.get_color(layer.data), none_color),
+            1,
+        )
+    )
 
 
 def test_paint():
