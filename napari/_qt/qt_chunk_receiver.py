@@ -31,6 +31,16 @@ class QtGuiEvent(QObject):
         The event we are listening to.
     events : EmitterGroup
         The only event we report is events.gui_event.
+
+    Notes
+    -----
+    Qt's signal/slot is the only way we know of to "call" from a worker
+    thread to the GUI thread. When Qt signals from a worker thread it posts
+    an event. When the GUI thread is next processing messages it will call
+    into the Slot to deliver that event.
+
+    If the original event was already in the GUI thread that's fine,
+    the resulting event will just be triggered right away.
     """
 
     signal = Signal(Event)
@@ -73,6 +83,29 @@ class QtChunkReceiver:
     ----------
     gui_event : QtGuiEvent
         We use this to call _on_chunk_loaded_gui() in the GUI thread.
+
+    Notes
+    -----
+    ChunkLoader._done "may" be called in a worker thread. The
+    concurrent.futures documentation only guarantees that the future's done
+    handler will be called in a thread in the correct process, it does not
+    say which thread.
+
+    We need to call Layer.on_chunk_loaded() to deliver the loaded chunk to the
+    Layer. We do not want to make this call from a worker thread, because our
+    model code is not thread safe. We don't want the GUI thread and the worker
+    thread changing things at the same time, both triggering events, potentially
+    calling into vispy or other things that also aren't thread safe.
+
+    We could add locks, but it's simpler and better if we just call
+    Layer.on_chunk_loaded() from the GUI thread. This class QtChunkReceiver
+    listens to the ChunkLoader's chunk_loaded event. It then uses QtUiEvent
+    to call its own _on_chunk_loaded_gui() in the GUI thread. From that
+    method it can safely call Layer.on_chunk_loaded.
+
+    If ChunkLoader's chunk_loaded event is already in the GUI thread for
+    some reason, this class will still work fine, it will just run
+    100% in the GUI thread.
     """
 
     def __init__(self, parent: QObject):
