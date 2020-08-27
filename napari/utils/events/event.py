@@ -53,8 +53,8 @@ For more information see http://github.com/vispy/vispy/wiki/API_Events
 from __future__ import division
 
 import inspect
-import sys
 import traceback
+import warnings
 import weakref
 from collections import OrderedDict
 from typing import Any
@@ -689,10 +689,10 @@ class EmitterGroup(EventEmitter):
     # mypy fix for dynamic attribute access
     def __getattr__(self, name: str) -> Any:
         if name in self._deprecated:
-            print(
+            warnings.warn(
                 f"emitter {name} is deprecated, {self._deprecated[name]} provided instead",
-                file=sys.stderr,
-            )
+                category=FutureWarning,
+            ),
             return object.__getattribute__(self, self._deprecated[name])
         return object.__getattribute__(self, name)
 
@@ -703,10 +703,10 @@ class EmitterGroup(EventEmitter):
         EmitterGroup.
         """
         if name in self._deprecated:
-            print(
+            warnings.warn(
                 f"emitter {name} is deprecated, {self._deprecated[name]} provided instead",
-                file=sys.stderr,
-            )
+                category=FutureWarning,
+            ),
             return self._emitters[self._deprecated[name]]
         return self._emitters[name]
 
