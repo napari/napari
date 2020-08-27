@@ -1,4 +1,3 @@
-import configparser
 import os
 import re
 import shutil
@@ -34,25 +33,10 @@ with open(os.path.join(HERE, "napari", "_version.py")) as f:
         VERSION = match.groups()[0].split('+')[0]
 
 
-def patch_toml():
-    parser = configparser.ConfigParser()
-    parser.read(SETUP_CFG)
-    requirements = parser.get("options", "install_requires").splitlines()
-    requirements = [r.split('#')[0].strip() for r in requirements if r]
-
+def update_toml_version():
     toml = tomlkit.parse(original_toml)
     toml['tool']['briefcase']['version'] = VERSION
-    toml['tool']['briefcase']['app'][APP]['requires'] = requirements + [
-        "pip",
-        "PySide2==5.14.2.2",
-    ]
-
-    print("patching pyproject.toml to version: ", VERSION)
-    print(
-        "patching pyproject.toml requirements to : \n",
-        "\n".join(toml['tool']['briefcase']['app'][APP]['requires']),
-    )
-
+    print("updating pyproject.toml to version: ", VERSION)
     with open(PYPROJECT_TOML, 'w') as f:
         f.write(tomlkit.dumps(toml))
 
@@ -152,7 +136,7 @@ def bundle():
 
     # smoke test, and build resources
     subprocess.check_call([sys.executable, '-m', APP, '--info'])
-    patch_toml()
+    update_toml_version()
 
     # create
     cmd = ['briefcase', 'create'] + (['--no-docker'] if LINUX else [])
