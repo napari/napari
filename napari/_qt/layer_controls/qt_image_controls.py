@@ -106,7 +106,7 @@ class QtImageControls(QtBaseImageControls):
         self.grid_layout.addWidget(QLabel('gamma:'), 2, 0)
         self.grid_layout.addWidget(self.gammaSlider, 2, 1)
 
-        if(layer.rgb is False):
+        if layer.rgb is False:
             self.grid_layout.addWidget(QLabel('colormap:'), 3, 0)
             self.grid_layout.addLayout(colormap_layout, 3, 1)
 
