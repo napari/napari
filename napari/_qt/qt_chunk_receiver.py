@@ -53,7 +53,7 @@ class QtGuiEvent(QObject):
 
     def _slot(self, event) -> None:
         """Slot is always called in the GUI thread."""
-        self.events.gui_event(event=event)
+        self.events.gui_event(original_event=event)
 
     def close(self):
         """Viewer is closing."""
@@ -88,8 +88,8 @@ class QtChunkReceiver:
         event : Event
             The event object from the original event.
         """
-        layer = event.event.layer
-        request = event.event.request
+        layer = event.original_event.layer
+        request = event.original_event.request
 
         LOGGER.info(
             "QtChunkReceiver._on_chunk_loaded_gui: data_id=%d",
