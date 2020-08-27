@@ -138,6 +138,13 @@ class ChunkLoader:
         request : ChunkRequest
             Contains the arrays to load.
         """
+        # Note about string formatting with logging: it's recommended to
+        # use the oldest style of string formatting with logging. With
+        # f-strings you'd pay the price of formatting the string even if
+        # the log statement is disabled due to the log level, etc. In our
+        # case the log will almost always be disabled unless debugging.
+        # https://docs.python.org/3/howto/logging.html#optimization
+        # https://blog.pilosus.org/posts/2020/01/24/python-f-strings-in-logging/
         LOGGER.debug("ChunkLoader._load_async: %s", request.key)
 
         # Submit the future, have it call ChunkLoader._done when done.
