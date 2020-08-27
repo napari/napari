@@ -461,6 +461,7 @@ class QtColorBox(QWidget):
         self.setToolTip('Selected label color')
 
         self.layer.events.selected_label.connect(self.update_color)
+        self.layer.events.opacity.connect(self.update_color)
 
     def update_color(self, event):
         """Receive layer model label selection change event & update colorbox.
@@ -494,8 +495,8 @@ class QtColorBox(QWidget):
                         painter.setBrush(QColor(25, 25, 25))
                     painter.drawRect(i * 4, j * 4, 5, 5)
         else:
-            color = 255 * self.layer._selected_color
-            color = color.astype(int)
+            color = np.multiply(self.layer._selected_color, self.layer.opacity)
+            color = np.round(255 * color).astype(int)
             painter.setPen(QColor(*list(color)))
             painter.setBrush(QColor(*list(color)))
             painter.drawRect(0, 0, self._height, self._height)

@@ -1,5 +1,4 @@
 import numpy as np
-import pytest
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Surface
@@ -35,7 +34,7 @@ def test_random_3D_surface():
     assert layer._data_view.shape[1] == 2
     assert layer._view_vertex_values.ndim == 1
 
-    layer.dims.ndisplay = 3
+    layer._slice_dims(ndisplay=3)
     assert layer._data_view.shape[1] == 3
     assert layer._view_vertex_values.ndim == 1
 
@@ -53,7 +52,7 @@ def test_random_4D_surface():
     assert layer._data_view.shape[1] == 2
     assert layer._view_vertex_values.ndim == 1
 
-    layer.dims.ndisplay = 3
+    layer._slice_dims(ndisplay=3)
     assert layer._data_view.shape[1] == 3
     assert layer._view_vertex_values.ndim == 1
 
@@ -72,14 +71,13 @@ def test_random_3D_timeseries_surface():
     assert layer._view_vertex_values.ndim == 1
     assert layer.shape[0] == 22
 
-    layer.dims.ndisplay = 3
+    layer._slice_dims(ndisplay=3)
     assert layer._data_view.shape[1] == 3
     assert layer._view_vertex_values.ndim == 1
 
     # If a values axis is made to be a displayed axis then no data should be
     # shown
-    with pytest.warns(UserWarning):
-        layer.dims.order = [3, 0, 1, 2]
+    layer._slice_dims(ndisplay=3, order=[3, 0, 1, 2])
     assert len(layer._data_view) == 0
 
 
@@ -98,7 +96,7 @@ def test_random_3D_multitimeseries_surface():
     assert layer.shape[0] == 16
     assert layer.shape[1] == 22
 
-    layer.dims.ndisplay = 3
+    layer._slice_dims(ndisplay=3)
     assert layer._data_view.shape[1] == 3
     assert layer._view_vertex_values.ndim == 1
 

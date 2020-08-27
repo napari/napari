@@ -55,3 +55,8 @@ def test_error_reporter(qtbot, test_plugin_manager, monkeypatch):
 
     report_widget.set_plugin(None)
     assert not report_widget.text_area.toPlainText()
+
+
+def test_dialog_create(qtbot):
+    dialog = qt_plugin_report.QtPluginErrReporter()
+    qtbot.addWidget(dialog)

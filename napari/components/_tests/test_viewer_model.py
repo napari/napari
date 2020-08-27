@@ -3,7 +3,7 @@ import pytest
 
 from napari._tests.utils import good_layer_data
 from napari.components import ViewerModel
-from napari.utils.colormaps import colormaps
+from napari.utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 
 
 def test_viewer_model():
@@ -41,16 +41,16 @@ def test_add_image_colormap_variants():
     assert viewer.add_image(data, colormap='cubehelix')
 
     # as tuple
-    cmap_tuple = ("my_colormap", colormaps.Colormap(['g', 'm', 'y']))
+    cmap_tuple = ("my_colormap", Colormap(['g', 'm', 'y']))
     assert viewer.add_image(data, colormap=cmap_tuple)
 
     # as dict
-    cmap_dict = {"your_colormap": colormaps.Colormap(['g', 'r', 'y'])}
+    cmap_dict = {"your_colormap": Colormap(['g', 'r', 'y'])}
     assert viewer.add_image(data, colormap=cmap_dict)
 
     # as Colormap instance
-    fire = colormaps.AVAILABLE_COLORMAPS['fire']
-    assert viewer.add_image(data, colormap=fire)
+    blue_cmap = AVAILABLE_COLORMAPS['blue']
+    assert viewer.add_image(data, colormap=blue_cmap)
 
     # string values must be known colormap types
     with pytest.raises(KeyError) as err:
@@ -112,10 +112,10 @@ def test_add_points():
 
 def test_add_empty_points_to_empty_viewer():
     viewer = ViewerModel()
-    pts = viewer.add_points(name='empty points')
-    assert pts.dims.ndim == 2
-    pts.add([1000.0, 27.0])
-    assert pts.data.shape == (1, 2)
+    layer = viewer.add_points(name='empty points')
+    assert layer.ndim == 2
+    layer.add([1000.0, 27.0])
+    assert layer.data.shape == (1, 2)
 
 
 def test_add_empty_points_on_top_of_image():
@@ -123,10 +123,10 @@ def test_add_empty_points_on_top_of_image():
     image = np.random.random((8, 64, 64))
     # add_image always returns the corresponding layer
     _ = viewer.add_image(image)
-    pts = viewer.add_points()
-    assert pts.dims.ndim == 3
-    pts.add([5.0, 32.0, 61.0])
-    assert pts.data.shape == (1, 3)
+    layer = viewer.add_points()
+    assert layer.ndim == 3
+    layer.add([5.0, 32.0, 61.0])
+    assert layer.data.shape == (1, 3)
 
 
 def test_add_empty_shapes_layer():
@@ -134,8 +134,8 @@ def test_add_empty_shapes_layer():
     image = np.random.random((8, 64, 64))
     # add_image always returns the corresponding layer
     _ = viewer.add_image(image)
-    shp = viewer.add_shapes()
-    assert shp.dims.ndim == 3
+    layer = viewer.add_shapes()
+    assert layer.ndim == 3
 
 
 def test_add_vectors():

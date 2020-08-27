@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 import traceback
 from types import TracebackType
 from typing import Optional, Type
@@ -62,6 +63,12 @@ class ExceptionHandler(QObject):
         tb : TracebackType
             The traceback object associated with the error.
         """
+        # etype.__module__ contains the module raising the error
+        # Custom exception classes can have different behavior
+        # can add custom exception handlers here ...
+        if isinstance(value, KeyboardInterrupt):
+            print("Closed by KeyboardInterrupt", file=sys.stderr)
+            sys.exit(1)
         if self.gui_exceptions:
             self._show_error_dialog(value)
         else:
