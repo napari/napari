@@ -8,20 +8,19 @@ from cachetools import LRUCache
 
 from ._request import ChunkRequest
 
-LOGGER = logging.getLogger("ChunkLoader")
+LOGGER = logging.getLogger("napari.async")
 
-# ChunkCache size as a fraction of total RAM, needs to be configurable
-# and even dynamically configurable. Keep it small for now until we
-# figure out how ChunkCache will work with the Dask cache.
+# ChunkCache size as a fraction of total RAM. Keep it small for now until
+# we figure out how ChunkCache will work with the Dask cache, and do
+# a lot more testing.
 CACHE_MEM_FRACTION = 0.1
 
-# Once a ChunkRequest has been loaded its ChunkRequest.chunks attribute
-# is a ChunkArrays dict, it's some number of named arrays.
+# A ChunKRequest contains some number of named arrays.
 ChunkArrays = Dict[str, np.ndarray]
 
 
 def _get_cache_size_bytes(mem_fraction: float) -> int:
-    """Return number of bytes the cache should use at most.
+    """Return the max number of bytes the cache should use.
 
     Parameters
     ----------
@@ -31,7 +30,7 @@ def _get_cache_size_bytes(mem_fraction: float) -> int:
     Returns
     -------
     int
-        Number of bytes the cache should limit itself to.
+        The max number of bytes the cache should be.
     """
     import psutil
 
@@ -39,7 +38,7 @@ def _get_cache_size_bytes(mem_fraction: float) -> int:
 
 
 def _getsizeof_chunks(chunks: ChunkArrays) -> int:
-    """This lets the cachetools LRUCache know how big our chunks are.
+    """This tells the LRUCache know how big our chunks are.
 
     Parameters
     ----------
@@ -49,7 +48,7 @@ def _getsizeof_chunks(chunks: ChunkArrays) -> int:
     Returns
     -------
     int
-        How many bytes these arrays take up in memory.
+        How many bytes the arrays take up in memory.
     """
     return sum(array.nbytes for array in chunks.values())
 
@@ -58,7 +57,7 @@ class ChunkCache:
     """Cache of previously loaded chunks.
 
     Uses a cachetools LRUCache to implement a least recently used cache
-    that will grow in memory usage up to some limit, then it will free the
+    that will grow in memory usage up to some limit. Then it will free the
     least recently used entries so total usage does not exceed that limit.
 
     TODO_ASYNC:
@@ -75,6 +74,8 @@ class ChunkCache:
     ----------
     chunks : LRUCache
         The cache of chunks.
+    enabled : bool
+        True if the cache is enabled.
     """
 
     def __init__(self):
