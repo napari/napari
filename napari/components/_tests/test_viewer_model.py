@@ -112,10 +112,10 @@ def test_add_points():
 
 def test_add_empty_points_to_empty_viewer():
     viewer = ViewerModel()
-    pts = viewer.add_points(name='empty points')
-    assert pts.dims.ndim == 2
-    pts.add([1000.0, 27.0])
-    assert pts.data.shape == (1, 2)
+    layer = viewer.add_points(name='empty points')
+    assert layer.ndim == 2
+    layer.add([1000.0, 27.0])
+    assert layer.data.shape == (1, 2)
 
 
 def test_add_empty_points_on_top_of_image():
@@ -123,10 +123,10 @@ def test_add_empty_points_on_top_of_image():
     image = np.random.random((8, 64, 64))
     # add_image always returns the corresponding layer
     _ = viewer.add_image(image)
-    pts = viewer.add_points()
-    assert pts.dims.ndim == 3
-    pts.add([5.0, 32.0, 61.0])
-    assert pts.data.shape == (1, 3)
+    layer = viewer.add_points()
+    assert layer.ndim == 3
+    layer.add([5.0, 32.0, 61.0])
+    assert layer.data.shape == (1, 3)
 
 
 def test_add_empty_shapes_layer():
@@ -134,8 +134,8 @@ def test_add_empty_shapes_layer():
     image = np.random.random((8, 64, 64))
     # add_image always returns the corresponding layer
     _ = viewer.add_image(image)
-    shp = viewer.add_shapes()
-    assert shp.dims.ndim == 3
+    layer = viewer.add_shapes()
+    assert layer.ndim == 3
 
 
 def test_add_vectors():

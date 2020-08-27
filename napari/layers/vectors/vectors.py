@@ -611,7 +611,7 @@ class Vectors(Layer):
         vertices = self._mesh_vertices
         not_disp = list(self.dims.not_displayed)
         disp = list(self.dims.displayed)
-        indices = np.array(self.dims.indices)
+        indices = np.array(self._slice_indices)
 
         if len(self.data) == 0:
             faces = []
