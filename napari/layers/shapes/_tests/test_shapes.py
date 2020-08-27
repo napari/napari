@@ -31,7 +31,7 @@ def _make_cycled_properties(values, length):
 
 def test_empty_shapes():
     shp = Shapes()
-    assert shp.dims.ndim == 2
+    assert shp.ndim == 2
 
 
 properties_array = {'shape_type': _make_cycled_properties(['A', 'B'], 10)}
