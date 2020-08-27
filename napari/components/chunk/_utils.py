@@ -21,4 +21,4 @@ def get_data_id(layer) -> int:
         assert data  # data should not be empty for image layers.
         return id(data[0])  # Just use the ID from the 0'th layer.
 
-    return id(data)  # Not a list, just us it.
+    return id(data)  # Not a list, just use it.
