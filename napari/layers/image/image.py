@@ -637,7 +637,9 @@ class Image(IntensityVisualizationMixin, Layer):
         if self.multiscale:
             coord = np.round(self.coordinates).astype(int)
         else:
-            coord = np.round(self._transforms.simplified(self.coordinates)).astype(int)
+            coord = np.round(
+                self._transforms['tile2data'](self.coordinates)
+            ).astype(int)
 
         raw = self._slice.image.raw
         if self.rgb:
