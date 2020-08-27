@@ -34,10 +34,11 @@ class QtGuiEvent(QObject):
 
     Notes
     -----
-    Qt's signal/slot is the only way we know of to "call" from a worker
-    thread to the GUI thread. When Qt signals from a worker thread it posts
-    an event. When the GUI thread is next processing messages it will call
-    into the Slot to deliver that event.
+    Qt's signal/slot mechanism is the only way we know of to "call" from a
+    worker thread to the GUI thread. When Qt signals from a worker thread
+    it posts a message to the GUI thread. When the GUI thread is next
+    processing messages it will receive that message and call into the Slot
+    to deliver the message/event.
 
     If the original event was already in the GUI thread that's fine,
     the resulting event will just be triggered right away.
