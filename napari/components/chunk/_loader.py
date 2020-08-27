@@ -2,7 +2,7 @@
 """
 import logging
 import os
-from concurrent import futures
+from concurrent.futures import CancelledError, Future, ThreadPoolExecutor
 from typing import Dict, List, Optional
 
 from ...types import ArrayLike
@@ -46,7 +46,7 @@ class ChunkLoader:
         If True all requests are loaded synchronously.
     executor : ThreadPoolExecutor
         Our thread pool executor.
-    futures : Dict[int, List[futures.Future]]
+    futures : Dict[int, List[Future]]
         In progress futures for each layer (data_id).
     events : EmitterGroup
         We only signal one event: chunk_loaded.
@@ -56,8 +56,8 @@ class ChunkLoader:
 
     def __init__(self):
         self.synchronous = not _is_enabled("NAPARI_ASYNC")
-        self.executor = futures.ThreadPoolExecutor(max_workers=6)
-        self.futures: Dict[int, List[futures.Future]] = {}
+        self.executor = ThreadPoolExecutor(max_workers=6)
+        self.futures: Dict[int, List[Future]] = {}
         self.events = EmitterGroup(
             source=self, auto_connect=True, chunk_loaded=None
         )
@@ -183,12 +183,12 @@ class ChunkLoader:
             )
 
     @staticmethod
-    def _get_request(future: futures.Future) -> Optional[ChunkRequest]:
+    def _get_request(future: Future) -> Optional[ChunkRequest]:
         """Return the ChunkRequest for this future.
 
         Parameters
         ----------
-        future : futures.Future
+        future : Future
             Get the request from this future.
 
         Returns
@@ -201,16 +201,16 @@ class ChunkLoader:
             # called from Chunk_Request._done(), so result() will
             # never block.
             return future.result()
-        except futures.CancelledError:
+        except CancelledError:
             LOGGER.debug("ChunkLoader._done: cancelled")
             return None
 
-    def _done(self, future: futures.Future) -> None:
+    def _done(self, future: Future) -> None:
         """Called when a future finishes with success or was cancelled.
 
         Parameters
         ----------
-        future : futures.Future
+        future : Future
             The future that finished or was cancelled.
 
         Notes
