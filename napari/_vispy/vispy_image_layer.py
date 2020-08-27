@@ -52,7 +52,19 @@ class VispyImageLayer(VispyBaseLayer):
         self.node.order = self.order
         self.reset()
 
+    def _data_astype(self, data, dtype):
+        """Broken out as a separate function so we can time with perfmon."""
+        return data.astype(dtype)
+
     def _on_data_change(self, event=None):
+        """Our self.layer._data_view has been updated, update our node.
+        """
+        if not self.node.visible:
+            # Do nothing if we are not visible. Calling astype below could
+            # be very expensive. We have to make sure it gets called when
+            # we next become visible though.
+            return
+
         data = self.layer._data_view
         dtype = np.dtype(data.dtype)
         if dtype not in texture_dtypes:
@@ -64,7 +76,7 @@ class VispyImageLayer(VispyBaseLayer):
                 raise TypeError(
                     f'type {dtype} not allowed for texture; must be one of {set(texture_dtypes)}'  # noqa: E501
                 )
-            data = data.astype(dtype)
+            data = self._data_astype(data, dtype)
 
         if self.layer.dims.ndisplay == 3 and self.layer.dims.ndim == 2:
             data = np.expand_dims(data, axis=0)

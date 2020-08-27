@@ -7,6 +7,7 @@ from typing import Dict, List, Optional
 
 from ...types import ArrayLike
 from ...utils.events import EmitterGroup
+from ._cache import ChunkCache
 from ._info import LayerInfo
 from ._request import ChunkKey, ChunkRequest
 
@@ -48,6 +49,8 @@ class ChunkLoader:
         Our thread pool executor.
     futures : Dict[int, List[Future]]
         In progress futures for each layer (data_id).
+    cache : ChunkCache
+        Cache of previously loaded chunks.
     events : EmitterGroup
         We only signal one event: chunk_loaded.
     layer_map : Dict[int, LayerInfo]
@@ -58,6 +61,7 @@ class ChunkLoader:
         self.synchronous = not _is_enabled("NAPARI_ASYNC")
         self.executor = ThreadPoolExecutor(max_workers=6)
         self.futures: Dict[int, List[Future]] = {}
+        self.cache: ChunkCache = ChunkCache()
         self.events = EmitterGroup(
             source=self, auto_connect=True, chunk_loaded=None
         )
@@ -113,6 +117,15 @@ class ChunkLoader:
         if self._load_synchronously(request):
             return request
 
+        # Check the cache first.
+        chunks = self.cache.get_chunks(request)
+
+        if chunks is not None:
+            LOGGER.info("ChunkLoader._load_async: cache hit %s", request.key)
+            request.chunks = chunks
+            return request
+
+        LOGGER.info("ChunkLoader.load_chunk: cache miss %s", request.key)
         # Clear any pending requests for this specific data_id.
         self._clear_pending(request.key.data_id)
 
@@ -237,6 +250,11 @@ class ChunkLoader:
 
         LOGGER.debug("ChunkLoader._done: %s", request.key)
 
+        # Add chunks to the cache in the worker thread. For now it's safe
+        # to do this in the worker. Later we might need to arrange for this
+        # to be done in the GUI thread if cache access becomes more
+        # complicated.
+        self.cache.add_chunks(request)
         # Lookup this Request's LayerInfo.
         info = self._get_layer_info(request)
 
