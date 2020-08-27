@@ -56,7 +56,9 @@ class QtDims(QWidget):
         # Update the number of sliders now that the dims have been added
         self._update_nsliders()
         self.dims.events.ndim.connect(self._update_nsliders)
-        self.dims.events.axis.connect(lambda ev: self._update_slider(ev.axis))
+        self.dims.events.current_step.connect(
+            lambda ev: self._update_slider(ev.axis)
+        )
         self.dims.events.range.connect(lambda ev: self._update_range(ev.axis))
         self.dims.events.ndisplay.connect(self._update_display)
         self.dims.events.order.connect(self._update_display)
@@ -153,9 +155,9 @@ class QtDims(QWidget):
             The napari event that triggered this method, by default None.
         """
         widgets = reversed(list(enumerate(self.slider_widgets)))
+        nsteps = self.dims.nsteps
         for (axis, widget) in widgets:
-            _range = self.dims.range[axis][1] - self.dims.range[axis][2]
-            if axis in self.dims.displayed or _range == 0:
+            if axis in self.dims.displayed or nsteps[axis] <= 1:
                 # Displayed dimensions correspond to non displayed sliders
                 self._displayed_sliders[axis] = False
                 self.dims.last_used = None
@@ -212,9 +214,9 @@ class QtDims(QWidget):
         largest dimensions, plus a little padding.
         """
         width = 0
-        for ax, maxi in enumerate(self.dims.max_indices):
+        for ax, maxi in enumerate(self.dims.nsteps):
             if self._displayed_sliders[ax]:
-                length = len(str(int(maxi)))
+                length = len(str(maxi - 1))
                 if length > width:
                     width = length
         # gui width of a string of length `width`
@@ -347,7 +349,7 @@ class QtDims(QWidget):
                 )
             loop_mode = LoopMode(loop_mode)
 
-        if axis >= len(self.dims.range):
+        if axis >= self.dims.ndim:
             raise IndexError('axis argument out of range')
 
         if self.is_playing:
@@ -395,7 +397,7 @@ class QtDims(QWidget):
         if self._play_ready:
             # disable additional point advance requests until this one draws
             self._play_ready = False
-            self.dims.set_point(axis, frame)
+            self.dims.set_current_step(axis, frame)
 
     def enable_play(self, *args):
         # this is mostly here to connect to the main SceneCanvas.events.draw
