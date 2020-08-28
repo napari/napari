@@ -40,11 +40,11 @@ class VispyShapesLayer(VispyBaseLayer):
             vertices = vertices[:, ::-1] + 0.5
 
         if len(vertices) == 0 or len(faces) == 0:
-            vertices = np.zeros((3, self.layer._dims.ndisplay))
+            vertices = np.zeros((3, self.layer.dims.ndisplay))
             faces = np.array([[0, 1, 2]])
             colors = np.array([[0, 0, 0, 0]])
 
-        if self.layer._dims.ndisplay == 3 and self.layer._dims.ndim == 2:
+        if self.layer.dims.ndisplay == 3 and self.layer.dims.ndim == 2:
             vertices = np.pad(vertices, ((0, 0), (0, 1)), mode='constant')
 
         self.node._subvisuals[0].set_data(
@@ -62,7 +62,7 @@ class VispyShapesLayer(VispyBaseLayer):
         vertices, faces = self.layer._outline_shapes()
 
         if vertices is None or len(vertices) == 0 or len(faces) == 0:
-            vertices = np.zeros((3, self.layer._dims.ndisplay))
+            vertices = np.zeros((3, self.layer.dims.ndisplay))
             faces = np.array([[0, 1, 2]])
         else:
             vertices = vertices + 0.5
@@ -82,7 +82,7 @@ class VispyShapesLayer(VispyBaseLayer):
         ) = self.layer._compute_vertices_and_box()
 
         if vertices is None or len(vertices) == 0:
-            vertices = np.zeros((1, self.layer._dims.ndisplay))
+            vertices = np.zeros((1, self.layer.dims.ndisplay))
             size = 0
         else:
             vertices = vertices + 0.5
@@ -99,7 +99,7 @@ class VispyShapesLayer(VispyBaseLayer):
         )
 
         if pos is None or len(pos) == 0:
-            pos = np.zeros((1, self.layer._dims.ndisplay))
+            pos = np.zeros((1, self.layer.dims.ndisplay))
             width = 0
         else:
             pos = pos + 0.5
@@ -116,7 +116,7 @@ class VispyShapesLayer(VispyBaseLayer):
         update_node : bool
             If true, update the node after setting the properties
         """
-        ndisplay = self.layer._dims.ndisplay
+        ndisplay = self.layer.dims.ndisplay
         if (len(self.layer._indices_view) == 0) or (
             self.layer._text.visible is False
         ):

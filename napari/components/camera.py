@@ -1,4 +1,4 @@
-from ..utils.event import EmitterGroup
+from ..utils.events import EmitterGroup
 
 
 class Camera:

@@ -1263,7 +1263,7 @@ class Shapes(Layer):
             Array of coordindates for the N text elements in view
         """
         return self.text.compute_text_coords(
-            self._data_view.data, self._dims.ndisplay
+            self._data_view.data, self.dims.ndisplay
         )
 
     @property
@@ -1382,7 +1382,7 @@ class Shapes(Layer):
     def _set_editable(self, editable=None):
         """Set editable mode based on layer properties."""
         if editable is None:
-            if self._dims.ndisplay == 3:
+            if self.dims.ndisplay == 3:
                 self.editable = False
             else:
                 self.editable = True
@@ -1681,8 +1681,8 @@ class Shapes(Layer):
                     d,
                     edge_width=ew,
                     z_index=z,
-                    dims_order=self._dims.order,
-                    ndisplay=self._dims.ndisplay,
+                    dims_order=self.dims.order,
+                    ndisplay=self.dims.ndisplay,
                 )
 
                 # Add shape
@@ -1690,8 +1690,8 @@ class Shapes(Layer):
                     shape, edge_color=ec, face_color=fc, z_refresh=z_refresh
                 )
 
-        self._display_order_stored = copy(self._dims.order)
-        self._ndisplay_stored = copy(self._dims.ndisplay)
+        self._display_order_stored = copy(self.dims.order)
+        self._ndisplay_stored = copy(self.dims.ndisplay)
         self._update_dims()
 
     def _validate_properties(
@@ -1731,18 +1731,16 @@ class Shapes(Layer):
 
     def _set_view_slice(self):
         """Set the view given the slicing indices."""
-        if not self._dims.ndisplay == self._ndisplay_stored:
+        if not self.dims.ndisplay == self._ndisplay_stored:
             self.selected_data = set()
-            self._data_view.ndisplay = min(
-                self._dims.ndim, self._dims.ndisplay
-            )
-            self._ndisplay_stored = copy(self._dims.ndisplay)
+            self._data_view.ndisplay = min(self.dims.ndim, self.dims.ndisplay)
+            self._ndisplay_stored = copy(self.dims.ndisplay)
             self._clipboard = {}
 
-        if not self._dims.order == self._display_order_stored:
+        if not self.dims.order == self._display_order_stored:
             self.selected_data = set()
-            self._data_view.update_dims_order(self._dims.order)
-            self._display_order_stored = copy(self._dims.order)
+            self._data_view.update_dims_order(self.dims.order)
+            self._display_order_stored = copy(self.dims.order)
             # Clear clipboard if dimensions swap
             self._clipboard = {}
 
@@ -2114,14 +2112,14 @@ class Shapes(Layer):
             Full D dimensional data array of the shape.
         """
         if self.ndim == 2:
-            data_full = data[:, self._dims.displayed_order]
+            data_full = data[:, self.dims.displayed_order]
         else:
             data_full = np.zeros((len(data), self.ndim), dtype=float)
             indices = np.array(self._slice_indices)
             data_full[:, self.dims.not_displayed] = indices[
                 self.dims.not_displayed
             ]
-            data_full[:, self._dims.displayed] = data
+            data_full[:, self.dims.displayed] = data
 
         return data_full
 
@@ -2139,7 +2137,7 @@ class Shapes(Layer):
             Index of vertex if any that is at the coordinates. Returns `None`
             if no vertex is found.
         """
-        if self._dims.ndisplay == 3:
+        if self.dims.ndisplay == 3:
             return (None, None)
 
         if self._is_moving:
@@ -2253,8 +2251,8 @@ class Shapes(Layer):
             for i, s in enumerate(self._clipboard['data']):
                 shape = deepcopy(s)
                 data = copy(shape.data)
-                data[:, self._dims.not_displayed] = data[
-                    :, self._dims.not_displayed
+                data[:, self.dims.not_displayed] = data[
+                    :, self.dims.not_displayed
                 ] + np.array(offset)
                 shape.data = data
                 face_color = self._clipboard['face_color'][i]

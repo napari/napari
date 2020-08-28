@@ -40,8 +40,8 @@ class VispySurfaceLayer(VispyBaseLayer):
 
         if (
             vertices is not None
-            and self.layer._dims.ndisplay == 3
-            and self.layer._dims.ndim == 2
+            and self.layer.dims.ndisplay == 3
+            and self.layer.dims.ndim == 2
         ):
             vertices = np.pad(vertices, ((0, 0), (0, 1)))
         self.node.set_data(

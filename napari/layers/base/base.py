@@ -153,7 +153,7 @@ class Layer(KeymapProvider, ABC):
         self.scale_factor = 1
         self.multiscale = multiscale
 
-        self._dims = Dims(ndim)
+        self.dims = Dims(ndim)
 
         if scale is None:
             scale = [1] * ndim
@@ -380,7 +380,7 @@ class Layer(KeymapProvider, ABC):
     def _update_dims(self, event=None):
         """Updates dims model, which is useful after data has been changed."""
         ndim = self._get_ndim()
-        ndisplay = self._dims.ndisplay
+        ndisplay = self.dims.ndisplay
 
         # If the dimensionality is changing then if the number of dimensions
         # is becoming smaller trim the property from the beginning, and if
@@ -392,7 +392,7 @@ class Layer(KeymapProvider, ABC):
                 self.position
             )
 
-        old_ndim = self._dims.ndim
+        old_ndim = self.dims.ndim
         if old_ndim > ndim:
             keep_axes = range(old_ndim - ndim, old_ndim)
             self._transforms = self._transforms.set_slice(keep_axes)
@@ -547,7 +547,7 @@ class Layer(KeymapProvider, ABC):
     @property
     def ndim(self):
         """int: Number of dimensions in the data."""
-        return self._dims.ndim
+        return self.dims.ndim
 
     @property
     def selected(self):
@@ -763,7 +763,7 @@ class Layer(KeymapProvider, ABC):
             Requested shape of field of view in data coordinates
         """
 
-        if len(self._dims.displayed) == 3:
+        if len(self.dims.displayed) == 3:
             data_level = corner_pixels.shape[1] - 1
         else:
             # Clip corner pixels inside data shape
@@ -779,11 +779,11 @@ class Layer(KeymapProvider, ABC):
             ) * self.downsample_factors[self.data_level]
 
             downsample_factors = self.downsample_factors[
-                :, self._dims.displayed
+                :, self.dims.displayed
             ]
 
             data_level = compute_multiscale_level(
-                requested_shape[self._dims.displayed],
+                requested_shape[self.dims.displayed],
                 shape_threshold,
                 downsample_factors,
             )
@@ -800,7 +800,7 @@ class Layer(KeymapProvider, ABC):
     @property
     def displayed_coordinates(self):
         """list: List of currently displayed coordinates."""
-        return [self.coordinates[i] for i in self._dims.displayed]
+        return [self.coordinates[i] for i in self.dims.displayed]
 
     def get_message(self):
         """Generate a status message based on the coordinates and value
