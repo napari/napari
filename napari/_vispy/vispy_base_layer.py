@@ -169,6 +169,7 @@ class VispyBaseLayer(ABC):
 
     def _on_loaded_change(self, event=None):
         self.node.visible = self.layer.visible and self.layer.loaded
+        self.node.loaded = self.layer.loaded
 
     def _transform_position(self, position):
         """Transform cursor position from canvas space (x, y) into image space.

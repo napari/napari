@@ -288,10 +288,9 @@ class ImageVisual(Visual):
         image : array-like
             The image data.
         """
-        if not self.visible:
-            # Do nothing if we are not visible. Calling asarray below could
-            # be very expensive. We have to make sure it gets called when
-            # we next become visible though.
+        if not self.loaded:
+            # Do nothing so we avoid calling asarray below which could be expensive.
+            # We have to make sure set_data is called when the load completes.
             return
 
         data = np.asarray(image)
