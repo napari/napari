@@ -60,6 +60,7 @@ class Dims:
             order=None,
             range=None,
             camera=None,
+            deprecated={"axis": "current_step"},
         )
         self._range = []
         self._current_step = []
