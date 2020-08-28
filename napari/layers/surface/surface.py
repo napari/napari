@@ -3,7 +3,7 @@ import warnings
 import numpy as np
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS
-from ...utils.event import Event
+from ...utils.events import Event
 from ..base import Layer
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
@@ -22,7 +22,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         of the mesh triangles. The third element is the (K0, ..., KL, N)
         array of values used to color vertices where the additional L
         dimensions are used to color the same mesh with different values.
-    colormap : str, vispy.Color.Colormap, tuple, dict
+    colormap : str, napari.utils.Colormap, tuple, dict
         Colormap to use for luminance images. If a string must be the name
         of a supported colormap from vispy or matplotlib. If a tuple the
         first value must be a string to assign as a name to a colormap and
@@ -66,7 +66,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         Indices of mesh triangles.
     vertex_values : (K0, ..., KL, N) array
         Values used to color vertices.
-    colormap : str, vispy.Color.Colormap, tuple, dict
+    colormap : str, napari.utils.Colormap, tuple, dict
         Colormap to use for luminance images. If a string must be the name
         of a supported colormap from vispy or matplotlib. If a tuple the
         first value must be a string to assign as a name to a colormap and
@@ -237,7 +237,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         state = self._get_base_state()
         state.update(
             {
-                'colormap': self.colormap[0],
+                'colormap': self.colormap.name,
                 'contrast_limits': self.contrast_limits,
                 'gamma': self.gamma,
                 'data': self.data,
@@ -286,8 +286,8 @@ class Surface(IntensityVisualizationMixin, Layer):
         else:
             self._view_vertex_values = self.vertex_values
             indices = np.array(self._slice_indices)
-            not_disp = list(self._dims.not_displayed)
-            disp = list(self._dims.displayed)
+            not_disp = list(self.dims.not_displayed)
+            disp = list(self.dims.displayed)
 
         self._data_view = self.vertices[:, disp]
         if len(self.vertices) == 0:

@@ -24,7 +24,7 @@ def _create_application(argv) -> QApplication:
     QWidgets with it, such as we do for the splash screen.
     """
     if perf_config and perf_config.trace_qt_events:
-        from .qt_event_tracing import QApplicationWithTracing
+        from .tracing.qt_event_tracing import QApplicationWithTracing
 
         return QApplicationWithTracing(argv)
     else:
@@ -32,13 +32,16 @@ def _create_application(argv) -> QApplication:
 
 
 @contextmanager
-def gui_qt(*, startup_logo=False):
+def gui_qt(*, startup_logo=False, gui_exceptions=False):
     """Start a Qt event loop in which to run the application.
 
     Parameters
     ----------
-    startup_logo : bool
+    startup_logo : bool, optional
         Show a splash screen with the napari logo during startup.
+    gui_exceptions : bool, optional
+        Whether to show uncaught exceptions in the GUI, by default they will be
+        shown in the console that launched the event loop.
 
     Notes
     -----
@@ -69,10 +72,14 @@ def gui_qt(*, startup_logo=False):
         app._existed = True
 
     # instantiate the exception handler
-    exception_handler = ExceptionHandler()
+    exception_handler = ExceptionHandler(gui_exceptions=gui_exceptions)
     sys.excepthook = exception_handler.handle
 
-    yield app
+    try:
+        yield app
+    except Exception:
+        exception_handler.handle(*sys.exc_info())
+
     # if the application already existed before this function was called,
     # there's no need to start it again.  By avoiding unnecessary calls to
     # ``app.exec_``, we avoid blocking.

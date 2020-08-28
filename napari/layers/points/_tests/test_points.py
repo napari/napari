@@ -91,7 +91,7 @@ def test_empty_layer_with_face_colorap():
     layer = Points(
         properties=default_properties,
         face_color='point_type',
-        face_colormap='grays',
+        face_colormap='gray',
     )
 
     assert layer.face_color_mode == 'colormap'
@@ -109,7 +109,7 @@ def test_empty_layer_with_edge_colormap():
     layer = Points(
         properties=default_properties,
         edge_color='point_type',
-        edge_colormap='grays',
+        edge_colormap='gray',
     )
 
     assert layer.edge_color_mode == 'colormap'
@@ -824,7 +824,7 @@ def test_add_colormap(attribute):
 
     setattr(layer, f'{attribute}_colormap', get_colormap('gray'))
     layer_colormap = getattr(layer, f'{attribute}_colormap')
-    assert 'unnamed colormap' in layer_colormap[0]
+    assert 'unnamed colormap' in layer_colormap.name
 
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
@@ -1080,7 +1080,7 @@ def test_color_colormap(attribute):
     new_colormap = 'viridis'
     setattr(layer, f'{attribute}_colormap', new_colormap)
     attribute_colormap = getattr(layer, f'{attribute}_colormap')
-    assert attribute_colormap[1] == get_colormap(new_colormap)
+    assert attribute_colormap.name == new_colormap
 
 
 def test_size():
@@ -1389,9 +1389,7 @@ def test_view_size():
     )
 
     layer._slice_dims([1, slice(None), slice(None)])
-    assert np.all(
-        layer._view_size == sizes[np.ix_([2], layer._dims.displayed)]
-    )
+    assert np.all(layer._view_size == sizes[np.ix_([2], layer.dims.displayed)])
 
     layer.n_dimensional = True
     assert len(layer._view_size) == 3

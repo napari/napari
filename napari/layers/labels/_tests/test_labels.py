@@ -1,9 +1,9 @@
 import numpy as np
 import pytest
-from vispy.color import Colormap
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Labels
+from napari.utils import Colormap
 
 
 def test_random_labels():
@@ -43,7 +43,7 @@ def test_3D_labels():
     assert layer.editable is True
 
     layer._slice_dims(ndisplay=3)
-    assert layer._dims.ndisplay == 3
+    assert layer.dims.ndisplay == 3
     assert layer.editable is False
     assert layer.mode == 'pan_zoom'
 
@@ -276,14 +276,12 @@ def test_colormap():
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
-    assert type(layer.colormap) == tuple
-    assert layer.colormap[0] == 'random'
-    assert type(layer.colormap[1]) == Colormap
+    assert isinstance(layer.colormap, Colormap)
+    assert layer.colormap.name == 'label_colormap'
 
     layer.new_colormap()
-    assert type(layer.colormap) == tuple
-    assert layer.colormap[0] == 'random'
-    assert type(layer.colormap[1]) == Colormap
+    assert isinstance(layer.colormap, Colormap)
+    assert layer.colormap.name == 'label_colormap'
 
 
 def test_custom_color_dict():

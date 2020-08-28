@@ -3,7 +3,7 @@ from typing import Sequence, Union
 
 import numpy as np
 
-from ..utils.event import EmitterGroup
+from ..utils.events import EmitterGroup
 
 
 class Dims:
@@ -32,7 +32,7 @@ class Dims:
     point : list of float
         List of floats setting the current value of the range slider when in
         POINT mode, one for each dimension. In a world coordinates space.
-    step : tuple of int
+    current_step : tuple of int
         Tuple the slider position for each dims slider, in slider coordinates.
     nsteps : tuple of int
         Number of steps available to each slider.
@@ -53,16 +53,17 @@ class Dims:
         self.events = EmitterGroup(
             source=self,
             auto_connect=True,
-            step=None,
+            current_step=None,
             axis_labels=None,
             ndim=None,
             ndisplay=None,
             order=None,
             range=None,
             camera=None,
+            deprecated={"axis": "current_step"},
         )
         self._range = []
-        self._step = []
+        self._current_step = []
         self._order = []
         self._axis_labels = []
         self._scroll_progress = 0
@@ -108,17 +109,18 @@ class Dims:
         ]
 
     @property
-    def step(self):
+    def current_step(self):
         """Tuple of int: value of slider position for each dimension."""
-        return copy(self._step)
+        return copy(self._current_step)
 
     @property
     def point(self):
-        """List of float: value of each dimension if in POINT mode."""
+        """List of float: value of each dimension."""
+        # The point value is computed from the current_step
         point = [
             min_val + step_size * value
             for (min_val, max_val, step_size), value in zip(
-                self._range, self._step
+                self._range, self._current_step
             )
         ]
         return point
@@ -184,7 +186,7 @@ class Dims:
             # Range value is (min, max, step) for the entire slider
             self._range = [(0, 2, 1)] * (ndim - cur_ndim) + self._range
             # Point is the slider value if in point mode
-            self._step = [0] * (ndim - cur_ndim) + self._step
+            self._current_step = [0] * (ndim - cur_ndim) + self._current_step
             self._order = list(range(ndim - cur_ndim)) + [
                 o + ndim - cur_ndim for o in self.order
             ]
@@ -201,10 +203,10 @@ class Dims:
 
             # Notify listeners of which dimensions have been affected
             for axis_changed in range(ndim - cur_ndim):
-                self.events.step(axis=axis_changed)
+                self.events.current_step(axis=axis_changed)
         elif ndim < cur_ndim:
             self._range = self._range[-ndim:]
-            self._step = self._step[-ndim:]
+            self._current_step = self._current_step[-ndim:]
             self._order = self._reorder_after_dim_reduction(
                 self._order[-ndim:]
             )
@@ -273,7 +275,7 @@ class Dims:
             # Range value is (min, max, step) for the entire slider
             self._range[axis] = (0, 2, 1)
             # Point is the slider value if in point mode
-            self._step[axis] = 0
+            self._current_step[axis] = 0
             self._order[axis] = axis
             # Default axis labels go from "-ndim" to "-1" so new axes can easily be added
             self._axis_labels[axis] = str(axis - self.ndim)
@@ -294,7 +296,10 @@ class Dims:
             self.events.range(axis=axis)
 
     def set_point(self, axis: int, value: Union[int, float]):
-        """Sets the point at which to slice this dimension.
+        """Sets point to slice dimension in world coordinates.
+
+        The desired point gets transformed into an integer step
+        of the slider and stored in the current_step.
 
         Parameters
         ----------
@@ -306,10 +311,13 @@ class Dims:
         axis = self._assert_axis_in_bounds(axis)
         (min_val, max_val, step_size) = self._range[axis]
         raw_step = (value - min_val) / step_size
-        self.set_step(axis, raw_step)
+        self.set_current_step(axis, raw_step)
 
-    def set_step(self, axis: int, value: int):
+    def set_current_step(self, axis: int, value: int):
         """Sets the slider step at which to slice this dimension.
+
+        The position of the slider in world coordinates gets
+        calculated from the current_step of the slider.
 
         Parameters
         ----------
@@ -321,10 +329,9 @@ class Dims:
         axis = self._assert_axis_in_bounds(axis)
         step = np.round(np.clip(value, 0, self.nsteps[axis] - 1)).astype(int)
 
-        if self._step[axis] != step:
-            self._step[axis] = step
-            print('ss', self._step[axis], self.point[axis], self._range[axis])
-            self.events.step(axis=axis, value=step)
+        if self._current_step[axis] != step:
+            self._current_step[axis] = step
+            self.events.current_step(axis=axis, value=step)
 
     def _increment_dims_right(self, axis: int = None):
         """Increment dimensions to the right along given axis, or last used axis if None
@@ -337,7 +344,7 @@ class Dims:
         if axis is None:
             axis = self.last_used
         if axis is not None:
-            self.set_step(axis, self.step[axis] + 1)
+            self.set_current_step(axis, self.current_step[axis] + 1)
 
     def _increment_dims_left(self, axis: int = None):
         """Increment dimensions to the left along given axis, or last used axis if None
@@ -350,7 +357,7 @@ class Dims:
         if axis is None:
             axis = self.last_used
         if axis is not None:
-            self.set_step(axis, self.step[axis] - 1)
+            self.set_current_step(axis, self.current_step[axis] - 1)
 
     def set_axis_label(self, axis: int, label: str):
         """Sets a new axis label for the given axis.

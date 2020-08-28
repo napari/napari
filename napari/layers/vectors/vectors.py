@@ -3,11 +3,9 @@ from copy import copy
 from typing import Dict, Tuple, Union
 
 import numpy as np
-from vispy.color.colormap import Colormap
 
-from ...types import ValidColormapArg
-from ...utils.colormaps import ensure_colormap_tuple
-from ...utils.event import Event
+from ...utils.colormaps import Colormap, ValidColormapArg, ensure_colormap
+from ...utils.events import Event
 from ...utils.status_messages import format_float
 from ..base import Layer
 from ..utils.color_transformations import (
@@ -48,9 +46,8 @@ class Vectors(Layer):
     edge_color_cycle : np.ndarray, list
         Cycle of colors (provided as string name, RGB, or RGBA) to map to edge_color if a
         categorical attribute is used color the vectors.
-    edge_colormap : str, vispy.color.colormap.Colormap
+    edge_colormap : str, napari.utils.Colormap
         Colormap to set vector color if a continuous attribute is used to set edge_color.
-        See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
     edge_contrast_limits : None, (float, float)
         clims for mapping the property to a color map. These are the min and max value
         of the specified property that are mapped to 0 and 1, respectively.
@@ -89,9 +86,8 @@ class Vectors(Layer):
     edge_color_cycle : np.ndarray, list
         Cycle of colors (provided as string name, RGB, or RGBA) to map to edge_color if a
         categorical attribute is used color the vectors.
-    edge_colormap : str, vispy.color.colormap.Colormap
+    edge_colormap : str, napari.utils.Colormap
         Colormap to set vector color if a continuous attribute is used to set edge_color.
-        See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
     edge_contrast_limits : None, (float, float)
         clims for mapping the property to a color map. These are the min and max value
         of the specified property that are mapped to 0 and 1, respectively.
@@ -288,7 +284,7 @@ class Vectors(Layer):
                 'edge_width': self.edge_width,
                 'edge_color': self.edge_color,
                 'edge_color_cycle': self.edge_color_cycle,
-                'edge_colormap': self.edge_colormap[0],
+                'edge_colormap': self.edge_colormap.name,
                 'edge_contrast_limits': self.edge_contrast_limits,
                 'data': self.data,
                 'properties': self.properties,
@@ -468,13 +464,13 @@ class Vectors(Layer):
                     ):
                         edge_colors, contrast_limits = map_property(
                             prop=edge_color_properties,
-                            colormap=self.edge_colormap[1],
+                            colormap=self.edge_colormap,
                         )
                         self.edge_contrast_limits = contrast_limits
                     else:
                         edge_colors, _ = map_property(
                             prop=edge_color_properties,
-                            colormap=self.edge_colormap[1],
+                            colormap=self.edge_colormap,
                             contrast_limits=self.edge_contrast_limits,
                         )
                 else:
@@ -568,18 +564,14 @@ class Vectors(Layer):
 
         Returns
         -------
-        colormap_name : str
-            The name of the current colormap.
-        colormap : vispy.color.Colormap
-            The vispy colormap object.
+        colormap : napari.utils.Colormap
+            The Colormap object.
         """
-        return self._edge_colormap_name, self._edge_colormap
+        return self._edge_colormap
 
     @edge_colormap.setter
     def edge_colormap(self, colormap: ValidColormapArg):
-        name, cmap = ensure_colormap_tuple(colormap)
-        self._edge_colormap_name = name
-        self._edge_colormap = cmap
+        self._edge_colormap = ensure_colormap(colormap)
 
     @property
     def edge_contrast_limits(self) -> Tuple[float, float]:
@@ -617,8 +609,8 @@ class Vectors(Layer):
             self._displayed_stored = copy(self._dims.displayed)
 
         vertices = self._mesh_vertices
-        not_disp = list(self._dims.not_displayed)
-        disp = list(self._dims.displayed)
+        not_disp = list(self.dims.not_displayed)
+        disp = list(self.dims.displayed)
         indices = np.array(self._slice_indices)
 
         if len(self.data) == 0:

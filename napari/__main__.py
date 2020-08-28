@@ -3,9 +3,14 @@ napari command line viewer.
 """
 import argparse
 import logging
+import os
+import platform
 import runpy
 import sys
+import warnings
 from ast import literal_eval
+from distutils.version import StrictVersion
+from pathlib import Path
 from textwrap import wrap
 from typing import Any, Dict, List
 
@@ -79,7 +84,7 @@ def validate_unknown_args(unknown: List[str]) -> Dict[str, Any]:
     return out
 
 
-def main():
+def _run():
     kwarg_options = []
     for layer_type, keys in valid_add_kwargs().items():
         kwarg_options.append(f"  {layer_type.title()}:")
@@ -177,7 +182,7 @@ def main():
             if getattr(app, '_existed', False):
                 sys.exit()
     else:
-        with gui_qt(startup_logo=True):
+        with gui_qt(startup_logo=True, gui_exceptions=True):
             view_path(
                 args.paths,
                 stack=args.stack,
@@ -185,6 +190,64 @@ def main():
                 layer_type=args.layer_type,
                 **kwargs,
             )
+
+
+def _run_pythonw(python_path):
+    """Execute this script again through pythonw.
+
+    This can be used to ensure we're using a framework
+    build of Python on macOS, which fixes frozen menubar issues.
+
+    Parameters
+    ----------
+    python_path : pathlib.Path
+        Path to python framework build.
+    """
+    import subprocess
+
+    cwd = Path.cwd()
+    cmd = [python_path, '-m', 'napari']
+    env = os.environ.copy()
+
+    # Append command line arguments.
+    if len(sys.argv) > 1:
+        cmd.append(*sys.argv[1:])
+
+    result = subprocess.run(cmd, env=env, cwd=cwd)
+    sys.exit(result.returncode)
+
+
+def main():
+    # Ensure we're always using a "framework build" on the latest
+    # macOS to ensure menubar works without needing to refocus napari.
+    # We try this for macOS later than the Catelina release
+    # See https://github.com/napari/napari/pull/1554 and
+    # https://github.com/napari/napari/issues/380#issuecomment-659656775
+    # and https://github.com/ContinuumIO/anaconda-issues/issues/199
+    _MACOS_LATEST = sys.platform == "darwin" and StrictVersion(
+        platform.release()
+    ) > StrictVersion('19.0.0')
+    _RUNNING_CONDA = "CONDA_PREFIX" in os.environ
+    _RUNNING_PYTHONW = "PYTHONEXECUTABLE" in os.environ
+
+    if _MACOS_LATEST and _RUNNING_CONDA and not _RUNNING_PYTHONW:
+        python_path = Path(sys.exec_prefix) / 'bin' / 'pythonw'
+
+        if python_path.exists():
+            # Running again with pythonw will exit this script
+            # and use the framework build of python.
+            _run_pythonw(python_path)
+        else:
+            msg = (
+                'pythonw executable not found.\n'
+                'To unfreeze the menubar on macOS, '
+                'click away from napari to another app, '
+                'then reactivate napari. To avoid this problem, '
+                'please install python.app in conda using:\n'
+                'conda install -c conda-forge python.app'
+            )
+            warnings.warn(msg)
+    _run()
 
 
 if __name__ == '__main__':

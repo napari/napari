@@ -1,10 +1,11 @@
 import os
-from typing import List, Tuple
+from typing import Dict, List, Tuple, Union
 
 import numpy as np
-from vispy.color import BaseColormap, Colormap, get_colormap, get_colormaps
+from vispy.color import BaseColormap as VispyColormap
+from vispy.color import get_colormap, get_colormaps
 
-from ...types import ValidColormapArg
+from .colormap import Colormap
 from .vendored import cm, colorconv
 
 _matplotlib_list_file = os.path.join(
@@ -14,6 +15,18 @@ with open(_matplotlib_list_file) as fin:
     matplotlib_colormaps = [line.rstrip() for line in fin]
 
 
+ValidColormapArg = Union[
+    str,
+    VispyColormap,
+    Colormap,
+    Tuple[str, VispyColormap],
+    Tuple[str, Colormap],
+    Dict[str, VispyColormap],
+    Dict[str, Colormap],
+    Dict,
+]
+
+
 primary_color_names = ['red', 'green', 'blue', 'cyan', 'magenta', 'yellow']
 primary_colors = np.array(
     [(1, 0, 0), (0, 1, 0), (0, 0, 1), (0, 1, 1), (1, 0, 1), (1, 1, 0)],
@@ -21,8 +34,8 @@ primary_colors = np.array(
 )
 
 
-simple_colormaps = {
-    name: Colormap([[0.0, 0.0, 0.0], color])
+SIMPLE_COLORMAPS = {
+    name: Colormap(name=name, colors=[[0.0, 0.0, 0.0], color])
     for name, color in zip(primary_color_names, primary_colors)
 }
 
@@ -43,6 +56,47 @@ LUVRNG = LUVMAX - LUVMIN
 LABMIN = np.array([0.0, -86.18302974, -107.85730021])
 LABMAX = np.array([100.0, 98.23305386, 94.47812228])
 LABRNG = LABMAX - LABMIN
+
+
+def convert_vispy_colormap(colormap, name='vispy'):
+    """Convert a vispy colormap object to a napari colormap.
+
+    Parameters
+    ----------
+    colormap : vispy.color.Colormap
+        Vispy colormap object that should be converted.
+    name : str
+        Name of colormap, optional.
+
+    Returns
+    -------
+    napari.utils.Colormap
+    """
+    if not isinstance(colormap, VispyColormap):
+        raise TypeError(
+            'Colormap must be a vispy colormap ' 'if passed to from_vispy'
+        )
+
+    # Not all vispy colormaps have an `_controls`
+    # but if they do, we want to use it
+    if hasattr(colormap, '_controls'):
+        controls = colormap._controls
+    else:
+        controls = None
+
+    # Not all vispy colormaps have an `interpolation`
+    # but if they do, we want to use it
+    if hasattr(colormap, 'interpolation'):
+        interpolation = colormap.interpolation
+    else:
+        interpolation = 'linear'
+
+    return Colormap(
+        name=name,
+        colors=colormap.colors.rgba,
+        controls=controls,
+        interpolation=interpolation,
+    )
 
 
 def _validate_rgb(colors, *, tolerance=0.0):
@@ -82,7 +136,7 @@ def _validate_rgb(colors, *, tolerance=0.0):
     return filtered_colors
 
 
-def _low_discrepancy_image(image, seed=0.5, margin=1 / 256):
+def low_discrepancy_image(image, seed=0.5, margin=1 / 256):
     """Generate a 1d low discrepancy sequence of coordinates.
 
     Parameters
@@ -122,14 +176,14 @@ def color_dict_to_colormap(colors):
 
     Returns
     -------
-    colormap : Colormap
+    colormap : napari.utils.Colormap
         Colormap constructed with provided control colors
     label_color_index : dict of int
         Mapping of Label to color control point within colormap
     """
 
     control_colors = np.unique(list(colors.values()), axis=0)
-    colormap = Colormap(control_colors)
+    colormap = Colormap(colors=control_colors)
     control2index = {
         tuple(ctrl): i / (len(control_colors) - 1)
         for i, ctrl in enumerate(control_colors)
@@ -221,7 +275,7 @@ def label_colormap(num_colors=256, seed=0.5):
 
     Returns
     -------
-    cmap : vispy.color.Colormap
+    colormap : napari.utils.Colormap
         A colormap for use with labels are remapped to [0, 1].
 
     Notes
@@ -238,10 +292,12 @@ def label_colormap(num_colors=256, seed=0.5):
         axis=1,
     )
     colors[0, :] = 0  # ensure alpha is 0 for label 0
-    cmap = Colormap(
-        colors=colors, controls=control_points, interpolation='zero'
+    return Colormap(
+        name='label_colormap',
+        colors=colors,
+        controls=control_points,
+        interpolation='zero',
     )
-    return cmap
 
 
 def vispy_or_mpl_colormap(name):
@@ -254,7 +310,7 @@ def vispy_or_mpl_colormap(name):
 
     Returns
     -------
-    cmap : vispy.color.Colormap
+    colormap : napari.utils.Colormap
         The found colormap.
 
     Raises
@@ -265,6 +321,7 @@ def vispy_or_mpl_colormap(name):
     vispy_cmaps = get_colormaps()
     if name in vispy_cmaps:
         cmap = get_colormap(name)
+        colormap = convert_vispy_colormap(cmap, name=name)
     else:
         try:
             mpl_cmap = getattr(cm, name)
@@ -274,57 +331,13 @@ def vispy_or_mpl_colormap(name):
                 'or matplotlib.'
             )
         mpl_colors = mpl_cmap(np.linspace(0, 1, 256))
-        cmap = Colormap(mpl_colors)
-    return cmap
-
-
-# Fire and Grays are two colormaps that work well for
-# translucent and additive volume rendering - add
-# them to best_3d_colormaps, append them to
-# all the existing colormaps
-
-
-class TransFire(BaseColormap):
-    glsl_map = """
-    vec4 translucent_fire(float t) {
-        return vec4(pow(t, 0.5), t, t*t, max(0, t*1.05 - 0.05));
-    }
-    """
-
-    def map(self, t):
-        if isinstance(t, np.ndarray):
-            return np.hstack(
-                [np.power(t, 0.5), t, t * t, np.maximum(0, t * 1.05 - 0.05)]
-            ).astype(np.float32)
-        else:
-            return np.array(
-                [np.power(t, 0.5), t, t * t, np.maximum(0, t * 1.05 - 0.05)],
-                dtype=np.float32,
-            )
-
-
-class TransGrays(BaseColormap):
-    glsl_map = """
-    vec4 translucent_grays(float t) {
-        return vec4(t, t, t, t*0.5);
-    }
-    """
-
-    def map(self, t):
-        if isinstance(t, np.ndarray):
-            return np.hstack([t, t, t, t * 0.5]).astype(np.float32)
-        else:
-            return np.array([t, t, t, t * 0.5], dtype=np.float32)
-
-
-colormaps_3D = {"fire": TransFire(), "gray_trans": TransGrays()}
-colormaps_3D = {k: v for k, v in sorted(colormaps_3D.items())}
+        colormap = Colormap(name=name, colors=mpl_colors)
+    return colormap
 
 
 # A dictionary mapping names to VisPy colormap objects
 ALL_COLORMAPS = {k: vispy_or_mpl_colormap(k) for k in matplotlib_colormaps}
-ALL_COLORMAPS.update(simple_colormaps)
-ALL_COLORMAPS.update(colormaps_3D)
+ALL_COLORMAPS.update(SIMPLE_COLORMAPS)
 
 # ... sorted alphabetically by name
 AVAILABLE_COLORMAPS = {k: v for k, v in sorted(ALL_COLORMAPS.items())}
@@ -360,7 +373,7 @@ def increment_unnamed_colormap(
     return name
 
 
-def ensure_colormap_tuple(colormap: ValidColormapArg) -> Tuple[str, Colormap]:
+def ensure_colormap(colormap: ValidColormapArg) -> Colormap:
     """Accept any valid colormap arg, and return (name, Colormap), or raise.
 
     Adds any new colormaps to AVAILABLE_COLORMAPS in the process.
@@ -368,13 +381,12 @@ def ensure_colormap_tuple(colormap: ValidColormapArg) -> Tuple[str, Colormap]:
     Parameters
     ----------
     colormap : ValidColormapArg
-        colormap as str, Colormap, {name: Colormap} ``dict``, or
-        (name, Colormap) ``tuple``.
+        colormap as str, napari.utils.Colormap.
 
     Returns
     -------
     Tuple[str, Colormap]
-        Normalized name and Colormap.
+        Normalized name and napari.utils.Colormap.
 
     Raises
     ------
@@ -384,7 +396,8 @@ def ensure_colormap_tuple(colormap: ValidColormapArg) -> Tuple[str, Colormap]:
         If a tuple is provided and the first element is not a string or the
         second element is not a Colormap.
     TypeError
-        If a dict is provided and any of the values are not Colormap instances.
+        If a dict is provided and any of the values are not Colormap instances
+        or valid inputs to the Colormap constructor.
     TypeError
         If ``colormap`` is not a ``str``, ``dict``, ``tuple``, or ``Colormap``
     """
@@ -393,9 +406,12 @@ def ensure_colormap_tuple(colormap: ValidColormapArg) -> Tuple[str, Colormap]:
         if name not in AVAILABLE_COLORMAPS:
             cmap = vispy_or_mpl_colormap(name)  # raises KeyError if not found
             AVAILABLE_COLORMAPS[name] = cmap
-    elif isinstance(colormap, BaseColormap):
-        # if a colormap instance is provided, make sure we don't already know
-        # about it before adding a new unnamed colormap
+    elif isinstance(colormap, Colormap):
+        AVAILABLE_COLORMAPS[colormap.name] = colormap
+        name = colormap.name
+    elif isinstance(colormap, VispyColormap):
+        # if a vispy colormap instance is provided, make sure we don't already
+        # know about it before adding a new unnamed colormap
         name = None
         for key, val in AVAILABLE_COLORMAPS.items():
             if colormap == val:
@@ -403,11 +419,17 @@ def ensure_colormap_tuple(colormap: ValidColormapArg) -> Tuple[str, Colormap]:
                 break
         if not name:
             name = increment_unnamed_colormap(AVAILABLE_COLORMAPS)
-        AVAILABLE_COLORMAPS[name] = colormap
+        # Convert from vispy colormap
+        cmap = convert_vispy_colormap(colormap, name=name)
+        AVAILABLE_COLORMAPS[name] = cmap
+
     elif isinstance(colormap, tuple):
         if not (
-            len(colormap) > 1
-            and isinstance(colormap[1], BaseColormap)
+            len(colormap) == 2
+            and (
+                isinstance(colormap[1], VispyColormap)
+                or isinstance(colormap[1], Colormap)
+            )
             and isinstance(colormap[0], str)
         ):
             raise TypeError(
@@ -415,28 +437,58 @@ def ensure_colormap_tuple(colormap: ValidColormapArg) -> Tuple[str, Colormap]:
                 "element must be a string and the second a Colormap instance"
             )
         name, cmap = colormap
+        # Convert from vispy colormap
+        if isinstance(cmap, VispyColormap):
+            cmap = convert_vispy_colormap(cmap, name=name)
+        else:
+            cmap.name = name
         AVAILABLE_COLORMAPS[name] = cmap
+
     elif isinstance(colormap, dict):
-        if not all(isinstance(i, BaseColormap) for i in colormap.values()):
+        if 'colors' in colormap and not (
+            isinstance(colormap['colors'], VispyColormap)
+            or isinstance(colormap['colors'], Colormap)
+        ):
+            cmap = Colormap(**colormap)
+            name = cmap.name
+            AVAILABLE_COLORMAPS[name] = cmap
+        elif not all(
+            (isinstance(i, VispyColormap) or isinstance(i, Colormap))
+            for i in colormap.values()
+        ):
             raise TypeError(
                 "When providing a dict as a colormap, "
-                "all values must be BaseColormap instances"
-            )
-        AVAILABLE_COLORMAPS.update(colormap)
-        if len(colormap) == 1:
-            name = list(colormap)[0]  # first key in dict
-        elif len(colormap) > 1:
-            import warnings
-
-            warnings.warn(
-                "only the first item in a colormap dict is used as an argument"
+                "all values must be Colormap instances"
             )
         else:
-            raise ValueError("Received an empty dict as a colormap argument.")
+            # Convert from vispy colormaps
+            for key, cmap in colormap.items():
+                # Convert from vispy colormap
+                if isinstance(cmap, VispyColormap):
+                    cmap = convert_vispy_colormap(cmap, name=key)
+                else:
+                    cmap.name = key
+                name = key
+                colormap[name] = cmap
+            AVAILABLE_COLORMAPS.update(colormap)
+            if len(colormap) == 1:
+                name = list(colormap)[0]  # first key in dict
+            elif len(colormap) > 1:
+                name = list(colormap.keys())[0]
+                import warnings
+
+                warnings.warn(
+                    "only the first item in a colormap dict is used as an argument"
+                )
+            else:
+                raise ValueError(
+                    "Received an empty dict as a colormap argument."
+                )
     else:
         raise TypeError(
             f'invalid type for colormap: {type(colormap)}. '
-            'Must be a {str, tuple, dict, vispy.colormap.Colormap}'
+            'Must be a {str, tuple, dict, napari.utils.Colormap, '
+            'vispy.colors.Colormap}'
         )
 
-    return name, AVAILABLE_COLORMAPS[name]
+    return AVAILABLE_COLORMAPS[name]

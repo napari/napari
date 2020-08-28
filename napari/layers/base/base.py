@@ -7,7 +7,7 @@ import numpy as np
 
 from ...components import Dims
 from ...utils.dask_utils import configure_dask
-from ...utils.event import EmitterGroup, Event
+from ...utils.events import EmitterGroup, Event
 from ...utils.key_bindings import KeymapProvider
 from ...utils.misc import ROOT_DIR
 from ...utils.naming import magic_name
@@ -185,7 +185,7 @@ class Layer(KeymapProvider, ABC):
         )
 
         self.coordinates = (0,) * ndim
-        self._position = (0,) * self._dims.ndisplay
+        self._position = (0,) * self.dims.ndisplay
         self._dims_point = [0] * ndim
         self.corner_pixels = np.zeros((2, ndim), dtype=int)
         self._editable = True
@@ -215,6 +215,7 @@ class Layer(KeymapProvider, ABC):
             cursor=Event,
             cursor_size=Event,
             editable=Event,
+            loaded=Event,
         )
         self.name = name
 
@@ -241,6 +242,15 @@ class Layer(KeymapProvider, ABC):
     def name(self):
         """str: Unique name of the layer."""
         return self._name
+
+    @property
+    def loaded(self) -> bool:
+        """Return True if this layer is fully loaded in memory.
+
+        This base class says that layers are permanently in the loaded state.
+        Derived classes that do asynchronous loading can override this.
+        """
+        return True
 
     @name.setter
     def name(self, name):
@@ -393,7 +403,7 @@ class Layer(KeymapProvider, ABC):
             self.coordinates = (0,) * (ndim - old_ndim) + self.coordinates
             self._dims_point = [0] * (ndim - old_ndim) + self._dims_point
 
-        self._dims.ndim = ndim
+        self.dims.ndim = ndim
 
         self.refresh()
         self._update_coordinates()
@@ -433,18 +443,18 @@ class Layer(KeymapProvider, ABC):
     @property
     def _slice_indices(self):
         """(D, ) array: Slice indices in data coordinates."""
-        world_pts = [self._dims_point[ax] for ax in self._dims.not_displayed]
+        world_pts = [self._dims_point[ax] for ax in self.dims.not_displayed]
         inv_transform = self._transforms['data2world'].inverse
-        data_pts = inv_transform.set_slice(self._dims.not_displayed)(world_pts)
+        data_pts = inv_transform.set_slice(self.dims.not_displayed)(world_pts)
         # A round is taken to convert these values to slicing integers
         data_pts = np.round(data_pts).astype(int)
 
         indices = [slice(None)] * self.ndim
-        for i, ax in enumerate(self._dims.not_displayed):
+        for i, ax in enumerate(self.dims.not_displayed):
             indices[ax] = data_pts[i]
 
         coords = list(self.coordinates)
-        for d in self._dims.not_displayed:
+        for d in self.dims.not_displayed:
             coords[d] = indices[d]
         self.coordinates = tuple(coords)
 
@@ -667,14 +677,14 @@ class Layer(KeymapProvider, ABC):
 
         # If no slide data has changed, then do nothing
         if (
-            np.all(order == self._dims.order)
-            and ndisplay == self._dims.ndisplay
+            np.all(order == self.dims.order)
+            and ndisplay == self.dims.ndisplay
             and np.all(point[offset:] == self._dims_point)
         ):
             return
 
-        self._dims.order = order
-        self._dims.ndisplay = ndisplay
+        self.dims.order = order
+        self.dims.ndisplay = ndisplay
 
         # Update the point values
         self._dims_point = point[offset:]
@@ -733,7 +743,7 @@ class Layer(KeymapProvider, ABC):
         tuple of indices and update the cursor coordinates.
         """
         coords = list(self.coordinates)
-        for d, p in zip(self._dims.displayed, self.position):
+        for d, p in zip(self.dims.displayed, self.position):
             coords[d] = p
         self.coordinates = tuple(coords)
         self._value = self.get_value()

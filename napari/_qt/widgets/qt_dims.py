@@ -56,7 +56,9 @@ class QtDims(QWidget):
         # Update the number of sliders now that the dims have been added
         self._update_nsliders()
         self.dims.events.ndim.connect(self._update_nsliders)
-        self.dims.events.step.connect(lambda ev: self._update_slider(ev.axis))
+        self.dims.events.current_step.connect(
+            lambda ev: self._update_slider(ev.axis)
+        )
         self.dims.events.range.connect(lambda ev: self._update_range(ev.axis))
         self.dims.events.ndisplay.connect(self._update_display)
         self.dims.events.order.connect(self._update_display)
@@ -395,7 +397,7 @@ class QtDims(QWidget):
         if self._play_ready:
             # disable additional point advance requests until this one draws
             self._play_ready = False
-            self.dims.set_step(axis, frame)
+            self.dims.set_current_step(axis, frame)
 
     def enable_play(self, *args):
         # this is mostly here to connect to the main SceneCanvas.events.draw

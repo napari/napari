@@ -1,5 +1,5 @@
 import numpy as np
-from vispy.color import Colormap
+from vispy.color import Colormap as VispyColormap
 from vispy.scene.visuals import Mesh
 
 from .vispy_base_layer import VispyBaseLayer
@@ -53,12 +53,16 @@ class VispySurfaceLayer(VispyBaseLayer):
         self._on_translate_change()
 
     def _on_colormap_change(self, event=None):
-        cmap = self.layer.colormap[1]
         if self.layer.gamma != 1:
             # when gamma!=1, we instantiate a new colormap with 256 control
             # points from 0-1
-            cmap = Colormap(cmap[np.linspace(0, 1, 256) ** self.layer.gamma])
-        if self.layer._dims.ndisplay == 3:
+            colors = self.layer.colormap.map(
+                np.linspace(0, 1, 256) ** self.layer.gamma
+            )
+            cmap = VispyColormap(colors)
+        else:
+            cmap = VispyColormap(*self.layer.colormap)
+        if self.layer.dims.ndisplay == 3:
             self.node.view_program['texture2D_LUT'] = (
                 cmap.texture_lut() if (hasattr(cmap, 'texture_lut')) else None
             )

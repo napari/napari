@@ -54,8 +54,10 @@ from __future__ import division
 
 import inspect
 import traceback
+import warnings
 import weakref
 from collections import OrderedDict
+from typing import Any
 
 from vispy.ext.six import string_types
 from vispy.util.logs import _handle_exception, logger
@@ -183,6 +185,10 @@ class Event(object):
     def __str__(self):
         """Shorter string representation"""
         return self.__class__.__name__
+
+    # mypy fix for dynamic attribute access
+    def __getattr__(self, name: str) -> Any:
+        return object.__getattribute__(self, name)
 
 
 _event_repr_depth = 0
@@ -661,19 +667,34 @@ class EmitterGroup(EventEmitter):
         <vispy.event.EventEmitter.connect>`.
         This provides a simple mechanism for automatically connecting a large
         group of emitters to default callbacks.
+    deprecated: dict
+        dict with mapping old emitter name to new emitter name
     emitters : keyword arguments
         See the :func:`add <vispy.event.EmitterGroup.add>` method.
     """
 
-    def __init__(self, source=None, auto_connect=True, **emitters):
+    def __init__(
+        self, source=None, auto_connect=True, deprecated=None, **emitters
+    ):
         EventEmitter.__init__(self, source)
 
         self.auto_connect = auto_connect
+        self._deprecated = {} if deprecated is None else deprecated
         self.auto_connect_format = "on_%s"
         self._emitters = OrderedDict()
         # whether the sub-emitters have been connected to the group:
         self._emitters_connected = False
         self.add(**emitters)
+
+    # mypy fix for dynamic attribute access
+    def __getattr__(self, name: str) -> Any:
+        if name in self._deprecated:
+            warnings.warn(
+                f"emitter {name} is deprecated, {self._deprecated[name]} provided instead",
+                category=FutureWarning,
+            ),
+            return object.__getattribute__(self, self._deprecated[name])
+        return object.__getattribute__(self, name)
 
     def __getitem__(self, name):
         """
@@ -681,6 +702,12 @@ class EmitterGroup(EventEmitter):
         Note that emitters may also be retrieved as an attribute of the
         EmitterGroup.
         """
+        if name in self._deprecated:
+            warnings.warn(
+                f"emitter {name} is deprecated, {self._deprecated[name]} provided instead",
+                category=FutureWarning,
+            ),
+            return self._emitters[self._deprecated[name]]
         return self._emitters[name]
 
     def __setitem__(self, name, emitter):
@@ -817,7 +844,7 @@ class EmitterGroup(EventEmitter):
 
     @property
     def ignore_callback_errors(self):
-        return super(EventEmitter, self).ignore_callback_errors
+        return super().ignore_callback_errors
 
     @ignore_callback_errors.setter
     def ignore_callback_errors(self, ignore):
@@ -827,6 +854,18 @@ class EmitterGroup(EventEmitter):
                 emitter.ignore_callback_errors = ignore
             elif isinstance(emitter, EmitterGroup):
                 emitter.ignore_callback_errors_all(ignore)
+
+    def blocker_all(self):
+        """Return an EventBlockerAll to be used in 'with' statements
+
+        Notes
+        -----
+        For example, one could do::
+
+            with emitter.blocker_all():
+                pass  # ..do stuff; no events will be emitted..
+        """
+        return EventBlockerAll(self)
 
 
 class EventBlocker(object):
@@ -844,3 +883,19 @@ class EventBlocker(object):
 
     def __exit__(self, *args):
         self.target.unblock(self.callback)
+
+
+class EventBlockerAll(object):
+
+    """ Represents a block_all for an EmitterGroup to be used in a context
+    manager (i.e. 'with' statement).
+    """
+
+    def __init__(self, target):
+        self.target = target
+
+    def __enter__(self):
+        self.target.block_all()
+
+    def __exit__(self, *args):
+        self.target.unblock_all()

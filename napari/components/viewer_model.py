@@ -1,6 +1,6 @@
 import numpy as np
 
-from ..utils.event import EmitterGroup, Event
+from ..utils.events import EmitterGroup, Event
 from ..utils.key_bindings import KeymapHandler, KeymapProvider
 from ..utils.theme import palettes
 from ._viewer_mouse_bindings import dims_scroll
@@ -83,7 +83,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self.dims.events.camera.connect(self.reset_view)
         self.dims.events.ndisplay.connect(self._update_layers)
         self.dims.events.order.connect(self._update_layers)
-        self.dims.events.step.connect(self._update_layers)
+        self.dims.events.current_step.connect(self._update_layers)
         self.layers.events.changed.connect(self._update_active_layer)
         self.layers.events.changed.connect(self._update_grid)
         self.layers.events.changed.connect(self._on_layers_change)
