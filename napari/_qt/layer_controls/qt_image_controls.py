@@ -90,15 +90,8 @@ class QtImageControls(QtBaseImageControls):
         colormap_layout.addWidget(self.colormapComboBox)
         colormap_layout.addStretch(1)
 
-        # if layer.rgb == False:
-        #     colormap_layout = QHBoxLayout()
-        #     colormap_layout.addWidget(self.colorbarLabel)
-        #     colormap_layout.addWidget(self.colormapComboBox)
-        #     colormap_layout.addStretch(1)
-
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
-
         self.grid_layout.addWidget(QLabel('opacity:'), 0, 0)
         self.grid_layout.addWidget(self.opacitySlider, 0, 1)
         self.grid_layout.addWidget(QLabel('contrast limits:'), 1, 0)
@@ -106,12 +99,10 @@ class QtImageControls(QtBaseImageControls):
         self.grid_layout.addWidget(QLabel('gamma:'), 2, 0)
         self.grid_layout.addWidget(self.gammaSlider, 2, 1)
 
+        # The colormap widget won't be created when image has a rgb layer
         if layer.rgb is False:
             self.grid_layout.addWidget(QLabel('colormap:'), 3, 0)
             self.grid_layout.addLayout(colormap_layout, 3, 1)
-
-        # self.grid_layout.addWidget(QLabel('colormap:'), 3, 0)
-        # self.grid_layout.addLayout(colormap_layout, 3, 1)
 
         self.grid_layout.addWidget(QLabel('blending:'), 4, 0)
         self.grid_layout.addWidget(self.blendComboBox, 4, 1)
@@ -126,6 +117,11 @@ class QtImageControls(QtBaseImageControls):
         self.grid_layout.setRowStretch(9, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
+
+        # Similarly, the colormap combo box will be hidden if the layer is rgb
+        if layer.rgb:
+            self.colorbarLabel.hide()
+            self.colormapComboBox.hide()
 
     def changeInterpolation(self, text):
         """Change interpolation mode for image display.
