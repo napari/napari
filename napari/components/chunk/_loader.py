@@ -61,11 +61,12 @@ class ChunkLoader:
         self.synchronous = not _is_enabled("NAPARI_ASYNC")
         self.executor = ThreadPoolExecutor(max_workers=6)
         self.futures: Dict[int, List[Future]] = {}
+        self.layer_map: Dict[int, LayerInfo] = {}
         self.cache: ChunkCache = ChunkCache()
+
         self.events = EmitterGroup(
             source=self, auto_connect=True, chunk_loaded=None
         )
-        self.layer_map: Dict[int, LayerInfo] = {}
 
     def get_info(self, layer_id: int) -> Optional[LayerInfo]:
         """Get LayerInfo for this layer or None."""
@@ -158,7 +159,7 @@ class ChunkLoader:
         # case the log will almost always be disabled unless debugging.
         # https://docs.python.org/3/howto/logging.html#optimization
         # https://blog.pilosus.org/posts/2020/01/24/python-f-strings-in-logging/
-        LOGGER.debug("ChunkLoader._load_async: %s", request.key)
+        LOGGER.debug("ChunkLoader._submit_async: %s", request.key)
 
         # Submit the future, have it call ChunkLoader._done when done.
         future = self.executor.submit(_chunk_loader_worker, request)
@@ -255,6 +256,7 @@ class ChunkLoader:
         # to be done in the GUI thread if cache access becomes more
         # complicated.
         self.cache.add_chunks(request)
+
         # Lookup this Request's LayerInfo.
         info = self._get_layer_info(request)
 
