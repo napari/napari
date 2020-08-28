@@ -28,9 +28,6 @@ def test_changing_combo_box_updates_layer_color_mode(qtbot):
     qtbot.addWidget(qtctrl)
     color_mode_comboBox = qtctrl.colorModeComboBox
 
-    selected_button = color_mode_comboBox.model().findItems('selected')
-    qtbot.mousePress(selected_button, Qt.LeftButton)
-
     index = color_mode_comboBox.findText('selected', Qt.MatchFixedString)
     color_mode_comboBox.setCurrentIndex(index)
     assert layer.color_mode == color_mode_comboBox.currentText()
