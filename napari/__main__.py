@@ -195,8 +195,8 @@ def _run():
 def _run_pythonw(python_path):
     """Execute this script again through pythonw.
 
-    This can be used to ensures we're using a framework
-    build of Python on macOS which fixes menubar issues.
+    This can be used to ensure we're using a framework
+    build of Python on macOS, which fixes frozen menubar issues.
 
     Parameters
     ----------
