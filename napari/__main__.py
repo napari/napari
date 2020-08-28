@@ -239,16 +239,14 @@ def main():
             _run_pythonw(python_path)
         else:
             msg = (
-                'pythonw executable not found. '
-                'The menubar might only become '
-                'functional on the macOS after '
-                'focus is toggled in and out of '
-                'napari. To fix this problem, '
-                'please install python.app via conda, '
-                'which can be done with '
-                '`conda install -c conda-forge python.app`.'
+                'pythonw executable not found.\n'
+                'To unfreeze the menubar on macOS, '
+                'click away from napari to another app, '
+                'then reactivate napari. To avoid this problem, '
+                'please install python.app in conda using:\n'
+                'conda install -c conda-forge python.app'
             )
-            raise warnings.warn(msg)
+            warnings.warn(msg)
     _run()
 
 
