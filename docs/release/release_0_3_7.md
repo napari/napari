@@ -11,8 +11,25 @@ For more information, examples, and documentation, please visit our website:
 https://github.com/napari/napari
 
 ## Highlights
-- Add briefcase app bundles to release assets (#1289)
 
+With this release, we are launching an experimental standalone app (#1289). You
+can find it on our [GitHub releases
+page](https://github.com/napari/napari/releases) (scroll down to "Assets" for
+this release). You can install reader/writer plugins from the app itself, so
+you can use the napari app to view many different kinds of datasets!
+
+We also have an also-experimental, work-in-progress asynchronous rendering
+mode (#1565, #1583) to make the viewer interactivity smoother with slow-loading
+datasets, such as those backed by remote data or by dask computation. To opt
+into this, set the NAPARI_ASYNC environment variable to anything other than
+"0".
+
+Scrolling through n-dimensional datasets has become a bit more convenient:
+scroll to zoom, as always, but hold Ctrl (Cmd on Mac) while scrolling to move
+up and down a stack. (#1434, #1525)
+
+This is in addition to many bug fixes and usability improvements — see below
+for the full list! Thank you to everyone who contributed to this release!
 
 ## New Features
 - Add briefcase app bundles to release assets (#1289)
