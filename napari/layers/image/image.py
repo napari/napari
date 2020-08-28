@@ -223,6 +223,7 @@ class Image(IntensityVisualizationMixin, Layer):
         self._slice = ImageSlice(
             self._get_empty_image(), self._raw_to_displayed, self.rgb
         )
+        self._empty = True
 
         # Set contrast_limits and colormaps
         self._gamma = gamma
@@ -496,6 +497,26 @@ class Image(IntensityVisualizationMixin, Layer):
         """Set the view given the indices to slice with."""
         not_disp = self.dims.not_displayed
 
+        # Check if requested slice outside of data range
+        indices = np.array(self._slice_indices)
+        extent = self._extent_data
+        if np.any(
+            np.less(
+                [indices[ax] for ax in not_disp],
+                [extent[0, ax] for ax in not_disp],
+            )
+        ) or np.any(
+            np.greater(
+                [indices[ax] for ax in not_disp],
+                [extent[1, ax] - 1 for ax in not_disp],
+            )
+        ):
+            self._slice.image.raw = self._get_empty_image()
+            self._slice.thumbnail.raw = self._get_empty_image()
+            self._empty = True
+            return
+        self._empty = False
+
         if self.multiscale:
             # If 3d redering just show lowest level of multiscale
             if self.dims.ndisplay == 3:
@@ -503,7 +524,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
             # Slice currently viewed level
             level = self.data_level
-            indices = np.array(self.dims.indices)
+            indices = np.array(self._slice_indices)
             downsampled_indices = (
                 indices[not_disp] / self.downsample_factors[level, not_disp]
             )
@@ -541,7 +562,7 @@ class Image(IntensityVisualizationMixin, Layer):
             image_indices = indices
 
             # Slice thumbnail
-            indices = np.array(self.dims.indices)
+            indices = np.array(self._slice_indices)
             downsampled_indices = (
                 indices[not_disp]
                 / self.downsample_factors[self._thumbnail_level, not_disp]
@@ -558,8 +579,8 @@ class Image(IntensityVisualizationMixin, Layer):
 
             thumbnail_source = self.data[self._thumbnail_level][tuple(indices)]
         else:
-            self._transforms['tile2data'].scale = np.ones(self.dims.ndim)
-            image_indices = self.dims.indices
+            self._transforms['tile2data'].scale = np.ones(self.ndim)
+            image_indices = self._slice_indices
             image = self.data[image_indices]
 
             # For single-scale we don't request a separate thumbnail_source
@@ -660,6 +681,7 @@ class Image(IntensityVisualizationMixin, Layer):
             return
 
         image = self._slice.thumbnail.view
+
         if self.dims.ndisplay == 3 and self.dims.ndim > 2:
             image = np.max(image, axis=0)
 

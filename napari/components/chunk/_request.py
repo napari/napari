@@ -7,6 +7,7 @@ import numpy as np
 
 from ...layers.base.base import Layer
 from ...types import ArrayLike, Dict
+from ._utils import get_data_id
 
 LOGGER = logging.getLogger("napari.async")
 
@@ -38,13 +39,14 @@ class ChunkKey:
 
     def __init__(self, layer: Layer, indices: Tuple[Optional[slice], ...]):
         self.layer_id = id(layer)
+        self.data_id = get_data_id(layer)
         self.data_level = layer._data_level
 
         # Slice objects are not hashable, so turn them into tuples.
         self.indices = tuple(_index_to_tuple(x) for x in indices)
 
         # All together as one tuple for easy comparison.
-        self.key = (self.layer_id, self.data_level, self.indices)
+        self.key = (self.layer_id, self.data_id, self.data_level, self.indices)
 
     def __str__(self):
         return (
@@ -72,8 +74,6 @@ class ChunkRequest:
         The key of the request.
     chunks : Dict[str, ArrayLike]
         The chunk arrays we need to load.
-    load_seconds : float
-        Delay for this long during the load portion, for testing.
     """
 
     def __init__(self, key: ChunkKey, chunks: Dict[str, ArrayLike]):
@@ -85,8 +85,10 @@ class ChunkRequest:
         self.key = key
         self.chunks = chunks
 
-        # No delay by default.
-        self.load_seconds = 0
+    @property
+    def in_memory(self) -> bool:
+        """True if all chunks are ndarrays."""
+        return all(isinstance(x, np.ndarray) for x in self.chunks.values())
 
     def load_chunks(self):
         """Load all of our chunks now in this thread."""
