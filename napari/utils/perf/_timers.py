@@ -183,19 +183,26 @@ if USE_PERFMON:
         **kwargs : dict
             Additional keyword arguments for the "args" field of the event.
 
-        Examples
-        --------
+        Example
+        -------
         with perf_timer("draw"):
             draw_stuff()
         """
         start_ns = perf_counter_ns()
-        yield
-        end_ns = perf_counter_ns()
-        event = PerfEvent(name, start_ns, end_ns, **kwargs)
-        timers.add_event(event)
+
+        # Intially we don't know the end_ns, but we want to yield the
+        # event. So just put start_ns as the end, then update it
+        # after the yield when the block is over.
+        event = PerfEvent(name, start_ns, start_ns, category, **kwargs)
+        yield event
+
+        # Now update the end time.
+        event.end_ns = perf_counter_ns()
+
+        if timers:
+            timers.add_event(event)
         if print_time:
-            ms = (end_ns - start_ns) / 1e6
-            print(f"{name} {ms}ms")
+            print(f"{name} {event.duration_ms}ms")
 
 
 else:

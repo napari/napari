@@ -7,6 +7,7 @@ import numpy as np
 
 from ...layers.base.base import Layer
 from ...types import ArrayLike, Dict
+from ...utils.perf import perf_timer
 from ._utils import get_data_id
 
 LOGGER = logging.getLogger("napari.async")
@@ -92,9 +93,10 @@ class ChunkRequest:
 
     def load_chunks(self):
         """Load all of our chunks now in this thread."""
-        for key, array in self.chunks.items():
-            loaded_array = np.asarray(array)
-            self.chunks[key] = loaded_array
+        with perf_timer("load_chunks"):
+            for key, array in self.chunks.items():
+                loaded_array = np.asarray(array)
+                self.chunks[key] = loaded_array
 
     def transpose_chunks(self, order: tuple) -> None:
         """Transpose all our chunks.
