@@ -388,30 +388,23 @@ def test_selected_mode_label_color():
     original_color = layer.get_color(1)
 
     layer.color_mode = LabelColorMode.SELECTED
+    original_background_color = layer.get_color(layer._background_label)
+    none_color = layer.get_color(None)
     layer.selected_label = 1
+
     # color of selected label has not changed
     assert np.allclose(layer.get_color(layer.selected_label), original_color)
 
-    background_color = layer.get_color(layer._background_label)
-    none_color = layer.get_color(None)
+    current_background_color = layer.get_color(layer._background_label)
     # color of background is background color
-    assert np.all(
-        np.where(
-            layer.data == layer._background_label,
-            np.allclose(layer.get_color(layer.data), background_color),
-            1,
-        )
-    )
+    assert current_background_color == original_background_color
 
     # color of all others is none color
-    assert np.all(
-        np.where(
-            layer.data != layer.selected_label
-            and layer.data != layer._background_label,
-            np.allclose(layer.get_color(layer.data), none_color),
-            1,
-        )
+    other_labels = np.unique(layer.data)[2:]
+    other_colors = np.array(
+        list(map(lambda x: layer.get_color(x), other_labels))
     )
+    assert np.allclose(other_colors, none_color)
 
 
 def test_paint():
