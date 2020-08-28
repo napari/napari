@@ -163,7 +163,7 @@ class ChunkLoader:
         # case the log will almost always be disabled unless debugging.
         # https://docs.python.org/3/howto/logging.html#optimization
         # https://blog.pilosus.org/posts/2020/01/24/python-f-strings-in-logging/
-        LOGGER.debug("ChunkLoader._load_async: %s", request.key)
+        LOGGER.debug("ChunkLoader._submit_async: %s", request.key)
 
         # Submit the future, have it call ChunkLoader._done when done.
         future = self.executor.submit(_chunk_loader_worker, request)
@@ -260,6 +260,7 @@ class ChunkLoader:
         # to be done in the GUI thread if cache access becomes more
         # complicated.
         self.cache.add_chunks(request)
+
         # Lookup this Request's LayerInfo.
         info = self._get_layer_info(request)
 

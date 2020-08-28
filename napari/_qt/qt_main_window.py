@@ -269,6 +269,12 @@ class Window:
         list_plugins_action.triggered.connect(self._show_plugin_list)
         self.plugins_menu.addAction(list_plugins_action)
 
+        pip_install_action = QAction(
+            "Install/Uninstall Package(s)...", self._qt_window
+        )
+        pip_install_action.triggered.connect(self._show_pip_install_dialog)
+        self.plugins_menu.addAction(pip_install_action)
+
         order_plugin_action = QAction("Plugin Call Order...", self._qt_window)
         order_plugin_action.setStatusTip('Change call order for plugins')
         order_plugin_action.triggered.connect(self._show_plugin_sorter)
@@ -294,6 +300,13 @@ class Window:
         plugin_sorter.finished.connect(dock_widget.close)
         plugin_sorter.finished.connect(plugin_sorter.deleteLater)
         plugin_sorter.finished.connect(dock_widget.deleteLater)
+
+    def _show_pip_install_dialog(self):
+        """Show dialog that allows users to sort the call order of plugins."""
+        from .qt_pip_dialog import QtPipDialog
+
+        dialog = QtPipDialog(self._qt_window)
+        dialog.exec_()
 
     def _show_plugin_err_reporter(self):
         """Show dialog that allows users to review and report plugin errors."""
