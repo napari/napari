@@ -517,24 +517,6 @@ class Image(IntensityVisualizationMixin, Layer):
             return
         self._empty = False
 
-        # Check if requested slice outside of data range
-        indices = np.array(self._slice_indices)
-        extent = self._extent_data
-        if np.any(
-            np.less(
-                [indices[ax] for ax in not_disp],
-                [extent[0, ax] for ax in not_disp],
-            )
-        ) or np.any(
-            np.greater(
-                [indices[ax] for ax in not_disp],
-                [extent[1, ax] - 1 for ax in not_disp],
-            )
-        ):
-            self._slice.image.raw = self._get_empty_image()
-            self._slice.thumbnail.raw = self._get_empty_image()
-            return
-
         if self.multiscale:
             # If 3d redering just show lowest level of multiscale
             if self.dims.ndisplay == 3:

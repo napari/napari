@@ -305,7 +305,7 @@ class Dims:
         ----------
         axis : int
             Dimension index.
-        point : int or float
+        value : int or float
             Value of the point.
         """
         axis = self._assert_axis_in_bounds(axis)
