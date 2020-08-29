@@ -224,3 +224,168 @@ class ScaleTranslate(Transform):
         translate = np.zeros(n)
         translate[not_axes] = self.translate
         return ScaleTranslate(scale, translate, name=self.name)
+
+
+class Affine(Transform):
+    """n-dimensional affine transformation class.
+
+    The affine transform is represented as a n+1 dimensionsal matrix
+
+    Parameters
+    ----------
+    scale : 1-D array
+        A 1-D array of factors to scale each axis by. Scale is broadcast to 1
+        in leading dimensions, so that, for example, a scale of [4, 18, 34] in
+        3D can be used as a scale of [1, 4, 18, 34] in 4D without modification.
+        An empty translation vector implies no scaling.
+    translate : 1-D array
+        A 1-D array of factors to shift each axis by. Translation is broadcast
+        to 0 in leading dimensions, so that, for example, a translation of
+        [4, 18, 34] in 3D can be used as a translation of [0, 4, 18, 34] in 4D
+        without modification. An empty translation vector implies no
+        translation.
+    rotation : n-D array
+        An n-D rotation matrix.
+    sheer : n-D array
+        An n-D sheer matrix.
+    name : string
+        A string name for the transform.
+    """
+
+    def __init__(
+        self,
+        scale=(1.0,),
+        translate=(0.0,),
+        rotation=None,
+        sheer=None,
+        matrix=None,
+        name=None,
+    ):
+        super().__init__(name=name)
+        if matrix is None:
+            if rotation is None:
+                rotation = np.eye(len(scale))
+            if sheer is None:
+                sheer = np.eye(len(scale))
+            d_scale = np.diag(scale)
+            self.matrix = d_scale @ np.array(rotation) @ np.array(sheer)
+        else:
+            self.matrix = np.array(matrix)
+        self.translate = np.array(translate)
+
+    def __call__(self, coords):
+        coords = np.atleast_2d(coords)
+        if coords.shape[1] != self.matrix.shape[0]:
+            matrix = np.eye(coords.shape[1])
+            matrix[
+                -self.matrix.shape[0] :, -self.matrix.shape[1] :
+            ] = self.matrix
+        else:
+            matrix = self.matrix
+        translate = np.concatenate(
+            ([0.0] * (coords.shape[1] - len(self.translate)), self.translate)
+        )
+        return np.atleast_1d(np.squeeze(coords @ matrix.T + translate))
+
+    def decompose(self) -> (np.array, np.array, np.array):
+        """Decompose the transform matrix into rotation, sheer, scale."""
+        RZS = self.matrix
+        ZS = np.linalg.cholesky(np.dot(RZS.T, RZS)).T
+        Z = np.diag(ZS).copy()
+        shears = ZS / Z[:, np.newaxis]
+        n = len(Z)
+        S = shears[np.triu(np.ones((n, n)), 1).astype(bool)]
+        R = np.dot(RZS, np.linalg.inv(ZS))
+        if np.linalg.det(R) < 0:
+            Z[0] *= -1
+            ZS[0] *= -1
+            R = np.dot(RZS, np.linalg.inv(ZS))
+        return R, Z, S
+
+    @property
+    def scale(self) -> np.array:
+        """Return the scale of the transform."""
+        return self.decompose()[1]
+
+    @scale.setter
+    def scale(self, scale):
+        """Set the scale of the transform."""
+        R, Z, S = self.decompose()
+        self.matrix = R @ np.diag(scale) @ S
+
+    @property
+    def rotation(self) -> np.array:
+        """Return the rotation of the transform."""
+        return self.decompose()[0]
+
+    @rotation.setter
+    def rotation(self, rotation):
+        """Set the rotation of the transform."""
+        R, Z, S = self.decompose()
+        self.matrix = np.array(rotation) @ Z @ S
+
+    @property
+    def sheer(self) -> np.array:
+        """Return the sheer of the transform."""
+        return self.decompose()[2]
+
+    @sheer.setter
+    def sheer(self, sheer):
+        """Set the rotation of the transform."""
+        R, Z, S = self.decompose()
+        self.matrix = R @ Z @ np.array(sheer)
+
+    @property
+    def inverse(self) -> 'Affine':
+        """Return the inverse transform."""
+        matrix = np.linalg.inv(self.matrix)
+        translate = -matrix @ self.translate
+        return Affine(matrix=matrix, translate=translate)
+
+    def compose(self, transform: 'Affine') -> 'Affine':
+        """Return the composite of this transform and the provided one."""
+        matrix = self.matrix @ transform.matrix
+        translate = self.translate + self.matrix @ transform.translate
+        return Affine(matrix=matrix, translate=translate)
+
+    def set_slice(self, axes: Sequence[int]) -> 'Affine':
+        """Return a transform subset to the visible dimensions.
+
+        Parameters
+        ----------
+        axes : Sequence[int]
+            Axes to subset the current transform with.
+
+        Returns
+        -------
+        Transform
+            Resulting transform.
+        """
+        return Affine(
+            matrix=self.matrix[np.ix_(axes, axes)],
+            translate=self.translate[axes],
+            name=self.name,
+        )
+
+    def expand_dims(self, axes: Sequence[int]) -> 'Affine':
+        """Return a transform with added axes for non-visible dimensions.
+
+        Parameters
+        ----------
+        axes : Sequence[int]
+            Location of axes to expand the current transform with. Passing a
+            list allows expansion to occur at specific locations and for
+            expand_dims to be like an inverse to the set_slice method.
+
+        Returns
+        -------
+        Transform
+            Resulting transform.
+        """
+        n = len(axes) + len(self.scale)
+        not_axes = [i for i in range(n) if i not in axes]
+        matrix = np.eye(n)
+        matrix[np.ix_(not_axes, not_axes)] = self.matrix
+        translate = np.zeros(n)
+        translate[not_axes] = self.translate
+        return Affine(matrix=matrix, translate=translate, name=self.name)

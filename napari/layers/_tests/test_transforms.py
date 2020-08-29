@@ -1,20 +1,23 @@
 import numpy.testing as npt
+import pytest
 
-from napari.layers.transforms import ScaleTranslate
+from napari.layers.transforms import Affine, ScaleTranslate
 
 
-def test_scale_translate():
+@pytest.mark.parametrize('Transform', [ScaleTranslate, Affine])
+def test_scale_translate(Transform):
     coord = [10, 13]
-    transform = ScaleTranslate(scale=[2, 3], translate=[8, -5], name='st')
+    transform = Transform(scale=[2, 3], translate=[8, -5], name='st')
     new_coord = transform(coord)
     target_coord = [2 * 10 + 8, 3 * 13 - 5]
     assert transform.name == 'st'
     npt.assert_allclose(new_coord, target_coord)
 
 
-def test_scale_translate_inverse():
+@pytest.mark.parametrize('Transform', [ScaleTranslate, Affine])
+def test_scale_translate_inverse(Transform):
     coord = [10, 13]
-    transform = ScaleTranslate(scale=[2, 3], translate=[8, -5])
+    transform = Transform(scale=[2, 3], translate=[8, -5])
     new_coord = transform(coord)
     target_coord = [2 * 10 + 8, 3 * 13 - 5]
     npt.assert_allclose(new_coord, target_coord)
@@ -23,10 +26,11 @@ def test_scale_translate_inverse():
     npt.assert_allclose(inverted_new_coord, coord)
 
 
-def test_scale_translate_compose():
+@pytest.mark.parametrize('Transform', [ScaleTranslate, Affine])
+def test_scale_translate_compose(Transform):
     coord = [10, 13]
-    transform_a = ScaleTranslate(scale=[2, 3], translate=[8, -5])
-    transform_b = ScaleTranslate(scale=[0.3, 1.4], translate=[-2.2, 3])
+    transform_a = Transform(scale=[2, 3], translate=[8, -5])
+    transform_b = Transform(scale=[0.3, 1.4], translate=[-2.2, 3])
     transform_c = transform_b.compose(transform_a)
 
     new_coord_1 = transform_c(coord)
@@ -34,11 +38,10 @@ def test_scale_translate_compose():
     npt.assert_allclose(new_coord_1, new_coord_2)
 
 
-def test_scale_translate_slice():
-    transform_a = ScaleTranslate(scale=[2, 3], translate=[8, -5])
-    transform_b = ScaleTranslate(
-        scale=[2, 1, 3], translate=[8, 3, -5], name='st'
-    )
+@pytest.mark.parametrize('Transform', [ScaleTranslate, Affine])
+def test_scale_translate_slice(Transform):
+    transform_a = Transform(scale=[2, 3], translate=[8, -5])
+    transform_b = Transform(scale=[2, 1, 3], translate=[8, 3, -5], name='st')
     npt.assert_allclose(transform_b.set_slice([0, 2]).scale, transform_a.scale)
     npt.assert_allclose(
         transform_b.set_slice([0, 2]).translate, transform_a.translate
@@ -46,9 +49,10 @@ def test_scale_translate_slice():
     assert transform_b.set_slice([0, 2]).name == 'st'
 
 
-def test_scale_translate_expand_dims():
-    transform_a = ScaleTranslate(scale=[2, 3], translate=[8, -5], name='st')
-    transform_b = ScaleTranslate(scale=[2, 1, 3], translate=[8, 0, -5])
+@pytest.mark.parametrize('Transform', [ScaleTranslate, Affine])
+def test_scale_translate_expand_dims(Transform):
+    transform_a = Transform(scale=[2, 3], translate=[8, -5], name='st')
+    transform_b = Transform(scale=[2, 1, 3], translate=[8, 0, -5])
     npt.assert_allclose(transform_a.expand_dims([1]).scale, transform_b.scale)
     npt.assert_allclose(
         transform_a.expand_dims([1]).translate, transform_b.translate
@@ -56,8 +60,9 @@ def test_scale_translate_expand_dims():
     assert transform_a.expand_dims([1]).name == 'st'
 
 
-def test_scale_translate_identity_default():
+@pytest.mark.parametrize('Transform', [ScaleTranslate, Affine])
+def test_scale_translate_identity_default(Transform):
     coord = [10, 13]
-    transform = ScaleTranslate()
+    transform = Transform()
     new_coord = transform(coord)
     npt.assert_allclose(new_coord, coord)
