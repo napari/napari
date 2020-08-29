@@ -16,7 +16,7 @@ with napari.gui_qt():
     labeled = ndi.label(blobs)[0]
     labels_layer = viewer.add_labels(labeled, name='blob ID')
 
-    @viewer.mouse_press_callbacks.append
+    @viewer.mouse_drag_callbacks.append
     def get_event(viewer, event):
         print(event)
 
