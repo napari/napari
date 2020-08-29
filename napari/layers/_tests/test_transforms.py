@@ -66,3 +66,11 @@ def test_scale_translate_identity_default(Transform):
     transform = Transform()
     new_coord = transform(coord)
     npt.assert_allclose(new_coord, coord)
+
+
+# def test_scale_translate_rotate():
+#     coord = [10, 13]
+#     transform = Affine(scale=[2, 3], translate=[8, -5], rotation=10, degrees=True)
+#     new_coord = transform(coord)
+#     target_coord = [2 * 10 + 8, 3 * 13 - 5]
+#     npt.assert_allclose(new_coord, target_coord)

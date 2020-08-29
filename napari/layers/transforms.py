@@ -244,10 +244,15 @@ class Affine(Transform):
         [4, 18, 34] in 3D can be used as a translation of [0, 4, 18, 34] in 4D
         without modification. An empty translation vector implies no
         translation.
-    rotation : n-D array
-        An n-D rotation matrix.
+    rotation : float, 2-tuple of float, or n-D array.
+        If a float convert into a 2D rotation matrix using that value as an
+        angle. If 2-tuple convert into a 3D rotation matrix, otherwise assume
+        an nD rotation. Angle conversion are done either using degrees or
+        radians depending on the degrees boolean parameter.
     sheer : n-D array
         An n-D sheer matrix.
+    degrees : bool
+        Boolean if rotation angles are provided in degrees
     name : string
         A string name for the transform.
     """
@@ -259,18 +264,23 @@ class Affine(Transform):
         rotation=None,
         sheer=None,
         matrix=None,
+        degrees=True,
         name=None,
     ):
         super().__init__(name=name)
+
         if matrix is None:
             if rotation is None:
                 rotation = np.eye(len(scale))
             if sheer is None:
                 sheer = np.eye(len(scale))
-            d_scale = np.diag(scale)
-            self.matrix = d_scale @ np.array(rotation) @ np.array(sheer)
+            matrix = compose_affine_matrix(
+                rotation, scale, sheer, degrees=degrees
+            )
         else:
-            self.matrix = np.array(matrix)
+            matrix = np.array(matrix)
+
+        self.matrix = matrix
         self.translate = np.array(translate)
 
     def __call__(self, coords):
@@ -287,53 +297,38 @@ class Affine(Transform):
         )
         return np.atleast_1d(np.squeeze(coords @ matrix.T + translate))
 
-    def decompose(self) -> (np.array, np.array, np.array):
-        """Decompose the transform matrix into rotation, sheer, scale."""
-        RZS = self.matrix
-        ZS = np.linalg.cholesky(np.dot(RZS.T, RZS)).T
-        Z = np.diag(ZS).copy()
-        shears = ZS / Z[:, np.newaxis]
-        n = len(Z)
-        S = shears[np.triu(np.ones((n, n)), 1).astype(bool)]
-        R = np.dot(RZS, np.linalg.inv(ZS))
-        if np.linalg.det(R) < 0:
-            Z[0] *= -1
-            ZS[0] *= -1
-            R = np.dot(RZS, np.linalg.inv(ZS))
-        return R, Z, S
-
     @property
     def scale(self) -> np.array:
         """Return the scale of the transform."""
-        return self.decompose()[1]
+        return decompose_affine_matrix(self.matrix)[1]
 
     @scale.setter
     def scale(self, scale):
         """Set the scale of the transform."""
-        R, Z, S = self.decompose()
-        self.matrix = R @ np.diag(scale) @ S
+        R, Z, S = decompose_affine_matrix(self.matrix)
+        self.matrix = compose_affine_matrix(R, scale, S)
 
     @property
     def rotation(self) -> np.array:
         """Return the rotation of the transform."""
-        return self.decompose()[0]
+        return decompose_affine_matrix(self.matrix)[0]
 
     @rotation.setter
     def rotation(self, rotation):
         """Set the rotation of the transform."""
-        R, Z, S = self.decompose()
-        self.matrix = np.array(rotation) @ Z @ S
+        R, Z, S = decompose_affine_matrix(self.matrix)
+        self.matrix = compose_affine_matrix(rotation, Z, S)
 
     @property
     def sheer(self) -> np.array:
         """Return the sheer of the transform."""
-        return self.decompose()[2]
+        return decompose_affine_matrix(self.matrix)[2]
 
     @sheer.setter
     def sheer(self, sheer):
         """Set the rotation of the transform."""
-        R, Z, S = self.decompose()
-        self.matrix = R @ Z @ np.array(sheer)
+        R, Z, S = decompose_affine_matrix(self.matrix)
+        self.matrix = compose_affine_matrix(R, Z, sheer)
 
     @property
     def inverse(self) -> 'Affine':
@@ -389,3 +384,105 @@ class Affine(Transform):
         translate = np.zeros(n)
         translate[not_axes] = self.translate
         return Affine(matrix=matrix, translate=translate, name=self.name)
+
+
+def compose_affine_matrix(rotation, scale, sheer, degrees=True) -> np.array:
+    """Compose matrix from rotation, sheer, scale."""
+
+    if np.isscalar(rotation):
+        # If a scalar is passed assume it is a single rotation angle
+        # for a 2D rotation
+        if degrees:
+            theta = np.deg2rad(rotation)
+        else:
+            theta = rotation
+        rotation_mat = np.array(
+            [[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]]
+        )
+    elif np.array(rotation).ndim == 1 and len(rotation) == 2:
+        # If a 2-tuple is passed assume it is two rotation angles
+        # for a 3D rotation
+        if degrees:
+            theta = np.deg2rad(rotation[0])
+            phi = np.deg2rad(rotation[1])
+        else:
+            theta = rotation[0]
+            phi = rotation[1]
+        rotation_mat = np.array(
+            [
+                [
+                    np.sin(theta) * np.cos(phi),
+                    np.sin(theta) * np.sin(phi),
+                    np.cos(theta),
+                ],
+                [
+                    np.cos(theta) * np.cos(phi),
+                    np.cos(theta) * np.sin(phi),
+                    -np.sin(theta),
+                ],
+                [-np.sin(phi), np.cos(phi), 0],
+            ]
+        )
+    else:
+        # Otherwise assume a full nD rotation matrix has been passed
+        rotation_mat = np.array(rotation)
+
+    # Convert a scale vector to an nD diagonal matrix
+    scale_mat = np.diag(scale)
+
+    # Assume a full nD sheer matrix has been passed
+    sheer_mat = np.array(sheer)
+
+    # Check the dimensionality of the transforms and pad as needed
+    n_scale = scale_mat.shape[0]
+    n_rotation = rotation_mat.shape[0]
+    n_sheer = sheer_mat.shape[0]
+    ndim = max(n_scale, n_rotation, n_sheer)
+
+    full_scale = embed_in_identity_matrix(scale_mat, ndim)
+    full_rotation = embed_in_identity_matrix(rotation_mat, ndim)
+    full_sheer = embed_in_identity_matrix(sheer_mat, ndim)
+
+    return full_scale @ full_rotation @ full_sheer
+
+
+def embed_in_identity_matrix(matrix, ndim):
+    """Embed an MxM matrix in a larger NxN identity matrix.
+
+    Parameters
+    ----------
+    matrix : np.array
+        2D square matrix, MxM.
+    ndim : int
+        Integer with N >= M.
+
+    Returns
+    -------
+    np.array shape (N, N)
+        Larger matrix.
+    """
+    if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1]:
+        raise ValueError(f'Improper transform matrix {matrix}')
+
+    if matrix.shape[0] == ndim:
+        return matrix
+    else:
+        full_matrix = np.eye(ndim)
+        full_matrix[-matrix.shape[0] :, -matrix.shape[1]] = matrix
+        return full_matrix
+
+
+def decompose_affine_matrix(matrix) -> (np.array, np.array, np.array):
+    """Decompose the transform matrix into rotation, sheer, scale."""
+    RZS = matrix
+    ZS = np.linalg.cholesky(np.dot(RZS.T, RZS)).T
+    Z = np.diag(ZS).copy()
+    shears = ZS / Z[:, np.newaxis]
+    n = len(Z)
+    S = shears[np.triu(np.ones((n, n)), 1).astype(bool)]
+    R = np.dot(RZS, np.linalg.inv(ZS))
+    if np.linalg.det(R) < 0:
+        Z[0] *= -1
+        ZS[0] *= -1
+        R = np.dot(RZS, np.linalg.inv(ZS))
+    return R, Z, S
