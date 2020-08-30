@@ -4,7 +4,7 @@ from functools import lru_cache
 import numpy as np
 from vispy.app import Canvas
 from vispy.gloo import gl
-from vispy.visuals.transforms import STTransform
+from vispy.visuals.transforms import MatrixTransform
 
 
 class VispyBaseLayer(ABC):
@@ -39,7 +39,7 @@ class VispyBaseLayer(ABC):
 
     Extended Summary
     ----------------
-    _master_transform : vispy.visuals.transforms.STTransform
+    _master_transform : vispy.visuals.transforms.MatrixTransform
         Transform positioning the layer visual inside the scenecanvas.
     """
 
@@ -60,18 +60,20 @@ class VispyBaseLayer(ABC):
         self.layer.events.visible.connect(self._on_visible_change)
         self.layer.events.opacity.connect(self._on_opacity_change)
         self.layer.events.blending.connect(self._on_blending_change)
-        self.layer.events.scale.connect(self._on_scale_change)
-        self.layer.events.translate.connect(self._on_translate_change)
+        self.layer.events.scale.connect(self._on_matrix_change)
+        self.layer.events.translate.connect(self._on_matrix_change)
+        self.layer.events.rotate.connect(self._on_matrix_change)
+        self.layer.events.shear.connect(self._on_matrix_change)
 
     @property
     def _master_transform(self):
-        """vispy.visuals.transforms.STTransform:
+        """vispy.visuals.transforms.MatrixTransform:
         Central node's firstmost transform.
         """
         # whenever a new parent is set, the transform is reset
         # to a NullTransform so we reset it here
-        if not isinstance(self.node.transform, STTransform):
-            self.node.transform = STTransform()
+        if not isinstance(self.node.transform, MatrixTransform):
+            self.node.transform = MatrixTransform()
 
         return self.node.transform
 
@@ -86,43 +88,6 @@ class VispyBaseLayer(ABC):
     @order.setter
     def order(self, order):
         self.node.order = order
-
-    @property
-    def scale(self):
-        """sequence of float: Scale factors."""
-        return self._master_transform.scale
-
-    @scale.setter
-    def scale(self, scale):
-        # Avoid useless update if nothing changed in the displayed dims
-        # Note that the master_transform scale is always a 4-vector so pad
-        padded_scale = np.pad(
-            scale, ((0, 4 - len(scale))), constant_values=1, mode='constant'
-        )
-        if self.scale is not None and np.all(self.scale == padded_scale):
-            return
-        self._master_transform.scale = padded_scale
-
-    @property
-    def translate(self):
-        """sequence of float: Translation values."""
-        return self._master_transform.translate
-
-    @translate.setter
-    def translate(self, translate):
-        # Avoid useless update if nothing changed in the displayed dims
-        # Note that the master_transform translate is always a 4-vector so pad
-        padded_translate = np.pad(
-            translate,
-            ((0, 4 - len(translate))),
-            constant_values=1,
-            mode='constant',
-        )
-        if self.translate is not None and np.all(
-            self.translate == padded_translate
-        ):
-            return
-        self._master_transform.translate = padded_translate
 
     @property
     def scale_factor(self):
@@ -148,21 +113,18 @@ class VispyBaseLayer(ABC):
         self.node.set_gl_state(self.layer.blending)
         self.node.update()
 
-    def _on_scale_change(self, event=None):
-        scale = self.layer._transforms.simplified.set_slice(
+    def _on_matrix_change(self, event=None):
+        transform = self.layer._transforms.simplified.set_slice(
             self.layer.dims.displayed
-        ).scale
+        )
         # convert NumPy axis ordering to VisPy axis ordering
-        self.scale = scale[::-1]
-        self.layer.corner_pixels = self.coordinates_of_canvas_corners()
-        self.layer.position = self._transform_position(self._position)
-
-    def _on_translate_change(self, event=None):
-        translate = self.layer._transforms.simplified.set_slice(
-            self.layer.dims.displayed
-        ).translate
-        # convert NumPy axis ordering to VisPy axis ordering
-        self.translate = translate[::-1]
+        matrix = transform.matrix[::-1, ::-1]
+        translate = transform.translate[::-1]
+        # Embed in 4x4 affine matrix
+        affine_matrix = np.eye(4)
+        affine_matrix[: matrix.shape[0], : matrix.shape[1]] = matrix
+        affine_matrix[: len(translate), -1] = translate
+        self._master_transform.matrix = affine_matrix
         self.layer.corner_pixels = self.coordinates_of_canvas_corners()
         self.layer.position = self._transform_position(self._position)
 
@@ -192,8 +154,7 @@ class VispyBaseLayer(ABC):
         self._on_visible_change()
         self._on_opacity_change()
         self._on_blending_change()
-        self._on_scale_change()
-        self._on_translate_change()
+        self._on_matrix_change()
 
     def coordinates_of_canvas_corners(self):
         """Find location of the corners of canvas in data coordinates.
@@ -209,7 +170,11 @@ class VispyBaseLayer(ABC):
         nd = self.layer.dims.ndisplay
         # Find image coordinate of top left canvas pixel
         if self.node.canvas is not None:
-            offset = self.translate[:nd] / self.scale[:nd]
+            translate = self._master_transform.matrix[:, -1]
+            matrix = self._master_transform.matrix[:-1, :-1]
+            ZS = np.linalg.cholesky(np.dot(matrix.T, matrix)).T
+            scale = np.diag(ZS).copy()
+            offset = translate[:nd] / scale[:nd]
             tl_raw = np.floor(self._transform_position([0, 0]) + offset[::-1])
             br_raw = np.ceil(
                 self._transform_position(self.node.canvas.size) + offset[::-1]

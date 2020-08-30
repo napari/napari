@@ -76,6 +76,8 @@ class AddLayersMixin:
         metadata=None,
         scale=None,
         translate=None,
+        rotate=None,
+        shear=None,
         opacity=1,
         blending=None,
         visible=True,
@@ -199,6 +201,8 @@ class AddLayersMixin:
             'metadata': metadata,
             'scale': scale,
             'translate': translate,
+            'rotate': rotate,
+            'shear': shear,
             'opacity': opacity,
             'blending': blending,
             'visible': visible,
@@ -206,7 +210,14 @@ class AddLayersMixin:
         }
 
         # these arguments are *already* iterables in the single-channel case.
-        iterable_kwargs = {'scale', 'translate', 'contrast_limits', 'metadata'}
+        iterable_kwargs = {
+            'scale',
+            'translate',
+            'rotate',
+            'shear',
+            'contrast_limits',
+            'metadata',
+        }
 
         if channel_axis is None:
             kwargs['colormap'] = kwargs['colormap'] or 'gray'

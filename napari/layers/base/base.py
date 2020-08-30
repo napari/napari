@@ -12,7 +12,7 @@ from ...utils.key_bindings import KeymapProvider
 from ...utils.misc import ROOT_DIR
 from ...utils.naming import magic_name
 from ...utils.status_messages import format_float, status_format
-from ..transforms import ScaleTranslate, TransformChain
+from ..transforms import Affine, TransformChain
 from ..utils.layer_utils import compute_multiscale_level, convert_to_uint8
 from ._base_constants import Blending
 
@@ -127,6 +127,8 @@ class Layer(KeymapProvider, ABC):
         metadata=None,
         scale=None,
         translate=None,
+        rotate=None,
+        shear=None,
         opacity=1,
         blending='translucent',
         visible=True,
@@ -174,13 +176,15 @@ class Layer(KeymapProvider, ABC):
         #   into a grid for looking at layers side-by-side.
         self._transforms = TransformChain(
             [
-                ScaleTranslate(
-                    np.ones(ndim), np.zeros(ndim), name='tile2data'
+                Affine(np.ones(ndim), np.zeros(ndim), name='tile2data'),
+                Affine(
+                    scale,
+                    translate,
+                    rotate=rotate,
+                    shear=shear,
+                    name='data2world',
                 ),
-                ScaleTranslate(scale, translate, name='data2world'),
-                ScaleTranslate(
-                    np.ones(ndim), np.zeros(ndim), name='world2grid'
-                ),
+                Affine(np.ones(ndim), np.zeros(ndim), name='world2grid'),
             ]
         )
 
@@ -206,6 +210,8 @@ class Layer(KeymapProvider, ABC):
             deselect=Event,
             scale=Event,
             translate=Event,
+            rotate=Event,
+            shear=Event,
             data=Event,
             name=Event,
             thumbnail=Event,
@@ -352,6 +358,28 @@ class Layer(KeymapProvider, ABC):
         self._transforms['data2world'].translate = np.array(translate)
         self._update_dims()
         self.events.translate()
+
+    @property
+    def rotate(self):
+        """array: Rotation matrix in world coordinates."""
+        return self._transforms['data2world'].rotate
+
+    @rotate.setter
+    def rotate(self, rotate):
+        self._transforms['data2world'].rotate = rotate
+        self._update_dims()
+        self.events.rotate()
+
+    @property
+    def shear(self):
+        """array: Sheer matrix in world coordinates."""
+        return self._transforms['data2world'].shear
+
+    @shear.setter
+    def shear(self, shear):
+        self._transforms['data2world'].shear = shear
+        self._update_dims()
+        self.events.shear()
 
     @property
     def translate_grid(self):

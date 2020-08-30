@@ -68,9 +68,55 @@ def test_scale_translate_identity_default(Transform):
     npt.assert_allclose(new_coord, coord)
 
 
-# def test_scale_translate_rotate():
-#     coord = [10, 13]
-#     transform = Affine(scale=[2, 3], translate=[8, -5], rotation=10, degrees=True)
-#     new_coord = transform(coord)
-#     target_coord = [2 * 10 + 8, 3 * 13 - 5]
-#     npt.assert_allclose(new_coord, target_coord)
+def test_scale_translate_rotate():
+    coord = [10, 13]
+    transform = Affine(
+        scale=[2, 3], translate=[8, -5], rotate=90, degrees=True
+    )
+    new_coord = transform(coord)
+    pre_rotate = [2 * 10, 3 * 13]
+    # As rotate by 90 degrees, can use [y, -x]
+    post_rotate = [pre_rotate[1], -pre_rotate[0]]
+    target_coord = [post_rotate[0] + 8, post_rotate[1] - 5]
+    npt.assert_allclose(new_coord, target_coord)
+
+
+def test_affine_properties():
+    transform = Affine(
+        scale=[2, 3], translate=[8, -5], rotate=90, shear=[1], degrees=True
+    )
+    npt.assert_allclose(transform.translate, [8, -5])
+    npt.assert_allclose(transform.scale, [2, 3])
+    npt.assert_almost_equal(transform.rotate, [[0, -1], [1, 0]])
+    npt.assert_almost_equal(transform.shear, [1])
+
+
+def test_scale_translate_rotate_inverse():
+    coord = [10, 13]
+    transform = Affine(
+        scale=[2, 3], translate=[8, -5], rotate=90, degrees=True
+    )
+    new_coord = transform(coord)
+    pre_rotate = [2 * 10, 3 * 13]
+    # As rotate by 90 degrees, can use [y, -x]
+    post_rotate = [pre_rotate[1], -pre_rotate[0]]
+    target_coord = [post_rotate[0] + 8, post_rotate[1] - 5]
+    npt.assert_allclose(new_coord, target_coord)
+
+    inverted_new_coord = transform.inverse(new_coord)
+    npt.assert_allclose(inverted_new_coord, coord)
+
+
+def test_scale_translate_rotate_compose():
+    coord = [10, 13]
+    transform_a = Affine(
+        scale=[2, 3], translate=[8, -5], rotate=25, degrees=True
+    )
+    transform_b = Affine(
+        scale=[0.3, 1.4], translate=[-2.2, 3], rotate=65, degrees=True
+    )
+    transform_c = transform_b.compose(transform_a)
+
+    new_coord_1 = transform_c(coord)
+    new_coord_2 = transform_b(transform_a(coord))
+    npt.assert_allclose(new_coord_1, new_coord_2)
