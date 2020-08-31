@@ -274,6 +274,9 @@ class ImageVisual(Visual):
         # self._build_interpolation()
         self._data_lookup_fn = None
 
+        # By default Images are loaded, but async loading can toggle this off.
+        self.loaded = True
+
         self.clim = clim
         self.cmap = cmap
         if data is not None:
