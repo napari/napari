@@ -1,7 +1,8 @@
 from typing import Dict, Tuple, Union
 
 import numpy as np
-from vispy.color import Colormap
+
+from ...utils.colormaps import Colormap
 
 
 def calc_data_range(data):
@@ -180,8 +181,8 @@ def map_property(
     ----------
     prop : np.ndarray
         The property to be colormapped
-    colormap : vispy.color.Colormap
-        The vispy colormap object to apply to the property
+    colormap : napari.utils.Colormap
+        The colormap object to apply to the property
     contrast_limits : Union[None, Tuple[float, float]]
         The contrast limits for applying the colormap to the property.
         If a 2-tuple is provided, it should be provided as (lower_bound, upper_bound).

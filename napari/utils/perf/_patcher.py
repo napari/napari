@@ -57,7 +57,7 @@ def _patch_attribute(
         # Assume attribute_str is <function>.
         class_str = None
         parent = module
-        parent_str = module.__name___
+        parent_str = module.__name__
         callable_str = attribute_str
 
     try:

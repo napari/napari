@@ -1,6 +1,7 @@
 import warnings
 
 import numpy as np
+from vispy.color import Colormap as VispyColormap
 
 from .image import Image as ImageNode
 from .vispy_base_layer import VispyBaseLayer
@@ -45,6 +46,11 @@ class VispyImageLayer(VispyBaseLayer):
 
         if data is None:
             data = np.zeros((1,) * self.layer.dims.ndisplay)
+
+        if self.layer._empty:
+            self.node.visible = False
+        else:
+            self.node.visible = self.layer.visible
 
         self.node.set_data(data)
         self.node.parent = parent
@@ -92,6 +98,11 @@ class VispyImageLayer(VispyBaseLayer):
         else:
             self.node.set_data(data)
 
+        if self.layer._empty:
+            self.node.visible = False
+        else:
+            self.node.visible = self.layer.visible
+
         # Call to update order of translation values with new dims:
         self._on_scale_change()
         self._on_translate_change()
@@ -107,7 +118,7 @@ class VispyImageLayer(VispyBaseLayer):
             self._on_iso_threshold_change()
 
     def _on_colormap_change(self, event=None):
-        self.node.cmap = self.layer.colormap[1]
+        self.node.cmap = VispyColormap(*self.layer.colormap)
 
     def _on_contrast_limits_change(self, event=None):
         self.node.clim = self.layer.contrast_limits
