@@ -53,8 +53,9 @@ class ImageSlice:
         self.current_key: Optional[ChunkKey] = None
 
         # With async there can be a gap between when the ImageSlice is
-        # created and the data is actually loaded.
-        self.loaded = False
+        # created and the data is actually loaded. However initialize
+        # as True in case we aren't even doing async loading.
+        self.loaded = True
 
     def set_raw_images(
         self, image: ArrayLike, thumbnail_source: ArrayLike
