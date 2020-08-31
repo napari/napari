@@ -592,7 +592,7 @@ class Labels(Image):
             else:
                 image = np.where(
                     raw == selected,
-                    colormaps._low_discrepancy_image(selected, self._seed),
+                    low_discrepancy_image(selected, self._seed),
                     0,
                 )
         else:
