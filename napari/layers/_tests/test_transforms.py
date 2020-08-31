@@ -120,3 +120,22 @@ def test_scale_translate_rotate_compose():
     new_coord_1 = transform_c(coord)
     new_coord_2 = transform_b(transform_a(coord))
     npt.assert_allclose(new_coord_1, new_coord_2)
+
+
+def test_scale_translate_rotate_shear_compose():
+    coord = [10, 13]
+    transform_a = Affine(
+        scale=[2, 3], translate=[8, -5], rotate=25, shear=[1], degrees=True
+    )
+    transform_b = Affine(
+        scale=[0.3, 1.4],
+        translate=[-2.2, 3],
+        rotate=65,
+        shear=[-0.5],
+        degrees=True,
+    )
+    transform_c = transform_b.compose(transform_a)
+
+    new_coord_1 = transform_c(coord)
+    new_coord_2 = transform_b(transform_a(coord))
+    npt.assert_allclose(new_coord_1, new_coord_2)

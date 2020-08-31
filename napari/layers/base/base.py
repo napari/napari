@@ -471,15 +471,23 @@ class Layer(KeymapProvider, ABC):
     @property
     def _slice_indices(self):
         """(D, ) array: Slice indices in data coordinates."""
-        world_pts = [self._dims_point[ax] for ax in self.dims.not_displayed]
+        # clipping plane in world coordinates
+        # clipping_plane = [1, 0, 0]
         inv_transform = self._transforms['data2world'].inverse
-        data_pts = inv_transform.set_slice(self.dims.not_displayed)(world_pts)
+        # data_clipping_plane = inv_transform(clipping_plane)
+
+        slice_inv_transform = inv_transform.set_slice(self.dims.not_displayed)
+
+        world_pts = [self._dims_point[ax] for ax in self.dims.not_displayed]
+        data_pts = slice_inv_transform(world_pts)
         # A round is taken to convert these values to slicing integers
         data_pts = np.round(data_pts).astype(int)
 
         indices = [slice(None)] * self.ndim
         for i, ax in enumerate(self.dims.not_displayed):
             indices[ax] = data_pts[i]
+
+        print('pp', world_pts, data_pts, indices)
 
         coords = list(self.coordinates)
         for d in self.dims.not_displayed:
