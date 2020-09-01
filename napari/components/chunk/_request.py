@@ -1,5 +1,6 @@
 """ChunkRequest is passed to ChunkLoader.load_chunks().
 """
+import contextlib
 import logging
 from typing import Optional, Tuple, Union
 
@@ -86,17 +87,43 @@ class ChunkRequest:
         self.key = key
         self.chunks = chunks
 
+        self.timers = {}
+
     @property
     def in_memory(self) -> bool:
         """True if all chunks are ndarrays."""
         return all(isinstance(x, np.ndarray) for x in self.chunks.values())
 
+    @contextlib.contextmanager
+    def chunk_timer(self, name):
+        """Time a block of code and save the PerfEvent in self.timers.
+
+        Whether perfmon is running or not, we want to time the loads to
+        report statistics and to support auto-async. We use perf_timer and
+        PerfEvent rather than roll our own totally separate timing code. So
+        we call perf_timer but then we manually save the event in
+        self.timers.
+
+        Parameters
+        ----------
+        name : str
+            The name of the timer.
+
+        """
+        with perf_timer(name) as event:
+            yield event
+        self.timers[name] = event
+
     def load_chunks(self):
-        """Load all of our chunks now in this thread."""
-        with perf_timer("load_chunks"):
+        """Load all of our chunks now in this thread.
+
+        We time the overall load plus the load of each chunk.
+        """
+        with self.chunk_timer("load_chunks"):
             for key, array in self.chunks.items():
-                loaded_array = np.asarray(array)
-                self.chunks[key] = loaded_array
+                with self.chunk_timer(key):
+                    loaded_array = np.asarray(array)
+                    self.chunks[key] = loaded_array
 
     def transpose_chunks(self, order: tuple) -> None:
         """Transpose all our chunks.

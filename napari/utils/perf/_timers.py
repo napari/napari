@@ -190,14 +190,13 @@ if USE_PERFMON:
         """
         start_ns = perf_counter_ns()
 
-        # Intially we don't know the end_ns, but we want to yield the
-        # event. So just put start_ns as the end, then update it
-        # after the yield when the block is over.
+        # Intially we don't know the end_ns, so we pass in start_ns for
+        # both start and end. We update end_ns after the yield.
         event = PerfEvent(name, start_ns, start_ns, category, **kwargs)
         yield event
 
-        # Now update the end time.
-        event.end_ns = perf_counter_ns()
+        # Now update the end time now that the block as finished.
+        event.update_end_ns(perf_counter_ns())
 
         if timers:
             timers.add_event(event)
