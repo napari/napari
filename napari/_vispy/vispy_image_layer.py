@@ -64,9 +64,9 @@ class VispyImageLayer(VispyBaseLayer):
     def _on_data_change(self, event=None):
         """Our self.layer._data_view has been updated, update our node.
         """
-        if not self.node.loaded:
+        if not self.layer.loaded:
             # Do nothing if we are not yet loaded. Calling astype below could
-            # be very expensive. Lets no do it until our data has been loaded.
+            # be very expensive. Lets not do it until our data has been loaded.
             return
 
         data = self.layer._data_view
