@@ -274,9 +274,6 @@ class ImageVisual(Visual):
         # self._build_interpolation()
         self._data_lookup_fn = None
 
-        # By default Images are loaded, but async loading can toggle this off.
-        self.loaded = True
-
         self.clim = clim
         self.cmap = cmap
         if data is not None:
@@ -291,11 +288,6 @@ class ImageVisual(Visual):
         image : array-like
             The image data.
         """
-        if not self.loaded:
-            # Do nothing so we avoid calling asarray below which could be expensive.
-            # We have to make sure set_data is called when the load completes.
-            return
-
         data = np.asarray(image)
         if self._data is None or self._data.shape != data.shape:
             self._need_vertex_update = True

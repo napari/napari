@@ -36,6 +36,7 @@ class VispyImageLayer(VispyBaseLayer):
         self._on_data_change()
 
     def _on_display_change(self, data=None):
+
         parent = self.node.parent
         self.node.parent = None
 
@@ -52,7 +53,9 @@ class VispyImageLayer(VispyBaseLayer):
         else:
             self.node.visible = self.layer.visible
 
-        self.node.set_data(data)
+        if self.layer.loaded:
+            self.node.set_data(data)
+
         self.node.parent = parent
         self.node.order = self.order
         self.reset()

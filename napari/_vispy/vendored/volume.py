@@ -564,9 +564,6 @@ class VolumeVisual(Visual):
         # Get some stats
         self._kb_for_texture = np.prod(self._vol_shape) / 1024
 
-        # By default Images are loaded, but async loading can toggle this off.
-        self.loaded = True
-
     def rescale_data(self):
         """Force rescaling of data to the current contrast limits and texture upload.
 
