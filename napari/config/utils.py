@@ -1,7 +1,10 @@
 import builtins
+import logging
 import os
 from collections import abc
 from typing import Iterable, Optional, TypeVar
+
+logger = logging.getLogger('napari.config')
 
 
 def canonical_name(k: str, config: abc.Mapping) -> str:
@@ -128,6 +131,7 @@ def ensure_file(source: str, destination: Optional[str] = None, comment=True):
 
     try:
         if not os.path.exists(destination):
+            logger.debug('copying %r to %r' % (source, destination))
             os.makedirs(directory, exist_ok=True)
 
             # Atomically create destination.  Parallel testing discovered

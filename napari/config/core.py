@@ -86,6 +86,9 @@ from ..utils.misc import StringEnum
 from .deprecations import check_deprecations
 from .utils import canonical_name, ensure_file, merge, update
 
+logger = logging.getLogger('napari.config')
+
+
 #: a list of paths that get searched for .yaml files in :func:`collect_yaml`
 paths = [
     os.getenv("NAPARI_ROOT_CONFIG", "/etc/napari"),
@@ -368,6 +371,8 @@ def collect_yaml(paths: List[str] = paths) -> List[dict]:
     This searches through a list of paths, expands to find all yaml or json
     files, and then parses each file.
     """
+    logger.debug("collect_yaml from %r", paths)
+
     # Find all paths
     file_paths = []
     for path in paths:
@@ -390,9 +395,16 @@ def collect_yaml(paths: List[str] = paths) -> List[dict]:
     # Parse yaml files
     for path in file_paths:
         try:
+            logger.debug("loading config at %s", path)
             with open(path) as f:
                 data = yaml.safe_load(f.read()) or {}
-                configs.append(data)
+
+                if isinstance(data, dict):
+                    configs.append(data)
+                else:
+                    logger.warn("Ignoring malformed config file: %r", path)
+        except yaml.error.YAMLError:
+            logger.warn("Failed to parse config file: %r", path)
         except (OSError, IOError):
             # Ignore permission errors
             pass
@@ -416,6 +428,7 @@ def collect_env(env: Optional[Union[dict, os._Environ]] = None) -> dict:
     d = {}
     for name, value in env.items():
         if name.startswith("NAPARI_"):
+            logger.debug("using env var config: %s=%r" % (name, value))
             varname = name[7:].lower().replace("__", ".")
             try:
                 d[varname] = ast.literal_eval(value)
@@ -484,12 +497,14 @@ def refresh(config: dict = config, defaults: List[dict] = defaults, **kwargs):
     napari.config.collect: for parameters
     napari.config.update_defaults
     """
+    logger.debug("refreshing napari config")
     config.clear()
 
     for d in defaults:
         update(config, d, priority="old")
 
     update(config, collect(**kwargs))
+    logger.debug("config after refresh(): %r" % config)
 
 
 def rename(aliases: dict, config: dict = config):
@@ -523,9 +538,11 @@ def update_defaults(
 
     1. Add the defaults to a global ``defaults`` collection to be used by
        refresh later
-    2. Updates the global config with the new configurationm, prioritizing
+    2. Updates the global config with the new configuration, prioritizing
        older values over newer ones
     """
+    if new:
+        logger.debug("updating config defaults with %r" % new)
     defaults.append(new)
     update(config, new, priority="old")
 
@@ -593,7 +610,7 @@ class ConfigDumper(yaml.SafeDumper):
         return True
 
     def represent_undefined(self, data):
-        logging.error("Error serializing object: %r", data)
+        logger.error("Error serializing object: %r", data)
         return self.represent_str('<unserializeable>')
 
     def coerce_to_str(self, data) -> yaml.nodes.ScalarNode:
@@ -673,6 +690,7 @@ def _initialize():
     # and make sure it exists (commented out) in the user config dir
     ensure_file(source=napari_defaults)
 
+    logger.debug("updating defaults from %s", napari_defaults)
     # add our internal defaults to the config
     with open(napari_defaults) as f:
         update_defaults(yaml.safe_load(f) or {})
@@ -684,6 +702,7 @@ def _initialize():
             update(config, yaml.safe_load(f) or {}, priority="old")
 
     config.pop("_dirty", None)
+    logger.debug("Final config: %r", config)
 
 
 _initialize()
