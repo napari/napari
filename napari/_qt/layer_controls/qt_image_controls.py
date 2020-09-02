@@ -98,12 +98,8 @@ class QtImageControls(QtBaseImageControls):
         self.grid_layout.addWidget(self.contrastLimitsSlider, 1, 1)
         self.grid_layout.addWidget(QLabel('gamma:'), 2, 0)
         self.grid_layout.addWidget(self.gammaSlider, 2, 1)
-
-        # The colormap widget won't be created when image has a rgb layer
-        if layer.rgb is False:
-            self.grid_layout.addWidget(QLabel('colormap:'), 3, 0)
-            self.grid_layout.addLayout(colormap_layout, 3, 1)
-
+        self.grid_layout.addWidget(QLabel('colormap:'), 3, 0)
+        self.grid_layout.addLayout(colormap_layout, 3, 1)
         self.grid_layout.addWidget(QLabel('blending:'), 4, 0)
         self.grid_layout.addWidget(self.blendComboBox, 4, 1)
         self.grid_layout.addWidget(self.interpLabel, 5, 0)
@@ -118,10 +114,8 @@ class QtImageControls(QtBaseImageControls):
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
 
-        # Similarly, the colormap combo box will be hidden if the layer is rgb
-        if layer.rgb:
-            self.colorbarLabel.hide()
-            self.colormapComboBox.hide()
+        if layer.rgb is True:
+            self.colormapComboBox.setDisabled(True)
 
     def changeInterpolation(self, text):
         """Change interpolation mode for image display.
