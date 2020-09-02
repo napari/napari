@@ -1,6 +1,8 @@
-import toolz as tz
 from typing import Sequence
+
 import numpy as np
+import toolz as tz
+
 from ..utils.list import ListModel
 
 
@@ -62,7 +64,7 @@ class Transform:
         ----------
         axes : Sequence[int]
             Location of axes to expand the current transform with. Passing a
-            list allows expanion to occur at specific locations and for
+            list allows expansion to occur at specific locations and for
             expand_dims to be like an inverse to the set_slice method.
 
         Returns
@@ -124,7 +126,7 @@ class TransformChain(ListModel, Transform):
         ----------
         axes : Sequence[int]
             Location of axes to expand the current transform with. Passing a
-            list allows expanion to occur at specific locations and for
+            list allows expansion to occur at specific locations and for
             expand_dims to be like an inverse to the set_slice method.
 
         Returns
@@ -170,7 +172,7 @@ class ScaleTranslate(Transform):
         translate = np.concatenate(
             ([0.0] * (coords.shape[1] - len(self.translate)), self.translate)
         )
-        return np.squeeze(scale * coords + translate)
+        return np.atleast_1d(np.squeeze(scale * coords + translate))
 
     @property
     def inverse(self) -> 'ScaleTranslate':
@@ -207,7 +209,7 @@ class ScaleTranslate(Transform):
         ----------
         axes : Sequence[int]
             Location of axes to expand the current transform with. Passing a
-            list allows expanion to occur at specific locations and for
+            list allows expansion to occur at specific locations and for
             expand_dims to be like an inverse to the set_slice method.
 
         Returns

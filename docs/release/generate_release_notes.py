@@ -24,10 +24,10 @@ https://github.com/scikit-image/scikit-image/blob/master/tools/generate_release_
 https://github.com/scikit-image/scikit-image/issues/3404
 https://github.com/scikit-image/scikit-image/issues/3405
 """
-import os
 import argparse
-from datetime import datetime
+import os
 from collections import OrderedDict
+from datetime import datetime
 from warnings import warn
 
 from github import Github
@@ -108,7 +108,7 @@ committers = set()
 reviewers = set()
 users = {}
 
-for commit in tqdm(all_commits, desc="Getting commiters and authors"):
+for commit in tqdm(all_commits, desc="Getting committers and authors"):
     if commit.committer is not None:
         add_to_users(users, commit.committer)
         committers.add(commit.committer.login)

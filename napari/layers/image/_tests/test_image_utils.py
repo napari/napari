@@ -2,11 +2,8 @@ import dask.array as da
 import numpy as np
 import pytest
 from skimage.transform import pyramid_gaussian
-from napari.layers.image._image_utils import (
-    guess_multiscale,
-    guess_rgb,
-)
 
+from napari.layers.image._image_utils import guess_multiscale, guess_rgb
 
 data_dask = da.random.random(
     size=(100_000, 1000, 1000), chunks=(1, 1000, 1000)
@@ -52,7 +49,10 @@ def test_guess_multiscale():
     assert guess_multiscale(data)[0]
 
     data = np.asarray(
-        tuple(pyramid_gaussian(np.random.random((10, 15)), multichannel=False))
+        tuple(
+            pyramid_gaussian(np.random.random((10, 15)), multichannel=False)
+        ),
+        dtype=object,
     )
     assert guess_multiscale(data)[0]
 

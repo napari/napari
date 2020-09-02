@@ -43,7 +43,12 @@ with napari.gui_qt():
         'size': ['none'] + list(coin_sizes),  # background is size: none
     }
 
+    color = {1: 'white', 2: 'blue', 3: 'green', 4: 'red', 5: 'yellow'}
+
     # add the labels
     label_layer = viewer.add_labels(
-        label_image, name='segmentation', properties=label_properties
+        label_image,
+        name='segmentation',
+        properties=label_properties,
+        color=color,
     )

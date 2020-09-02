@@ -1,15 +1,18 @@
+import sys
+
 import numpy as np
 import pytest
-import sys
 
 
 @pytest.mark.skipif(
     sys.platform.startswith('win') or sys.platform.startswith('linux'),
     reason='Currently fails on certain CI due to error on canvas draw.',
 )
-def test_canvas_drawing(viewer_factory):
+def test_canvas_drawing(make_test_viewer):
     """Test drawing before and after adding and then deleting a layer."""
-    view, viewer = viewer_factory()
+    viewer = make_test_viewer()
+    view = viewer.window.qt_viewer
+
     assert len(viewer.layers) == 0
     # Check canvas context is not none before drawing, as currently on
     # some of our CI a proper canvas context is not made

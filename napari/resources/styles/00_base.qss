@@ -148,7 +148,7 @@ QAbstractSpinBox {
   background-color: {{ foreground }};
   border: none;
   padding: 1px 10px;
-  min-width: 40px;
+  min-width: 70px;
   min-height: 18px;
   border-radius: 2px;
 }
@@ -618,4 +618,10 @@ QMenuBar::item:selected {
 
 QLCDNumber {
   background: none;
+}
+
+/* ----------------- QStatusBar ------------------ */
+
+QStatusBar::item{
+  border: None;
 }

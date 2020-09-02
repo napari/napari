@@ -1,7 +1,8 @@
 import numpy as np
 import pytest
-from napari.utils.misc import callsignature
+
 from napari._tests.utils import layer_test_data
+from napari.utils.misc import callsignature
 
 
 @pytest.mark.parametrize('Layer, data, ndim', layer_test_data)
@@ -35,6 +36,13 @@ def test_attrs_arrays(Layer, data, ndim):
                     for ol, nl in zip(
                         getattr(layer, prop), getattr(new_layer, prop)
                     )
+                ]
+            )
+        elif isinstance(getattr(layer, prop), dict):
+            assert np.all(
+                [
+                    np.all(value == getattr(new_layer, prop)[key])
+                    for key, value in getattr(layer, prop).items()
                 ]
             )
         else:

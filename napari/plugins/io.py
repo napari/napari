@@ -80,7 +80,7 @@ def read_data_with_plugins(
         result = hook_caller.call_with_result_obj(
             path=path, _skip_impls=skip_impls
         )
-        reader = result.result  # will raise exceptions if any occured
+        reader = result.result  # will raise exceptions if any occurred
         if not reader:
             # we're all out of reader plugins
             break
@@ -104,13 +104,13 @@ def read_data_with_plugins(
             path_repr = f"[{path[0]}, ...] as stack"
         else:
             path_repr = repr(path)
-        msg = f'No plugin found capable of reading {path_repr}.'
-        logger.warn(msg)
+        # TODO: change to a warning notification in a later PR
+        raise ValueError(f'No plugin found capable of reading {path_repr}.')
 
     if errors:
         names = set([repr(e.plugin_name) for e in errors])
         err_msg = f"({len(errors)}) error{'s' if len(errors) > 1 else ''} "
-        err_msg += f"occured in plugins: {', '.join(names)}. "
+        err_msg += f"occurred in plugins: {', '.join(names)}. "
         err_msg += 'See full error logs in "Plugins → Plugin Errors..."'
         logger.error(err_msg)
 
@@ -221,7 +221,7 @@ def _write_multiple_layers_with_plugins(
         The path (file, directory, url) to write.
     layers : List of napari.layers.Layer
         List of napari layers to write.
-    plugin_name: str, optional
+    plugin_name : str, optional
         If provided, force the plugin manager to use the ``napari_get_writer``
         from the requested ``plugin_name``.  If none is available, or if it is
         incapable of handling the layers, this function will fail.

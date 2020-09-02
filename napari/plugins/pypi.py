@@ -206,6 +206,7 @@ def iter_napari_plugin_info(
 def list_outdated() -> Dict[str, Tuple[str, ...]]:
     # slow!
     import subprocess
+
     from ..utils._appdirs import user_site_packages
 
     env = os.environ.copy()

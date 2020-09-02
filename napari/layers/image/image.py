@@ -1,16 +1,21 @@
+"""Image class.
+"""
 import types
 import warnings
+
 import numpy as np
 from scipy import ndimage as ndi
 
+from ...components.chunk import ChunkKey, ChunkRequest, chunk_loader
 from ...utils.colormaps import AVAILABLE_COLORMAPS
-from ...utils.event import Event
+from ...utils.events import Event
 from ...utils.status_messages import format_float
 from ..base import Layer
-from ..utils.layer_utils import calc_data_range
 from ..intensity_mixin import IntensityVisualizationMixin
+from ..utils.layer_utils import calc_data_range
 from ._image_constants import Interpolation, Interpolation3D, Rendering
-from ._image_utils import guess_rgb, guess_multiscale
+from ._image_slice import ImageSlice
+from ._image_utils import guess_multiscale, guess_rgb
 
 
 # Mixin must come before Layer
@@ -28,7 +33,7 @@ class Image(IntensityVisualizationMixin, Layer):
         Whether the image is rgb RGB or RGBA. If not specified by user and
         the last dimension of the data has length 3 or 4 it will be set as
         `True`. If `False` the image is interpreted as a luminance image.
-    colormap : str, vispy.Color.Colormap, tuple, dict
+    colormap : str, napari.utils.Colormap, tuple, dict
         Colormap to use for luminance images. If a string must be the name
         of a supported colormap from vispy or matplotlib. If a tuple the
         first value must be a string to assign as a name to a colormap and
@@ -79,7 +84,7 @@ class Image(IntensityVisualizationMixin, Layer):
     data : array or list of array
         Image data. Can be N dimensional. If the last dimension has length
         3 or 4 can be interpreted as RGB or RGBA if rgb is `True`. If a list
-        and arrays are decreaing in shape then the data is treated as a
+        and arrays are decreasing in shape then the data is treated as a
         multiscale image.
     metadata : dict
         Image metadata.
@@ -92,7 +97,7 @@ class Image(IntensityVisualizationMixin, Layer):
         Whether the data is a multiscale image or not. Multiscale data is
         represented by a list of array like image data. The first image in the
         list should be the largest.
-    colormap : 2-tuple of str, vispy.color.Colormap
+    colormap : 2-tuple of str, napari.utils.Colormap
         The first is the name of the current colormap, and the second value is
         the colormap. Colormaps are used for luminance images, if the image is
         rgb the colormap is ignored.
@@ -102,7 +107,7 @@ class Image(IntensityVisualizationMixin, Layer):
         Color limits to be used for determining the colormap bounds for
         luminance images. If the image is rgb the contrast_limits is ignored.
     contrast_limits_range : list (2,) of float
-        Range for the color limits for luminace images. If the image is
+        Range for the color limits for luminance images. If the image is
         rgb the contrast_limits_range is ignored.
     gamma : float
         Gamma correction for determining colormap linearity.
@@ -118,7 +123,7 @@ class Image(IntensityVisualizationMixin, Layer):
         Attenuation rate for attenuated maximum intensity projection.
 
     Extended Summary
-    ----------
+    ----------------
     _data_view : array (N, M), (N, M, 3), or (N, M, 4)
         Image data for the currently viewed slice. Must be 2D image data, but
         can be multidimensional for RGB or RGBA images if multidimensional is
@@ -140,7 +145,7 @@ class Image(IntensityVisualizationMixin, Layer):
         interpolation='nearest',
         rendering='mip',
         iso_threshold=0.5,
-        attenuation=0.5,
+        attenuation=0.05,
         name=None,
         metadata=None,
         scale=None,
@@ -214,15 +219,11 @@ class Image(IntensityVisualizationMixin, Layer):
             self._thumbnail_level = 0
         self.corner_pixels[1] = self.level_shapes[self._data_level]
 
-        # Intitialize image views and thumbnails with zeros
-        if self.rgb:
-            self._data_view = np.zeros(
-                (1,) * self.dims.ndisplay + (self.shape[-1],)
-            )
-        else:
-            self._data_view = np.zeros((1,) * self.dims.ndisplay)
-        self._data_raw = self._data_view
-        self._data_thumbnail = self._data_view
+        # Initialize the current slice to an empty image.
+        self._slice = ImageSlice(
+            self._get_empty_image(), self._raw_to_displayed, self.rgb
+        )
+        self._empty = True
 
         # Set contrast_limits and colormaps
         self._gamma = gamma
@@ -248,6 +249,36 @@ class Image(IntensityVisualizationMixin, Layer):
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
+
+    def _get_empty_image(self):
+        """Get empty image to use as the default before data is loaded.
+        """
+        if self.rgb:
+            return np.zeros((1,) * self.dims.ndisplay + (3,))
+        else:
+            return np.zeros((1,) * self.dims.ndisplay)
+
+    def _get_order(self):
+        """Return the order of the displayed dimensions."""
+        if self.rgb:
+            # if rgb need to keep the final axis fixed during the
+            # transpose. The index of the final axis depends on how many
+            # axes are displayed.
+            return self.dims.displayed_order + (
+                max(self.dims.displayed_order) + 1,
+            )
+        else:
+            return self.dims.displayed_order
+
+    @property
+    def _data_view(self):
+        """Viewable image for the current slice. (compatibility)"""
+        return self._slice.image.view
+
+    @property
+    def _data_raw(self):
+        """Raw image for the current slice. (compatibility)"""
+        return self._slice.image.raw
 
     def _calc_data_range(self):
         if self.multiscale:
@@ -275,8 +306,16 @@ class Image(IntensityVisualizationMixin, Layer):
         """Determine number of dimensions of the layer."""
         return len(self.level_shapes[0])
 
-    def _get_extent(self):
-        return tuple((0, m) for m in self.level_shapes[0])
+    @property
+    def _extent_data(self) -> np.ndarray:
+        """Extent of layer in data coordinates.
+
+        Returns
+        -------
+        extent_data : array, shape (2, D)
+        """
+        shape = self.level_shapes[0]
+        return np.vstack([np.zeros(len(shape)), shape])
 
     @property
     def data_level(self):
@@ -377,14 +416,14 @@ class Image(IntensityVisualizationMixin, Layer):
 
         * ``translucent``: voxel colors are blended along the view ray until
           the result is opaque.
-        * ``mip``: maxiumum intensity projection. Cast a ray and display the
+        * ``mip``: maximum intensity projection. Cast a ray and display the
           maximum value that was encountered.
         * ``additive``: voxel colors are added along the view ray until the
           result is saturated.
         * ``iso``: isosurface. Cast a ray until a certain threshold is
           encountered. At that location, lighning calculations are performed to
           give the visual appearance of a surface.
-        * ``attenuated_mip``: attenuated maxiumum intensity projection. Cast a
+        * ``attenuated_mip``: attenuated maximum intensity projection. Cast a
           ray and attenuate values based on integral of encountered values,
           display the maximum value that was encountered after attenuation.
           This will make nearer objects appear more prominent.
@@ -402,6 +441,15 @@ class Image(IntensityVisualizationMixin, Layer):
         self._rendering = Rendering(rendering)
         self.events.rendering()
 
+    @property
+    def loaded(self):
+        """Has the data for this layer been loaded yet.
+
+        With asynchronous loading the layer might exist but its data
+        for the current slice has not been loaded.
+        """
+        return self._slice.loaded
+
     def _get_state(self):
         """Get dictionary of layer state.
 
@@ -415,7 +463,7 @@ class Image(IntensityVisualizationMixin, Layer):
             {
                 'rgb': self.rgb,
                 'multiscale': self.multiscale,
-                'colormap': self.colormap[0],
+                'colormap': self.colormap.name,
                 'contrast_limits': self.contrast_limits,
                 'interpolation': self.interpolation,
                 'rendering': self.rendering,
@@ -433,7 +481,7 @@ class Image(IntensityVisualizationMixin, Layer):
         For normal image layers, just return the actual image.
 
         Parameters
-        -------
+        ----------
         raw : array
             Raw array.
 
@@ -449,15 +497,25 @@ class Image(IntensityVisualizationMixin, Layer):
         """Set the view given the indices to slice with."""
         not_disp = self.dims.not_displayed
 
-        if self.rgb:
-            # if rgb need to keep the final axis fixed during the
-            # transpose. The index of the final axis depends on how many
-            # axes are displayed.
-            order = self.dims.displayed_order + (
-                max(self.dims.displayed_order) + 1,
+        # Check if requested slice outside of data range
+        indices = np.array(self._slice_indices)
+        extent = self._extent_data
+        if np.any(
+            np.less(
+                [indices[ax] for ax in not_disp],
+                [extent[0, ax] for ax in not_disp],
             )
-        else:
-            order = self.dims.displayed_order
+        ) or np.any(
+            np.greater(
+                [indices[ax] for ax in not_disp],
+                [extent[1, ax] - 1 for ax in not_disp],
+            )
+        ):
+            self._slice.image.raw = self._get_empty_image()
+            self._slice.thumbnail.raw = self._get_empty_image()
+            self._empty = True
+            return
+        self._empty = False
 
         if self.multiscale:
             # If 3d redering just show lowest level of multiscale
@@ -466,7 +524,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
             # Slice currently viewed level
             level = self.data_level
-            indices = np.array(self.dims.indices)
+            indices = np.array(self._slice_indices)
             downsampled_indices = (
                 indices[not_disp] / self.downsample_factors[level, not_disp]
             )
@@ -500,12 +558,11 @@ class Image(IntensityVisualizationMixin, Layer):
                     * self._transforms['tile2data'].scale
                 )
 
-            image = np.transpose(
-                np.asarray(self.data[level][tuple(indices)]), order
-            )
+            image = self.data[level][tuple(indices)]
+            image_indices = indices
 
             # Slice thumbnail
-            indices = np.array(self.dims.indices)
+            indices = np.array(self._slice_indices)
             downsampled_indices = (
                 indices[not_disp]
                 / self.downsample_factors[self._thumbnail_level, not_disp]
@@ -519,36 +576,114 @@ class Image(IntensityVisualizationMixin, Layer):
                 self.level_shapes[self._thumbnail_level, not_disp] - 1,
             )
             indices[not_disp] = downsampled_indices
-            thumbnail_source = np.asarray(
-                self.data[self._thumbnail_level][tuple(indices)]
-            ).transpose(order)
-        else:
-            self._transforms['tile2data'].scale = np.ones(self.dims.ndim)
-            image = np.asarray(self.data[self.dims.indices]).transpose(order)
-            thumbnail_source = image
 
-        if self.rgb and image.dtype.kind == 'f':
-            self._data_raw = np.clip(image, 0, 1)
-            self._data_view = self._raw_to_displayed(self._data_raw)
-            self._data_thumbnail = self._raw_to_displayed(
-                np.clip(thumbnail_source, 0, 1)
+            thumbnail_source = self.data[self._thumbnail_level][tuple(indices)]
+        else:
+            self._transforms['tile2data'].scale = np.ones(self.ndim)
+            image_indices = self._slice_indices
+            image = self.data[image_indices]
+
+            # For single-scale we don't request a separate thumbnail_source
+            # from the ChunkLoader because in ImageSlice.chunk_loaded we
+            # call request.thumbnail_source() and it knows to just use the
+            # image itself is there is no explicit thumbnail_source.
+            thumbnail_source = None
+
+        # Load our images, might be sync or async.
+        key = ChunkKey(self, image_indices)
+        self._load_images(key, image, thumbnail_source)
+
+    def _load_images(self, key: ChunkKey, image, thumbnail_source=None):
+        """Load the image and maybe thumbnail source.
+
+        The load will happen synchronously if any of these are true:
+        1) The arrays are already ndarrays, or
+        2) We are in synchronous mode, or
+        3) The arrays were found in the ChunkCache.
+
+        If the load is synchronous we immediately call our on_chunk_loaded()
+        method so that we use the new data right away. If the load is
+        asynchronous then sometime later our on_chunk_loaded() method will be
+        called with the loaded data.
+        """
+        # We always load the image.
+        chunks = {'image': image}
+
+        # Optionally also load the thumbnail_source.
+        if thumbnail_source is not None:
+            chunks['thumbnail_source'] = thumbnail_source
+
+        # Create the ChunkRequest for the chunks we are going to load.
+        request = chunk_loader.create_request(self, key, chunks)
+
+        # Load the chunk(s), the load could happen sync or async.
+        satisfied_request = self._slice.load_chunk(request)
+
+        if satisfied_request is None:
+            # The load is going to be async, announce that a load is
+            # underway, that we are no longer in the loaded state.
+            self.events.loaded()
+        else:
+            # The load was sync, it's done, so use the chunk now.
+            self.on_chunk_loaded(satisfied_request, sync=True)
+
+    def on_chunk_loaded(
+        self, request: ChunkRequest, sync: bool = False
+    ) -> None:
+        """The given ChunkRequest was satisfied, we can use the data now.
+
+        This routine is called synchronously from _load_async() above, or
+        it is called asynchronously sometime later when the ChunkLoader
+        finishes loading the data in a worker thread or process.
+
+        Parameters
+        ----------
+        request : ChunkRequest
+            The request that was satisfied/loaded.
+        sync : bool
+            If True the chunk was loaded synchronously.
+        """
+        # Chunks get transposed after load.
+        request.transpose_chunks(self._get_order())
+
+        # The shape of the array after we loaded it was "wrong" in that it
+        # didn't match the rgb flag that the user specified (or we inferred?).
+        if self.rgb != guess_rgb(request.image.shape):
+            raise ValueError(
+                "Loaded chunk was the wrong shape, was rgb set correctly?"
             )
 
-        else:
-            self._data_raw = image
-            self._data_view = self._raw_to_displayed(self._data_raw)
-            self._data_thumbnail = self._raw_to_displayed(thumbnail_source)
+        # Pass the loaded data to the slice.
+        if not self._slice.on_chunk_loaded(request):
+            # Slice rejected it, was it for the wrong indices?
+            return
 
+        # Notify the world.
         if self.multiscale:
             self.events.scale()
             self.events.translate()
 
+        # Announcing we are in the loaded state will make our node visible
+        # if it was invisible during the load.
+        self.events.loaded()
+
+        if not sync:
+            # If this specific load itself was async we need a full refresh.
+            # Note: even in async mode, some loads are sync, such as cache hits
+            # and loads of ndarray data.
+            self.refresh()
+
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""
+        if not self._slice.loaded:
+            # ASYNC_TODO: Do not compute the thumbnail until we are loaded.
+            # Is there a nicer way to prevent this from getting called?
+            return
+
+        image = self._slice.thumbnail.view
+
         if self.dims.ndisplay == 3 and self.dims.ndim > 2:
-            image = np.max(self._data_thumbnail, axis=0)
-        else:
-            image = self._data_thumbnail
+            image = np.max(image, axis=0)
 
         # float16 not supported by ndi.zoom
         dtype = np.dtype(image.dtype)
@@ -599,8 +734,8 @@ class Image(IntensityVisualizationMixin, Layer):
             if color_range != 0:
                 downsampled = (downsampled - low) / color_range
             downsampled = downsampled ** self.gamma
-            color_array = self.colormap[1][downsampled.ravel()]
-            colormapped = color_array.rgba.reshape(downsampled.shape + (4,))
+            color_array = self.colormap.map(downsampled.ravel())
+            colormapped = color_array.reshape(downsampled.shape + (4,))
             colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 
@@ -609,18 +744,19 @@ class Image(IntensityVisualizationMixin, Layer):
         and set of indices.
 
         Returns
-        ----------
+        -------
         value : tuple
             Value of the data at the coord.
         """
         coord = np.round(self.coordinates).astype(int)
+        raw = self._slice.image.raw
         if self.rgb:
-            shape = self._data_raw.shape[:-1]
+            shape = raw.shape[:-1]
         else:
-            shape = self._data_raw.shape
+            shape = raw.shape
 
         if all(0 <= c < s for c, s in zip(coord[self.dims.displayed], shape)):
-            value = self._data_raw[tuple(coord[self.dims.displayed])]
+            value = raw[tuple(coord[self.dims.displayed])]
         else:
             value = None
 

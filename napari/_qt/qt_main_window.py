@@ -5,40 +5,35 @@ wrap.
 import os
 import time
 
-# set vispy to use same backend as qtpy
-from ..utils.io import imsave
-
-from .qt_viewer import QtViewer
-from .qt_about import QtAbout
-from .qt_plugin_report import QtPluginErrReporter
-from .qt_plugin_sorter import QtPluginSorter
-from .qt_plugin_dialog import QtPluginDialog
-from .qt_dict_table import QtDictTable
-from .qt_viewer_dock_widget import QtViewerDockWidget
-from ..resources import get_stylesheet
-
-# these "# noqa" comments are here to skip flake8 linting (E402),
-# these module-level imports have to come after `app.use_app(API)`
-# see discussion on #638
-from qtpy.QtWidgets import (  # noqa: E402
-    QAbstractItemView,
-    QApplication,
-    QMainWindow,
-    QWidget,
-    QHBoxLayout,
-    QDialog,
-    QDockWidget,
-    QLabel,
+from qtpy.QtCore import Qt
+from qtpy.QtGui import QIcon, QKeySequence
+from qtpy.QtWidgets import (
     QAction,
+    QApplication,
+    QDockWidget,
+    QFileDialog,
+    QHBoxLayout,
+    QLabel,
+    QMainWindow,
     QShortcut,
     QStatusBar,
-    QVBoxLayout,
-    QFileDialog,
+    QWidget,
 )
-from qtpy.QtCore import Qt  # noqa: E402
-from qtpy.QtGui import QKeySequence, QIcon  # noqa: E402
-from .utils import QImg2array  # noqa: E402
-from ..utils.theme import template  # noqa: E402
+
+from ..resources import get_stylesheet
+from ..utils import perf
+from ..utils.io import imsave
+from ..utils.misc import in_jupyter
+from ..utils.theme import template
+from .dialogs.qt_about import QtAbout
+from .dialogs.qt_plugin_dialog import QtPluginDialog
+from .dialogs.qt_plugin_report import QtPluginErrReporter
+from .dialogs.qt_plugin_table import QtPluginTable
+from .qt_viewer import QtViewer
+from .tracing.qt_debug_menu import DebugMenu
+from .utils import QImg2array
+from .widgets.qt_plugin_sorter import QtPluginSorter
+from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
 
 
 class Window:
@@ -108,6 +103,17 @@ class Window:
         self.qt_viewer.viewer.events.help.connect(self._help_changed)
         self.qt_viewer.viewer.events.title.connect(self._title_changed)
         self.qt_viewer.viewer.events.palette.connect(self._update_palette)
+
+        if perf.USE_PERFMON:
+            # Add DebugMenu if using perfmon. The DebugMenu is intended to
+            # contain non-perfmon stuff as well. When it does we will want
+            # a separate env variable for it.
+            self._debug_menu = DebugMenu(self)
+
+            # The QtPerformance widget only exists if we are using perfmon.
+            self._add_viewer_dock_widget(self.qt_viewer.dockPerformance)
+        else:
+            self._debug_menu = None
 
         if show:
             self.show()
@@ -207,12 +213,17 @@ class Window:
                 QApplication.quit()
             # otherwise, something else created the QApp before us (such as
             # %gui qt IPython magic).  If we quit the app in this case, then
-            # *later* attemps to instantiate a napari viewer won't work until
+            # *later* attempts to instantiate a napari viewer won't work until
             # the event loop is restarted with app.exec_().  So rather than
             # quit just close all the windows (and clear our app icon).
             else:
                 QApplication.setWindowIcon(QIcon())
                 self.close()
+
+            if perf.USE_PERFMON:
+                # Write trace file before exit, if we were writing one.
+                # Is there a better place to make sure this is done on exit?
+                perf.timers.stop_trace_file()
 
         exitAction.triggered.connect(handle_exit)
 
@@ -282,46 +293,7 @@ class Window:
 
     def _show_plugin_list(self, plugin_manager=None):
         """Show dialog with a table of installed plugins and metadata."""
-        if not plugin_manager:
-            from ..plugins import plugin_manager
-
-        dialog = QDialog(self._qt_window)
-        dialog.setMaximumHeight(800)
-        dialog.setMaximumWidth(1280)
-        layout = QVBoxLayout()
-        # maybe someday add a search bar here?
-        title = QLabel("Installed Plugins")
-        title.setObjectName("h2")
-        layout.addWidget(title)
-        # get metadata for successfully registered plugins
-        plugin_manager.discover()
-        data = plugin_manager.list_plugin_metadata()
-        data = list(filter(lambda x: x['plugin_name'] != 'builtins', data))
-        # create a table for it
-        dialog.table = QtDictTable(
-            self._qt_window,
-            data,
-            headers=[
-                'plugin_name',
-                'package',
-                'version',
-                'url',
-                'author',
-                'license',
-            ],
-            min_section_width=60,
-        )
-        dialog.table.setObjectName("pluginTable")
-        dialog.table.horizontalHeader().setObjectName("pluginTableHeader")
-        dialog.table.verticalHeader().setObjectName("pluginTableHeader")
-        dialog.table.setGridStyle(Qt.NoPen)
-        # prevent editing of table
-        dialog.table.setEditTriggers(QAbstractItemView.NoEditTriggers)
-        layout.addWidget(dialog.table)
-        dialog.setLayout(layout)
-        dialog.setAttribute(Qt.WA_DeleteOnClose)
-        self._plugin_list = dialog
-        dialog.exec_()
+        QtPluginTable(self._qt_window).exec_()
 
     def _show_plugin_sorter(self):
         """Show dialog that allows users to sort the call order of plugins."""
@@ -430,8 +402,8 @@ class Window:
 
         Parameters
         ----------
-            widget : QWidget | str
-                If widget == 'all', all docked widgets will be removed.
+        widget : QWidget | str
+            If widget == 'all', all docked widgets will be removed.
         """
         if widget == 'all':
             for dw in self._qt_window.findChildren(QDockWidget):
@@ -458,17 +430,24 @@ class Window:
         # Resize axis labels now that window is shown
         self.qt_viewer.dims._resize_axis_labels()
 
-        # We want to call Window._qt_window.raise_() in every case *except*
-        # when instantiating a viewer within a gui_qt() context for the
-        # _first_ time within the Qt app's lifecycle.
-        #
+        # We want to bring the viewer to the front when
+        # A) it is our own (gui_qt) event loop OR we are running in jupyter
+        # B) it is not the first time a QMainWindow is being created
+
         # `app_name` will be "napari" iff the application was instantiated in
         # gui_qt(). isActiveWindow() will be True if it is the second time a
-        # _qt_window has been created. See #732
+        # _qt_window has been created.
+        # See #721, #732, #735, #795, #1594
         app_name = QApplication.instance().applicationName()
-        if app_name != 'napari' or self._qt_window.isActiveWindow():
-            self._qt_window.raise_()  # for macOS
-            self._qt_window.activateWindow()  # for Windows
+        if (
+            app_name == 'napari' or in_jupyter()
+        ) and self._qt_window.isActiveWindow():
+            self.activate()
+
+    def activate(self):
+        """Make the viewer the currently active window."""
+        self._qt_window.raise_()  # for macOS
+        self._qt_window.activateWindow()  # for Windows
 
     def _update_palette(self, event=None):
         """Update widget color palette."""
@@ -492,8 +471,8 @@ class Window:
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         self._status_bar.showMessage(event.text)
 
@@ -502,8 +481,8 @@ class Window:
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         self._qt_window.setWindowTitle(event.text)
 
@@ -512,8 +491,8 @@ class Window:
 
         Parameters
         ----------
-        event : qtpy.QtCore.QEvent
-            Event from the Qt context.
+        event : napari.utils.event.Event
+            The napari event that triggered this method.
         """
         self._help.setText(event.text)
 
@@ -556,7 +535,16 @@ class Window:
 
     def close(self):
         """Close the viewer window and cleanup sub-widgets."""
-        # on some versions of Darwin, exiting while fullscreen seems to tickle
+
+        # Someone is closing us twice? Only try to delete self._qt_window
+        # if we still have one.
+        if hasattr(self, '_qt_window'):
+            self._delete_qt_window()
+
+    def _delete_qt_window(self):
+        """Delete our self._qt_window."""
+
+        # On some versions of Darwin, exiting while fullscreen seems to tickle
         # some bug deep in NSWindow.  This forces the fullscreen keybinding
         # test to complete its draw cycle, then pop back out of fullscreen.
         if self._qt_window.isFullScreen():

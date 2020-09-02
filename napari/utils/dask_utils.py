@@ -1,8 +1,8 @@
 """Dask cache utilities.
 """
+import warnings
 from contextlib import contextmanager
 from typing import Callable, ContextManager, Optional
-import warnings
 
 import dask
 import dask.array as da
@@ -72,8 +72,8 @@ def resize_dask_cache(
     dask_cache : dask.cache.Cache
         An instance of a Dask Cache
 
-    Example
-    -------
+    Examples
+    --------
     >>> from napari.utils import resize_dask_cache
     >>> cache = resize_dask_cache()  # use 50% of total memory by default
 
@@ -158,8 +158,8 @@ def configure_dask(data) -> Callable[[], ContextManager[dict]]:
     ContextManager
         A context manager that can be used to optimize dask indexing
 
-    Example
-    -------
+    Examples
+    --------
     >>> data = dask.array.ones((10,10,10))
     >>> optimized_slicing = configure_dask(data)
     >>> with optimized_slicing():

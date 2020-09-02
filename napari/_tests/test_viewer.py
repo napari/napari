@@ -1,3 +1,4 @@
+import os
 import time
 
 import numpy as np
@@ -6,15 +7,16 @@ import pytest
 from napari import Viewer
 from napari._tests.utils import (
     add_layer_by_type,
-    check_viewer_functioning,
     check_view_transform_consistency,
+    check_viewer_functioning,
     layer_test_data,
 )
 
 
-def test_viewer(viewer_factory):
+def test_viewer(make_test_viewer):
     """Test instantiating viewer."""
-    view, viewer = viewer_factory()
+    viewer = make_test_viewer()
+    view = viewer.window.qt_viewer
 
     assert viewer.title == 'napari'
     assert view.viewer == viewer
@@ -34,20 +36,15 @@ def test_viewer(viewer_factory):
 
     # Run all class key bindings
     for func in viewer.class_keymap.values():
-        func(viewer)
-        # the `play` keybinding calls QtDims.play_dim(), which then creates a
-        # new QThread. we must then run the keybinding a second time, which
-        # will call QtDims.stop(), otherwise the thread will be killed at the
-        # end of the test without cleanup, causing a segmentation fault.
-        # (though the tests still pass)
+        # skip fullscreen test locally
+        if func.__name__ == 'toggle_fullscreen' and not os.getenv("CI"):
+            continue
         if func.__name__ == 'play':
-            func(viewer)
-
-    # the test for fullscreen that used to be here has been moved to the
-    # Window.close() method.
+            continue
+        func(viewer)
 
 
-@pytest.mark.first  # provided by pytest-ordering
+@pytest.mark.run(order=1)  # provided by pytest-ordering
 def test_no_qt_loop():
     """Test informative error raised when no Qt event loop exists.
 
@@ -63,19 +60,19 @@ def test_no_qt_loop():
 
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
 @pytest.mark.parametrize('visible', [True, False])
-def test_add_layer(viewer_factory, layer_class, data, ndim, visible):
-    view, viewer = viewer_factory()
+def test_add_layer(make_test_viewer, layer_class, data, ndim, visible):
+    viewer = make_test_viewer()
     layer = add_layer_by_type(viewer, layer_class, data, visible=visible)
-    check_viewer_functioning(viewer, view, data, ndim)
+    check_viewer_functioning(viewer, viewer.window.qt_viewer, data, ndim)
 
     # Run all class key bindings
     for func in layer.class_keymap.values():
         func(layer)
 
 
-def test_screenshot(viewer_factory):
+def test_screenshot(make_test_viewer):
     """Test taking a screenshot."""
-    view, viewer = viewer_factory()
+    viewer = make_test_viewer()
 
     np.random.seed(0)
     # Add image
@@ -107,9 +104,9 @@ def test_screenshot(viewer_factory):
     assert screenshot.ndim == 3
 
 
-def test_update(viewer_factory):
+def test_update(make_test_viewer):
     data = np.random.random((512, 512))
-    view, viewer = viewer_factory()
+    viewer = make_test_viewer()
     layer = viewer.add_image(data)
 
     def layer_update(*, update_period, num_updates):
@@ -145,23 +142,32 @@ def test_update(viewer_factory):
         )
 
 
-def test_changing_theme(viewer_factory):
-    """Test instantiating viewer."""
-    view, viewer = viewer_factory()
+def test_changing_theme(make_test_viewer):
+    """Test changing the theme updates the full window."""
+    viewer = make_test_viewer()
+    viewer.add_points(data=None)
     assert viewer.palette['folder'] == 'dark'
+
+    screenshot_dark = viewer.screenshot(canvas_only=False)
 
     viewer.theme = 'light'
     assert viewer.palette['folder'] == 'light'
+
+    screenshot_light = viewer.screenshot(canvas_only=False)
+    equal = (screenshot_dark == screenshot_light).min(-1)
+
+    # more than 99.5% of the pixels have changed
+    assert (np.count_nonzero(equal) / equal.size) < 0.05, "Themes too similar"
 
     with pytest.raises(ValueError):
         viewer.theme = 'nonexistent_theme'
 
 
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
-def test_roll_traspose_update(viewer_factory, layer_class, data, ndim):
+def test_roll_traspose_update(make_test_viewer, layer_class, data, ndim):
     """Check that transpose and roll preserve correct transform sequence."""
 
-    view, viewer = viewer_factory()
+    viewer = make_test_viewer()
 
     np.random.seed(0)
 

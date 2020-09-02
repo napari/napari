@@ -2,10 +2,12 @@
 # https://asv.readthedocs.io/en/latest/writing_benchmarks.html
 # or the napari documentation on benchmarking
 # https://github.com/napari/napari/blob/master/docs/BENCHMARKS.md
-import numpy as np
-import napari
-from qtpy.QtWidgets import QApplication
 import collections
+
+import numpy as np
+from qtpy.QtWidgets import QApplication
+
+import napari
 
 
 class QtViewerSingleLabelsSuite:

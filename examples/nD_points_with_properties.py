@@ -1,7 +1,7 @@
 """
 Display one points layer ontop of one 4-D image layer using the
 add_points and add_image APIs, where the markes are visible as nD objects
-accross the dimensions, specified by their size
+across the dimensions, specified by their size
 """
 
 from math import ceil
@@ -13,23 +13,19 @@ import napari
 
 with napari.gui_qt():
     blobs = data.binary_blobs(
-                length=100, blob_size_fraction=0.05, n_dim=3, volume_fraction=0.05
-            )
+        length=100, blob_size_fraction=0.05, n_dim=3, volume_fraction=0.05
+    )
     viewer = napari.view_image(blobs.astype(float))
 
     # create the points
     points = []
     for z in range(blobs.shape[0]):
-        points += [
-                [z, 25, 25],
-                [z, 25, 75],
-                [z, 75, 25],
-                [z, 75, 75]
-        ]
+        points += [[z, 25, 25], [z, 25, 75], [z, 75, 25], [z, 75, 75]]
 
     # create the property for setting the face and edge color.
     face_property = np.array(
-        [True, True, True, True, False, False, False, False] * int((blobs.shape[0] / 2))
+        [True, True, True, True, False, False, False, False]
+        * int((blobs.shape[0] / 2))
     )
     edge_property = np.array(['A', 'B', 'C', 'D', 'E'] * int(len(points) / 5))
 

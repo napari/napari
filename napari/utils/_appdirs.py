@@ -1,8 +1,9 @@
 import os
 import sys
 from functools import partial
+from typing import Callable, Optional
+
 import appdirs
-from typing import Optional, Callable
 
 _appname = 'napari'
 _appauthor = False

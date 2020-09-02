@@ -19,6 +19,50 @@ class ReadOnlyWrapper(wrapt.ObjectProxy):
         raise TypeError(f'cannot set item {name}')
 
 
+def mouse_wheel_callbacks(obj, event):
+    """Run mouse wheel callbacks on either layer or viewer object.
+
+    Note that drag callbacks should have the following form:
+
+    .. code-block:: python
+
+        def hello_world(layer, event):
+            "dragging"
+            # on press
+            print('hello world!')
+            yield
+
+            # on move
+            while event.type == 'mouse_move':
+                print(event.pos)
+                yield
+
+            # on release
+            print('goodbye world ;(')
+
+    Parameters
+    ---------
+    obj : ViewerModel or Layer
+        Layer or Viewer object to run callbacks on
+    event : Event
+        Mouse event
+    """
+    # iterate through drag callback functions
+    for mouse_wheel_func in obj.mouse_wheel_callbacks:
+        # execute function to run press event code
+        gen = mouse_wheel_func(obj, event)
+        # if function returns a generator then try to iterate it
+        if inspect.isgenerator(gen):
+            try:
+                next(gen)
+                # now store iterated genenerator
+                obj._mouse_wheel_gen[mouse_wheel_func] = gen
+                # and now store event that initially triggered the press
+                obj._persisted_mouse_event[gen] = event
+            except StopIteration:
+                pass
+
+
 def mouse_press_callbacks(obj, event):
     """Run mouse press callbacks on either layer or viewer object.
 
@@ -41,7 +85,7 @@ def mouse_press_callbacks(obj, event):
             print('goodbye world ;(')
 
     Parameters
-    ---------
+    ----------
     obj : ViewerModel or Layer
         Layer or Viewer object to run callbacks on
     event : Event
@@ -85,7 +129,7 @@ def mouse_move_callbacks(obj, event):
             print('goodbye world ;(')
 
     Parameters
-    ---------
+    ----------
     obj : ViewerModel or Layer
         Layer or Viewer object to run callbacks on
     event : Event
@@ -131,7 +175,7 @@ def mouse_release_callbacks(obj, event):
             print('goodbye world ;(')
 
     Parameters
-    ---------
+    ----------
     obj : ViewerModel or Layer
         Layer or Viewer object to run callbacks on
     event : Event
@@ -179,7 +223,7 @@ def get_key_bindings_summary(keymap, col='rgb(134, 142, 147)'):
     """Get summary of key bindings in keymap.
 
     Parameters
-    ---------
+    ----------
     keymap : dict
         Dictionary of key bindings.
     col : str
@@ -187,7 +231,7 @@ def get_key_bindings_summary(keymap, col='rgb(134, 142, 147)'):
         keypress combination.
 
     Returns
-    ---------
+    -------
     key_bindings_str : str
         String with summary of all key_bindings and their functions.
     """
