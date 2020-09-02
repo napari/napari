@@ -1,4 +1,4 @@
-from .._qt.threading import (
+from .._qt.qthreading import (
     FunctionWorker,
     GeneratorWorker,
     GeneratorWorkerSignals,

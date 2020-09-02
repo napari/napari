@@ -65,7 +65,7 @@ As noted above, napari aims to support a plugin ecosystem for scientific image a
 
 We will be adding more dedicated documentation around plugins shortly, and this section will likely continue to be significantly updated over the coming months as more work is done, but we will lay out here some of our motivation and vision for the plugin ecosystem.
 
-Image analysis is heterogenous and often highly specialized within different domains of science. napari alone will not try to meet all the image analysis needs of the scientific community, but instead try to be a foundational visualization tool that provides access to domain specific analysis through community developed plugins.
+Image analysis is heterogeneous and often highly specialized within different domains of science. napari alone will not try to meet all the image analysis needs of the scientific community, but instead try to be a foundational visualization tool that provides access to domain specific analysis through community developed plugins.
 
 We want to make it as easy as possible for developers to build plugins for napari, with as little to no specific napari code in your plugin as possible. Philosophically a napari plugin without napari should just be Python, and they should always be importable and runnable as such. We are looking into using minimal typing and function annotations that don't change the runtime of your functions, but lets napari know how to interpret the inputs and outputs of your functions and integrate them with our GUI code. We are also planning to leverage git for versioning and installation of plugins.
 

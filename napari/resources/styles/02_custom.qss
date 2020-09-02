@@ -63,6 +63,7 @@ QMainWindow::separator:hover {
     image: url(":/themes/{{ folder }}/delete_shape.svg");
 }
 
+
 #QTitleBarFloatButton{
     image: url(":/themes/{{ folder }}/pop_out.svg");
     width: 10px;
@@ -254,12 +255,12 @@ QLabel#Vectors {
 
 /* ------------------------------------------------------ */
 
-QtControls {
+QtLayerControlsContainer {
     border-radius: 2px;
     padding: 0px;
     margin: 10px;
-    min-height: 215px;
-    max-height: 215px;
+    min-height: 245px;
+    max-height: 245px;
     min-width: 240px;
     max-width: 240px;
     margin-left: 10px;
@@ -267,7 +268,7 @@ QtControls {
     margin-bottom: 4px;
 }
 
-QtControls > QFrame {
+QtLayerControlsContainer > QFrame {
   padding: 5px;
   padding-right: 8px;
   border-radius: 2px;
@@ -376,7 +377,7 @@ QtDimSliderWidget > QLineEdit {
 /* editable slice label and axis name */
 QtDimSliderWidget > QLineEdit {
   padding: 0 0 1px 2px;
-  max-height: 12px;
+  max-height: 14px;
   min-height: 12px;
   min-width: 16px;
   color: {{ text }};
@@ -391,10 +392,6 @@ QtDimSliderWidget > QLineEdit {
 #slice_label_sep{
   background-color: {{ background }};
   border: 1px solid {{ primary }};
-}
-
-QtDimSliderWidget > QLabel {
-  padding: 4px 0 0 1px;
 }
 
 
@@ -454,4 +451,56 @@ QtHookImplementationListWidget {
 QTableCornerButton::section{
   background: {{ background }};
   border: 1px solid {{ background }};
+}
+
+NapariNotification > QWidget {
+  background: none;
+}
+
+NapariNotification::hover{
+  background: {{ lighten(background, 5) }};
+}
+
+MultilineElidedLabel{
+  background: none;
+  color: {{ icon }};
+  font-size: 12px;
+}
+
+NapariNotification #expand_button {
+  background: none;
+  padding: 0px;
+  margin: 0px;
+  max-width: 20px;
+}
+
+NapariNotification[expanded="false"] #expand_button {
+  image: url(":/themes/{{ folder }}/chevron_up.svg");
+}
+
+NapariNotification[expanded="true"] #expand_button {
+  image: url(":/themes/{{ folder }}/chevron_down.svg");
+}
+
+
+NapariNotification #close_button {
+  background: none;
+  image: url(":/themes/{{ folder }}/delete_shape.svg");
+  padding: 0px;
+  margin: 0px;
+  max-width: 20px;
+}
+
+NapariNotification #source_label {
+  color: {{ primary }};
+  font-size: 11px;
+}
+
+NapariNotification #severity_icon {
+  padding: 0;
+  margin: 0 0 -3px 0;
+  min-width: 20px;
+  min-height: 18px;
+  font-size: 15px;
+  color: {{ icon }};
 }

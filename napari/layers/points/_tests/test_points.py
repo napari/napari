@@ -1,10 +1,12 @@
 from copy import copy
 from itertools import cycle, islice
+
 import numpy as np
 import pandas as pd
 import pytest
 from vispy.color import get_colormap
 
+from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Points
 from napari.layers.points._points_utils import points_to_squares
 from napari.utils.colormaps.standardize_color import transform_color
@@ -13,15 +15,15 @@ from napari.utils.colormaps.standardize_color import transform_color
 def _make_cycled_properties(values, length):
     """Helper function to make property values
 
-    Parameters:
-    -----------
-    values :
+    Parameters
+    ----------
+    values
         The values to be cycled.
     length : int
         The length of the resulting property array
 
-    Returns:
-    --------
+    Returns
+    -------
     cycled_properties : np.ndarray
         The property array comprising the cycled values.
     """
@@ -89,7 +91,7 @@ def test_empty_layer_with_face_colorap():
     layer = Points(
         properties=default_properties,
         face_color='point_type',
-        face_colormap='grays',
+        face_colormap='gray',
     )
 
     assert layer.face_color_mode == 'colormap'
@@ -107,7 +109,7 @@ def test_empty_layer_with_edge_colormap():
     layer = Points(
         properties=default_properties,
         edge_color='point_type',
-        edge_colormap='grays',
+        edge_colormap='gray',
     )
 
     assert layer.edge_color_mode == 'colormap'
@@ -216,7 +218,7 @@ def test_selecting_points():
     assert layer.selected_data == data_to_select
 
     # test switching to 3D
-    layer.dims.ndisplay = 3
+    layer._slice_dims(ndisplay=3)
     assert layer.selected_data == data_to_select
 
     # select different points while in 3D mode
@@ -225,7 +227,7 @@ def test_selecting_points():
     assert layer.selected_data == other_data_to_select
 
     # selection should persist when going back to 2D mode
-    layer.dims.ndisplay = 2
+    layer._slice_dims(ndisplay=2)
     assert layer.selected_data == other_data_to_select
 
     # selection should persist when switching between between select and pan_zoom
@@ -364,7 +366,7 @@ def test_name():
 
 
 def test_visiblity():
-    """Test setting layer visiblity."""
+    """Test setting layer visibility."""
     np.random.seed(0)
     data = 20 * np.random.random((10, 2))
     layer = Points(data)
@@ -551,6 +553,104 @@ def test_updating_points_properties():
     np.testing.assert_equal(layer.properties, updated_properties)
 
 
+properties_array = {'point_type': _make_cycled_properties(['A', 'B'], 10)}
+properties_list = {'point_type': list(_make_cycled_properties(['A', 'B'], 10))}
+
+
+@pytest.mark.parametrize("properties", [properties_array, properties_list])
+def test_text_from_property_value(properties):
+    """Test setting text from a property value"""
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data, properties=copy(properties), text='point_type')
+
+    np.testing.assert_equal(layer.text.values, properties['point_type'])
+
+
+@pytest.mark.parametrize("properties", [properties_array, properties_list])
+def test_text_from_property_fstring(properties):
+    """Test setting text with an f-string from the property value"""
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(
+        data, properties=copy(properties), text='type: {point_type}'
+    )
+
+    expected_text = ['type: ' + v for v in properties['point_type']]
+    np.testing.assert_equal(layer.text.values, expected_text)
+
+    # test updating the text
+    layer.text = 'type-ish: {point_type}'
+    expected_text_2 = ['type-ish: ' + v for v in properties['point_type']]
+    np.testing.assert_equal(layer.text.values, expected_text_2)
+
+    # copy/paste
+    layer.selected_data = {0}
+    layer._copy_data()
+    layer._paste_data()
+    expected_text_3 = expected_text_2 + ['type-ish: A']
+    np.testing.assert_equal(layer.text.values, expected_text_3)
+
+    # add point
+    layer.selected_data = {0}
+    new_shape = np.random.random((1, 2))
+    layer.add(new_shape)
+    expected_text_4 = expected_text_3 + ['type-ish: A']
+    np.testing.assert_equal(layer.text.values, expected_text_4)
+
+
+@pytest.mark.parametrize("properties", [properties_array, properties_list])
+def test_set_text_with_kwarg_dict(properties):
+    text_kwargs = {
+        'text': 'type: {point_type}',
+        'color': [0, 0, 0, 1],
+        'rotation': 10,
+        'translation': [5, 5],
+        'anchor': 'upper_left',
+        'size': 10,
+        'visible': True,
+    }
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer = Points(data, properties=copy(properties), text=text_kwargs)
+
+    expected_text = ['type: ' + v for v in properties['point_type']]
+    np.testing.assert_equal(layer.text.values, expected_text)
+
+    for property, value in text_kwargs.items():
+        if property == 'text':
+            continue
+        layer_value = getattr(layer._text, property)
+        np.testing.assert_equal(layer_value, value)
+
+
+@pytest.mark.parametrize("properties", [properties_array, properties_list])
+def test_text_error(properties):
+    """creating a layer with text as the wrong type should raise an error"""
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    # try adding text as the wrong type
+    with pytest.raises(TypeError):
+        Points(data, properties=copy(properties), text=123)
+
+
+def test_refresh_text():
+    """Test refreshing the text after setting new properties"""
+    shape = (10, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    properties = {'point_type': ['A'] * shape[0]}
+    layer = Points(data, properties=copy(properties), text='point_type')
+
+    new_properties = {'point_type': ['B'] * shape[0]}
+    layer.properties = new_properties
+    np.testing.assert_equal(layer.text.values, new_properties['point_type'])
+
+
 def test_points_errors():
     shape = (3, 2)
     np.random.seed(0)
@@ -624,6 +724,7 @@ def test_n_dimensional():
     assert layer.n_dimensional is True
 
 
+@pytest.mark.filterwarnings("ignore:elementwise comparison fail:FutureWarning")
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
 def test_switch_color_mode(attribute):
     """Test switching between color modes"""
@@ -705,7 +806,8 @@ def test_colormap_with_categorical_properties(attribute):
     layer = Points(data, properties=properties)
 
     with pytest.raises(TypeError):
-        setattr(layer, f'{attribute}_color_mode', 'colormap')
+        with pytest.warns(UserWarning):
+            setattr(layer, f'{attribute}_color_mode', 'colormap')
 
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
@@ -722,7 +824,7 @@ def test_add_colormap(attribute):
 
     setattr(layer, f'{attribute}_colormap', get_colormap('gray'))
     layer_colormap = getattr(layer, f'{attribute}_colormap')
-    assert 'unnamed colormap' in layer_colormap[0]
+    assert 'unnamed colormap' in layer_colormap.name
 
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
@@ -978,7 +1080,7 @@ def test_color_colormap(attribute):
     new_colormap = 'viridis'
     setattr(layer, f'{attribute}_colormap', new_colormap)
     attribute_colormap = getattr(layer, f'{attribute}_colormap')
-    assert attribute_colormap[1] == get_colormap(new_colormap)
+    assert attribute_colormap.name == new_colormap
 
 
 def test_size():
@@ -1253,7 +1355,7 @@ def test_thumbnail_with_n_points_greater_than_max():
     # #3D
     bigger_data_3d = np.random.randint(10, 100, (max_points, 3))
     bigger_layer_3d = Points(bigger_data_3d)
-    bigger_layer_3d.dims.ndisplay = 3
+    bigger_layer_3d._slice_dims(ndisplay=3)
     bigger_layer_3d._update_thumbnail()
     assert bigger_layer_3d.thumbnail.shape == bigger_layer_3d._thumbnail_shape
 
@@ -1262,17 +1364,17 @@ def test_view_data():
     coords = np.array([[0, 1, 1], [0, 2, 2], [1, 3, 3], [3, 3, 3]])
     layer = Points(coords)
 
-    layer.dims.set_point(0, 0)
+    layer._slice_dims([0, slice(None), slice(None)])
     assert np.all(
         layer._view_data == coords[np.ix_([0, 1], layer.dims.displayed)]
     )
 
-    layer.dims.set_point(0, 1)
+    layer._slice_dims([1, slice(None), slice(None)])
     assert np.all(
         layer._view_data == coords[np.ix_([2], layer.dims.displayed)]
     )
 
-    layer.dims.ndisplay = 3
+    layer._slice_dims([1, slice(None), slice(None)], ndisplay=3)
     assert np.all(layer._view_data == coords)
 
 
@@ -1281,12 +1383,12 @@ def test_view_size():
     sizes = np.array([[3, 5, 5], [3, 5, 5], [3, 3, 3], [2, 2, 3]])
     layer = Points(coords, size=sizes, n_dimensional=False)
 
-    layer.dims.set_point(0, 0)
+    layer._slice_dims([0, slice(None), slice(None)])
     assert np.all(
         layer._view_size == sizes[np.ix_([0, 1], layer.dims.displayed)]
     )
 
-    layer.dims.set_point(0, 1)
+    layer._slice_dims([1, slice(None), slice(None)])
     assert np.all(layer._view_size == sizes[np.ix_([2], layer.dims.displayed)])
 
     layer.n_dimensional = True
@@ -1294,7 +1396,7 @@ def test_view_size():
 
     # test a slice with no points
     layer.n_dimensional = False
-    layer.dims.set_point(0, 2)
+    layer._slice_dims([2, slice(None), slice(None)])
     assert np.all(layer._view_size == [])
 
 
@@ -1308,18 +1410,16 @@ def test_view_colors():
     )
 
     layer = Points(coords, face_color=face_color, edge_color=edge_color)
-    layer.dims.set_point(0, 0)
-    print(layer.face_color)
-    print(layer._view_face_color)
+    layer._slice_dims([0, slice(None), slice(None)])
     assert np.all(layer._view_face_color == face_color[[0, 1]])
     assert np.all(layer._view_edge_color == edge_color[[0, 1]])
 
-    layer.dims.set_point(0, 1)
+    layer._slice_dims([1, slice(None), slice(None)])
     assert np.all(layer._view_face_color == face_color[[2]])
     assert np.all(layer._view_edge_color == edge_color[[2]])
 
     # view colors should return empty array if there are no points
-    layer.dims.set_point(0, 2)
+    layer._slice_dims([2, slice(None), slice(None)])
     assert len(layer._view_face_color) == 0
     assert len(layer._view_edge_color) == 0
 
@@ -1340,3 +1440,13 @@ def test_interaction_box():
     expected_box = points_to_squares(data, size)
     box = layer.interaction_box(index)
     np.all([np.isin(p, expected_box) for p in box])
+
+
+def test_world_data_extent():
+    """Test extent after applying transforms."""
+    data = [(7, -5, 0), (-2, 0, 15), (4, 30, 12)]
+    min_val = (-2, -5, 0)
+    max_val = (7, 30, 15)
+    layer = Points(data)
+    extent = np.array((min_val, max_val))
+    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))

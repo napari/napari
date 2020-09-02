@@ -8,16 +8,12 @@ from typing import Any, Dict, List, Optional, Sequence, Set, Union
 import numpy as np
 
 from .. import layers
-from ..layers.image._image_utils import guess_labels, guess_multiscale
+from ..layers.image._image_utils import guess_labels
+from ..layers.utils.stack_utils import split_channels
 from ..plugins.io import read_data_with_plugins
 from ..types import FullLayerData, LayerData
-from ..utils import colormaps
-from ..utils.colormaps import ensure_colormap_tuple
-from ..utils.misc import (
-    ensure_iterable,
-    ensure_sequence_of_iterables,
-    is_sequence,
-)
+from ..utils.colormaps import ensure_colormap
+from ..utils.misc import is_sequence
 
 logger = getLogger(__name__)
 
@@ -56,9 +52,6 @@ class AddLayersMixin:
         layer.events.cursor.connect(self._update_cursor)
         layer.events.cursor_size.connect(self._update_cursor_size)
         layer.events.data.connect(self._on_layers_change)
-        layer.dims.events.ndisplay.connect(self._on_layers_change)
-        layer.dims.events.order.connect(self._on_layers_change)
-        layer.dims.events.range.connect(self._on_layers_change)
         self.layers.append(layer)
         self._update_layers(layers=[layer])
 
@@ -78,7 +71,7 @@ class AddLayersMixin:
         interpolation='nearest',
         rendering='mip',
         iso_threshold=0.5,
-        attenuation=0.5,
+        attenuation=0.05,
         name=None,
         metadata=None,
         scale=None,
@@ -109,7 +102,7 @@ class AddLayersMixin:
             `True`. If `False` the image is interpreted as a luminance image.
             If a list then must be same length as the axis that is being
             expanded as channels.
-        colormap : str, vispy.Color.Colormap, tuple, dict, list
+        colormap : str, napari.utils.Colormap, tuple, dict, list
             Colormaps to use for luminance images. If a string must be the name
             of a supported colormap from vispy or matplotlib. If a tuple the
             first value must be a string to assign as a name to a colormap and
@@ -183,14 +176,14 @@ class AddLayersMixin:
         """
 
         if colormap is not None:
-            # standardize colormap argument(s) to strings, and make sure they
+            # standardize colormap argument(s) to Colormaps, and make sure they
             # are in AVAILABLE_COLORMAPS.  This will raise one of many various
             # errors if the colormap argument is invalid.  See
-            # ensure_colormap_tuple for details
+            # ensure_colormap for details
             if isinstance(colormap, list):
-                colormap = [ensure_colormap_tuple(c)[0] for c in colormap]
+                colormap = [ensure_colormap(c) for c in colormap]
             else:
-                colormap, _ = ensure_colormap_tuple(colormap)
+                colormap = ensure_colormap(colormap)
 
         # doing this here for IDE/console autocompletion in add_image function.
         kwargs = {
@@ -229,55 +222,13 @@ class AddLayersMixin:
 
             return self.add_layer(layers.Image(data, **kwargs))
         else:
-            # Determine if data is a multiscale
-            if multiscale is None:
-                multiscale, data = guess_multiscale(data)
-            n_channels = (data[0] if multiscale else data).shape[channel_axis]
-            kwargs['blending'] = kwargs['blending'] or 'additive'
+            layerdata_list = split_channels(data, channel_axis, **kwargs)
 
-            # turn the kwargs dict into a mapping of {key: iterator}
-            # so that we can use {k: next(v) for k, v in kwargs.items()} below
-            for key, val in kwargs.items():
-                if key == 'colormap' and val is None:
-                    if n_channels == 1:
-                        kwargs[key] = iter(['gray'])
-                    elif n_channels == 2:
-                        kwargs[key] = iter(colormaps.MAGENTA_GREEN)
-                    else:
-                        kwargs[key] = itertools.cycle(colormaps.CYMRGB)
-
-                # make sure that iterable_kwargs are a *sequence* of iterables
-                # for the multichannel case.  For example: if scale == (1, 2) &
-                # n_channels = 3, then scale should == [(1, 2), (1, 2), (1, 2)]
-                elif key in iterable_kwargs:
-                    kwargs[key] = iter(
-                        ensure_sequence_of_iterables(val, n_channels)
-                    )
-                else:
-                    kwargs[key] = iter(ensure_iterable(val))
-
-            layer_list = []
-            for i in range(n_channels):
-                if multiscale:
-                    image = [
-                        np.take(data[j], i, axis=channel_axis)
-                        for j in range(len(data))
-                    ]
-                else:
-                    image = np.take(data, i, axis=channel_axis)
-                i_kwargs = {}
-                for key, val in kwargs.items():
-                    try:
-                        i_kwargs[key] = next(val)
-                    except StopIteration:
-                        raise IndexError(
-                            "Error adding multichannel image with data shape "
-                            f"{data.shape!r}.\nRequested channel_axis "
-                            f"({channel_axis}) had length {n_channels}, but "
-                            f"the '{key}' argument only provided {i} values. "
-                        )
+            layer_list = list()
+            for image, i_kwargs, _ in layerdata_list:
                 layer = self.add_layer(layers.Image(image, **i_kwargs))
                 layer_list.append(layer)
+
             return layer_list
 
     def add_points(
@@ -285,6 +236,7 @@ class AddLayersMixin:
         data=None,
         *,
         properties=None,
+        text=None,
         symbol='o',
         size=10,
         edge_width=1,
@@ -314,6 +266,13 @@ class AddLayersMixin:
         properties : dict {str: array (N,)}, DataFrame
             Properties for each point. Each property should be an array of length N,
             where N is the number of points.
+        text : str, dict
+            Text to be displayed with the points. If text is set to a key in properties,
+            the value of that property will be displayed. Multiple properties can be
+            composed using f-string-like syntax (e.g., '{property_1}, {float_property:.2f}).
+            A dictionary can be provided with keyword arguments to set the text values
+            and display properties. See TextManager.__init__() for the valid keyword arguments.
+            For example usage, see /napari/examples/add_points_with_text.py.
         symbol : str
             Symbol to be used for the point markers. Must be one of the
             following: arrow, clobber, cross, diamond, disc, hbar, ring,
@@ -329,9 +288,8 @@ class AddLayersMixin:
         edge_color_cycle : np.ndarray, list
             Cycle of colors (provided as string name, RGB, or RGBA) to map to edge_color if a
             categorical attribute is used color the vectors.
-        edge_colormap : str, vispy.color.colormap.Colormap
+        edge_colormap : str, napari.utils.Colormap
             Colormap to set edge_color if a continuous attribute is used to set face_color.
-            See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
         edge_contrast_limits : None, (float, float)
             clims for mapping the property to a color map. These are the min and max value
             of the specified property that are mapped to 0 and 1, respectively.
@@ -342,9 +300,8 @@ class AddLayersMixin:
         face_color_cycle : np.ndarray, list
             Cycle of colors (provided as string name, RGB, or RGBA) to map to face_color if a
             categorical attribute is used color the vectors.
-        face_colormap : str, vispy.color.colormap.Colormap
+        face_colormap : str, napari.utils.Colormap
             Colormap to set face_color if a continuous attribute is used to set face_color.
-            See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
         face_contrast_limits : None, (float, float)
             clims for mapping the property to a color map. These are the min and max value
             of the specified property that are mapped to 0 and 1, respectively.
@@ -387,6 +344,7 @@ class AddLayersMixin:
         layer = layers.Points(
             data=data,
             properties=properties,
+            text=text,
             symbol=symbol,
             size=size,
             edge_width=edge_width,
@@ -509,6 +467,7 @@ class AddLayersMixin:
         *,
         ndim=None,
         properties=None,
+        text=None,
         shape_type='rectangle',
         edge_width=1,
         edge_color='black',
@@ -542,6 +501,13 @@ class AddLayersMixin:
         properties : dict {str: array (N,)}, DataFrame
             Properties for each shape. Each property should be an array of
             length N, where N is the number of shapes.
+        text : str, dict
+            Text to be displayed with the shapes. If text is set to a key in properties,
+            the value of that property will be displayed. Multiple properties can be
+            composed using f-string-like syntax (e.g., '{property_1}, {float_property:.2f}).
+            A dictionary can be provided with keyword arguments to set the text values
+            and display properties. See TextManager.__init__() for the valid keyword arguments.
+            For example usage, see /napari/examples/add_shapes_with_text.py.
         shape_type : string or list
             String of shape shape_type, must be one of "{'line', 'rectangle',
             'ellipse', 'path', 'polygon'}". If a list is supplied it must be
@@ -562,9 +528,8 @@ class AddLayersMixin:
         edge_color_cycle : np.ndarray, list
             Cycle of colors (provided as string name, RGB, or RGBA) to map to edge_color if a
             categorical attribute is used color the vectors.
-        edge_colormap : str, vispy.color.colormap.Colormap
+        edge_colormap : str, napari.utils.Colormap
             Colormap to set edge_color if a continuous attribute is used to set face_color.
-            See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
         edge_contrast_limits : None, (float, float)
             clims for mapping the property to a color map. These are the min and max value
             of the specified property that are mapped to 0 and 1, respectively.
@@ -579,9 +544,8 @@ class AddLayersMixin:
         face_color_cycle : np.ndarray, list
             Cycle of colors (provided as string name, RGB, or RGBA) to map to face_color if a
             categorical attribute is used color the vectors.
-        face_colormap : str, vispy.color.colormap.Colormap
+        face_colormap : str, napari.utils.Colormap
             Colormap to set face_color if a continuous attribute is used to set face_color.
-            See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
         face_contrast_limits : None, (float, float)
             clims for mapping the property to a color map. These are the min and max value
             of the specified property that are mapped to 0 and 1, respectively.
@@ -624,6 +588,7 @@ class AddLayersMixin:
             data=data,
             ndim=ndim,
             properties=properties,
+            text=text,
             shape_type=shape_type,
             edge_width=edge_width,
             edge_color=edge_color,
@@ -671,7 +636,7 @@ class AddLayersMixin:
             of the mesh triangles. The third element is the (K0, ..., KL, N)
             array of values used to color vertices where the additional L
             dimensions are used to color the same mesh with different values.
-        colormap : str, vispy.Color.Colormap, tuple, dict
+        colormap : str, napari.utils.Colormap, tuple, dict
             Colormap to use for luminance images. If a string must be the name
             of a supported colormap from vispy or matplotlib. If a tuple the
             first value must be a string to assign as a name to a colormap and
@@ -757,15 +722,14 @@ class AddLayersMixin:
         edge_width : float
             Width for all vectors in pixels.
         length : float
-             Multiplicative factor on projections for length of all vectors.
+            Multiplicative factor on projections for length of all vectors.
         edge_color : str
             Color of all of the vectors.
         edge_color_cycle : np.ndarray, list
             Cycle of colors (provided as string name, RGB, or RGBA) to map to edge_color if a
             categorical attribute is used color the vectors.
-        edge_colormap : str, vispy.color.colormap.Colormap
+        edge_colormap : str, napari.utils.Colormap
             Colormap to set vector color if a continuous attribute is used to set edge_color.
-            See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
         edge_contrast_limits : None, (float, float)
             clims for mapping the property to a color map. These are the min and max value
             of the specified property that are mapped to 0 and 1, respectively.
@@ -816,6 +780,7 @@ class AddLayersMixin:
     def open(
         self,
         path: Union[str, Sequence[str]],
+        *,
         stack: bool = False,
         plugin: Optional[str] = None,
         layer_type: Optional[str] = None,
@@ -840,7 +805,7 @@ class AddLayersMixin:
         plugin : str, optional
             Name of a plugin to use.  If provided, will force ``path`` to be
             read with the specified ``plugin``.  If the requested plugin cannot
-            read ``path``, an execption will be raised.
+            read ``path``, an exception will be raised.
         layer_type : str, optional
             If provided, will force data read from ``path`` to be passed to the
             corresponding ``add_<layer_type>`` method (along with any
@@ -902,7 +867,7 @@ class AddLayersMixin:
         plugin : str, optional
             Name of a plugin to use.  If provided, will force ``path`` to be
             read with the specified ``plugin``.  If the requested plugin cannot
-            read ``path``, an execption will be raised.
+            read ``path``, an exception will be raised.
         layer_type : str, optional
             If provided, will force data read from ``path`` to be passed to the
             corresponding ``add_<layer_type>`` method (along with any
@@ -1164,10 +1129,10 @@ def prune_kwargs(kwargs: Dict[str, Any], layer_type: str) -> Dict[str, Any]:
     Examples
     --------
     >>> test_kwargs = {
-            'scale': (0.75, 1),
-            'blending': 'additive',
-            'num_colors': 10,
-        }
+    ...     'scale': (0.75, 1),
+    ...     'blending': 'additive',
+    ...     'num_colors': 10,
+    ... }
     >>> prune_kwargs(test_kwargs, 'image')
     {'scale': (0.75, 1), 'blending': 'additive'}
 

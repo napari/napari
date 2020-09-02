@@ -1,15 +1,15 @@
 import os
 
 import pytest
+from napari_plugin_engine import PluginCallError
 
+from napari.plugins import hook_specifications
 from napari.plugins._builtins import (
     napari_get_writer,
     napari_write_image,
     napari_write_points,
     write_layer_data_with_plugins,
 )
-from napari_plugin_engine import PluginCallError
-from napari.plugins import hook_specifications
 
 
 # test_plugin_manager fixture is provided by napari_plugin_engine._testsupport

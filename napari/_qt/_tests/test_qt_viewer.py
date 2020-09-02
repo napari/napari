@@ -4,12 +4,12 @@ from unittest import mock
 import numpy as np
 import pytest
 
-from napari.utils.io import imread
 from napari._tests.utils import (
     add_layer_by_type,
     check_viewer_functioning,
     layer_test_data,
 )
+from napari.utils.io import imread
 
 
 def test_qt_viewer(make_test_viewer):
@@ -156,6 +156,39 @@ def test_new_shapes_empty_viewer(make_test_viewer):
     assert viewer.dims.ndim == 2
     assert view.dims.nsliders == viewer.dims.ndim
     assert np.sum(view.dims._displayed_sliders) == 0
+
+
+def test_z_order_adding_removing_images(make_test_viewer):
+    """Test z order is correct after adding/ removing images."""
+    data = np.ones((10, 10))
+
+    viewer = make_test_viewer()
+    vis = viewer.window.qt_viewer.layer_to_visual
+    viewer.add_image(data, colormap='red', name='red')
+    viewer.add_image(data, colormap='green', name='green')
+    viewer.add_image(data, colormap='blue', name='blue')
+    order = [vis[x].order for x in viewer.layers]
+    np.testing.assert_almost_equal(order, list(range(len(viewer.layers))))
+
+    # Remove and re-add image
+    viewer.layers.remove('red')
+    order = [vis[x].order for x in viewer.layers]
+    np.testing.assert_almost_equal(order, list(range(len(viewer.layers))))
+    viewer.add_image(data, colormap='red', name='red')
+    order = [vis[x].order for x in viewer.layers]
+    np.testing.assert_almost_equal(order, list(range(len(viewer.layers))))
+
+    # Remove two other images
+    viewer.layers.remove('green')
+    viewer.layers.remove('blue')
+    order = [vis[x].order for x in viewer.layers]
+    np.testing.assert_almost_equal(order, list(range(len(viewer.layers))))
+
+    # Add two other layers back
+    viewer.add_image(data, colormap='green', name='green')
+    viewer.add_image(data, colormap='blue', name='blue')
+    order = [vis[x].order for x in viewer.layers]
+    np.testing.assert_almost_equal(order, list(range(len(viewer.layers))))
 
 
 def test_screenshot(make_test_viewer):

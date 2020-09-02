@@ -1,7 +1,7 @@
-import napari
 import numpy as np
+
 from napari import Viewer
-from napari.layers import Image, Labels, Points, Shapes, Vectors, Surface
+from napari.layers import Image, Labels, Points, Shapes, Surface, Vectors
 
 """
 Used as pytest params for testing layer add and view functionality (Layer class, data, ndim)
@@ -20,7 +20,7 @@ layer_test_data = [
     (
         Surface,
         (
-            np.random.random((10, 3)),
+            20 * np.random.random((10, 3)),
             np.random.randint(10, size=(6, 3)),
             np.random.random(10),
         ),
@@ -35,9 +35,6 @@ layer2addmethod = {
     cls: getattr(Viewer, 'add_' + name) for cls, name in zip(classes, names)
 }
 
-layer2viewmethod = {
-    cls: getattr(napari, 'view_' + name) for cls, name in zip(classes, names)
-}
 
 # examples of valid tuples that might be passed to viewer._add_layer_from_data
 good_layer_data = [
@@ -67,24 +64,10 @@ def add_layer_by_type(viewer, layer_type, data, visible=True):
     ----------
     layer_type : LayerTypes
         Layer type to add
-    data :
+    data
         The layer data to view
     """
     return layer2addmethod[layer_type](viewer, data, visible=visible)
-
-
-def view_layer_type(layer_type, data):
-    """
-    Convenience method that maps a LayerType to it's view method.
-
-    Parameters
-    ----------
-    layer_type : LayerTypes
-        Layer type to view
-    data :
-        The layer data to view
-    """
-    return layer2viewmethod[layer_type](data, show=False)
 
 
 def check_viewer_functioning(viewer, view=None, data=None, ndim=2):
@@ -118,6 +101,8 @@ def check_viewer_functioning(viewer, view=None, data=None, ndim=2):
 def check_view_transform_consistency(layer, viewer, transf_dict):
     """Check layer transforms have been applied to the view.
 
+    Note this check only works for non-multiscale data.
+
     Parameters
     ----------
     layer : napari.layers.Layer
@@ -129,25 +114,45 @@ def check_view_transform_consistency(layer, viewer, transf_dict):
         the transform property (i.e. `scale`, `translate`) and the value
         corresponding to the array of property values
     """
+    if layer.multiscale:
+        return None
+
     # Get an handle on visual layer:
     vis_lyr = viewer.window.qt_viewer.layer_to_visual[layer]
-
     # Visual layer attributes should match expected from viewer dims:
     for transf_name, transf in transf_dict.items():
         disp_dims = viewer.dims.displayed  # dimensions displayed in 2D
         # values of visual layer
         vis_vals = getattr(vis_lyr, transf_name)[1::-1]
 
-        # The transform of the visual includes both values from the
-        # data2world transform and the tile2data transform and so any
-        # any additional scaling / translation from tile2data transform
-        # must be taken into account
-        transform = layer._transforms['tile2data'].set_slice(disp_dims)
-        tile_transf = getattr(transform, transf_name)
-        if transf_name == 'scale':
-            # expected scale values
-            correct_vals = np.multiply(transf[disp_dims], tile_transf)
-        else:
-            # expected translate values
-            correct_vals = np.add(transf[disp_dims], tile_transf)
-        assert (vis_vals == correct_vals).all()
+        np.testing.assert_almost_equal(vis_vals, transf[disp_dims])
+
+
+def check_layer_world_data_extent(layer, extent, scale, translate):
+    """Test extents after applying transforms.
+
+    Parameters
+    ----------
+    layer : napar.layers.Layer
+        Layet to be tested.
+    extent : array, shape (2, D)
+        Extent of data in layer.
+    scale : array, shape (D,)
+        Scale to be applied to layer.
+    translate : array, shape (D,)
+        Translation to be applied to layer.
+    """
+    np.testing.assert_almost_equal(layer._extent_data, extent)
+    np.testing.assert_almost_equal(layer._extent_world, extent)
+
+    # Apply scale transformation
+    layer.scale = scale
+    scaled_extent = np.multiply(extent, scale)
+    np.testing.assert_almost_equal(layer._extent_data, extent)
+    np.testing.assert_almost_equal(layer._extent_world, scaled_extent)
+
+    # Apply translation transformation
+    layer.translate = translate
+    translated_extent = np.add(scaled_extent, translate)
+    np.testing.assert_almost_equal(layer._extent_data, extent)
+    np.testing.assert_almost_equal(layer._extent_world, translated_extent)
