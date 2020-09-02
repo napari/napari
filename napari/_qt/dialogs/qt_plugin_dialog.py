@@ -6,7 +6,7 @@ from napari_plugin_engine.dist import standard_metadata
 from napari_plugin_engine.exceptions import PluginError
 from pkg_resources import parse_version
 from qtpy.QtCore import QProcess, QProcessEnvironment, QSize, Qt, Slot
-from qtpy.QtGui import QFont, QFontMetrics, QMovie
+from qtpy.QtGui import QFont, QMovie
 from qtpy.QtWidgets import (
     QCheckBox,
     QDialog,
@@ -31,6 +31,7 @@ from ...plugins.pypi import (
 from ...utils._appdirs import user_plugin_dir, user_site_packages
 from ...utils.misc import running_as_bundled_app
 from ..qthreading import create_worker
+from ..widgets.qt_eliding_label import ElidingLabel
 from ..widgets.qt_plugin_sorter import QtPluginSorter
 from .qt_plugin_report import QtPluginErrReporter
 
@@ -92,24 +93,6 @@ class Installer:
         if self._output_widget:
             self._output_widget.clear()
         self.process.start()
-
-
-class ElidingLabel(QLabel):
-    def __init__(self, text='', parent=None):
-        super().__init__(parent)
-        self._text = text
-        self.fm = QFontMetrics(self.font())
-
-    def setText(self, txt):
-        self._text = txt
-        short = self.fm.elidedText(self._text, Qt.ElideRight, self.width())
-        super().setText(short)
-
-    def resizeEvent(self, rEvent):
-        width = rEvent.size().width()
-        short = self.fm.elidedText(self._text, Qt.ElideRight, width)
-        super().setText(short)
-        rEvent.accept()
 
 
 class PluginListItem(QFrame):

@@ -1,6 +1,26 @@
 from qtpy.QtCore import QPoint, QRect, QSize, Qt
 from qtpy.QtGui import QFontMetrics, QPainter, QTextLayout
-from qtpy.QtWidgets import QFrame, QWidget
+from qtpy.QtWidgets import QFrame, QLabel, QWidget
+
+
+class ElidingLabel(QLabel):
+    """A single-line eliding QLabel."""
+
+    def __init__(self, text='', parent=None):
+        super().__init__(parent)
+        self._text = text
+        self.fm = QFontMetrics(self.font())
+
+    def setText(self, txt):
+        self._text = txt
+        short = self.fm.elidedText(self._text, Qt.ElideRight, self.width())
+        super().setText(short)
+
+    def resizeEvent(self, rEvent):
+        width = rEvent.size().width()
+        short = self.fm.elidedText(self._text, Qt.ElideRight, width)
+        super().setText(short)
+        rEvent.accept()
 
 
 class MultilineElidedLabel(QFrame):

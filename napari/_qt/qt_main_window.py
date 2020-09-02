@@ -28,7 +28,6 @@ from ..utils.theme import template
 from .dialogs.qt_about import QtAbout
 from .dialogs.qt_plugin_dialog import QtPluginDialog
 from .dialogs.qt_plugin_report import QtPluginErrReporter
-from .dialogs.qt_plugin_table import QtPluginTable
 from .qt_viewer import QtViewer
 from .tracing.qt_debug_menu import DebugMenu
 from .utils import QImg2array
@@ -266,17 +265,10 @@ class Window:
         """Add 'Plugins' menu to app menubar."""
         self.plugins_menu = self.main_menu.addMenu('&Plugins')
 
-        list_plugins_action = QAction(
-            "List Installed Plugins...", self._qt_window
-        )
-        list_plugins_action.setStatusTip('List installed plugins')
-        list_plugins_action.triggered.connect(self._show_plugin_list)
-        self.plugins_menu.addAction(list_plugins_action)
-
         pip_install_action = QAction(
             "Install/Uninstall Package(s)...", self._qt_window
         )
-        pip_install_action.triggered.connect(self._show_pip_install_dialog)
+        pip_install_action.triggered.connect(self._show_plugin_install_dialog)
         self.plugins_menu.addAction(pip_install_action)
 
         order_plugin_action = QAction("Plugin Call Order...", self._qt_window)
@@ -291,10 +283,6 @@ class Window:
         report_plugin_action.triggered.connect(self._show_plugin_err_reporter)
         self.plugins_menu.addAction(report_plugin_action)
 
-    def _show_plugin_list(self, plugin_manager=None):
-        """Show dialog with a table of installed plugins and metadata."""
-        QtPluginTable(self._qt_window).exec_()
-
     def _show_plugin_sorter(self):
         """Show dialog that allows users to sort the call order of plugins."""
         plugin_sorter = QtPluginSorter(parent=self._qt_window)
@@ -305,7 +293,7 @@ class Window:
                 plugin_sorter, name='Plugin Sorter', area="right"
             )
 
-    def _show_pip_install_dialog(self):
+    def _show_plugin_install_dialog(self):
         """Show dialog that allows users to sort the call order of plugins."""
 
         self.plugin_dialog = QtPluginDialog(self._qt_window)
