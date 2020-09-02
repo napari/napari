@@ -31,6 +31,8 @@ class QtBaseImageControls(QtLayerControls):
         Label text of colorbar widget.
     colormapComboBox : qtpy.QtWidgets.QComboBox
         Dropdown widget for selecting the layer colormap.
+    colormapLabel: qtpy.QtWidgets.QLabel
+        The label(s) for the layer colormap
     contrastLimitsSlider : qtpy.QtWidgets.QHRangeSlider
         Contrast range slider widget.
     gammaSlider : qtpy.QtWidgets.QSlider
@@ -49,10 +51,15 @@ class QtBaseImageControls(QtLayerControls):
 
         comboBox = QComboBox(self)
         comboBox.setObjectName("colormapComboBox")
-        comboBox.addItems(self.layer.colormaps)
+        if layer.rgb is False:
+            comboBox.addItems(self.layer.colormaps)
+        if layer.rgb is True:
+            rgbLayer = "RGB"
+            comboBox.addItem(rgbLayer)
         comboBox._allitems = set(self.layer.colormaps)
         comboBox.activated[str].connect(self.changeColor)
         self.colormapComboBox = comboBox
+        self.colormapLabel = QLabel('colormap:')
 
         # Create contrast_limits slider
         self.contrastLimitsSlider = QHRangeSlider(
