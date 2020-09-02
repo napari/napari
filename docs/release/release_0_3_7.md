@@ -23,7 +23,10 @@ We also have an also-experimental, work-in-progress asynchronous rendering
 mode (#1565, #1583) to make the viewer interactivity smoother with slow-loading
 datasets, such as those backed by remote data or by dask computation. To opt
 into this, set the NAPARI_ASYNC environment variable to anything other than
-"0".
+"0". 3D rendering and multiscale are currently not supported. 3D rendering and
+multiscale are currently not supported. If you encounter an issue please check
+the [async label](https://github.com/napari/napari/labels/async) on the
+repository to see if your issue is known. 
 
 Scrolling through n-dimensional datasets has become a bit more convenient:
 scroll to zoom, as always, but hold Ctrl (Cmd on Mac) while scrolling to move
@@ -91,7 +94,7 @@ for the full list! Thank you to everyone who contributed to this release!
 ## 10 authors added to this release (alphabetical)
 
 - [Dan Allan](https://github.com/napari/napari/commits?author=danielballan) - @danielballan
-- [Draga Doncila](https://github.com/napari/napari/commits?author=DragaDoncila) - @DragaDoncila
+- [Draga Doncila Pop](https://github.com/napari/napari/commits?author=DragaDoncila) - @DragaDoncila
 - [Grzegorz Bokota](https://github.com/napari/napari/commits?author=Czaki) - @Czaki
 - [Hector](https://github.com/napari/napari/commits?author=hectormz) - @hectormz
 - [Jordão Bragantini](https://github.com/napari/napari/commits?author=JoOkuma) - @JoOkuma
@@ -105,7 +108,7 @@ for the full list! Thank you to everyone who contributed to this release!
 ## 12 reviewers added to this release (alphabetical)
 
 - [Davis Bennett](https://github.com/napari/napari/commits?author=d-v-b) - @d-v-b
-- [Draga Doncila](https://github.com/napari/napari/commits?author=DragaDoncila) - @DragaDoncila
+- [Draga Doncila Pop](https://github.com/napari/napari/commits?author=DragaDoncila) - @DragaDoncila
 - [Fedor Korotkov](https://github.com/napari/napari/commits?author=fkorotkov) - @fkorotkov
 - [Genevieve Buckley](https://github.com/napari/napari/commits?author=GenevieveBuckley) - @GenevieveBuckley
 - [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - @jni
