@@ -23,10 +23,9 @@ We also have an also-experimental, work-in-progress asynchronous rendering
 mode (#1565, #1583) to make the viewer interactivity smoother with slow-loading
 datasets, such as those backed by remote data or by dask computation. To opt
 into this, set the NAPARI_ASYNC environment variable to anything other than
-"0". 3D rendering and multiscale are currently not supported. 3D rendering and
-multiscale are currently not supported. If you encounter an issue please check
-the [async label](https://github.com/napari/napari/labels/async) on the
-repository to see if your issue is known. 
+"0". 3D rendering and multiscale are currently not supported. If you encounter
+an issue please check the [async label](https://github.com/napari/napari/labels/async)
+on the repository to see if your issue is known. 
 
 Scrolling through n-dimensional datasets has become a bit more convenient:
 scroll to zoom, as always, but hold Ctrl (Cmd on Mac) while scrolling to move
