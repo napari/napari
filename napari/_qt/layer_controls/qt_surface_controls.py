@@ -36,7 +36,7 @@ class QtSurfaceControls(QtBaseImageControls):
         self.grid_layout.addWidget(self.contrastLimitsSlider, 1, 1)
         self.grid_layout.addWidget(QLabel('gamma:'), 2, 0)
         self.grid_layout.addWidget(self.gammaSlider, 2, 1)
-        self.grid_layout.addWidget(QLabel('colormap:'), 3, 0)
+        self.grid_layout.addWidget(self.colormapLabel, 3, 0)
         self.grid_layout.addLayout(colormap_layout, 3, 1)
         self.grid_layout.addWidget(QLabel('blending:'), 4, 0)
         self.grid_layout.addWidget(self.blendComboBox, 4, 1)
