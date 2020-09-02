@@ -153,8 +153,11 @@ class ChunkLoader:
         if not self.synchronous and not request.in_memory:
             return False  # load async
 
-        # Load synchronously.
-        request.load_chunks()
+        request.load_chunks()  # Load sync.
+
+        info = self._get_layer_info(request)
+        info.stats.on_load_finished(request, sync=True)
+
         return True
 
     def _submit_async(self, request: ChunkRequest) -> None:
@@ -282,6 +285,8 @@ class ChunkLoader:
 
         if layer is None:
             return  # Ignore chunks since layer was deleted.
+
+        info.stats.on_load_finished(request, sync=False)
 
         # Fire event to tell QtChunkReceiver to forward this chunk to its
         # layer in the GUI thread.
