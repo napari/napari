@@ -89,6 +89,7 @@ for the full list! Thank you to everyone who contributed to this release!
 - Revert "CI cache reset" (#1551)
 - Add fingerprint script to pip caching (#1553)
 - Add Shapes benchmarks for interactions (#1563)
+- Exclude test_bundle.py from distribution (#1604)
 
 ## 10 authors added to this release (alphabetical)
 
