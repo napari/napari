@@ -116,6 +116,7 @@ class QtImageControls(QtBaseImageControls):
 
         if layer.rgb is True:
             self.colormapComboBox.setDisabled(True)
+            colormap_layout.itemAt(0).widget().setVisible(False)
 
     def changeInterpolation(self, text):
         """Change interpolation mode for image display.
