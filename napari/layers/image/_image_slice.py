@@ -88,14 +88,19 @@ class ImageSlice:
         """
         LOGGER.debug("ImageSlice.load_chunk: %s", request.key)
 
+        if self.current_key is not None and self.current_key == request.key:
+            # We are already showing this slice, or its being loaded
+            # asynchronously.
+            return None
+
         # Now "showing" this slice, even if it hasn't loaded yet.
         self.current_key = request.key
         self.loaded = False
 
-        # This will return a satisfied request if ChunkLoader is doing
-        # synchronous loading or the chunk was in the cache. If it returns
-        # None that means a request was queued and it will be loaded in a
-        # worker thread or process.
+        # This will return a satisfied request if the load was synchronous
+        # or the chunk was in the cache. If it returns None that means a
+        # request was queued and it will be loaded in a worker thread or
+        # process.
         return chunk_loader.load_chunk(request)
 
     def on_chunk_loaded(self, request: ChunkRequest) -> bool:
