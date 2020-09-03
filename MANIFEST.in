@@ -1,6 +1,5 @@
 include LICENSE
-recursive-include napari _vendor/*.py
-recursive-include napari _tests/*.py
+recursive-include napari _tests/*.py _vendor/*.py
 recursive-include napari/resources *.png *.jpeg *.jpg *.svg *.qss
 exclude napari/resources/_qt_resources*.py
 include napari/utils/colormaps/matplotlib_cmaps.txt
