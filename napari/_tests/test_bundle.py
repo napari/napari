@@ -1,9 +1,3 @@
-"""
-NOTE:
-
-This file is NOT included in the distribution.  Tests included here will only
-be run in development environments.
-"""
 import configparser
 from pathlib import Path
 
