@@ -25,7 +25,7 @@ datasets, such as those backed by remote data or by dask computation. To opt
 into this, set the NAPARI_ASYNC environment variable to anything other than
 "0". 3D rendering and multiscale are currently not supported. If you encounter
 an issue please check the [async label](https://github.com/napari/napari/labels/async)
-on the repository to see if your issue is known. 
+on the repository to see if your issue is known.
 
 Scrolling through n-dimensional datasets has become a bit more convenient:
 scroll to zoom, as always, but hold Ctrl (Cmd on Mac) while scrolling to move
@@ -90,14 +90,16 @@ for the full list! Thank you to everyone who contributed to this release!
 - Add fingerprint script to pip caching (#1553)
 - Add Shapes benchmarks for interactions (#1563)
 - Exclude test_bundle.py from distribution (#1604)
+- Skip bundle test when setup.cfg is missing (#1608)
 
-## 10 authors added to this release (alphabetical)
+## 11 authors added to this release (alphabetical)
 
 - [Dan Allan](https://github.com/napari/napari/commits?author=danielballan) - @danielballan
 - [Draga Doncila Pop](https://github.com/napari/napari/commits?author=DragaDoncila) - @DragaDoncila
 - [Grzegorz Bokota](https://github.com/napari/napari/commits?author=Czaki) - @Czaki
 - [Hector](https://github.com/napari/napari/commits?author=hectormz) - @hectormz
 - [Jordão Bragantini](https://github.com/napari/napari/commits?author=JoOkuma) - @JoOkuma
+- [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - @jni
 - [Kevin Yamauchi](https://github.com/napari/napari/commits?author=kevinyamauchi) - @kevinyamauchi
 - [Nicholas Sofroniew](https://github.com/napari/napari/commits?author=sofroniewn) - @sofroniewn
 - [Philip Winston](https://github.com/napari/napari/commits?author=pwinston) - @pwinston
