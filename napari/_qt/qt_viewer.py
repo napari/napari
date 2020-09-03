@@ -26,7 +26,7 @@ from ..utils.key_bindings import components_to_key_combo
 from ..utils.theme import template
 from .dialogs.qt_about_key_bindings import QtAboutKeyBindings
 from .tracing.qt_performance import QtPerformance
-from .utils import circle_pixmap, square_pixmap
+from .utils import QImg2array, circle_pixmap, square_pixmap
 from .widgets.qt_dims import QtDims
 from .widgets.qt_layerlist import QtLayerList
 from .widgets.qt_viewer_buttons import QtLayerButtons, QtViewerButtons
@@ -362,7 +362,7 @@ class QtViewer(QSplitter):
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
-        img = self.canvas.render()
+        img = QImg2array(self.canvas.native.grabFramebuffer())
         if path is not None:
             imsave(path, img)  # scikit-image imsave method
         return img
