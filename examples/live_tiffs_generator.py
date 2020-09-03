@@ -1,6 +1,8 @@
 """
-Display one 4-D image layer using the add_image API
+Simulation of microscope acquisition. This code generates time series tiffs in a output directory.
 """
+
+
 import os
 import sys
 import time

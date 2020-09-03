@@ -1,3 +1,8 @@
+"""
+Loads and Displays tiffs as they get generated in the specific directory.
+Trying to simulate the live display of data as it gets acquired by microscope. 
+"""
+
 import os
 import sys
 import time
@@ -8,12 +13,12 @@ import dask.array as da
 from tifffile import imread
 import napari
 from napari.qt import thread_worker
-# from qtpy.QtCore import QFileSystemWatcher
 
 
 with napari.gui_qt():
     viewer = napari.Viewer(ndisplay=3)
-    path = sys.argv[1] if len(sys.argv) > 1 else '.'
+    # pass a directory to monitor or it will monitor current directory.
+    path = sys.argv[1] if len(sys.argv) > 1 else '.' 
     path = os.path.abspath(path)
     end_of_experiment = 'final.log'
 
@@ -63,7 +68,7 @@ with napari.gui_qt():
                 files_to_process = current_files - processed_files
             
             for p in sorted(files_to_process, key=alphanumeric_key):
-                yield delayed(imread)(os.path.join(path, p)) #os.path.join(path, p)
+                yield delayed(imread)(os.path.join(path, p))
             else:
                 yield
 
