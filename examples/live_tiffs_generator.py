@@ -30,6 +30,8 @@ def main(argv=sys.argv[1:]):
         ).astype(np.uint8)
         tifffile.imwrite(os.path.join(outdir, f'{i}.tiff'), curr_vol, compress=6)
         time.sleep(sleep_time)
+    final_file = open(os.path.join(outdir, 'final.log'), 'w')
+    final_file.close()
 
 if __name__ == '__main__':
     main()
