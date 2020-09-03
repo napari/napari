@@ -55,7 +55,7 @@ class ChunkKey:
         )
 
     def __eq__(self, other):
-        return self.key == other.key
+        return np.all(self.key == other.key)
 
 
 class ChunkRequest:
