@@ -1,3 +1,5 @@
+"""guess_rgb, guess_multiscale, guess_labels.
+"""
 import numpy as np
 
 

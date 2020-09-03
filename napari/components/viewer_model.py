@@ -82,7 +82,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self.dims.events.camera.connect(self.reset_view)
         self.dims.events.ndisplay.connect(self._update_layers)
         self.dims.events.order.connect(self._update_layers)
-        self.dims.events.axis.connect(self._update_layers)
+        self.dims.events.current_step.connect(self._update_layers)
         self.layers.events.changed.connect(self._update_active_layer)
         self.layers.events.changed.connect(self._update_grid)
         self.layers.events.changed.connect(self._on_layers_change)
@@ -322,28 +322,10 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             List of layers to update. If none provided updates all.
         """
         layers = layers or self.layers
-
         for layer in layers:
-            # adjust the order of the global dims based on the number of
-            # dimensions that a layer has - for example a global order of
-            # [2, 1, 0, 3] -> [0, 1] for a layer that only has two dimensions
-            # or -> [1, 0, 2] for a layer with three as that corresponds to
-            # the relative order of the last two and three dimensions
-            # respectively
-            offset = self.dims.ndim - layer.dims.ndim
-            order = np.array(self.dims.order)
-            if offset <= 0:
-                order = list(range(-offset)) + list(order - offset)
-            else:
-                order = list(order[order >= offset] - offset)
-            layer.dims.order = order
-            layer.dims.ndisplay = self.dims.ndisplay
-
-            # Update the point values of the layers for the dimensions that
-            # the layer has
-            for axis in range(layer.dims.ndim):
-                point = self.dims.point[axis + offset]
-                layer.dims.set_point(axis, point)
+            layer._slice_dims(
+                self.dims.point, self.dims.ndisplay, self.dims.order
+            )
 
     def _toggle_theme(self):
         """Switch to next theme in list of themes

@@ -4,7 +4,6 @@ from typing import Any, Callable, Dict, List, Tuple, Type, Union
 
 import dask.array as da
 import numpy as np
-import vispy.color
 
 try:
     import zarr
@@ -34,9 +33,6 @@ ExcInfo = Union[
     Tuple[None, None, None],
 ]
 
-# Converts a raw image to a displayable one.
-ImageConverter = Callable[[ArrayLike], ArrayLike]
-
 
 def image_reader_to_layerdata_reader(
     func: Callable[[PathLike], ArrayLike]
@@ -62,11 +58,3 @@ def image_reader_to_layerdata_reader(
         return [(result,)]
 
     return reader_function
-
-
-ValidColormapArg = Union[
-    str,
-    vispy.color.Colormap,
-    Tuple[str, vispy.color.Colormap],
-    Dict[str, vispy.color.Colormap],
-]
