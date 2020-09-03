@@ -466,7 +466,7 @@ def expand_upper_triangular(striu):
 
 
 def embed_in_identity_matrix(matrix, ndim):
-    """Embed an MxM matrix in a larger NxN identity matrix.
+    """Embed an MxM matrix in a larger NxN identity matrix .
 
     Parameters
     ----------
