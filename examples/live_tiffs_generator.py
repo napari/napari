@@ -13,7 +13,7 @@ import tifffile
 
 parser = argparse.ArgumentParser()
 parser.add_argument('outdir', help='output directory for tiffs')
-parser.add_argument('--sleep-time', help='how long to sleep between volumes, in seconds', default=1)
+parser.add_argument('--sleep-time', help='how long to sleep between volumes, in seconds', type=float, default=1.0)
 parser.add_argument('-n', help='total number of volumes', default=100)
 
 
