@@ -88,6 +88,7 @@ ignore = [
   "codecov.yml",
   "Makefile",
   "napari/_version.py",  # added during build by setuptools_scm
+  "tools/minreq.py",
 ]
 
 [tool.isort]
