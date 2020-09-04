@@ -35,7 +35,7 @@ def pin_config_minimum_requirements(config_filename):
 
 
 if __name__ == '__main__':
-    if os.environ['MIN_REQ'] == '1':
+    if os.environ.get('MIN_REQ', '') == '1':
         # find setup.cfg
         config_filename = os.path.join(
             os.path.dirname(__file__), "..", "setup.cfg"

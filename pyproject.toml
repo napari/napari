@@ -75,6 +75,7 @@ exclude = '''
     | vendored
   )/
   | napari/resources/qt.py
+  | tools/minreq.py
 )
 '''
 
