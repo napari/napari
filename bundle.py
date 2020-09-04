@@ -65,6 +65,12 @@ def patch_toml():
                 if r.startswith(_base):
                     requirements.remove(r)
                     break
+            if _base.lower().startswith('pyqt5'):
+                try:
+                    i = next(x for x in requirements if x.startswith('PySide'))
+                    requirements.remove(i)
+                except StopIteration:
+                    pass
             requirements.append(item)
 
     toml['tool']['briefcase']['app'][APP]['requires'] = requirements
