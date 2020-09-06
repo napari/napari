@@ -38,11 +38,14 @@ class LoadStats:
         sync : bool
             True if the load was synchronous.
         """
-        # Use the time to load all chunks combined.
-        load_ms = request.timers['load_chunks'].duration_ms
+        try:
+            # Use the time to load all chunks combined.
+            load_ms = request.timers['load_chunks'].duration_ms
 
-        # Update our StatWindow.
-        self.window_ms.add(load_ms)
+            # Update our StatWindow.
+            self.window_ms.add(load_ms)
+        except KeyError:
+            return  # there was no 'load_chunks" timer...
 
 
 class LayerInfo:
