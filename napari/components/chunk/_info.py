@@ -2,10 +2,46 @@
 """
 import logging
 import weakref
+from enum import Enum
 
 from ...layers.base import Layer
+from ._request import ChunkRequest
+from ._utils import StatWindow
 
 LOGGER = logging.getLogger("napari.async")
+
+
+class LoadType(Enum):
+    """Tell the ChunkLoader how it should load this layer."""
+
+    AUTO = 0  # Decide based on load speed.
+    SYNC = 1  # Always load synchronously.
+    ASYNC = 2  # Always load asynchronously.
+
+
+class LoadStats:
+    """Statistics about async/async loads for one layer."""
+
+    WINDOW_SIZE = 10  # Calculate states based on this many recent load.
+
+    def __init__(self):
+        self.window_ms: StatWindow = StatWindow(self.WINDOW_SIZE)
+
+    def on_load_finished(self, request: ChunkRequest, sync: bool) -> None:
+        """Record stats on this request that was just loaded.
+
+        Parameters
+        ----------
+        request : ChunkRequest
+            The request that was just loaded.
+        sync : bool
+            True if the load was synchronous.
+        """
+        # Use the time to load all chunks combined.
+        load_ms = request.timers['load_chunks'].duration_ms
+
+        # Update our StatWindow.
+        self.window_ms.add(load_ms)
 
 
 class LayerInfo:
@@ -24,6 +60,8 @@ class LayerInfo:
         Weak reference to the layer.
     load_type : LoadType
         Enum for whether to do auto/sync/async loads.
+    stats : LoadStats
+        Statistics related the loads.
 
     Notes
     -----
@@ -36,6 +74,10 @@ class LayerInfo:
     def __init__(self, layer):
         self.layer_id: int = id(layer)
         self.layer_ref: weakref.ReferenceType = weakref.ref(layer)
+        self.load_type: LoadType = LoadType.AUTO
+        self.auto_sync_ms = 30
+
+        self.stats = LoadStats()
 
     def get_layer(self) -> Layer:
         """Resolve our weakref to get the layer.
@@ -51,3 +93,9 @@ class LayerInfo:
                 "LayerInfo.get_layer: layer %d was deleted", self.layer_id
             )
         return layer
+
+    @property
+    def loads_fast(self) -> bool:
+        """Return True if this layer has been loading very fast."""
+        average = self.stats.window_ms.average
+        return average is not None and average <= self.auto_sync_ms
