@@ -59,6 +59,7 @@ vispy_logger.setLevel(logging.WARNING)
 # by our users and so is deleted below
 from . import _viewer_key_bindings  # noqa: F401
 from ._qt import gui_qt
+from .components.chunk import synchronous_loading
 from .plugins.io import save_layers
 from .utils import _magicgui, sys_info
 from .view_layers import (

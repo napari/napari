@@ -9,6 +9,7 @@ from qtpy.QtWidgets import QApplication
 
 from napari import Viewer, synchronous_loading
 from napari.components import LayerList
+from napari.components.chunk import chunk_loader
 from napari.layers import Image, Labels, Points, Shapes, Vectors
 from napari.plugins._builtins import (
     napari_write_image,
@@ -17,7 +18,6 @@ from napari.plugins._builtins import (
     napari_write_shapes,
 )
 from napari.utils import io
-from napari.utils.chunk import chunk_loader
 
 try:
     from skimage.data import image_fetcher
