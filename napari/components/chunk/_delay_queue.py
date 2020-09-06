@@ -92,7 +92,7 @@ class DelayQueue(threading.Thread):
         submit_time = time.time() + self.delay_seconds
         entry = QueueEntry(request, submit_time)
 
-        if self.lock:
+        with self.lock:
             self.entries.append(entry)
             num_entries = len(self.entries)
 
@@ -112,7 +112,7 @@ class DelayQueue(threading.Thread):
         """
         LOGGER.info("DelayQueue.clear: data_id=%d", data_id)
 
-        if self.lock:
+        with self.lock:
             self.entries[:] = [
                 x for x in self.entries if x.request.key.data_id != data_id
             ]
@@ -158,7 +158,7 @@ class DelayQueue(threading.Thread):
         while True:
             now = time.time()
 
-            if self.lock:
+            with self.lock:
                 seconds = self._submit_due_entries(now)
                 num_entries = len(self.entries)
 
