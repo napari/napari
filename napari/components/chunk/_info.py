@@ -76,7 +76,7 @@ class LayerInfo:
         self.layer_id: int = id(layer)
         self.layer_ref: weakref.ReferenceType = weakref.ref(layer)
         self.load_type: LoadType = LoadType.AUTO
-        self.auto_sync_ms = async_config.auto_async_ms
+        self.auto_sync_ms = async_config.auto_sync_ms
 
         self.stats = LoadStats()
 
@@ -99,4 +99,4 @@ class LayerInfo:
     def loads_fast(self) -> bool:
         """Return True if this layer has been loading very fast."""
         average = self.stats.window_ms.average
-        return average is not None and average <= self.self.auto_sync_ms
+        return average is not None and average <= self.auto_sync_ms

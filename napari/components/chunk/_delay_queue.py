@@ -82,7 +82,7 @@ class DelayQueue(threading.Thread):
         request : ChunkRequest
             Insert this request into the queue.
         """
-        if self.delay_queue_ms == 0:
+        if self.delay_seconds == 0:
             self.submit_func(request)  # Submit with no delay.
             return
 

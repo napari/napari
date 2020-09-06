@@ -7,7 +7,7 @@ import numpy as np
 import pytest
 from qtpy.QtWidgets import QApplication
 
-from napari import Viewer
+from napari import Viewer, synchronous_loading
 from napari.components import LayerList
 from napari.layers import Image, Labels, Points, Shapes, Vectors
 from napari.plugins._builtins import (
@@ -17,6 +17,7 @@ from napari.plugins._builtins import (
     napari_write_shapes,
 )
 from napari.utils import io
+from napari.utils.chunk import chunk_loader
 
 try:
     from skimage.data import image_fetcher
@@ -45,6 +46,9 @@ def pytest_addoption(parser):
     --perfmon-only
         Run only perfmon test.
 
+    --aysnc_only
+        Run only asynchronous tests, not sync ones.
+
     Notes
     -----
     Due to the placement of this conftest.py file, you must specifically name
@@ -65,6 +69,13 @@ def pytest_addoption(parser):
         action="store_true",
         default=False,
         help="run only perfmon tests",
+    )
+
+    parser.addoption(
+        "--async_only",
+        action="store_true",
+        default=False,
+        help="run only asynchronous tests",
     )
 
 
@@ -305,6 +316,27 @@ def irregular_images():
 @pytest.fixture
 def single_tiff():
     return [image_fetcher.fetch('data/multipage.tif')]
+
+
+# Currently we cannot run async and async in the invocation of pytest
+# because we get a segfault for unknown reasons. So for now:
+# "pytest" runs sync_only
+# "pytest napari --async_only" runs async only
+@pytest.fixture(scope="session", autouse=True)
+def configure_loading(request):
+    """Configure async/async loading."""
+    sync_mode = not request.config.getoption("--async_only")
+    with synchronous_loading(sync_mode):
+        yield
+
+
+@pytest.fixture(autouse=True)
+def skip_sync_only(request):
+    """Skip tests depending on our sync/async settings."""
+    async_mode = not chunk_loader.synchronous
+    sync_only_test = request.node.get_closest_marker('sync_only')
+    if async_mode and sync_only_test:
+        pytest.skip("running with --async_only")
 
 
 @pytest.fixture(autouse=True)

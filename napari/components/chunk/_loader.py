@@ -3,6 +3,7 @@
 import logging
 import os
 from concurrent.futures import CancelledError, Future, ThreadPoolExecutor
+from contextlib import contextmanager
 from typing import Dict, List, Optional
 
 from ...types import ArrayLike
@@ -351,6 +352,20 @@ class ChunkLoader:
             del self.layer_map[id(layer)]
         except KeyError:
             pass  # We weren't tracking that layer yet.
+
+
+@contextmanager
+def synchronous_loading(enabled):
+    """Context object to temporarily disable async loading.
+
+    with synchronous_loading(True):
+        layer = Image(data)
+        ... use layer ...
+    """
+    previous = chunk_loader.synchronous
+    chunk_loader.synchronous = enabled
+    yield
+    chunk_loader.synchronous = previous
 
 
 # Global instance
