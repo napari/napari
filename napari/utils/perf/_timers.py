@@ -182,6 +182,7 @@ if USE_PERFMON:
     # The one global instance
     timers = PerfTimers()
 
+    # perf_timer is enabled
     perf_timer = block_timer
 
     def add_instant_event(name: str, **kwargs):
@@ -223,9 +224,7 @@ else:
     def add_counter_event(name: str, **kwargs: Dict[str, float]) -> None:
         pass
 
-    # contextlib.nullcontext does not work with kwargs, so we just
-    # create a do-nothing context object. Not zero overhead but
-    # very small.
+    # perf_timer is disabled. Using contextlib.nullcontext did not work.
     @contextlib.contextmanager
     def perf_timer(name: str, category: Optional[str] = None, **kwargs):
         yield
