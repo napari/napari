@@ -42,10 +42,13 @@ class LabelColorMode(StringEnum):
     AUTO (default) allows color to be set via a hash function with a seed.
 
     DIRECT allows color of each label to be set directly by a color dictionary.
+
+    SELECTED allows only selected labels to be visible
     """
 
     AUTO = auto()
     DIRECT = auto()
+    SELECTED = auto()
 
 
 class LabelBrushShape(StringEnum):
