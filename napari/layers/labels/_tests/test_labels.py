@@ -3,6 +3,7 @@ import pytest
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Labels
+from napari.layers.labels._labels_constants import LabelColorMode
 from napari.utils import Colormap
 
 
@@ -372,6 +373,33 @@ def test_label_color():
 
     col = layer.get_color(1)
     assert len(col) == 4
+
+
+def test_selected_mode_label_color():
+    """Test color of labels in selected color mode"""
+    np.random.seed(0)
+    data = np.random.randint(20, size=(10, 15))
+    layer = Labels(data)
+    original_color = layer.get_color(1)
+
+    layer.color_mode = LabelColorMode.SELECTED
+    original_background_color = layer.get_color(layer._background_label)
+    none_color = layer.get_color(None)
+    layer.selected_label = 1
+
+    # color of selected label has not changed
+    assert np.allclose(layer.get_color(layer.selected_label), original_color)
+
+    current_background_color = layer.get_color(layer._background_label)
+    # color of background is background color
+    assert current_background_color == original_background_color
+
+    # color of all others is none color
+    other_labels = np.unique(layer.data)[2:]
+    other_colors = np.array(
+        list(map(lambda x: layer.get_color(x), other_labels))
+    )
+    assert np.allclose(other_colors, none_color)
 
 
 def test_paint():
