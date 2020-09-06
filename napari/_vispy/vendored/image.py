@@ -288,12 +288,6 @@ class ImageVisual(Visual):
         image : array-like
             The image data.
         """
-        if not self.visible:
-            # Do nothing if we are not visible. Calling asarray below could
-            # be very expensive. We have to make sure it gets called when
-            # we next become visible though.
-            return
-
         data = np.asarray(image)
         if self._data is None or self._data.shape != data.shape:
             self._need_vertex_update = True

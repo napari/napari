@@ -2,7 +2,7 @@
 """
 import contextlib
 import logging
-from typing import Optional, Tuple, Union
+from typing import Optional, Tuple
 
 import numpy as np
 
@@ -15,6 +15,20 @@ LOGGER = logging.getLogger("napari.async")
 
 # We convert slices to tuple for hashing.
 SliceTuple = Tuple[Optional[int], Optional[int], Optional[int]]
+
+
+def _flatten(indices):
+    """Return a flat tuple of integers to represent the indices.
+
+    Slice objects are not hashable, so we convert them.
+    """
+    result = []
+    for x in indices:
+        if isinstance(x, slice):
+            result.extend([x.start, x.stop, x.step])
+        else:
+            result.append(x)
+    return tuple(result)
 
 
 class ChunkKey:
@@ -43,12 +57,15 @@ class ChunkKey:
         self.layer_id = id(layer)
         self.data_id = get_data_id(layer)
         self.data_level = layer._data_level
+        self.indices = indices
 
-        # Slice objects are not hashable, so turn them into tuples.
-        self.indices = tuple(_index_to_tuple(x) for x in indices)
-
-        # All together as one tuple for easy comparison.
-        self.key = (self.layer_id, self.data_id, self.data_level, self.indices)
+        combined = (
+            self.layer_id,
+            self.data_id,
+            self.data_level,
+            _flatten(self.indices),
+        )
+        self.key = hash(combined)
 
     def __str__(self):
         return (
@@ -150,23 +167,3 @@ class ChunkRequest:
             # No thumbnail_source so return the image instead. For single-scale
             # we use the image as the thumbnail_source.
             return self.chunks.get('image')
-
-
-def _index_to_tuple(index: Union[int, slice]) -> Union[int, SliceTuple]:
-    """Get hashable object for the given index.
-
-    Slice is not hashable so we convert slices to tuples.
-
-    Parameters
-    ----------
-    index
-        Integer index or a slice.
-
-    Returns
-    -------
-    Union[int, SliceTuple]
-        Hashable object that can be used for the index.
-    """
-    if isinstance(index, slice):
-        return (index.start, index.stop, index.step)
-    return index

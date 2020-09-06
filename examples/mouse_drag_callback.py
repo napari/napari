@@ -13,7 +13,9 @@ def profile_lines(image, shape_layer):
     profile_data = []
     for line in shape_layer.data:
         profile_data.append(
-            measure.profile_line(image, line[0], line[1]).mean()
+            measure.profile_line(
+                image, line[0], line[1], mode='reflect'
+            ).mean()
         )
     msg = ('profile means: ['
             + ', '.join([f'{d:.2f}' for d in profile_data])
