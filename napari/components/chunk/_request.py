@@ -8,7 +8,7 @@ import numpy as np
 
 from ...layers.base.base import Layer
 from ...types import ArrayLike, Dict
-from ...utils.perf import perf_timer
+from ...utils.perf import block_timer
 from ._utils import get_data_id
 
 LOGGER = logging.getLogger("napari.async")
@@ -127,7 +127,7 @@ class ChunkRequest:
             The name of the timer.
 
         """
-        with perf_timer(name) as event:
+        with block_timer(name) as event:
             yield event
         self.timers[name] = event
 
