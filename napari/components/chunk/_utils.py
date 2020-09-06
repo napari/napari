@@ -1,5 +1,7 @@
-"""ChunkLoader related utilities.
+"""ChunkLoader utilities.
 """
+from typing import Optional
+
 import numpy as np
 
 
@@ -26,10 +28,12 @@ def get_data_id(layer) -> int:
 
 
 class StatWindow:
-    """Maintain an average value over some rolling window.
+    """Average value over a rolling window.
 
-    Adding values is very efficient (once the window is full) but
-    calculating the average is O(size), although using numpy.
+    Notes
+    -----
+    Inserting values once the window is full is O(1). However calculating
+    the average is O(N) although using numpy.
 
     Parameters
     ----------
@@ -40,7 +44,10 @@ class StatWindow:
     def __init__(self, size: int):
         self.size = size
         self.values = np.array([])  # float64 array
-        self.index = 0  # insert values here once full
+
+        # Once the window is full we insert values at this index, the
+        # index loops through the slots circularly.
+        self.index = 0
 
     def add(self, value: float):
         """Add one value to the window.
@@ -51,18 +58,22 @@ class StatWindow:
             Add this value to the window.
         """
         if len(self.values) < self.size:
-            # This isn't super efficient but we're optimizing for the case
-            # when the array is full and we are just poking in values.
+            # Not super efficient but once window is full we are O(1).
             self.values = np.append(self.values, value)
         else:
-            # Array is full, rotate through poking in one value at a time,
-            # this should be very fast.
+            # Window is full, poke values in circularly.
             self.values[self.index] = value
             self.index = (self.index + 1) % self.size
 
     @property
-    def average(self):
-        """Return the average of all values in the window."""
+    def average(self) -> Optional[float]:
+        """Return the average of all the values in the window.
+
+        Returns
+        -------
+        float
+            The average of all values in the window.
+        """
         if len(self.values) == 0:
-            return 0  # Just say zero, really there is no value.
-        return np.average(self.values)
+            return None
+        return float(np.average(self.values))

@@ -1,4 +1,4 @@
-"""LayerInfo class.
+"""LoadType, LoadStats and LayerInfo.
 """
 import logging
 import weakref
@@ -11,97 +11,23 @@ from ._utils import StatWindow
 LOGGER = logging.getLogger("napari.async")
 
 
-def _mbits(num_bytes, duration_ms) -> float:
-    """Return Mbit/s."""
-    mbits = (num_bytes * 8) / (1024 * 1024)
-    seconds = duration_ms / 1000
-    if seconds == 0:
-        return 0
-    return mbits / seconds
-
-
 class LoadType(Enum):
-    """How ChunkLoader should load this layer.
+    """Tell the ChunkLoader how it should load this layer."""
 
-    AUTO means let the ChunkLoader decide, it will load the layer sync or async
-    depending on how fast it loads. Otherwise we can lock a layer to SYNC
-    or ASYNC.
-    """
-
-    AUTO = 0
-    SYNC = 1
-    ASYNC = 2
-
-
-class LoadCounts:
-    """Cumulative stats for a layer."""
-
-    def __init__(self):
-        self.loads: int = 0
-        self.chunks: int = 0
-        self.bytes: int = 0
+    AUTO = 0  # Decide based on load speed.
+    SYNC = 1  # Always load synchronously.
+    ASYNC = 2  # Always load asynchronously.
 
 
 class LoadStats:
     """Statistics about async/async loads for one layer."""
 
-    # Keep full details of this many recent loads.
-    NUM_RECENT_LOADS = 10
-
-    # Window size for timing statistics. We use a simple average over the
-    # window so it doesn't jump around as much as using the last value.
-    WINDOW_SIZE = 10
-
-    # Consider loads that takes this or less to be "fast", which will lead
-    # us to load the layer sync if the type is LoadType.AUTO.
-    MAX_FAST_LOAD_MS = 30
+    WINDOW_SIZE = 10  # Calculate states based on this many recent load.
 
     def __init__(self):
-        self.counts: LoadCounts = LoadCounts()
-
-        # Keep running averages of load time and size.
         self.window_ms: StatWindow = StatWindow(self.WINDOW_SIZE)
-        self.window_bytes: StatWindow = StatWindow(self.WINDOW_SIZE)
 
-        # Keep most recent NUM_RECENT_LOADS loads
-        self.recent_loads: list = []
-
-    @property
-    def mbits(self) -> float:
-        """Return Mbit/second."""
-        return _mbits(self.window_bytes.average, self.window_ms.average)
-
-    @property
-    def loads_fast(self) -> bool:
-        """Return True if this layer has been loading very fast."""
-        avg = self.window_ms.average
-
-        # If average is zero there have been no loads yet.
-        return avg > 0 and avg <= self.MAX_FAST_LOAD_MS
-
-    @property
-    def recent_load_str(self) -> str:
-        """Return string describing the sync/async nature of recent loads.
-
-        Returns
-        -------
-        str
-            Return "sync", "async" or "mixed".
-        """
-        num_sync = num_async = 0
-        for load in self.recent_loads:
-            if load.sync:
-                num_sync += 1
-            else:
-                num_async += 1
-
-        if num_async == 0:
-            return "sync"
-        if num_sync == 0:
-            return "async"
-        return "mixed"
-
-    def on_load_finished(self, request: ChunkRequest, sync: bool):
+    def on_load_finished(self, request: ChunkRequest, sync: bool) -> None:
         """Record stats on this request that was just loaded.
 
         Parameters
@@ -111,49 +37,11 @@ class LoadStats:
         sync : bool
             True if the load was synchronous.
         """
-        # Record the number of loads and chunks.
-        self.counts.loads += 1
-        self.counts.chunks += request.num_chunks
-
-        # Increment total bytes loaded.
-        num_bytes = request.num_bytes
-        self.counts.bytes += num_bytes
-
-        # Time to load all chunks.
+        # Use the time to load all chunks combined.
         load_ms = request.timers['load_chunks'].duration_ms
 
-        # Update our StatWindows.
-        self.window_bytes.add(num_bytes)
+        # Update our StatWindow.
         self.window_ms.add(load_ms)
-
-        # Add LoadInfo, keep only NUM_RECENT_LOADS of them.
-        load_info = LoadInfo(num_bytes, load_ms, sync=sync)
-        keep = self.NUM_RECENT_LOADS - 1
-        self.recent_loads = self.recent_loads[-keep:] + [load_info]
-
-
-class LoadInfo:
-    """Information about the load of one request.
-
-    Parameters
-    ----------
-    num_bytes : int
-        How big was this load.
-    duration_ms : float
-        How long did this load take in milliseconds.
-    sync : bool
-        True if the load was synchronous.
-    """
-
-    def __init__(self, num_bytes: int, duration_ms: float, sync: bool):
-        self.num_bytes = num_bytes
-        self.duration_ms = duration_ms
-        self.sync = sync
-
-    @property
-    def mbits(self) -> float:
-        """Return Mbits/second."""
-        return _mbits(self.num_bytes, self.duration_ms)
 
 
 class LayerInfo:
@@ -170,13 +58,22 @@ class LayerInfo:
         The id of the layer.
     layer_ref : weakref
         Weak reference to the layer.
+    load_type : LoadType
+        Enum for whether to do auto/sync/async loads.
+    stats : LoadStats
+        Statistics related the loads.
 
     Notes
     -----
-    We store a weak reference because an in-progress request should not prevent
-    a layer from being deleted. Meanwhile once a request has finished, we can
-    de-reference to make sure the layer still exists.
+    We store a weak reference because we do not want an in-progress request
+    to prevent a layer from being deleted. Meanwhile, once a request has
+    finished, we can de-reference the weakref to make sure the layer was
+    note deleted during the load process.
     """
+
+    # If a load takes MAX_FAST_LOAD_MS or less, it's considered "fast" and
+    # if the layer is LoadType.AUTO we might switch to sync loads.
+    MAX_FAST_LOAD_MS = 30
 
     def __init__(self, layer):
         self.layer_id: int = id(layer)
@@ -198,3 +95,9 @@ class LayerInfo:
                 "LayerInfo.get_layer: layer %d was deleted", self.layer_id
             )
         return layer
+
+    @property
+    def loads_fast(self) -> bool:
+        """Return True if this layer has been loading very fast."""
+        average = self.stats.window_ms.average
+        return average is not None and average <= self.MAX_FAST_LOAD_MS

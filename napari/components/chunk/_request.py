@@ -154,16 +154,6 @@ class ChunkRequest:
             self.chunks[key] = array.transpose(order)
 
     @property
-    def num_chunks(self) -> int:
-        """Return the number of chunks in this request."""
-        return len(self.chunks)
-
-    @property
-    def num_bytes(self) -> int:
-        """Return the number of bytes that were loaded."""
-        return sum(array.nbytes for array in self.chunks.values())
-
-    @property
     def image(self):
         """The image chunk if we have one or None."""
         return self.chunks.get('image')
