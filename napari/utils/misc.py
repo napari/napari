@@ -27,6 +27,28 @@ def running_as_bundled_app() -> bool:
     return importlib_metadata.metadata("napari").get("App-ID") is not None
 
 
+def in_jupyter() -> bool:
+    """Return true if we're running in jupyter notebook/lab or qtconsole."""
+    try:
+        from IPython import get_ipython
+
+        return get_ipython().__class__.__name__ == 'ZMQInteractiveShell'
+    except Exception:
+        pass
+    return False
+
+
+def in_ipython() -> bool:
+    """Return true if we're running in an IPython interactive shell."""
+    try:
+        from IPython import get_ipython
+
+        return get_ipython().__class__.__name__ == 'TerminalInteractiveShell'
+    except Exception:
+        pass
+    return False
+
+
 def str_to_rgb(arg):
     """Convert an rgb string 'rgb(x,y,z)' to a list of ints [x,y,z].
     """

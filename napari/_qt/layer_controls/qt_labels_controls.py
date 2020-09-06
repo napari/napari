@@ -327,6 +327,7 @@ class QtLabelsControls(QtLayerControls):
         new_mode : str
             AUTO (default) allows color to be set via a hash function with a seed.
             DIRECT allows color of each label to be set directly by a color dictionary.
+            SELECTED allows only selected labels to be visible.
         """
         self.layer.color_mode = new_mode
 
@@ -411,7 +412,7 @@ class QtLabelsControls(QtLayerControls):
             index = self.colorModeComboBox.findText(
                 self.layer.color_mode, Qt.MatchFixedString
             )
-            self.blendComboBox.setCurrentIndex(index)
+            self.colorModeComboBox.setCurrentIndex(index)
 
     def _on_brush_shape_change(self, event=None):
         """Receive brush shape change event and update dropdown menu.
