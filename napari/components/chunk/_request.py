@@ -8,7 +8,7 @@ import numpy as np
 
 from ...layers.base.base import Layer
 from ...types import ArrayLike, Dict
-from ...utils.perf import perf_timer
+from ...utils.perf import block_timer
 from ._utils import get_data_id
 
 LOGGER = logging.getLogger("napari.async")
@@ -115,19 +115,13 @@ class ChunkRequest:
     def chunk_timer(self, name):
         """Time a block of code and save the PerfEvent in self.timers.
 
-        Whether perfmon is running or not, we want to time the loads to
-        report statistics and to support auto-async. We use perf_timer and
-        PerfEvent rather than roll our own totally separate timing code. So
-        we call perf_timer but then we manually save the event in
-        self.timers.
-
         Parameters
         ----------
         name : str
             The name of the timer.
 
         """
-        with perf_timer(name) as event:
+        with block_timer(name) as event:
             yield event
         self.timers[name] = event
 
