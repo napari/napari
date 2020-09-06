@@ -129,9 +129,61 @@ class PerfTimers:
             self.trace_file = None
 
 
+@contextlib.contextmanager
+def block_timer(
+    name: str,
+    category: Optional[str] = None,
+    print_time: bool = False,
+    **kwargs,
+):
+    """Time a block of code.
+
+    block_timer can be used when perfmon is disabled. Use perf_timer instead
+    if you want your time to do nothing when perfmon is disabled.
+
+    Notes
+    -----
+    Most of the time you should use the perfmon config file to monkey-patch
+    this timer into methods an functions. Then you do not need to use
+    block_timer or perf_timer at all.
+
+    Parameters
+    ----------
+    name : str
+        The name of this timer.
+    category : str
+        Comma separated categories such has "render,update".
+    **kwargs : dict
+        Additional keyword arguments for the "args" field of the event.
+
+    Example
+    -------
+    with block_timer("draw") as event:
+        draw_stuff()
+    print(event.duration_ms)
+    """
+    start_ns = perf_counter_ns()
+
+    # Intially we don't know the end_ns, so we pass in start_ns for
+    # both start and end. We update end_ns after the yield.
+    event = PerfEvent(name, start_ns, start_ns, category, **kwargs)
+    yield event
+
+    # Now update the end time now that the block as finished.
+    event.update_end_ns(perf_counter_ns())
+
+    if timers:
+        timers.add_event(event)
+    if print_time:
+        print(f"{name} {event.duration_ms}ms")
+
+
 if USE_PERFMON:
     # The one global instance
     timers = PerfTimers()
+
+    # perf_timer is enabled
+    perf_timer = block_timer
 
     def add_instant_event(name: str, **kwargs):
         """Add one instant event.
@@ -161,48 +213,6 @@ if USE_PERFMON:
         """
         timers.add_counter_event(name, **kwargs)
 
-    @contextlib.contextmanager
-    def perf_timer(
-        name: str,
-        category: Optional[str] = None,
-        print_time: bool = False,
-        **kwargs,
-    ):
-        """Time a block of code.
-
-        It's best to use the perfmon config file to monkey-patch this timer
-        into methods an functions. However you can manually use it to time
-        a block of code or even a single lines.
-
-        Parameters
-        ----------
-        name : str
-            The name of this timer.
-        category : str
-            Comma separated categories such has "render,update".
-        **kwargs : dict
-            Additional keyword arguments for the "args" field of the event.
-
-        Example
-        -------
-        with perf_timer("draw"):
-            draw_stuff()
-        """
-        start_ns = perf_counter_ns()
-
-        # Intially we don't know the end_ns, so we pass in start_ns for
-        # both start and end. We update end_ns after the yield.
-        event = PerfEvent(name, start_ns, start_ns, category, **kwargs)
-        yield event
-
-        # Now update the end time now that the block as finished.
-        event.update_end_ns(perf_counter_ns())
-
-        if timers:
-            timers.add_event(event)
-        if print_time:
-            print(f"{name} {event.duration_ms}ms")
-
 
 else:
     # Make sure no one accesses the timers when they are disabled.
@@ -214,9 +224,7 @@ else:
     def add_counter_event(name: str, **kwargs: Dict[str, float]) -> None:
         pass
 
-    # contextlib.nullcontext does not work with kwargs, so we just
-    # create a do-nothing context object. Not zero overhead but
-    # very small.
+    # perf_timer is disabled. Using contextlib.nullcontext did not work.
     @contextlib.contextmanager
     def perf_timer(name: str, category: Optional[str] = None, **kwargs):
         yield

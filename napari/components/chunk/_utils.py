@@ -1,4 +1,4 @@
-"""ChunkLoader utilities.
+"""ChunkLoader related utilities.
 """
 from typing import Optional
 

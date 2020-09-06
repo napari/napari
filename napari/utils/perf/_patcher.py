@@ -80,11 +80,11 @@ def _import_module(target_str: str) -> Tuple[types.ModuleType, str]:
     """Import the module portion of this target string.
 
     Try importing successively longer segments of the target_str. For example
-    with "napari.utils.chunk_loader.ChunkLoader.load_chunk" we will import:
+    with "napari.components.chunk._loader.ChunkLoader.load_chunk" we will import:
         napari (success)
         napari.utils (success)
-        napari.utils.chunk_loader (success)
-        napari.utils.chunk_loader.ChunkLoader (failure)
+        napari.components.chunk._loader (success)
+        napari.components.chunk._loader.ChunkLoader (failure, not a module)
 
     The last one fails because ChunkLoader is a class not a module.
 
