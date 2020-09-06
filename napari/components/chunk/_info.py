@@ -5,6 +5,7 @@ import weakref
 from enum import Enum
 
 from ...layers.base import Layer
+from ._config import async_config
 from ._request import ChunkRequest
 from ._utils import StatWindow
 
@@ -71,14 +72,12 @@ class LayerInfo:
     note deleted during the load process.
     """
 
-    # If a load takes MAX_FAST_LOAD_MS or less, it's considered "fast" and
-    # if the layer is LoadType.AUTO we might switch to sync loads.
-    MAX_FAST_LOAD_MS = 30
-
     def __init__(self, layer):
         self.layer_id: int = id(layer)
         self.layer_ref: weakref.ReferenceType = weakref.ref(layer)
         self.load_type: LoadType = LoadType.AUTO
+        self.auto_sync_ms = async_config.auto_async_ms
+
         self.stats = LoadStats()
 
     def get_layer(self) -> Layer:
@@ -100,4 +99,4 @@ class LayerInfo:
     def loads_fast(self) -> bool:
         """Return True if this layer has been loading very fast."""
         average = self.stats.window_ms.average
-        return average is not None and average <= self.MAX_FAST_LOAD_MS
+        return average is not None and average <= self.self.auto_sync_ms

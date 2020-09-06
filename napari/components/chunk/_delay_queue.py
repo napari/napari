@@ -22,27 +22,40 @@ class DelayQueue(threading.Thread):
     requests need to be cancelled often, because the requests for previous
     slices will quickly become stale.
 
-    We could load those stale requests and just throw away the result, but
-    that will hammer the server with bogus requests, and it would mean
-    there might not be an available worker when the user finally does
+    We could load those stale requests and just throw away the results, but
+    that will hammer the remote server with bogus requests, and it would
+    mean there might not be an available worker when the user finally does
     settle on a slice they want to load.
 
     So the GUI thread calls DelayQueue.clear() everytime the user switches
-    to a new slice and we trivially clear quests still in this queue.
+    to a new slice and we trivially clear quests still in this queue. This
+    greatly reduces requests the remote server, and keeps the worker pool
+    from being overly busy.
+
+    Parameters
+    ----------
+    delay_queue_ms : float
+        Delay the request for this many milliseconds before submission.
+    sumbit_func
+        We call this function to submit the request.
 
     Attributes
     ----------
     delay_seconds : float
         Delay each request by this many seconds.
     submit_func
-        Call this function to submit the request.
+        We call this function to submit the request.
     entries : List[QueueEntry]
         The entries in the queue
+    lock : threading.Lock
+        Guard access to the list of entries.
+    event : threading.Event()
+        Signal the worker there are entires in the queue.
     """
 
-    def __init__(self, delay_seconds: float, submit_func):
+    def __init__(self, delay_queue_ms: float, submit_func):
         super().__init__(daemon=True)
-        self.delay_seconds: float = delay_seconds
+        self.delay_seconds: float = (delay_queue_ms / 1000)
         self.submit_func = submit_func
 
         # The entries waiting to be submitted.
@@ -69,7 +82,7 @@ class DelayQueue(threading.Thread):
         request : ChunkRequest
             Insert this request into the queue.
         """
-        if self.delay_seconds == 0:
+        if self.delay_queue_ms == 0:
             self.submit_func(request)  # Submit with no delay.
             return
 

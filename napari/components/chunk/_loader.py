@@ -72,7 +72,7 @@ class ChunkLoader:
         # Delay queue prevents us from spamming the worker pool when the
         # user is rapidly scrolling through slices.
         self.delay_queue = DelayQueue(
-            async_config.delay_seconds, self._submit_async
+            async_config.delay_queue_ms, self._submit_async
         )
 
         self.events = EmitterGroup(
