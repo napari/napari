@@ -4,8 +4,8 @@ import logging
 from typing import Dict, Optional
 
 import numpy as np
-from cachetools import LRUCache
 
+from ..._vendor.cachetools.cachetools import LRUCache
 from ._request import ChunkRequest
 
 LOGGER = logging.getLogger("napari.async")
