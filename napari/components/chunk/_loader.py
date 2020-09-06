@@ -400,5 +400,10 @@ def synchronous_loading(enabled):
     chunk_loader.synchronous = previous
 
 
+def wait_for_async():
+    """Wait for all asynchronous loads to finish."""
+    chunk_loader.wait_for_all()
+
+
 # Global instance
 chunk_loader = ChunkLoader()

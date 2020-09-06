@@ -5,7 +5,7 @@ import dask.array as da
 import numpy as np
 import pytest
 
-from napari import layers, utils, viewer
+from napari import layers, utils, viewer, wait_for_async
 
 dask_version = tuple(map(int, dask.__version__.split(".")))
 
@@ -94,6 +94,8 @@ def test_dask_optimized_slicing(delayed_dask_stack, monkeypatch):
     v = viewer.ViewerModel()
     dask_stack = delayed_dask_stack['stack']
     v.add_image(dask_stack, multiscale=False, contrast_limits=(0, 1))
+    wait_for_async()
+
     assert delayed_dask_stack['calls'] == 1  # the first stack will be loaded
 
     # changing the Z plane should never incur calls
