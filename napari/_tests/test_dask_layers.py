@@ -5,7 +5,7 @@ import dask.array as da
 import numpy as np
 import pytest
 
-from napari import layers, utils, viewer, wait_for_async
+from napari import layers, utils, viewer
 
 dask_version = tuple(map(int, dask.__version__.split(".")))
 
@@ -87,6 +87,7 @@ def delayed_dask_stack():
 @pytest.mark.skipif(
     dask_version < (2, 15, 0), reason="requires dask 2.15.0 or higher"
 )
+@pytest.mark.sync_only
 def test_dask_optimized_slicing(delayed_dask_stack, monkeypatch):
     """Test that dask_configure reduces compute with dask stacks."""
 
@@ -94,8 +95,6 @@ def test_dask_optimized_slicing(delayed_dask_stack, monkeypatch):
     v = viewer.ViewerModel()
     dask_stack = delayed_dask_stack['stack']
     v.add_image(dask_stack, multiscale=False, contrast_limits=(0, 1))
-    wait_for_async()
-
     assert delayed_dask_stack['calls'] == 1  # the first stack will be loaded
 
     # changing the Z plane should never incur calls
@@ -121,6 +120,7 @@ def test_dask_optimized_slicing(delayed_dask_stack, monkeypatch):
 @pytest.mark.skipif(
     dask_version < (2, 15, 0), reason="requires dask 2.15.0 or higher"
 )
+@pytest.mark.sync_only
 def test_dask_unoptimized_slicing(delayed_dask_stack, monkeypatch):
     """Prove that the dask_configure function works with a counterexample."""
     # make sure we are not caching for this test, which also tests that we
@@ -165,6 +165,7 @@ def test_dask_unoptimized_slicing(delayed_dask_stack, monkeypatch):
     assert delayed_dask_stack['calls'] == 8
 
 
+@pytest.mark.sync_only
 def test_dask_cache_resizing(delayed_dask_stack):
     """Test that we can spin up, resize, and spin down the cache."""
     # add dask stack to the viewer, making sure to pass multiscale and clims

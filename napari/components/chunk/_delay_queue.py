@@ -201,6 +201,6 @@ class DelayQueue(threading.Thread):
     def flush(self):
         """Submit all entries right now."""
         with self.lock:
-            for entry in self.entires:
+            for entry in self.entries:
                 self.submit_func(entry.request)
             self.entries = []
