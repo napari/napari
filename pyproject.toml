@@ -16,7 +16,7 @@ author = "napari"
 url = "https://napari.org/"
 license = "BSD license"
 # version populated in bundle.py
-version = "0.3.7rc11.dev7"
+version = "0.0.1"
 
 [tool.briefcase.app.napari]
 formal_name = "napari"
@@ -77,4 +77,3 @@ filterwarnings = [
 markers = [
     "perfmon: marks tests that require perfmon to be enabled"
 ]
-
