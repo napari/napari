@@ -353,6 +353,38 @@ class ChunkLoader:
         except KeyError:
             pass  # We weren't tracking that layer yet.
 
+    def wait_for_all(self):
+        """Wait for all in-progress requests to finish."""
+        self.delay_queue.flush()
+
+        for data_id, future_list in self.futures.items():
+            # Result blocks until the future is done or cancelled
+            [future.result() for future in future_list]
+
+    def wait_for_data_is(self, data_id: int) -> None:
+        """Wait for the given data to be loaded.
+
+        Parameters
+        ----------
+        data_id : int
+            Wait on chunks for this data_id.
+        """
+        try:
+            future_list = self.futures[data_id]
+        except KeyError:
+            LOGGER.warn("ChunkLoader.wait: no futures for data_id %d", data_id)
+            return
+
+        LOGGER.info(
+            "ChunkLoader.wait: waiting on %d futures for %d",
+            len(future_list),
+            data_id,
+        )
+
+        # Call result() will block until the future has finished or was cancelled.
+        [future.result() for future in future_list]
+        del self.futures[data_id]
+
 
 @contextmanager
 def synchronous_loading(enabled):
