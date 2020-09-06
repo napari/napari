@@ -22,6 +22,7 @@ from qtpy.QtWidgets import (
 from ..resources import get_stylesheet
 from ..utils import perf
 from ..utils.io import imsave
+from ..utils.misc import in_jupyter
 from ..utils.theme import template
 from .dialogs.qt_about import QtAbout
 from .dialogs.qt_plugin_report import QtPluginErrReporter
@@ -428,17 +429,24 @@ class Window:
         # Resize axis labels now that window is shown
         self.qt_viewer.dims._resize_axis_labels()
 
-        # We want to call Window._qt_window.raise_() in every case *except*
-        # when instantiating a viewer within a gui_qt() context for the
-        # _first_ time within the Qt app's lifecycle.
-        #
+        # We want to bring the viewer to the front when
+        # A) it is our own (gui_qt) event loop OR we are running in jupyter
+        # B) it is not the first time a QMainWindow is being created
+
         # `app_name` will be "napari" iff the application was instantiated in
         # gui_qt(). isActiveWindow() will be True if it is the second time a
-        # _qt_window has been created. See #732
+        # _qt_window has been created.
+        # See #721, #732, #735, #795, #1594
         app_name = QApplication.instance().applicationName()
-        if app_name != 'napari' or self._qt_window.isActiveWindow():
-            self._qt_window.raise_()  # for macOS
-            self._qt_window.activateWindow()  # for Windows
+        if (
+            app_name == 'napari' or in_jupyter()
+        ) and self._qt_window.isActiveWindow():
+            self.activate()
+
+    def activate(self):
+        """Make the viewer the currently active window."""
+        self._qt_window.raise_()  # for macOS
+        self._qt_window.activateWindow()  # for Windows
 
     def _update_palette(self, event=None):
         """Update widget color palette."""
