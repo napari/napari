@@ -1001,7 +1001,7 @@ class Points(Layer):
             if None not in color_cycle:
                 color_cycle[None] = 'white'
             transformed_colors = {
-                key: transform_color(value)
+                key: transform_color(value)[0]
                 for key, value in color_cycle.items()
             }
             setattr(self, f'_{attribute}_color_cycle', transformed_colors)
