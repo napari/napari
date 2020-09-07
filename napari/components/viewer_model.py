@@ -1,5 +1,6 @@
 import numpy as np
 
+from ..components.chunk._commands import LoaderCommands
 from ..utils.events import EmitterGroup, Event
 from ..utils.key_bindings import KeymapHandler, KeymapProvider
 from ..utils.theme import palettes
@@ -475,3 +476,11 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         translate = [0] * layer.ndim
         translate[-2:] = translate_2d
         layer.translate_grid = translate
+
+    @property
+    def loader(self):
+        """Loader commands for IPython console.
+
+        For example run "viewer.loader.help" or "viewer.loader.layers".
+        """
+        return LoaderCommands(self.layers)
