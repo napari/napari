@@ -2,9 +2,14 @@
 """
 import logging
 import os
-from concurrent.futures import CancelledError, Future, ThreadPoolExecutor
+from concurrent.futures import (
+    CancelledError,
+    Future,
+    ProcessPoolExecutor,
+    ThreadPoolExecutor,
+)
 from contextlib import contextmanager
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Union
 
 from ...types import ArrayLike
 from ...utils.events import EmitterGroup
@@ -16,6 +21,9 @@ from ._request import ChunkKey, ChunkRequest
 
 LOGGER = logging.getLogger("napari.async")
 
+# Executor for either a thread pool or a process pool.
+PoolExecutor = Union[ThreadPoolExecutor, ProcessPoolExecutor]
+
 
 def _is_enabled(env_var) -> bool:
     """Return True if env_var is defined and not zero."""
@@ -23,7 +31,7 @@ def _is_enabled(env_var) -> bool:
 
 
 def _chunk_loader_worker(request: ChunkRequest) -> ChunkRequest:
-    """This is the worker thread that loads the array.
+    """This is the worker thread or process that loads the array.
 
     We call np.asarray() in a worker because it might lead to IO or
     computation which would block the GUI thread.
@@ -37,18 +45,33 @@ def _chunk_loader_worker(request: ChunkRequest) -> ChunkRequest:
     return request
 
 
+def _create_executor(use_processes: bool, num_workers: int) -> PoolExecutor:
+    """Return the thread or process pool executor.
+
+    Parameters
+    ----------
+    use_processes : bool
+        If True use processes, otherwise threads.
+    num_workers : int
+        The number of worker threads or processes.
+    """
+    if use_processes:
+        return ProcessPoolExecutor(max_workers=num_workers)
+    return ThreadPoolExecutor(max_workers=num_workers)
+
+
 class ChunkLoader:
-    """Loads chunks synchronously or asynchronously in worker threads.
+    """Loads chunks synchronously or asynchronously in worker thread or processes.
 
     We cannot call np.asarray() in the GUI thread because it might block on
     IO or a computation. So the ChunkLoader calls np.asarray() in a worker
-    thread if doing async loading.
+    if doing async loading.
 
     Attributes
     ----------
     synchronous : bool
         If True all requests are loaded synchronously.
-    executor : ThreadPoolExecutor
+    executor : PoolExecutor
         Our thread pool executor.
     futures : Dict[int, List[Future]]
         In progress futures for each layer (data_id).
@@ -64,8 +87,12 @@ class ChunkLoader:
         # Config settings.
         self.synchronous: bool = async_config.synchronous
         self.num_workers: int = async_config.num_workers
+        self.use_processes: bool = async_config.use_processes
 
-        self.executor = ThreadPoolExecutor(max_workers=self.num_workers)
+        self.executor: PoolExecutor = _create_executor(
+            self.use_processes, self.num_workers
+        )
+
         self.futures: Dict[int, List[Future]] = {}
         self.layer_map: Dict[int, LayerInfo] = {}
         self.cache: ChunkCache = ChunkCache()
@@ -287,7 +314,7 @@ class ChunkLoader:
 
         Notes
         -----
-        This method may be called in the worker thread. The
+        This method may be called in a worker thread. The
         concurrent.futures documentation very intentionally does not
         specify which thread the future's done callback will be called in,
         only that it will be called in some thread in the current process.
@@ -405,5 +432,19 @@ def wait_for_async():
     chunk_loader.wait_for_all()
 
 
-# Global instance
+"""
+There is one global chunk_loader instance to handle async loading for all
+Viewer instances. There are two main reasons we do this instead of one
+ChunkLoader per Viewer:
+
+1. We size the ChunkCache as a fraction of RAM, so having more than one
+   cache would use too much RAM.
+
+2. We might size the thread pool for optimal performance, and having
+   multiple pools would result in more workers than we want.
+
+Think of the ChunkLoader as a shared resource like "the filesystem" where
+multiple clients can be access it at the same time, but it is the interface
+to just one physical resource.
+"""
 chunk_loader = ChunkLoader()

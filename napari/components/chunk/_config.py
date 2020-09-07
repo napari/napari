@@ -20,6 +20,7 @@ DEFAULT_ASYNC_CONFIG = {
     "log_path": None,
     "synchronous": False,
     "num_workers": 6,
+    "use_processes": False,
     "auto_sync_ms": 30,
     "delay_queue_ms": 100,
 }
@@ -31,6 +32,7 @@ AsyncConfig = namedtuple(
         "log_path",
         "synchronous",
         "num_workers",
+        "use_processes",
         "auto_sync_ms",
         "delay_queue_ms",
     ],
@@ -97,6 +99,7 @@ def _create_async_config(data: dict) -> AsyncConfig:
         data.get("synchronous", True),
         data.get("num_workers", 6),
         data.get("async_sync_ms", 30),
+        data.get("use_processes", False),
         data.get("delay_queue_ms", 0.1),
     )
 
