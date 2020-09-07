@@ -1,3 +1,0 @@
-# Number
-
-::: humanize.number

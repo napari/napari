@@ -1,3 +1,0 @@
-# Time
-
-::: humanize.time

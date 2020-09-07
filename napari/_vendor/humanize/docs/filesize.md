@@ -1,3 +1,0 @@
-# Filesize
-
-::: humanize.filesize
