@@ -1,8 +1,8 @@
 import pkg_resources
-from humanize.filesize import naturalsize
-from humanize.i18n import activate, deactivate
-from humanize.number import apnumber, fractional, intcomma, intword, ordinal, scientific
-from humanize.time import (
+from .filesize import naturalsize
+from .i18n import activate, deactivate
+from .number import apnumber, fractional, intcomma, intword, ordinal, scientific
+from .time import (
     naturaldate,
     naturalday,
     naturaldelta,
@@ -10,7 +10,7 @@ from humanize.time import (
     precisedelta,
 )
 
-__version__ = VERSION = pkg_resources.get_distribution(__name__).version
+__version__ = VERSION = "2.5.0"
 
 
 __all__ = [
