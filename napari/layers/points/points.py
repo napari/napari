@@ -370,7 +370,7 @@ class Points(Layer):
             self.face_colormap = face_colormap
             self._face_contrast_limits = face_contrast_limits
 
-        self.refresh_colors(update_color_mapping=True)
+        self.refresh_colors()
 
         self.size = size
         # set the current_* properties
@@ -1068,7 +1068,7 @@ class Points(Layer):
                         color_cycle_map = color_cycle
                     else:
                         color_cycle_map = {
-                            print(k, c)  # k: np.squeeze(transform_color(c))
+                            k: np.squeeze(transform_color(c))
                             for k, c in zip(
                                 np.unique(color_properties), color_cycle
                             )
@@ -1094,7 +1094,14 @@ class Points(Layer):
                         )
                         for prop in props_to_add:
                             color_cycle_map[prop] = np.squeeze(
-                                transform_color(next(color_cycle))
+                                transform_color(
+                                    color_cycle[prop]
+                                    if isinstance(color_cycle, dict)
+                                    and prop in color_cycle
+                                    else color_cycle[None]
+                                    if isinstance(color_cycle, dict)
+                                    else next(color_cycle)
+                                )
                             )
                         setattr(
                             self,
