@@ -1,4 +1,8 @@
+import os
+import sys
+
 import numpy as np
+import pytest
 
 
 def test_image_rendering(make_test_viewer):
@@ -35,3 +39,21 @@ def test_image_rendering(make_test_viewer):
     # Change rendering property
     layer.rendering = 'additive'
     assert layer.rendering == 'additive'
+
+
+@pytest.mark.skipif(
+    sys.platform.startswith('win') or not os.getenv("CI"),
+    reason='Screenshot tests are not supported on napari windows CI.',
+)
+def test_visibility_consistency(qtbot, make_test_viewer):
+    viewer = make_test_viewer(show=True)
+
+    layer = viewer.add_image(
+        np.random.random((200, 200)), contrast_limits=[0, 10]
+    )
+    qtbot.wait(10)
+    layer.contrast_limits = (0, 2)
+    screen1 = viewer.screenshot().astype('float')
+    layer.visible = True
+    screen2 = viewer.screenshot().astype('float')
+    assert np.max(screen2 - screen1) < 5
