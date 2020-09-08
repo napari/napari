@@ -46,7 +46,7 @@ def test_image_rendering(make_test_viewer):
     reason='Screenshot tests are not supported on napari windows CI.',
 )
 def test_visibility_consistency(qtbot, make_test_viewer):
-    """Make sure toggling visibility maintains image contrast.ArithmeticError
+    """Make sure toggling visibility maintains image contrast.
 
     see #1622 for details.
     """
@@ -60,4 +60,4 @@ def test_visibility_consistency(qtbot, make_test_viewer):
     screen1 = viewer.screenshot().astype('float')
     layer.visible = True
     screen2 = viewer.screenshot().astype('float')
-    assert np.max(screen2 - screen1) < 5
+    assert np.max(np.abs(screen2 - screen1)) < 5
