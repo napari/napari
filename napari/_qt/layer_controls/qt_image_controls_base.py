@@ -53,13 +53,10 @@ class QtBaseImageControls(QtLayerControls):
         comboBox.setObjectName("colormapComboBox")
         if layer.rgb is False:
             comboBox.addItems(self.layer.colormaps)
-        if layer.rgb is True:
-            rgbLayer = "RGB"
-            comboBox.addItem(rgbLayer)
         comboBox._allitems = set(self.layer.colormaps)
         comboBox.activated[str].connect(self.changeColor)
         self.colormapComboBox = comboBox
-        self.colormapLabel = QLabel('colormap:')
+        self.colormapLabel = QLabel('colormap:', parent = self)
 
         # Create contrast_limits slider
         self.contrastLimitsSlider = QHRangeSlider(
