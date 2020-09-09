@@ -285,12 +285,11 @@ class LoaderCommands:
         """Print the current list of layers."""
         src = async_config
         config = [
+            ('log_path', src.log_path),
             ('synchronous', src.synchronous),
             ('num_workers', src.num_workers),
-            ('log_path', src.log_path),
-            ('use_processes', src.use_processes),
-            ('delay_seconds', src.delay_seconds),
-            ('load_seconds', src.load_seconds),
+            ('auto_sync_ms', src.auto_sync_ms),
+            ('delay_queue_ms', src.delay_queue_ms),
         ]
         print_property_table(config)
 
