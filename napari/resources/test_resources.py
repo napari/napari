@@ -1,4 +1,5 @@
 import os
+import platform
 
 import qtpy
 
@@ -30,6 +31,6 @@ def test_path_pollution(tmp_path, monkeypatch, capfd):
     build_pyqt_resources(str(tmp_path / "resourcses.py"))
     assert (tmp_path / "resourcses.py").exists()
 
-    if qtpy.API == "pyside2":
+    if qtpy.API == "pyside2" and platform.system() != "Windows":
         captured = capfd.readouterr()
         assert f"Fake {file_name} executable" in captured.out
