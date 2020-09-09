@@ -56,7 +56,10 @@ def _create_executor(use_processes: bool, num_workers: int) -> PoolExecutor:
         The number of worker threads or processes.
     """
     if use_processes:
+        LOGGER.debug("ChunkLoader process pool num_workers=%d", num_workers)
         return ProcessPoolExecutor(max_workers=num_workers)
+
+    LOGGER.debug("ChunkLoader thread pool num_workers=%d", num_workers)
     return ThreadPoolExecutor(max_workers=num_workers)
 
 
