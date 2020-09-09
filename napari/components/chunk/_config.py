@@ -7,7 +7,7 @@ import os
 from collections import namedtuple
 from pathlib import Path
 
-LOGGER = logging.getLogger("ChunkLoader")
+LOGGER = logging.getLogger("napari.async")
 
 # Use NAPARI_ASYNC to enable or configure async.
 ASYNC_ENV_VAR = "NAPARI_ASYNC"
@@ -50,7 +50,7 @@ def _log_to_file(path: str) -> None:
     if path:
         fh = logging.FileHandler(path)
         LOGGER.addHandler(fh)
-        LOGGER.setLevel(logging.INFO)
+        LOGGER.setLevel(logging.DEBUG)
 
 
 def _load_config(config_path: str) -> dict:
