@@ -1,3 +1,4 @@
+import configparser
 import os
 import re
 import shutil
@@ -8,6 +9,18 @@ import time
 import tomlkit
 
 APP = 'napari'
+
+# EXTRA_REQS will be added to the bundle, in addition to those specified in
+# setup.cfg.  To add additional packages to the bundle, or to override any of
+# the packages listed here or in `setup.cfg, use the `--add` command line
+# argument with a series of "pip install" style strings when running this file.
+# For example, the following will ADD ome-zarr, and CHANGE the version of
+# PySide2:
+# python bundle.py --add 'PySide2==5.15.0' 'ome-zarr'
+
+EXTRA_REQS = ["pip", "PySide2==5.14.2.2", "scikit-image", "zarr"]
+
+
 WINDOWS = os.name == 'nt'
 MACOS = sys.platform == 'darwin'
 LINUX = sys.platform.startswith("linux")
@@ -33,10 +46,41 @@ with open(os.path.join(HERE, "napari", "_version.py")) as f:
         VERSION = match.groups()[0].split('+')[0]
 
 
-def update_toml_version():
+def patch_toml():
+    parser = configparser.ConfigParser()
+    parser.read(SETUP_CFG)
+    requirements = parser.get("options", "install_requires").splitlines()
+    requirements = [r.split('#')[0].strip() for r in requirements if r]
+    requirements += EXTRA_REQS
+
     toml = tomlkit.parse(original_toml)
+
+    # parse command line arguments
+    if '--add' in sys.argv:
+        for item in sys.argv[sys.argv.index('--add') + 1 :]:
+            if item.startswith('-'):
+                break
+            _base = re.split('<|>|=', item, maxsplit=1)[0]
+            for r in requirements:
+                if r.startswith(_base):
+                    requirements.remove(r)
+                    break
+            if _base.lower().startswith('pyqt5'):
+                try:
+                    i = next(x for x in requirements if x.startswith('PySide'))
+                    requirements.remove(i)
+                except StopIteration:
+                    pass
+            requirements.append(item)
+
+    toml['tool']['briefcase']['app'][APP]['requires'] = requirements
     toml['tool']['briefcase']['version'] = VERSION
-    print("updating pyproject.toml to version: ", VERSION)
+
+    print("patching pyroject.toml to version: ", VERSION)
+    print(
+        "patching pyroject.toml requirements to : \n",
+        "\n".join(toml['tool']['briefcase']['app'][APP]['requires']),
+    )
     with open(PYPROJECT_TOML, 'w') as f:
         f.write(tomlkit.dumps(toml))
 
@@ -136,7 +180,7 @@ def bundle():
 
     # smoke test, and build resources
     subprocess.check_call([sys.executable, '-m', APP, '--info'])
-    update_toml_version()
+    patch_toml()
 
     # create
     cmd = ['briefcase', 'create'] + (['--no-docker'] if LINUX else [])
