@@ -11,7 +11,8 @@
    events/index
    api
    releases
-   developers
+   developers/index
+   explanations/index
    Home <https://napari.org>
    Source Code <https://github.com/napari/napari>
 

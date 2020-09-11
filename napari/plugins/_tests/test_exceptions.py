@@ -1,9 +1,9 @@
 import sys
 
 import pytest
+from napari_plugin_engine import PluginError
 
 from napari.plugins import exceptions
-from napari_plugin_engine import PluginError
 
 
 # monkeypatch fixture is from pytest

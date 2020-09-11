@@ -25,12 +25,22 @@ lint_task:
 linux_task:
   auto_cancellation: true
 
-  env:
-    matrix:
+  
+  matrix:
+    env:
       PY_VER: "3.6"
+      PYTEST_FLAGS: ""
+    env:
       PY_VER: "3.7"
+      PYTEST_FLAGS: ""
+    env:
       PY_VER: "3.8"
-
+      PYTEST_FLAGS: ""
+    env:
+      PY_VER: "3.8"
+      NAPARI_PERFMON: "1"
+      PYTEST_FLAGS: "--perfmon-only"
+  
   name: linux ${PY_VER}
 
   container:
@@ -50,7 +60,7 @@ linux_task:
     - bash install.sh -b -p $HOME/conda
     # https://github.com/napari/napari/pull/594#issuecomment-542475164
     - conda install --yes -c conda-forge setuptools
-    - conda update -y -n base conda
+    - conda install -y -n base conda=4.8.3
     - conda install -y python=$PY_VER
 
   # https://github.com/cirruslabs/cirrus-ci-docs/issues/97
@@ -60,6 +70,9 @@ linux_task:
 
   pip_cache:
     folder: ~/.cache/pip
+    fingerprint_script:
+      - echo $PYTHON_VERSION
+      - cat requirements/test.txt
     populate_script: 
       - python -m pip install --retries 3 --upgrade pip
       - python -m pip install --retries 3 -r requirements/test.txt
@@ -74,15 +87,16 @@ linux_task:
     - conda list
     - python -c "import napari; print(napari.__version__)"
 
-  test_pyside2_with_coverage_script:
-    - pytest -v --cov-report=xml --cov=./napari
-    - codecov
+  test_pyside2_with_coverage_script: |
+    if [[ $PYTEST_FLAGS == "" ]]; then
+      pytest -v --cov-report=xml --cov=./napari
+      codecov
+    fi;
 
   test_pyqt5_script:
     - python -m pip uninstall -y pyside2
     - python -m pip install -e .[pyqt5]
-    - pytest -v
-
+    - pytest napari -v $PYTEST_FLAGS
 
 mac_task:
   auto_cancellation: true
@@ -110,11 +124,14 @@ mac_task:
     - bash install.sh -b -p $HOME/conda
     # https://github.com/napari/napari/pull/594#issuecomment-542475164
     - conda install --yes -c conda-forge setuptools
-    - conda update -y -n base conda
+    - conda install -y -n base conda=4.8.3
     - conda install -y python=$PY_VER
 
   pip_cache:
     folder: $HOME/Library/Caches/pip
+    fingerprint_script:
+      - echo $PYTHON_VERSION
+      - cat requirements/test.txt
     populate_script:
       - export MACOSX_DEPLOYMENT_TARGET=10.10
       - python -m pip install --retries 3 --upgrade pip
@@ -174,11 +191,14 @@ win_task:
     - choco install -y miniconda3 --params="'/D:%ANACONDA_LOCATION%'"
     # https://github.com/napari/napari/pull/594#issuecomment-542475164
     - conda install --yes -c conda-forge setuptools
-    - conda update -y -n base conda
+    - conda install -y -n base conda=4.8.3
     - conda install -y python=%PY_VER%
 
   pip_cache:
     folder: $LOCALAPPDATA\pip\Cache
+    fingerprint_script:
+      - echo $PYTHON_VERSION
+      - type requirements\test.txt
     populate_script: 
       - python -m pip install --retries 3 --upgrade pip
       - python -m pip install --retries 3 -r requirements/test.txt
@@ -226,6 +246,7 @@ push_docs_task:
     apt-get install -y libgl1-mesa-glx libqt5x11extras5
 
   install_script: |
+    git fetch --tags
     python -m pip install --retries 3 --upgrade pip
     python -m pip install --retries 3 -e ".[all]"
     python -m pip install --retries 3 -r requirements/docs.txt

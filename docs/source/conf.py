@@ -6,18 +6,21 @@
 
 # -- Path setup --------------------------------------------------------------
 
+import fileinput
+
 # If extensions (or modules to document with autodoc) are in another directory,
 # add these directories to sys.path here. If the directory is relative to the
 # documentation root, use os.path.abspath to make it absolute, like shown here.
 #
 import os
-import sys
 import re
-import fileinput
+import sys
+
+import recommonmark  # noqa: F401
+from recommonmark.transform import AutoStructify
 
 sys.path.insert(0, os.path.abspath('../..'))
 from napari import __version__  # noqa: E402
-
 
 # -- Project information -----------------------------------------------------
 
@@ -128,3 +131,21 @@ add_module_names = False
 
 # If true, `todo` and `todoList` produce output, else they produce nothing.
 todo_include_todos = True
+
+
+# app setup hook
+github_doc_root = 'https://github.com/napari/napari/tree/master/docs/'
+
+
+def setup(app):
+    app.add_config_value(
+        'recommonmark_config',
+        {
+            'url_resolver': lambda url: github_doc_root + url,
+            'enable_auto_toc_tree': True,
+            'auto_toc_tree_section': 'Contents',
+            'enable_eval_rst': True,
+        },
+        True,
+    )
+    app.add_transform(AutoStructify)

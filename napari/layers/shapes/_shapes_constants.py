@@ -1,8 +1,8 @@
-from enum import auto
 import sys
+from enum import auto
 
 from ...utils.misc import StringEnum
-from ._shapes_models import Rectangle, Ellipse, Line, Path, Polygon
+from ._shapes_models import Ellipse, Line, Path, Polygon, Rectangle
 
 
 class Mode(StringEnum):
@@ -33,6 +33,22 @@ class Mode(StringEnum):
     ADD_POLYGON = auto()
     VERTEX_INSERT = auto()
     VERTEX_REMOVE = auto()
+
+
+class ColorMode(StringEnum):
+    """
+    ColorMode: Color setting mode.
+
+    DIRECT (default mode) allows each shape to be set arbitrarily
+
+    CYCLE allows the color to be set via a color cycle over an attribute
+
+    COLORMAP allows color to be set via a color map over an attribute
+    """
+
+    DIRECT = auto()
+    CYCLE = auto()
+    COLORMAP = auto()
 
 
 class Box:

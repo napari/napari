@@ -1,0 +1,65 @@
+on:
+  push:
+    # Sequence of patterns matched against refs/tags
+    tags:
+      - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
+
+name: Create App Bundle
+
+jobs:
+  bundle:
+    name: Bundle ${{ matrix.platform }}
+    runs-on: ${{ matrix.platform }}
+    # if: github.repository == 'napari/napari'
+    env:
+      GITHUB_TOKEN: ${{ github.token }}
+      DISPLAY: ":99.0"
+    strategy:
+      fail-fast: false
+      matrix:
+        platform: [ubuntu-16.04, macos-latest, windows-latest]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+        with:
+          fetch-depth: 0
+      - name: Install Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+      - name: Start xvfb
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt install libxkbcommon-x11-0
+          /sbin/start-stop-daemon --start --quiet \
+            --pidfile /tmp/custom_xvfb_99.pid --make-pidfile \
+            --background --exec /usr/bin/Xvfb \
+            -- :99 -screen 0 1920x1200x24 -ac +extension GLX
+      - name: Install Dependencies
+        run: |
+          python -m pip install --upgrade pip 
+          python -m pip install briefcase==0.3.1 tomlkit wheel
+          python -m pip install -e .[pyside2]
+      - name: get tag
+        shell: bash
+        run: |
+          VER=`python bundle.py --version`
+          echo "::set-env name=version::$VER"
+          echo $VER
+      - name: Make Bundle
+        run: python -m bundle
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v2
+        with:
+          name: napari-${{ env.version }}-${{ runner.os }}.zip
+          path: napari-${{ env.version }}-${{ runner.os }}.zip
+      - name: Get Release
+        id: get_release
+        uses: bruceadams/get-release@v1.2.0
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
+          asset_path: napari-${{ env.version }}-${{ runner.os }}.zip
+          asset_name: napari-${{ env.version }}-${{ runner.os }}.zip
+          asset_content_type: application/zip

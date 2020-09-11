@@ -20,8 +20,9 @@ from napari.utils import io
 try:
     from skimage.data import image_fetcher
 except ImportError:
-    from skimage.data import data_dir
     import os
+
+    from skimage.data import data_dir
 
     class image_fetcher:
         def fetch(data_name):
@@ -36,21 +37,35 @@ except ImportError:
 
 
 def pytest_addoption(parser):
-    """An option to show viewers during tests. (Hidden by default).
+    """Add napari specific command line options.
 
-    Showing viewers decreases test speed by about %18.  Note, due to the
-    placement of this conftest.py file, you must specify the napari folder (in
-    the pytest command) to use this flag.
+    --show-viewer
+        Show viewers during tests, they are hidden by default. Showing viewers
+        decreases test speed by around 20%.
 
-    Example
-    -------
-    $ pytest napari --show-viewer
+    --perfmon-only
+        Run only perfmon test.
+
+    Notes
+    -----
+    Due to the placement of this conftest.py file, you must specifically name
+    the napari folder such as "pytest napari --show-viewer"
+
+    For --perfmon-only must also enable perfmon with env var:
+    NAPARI_PERFMON=1 pytest napari --perfmon-only
     """
     parser.addoption(
         "--show-viewer",
         action="store_true",
         default=False,
         help="don't show viewer during tests",
+    )
+
+    parser.addoption(
+        "--perfmon-only",
+        action="store_true",
+        default=False,
+        help="run only perfmon tests",
     )
 
 
@@ -70,7 +85,7 @@ def qtbot(qtbot):
 
 
 @pytest.fixture(scope="function")
-def viewer_factory(qtbot, request):
+def make_test_viewer(qtbot, request):
     viewers: List[Viewer] = []
 
     def actual_factory(*model_args, **model_kwargs):
@@ -79,8 +94,7 @@ def viewer_factory(qtbot, request):
         )
         viewer = Viewer(*model_args, **model_kwargs)
         viewers.append(viewer)
-        view = viewer.window.qt_viewer
-        return view, viewer
+        return viewer
 
     yield actual_factory
 
@@ -190,9 +204,9 @@ def layer_data_and_types():
         ),
     ]
     extensions = ['.tif', '.tif', '.csv', '.csv']
-    layer_data = [l.as_layer_data_tuple() for l in layers]
+    layer_data = [layer.as_layer_data_tuple() for layer in layers]
     layer_types = [layer._type_string for layer in layers]
-    filenames = [l.name + e for l, e in zip(layers, extensions)]
+    filenames = [layer.name + e for layer, e in zip(layers, extensions)]
     return layers, layer_data, layer_types, filenames
 
 
@@ -292,3 +306,14 @@ def irregular_images():
 @pytest.fixture
 def single_tiff():
     return [image_fetcher.fetch('data/multipage.tif')]
+
+
+@pytest.fixture(autouse=True)
+def perfmon_only(request):
+    """If flag is set, only run the perfmon tests."""
+    perfmon_flag = request.config.getoption("--perfmon-only")
+    perfmon_test = request.node.get_closest_marker('perfmon')
+    if perfmon_flag and not perfmon_test:
+        pytest.skip("running with --perfmon-only")
+    if not perfmon_flag and perfmon_test:
+        pytest.skip("not running with --perfmon-only")

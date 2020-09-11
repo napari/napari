@@ -241,9 +241,6 @@ class TrackManager:
         if self._kdtree is None:
             return
 
-        # need to swap x,y for this to work
-        coords[2], coords[1] = coords[1], coords[2]
-
         d, idx = self._kdtree.query(coords, k=10)
         pruned = [i for i in idx if self._points[i, 0] == coords[0]]
         if pruned and self._points_id is not None:
@@ -254,9 +251,12 @@ class TrackManager:
         """Determine ranges for slicing given by (min, max, step)."""
 
         def _minmax(x):
-            return (int(np.min(x)), int(np.max(x)) + 1, 1)
+            return (np.floor(np.min(x)), np.ceil(np.max(x)))
 
-        return [_minmax(self._track_vertices[:, i]) for i in range(self.ndim)]
+        extrema = np.zeros((2, self.ndim))
+        for dim in range(self.ndim):
+            extrema[:, dim] = _minmax(self._track_vertices[:, dim])
+        return extrema
 
     @property
     def ndim(self):

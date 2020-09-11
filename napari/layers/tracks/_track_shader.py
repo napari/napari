@@ -1,9 +1,8 @@
-from vispy.visuals.filters.base_filter import Filter
-from vispy.gloo import VertexBuffer
-
-from typing import Union, List
+from typing import List, Union
 
 import numpy as np
+from vispy.gloo import VertexBuffer
+from vispy.visuals.filters.base_filter import Filter
 
 
 class TrackShader(Filter):
@@ -50,6 +49,7 @@ class TrackShader(Filter):
         void apply_track_shading() {
 
             float alpha;
+            float masked_alpha;
 
             if ($a_vertex_time > $current_time) {
                 // this is a hack to minimize the frag shader rendering ahead
@@ -75,10 +75,10 @@ class TrackShader(Filter):
             // do it here. THIS WILL OVERIDE the time based vertex shading and
             // set the vertex alpha to zero
 
-            alpha = (1.-$a_vertex_mask) * alpha;
+            masked_alpha = $a_vertex_mask * alpha;
 
             // set the vertex alpha according to the fade
-            v_track_color.a = alpha;
+            v_track_color.a = masked_alpha;
         }
     """
 
@@ -86,7 +86,7 @@ class TrackShader(Filter):
         varying vec4 v_track_color;
         void apply_track_shading() {
             // interpolate
-            gl_FragColor.a = v_track_color.a;
+            gl_FragColor.a = clamp(v_track_color.a, 0.0, 1.0);
         }
     """
 
@@ -95,8 +95,8 @@ class TrackShader(Filter):
         current_time=0,
         tail_length=30,
         use_fade: bool = True,
-        vertex_time: Union[List, np.ndarray] = [],
-        vertex_mask: Union[List, np.ndarray] = [],
+        vertex_time: Union[List, np.ndarray] = None,
+        vertex_mask: Union[List, np.ndarray] = None,
     ):
 
         super().__init__(
@@ -134,14 +134,12 @@ class TrackShader(Filter):
         return self._tail_length
 
     @tail_length.setter
-    def tail_length(self, l: Union[int, float]):
-        self._tail_length = l
-        self.vshader['tail_length'] = float(l)
+    def tail_length(self, tail_length: Union[int, float]):
+        self._tail_length = tail_length
+        self.vshader['tail_length'] = float(tail_length)
 
     def _attach(self, visual):
         super(TrackShader, self)._attach(visual)
-        self.vshader['a_vertex_time'] = VertexBuffer(self.vertex_time)
-        self.vshader['a_vertex_mask'] = VertexBuffer(self.vertex_mask)
 
     @property
     def vertex_time(self):
@@ -150,6 +148,7 @@ class TrackShader(Filter):
     @vertex_time.setter
     def vertex_time(self, v_time):
         self._vertex_time = np.array(v_time).reshape(-1, 1).astype(np.float32)
+        self.vshader['a_vertex_time'] = VertexBuffer(self.vertex_time)
 
     @property
     def vertex_mask(self):
@@ -157,6 +156,7 @@ class TrackShader(Filter):
 
     @vertex_mask.setter
     def vertex_mask(self, v_mask):
-        if not v_mask:
-            v_mask = np.zeros(self.vertex_time.shape, dtype=np.float32)
-        self._vertex_mask = v_mask
+        if v_mask is None:
+            v_mask = np.ones(self.vertex_time.shape, dtype=np.float32)
+        self._vertex_mask = v_mask.reshape(-1, 1).astype(np.float32)
+        self.vshader['a_vertex_mask'] = VertexBuffer(self.vertex_mask)

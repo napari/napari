@@ -5,11 +5,11 @@ import pytest
 
 from .. import key_bindings
 from ..key_bindings import (
+    KeymapHandler,
+    KeymapProvider,
     _bind_keymap,
     bind_key,
     components_to_key_combo,
-    KeymapHandler,
-    KeymapProvider,
     normalize_key_combo,
     parse_key_combo,
 )

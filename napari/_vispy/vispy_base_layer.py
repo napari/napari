@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from functools import lru_cache
+
 import numpy as np
 from vispy.app import Canvas
 from vispy.gloo import gl
@@ -37,7 +38,7 @@ class VispyBaseLayer(ABC):
         Max texture size allowed by the vispy canvas during 2D rendering.
 
     Extended Summary
-    ----------
+    ----------------
     _master_transform : vispy.visuals.transforms.STTransform
         Transform positioning the layer visual inside the scenecanvas.
     """
@@ -61,6 +62,7 @@ class VispyBaseLayer(ABC):
         self.layer.events.blending.connect(self._on_blending_change)
         self.layer.events.scale.connect(self._on_scale_change)
         self.layer.events.translate.connect(self._on_translate_change)
+        self.layer.events.loaded.connect(self._on_loaded_change)
 
     @property
     def _master_transform(self):
@@ -138,7 +140,7 @@ class VispyBaseLayer(ABC):
         raise NotImplementedError()
 
     def _on_visible_change(self, event=None):
-        self.node.visible = self.layer.visible
+        self.node.visible = self.layer.visible and self.layer.loaded
 
     def _on_opacity_change(self, event=None):
         self.node.opacity = self.layer.opacity
@@ -165,13 +167,16 @@ class VispyBaseLayer(ABC):
         self.layer.corner_pixels = self.coordinates_of_canvas_corners()
         self.layer.position = self._transform_position(self._position)
 
+    def _on_loaded_change(self, event=None):
+        self.node.visible = self.layer.visible and self.layer.loaded
+
     def _transform_position(self, position):
         """Transform cursor position from canvas space (x, y) into image space.
 
         Parameters
-        -------
+        ----------
         position : 2-tuple
-            Cursor position in canvase (x, y).
+            Cursor position in canvas (x, y).
 
         Returns
         -------
@@ -201,7 +206,7 @@ class VispyBaseLayer(ABC):
         depends on the current pan and zoom position.
 
         Returns
-        ----------
+        -------
         corner_pixels : array
             Coordinates of top left and bottom right canvas pixel in the data.
         """

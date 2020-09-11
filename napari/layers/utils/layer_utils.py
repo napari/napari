@@ -1,14 +1,15 @@
-from typing import Dict, Union, Tuple
+from typing import Dict, Tuple, Union
 
 import numpy as np
-from vispy.color import Colormap
+
+from ...utils.colormaps import Colormap
 
 
 def calc_data_range(data):
     """Calculate range of data values. If all values are equal return [0, 1].
 
     Parameters
-    -------
+    ----------
     data : array
         Data to calculate range of values over.
 
@@ -180,9 +181,9 @@ def map_property(
     ----------
     prop : np.ndarray
         The property to be colormapped
-    colormap : vispy.color.Colormap
-        The vispy colormap object to apply to the property
-    contrast_limits: Union[None, Tuple[float, float]]
+    colormap : napari.utils.Colormap
+        The colormap object to apply to the property
+    contrast_limits : Union[None, Tuple[float, float]]
         The contrast limits for applying the colormap to the property.
         If a 2-tuple is provided, it should be provided as (lower_bound, upper_bound).
         If None is provided, the contrast limits will be set to (property.min(), property.max()).

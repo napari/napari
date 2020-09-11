@@ -10,9 +10,9 @@ from qtpy.QtWidgets import (
     QGraphicsOpacityEffect,
     QHBoxLayout,
     QListWidget,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
-    QSizePolicy,
 )
 
 from ..utils.misc import is_sequence
@@ -85,6 +85,21 @@ def square_pixmap(size):
     return pixmap
 
 
+@lru_cache(maxsize=64)
+def circle_pixmap(size: int):
+    """Create a white/black hollow circle pixmap. For use as labels cursor."""
+    size = int(size)
+    pixmap = QPixmap(QSize(size, size))
+    pixmap.fill(Qt.transparent)
+    painter = QPainter(pixmap)
+    painter.setPen(Qt.white)
+    painter.drawEllipse(0, 0, size - 1, size - 1)
+    painter.setPen(Qt.black)
+    painter.drawEllipse(1, 1, size - 3, size - 3)
+    painter.end()
+    return pixmap
+
+
 def drag_with_pixmap(list_widget: QListWidget) -> QDrag:
     """Create a QDrag object with a pixmap of the currently select list item.
 
@@ -104,8 +119,8 @@ def drag_with_pixmap(list_widget: QListWidget) -> QDrag:
     QDrag
         A QDrag instance with a pixmap of the currently selected item.
 
-    Example
-    -------
+    Examples
+    --------
     >>> class QListWidget:
     ...     def startDrag(self, supportedActions):
     ...         drag = drag_with_pixmap(self)

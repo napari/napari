@@ -1,17 +1,22 @@
 from collections import deque
-from typing import Union, Dict
+from typing import Dict, Union
 
 import numpy as np
 from scipy import ndimage as ndi
-from ..image import Image
-from ...utils.colormaps import colormaps
-from ..utils.color_transformations import transform_color
-from ...utils.event import Event
-from ...utils.status_messages import format_float
-from ._labels_constants import Mode, LabelColorMode
-from ._labels_mouse_bindings import draw, pick
 
+from ...utils.colormaps import (
+    color_dict_to_colormap,
+    label_colormap,
+    low_discrepancy_image,
+)
+from ...utils.events import Event
+from ...utils.status_messages import format_float
+from ..image import Image
+from ..utils.color_transformations import transform_color
 from ..utils.layer_utils import dataframe_to_properties
+from ._labels_constants import LabelBrushShape, LabelColorMode, Mode
+from ._labels_mouse_bindings import draw, pick
+from ._labels_utils import sphere_indices
 
 
 class Labels(Image):
@@ -28,8 +33,11 @@ class Labels(Image):
         Number of unique colors to use in colormap.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each label. Each property should be an array of length
-        N, where N is the number of labels, and the first property corresponds to
-        background.
+        N, where N is the number of labels, and the first property corresponds
+        to background.
+    color : dict of int to str or array
+        Custom label to color mapping. Values must be valid color names or RGBA
+        arrays.
     seed : float
         Seed for colormap random generator.
     name : str
@@ -71,8 +79,11 @@ class Labels(Image):
         Number of unique colors to use in colormap.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each label. Each property should be an array of length
-        N, where N is the number of labels, and the first property corresponds to
-        background.
+        N, where N is the number of labels, and the first property corresponds
+        to background.
+    color : dict of int to str or array
+        Custom label to color mapping. Values must be valid color names or RGBA
+        arrays.
     seed : float
         Seed for colormap random generator.
     opacity : float
@@ -90,7 +101,7 @@ class Labels(Image):
         allows for normal interactivity with the canvas.
 
         In PICK mode the cursor functions like a color picker, setting the
-        clicked on label to be the curent label. If the background is picked it
+        clicked on label to be the current label. If the background is picked it
         will select the background label `0`.
 
         In PAINT mode the cursor functions like a paint brush changing any
@@ -126,6 +137,7 @@ class Labels(Image):
         *,
         num_colors=50,
         properties=None,
+        color=None,
         seed=0.5,
         name=None,
         metadata=None,
@@ -135,17 +147,14 @@ class Labels(Image):
         blending='translucent',
         visible=True,
         multiscale=None,
-        color_dict=None,
     ):
 
         self._seed = seed
         self._background_label = 0
         self._num_colors = num_colors
-        self._random_colormap = (
-            'random',
-            colormaps.label_colormap(self.num_colors),
-        )
+        self._random_colormap = label_colormap(self.num_colors)
         self._color_mode = LabelColorMode.AUTO
+        self._brush_shape = LabelBrushShape.CIRCLE
 
         if properties is None:
             self._properties = {}
@@ -187,6 +196,7 @@ class Labels(Image):
             brush_size=Event,
             selected_label=Event,
             color_mode=Event,
+            brush_shape=Event,
         )
 
         self._n_dimensional = False
@@ -195,7 +205,7 @@ class Labels(Image):
 
         self._selected_label = 1
         self._selected_color = self.get_color(self._selected_label)
-        self.color_dict = color_dict
+        self.color = color
 
         self._mode = Mode.PAN_ZOOM
         self._mode_history = self._mode
@@ -212,7 +222,7 @@ class Labels(Image):
 
         self.dims.events.ndisplay.connect(self._reset_history)
         self.dims.events.order.connect(self._reset_history)
-        self.dims.events.axis.connect(self._reset_history)
+        self.dims.events.current_step.connect(self._reset_history)
 
     @property
     def contiguous(self):
@@ -266,10 +276,7 @@ class Labels(Image):
     @num_colors.setter
     def num_colors(self, num_colors):
         self._num_colors = num_colors
-        self.colormap = (
-            self._colormap_name,
-            colormaps.label_colormap(num_colors),
-        )
+        self.colormap = label_colormap(num_colors)
         self.refresh()
         self._selected_color = self.get_color(self.selected_label)
         self.events.selected_label()
@@ -289,31 +296,31 @@ class Labels(Image):
         self._label_index = label_index
 
     @property
-    def color_dict(self):
+    def color(self):
         """dict: custom color dict for label coloring"""
-        return self._color_dict
+        return self._color
 
-    @color_dict.setter
-    def color_dict(self, color_dict):
+    @color.setter
+    def color(self, color):
 
-        if not color_dict:
-            color_dict = {}
+        if not color:
+            color = {}
             color_mode = LabelColorMode.AUTO
         else:
             color_mode = LabelColorMode.DIRECT
 
-        if self._background_label not in color_dict:
-            color_dict[self._background_label] = 'transparent'
+        if self._background_label not in color:
+            color[self._background_label] = 'transparent'
 
-        if None not in color_dict:
-            color_dict[None] = 'black'
+        if None not in color:
+            color[None] = 'black'
 
         colors = {
             label: transform_color(color_str)[0]
-            for label, color_str in color_dict.items()
+            for label, color_str in color.items()
         }
 
-        self._color_dict = colors
+        self._color = colors
         self.color_mode = color_mode
 
     def _validate_properties(
@@ -354,7 +361,7 @@ class Labels(Image):
                 'properties': self._properties,
                 'seed': self.seed,
                 'data': self.data,
-                'color_dict': self.color_dict,
+                'color': self.color,
             }
         )
         return state
@@ -375,24 +382,37 @@ class Labels(Image):
         self._selected_color = self.get_color(selected_label)
         self.events.selected_label()
 
+        # note: self.color_mode returns a string and this comparison fails,
+        # so use self._color_mode
+        if self._color_mode == LabelColorMode.SELECTED:
+            self.refresh()
+
     @property
     def color_mode(self):
-        """Color mode string"""
+        """Color mode to change how color is represented.
+
+        AUTO (default) allows color to be set via a hash function with a seed.
+
+        DIRECT allows color of each label to be set directly by a color dict.
+
+        SELECTED allows only selected labels to be visible.
+        """
         return str(self._color_mode)
 
     @color_mode.setter
     def color_mode(self, color_mode: Union[str, LabelColorMode]):
         color_mode = LabelColorMode(color_mode)
         if color_mode == LabelColorMode.DIRECT:
-            (
-                custom_colormap,
-                label_color_index,
-            ) = colormaps.color_dict_to_colormap(self.color_dict)
+            (custom_colormap, label_color_index,) = color_dict_to_colormap(
+                self.color
+            )
             self.colormap = custom_colormap
             self._label_color_index = label_color_index
         elif color_mode == LabelColorMode.AUTO:
             self._label_color_index = {}
             self.colormap = self._random_colormap
+        elif color_mode == LabelColorMode.SELECTED:
+            pass
         else:
             raise ValueError("Unsupported Color Mode")
 
@@ -404,12 +424,23 @@ class Labels(Image):
         self.refresh()
 
     @property
+    def brush_shape(self):
+        """str: Paintbrush shape"""
+        return str(self._brush_shape)
+
+    @brush_shape.setter
+    def brush_shape(self, brush_shape):
+        """Set current brush shape."""
+        self._brush_shape = LabelBrushShape(brush_shape)
+        self.cursor = self.brush_shape
+
+    @property
     def mode(self):
         """MODE: Interactive mode. The normal, default mode is PAN_ZOOM, which
         allows for normal interactivity with the canvas.
 
         In PICK mode the cursor functions like a color picker, setting the
-        clicked on label to be the curent label. If the background is picked it
+        clicked on label to be the current label. If the background is picked it
         will select the background label `0`.
 
         In PAINT mode the cursor functions like a paint brush changing any
@@ -456,7 +487,7 @@ class Labels(Image):
             self.mouse_drag_callbacks.append(pick)
         elif mode == Mode.PAINT:
             self.cursor_size = self.brush_size / self.scale_factor
-            self.cursor = 'square'
+            self.cursor = self.brush_shape
             self.interactive = False
             self.help = (
                 'hold <space> to pan/zoom, '
@@ -473,7 +504,7 @@ class Labels(Image):
             self.mouse_drag_callbacks.append(draw)
         elif mode == Mode.ERASE:
             self.cursor_size = self.brush_size / self.scale_factor
-            self.cursor = 'square'
+            self.cursor = self.brush_shape
             self.interactive = False
             self.help = 'hold <space> to pan/zoom, drag to erase a label'
             self.mouse_drag_callbacks.append(draw)
@@ -491,7 +522,7 @@ class Labels(Image):
         """Defines if painting should preserve existing labels.
 
         Default to false to allow paint on existing labels. When
-        set to true, existing labels will be replaced during painting.
+        set to true, existing labels will be preserved during painting.
         """
         return self._preserve_labels
 
@@ -519,7 +550,7 @@ class Labels(Image):
         pixel.
 
         Parameters
-        -------
+        ----------
         raw : array or int
             Raw integer input image.
 
@@ -540,8 +571,30 @@ class Labels(Image):
             )[inv].reshape(raw.shape)
         elif self._color_mode == LabelColorMode.AUTO:
             image = np.where(
-                raw > 0, colormaps._low_discrepancy_image(raw, self._seed), 0
+                raw > 0, low_discrepancy_image(raw, self._seed), 0
             )
+        elif self._color_mode == LabelColorMode.SELECTED:
+            selected = self._selected_label
+            # we were in direct mode previously
+            if self._label_color_index:
+                if selected not in self._label_color_index:
+                    selected = None
+                index = self._label_color_index
+                image = np.where(
+                    raw == selected,
+                    index[selected],
+                    np.where(
+                        raw != self._background_label,
+                        index[None],
+                        index[self._background_label],
+                    ),
+                )
+            else:
+                image = np.where(
+                    raw == selected,
+                    low_discrepancy_image(selected, self._seed),
+                    0,
+                )
         else:
             raise ValueError("Unsupported Color Mode")
         return image
@@ -555,7 +608,7 @@ class Labels(Image):
             col = None
         else:
             val = self._raw_to_displayed(np.array([label]))
-            col = self.colormap[1][val].rgba[0]
+            col = self.colormap.map(val)[0]
         return col
 
     def _reset_history(self, event=None):
@@ -572,7 +625,7 @@ class Labels(Image):
     def _save_history(self):
         self._redo_history = deque()
         if not self._block_saving:
-            self._undo_history.append(self.data[self.dims.indices].copy())
+            self._undo_history.append(self.data[self._slice_indices].copy())
             self._trim_history()
 
     def _load_history(self, before, after):
@@ -580,8 +633,8 @@ class Labels(Image):
             return
 
         prev = before.pop()
-        after.append(self.data[self.dims.indices].copy())
-        self.data[self.dims.indices] = prev
+        after.append(self.data[self._slice_indices].copy())
+        self.data[self._slice_indices] = prev
 
         self.refresh()
 
@@ -611,7 +664,7 @@ class Labels(Image):
         int_coord = tuple(np.round(coord).astype(int))
         # If requested fill location is outside data shape then return
         if np.any(np.less(int_coord, 0)) or np.any(
-            np.greater_equal(int_coord, self.shape)
+            np.greater_equal(int_coord, self.data.shape)
         ):
             return
 
@@ -649,7 +702,7 @@ class Labels(Image):
 
         if not (self.n_dimensional or self.ndim == 2):
             # if working with just the slice, update the rest of the raw data
-            self.data[tuple(self.dims.indices)] = labels
+            self.data[tuple(self._slice_indices)] = labels
 
         if refresh is True:
             self.refresh()
@@ -671,45 +724,65 @@ class Labels(Image):
         """
         if refresh is True:
             self._save_history()
+        brush_size_dims = [self.brush_size] * self.ndim
+        if not self.n_dimensional and self.ndim > 2:
+            for i in self.dims.not_displayed:
+                brush_size_dims[i] = 1
 
-        if self.n_dimensional or self.ndim == 2:
+        if self.brush_shape == "square":
             slice_coord = tuple(
-                [
-                    slice(
-                        np.round(
-                            np.clip(c - self.brush_size / 2 + 0.5, 0, s)
-                        ).astype(int),
-                        np.round(
-                            np.clip(c + self.brush_size / 2 + 0.5, 0, s)
-                        ).astype(int),
-                        1,
-                    )
-                    for c, s in zip(coord, self.shape)
-                ]
-            )
-        else:
-            slice_coord = [0] * self.ndim
-            for i in self.dims.displayed:
-                slice_coord[i] = slice(
-                    np.round(
-                        np.clip(
-                            coord[i] - self.brush_size / 2 + 0.5,
-                            0,
-                            self.shape[i],
-                        )
-                    ).astype(int),
-                    np.round(
-                        np.clip(
-                            coord[i] + self.brush_size / 2 + 0.5,
-                            0,
-                            self.shape[i],
-                        )
-                    ).astype(int),
+                slice(
+                    np.round(np.clip(c - brush_size / 2 + 0.5, 0, s)).astype(
+                        int
+                    ),
+                    np.round(np.clip(c + brush_size / 2 + 0.5, 0, s)).astype(
+                        int
+                    ),
                     1,
                 )
-            for i in self.dims.not_displayed:
-                slice_coord[i] = np.round(coord[i]).astype(int)
+                for c, s, brush_size in zip(
+                    coord, self.data.shape, brush_size_dims
+                )
+            )
+        elif self.brush_shape == "circle":
+            slice_coord = [int(np.round(c)) for c in coord]
+            shape = self.data.shape
+            if not self.n_dimensional and self.ndim > 2:
+                coord = [coord[i] for i in self.dims.displayed]
+                shape = [shape[i] for i in self.dims.displayed]
+
+            sphere_dims = len(coord)
+            # Ensure circle doesn't have spurious point
+            # on edge by keeping radius as ##.5
+            radius = np.floor(self.brush_size / 2) + 0.5
+            mask_indices = sphere_indices(radius, sphere_dims)
+
+            mask_indices = mask_indices + np.round(np.array(coord)).astype(int)
+
+            # discard candidate coordinates that are out of bounds
+            discard_coords = np.logical_and(
+                ~np.any(mask_indices < 0, axis=1),
+                ~np.any(mask_indices >= np.array(shape), axis=1),
+            )
+            mask_indices = mask_indices[discard_coords]
+
+            # Transfer valid coordinates to slice_coord,
+            # or expand coordinate if 3rd dim in 2D image
+            slice_coord_temp = [m for m in mask_indices.T]
+            if not self.n_dimensional and self.ndim > 2:
+                for j, i in enumerate(self.dims.displayed):
+                    slice_coord[i] = slice_coord_temp[j]
+                for i in self.dims.not_displayed:
+                    slice_coord[i] = slice_coord[i] * np.ones(
+                        mask_indices.shape[0], dtype=int
+                    )
+            else:
+                slice_coord = slice_coord_temp
+
             slice_coord = tuple(slice_coord)
+
+        # slice_coord from square brush is tuple of slices per dimension
+        # slice_coord from circle brush is tuple of coord. arrays per dimension
 
         # update the labels image
 
@@ -720,7 +793,11 @@ class Labels(Image):
                 keep_coords = self.data[slice_coord] == self.selected_label
             else:
                 keep_coords = self.data[slice_coord] == self._background_label
-            self.data[slice_coord][keep_coords] = new_label
+            if self.brush_shape == "circle":
+                slice_coord = tuple(sc[keep_coords] for sc in slice_coord)
+                self.data[slice_coord] = new_label
+            else:
+                self.data[slice_coord][keep_coords] = new_label
 
         if refresh is True:
             self.refresh()
@@ -731,8 +808,12 @@ class Labels(Image):
         if self._label_index and self._properties:
             # if the cursor is not outside the image or on the background
             if self._value is not None:
-                if self._value in self._label_index:
-                    idx = self._label_index[self._value]
+                if self.multiscale:
+                    value = self._value[1]
+                else:
+                    value = self._value
+                if value in self._label_index:
+                    idx = self._label_index[value]
                     for k, v in self._properties.items():
                         if k != 'index':
                             msg += f', {k}: {v[idx]}'

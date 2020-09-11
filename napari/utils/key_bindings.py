@@ -39,7 +39,6 @@ from collections import ChainMap
 
 from vispy.util import keys
 
-
 SPECIAL_KEYS = [
     keys.SHIFT,
     keys.CONTROL,

@@ -1,16 +1,17 @@
 # from napari.layers.base.base import Layer
-# from napari.utils.event import Event
+# from napari.utils.events import Event
 # from napari.utils.colormaps import AVAILABLE_COLORMAPS
 
-from ..base import Layer
-from ...utils.event import Event
-from ...utils.colormaps import AVAILABLE_COLORMAPS
-
-from typing import Union, Tuple, List
+from typing import Union
 
 import numpy as np
 
+from ...utils.colormaps import AVAILABLE_COLORMAPS
+from ...utils.events import Event
+from ..base import Layer
 from ._track_utils import TrackManager, check_track_dimensionality
+
+ALLOW_ND_SLICING = False
 
 
 class Tracks(Layer):
@@ -138,15 +139,16 @@ class Tracks(Layer):
             properties=Event,
         )
 
-        # store the currently displayed dims, we can use changes to this to
-        # refactor what is sent to vispy
-        self._current_dims_displayed = self.dims.displayed
-
         # track manager deals with data slicing, graph building an properties
         self._manager = TrackManager()
         self._track_colors = (
             None  # this layer takes care of coloring the tracks
         )
+
+        # masks used when slicing nD data, None indicates that everything
+        # should be displayed
+        self._mask_data = None
+        self._mask_graph = None
 
         self.data = data  # this is the track data
         self.properties = properties or []
@@ -160,11 +162,22 @@ class Tracks(Layer):
         self._color_by = color_by  # default color by ID
         self.colormap = colormap
 
-        self._update_dims()
+        # self._update_dims()
 
-    def _get_extent(self) -> List[Tuple[int, int, int]]:
-        """Determine ranges for slicing given by (min, max, step)."""
-        return self._manager.extent
+    @property
+    def _extent_data(self) -> np.ndarray:
+        """Extent of layer in data coordinates.
+
+        Returns
+        -------
+        extent_data : array, shape (2, D)
+        """
+        if len(self.data) == 0:
+            extrema = np.full((2, self.ndim), np.nan)
+        else:
+            # Convert from projections to endpoints using the current length
+            extrema = self._manager.extent
+        return extrema
 
     def _get_ndim(self) -> int:
         """Determine number of dimensions of the layer."""
@@ -198,11 +211,49 @@ class Tracks(Layer):
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
 
-        # check whether we want to slice the data
-        if self.dims.displayed != self._current_dims_displayed:
-            self._current_dims_displayed = self.dims.displayed
-            # TODO(arl): we can use the shader masking to slice the data
-            # print(self.dims.displayed, self.dims.indices)
+        if not ALLOW_ND_SLICING:
+            return
+
+        indices = self._slice_indices
+
+        # if none of the dims need slicing, return since this function gets
+        # called every time a slider changes
+        if all([isinstance(idx, slice) for idx in indices[1:]]):
+            return
+
+        # NOTE(arl): to whoever is reading this. The implementation is a bit
+        # clunky here - no real need to iterate over the dims, but it works
+        # by building a vertex mask, i.e. those vertices that should be
+        # displayed, give the current slicing. This is only applied to the
+        # dims>0 since we always want to project time
+        #
+        # a better way to do this, may be to use a similar trick to the time
+        # slicing in the vertex shader, i.e. provide the current slider
+        # positions and a window, and scale the alpha value accordingly
+
+        n_track_vertices = self._manager.track_vertices.shape[0]
+        n_graph_vertices = self._manager.graph_vertices.shape[0]
+        self._mask_data = np.array([True] * n_track_vertices)
+        self._mask_graph = np.array([True] * n_graph_vertices)
+
+        # this bins the data into integer bins for slicing.
+        # NOTE(arl): we could also use a hash bin here
+        bin_track_vertices = np.round(
+            self._manager.track_vertices[:, 1:]
+        ).astype(np.int32)
+        bin_graph_vertices = np.round(
+            self._manager.graph_vertices[:, 1:]
+        ).astype(np.int32)
+        for i, idx in enumerate(indices[1:]):
+            if isinstance(idx, slice):
+                continue
+
+            axis_mask_data = bin_track_vertices[:, i] == idx
+            axis_mask_graph = bin_graph_vertices[:, i] == idx
+            self._mask_data = np.logical_and(axis_mask_data, self._mask_data)
+            self._mask_graph = np.logical_and(
+                axis_mask_graph, self._mask_graph
+            )
 
         return
 
@@ -249,9 +300,14 @@ class Tracks(Layer):
     def current_time(self):
         """ current time according to the first dimension """
         # TODO(arl): get the correct index here
-        if isinstance(self.dims.indices[0], slice):
+        time_step = self._slice_indices[0]
+
+        if isinstance(time_step, slice):
+            # if we are visualizing all time, then just set to the maximum
+            # timestamp of the dataset
             return self._manager.max_time
-        return self.dims.indices[0]
+
+        return time_step
 
     @property
     def use_fade(self) -> bool:
@@ -268,6 +324,8 @@ class Tracks(Layer):
     def data(self, data: list):
         """ set the data and build the vispy arrays for display """
         self._manager.data = data
+        self._update_dims()
+        self.events.data()
 
     @property
     def properties(self) -> list:
@@ -359,7 +417,6 @@ class Tracks(Layer):
             return
         self._color_by = color_by
         self._recolor_tracks()
-        # fire the events and update the display
         self.events.color_by()
         self.refresh()
 
@@ -393,7 +450,10 @@ class Tracks(Layer):
             vertex_properties = _norm(vertex_properties)
 
         # actually set the vertex colors
-        self._track_colors = colormap[vertex_properties]
+        if hasattr(colormap, 'map_modulo'):
+            self._track_colors = colormap.map_modulo(vertex_properties)
+        else:
+            self._track_colors = colormap.map(vertex_properties)
 
     @property
     def track_connex(self) -> np.ndarray:
