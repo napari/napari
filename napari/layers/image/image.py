@@ -2,6 +2,7 @@
 """
 import types
 import warnings
+from typing import Callable, Union
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -9,11 +10,17 @@ from scipy import ndimage as ndi
 from ...components.chunk import ChunkKey, ChunkRequest, chunk_loader
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
+from ...utils.misc import guess_complex
 from ...utils.status_messages import format_float
 from ..base import Layer
 from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
-from ._image_constants import Interpolation, Interpolation3D, Rendering
+from ._image_constants import (
+    ComplexRendering,
+    Interpolation,
+    Interpolation3D,
+    Rendering,
+)
 from ._image_slice import ImageSlice
 from ._image_utils import guess_multiscale, guess_rgb
 
@@ -143,6 +150,7 @@ class Image(IntensityVisualizationMixin, Layer):
         contrast_limits=None,
         gamma=1,
         interpolation='nearest',
+        complex_rendering='magnitude',
         rendering='mip',
         iso_threshold=0.5,
         attenuation=0.05,
@@ -194,12 +202,18 @@ class Image(IntensityVisualizationMixin, Layer):
         self.events.add(
             interpolation=Event,
             rendering=Event,
+            complex_rendering=Event,
             iso_threshold=Event,
             attenuation=Event,
         )
 
         # Set data
         self.rgb = rgb
+        self.is_complex = (
+            guess_complex(data[0]) if self.multiscale else guess_complex(data)
+        )
+        self._complex_rendering = None
+        self.complex_rendering = complex_rendering
         self._data = data
         if self.multiscale:
             self._data_level = len(self.data) - 1
@@ -285,6 +299,8 @@ class Image(IntensityVisualizationMixin, Layer):
             input_data = self.data[-1]
         else:
             input_data = self.data
+        if self.is_complex:
+            input_data = self._complex_rendering(input_data)
         return calc_data_range(input_data)
 
     @property
@@ -298,6 +314,9 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @data.setter
     def data(self, data):
+        self.is_complex = (
+            guess_complex(data[0]) if self.multiscale else guess_complex(data)
+        )
         self._data = data
         self._update_dims()
         self.events.data()
@@ -331,9 +350,9 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @property
     def level_shapes(self):
-        """array: Shapes of each level of the multiscale or just of image."""
+        """array: Shapes of each level of the pyramid or just of image."""
         if self.multiscale:
-            if self.rgb:
+            if (not self.is_complex) and self.rgb:
                 shapes = [im.shape[:-1] for im in self.data]
             else:
                 shapes = [im.shape for im in self.data]
@@ -440,6 +459,33 @@ class Image(IntensityVisualizationMixin, Layer):
         """Set current rendering mode."""
         self._rendering = Rendering(rendering)
         self.events.rendering()
+
+    @property
+    def complex_rendering(self) -> str:
+        """Mode for converting complex values to real values."""
+        return str(self._complex_rendering)
+
+    @complex_rendering.setter
+    def complex_rendering(
+        self, value: Union[str, ComplexRendering, Callable]
+    ) -> None:
+        """Set mode for rendering complex valued data."""
+
+        _value = ComplexRendering(value)
+
+        if _value == self._complex_rendering:
+            return
+
+        self._complex_rendering = _value
+        if self._complex_rendering == ComplexRendering.PHASE:
+            self.contrast_limits = [-np.pi, np.pi]
+            self.contrast_limits_range = [-np.pi, np.pi]
+        else:
+            if hasattr(self, '_data'):
+                self.reset_contrast_limits()
+                self.contrast_limits_range = self.contrast_limits
+
+        self.events.complex_rendering()
 
     @property
     def loaded(self):
@@ -680,7 +726,7 @@ class Image(IntensityVisualizationMixin, Layer):
             # Is there a nicer way to prevent this from getting called?
             return
 
-        image = self._slice.thumbnail.view.real
+        image = self._slice.thumbnail.view
 
         if self.dims.ndisplay == 3 and self.dims.ndim > 2:
             image = np.max(image, axis=0)
@@ -721,6 +767,18 @@ class Image(IntensityVisualizationMixin, Layer):
                 else:
                     alpha = np.full(downsampled.shape[:2] + (1,), self.opacity)
                 colormapped = np.concatenate([downsampled, alpha], axis=2)
+        elif self.is_complex:
+            zoom_factor_int = np.clip(
+                np.round(1 / np.array(zoom_factor)).astype(int), 1, None
+            )
+            downsampled = image[
+                tuple(slice(None, None, z) for z in zoom_factor_int)
+            ]
+
+            precolormapped = self._complex_rendering(downsampled)
+            color_array = self.colormap.map(precolormapped.ravel())
+            colormapped = color_array.reshape(downsampled.shape + (4,))
+            colormapped[..., 3] *= self.opacity
         else:
             # warning filter can be removed with scipy 1.4
             with warnings.catch_warnings():

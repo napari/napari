@@ -1,5 +1,7 @@
 from enum import auto
 
+import numpy as np
+
 from ...utils.misc import StringEnum
 
 
@@ -60,3 +62,25 @@ class Rendering(StringEnum):
     ISO = auto()
     MIP = auto()
     ATTENUATED_MIP = auto()
+
+
+class ComplexRendering(StringEnum):
+
+    MAGNITUDE = auto()
+    PHASE = auto()
+    REAL = auto()
+    IMAGINARY = auto()
+
+    def __call__(self, *args, **kwargs):
+        return self.to_function()(*args, **kwargs)
+
+    def to_function(self):
+        return complex_renderers[self]
+
+
+complex_renderers = {
+    ComplexRendering.MAGNITUDE: np.abs,
+    ComplexRendering.PHASE: np.angle,
+    ComplexRendering.REAL: np.real,
+    ComplexRendering.IMAGINARY: np.imag,
+}

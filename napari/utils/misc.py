@@ -88,6 +88,11 @@ def is_iterable(arg, color=False):
         return True
 
 
+def guess_complex(obj):
+    """Dask-safe way to check whether an array is complex."""
+    return getattr(obj, 'dtype', None) in (np.complex64, np.complex128)
+
+
 def is_sequence(arg):
     """Check if ``arg`` is a sequence like a list or tuple.
 

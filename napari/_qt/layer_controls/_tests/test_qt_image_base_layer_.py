@@ -102,3 +102,15 @@ def test_clim_slider_step_size_and_precision(qtbot, mag):
     # the slider step size should also be inversely proportional to the data
     # range, with 1000 steps across the data range
     assert np.ceil(popup.slider._step * 10 ** (mag + 4)) == 10
+
+
+@pytest.mark.skip(reason="broken test that needs to be fixed")
+def test_complex_colormap_mode_in_3d(viewermodel_factory):
+    """Test that complex rending in one of the RGB modes works in 3d views."""
+    view, viewer = viewermodel_factory()
+
+    data = np.random.random((10, 10)) + np.random.random((10, 10)) * 1j
+    layer = viewer.add_image(data)
+
+    layer.complex_rendering = 'colormap'
+    viewer.dims.ndisplay = 3
