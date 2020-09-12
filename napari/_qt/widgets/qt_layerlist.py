@@ -14,6 +14,8 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from ..qt_chunk_receiver import QtChunkReceiver
+
 
 class QtLayerList(QScrollArea):
     """Widget storing a list of all the layers present in the current window.
@@ -66,6 +68,8 @@ class QtLayerList(QScrollArea):
 
         self._drag_start_position = np.zeros(2)
         self._drag_name = None
+
+        self.chunk_receiver = QtChunkReceiver(self)
 
     def _add(self, event):
         """Insert widget for layer `event.item` at index `event.index`.
@@ -645,3 +649,7 @@ class QtLayerWidget(QFrame):
             QImage.Format_RGBA8888,
         )
         self.thumbnailLabel.setPixmap(QPixmap.fromImage(image))
+
+    def close(self):
+        """Viewer is closing."""
+        self.chunk_receiver.close()

@@ -16,7 +16,7 @@ def test_stack_to_images_basic():
     images = stack_to_images(stack, 1, colormap=None)
 
     assert isinstance(images, list)
-    assert images[0].colormap[0] == 'magenta'
+    assert images[0].colormap.name == 'magenta'
     assert len(images) == 2
 
     for i in images:
@@ -66,7 +66,7 @@ def test_stack_to_images_4_channels():
 
     assert isinstance(images, list)
     assert len(images) == 4
-    assert images[-2].colormap[0] == 'red'
+    assert images[-2].colormap.name == 'red'
     for i in images:
         assert type(stack) == type(i)
         assert i.data.shape == (128, 128)
@@ -112,7 +112,7 @@ def test_images_to_stack_with_scale():
 
     assert isinstance(stack, Image)
     assert stack.data.shape == (10, 3, 128, 128)
-    assert stack.colormap[0] == 'green'
+    assert stack.colormap.name == 'green'
     assert list(stack.scale) == [3, 1, 1, 1]
     assert list(stack.translate) == [1, 0, 2, 3]
 
@@ -132,7 +132,7 @@ def test_images_to_stack_none_scale():
 
     assert isinstance(stack, Image)
     assert stack.data.shape == (10, 3, 128, 128)
-    assert stack.colormap[0] == 'green'
+    assert stack.colormap.name == 'green'
     assert list(stack.scale) == [4, 1, 1, 1]
     assert list(stack.translate) == [0, 0, -1, 2]
 

@@ -183,7 +183,7 @@ def test_changing_display_surface(make_test_viewer):
     view = viewer.window.qt_viewer
 
     np.random.seed(0)
-    vertices = np.random.random((10, 3))
+    vertices = 20 * np.random.random((10, 3))
     faces = np.random.randint(10, size=(6, 3))
     values = np.random.random(10)
     data = (vertices, faces, values)

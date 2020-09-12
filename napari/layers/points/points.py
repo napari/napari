@@ -4,10 +4,8 @@ from itertools import cycle
 from typing import Dict, List, Tuple, Union
 
 import numpy as np
-from vispy.color.colormap import Colormap
 
-from ...types import ValidColormapArg
-from ...utils.colormaps import ensure_colormap_tuple
+from ...utils.colormaps import Colormap, ValidColormapArg, ensure_colormap
 from ...utils.colormaps.standardize_color import (
     get_color_namelist,
     hex_to_name,
@@ -68,9 +66,8 @@ class Points(Layer):
     edge_color_cycle : np.ndarray, list
         Cycle of colors (provided as string name, RGB, or RGBA) to map to edge_color if a
         categorical attribute is used color the vectors.
-    edge_colormap : str, vispy.color.colormap.Colormap
+    edge_colormap : str, napari.utils.Colormap
         Colormap to set edge_color if a continuous attribute is used to set face_color.
-        See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
     edge_contrast_limits : None, (float, float)
         clims for mapping the property to a color map. These are the min and max value
         of the specified property that are mapped to 0 and 1, respectively.
@@ -81,9 +78,8 @@ class Points(Layer):
     face_color_cycle : np.ndarray, list
         Cycle of colors (provided as string name, RGB, or RGBA) to map to face_color if a
         categorical attribute is used color the vectors.
-    face_colormap : str, vispy.color.colormap.Colormap
+    face_colormap : str, napari.utils.Colormap
         Colormap to set face_color if a continuous attribute is used to set face_color.
-        See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
     face_contrast_limits : None, (float, float)
         clims for mapping the property to a color map. These are the min and max value
         of the specified property that are mapped to 0 and 1, respectively.
@@ -133,9 +129,8 @@ class Points(Layer):
     edge_color_cycle : np.ndarray, list
         Cycle of colors (provided as string name, RGB, or RGBA) to map to edge_color if a
         categorical attribute is used color the vectors.
-    edge_colormap : str, vispy.color.colormap.Colormap
+    edge_colormap : str, napari.utils.Colormap
         Colormap to set edge_color if a continuous attribute is used to set face_color.
-        See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
     edge_contrast_limits : None, (float, float)
         clims for mapping the property to a color map. These are the min and max value
         of the specified property that are mapped to 0 and 1, respectively.
@@ -146,9 +141,8 @@ class Points(Layer):
     face_color_cycle : np.ndarray, list
         Cycle of colors (provided as string name, RGB, or RGBA) to map to face_color if a
         categorical attribute is used color the vectors.
-    face_colormap : str, vispy.color.colormap.Colormap
+    face_colormap : str, napari.utils.Colormap
         Colormap to set face_color if a continuous attribute is used to set face_color.
-        See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
     face_contrast_limits : None, (float, float)
         clims for mapping the property to a color map. These are the min and max value
         of the specified property that are mapped to 0 and 1, respectively.
@@ -285,7 +279,6 @@ class Points(Layer):
 
         # Save the point coordinates
         self._data = np.asarray(data)
-        self.dims.clip = False
 
         # Save the properties
         if properties is None:
@@ -442,7 +435,7 @@ class Points(Layer):
             contrast_limits = getattr(self, f'_{attribute}_contrast_limits')
             curr_color, _ = map_property(
                 prop=prop_value,
-                colormap=colormap[1],
+                colormap=colormap,
                 contrast_limits=contrast_limits,
             )
         setattr(self, f'_current_{attribute}_color', curr_color)
@@ -550,7 +543,7 @@ class Points(Layer):
 
             fc, _ = map_property(
                 prop=color_property_value,
-                colormap=colormap[1],
+                colormap=colormap,
                 contrast_limits=contrast_limits,
             )
             new_colors = np.tile(fc, (adding, 1))
@@ -764,18 +757,14 @@ class Points(Layer):
 
         Returns
         -------
-        colormap_name : str
-            The name of the current colormap.
-        colormap : vispy.color.Colormap
-            The vispy colormap object.
+        colormap : napari.utils.Colormap
+            The Colormap object.
         """
-        return self._edge_colormap_name, self._edge_colormap
+        return self._edge_colormap
 
     @edge_colormap.setter
     def edge_colormap(self, colormap: ValidColormapArg):
-        name, cmap = ensure_colormap_tuple(colormap)
-        self._edge_colormap_name = name
-        self._edge_colormap = cmap
+        self._edge_colormap = ensure_colormap(colormap)
 
     @property
     def edge_contrast_limits(self) -> Tuple[float, float]:
@@ -848,22 +837,18 @@ class Points(Layer):
 
     @property
     def face_colormap(self) -> Tuple[str, Colormap]:
-        """Return the colormap to be applied to a property to get the edge color.
+        """Return the colormap to be applied to a property to get the face color.
 
         Returns
         -------
-        colormap_name : str
-            The name of the current colormap.
-        colormap : vispy.color.Colormap
-            The vispy colormap object.
+        colormap : napari.utils.Colormap
+            The Colormap object.
         """
-        return self._face_colormap_name, self._face_colormap
+        return self._face_colormap
 
     @face_colormap.setter
     def face_colormap(self, colormap: ValidColormapArg):
-        name, cmap = ensure_colormap_tuple(colormap)
-        self._face_colormap_name = name
-        self._face_colormap = cmap
+        self._face_colormap = ensure_colormap(colormap)
 
     @property
     def face_contrast_limits(self) -> Union[None, Tuple[float, float]]:
@@ -1117,7 +1102,7 @@ class Points(Layer):
                     if update_color_mapping or contrast_limits is None:
 
                         colors, contrast_limits = map_property(
-                            prop=color_properties, colormap=colormap[1]
+                            prop=color_properties, colormap=colormap
                         )
                         setattr(
                             self,
@@ -1128,7 +1113,7 @@ class Points(Layer):
 
                         colors, _ = map_property(
                             prop=color_properties,
-                            colormap=colormap[1],
+                            colormap=colormap,
                             contrast_limits=contrast_limits,
                         )
                 else:
@@ -1167,11 +1152,11 @@ class Points(Layer):
                 'edge_width': self.edge_width,
                 'face_color': self.face_color,
                 'face_color_cycle': self.face_color_cycle,
-                'face_colormap': self.face_colormap[0],
+                'face_colormap': self.face_colormap.name,
                 'face_contrast_limits': self.face_contrast_limits,
                 'edge_color': self.edge_color,
                 'edge_color_cycle': self.edge_color_cycle,
-                'edge_colormap': self.edge_colormap[0],
+                'edge_colormap': self.edge_colormap.name,
                 'edge_contrast_limits': self.edge_contrast_limits,
                 'properties': self.properties,
                 'text': self.text._get_state(),
@@ -1490,7 +1475,7 @@ class Points(Layer):
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
         # get the indices of points in view
-        indices, scale = self._slice_data(self.dims.indices)
+        indices, scale = self._slice_data(self._slice_indices)
         self._view_size_scale = scale
         self._indices_view = indices
         # get the selected points that are in view
@@ -1666,7 +1651,7 @@ class Points(Layer):
             not_disp = self.dims.not_displayed
             data = deepcopy(self._clipboard['data'])
             offset = [
-                self.dims.indices[i] - self._clipboard['indices'][i]
+                self._slice_indices[i] - self._clipboard['indices'][i]
                 for i in not_disp
             ]
             data[:, not_disp] = data[:, not_disp] + np.array(offset)
@@ -1717,7 +1702,7 @@ class Points(Layer):
                 'properties': {
                     k: deepcopy(v[index]) for k, v in self.properties.items()
                 },
-                'indices': self.dims.indices,
+                'indices': self._slice_indices,
             }
 
             if self.text.values is None:

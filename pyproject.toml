@@ -9,6 +9,24 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools_scm]
 write_to = "napari/_version.py"
 
+[tool.briefcase]
+project_name = "napari"
+bundle = "com.napari"
+author = "napari"
+url = "https://napari.org/"
+license = "BSD license"
+# version populated in bundle.py
+version = "0.0.1"
+
+[tool.briefcase.app.napari]
+formal_name = "napari"
+description = "napari: a multi-dimensional image viewer"
+sources = ['napari']
+icon = "resources/icon"
+# populated in bundle.py
+requires = []
+
+
 [tool.black]
 target-version = ['py36', 'py37', 'py38']
 skip-string-normalization = true
@@ -35,6 +53,7 @@ exclude = '''
 
 [tool.check-manifest]
 ignore = [
+  "bundle.py",
   ".cirrus.yml",
   ".pre-commit-config.yaml",
   "asv.conf.json",
@@ -54,4 +73,7 @@ filterwarnings = [
   "ignore::DeprecationWarning:skimage.util.dtype:226",
   "ignore:QFontMetrics.width::qtconsole",
   "ignore:Accessing zmq Socket:DeprecationWarning:jupyter_client"
+]
+markers = [
+    "perfmon: marks tests that require perfmon to be enabled"
 ]

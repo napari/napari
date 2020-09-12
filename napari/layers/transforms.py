@@ -172,7 +172,7 @@ class ScaleTranslate(Transform):
         translate = np.concatenate(
             ([0.0] * (coords.shape[1] - len(self.translate)), self.translate)
         )
-        return np.squeeze(scale * coords + translate)
+        return np.atleast_1d(np.squeeze(scale * coords + translate))
 
     @property
     def inverse(self) -> 'ScaleTranslate':
