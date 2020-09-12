@@ -121,6 +121,9 @@ class Image(IntensityVisualizationMixin, Layer):
     interpolation : str
         Interpolation mode used by vispy. Must be one of our supported
         modes.
+    complex_rendering : str
+        Rendering mode for complex-valued data. Must be one of 'magnitude',
+        'phase', 'real', 'imaginary'
     rendering : str
         Rendering mode used by vispy. Must be one of our supported
         modes.
