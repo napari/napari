@@ -353,9 +353,9 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @property
     def level_shapes(self):
-        """array: Shapes of each level of the pyramid or just of image."""
+        """array: Shapes of each level of the multiscale or just of image."""
         if self.multiscale:
-            if (not self.is_complex) and self.rgb:
+            if self.rgb:
                 shapes = [im.shape[:-1] for im in self.data]
             else:
                 shapes = [im.shape for im in self.data]
