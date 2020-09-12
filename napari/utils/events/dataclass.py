@@ -147,6 +147,7 @@ def add_events_to_class(cls: Type[C]) -> Type[C]:
 
 def getattr_with_conversion(self: C, name: str) -> Any:
     """Modified __getattr__ method that allows class override.
+
     Parameters
     ----------
     self : T
@@ -266,6 +267,7 @@ def convert_fields_to_properties(cls: Type[C]) -> Type[C]:
     for name, type_ in list(cls.__dict__.get('__annotations__', {}).items()):
         # ClassVar and InitVar types are exempt from dataclasses and properties
         # https://docs.python.org/3/library/dataclasses.html#class-variables
+        # TODO: private methods !
         if _dc._is_classvar(type_, typing) or _dc._is_initvar(type_, _dc):
             continue
         private_name = f"_{name}"
@@ -274,6 +276,7 @@ def convert_fields_to_properties(cls: Type[C]) -> Type[C]:
 
         # add the private_name as a ClassVar annotation on the original class
         # (annotations of type ClassVar are ignored by the dataclass)
+        # `self.x` is the property, `self._x` contains the data
         cls.__annotations__[private_name] = ClassVar[type_]
 
         fget = prop_getter(private_name, coerce_funcs.get(name).fget)
@@ -405,10 +408,13 @@ def dataclass(
     # if neither events or properties are True, this function is exactly like
     # the builtin `dataclasses.dataclass`
     with stripped_annotated_types(cls):
+        # TODO: don't use private
         cls = _dc._process_class(
             cls, init, repr, eq, order, unsafe_hash, frozen
         )
 
+    # XXX: Open question: should properties=True make ALL fields properties?
+    # or should we declare that on each one...
     if properties:
         # convert public dataclass fields to properties
         cls = convert_fields_to_properties(cls)
@@ -419,3 +425,8 @@ def dataclass(
 def _get_state(self):
     """Get dictionary of dataclass fiels."""
     return _dc.asdict(self)
+
+
+# TODO: docs on when to do initVar vs classVar
+# viewerModel
+# see if we can get Layer (base class) to work without others...
