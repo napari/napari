@@ -38,6 +38,13 @@ class Interpolation3D(StringEnum):
     NEAREST = auto()
 
 
+class InterpolationComplex(StringEnum):
+    """INTERPOLATION: Vispy interpolation mode for complex image rendering."""
+
+    BILINEAR = auto()
+    NEAREST = auto()
+
+
 class Rendering(StringEnum):
     """Rendering: Rendering mode for the layer.
 

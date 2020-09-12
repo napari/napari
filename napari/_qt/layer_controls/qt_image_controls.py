@@ -5,6 +5,7 @@ from ...layers.image._image_constants import (
     ComplexRendering,
     Interpolation,
     Interpolation3D,
+    InterpolationComplex,
     Rendering,
 )
 from .qt_image_controls_base import QtBaseImageControls
@@ -274,9 +275,13 @@ class QtImageControls(QtBaseImageControls):
 
     def _update_interpolation_combo(self):
         self.interpComboBox.clear()
-        interp_enum = (
-            Interpolation3D if self.layer.dims.ndisplay == 3 else Interpolation
-        )
+        if self.layer.dims.ndisplay == 3:
+            interp_enum = Interpolation3D
+        elif self.layer.is_complex:
+            interp_enum = InterpolationComplex
+        else:
+            interp_enum = Interpolation
+
         self.interpComboBox.addItems(interp_enum.keys())
         index = self.interpComboBox.findText(
             self.layer.interpolation, Qt.MatchFixedString

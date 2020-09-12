@@ -1,7 +1,3 @@
-# -*- coding: utf-8 -*-
-# Copyright (c) Vispy Development Team. All Rights Reserved.
-# Distributed under the (new) BSD License. See LICENSE.txt for more info.
-
 import numpy as np
 from .image import ImageVisual
 from vispy.gloo import Texture2D
@@ -24,7 +20,6 @@ class ComplexImageVisual(ImageVisual):
         complex_mode='magnitude',
         **kwargs,
     ):
-        self._x = False
         self._complex_mode = complex_mode
         self._texture_i = Texture2D(
             np.zeros((1, 1)),
@@ -32,7 +27,16 @@ class ComplexImageVisual(ImageVisual):
             internalformat='r32f',
             format='luminance',
         )
-        super().__init__()
+        super().__init__(
+            data=data,
+            method=method,
+            grid=grid,
+            cmap=cmap,
+            clim=clim,
+            gamma=gamma,
+            interpolation=interpolation,
+            **kwargs,
+        )
 
         interp = 'linear' if self._interpolation == 'bilinear' else 'nearest'
         self._texture = Texture2D(
@@ -46,6 +50,7 @@ class ComplexImageVisual(ImageVisual):
     def _build_interpolation(self):
         super()._build_interpolation()
         self._data_lookup_fn['texture_i'] = self._texture_i
+        self._texture_i.interpolation = self._texture.interpolation
 
     def _build_texture(self):
         data = self._data
@@ -83,6 +88,10 @@ class ComplexImageVisual(ImageVisual):
             self.update()
 
     def _build_color_transform(self, data, clim, gamma, cmap):
+        fclim = Function(_apply_clim)
+        fgamma = Function(_apply_gamma)
+        fclim['clim'] = clim
+        fgamma['gamma'] = gamma
 
         mode_funcs = {
             'magnitude': _complex_mag,
@@ -90,11 +99,6 @@ class ComplexImageVisual(ImageVisual):
             'real': _complex_real,
             'imaginary': _complex_imaginary,
         }
-
-        fclim = Function(_apply_clim)
-        fgamma = Function(_apply_gamma)
-        fclim['clim'] = clim
-        fgamma['gamma'] = gamma
         chain = [
             Function(mode_funcs[self.complex_mode]),
             fclim,
