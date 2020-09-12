@@ -75,14 +75,6 @@ _interpolation_template = """
         return %s($texture, $shape, texcoord);
     }"""
 
-_texture_lookup = """
-    vec4 texture_lookup(vec2 texcoord) {
-        if(texcoord.x < 0.0 || texcoord.x > 1.0 ||
-        texcoord.y < 0.0 || texcoord.y > 1.0) {
-            discard;
-        }
-        return texture2D($texture, texcoord);
-    }"""
 
 _apply_clim_float = """
     float apply_clim(float data) {
@@ -111,24 +103,6 @@ _apply_gamma = """
 
 _null_color_transform = 'vec4 pass(vec4 color) { return color; }'
 _c2l = 'float cmap(vec4 color) { return (color.r + color.g + color.b) / 3.; }'
-
-
-def _build_color_transform(data, clim, gamma, cmap):
-    if data.ndim == 2 or data.shape[2] == 1:
-        fclim = Function(_apply_clim_float)
-        fgamma = Function(_apply_gamma_float)
-        fun = FunctionChain(
-            None, [Function(_c2l), fclim, fgamma, Function(cmap.glsl_map)]
-        )
-    else:
-        fclim = Function(_apply_clim)
-        fgamma = Function(_apply_gamma)
-        fun = FunctionChain(
-            None, [Function(_null_color_transform), fclim, fgamma]
-        )
-    fclim['clim'] = clim
-    fgamma['gamma'] = gamma
-    return fun
 
 
 class ImageVisual(Visual):
@@ -184,6 +158,15 @@ class ImageVisual(Visual):
     if the data are 2D.
     """
 
+    _texture_lookup = """
+        vec4 texture_lookup(vec2 texcoord) {
+            if(texcoord.x < 0.0 || texcoord.x > 1.0 ||
+            texcoord.y < 0.0 || texcoord.y > 1.0) {
+                discard;
+            }
+            return texture2D($texture, texcoord);
+        }"""
+
     def __init__(
         self,
         data=None,
@@ -227,8 +210,8 @@ class ImageVisual(Visual):
 
         # overwrite "nearest" and "bilinear" spatial-filters
         # with  "hardware" interpolation _data_lookup_fn
-        self._interpolation_fun['nearest'] = Function(_texture_lookup)
-        self._interpolation_fun['bilinear'] = Function(_texture_lookup)
+        self._interpolation_fun['nearest'] = Function(self._texture_lookup)
+        self._interpolation_fun['bilinear'] = Function(self._texture_lookup)
 
         if interpolation not in self._interpolation_names:
             raise ValueError(
@@ -533,6 +516,23 @@ class ImageVisual(Visual):
             prg.vert['transform'] = self._null_tr
             prg.frag['transform'] = trs.get_transform().inverse
 
+    def _build_color_transform(self, data, clim, gamma, cmap):
+        if data.ndim == 2 or data.shape[2] == 1:
+            fclim = Function(_apply_clim_float)
+            fgamma = Function(_apply_gamma_float)
+            fun = FunctionChain(
+                None, [Function(_c2l), fclim, fgamma, Function(cmap.glsl_map)]
+            )
+        else:
+            fclim = Function(_apply_clim)
+            fgamma = Function(_apply_gamma)
+            fun = FunctionChain(
+                None, [Function(_null_color_transform), fclim, fgamma]
+            )
+        fclim['clim'] = clim
+        fgamma['gamma'] = gamma
+        return fun
+
     def _prepare_draw(self, view):
         if self._data is None:
             return False
@@ -547,7 +547,7 @@ class ImageVisual(Visual):
             prg = view.view_program
             self.shared_program.frag[
                 'color_transform'
-            ] = _build_color_transform(
+            ] = self._build_color_transform(
                 self._data, self.clim_normalized, self.gamma, self.cmap
             )
             self._need_colortransform_update = False

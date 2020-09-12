@@ -3,7 +3,7 @@ import warnings
 import numpy as np
 from vispy.color import Colormap as VispyColormap
 
-from .image import Image as ImageNode
+from .image import ComplexImage as ImageNode
 from .vispy_base_layer import VispyBaseLayer
 from .volume import Volume as VolumeNode
 
@@ -13,6 +13,7 @@ texture_dtypes = [
     np.dtype(np.int16),
     np.dtype(np.uint16),
     np.dtype(np.float32),
+    np.dtype(np.complex64),
 ]
 
 
@@ -77,7 +78,11 @@ class VispyImageLayer(VispyBaseLayer):
         if dtype not in texture_dtypes:
             try:
                 dtype = dict(
-                    i=np.int16, f=np.float32, u=np.uint16, b=np.uint8
+                    i=np.int16,
+                    f=np.float32,
+                    u=np.uint16,
+                    b=np.uint8,
+                    c=np.complex64,
                 )[dtype.kind]
             except KeyError:  # not an int or float
                 raise TypeError(
