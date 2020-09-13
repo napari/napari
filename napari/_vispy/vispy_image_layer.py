@@ -36,6 +36,7 @@ class VispyImageLayer(VispyBaseLayer):
         self._on_data_change()
 
     def _on_display_change(self, data=None):
+
         parent = self.node.parent
         self.node.parent = None
 
@@ -52,12 +53,25 @@ class VispyImageLayer(VispyBaseLayer):
         else:
             self.node.visible = self.layer.visible
 
-        self.node.set_data(data)
+        if self.layer.loaded:
+            self.node.set_data(data)
+
         self.node.parent = parent
         self.node.order = self.order
         self.reset()
 
+    def _data_astype(self, data, dtype):
+        """Broken out as a separate function so we can time with perfmon."""
+        return data.astype(dtype)
+
     def _on_data_change(self, event=None):
+        """Our self.layer._data_view has been updated, update our node.
+        """
+        if not self.layer.loaded:
+            # Do nothing if we are not yet loaded. Calling astype below could
+            # be very expensive. Lets not do it until our data has been loaded.
+            return
+
         data = self.layer._data_view
         dtype = np.dtype(data.dtype)
         if dtype not in texture_dtypes:
@@ -69,7 +83,7 @@ class VispyImageLayer(VispyBaseLayer):
                 raise TypeError(
                     f'type {dtype} not allowed for texture; must be one of {set(texture_dtypes)}'  # noqa: E501
                 )
-            data = data.astype(dtype)
+            data = self._data_astype(data, dtype)
 
         if self.layer.dims.ndisplay == 3 and self.layer.dims.ndim == 2:
             data = np.expand_dims(data, axis=0)
