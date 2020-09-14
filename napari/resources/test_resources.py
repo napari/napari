@@ -28,8 +28,8 @@ def test_path_pollution(tmp_path, monkeypatch, capfd):
     monkeypatch.setenv(
         "PATH", os.pathsep.join([str(tmp_path / "path"), os.environ["PATH"]])
     )
-    build_pyqt_resources(str(tmp_path / "resourcses.py"))
-    assert (tmp_path / "resourcses.py").exists()
+    build_pyqt_resources(str(tmp_path / "resources.py"))
+    assert (tmp_path / "resources.py").exists()
 
     if qtpy.API == "pyside2" and platform.system() != "Windows":
         captured = capfd.readouterr()
