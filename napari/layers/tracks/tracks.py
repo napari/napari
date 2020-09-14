@@ -9,7 +9,7 @@ import numpy as np
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
 from ..base import Layer
-from ._track_utils import TrackManager, check_track_dimensionality
+from ._track_utils import TrackManager, get_track_dimensionality
 
 ALLOW_ND_SLICING = False
 
@@ -110,7 +110,7 @@ class Tracks(Layer):
         if data is None:
             data = [np.empty((0, 3))]
 
-        ndim = check_track_dimensionality(data)
+        ndim = get_track_dimensionality(data)
 
         super().__init__(
             data,

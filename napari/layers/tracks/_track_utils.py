@@ -7,14 +7,60 @@ def connex(vertices: np.ndarray) -> list:
     return [True] * (vertices.shape[0] - 1) + [False]
 
 
-def check_track_dimensionality(data: list):
+def get_track_dimensionality(data: list):
     """ check the dimensionality of the data
 
     TODO(arl): we could allow a mix of 2D/3D etc...
+    TODO(arl): raise appropriate errors/warnings
     """
-    assert all([isinstance(d, np.ndarray) for d in data])
+
+    # check that the data dimensionality is the same for all tracks
     assert all([d.shape[1] == data[0].shape[1] for d in data])
+
+    # return the number of tracks
     return data[0].shape[1]
+
+
+def validate_track_data(data: list):
+    """ check the dimensionality of the data
+
+    TODO(arl): we could allow a mix of 2D/3D etc...
+    TODO(arl): raise appropriate errors/warnings
+
+    TODO(arl): move this to the TrackManager class?
+    """
+
+    # check that the data are provided as numpy arrays
+    assert all([isinstance(d, np.ndarray) for d in data])
+
+    # check that the data dimensionality is the same for all tracks
+    assert all([d.shape[1] == data[0].shape[1] for d in data])
+
+    # check that tracks all have monotonically increasing timestamps
+    assert all([all(d[:, 0] == np.maximum.accumulate(d[:, 0])) for d in data])
+
+    # check that we don't have duplicate timestamps in any track
+    assert all([d[:, 0].shape[0] == np.unique(d[:, 0]).shape[0] for d in data])
+
+
+def validate_track_properties(properties: list):
+    """ check the properties of the data
+
+    TODO(arl): move this to the TrackManager class?
+    """
+
+    if not properties:
+        return
+
+    # make sure that each track has a dictionary for properties
+    assert all([isinstance(p, dict) for p in properties])
+
+    # ensure that we have the same keys for each dictionary
+    property_keys = properties[0].keys()
+    assert all([p.keys() == property_keys for p in properties])
+
+    # ensure that each property is a string
+    assert all([isinstance(k, str) for k in property_keys])
 
 
 class TrackManager:
@@ -72,6 +118,10 @@ class TrackManager:
     @data.setter
     def data(self, data: list):
         """ set the data and build the vispy arrays for display """
+
+        # check check the formatting of the incoming track data
+        validate_track_data(data)
+
         self._data = data
 
         # build the track data for vispy
@@ -106,8 +156,15 @@ class TrackManager:
     @properties.setter
     def properties(self, properties: list):
         """ set track properties """
+
+        # check the formatting of incoming properties data
+        validate_track_properties(properties)
+
+        # make sure that we either have no data or that there is enough data
+        # given the track data
         assert not properties or len(properties) == len(self.data)
 
+        # if there are no properties, add the track ID as a minimum
         if not properties:
             properties = [{'ID': i} for i in range(len(self.data))]
 
@@ -140,7 +197,11 @@ class TrackManager:
 
             points_id += [track['ID']] * track_len  # track length
 
+        # set the properties
         self._properties = properties
+
+        # these are the positions for plotting text labels for the track IDs at
+        # the correct positions in time and space
         self._points_id = np.array(points_id)[self._ordered_points_idx]
 
         # TODO(arl): not all tracks are guaranteed to have the same keys
@@ -241,8 +302,13 @@ class TrackManager:
         if self._kdtree is None:
             return
 
+        # query can return indices to points that do not exist, trim that here
+        # then prune to only those in the current frame/time
         d, idx = self._kdtree.query(coords, k=10)
+        idx = [i for i in idx if i >= 0 and i < self._points.shape[0]]
         pruned = [i for i in idx if self._points[i, 0] == coords[0]]
+
+        # if we have found a point, return it
         if pruned and self._points_id is not None:
             return self._points_id[pruned[0]]  # return the track ID
 
