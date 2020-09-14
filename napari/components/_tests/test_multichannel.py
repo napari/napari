@@ -191,7 +191,7 @@ def test_multichannel_dask_array():
     assert len(viewer.layers) == data.shape[0]
     for i in range(data.shape[0]):
         assert viewer.layers[i].data.shape == data.shape[1:]
-        assert isinstance(viewer.layers[i].data, da.core.Array)
+        assert isinstance(viewer.layers[i].data, type(data))
 
 
 def test_forgot_multichannel_error_hint():
