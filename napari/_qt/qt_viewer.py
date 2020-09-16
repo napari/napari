@@ -362,10 +362,10 @@ class QtViewer(QSplitter):
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
-        img = self.canvas.native.grabFramebuffer()
+        img = QImg2array(self.canvas.native.grabFramebuffer())
         if path is not None:
-            imsave(path, QImg2array(img))  # scikit-image imsave method
-        return QImg2array(img)
+            imsave(path, img)  # scikit-image imsave method
+        return img
 
     def _screenshot_dialog(self):
         """Save screenshot of current display, default .png"""
