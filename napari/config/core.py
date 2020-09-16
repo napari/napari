@@ -47,7 +47,7 @@ When this module is imported, this sequence of events happens:
 6. finally, ``update_defaults()`` is called using the settings in the
    `napari.yaml` file, which merges the configs again, but gives priority to
    already existing values in the config (i.e. ones that were overwritten by
-   the user or the environement)
+   the user or the environment)
 
 Writing
 -------
