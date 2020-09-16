@@ -62,12 +62,12 @@ we know they are fully in memory. Instead, Napari's rendering has to be
 done _asynchronously_.
 
 The renderer will only draw data that is fully in memory, so that it never
-blocks on IO or computation. Meanwhile, more data will be loaded into
+blocks on IO or computations. Meanwhile, more data will be loaded into
 memory in the background. The frame after the data is loaded the renderer
-will draw the new data along with the previously loaded data. This
+will draw the new data along with the previously drawn data. This
 necessarily means that Napari will sometimes draw partially loaded data.
-For example it might draw portions of an image or images that are blurry,
-until the data has fully loaded.
+For example, it might draw portions of an image or draw images that are
+blurry, until the data has fully loaded.
 
 Issues that Napari has without asynchronous rendering include
 [#845](https://github.com/napari/napari/issues/845),
@@ -78,14 +78,15 @@ Issues that Napari has without asynchronous rendering include
 
 Even if the data is loaded into RAM fully in the background, Napari still
 needs to move the data from RAM into VRAM. Unlike the load into RAM, the
-transfer into VRAM must be done in the GUI thread. If the data is too large
+transfer into VRAM must be done by the GUI thread. If the data is too large
 then loading it will cause a slow frame that the user will notice.
 
 This leads to the requirement that all data needs to be broken into chunks,
-where a chunk is a deliberately vague term for a portion of the data we
-want to render. The chunk size needs to be small enough that the renderer
-can at least load one chunk per frame into VRAM, so that over time all
-chunks can be loaded into VRAM without any framerate glitches.
+where a chunk is a deliberately vague term for a portion of the data that
+we can load and render independently. The chunk size needs to be small
+enough that the renderer can at least load one chunk per frame into VRAM,
+so that over time all chunks can be loaded into VRAM without any framerate
+glitches.
 
 ## Renderer Requirements
 
@@ -97,7 +98,7 @@ The above discussion leads to two rigid requirements for rendering:
 
 ## Render Algorithm
 
-The renderer will compute a **working set** of chunks based on the current
+The renderer computes a **working set** of chunks based on the current
 view. The working set is the set of chunks that we need to draw in order to
 depict the current view of the data. The renderer will step through every
 chunk in the working set and do one of these three things:
@@ -120,15 +121,16 @@ draw more in the future.
 
 A chunk is simply a portion of what we need to load and render. A chunk
 will often be a region of space like a tile or a sub-volume, but it could
-be some other part of the whole, such as a layer or some geometry.
+be some other part of the whole, such as a layer or some portion of the
+geometry.
 
 If only a subset of the desired chunks are in memory, then Napari can only
 render that portion of the data. However, rendering a portion of the data
 quickly is often much better for the user than waiting until the data is
-fully loaded. Users can often interpret and navigate their data even while
-seeing only a portion of it. Thus asynchronous rendering with partial draws
-can vastly speed up the user's ability to analyze and interact with their
-data.
+fully loaded. Users can often interpret and navigate their data even if
+they can only see part of it. Thus asynchronous rendering with partial
+draws can vastly speed up the user's ability to analyze and interact with
+their data.
 
 ### Chunked File Formats
 
@@ -139,8 +141,8 @@ an API like Dask.
 If an image is stored without chunks then reading a 2D region of the image
 might require many different read operations, since the bytes for that
 region are spread throughout the linear file, interspersed with the bytes
-from other regions. With chunking you can read a rectangular region with a
-single linear read.
+from other geographic regions. In contrast with a chunked file you can read
+a rectangular region with a single linear read.
 
 ![chunked-format](images/chunked-format.png)
 
@@ -218,29 +220,30 @@ octree](https://developer.apple.com/documentation/gameplaykit/gkoctree):
 
 ![octree](images/octree.png)
 
-We can use our octree for 2D images by only using four children per node
+We can use our octree for 2D images by only setting four children per node
 instead of eight. This effectively makes it a quadtree. The memory wasted
 by not using the other four children is minimal relative to the size of the
 data, and we'd rather use the same data structure and code for 2D and 3D.
 
 ## Beyond Images
 
-Images are the marquee type data for Napari, but Napari can also display
+Images are the marquee data type for Napari, but Napari can also display
 geometry such as points, shapes and meshes. The `ChunkLoader` and octree
-should work for any layer type, but there will be additional challenges to make things work well with non-image layers:
+should work for any layer type, but there will be additional challenges to
+make things work well with non-image layers:
 
 1. Downsampling images is fast and well understood, but "downsampling"
-   geometry is called decimation and it can be slow and complicated. Also 
-   this is no one definitive decimation, there will be complicated
+   geometry is called decimation and it can be slow and complicated. Also
+   there is not one definitive decimation, there will be complicated
    trade-offs for speed and quality.
-2. Sometimes we will to want downsample versions of things into a format
-   that represents the data but does not look like the data. For example we
+2. Sometimes we will to want downsample geometry into a format that
+   represents the data but does not look like the data. For example we
    might want to display a heatmap instead of millions of tiny points. This
    will require new code we did not need for image layers.
 3. With images the data density is spatially uniform but with geometry
    there might be pockets of super high density data. For example the data
    might have millions of points or triangles in a tiny geographic area.
-   This might tax the rendering in a ways that uniform images did not.
+   This might tax the rendering in new ways that images did not.
 
 ## Appendix
 
@@ -264,17 +267,17 @@ computations in C/C++. If the GIL is released those threads *can* run
 simultaneously, since Python threads are first-class Operating Systems
 threads.
 
-However, if you do need to run Python bytecode fully in parallel, we might
-offer the ability to use a `concurrent.futures` process pool instead of a
-thread pool. The downside of using processes is that memory is not shared
-between processes by default, so the arguments to and from the worker
-process need to be serialized, and not all objects can easily be serialized.
+However, if you do need to run Python bytecode fully in parallel, it might
+be necessary to use a `concurrent.futures` process pool instead of a thread
+pool. The downside of using processes is that memory is not shared between
+processes by default, so the arguments to and from the worker process need
+to be serialized, and not all objects can easily be serialized.
 
 The Dask developers have extensive experience with serialization, and their
 library contains it's own serialization routines. Long term we might decide
-that Napari should only support threads, and if you need processes you
-should use Napari with Dask. How exactly this would work is to be
-determined.
+that Napari should only support threads internally, and if you need
+processes you should use Napari with Dask. How exactly Napari can
+interoperate with Dask is to be determined.
 
 ### B. Number of Workers
 
@@ -283,8 +286,8 @@ depend on the hardware, but it also might depend on the workload. One
 thread per core is a reasonable starting point, but a different number of
 workers might be more efficient in certain situations. We will start with a
 reasonable default value and let the user configure the number manually if
-desired. Long term maybe we can set number of workers automatically and
-adjust it dynamically.
+desired. Long term maybe we can set the number of workers automatically or
+even adjust it dynamically.
 
 ### C. asyncio
 
