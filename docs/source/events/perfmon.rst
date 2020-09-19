@@ -1,11 +1,10 @@
 .. _perfmon:
 
-Performance Monitoring
-======================
+Performance Monitoring ======================
 
 Performance is a core feature of napari. In order to help you monitor
-performance and diagnose or fix performance issues, napari includes
-:mod:`~napari.utils.perf`. The module has several features:
+performance and diagnose or fix performance issues, napari includes the
+:mod:`~napari.utils.perf` module which has several features:
 
 1. It can time Qt Events and other functions or methods.
 
@@ -14,6 +13,27 @@ duration is over some configurable threshold.
 
 3. It can produce JSON trace files that can be visualized and interactively
 explored using Chrome's tracing GUI.
+
+Monitoring vs. Profiling
+------------------------
+
+Performance Monitoring and Profiling are similar, they are both are ways to
+objectively time the duration of code. Some differences between the two
+tend to be:
+
+1. Monitoring is generally done by the application itself, it does not
+require an external tool. Profiling often requires running a separate tool.
+
+2. Monitoring is generally lighter weight than profiling. In some cases
+profiling can slow an application down so much that it cannot be used
+interactively.
+
+3. Monitoring usually focuses on timing important or expensive functions,
+while profiling often times every function no matter how tiny.
+
+This document focuses only on performance monitoring, but you are encouraged
+to profile Napari and share your findings.
+
 
 Enabling perfmon
 ----------------
@@ -26,17 +46,12 @@ Setting the environment variable to 1 enables perfmon in a mode that can
 only time Qt Events. In order to time other functions and methods, you need
 to use the configuration file.
 
-Configuration File
-------------------
-
-.. code-block:: JSON
+Configuration File ------------------ .. code-block:: python
     {
-        "trace_qt_events": true,
-        "trace_file_on_start": "/path/to/latest.json",
-        "trace_callables": [
+        "trace_qt_events": true, "trace_file_on_start":
+        "/path/to/latest.json", "trace_callables": [
             "chunk_loader"
-        ],
-        "callable_lists": {
+        ], "callable_lists": {
             "chunk_loader": [
                 "napari.components.chunk._loader.ChunkLoader.load_chunk",
                 "napari.components.chunk._loader.ChunkLoader._done"
@@ -44,12 +59,12 @@ Configuration File
         }
     }
 
-Config options
---------------
+Config options --------------
 
-`trace_qt_events` if true perfmon times the duration of all Qt Events. This is
-on by default if `NAPARI_PERFMON=1`. The only reason to turn it off would be
-if the overhead is noticeable, or if you just wanted less clutter in your trace files.
+`trace_qt_events` if true perfmon times the duration of all Qt Events. This
+is on by default if `NAPARI_PERFMON=1`. The only reason to turn it off
+would be if the overhead is noticeable, or if you just wanted less clutter
+in your trace files.
 
 `trace_file_on_start` if set then napari will start recording a trace file
 as soon as it starts. In many cases this is much more convenient than using
@@ -68,8 +83,7 @@ interested in. The reason to not just trace everything is tracing has some
 performance overhead of its own, and tracing too many things will clutter
 the trace file.
 
-Trace File
------------
+Trace File -----------
 
 A performance trace is a JSON file that is viewable using Chrome's tracing
 GUI. The GUI is a development tool that's built-in to Chrome. You can
