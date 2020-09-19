@@ -61,16 +61,24 @@ def magic_name(value, *, path_prefix):
     name : str or None
         Name of the variable, if found.
     """
-    frame = inspect.currentframe().f_back
-    code = frame.f_code
-
-    while code.co_filename.startswith(path_prefix):
-        frame = frame.f_back
+    try:
+        frame = inspect.currentframe().f_back
         code = frame.f_code
 
-    varmap = ChainMap(frame.f_locals, frame.f_globals)
-    names = *code.co_varnames, *code.co_names
+        while code.co_filename.startswith(path_prefix):
+            frame = frame.f_back
+            code = frame.f_code
 
-    for name in names:
-        if name.isidentifier() and name in varmap and varmap[name] is value:
-            return name
+        varmap = ChainMap(frame.f_locals, frame.f_globals)
+        names = *code.co_varnames, *code.co_names
+
+        for name in names:
+            if (
+                name.isidentifier()
+                and name in varmap
+                and varmap[name] is value
+            ):
+                return name
+    except AttributeError:
+        # Should we issue a warning?
+        return None
