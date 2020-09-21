@@ -951,6 +951,24 @@ def test_color_cycle(attribute, color_cycle):
 
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
+def test_color_cycle_dict(attribute):
+    """Test setting edge/face color with a color cycle dict"""
+    data = np.array([[0, 0], [100, 0], [0, 100]])
+    properties = {'my_colors': [2, 6, 3]}
+    points_kwargs = {
+        'properties': properties,
+        f'{attribute}_color': 'my_colors',
+        f'{attribute}_color_cycle': {1: 'green', 2: 'red', 3: 'blue'},
+    }
+    layer = Points(data, **points_kwargs)
+
+    color_cycle_map = getattr(layer, f'{attribute}_color_cycle_map')
+    np.testing.assert_allclose(color_cycle_map[2], [1, 0, 0, 1])  # 2 is red
+    np.testing.assert_allclose(color_cycle_map[3], [0, 0, 1, 1])  # 3 is blue
+    np.testing.assert_allclose(color_cycle_map[6], [1, 1, 1, 1])  # 6 is white
+
+
+@pytest.mark.parametrize("attribute", ['edge', 'face'])
 def test_add_color_cycle_to_empty_layer(attribute):
     """ Test adding a point to an empty layer when edge/face color is a color cycle
 
