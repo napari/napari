@@ -44,6 +44,8 @@ jobs:
           token: ${{ secrets.DOCS_GITHUB_TOKEN }}
       - name: Get tag if is a release
         uses: olegtarasov/get-tag@v2
+        with:
+          tagRegex: "v(.*)"  # remove the leading v
         continue-on-error: true  # sets $GIT_TAG_NAME when successful
       - name: Copy docs to docs repo
         id: cp
