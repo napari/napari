@@ -828,6 +828,19 @@ def test_add_colormap(attribute):
 
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
+def test_add_point_direct(attribute: str):
+    """Test adding points to layer directly"""
+    layer = Points()
+    assert len(getattr(layer, f'{attribute}_color')) == 0
+    setattr(layer, f'current_{attribute}_color', 'red')
+    coord = [18, 18]
+    layer.add(coord)
+    np.testing.assert_allclose(
+        [[1, 0, 0, 1]], getattr(layer, f'{attribute}_color')
+    )
+
+
+@pytest.mark.parametrize("attribute", ['edge', 'face'])
 def test_color_direct(attribute: str):
     """Test setting colors directly"""
     shape = (10, 2)
