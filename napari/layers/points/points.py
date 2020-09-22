@@ -390,6 +390,8 @@ class Points(Layer):
         else:
             self._current_edge_color = self.edge_color[-1]
             self._current_face_color = self.face_color[-1]
+            self._face_color = np.empty((0, 4))
+            self._edge_color = np.empty((0, 4))
             self.current_properties = {}
 
         # Trigger generation of view slice and thumbnail
@@ -548,7 +550,12 @@ class Points(Layer):
             )
             new_colors = np.tile(fc, (adding, 1))
         colors = getattr(self, f'{attribute}_color')
-        setattr(self, f'_{attribute}_color', np.vstack((colors, new_colors)))
+        if len(colors) == 0:
+            setattr(self, f'_{attribute}_color', new_colors)
+        else:
+            setattr(
+                self, f'_{attribute}_color', np.vstack((colors, new_colors))
+            )
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
