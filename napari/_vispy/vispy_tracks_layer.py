@@ -1,6 +1,6 @@
 from vispy.scene.visuals import Compound, Line, Text
 
-from ..layers.tracks._track_shader import TrackShader
+from ._vispy_tracks_shader import TrackShader
 from .vispy_base_layer import VispyBaseLayer
 
 # from napari._vispy.vispy_base_layer import VispyBaseLayer
@@ -35,14 +35,12 @@ class VispyTracksLayer(VispyBaseLayer):
             current_time=self.layer.current_time,
             tail_length=self.layer.tail_length,
             vertex_time=self.layer.track_times,
-            vertex_mask=self.layer._mask_data,
         )
 
         self.graph_shader = TrackShader(
             current_time=self.layer.current_time,
             tail_length=self.layer.tail_length,
             vertex_time=self.layer.graph_times,
-            vertex_mask=self.layer._mask_graph,
         )
 
         node._subvisuals[0].attach(self.track_shader)
@@ -65,11 +63,10 @@ class VispyTracksLayer(VispyBaseLayer):
         self.track_shader.current_time = self.layer.current_time
         self.track_shader.tail_length = self.layer.tail_length
         self.track_shader.use_fade = self.layer.use_fade
-        self.track_shader.vertex_mask = self.layer._mask_data
+
         self.graph_shader.current_time = self.layer.current_time
         self.graph_shader.tail_length = self.layer.tail_length
         self.graph_shader.use_fade = self.layer.use_fade
-        self.graph_shader.vertex_mask = self.layer._mask_graph
 
         # set visibility of subvisuals
         self.node._subvisuals[0].visible = self.layer.display_tail

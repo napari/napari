@@ -1,66 +1,14 @@
+from typing import Dict
+
 import numpy as np
 from scipy.spatial import cKDTree
+
+from ..utils.layer_utils import dataframe_to_properties
 
 
 def connex(vertices: np.ndarray) -> list:
     """ make vertex edges for vispy Line """
     return [True] * (vertices.shape[0] - 1) + [False]
-
-
-def get_track_dimensionality(data: list):
-    """ check the dimensionality of the data
-
-    TODO(arl): we could allow a mix of 2D/3D etc...
-    TODO(arl): raise appropriate errors/warnings
-    """
-
-    # check that the data dimensionality is the same for all tracks
-    assert all([d.shape[1] == data[0].shape[1] for d in data])
-
-    # return the number of tracks
-    return data[0].shape[1]
-
-
-def validate_track_data(data: list):
-    """ check the dimensionality of the data
-
-    TODO(arl): we could allow a mix of 2D/3D etc...
-    TODO(arl): raise appropriate errors/warnings
-
-    TODO(arl): move this to the TrackManager class?
-    """
-
-    # check that the data are provided as numpy arrays
-    assert all([isinstance(d, np.ndarray) for d in data])
-
-    # check that the data dimensionality is the same for all tracks
-    assert all([d.shape[1] == data[0].shape[1] for d in data])
-
-    # check that tracks all have monotonically increasing timestamps
-    assert all([all(d[:, 0] == np.maximum.accumulate(d[:, 0])) for d in data])
-
-    # check that we don't have duplicate timestamps in any track
-    assert all([d[:, 0].shape[0] == np.unique(d[:, 0]).shape[0] for d in data])
-
-
-def validate_track_properties(properties: list):
-    """ check the properties of the data
-
-    TODO(arl): move this to the TrackManager class?
-    """
-
-    if not properties:
-        return
-
-    # make sure that each track has a dictionary for properties
-    assert all([isinstance(p, dict) for p in properties])
-
-    # ensure that we have the same keys for each dictionary
-    property_keys = properties[0].keys()
-    assert all([p.keys() == property_keys for p in properties])
-
-    # ensure that each property is a string
-    assert all([isinstance(k, str) for k in property_keys])
 
 
 class TrackManager:
@@ -111,26 +59,20 @@ class TrackManager:
         self._graph_colors = None
 
     @property
-    def data(self) -> list:
-        """list of (N, D) arrays: coordinates for N points in D dimensions."""
+    def data(self) -> np.ndarray:
+        """(N, D) array: coordinates for N points in D dimensions."""
         return self._data
 
     @data.setter
-    def data(self, data: list):
-        """ set the data and build the vispy arrays for display """
+    def data(self, data: np.ndarray):
+        """ set the vertex data and build the vispy arrays for display """
 
         # check check the formatting of the incoming track data
-        validate_track_data(data)
-
-        self._data = data
-
-        # build the track data for vispy
-        self._track_vertices = np.concatenate(self.data, axis=0)
-        self._track_connex = np.concatenate([connex(d) for d in data], axis=0)
+        self._data = self._validate_track_data(data)
 
         # build the indices for sorting points by time
-        self._ordered_points_idx = np.argsort(self._track_vertices[:, 0])
-        self._points = self._track_vertices[self._ordered_points_idx]
+        self._ordered_points_idx = np.argsort(self.data[:, 0])
+        self._points = self.data[self._ordered_points_idx]
 
         # build a tree of the track data to allow fast lookup of nearest track
         self._kdtree = cKDTree(self._points)
@@ -149,126 +91,148 @@ class TrackManager:
                 self._points_lookup[f] = slice(min(idx), max(idx) + 1, 1)
 
     @property
-    def properties(self) -> list:
-        """ return the list of track properties """
+    def properties(self) -> Dict[str, np.ndarray]:
+        """dict {str: np.ndarray (N,)}, DataFrame: properties for each track"""
         return self._properties
 
     @properties.setter
-    def properties(self, properties: list):
+    def properties(self, properties: Dict[str, np.ndarray]):
         """ set track properties """
+        if not isinstance(properties, dict):
+            properties, _ = dataframe_to_properties(properties)
 
         # check the formatting of incoming properties data
-        validate_track_properties(properties)
+        self._properties = self._validate_track_properties(properties)
+        self._build_tracks()
 
-        # make sure that we either have no data or that there is enough data
-        # given the track data
-        assert not properties or len(properties) == len(self.data)
+    @property
+    def graph(self) -> Dict[str, list]:
+        """ dict {str: list}, graph representation of tracks """
+        return self._graph
 
-        # if there are no properties, add the track ID as a minimum
-        if not properties:
-            properties = [{'ID': i} for i in range(len(self.data))]
+    @graph.setter
+    def graph(self, graph: Dict[str, list]):
+        """ set the track graph """
+
+        self._graph = self._validate_track_graph(graph)
+        self._build_graph()
+
+    @property
+    def track_ids(self):
+        """ return the track identifiers"""
+        return self.properties['track_id']
+
+    @property
+    def unique_track_ids(self):
+        """ return the unique track identifiers"""
+        return np.unique(self.track_ids)
+
+    def __len__(self):
+        """ return the number of tracks """
+        return len(self.unique_track_ids) if self.properties is not None else 0
+
+    def _vertex_indices_from_id(self, track_id: int):
+        """ return the vertices corresponding to a track id """
+        return tuple(np.where(self.track_ids == track_id)[0])
+
+    def _validate_track_data(self, data: np.ndarray) -> np.ndarray:
+        """ validate the coordinate data """
+
+        if data.ndim != 2:
+            raise ValueError('track vertices should be a NxD array')
+
+        if data.shape[1] < 3 or data.shape[1] > 4:
+            raise ValueError('track vertices should be 3 or 4-dimensional')
+
+        return data
+
+    def _validate_track_properties(
+        self, properties: Dict[str, np.ndarray]
+    ) -> Dict[str, np.ndarray]:
+        """ validate the track properties """
+
+        for k, v in properties.items():
+            if len(v) != len(self.data):
+                raise ValueError(
+                    'the number of properties must equal the number of vertices'
+                )
+            # ensure the property values are a numpy array
+            if type(v) != np.ndarray:
+                properties[k] = np.asarray(v)
+
+        if 'track_id' in properties:
+            track_idx = properties['track_id']
+            if not all(track_idx == np.maximum.accumulate(track_idx)):
+                raise ValueError('track_id should be monotonically increasing')
+        else:
+            raise ValueError('track_id is missing from properties')
+
+        return properties
+
+    def _validate_track_graph(self, graph: Dict[int, list]) -> Dict[int, list]:
+        """ validate the track graph """
+
+        # check that graph nodes are of correct format
+        for node_idx, parents_idx in graph.items():
+            # make sure parents are always a list
+            if type(parents_idx) != list:
+                graph[node_idx] = [parents_idx]
+
+        # check that graph nodes exist in the track id lookup
+        for node_idx, parents_idx in graph.items():
+            nodes = [node_idx] + graph[node_idx]
+            for node in nodes:
+                if node not in self.unique_track_ids:
+                    raise ValueError(f'graph node {node_idx} not found')
+
+        return graph
+
+    def _build_tracks(self):
+        """ build the tracks """
 
         points_id = []
+        track_vertices = []
+        track_connex = []
 
-        # do some type checking/enforcing
-        for idx, track in enumerate(properties):
+        for idx in self.unique_track_ids:
+            indices = self._vertex_indices_from_id(idx)
 
-            # length of this track
-            track_len = len(self.data[idx])
+            # grab the correct vertices and sort by time
+            vertices = self.data[indices, :]
+            vertices = vertices[vertices[:, 0].argsort()]
 
-            # if there is not a track ID listed, generate one on the fly
-            if 'ID' not in track:
-                properties[idx]['ID'] = idx
+            # coordinates of the text identifiers, vertices and connections
+            points_id += [idx] * vertices.shape[0]
+            track_vertices.append(vertices)
+            track_connex.append(connex(vertices))
 
-            # check whether the property is a scalar or list/array,
-            # if list/array, ensure that the length of the list is equal to the
-            # length of the track
-            for key, value in track.items():
-                if isinstance(value, (np.ndarray, np.generic)):
-                    track[key] = value.tolist()
-
-                if isinstance(track[key], list):
-                    property_len = len(track[key])
-                    if property_len != track_len:
-                        raise ValueError(
-                            f'Track property {key} has incorrect '
-                            f'length: {property_len} (vs {track_len})'
-                        )
-
-            points_id += [track['ID']] * track_len  # track length
-
-        # set the properties
-        self._properties = properties
-
-        # these are the positions for plotting text labels for the track IDs at
-        # the correct positions in time and space
         self._points_id = np.array(points_id)[self._ordered_points_idx]
+        self._track_vertices = np.concatenate(track_vertices, axis=0)
+        self._track_connex = np.concatenate(track_connex, axis=0)
 
-        # TODO(arl): not all tracks are guaranteed to have the same keys
-        self._property_keys = list(properties[0].keys())
-
-        # build the track graph
-        self.build_graph()
-
-        # # properties have been updated, we need to alert the gui
-        # self.events.properties()
-
-    def build_graph(self):
-        """ build_graph
-
-        Build the track graph using track properties. The track graph should be:
-
-            [(track_idx, (parent_idx,...)),...]
-
-        """
-
-        # if we don't have any properties, then return gracefully
-        if not self.properties:
+    def _build_graph(self):
+        """ build the track graph """
+        # if there is not graph, return here
+        if not self.graph:
             return
 
-        if 'parent' not in self._property_keys:
-            return
-
-        track_lookup = [track['ID'] for track in self.properties]
-        track_parents = [track['parent'] for track in self.properties]
-
-        # now remove any root nodes
-        branches = zip(track_lookup, track_parents)
-        self._graph = [b for b in branches if b[0] != b[1]]
-
-        # TODO(arl): parent can also be a list in the case of merging
-        # need to deal with that here
-
-        # lookup the actual indices for the tracks
-        def _get_id(x):
-            return track_lookup.index(x)
-
-        graph = []
-        for node, parent in self._graph:
-            try:
-                edge = (_get_id(node), _get_id(parent))
-                graph.append(edge)
-            except ValueError:
-                continue
-
-        # if we have no graph, return
-        if not graph:
-            return
-
-        # we can use the graph to build the vertices and edges of the graph
         graph_vertices = []
         graph_connex = []
 
-        for node_idx, parent_idx in graph:
+        for node_idx, parents_idx in self.graph.items():
             # we join from the first observation of the node, to the last
             # observation of the parent
-            node = self.data[node_idx][0, ...]
-            parent = self.data[parent_idx][-1, ...]
+            node_start = self._vertex_indices_from_id(node_idx)[0]
+            node = self.data[node_start]
 
-            verts = np.stack([node, parent], axis=0)
-            graph_vertices.append(verts)
+            for parent_idx in parents_idx:
+                parent_stop = self._vertex_indices_from_id(parent_idx)[-1]
+                parent = self.data[parent_stop]
 
-            graph_connex.append([True, False])
+                verts = np.stack([node, parent], axis=0)
+
+                graph_vertices.append(verts)
+                graph_connex.append([True, False])
 
         self._graph_vertices = np.concatenate(graph_vertices, axis=0)
         self._graph_connex = np.concatenate(graph_connex, axis=0)
@@ -276,26 +240,14 @@ class TrackManager:
     def vertex_properties(self, color_by: str) -> np.ndarray:
         """ return the properties of tracks by vertex """
 
-        # if we change the coloring, rebuild the vertex colors array
-        vertex_properties = []
-        for idx, track_property in enumerate(self.properties):
-            property = track_property[color_by]
-
-            if isinstance(property, (list, np.ndarray)):
-                p = property
-            elif isinstance(property, (int, float, np.generic)):
-                p = [property] * len(self.data[idx])  # length of the track
+        if color_by not in self.properties:
+            # if it's the default calculate the vertex properties
+            if color_by == 'track_id' and 'track_id' in self.graph:
+                return self.graph['track_id']
             else:
-                raise TypeError(
-                    f'Property {track_property} type not recognized'
-                )
+                raise ValueError(f'Property {color_by} type not found')
 
-            vertex_properties.append(p)
-
-        # concatenate them, and use a colormap to color them
-        vertex_properties = np.concatenate(vertex_properties, axis=0)
-
-        return vertex_properties
+        return self.properties[color_by]
 
     def get_value(self, coords):
         """ use a kd-tree to lookup the ID of the nearest tree """
@@ -313,24 +265,12 @@ class TrackManager:
             return self._points_id[pruned[0]]  # return the track ID
 
     @property
-    def extent(self):
-        """Determine ranges for slicing given by (min, max, step)."""
-
-        def _minmax(x):
-            return (np.floor(np.min(x)), np.ceil(np.max(x)))
-
-        extrema = np.zeros((2, self.ndim))
-        for dim in range(self.ndim):
-            extrema[:, dim] = _minmax(self._track_vertices[:, dim])
-        return extrema
-
-    @property
-    def ndim(self):
+    def ndim(self) -> int:
         """Determine number of dimensions of the layer."""
-        return self._track_vertices.shape[1]
+        return self.data.shape[1]
 
     @property
-    def max_time(self):
+    def max_time(self) -> int:
         return int(np.max(self.track_times))
 
     @property
@@ -360,18 +300,13 @@ class TrackManager:
     @property
     def track_times(self) -> np.ndarray:
         """ time points associated with each track vertex """
-        return self._track_vertices[:, 0]
-
-    @property
-    def graph(self) -> list:
-        """ return the graph """
-        return self._graph
+        return self.track_vertices[:, 0]
 
     @property
     def graph_times(self) -> np.ndarray:
         """ time points assocaite with each graph vertex """
-        if self._graph:
-            return self._graph_vertices[:, 0]
+        if self.graph_vertices is not None:
+            return self.graph_vertices[:, 0]
         return None
 
     def track_labels(self, current_time: int) -> tuple:

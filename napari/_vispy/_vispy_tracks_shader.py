@@ -71,14 +71,8 @@ class TrackShader(Filter):
                 alpha = 1.0;
             }
 
-            // finally, if we're applying a mask (for e.g. slicing ND data),
-            // do it here. THIS WILL OVERIDE the time based vertex shading and
-            // set the vertex alpha to zero
-
-            masked_alpha = $a_vertex_mask * alpha;
-
             // set the vertex alpha according to the fade
-            v_track_color.a = masked_alpha;
+            v_track_color.a = alpha;
         }
     """
 
@@ -96,7 +90,6 @@ class TrackShader(Filter):
         tail_length=30,
         use_fade: bool = True,
         vertex_time: Union[List, np.ndarray] = None,
-        vertex_mask: Union[List, np.ndarray] = None,
     ):
 
         super().__init__(
@@ -107,7 +100,6 @@ class TrackShader(Filter):
         self.tail_length = tail_length
         self.use_fade = use_fade
         self.vertex_time = vertex_time
-        self.vertex_mask = vertex_mask
 
     @property
     def current_time(self) -> Union[int, float]:
@@ -139,7 +131,7 @@ class TrackShader(Filter):
         self.vshader['tail_length'] = float(tail_length)
 
     def _attach(self, visual):
-        super(TrackShader, self)._attach(visual)
+        super()._attach(visual)
 
     @property
     def vertex_time(self):
@@ -149,14 +141,3 @@ class TrackShader(Filter):
     def vertex_time(self, v_time):
         self._vertex_time = np.array(v_time).reshape(-1, 1).astype(np.float32)
         self.vshader['a_vertex_time'] = VertexBuffer(self.vertex_time)
-
-    @property
-    def vertex_mask(self):
-        return self._vertex_mask
-
-    @vertex_mask.setter
-    def vertex_mask(self, v_mask):
-        if v_mask is None:
-            v_mask = np.ones(self.vertex_time.shape, dtype=np.float32)
-        self._vertex_mask = v_mask.reshape(-1, 1).astype(np.float32)
-        self.vshader['a_vertex_mask'] = VertexBuffer(self.vertex_mask)

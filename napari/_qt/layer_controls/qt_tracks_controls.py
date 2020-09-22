@@ -1,6 +1,3 @@
-# from napari._qt.layer_controls.qt_layer_controls_base import QtLayerControls
-# from napari.utils.colormaps import AVAILABLE_COLORMAPS
-
 import numpy as np
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QCheckBox, QComboBox, QLabel, QSlider
@@ -24,7 +21,7 @@ class QtTracksControls(QtLayerControls):
     ----------
     grid_layout : qtpy.QtWidgets.QGridLayout
         Layout of Qt widget controls for the layer.
-    layer : arboretum.layers.Tracks
+    layer : layers.Tracks
         An instance of a Tracks layer.
 
     """
@@ -140,8 +137,9 @@ class QtTracksControls(QtLayerControls):
             self.tail_length_slider.setValue(value)
 
     def _on_properties_change(self, event=None):
-        self.color_by_combobox.clear()
-        self.color_by_combobox.addItems(self.layer._property_keys)
+        with self.layer.events.properties.blocker():
+            self.color_by_combobox.clear()
+            self.color_by_combobox.addItems(self.layer.properties_to_color_by)
 
     def change_tail_length(self, value):
         """Change edge line width of shapes on the layer model.

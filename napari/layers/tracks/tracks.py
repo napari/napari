@@ -2,16 +2,14 @@
 # from napari.utils.events import Event
 # from napari.utils.colormaps import AVAILABLE_COLORMAPS
 
-from typing import Union
+from typing import Dict, List, Union
 
 import numpy as np
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
 from ..base import Layer
-from ._track_utils import TrackManager, get_track_dimensionality
-
-ALLOW_ND_SLICING = False
+from ._track_utils import TrackManager
 
 
 class Tracks(Layer):
@@ -21,22 +19,14 @@ class Tracks(Layer):
 
     Parameters
     ----------
-    data : list
-        list of (NxD) arrays of the format: time, x, y, (z), ....
-    properties : list (optional)
-        list of dictionaries of track properties, e.g.:
-
-        [{'ID': 0,
-          'parent': [],
-          'root': 0,
-          'states': [], ...}, ...]
-
-        List needs to be the same length as data, and all items need to
-        contain the same dictionary keys etc. If no properties are provided,
-        the layer autogenerates the ID property based on the track index in
-        the list. Properties can have any numeric type (scalar, array).
-        Importantly, 'parent' is a special property which defines a list of
-        track IDs that are parents of the track. This can be one (the track
+    data : array (N, D)
+        Coordinates for N points in D dimensions. T(Z)YX
+    properties : dict {str: array (N,)}, DataFrame
+        Properties for each point. Each property should be an array of length N,
+        where N is the number of points. Must contain 'track_id'
+    graph : dict {int: list}
+        Graph representing track edges. Dictionary defines the mapping between
+        a track ID and the parents of the track. This can be one (the track
         has one parent, and the parent has >=1 child) in the case of track
         splitting, or more than one (the track has multiple parents, but
         only one child) in the case of track merging.
@@ -50,12 +40,9 @@ class Tracks(Layer):
         Default colormap to use to set vertex colors. Specialized colormaps,
         relating to specified properties can be passed to the layer via
         colormaps_dict.
-    colomaps_dict : dict
+    colomaps_dict : dict {str: Colormap}
         dictionary list of colormap objects to use for coloring by track
-        properties. when coloring vertices, the layer looks in this
-        dictionary to find a matching colormap. the value is any object
-        with a __getitem__, that returns RGBA values that can be mapped to
-        the property
+        properties.
     name : str
         Name of the layer.
     metadata : dict
@@ -73,13 +60,6 @@ class Tracks(Layer):
     visible : bool
         Whether the layer visual is currently being displayed.
 
-    Notes
-    -----
-
-        The TrackManager class abstracts the input data types to this layer,
-        meaning that it should be possible to change the data types and maintain
-        the general structure of the layer.
-
     """
 
     # The max number of points that will ever be used to render the thumbnail
@@ -91,6 +71,7 @@ class Tracks(Layer):
         data,
         *,
         properties=None,
+        graph=None,
         edge_width=2,
         tail_length=30,
         n_dimensional=True,
@@ -102,7 +83,7 @@ class Tracks(Layer):
         blending='additive',
         visible=True,
         colormap='viridis',
-        color_by='ID',
+        color_by='track_id',
         colormaps_dict=None,
     ):
 
@@ -110,7 +91,8 @@ class Tracks(Layer):
         if data is None:
             data = [np.empty((0, 3))]
 
-        ndim = get_track_dimensionality(data)
+        # set the track data dimensions
+        ndim = data.shape[1]
 
         super().__init__(
             data,
@@ -145,13 +127,14 @@ class Tracks(Layer):
             None  # this layer takes care of coloring the tracks
         )
 
-        # masks used when slicing nD data, None indicates that everything
-        # should be displayed
-        self._mask_data = None
-        self._mask_graph = None
+        # # masks used when slicing nD data, None indicates that everything
+        # # should be displayed
+        # self._mask_data = None
+        # self._mask_graph = None
 
-        self.data = data  # this is the track data
-        self.properties = properties or []
+        self.data = data
+        self.properties = properties
+        self.graph = graph or {}
         self.colormaps_dict = colormaps_dict or {}  # additional colormaps
 
         self.edge_width = edge_width
@@ -161,8 +144,9 @@ class Tracks(Layer):
         self.display_graph = True
         self._color_by = color_by  # default color by ID
         self.colormap = colormap
+        self.color_by = color_by
 
-        # self._update_dims()
+        self._update_dims()
 
     @property
     def _extent_data(self) -> np.ndarray:
@@ -175,8 +159,9 @@ class Tracks(Layer):
         if len(self.data) == 0:
             extrema = np.full((2, self.ndim), np.nan)
         else:
-            # Convert from projections to endpoints using the current length
-            extrema = self._manager.extent
+            maxs = np.max(self.data, axis=0)
+            mins = np.min(self.data, axis=0)
+            extrema = np.vstack([mins, maxs])
         return extrema
 
     def _get_ndim(self) -> int:
@@ -194,70 +179,26 @@ class Tracks(Layer):
         state = self._get_base_state()
         state.update(
             {
-                'edge_width': self.edge_width,
-                'tail_length': self.tail_length,
-                'properties': self.properties,
                 'n_dimensional': self.n_dimensional,
                 'data': self.data,
+                'properties': self.properties,
+                'graph': self.graph,
                 'display_id': self.display_id,
                 'display_tail': self.display_tail,
                 'display_graph': self.display_graph,
                 'color_by': self.color_by,
                 'colormap': self.colormap,
+                'edge_width': self.edge_width,
+                'tail_length': self.tail_length,
             }
         )
         return state
 
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
-
-        if not ALLOW_ND_SLICING:
-            return
-
-        indices = self._slice_indices
-
-        # if none of the dims need slicing, return since this function gets
-        # called every time a slider changes
-        if all([isinstance(idx, slice) for idx in indices[1:]]):
-            return
-
-        # NOTE(arl): to whoever is reading this. The implementation is a bit
-        # clunky here - no real need to iterate over the dims, but it works
-        # by building a vertex mask, i.e. those vertices that should be
-        # displayed, give the current slicing. This is only applied to the
-        # dims>0 since we always want to project time
-        #
-        # a better way to do this, may be to use a similar trick to the time
-        # slicing in the vertex shader, i.e. provide the current slider
-        # positions and a window, and scale the alpha value accordingly
-
-        n_track_vertices = self._manager.track_vertices.shape[0]
-        n_graph_vertices = self._manager.graph_vertices.shape[0]
-        self._mask_data = np.array([True] * n_track_vertices)
-        self._mask_graph = np.array([True] * n_graph_vertices)
-
-        # this bins the data into integer bins for slicing.
-        # NOTE(arl): we could also use a hash bin here
-        bin_track_vertices = np.round(
-            self._manager.track_vertices[:, 1:]
-        ).astype(np.int32)
-        bin_graph_vertices = np.round(
-            self._manager.graph_vertices[:, 1:]
-        ).astype(np.int32)
-        for i, idx in enumerate(indices[1:]):
-            if isinstance(idx, slice):
-                continue
-
-            axis_mask_data = bin_track_vertices[:, i] == idx
-            axis_mask_graph = bin_graph_vertices[:, i] == idx
-            self._mask_data = np.logical_and(axis_mask_data, self._mask_data)
-            self._mask_graph = np.logical_and(
-                axis_mask_graph, self._mask_graph
-            )
-
         return
 
-    def _get_value(self):
+    def _get_value(self) -> int:
         """ use a kd-tree to lookup the ID of the nearest tree """
         coords = np.array(self.coordinates)
         return self._manager.get_value(coords)
@@ -286,14 +227,18 @@ class Tracks(Layer):
             3d data is zyxt
 
         """
+        if vertices is None:
+            return
+
         data = vertices[:, self.dims.displayed]
         # if we're only displaying two dimensions, then pad the display dim
         # with zeros
         if self.dims.ndisplay == 2:
             data = np.pad(data, ((0, 0), (0, 1)), 'constant')
-            data = data[:, (1, 0, 2)]  # y, x, z
+            data = data[:, (1, 0, 2)]  # y, x, z -> x, y, z
         else:
-            data = data[:, (2, 1, 0)]  # z, y, x
+            data = data[:, (2, 1, 0)]  # z, y, x -> x, y, z
+
         return data
 
     @property
@@ -316,38 +261,42 @@ class Tracks(Layer):
         return 0 in self.dims.not_displayed
 
     @property
-    def data(self) -> list:
+    def data(self) -> np.ndarray:
         """list of (N, D) arrays: coordinates for N points in D dimensions."""
         return self._manager.data
 
     @data.setter
-    def data(self, data: list):
+    def data(self, data: np.ndarray):
         """ set the data and build the vispy arrays for display """
         self._manager.data = data
         self._update_dims()
         self.events.data()
 
     @property
-    def properties(self) -> list:
+    def properties(self) -> Dict[str, np.ndarray]:
         """ return the list of track properties """
         return self._manager.properties
 
     @property
-    def _property_keys(self):
+    def properties_to_color_by(self) -> List[str]:
         """ track properties that can be used for coloring etc... """
-        return self._manager._property_keys
+        # return list(self._manager.properties.keys()) + ['track_id']
+        return list(self.properties.keys())
 
     @properties.setter
-    def properties(self, properties: list):
+    def properties(self, properties: Dict[str, np.ndarray]):
         """ set track properties """
         self._manager.properties = properties
-        # properties have been updated, we need to alert the gui
         self.events.properties()
 
     @property
     def graph(self) -> list:
         """ return the graph """
         return self._manager.graph
+
+    @graph.setter
+    def graph(self, graph: dict):
+        self._manager.graph = graph
 
     @property
     def edge_width(self) -> Union[int, float]:
@@ -403,7 +352,7 @@ class Tracks(Layer):
     @display_graph.setter
     def display_graph(self, value: bool):
         self._display_graph = value
-        self.events.display_tail()
+        self.events.display_graph()
         self.refresh()
 
     @property
@@ -413,7 +362,7 @@ class Tracks(Layer):
     @color_by.setter
     def color_by(self, color_by: str):
         """ set the property to color vertices by """
-        if color_by not in self._property_keys:
+        if color_by not in self.properties_to_color_by:
             return
         self._color_by = color_by
         self._recolor_tracks()
@@ -450,10 +399,7 @@ class Tracks(Layer):
             vertex_properties = _norm(vertex_properties)
 
         # actually set the vertex colors
-        if hasattr(colormap, 'map_modulo'):
-            self._track_colors = colormap.map_modulo(vertex_properties)
-        else:
-            self._track_colors = colormap.map(vertex_properties)
+        self._track_colors = colormap.map(vertex_properties)
 
     @property
     def track_connex(self) -> np.ndarray:
@@ -467,7 +413,7 @@ class Tracks(Layer):
         return self._track_colors
 
     @property
-    def graph_connex(self):
+    def graph_connex(self) -> np.ndarray:
         """ vertex connections for drawing the graph """
         return self._manager.graph_connex
 
@@ -482,7 +428,7 @@ class Tracks(Layer):
         return self._manager.graph_times
 
     @property
-    def track_labels(self) -> zip:
+    def track_labels(self) -> tuple:
         """ return track labels at the current time """
         labels, positions = self._manager.track_labels(self.current_time)
         padded_positions = self._pad_display_data(positions)

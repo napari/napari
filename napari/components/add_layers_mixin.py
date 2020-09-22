@@ -782,6 +782,7 @@ class AddLayersMixin:
         data,
         *,
         properties=None,
+        graph=None,
         edge_width=2,
         tail_length=30,
         n_dimensional=True,
@@ -793,29 +794,21 @@ class AddLayersMixin:
         blending='additive',
         visible=True,
         colormap='viridis',
-        color_by='ID',
+        color_by='track_id',
         colormaps_dict=None,
     ) -> layers.Tracks:
         """Add a tracks layer to the layers list.
 
         Parameters
         ----------
-        data : list
-            list of (NxD) arrays of the format: time, x, y, (z), ....
-        properties : list (optional)
-            list of dictionaries of track properties, e.g.:
-
-            [{'ID': 0,
-              'parent': [],
-              'root': 0,
-              'states': [], ...}, ...]
-
-            List needs to be the same length as data, and all items need to
-            contain the same dictionary keys etc. If no properties are provided,
-            the layer autogenerates the ID property based on the track index in
-            the list. Properties can have any numeric type (scalar, array).
-            Importantly, 'parent' is a special property which defines a list of
-            track IDs that are parents of the track. This can be one (the track
+        data : array (N, D)
+            Coordinates for N points in D dimensions. T(Z)YX
+        properties : dict {str: array (N,)}, DataFrame
+            Properties for each point. Each property should be an array of length N,
+            where N is the number of points. Must contain 'track_id'
+        graph : dict {int: list}
+            Graph representing track edges. Dictionary defines the mapping between
+            a track ID and the parents of the track. This can be one (the track
             has one parent, and the parent has >=1 child) in the case of track
             splitting, or more than one (the track has multiple parents, but
             only one child) in the case of track merging.
@@ -829,12 +822,9 @@ class AddLayersMixin:
             Default colormap to use to set vertex colors. Specialized colormaps,
             relating to specified properties can be passed to the layer via
             colormaps_dict.
-        colomaps_dict : dict
+        colomaps_dict : dict {str: Colormap}
             dictionary list of colormap objects to use for coloring by track
-            properties. when coloring vertices, the layer looks in this
-            dictionary to find a matching colormap. the value is any object
-            with a __getitem__, that returns RGBA values that can be mapped to
-            the property
+            properties.
         name : str
             Name of the layer.
         metadata : dict
@@ -852,7 +842,6 @@ class AddLayersMixin:
         visible : bool
             Whether the layer visual is currently being displayed.
 
-
         Returns
         -------
         layer : :class:`napari.layers.Tracks`
@@ -862,6 +851,7 @@ class AddLayersMixin:
         layer = layers.Tracks(
             data,
             properties=properties,
+            graph=graph,
             edge_width=edge_width,
             tail_length=tail_length,
             n_dimensional=n_dimensional,
