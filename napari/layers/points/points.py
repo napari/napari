@@ -1175,10 +1175,12 @@ class Points(Layer):
     @selected_data.setter
     def selected_data(self, selected_data):
         self._selected_data = set(selected_data)
-        _, _, self._selected_view = np.intersect1d(
-            np.array(list(self._selected_data)),
-            self._indices_view,
-            return_indices=True,
+        self._selected_view = list(
+            np.intersect1d(
+                np.array(list(self._selected_data)),
+                self._indices_view,
+                return_indices=True,
+            )[2]
         )
 
         # Update properties based on selected points
@@ -1478,10 +1480,12 @@ class Points(Layer):
         self._view_size_scale = scale
         self._indices_view = indices
         # get the selected points that are in view
-        _, _, self._selected_view = np.intersect1d(
-            np.array(list(self._selected_data)),
-            self._indices_view,
-            return_indices=True,
+        self._selected_view = list(
+            np.intersect1d(
+                np.array(list(self._selected_data)),
+                self._indices_view,
+                return_indices=True,
+            )[2]
         )
         with self.events.highlight.blocker():
             self._set_highlight(force=True)
