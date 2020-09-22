@@ -1,12 +1,14 @@
 .. _perfmon:
 
-Performance Monitoring ======================
+Performance Monitoring
+======================
 
 Performance is a core feature of napari. In order to help you monitor
 performance and diagnose or fix performance issues, napari includes the
 :mod:`~napari.utils.perf` module which has several features:
 
-1. It can time Qt Events and other functions or methods.
+1. It can time Qt Events and any function or method you specify in the
+config file.
 
 2. It can display a dockable performance widget that will list events whose
 duration is over some configurable threshold.
@@ -18,40 +20,44 @@ Monitoring vs. Profiling
 ------------------------
 
 Performance Monitoring and Profiling are similar, they are both are ways to
-objectively time the duration of code. Some differences between the two
-tend to be:
+time the duration of code execution. This document focuses only on
+performance monitoring, but profiling can also be a productive tool. Some
+differences between the two:
 
 1. Monitoring is generally done by the application itself, it does not
-require an external tool. Profiling often requires running a separate tool.
+require an external tool. Profiling often requires running the application
+using a separate tool.
 
 2. Monitoring is generally lighter weight than profiling. In some cases
 profiling can slow an application down so much that it cannot be used
 interactively.
 
-3. Monitoring usually focuses on timing important or expensive functions,
-while profiling often times every function no matter how tiny.
-
-This document focuses only on performance monitoring, but you are encouraged
-to profile Napari and share your findings.
+3. Monitoring usually focuses on timing specific sets of important or
+expensive functions, while by profiling by default will time every function
+no matter how tiny.
 
 
 Enabling perfmon
 ----------------
 
-To enable perfmonance monitoring set the environment variable
-`NAPARI_PERFMON=1`, or is set to the path of a configuration file such as
+To enable performance monitoring, set the environment variable
+`NAPARI_PERFMON=1`, or set it to the path of a configuration file such as
 `NAPARI_PERFMON=~/.perfmon.json`.
 
 Setting the environment variable to 1 enables perfmon in a mode that can
-only time Qt Events. In order to time other functions and methods, you need
+only time Qt Events. In order to time other functions and methods you need
 to use the configuration file.
 
-Configuration File ------------------ .. code-block:: python
+Configuration File ------------------
+
+.. code-block:: python
     {
-        "trace_qt_events": true, "trace_file_on_start":
-        "/path/to/latest.json", "trace_callables": [
+        "trace_qt_events": true,
+        "trace_file_on_start": "/path/to/latest.json",
+        "trace_callables": [
             "chunk_loader"
-        ], "callable_lists": {
+        ],
+        "callable_lists": {
             "chunk_loader": [
                 "napari.components.chunk._loader.ChunkLoader.load_chunk",
                 "napari.components.chunk._loader.ChunkLoader._done"
@@ -59,7 +65,8 @@ Configuration File ------------------ .. code-block:: python
         }
     }
 
-Config options --------------
+Config options
+--------------
 
 `trace_qt_events` if true perfmon times the duration of all Qt Events. This
 is on by default if `NAPARI_PERFMON=1`. The only reason to turn it off
@@ -83,7 +90,8 @@ interested in. The reason to not just trace everything is tracing has some
 performance overhead of its own, and tracing too many things will clutter
 the trace file.
 
-Trace File -----------
+Trace File
+-----------
 
 A performance trace is a JSON file that is viewable using Chrome's tracing
 GUI. The GUI is a development tool that's built-in to Chrome. You can
@@ -95,7 +103,3 @@ Google "Trace Event Format" for the Google Doc which specifies the trace
 file format. The format is well-documented, but the document does not
 generally explain how a given feature actually looks in the Chrome Tracing
 GUI.
-
-
-
-
