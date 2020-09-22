@@ -1,7 +1,6 @@
 """Automatically generate names.
 """
 import inspect
-import logging
 import re
 from collections import ChainMap
 
@@ -13,8 +12,6 @@ start = 1
 # Match integer between square brackets at end of string if after space
 # or at beginning of string or just match end of string
 numbered_patt = re.compile(r'((?<=\A\[)|(?<=\s\[))(?:\d+|)(?=\]$)|$')
-
-logger = logging.getLogger(__name__)
 
 
 def _inc_name_count_sub(match):
