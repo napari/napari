@@ -475,7 +475,7 @@ class Window:
         """
         self._help.setText(event.text)
 
-    def _screenshot_dialog(self, *, default_name=""):
+    def _screenshot_dialog(self):
         """Save screenshot of current display with viewer, default .png"""
         dial = ScreenshotDialog(
             self.screenshot, self.qt_viewer, self.qt_viewer._last_visited_dir

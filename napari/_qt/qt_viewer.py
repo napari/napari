@@ -369,7 +369,7 @@ class QtViewer(QSplitter):
             imsave(path, QImg2array(img))  # scikit-image imsave method
         return QImg2array(img)
 
-    def _screenshot_dialog(self, *, default_name=""):
+    def _screenshot_dialog(self):
         """Save screenshot of current display, default .png"""
         dial = ScreenshotDialog(self.screenshot, self, self._last_visited_dir)
         if dial.exec_():
