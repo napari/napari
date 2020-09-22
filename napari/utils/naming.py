@@ -66,6 +66,8 @@ def magic_name(value, *, path_prefix):
     """
     try:
         frame = inspect.currentframe()
+        if inspect.isframe(frame):
+            frame = frame.f_back
 
         while (
             inspect.isframe(frame)
