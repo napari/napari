@@ -65,24 +65,28 @@ def magic_name(value, *, path_prefix):
         Name of the variable, if found.
     """
     try:
-        frame = inspect.currentframe().f_back
-        code = frame.f_code
+        frame = inspect.currentframe()
 
-        while code.co_filename.startswith(path_prefix):
+        while (
+            inspect.isframe(frame)
+            and inspect.iscode(frame.f_code)
+            and frame.f_code.co_filename.startswith(path_prefix)
+        ):
             frame = frame.f_back
-            code = frame.f_code
 
-        varmap = ChainMap(frame.f_locals, frame.f_globals)
-        names = *code.co_varnames, *code.co_names
+        if inspect.isframe(frame) and inspect.iscode(frame.f_code):
+            varmap = ChainMap(frame.f_locals, frame.f_globals)
+            names = *frame.f_code.co_varnames, *frame.f_code.co_names
 
-        for name in names:
-            if (
-                name.isidentifier()
-                and name in varmap
-                and varmap[name] is value
-            ):
-                return name
-    except AttributeError as error:
-        logger.debug("magic_name did not find the variable name")
-        logger.debug(error)
-        return None
+            for name in names:
+                if (
+                    name.isidentifier()
+                    and name in varmap
+                    and varmap[name] is value
+                ):
+                    return name
+    finally:
+        # Prevent stack frame leak
+        del frame
+
+    return None
