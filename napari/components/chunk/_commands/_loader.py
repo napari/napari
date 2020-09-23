@@ -57,14 +57,17 @@ class InfoDisplayer:
 
     def __init__(self, info: LayerInfo):
         self.info = info
+        stats = info.stats
+        counts = stats.counts
+
         self.data_type = info.data_type
-        self.num_loads = info.counts.loads
-        self.num_chunks = info.counts.chunks
+        self.num_loads = counts.loads
+        self.num_chunks = counts.chunks
         self.sync = LOAD_TYPE_STR[self.info.load_type]
-        self.total = format_bytes(self.info.counts.bytes)
-        self.avg_ms = f"{self.info.window_ms.average:.1f}"
-        self.mbits = f"{self.info.mbits:.1f}"
-        self.load_str = self.info.recent_load_str
+        self.total = format_bytes(counts.bytes)
+        self.avg_ms = f"{stats.window_ms.average:.1f}"
+        self.mbits = f"{stats.mbits:.1f}"
+        self.load_str = stats.recent_load_str
 
 
 class NoInfoDisplayer:
