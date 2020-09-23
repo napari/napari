@@ -7,7 +7,7 @@ images. It's built on top of Qt (for the GUI), vispy (for performant GPU-based
 rendering), and the scientific Python stack (numpy, scipy).
 
 For more information, examples, and documentation, please visit our website:
-https://github.com/napari/napari
+https://napari.org
 
 
 ## Highlights
@@ -55,4 +55,3 @@ and (#1643). This will also be our last release supporting Python3.6.
 - [Kevin Yamauchi](https://github.com/napari/napari/commits?author=kevinyamauchi) - @kevinyamauchi
 - [Nicholas Sofroniew](https://github.com/napari/napari/commits?author=sofroniewn) - @sofroniewn
 - [Talley Lambert](https://github.com/napari/napari/commits?author=tlambert03) - @tlambert03
-
