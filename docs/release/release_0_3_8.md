@@ -28,6 +28,7 @@ and (#1643). This will also be our last release supporting Python3.6.
 - Fix points layer coloring (#1623)
 - Fix painting by creating a new slice every time (#1641)
 - Fix new color point off (#1643)
+- Prevent bundle fail when name is not napari (#1647)
 
 
 ## Build Tools and Docs
