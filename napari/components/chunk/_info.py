@@ -198,6 +198,7 @@ class LayerInfo:
     def __init__(self, layer):
         self.layer_id: int = id(layer)
         self.layer_ref: weakref.ReferenceType = weakref.ref(layer)
+        self.data_type: str = _get_type_str(layer.data)
         self.load_type: LoadType = LoadType.AUTO
         self.auto_sync_ms = async_config.auto_sync_ms
 
