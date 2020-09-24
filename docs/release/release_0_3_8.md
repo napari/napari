@@ -19,7 +19,7 @@ and (#1643). This will also be our last release supporting Python3.6.
 ## Improvements
 - Async-2.5: Vispy Changes (#1607)
 - Increase screenshot performance (#1615)
-
+- Speed up points selection and selection display (#1648)
 
 ## Bug Fixes
 - Remove silence overwritte during screenshot (#1567)
@@ -47,6 +47,7 @@ and (#1643). This will also be our last release supporting Python3.6.
 - [Grzegorz Bokota](https://github.com/napari/napari/commits?author=Czaki) - @Czaki
 - [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - @jni
 - [Kira Evans](https://github.com/napari/napari/commits?author=kne42) - @kne42
+- [Matthias Wagner](https://github.com/napari/napari/commits?author=matthias-us) - @matthias-us
 - [Philip Winston](https://github.com/napari/napari/commits?author=pwinston) - @pwinston
 - [Talley Lambert](https://github.com/napari/napari/commits?author=tlambert03) - @tlambert03
 - [Ziyang Liu](https://github.com/napari/napari/commits?author=ziyangczi) - @ziyangczi
