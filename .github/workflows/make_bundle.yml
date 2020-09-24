@@ -1,8 +1,8 @@
 on:
   push:
     # Sequence of patterns matched against refs/tags
-    # tags:
-    #   - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
+    tags:
+      - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
 
 name: Create App Bundle
 
@@ -57,13 +57,13 @@ jobs:
         with:
           name: napari-${{ env.version }}-${{ runner.os }}.zip
           path: napari-${{ env.version }}-${{ runner.os }}.zip
-      # - name: Get Release
-      #   id: get_release
-      #   uses: bruceadams/get-release@v1.2.0
-      # - name: Upload Release Asset
-      #   uses: actions/upload-release-asset@v1
-      #   with:
-      #     upload_url: ${{ steps.get_release.outputs.upload_url }}
-      #     asset_path: napari-${{ env.version }}-${{ runner.os }}.zip
-      #     asset_name: napari-${{ env.version }}-${{ runner.os }}.zip
-      #     asset_content_type: application/zip
+      - name: Get Release
+        id: get_release
+        uses: bruceadams/get-release@v1.2.0
+      - name: Upload Release Asset
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.get_release.outputs.upload_url }}
+          asset_path: napari-${{ env.version }}-${{ runner.os }}.zip
+          asset_name: napari-${{ env.version }}-${{ runner.os }}.zip
+          asset_content_type: application/zip
