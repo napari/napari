@@ -28,6 +28,7 @@ and (#1643). This will also be our last release supporting Python3.6.
 - Fix points layer coloring (#1623)
 - Fix painting by creating a new slice every time (#1641)
 - Fix new color point off (#1643)
+- Prevent bundle fail when name is not napari (#1647)
 
 
 ## Build Tools and Docs
@@ -36,6 +37,7 @@ and (#1643). This will also be our last release supporting Python3.6.
 - Use pyside2-rcc if pyrcc5 fail (#1626)
 - Big update of rendering explanation doc (#1632)
 - Do not ship bundle.py in source distribution (#1633)
+- Remove Python version requirement for pre-commit (#1645)
 - Add github retry action to try and fix flaky app bundling (#1649)
 
 
