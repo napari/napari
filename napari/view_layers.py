@@ -22,6 +22,7 @@ import inspect
 import sys
 import textwrap
 import typing
+from typing import Optional
 
 from numpydoc.docscrape import NumpyDocString
 
