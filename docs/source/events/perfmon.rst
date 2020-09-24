@@ -5,7 +5,9 @@ Performance Monitoring
 
 If napari is not performing well, you can use the
 :mod:`napari.utils.perf<napari.utils.perf>` to help
-diagnose the problem. The module can do several things:
+diagnose the problem.
+
+The module can do several things:
 
 1. Time Qt Events 
 
@@ -13,21 +15,20 @@ diagnose the problem. The module can do several things:
 
 3. Write JSON trace files viewable with `chrome://tracing`.
 
-4. Time any function or method you specify in the config file.
+4. Time any function that you specify in the config file.
 
 Monitoring vs. Profiling
 ------------------------
 
-Profiling is similar to performance monitoring. Profiling usually
-involves running an external tool to acquire timing data on
-every function and method in the program. Sometimes this will
-cause the program to run so slowly it's hard to use the program
-interactively.
+Profiling is similar to performance monitoring. Profiling usually involves
+running an external tool to acquire timing data on every function in the
+program. Sometimes this will cause the program to run so slowly it's hard
+to use the program interactively.
 
 Performance monitoring does not require running a separate tool to collect
 the timing information. Although we do use Chrome to view the trace files.
-If you don't time too many functions and and methods, the program can run
-at close to full speed.
+If you don't time too many functions the napari can run at close to full
+speed.
 
 This document discusses napari's Performance Monitoring features. Profiling
 napari might be useful as well, but it is not discussed here.
@@ -96,8 +97,8 @@ Specify which `callable_lists` you want to trace. You can have many
 `callable_lists`
 ~~~~~~~~~~~~~~~~
 
-These lists can be referenced by the `callable_lists` option. For example
-you might want one list for "rendering" and another for "painting".
+These lists can be referenced by the `callable_lists` option. You might
+want multiple lists so they can be enabled separately.
 
 Trace File
 -----------
@@ -165,7 +166,7 @@ Now run napari's `add_labels` example like this:
     NAPARI_PERFMON=/tmp/perfmon.json python examples/add_labels.py
 
 Use the paint tool to draw on the labels layer. Notice in the
-**performance** widget it prints some events took over 100ms. It says both
+**performance** widget it says some events took over 100ms. It says both
 events took over 100ms, but really one probably called the other one, the
 call hierarchy is not shown:
 
@@ -179,10 +180,8 @@ View Trace in Chrome
 Run Chrome and go to the URL `chrome://tracing`. Drag and drop
 `/temp/latest.json` into the Chrome window. You can navigate multiple ways,
 but one easy way is use the `AD` keys to move left and right, and use `WS`
-keys to zoom in or out.
-
-Locate one of the slow `MouseMove` events and click on it. In the lower
-pane the `Wall Duration` field says it took over 100ms:
+keys to zoom in or out. Locate one of the slow `MouseMove` events and click
+on it. In the lower pane the `Wall Duration` field says it took over 100ms:
 
 .. image:: https://user-images.githubusercontent.com/4163446/94200256-1fc17180-fe88-11ea-9935-bef4f818407d.png
 
@@ -217,16 +216,20 @@ command.
 View the new Trace File
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Drop `/tmp/latest.json` into Chrome again. After clicking on the event
-press the `m` key to show the duration of that event on the timeline,
-below it says the event took 106.597ms:
+Drop `/tmp/latest.json` into Chrome again. Now we can see that
+`MouseButtonPress` calls
+:meth:`Labels.paint<napari.layer.labels.Label.paint>` and that
+:meth:`Labels.paint<napari.layer.labels.Label.paint>` is really responsible
+for most of the time. After clicking on the event press the `m` key, that
+will highlight the event duration with arrows and print the duration right
+on the timeline, in this case it says the even took  106.597ms:
 
 .. image:: https://user-images.githubusercontent.com/4163446/94201049-66fc3200-fe89-11ea-9720-6a7ff3c7361a.png
 
-We added the timer for :meth:`Labels.paint<napari.layer.labels.Label.paint>` and now we see that `MouseButtonPress`
-takes is slow because :meth:`Labels.paint<napari.layer.labels.Label.paint>` is slow. When
-investigating a real problem we might have to add quite a few timers. We can save 
-the `callable_list` for future use.
+When investigating a real problem we might have to add quite a few timers. If
+add timers that are called hundreds of times that might slow things down
+or clutter the trace file. In general we want to trace important and interesting
+functions. If we create a large `callable_list` we can save it for future use.
 
 Advanced
 ~~~~~~~~
@@ -237,8 +240,7 @@ what you care about will yield the best performance and lead to trace files
 that are easier to understand.
 
 Use the :func:`perf_timer<napari.utils.perf.perf_timer>` context object to
-time a single block of code, if you don't want to time an entire function
-or method.
+time a single block of code, if you don't want to time an entire function.
 
 Use :func:`add_instant_event<napari.utils.perf.add_instant_event>` and
 :func:`add_counter_event<napari.utils.perf.add_counter_event>` to annotate
