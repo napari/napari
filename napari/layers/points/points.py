@@ -390,6 +390,8 @@ class Points(Layer):
         else:
             self._current_edge_color = self.edge_color[-1]
             self._current_face_color = self.face_color[-1]
+            self._face_color = np.empty((0, 4))
+            self._edge_color = np.empty((0, 4))
             self.current_properties = {}
 
         # Trigger generation of view slice and thumbnail
@@ -548,7 +550,12 @@ class Points(Layer):
             )
             new_colors = np.tile(fc, (adding, 1))
         colors = getattr(self, f'{attribute}_color')
-        setattr(self, f'_{attribute}_color', np.vstack((colors, new_colors)))
+        if len(colors) == 0:
+            setattr(self, f'_{attribute}_color', new_colors)
+        else:
+            setattr(
+                self, f'_{attribute}_color', np.vstack((colors, new_colors))
+            )
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
@@ -997,13 +1004,27 @@ class Points(Layer):
             The name of the attribute to set the color of.
             Should be 'edge' for edge_color or 'face' for face_color.
         """
-        transformed_color_cycle, transformed_colors = transform_color_cycle(
-            color_cycle=color_cycle,
-            elem_name=f'{attribute}_color_cycle',
-            default="white",
-        )
-        setattr(self, f'_{attribute}_color_cycle_values', transformed_colors)
-        setattr(self, f'_{attribute}_color_cycle', transformed_color_cycle)
+        if isinstance(color_cycle, dict):
+            if None not in color_cycle:
+                color_cycle[None] = 'white'
+            transformed_colors = {
+                key: transform_color(value)[0]
+                for key, value in color_cycle.items()
+            }
+            setattr(self, f'_{attribute}_color_cycle', transformed_colors)
+        else:
+            (
+                transformed_color_cycle,
+                transformed_colors,
+            ) = transform_color_cycle(
+                color_cycle=color_cycle,
+                elem_name=f'{attribute}_color_cycle',
+                default="white",
+            )
+            setattr(
+                self, f'_{attribute}_color_cycle_values', transformed_colors
+            )
+            setattr(self, f'_{attribute}_color_cycle', transformed_color_cycle)
         color_mode = getattr(self, f'_{attribute}_color_mode')
         if color_mode == ColorMode.CYCLE:
             self.refresh_colors(update_color_mapping=True)
@@ -1050,12 +1071,15 @@ class Points(Layer):
                 color_properties = self.properties[color_property]
                 if update_color_mapping:
                     color_cycle = getattr(self, f'_{attribute}_color_cycle')
-                    color_cycle_map = {
-                        k: np.squeeze(transform_color(c))
-                        for k, c in zip(
-                            np.unique(color_properties), color_cycle
-                        )
-                    }
+                    if isinstance(color_cycle, dict):
+                        color_cycle_map = color_cycle
+                    else:
+                        color_cycle_map = {
+                            k: np.squeeze(transform_color(c))
+                            for k, c in zip(
+                                np.unique(color_properties), color_cycle
+                            )
+                        }
                     setattr(
                         self, f'{attribute}_color_cycle_map', color_cycle_map
                     )
@@ -1077,7 +1101,14 @@ class Points(Layer):
                         )
                         for prop in props_to_add:
                             color_cycle_map[prop] = np.squeeze(
-                                transform_color(next(color_cycle))
+                                transform_color(
+                                    color_cycle[prop]
+                                    if isinstance(color_cycle, dict)
+                                    and prop in color_cycle
+                                    else color_cycle[None]
+                                    if isinstance(color_cycle, dict)
+                                    else next(color_cycle)
+                                )
                             )
                         setattr(
                             self,
@@ -1130,6 +1161,8 @@ class Points(Layer):
                 return True
             else:
                 return False
+        elif isinstance(color, dict):
+            return True
         elif isinstance(color, (list, np.ndarray)):
             return False
         else:
