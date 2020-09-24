@@ -51,7 +51,7 @@ jobs:
         with:
           timeout_minutes: 30
           max_attempts: 3
-          cmd: python -m bundle
+          command: python -m bundle
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
         with:
