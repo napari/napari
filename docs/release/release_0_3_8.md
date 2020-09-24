@@ -36,10 +36,12 @@ and (#1643). This will also be our last release supporting Python3.6.
 - Use pyside2-rcc if pyrcc5 fail (#1626)
 - Big update of rendering explanation doc (#1632)
 - Do not ship bundle.py in source distribution (#1633)
+- Add github retry action to try and fix flaky app bundling (#1649)
 
 
 ## 6 authors added to this release (alphabetical)
 
+- [Genevieve Buckley](https://github.com/napari/napari/commits?author=GenevieveBuckley) - @GenevieveBuckley
 - [Grzegorz Bokota](https://github.com/napari/napari/commits?author=Czaki) - @Czaki
 - [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - @jni
 - [Kira Evans](https://github.com/napari/napari/commits?author=kne42) - @kne42
