@@ -5,50 +5,48 @@ Performance Monitoring
 
 Performance is a core feature of napari. In order to help you monitor
 performance and diagnose or fix performance issues, napari includes the
-:mod:`~napari.utils.perf` module which has several features:
+`napari.utils.`:mod:`~napari.utils.perf` module which has several features:
 
-1. It can time Qt Events and any function or method you specify in the
-config file.
+1. Times Qt Events 
 
-2. It can display a dockable performance widget that will list events whose
-duration is over some configurable threshold.
+2. Times any function or method you specify in the config file.
 
-3. It can produce JSON trace files that can be visualized and interactively
-explored using Chrome's tracing GUI.
+3. Displays a dockable "performance widget" that lists "long running" timers.
+
+4. Produces JSON trace files that can be visualized using Chrome's built-in
+tracing GUI.
 
 Monitoring vs. Profiling
 ------------------------
 
-Performance Monitoring and Profiling are similar, they are both are ways to
-time the duration of code execution. This document focuses only on
-performance monitoring, but profiling can also be a productive tool. Some
-differences between the two:
+Profiling is similar to monitoring. Although generally profiling involves
+using an external tool which times every function and method. Instead
+monitoring tends to be built-in to the application. And with monitoring you
+usually only time a small set of functions and methods.
 
-1. Monitoring is generally done by the application itself, it does not
-require an external tool. Profiling often requires running the application
-using a separate tool.
+Profiling sometimes slows an application down to the point where you cannot
+use it normally. While the intent of monitoring is that you can monitor 
+while still using the application normally.
 
-2. Monitoring is generally lighter weight than profiling. In some cases
-profiling can slow an application down so much that it cannot be used
-interactively.
-
-3. Monitoring usually focuses on timing specific sets of important or
-expensive functions, while by profiling by default will time every function
-no matter how tiny.
+This document discusses napari's Performance Monitoring features. Profiling
+napari might also be a good approach to try, but it is not discussed here.
 
 
 Enabling perfmon
 ----------------
 
-To enable performance monitoring, set the environment variable
-`NAPARI_PERFMON=1`, or set it to the path of a configuration file such as
-`NAPARI_PERFMON=~/.perfmon.json`.
+There are two ways to enable performance monitoring.
 
-Setting the environment variable to 1 enables perfmon in a mode that can
-only time Qt Events. In order to time other functions and methods you need
-to use the configuration file.
+1. Set the environment variable `NAPARI_PERFMON=1`. This will time
+Qt events, show the dockable widget, and reveal the **Performance Trace**
+menu items on the **Debug** menu.
 
-Configuration File ------------------
+2. Set that same environment variable to point to a JSON config file such as
+`NAPARI_PERFMON=~/.perfmon-config.json`. This gives you additional options
+describe below.
+
+Configuration File
+------------------
 
 .. code-block:: python
     {

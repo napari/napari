@@ -1,5 +1,5 @@
-Events and Threading
-====================
+Guides
+======
 
 .. toctree::
    :maxdepth: 1
@@ -18,6 +18,5 @@ computations, and would like to avoid having the viewer become unresponsive
 while you wait for a computation to finish, you may benefit from reading about
 :ref:`multithreading-in-napari`.
 
-Performance is a core feature of napari, and napari contains tools to help
-you monitor performance and diagnose and fix performance problems, see
-:ref:`perfmon`.
+Performance is a core feature of napari. To learn how to monitor
+performance and diagnose and fix performance problems, see :ref:`perfmon`.
