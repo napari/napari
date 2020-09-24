@@ -22,7 +22,6 @@ import inspect
 import sys
 import textwrap
 import typing
-from typing import Optional
 
 from numpydoc.docscrape import NumpyDocString
 
@@ -136,6 +135,7 @@ def _generate_view_function(layer_string: str, method_name: str = None):
             'typing': typing,
             'view_sig': view_sig,
             'Union': typing.Union,
+            'Optional': typing.Optional,
             'List': typing.List,
             'NoneType': type(None),
             'Sequence': typing.Sequence,
