@@ -20,18 +20,17 @@ The module can do several things:
 Monitoring vs. Profiling
 ------------------------
 
-Profiling is similar to performance monitoring. Profiling usually involves
-running an external tool to acquire timing data on every function in the
-program. Sometimes this will cause the program to run so slowly it's hard
-to use the program interactively.
+Profiling is similar to performance monitoring. However profiling usually
+involves running an external tool to acquire timing data on every function
+in the program. Sometimes this will cause the program to run so slowly it's
+hard to use the program interactively.
 
 Performance monitoring does not require running a separate tool to collect
-the timing information. Although we do use Chrome to view the trace files.
-If you don't time too many functions the napari can run at close to full
-speed.
-
-This document discusses napari's Performance Monitoring features. Profiling
-napari might be useful as well, but it is not discussed here.
+the timing information, however we do use Chrome to view the trace files.
+With performance monitoring napari can run at close to full speed in many
+cases. This document discusses only napari's performance monitoring
+features. Profiling napari might be useful as well, but it is not discussed
+here.
 
 
 Enabling perfmon
@@ -43,9 +42,9 @@ a JSON configuration file, for example `NAPARI_PERFMON=/tmp/perfmon.json`.
 
 Setting `NAPARI_PERFMON=1` does three things:
 
-1. Time Qt Events
-2. Show the dockable **performance** widget.
-3. Reveal the **Debug** menu which you can use to create a trace file.
+1. Times Qt Events
+2. Shows the dockable **performance** widget.
+3. Reveals the **Debug** menu which you can use to create a trace file.
 
 
 Configuration File Format
@@ -108,11 +107,10 @@ special URL `chrome://tracing` in Chrome. Use the **Load** button inside
 the Chrome window, or just drag-n-drop your JSON trace file into the Chrome
 window.
 
-You can also view trace files using the Speedscope website at
-https://www.speedscope.app/. It is similar to `chrome://tracing` but has
+You can also view trace files using the `Speedscope website<https://www.speedscope.app/>`_. It is similar to `chrome://tracing` but has
 some different features.
 
-The trace file format is specifed in the [Trace File Format](https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU/preview)
+The trace file format is specified in the `Trace File Format<https://docs.google.com/document/d/1CvAClvFfyA5R-PhYUmn5OOQtYMH4h6I0nSsKchNAySU/preview>`_
 Google Doc. The format is well-documented, but there are no pictures so
 it's not always clear how a given feature actually looks in the Chrome
 Tracing GUI.
@@ -120,10 +118,12 @@ Tracing GUI.
 Example Investigation
 ---------------------
 
+This is an example showing how you might use the perfmon module.
+
 Add a Sleep
 ~~~~~~~~~~~
 
-To simulate part of napari running slow, add a `sleep()` call to the
+To simulate a performance problem in napari  add a `sleep()` call to the
 :meth:`Labels.paint<napari.layer.labels.Label.paint>` method, this 
 will make the method take at least 100ms:
 
@@ -141,7 +141,7 @@ will make the method take at least 100ms:
 Create a Perfmon Config File
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Create a minimal perfmon config file `/tmp/perfmon.json` like this:
+Create a minimal perfmon config file `/tmp/perfmon.json` that looks like this:
 
 .. code-block:: json
 
@@ -151,9 +151,10 @@ Create a minimal perfmon config file `/tmp/perfmon.json` like this:
         "trace_callables": []
     }
 
-This will write `/tmp/latest.json` every time we run napari and then exit
-with the **Quit** commmand. This is often easier than manually start a trace
-using the **Debug** menu. 
+This will write `/tmp/latest.json` every time we run napari. This file is
+only written on exit, and you must exit with the **Quit** commmand. Using
+`trace_file_on_start` is often easier than manually starting a trace using
+the **Debug** menu. 
 
 
 Run napari
@@ -165,32 +166,41 @@ Now run napari's `add_labels` example like this:
 
     NAPARI_PERFMON=/tmp/perfmon.json python examples/add_labels.py
 
-Use the paint tool to draw on the labels layer. Notice in the
-**performance** widget it says some events took over 100ms. It says both
-events took over 100ms, but really one probably called the other one, the
-call hierarchy is not shown:
+Use the paint tool and single-click once or twice on the labels layer. Look
+at the **performance** widget, it should show that some events took over
+100ms. The **performance** widget is just to give you a quick idea of what
+is running slow:
 
 .. image:: https://user-images.githubusercontent.com/4163446/94198620-898c4c00-fe85-11ea-8769-83f52c0a1aad.png
 
-Exit napari using the **Quit** command so that it writes the trace file on exit.
+The trace file will give you much more information than the **performance**
+widget. Exit napari using the **Quit** command so that it writes the trace
+file on exit.
 
 View Trace in Chrome
 ~~~~~~~~~~~~~~~~~~~~
 
 Run Chrome and go to the URL `chrome://tracing`. Drag and drop
-`/temp/latest.json` into the Chrome window. You can navigate multiple ways,
-but one easy way is use the `AD` keys to move left and right, and use `WS`
-keys to zoom in or out. Locate one of the slow `MouseMove` events and click
-on it. In the lower pane the `Wall Duration` field says it took over 100ms:
+`/temp/latest.json` into the Chrome window, or use the **Load** button to
+load the JSON file. You will usually need to pan and zoom the trace to
+explore it, to figure out what is going on.
+
+You can navigate with the mouse, but using the keyboard might be easier.
+Press the `AD` keys to move left and right, and press the `WS` keys to zoom
+in or out. Both the `MouseButtonPress` and `MouseMove` events are slow. In
+the lower pane the `Wall Duration` field says it took over 100ms:
 
 .. image:: https://user-images.githubusercontent.com/4163446/94200256-1fc17180-fe88-11ea-9935-bef4f818407d.png
+
+So we've found an event that's slow. But what about `MouseButtonPress` or `MouseMove`
+is running slow?
 
 Add Paint Method
 ~~~~~~~~~~~~~~~~
 
-The `MouseMove` event was slow, but why was it slow? Add :meth:`Labels.paint<napari.layer.labels.Label.paint>` to
-the trace. Create a new list of callables called `labels` which will trace
-the paint method:
+Add :meth:`Labels.paint<napari.layer.labels.Label.paint>` to the trace.
+Create a new list of callables called `labels` which will trace the paint
+method:
 
 .. code-block:: json
 
@@ -210,7 +220,7 @@ the paint method:
 Create the new Trace File
 ~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Run `add_labels` as before, use the paint tool, exit with the **Quit**
+Run `add_labels` as before, click with the paint tool, exit with the **Quit**
 command.
 
 View the new Trace File
@@ -226,13 +236,18 @@ on the timeline, in this case it says the even took  106.597ms:
 
 .. image:: https://user-images.githubusercontent.com/4163446/94201049-66fc3200-fe89-11ea-9720-6a7ff3c7361a.png
 
-When investigating a real problem we might have to add quite a few timers. If
-add timers that are called hundreds of times that might slow things down
-or clutter the trace file. In general we want to trace important and interesting
-functions. If we create a large `callable_list` we can save it for future use.
+When investigating a real problem we might have to add many functions to
+the config file. It's best to add timers that take a lot of time. If you
+add a timer that's called thousands of times, it will add overhead and will
+clutter the trace file. In general we want to trace important and
+interesting functions. If we create a large `callable_list` we can save it
+for future use.
 
 Advanced
 ~~~~~~~~
+
+Experiment with the :mod:`napari.utils.perf<napari.utils.perf>` features and
+you will find your own tricks and techniques.
 
 Create multiple `callable_lists` and toggle them on or off depending on
 what you are investigating. The perfmon overhead is low, but tracing only
@@ -240,10 +255,19 @@ what you care about will yield the best performance and lead to trace files
 that are easier to understand.
 
 Use the :func:`perf_timer<napari.utils.perf.perf_timer>` context object to
-time a single block of code, if you don't want to time an entire function.
+time only a block of code, or even a single line, if you don't want to time
+an entire function.
 
 Use :func:`add_instant_event<napari.utils.perf.add_instant_event>` and
 :func:`add_counter_event<napari.utils.perf.add_counter_event>` to annotate
-your trace file with additional information beyond just timing events. These
-commands should be removed before merging code into master, they are for
-temporary use only.
+your trace file with additional information beyond just timing events. The
+`add_instant_event` function draws a vertical line on the trace in Chrome,
+to show when something happened like a click. The `add_counter_event`
+function creates a bar graph on the trace showing the value of some counter
+at every point in time. For example you could record the length of a queue,
+and see the queue grow and shrink over time.
+
+Calls to `perf_timer`, `add_instant_event` and `add_counter_event` should
+be removed before merging code into master. Think of them like "debug
+prints", things you add while investigating a problem, but you do not leave
+them in the code permanently.
