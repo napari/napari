@@ -49,7 +49,7 @@ jobs:
       - name: Make Bundle
         uses: nick-invision/retry@v1
         with:
-          timeout_minutes: 10
+          timeout_minutes: 30
           max_attempts: 3
           command: python -m bundle
       - name: Upload Artifact
