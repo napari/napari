@@ -13,3 +13,4 @@ recursive-exclude docs *
 recursive-exclude examples *
 exclude napari/benchmarks/*
 recursive-exclude resources *
+exclude bundle.py

@@ -34,6 +34,12 @@ linux_task:
       PY_VER: "3.7"
       PYTEST_FLAGS: ""
     env:
+      PY_VER: "3.7"
+      MIN_REQ: "1"
+      # needed for NumPy 1.16 compatibility with dask arrays; see:
+      # https://github.com/napari/napari/pull/1617#issuecomment-692372655
+      NUMPY_EXPERIMENTAL_ARRAY_FUNCTION: "1"
+    env:
       PY_VER: "3.8"
       PYTEST_FLAGS: ""
     env:
@@ -81,6 +87,7 @@ linux_task:
     - python -m pip install --retries 3 --upgrade pip
     - python -m pip install --retries 3 -r requirements/test.txt
     - python -m pip install --retries 3 pytest-cov codecov
+    - python tools/minreq.py  # no-op if MIN_REQ is not set
     - python -m pip install -e .[pyside2]
 
   check_script:
