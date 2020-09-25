@@ -182,7 +182,7 @@ class ScaleTranslate(Transform):
     def compose(self, transform: 'ScaleTranslate') -> 'ScaleTranslate':
         """Return the composite of this transform and the provided one."""
         scale = self.scale * transform.scale
-        translate = self.translate + self.scale * transform.translate
+        translate = self.translate + transform.translate
         return ScaleTranslate(scale, translate)
 
     def set_slice(self, axes: Sequence[int]) -> 'ScaleTranslate':
