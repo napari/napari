@@ -37,7 +37,7 @@ jobs:
             -- :99 -screen 0 1920x1200x24 -ac +extension GLX
       - name: Install Dependencies
         run: |
-          python -m pip install --upgrade pip 
+          python -m pip install --upgrade pip
           python -m pip install briefcase==0.3.1 tomlkit wheel
           python -m pip install -e .[pyside2]
       - name: get tag
@@ -47,7 +47,11 @@ jobs:
           echo "::set-env name=version::$VER"
           echo $VER
       - name: Make Bundle
-        run: python -m bundle
+        uses: nick-invision/retry@v1
+        with:
+          timeout_minutes: 30
+          max_attempts: 3
+          command: python -m bundle
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
         with:

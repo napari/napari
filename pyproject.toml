@@ -26,7 +26,6 @@ icon = "resources/icon"
 # populated in bundle.py
 requires = []
 
-
 [tool.black]
 target-version = ['py36', 'py37', 'py38']
 skip-string-normalization = true
@@ -49,6 +48,7 @@ exclude = '''
     | _vendor
   )/
   | napari/resources/qt.py
+  | tools/minreq.py
 )
 '''
 
@@ -61,6 +61,7 @@ ignore = [
   "codecov.yml",
   "Makefile",
   "napari/_version.py",  # added during build by setuptools_scm
+  "tools/minreq.py",
 ]
 
 [tool.isort]
