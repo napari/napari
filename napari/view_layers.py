@@ -135,6 +135,7 @@ def _generate_view_function(layer_string: str, method_name: str = None):
             'typing': typing,
             'view_sig': view_sig,
             'Union': typing.Union,
+            'Optional': typing.Optional,
             'List': typing.List,
             'NoneType': type(None),
             'Sequence': typing.Sequence,
