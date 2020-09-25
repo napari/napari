@@ -277,4 +277,4 @@ prints", things you add while investigating a problem, but you do not leave
 them in the code permanently.
 
 You can save JSON files so that you can compare how things looked 
-before and after you changes.
+before and after your changes.
