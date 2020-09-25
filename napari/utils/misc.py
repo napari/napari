@@ -24,7 +24,11 @@ def running_as_bundled_app() -> bool:
     # https://github.com/beeware/briefcase/issues/412
     # https://github.com/beeware/briefcase/pull/425
     # this assumes the name of the app stays "napari"
-    return importlib_metadata.metadata("napari").get("App-ID") is not None
+    try:
+        return importlib_metadata.metadata("napari").get("App-ID") is not None
+    except importlib_metadata.PackageNotFoundError:
+        """When bundled in another app. Return false to not conflict with napari bundle"""
+        return False
 
 
 def in_jupyter() -> bool:
