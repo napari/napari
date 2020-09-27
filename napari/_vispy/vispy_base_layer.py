@@ -81,7 +81,7 @@ class VispyBaseLayer(ABC):
     @property
     def translate(self):
         """sequence of float: Translation values."""
-        return self._master_transform.matrix[:, -1]
+        return self._master_transform.matrix[-1, :]
 
     @property
     def scale(self):
