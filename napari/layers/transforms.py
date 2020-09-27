@@ -244,11 +244,12 @@ class Affine(Transform):
         [4, 18, 34] in 3D can be used as a translation of [0, 4, 18, 34] in 4D
         without modification. An empty translation vector implies no
         translation.
-    rotate : float, 2-tuple of float, or n-D array.
+    rotate : float, 3-tuple of float, or n-D array.
         If a float convert into a 2D rotate matrix using that value as an
-        angle. If 2-tuple convert into a 3D rotate matrix, otherwise assume
-        an nD rotate. Angle conversion are done either using degrees or
-        radians depending on the degrees boolean parameter.
+        angle. If 3-tuple convert into a 3D rotate matrix, rolling a yaw,
+        pitch, roll convention. Otherwise assume an nD rotate. Angle
+        conversion are done either using degrees or radians depending on the
+        degrees boolean parameter.
     shear : n-D array
         An n-D shear matrix.
     degrees : bool
@@ -275,7 +276,7 @@ class Affine(Transform):
                 rotate = np.eye(len(scale))
             if shear is None:
                 shear = np.eye(len(scale))
-            matrix = compose_affine_matrix(
+            matrix = compose_linear_matrix(
                 rotate, scale, shear, degrees=degrees
             )
         else:
@@ -304,35 +305,35 @@ class Affine(Transform):
     @property
     def scale(self) -> np.array:
         """Return the scale of the transform."""
-        return decompose_affine_matrix(self.matrix)[1]
+        return decompose_linear_matrix(self.matrix)[1]
 
     @scale.setter
     def scale(self, scale):
         """Set the scale of the transform."""
-        R, Z, S = decompose_affine_matrix(self.matrix)
-        self.matrix = compose_affine_matrix(R, scale, S)
+        R, Z, S = decompose_linear_matrix(self.matrix)
+        self.matrix = compose_linear_matrix(R, scale, S)
 
     @property
     def rotate(self) -> np.array:
         """Return the rotate of the transform."""
-        return decompose_affine_matrix(self.matrix)[0]
+        return decompose_linear_matrix(self.matrix)[0]
 
     @rotate.setter
     def rotate(self, rotate):
         """Set the rotate of the transform."""
-        R, Z, S = decompose_affine_matrix(self.matrix)
-        self.matrix = compose_affine_matrix(rotate, Z, S)
+        R, Z, S = decompose_linear_matrix(self.matrix)
+        self.matrix = compose_linear_matrix(rotate, Z, S)
 
     @property
     def shear(self) -> np.array:
         """Return the shear of the transform."""
-        return decompose_affine_matrix(self.matrix)[2]
+        return decompose_linear_matrix(self.matrix)[2]
 
     @shear.setter
     def shear(self, shear):
         """Set the rotate of the transform."""
-        R, Z, S = decompose_affine_matrix(self.matrix)
-        self.matrix = compose_affine_matrix(R, Z, shear)
+        R, Z, S = decompose_linear_matrix(self.matrix)
+        self.matrix = compose_linear_matrix(R, Z, shear)
 
     @property
     def inverse(self) -> 'Affine':
@@ -390,8 +391,8 @@ class Affine(Transform):
         return Affine(matrix=matrix, translate=translate, name=self.name)
 
 
-def compose_affine_matrix(rotate, scale, shear, degrees=True) -> np.array:
-    """Compose matrix from rotate, shear, scale."""
+def compose_linear_matrix(rotate, scale, shear, degrees=True) -> np.array:
+    """Compose linear transform matrix from rotate, shear, scale."""
 
     if np.isscalar(rotate):
         # If a scalar is passed assume it is a single rotate angle
@@ -403,30 +404,40 @@ def compose_affine_matrix(rotate, scale, shear, degrees=True) -> np.array:
         rotate_mat = np.array(
             [[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]]
         )
-    elif np.array(rotate).ndim == 1 and len(rotate) == 2:
-        # If a 2-tuple is passed assume it is two rotate angles
-        # for a 3D rotate
+    elif np.array(rotate).ndim == 1 and len(rotate) == 3:
+        # If a 3-tuple is passed assume it is three rotation angles for
+        # a roll, pitch, and yaw for a 3D rotation. For more details see
+        # https://en.wikipedia.org/wiki/Rotation_matrix#General_rotations
         if degrees:
-            theta = np.deg2rad(rotate[0])
-            phi = np.deg2rad(rotate[1])
+            alpha = np.deg2rad(rotate[0])
+            beta = np.deg2rad(rotate[1])
+            gamma = np.deg2rad(rotate[2])
         else:
-            theta = rotate[0]
-            phi = rotate[1]
-        rotate_mat = np.array(
+            alpha = rotate[0]
+            beta = rotate[1]
+            gamma = rotate[2]
+        R_alpha = np.array(
             [
-                [
-                    np.sin(theta) * np.cos(phi),
-                    np.sin(theta) * np.sin(phi),
-                    np.cos(theta),
-                ],
-                [
-                    np.cos(theta) * np.cos(phi),
-                    np.cos(theta) * np.sin(phi),
-                    -np.sin(theta),
-                ],
-                [-np.sin(phi), np.cos(phi), 0],
+                [np.cos(alpha), np.sin(alpha), 0],
+                [-np.sin(alpha), np.cos(alpha), 0],
+                [0, 0, 1],
             ]
         )
+        R_beta = np.array(
+            [
+                [np.cos(beta), 0, np.sin(beta)],
+                [0, 1, 0],
+                [-np.sin(beta), 0, np.cos(beta)],
+            ]
+        )
+        R_gamma = np.array(
+            [
+                [1, 0, 0],
+                [0, np.cos(gamma), -np.sin(gamma)],
+                [0, np.sin(gamma), np.cos(gamma)],
+            ]
+        )
+        rotate_mat = R_alpha @ R_beta @ R_gamma
     else:
         # Otherwise assume a full nD rotate matrix has been passed
         rotate_mat = np.array(rotate)
@@ -491,8 +502,8 @@ def embed_in_identity_matrix(matrix, ndim):
         return full_matrix
 
 
-def decompose_affine_matrix(matrix) -> (np.array, np.array, np.array):
-    """Decompose the transform matrix into rotate, shear, scale."""
+def decompose_linear_matrix(matrix) -> (np.array, np.array, np.array):
+    """Decompose linear transform matrix into rotate, shear, scale."""
     RZS = np.linalg.inv(matrix)
     ZS = np.linalg.cholesky(np.dot(RZS.T, RZS)).T
     Z = np.diag(ZS).copy()
