@@ -64,6 +64,7 @@ class VispyBaseLayer(ABC):
         self.layer.events.translate.connect(self._on_matrix_change)
         self.layer.events.rotate.connect(self._on_matrix_change)
         self.layer.events.shear.connect(self._on_matrix_change)
+        self.layer.events.loaded.connect(self._on_loaded_change)
 
     @property
     def _master_transform(self):
@@ -104,7 +105,7 @@ class VispyBaseLayer(ABC):
         raise NotImplementedError()
 
     def _on_visible_change(self, event=None):
-        self.node.visible = self.layer.visible
+        self.node.visible = self.layer.visible and self.layer.loaded
 
     def _on_opacity_change(self, event=None):
         self.node.opacity = self.layer.opacity
@@ -127,6 +128,9 @@ class VispyBaseLayer(ABC):
         self._master_transform.matrix = affine_matrix
         self.layer.corner_pixels = self.coordinates_of_canvas_corners()
         self.layer.position = self._transform_position(self._position)
+
+    def _on_loaded_change(self, event=None):
+        self.node.visible = self.layer.visible and self.layer.loaded
 
     def _transform_position(self, position):
         """Transform cursor position from canvas space (x, y) into image space.

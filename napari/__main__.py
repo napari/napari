@@ -211,7 +211,7 @@ def _run_pythonw(python_path):
 
     # Append command line arguments.
     if len(sys.argv) > 1:
-        cmd.append(*sys.argv[1:])
+        cmd.extend(sys.argv[1:])
 
     result = subprocess.run(cmd, env=env, cwd=cwd)
     sys.exit(result.returncode)

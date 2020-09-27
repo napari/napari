@@ -223,11 +223,7 @@ class Image(IntensityVisualizationMixin, Layer):
             self._thumbnail_level = 0
         self.corner_pixels[1] = self.level_shapes[self._data_level]
 
-        # Initialize the current slice to an empty image.
-        self._slice = ImageSlice(
-            self._get_empty_image(), self._raw_to_displayed, self.rgb
-        )
-        self._empty = True
+        self._new_empty_slice()
 
         # Set contrast_limits and colormaps
         self._gamma = gamma
@@ -253,6 +249,14 @@ class Image(IntensityVisualizationMixin, Layer):
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
+
+    def _new_empty_slice(self):
+        """Initialize the current slice to an empty image.
+        """
+        self._slice = ImageSlice(
+            self._get_empty_image(), self._raw_to_displayed, self.rgb
+        )
+        self._empty = True
 
     def _get_empty_image(self):
         """Get empty image to use as the default before data is loaded.
@@ -499,6 +503,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
+        self._new_empty_slice()
         not_disp = self.dims.not_displayed
 
         # Check if requested slice outside of data range
@@ -515,9 +520,6 @@ class Image(IntensityVisualizationMixin, Layer):
                 [extent[1, ax] - 1 for ax in not_disp],
             )
         ):
-            self._slice.image.raw = self._get_empty_image()
-            self._slice.thumbnail.raw = self._get_empty_image()
-            self._empty = True
             return
         self._empty = False
 

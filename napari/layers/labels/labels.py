@@ -382,6 +382,11 @@ class Labels(Image):
         self._selected_color = self.get_color(selected_label)
         self.events.selected_label()
 
+        # note: self.color_mode returns a string and this comparison fails,
+        # so use self._color_mode
+        if self._color_mode == LabelColorMode.SELECTED:
+            self.refresh()
+
     @property
     def color_mode(self):
         """Color mode to change how color is represented.
@@ -389,6 +394,8 @@ class Labels(Image):
         AUTO (default) allows color to be set via a hash function with a seed.
 
         DIRECT allows color of each label to be set directly by a color dict.
+
+        SELECTED allows only selected labels to be visible.
         """
         return str(self._color_mode)
 
@@ -404,6 +411,8 @@ class Labels(Image):
         elif color_mode == LabelColorMode.AUTO:
             self._label_color_index = {}
             self.colormap = self._random_colormap
+        elif color_mode == LabelColorMode.SELECTED:
+            pass
         else:
             raise ValueError("Unsupported Color Mode")
 
@@ -564,6 +573,28 @@ class Labels(Image):
             image = np.where(
                 raw > 0, low_discrepancy_image(raw, self._seed), 0
             )
+        elif self._color_mode == LabelColorMode.SELECTED:
+            selected = self._selected_label
+            # we were in direct mode previously
+            if self._label_color_index:
+                if selected not in self._label_color_index:
+                    selected = None
+                index = self._label_color_index
+                image = np.where(
+                    raw == selected,
+                    index[selected],
+                    np.where(
+                        raw != self._background_label,
+                        index[None],
+                        index[self._background_label],
+                    ),
+                )
+            else:
+                image = np.where(
+                    raw == selected,
+                    low_discrepancy_image(selected, self._seed),
+                    0,
+                )
         else:
             raise ValueError("Unsupported Color Mode")
         return image
