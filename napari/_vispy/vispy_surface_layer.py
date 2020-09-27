@@ -50,7 +50,6 @@ class VispySurfaceLayer(VispyBaseLayer):
         self.node.update()
         # Call to update order of translation values with new dims:
         self._on_matrix_change()
-        self._on_matrix_change()
 
     def _on_colormap_change(self, event=None):
         if self.layer.gamma != 1:

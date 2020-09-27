@@ -79,6 +79,18 @@ class VispyBaseLayer(ABC):
         return self.node.transform
 
     @property
+    def translate(self):
+        """sequence of float: Translation values."""
+        return self._master_transform.matrix[:, -1]
+
+    @property
+    def scale(self):
+        """sequence of float: Scale factors."""
+        matrix = self._master_transform.matrix[:-1, :-1]
+        upper_tri = np.linalg.cholesky(np.dot(matrix.T, matrix)).T
+        return np.diag(upper_tri).copy()
+
+    @property
     def order(self):
         """int: Order in which the visual is drawn in the scenegraph.
 
@@ -174,11 +186,7 @@ class VispyBaseLayer(ABC):
         nd = self.layer.dims.ndisplay
         # Find image coordinate of top left canvas pixel
         if self.node.canvas is not None:
-            translate = self._master_transform.matrix[:, -1]
-            matrix = self._master_transform.matrix[:-1, :-1]
-            upper_tri = np.linalg.cholesky(np.dot(matrix.T, matrix)).T
-            scale = np.diag(upper_tri).copy()
-            offset = translate[:nd] / scale[:nd]
+            offset = self.translate[:nd] / self.scale[:nd]
             tl_raw = np.floor(self._transform_position([0, 0]) + offset[::-1])
             br_raw = np.ceil(
                 self._transform_position(self.node.canvas.size) + offset[::-1]
