@@ -176,8 +176,8 @@ class VispyBaseLayer(ABC):
         if self.node.canvas is not None:
             translate = self._master_transform.matrix[:, -1]
             matrix = self._master_transform.matrix[:-1, :-1]
-            decomp = np.linalg.cholesky(np.dot(matrix.T, matrix)).T
-            scale = np.diag(decomp).copy()
+            upper_tri = np.linalg.cholesky(np.dot(matrix.T, matrix)).T
+            scale = np.diag(upper_tri).copy()
             offset = translate[:nd] / scale[:nd]
             tl_raw = np.floor(self._transform_position([0, 0]) + offset[::-1])
             br_raw = np.ceil(

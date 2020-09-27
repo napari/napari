@@ -487,8 +487,6 @@ class Layer(KeymapProvider, ABC):
         for i, ax in enumerate(self.dims.not_displayed):
             indices[ax] = data_pts[i]
 
-        print('pp', world_pts, data_pts, indices)
-
         coords = list(self.coordinates)
         for d in self.dims.not_displayed:
             coords[d] = indices[d]
