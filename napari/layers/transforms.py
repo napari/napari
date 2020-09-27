@@ -311,6 +311,11 @@ class Affine(Transform):
         return np.atleast_1d(np.squeeze(coords @ linear_matrix + translate))
 
     @property
+    def ndim(self) -> int:
+        """Dimensionality of the transform."""
+        return self.linear_matrix.shape[0]
+
+    @property
     def scale(self) -> np.array:
         """Return the scale of the transform."""
         return decompose_linear_matrix(self.linear_matrix)[1]

@@ -484,6 +484,18 @@ class Layer(KeymapProvider, ABC):
         inv_transform = self._transforms['data2world'].inverse
         # data_clipping_plane = inv_transform(clipping_plane)
 
+        if self.ndim > self.dims.ndisplay:
+            clipping_plane = np.ones(self.ndim)
+            clipping_plane[-self.dims.ndisplay :] = 0
+            mapped_clipping_plane = inv_transform(clipping_plane)
+            if not np.allclose(
+                mapped_clipping_plane[-self.dims.ndisplay :], 0
+            ):
+                warnings.warn(
+                    'Non-orthogonal slicing is being requested, but'
+                    'is not fully supported'
+                )
+
         slice_inv_transform = inv_transform.set_slice(self.dims.not_displayed)
 
         world_pts = [self._dims_point[ax] for ax in self.dims.not_displayed]
