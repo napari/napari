@@ -233,25 +233,25 @@ class Affine(Transform):
 
     Parameters
     ----------
-    scale : 1-D array
-        A 1-D array of factors to scale each axis by. Scale is broadcast to 1
-        in leading dimensions, so that, for example, a scale of [4, 18, 34] in
-        3D can be used as a scale of [1, 4, 18, 34] in 4D without modification.
-        An empty translation vector implies no scaling.
-    translate : 1-D array
-        A 1-D array of factors to shift each axis by. Translation is broadcast
-        to 0 in leading dimensions, so that, for example, a translation of
-        [4, 18, 34] in 3D can be used as a translation of [0, 4, 18, 34] in 4D
-        without modification. An empty translation vector implies no
-        translation.
     rotate : float, 3-tuple of float, or n-D array.
         If a float convert into a 2D rotate matrix using that value as an
         angle. If 3-tuple convert into a 3D rotate matrix, rolling a yaw,
         pitch, roll convention. Otherwise assume an nD rotate. Angle
         conversion are done either using degrees or radians depending on the
         degrees boolean parameter.
+    scale : 1-D array
+        A 1-D array of factors to scale each axis by. Scale is broadcast to 1
+        in leading dimensions, so that, for example, a scale of [4, 18, 34] in
+        3D can be used as a scale of [1, 4, 18, 34] in 4D without modification.
+        An empty translation vector implies no scaling.
     shear : n-D array
         An n-D shear matrix.
+    translate : 1-D array
+        A 1-D array of factors to shift each axis by. Translation is broadcast
+        to 0 in leading dimensions, so that, for example, a translation of
+        [4, 18, 34] in 3D can be used as a translation of [0, 4, 18, 34] in 4D
+        without modification. An empty translation vector implies no
+        translation.
     degrees : bool
         Boolean if rotate angles are provided in degrees
     name : string
@@ -310,8 +310,8 @@ class Affine(Transform):
     @scale.setter
     def scale(self, scale):
         """Set the scale of the transform."""
-        R, Z, S = decompose_linear_matrix(self.matrix)
-        self.matrix = compose_linear_matrix(R, scale, S)
+        rotate, _, shear = decompose_linear_matrix(self.matrix)
+        self.matrix = compose_linear_matrix(rotate, scale, shear)
 
     @property
     def rotate(self) -> np.array:
@@ -321,8 +321,8 @@ class Affine(Transform):
     @rotate.setter
     def rotate(self, rotate):
         """Set the rotate of the transform."""
-        R, Z, S = decompose_linear_matrix(self.matrix)
-        self.matrix = compose_linear_matrix(rotate, Z, S)
+        _, scale, shear = decompose_linear_matrix(self.matrix)
+        self.matrix = compose_linear_matrix(rotate, scale, shear)
 
     @property
     def shear(self) -> np.array:
@@ -332,8 +332,8 @@ class Affine(Transform):
     @shear.setter
     def shear(self, shear):
         """Set the rotate of the transform."""
-        R, Z, S = decompose_linear_matrix(self.matrix)
-        self.matrix = compose_linear_matrix(R, Z, shear)
+        rotate, scale, _ = decompose_linear_matrix(self.matrix)
+        self.matrix = compose_linear_matrix(rotate, scale, shear)
 
     @property
     def inverse(self) -> 'Affine':
@@ -392,8 +392,29 @@ class Affine(Transform):
 
 
 def compose_linear_matrix(rotate, scale, shear, degrees=True) -> np.array:
-    """Compose linear transform matrix from rotate, shear, scale."""
+    """Compose linear transform matrix from rotate, shear, scale.
 
+    Parameters
+    ----------
+    rotate : float, 3-tuple of float, or n-D array.
+        If a float convert into a 2D rotate matrix using that value as an
+        angle. If 3-tuple convert into a 3D rotate matrix, rolling a yaw,
+        pitch, roll convention. Otherwise assume an nD rotate. Angle
+        conversion are done either using degrees or radians depending on the
+        degrees boolean parameter.
+    scale : 1-D array
+        A 1-D array of factors to scale each axis by. Scale is broadcast to 1
+        in leading dimensions, so that, for example, a scale of [4, 18, 34] in
+        3D can be used as a scale of [1, 4, 18, 34] in 4D without modification.
+        An empty translation vector implies no scaling.
+    shear : n-D array
+        An n-D shear matrix.
+
+    Returns
+    -------
+    matrix : array
+        nD array representing the composed linear transform.
+    """
     if np.isscalar(rotate):
         # If a scalar is passed assume it is a single rotate angle
         # for a 2D rotate
@@ -464,20 +485,35 @@ def compose_linear_matrix(rotate, scale, shear, degrees=True) -> np.array:
     return full_shear @ full_scale @ full_rotate
 
 
-def expand_upper_triangular(striu):
-    n = len(striu)
+def expand_upper_triangular(vector):
+    """Expand a vector into an upper triangular matrix.
+
+    Decomposition is modeled on code from https://github.com/matthew-brett/transforms3d.
+    In particular, https://github.com/matthew-brett/transforms3d/blob/master/transforms3d/shears.py#L30.
+
+    Parameters
+    ----------
+    vector : np.array
+        1D vector of length M
+
+    Returns
+    -------
+    matrix : np.array shape (N, N)
+        Upper triangluar matrix.
+    """
+    n = len(vector)
     N = ((-1 + np.sqrt(8 * n + 1)) / 2.0) + 1  # n+1 th root
     if N != np.floor(N):
         raise ValueError('%d is a strange number of shear elements' % n)
     N = int(N)
     inds = np.triu(np.ones((N, N)), 1).astype(bool)
-    M = np.eye(N)
-    M[inds] = striu
-    return M
+    matrix = np.eye(N)
+    matrix[inds] = vector
+    return matrix
 
 
 def embed_in_identity_matrix(matrix, ndim):
-    """Embed an MxM matrix in a larger NxN identity matrix .
+    """Embed an MxM matrix in a larger NxN identity matrix.
 
     Parameters
     ----------
@@ -488,7 +524,7 @@ def embed_in_identity_matrix(matrix, ndim):
 
     Returns
     -------
-    np.array shape (N, N)
+    full_matrix : np.array shape (N, N)
         Larger matrix.
     """
     if matrix.ndim != 2 or matrix.shape[0] != matrix.shape[1]:
@@ -503,16 +539,46 @@ def embed_in_identity_matrix(matrix, ndim):
 
 
 def decompose_linear_matrix(matrix) -> (np.array, np.array, np.array):
-    """Decompose linear transform matrix into rotate, shear, scale."""
-    RZS = np.linalg.inv(matrix)
-    ZS = np.linalg.cholesky(np.dot(RZS.T, RZS)).T
-    Z = np.diag(ZS).copy()
-    shears = np.linalg.inv(ZS / Z[:, np.newaxis])
-    n = len(Z)
-    S = shears[np.triu(np.ones((n, n)), 1).astype(bool)]
-    R = np.dot(RZS, np.linalg.inv(ZS))
-    if np.linalg.det(R) < 0:
-        Z[0] *= -1
-        ZS[0] *= -1
-        R = np.dot(RZS, np.linalg.inv(ZS))
-    return np.linalg.inv(R), np.array([1 / z for z in Z]), S
+    """Decompose linear transform matrix into rotate, scale, shear.
+
+    Decomposition is modeled on code from https://github.com/matthew-brett/transforms3d.
+    In particular, https://github.com/matthew-brett/transforms3d/blob/master/transforms3d/affines.py#L156.
+
+    Parameters
+    ----------
+    matrix : np.array shape (N, N)
+        nD array representing the composed linear transform.
+
+    Returns
+    -------
+    rotate : float, 3-tuple of float, or n-D array.
+        If a float convert into a 2D rotate matrix using that value as an
+        angle. If 3-tuple convert into a 3D rotate matrix, rolling a yaw,
+        pitch, roll convention. Otherwise assume an nD rotate. Angle
+        conversion are done either using degrees or radians depending on the
+        degrees boolean parameter.
+    scale : 1-D array
+        A 1-D array of factors to scale each axis by. Scale is broadcast to 1
+        in leading dimensions, so that, for example, a scale of [4, 18, 34] in
+        3D can be used as a scale of [1, 4, 18, 34] in 4D without modification.
+        An empty translation vector implies no scaling.
+    shear : n-D array
+        An n-D shear matrix.
+    """
+    n = matrix.shape[0]
+
+    matrix_inv = np.linalg.inv(matrix)
+
+    decomp = np.linalg.cholesky(np.dot(matrix_inv.T, matrix_inv)).T
+    scale = np.diag(decomp).copy()
+    shears = np.linalg.inv(decomp / scale[:, np.newaxis])
+
+    shear = shears[np.triu(np.ones((n, n)), 1).astype(bool)]
+    rotate = np.dot(matrix_inv, np.linalg.inv(decomp))
+
+    if np.linalg.det(rotate) < 0:
+        scale[0] *= -1
+        decomp[0] *= -1
+        rotate = np.dot(matrix_inv, np.linalg.inv(decomp))
+
+    return np.linalg.inv(rotate), np.divide(1, scale), shear
