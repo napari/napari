@@ -124,7 +124,7 @@ class VispyBaseLayer(ABC):
         # Embed in 4x4 affine matrix
         affine_matrix = np.eye(4)
         affine_matrix[: matrix.shape[0], : matrix.shape[1]] = matrix
-        affine_matrix[: len(translate), -1] = translate
+        affine_matrix[-1, : len(translate)] = translate
         self._master_transform.matrix = affine_matrix
         self.layer.corner_pixels = self.coordinates_of_canvas_corners()
         self.layer.position = self._transform_position(self._position)
