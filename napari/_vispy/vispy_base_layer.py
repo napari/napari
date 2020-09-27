@@ -119,7 +119,7 @@ class VispyBaseLayer(ABC):
             self.layer.dims.displayed
         )
         # convert NumPy axis ordering to VisPy axis ordering
-        matrix = transform.matrix[::-1, ::-1]
+        matrix = transform.linear_matrix[::-1, ::-1]
         translate = transform.translate[::-1]
         # Embed in 4x4 affine matrix
         affine_matrix = np.eye(4)

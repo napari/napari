@@ -163,6 +163,9 @@ def stack_to_images(stack: Image, axis: int, **kwargs: Dict,) -> List[Image]:
         meta['scale'].pop(axis)
         meta['translate'].pop(axis)
 
+    meta['rotate'] = None
+    meta['shear'] = None
+
     meta.update(kwargs)
     imagelist = list()
     layerdata_list = split_channels(data, axis, **meta)

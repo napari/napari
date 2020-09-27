@@ -181,7 +181,7 @@ with napari.gui_qt():
 - Points view data refactor (#951)
 - Add magic name guessing (#1008)
 - Refactor labels layer mouse bindings (#1010)
-- Reduce code duplication for `_on_scale_change` & `_on_translate_change` (#1015)
+- Reduce code duplication for `_on_matrix_change` & `_on_translate_change` (#1015)
 - Style refactor (#1017)
 - Add ScaleTranslate transform (#1018)
 - Add docstrings for all the Qt classees (#1022)

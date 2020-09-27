@@ -152,6 +152,17 @@ class AddLayersMixin:
             Translation values for the layer. If a list then must be a list of
             tuples of float with the same length as the axis that is being
             expanded as channels.
+        rotate : float, 3-tuple of float, n-D array or list.
+            If a float convert into a 2D rotate matrix using that value as an
+            angle. If 3-tuple convert into a 3D rotate matrix, rolling a yaw,
+            pitch, roll convention. Otherwise assume an nD rotate. Angle
+            conversion are done either using degrees or radians depending on the
+            degrees boolean parameter. If a list then must have same length as
+            the axis that is being expanded as channels.
+        shear : 1-D array or list.
+            A vector of shear values for an upper triangular n-D shear matrix.
+            If a list then must have same length as the axis that is being
+            expanded as channels.
         opacity : float or list
             Opacity of the layer visual, between 0.0 and 1.0.  If a list then
             must be same length as the axis that is being expanded as channels.
@@ -264,6 +275,8 @@ class AddLayersMixin:
         metadata=None,
         scale=None,
         translate=None,
+        rotate=None,
+        shear=None,
         opacity=1,
         blending='translucent',
         visible=True,
@@ -329,6 +342,14 @@ class AddLayersMixin:
             Scale factors for the layer.
         translate : tuple of float
             Translation values for the layer.
+        rotate : float, 3-tuple of float, or n-D array.
+            If a float convert into a 2D rotate matrix using that value as an
+            angle. If 3-tuple convert into a 3D rotate matrix, rolling a yaw,
+            pitch, roll convention. Otherwise assume an nD rotate. Angle
+            conversion are done either using degrees or radians depending on the
+            degrees boolean parameter.
+        shear : 1-D array
+            A vector of shear values for an upper triangular n-D shear matrix.
         opacity : float
             Opacity of the layer visual, between 0.0 and 1.0.
         blending : str
@@ -372,6 +393,8 @@ class AddLayersMixin:
             metadata=metadata,
             scale=scale,
             translate=translate,
+            rotate=rotate,
+            shear=shear,
             opacity=opacity,
             blending=blending,
             visible=visible,
@@ -391,6 +414,8 @@ class AddLayersMixin:
         metadata=None,
         scale=None,
         translate=None,
+        rotate=None,
+        shear=None,
         opacity=0.7,
         blending='translucent',
         visible=True,
@@ -434,6 +459,14 @@ class AddLayersMixin:
             Scale factors for the layer.
         translate : tuple of float
             Translation values for the layer.
+        rotate : float, 3-tuple of float, or n-D array.
+            If a float convert into a 2D rotate matrix using that value as an
+            angle. If 3-tuple convert into a 3D rotate matrix, rolling a yaw,
+            pitch, roll convention. Otherwise assume an nD rotate. Angle
+            conversion are done either using degrees or radians depending on the
+            degrees boolean parameter.
+        shear : 1-D array
+            A vector of shear values for an upper triangular n-D shear matrix.
         opacity : float
             Opacity of the layer visual, between 0.0 and 1.0.
         blending : str
@@ -464,6 +497,8 @@ class AddLayersMixin:
             metadata=metadata,
             scale=scale,
             translate=translate,
+            rotate=rotate,
+            shear=shear,
             opacity=opacity,
             blending=blending,
             visible=visible,
@@ -494,6 +529,8 @@ class AddLayersMixin:
         metadata=None,
         scale=None,
         translate=None,
+        rotate=None,
+        shear=None,
         opacity=0.7,
         blending='translucent',
         visible=True,
@@ -576,6 +613,14 @@ class AddLayersMixin:
             Scale factors for the layer.
         translate : tuple of float
             Translation values for the layer.
+        rotate : float, 3-tuple of float, or n-D array.
+            If a float convert into a 2D rotate matrix using that value as an
+            angle. If 3-tuple convert into a 3D rotate matrix, rolling a yaw,
+            pitch, roll convention. Otherwise assume an nD rotate. Angle
+            conversion are done either using degrees or radians depending on the
+            degrees boolean parameter.
+        shear : 1-D array
+            A vector of shear values for an upper triangular n-D shear matrix.
         opacity : float
             Opacity of the layer visual, between 0.0 and 1.0.
         blending : str
@@ -615,6 +660,8 @@ class AddLayersMixin:
             metadata=metadata,
             scale=scale,
             translate=translate,
+            rotate=rotate,
+            shear=shear,
             opacity=opacity,
             blending=blending,
             visible=visible,
@@ -633,6 +680,8 @@ class AddLayersMixin:
         metadata=None,
         scale=None,
         translate=None,
+        rotate=None,
+        shear=None,
         opacity=1,
         blending='translucent',
         visible=True,
@@ -668,6 +717,14 @@ class AddLayersMixin:
             Scale factors for the layer.
         translate : tuple of float
             Translation values for the layer.
+        rotate : float, 3-tuple of float, or n-D array.
+            If a float convert into a 2D rotate matrix using that value as an
+            angle. If 3-tuple convert into a 3D rotate matrix, rolling a yaw,
+            pitch, roll convention. Otherwise assume an nD rotate. Angle
+            conversion are done either using degrees or radians depending on the
+            degrees boolean parameter.
+        shear : 1-D array
+            A vector of shear values for an upper triangular n-D shear matrix.
         opacity : float
             Opacity of the layer visual, between 0.0 and 1.0.
         blending : str
@@ -691,6 +748,8 @@ class AddLayersMixin:
             metadata=metadata,
             scale=scale,
             translate=translate,
+            rotate=rotate,
+            shear=shear,
             opacity=opacity,
             blending=blending,
             visible=visible,
@@ -713,6 +772,8 @@ class AddLayersMixin:
         metadata=None,
         scale=None,
         translate=None,
+        rotate=None,
+        shear=None,
         opacity=0.7,
         blending='translucent',
         visible=True,
@@ -754,6 +815,14 @@ class AddLayersMixin:
             Scale factors for the layer.
         translate : tuple of float
             Translation values for the layer.
+        rotate : float, 3-tuple of float, or n-D array.
+            If a float convert into a 2D rotate matrix using that value as an
+            angle. If 3-tuple convert into a 3D rotate matrix, rolling a yaw,
+            pitch, roll convention. Otherwise assume an nD rotate. Angle
+            conversion are done either using degrees or radians depending on the
+            degrees boolean parameter.
+        shear : 1-D array
+            A vector of shear values for an upper triangular n-D shear matrix.
         opacity : float
             Opacity of the layer visual, between 0.0 and 1.0.
         blending : str
@@ -781,6 +850,8 @@ class AddLayersMixin:
             metadata=metadata,
             scale=scale,
             translate=translate,
+            rotate=rotate,
+            shear=shear,
             opacity=opacity,
             blending=blending,
             visible=visible,
