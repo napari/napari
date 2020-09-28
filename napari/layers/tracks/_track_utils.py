@@ -175,6 +175,12 @@ class TrackManager:
         if data.shape[1] < 4 or data.shape[1] > 5:
             raise ValueError('track vertices should be 4 or 5-dimensional')
 
+        if not all([idx.is_integer() for idx in data[:, 0].tolist()]):
+            raise ValueError('track id must be an integer')
+
+        if not all([t >= 0 for t in data[:, 1]]):
+            raise ValueError('track timestamps must be greater than zero')
+
         return data
 
     def _validate_track_properties(

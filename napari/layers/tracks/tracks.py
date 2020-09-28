@@ -88,7 +88,7 @@ class Tracks(Layer):
 
         # if not provided with any data, set up an empty layer in 2D+t
         if data is None:
-            data = np.empty((0, 3))
+            data = np.empty((0, 4))
 
         # set the track data dimensions (remove ID from data)
         ndim = data.shape[1] - 1
