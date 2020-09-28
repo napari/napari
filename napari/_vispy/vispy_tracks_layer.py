@@ -3,14 +3,11 @@ from vispy.scene.visuals import Compound, Line, Text
 from ._vispy_tracks_shader import TrackShader
 from .vispy_base_layer import VispyBaseLayer
 
-# from napari._vispy.vispy_base_layer import VispyBaseLayer
-# from ._track_shader import TrackShader
-
 
 class VispyTracksLayer(VispyBaseLayer):
     """ VispyTracksLayer
 
-    Custom napari Track layer for visualizing tracks.
+    Track layer for visualizing tracks.
 
     Components:
         - Track lines (vispy.LineVisual)
@@ -23,26 +20,24 @@ class VispyTracksLayer(VispyBaseLayer):
         node = Compound([Line(), Text(), Line()])
         super().__init__(layer, node)
 
-        self.layer.events.edge_width.connect(self._on_data_change)
-        self.layer.events.tail_length.connect(self._on_data_change)
-        self.layer.events.display_id.connect(self._on_data_change)
-        self.layer.events.display_tail.connect(self._on_data_change)
-        self.layer.events.display_graph.connect(self._on_data_change)
-        self.layer.events.color_by.connect(self._on_data_change)
+        self.layer.events.tail_width.connect(self._on_appearance_change)
+        self.layer.events.tail_length.connect(self._on_appearance_change)
+        self.layer.events.display_id.connect(self._on_appearance_change)
+        self.layer.events.display_tail.connect(self._on_appearance_change)
+        self.layer.events.display_graph.connect(self._on_appearance_change)
+
+        self.layer.events.color_by.connect(self._on_appearance_change)
+        self.layer.events.colormap.connect(self._on_appearance_change)
+
+        # these events are fired when changes occur to the tracks or the
+        # graph - as the vertex buffer of the shader needs to be updated
+        # alongside the actual vertex data
+        self.layer.events.rebuild_tracks.connect(self._on_tracks_change)
+        self.layer.events.rebuild_graph.connect(self._on_graph_change)
 
         # build and attach the shader to the track
-        self.track_shader = TrackShader(
-            current_time=self.layer.current_time,
-            tail_length=self.layer.tail_length,
-            vertex_time=self.layer.track_times,
-        )
-
-        self.graph_shader = TrackShader(
-            current_time=self.layer.current_time,
-            tail_length=self.layer.tail_length,
-            vertex_time=self.layer.graph_times,
-        )
-
+        self.track_shader = TrackShader()
+        self.graph_shader = TrackShader()
         node._subvisuals[0].attach(self.track_shader)
         node._subvisuals[2].attach(self.graph_shader)
 
@@ -51,35 +46,16 @@ class VispyTracksLayer(VispyBaseLayer):
         self.node._subvisuals[1].font_size = 8
 
         self._reset_base()
+
         self._on_data_change()
+        self._on_appearance_change()
 
     def _on_data_change(self, event=None):
-        """ update the display
+        """ update the display """
 
-        NOTE(arl): this gets called by the VispyBaseLayer
-
-        """
-        # update the shader
+        # update the shaders
         self.track_shader.current_time = self.layer.current_time
-        self.track_shader.tail_length = self.layer.tail_length
-        self.track_shader.use_fade = self.layer.use_fade
-
         self.graph_shader.current_time = self.layer.current_time
-        self.graph_shader.tail_length = self.layer.tail_length
-        self.graph_shader.use_fade = self.layer.use_fade
-
-        # set visibility of subvisuals
-        self.node._subvisuals[0].visible = self.layer.display_tail
-        self.node._subvisuals[1].visible = self.layer.display_id
-        self.node._subvisuals[2].visible = self.layer.display_graph
-
-        # change track line width
-        self.node._subvisuals[0].set_data(
-            pos=self.layer._view_data,
-            width=self.layer.edge_width,
-            color=self.layer.track_colors,
-            connect=self.layer.track_connex,
-        )
 
         # add text labels if they're visible
         if self.node._subvisuals[1].visible:
@@ -87,22 +63,64 @@ class VispyTracksLayer(VispyBaseLayer):
             self.node._subvisuals[1].text = labels_text
             self.node._subvisuals[1].pos = labels_pos
 
-        # add the meta-linkages / graph edges
-        self.node._subvisuals[2].set_data(
-            pos=self.layer._view_graph,
-            width=self.layer.edge_width,
-            color='white',
-            connect=self.layer.graph_connex,
-        )
-
         self.node.update()
         # Call to update order of translation values with new dims:
         self._on_scale_change()
         self._on_translate_change()
 
-    def _on_color_by(self, event=None):
-        """ change the coloring only """
-        self.node._subvisuals[0].set_data(color=self.layer.track_colors)
+    def _on_appearance_change(self, event=None):
+        """ change the appearance of the data """
+
+        # update shader properties related to appearance
+        self.track_shader.use_fade = self.layer.use_fade
+        self.track_shader.tail_length = self.layer.tail_length
+        self.graph_shader.use_fade = self.layer.use_fade
+        self.graph_shader.tail_length = self.layer.tail_length
+
+        # set visibility of subvisuals
+        self.node._subvisuals[0].visible = self.layer.display_tail
+        self.node._subvisuals[1].visible = self.layer.display_id
+        self.node._subvisuals[2].visible = self.layer.display_graph
+
+        # set the width of the track tails
+        self.node._subvisuals[0].set_data(
+            width=self.layer.tail_width, color=self.layer.track_colors,
+        )
+        self.node._subvisuals[2].set_data(width=self.layer.tail_width,)
+        self.node.update()
+
+    def _on_tracks_change(self, event=None):
+        """ update the shader when the track data changes """
+
+        self.track_shader.use_fade = self.layer.use_fade
+        self.track_shader.tail_length = self.layer.tail_length
+        self.track_shader.vertex_time = self.layer.track_times
+
+        # change the data to the vispy line visual
+        self.node._subvisuals[0].set_data(
+            pos=self.layer._view_data,
+            connect=self.layer.track_connex,
+            width=self.layer.tail_width,
+            color=self.layer.track_colors,
+        )
+        self.node.update()
+        # Call to update order of translation values with new dims:
+        self._on_scale_change()
+        self._on_translate_change()
+
+    def _on_graph_change(self, event=None):
+        """ update the shader when the graph data changes """
+
+        self.graph_shader.use_fade = self.layer.use_fade
+        self.graph_shader.tail_length = self.layer.tail_length
+        self.graph_shader.vertex_time = self.layer.graph_times
+
+        self.node._subvisuals[2].set_data(
+            pos=self.layer._view_graph,
+            connect=self.layer.graph_connex,
+            width=self.layer.tail_width,
+            color='white',
+        )
         self.node.update()
         # Call to update order of translation values with new dims:
         self._on_scale_change()

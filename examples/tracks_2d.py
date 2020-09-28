@@ -17,36 +17,37 @@ def tracks_2d(num_tracks = 10):
         track = np.zeros((100, 6), dtype=np.float32)
 
         # time
-        track[:,0] = np.arange(track.shape[0])
+        timestamps = np.arange(track.shape[0])
 
         radius = 20+30*np.random.random()
-        theta = track[:,0]*0.1 + np.random.random()*np.pi
+        theta = timestamps*0.1 + np.random.random()*np.pi
         x, y = _circle(radius, theta)
 
-        track[:,1] = 50. + y
-        track[:,2] = 50. + x
-        track[:,3] = theta
-        track[:,4] = radius
-        track[:,5] = track_id
+        track[:, 0] = track_id
+        track[:, 1] = timestamps
+        track[:, 2] = 50. + y
+        track[:, 3] = 50. + x
+        track[:, 4] = theta
+        track[:, 5] = radius
 
         tracks.append(track)
 
 
     tracks = np.concatenate(tracks, axis=0)
-    data = tracks[:,:3] # just the coordinate data
+    data = tracks[:, :4] # just the coordinate data
 
-    properties = {'track_id': tracks[:,5],
-                  'time': tracks[:,0],
-                  'theta': tracks[:,3],
-                  'radius': tracks[:,4]}
+    properties = {'time': tracks[:, 1],
+                  'theta': tracks[:, 4],
+                  'radius': tracks[:, 5]}
 
     graph = {}
     return data, properties, graph
 
 
 tracks, properties, graph = tracks_2d(num_tracks=10)
+vertices = tracks[:, 1:]
 
 with napari.gui_qt():
     viewer = napari.Viewer()
-    # viewer.add_points(tracks, size=1)
+    viewer.add_points(vertices, size=1, name='points', opacity=0.3)
     viewer.add_tracks(tracks, properties=properties, graph=graph, name='tracks')

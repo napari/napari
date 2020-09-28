@@ -18,29 +18,29 @@ class TrackShader(Filter):
     is scaled according to the tail length. Points ahead of the current time
     are rendered with alpha set to zero.
 
-    Can also apply a mask directly to the shader to slice data
-
     Parameters
     ----------
+    current_time: int, float
+        the current time, which is typically the frame index, although this
+        can be an arbitrary float
+    tail_length: int, float
+        the upper limit on length of the 'tail'
+    use_fade: bool
+        this will enable/disable tail fading with time
+    vertex_time: 1D array, list
+        a vector describing the time associated with each vertex
 
-        current_time: int, float
-            the current time, which is typically the frame index, although this
-            can be an arbitrary float
-        tail_length: int, float
-            the upper limit on length of the 'tail'
-        use_fade: bool
-            this will enable/disable tail fading with time
-        vertex_time: 1D array, list
-            a vector describing the time associated with each vertex
-        vertex_mask: 1D array, list
-            a vector describing whether to mask each vertex
 
     TODO
     ----
-        - the track is still displayed, albeit with fading, once the track has
-         finished but is still within the 'tail_length' window. Should it
-         disappear?
-        - check the shader positioning within the GL pipeline
+    - the track is still displayed, albeit with fading, once the track has
+     finished but is still within the 'tail_length' window. Should it
+     disappear?
+    - check the shader positioning within the GL pipeline, currently
+     overides layer opacity settings
+
+    vertex_mask: 1D array, list
+        a vector describing whether to mask each vertex
 
     """
 
@@ -49,7 +49,6 @@ class TrackShader(Filter):
         void apply_track_shading() {
 
             float alpha;
-            float masked_alpha;
 
             if ($a_vertex_time > $current_time) {
                 // this is a hack to minimize the frag shader rendering ahead
@@ -119,7 +118,7 @@ class TrackShader(Filter):
     @use_fade.setter
     def use_fade(self, value: bool):
         self._use_fade = value
-        self.vshader['use_fade'] = float(value)
+        self.vshader['use_fade'] = float(self._use_fade)
 
     @property
     def tail_length(self) -> Union[int, float]:
@@ -128,7 +127,7 @@ class TrackShader(Filter):
     @tail_length.setter
     def tail_length(self, tail_length: Union[int, float]):
         self._tail_length = tail_length
-        self.vshader['tail_length'] = float(tail_length)
+        self.vshader['tail_length'] = float(self._tail_length)
 
     def _attach(self, visual):
         super()._attach(visual)

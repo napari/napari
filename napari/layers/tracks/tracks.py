@@ -6,24 +6,23 @@ from typing import Dict, List, Union
 
 import numpy as np
 
-from ...utils.colormaps import AVAILABLE_COLORMAPS
+from ...utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 from ...utils.events import Event
+from ...utils.status_messages import format_float
 from ..base import Layer
 from ._track_utils import TrackManager
 
 
 class Tracks(Layer):
-    """ Tracks
-
-    A Tracks layer for overlaying trajectories on image data.
+    """ Tracks layer.
 
     Parameters
     ----------
     data : array (N, D)
-        Coordinates for N points in D dimensions. T(Z)YX
+        Coordinates for N points in D dimensions. ID,T,(Z),Y,X
     properties : dict {str: array (N,)}, DataFrame
         Properties for each point. Each property should be an array of length N,
-        where N is the number of points. Must contain 'track_id'
+        where N is the number of points.
     graph : dict {int: list}
         Graph representing track edges. Dictionary defines the mapping between
         a track ID and the parents of the track. This can be one (the track
@@ -32,16 +31,16 @@ class Tracks(Layer):
         only one child) in the case of track merging.
     color_by: str
         track property (from property keys) to color vertices by
-    edge_width : float
-        Width for all vectors in pixels.
+    tail_width : float
+        Width of the track tails in pixels.
     tail_length : float
-        Length of the projection of time as a tail, in units of time.
+        Length of the track tails in units of time.
     colormap : str
         Default colormap to use to set vertex colors. Specialized colormaps,
         relating to specified properties can be passed to the layer via
         colormaps_dict.
-    colomaps_dict : dict {str: Colormap}
-        dictionary list of colormap objects to use for coloring by track
+    colormaps_dict : dict {str: napari.utils.Colormap}
+        Optional dictionary of colormap objects to use for coloring by track
         properties.
     name : str
         Name of the layer.
@@ -62,8 +61,8 @@ class Tracks(Layer):
 
     """
 
-    # The max number of points that will ever be used to render the thumbnail
-    # If more points are present then they are randomly subsampled
+    # The max number of tracks that will ever be used to render the thumbnail
+    # If more tracks are present then they are randomly subsampled
     _max_tracks_thumbnail = 1024
 
     def __init__(
@@ -72,7 +71,7 @@ class Tracks(Layer):
         *,
         properties=None,
         graph=None,
-        edge_width=2,
+        tail_width=2,
         tail_length=30,
         n_dimensional=True,
         name=None,
@@ -82,17 +81,17 @@ class Tracks(Layer):
         opacity=1,
         blending='additive',
         visible=True,
-        colormap='viridis',
+        colormap='turbo',
         color_by='track_id',
         colormaps_dict=None,
     ):
 
         # if not provided with any data, set up an empty layer in 2D+t
         if data is None:
-            data = [np.empty((0, 3))]
+            data = np.empty((0, 3))
 
-        # set the track data dimensions
-        ndim = data.shape[1]
+        # set the track data dimensions (remove ID from data)
+        ndim = data.shape[1] - 1
 
         super().__init__(
             data,
@@ -107,46 +106,48 @@ class Tracks(Layer):
         )
 
         self.events.add(
-            edge_width=Event,
-            edge_color=Event,
+            tail_width=Event,
             tail_length=Event,
             display_id=Event,
             display_tail=Event,
             display_graph=Event,
-            current_edge_color=Event,
-            current_properties=Event,
             n_dimensional=Event,
             color_by=Event,
             colormap=Event,
             properties=Event,
+            rebuild_tracks=Event,
+            rebuild_graph=Event,
         )
 
         # track manager deals with data slicing, graph building an properties
         self._manager = TrackManager()
-        self._track_colors = (
-            None  # this layer takes care of coloring the tracks
-        )
+        self._track_colors = None
+        self._colormaps_dict = colormaps_dict or {}  # additional colormaps
+        self._color_by = color_by  # default color by ID
+        self._colormap = colormap
 
-        # # masks used when slicing nD data, None indicates that everything
-        # # should be displayed
-        # self._mask_data = None
-        # self._mask_graph = None
+        # use this to update shaders when the displayed dims change
+        self._current_displayed_dims = None
 
-        self.data = data
-        self.properties = properties
-        self.graph = graph or {}
-        self.colormaps_dict = colormaps_dict or {}  # additional colormaps
-
-        self.edge_width = edge_width
+        # track display properties
+        self.tail_width = tail_width
         self.tail_length = tail_length
         self.display_id = False
         self.display_tail = True
         self.display_graph = True
-        self._color_by = color_by  # default color by ID
-        self.colormap = colormap
+
+        # set the data, properties and graph
+        self.data = data
+        self.properties = properties or {}
+        self.graph = graph or {}
+
         self.color_by = color_by
+        self.colormap = colormap
 
         self._update_dims()
+
+        # reset the display before returning
+        self._current_displayed_dims = None
 
     @property
     def _extent_data(self) -> np.ndarray:
@@ -162,7 +163,7 @@ class Tracks(Layer):
             maxs = np.max(self.data, axis=0)
             mins = np.min(self.data, axis=0)
             extrema = np.vstack([mins, maxs])
-        return extrema
+        return extrema[:, 1:]
 
     def _get_ndim(self) -> int:
         """Determine number of dimensions of the layer."""
@@ -188,7 +189,7 @@ class Tracks(Layer):
                 'display_graph': self.display_graph,
                 'color_by': self.color_by,
                 'colormap': self.colormap,
-                'edge_width': self.edge_width,
+                'tail_width': self.tail_width,
                 'tail_length': self.tail_length,
             }
         )
@@ -196,6 +197,15 @@ class Tracks(Layer):
 
     def _set_view_slice(self):
         """Sets the view given the indices to slice with."""
+
+        # if the displayed dims have changed, update the shader data
+        if self.dims.displayed != self._current_displayed_dims:
+            # store the new dims
+            self._current_displayed_dims = self.dims.displayed
+            # fire the events to update the shaders
+            self.events.rebuild_tracks()
+            self.events.rebuild_graph()
+
         return
 
     def _get_value(self) -> int:
@@ -205,7 +215,45 @@ class Tracks(Layer):
 
     def _update_thumbnail(self):
         """Update thumbnail with current points and colors."""
-        pass
+        colormapped = np.zeros(self._thumbnail_shape)
+        colormapped[..., 3] = 1
+        # return
+        if self._view_data is not None and self.track_colors is not None:
+            de = self._extent_data
+            min_vals = [de[0, i] for i in self.dims.displayed]
+            shape = np.ceil(
+                [de[1, i] - de[0, i] + 1 for i in self.dims.displayed]
+            ).astype(int)
+            zoom_factor = np.divide(
+                self._thumbnail_shape[:2], shape[-2:]
+            ).min()
+            if len(self._view_data) > self._max_tracks_thumbnail:
+                thumbnail_indices = np.random.randint(
+                    0, len(self._view_data), self._max_tracks_thumbnail
+                )
+                points = self._view_data[thumbnail_indices]
+            else:
+                points = self._view_data
+                thumbnail_indices = range(len(self._view_data))
+
+            # get the track coords here
+            coords = np.floor(
+                (points[:, :2] - min_vals[1:] + 0.5) * zoom_factor
+            ).astype(int)
+            coords = np.clip(
+                coords, 0, np.subtract(self._thumbnail_shape[:2], 1)
+            )
+
+            # modulate track colors as per colormap/current_time
+            colors = self.track_colors[thumbnail_indices]
+            times = self.track_times[thumbnail_indices]
+            alpha = (self.current_time - times) / self.tail_length
+            alpha[times > self.current_time] = 1.0
+            colors[:, -1] = np.clip(1.0 - alpha, 0.0, 1.0)
+            colormapped[coords[:, 1], coords[:, 0]] = colors
+
+        colormapped[..., 3] *= self.opacity
+        self.thumbnail = colormapped
 
     @property
     def _view_data(self):
@@ -239,7 +287,8 @@ class Tracks(Layer):
         else:
             data = data[:, (2, 1, 0)]  # z, y, x -> x, y, z
 
-        return data
+        # return the data + 0.5 pixel offset
+        return data + 0.5
 
     @property
     def current_time(self):
@@ -262,15 +311,25 @@ class Tracks(Layer):
 
     @property
     def data(self) -> np.ndarray:
-        """list of (N, D) arrays: coordinates for N points in D dimensions."""
+        """(N, D) array: coordinates for N points in D dimensions."""
         return self._manager.data
 
     @data.setter
     def data(self, data: np.ndarray):
         """ set the data and build the vispy arrays for display """
+        # set the data and build the tracks
         self._manager.data = data
+        self._manager.build_tracks()
+
+        # reset the graph and properties
+        self.graph = {}
+        self.properties = {}
+        self._recolor_tracks()
+
+        # fire events to update shaders
+        self.events.rebuild_tracks()
+        # self.events.data()
         self._update_dims()
-        self.events.data()
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
@@ -280,7 +339,6 @@ class Tracks(Layer):
     @property
     def properties_to_color_by(self) -> List[str]:
         """ track properties that can be used for coloring etc... """
-        # return list(self._manager.properties.keys()) + ['track_id']
         return list(self.properties.keys())
 
     @properties.setter
@@ -288,6 +346,7 @@ class Tracks(Layer):
         """ set track properties """
         self._manager.properties = properties
         self.events.properties()
+        self.events.color_by()
 
     @property
     def graph(self) -> list:
@@ -297,18 +356,20 @@ class Tracks(Layer):
     @graph.setter
     def graph(self, graph: dict):
         self._manager.graph = graph
+        self._manager.build_graph()
+        self.events.rebuild_graph()
 
     @property
-    def edge_width(self) -> Union[int, float]:
+    def tail_width(self) -> Union[int, float]:
         """float: Width for all vectors in pixels."""
-        return self._edge_width
+        return self._tail_width
 
-    @edge_width.setter
-    def edge_width(self, edge_width: Union[int, float]):
-        self._edge_width = edge_width
-        self.events.edge_width()
+    @tail_width.setter
+    def tail_width(self, tail_width: Union[int, float]):
+        self._tail_width = tail_width
+        self.events.tail_width()
         self.refresh()
-        # self.status = format_float(self.edge_width)
+        self.status = format_float(self.tail_width)
 
     @property
     def tail_length(self) -> Union[int, float]:
@@ -320,7 +381,7 @@ class Tracks(Layer):
         self._tail_length = tail_length
         self.events.tail_length()
         self.refresh()
-        # self.status = format_float(self.edge_width)
+        self.status = format_float(self.tail_length)
 
     @property
     def display_id(self) -> bool:
@@ -367,7 +428,7 @@ class Tracks(Layer):
         self._color_by = color_by
         self._recolor_tracks()
         self.events.color_by()
-        self.refresh()
+        # self.refresh()
 
     @property
     def colormap(self) -> str:
@@ -381,10 +442,26 @@ class Tracks(Layer):
         self._colormap = colormap
         self._recolor_tracks()
         self.events.colormap()
-        self.refresh()
+        # self.refresh()
+
+    @property
+    def colormaps_dict(self) -> Dict[str, Colormap]:
+        return self._colormaps_dict
+
+    @colormaps_dict.setter
+    def colomaps_dict(self, colormaps_dict: Dict[str, Colormap]):
+        # validate the dictionary entries?
+        self._colormaps_dict = colormaps_dict
 
     def _recolor_tracks(self):
         """ recolor the tracks """
+
+        # this catch prevents a problem coloring the tracks if the data is
+        # updated before the properties are. properties should always contain
+        # a track_id key
+        if self.color_by not in self.properties_to_color_by:
+            self.color_by = 'track_id'
+
         # if we change the coloring, rebuild the vertex colors array
         vertex_properties = self._manager.vertex_properties(self.color_by)
 
@@ -430,6 +507,12 @@ class Tracks(Layer):
     @property
     def track_labels(self) -> tuple:
         """ return track labels at the current time """
+
+        # check that current time is still within the frame map
+        if self.current_time < 0 or self.current_time > self._manager.max_time:
+            # need to return a tuple for pos to clear the vispy text visual
+            return None, (None, None)
+
         labels, positions = self._manager.track_labels(self.current_time)
         padded_positions = self._pad_display_data(positions)
         return labels, padded_positions

@@ -5,17 +5,15 @@ from napari.layers import Tracks
 
 def test_tracks_layer_2dt_ndim():
     """Test instantiating Tracks layer, check 2D+t dimensionality."""
-    data = np.zeros((1, 3))
-    properties = {'track_id': [0]}
-    layer = Tracks(data, properties=properties)
+    data = np.zeros((1, 4))
+    layer = Tracks(data)
     assert layer.ndim == 3
 
 
 def test_tracks_layer_3dt_ndim():
     """Test instantiating Tracks layer, check 3D+t dimensionality."""
-    data = np.zeros((1, 4))
-    properties = {'track_id': [0]}
-    layer = Tracks(data, properties=properties)
+    data = np.zeros((1, 5))
+    layer = Tracks(data)
     assert layer.ndim == 4
 
 

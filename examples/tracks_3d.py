@@ -3,8 +3,8 @@ import numpy as np
 
 def lissajous(t):
     a = np.random.random(size=(3,))*80. - 40.
-    b = np.random.random(size=(3,))*0.1
-    c = np.random.random(size=(3,))*0.01
+    b = np.random.random(size=(3,))*0.05
+    c = np.random.random(size=(3,))*0.1
     return (a[i]*np.cos(b[i]*t+c[i]) for i in range(3))
 
 
@@ -15,35 +15,49 @@ def tracks_3d(num_tracks = 10):
     for track_id in range(num_tracks):
 
         # space to store the track data and properties
-        track = np.zeros((100, 5), dtype=np.float32)
+        track = np.zeros((200, 9), dtype=np.float32)
 
         # time
-        track[:,0] = np.arange(track.shape[0])
-        x, y, z = lissajous(track[:,0])
+        timestamps = np.arange(track.shape[0])
+        x, y, z = lissajous(timestamps)
 
-        track[:,1] = 50. + z
-        track[:,2] = 50. + y
-        track[:,3] = 50. + x
-        track[:,4] = track_id
+        track[:, 0] = track_id
+        track[:, 1] = timestamps
+        track[:, 2] = 50. + z
+        track[:, 3] = 50. + y
+        track[:, 4] = 50. + x
+
+        # calculate the speed as a property
+        gz = np.gradient(track[:, 2])
+        gy = np.gradient(track[:, 3])
+        gx = np.gradient(track[:, 4])
+
+        speed = np.sqrt(gx**2 + gy**2 + gz**2)
+
+        track[:, 5] = gz
+        track[:, 6] = gy
+        track[:, 7] = gx
+        track[:, 8] = speed
 
         tracks.append(track)
 
 
     tracks = np.concatenate(tracks, axis=0)
-    data = tracks[:,:4] # just the coordinate data
+    data = tracks[:,:5] # just the coordinate data
 
-    properties = {'track_id': tracks[:,4],
-                  'time': tracks[:,0],
-                  'x': tracks[:,3],
-                  'y': tracks[:,2],
-                  'z': tracks[:,1]}
+    properties = {'time': tracks[:, 1],
+                  'gradient_z': tracks[:, 5],
+                  'gradient_y': tracks[:, 6],
+                  'gradient_x': tracks[:, 7],
+                  'speed': tracks[:, 8],}
 
     graph = {}
     return data, properties, graph
 
-tracks, properties, graph = tracks_3d(num_tracks=100)
+tracks, properties, graph = tracks_3d(num_tracks=1000)
+vertices = tracks[:, 1:]
 
 with napari.gui_qt():
     viewer = napari.Viewer()
-    viewer.add_points(tracks, size=1)
+    viewer.add_points(vertices, size=1, name='points', opacity=0.3)
     viewer.add_tracks(tracks, properties=properties, graph=graph, name='tracks')

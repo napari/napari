@@ -783,7 +783,7 @@ class AddLayersMixin:
         *,
         properties=None,
         graph=None,
-        edge_width=2,
+        tail_width=2,
         tail_length=30,
         n_dimensional=True,
         name=None,
@@ -793,7 +793,7 @@ class AddLayersMixin:
         opacity=1,
         blending='additive',
         visible=True,
-        colormap='viridis',
+        colormap='turbo',
         color_by='track_id',
         colormaps_dict=None,
     ) -> layers.Tracks:
@@ -802,10 +802,10 @@ class AddLayersMixin:
         Parameters
         ----------
         data : array (N, D)
-            Coordinates for N points in D dimensions. T(Z)YX
+            Coordinates for N points in D dimensions. ID,T,(Z),Y,X
         properties : dict {str: array (N,)}, DataFrame
             Properties for each point. Each property should be an array of length N,
-            where N is the number of points. Must contain 'track_id'
+            where N is the number of points.
         graph : dict {int: list}
             Graph representing track edges. Dictionary defines the mapping between
             a track ID and the parents of the track. This can be one (the track
@@ -814,16 +814,16 @@ class AddLayersMixin:
             only one child) in the case of track merging.
         color_by: str
             track property (from property keys) to color vertices by
-        edge_width : float
-            Width for all vectors in pixels.
+        tail_width : float
+            Width of the track tails in pixels.
         tail_length : float
-            Length of the projection of time as a tail, in units of time.
+            Length of the track tails in units of time.
         colormap : str
             Default colormap to use to set vertex colors. Specialized colormaps,
             relating to specified properties can be passed to the layer via
             colormaps_dict.
-        colomaps_dict : dict {str: Colormap}
-            dictionary list of colormap objects to use for coloring by track
+        colormaps_dict : dict {str: napari.utils.Colormap}
+            Optional dictionary of colormap objects to use for coloring by track
             properties.
         name : str
             Name of the layer.
@@ -852,7 +852,7 @@ class AddLayersMixin:
             data,
             properties=properties,
             graph=graph,
-            edge_width=edge_width,
+            tail_width=tail_width,
             tail_length=tail_length,
             n_dimensional=n_dimensional,
             name=name,

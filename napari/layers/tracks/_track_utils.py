@@ -7,7 +7,13 @@ from ..utils.layer_utils import dataframe_to_properties
 
 
 def connex(vertices: np.ndarray) -> list:
-    """ make vertex edges for vispy Line """
+    """ connection array to build vertex edges for vispy LineVisual
+
+    Notes:
+        http://api.vispy.org/en/latest/
+        visuals.html?highlight=visuals%20line#vispy.visuals.LineVisual
+
+    """
     return [True] * (vertices.shape[0] - 1) + [False]
 
 
@@ -17,20 +23,43 @@ class TrackManager:
     Class to manage the track data and simplify interactions with the Tracks
     layer.
 
+    Attributes
+    ----------
+    data : array (N, D)
+        Coordinates for N points in D dimensions. ID,T,(Z),Y,X
+    properties : dict {str: array (N,)}, DataFrame
+        Properties for each point. Each property should be an array of
+        length N, where N is the number of points.
+    graph : dict {int: list}
+        Graph representing track edges. Dictionary defines the mapping between
+        a track ID and the parents of the track. This can be one (the track
+        has one parent, and the parent has >=1 child) in the case of track
+        splitting, or more than one (the track has multiple parents, but
+        only one child) in the case of track merging.
+    ndim : int
+        Number of spatiotemporal dimensions of the data
+    max_time: float, int
+        Maximum value of timestamps in data.
+    track_vertices : array (N, D)
+        Vertices for N points in D dimensions. T,(Z),Y,X
+    track_connex : array (N,)
+        Connection array specifying consecutive vertices that are linked to
+        form the tracks. Boolean
+    track_times : array (N,)
+        Timestamp for each vertex in track_vertices.
+    graph_vertices : array (N, D)
+        Vertices for N points in D dimensions. T,(Z),Y,X
+    graph_connex : array (N,)
+        Connection array specifying consecutive vertices that are linked to
+        form the graph.
+    graph_times : array (N,)
+        Timestamp for each vertex in graph_vertices.
+    track_ids : array (N,)
+        Track ID for each vertex in track_vertices.
 
-    Properties:
-        data
-        properties
-        points
+    Methods
+    -------
 
-        track_vertices
-        track_connex
-        track_times
-        track_labels
-
-        graph_vertices
-        graph_connex
-        graph_times
 
     """
 
@@ -56,7 +85,6 @@ class TrackManager:
         self._graph = None
         self._graph_vertices = None
         self._graph_connex = None
-        self._graph_colors = None
 
     @property
     def data(self) -> np.ndarray:
@@ -71,8 +99,8 @@ class TrackManager:
         self._data = self._validate_track_data(data)
 
         # build the indices for sorting points by time
-        self._ordered_points_idx = np.argsort(self.data[:, 0])
-        self._points = self.data[self._ordered_points_idx]
+        self._ordered_points_idx = np.argsort(self.data[:, 1])
+        self._points = self.data[self._ordered_points_idx, 1:]
 
         # build a tree of the track data to allow fast lookup of nearest track
         self._kdtree = cKDTree(self._points)
@@ -101,9 +129,11 @@ class TrackManager:
         if not isinstance(properties, dict):
             properties, _ = dataframe_to_properties(properties)
 
+        if 'track_id' not in properties:
+            properties['track_id'] = self.track_ids
+
         # check the formatting of incoming properties data
         self._properties = self._validate_track_properties(properties)
-        self._build_tracks()
 
     @property
     def graph(self) -> Dict[str, list]:
@@ -115,12 +145,13 @@ class TrackManager:
         """ set the track graph """
 
         self._graph = self._validate_track_graph(graph)
-        self._build_graph()
+        self.build_graph()
 
     @property
     def track_ids(self):
         """ return the track identifiers"""
-        return self.properties['track_id']
+        # return self.properties['track_id']
+        return self.data[:, 0].astype(np.uint16)
 
     @property
     def unique_track_ids(self):
@@ -129,7 +160,7 @@ class TrackManager:
 
     def __len__(self):
         """ return the number of tracks """
-        return len(self.unique_track_ids) if self.properties is not None else 0
+        return len(self.unique_track_ids) if self.data is not None else 0
 
     def _vertex_indices_from_id(self, track_id: int):
         """ return the vertices corresponding to a track id """
@@ -141,8 +172,8 @@ class TrackManager:
         if data.ndim != 2:
             raise ValueError('track vertices should be a NxD array')
 
-        if data.shape[1] < 3 or data.shape[1] > 4:
-            raise ValueError('track vertices should be 3 or 4-dimensional')
+        if data.shape[1] < 4 or data.shape[1] > 5:
+            raise ValueError('track vertices should be 4 or 5-dimensional')
 
         return data
 
@@ -187,18 +218,19 @@ class TrackManager:
 
         return graph
 
-    def _build_tracks(self):
+    def build_tracks(self):
         """ build the tracks """
 
         points_id = []
         track_vertices = []
         track_connex = []
 
+        # NOTE(arl): this takes some time when the number of tracks is large
         for idx in self.unique_track_ids:
             indices = self._vertex_indices_from_id(idx)
 
             # grab the correct vertices and sort by time
-            vertices = self.data[indices, :]
+            vertices = self.data[indices, 1:]
             vertices = vertices[vertices[:, 0].argsort()]
 
             # coordinates of the text identifiers, vertices and connections
@@ -209,12 +241,10 @@ class TrackManager:
         self._points_id = np.array(points_id)[self._ordered_points_idx]
         self._track_vertices = np.concatenate(track_vertices, axis=0)
         self._track_connex = np.concatenate(track_connex, axis=0)
+        # print(f'updated data: {self._track_vertices.shape}')
 
-    def _build_graph(self):
+    def build_graph(self):
         """ build the track graph """
-        # if there is not graph, return here
-        if not self.graph:
-            return
 
         graph_vertices = []
         graph_connex = []
@@ -223,29 +253,31 @@ class TrackManager:
             # we join from the first observation of the node, to the last
             # observation of the parent
             node_start = self._vertex_indices_from_id(node_idx)[0]
-            node = self.data[node_start]
+            node = self.data[node_start, 1:]
 
             for parent_idx in parents_idx:
                 parent_stop = self._vertex_indices_from_id(parent_idx)[-1]
-                parent = self.data[parent_stop]
+                parent = self.data[parent_stop, 1:]
 
                 verts = np.stack([node, parent], axis=0)
 
                 graph_vertices.append(verts)
                 graph_connex.append([True, False])
 
-        self._graph_vertices = np.concatenate(graph_vertices, axis=0)
-        self._graph_connex = np.concatenate(graph_connex, axis=0)
+        # if there is a graph, store the vertices and connection arrays,
+        # otherwise, clear the vertex arrays
+        if graph_vertices:
+            self._graph_vertices = np.concatenate(graph_vertices, axis=0)
+            self._graph_connex = np.concatenate(graph_connex, axis=0)
+        else:
+            self._graph_vertices = None
+            self._graph_connex = None
 
     def vertex_properties(self, color_by: str) -> np.ndarray:
         """ return the properties of tracks by vertex """
 
         if color_by not in self.properties:
-            # if it's the default calculate the vertex properties
-            if color_by == 'track_id' and 'track_id' in self.graph:
-                return self.graph['track_id']
-            else:
-                raise ValueError(f'Property {color_by} type not found')
+            raise ValueError(f'Property {color_by} type not found')
 
         return self.properties[color_by]
 
@@ -256,6 +288,7 @@ class TrackManager:
 
         # query can return indices to points that do not exist, trim that here
         # then prune to only those in the current frame/time
+        # NOTE(arl): I don't like this!!!
         d, idx = self._kdtree.query(coords, k=10)
         idx = [i for i in idx if i >= 0 and i < self._points.shape[0]]
         pruned = [i for i in idx if self._points[i, 0] == coords[0]]
@@ -266,15 +299,17 @@ class TrackManager:
 
     @property
     def ndim(self) -> int:
-        """Determine number of dimensions of the layer."""
-        return self.data.shape[1]
+        """Determine number of spatiotemporal dimensions of the layer."""
+        return self.data.shape[1] - 1
 
     @property
     def max_time(self) -> int:
+        """Determine the maximum timestamp of the dataset"""
         return int(np.max(self.track_times))
 
     @property
     def track_vertices(self) -> np.ndarray:
+        """ return the track vertices """
         return self._track_vertices
 
     @property
@@ -290,6 +325,7 @@ class TrackManager:
 
     @property
     def graph_vertices(self) -> np.ndarray:
+        """ return the graph vertices """
         return self._graph_vertices
 
     @property

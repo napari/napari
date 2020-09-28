@@ -13,33 +13,34 @@ def tracks_3d_merge_split():
     timestamps = np.arange(300)
 
 
-    def _trajectory(t, r):
+    def _trajectory(t, r, track_id):
         theta = t*0.1
         x, y = _circle(r, theta)
         z = np.zeros(x.shape)
-        return np.stack([t, z, y, x], axis=1)
+        tid = np.ones(x.shape) * track_id
+        return np.stack([tid, t, z, y, x], axis=1)
 
-    trackA = _trajectory(timestamps[:100], 30.)
-    trackB = _trajectory(timestamps[100:200], 10.)
-    trackC = _trajectory(timestamps[100:200], 50.)
-    trackD = _trajectory(timestamps[200:], 30.)
+    trackA = _trajectory(timestamps[:100], 30., 0)
+    trackB = _trajectory(timestamps[100:200], 10., 1)
+    trackC = _trajectory(timestamps[100:200], 50., 2)
+    trackD = _trajectory(timestamps[200:], 30., 3)
 
     data = [trackA, trackB, trackC, trackD]
     tracks = np.concatenate(data, axis=0)
-    tracks[:,1:] += 50. # centre the track at (50, 50, 50)
+    tracks[:, 2:] += 50. # centre the track at (50, 50, 50)
 
     graph = {1:0, 2:[0], 3:[1,2]}
 
-    properties = {'track_id': np.concatenate([[i]*100 for i in range(4)]),
-                  'time': tracks[:,0]}
+    properties = {'time': tracks[:, 1]}
 
     return tracks, properties, graph
 
 
 
 tracks, properties, graph = tracks_3d_merge_split()
+vertices = tracks[:, 1:]
 
 with napari.gui_qt():
     viewer = napari.Viewer()
-    # viewer.add_points(tracks, size=1)
+    viewer.add_points(vertices, size=1, name='points', opacity=0.3)
     viewer.add_tracks(tracks, properties=properties, graph=graph, name='tracks')
