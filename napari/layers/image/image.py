@@ -670,10 +670,13 @@ class Image(IntensityVisualizationMixin, Layer):
         self.events.loaded()
 
         if not sync:
-            # If this specific load itself was async we need a full refresh.
-            # Note: even in async mode, some loads are sync, such as cache hits
-            # and loads of ndarray data.
-            self.refresh()
+            # TODO_ASYNC: Avoid calling self.refresh(), because it would call
+            # our _set_view_slice() method which would clear the slice. But
+            # we do need to refresh some things now that we have our image
+            # data. Need a better way to do this.
+
+            self.events.set_data()  # update vispy
+            self._update_thumbnail()
 
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""
