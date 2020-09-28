@@ -555,9 +555,7 @@ class Image(IntensityVisualizationMixin, Layer):
                         corner_pixels[0, d], corner_pixels[1, d] + 1, 1
                     )
                 self._transforms['tile2data'].translate = (
-                    corner_pixels[0]
-                    * self._transforms['data2world'].scale
-                    * self._transforms['tile2data'].scale
+                    corner_pixels[0] * self._transforms['tile2data'].scale
                 )
 
             image = self.data[level][tuple(indices)]
