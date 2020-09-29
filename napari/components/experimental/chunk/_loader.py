@@ -1,4 +1,4 @@
-"""ChunkLoader: synchronous or asynchronous chunk loading
+"""ChunkLoader class.
 """
 import logging
 import os

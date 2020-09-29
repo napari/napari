@@ -1,4 +1,4 @@
-"""Synchronous and Asynchronous Chunk Loading.
+"""ChunkLoader and related.
 """
 import os
 

@@ -1,4 +1,4 @@
-"""ChunkRequest is passed to ChunkLoader.load_chunks().
+"""ChunkKey and ChunkRequest classes.
 """
 import logging
 from typing import Optional, Tuple
