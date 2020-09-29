@@ -47,6 +47,7 @@ class VispyBaseLayer(ABC):
         super().__init__()
 
         self.layer = layer
+        self._array_like = False
         self.node = node
 
         MAX_TEXTURE_SIZE_2D, MAX_TEXTURE_SIZE_3D = get_max_texture_sizes()
@@ -163,7 +164,15 @@ class VispyBaseLayer(ABC):
             self.layer.dims.displayed
         ).translate
         # convert NumPy axis ordering to VisPy axis ordering
-        self.translate = translate[::-1]
+        if self._array_like:
+            scale = (
+                self.layer._transforms['data2world']
+                .set_slice(self.layer.dims.displayed)
+                .scale
+            )
+            self.translate = translate[::-1] - scale[::-1] / 2
+        else:
+            self.translate = translate[::-1]
         self.layer.corner_pixels = self.coordinates_of_canvas_corners()
         self.layer.position = self._transform_position(self._position)
 
@@ -187,7 +196,14 @@ class VispyBaseLayer(ABC):
         if self.node.canvas is not None:
             transform = self.node.canvas.scene.node_transform(self.node)
             # Map and offset position so that pixel center is at 0
-            mapped_position = transform.map(list(position))[:nd] - 0.5
+            mapped_position = transform.map(list(position))[:nd]
+            if self._array_like:
+                scale = (
+                    self.layer._transforms['data2world']
+                    .set_slice(self.layer.dims.displayed)
+                    .scale
+                )
+                mapped_position -= scale[::-1] / 2
             return tuple(mapped_position[::-1])
         else:
             return (0,) * nd
