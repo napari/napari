@@ -50,7 +50,7 @@ class ImageSlice:
         self.thumbnail: ImageView = ImageView(image, image_converter)
         self.rgb = rgb
 
-        use_async = os.getenv("NAPARI_ASYNC", "0")
+        use_async = os.getenv("NAPARI_ASYNC", "0") != "0"
         self.loader = AsyncImageLoader() if use_async else SyncImageLoader()
 
         # With async there can be a gap between when the ImageSlice is
