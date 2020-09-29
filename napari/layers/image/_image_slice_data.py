@@ -26,7 +26,7 @@ class ImageSliceData:
         # chunk_request is None unless doing asynchronous loading.
         self.chunk_request = chunk_request
 
-    def load(self) -> None:
+    def load_sync(self) -> None:
         """Call asarray on our images to load them."""
         self.image = np.asarray(self.image)
 
