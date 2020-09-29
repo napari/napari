@@ -40,7 +40,7 @@ class ImageSliceData:
         self.image = self.image.transpose(order)
 
         if self.thumbnail_source is not None:
-            self.thumbanail_source = self.thumbanail_source.transpose(order)
+            self.thumbnail_source = self.thumbnail_source.transpose(order)
 
     def load_chunks(self, key: ChunkKey) -> bool:
         """Load chunks sync or async.
