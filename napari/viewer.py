@@ -1,3 +1,4 @@
+import os
 import platform
 import sys
 from os.path import dirname, join
@@ -10,8 +11,9 @@ from ._qt.qt_main_window import Window
 from ._qt.qt_viewer import QtViewer
 from ._qt.qthreading import create_worker, wait_for_workers_to_quit
 from .components import ViewerModel
-from .components.experimental.chunk import chunk_loader
 from .utils.perf import perf_config
+
+_use_async = os.getenv("NAPARI_ASYNC", "0") != "0"
 
 
 class Viewer(ViewerModel):
@@ -168,12 +170,15 @@ class Viewer(ViewerModel):
         """Close the viewer window."""
         self.window.close()
 
-        # TODO_ASYNC: Tell the ChunkLoader which layers are in the
-        # viewer that's being closed. This is surely not what we want
-        # to do long term, but it fixes some tests for now. See:
-        # https://github.com/napari/napari/issues/1500
-        for layer in self.layers:
-            chunk_loader.on_layer_deleted(layer)
+        if _use_async:
+            from .components.experimental.chunk import chunk_loader
+
+            # TODO_ASYNC: Tell the ChunkLoader which layers are in the
+            # viewer that's being closed. This is surely not what we want
+            # to do long term, but it fixes some tests for now. See:
+            # https://github.com/napari/napari/issues/1500
+            for layer in self.layers:
+                chunk_loader.on_layer_deleted(layer)
 
     def __str__(self):
         """Simple string representation"""
