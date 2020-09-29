@@ -1,4 +1,5 @@
 """Tests for components.experimental.chunk."""
+import os
 
 import numpy as np
 import pytest
@@ -50,6 +51,10 @@ def test_chunk_key():
 
 def test_loader():
     """Test ChunkRequest and the ChunkLoader."""
+    use_async = os.getenv("NAPARI_ASYNC", "0") != "0"
+    if not use_async:
+        return  # temporary until we add the @async_only pytest mark
+
     layer = _create_layer()
     key = ChunkKey(layer, (0, 0))
 
