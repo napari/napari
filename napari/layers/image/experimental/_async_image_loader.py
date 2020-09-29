@@ -3,7 +3,7 @@
 import logging
 from typing import Optional
 
-from ....components.chunk import ChunkKey
+from ....components.experimental.chunk import ChunkKey
 from .._image_slice_data import ImageSliceData
 
 LOGGER = logging.getLogger("napari.async")

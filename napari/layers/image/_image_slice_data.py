@@ -4,7 +4,11 @@ import logging
 
 import numpy as np
 
-from ...components.chunk import ChunkKey, ChunkRequest, chunk_loader
+from ...components.experimental.chunk import (
+    ChunkKey,
+    ChunkRequest,
+    chunk_loader,
+)
 from ._image_utils import guess_rgb
 
 LOGGER = logging.getLogger("napari.async")

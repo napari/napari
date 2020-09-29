@@ -6,7 +6,7 @@ import warnings
 import numpy as np
 from scipy import ndimage as ndi
 
-from ...components.chunk import ChunkRequest
+from ...components.experimental.chunk import ChunkRequest
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
 from ...utils.status_messages import format_float

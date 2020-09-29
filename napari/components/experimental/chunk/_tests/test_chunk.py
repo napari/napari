@@ -1,9 +1,9 @@
-"""Tests for components.chunk."""
+"""Tests for components.experimental.chunk."""
 
 import numpy as np
 import pytest
 
-from napari.components.chunk import ChunkKey, chunk_loader
+from napari.components.experimental.chunk import ChunkKey, chunk_loader
 from napari.layers.image import Image
 
 

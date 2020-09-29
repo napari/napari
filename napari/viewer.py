@@ -10,7 +10,7 @@ from ._qt.qt_main_window import Window
 from ._qt.qt_viewer import QtViewer
 from ._qt.qthreading import create_worker, wait_for_workers_to_quit
 from .components import ViewerModel
-from .components.chunk import chunk_loader
+from .components.experimental.chunk import chunk_loader
 from .utils.perf import perf_config
 
 

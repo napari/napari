@@ -5,8 +5,8 @@ import os
 from concurrent.futures import CancelledError, Future, ThreadPoolExecutor
 from typing import Dict, List, Optional
 
-from ...types import ArrayLike
-from ...utils.events import EmitterGroup
+from ....types import ArrayLike
+from ....utils.events import EmitterGroup
 from ._info import LayerInfo
 from ._request import ChunkKey, ChunkRequest
 
