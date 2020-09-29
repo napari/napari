@@ -115,6 +115,15 @@ class VispyTracksLayer(VispyBaseLayer):
         self.graph_shader.tail_length = self.layer.tail_length
         self.graph_shader.vertex_time = self.layer.graph_times
 
+        # if the user clears a graph after it has been created, vispy offers
+        # no method to clear the data, therefore, we need to set private
+        # attributes to None to prevent errors
+        if self.layer._view_graph is None:
+            self.node._subvisuals[2]._pos = None
+            self.node._subvisuals[2]._connect = None
+            self.node.update()
+            return
+
         self.node._subvisuals[2].set_data(
             pos=self.layer._view_graph,
             connect=self.layer.graph_connex,

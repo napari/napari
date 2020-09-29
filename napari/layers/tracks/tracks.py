@@ -263,8 +263,6 @@ class Tracks(Layer):
     @property
     def _view_graph(self):
         """ return a view of the graph """
-        if not self._manager.graph:
-            return None
         return self._pad_display_data(self._manager.graph_vertices)
 
     def _pad_display_data(self, vertices):
@@ -321,13 +319,17 @@ class Tracks(Layer):
         self._manager.data = data
         self._manager.build_tracks()
 
-        # reset the graph and properties
-        self.graph = {}
+        # reset the properties and recolor the tracks
         self.properties = {}
         self._recolor_tracks()
 
+        # reset the graph
+        self._manager.graph = {}
+        self._manager.build_graph()
+
         # fire events to update shaders
         self.events.rebuild_tracks()
+        self.events.rebuild_graph()
         # self.events.data()
         self._update_dims()
 

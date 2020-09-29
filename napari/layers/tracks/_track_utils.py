@@ -145,7 +145,7 @@ class TrackManager:
         """ set the track graph """
 
         self._graph = self._validate_track_graph(graph)
-        self.build_graph()
+        # self.build_graph()
 
     @property
     def track_ids(self):
@@ -197,12 +197,12 @@ class TrackManager:
             if type(v) != np.ndarray:
                 properties[k] = np.asarray(v)
 
-        if 'track_id' in properties:
-            track_idx = properties['track_id']
-            if not all(track_idx == np.maximum.accumulate(track_idx)):
-                raise ValueError('track_id should be monotonically increasing')
-        else:
-            raise ValueError('track_id is missing from properties')
+        # if 'track_id' in properties:
+        #     track_idx = properties['track_id']
+        #     if not all(track_idx == np.maximum.accumulate(track_idx)):
+        #         raise ValueError('track_id should be monotonically increasing')
+        # else:
+        #     raise ValueError('track_id is missing from properties')
 
         return properties
 
