@@ -1,3 +1,5 @@
+import os
+
 import numpy as np
 from qtpy.QtCore import QMimeData, Qt, QTimer
 from qtpy.QtGui import QDrag, QImage, QPixmap
@@ -14,7 +16,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ..qt_chunk_receiver import QtChunkReceiver
+from ..experimental.qt_chunk_receiver import QtChunkReceiver
 
 
 class QtLayerList(QScrollArea):
@@ -69,7 +71,10 @@ class QtLayerList(QScrollArea):
         self._drag_start_position = np.zeros(2)
         self._drag_name = None
 
-        self.chunk_receiver = QtChunkReceiver(self)
+        if os.getenv("NAPARI_ASYNC", "0") != "0":
+            self.chunk_receiver = QtChunkReceiver(self)
+        else:
+            self.chunk_receiver = None
 
     def _add(self, event):
         """Insert widget for layer `event.item` at index `event.index`.
@@ -652,4 +657,5 @@ class QtLayerWidget(QFrame):
 
     def close(self):
         """Viewer is closing."""
-        self.chunk_receiver.close()
+        if self.chunk_receiver is not None:
+            self.chunk_receiver.close()

@@ -4,8 +4,8 @@ import logging
 
 from qtpy.QtCore import QObject, Signal
 
-from ..components.experimental.chunk import chunk_loader
-from ..utils.events import EmitterGroup, Event, EventEmitter
+from ...components.experimental.chunk import chunk_loader
+from ...utils.events import EmitterGroup, Event, EventEmitter
 
 LOGGER = logging.getLogger('napari.async')
 
