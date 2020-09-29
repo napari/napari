@@ -282,4 +282,5 @@ class ChunkLoader:
 
 
 # Global instance
-chunk_loader = ChunkLoader()
+use_async = os.getenv("NAPARI_ASYNC", "0") != "0"
+chunk_loader = ChunkLoader() if use_async else None
