@@ -35,6 +35,8 @@ def compose_linear_matrix(rotate, scale, shear, degrees=True) -> np.array:
         rotate_mat = np.array(
             [[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]]
         )
+        # convert to numpy coordinates
+        rotate_mat = rotate_mat[::-1, ::-1]
     elif np.array(rotate).ndim == 1 and len(rotate) == 3:
         # If a 3-tuple is passed assume it is three rotation angles for
         # a roll, pitch, and yaw for a 3D rotation. For more details see
@@ -69,6 +71,8 @@ def compose_linear_matrix(rotate, scale, shear, degrees=True) -> np.array:
             ]
         )
         rotate_mat = R_alpha @ R_beta @ R_gamma
+        # convert to numpy coordinates
+        rotate_mat = rotate_mat[::-1, ::-1]
     else:
         # Otherwise assume a full nD rotate matrix has been passed
         rotate_mat = np.array(rotate)
@@ -92,7 +96,7 @@ def compose_linear_matrix(rotate, scale, shear, degrees=True) -> np.array:
     full_scale = embed_in_identity_matrix(scale_mat, ndim)
     full_rotate = embed_in_identity_matrix(rotate_mat, ndim)
     full_shear = embed_in_identity_matrix(shear_mat, ndim)
-    return full_shear @ full_scale @ full_rotate
+    return full_rotate @ full_scale @ full_shear
 
 
 def expand_upper_triangular(vector):
@@ -179,24 +183,16 @@ def decompose_linear_matrix(matrix) -> (np.array, np.array, np.array):
     """
     n = matrix.shape[0]
 
-    # Do decomposition with matrix inverse as we use a left multiplication
-    # convention instead of right multiplication
-    matrix_inv = np.linalg.inv(matrix)
-    upper_tri = np.linalg.cholesky(np.dot(matrix_inv.T, matrix_inv)).T
-
+    upper_tri = np.linalg.cholesky(np.dot(matrix.T, matrix)).T
     scale = np.diag(upper_tri).copy()
     upper_tri_normalized = upper_tri / scale[:, np.newaxis]
 
-    rotate = np.dot(matrix_inv, np.linalg.inv(upper_tri))
+    rotate = np.dot(matrix, np.linalg.inv(upper_tri))
     if np.linalg.det(rotate) < 0:
         scale[0] *= -1
         upper_tri[0] *= -1
-        rotate = np.dot(matrix_inv, np.linalg.inv(upper_tri))
+        rotate = np.dot(matrix, np.linalg.inv(upper_tri))
 
-    # Invert again to undo original matrix inverstion
-    rotate = np.linalg.inv(rotate)
-    scale = np.divide(1, scale)
-    shears = np.linalg.inv(upper_tri_normalized)
-    shear = shears[np.triu(np.ones((n, n)), 1).astype(bool)]
+    shear = upper_tri_normalized[np.triu(np.ones((n, n)), 1).astype(bool)]
 
     return rotate, scale, shear

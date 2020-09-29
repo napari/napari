@@ -308,7 +308,7 @@ class Affine(Transform):
         translate = np.concatenate(
             ([0.0] * (coords.shape[1] - len(self.translate)), self.translate)
         )
-        return np.atleast_1d(np.squeeze(coords @ linear_matrix + translate))
+        return np.atleast_1d(np.squeeze(coords @ linear_matrix.T + translate))
 
     @property
     def ndim(self) -> int:
@@ -352,13 +352,13 @@ class Affine(Transform):
     def inverse(self) -> 'Affine':
         """Return the inverse transform."""
         linear_matrix = np.linalg.inv(self.linear_matrix)
-        translate = -self.translate @ linear_matrix
+        translate = -self.translate @ linear_matrix.T
         return Affine(linear_matrix=linear_matrix, translate=translate)
 
     def compose(self, transform: 'Affine') -> 'Affine':
         """Return the composite of this transform and the provided one."""
-        linear_matrix = transform.linear_matrix @ self.linear_matrix
-        translate = self.translate + transform.translate @ self.linear_matrix
+        linear_matrix = self.linear_matrix @ transform.linear_matrix
+        translate = self.translate + transform.translate @ self.linear_matrix.T
         return Affine(linear_matrix=linear_matrix, translate=translate)
 
     def set_slice(self, axes: Sequence[int]) -> 'Affine':

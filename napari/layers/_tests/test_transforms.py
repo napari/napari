@@ -87,7 +87,7 @@ def test_affine_properties():
     )
     npt.assert_allclose(transform.translate, [8, -5])
     npt.assert_allclose(transform.scale, [2, 3])
-    npt.assert_almost_equal(transform.rotate, [[0, -1], [1, 0]])
+    npt.assert_almost_equal(transform.rotate, [[0, 1], [-1, 0]])
     npt.assert_almost_equal(transform.shear, [1])
 
 
