@@ -173,9 +173,7 @@ class Viewer(ViewerModel):
         if _use_async:
             from .components.experimental.chunk import chunk_loader
 
-            # TODO_ASYNC: Tell the ChunkLoader which layers are in the
-            # viewer that's being closed. This is surely not what we want
-            # to do long term, but it fixes some tests for now. See:
+            # TODO_ASYNC: Find a cleaner way to do this? Fixes some tests.
             # https://github.com/napari/napari/issues/1500
             for layer in self.layers:
                 chunk_loader.on_layer_deleted(layer)
