@@ -10,8 +10,11 @@ from ...utils.events import EmitterGroup, Event, EventEmitter
 
 LOGGER = logging.getLogger('napari.async')
 
-# Should not be imported unless async is defined.
-assert os.getenv("NAPARI_ASYNC", "0") != "0"
+_async = os.getenv("NAPARI_ASYNC", "0") != "0"
+_pytest = "PYTEST_CURRENT_TEST" in os.environ
+
+# Nothing should be imported unless async is defined.
+assert _async or _pytest
 
 
 class QtGuiEvent(QObject):
