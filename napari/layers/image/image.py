@@ -1,5 +1,6 @@
 """Image class.
 """
+import os
 import types
 import warnings
 
@@ -17,6 +18,8 @@ from ._image_constants import Interpolation, Interpolation3D, Rendering
 from ._image_slice import ImageSlice
 from ._image_slice_data import ImageSliceData
 from ._image_utils import guess_multiscale, guess_rgb
+
+_use_async = os.getenv("NAPARI_ASYNC", "0") != "0"
 
 
 # Mixin must come before Layer
@@ -613,17 +616,19 @@ class Image(IntensityVisualizationMixin, Layer):
             # The load was synchronous.
             self._on_data_loaded(loaded_data, sync=True)
 
-    def on_chunk_loaded(self, request: ChunkRequest) -> None:
-        """An asynchronous ChunkRequest was loaded.
+    if _use_async:
 
-        Parameters
-        ----------
-        request : ChunkRequest
-            This request was loaded.
-        """
-        # Create a ImageSliceData from the ChunkRequest and load the data.
-        data = ImageSliceData.from_request(self, request)
-        self._on_data_loaded(data, sync=False)
+        def on_chunk_loaded(self, request: ChunkRequest) -> None:
+            """An asynchronous ChunkRequest was loaded.
+
+            Parameters
+            ----------
+            request : ChunkRequest
+                This request was loaded.
+            """
+            # Create a ImageSliceData from the ChunkRequest and load the data.
+            data = ImageSliceData.from_request(self, request)
+            self._on_data_loaded(data, sync=False)
 
     def _on_data_loaded(self, data: ImageSliceData, sync: bool) -> None:
         """The given data a was loaded, use it now.
