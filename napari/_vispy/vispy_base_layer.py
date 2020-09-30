@@ -203,6 +203,8 @@ class VispyBaseLayer(ABC):
                     .set_slice(self.layer.dims.displayed)
                     .scale
                 )
+                if len(scale) < nd:
+                    scale = np.array(list(scale) + [1] * (nd - len(scale)))
                 mapped_position -= scale[::-1] / 2
             return tuple(mapped_position[::-1])
         else:
