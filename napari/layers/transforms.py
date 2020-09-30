@@ -260,6 +260,11 @@ class Affine(Transform):
     linear_matrix : n-D array, optional
         (N, N) matrix with linear transform. If provided then scale, rotate,
         and shear values are ignored.
+    affine_matrix : n-D array, optional
+        (N+1, N+1) matrix where first (N, N) entries correspond to a linear
+        transform and the final column is a lenght N translation vector and
+        a 1. If provided then linear_matrix, scale, rotate, and shear values
+        are ignored.
     degrees : bool
         Boolean if rotate angles are provided in degrees
     name : string
@@ -274,12 +279,18 @@ class Affine(Transform):
         rotate=None,
         shear=None,
         linear_matrix=None,
+        affine_matrix=None,
         degrees=True,
         name=None,
     ):
         super().__init__(name=name)
 
-        if linear_matrix is None:
+        if affine_matrix is not None:
+            linear_matrix = affine_matrix[:-1, :-1]
+            translate = affine_matrix[-1, :-1]
+        elif linear_matrix is not None:
+            linear_matrix = np.array(linear_matrix)
+        else:
             if rotate is None:
                 rotate = np.eye(len(scale))
             if shear is None:
@@ -287,8 +298,6 @@ class Affine(Transform):
             linear_matrix = compose_linear_matrix(
                 rotate, scale, shear, degrees=degrees
             )
-        else:
-            linear_matrix = np.array(linear_matrix)
 
         ndim = max(linear_matrix.shape[0], len(translate))
         self.linear_matrix = embed_in_identity_matrix(linear_matrix, ndim)
@@ -344,9 +353,23 @@ class Affine(Transform):
 
     @shear.setter
     def shear(self, shear):
-        """Set the rotate of the transform."""
+        """Set the shear of the transform."""
         rotate, scale, _ = decompose_linear_matrix(self.linear_matrix)
         self.linear_matrix = compose_linear_matrix(rotate, scale, shear)
+
+    @property
+    def affine_matrix(self) -> np.array:
+        """Return the affine matrix for the transform."""
+        matrix = np.eye(self.ndim + 1, self.ndim + 1)
+        matrix[:-1, :-1] = self.linear_matrix
+        matrix[-1, :-1] = self.translate
+        return matrix
+
+    @affine_matrix.setter
+    def affine_matrix(self, affine_matrix):
+        """Set the affine matrix for the transform."""
+        self.linear_matrix = affine_matrix[:-1, :-1]
+        self.translate = affine_matrix[-1, :-1]
 
     @property
     def inverse(self) -> 'Affine':

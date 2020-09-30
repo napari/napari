@@ -56,6 +56,11 @@ class Labels(Image):
         degrees boolean parameter.
     shear : 1-D array
         A vector of shear values for an upper triangular n-D shear matrix.
+    affine: n-D array or napari.layers.transforms.Affine
+        (N+1, N+1) matrix where first (N, N) entries correspond to a linear
+        transform and the final column is a lenght N translation vector and
+        a 1 or a napari AffineTransform object. If provided then, scale,
+        rotate, and shear values are ignored.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -153,6 +158,7 @@ class Labels(Image):
         translate=None,
         rotate=None,
         shear=None,
+        affine=None,
         opacity=0.7,
         blending='translucent',
         visible=True,
@@ -194,6 +200,7 @@ class Labels(Image):
             translate=translate,
             rotate=rotate,
             shear=shear,
+            affine=affine,
             opacity=opacity,
             blending=blending,
             visible=visible,

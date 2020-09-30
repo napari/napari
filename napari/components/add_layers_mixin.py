@@ -78,6 +78,7 @@ class AddLayersMixin:
         translate=None,
         rotate=None,
         shear=None,
+        affine=None,
         opacity=1,
         blending=None,
         visible=True,
@@ -163,6 +164,11 @@ class AddLayersMixin:
             A vector of shear values for an upper triangular n-D shear matrix.
             If a list then must have same length as the axis that is being
             expanded as channels.
+        affine: n-D array or napari.layers.transforms.Affine
+            (N+1, N+1) matrix where first (N, N) entries correspond to a linear
+            transform and the final column is a lenght N translation vector and
+            a 1 or a napari AffineTransform object. If provided then, scale,
+            rotate, and shear values are ignored.
         opacity : float or list
             Opacity of the layer visual, between 0.0 and 1.0.  If a list then
             must be same length as the axis that is being expanded as channels.
@@ -214,6 +220,7 @@ class AddLayersMixin:
             'translate': translate,
             'rotate': rotate,
             'shear': shear,
+            'affine': affine,
             'opacity': opacity,
             'blending': blending,
             'visible': visible,
@@ -226,6 +233,7 @@ class AddLayersMixin:
             'translate',
             'rotate',
             'shear',
+            'affine',
             'contrast_limits',
             'metadata',
         }
@@ -277,6 +285,7 @@ class AddLayersMixin:
         translate=None,
         rotate=None,
         shear=None,
+        affine=None,
         opacity=1,
         blending='translucent',
         visible=True,
@@ -350,6 +359,11 @@ class AddLayersMixin:
             degrees boolean parameter.
         shear : 1-D array
             A vector of shear values for an upper triangular n-D shear matrix.
+        affine: n-D array or napari.layers.transforms.Affine
+            (N+1, N+1) matrix where first (N, N) entries correspond to a linear
+            transform and the final column is a lenght N translation vector and
+            a 1 or a napari AffineTransform object. If provided then, scale,
+            rotate, and shear values are ignored.
         opacity : float
             Opacity of the layer visual, between 0.0 and 1.0.
         blending : str
@@ -395,6 +409,7 @@ class AddLayersMixin:
             translate=translate,
             rotate=rotate,
             shear=shear,
+            affine=affine,
             opacity=opacity,
             blending=blending,
             visible=visible,
@@ -416,6 +431,7 @@ class AddLayersMixin:
         translate=None,
         rotate=None,
         shear=None,
+        affine=None,
         opacity=0.7,
         blending='translucent',
         visible=True,
@@ -467,6 +483,11 @@ class AddLayersMixin:
             degrees boolean parameter.
         shear : 1-D array
             A vector of shear values for an upper triangular n-D shear matrix.
+        affine: n-D array or napari.layers.transforms.Affine
+            (N+1, N+1) matrix where first (N, N) entries correspond to a linear
+            transform and the final column is a lenght N translation vector and
+            a 1 or a napari AffineTransform object. If provided then, scale,
+            rotate, and shear values are ignored.
         opacity : float
             Opacity of the layer visual, between 0.0 and 1.0.
         blending : str
@@ -499,6 +520,7 @@ class AddLayersMixin:
             translate=translate,
             rotate=rotate,
             shear=shear,
+            affine=affine,
             opacity=opacity,
             blending=blending,
             visible=visible,
@@ -531,6 +553,7 @@ class AddLayersMixin:
         translate=None,
         rotate=None,
         shear=None,
+        affine=None,
         opacity=0.7,
         blending='translucent',
         visible=True,
@@ -621,6 +644,11 @@ class AddLayersMixin:
             degrees boolean parameter.
         shear : 1-D array
             A vector of shear values for an upper triangular n-D shear matrix.
+        affine: n-D array or napari.layers.transforms.Affine
+            (N+1, N+1) matrix where first (N, N) entries correspond to a linear
+            transform and the final column is a lenght N translation vector and
+            a 1 or a napari AffineTransform object. If provided then, scale,
+            rotate, and shear values are ignored.
         opacity : float
             Opacity of the layer visual, between 0.0 and 1.0.
         blending : str
@@ -662,6 +690,7 @@ class AddLayersMixin:
             translate=translate,
             rotate=rotate,
             shear=shear,
+            affine=affine,
             opacity=opacity,
             blending=blending,
             visible=visible,
@@ -682,6 +711,7 @@ class AddLayersMixin:
         translate=None,
         rotate=None,
         shear=None,
+        affine=None,
         opacity=1,
         blending='translucent',
         visible=True,
@@ -725,6 +755,11 @@ class AddLayersMixin:
             degrees boolean parameter.
         shear : 1-D array
             A vector of shear values for an upper triangular n-D shear matrix.
+        affine: n-D array or napari.layers.transforms.Affine
+            (N+1, N+1) matrix where first (N, N) entries correspond to a linear
+            transform and the final column is a lenght N translation vector and
+            a 1 or a napari AffineTransform object. If provided then, scale,
+            rotate, and shear values are ignored.
         opacity : float
             Opacity of the layer visual, between 0.0 and 1.0.
         blending : str
@@ -750,6 +785,7 @@ class AddLayersMixin:
             translate=translate,
             rotate=rotate,
             shear=shear,
+            affine=affine,
             opacity=opacity,
             blending=blending,
             visible=visible,
@@ -774,6 +810,7 @@ class AddLayersMixin:
         translate=None,
         rotate=None,
         shear=None,
+        affine=None,
         opacity=0.7,
         blending='translucent',
         visible=True,
@@ -823,6 +860,11 @@ class AddLayersMixin:
             degrees boolean parameter.
         shear : 1-D array
             A vector of shear values for an upper triangular n-D shear matrix.
+        affine: n-D array or napari.layers.transforms.Affine
+            (N+1, N+1) matrix where first (N, N) entries correspond to a linear
+            transform and the final column is a lenght N translation vector and
+            a 1 or a napari AffineTransform object. If provided then, scale,
+            rotate, and shear values are ignored.
         opacity : float
             Opacity of the layer visual, between 0.0 and 1.0.
         blending : str
@@ -852,6 +894,7 @@ class AddLayersMixin:
             translate=translate,
             rotate=rotate,
             shear=shear,
+            affine=affine,
             opacity=opacity,
             blending=blending,
             visible=visible,

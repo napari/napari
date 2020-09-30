@@ -38,6 +38,11 @@ class Layer(KeymapProvider, ABC):
         degrees boolean parameter.
     shear : 1-D array
         A vector of shear values for an upper triangular n-D shear matrix.
+    affine: n-D array or napari.layers.transforms.Affine
+        (N+1, N+1) matrix where first (N, N) entries correspond to a linear
+        transform and the final column is a lenght N translation vector and
+        a 1 or a napari AffineTransform object. If provided then, scale,
+        rotate, and shear values are ignored.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -137,6 +142,7 @@ class Layer(KeymapProvider, ABC):
         translate=None,
         rotate=None,
         shear=None,
+        affine=None,
         opacity=1,
         blending='translucent',
         visible=True,
@@ -165,11 +171,6 @@ class Layer(KeymapProvider, ABC):
 
         self.dims = Dims(ndim)
 
-        if scale is None:
-            scale = [1] * ndim
-        if translate is None:
-            translate = [0] * ndim
-
         # Create a transform chain consisting of three transforms:
         # 1. `tile2data`: An initial transform only needed displaying tiles
         #   of an image. It maps pixels of the tile into the coordinate space
@@ -182,16 +183,40 @@ class Layer(KeymapProvider, ABC):
         #   coordinate.
         # 3. `world2grid`: An additional transform mapping world-coordinates
         #   into a grid for looking at layers side-by-side.
+
+        # First create the `data2world` transform from the input parameters
+        if affine is None:
+            if scale is None:
+                scale = [1] * ndim
+            if translate is None:
+                translate = [0] * ndim
+            data2world_transform = Affine(
+                scale,
+                translate,
+                rotate=rotate,
+                shear=shear,
+                name='data2world',
+            )
+        elif isinstance(affine, np.ndarray) or isinstance(affine, list):
+            data2world_transform = Affine(
+                affine_matrix=np.array(affine), name='data2world',
+            )
+        elif isinstance(affine, Affine):
+            affine.name = 'data2world'
+            data2world_transform = affine
+        else:
+            raise ValueError(
+                (
+                    f'affine input not recgonized '
+                    f'must be either napari.layers.transforms.Affine, '
+                    f'ndarray or None. Got {type(affine)}'
+                )
+            )
+
         self._transforms = TransformChain(
             [
                 Affine(np.ones(ndim), np.zeros(ndim), name='tile2data'),
-                Affine(
-                    scale,
-                    translate,
-                    rotate=rotate,
-                    shear=shear,
-                    name='data2world',
-                ),
+                data2world_transform,
                 Affine(np.ones(ndim), np.zeros(ndim), name='world2grid'),
             ]
         )
@@ -220,6 +245,7 @@ class Layer(KeymapProvider, ABC):
             translate=Event,
             rotate=Event,
             shear=Event,
+            affine=Event,
             data=Event,
             name=Event,
             thumbnail=Event,
@@ -388,6 +414,29 @@ class Layer(KeymapProvider, ABC):
         self._transforms['data2world'].shear = shear
         self._update_dims()
         self.events.shear()
+
+    @property
+    def affine(self):
+        """napari.layers.transforms.Affine: Affine transform."""
+        return self._transforms['data2world']
+
+    @affine.setter
+    def affine(self, affine):
+        if isinstance(affine, np.ndarray) or isinstance(affine, list):
+            self._transforms['data2world'].affine_matrix = np.array(affine)
+        elif isinstance(affine, Affine):
+            affine.name = 'data2world'
+            self._transforms['data2world'] = affine
+        else:
+            raise ValueError(
+                (
+                    f'affine input not recgonized '
+                    f'must be either napari.layers.transforms.Affine '
+                    f'or ndarray. Got {type(affine)}'
+                )
+            )
+        self._update_dims()
+        self.events.affine()
 
     @property
     def translate_grid(self):

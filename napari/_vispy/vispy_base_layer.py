@@ -65,6 +65,7 @@ class VispyBaseLayer(ABC):
         self.layer.events.translate.connect(self._on_matrix_change)
         self.layer.events.rotate.connect(self._on_matrix_change)
         self.layer.events.shear.connect(self._on_matrix_change)
+        self.layer.events.affine.connect(self._on_matrix_change)
         self.layer.events.loaded.connect(self._on_loaded_change)
 
     @property

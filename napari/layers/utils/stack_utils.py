@@ -165,6 +165,7 @@ def stack_to_images(stack: Image, axis: int, **kwargs: Dict,) -> List[Image]:
 
     meta['rotate'] = None
     meta['shear'] = None
+    meta['affine'] = None
 
     meta.update(kwargs)
     imagelist = list()
