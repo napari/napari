@@ -26,6 +26,11 @@ def _create_chunk_receiver(parent: QObject):
     ----------
     parent : QObject
         Parent of the chunk receiver.
+
+    Return
+    ------
+    Optional[QtChunkReceiver]
+        The QtChunkReceiver instance to use.
     """
     if _use_async:
         from ..experimental.qt_chunk_receiver import QtChunkReceiver
