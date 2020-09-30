@@ -1,7 +1,7 @@
 import os
 
 import numpy as np
-from qtpy.QtCore import QMimeData, Qt, QTimer
+from qtpy.QtCore import QMimeData, QObject, Qt, QTimer
 from qtpy.QtGui import QDrag, QImage, QPixmap
 from qtpy.QtWidgets import (
     QApplication,
@@ -16,9 +16,23 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ..experimental.qt_chunk_receiver import QtChunkReceiver
-
 _use_async = os.getenv("NAPARI_ASYNC", "0") != "0"
+
+
+def _create_chunk_receiver(parent: QObject):
+    """Return a QtChunkReceiver or None if not using async.
+
+    Attributes
+    ----------
+    parent : QObject
+        Parent of the chunk receiver.
+    """
+    if _use_async:
+        from ..experimental.qt_chunk_receiver import QtChunkReceiver
+
+        return QtChunkReceiver(parent)
+    else:
+        return None
 
 
 class QtLayerList(QScrollArea):
@@ -74,7 +88,7 @@ class QtLayerList(QScrollArea):
         self._drag_name = None
 
         if _use_async:
-            self.chunk_receiver = QtChunkReceiver(self)
+            self.chunk_receiver = _create_chunk_receiver(self)
         else:
             self.chunk_receiver = None
 

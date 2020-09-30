@@ -1,9 +1,9 @@
-"""ImageLoader and AsyncImageLoader classes.
+"""ImageLoader class.
 """
 from ._image_slice_data import ImageSliceData
 
 
-class SyncImageLoader:
+class ImageLoader:
     """Synchronous image loader.
 
     This is the default image loader. It does very little, it only exists

@@ -7,14 +7,23 @@ from typing import Callable, Optional
 import numpy as np
 
 from ...types import ArrayLike
+from ._image_loader import ImageLoader
 from ._image_slice_data import ImageSliceData
 from ._image_view import ImageView
-from ._sync_image_loader import SyncImageLoader
-from .experimental._async_image_loader import AsyncImageLoader
 
 LOGGER = logging.getLogger("napari.async")
 
 _use_async = os.getenv("NAPARI_ASYNC", "0") != "0"
+
+
+def _create_loader_class() -> ImageLoader:
+    """Return ImageLoader for sync or async."""
+    if _use_async:
+        from .experimental._async_image_loader import AsyncImageLoader
+
+        return AsyncImageLoader()
+    else:
+        return ImageLoader()
 
 
 class ImageSlice:
@@ -51,7 +60,7 @@ class ImageSlice:
         self.image: ImageView = ImageView(image, image_converter)
         self.thumbnail: ImageView = ImageView(image, image_converter)
         self.rgb = rgb
-        self.loader = AsyncImageLoader() if _use_async else SyncImageLoader()
+        self.loader = _create_loader_class()
 
         # With async there can be a gap between when the ImageSlice is
         # created and the data is actually loaded. However initialize
