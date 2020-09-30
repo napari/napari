@@ -1,6 +1,7 @@
 """QtChunkReceiver and QtGuiEvent classes.
 """
 import logging
+import os
 
 from qtpy.QtCore import QObject, Signal
 
@@ -8,6 +9,9 @@ from ...components.experimental.chunk import chunk_loader
 from ...utils.events import EmitterGroup, Event, EventEmitter
 
 LOGGER = logging.getLogger('napari.async')
+
+# Should not be imported unless async is defined.
+assert os.getenv("NAPARI_ASYNC", "0") != "0"
 
 
 class QtGuiEvent(QObject):
