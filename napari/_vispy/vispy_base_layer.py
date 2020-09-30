@@ -47,6 +47,7 @@ class VispyBaseLayer(ABC):
         super().__init__()
 
         self.layer = layer
+        self._array_like = False
         self.node = node
 
         MAX_TEXTURE_SIZE_2D, MAX_TEXTURE_SIZE_3D = get_max_texture_sizes()
@@ -136,8 +137,17 @@ class VispyBaseLayer(ABC):
         # Embed in 4x4 affine matrix
         affine_matrix = np.eye(4)
         affine_matrix[: matrix.shape[0], : matrix.shape[1]] = matrix
+        if self._array_like:
+            matrix = (
+                self.layer._transforms['data2world']
+                .set_slice(self.layer.dims.displayed)
+                .linear_matrix[::-1, ::-1]
+            )
+            offset = -matrix.T @ np.ones(matrix.shape[1]) / 2
+            translate += offset
         affine_matrix[-1, : len(translate)] = translate
         self._master_transform.matrix = affine_matrix
+
         self.layer.corner_pixels = self.coordinates_of_canvas_corners()
         self.layer.position = self._transform_position(self._position)
 
@@ -161,7 +171,17 @@ class VispyBaseLayer(ABC):
         if self.node.canvas is not None:
             transform = self.node.canvas.scene.node_transform(self.node)
             # Map and offset position so that pixel center is at 0
-            mapped_position = transform.map(list(position))[:nd] - 0.5
+            mapped_position = transform.map(list(position))[:nd]
+            if self._array_like:
+                matrix = (
+                    self.layer._transforms['data2world']
+                    .set_slice(self.layer.dims.displayed)
+                    .linear_matrix[::-1, ::-1]
+                )
+                offset = -matrix.T @ np.ones(matrix.shape[1]) / 2
+                if len(offset) < nd:
+                    offset = np.array([1] * (nd - len(offset)) + list(offset))
+                mapped_position += offset
             return tuple(mapped_position[::-1])
         else:
             return (0,) * nd

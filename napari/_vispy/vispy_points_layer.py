@@ -51,7 +51,7 @@ class VispyPointsLayer(VispyBaseLayer):
         set_data = self.node._subvisuals[0].set_data
 
         set_data(
-            data[:, ::-1] + 0.5,
+            data[:, ::-1],
             size=size,
             edge_width=self.layer.edge_width,
             symbol=self.layer.symbol,
@@ -78,7 +78,7 @@ class VispyPointsLayer(VispyBaseLayer):
             size = 0
 
         self.node._subvisuals[1].set_data(
-            data[:, ::-1] + 0.5,
+            data[:, ::-1],
             size=size,
             edge_width=self._highlight_width,
             symbol=self.layer.symbol,
@@ -100,9 +100,7 @@ class VispyPointsLayer(VispyBaseLayer):
                 width = self._highlight_width
 
             self.node._subvisuals[2].set_data(
-                pos=pos[:, ::-1] + 0.5,
-                color=self._highlight_color,
-                width=width,
+                pos=pos[:, ::-1], color=self._highlight_color, width=width,
             )
         else:
             self.node._subvisuals[2].set_data(
