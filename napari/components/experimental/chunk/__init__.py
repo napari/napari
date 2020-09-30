@@ -6,7 +6,7 @@ from ._loader import chunk_loader
 from ._request import ChunkKey, ChunkRequest
 
 _async = os.getenv("NAPARI_ASYNC", "0") != "0"
-_pytest = "PYTEST_CURRENT_TEST" in os.environ
+_pytest = _pytest = "pytest" in sys.modules
 
-# Nothing should be imported unless async is defined.
+# Nothing should be imported unless async is defined or we are in pytest.
 assert _async or _pytest
