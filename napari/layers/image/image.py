@@ -7,7 +7,6 @@ import warnings
 import numpy as np
 from scipy import ndimage as ndi
 
-from ...components.experimental.chunk import ChunkRequest
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
 from ...utils.status_messages import format_float
@@ -617,6 +616,7 @@ class Image(IntensityVisualizationMixin, Layer):
             self._on_data_loaded(loaded_data, sync=True)
 
     if _use_async:
+        from ...components.experimental.chunk import ChunkRequest
 
         def on_chunk_loaded(self, request: ChunkRequest) -> None:
             """An asynchronous ChunkRequest was loaded.
