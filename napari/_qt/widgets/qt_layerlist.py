@@ -87,10 +87,7 @@ class QtLayerList(QScrollArea):
         self._drag_start_position = np.zeros(2)
         self._drag_name = None
 
-        if _use_async:
-            self.chunk_receiver = _create_chunk_receiver(self)
-        else:
-            self.chunk_receiver = None
+        self.chunk_receiver = _create_chunk_receiver(self)
 
     def _add(self, event):
         """Insert widget for layer `event.item` at index `event.index`.
