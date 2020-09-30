@@ -4,7 +4,7 @@ import logging
 from typing import Optional
 
 from ....components.experimental.chunk import ChunkKey
-from .._image_slice_data import ImageSliceData
+from ._async_image_slice_data import AsyncImageSliceData
 
 LOGGER = logging.getLogger("napari.async")
 
@@ -22,8 +22,8 @@ class AsyncImageLoader:
         # We're showing nothing to start.
         self.current_key: Optional[ChunkKey] = None
 
-    def load(self, data: ImageSliceData):
-        """Load this ImageSliceData sync or async.
+    def load(self, data: AsyncImageSliceData):
+        """Load this AsyncImageSliceData sync or async.
 
         Parameters
         ----------
@@ -46,12 +46,12 @@ class AsyncImageLoader:
 
         return None  # Load was async.
 
-    def match(self, data: ImageSliceData) -> bool:
+    def match(self, data: AsyncImageSliceData) -> bool:
         """Return True if data matches what we are loading.
 
         Parameters
         ----------
-        data : ImageSliceData
+        data : AsyncImageSliceData
             Does this data match what we are loading?
 
         Return

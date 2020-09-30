@@ -20,6 +20,14 @@ from ._image_utils import guess_multiscale, guess_rgb
 
 _use_async = os.getenv("NAPARI_ASYNC", "0") != "0"
 
+# Use sync or async SliceData class.
+if _use_async:
+    from .experimental._async_image_slice_data import AsyncImageSliceData
+
+    SliceDataClass = AsyncImageSliceData
+else:
+    SliceDataClass = ImageSliceData
+
 
 # Mixin must come before Layer
 class Image(IntensityVisualizationMixin, Layer):
@@ -595,7 +603,7 @@ class Image(IntensityVisualizationMixin, Layer):
             thumbnail_source = None
 
         # Load our images, might be sync or async.
-        data = ImageSliceData(self, image_indices, image, thumbnail_source)
+        data = SliceDataClass(self, image_indices, image, thumbnail_source)
         self._load_slice(data)
 
     def _load_slice(self, data: ImageSliceData):
@@ -614,21 +622,6 @@ class Image(IntensityVisualizationMixin, Layer):
         else:
             # The load was synchronous.
             self._on_data_loaded(loaded_data, sync=True)
-
-    if _use_async:
-        from ...components.experimental.chunk import ChunkRequest
-
-        def on_chunk_loaded(self, request: ChunkRequest) -> None:
-            """An asynchronous ChunkRequest was loaded.
-
-            Parameters
-            ----------
-            request : ChunkRequest
-                This request was loaded.
-            """
-            # Create a ImageSliceData from the ChunkRequest and load the data.
-            data = ImageSliceData.from_request(self, request)
-            self._on_data_loaded(data, sync=False)
 
     def _on_data_loaded(self, data: ImageSliceData, sync: bool) -> None:
         """The given data a was loaded, use it now.
@@ -768,3 +761,19 @@ class Image(IntensityVisualizationMixin, Layer):
             value = (self.data_level, value)
 
         return value
+
+    # One additional method for async
+    if _use_async:
+        from ...components.experimental.chunk import ChunkRequest
+
+        def on_chunk_loaded(self, request: ChunkRequest) -> None:
+            """An asynchronous ChunkRequest was loaded.
+
+            Parameters
+            ----------
+            request : ChunkRequest
+                This request was loaded.
+            """
+            # Convert the ChunkRequest to SliceData and use it.
+            data = SliceDataClass.from_request(self, request)
+            self._on_data_loaded(data, sync=False)

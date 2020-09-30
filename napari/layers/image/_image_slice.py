@@ -14,6 +14,8 @@ from .experimental._async_image_loader import AsyncImageLoader
 
 LOGGER = logging.getLogger("napari.async")
 
+_use_async = os.getenv("NAPARI_ASYNC", "0") != "0"
+
 
 class ImageSlice:
     """The slice of the image that we are currently viewing.
@@ -49,9 +51,7 @@ class ImageSlice:
         self.image: ImageView = ImageView(image, image_converter)
         self.thumbnail: ImageView = ImageView(image, image_converter)
         self.rgb = rgb
-
-        use_async = os.getenv("NAPARI_ASYNC", "0") != "0"
-        self.loader = AsyncImageLoader() if use_async else SyncImageLoader()
+        self.loader = AsyncImageLoader() if _use_async else SyncImageLoader()
 
         # With async there can be a gap between when the ImageSlice is
         # created and the data is actually loaded. However initialize
