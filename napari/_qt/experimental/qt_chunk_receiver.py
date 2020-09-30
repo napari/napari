@@ -1,8 +1,6 @@
 """QtChunkReceiver and QtGuiEvent classes.
 """
 import logging
-import os
-import sys
 
 from qtpy.QtCore import QObject, Signal
 
@@ -10,12 +8,6 @@ from ...components.experimental.chunk import chunk_loader
 from ...utils.events import EmitterGroup, Event, EventEmitter
 
 LOGGER = logging.getLogger('napari.async')
-
-_async = os.getenv("NAPARI_ASYNC", "0") != "0"
-_pytest = "pytest" in sys.modules
-
-# Nothing should be imported unless async is defined or we are in pytest.
-assert _async or _pytest
 
 
 class QtGuiEvent(QObject):
