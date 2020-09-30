@@ -1,4 +1,4 @@
-"""ImageLoader and AsyncImageLoader classes.
+"""AsyncImageLoader classes.
 """
 import logging
 from typing import Optional
@@ -13,10 +13,10 @@ LOGGER = logging.getLogger("napari.async")
 class AsyncImageLoader(ImageLoader):
     """Load images synchronously or asynchronously.
 
-    Parameters
+    Attributes
     ----------
     current_key : Optional[ChunkKey]
-        The ChunkKey we are currently showing or which is loading.
+        The ChunkKey we are currently loading or showing.
     """
 
     def __init__(self):
@@ -60,7 +60,7 @@ class AsyncImageLoader(ImageLoader):
         bool
             Return True if data matches.
         """
-        key = data.chunk_request.key
+        key = data.request.key
 
         if self.current_key == key:
             LOGGER.debug("AsyncImageLoader.match: accept %s", key)

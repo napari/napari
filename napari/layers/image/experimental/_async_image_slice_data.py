@@ -1,20 +1,66 @@
-"""ImageSliceData class.
+"""AsyncImageSliceData class.
 """
 import logging
+from typing import Optional
 
 from ....components.experimental.chunk import (
     ChunkKey,
     ChunkRequest,
     chunk_loader,
 )
+from ....types import ArrayLike
+from ...base import Layer
 from .._image_slice_data import ImageSliceData
 
 LOGGER = logging.getLogger("napari.async")
 
 
 class AsyncImageSliceData(ImageSliceData):
+    """Chunked ImageSliceData.
+
+    Parameters
+    ----------
+    layer : Layer
+        The layer that contains the data.
+    indices : Tuple[Optional[slice], ...]
+        The indices of this slice.
+    image : ArrayList
+        The image to display in the slice.
+    thumbnail_source : ArrayList
+        The source used to create the thumbnail for the slice.
+    request : Optional[ChunkRequest]
+        The ChunkRequest that was used to load this data.
+    """
+
+    def __init__(
+        self,
+        layer: Layer,
+        indices,
+        image: ArrayLike,
+        thumbnail_source: ArrayLike,
+        request: Optional[ChunkRequest] = None,
+    ):
+        super().__init__(layer, indices, image, thumbnail_source)
+
+        # When AsyncImageSliceData is first created self.request is
+        # None, it will get set one of two ways:
+        #
+        # 1. Synchronous load: our load_chunks() method will set
+        #    self.request with the satisfied ChunkRequest.
+        #
+        # 2. Asynchronous load: Image.on_chunk_loaded() will create
+        #    a new AsyncImageSliceData using our from_request()
+        #    classmethod. It will set the completed self.request.
+        #
+        self.request = request
+
     def load_chunks(self, key: ChunkKey) -> bool:
-        """Load chunks sync or async.
+        """Load this slice data's chunks sync or async.
+
+        Parameters
+        ----------
+        key : ChunkKey
+            The key for the chunks we are going to load.
 
         Return
         ------
@@ -24,27 +70,33 @@ class AsyncImageSliceData(ImageSliceData):
         # Always load the image.
         chunks = {'image': self.image}
 
-        # Optionally also load the thumbnail_source.
+        # Optionally load the thumbnail_source if it exists.
         if self.thumbnail_source is not None:
             chunks['thumbnail_source'] = self.thumbnail_source
 
-        # Create our ChunkRequest.
-        self.chunk_request = chunk_loader.create_request(
-            self.layer, key, chunks
-        )
-
-        # Load using the global ChunkLoader.
-        satisfied_request = chunk_loader.load_chunk(self.chunk_request)
+        # Create the ChunkRequest and load it with the ChunkLoader.
+        self.request = chunk_loader.create_request(self.layer, key, chunks)
+        satisfied_request = chunk_loader.load_chunk(self.request)
 
         if satisfied_request is None:
             return False  # load was async
 
-        self.chunk_request = satisfied_request
+        self.request = satisfied_request
         return True  # load was sync
 
     @classmethod
-    def from_request(cls, layer, request: ChunkRequest):
+    def from_request(cls, layer: Layer, request: ChunkRequest):
+        """Create an AsyncImageSliceData from a ChunkRequest.
+
+        Parameters
+        ----------
+        layer : Layer
+            The layer for this request.
+
+        request : ChunkRequest
+            The request that was loaded.
+        """
+        indices = request.key.indices
         image = request.chunks.get('image')
         thumbnail_slice = request.chunks.get('thumbnail_slice')
-        indices = request.key.indices
         return cls(layer, indices, image, thumbnail_slice, request)
