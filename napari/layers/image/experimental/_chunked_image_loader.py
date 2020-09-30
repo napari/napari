@@ -1,4 +1,4 @@
-"""AsyncImageLoader classes.
+"""ChunkedImageLoader classes.
 """
 import logging
 from typing import Optional
@@ -37,7 +37,7 @@ class ChunkedImageLoader(ImageLoader):
             True if load happened synchronously.
         """
         key = ChunkKey(data.layer, data.indices)
-        LOGGER.debug("AsyncImageLoader.load: %s", key)
+        LOGGER.debug("ChunkedImageLoader.load: %s", key)
 
         if self.current_key is not None and self.current_key == key:
             # We are already showing this slice, or its being loaded
@@ -68,11 +68,11 @@ class ChunkedImageLoader(ImageLoader):
         key = data.request.key
 
         if self.current_key == key:
-            LOGGER.debug("AsyncImageLoader.match: accept %s", key)
+            LOGGER.debug("ChunkedImageLoader.match: accept %s", key)
             return True
 
         # Probably we are scrolling through slices and we are no longer
         # showing this slice, so drop it. Even if we don't use it, it
         # should get into the cache, so the load wasn't totally wasted.
-        LOGGER.debug("AsyncImageLoader.match: reject %s", key)
+        LOGGER.debug("ChunkedImageLoader.match: reject %s", key)
         return False

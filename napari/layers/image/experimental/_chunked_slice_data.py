@@ -1,4 +1,4 @@
-"""AsyncImageSliceData class.
+"""ChunkedSliceData class.
 """
 import logging
 from typing import Optional
@@ -42,14 +42,14 @@ class ChunkedSliceData(ImageSliceData):
     ):
         super().__init__(layer, indices, image, thumbnail_source)
 
-        # When AsyncImageSliceData is first created self.request is
+        # When ChunkedSliceData is first created self.request is
         # None, it will get set one of two ways:
         #
         # 1. Synchronous load: our load_chunks() method will set
         #    self.request with the satisfied ChunkRequest.
         #
         # 2. Asynchronous load: Image.on_chunk_loaded() will create
-        #    a new AsyncImageSliceData using our from_request()
+        #    a new ChunkedSliceData using our from_request()
         #    classmethod. It will set the completed self.request.
         #
         self.request = request
@@ -86,7 +86,7 @@ class ChunkedSliceData(ImageSliceData):
 
     @classmethod
     def from_request(cls, layer: Layer, request: ChunkRequest):
-        """Create an AsyncImageSliceData from a ChunkRequest.
+        """Create an ChunkedSliceData from a ChunkRequest.
 
         Parameters
         ----------
