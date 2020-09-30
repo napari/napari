@@ -613,15 +613,13 @@ class Image(IntensityVisualizationMixin, Layer):
         ----------
         data : Slice
         """
-        loaded_data = self._slice.load(data)
-
-        if loaded_data is None:
+        if self._slice.load(data):
+            # The load was synchronous.
+            self._on_data_loaded(data, sync=True)
+        else:
             # The load will be asynchronous. Signal that our self.loaded
             # property is now false, since the load is in progress.
             self.events.loaded()
-        else:
-            # The load was synchronous.
-            self._on_data_loaded(loaded_data, sync=True)
 
     def _on_data_loaded(self, data: ImageSliceData, sync: bool) -> None:
         """The given data a was loaded, use it now.

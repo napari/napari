@@ -91,7 +91,6 @@ class ImageSlice:
             thumbnail_source = np.clip(thumbnail_source, 0, 1)
         self.image.raw = image
         self.thumbnail.raw = thumbnail_source
-        self.loaded = True
 
     def load(self, data: ImageSliceData) -> Optional[ImageSliceData]:
         """Load this data into the slice.
@@ -106,7 +105,7 @@ class ImageSlice:
         Optional[ImageSliceData]
             Return ImageSliceData if it was loaded synchronously.
         """
-        self.loaded = False
+        self.loaded = False  # False until self._on_loaded is calls
         return self.loader.load(data)
 
     def on_loaded(self, data: ImageSliceData) -> bool:
@@ -123,8 +122,9 @@ class ImageSlice:
             True if the data was used, False if was for the wrong slice.
         """
         if not self.loader.match(data):
-            return False
+            return False  # data was not used.
 
         # Display the newly loaded data.
         self._set_raw_images(data.image, data.thumbnail_source)
-        return True
+        self.loaded = True
+        return True  # data was used.

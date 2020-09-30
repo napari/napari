@@ -23,29 +23,34 @@ class ChunkedImageLoader(ImageLoader):
         # We're showing nothing to start.
         self.current_key: Optional[ChunkKey] = None
 
-    def load(self, data: ChunkedSliceData):
+    def load(self, data: ChunkedSliceData) -> bool:
         """Load this ChunkedSliceData (sync or async).
 
         Parameters
         ----------
-        data : SlideData
+        data : ChunkedSliceData
             The data to load
+
+        Return
+        ------
+        bool
+            True if load happened synchronously.
         """
         key = ChunkKey(data.layer, data.indices)
         LOGGER.debug("AsyncImageLoader.load: %s", key)
 
         if self.current_key is not None and self.current_key == key:
             # We are already showing this slice, or its being loaded
-            # asynchronously. TODO_ASYNC: does this happen?
-            return None
+            # asynchronously. TODO_ASYNC: does this still happen?
+            return False
 
         # Now "showing" this slice, even if it hasn't loaded yet.
         self.current_key = key
 
         if data.load_chunks(key):
-            return data  # Load was sync.
+            return True  # Load was sync, load is done.
 
-        return None  # Load was async.
+        return False  # Load was async, so not loaded yet.
 
     def match(self, data: ChunkedSliceData) -> bool:
         """Return True if slice data matches what we are loading.
