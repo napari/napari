@@ -4,12 +4,13 @@ import logging
 from typing import Optional
 
 from ....components.experimental.chunk import ChunkKey
+from .._image_loader import ImageLoader
 from ._async_image_slice_data import AsyncImageSliceData
 
 LOGGER = logging.getLogger("napari.async")
 
 
-class AsyncImageLoader:
+class AsyncImageLoader(ImageLoader):
     """Load images synchronously or asynchronously.
 
     Parameters

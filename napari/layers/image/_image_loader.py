@@ -6,8 +6,8 @@ from ._image_slice_data import ImageSliceData
 class ImageLoader:
     """Synchronous image loader.
 
-    This is the default image loader. It does very little, it only exists
-    so that we can replace it with the experimental AsyncImageLoader
+    This is the default image loader. It does very little, it mainly exists
+    just so that we can replace it with the experimental AsyncImageLoader
     when using async loading.
     """
 
