@@ -141,3 +141,18 @@ def test_axis_labels_str_to_list():
     dims = Dims()
     dims.axis_labels = 'TX'
     assert dims.axis_labels == ['T', 'X']
+
+
+def test_roll():
+    dims = Dims(ndim=3)
+    dims.set_range(0, (0, 1, 1))
+    dims.set_range(1, (0, 10, 1))
+    dims.set_range(2, (0, 10, 1))
+    assert dims.order == [0, 1, 2]
+    dims._roll()
+    assert dims.order == [0, 2, 1]
+    dims._roll()
+    assert dims.order == [0, 1, 2]
+    dims.set_range(0, (0, 2, 1))
+    dims._roll()
+    assert dims.order == [2, 0, 1]
