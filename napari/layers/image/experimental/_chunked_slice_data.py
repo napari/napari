@@ -15,8 +15,8 @@ from .._image_slice_data import ImageSliceData
 LOGGER = logging.getLogger("napari.async")
 
 
-class AsyncImageSliceData(ImageSliceData):
-    """Chunked ImageSliceData.
+class ChunkedSliceData(ImageSliceData):
+    """SliceData that works with ChunkLoader.
 
     Parameters
     ----------

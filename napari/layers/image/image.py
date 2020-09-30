@@ -22,9 +22,9 @@ _use_async = os.getenv("NAPARI_ASYNC", "0") != "0"
 
 # Use sync or async SliceData class.
 if _use_async:
-    from .experimental._async_image_slice_data import AsyncImageSliceData
+    from .experimental._chunked_slice_data import ChunkedSliceData
 
-    SliceDataClass = AsyncImageSliceData
+    SliceDataClass = ChunkedSliceData
 else:
     SliceDataClass = ImageSliceData
 

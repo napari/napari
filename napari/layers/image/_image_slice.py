@@ -19,9 +19,9 @@ _use_async = os.getenv("NAPARI_ASYNC", "0") != "0"
 def _create_loader_class() -> ImageLoader:
     """Return ImageLoader for sync or async."""
     if _use_async:
-        from .experimental._async_image_loader import AsyncImageLoader
+        from .experimental._chunked_image_loader import ChunkedImageLoader
 
-        return AsyncImageLoader()
+        return ChunkedImageLoader()
     else:
         return ImageLoader()
 

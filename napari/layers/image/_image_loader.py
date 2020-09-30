@@ -4,12 +4,7 @@ from ._image_slice_data import ImageSliceData
 
 
 class ImageLoader:
-    """Synchronous image loader.
-
-    This is the default image loader. It does very little, it mainly exists
-    just so that we can replace it with the experimental AsyncImageLoader
-    when using async loading.
-    """
+    """The default synchrnous ImageLoader."""
 
     def load(self, data: ImageSliceData) -> ImageSliceData:
         data.load_sync()
