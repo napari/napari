@@ -2,7 +2,7 @@
 """
 import logging
 import os
-from typing import Callable, Optional
+from typing import Callable
 
 import numpy as np
 
@@ -17,7 +17,13 @@ _use_async = os.getenv("NAPARI_ASYNC", "0") != "0"
 
 
 def _create_loader_class() -> ImageLoader:
-    """Return ImageLoader for sync or async."""
+    """Return correct ImageLoader for sync or async.
+
+    Return
+    ------
+    ImageLoader
+        ImageLoader for sync or ChunkImageLoader for async.
+    """
     if _use_async:
         from .experimental._chunked_image_loader import ChunkedImageLoader
 
@@ -92,7 +98,7 @@ class ImageSlice:
         self.image.raw = image
         self.thumbnail.raw = thumbnail_source
 
-    def load(self, data: ImageSliceData) -> Optional[ImageSliceData]:
+    def load(self, data: ImageSliceData) -> bool:
         """Load this data into the slice.
 
         Parameters
@@ -102,8 +108,8 @@ class ImageSlice:
 
         Return
         ------
-        Optional[ImageSliceData]
-            Return ImageSliceData if it was loaded synchronously.
+        bool
+            Return True if load was synchronous.
         """
         self.loaded = False  # False until self._on_loaded is calls
         return self.loader.load(data)
