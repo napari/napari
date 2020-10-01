@@ -1,4 +1,4 @@
-"""ChunkLoader related utilities.
+"""ChunkLoader utilities.
 """
 
 
