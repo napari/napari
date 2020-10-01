@@ -1,12 +1,12 @@
-"""ChunkLoader: synchronous or asynchronous chunk loading
+"""ChunkLoader class.
 """
 import logging
 import os
 from concurrent.futures import CancelledError, Future, ThreadPoolExecutor
 from typing import Dict, List, Optional
 
-from ...types import ArrayLike
-from ...utils.events import EmitterGroup
+from ....types import ArrayLike
+from ....utils.events import EmitterGroup
 from ._cache import ChunkCache
 from ._config import async_config
 from ._info import LayerInfo
