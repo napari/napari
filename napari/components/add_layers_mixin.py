@@ -801,8 +801,8 @@ class AddLayersMixin:
 
         Parameters
         ----------
-        data : array (N, D)
-            Coordinates for N points in D dimensions. ID,T,(Z),Y,X
+        data : array (N, D+1)
+            Coordinates for N points in D+1 dimensions. ID,T,(Z),Y,X. The first axis is the integer ID of the track. D is either 3 or 4 for planar or volumetric timeseries respectively.
         properties : dict {str: array (N,)}, DataFrame
             Properties for each point. Each property should be an array of length N,
             where N is the number of points.
