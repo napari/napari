@@ -4,9 +4,9 @@ from typing import List
 
 import dask.array as da
 
-from ...._vendor.humanize.src.humanize import naturalsize
-from ....layers.base import Layer
-from ....layers.image import Image
+from ....._vendor.experimental.humanize.src.humanize import naturalsize
+from .....layers.base import Layer
+from .....layers.image import Image
 from .._config import async_config
 from .._info import LayerInfo, LoadType
 from .._loader import chunk_loader
