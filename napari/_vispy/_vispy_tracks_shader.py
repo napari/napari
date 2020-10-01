@@ -20,14 +20,14 @@ class TrackShader(Filter):
 
     Parameters
     ----------
-    current_time: int, float
+    current_time : int, float
         the current time, which is typically the frame index, although this
         can be an arbitrary float
-    tail_length: int, float
+    tail_length : int, float
         the upper limit on length of the 'tail'
-    use_fade: bool
+    use_fade : bool
         this will enable/disable tail fading with time
-    vertex_time: 1D array, list
+    vertex_time : 1D array, list
         a vector describing the time associated with each vertex
 
 

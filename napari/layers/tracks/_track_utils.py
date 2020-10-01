@@ -1,6 +1,7 @@
 from typing import Dict
 
 import numpy as np
+from scipy.sparse import coo_matrix
 from scipy.spatial import cKDTree
 
 from ..utils.layer_utils import dataframe_to_properties
@@ -86,6 +87,9 @@ class TrackManager:
         self._graph_vertices = None
         self._graph_connex = None
 
+        # lookup table for vertex indices from track id
+        self._id2idxs = None
+
     @property
     def data(self) -> np.ndarray:
         """(N, D) array: coordinates for N points in D dimensions."""
@@ -112,11 +116,21 @@ class TrackManager:
         # need to be an int, and the shader will render correctly.
         frames = list(set(self._points[:, 0].astype(np.uint).tolist()))
         self._points_lookup = [None] * (max(frames) + 1)
-        for f in range(max(frames) + 1):
-            # if we have some data for this frame, calculate the slice required
-            if f in frames:
-                idx = np.where(self._points[:, 0] == f)[0]
-                self._points_lookup[f] = slice(min(idx), max(idx) + 1, 1)
+        for f in frames:
+            idx = np.where(self._points[:, 0] == f)[0]
+            self._points_lookup[f] = slice(min(idx), max(idx) + 1, 1)
+
+        # make a second lookup table using a sparse matrix to convert track id
+        # to the vertex indices
+        self._id2idxs = coo_matrix(
+            (
+                np.broadcast_to(1, self.track_ids.size),  # just dummy ones
+                (self.track_ids, np.arange(self.track_ids.size)),
+            )
+        ).tocsr()
+
+        # sort the data by ID then time
+        # indices = np.lexsort((self.data[:, 1], self.data[:, 0]))
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
@@ -143,14 +157,11 @@ class TrackManager:
     @graph.setter
     def graph(self, graph: Dict[str, list]):
         """ set the track graph """
-
         self._graph = self._validate_track_graph(graph)
-        # self.build_graph()
 
     @property
     def track_ids(self):
         """ return the track identifiers"""
-        # return self.properties['track_id']
         return self.data[:, 0].astype(np.uint16)
 
     @property
@@ -164,7 +175,7 @@ class TrackManager:
 
     def _vertex_indices_from_id(self, track_id: int):
         """ return the vertices corresponding to a track id """
-        return tuple(np.where(self.track_ids == track_id)[0])
+        return self._id2idxs[track_id].nonzero()[1]
 
     def _validate_track_data(self, data: np.ndarray) -> np.ndarray:
         """ validate the coordinate data """
@@ -181,6 +192,11 @@ class TrackManager:
         if not all([t >= 0 for t in data[:, 1]]):
             raise ValueError('track timestamps must be greater than zero')
 
+        # check that data are sorted by ID then time
+        indices = np.lexsort((data[:, 1], data[:, 0]))
+        if not np.array_equal(indices, np.arange(data[:, 0].size)):
+            raise ValueError('tracks should be ordered by ID and time')
+
         return data
 
     def _validate_track_properties(
@@ -196,13 +212,6 @@ class TrackManager:
             # ensure the property values are a numpy array
             if type(v) != np.ndarray:
                 properties[k] = np.asarray(v)
-
-        # if 'track_id' in properties:
-        #     track_idx = properties['track_id']
-        #     if not all(track_idx == np.maximum.accumulate(track_idx)):
-        #         raise ValueError('track_id should be monotonically increasing')
-        # else:
-        #     raise ValueError('track_id is missing from properties')
 
         return properties
 

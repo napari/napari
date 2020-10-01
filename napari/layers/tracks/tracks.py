@@ -119,7 +119,7 @@ class Tracks(Layer):
             rebuild_graph=Event,
         )
 
-        # track manager deals with data slicing, graph building an properties
+        # track manager deals with data slicing, graph building and properties
         self._manager = TrackManager()
         self._track_colors = None
         self._colormaps_dict = colormaps_dict or {}  # additional colormaps
@@ -217,7 +217,7 @@ class Tracks(Layer):
         """Update thumbnail with current points and colors."""
         colormapped = np.zeros(self._thumbnail_shape)
         colormapped[..., 3] = 1
-        # return
+
         if self._view_data is not None and self.track_colors is not None:
             de = self._extent_data
             min_vals = [de[0, i] for i in self.dims.displayed]
@@ -285,8 +285,7 @@ class Tracks(Layer):
         else:
             data = data[:, (2, 1, 0)]  # z, y, x -> x, y, z
 
-        # return the data + 0.5 pixel offset
-        return data + 0.5
+        return data
 
     @property
     def current_time(self):
@@ -330,7 +329,7 @@ class Tracks(Layer):
         # fire events to update shaders
         self.events.rebuild_tracks()
         self.events.rebuild_graph()
-        # self.events.data()
+        self.events.data()
         self._update_dims()
 
     @property
@@ -370,7 +369,7 @@ class Tracks(Layer):
     def tail_width(self, tail_width: Union[int, float]):
         self._tail_width = tail_width
         self.events.tail_width()
-        self.refresh()
+        # self.refresh()
         self.status = format_float(self.tail_width)
 
     @property
@@ -382,7 +381,7 @@ class Tracks(Layer):
     def tail_length(self, tail_length: Union[int, float]):
         self._tail_length = tail_length
         self.events.tail_length()
-        self.refresh()
+        # self.refresh()
         self.status = format_float(self.tail_length)
 
     @property
@@ -405,7 +404,7 @@ class Tracks(Layer):
     def display_tail(self, value: bool):
         self._display_tail = value
         self.events.display_tail()
-        self.refresh()
+        # self.refresh()
 
     @property
     def display_graph(self) -> bool:
@@ -416,7 +415,7 @@ class Tracks(Layer):
     def display_graph(self, value: bool):
         self._display_graph = value
         self.events.display_graph()
-        self.refresh()
+        # self.refresh()
 
     @property
     def color_by(self) -> str:
