@@ -651,7 +651,6 @@ class Image(IntensityVisualizationMixin, Layer):
         self.events.loaded()
 
         if not sync:
-            print("would refresh after: ", data.request.key)
             # TODO_ASYNC: Avoid calling self.refresh(), because it would
             # call our _set_view_slice(). Do we need a "refresh without
             # set_view_slice()" method that we can call?
