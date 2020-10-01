@@ -6,7 +6,7 @@ from enum import Enum
 
 import dask.array as da
 
-from ...layers.base import Layer
+from ....layers.base import Layer
 from ._config import async_config
 from ._request import ChunkRequest
 from ._utils import StatWindow

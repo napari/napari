@@ -1,6 +1,5 @@
 import numpy as np
 
-from ..components.chunk._commands import LoaderCommands
 from ..utils.events import EmitterGroup, Event
 from ..utils.key_bindings import KeymapHandler, KeymapProvider
 from ..utils.theme import palettes
@@ -478,9 +477,20 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         layer.translate_grid = translate
 
     @property
-    def loader(self):
-        """Loader commands for IPython console.
+    def experimental(self):
+        """Experimental commands for IPython console.
 
-        For example run "viewer.loader.help" or "viewer.loader.layers".
+        For example run "viewer.experimental.loader.help".
         """
+        return ExperimentalCommands(self.layers)
+
+
+class ExperimentalCommands:
+    def __init__(self, layers):
+        self.layers = layers
+
+    @property
+    def loader(self):
+        from ..components.experimental.chunk._commands import LoaderCommands
+
         return LoaderCommands(self.layers)

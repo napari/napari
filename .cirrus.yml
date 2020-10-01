@@ -28,9 +28,6 @@ linux_task:
   
   matrix:
     env:
-      PY_VER: "3.6"
-      PYTEST_FLAGS: ""
-    env:
       PY_VER: "3.7"
       PYTEST_FLAGS: ""
     env:
@@ -117,7 +114,6 @@ mac_task:
     - only_if: $CIRRUS_PR == ""
       env:
         matrix:
-          PY_VER: "3.6"
           PY_VER: "3.7"
           PY_VER: "3.8"
     # is a pull request, only run python 3.8
@@ -168,7 +164,6 @@ win_task:
     - only_if: $CIRRUS_PR == ""
       env:
         matrix:
-          PY_VER: "3.6"
           PY_VER: "3.7"
           PY_VER: "3.8"
     # is a pull request, only run python 3.8
