@@ -7,21 +7,19 @@ from ..utils.layer_utils import dataframe_to_properties
 
 
 def connex(vertices: np.ndarray) -> list:
-    """ connection array to build vertex edges for vispy LineVisual
+    """Connection array to build vertex edges for vispy LineVisual.
 
-    Notes:
-        http://api.vispy.org/en/latest/
-        visuals.html?highlight=visuals%20line#vispy.visuals.LineVisual
+    Notes
+    -----
+    See
+    http://api.vispy.org/en/latest/visuals.html#vispy.visuals.LineVisual
 
     """
     return [True] * (vertices.shape[0] - 1) + [False]
 
 
 class TrackManager:
-    """ TrackManager
-
-    Class to manage the track data and simplify interactions with the Tracks
-    layer.
+    """Manage track data and simplify interactions with the Tracks layer.
 
     Attributes
     ----------
@@ -175,7 +173,9 @@ class TrackManager:
         if data.shape[1] < 4 or data.shape[1] > 5:
             raise ValueError('track vertices should be 4 or 5-dimensional')
 
-        if not all([idx.is_integer() for idx in data[:, 0].tolist()]):
+        # check that all IDs are integers
+        ids = data[:, 0]
+        if not np.all(np.floor(ids) == ids):
             raise ValueError('track id must be an integer')
 
         if not all([t >= 0 for t in data[:, 1]]):
@@ -206,7 +206,9 @@ class TrackManager:
 
         return properties
 
-    def _validate_track_graph(self, graph: Dict[int, list]) -> Dict[int, list]:
+    def _validate_track_graph(
+        self, graph: Dict[int, Union[int, List[int]]]
+    ) -> Dict[int, List[int]]:
         """ validate the track graph """
 
         # check that graph nodes are of correct format
@@ -217,7 +219,7 @@ class TrackManager:
 
         # check that graph nodes exist in the track id lookup
         for node_idx, parents_idx in graph.items():
-            nodes = [node_idx] + graph[node_idx]
+            nodes = [node_idx] + parents_idx
             for node in nodes:
                 if node not in self.unique_track_ids:
                     raise ValueError(f'graph node {node_idx} not found')
@@ -247,7 +249,6 @@ class TrackManager:
         self._points_id = np.array(points_id)[self._ordered_points_idx]
         self._track_vertices = np.concatenate(track_vertices, axis=0)
         self._track_connex = np.concatenate(track_connex, axis=0)
-        # print(f'updated data: {self._track_vertices.shape}')
 
     def build_graph(self):
         """ build the track graph """
@@ -283,7 +284,7 @@ class TrackManager:
         """ return the properties of tracks by vertex """
 
         if color_by not in self.properties:
-            raise ValueError(f'Property {color_by} type not found')
+            raise ValueError(f'Property {color_by} not found')
 
         return self.properties[color_by]
 
