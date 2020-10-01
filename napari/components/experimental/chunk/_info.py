@@ -3,7 +3,7 @@
 import logging
 import weakref
 
-from ...layers.base import Layer
+from ....layers.base import Layer
 
 LOGGER = logging.getLogger("napari.async")
 

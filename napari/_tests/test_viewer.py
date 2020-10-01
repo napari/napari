@@ -4,7 +4,7 @@ import time
 import numpy as np
 import pytest
 
-from napari import Viewer
+from napari import Viewer, layers
 from napari._tests.utils import (
     add_layer_by_type,
     check_view_transform_consistency,
@@ -180,6 +180,9 @@ def test_roll_traspose_update(make_test_viewer, layer_class, data, ndim):
     }
     for k, val in transf_dict.items():
         setattr(layer, k, val)
+
+    if layer_class in [layers.Image, layers.Labels]:
+        transf_dict['translate'] -= transf_dict['scale'] / 2
 
     # Check consistency:
     check_view_transform_consistency(layer, viewer, transf_dict)

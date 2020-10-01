@@ -1,4 +1,4 @@
-"""ChunkRequest is passed to ChunkLoader.load_chunks().
+"""ChunkKey and ChunkRequest classes.
 """
 import contextlib
 import logging
@@ -6,9 +6,9 @@ from typing import Optional, Tuple
 
 import numpy as np
 
-from ...layers.base.base import Layer
-from ...types import ArrayLike, Dict
-from ...utils.perf import block_timer
+from ....layers.base.base import Layer
+from ....types import ArrayLike, Dict
+from ....utils.perf import block_timer
 from ._utils import get_data_id
 
 LOGGER = logging.getLogger("napari.async")

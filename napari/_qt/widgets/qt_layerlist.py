@@ -1,5 +1,8 @@
+import os
+from typing import TYPE_CHECKING, Optional
+
 import numpy as np
-from qtpy.QtCore import QMimeData, Qt, QTimer
+from qtpy.QtCore import QMimeData, QObject, Qt, QTimer
 from qtpy.QtGui import QDrag, QImage, QPixmap
 from qtpy.QtWidgets import (
     QApplication,
@@ -14,7 +17,31 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ..qt_chunk_receiver import QtChunkReceiver
+_use_async = os.getenv("NAPARI_ASYNC", "0") != "0"
+
+if TYPE_CHECKING:
+    from ..experimental.qt_chunk_receiver import QtChunkReceiver
+
+
+def _create_chunk_receiver(parent: QObject) -> 'Optional[QtChunkReceiver]':
+    """Return a QtChunkReceiver or None if not using async.
+
+    Attributes
+    ----------
+    parent : QObject
+        Parent of the chunk receiver.
+
+    Return
+    ------
+    Optional[QtChunkReceiver]
+        The QtChunkReceiver instance to use.
+    """
+    if _use_async:
+        from ..experimental.qt_chunk_receiver import QtChunkReceiver
+
+        return QtChunkReceiver(parent)
+    else:
+        return None
 
 
 class QtLayerList(QScrollArea):
@@ -69,7 +96,7 @@ class QtLayerList(QScrollArea):
         self._drag_start_position = np.zeros(2)
         self._drag_name = None
 
-        self.chunk_receiver = QtChunkReceiver(self)
+        self.chunk_receiver = _create_chunk_receiver(self)
 
     def _add(self, event):
         """Insert widget for layer `event.item` at index `event.index`.
@@ -652,4 +679,5 @@ class QtLayerWidget(QFrame):
 
     def close(self):
         """Viewer is closing."""
-        self.chunk_receiver.close()
+        if self.chunk_receiver is not None:
+            self.chunk_receiver.close()
