@@ -4,7 +4,7 @@ import logging
 import weakref
 from enum import Enum
 
-from ...layers.base import Layer
+from ....layers.base import Layer
 from ._config import async_config
 from ._request import ChunkRequest
 from ._utils import StatWindow
