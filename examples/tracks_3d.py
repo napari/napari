@@ -15,7 +15,7 @@ def tracks_3d(num_tracks = 10):
     for track_id in range(num_tracks):
 
         # space to store the track data and properties
-        track = np.zeros((200, 9), dtype=np.float32)
+        track = np.zeros((200, 10), dtype=np.float32)
 
         # time
         timestamps = np.arange(track.shape[0])
@@ -33,31 +33,34 @@ def tracks_3d(num_tracks = 10):
         gx = np.gradient(track[:, 4])
 
         speed = np.sqrt(gx**2 + gy**2 + gz**2)
+        distance = np.sqrt(x**2 + y**2 + z**2)
 
         track[:, 5] = gz
         track[:, 6] = gy
         track[:, 7] = gx
         track[:, 8] = speed
+        track[:, 9] = distance
 
         tracks.append(track)
 
 
     tracks = np.concatenate(tracks, axis=0)
-    data = tracks[:,:5] # just the coordinate data
+    data = tracks[:, :5] # just the coordinate data
 
     properties = {'time': tracks[:, 1],
                   'gradient_z': tracks[:, 5],
                   'gradient_y': tracks[:, 6],
                   'gradient_x': tracks[:, 7],
-                  'speed': tracks[:, 8],}
+                  'speed': tracks[:, 8],
+                  'distance': tracks[:, 9]}
 
     graph = {}
     return data, properties, graph
 
-tracks, properties, graph = tracks_3d(num_tracks=1000)
+tracks, properties, graph = tracks_3d(num_tracks=100)
 vertices = tracks[:, 1:]
 
 with napari.gui_qt():
     viewer = napari.Viewer()
     viewer.add_points(vertices, size=1, name='points', opacity=0.3)
-    viewer.add_tracks(tracks, properties=properties, graph=graph, name='tracks')
+    viewer.add_tracks(tracks, properties=properties, name='tracks')

@@ -50,4 +50,4 @@ vertices = tracks[:, 1:]
 with napari.gui_qt():
     viewer = napari.Viewer()
     viewer.add_points(vertices, size=1, name='points', opacity=0.3)
-    viewer.add_tracks(tracks, properties=properties, graph=graph, name='tracks')
+    viewer.add_tracks(tracks, properties=properties, name='tracks')

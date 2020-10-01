@@ -1,5 +1,5 @@
-# import pytest
 import numpy as np
+import pytest
 
 from napari.layers import Tracks
 
@@ -71,28 +71,27 @@ def test_track_layer_reset_data():
     assert layer.graph == {}
 
 
-# @pytest.mark.xfail(strict=True)
-# def test_malformed_id():
-#     """Test for malformed track ID."""
-#     data = np.random.random((100, 4))
-#     data[:, 1] = np.arange(100)
-#     Tracks(data)
-#
-#
-#
-# @pytest.mark.xfail(strict=True)
-# def test_malformed_timestamps():
-#     """Test for malformed track timestamps."""
-#     data = np.random.random((100, 4))
-#     data[:, 0] = 0
-#     Tracks(data)
-#
-#
-# @pytest.mark.xfail(strict=True)
-# def test_malformed_graph():
-#     """Test for malformed graph."""
-#     data = np.zeros((100, 4))
-#     data[:, 1] = np.arange(100)
-#     data[50:, 0] = 1
-#     graph = {1: [0], 2: [33]}
-#     Tracks(data, graph=graph)
+def test_malformed_id():
+    """Test for malformed track ID."""
+    data = np.random.random((100, 4))
+    data[:, 1] = np.arange(100)
+    with pytest.raises(ValueError):
+        Tracks(data)
+
+
+def test_malformed_timestamps():
+    """Test for malformed track timestamps."""
+    data = np.random.random((100, 4))
+    data[:, 0] = 0
+    with pytest.raises(ValueError):
+        Tracks(data)
+
+
+def test_malformed_graph():
+    """Test for malformed graph."""
+    data = np.zeros((100, 4))
+    data[:, 1] = np.arange(100)
+    data[50:, 0] = 1
+    graph = {1: [0], 2: [33]}
+    with pytest.raises(ValueError):
+        Tracks(data, graph=graph)
