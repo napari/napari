@@ -813,7 +813,7 @@ class AddLayersMixin:
             splitting, or more than one (the track has multiple parents, but
             only one child) in the case of track merging.
         color_by: str
-            track property (from property keys) to color vertices by
+            Track property (from property keys) by which to color vertices.
         tail_width : float
             Width of the track tails in pixels.
         tail_length : float

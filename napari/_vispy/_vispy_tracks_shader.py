@@ -37,7 +37,7 @@ class TrackShader(Filter):
      finished but is still within the 'tail_length' window. Should it
      disappear?
     - check the shader positioning within the GL pipeline, currently
-     overides layer opacity settings
+     overrides layer opacity settings
 
     vertex_mask: 1D array, list
         a vector describing whether to mask each vertex

@@ -8,7 +8,7 @@ def _circle(r, theta):
 
 
 def tracks_2d(num_tracks = 10):
-    """ create 3d+t track data """
+    """ create 2d+t track data """
     tracks = []
 
     for track_id in range(num_tracks):

@@ -8,7 +8,7 @@ def _circle(r, theta):
 
 
 def tracks_3d_merge_split():
-    """ create tracks with splitting and merging """
+    """Create tracks with splitting and merging."""
 
     timestamps = np.arange(300)
 
