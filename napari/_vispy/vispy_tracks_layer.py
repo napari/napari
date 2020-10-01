@@ -87,7 +87,6 @@ class VispyTracksLayer(VispyBaseLayer):
             width=self.layer.tail_width, color=self.layer.track_colors,
         )
         self.node._subvisuals[2].set_data(width=self.layer.tail_width,)
-        self.node.update()
 
     def _on_tracks_change(self, event=None):
         """ update the shader when the track data changes """
@@ -103,7 +102,7 @@ class VispyTracksLayer(VispyBaseLayer):
             width=self.layer.tail_width,
             color=self.layer.track_colors,
         )
-        self.node.update()
+
         # Call to update order of translation values with new dims:
         self._on_scale_change()
         self._on_translate_change()
@@ -130,7 +129,7 @@ class VispyTracksLayer(VispyBaseLayer):
             width=self.layer.tail_width,
             color='white',
         )
-        self.node.update()
+
         # Call to update order of translation values with new dims:
         self._on_scale_change()
         self._on_translate_change()

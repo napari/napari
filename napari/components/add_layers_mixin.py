@@ -785,7 +785,6 @@ class AddLayersMixin:
         graph=None,
         tail_width=2,
         tail_length=30,
-        n_dimensional=True,
         name=None,
         metadata=None,
         scale=None,
@@ -802,16 +801,19 @@ class AddLayersMixin:
         Parameters
         ----------
         data : array (N, D+1)
-            Coordinates for N points in D+1 dimensions. ID,T,(Z),Y,X. The first axis is the integer ID of the track. D is either 3 or 4 for planar or volumetric timeseries respectively.
+            Coordinates for N points in D+1 dimensions. ID,T,(Z),Y,X. The first
+            axis is the integer ID of the track. D is either 3 or 4 for planar
+            or volumetric timeseries respectively.
         properties : dict {str: array (N,)}, DataFrame
             Properties for each point. Each property should be an array of length N,
             where N is the number of points.
         graph : dict {int: list}
-            Graph representing track edges. Dictionary defines the mapping between
-            a track ID and the parents of the track. This can be one (the track
-            has one parent, and the parent has >=1 child) in the case of track
-            splitting, or more than one (the track has multiple parents, but
-            only one child) in the case of track merging.
+            Graph representing associations between tracks. Dictionary defines the
+            mapping between a track ID and the parents of the track. This can be
+            one (the track has one parent, and the parent has >=1 child) in the
+            case of track splitting, or more than one (the track has multiple
+            parents, but only one child) in the case of track merging.
+            See examples/tracks_3d_with_graph.py
         color_by: str
             Track property (from property keys) by which to color vertices.
         tail_width : float
@@ -823,8 +825,9 @@ class AddLayersMixin:
             relating to specified properties can be passed to the layer via
             colormaps_dict.
         colormaps_dict : dict {str: napari.utils.Colormap}
-            Optional dictionary of colormap objects to use for coloring by track
-            properties.
+            Optional dictionary mapping each property to a colormap for that
+            property. This allows each property to be assigned a specific colormap,
+            rather than having a global colormap for everything.
         name : str
             Name of the layer.
         metadata : dict
@@ -854,7 +857,6 @@ class AddLayersMixin:
             graph=graph,
             tail_width=tail_width,
             tail_length=tail_length,
-            n_dimensional=n_dimensional,
             name=name,
             metadata=metadata,
             scale=scale,

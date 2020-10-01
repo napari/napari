@@ -18,19 +18,22 @@ class Tracks(Layer):
 
     Parameters
     ----------
-    data : array (N, D)
-        Coordinates for N points in D dimensions. ID,T,(Z),Y,X
+    data : array (N, D+1)
+        Coordinates for N points in D+1 dimensions. ID,T,(Z),Y,X. The first
+        axis is the integer ID of the track. D is either 3 or 4 for planar
+        or volumetric timeseries respectively.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each point. Each property should be an array of length N,
         where N is the number of points.
     graph : dict {int: list}
-        Graph representing track edges. Dictionary defines the mapping between
-        a track ID and the parents of the track. This can be one (the track
-        has one parent, and the parent has >=1 child) in the case of track
-        splitting, or more than one (the track has multiple parents, but
-        only one child) in the case of track merging.
+        Graph representing associations between tracks. Dictionary defines the
+        mapping between a track ID and the parents of the track. This can be
+        one (the track has one parent, and the parent has >=1 child) in the
+        case of track splitting, or more than one (the track has multiple
+        parents, but only one child) in the case of track merging.
+        See examples/tracks_3d_with_graph.py
     color_by: str
-        track property (from property keys) to color vertices by
+        Track property (from property keys) by which to color vertices.
     tail_width : float
         Width of the track tails in pixels.
     tail_length : float
@@ -40,8 +43,9 @@ class Tracks(Layer):
         relating to specified properties can be passed to the layer via
         colormaps_dict.
     colormaps_dict : dict {str: napari.utils.Colormap}
-        Optional dictionary of colormap objects to use for coloring by track
-        properties.
+        Optional dictionary mapping each property to a colormap for that
+        property. This allows each property to be assigned a specific colormap,
+        rather than having a global colormap for everything.
     name : str
         Name of the layer.
     metadata : dict
@@ -59,6 +63,7 @@ class Tracks(Layer):
     visible : bool
         Whether the layer visual is currently being displayed.
 
+
     """
 
     # The max number of tracks that will ever be used to render the thumbnail
@@ -73,7 +78,6 @@ class Tracks(Layer):
         graph=None,
         tail_width=2,
         tail_length=30,
-        n_dimensional=True,
         name=None,
         metadata=None,
         scale=None,
@@ -111,7 +115,6 @@ class Tracks(Layer):
             display_id=Event,
             display_tail=Event,
             display_graph=Event,
-            n_dimensional=Event,
             color_by=Event,
             colormap=Event,
             properties=Event,
@@ -180,7 +183,6 @@ class Tracks(Layer):
         state = self._get_base_state()
         state.update(
             {
-                'n_dimensional': self.n_dimensional,
                 'data': self.data,
                 'properties': self.properties,
                 'graph': self.graph,
@@ -266,13 +268,7 @@ class Tracks(Layer):
         return self._pad_display_data(self._manager.graph_vertices)
 
     def _pad_display_data(self, vertices):
-        """ pad display data when moving between 2d and 3d
-
-        NOTES:
-            2d data is transposed yx
-            3d data is zyxt
-
-        """
+        """ pad display data when moving between 2d and 3d """
         if vertices is None:
             return
 
@@ -281,11 +277,9 @@ class Tracks(Layer):
         # with zeros
         if self.dims.ndisplay == 2:
             data = np.pad(data, ((0, 0), (0, 1)), 'constant')
-            data = data[:, (1, 0, 2)]  # y, x, z -> x, y, z
+            return data[:, (1, 0, 2)]  # y, x, z -> x, y, z
         else:
-            data = data[:, (2, 1, 0)]  # z, y, x -> x, y, z
-
-        return data
+            return data[:, (2, 1, 0)]  # z, y, x -> x, y, z
 
     @property
     def current_time(self):
@@ -308,7 +302,7 @@ class Tracks(Layer):
 
     @property
     def data(self) -> np.ndarray:
-        """(N, D) array: coordinates for N points in D dimensions."""
+        """ array (N, D+1): Coordinates for N points in D+1 dimensions. """
         return self._manager.data
 
     @data.setter
@@ -334,7 +328,7 @@ class Tracks(Layer):
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
-        """ return the list of track properties """
+        """dict {str: np.ndarray (N,)}, DataFrame: Properties for each track."""
         return self._manager.properties
 
     @property
@@ -350,12 +344,13 @@ class Tracks(Layer):
         self.events.color_by()
 
     @property
-    def graph(self) -> list:
-        """ return the graph """
+    def graph(self) -> Dict[int, Union[int, List[int]]]:
+        """dict {int: list}: Graph representing associations between tracks."""
         return self._manager.graph
 
     @graph.setter
-    def graph(self, graph: dict):
+    def graph(self, graph: Dict[int, Union[int, List[int]]]):
+        """ Set the track graph. """
         self._manager.graph = graph
         self._manager.build_graph()
         self.events.rebuild_graph()
@@ -369,7 +364,6 @@ class Tracks(Layer):
     def tail_width(self, tail_width: Union[int, float]):
         self._tail_width = tail_width
         self.events.tail_width()
-        # self.refresh()
         self.status = format_float(self.tail_width)
 
     @property
@@ -381,7 +375,6 @@ class Tracks(Layer):
     def tail_length(self, tail_length: Union[int, float]):
         self._tail_length = tail_length
         self.events.tail_length()
-        # self.refresh()
         self.status = format_float(self.tail_length)
 
     @property
@@ -404,7 +397,6 @@ class Tracks(Layer):
     def display_tail(self, value: bool):
         self._display_tail = value
         self.events.display_tail()
-        # self.refresh()
 
     @property
     def display_graph(self) -> bool:
@@ -415,7 +407,6 @@ class Tracks(Layer):
     def display_graph(self, value: bool):
         self._display_graph = value
         self.events.display_graph()
-        # self.refresh()
 
     @property
     def color_by(self) -> str:
@@ -443,7 +434,6 @@ class Tracks(Layer):
         self._colormap = colormap
         self._recolor_tracks()
         self.events.colormap()
-        # self.refresh()
 
     @property
     def colormaps_dict(self) -> Dict[str, Colormap]:

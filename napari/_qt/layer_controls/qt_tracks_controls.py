@@ -39,6 +39,7 @@ class QtTracksControls(QtLayerControls):
         # combo box for track coloring, we can get these from the properties
         # keys
         self.color_by_combobox = QComboBox()
+        self.color_by_combobox.addItems(self.layer.properties_to_color_by)
         self.colormap_combobox = QComboBox()
         self.colormap_combobox.addItems(AVAILABLE_COLORMAPS.keys())
 

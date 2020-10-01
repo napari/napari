@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, List, Union
 
 import numpy as np
 from scipy.sparse import coo_matrix
@@ -24,19 +24,22 @@ class TrackManager:
 
     Attributes
     ----------
-    data : array (N, D)
-        Coordinates for N points in D dimensions. ID,T,(Z),Y,X
+    data : array (N, D+1)
+        Coordinates for N points in D+1 dimensions. ID,T,(Z),Y,X. The first
+        axis is the integer ID of the track. D is either 3 or 4 for planar
+        or volumetric timeseries respectively.
     properties : dict {str: array (N,)}, DataFrame
-        Properties for each point. Each property should be an array of
-        length N, where N is the number of points.
+        Properties for each point. Each property should be an array of length N,
+        where N is the number of points.
     graph : dict {int: list}
-        Graph representing track edges. Dictionary defines the mapping between
-        a track ID and the parents of the track. This can be one (the track
-        has one parent, and the parent has >=1 child) in the case of track
-        splitting, or more than one (the track has multiple parents, but
-        only one child) in the case of track merging.
+        Graph representing associations between tracks. Dictionary defines the
+        mapping between a track ID and the parents of the track. This can be
+        one (the track has one parent, and the parent has >=1 child) in the
+        case of track splitting, or more than one (the track has multiple
+        parents, but only one child) in the case of track merging.
+        See examples/tracks_3d_with_graph.py
     ndim : int
-        Number of spatiotemporal dimensions of the data
+        Number of spatiotemporal dimensions of the data.
     max_time: float, int
         Maximum value of timestamps in data.
     track_vertices : array (N, D)
@@ -90,7 +93,7 @@ class TrackManager:
 
     @property
     def data(self) -> np.ndarray:
-        """(N, D) array: coordinates for N points in D dimensions."""
+        """ array (N, D+1): Coordinates for N points in D+1 dimensions. """
         return self._data
 
     @data.setter
@@ -132,7 +135,7 @@ class TrackManager:
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
-        """dict {str: np.ndarray (N,)}, DataFrame: properties for each track"""
+        """dict {str: np.ndarray (N,)}, DataFrame: Properties for each track."""
         return self._properties
 
     @properties.setter
@@ -148,12 +151,12 @@ class TrackManager:
         self._properties = self._validate_track_properties(properties)
 
     @property
-    def graph(self) -> Dict[str, list]:
-        """ dict {str: list}, graph representation of tracks """
+    def graph(self) -> Dict[int, Union[int, List[int]]]:
+        """dict {int: list}: Graph representing associations between tracks."""
         return self._graph
 
     @graph.setter
-    def graph(self, graph: Dict[str, list]):
+    def graph(self, graph: Dict[int, Union[int, List[int]]]):
         """ set the track graph """
         self._graph = self._validate_track_graph(graph)
 
