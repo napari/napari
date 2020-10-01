@@ -1,4 +1,5 @@
 import os
+from typing import TYPE_CHECKING, Optional
 
 import numpy as np
 from qtpy.QtCore import QMimeData, QObject, Qt, QTimer
@@ -18,8 +19,11 @@ from qtpy.QtWidgets import (
 
 _use_async = os.getenv("NAPARI_ASYNC", "0") != "0"
 
+if TYPE_CHECKING:
+    from ..experimental.qt_chunk_receiver import QtChunkReceiver
 
-def _create_chunk_receiver(parent: QObject):
+
+def _create_chunk_receiver(parent: QObject) -> 'Optional[QtChunkReceiver]':
     """Return a QtChunkReceiver or None if not using async.
 
     Attributes
