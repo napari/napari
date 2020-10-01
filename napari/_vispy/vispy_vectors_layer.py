@@ -22,7 +22,7 @@ class VispyVectorsLayer(VispyBaseLayer):
             faces = np.array([[0, 1, 2]])
             face_color = np.array([[0, 0, 0, 0]])
         else:
-            vertices = self.layer._view_vertices[:, ::-1] + 0.5
+            vertices = self.layer._view_vertices[:, ::-1]
             faces = self.layer._view_faces
             face_color = self.layer._view_face_color
 
