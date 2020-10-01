@@ -21,6 +21,7 @@ class VispyImageLayer(VispyBaseLayer):
         self._image_node = ImageNode(None, method='auto')
         self._volume_node = VolumeNode(np.zeros((1, 1, 1)), clim=[0, 1])
         super().__init__(layer, self._image_node)
+        self._array_like = True
 
         self.layer.events.rendering.connect(self._on_rendering_change)
         self.layer.events.interpolation.connect(self._on_interpolation_change)
