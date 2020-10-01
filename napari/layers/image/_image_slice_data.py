@@ -7,7 +7,6 @@ import numpy as np
 
 from ...types import ArrayLike
 from ..base import Layer
-from ._image_utils import guess_rgb
 
 LOGGER = logging.getLogger("napari.async")
 
@@ -58,7 +57,3 @@ class ImageSliceData:
 
         if self.thumbnail_source is not None:
             self.thumbnail_source = self.thumbnail_source.transpose(order)
-
-    @property
-    def rgb(self) -> bool:
-        return guess_rgb(self.image.shape)

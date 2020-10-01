@@ -606,7 +606,7 @@ class Image(IntensityVisualizationMixin, Layer):
         data = SliceDataClass(self, image_indices, image, thumbnail_source)
         self._load_slice(data)
 
-    def _load_slice(self, data: ImageSliceData):
+    def _load_slice(self, data: SliceDataClass):
         """Load the image and maybe thumbnail source.
 
         Parameters
@@ -621,7 +621,7 @@ class Image(IntensityVisualizationMixin, Layer):
             # property is now false, since the load is in progress.
             self.events.loaded()
 
-    def _on_data_loaded(self, data: ImageSliceData, sync: bool) -> None:
+    def _on_data_loaded(self, data: SliceDataClass, sync: bool) -> None:
         """The given data a was loaded, use it now.
 
         This routine is called synchronously from _load_async() above, or
@@ -638,14 +638,6 @@ class Image(IntensityVisualizationMixin, Layer):
         # Transpose after the load.
         data.transpose(self._get_order())
 
-        # The shape of the array after we loaded it was "wrong" in that it
-        # didn't match the rgb flag that the user specified (or we inferred?).
-        # TODO_ASYNC: do something sooner so this check is not required?
-        if self.rgb != data.rgb:
-            raise ValueError(
-                "Loaded chunk was the wrong shape, was rgb set correctly?"
-            )
-
         # Pass the loaded data to the slice.
         if not self._slice.on_loaded(data):
             # Slice rejected it, was it for the wrong indices?
@@ -661,6 +653,7 @@ class Image(IntensityVisualizationMixin, Layer):
         self.events.loaded()
 
         if not sync:
+            print("would refresh after: ", data.request.key)
             # TODO_ASYNC: Avoid calling self.refresh(), because it would
             # call our _set_view_slice(). Do we need a "refresh without
             # set_view_slice()" method that we can call?
