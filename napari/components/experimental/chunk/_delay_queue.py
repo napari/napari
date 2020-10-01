@@ -6,7 +6,7 @@ import time
 from collections import namedtuple
 from typing import List, Optional
 
-from ...utils.perf import add_counter_event
+from ....utils.perf import add_counter_event
 
 LOGGER = logging.getLogger("ChunkLoader")
 

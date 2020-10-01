@@ -24,7 +24,7 @@ We're working on [tutorials](https://napari.org/tutorials/), but you can also qu
 ### from pip, with "batteries included"
 
 napari can be installed on most macOS, Linux, and Windows systems with
-Python 3.6, 3.7 and 3.8 using pip:
+Python 3.7 and 3.8 using pip:
 
 ```sh
 pip install napari[all]
