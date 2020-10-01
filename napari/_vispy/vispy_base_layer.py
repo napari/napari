@@ -213,11 +213,8 @@ class VispyBaseLayer(ABC):
         nd = self.layer.dims.ndisplay
         # Find image coordinate of top left canvas pixel
         if self.node.canvas is not None:
-            offset = self.translate[:nd] / self.scale[:nd]
-            tl_raw = np.floor(self._transform_position([0, 0]) + offset[::-1])
-            br_raw = np.ceil(
-                self._transform_position(self.node.canvas.size) + offset[::-1]
-            )
+            tl_raw = np.floor(self._transform_position([0, 0]))
+            br_raw = np.ceil(self._transform_position(self.node.canvas.size))
         else:
             tl_raw = [0] * nd
             br_raw = [1] * nd
