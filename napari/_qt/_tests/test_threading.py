@@ -24,19 +24,35 @@ def test_as_generator_function():
 def test_thread_worker(qtbot):
     """Test basic threadworker on a function"""
 
+    func_val = [0]
+    test_val = [0]
+
     def func():
+        func_val[0] = 1
         return 1
 
     def test(v):
+        test_val[0] = 1
         assert v == 1
 
-    thread_func = qthreading.thread_worker(func, connect={'returned': test})
+    thread_func = qthreading.thread_worker(
+        func, connect={'returned': test}, start_thread=False
+    )
     worker = thread_func()
     assert isinstance(worker, qthreading.FunctionWorker)
+    assert func_val[0] == 0
+    with qtbot.waitSignal(worker.finished):
+        worker.start()
+    assert func_val[0] == 1
+    assert test_val[0] == 1
+    assert worker.is_running is False
 
 
 def test_thread_generator_worker(qtbot):
     """Test basic threadworker on a generator"""
+
+    yeld_val = [0]
+    test_val = [0]
 
     def func():
         yield 1
@@ -44,20 +60,30 @@ def test_thread_generator_worker(qtbot):
         return 3
 
     def test_return(v):
+        yeld_val[0] = 1
         assert v == 3
 
     def test_yield(v):
+        test_val[0] = 1
         assert v == 1
 
     thread_func = qthreading.thread_worker(
-        func, connect={'returned': test_return, 'yielded': test_yield}
+        func,
+        connect={'returned': test_return, 'yielded': test_yield},
+        start_thread=False,
     )
     worker = thread_func()
     assert isinstance(worker, qthreading.GeneratorWorker)
+    with qtbot.waitSignal(worker.finished):
+        worker.start()
+    assert test_val[0] == 1
+    assert yeld_val[0] == 1
 
 
 def test_thread_raises(qtbot):
     """Test exceptions get returned to main thread"""
+
+    handle_val = [0]
 
     def func():
         yield 1
@@ -65,33 +91,47 @@ def test_thread_raises(qtbot):
         raise ValueError('whoops')
 
     def handle_raise(e):
+        handle_val[0] = 1
         assert isinstance(e, ValueError)
         assert str(e) == 'whoops'
 
     thread_func = qthreading.thread_worker(
-        func, connect={'errored': handle_raise}
+        func, connect={'errored': handle_raise}, start_thread=False
     )
     worker = thread_func()
     assert isinstance(worker, qthreading.GeneratorWorker)
+    with qtbot.waitSignal(worker.finished):
+        worker.start()
+    assert handle_val[0] == 1
 
 
 def test_multiple_connections(qtbot):
     """Test the connect dict accepts a list of functions, and type checks"""
 
+    test1_val = [0]
+    test2_val = [0]
+
     def func():
         return 1
 
     def test1(v):
+        test1_val[0] = 1
         assert v == 1
 
     def test2(v):
+        test2_val[0] = 1
         assert v == 1
 
     thread_func = qthreading.thread_worker(
-        func, connect={'returned': [test1, test2]}
+        func, connect={'returned': [test1, test2]}, start_thread=False
     )
     worker = thread_func()
     assert isinstance(worker, qthreading.FunctionWorker)
+    with qtbot.waitSignal(worker.finished):
+        worker.start()
+
+    assert test1_val[0] == 1
+    assert test2_val[0] == 1
 
     # they must all be functions
     with pytest.raises(TypeError):

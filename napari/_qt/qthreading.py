@@ -115,7 +115,9 @@ class WorkerBase(QRunnable):
             result = self.work()
             self.returned.emit(result)
         except Exception as exc:
+            self._running = False
             self.errored.emit(exc)
+        self._running = False
         self.finished.emit()
 
     def work(self):
