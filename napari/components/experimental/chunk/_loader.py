@@ -48,7 +48,7 @@ class ChunkLoader:
     synchronous : bool
         If True all requests are loaded synchronously.
     num_workers : int
-        The number of worker threads or processes.
+        The number of worker threads.
     executor : ThreadPoolExecutor
         Our thread pool executor.
     futures : Dict[int, List[Future]]
