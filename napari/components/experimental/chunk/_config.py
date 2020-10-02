@@ -1,4 +1,4 @@
-"""AsyncConfig to configure asynchronous loading and the ChunkLoader.
+"""AsyncConfig.
 """
 import errno
 import json
@@ -7,15 +7,16 @@ import os
 from collections import namedtuple
 from pathlib import Path
 
-LOGGER = logging.getLogger("ChunkLoader")
+LOGGER = logging.getLogger("napari.async")
 
-# Use NAPARI_ASYNC to enable or configure async.
+# NAPARI_ASYNC is the main environment variable to turn on async.
 ASYNC_ENV_VAR = "NAPARI_ASYNC"
 
-# NAPARI_ASYNC=0 or missing config will use these settings:
+# NAPARI_ASYNC=0 will use these settings, although currently with async
+# in experimental this module will not even be imported if NAPARI_ASYNC=0.
 DEFAULT_SYNC_CONFIG = {"synchronous": True}
 
-# NAPARI_ASYNC=1 will use these settings:
+# NAPARI_ASYNC=1 will use these default settings:
 DEFAULT_ASYNC_CONFIG = {
     "log_path": None,
     "synchronous": False,
@@ -24,7 +25,9 @@ DEFAULT_ASYNC_CONFIG = {
     "delay_queue_ms": 100,
 }
 
-# Config settings for ChunkLoader and other async stuff.
+# The sync config settings. It's called AsyncConfig and not
+# ChunkLoaderConfig because async might require settings related to
+# graphics or something else which isn't really ChunkLoader related.
 AsyncConfig = namedtuple(
     "AsyncConfig",
     [
@@ -38,7 +41,7 @@ AsyncConfig = namedtuple(
 
 
 def _log_to_file(path: str) -> None:
-    """Log ChunkLoader log messages to the given file path.
+    """Log "napari.async" messages to the given file.
 
     Parameters
     ----------
@@ -54,13 +57,20 @@ def _log_to_file(path: str) -> None:
 def _load_config(config_path: str) -> dict:
     """Load the JSON formatted config file.
 
+    Parameters
+    ----------
     config_path : str
-        The file path of the JSON file we should load.
-    """
+        The path of the JSON file we should load.
 
+    Return
+    ------
+    dict
+        The parsed data from the JSON file.
+    """
     path = Path(config_path).expanduser()
     if not path.exists():
-        # Example error: "Config file NAPARI_ASYNC=missing-file.json not found"
+        # Produce a nice error message like:
+        #     Config file NAPARI_ASYNC=missing-file.json not found
         raise FileNotFoundError(
             errno.ENOENT,
             f"Config file {ASYNC_ENV_VAR}={path} not found",
@@ -72,7 +82,12 @@ def _load_config(config_path: str) -> dict:
 
 
 def _get_config_data() -> dict:
-    """Return the config data from the user's file or the default.
+    """Return the config data from the user's file or the default data.
+
+    Return
+    ------
+    dict
+        The config data we should use.
     """
     value = os.getenv(ASYNC_ENV_VAR)
 
@@ -85,12 +100,17 @@ def _get_config_data() -> dict:
 
 
 def _create_async_config(data: dict) -> AsyncConfig:
-    """Creates the AsyncConfig object and sets up logging.
+    """Creates the AsyncConfig named tuple and set up logging.
 
     Parameters
     ----------
     data : dict
         The config settings.
+
+    Return
+    ------
+    AsyncConfig
+        The config settings to use.
     """
     config = AsyncConfig(
         data.get("log_path"),
@@ -107,5 +127,5 @@ def _create_async_config(data: dict) -> AsyncConfig:
     return config
 
 
-# The global instance
+# The global config settings instance.
 async_config = _create_async_config(_get_config_data())
