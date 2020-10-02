@@ -1,4 +1,4 @@
-"""ChunkDelayQueue used by the ChunkLoader
+"""DelayQueue class.
 """
 import logging
 import threading
@@ -8,27 +8,41 @@ from typing import List, Optional
 
 from ....utils.perf import add_counter_event
 
-LOGGER = logging.getLogger("ChunkLoader")
+LOGGER = logging.getLogger("napari.async")
 
-# Each queue entry contains 1 request and the time we should submit it.
+# Each queue entry contains the request we are going to submit, and the
+# time in seconds when it should be submitted.
 QueueEntry = namedtuple('QueueEntry', ["request", "submit_time"])
 
 
 class DelayQueue(threading.Thread):
     """A threaded queue that delays request submission.
 
-    We have a DelayQueue because once a worker is handling a request we
-    cannot cancel or abort it. But if the user is rapidly changing slices,
-    requests need to be cancelled often, because the requests for previous
-    slices will quickly become stale.
+    The DelayQueue exists because it's hard to cancel requests which
+    have been given to the thread or process pool. But it's trivial
+    to cancel requests from the DelayQueue.
 
-    We could load those stale requests and just throw away the result, but
-    that will hammer the server with bogus requests, and it would mean
-    there might not be an available worker when the user finally does
-    settle on a slice they want to load.
+    We need to constantly cancel requests while the user is rapidly
+    scrolling through slices. Otherwise we'd very often be loading chunks
+    for slices that were no longer needed.
 
-    So the GUI thread calls DelayQueue.clear() everytime the user switches
-    to a new slice and we trivially clear quests still in this queue.
+    We could just throw away the stale results, but that could generate
+    a lot of unnecessary network traffic and a lot of unnecessary
+    background computation in some cases.
+
+    So the GUI thread calls DelayQueue.clear() every time the user switches
+    to a new slice. This trivially clears the requests still in this queue.
+
+    The net result with much less wasted background effort. And because of
+    this when the user does pause, there are generally resources available
+    to immediately start on that load.
+
+    Parameters
+    ----------
+    delay_seconds : float
+        Delay each request by this many seconds.
+    submit_func
+        Call this function to submit the request.
 
     Attributes
     ----------
@@ -37,7 +51,11 @@ class DelayQueue(threading.Thread):
     submit_func
         Call this function to submit the request.
     entries : List[QueueEntry]
-        The entries in the queue
+        The entries in the queue.
+    lock : threading.Lock
+        Lock access to the self.entires queue.
+    event : threading.Event
+        Event we signal to wake up the worker.
     """
 
     def __init__(self, delay_seconds: float, submit_func):
@@ -45,18 +63,8 @@ class DelayQueue(threading.Thread):
         self.delay_seconds: float = delay_seconds
         self.submit_func = submit_func
 
-        # The entries waiting to be submitted.
         self.entries: List[QueueEntry] = []
-
-        # Lock access to self.entries. If we are careful we can probably rely
-        # on the just the GIL, but it was getting a little complicated because
-        # of the delay, this should be iron clad and not much slower.
         self.lock = threading.Lock()
-
-        # Worker blocks on this if the queue is empty, so it can politely
-        # wait for entries. It seems like maybe threading.Queue could
-        # replace the lock and the event, but again with the delay that was
-        # complicated.
         self.event = threading.Event()
 
         self.start()
@@ -85,9 +93,8 @@ class DelayQueue(threading.Thread):
 
         add_counter_event("delay_queue", entries=num_entries)
 
-        # If the list was previously empty.
         if num_entries == 1:
-            self.event.set()  # Wake up the worker
+            self.event.set()  # The list was empty so wake up the worker.
 
     def clear(self, data_id: int) -> None:
         """Remove any entires for this data_id.
@@ -133,14 +140,6 @@ class DelayQueue(threading.Thread):
 
         Submit all due entires, then sleep or wait on self.event
         for new entries.
-
-        We have a lock since DelayQueue.add() and DelayQueue.clear()
-        can be called out from under us in the GUI thread. We could
-        probably do it without a lock if we were very careful, but
-        this makes it bullet-proof and is probably not much slower.
-
-        It seems like threading.Queue might be suitable here, but it
-        was not obvious how to get the delay working with it.
         """
         while True:
             now = time.time()
