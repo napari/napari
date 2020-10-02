@@ -1,4 +1,4 @@
-"""AsyncConfig class.
+"""AsyncConfig.
 """
 import errno
 import json
