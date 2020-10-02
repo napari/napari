@@ -3,9 +3,8 @@
 import logging
 from typing import Dict, Optional
 
-import numpy as np
-
 from ...._vendor.experimental.cachetools import LRUCache
+from ....types import ArrayLike
 from ._request import ChunkRequest
 
 LOGGER = logging.getLogger("napari.async")
@@ -15,8 +14,15 @@ LOGGER = logging.getLogger("napari.async")
 # a lot more testing.
 CACHE_MEM_FRACTION = 0.1
 
-# A ChunKRequest contains some number of named arrays.
-ChunkArrays = Dict[str, np.ndarray]
+# A ChunkRequest is just a dict of the arrays we need to load. We allow
+# loading multiple arrays in one request so the caller does not have to
+# deal with partial loads, where it has received some arrays but it cannot
+# use them until other arrays have finished loading.
+#
+# The caller is free to use whatever names it wants to organize the arrays,
+# for example "image" and "thumbnail", or spatially neighboring tiles like
+# "tile.1.1", "tile1.2", "tile2.1", "tile2.2".
+ChunkArrays = Dict[str, ArrayLike]
 
 
 def _get_cache_size_bytes(mem_fraction: float) -> int:
@@ -25,12 +31,12 @@ def _get_cache_size_bytes(mem_fraction: float) -> int:
     Parameters
     ----------
     mem_fraction : float
-        Size the cache to be this fraction of RAM, for example 0.5.
+        The cache should use this fraction of RAM, for example 0.5.
 
     Returns
     -------
     int
-        The max number of bytes the cache should be.
+        The max number of bytes the cache should use.
     """
     import psutil
 
@@ -56,15 +62,14 @@ def _getsizeof_chunks(chunks: ChunkArrays) -> int:
 class ChunkCache:
     """Cache of previously loaded chunks.
 
-    Uses a cachetools LRUCache to implement a least recently used cache
+    We use a cachetools LRUCache to implement a least recently used cache
     that will grow in memory usage up to some limit. Then it will free the
     least recently used entries so total usage does not exceed that limit.
 
     TODO_ASYNC:
 
-    1) Should this cache be off by default? For data that is dynamically
-       produced as a result of computation, we probably want caching off
-       since the results could be different with each call.
+    1) For dynamically computed data the cache should be disabled. So
+       should the default be off? Or can we detect dynamic computations?
 
     2) Can we use the Dask cache instead of our own? The problem with having
        two caches is how to manage their sizes? They can't both be 0.5 * RAM
@@ -98,7 +103,7 @@ class ChunkCache:
         self.chunks[request.key.key] = request.chunks
 
     def get_chunks(self, request: ChunkRequest) -> Optional[ChunkArrays]:
-        """If there is cached data for this request, get it.
+        """Return the cached data for this request or None.
 
         Parameters
         ----------
