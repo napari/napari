@@ -16,6 +16,10 @@ SliceTuple = Tuple[Optional[int], Optional[int], Optional[int]]
 
 
 def _flatten(indices):
+    """Return a flat tuple of integers to represent the indices.
+
+    Slice objects are not hashable, so we convert them.
+    """
     result = []
     for x in indices:
         if isinstance(x, slice):
