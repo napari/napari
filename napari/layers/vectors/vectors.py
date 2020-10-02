@@ -1,13 +1,11 @@
 import warnings
 from copy import copy
-from typing import Dict, List, Tuple, Union
+from typing import Dict, Tuple, Union
 
 import numpy as np
-from vispy.color.colormap import Colormap
 
-from ...types import ValidColormapArg
-from ...utils.colormaps import ensure_colormap_tuple
-from ...utils.event import Event
+from ...utils.colormaps import Colormap, ValidColormapArg, ensure_colormap
+from ...utils.events import Event
 from ...utils.status_messages import format_float
 from ..base import Layer
 from ..utils.color_transformations import (
@@ -48,9 +46,8 @@ class Vectors(Layer):
     edge_color_cycle : np.ndarray, list
         Cycle of colors (provided as string name, RGB, or RGBA) to map to edge_color if a
         categorical attribute is used color the vectors.
-    edge_colormap : str, vispy.color.colormap.Colormap
+    edge_colormap : str, napari.utils.Colormap
         Colormap to set vector color if a continuous attribute is used to set edge_color.
-        See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
     edge_contrast_limits : None, (float, float)
         clims for mapping the property to a color map. These are the min and max value
         of the specified property that are mapped to 0 and 1, respectively.
@@ -89,9 +86,8 @@ class Vectors(Layer):
     edge_color_cycle : np.ndarray, list
         Cycle of colors (provided as string name, RGB, or RGBA) to map to edge_color if a
         categorical attribute is used color the vectors.
-    edge_colormap : str, vispy.color.colormap.Colormap
+    edge_colormap : str, napari.utils.Colormap
         Colormap to set vector color if a continuous attribute is used to set edge_color.
-        See vispy docs for details: http://vispy.org/color.html#vispy.color.Colormap
     edge_contrast_limits : None, (float, float)
         clims for mapping the property to a color map. These are the min and max value
         of the specified property that are mapped to 0 and 1, respectively.
@@ -288,7 +284,7 @@ class Vectors(Layer):
                 'edge_width': self.edge_width,
                 'edge_color': self.edge_color,
                 'edge_color_cycle': self.edge_color_cycle,
-                'edge_colormap': self.edge_colormap[0],
+                'edge_colormap': self.edge_colormap.name,
                 'edge_contrast_limits': self.edge_contrast_limits,
                 'data': self.data,
                 'properties': self.properties,
@@ -300,19 +296,24 @@ class Vectors(Layer):
         """Determine number of dimensions of the layer."""
         return self.data.shape[2]
 
-    def _get_extent(self) -> List[Tuple[int, int, int]]:
-        """Determine ranges for slicing given by (min, max, step)."""
+    @property
+    def _extent_data(self) -> np.ndarray:
+        """Extent of layer in data coordinates.
+
+        Returns
+        -------
+        extent_data : array, shape (2, D)
+        """
         if len(self.data) == 0:
-            maxs = np.ones(self.data.shape[2], dtype=int)
-            mins = np.zeros(self.data.shape[2], dtype=int)
+            extrema = np.full((2, self.ndim), np.nan)
         else:
             # Convert from projections to endpoints using the current length
             data = copy(self.data)
             data[:, 1, :] = data[:, 0, :] + self.length * data[:, 1, :]
             maxs = np.max(data, axis=(0, 1))
             mins = np.min(data, axis=(0, 1))
-
-        return [(min, max) for min, max in zip(mins, maxs)]
+            extrema = np.vstack([mins, maxs])
+        return extrema
 
     @property
     def edge_width(self) -> Union[int, float]:
@@ -463,13 +464,13 @@ class Vectors(Layer):
                     ):
                         edge_colors, contrast_limits = map_property(
                             prop=edge_color_properties,
-                            colormap=self.edge_colormap[1],
+                            colormap=self.edge_colormap,
                         )
                         self.edge_contrast_limits = contrast_limits
                     else:
                         edge_colors, _ = map_property(
                             prop=edge_color_properties,
-                            colormap=self.edge_colormap[1],
+                            colormap=self.edge_colormap,
                             contrast_limits=self.edge_contrast_limits,
                         )
                 else:
@@ -563,18 +564,14 @@ class Vectors(Layer):
 
         Returns
         -------
-        colormap_name : str
-            The name of the current colormap.
-        colormap : vispy.color.Colormap
-            The vispy colormap object.
+        colormap : napari.utils.Colormap
+            The Colormap object.
         """
-        return self._edge_colormap_name, self._edge_colormap
+        return self._edge_colormap
 
     @edge_colormap.setter
     def edge_colormap(self, colormap: ValidColormapArg):
-        name, cmap = ensure_colormap_tuple(colormap)
-        self._edge_colormap_name = name
-        self._edge_colormap = cmap
+        self._edge_colormap = ensure_colormap(colormap)
 
     @property
     def edge_contrast_limits(self) -> Tuple[float, float]:
@@ -614,7 +611,7 @@ class Vectors(Layer):
         vertices = self._mesh_vertices
         not_disp = list(self.dims.not_displayed)
         disp = list(self.dims.displayed)
-        indices = np.array(self.dims.indices)
+        indices = np.array(self._slice_indices)
 
         if len(self.data) == 0:
             faces = []
@@ -657,18 +654,13 @@ class Vectors(Layer):
         # calculate min vals for the vertices and pad with 0.5
         # the offset is needed to ensure that the top left corner of the
         # vectors corresponds to the top left corner of the thumbnail
-        offset = (
-            np.array([self.dims.range[d][0] for d in self.dims.displayed])
-            + 0.5
-        )[-2:]
+        de = self._extent_data
+        offset = (np.array([de[0, d] for d in self.dims.displayed]) + 0.5)[-2:]
         # calculate range of values for the vertices and pad with 1
         # padding ensures the entire vector can be represented in the thumbnail
         # without getting clipped
         shape = np.ceil(
-            [
-                self.dims.range[d][1] - self.dims.range[d][0] + 1
-                for d in self.dims.displayed
-            ]
+            [de[1, d] - de[0, d] + 1 for d in self.dims.displayed]
         ).astype(int)[-2:]
         zoom_factor = np.divide(self._thumbnail_shape[:2], shape).min()
 

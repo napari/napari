@@ -4,11 +4,11 @@ import time
 import numpy as np
 import pytest
 
-from napari import Viewer
+from napari import Viewer, layers
 from napari._tests.utils import (
     add_layer_by_type,
-    check_viewer_functioning,
     check_view_transform_consistency,
+    check_viewer_functioning,
     layer_test_data,
 )
 
@@ -39,18 +39,9 @@ def test_viewer(make_test_viewer):
         # skip fullscreen test locally
         if func.__name__ == 'toggle_fullscreen' and not os.getenv("CI"):
             continue
-
-        func(viewer)
-        # the `play` keybinding calls QtDims.play_dim(), which then creates a
-        # new QThread. we must then run the keybinding a second time, which
-        # will call QtDims.stop(), otherwise the thread will be killed at the
-        # end of the test without cleanup, causing a segmentation fault.
-        # (though the tests still pass)
         if func.__name__ == 'play':
-            func(viewer)
-
-    # the test for fullscreen that used to be here has been moved to the
-    # Window.close() method.
+            continue
+        func(viewer)
 
 
 @pytest.mark.run(order=1)  # provided by pytest-ordering
@@ -152,12 +143,21 @@ def test_update(make_test_viewer):
 
 
 def test_changing_theme(make_test_viewer):
-    """Test instantiating viewer."""
+    """Test changing the theme updates the full window."""
     viewer = make_test_viewer()
+    viewer.add_points(data=None)
     assert viewer.palette['folder'] == 'dark'
+
+    screenshot_dark = viewer.screenshot(canvas_only=False)
 
     viewer.theme = 'light'
     assert viewer.palette['folder'] == 'light'
+
+    screenshot_light = viewer.screenshot(canvas_only=False)
+    equal = (screenshot_dark == screenshot_light).min(-1)
+
+    # more than 99.5% of the pixels have changed
+    assert (np.count_nonzero(equal) / equal.size) < 0.05, "Themes too similar"
 
     with pytest.raises(ValueError):
         viewer.theme = 'nonexistent_theme'
@@ -180,6 +180,9 @@ def test_roll_traspose_update(make_test_viewer, layer_class, data, ndim):
     }
     for k, val in transf_dict.items():
         setattr(layer, k, val)
+
+    if layer_class in [layers.Image, layers.Labels]:
+        transf_dict['translate'] -= transf_dict['scale'] / 2
 
     # Check consistency:
     check_view_transform_consistency(layer, viewer, transf_dict)

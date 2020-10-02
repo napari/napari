@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from functools import lru_cache
+
 import numpy as np
 from vispy.app import Canvas
 from vispy.gloo import gl
@@ -46,6 +47,7 @@ class VispyBaseLayer(ABC):
         super().__init__()
 
         self.layer = layer
+        self._array_like = False
         self.node = node
 
         MAX_TEXTURE_SIZE_2D, MAX_TEXTURE_SIZE_3D = get_max_texture_sizes()
@@ -61,6 +63,7 @@ class VispyBaseLayer(ABC):
         self.layer.events.blending.connect(self._on_blending_change)
         self.layer.events.scale.connect(self._on_scale_change)
         self.layer.events.translate.connect(self._on_translate_change)
+        self.layer.events.loaded.connect(self._on_loaded_change)
 
     @property
     def _master_transform(self):
@@ -138,7 +141,7 @@ class VispyBaseLayer(ABC):
         raise NotImplementedError()
 
     def _on_visible_change(self, event=None):
-        self.node.visible = self.layer.visible
+        self.node.visible = self.layer.visible and self.layer.loaded
 
     def _on_opacity_change(self, event=None):
         self.node.opacity = self.layer.opacity
@@ -161,9 +164,20 @@ class VispyBaseLayer(ABC):
             self.layer.dims.displayed
         ).translate
         # convert NumPy axis ordering to VisPy axis ordering
-        self.translate = translate[::-1]
+        if self._array_like:
+            scale = (
+                self.layer._transforms['data2world']
+                .set_slice(self.layer.dims.displayed)
+                .scale
+            )
+            self.translate = translate[::-1] - scale[::-1] / 2
+        else:
+            self.translate = translate[::-1]
         self.layer.corner_pixels = self.coordinates_of_canvas_corners()
         self.layer.position = self._transform_position(self._position)
+
+    def _on_loaded_change(self, event=None):
+        self.node.visible = self.layer.visible and self.layer.loaded
 
     def _transform_position(self, position):
         """Transform cursor position from canvas space (x, y) into image space.
@@ -182,7 +196,16 @@ class VispyBaseLayer(ABC):
         if self.node.canvas is not None:
             transform = self.node.canvas.scene.node_transform(self.node)
             # Map and offset position so that pixel center is at 0
-            mapped_position = transform.map(list(position))[:nd] - 0.5
+            mapped_position = transform.map(list(position))[:nd]
+            if self._array_like:
+                scale = (
+                    self.layer._transforms['data2world']
+                    .set_slice(self.layer.dims.displayed)
+                    .scale
+                )
+                if len(scale) < nd:
+                    scale = np.array(list(scale) + [1] * (nd - len(scale)))
+                mapped_position -= scale[::-1] / 2
             return tuple(mapped_position[::-1])
         else:
             return (0,) * nd

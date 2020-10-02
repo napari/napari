@@ -104,8 +104,8 @@ def read_data_with_plugins(
             path_repr = f"[{path[0]}, ...] as stack"
         else:
             path_repr = repr(path)
-        msg = f'No plugin found capable of reading {path_repr}.'
-        logger.warn(msg)
+        # TODO: change to a warning notification in a later PR
+        raise ValueError(f'No plugin found capable of reading {path_repr}.')
 
     if errors:
         names = set([repr(e.plugin_name) for e in errors])

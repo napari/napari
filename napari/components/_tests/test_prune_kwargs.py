@@ -1,4 +1,5 @@
 import pytest
+
 from napari.components.add_layers_mixin import prune_kwargs
 
 TEST_KWARGS = {

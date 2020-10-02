@@ -4,8 +4,8 @@ from itertools import cycle, islice
 import numpy as np
 import pandas as pd
 import pytest
-from vispy.color import get_colormap
 
+from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Shapes
 from napari.utils.colormaps.standardize_color import transform_color
 
@@ -31,7 +31,7 @@ def _make_cycled_properties(values, length):
 
 def test_empty_shapes():
     shp = Shapes()
-    assert shp.dims.ndim == 2
+    assert shp.ndim == 2
 
 
 properties_array = {'shape_type': _make_cycled_properties(['A', 'B'], 10)}
@@ -757,6 +757,7 @@ def test_blending():
     assert layer.blending == 'opaque'
 
 
+@pytest.mark.filterwarnings("ignore:elementwise comparison fail:FutureWarning")
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
 def test_switch_color_mode(attribute):
     """Test switching between color modes"""
@@ -1078,7 +1079,7 @@ def test_color_colormap(attribute):
     new_colormap = 'viridis'
     setattr(layer, f'{attribute}_colormap', new_colormap)
     attribute_colormap = getattr(layer, f'{attribute}_colormap')
-    assert attribute_colormap[1] == get_colormap(new_colormap)
+    assert attribute_colormap.name == new_colormap
 
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
@@ -1103,7 +1104,8 @@ def test_colormap_with_categorical_properties(attribute):
     layer = Shapes(data, properties=properties)
 
     with pytest.raises(TypeError):
-        setattr(layer, f'{attribute}_color_mode', 'colormap')
+        with pytest.warns(UserWarning):
+            setattr(layer, f'{attribute}_color_mode', 'colormap')
 
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
@@ -1118,9 +1120,9 @@ def test_add_colormap(attribute):
     args = {color_kwarg: 'shape_type', colormap_kwarg: 'viridis'}
     layer = Shapes(data, properties=annotations, **args)
 
-    setattr(layer, f'{attribute}_colormap', get_colormap('gray'))
+    setattr(layer, f'{attribute}_colormap', 'gray')
     layer_colormap = getattr(layer, f'{attribute}_colormap')
-    assert 'unnamed colormap' in layer_colormap[0]
+    assert layer_colormap.name == 'gray'
 
 
 def test_edge_width():
@@ -1418,3 +1420,13 @@ def test_add_shapes_consistent_properties():
     assert len(layer.properties['index']) == 4
     assert layer.properties['index'][2] == 2
     assert layer.properties['index'][3] == 2
+
+
+def test_world_data_extent():
+    """Test extent after applying transforms."""
+    data = [(7, -5, 0), (-2, 0, 15), (4, 30, 12)]
+    layer = Shapes([data, np.add(data, [2, -3, 0])], shape_type='polygon')
+    min_val = (-2, -8, 0)
+    max_val = (9, 30, 15)
+    extent = np.array((min_val, max_val))
+    check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))

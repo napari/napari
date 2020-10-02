@@ -2,9 +2,9 @@
 These convenience functions will be useful for searching pypi for packages
 that match the plugin naming convention, and retrieving related metadata.
 """
-from urllib import request
-from typing import Tuple, Dict
 import re
+from typing import Dict, Tuple
+from urllib import request
 
 PYPI_SIMPLE_API_URL = 'https://pypi.org/simple/'
 URL_CACHE = {}  # {name: url} for packages at pypi.org/simple

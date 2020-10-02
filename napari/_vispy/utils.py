@@ -1,18 +1,18 @@
-from ..layers import Image, Labels, Points, Shapes, Surface, Vectors
+from ..layers import Image, Points, Shapes, Surface, Tracks, Vectors
 from .vispy_image_layer import VispyImageLayer
 from .vispy_points_layer import VispyPointsLayer
 from .vispy_shapes_layer import VispyShapesLayer
-from .vispy_vectors_layer import VispyVectorsLayer
 from .vispy_surface_layer import VispySurfaceLayer
-
+from .vispy_tracks_layer import VispyTracksLayer
+from .vispy_vectors_layer import VispyVectorsLayer
 
 layer_to_visual = {
     Image: VispyImageLayer,
-    Labels: VispyImageLayer,
     Points: VispyPointsLayer,
     Shapes: VispyShapesLayer,
     Surface: VispySurfaceLayer,
     Vectors: VispyVectorsLayer,
+    Tracks: VispyTracksLayer,
 }
 
 
@@ -29,6 +29,10 @@ def create_vispy_visual(layer):
     visual : vispy.scene.visuals.VisualNode
         Vispy visual node
     """
-    visual = layer_to_visual[type(layer)](layer)
+    for layer_type, visual in layer_to_visual.items():
+        if isinstance(layer, layer_type):
+            return visual(layer)
 
-    return visual
+    raise TypeError(
+        f'Could not find VispyLayer for layer of type {type(layer)}'
+    )

@@ -3,10 +3,10 @@ import warnings
 import numpy as np
 
 from ...utils.colormaps import AVAILABLE_COLORMAPS
-from ...utils.event import Event
+from ...utils.events import Event
 from ..base import Layer
-from ..utils.layer_utils import calc_data_range
 from ..intensity_mixin import IntensityVisualizationMixin
+from ..utils.layer_utils import calc_data_range
 
 
 # Mixin must come before Layer
@@ -22,7 +22,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         of the mesh triangles. The third element is the (K0, ..., KL, N)
         array of values used to color vertices where the additional L
         dimensions are used to color the same mesh with different values.
-    colormap : str, vispy.Color.Colormap, tuple, dict
+    colormap : str, napari.utils.Colormap, tuple, dict
         Colormap to use for luminance images. If a string must be the name
         of a supported colormap from vispy or matplotlib. If a tuple the
         first value must be a string to assign as a name to a colormap and
@@ -66,7 +66,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         Indices of mesh triangles.
     vertex_values : (K0, ..., KL, N) array
         Values used to color vertices.
-    colormap : str, vispy.Color.Colormap, tuple, dict
+    colormap : str, napari.utils.Colormap, tuple, dict
         Colormap to use for luminance images. If a string must be the name
         of a supported colormap from vispy or matplotlib. If a tuple the
         first value must be a string to assign as a name to a colormap and
@@ -203,23 +203,28 @@ class Surface(IntensityVisualizationMixin, Layer):
         """Determine number of dimensions of the layer."""
         return self.vertices.shape[1] + (self.vertex_values.ndim - 1)
 
-    def _get_extent(self):
-        """Determine ranges for slicing given by (min, max, step)."""
+    @property
+    def _extent_data(self) -> np.ndarray:
+        """Extent of layer in data coordinates.
+
+        Returns
+        -------
+        extent_data : array, shape (2, D)
+        """
         if len(self.vertices) == 0:
-            maxs = np.ones(self.vertices.shape[1], dtype=int)
-            mins = np.zeros(self.vertices.shape[1], dtype=int)
+            extrema = np.full((2, self.ndim), np.nan)
         else:
             maxs = np.max(self.vertices, axis=0)
             mins = np.min(self.vertices, axis=0)
 
-        # The full dimensionality and shape of the layer is determined by
-        # the number of additional vertex value dimensions and the
-        # dimensionality of the vertices themselves
-        if self.vertex_values.ndim > 1:
-            mins = [0] * (self.vertex_values.ndim - 1) + list(mins)
-            maxs = list(self.vertex_values.shape[:-1]) + list(maxs)
-
-        return [(min, max) for min, max in zip(mins, maxs)]
+            # The full dimensionality and shape of the layer is determined by
+            # the number of additional vertex value dimensions and the
+            # dimensionality of the vertices themselves
+            if self.vertex_values.ndim > 1:
+                mins = [0] * (self.vertex_values.ndim - 1) + list(mins)
+                maxs = list(self.vertex_values.shape[:-1]) + list(maxs)
+            extrema = np.vstack([mins, maxs])
+        return extrema
 
     def _get_state(self):
         """Get dictionary of layer state.
@@ -232,7 +237,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         state = self._get_base_state()
         state.update(
             {
-                'colormap': self.colormap[0],
+                'colormap': self.colormap.name,
                 'contrast_limits': self.contrast_limits,
                 'gamma': self.gamma,
                 'data': self.data,
@@ -249,7 +254,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         # is provided per vertex.
         if values_ndim > 0:
             # Get indices for axes corresponding to values dimensions
-            values_indices = self.dims.indices[:-vertex_ndim]
+            values_indices = self._slice_indices[:-vertex_ndim]
             values = self.vertex_values[values_indices]
             if values.ndim > 1:
                 warnings.warn(
@@ -267,7 +272,7 @@ class Surface(IntensityVisualizationMixin, Layer):
             # Determine which axes of the vertices data are being displayed
             # and not displayed, ignoring the additional dimensions
             # corresponding to the vertex_values.
-            indices = np.array(self.dims.indices[-vertex_ndim:])
+            indices = np.array(self._slice_indices[-vertex_ndim:])
             disp = [
                 d
                 for d in np.subtract(self.dims.displayed, values_ndim)
@@ -280,7 +285,7 @@ class Surface(IntensityVisualizationMixin, Layer):
             ]
         else:
             self._view_vertex_values = self.vertex_values
-            indices = np.array(self.dims.indices)
+            indices = np.array(self._slice_indices)
             not_disp = list(self.dims.not_displayed)
             disp = list(self.dims.displayed)
 

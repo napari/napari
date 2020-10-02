@@ -1,10 +1,10 @@
 import numpy as np
-from vispy.scene.visuals import Line, Compound, Text
-from .markers import Markers
+from vispy.scene.visuals import Compound, Line, Text
 
-from .vispy_base_layer import VispyBaseLayer
 from ..utils.colormaps.standardize_color import transform_color
 from ._text_utils import update_text
+from .markers import Markers
+from .vispy_base_layer import VispyBaseLayer
 
 
 class VispyPointsLayer(VispyBaseLayer):
@@ -51,7 +51,7 @@ class VispyPointsLayer(VispyBaseLayer):
         set_data = self.node._subvisuals[0].set_data
 
         set_data(
-            data[:, ::-1] + 0.5,
+            data[:, ::-1],
             size=size,
             edge_width=self.layer.edge_width,
             symbol=self.layer.symbol,
@@ -79,7 +79,7 @@ class VispyPointsLayer(VispyBaseLayer):
             size = 0
 
         self.node._subvisuals[1].set_data(
-            data[:, ::-1] + 0.5,
+            data[:, ::-1],
             size=size,
             edge_width=self._highlight_width,
             symbol=self.layer.symbol,
@@ -101,9 +101,7 @@ class VispyPointsLayer(VispyBaseLayer):
                 width = self._highlight_width
 
             self.node._subvisuals[2].set_data(
-                pos=pos[:, ::-1] + 0.5,
-                color=self._highlight_color,
-                width=width,
+                pos=pos[:, ::-1], color=self._highlight_color, width=width,
             )
         else:
             self.node._subvisuals[2].set_data(

@@ -1,8 +1,8 @@
 """Dask cache utilities.
 """
+import warnings
 from contextlib import contextmanager
 from typing import Callable, ContextManager, Optional
-import warnings
 
 import dask
 import dask.array as da
@@ -12,7 +12,7 @@ from .. import utils
 
 
 def create_dask_cache(
-    nbytes: Optional[int] = None, mem_fraction: float = 0.5
+    nbytes: Optional[int] = None, mem_fraction: float = 0.1
 ) -> Cache:
     """Create a dask cache at utils.dask_cache if one doesn't already exist.
 
@@ -26,7 +26,7 @@ def create_dask_cache(
         autodetermined using ``mem_fraction``.
     mem_fraction : float, optional
         The fraction (from 0 to 1) of total memory to use for the dask cache.
-        by default, 50% of total memory is used.
+        by default, 10% of total memory is used.
 
     Returns
     -------

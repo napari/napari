@@ -1,7 +1,16 @@
-import numpy as np
+import collections
 import os
 import sys
+
+import numpy as np
 import pytest
+
+from napari.utils.interactions import (
+    ReadOnlyWrapper,
+    mouse_move_callbacks,
+    mouse_press_callbacks,
+    mouse_release_callbacks,
+)
 
 
 @pytest.mark.skipif(
@@ -354,3 +363,54 @@ def test_changing_image_attenuation(make_test_viewer):
     center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
     # Check that rendering has been attenuated
     assert screenshot[center + (0,)] < 60
+
+
+@pytest.mark.skipif(
+    sys.platform.startswith('win') or not os.getenv("CI"),
+    reason='Screenshot tests are not supported on napari windows CI.',
+)
+def test_labels_painting(make_test_viewer):
+    """Test painting labels updates image."""
+    data = np.zeros((100, 100))
+
+    viewer = make_test_viewer(show=True)
+    viewer.add_labels(data)
+    layer = viewer.layers[0]
+
+    screenshot = viewer.screenshot(canvas_only=True)
+
+    # Check that no painting has occurred
+    assert layer.data.max() == 0
+    assert screenshot[:, :, :2].max() == 0
+
+    # Enter paint mode
+    layer.position = (0, 0)
+    layer.mode = 'paint'
+    layer.selected_label = 3
+
+    # Simulate click
+    Event = collections.namedtuple(
+        'Event', field_names=['type', 'is_dragging']
+    )
+
+    # Simulate click
+    event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
+    mouse_press_callbacks(layer, event)
+
+    layer.position = (100, 100)
+
+    # Simulate drag
+    event = ReadOnlyWrapper(Event(type='mouse_move', is_dragging=True))
+    mouse_move_callbacks(layer, event)
+
+    # Simulate release
+    event = ReadOnlyWrapper(Event(type='mouse_release', is_dragging=False))
+    mouse_release_callbacks(layer, event)
+
+    event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
+    mouse_press_callbacks(layer, event)
+
+    screenshot = viewer.screenshot(canvas_only=True)
+    # Check that painting has now occurred
+    assert layer.data.max() > 0
+    assert screenshot[:, :, :2].max() > 0

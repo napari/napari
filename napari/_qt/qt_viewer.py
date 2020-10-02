@@ -1,38 +1,47 @@
+import os.path
 from pathlib import Path
 
-from qtpy.QtCore import QCoreApplication, Qt, QSize
-from qtpy.QtWidgets import (
-    QWidget,
-    QVBoxLayout,
-    QFileDialog,
-    QSplitter,
-    QMessageBox,
-)
+from qtpy.QtCore import QCoreApplication, QSize, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
-from ..utils.io import imsave
-from vispy.scene import SceneCanvas, PanZoomCamera, ArcballCamera
+from qtpy.QtWidgets import (
+    QFileDialog,
+    QMessageBox,
+    QSplitter,
+    QVBoxLayout,
+    QWidget,
+)
+from vispy.scene import ArcballCamera, PanZoomCamera, SceneCanvas
 from vispy.visuals.transforms import ChainTransform
 
-from .qt_dims import QtDims
-from .qt_layerlist import QtLayerList
 from ..resources import get_stylesheet
-from ..utils.theme import template
+from ..utils import perf
 from ..utils.interactions import (
     ReadOnlyWrapper,
-    mouse_press_callbacks,
     mouse_move_callbacks,
+    mouse_press_callbacks,
     mouse_release_callbacks,
+    mouse_wheel_callbacks,
 )
+from ..utils.io import imsave
 from ..utils.key_bindings import components_to_key_combo
-from ..utils import perf
+from ..utils.theme import template
+from .dialogs.qt_about_key_bindings import QtAboutKeyBindings
+from .dialogs.screenshot_dialog import ScreenshotDialog
+from .tracing.qt_performance import QtPerformance
+from .utils import QImg2array, circle_pixmap, square_pixmap
+from .widgets.qt_dims import QtDims
+from .widgets.qt_layerlist import QtLayerList
+from .widgets.qt_viewer_buttons import QtLayerButtons, QtViewerButtons
+from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
 
-from .utils import QImg2array, square_pixmap, circle_pixmap
-from .qt_controls import QtControls
-from .qt_viewer_buttons import QtLayerButtons, QtViewerButtons
-from .qt_viewer_dock_widget import QtViewerDockWidget
-from .qt_about_key_bindings import QtAboutKeyBindings
-from .qt_performance import QtPerformance
-from .._vispy import create_vispy_visual
+
+class KeyModifierFilterSceneCanvas(SceneCanvas):
+    """SceneCanvas overriding VisPy when mouse wheel events have modifiers."""
+
+    def _process_mouse_event(self, event):
+        if event.type == 'mouse_wheel' and len(event.modifiers) > 0:
+            return
+        super()._process_mouse_event(event)
 
 
 class QtViewer(QSplitter):
@@ -49,7 +58,7 @@ class QtViewer(QSplitter):
         Canvas for rendering the current view.
     console : QtConsole
         iPython console terminal integrated into the napari GUI.
-    controls : QtControls
+    controls : QtLayerControlsContainer
         Qt view for GUI controls.
     dims : napari.qt_dims.QtDims
         Dimension sliders; Qt View for Dims model.
@@ -78,6 +87,8 @@ class QtViewer(QSplitter):
     raw_stylesheet = get_stylesheet()
 
     def __init__(self, viewer):
+        from .layer_controls import QtLayerControlsContainer
+
         super().__init__()
         self.setAttribute(Qt.WA_DeleteOnClose)
 
@@ -87,7 +98,7 @@ class QtViewer(QSplitter):
 
         self.viewer = viewer
         self.dims = QtDims(self.viewer.dims)
-        self.controls = QtControls(self.viewer)
+        self.controls = QtLayerControlsContainer(self.viewer)
         self.layers = QtLayerList(self.viewer.layers)
         self.layerButtons = QtLayerButtons(self.viewer)
         self.viewerButtons = QtViewerButtons(self.viewer)
@@ -141,7 +152,9 @@ class QtViewer(QSplitter):
             self.toggle_console_visibility
         )
 
-        self.canvas = SceneCanvas(keys=None, vsync=True, parent=self)
+        self.canvas = KeyModifierFilterSceneCanvas(
+            keys=None, vsync=True, parent=self
+        )
         self.canvas.events.ignore_callback_errors = False
         self.canvas.events.draw.connect(self.dims.enable_play)
         self.canvas.native.setMinimumSize(QSize(200, 200))
@@ -152,6 +165,7 @@ class QtViewer(QSplitter):
         self.canvas.connect(self.on_mouse_release)
         self.canvas.connect(self.on_key_press)
         self.canvas.connect(self.on_key_release)
+        self.canvas.connect(self.on_mouse_wheel)
 
         self.view = self.canvas.central_widget.add_view()
         self._update_camera()
@@ -212,7 +226,7 @@ class QtViewer(QSplitter):
         """QtConsole: iPython console terminal integrated into the napari GUI.
         """
         if self._console is None:
-            from .qt_console import QtConsole
+            from .widgets.qt_console import QtConsole
 
             self.console = QtConsole({'viewer': self.viewer})
         return self._console
@@ -244,6 +258,8 @@ class QtViewer(QSplitter):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
+        from .._vispy import create_vispy_visual
+
         layers = event.source
         layer = event.item
         vispy_layer = create_vispy_visual(layer)
@@ -348,28 +364,16 @@ class QtViewer(QSplitter):
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
-        img = self.canvas.native.grabFramebuffer()
+        img = QImg2array(self.canvas.native.grabFramebuffer())
         if path is not None:
-            imsave(path, QImg2array(img))  # scikit-image imsave method
-        return QImg2array(img)
+            imsave(path, img)  # scikit-image imsave method
+        return img
 
     def _screenshot_dialog(self):
         """Save screenshot of current display, default .png"""
-        filename, _ = QFileDialog.getSaveFileName(
-            parent=self,
-            caption='Save screenshot',
-            directory=self._last_visited_dir,  # home dir by default
-            filter="Image files (*.png *.bmp *.gif *.tif *.tiff)",  # first one used by default
-            # jpg and jpeg not included as they don't support an alpha channel
-        )
-        if (filename != '') and (filename is not None):
-            # double check that an appropriate extension has been added as the
-            # filter option does not always add an extension on linux and windows
-            # see https://bugreports.qt.io/browse/QTBUG-27186
-            image_extensions = ('.bmp', '.gif', '.png', '.tif', '.tiff')
-            if not filename.endswith(image_extensions):
-                filename = filename + '.png'
-            self.screenshot(path=filename)
+        dial = ScreenshotDialog(self.screenshot, self, self._last_visited_dir)
+        if dial.exec_():
+            self._last_visited_dir = os.path.dirname(dial.selectedFiles()[0])
 
     def _open_files_dialog(self):
         """Add files from the menubar."""
@@ -495,6 +499,26 @@ class QtViewer(QSplitter):
     def show_key_bindings_dialog(self, event=None):
         dialog = QtAboutKeyBindings(self.viewer, parent=self)
         dialog.show()
+
+    def on_mouse_wheel(self, event):
+        """Called whenever mouse wheel activated in canvas.
+
+        Parameters
+        ----------
+        event : qtpy.QtCore.QEvent
+        """
+        if event.pos is None:
+            return
+
+        event = ReadOnlyWrapper(event)
+        mouse_wheel_callbacks(self.viewer, event)
+
+        layer = self.viewer.active_layer
+        if layer is not None:
+            visual = self.layer_to_visual[layer]
+            visual._position = list(event.pos)
+            layer.position = visual._transform_position(visual._position)
+            mouse_wheel_callbacks(layer, event)
 
     def on_mouse_press(self, event):
         """Called whenever mouse pressed in canvas.
@@ -662,6 +686,8 @@ class QtViewer(QSplitter):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
+        self.layers.close()
+
         # if the viewer.QtDims object is playing an axis, we need to terminate
         # the AnimationThread before close, otherwise it will cauyse a segFault
         # or Abort trap. (calling stop() when no animation is occurring is also
