@@ -139,13 +139,13 @@ def block_timer(
     """Time a block of code.
 
     block_timer can be used when perfmon is disabled. Use perf_timer instead
-    if you want your time to do nothing when perfmon is disabled.
+    if you want your timer to do nothing when perfmon is disabled.
 
     Notes
     -----
     Most of the time you should use the perfmon config file to monkey-patch
-    this timer into methods an functions. Then you do not need to use
-    block_timer or perf_timer at all.
+    perf_timer's into methods and functions. Then you do not need to use
+    block_timer or perf_timer context objects explicitly at all.
 
     Parameters
     ----------
@@ -153,6 +153,8 @@ def block_timer(
         The name of this timer.
     category : str
         Comma separated categories such has "render,update".
+    print_time : bool
+        Print the duration of the timer when it finishes.
     **kwargs : dict
         Additional keyword arguments for the "args" field of the event.
 
@@ -160,16 +162,16 @@ def block_timer(
     -------
     with block_timer("draw") as event:
         draw_stuff()
-    print(event.duration_ms)
+    print(f"The timer took {event.duration_ms} milliseconds.")
     """
     start_ns = perf_counter_ns()
 
-    # Intially we don't know the end_ns, so we pass in start_ns for
-    # both start and end. We update end_ns after the yield.
+    # Pass in start_ns for start and end, we call update_end_ns
+    # once the block as finished.
     event = PerfEvent(name, start_ns, start_ns, category, **kwargs)
     yield event
 
-    # Now update the end time now that the block as finished.
+    # Update with the real end time.
     event.update_end_ns(perf_counter_ns())
 
     if timers:
