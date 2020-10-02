@@ -59,7 +59,6 @@ class ChunkLoader:
     """
 
     def __init__(self):
-        # Config settings.
         self.synchronous: bool = async_config.synchronous
         self.num_workers: int = async_config.num_workers
 
