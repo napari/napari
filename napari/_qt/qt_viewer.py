@@ -1,6 +1,7 @@
 import os.path
 from pathlib import Path
 
+import numpy as np
 from qtpy.QtCore import QCoreApplication, QSize, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import (
@@ -103,6 +104,7 @@ class QtViewer(QSplitter):
         self.layerButtons = QtLayerButtons(self.viewer)
         self.viewerButtons = QtViewerButtons(self.viewer)
         self._console = None
+        self._position = (0,) * self.viewer.dims.ndisplay
 
         layerList = QWidget()
         layerList.setObjectName('layerList')
@@ -166,6 +168,7 @@ class QtViewer(QSplitter):
         self.canvas.connect(self.on_key_press)
         self.canvas.connect(self.on_key_release)
         self.canvas.connect(self.on_mouse_wheel)
+        self.canvas.connect(self.on_draw)
 
         self.view = self.canvas.central_widget.add_view()
         self._update_camera()
@@ -265,7 +268,6 @@ class QtViewer(QSplitter):
         vispy_layer = create_vispy_visual(layer)
         vispy_layer.node.parent = self.view.scene
         vispy_layer.order = len(layers) - 1
-        self.canvas.connect(vispy_layer.on_draw)
         self.layer_to_visual[layer] = vispy_layer
 
     def _remove_layer(self, event):
@@ -278,7 +280,6 @@ class QtViewer(QSplitter):
         """
         layer = event.item
         vispy_layer = self.layer_to_visual[layer]
-        self.canvas.events.draw.disconnect(vispy_layer.on_draw)
         vispy_layer.node.transforms = ChainTransform()
         vispy_layer.node.parent = None
         del vispy_layer
@@ -500,6 +501,60 @@ class QtViewer(QSplitter):
         dialog = QtAboutKeyBindings(self.viewer, parent=self)
         dialog.show()
 
+    @property
+    def scale_factor(self):
+        """float: Conversion factor from canvas pixels to world coordinates.
+        """
+        return np.linalg.norm(
+            np.subtract(
+                self._transform_position([1, 1]),
+                self._transform_position([0, 0]),
+            )
+        ) / np.linalg.norm([1, 1])
+
+    def _transform_position(self, position):
+        """Transform cursor position from canvas space into world slice.
+
+        Parameters
+        ----------
+        position : 2-tuple
+            Cursor position in canvas (x, y).
+
+        Returns
+        -------
+        coords : tuple
+            Coordinates of cursor in world space for displayed dimensions only.
+            Has length equal to the number of displayed dimensions, either 2
+            or 3.
+        """
+        nd = self.viewer.dims.ndisplay
+        transform = self.view.camera.transform.inverse
+        mapped_position = transform.map(list(position))[:nd]
+        return tuple(mapped_position[::-1])
+
+    def coordinates_of_canvas_corners(self):
+        """Find location of the corners of canvas in data coordinates.
+
+        This method should only be used during 2D image viewing. The result
+        depends on the current pan and zoom position.
+
+        Returns
+        -------
+        corner_pixels : array
+            Coordinates of top left and bottom right canvas pixel in the data.
+        """
+        # Find image coordinate of top left canvas pixel
+        tl_raw = np.floor(self._transform_position([0, 0]))
+        br_raw = np.ceil(self._transform_position(self.canvas.size))
+
+        top_left = np.zeros(self.viewer.dims.ndim)
+        bottom_right = np.zeros(self.viewer.dims.ndim)
+        for d, tl, br in zip(self.viewer.dims.displayed, tl_raw, br_raw):
+            top_left[d] = tl
+            bottom_right[d] = br
+
+        return np.array([top_left, bottom_right]).astype(int)
+
     def on_mouse_wheel(self, event):
         """Called whenever mouse wheel activated in canvas.
 
@@ -515,9 +570,9 @@ class QtViewer(QSplitter):
 
         layer = self.viewer.active_layer
         if layer is not None:
-            visual = self.layer_to_visual[layer]
-            visual._position = list(event.pos)
-            layer.position = visual._transform_position(visual._position)
+            # update cursor position in layer
+            self._position = list(event.pos)
+            layer.position = self._transform_position(self._position)
             mouse_wheel_callbacks(layer, event)
 
     def on_mouse_press(self, event):
@@ -536,10 +591,9 @@ class QtViewer(QSplitter):
 
         layer = self.viewer.active_layer
         if layer is not None:
-            # update cursor position in visual and layer
-            visual = self.layer_to_visual[layer]
-            visual._position = list(event.pos)
-            layer.position = visual._transform_position(visual._position)
+            # update cursor position in layer
+            self._position = list(event.pos)
+            layer.position = self._transform_position(self._position)
             mouse_press_callbacks(layer, event)
 
     def on_mouse_move(self, event):
@@ -557,10 +611,9 @@ class QtViewer(QSplitter):
 
         layer = self.viewer.active_layer
         if layer is not None:
-            # update cursor position in visual and layer
-            visual = self.layer_to_visual[layer]
-            visual._position = list(event.pos)
-            layer.position = visual._transform_position(visual._position)
+            # update cursor position in layer
+            self._position = list(event.pos)
+            layer.position = self._transform_position(self._position)
             mouse_move_callbacks(layer, event)
 
     def on_mouse_release(self, event):
@@ -578,10 +631,9 @@ class QtViewer(QSplitter):
 
         layer = self.viewer.active_layer
         if layer is not None:
-            # update cursor position in visual and layer
-            visual = self.layer_to_visual[layer]
-            visual._position = list(event.pos)
-            layer.position = visual._transform_position(visual._position)
+            # update cursor position in layer
+            self._position = list(event.pos)
+            layer.position = self._transform_position(self._position)
             mouse_release_callbacks(layer, event)
 
     def on_key_press(self, event):
@@ -621,6 +673,26 @@ class QtViewer(QSplitter):
             return
         combo = components_to_key_combo(event.key.name, event.modifiers)
         self.viewer.release_key(combo)
+
+    def on_draw(self, event):
+        """Called whenever the canvas is drawn.
+
+        This is triggered from vispy whenever new data is sent to the canvas or
+        the camera is moved and is connected in the `QtViewer`.
+        """
+        for layer in self.viewer.layers:
+            layer.scale_factor = self.scale_factor
+            old_corner_pixels = layer.corner_pixels
+            layer.corner_pixels = self.coordinates_of_canvas_corners()[
+                :, -layer.ndim :
+            ]
+
+            # For 2D multiscale data determine if new data has been requested
+            if layer.multiscale and layer.dims.ndisplay == 2:
+                layer._update_multiscale(
+                    corner_pixels=old_corner_pixels,
+                    shape_threshold=self.canvas.size,
+                )
 
     def keyPressEvent(self, event):
         """Called whenever a key is pressed.
