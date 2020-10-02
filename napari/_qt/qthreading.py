@@ -33,6 +33,11 @@ class WorkerBase(QRunnable):
     ----------
     SignalsClass : type, optional
         A QObject subclass that contains signals, by default WorkerBaseSignals
+
+    Attributes
+    ----------
+    signals: WorkerBaseSignals
+        signal emitter object. To allow identify which worker thread emitted signal.
     """
 
     #: A set of Workers.  Add to set using :meth:`WorkerBase.start`
@@ -249,7 +254,7 @@ class GeneratorWorker(WorkerBase):
         self,
         func: Callable,
         *args,
-        SignalsClass: Type[QObject] = GeneratorWorkerSignals,
+        SignalsClass: Type[WorkerBaseSignals] = GeneratorWorkerSignals,
         **kwargs,
     ):
         if not inspect.isgeneratorfunction(func):
