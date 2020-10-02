@@ -420,7 +420,6 @@ class Tracks(Layer):
         self._color_by = color_by
         self._recolor_tracks()
         self.events.color_by()
-        # self.refresh()
 
     @property
     def colormap(self) -> str:
