@@ -39,12 +39,15 @@ class WorkerBase(QRunnable):
     _worker_set: Set['WorkerBase'] = set()
 
     def __init__(
-        self, *args, SignalsClass: Type[QObject] = WorkerBaseSignals, **kwargs
+        self,
+        *args,
+        SignalsClass: Type[WorkerBaseSignals] = WorkerBaseSignals,
+        **kwargs,
     ) -> None:
         super().__init__()
         self._abort_requested = False
         self._running = False
-        self._signals = SignalsClass()
+        self.signals = SignalsClass()
 
     def __getattr__(self, name):
         """Pass through attr requests to signals to simplify connection API.
@@ -57,12 +60,12 @@ class WorkerBase(QRunnable):
         object.
         """
         # the Signal object is actually a class attribute
-        attr = getattr(self._signals.__class__, name, None)
+        attr = getattr(self.signals.__class__, name, None)
         if isinstance(attr, Signal):
             # but what we need to connect to is the instantiated signal
             # (which is of type `SignalInstance` in PySide and
             # `pyqtBoundSignal` in PyQt)
-            return getattr(self._signals, name)
+            return getattr(self.signals, name)
 
     def quit(self) -> None:
         """Send a request to abort the worker.
