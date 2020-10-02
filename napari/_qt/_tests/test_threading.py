@@ -223,3 +223,13 @@ def test_thread_generator_worker_in_main_thread():
 
     worker2 = qthreading.thread_worker(func, start_thread=False)()
     assert worker2.work() == 3
+
+
+def test_worker_base_attribute():
+    obj = qthreading.WorkerBase()
+    assert obj.started is not None
+    assert obj.finished is not None
+    assert obj.returned is not None
+    assert obj.errored is not None
+    with pytest.raises(AttributeError):
+        obj.aa

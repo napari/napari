@@ -63,6 +63,7 @@ class WorkerBase(QRunnable):
             # (which is of type `SignalInstance` in PySide and
             # `pyqtBoundSignal` in PyQt)
             return getattr(self._signals, name)
+        super().__getattr__(name)
 
     def quit(self) -> None:
         """Send a request to abort the worker.
