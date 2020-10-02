@@ -1,4 +1,4 @@
-"""LayerInfo class.
+"""LoadType, LoadStats and LayerInfo.
 """
 import logging
 import weakref
@@ -22,12 +22,15 @@ class LayerInfo:
         The id of the layer.
     layer_ref : weakref
         Weak reference to the layer.
+    load_type : LoadType
+        Enum for whether to do auto/sync/async loads.
 
     Notes
     -----
-    We store a weak reference because an in-progress request should not prevent
-    a layer from being deleted. Meanwhile once a request has finished, we can
-    de-reference to make sure the layer still exists.
+    We store a weak reference because we do not want an in-progress request
+    to prevent a layer from being deleted. Meanwhile, once a request has
+    finished, we can de-reference the weakref to make sure the layer was
+    note deleted during the load process.
     """
 
     def __init__(self, layer):

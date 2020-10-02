@@ -21,12 +21,15 @@ DEFAULT_ASYNC_CONFIG = {
     "synchronous": False,
     "num_workers": 6,
     "log_path": None,
+    "delay_seconds": 0.1,
 }
 
-# The settings. We're calling this AsyncConfig and not ChunkLoaderConfig
-# because async might require graphical or other settings which aren't
-# related to the ChunkLoader.
-AsyncConfig = namedtuple("AsyncConfig", "synchronous num_workers log_path")
+# The sync config settings. It's called AsyncConfig and not
+# ChunkLoaderConfig because async might require settings related to
+# graphics or something else which isn't really ChunkLoader related.
+AsyncConfig = namedtuple(
+    "AsyncConfig", "synchronous num_workers log_path delay_seconds"
+)
 
 
 def _log_to_file(path: str) -> None:
@@ -105,6 +108,7 @@ def _create_async_config(data: dict) -> AsyncConfig:
         data.get("synchronous", True),
         data.get("num_workers", 6),
         data.get("log_path"),
+        data.get("delay_seconds", 0.1),
     )
 
     _log_to_file(config.log_path)
