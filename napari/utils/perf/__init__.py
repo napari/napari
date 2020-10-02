@@ -53,6 +53,12 @@ import os
 from ._compat import perf_counter_ns
 from ._config import perf_config
 from ._event import PerfEvent
-from ._timers import add_counter_event, add_instant_event, perf_timer, timers
+from ._timers import (
+    add_counter_event,
+    add_instant_event,
+    block_timer,
+    perf_timer,
+    timers,
+)
 
 USE_PERFMON = os.getenv("NAPARI_PERFMON", "0") != "0"
