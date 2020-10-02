@@ -24,9 +24,9 @@ DEFAULT_ASYNC_CONFIG = {
     "delay_seconds": 0.1,
 }
 
-# The settings. We're calling this AsyncConfig and not ChunkLoaderConfig
-# because async might require graphical or other settings which aren't
-# related to the ChunkLoader.
+# The sync config settings. It's called AsyncConfig and not
+# ChunkLoaderConfig because async might require settings related to
+# graphics or something else which isn't really ChunkLoader related.
 AsyncConfig = namedtuple(
     "AsyncConfig", "synchronous num_workers log_path delay_seconds"
 )
