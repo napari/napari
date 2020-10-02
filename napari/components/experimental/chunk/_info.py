@@ -21,9 +21,15 @@ class LoadType(Enum):
 
 
 class LoadStats:
-    """Statistics about async/async loads for one layer."""
+    """Statistics about the recent loads for one layer.
 
-    WINDOW_SIZE = 10  # Calculate states based on this many recent load.
+    Attributes
+    ----------
+    window_ms : StatWindow
+        Keeps track of the average load time over the window.
+    """
+
+    WINDOW_SIZE = 10  # Only keeps stats for this many loads.
 
     def __init__(self):
         self.window_ms: StatWindow = StatWindow(self.WINDOW_SIZE)
@@ -39,13 +45,13 @@ class LoadStats:
             True if the load was synchronous.
         """
         try:
-            # Use the time to load all chunks combined.
+            # Use the special "load_chunks" timer for all chunks combined.
             load_ms = request.timers['load_chunks'].duration_ms
 
             # Update our StatWindow.
             self.window_ms.add(load_ms)
         except KeyError:
-            return  # there was no 'load_chunks" timer...
+            pass  # there was no 'load_chunks" timer...
 
 
 class LayerInfo:
@@ -64,6 +70,8 @@ class LayerInfo:
         Weak reference to the layer.
     load_type : LoadType
         Enum for whether to do auto/sync/async loads.
+    auto_sync_ms : int
+        If load takes longer than this many milliseconds make it async.
     stats : LoadStats
         Statistics related the loads.
 
