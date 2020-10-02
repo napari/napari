@@ -8,6 +8,7 @@ from typing import Dict, List, Optional
 from ....types import ArrayLike
 from ....utils.events import EmitterGroup
 from ._cache import ChunkCache
+from ._config import async_config
 from ._info import LayerInfo
 from ._request import ChunkKey, ChunkRequest
 
@@ -58,8 +59,10 @@ class ChunkLoader:
     """
 
     def __init__(self):
-        self.synchronous = not _is_enabled("NAPARI_ASYNC")
-        self.executor = ThreadPoolExecutor(max_workers=6)
+        self.synchronous: bool = async_config.synchronous
+        self.num_workers: int = async_config.num_workers
+
+        self.executor = ThreadPoolExecutor(max_workers=self.num_workers)
         self.futures: Dict[int, List[Future]] = {}
         self.layer_map: Dict[int, LayerInfo] = {}
         self.cache: ChunkCache = ChunkCache()
