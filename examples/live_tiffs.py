@@ -41,6 +41,7 @@ with napari.gui_qt():
             return
 
         if viewer.layers:
+             # first run, no layer added yet
             layer = viewer.layers[0]
             image_shape = layer.data.shape[1:]
             image_dtype = layer.data.dtype
@@ -53,6 +54,7 @@ with napari.gui_qt():
                 (layer.data, image), axis=0
             )
         else:
+            # layer is present, append to its data
             image = delayed_image.compute()
             image = da.from_delayed(
                 delayed_image,
