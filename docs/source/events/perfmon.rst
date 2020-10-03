@@ -9,7 +9,7 @@ diagnose the problem.
 
 The module can do several things:
 
-1. Time Qt Events 
+1. Time Qt Events
 
 2. Display a dockable **performance** widget.
 
@@ -72,7 +72,7 @@ Example configuration file:
 Configuration Options
 ---------------------
 
-`trace_qt_events` 
+`trace_qt_events`
 ~~~~~~~~~~~~~~~~~
 
 If true perfmon will time the duration of all Qt Events. You might
@@ -154,7 +154,7 @@ Create a minimal perfmon config file `/tmp/perfmon.json` that looks like this:
 This will write `/tmp/latest.json` every time we run napari. This file is
 only written on exit, and you must exit with the **Quit** commmand. Using
 `trace_file_on_start` is often easier than manually starting a trace using
-the **Debug** menu. 
+the **Debug** menu.
 
 
 Run napari
