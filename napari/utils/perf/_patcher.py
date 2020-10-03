@@ -79,12 +79,15 @@ def _patch_attribute(
 def _import_module(target_str: str) -> Tuple[types.ModuleType, str]:
     """Import the module portion of this target string.
 
-    Try importing successively longer segments of the target_str. For example
-    with "napari.utils.chunk_loader.ChunkLoader.load_chunk" we will import:
+    Try importing successively longer segments of the target_str. For example:
+       napari.components.experimental.chunk._loader.ChunkLoader.load_chunk
+    will import:
         napari (success)
-        napari.utils (success)
-        napari.utils.chunk_loader (success)
-        napari.utils.chunk_loader.ChunkLoader (failure)
+        napari.components (success)
+        napari.components.experimental (success)
+        napari.components.experimental.chunk (success)
+        napari.components.experimental.chunk._loader (success)
+        napari.components.experimental.chunk._loader.ChunkLoader (failure, not a module)
 
     The last one fails because ChunkLoader is a class not a module.
 

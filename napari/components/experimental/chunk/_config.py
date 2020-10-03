@@ -18,15 +18,26 @@ DEFAULT_SYNC_CONFIG = {"synchronous": True}
 
 # NAPARI_ASYNC=1 will use these default settings:
 DEFAULT_ASYNC_CONFIG = {
+    "log_path": None,
     "synchronous": False,
     "num_workers": 6,
-    "log_path": None,
+    "auto_sync_ms": 30,
+    "delay_queue_ms": 100,
 }
 
-# The settings. We're calling this AsyncConfig and not ChunkLoaderConfig
-# because async might require graphical or other settings which aren't
-# related to the ChunkLoader.
-AsyncConfig = namedtuple("AsyncConfig", "synchronous num_workers log_path")
+# The sync config settings. It's called AsyncConfig and not
+# ChunkLoaderConfig because async might require settings related to
+# graphics or something else which isn't really ChunkLoader related.
+AsyncConfig = namedtuple(
+    "AsyncConfig",
+    [
+        "log_path",
+        "synchronous",
+        "num_workers",
+        "auto_sync_ms",
+        "delay_queue_ms",
+    ],
+)
 
 
 def _log_to_file(path: str) -> None:
@@ -102,9 +113,11 @@ def _create_async_config(data: dict) -> AsyncConfig:
         The config settings to use.
     """
     config = AsyncConfig(
+        data.get("log_path"),
         data.get("synchronous", True),
         data.get("num_workers", 6),
-        data.get("log_path"),
+        data.get("async_sync_ms", 30),
+        data.get("delay_queue_ms", 100),
     )
 
     _log_to_file(config.log_path)
