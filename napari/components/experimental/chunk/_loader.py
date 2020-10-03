@@ -391,7 +391,7 @@ class ChunkLoader:
 
 @contextmanager
 def synchronous_loading(enabled):
-    """Context object to temporarily disable async loading.
+    """Context object to enable or disable async loading.
 
     with synchronous_loading(True):
         layer = Image(data)
