@@ -41,7 +41,7 @@ def test_thread_worker(qtbot):
     worker = thread_func()
     assert isinstance(worker, qthreading.FunctionWorker)
     assert func_val[0] == 0
-    with qtbot.waitSignal(worker.finished):
+    with qtbot.waitSignal(worker.finished, timeout=10000):
         worker.start()
     assert func_val[0] == 1
     assert test_val[0] == 1
