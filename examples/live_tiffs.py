@@ -26,7 +26,7 @@ with napari.gui_qt():
     """
     viewer = napari.Viewer(ndisplay=3)
     # pass a directory to monitor or it will monitor current directory.
-    path = sys.argv[1] if len(sys.argv) > 1 else '.' 
+    path = sys.argv[1] if len(sys.argv) > 1 else '.'
     path = os.path.abspath(path)
     end_of_experiment = 'final.log'
 
@@ -41,35 +41,30 @@ with napari.gui_qt():
             return
 
         if viewer.layers:
-            # Layer is present, append to its data
+            # layer is present, append to its data
             layer = viewer.layers[0]
             image_shape = layer.data.shape[1:]
             image_dtype = layer.data.dtype
             image = da.from_delayed(
                 delayed_image, shape=image_shape, dtype=image_dtype,
             ).reshape((1,) + image_shape)
-            layer.data = da.concatenate(
-                (layer.data, image), axis=0
-            )
+            layer.data = da.concatenate((layer.data, image), axis=0)
         else:
-            # First run, no layer added yet
+            # first run, no layer added yet
             image = delayed_image.compute()
             image = da.from_delayed(
-                delayed_image,
-                shape=image.shape,
-                dtype=image.dtype,
+                delayed_image, shape=image.shape, dtype=image.dtype,
             ).reshape((1,) + image.shape)
             layer = viewer.add_image(image, rendering='attenuated_mip')
-        
+
         # we want to show the last file added in the viewer to do so we want to
-        # put the slider at the very end. But, sometimes when user is scrolling 
-        # through the previous slide then it is annoying to jump to last 
-        # stack as it gets added. To avoid that jump we 1st check where 
+        # put the slider at the very end. But, sometimes when user is scrolling
+        # through the previous slide then it is annoying to jump to last
+        # stack as it gets added. To avoid that jump we 1st check where
         # the scroll is and if its not at the last slide then don't move the slider.
         if viewer.dims.point[0] >= layer.data.shape[0] - 2:
             viewer.dims.set_point(0, layer.data.shape[0] - 1)
-   
-  
+
     @thread_worker(connect={'yielded': append})
     def watch_path(path):
         """Watches the path for new files and yields it once file is ready.
@@ -100,7 +95,7 @@ with napari.gui_qt():
             current_files = set(os.listdir(path))
 
             # Check if the end of acquisition has reached
-            # if yes then remove it from the files_to_process set 
+            # if yes then remove it from the files_to_process set
             # and send it to display
             if end_of_experiment in current_files:
                 files_to_process = current_files - processed_files
@@ -112,7 +107,7 @@ with napari.gui_qt():
                 last_file = sorted(current_files, key=alphanumeric_key)[-1]
                 current_files.remove(last_file)
                 files_to_process = current_files - processed_files
-            
+
             # yield every file to process as a dask.delayed function object.
             for p in sorted(files_to_process, key=alphanumeric_key):
                 yield delayed(imread)(os.path.join(path, p))
@@ -124,4 +119,3 @@ with napari.gui_qt():
             time.sleep(0.1)
 
     worker = watch_path(path)
-    
