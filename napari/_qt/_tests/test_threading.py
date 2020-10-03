@@ -2,6 +2,7 @@ import inspect
 import time
 
 import pytest
+from qtpy.QtCore import QCoreApplication
 
 from napari._qt import qthreading
 
@@ -43,6 +44,7 @@ def test_thread_worker(qtbot):
     assert func_val[0] == 0
     with qtbot.waitSignal(worker.finished, timeout=10000):
         worker.start()
+        QCoreApplication.processEvents()
     assert func_val[0] == 1
     assert test_val[0] == 1
     assert worker.is_running is False
