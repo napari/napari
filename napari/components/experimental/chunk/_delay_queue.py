@@ -22,10 +22,6 @@ class DelayQueue(threading.Thread):
     have been given to the thread or process pool. But it's trivial
     to cancel requests from the DelayQueue.
 
-    We need to constantly cancel requests while the user is rapidly
-    scrolling through slices. Otherwise we'd very often be loading chunks
-    for slices that were no longer needed.
-
     We could just throw away the stale results, but that could generate
     a lot of unnecessary network traffic and a lot of unnecessary
     background computation in some cases.
@@ -39,8 +35,8 @@ class DelayQueue(threading.Thread):
 
     Parameters
     ----------
-    delay_seconds : float
-        Delay each request by this many seconds.
+    delay_queue_ms : float
+        Delay the request for this many milliseconds before submission.
     submit_func
         Call this function to submit the request.
 
@@ -49,7 +45,7 @@ class DelayQueue(threading.Thread):
     delay_seconds : float
         Delay each request by this many seconds.
     submit_func
-        Call this function to submit the request.
+        We call this function to submit the request.
     entries : List[QueueEntry]
         The entries in the queue.
     lock : threading.Lock
@@ -58,9 +54,9 @@ class DelayQueue(threading.Thread):
         Event we signal to wake up the worker.
     """
 
-    def __init__(self, delay_seconds: float, submit_func):
+    def __init__(self, delay_queue_ms: float, submit_func):
         super().__init__(daemon=True)
-        self.delay_seconds: float = delay_seconds
+        self.delay_seconds: float = (delay_queue_ms / 1000)
         self.submit_func = submit_func
 
         self.entries: List[QueueEntry] = []

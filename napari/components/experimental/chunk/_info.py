@@ -5,6 +5,7 @@ import weakref
 from enum import Enum
 
 from ....layers.base import Layer
+from ._config import async_config
 from ._request import ChunkRequest
 from ._utils import StatWindow
 
@@ -81,7 +82,7 @@ class LayerInfo:
         self.layer_id: int = id(layer)
         self.layer_ref: weakref.ReferenceType = weakref.ref(layer)
         self.load_type: LoadType = LoadType.AUTO
-        self.auto_sync_ms = 30  # Needs to be config value later
+        self.auto_sync_ms = async_config.auto_sync_ms
 
         self.stats = LoadStats()
 
