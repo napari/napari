@@ -326,9 +326,12 @@ def single_tiff():
 @pytest.fixture(scope="session", autouse=True)
 def configure_loading(request):
     """Configure async/async loading."""
-    sync_mode = not request.config.getoption("--async_only")
-    with synchronous_loading(sync_mode):
-        yield
+    async_mode = request.config.getoption("--async_only")
+    if async_mode:
+        with synchronous_loading(False):
+            yield
+    else:
+        yield  # Sync so do nothing.
 
 
 @pytest.fixture(autouse=True)
