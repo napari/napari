@@ -6,9 +6,9 @@ import numpy as np
 import pytest
 from qtpy.QtWidgets import QApplication
 
-from napari import Viewer, synchronous_loading
+from napari import Viewer
 from napari.components import LayerList
-from napari.components.chunk import chunk_loader
+from napari.experimental import chunk_loader, synchronous_loading
 from napari.layers import Image, Labels, Points, Shapes, Vectors
 from napari.plugins._builtins import (
     napari_write_image,
