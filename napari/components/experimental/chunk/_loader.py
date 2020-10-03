@@ -364,7 +364,7 @@ class ChunkLoader:
             # Result blocks until the future is done or cancelled
             [future.result() for future in future_list]
 
-    def wait_for_data_is(self, data_id: int) -> None:
+    def wait_for_data_id(self, data_id: int) -> None:
         """Wait for the given data to be loaded.
 
         Parameters
