@@ -32,12 +32,14 @@ def test_thread_worker(qtbot):
     def func():
         print("[func]", file=sys.stderr)
         func_val[0] = 1
+        print("[func] end", file=sys.stderr)
         return 1
 
     def test(v):
         print("[test]", file=sys.stderr)
         test_val[0] = 1
         assert v == 1
+        print("[test] end", file=sys.stderr)
 
     thread_func = qthreading.thread_worker(
         func, connect={'returned': test}, start_thread=False
