@@ -2,13 +2,10 @@ import numpy as np
 from vispy.scene import ArcballCamera, PanZoomCamera
 from vispy.util.quaternion import Quaternion
 
-from napari import Viewer
 
-
-def test_camera(qtbot):
+def test_camera(make_test_viewer):
     """Test vispy camera model interaction."""
-    viewer = Viewer()
-    qtbot.addWidget(viewer.window.qt_viewer)
+    viewer = make_test_viewer()
     vispy_view = viewer.window.qt_viewer.view
 
     np.random.seed(0)

@@ -455,14 +455,16 @@ class QtViewer(QSplitter):
                 *self.viewer.camera.angles, degrees=True,
             )
             self.view.camera._quaternion = quat
+            # switch from numpy ordering to vispy ordering
             self.view.camera.center = self.viewer.camera.center[::-1]
             self.view.camera.scale_factor = self.viewer.camera.size
         else:
             # Assumes default camera has the same properties as PanZoomCamera
+            # switch from numpy ordering to vispy ordering
             corner = np.subtract(
-                self.viewer.camera.center, self.viewer.camera.size / 2
+                self.viewer.camera.center[::-1], self.viewer.camera.size / 2
             )
-            rectangle = tuple(corner[::-1]) + (self.viewer.camera.size,) * 2
+            rectangle = tuple(corner) + (self.viewer.camera.size,) * 2
             self.view.camera.rect = rectangle
 
     def _update_palette(self, event=None):
@@ -674,6 +676,7 @@ class QtViewer(QSplitter):
         the camera is moved and is connected in the `QtViewer`.
         """
         if isinstance(self.view.camera, ArcballCamera):
+            # switch from vispy ordering to numpy ordering
             self.viewer.camera._center = self.view.camera.center[::-1]
             self.viewer.camera._size = self.view.camera.scale_factor
 
@@ -682,6 +685,7 @@ class QtViewer(QSplitter):
             self.viewer.camera._angles = ang
         else:
             # Assumes default camera has the same properties as PanZoomCamera
+            # switch from vispy ordering to numpy ordering
             self.viewer.camera._center = self.view.camera.rect.center[::-1]
             self.viewer.camera._size = np.max(self.view.camera.rect.size)
 

@@ -7,9 +7,10 @@ class Camera:
     Parameters
     ----------
     center : 2-tuple or 3-tuple
-        Center point of camera view for 2D or 3D viewing.
+        Center point of camera view for 2D or 3D viewing in world slice
+        coordinates.
     size : float
-        Max size of data to display in canvas in data units.
+        Max size to display in canvas in world coordinates.
     angles : 3-tuple
         Euler angles of camera in 3D viewing (rx, ry, rz), in degrees.
     """
@@ -51,7 +52,7 @@ class Camera:
 
     @property
     def size(self):
-        """float: Max size of data to display in canvas in data units.."""
+        """float: Max size to display in canvas in world coordinates."""
         return self._size
 
     @size.setter
@@ -79,10 +80,10 @@ class Camera:
         Parameters
         ----------
         center : tuple
-            Center point of camera view for 2D or 3D viewing, must be length 2
-            or 3.
+            Center point of camera view for 2D or 3D viewing in world slice
+            coordinates.
         size : float
-            Max size of data to display in canvas in data units.
+            Max size to display in canvas in world coordinates.
         angles : 3-tuple
             Euler angles of camera in 3D viewing (rx, ry, rz), in degrees.
         """

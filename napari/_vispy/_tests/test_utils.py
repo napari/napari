@@ -1,7 +1,7 @@
 import numpy as np
 from vispy.util.quaternion import Quaternion
 
-from napari._vispy import quaternion2euler
+from napari._vispy.quaternion import quaternion2euler
 
 
 def test_quaternion2euler(qtbot):
