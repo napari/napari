@@ -35,6 +35,7 @@ def test_thread_worker(qtbot):
         return 1
 
     def test(v):
+        print("[test]", file=sys.stderr)
         test_val[0] = 1
         assert v == 1
 
