@@ -20,19 +20,18 @@ GL_MAX_TEXTURE_SIZE, _ = get_max_texture_sizes()
     ],
 )
 @pytest.mark.filterwarnings("ignore:data shape:UserWarning")
-def test_status_bar(shape):
+def test_downsample_value(shape):
+    """Test getting correct value for downsampled data."""
     data = np.zeros(shape)
     data[shape[0] // 2 :, shape[1] // 2 :] = 1
     layer = Image(data)
     _ = VispyImageLayer(layer)
 
-    coordinates_shape = layer._transforms['tile2data'].inverse(data.shape)
-
     test_points = [
-        (int(coordinates_shape[0] * 0.25), int(coordinates_shape[1] * 0.25)),
-        (int(coordinates_shape[0] * 0.75), int(coordinates_shape[1] * 0.25)),
-        (int(coordinates_shape[0] * 0.25), int(coordinates_shape[1] * 0.75)),
-        (int(coordinates_shape[0] * 0.75), int(coordinates_shape[1] * 0.75)),
+        (int(shape[0] * 0.25), int(shape[1] * 0.25)),
+        (int(shape[0] * 0.75), int(shape[1] * 0.25)),
+        (int(shape[0] * 0.25), int(shape[1] * 0.75)),
+        (int(shape[0] * 0.75), int(shape[1] * 0.75)),
     ]
     expected_values = [0.0, 0.0, 0.0, 1.0]
 
