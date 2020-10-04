@@ -374,9 +374,10 @@ class Layer(KeymapProvider, ABC):
 
     @position.setter
     def position(self, position):
-        if self._position == position:
+        _position = position[-self.ndim :]
+        if self._position == _position:
             return
-        self._position = position
+        self._position = _position
         self._update_value_and_status()
 
     def _update_dims(self, event=None):
@@ -728,6 +729,7 @@ class Layer(KeymapProvider, ABC):
     @property
     def coordinates(self):
         """Cursor position in data coordinates."""
+        # Note we ignore the first transform which is tile2data
         return tuple(self._transforms[1:].simplified.inverse(self.position))
 
     def _update_value_and_status(self):
@@ -751,11 +753,11 @@ class Layer(KeymapProvider, ABC):
         shape_threshold : tuple
             Requested shape of field of view in data coordinates.
         """
-
+        # Note we ignore the first transform which is tile2data
         scale = np.divide(scale_factors, self._transforms[1:].simplified.scale)
-        self.scale_factor = np.linalg.norm(scale) / np.linalg.norm([1, 1])
-
         data_corners = self._transforms[1:].simplified.inverse(corner_pixels)
+
+        self.scale_factor = np.linalg.norm(scale) / np.linalg.norm([1, 1])
 
         # Round and clip data corners
         data_corners = np.array(

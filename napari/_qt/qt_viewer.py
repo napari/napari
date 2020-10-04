@@ -545,7 +545,7 @@ class QtViewer(QSplitter):
         # Find corners of canvas in world coordinates
         top_left = self._map_canvas2world([0, 0])
         bottom_right = self._map_canvas2world(self.canvas.size)
-        return top_left, bottom_right
+        return np.array([top_left, bottom_right])
 
     def on_mouse_wheel(self, event):
         """Called whenever mouse wheel activated in canvas.
@@ -562,7 +562,7 @@ class QtViewer(QSplitter):
 
         layer = self.viewer.active_layer
         if layer is not None:
-            # update cursor position in world coordinates
+            # set cursor position in world coordinates
             layer.position = self._map_canvas2world(list(event.pos))
             mouse_wheel_callbacks(layer, event)
 
@@ -582,7 +582,7 @@ class QtViewer(QSplitter):
 
         layer = self.viewer.active_layer
         if layer is not None:
-            # update cursor position in world coordinates
+            # set cursor position in world coordinates
             layer.position = self._map_canvas2world(list(event.pos))
             mouse_press_callbacks(layer, event)
 
@@ -601,7 +601,7 @@ class QtViewer(QSplitter):
 
         layer = self.viewer.active_layer
         if layer is not None:
-            # update cursor position in world coordinates
+            # set cursor position in world coordinates
             layer.position = self._map_canvas2world(list(event.pos))
             mouse_move_callbacks(layer, event)
 
@@ -620,7 +620,7 @@ class QtViewer(QSplitter):
 
         layer = self.viewer.active_layer
         if layer is not None:
-            # update cursor position in world coordinates
+            # set cursor position in world coordinates
             layer.position = self._map_canvas2world(list(event.pos))
             mouse_release_callbacks(layer, event)
 
@@ -669,11 +669,14 @@ class QtViewer(QSplitter):
         the camera is moved and is connected in the `QtViewer`.
         """
         for layer in self.viewer.layers:
-            layer._update_draw(
-                scale_factors=self._canvas2world_scale,
-                corner_pixels=self._canvas_corners_in_world,
-                shape_threshold=self.canvas.size,
-            )
+            if layer.ndim <= self.viewer.dims.ndim:
+                layer._update_draw(
+                    scale_factors=self._canvas2world_scale[-layer.ndim :],
+                    corner_pixels=self._canvas_corners_in_world[
+                        :, -layer.ndim :
+                    ],
+                    shape_threshold=self.canvas.size,
+                )
 
     def keyPressEvent(self, event):
         """Called whenever a key is pressed.
