@@ -17,7 +17,7 @@ def test_multiscale(make_test_viewer):
 
     # Set canvas size to target amount
     viewer.window.qt_viewer.view.canvas.size = (800, 600)
-    list(viewer.window.qt_viewer.layer_to_visual.values())[0].on_draw(None)
+    viewer.window.qt_viewer.on_draw(None)
 
     # Check that current level is first large enough to fill the canvas with
     # a greater than one pixel depth
@@ -57,7 +57,7 @@ def test_3D_multiscale_image(make_test_viewer):
     assert viewer.layers[0].data_level == 1
 
     # Note that draw command must be explicitly triggered in our tests
-    list(viewer.window.qt_viewer.layer_to_visual.values())[0].on_draw(None)
+    viewer.window.qt_viewer.on_draw(None)
 
 
 @pytest.mark.skipif(
@@ -108,7 +108,7 @@ def test_multiscale_screenshot_zoomed(make_test_viewer):
 
     # Set zoom of camera to show highest resolution tile
     view.view.camera.rect = [1000, 1000, 200, 150]
-    list(view.layer_to_visual.values())[0].on_draw(None)
+    viewer.window.qt_viewer.on_draw(None)
 
     # Check that current level is bottom level of multiscale
     assert viewer.layers[0].data_level == 0
@@ -144,7 +144,7 @@ def test_image_screenshot_zoomed(make_test_viewer):
 
     # Set zoom of camera to show highest resolution tile
     view.view.camera.rect = [1000, 1000, 200, 150]
-    list(view.layer_to_visual.values())[0].on_draw(None)
+    viewer.window.qt_viewer.on_draw(None)
 
     screenshot = viewer.screenshot(canvas_only=True)
     center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(np.int)
