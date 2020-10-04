@@ -13,7 +13,7 @@ At its core, an event loop is rather simple.  It amounts to something
 that looks like this (in pseudo-code):
 
 .. code-block:: python
-   
+
     event_queue = Queue()
 
     while True:  # infinite loop!
@@ -25,7 +25,7 @@ that looks like this (in pseudo-code):
                 process_event(event)
 
 Actions taken by the user add events to the queue ("button pressed",
-"slider moved", etc...), and the event loop handles them one at a time. 
+"slider moved", etc...), and the event loop handles them one at a time.
 
 The Qt Event Loop
 -----------------

@@ -13,7 +13,10 @@ from ...utils.misc import ROOT_DIR
 from ...utils.naming import magic_name
 from ...utils.status_messages import format_float, status_format
 from ..transforms import ScaleTranslate, TransformChain
-from ..utils.layer_utils import compute_multiscale_level, convert_to_uint8
+from ..utils.layer_utils import (
+    compute_multiscale_level_and_corners,
+    convert_to_uint8,
+)
 from ._base_constants import Blending
 
 
@@ -76,14 +79,14 @@ class Layer(KeymapProvider, ABC):
     z_index : int
         Depth of the layer visual relative to other visuals in the scenecanvas.
     coordinates : tuple of float
-        Coordinates of the cursor in the data space of each layer. The length
-        of the tuple is equal to the number of dimensions of the layer.
+        Cursor position in data coordinates.
     corner_pixels : array
         Coordinates of the top-left and bottom-right canvas pixels in the data
-        space of each layer. The length of the tuple is equal to the number of
-        dimensions of the layer.
-    position : 2-tuple of int
-        Cursor position in the image space of only the displayed dimensions.
+        coordinates of each layer. For multiscale data the coordinates are in
+        the space of the currently viewed data level, not the highest resolution
+        level.
+    position : tuple
+        Cursor position in world coordinates.
     shape : tuple of int
         Size of the data in the layer.
     ndim : int
@@ -184,8 +187,8 @@ class Layer(KeymapProvider, ABC):
             ]
         )
 
-        self.coordinates = (0,) * ndim
-        self._position = (0,) * self.dims.ndisplay
+        self._position = (0,) * self.dims.ndim
+        self._dims_point = [0] * ndim
         self.corner_pixels = np.zeros((2, ndim), dtype=int)
         self._editable = True
 
@@ -214,16 +217,11 @@ class Layer(KeymapProvider, ABC):
             cursor=Event,
             cursor_size=Event,
             editable=Event,
+            loaded=Event,
         )
         self.name = name
 
         self.events.data.connect(lambda e: self._set_editable())
-        self.dims.events.ndisplay.connect(lambda e: self._set_editable())
-        self.dims.events.order.connect(self.refresh)
-        self.dims.events.ndisplay.connect(self._update_dims)
-        self.dims.events.order.connect(self._update_dims)
-        self.dims.events.axis.connect(self.refresh)
-
         self.mouse_move_callbacks = []
         self.mouse_drag_callbacks = []
         self.mouse_wheel_callbacks = []
@@ -246,6 +244,15 @@ class Layer(KeymapProvider, ABC):
     def name(self):
         """str: Unique name of the layer."""
         return self._name
+
+    @property
+    def loaded(self) -> bool:
+        """Return True if this layer is fully loaded in memory.
+
+        This base class says that layers are permanently in the loaded state.
+        Derived classes that do asynchronous loading can override this.
+        """
+        return True
 
     @name.setter
     def name(self, name):
@@ -362,49 +369,37 @@ class Layer(KeymapProvider, ABC):
 
     @property
     def position(self):
-        """tuple of int: Cursor position in image of displayed dimensions."""
+        """tuple: Cursor position in world slice coordinates."""
         return self._position
 
     @position.setter
     def position(self, position):
-        if self._position == position:
+        _position = position[-self.ndim :]
+        if self._position == _position:
             return
-        self._position = position
-        self._update_coordinates()
+        self._position = _position
+        self._update_value_and_status()
 
     def _update_dims(self, event=None):
         """Updates dims model, which is useful after data has been changed."""
         ndim = self._get_ndim()
-        ndisplay = self.dims.ndisplay
-
-        # If the dimensionality is changing then if the number of dimensions
-        # is becoming smaller trim the property from the beginning, and if
-        # the number of dimensions is becoming larger pad from the beginning
-        if len(self.position) > ndisplay:
-            self._position = self._position[-ndisplay:]
-        elif len(self.position) < ndisplay:
-            self._position = (0,) * (ndisplay - len(self.position)) + tuple(
-                self.position
-            )
 
         old_ndim = self.dims.ndim
         if old_ndim > ndim:
             keep_axes = range(old_ndim - ndim, old_ndim)
             self._transforms = self._transforms.set_slice(keep_axes)
+            self._dims_point = self._dims_point[-ndim:]
+            self._position = self._position[-ndim:]
         elif old_ndim < ndim:
             new_axes = range(ndim - old_ndim)
             self._transforms = self._transforms.expand_dims(new_axes)
+            self._dims_point = [0] * (ndim - old_ndim) + self._dims_point
+            self._position = (0,) * (ndim - old_ndim) + self._position
 
         self.dims.ndim = ndim
 
-        step_size = self.scale
-        # For now dims don't use world coordinates, but scaled data coordinates
-        extent = np.multiply(self._extent_data, step_size)
-        for i in range(self.dims.ndim):
-            self.dims.set_range(i, (extent[0, i], extent[1, i], step_size[i]))
-
         self.refresh()
-        self._update_coordinates()
+        self._update_value_and_status()
 
     @property
     @abstractmethod
@@ -437,6 +432,21 @@ class Layer(KeymapProvider, ABC):
         extent_world : array, shape (2, D)
         """
         return self._transforms['data2world'](self._extent_data)
+
+    @property
+    def _slice_indices(self):
+        """(D, ) array: Slice indices in data coordinates."""
+        world_pts = [self._dims_point[ax] for ax in self.dims.not_displayed]
+        inv_transform = self._transforms['data2world'].inverse
+        data_pts = inv_transform.set_slice(self.dims.not_displayed)(world_pts)
+        # A round is taken to convert these values to slicing integers
+        data_pts = np.round(data_pts).astype(int)
+
+        indices = [slice(None)] * self.ndim
+        for i, ax in enumerate(self.dims.not_displayed):
+            indices[ax] = data_pts[i]
+
+        return tuple(indices)
 
     @property
     def shape(self):
@@ -611,6 +621,64 @@ class Layer(KeymapProvider, ABC):
     def _set_view_slice(self):
         raise NotImplementedError()
 
+    def _slice_dims(self, point=None, ndisplay=2, order=None):
+        """Slice data with values from a global dims model.
+
+        Note this will likely be moved off the base layer soon.
+
+        Parameters
+        ----------
+        point : list
+            Values of data to slice at in world coordinates.
+        ndisplay : int
+            Number of dimensions to be displayed.
+        order : list of int
+            Order of dimensions, where last `ndisplay` will be
+            rendered in canvas.
+        """
+        if point is None:
+            ndim = self.ndim
+        else:
+            ndim = len(point)
+
+        if order is None:
+            order = list(range(ndim))
+
+        # adjust the order of the global dims based on the number of
+        # dimensions that a layer has - for example a global order of
+        # [2, 1, 0, 3] -> [0, 1] for a layer that only has two dimensions
+        # or -> [1, 0, 2] for a layer with three as that corresponds to
+        # the relative order of the last two and three dimensions
+        # respectively
+        offset = ndim - self.ndim
+        order = np.array(order)
+        if offset <= 0:
+            order = list(range(-offset)) + list(order - offset)
+        else:
+            order = list(order[order >= offset] - offset)
+
+        if point is None:
+            point = [0] * ndim
+            nd = min(self.ndim, ndisplay)
+            for i in order[-nd:]:
+                point[i] = slice(None)
+
+        # If no slide data has changed, then do nothing
+        if (
+            np.all(order == self.dims.order)
+            and ndisplay == self.dims.ndisplay
+            and np.all(point[offset:] == self._dims_point)
+        ):
+            return
+
+        self.dims.order = order
+        self.dims.ndisplay = ndisplay
+
+        # Update the point values
+        self._dims_point = point[offset:]
+        self._update_dims()
+        self._set_editable()
+
     @abstractmethod
     def _update_thumbnail(self):
         raise NotImplementedError()
@@ -655,67 +723,63 @@ class Layer(KeymapProvider, ABC):
             self.set_view_slice()
             self.events.set_data()
             self._update_thumbnail()
-            self._update_coordinates()
+            self._update_value_and_status()
             self._set_highlight(force=True)
 
-    def _update_coordinates(self):
-        """Insert the cursor position into the correct position in the
-        tuple of indices and update the cursor coordinates.
-        """
-        coords = list(self.dims.indices)
-        for d, p in zip(self.dims.displayed, self.position):
-            coords[d] = p
-        self.coordinates = tuple(coords)
+    @property
+    def coordinates(self):
+        """Cursor position in data coordinates."""
+        # Note we ignore the first transform which is tile2data
+        return tuple(self._transforms[1:].simplified.inverse(self.position))
+
+    def _update_value_and_status(self):
+        """Update value and status message."""
         self._value = self.get_value()
         self.status = self.get_message()
 
-    def _update_multiscale(self, corner_pixels, shape_threshold):
-        """Refresh layer multiscale if new resolution level or tile is required.
+    def _update_draw(self, scale_factors, corner_pixels, shape_threshold):
+        """Update canvas scale and corner values on draw.
+
+        For layer multiscale determing if a new resolution level or tile is
+        required.
 
         Parameters
         ----------
+        scale_factors : list
+            Scale factors going from canvas to world coordinates.
         corner_pixels : array
             Coordinates of the top-left and bottom-right canvas pixels in the
-            data space of each layer. The length of the tuple is equal to the
-            number of dimensions of the layer. If different from the current
-            layer corner_pixels the layer needs refreshing.
+            world coordinates.
         shape_threshold : tuple
-            Requested shape of field of view in data coordinates
+            Requested shape of field of view in data coordinates.
         """
+        # Note we ignore the first transform which is tile2data
+        scale = np.divide(scale_factors, self._transforms[1:].simplified.scale)
+        data_corners = self._transforms[1:].simplified.inverse(corner_pixels)
 
-        if len(self.dims.displayed) == 3:
-            data_level = corner_pixels.shape[1] - 1
+        self.scale_factor = np.linalg.norm(scale) / np.linalg.norm([1, 1])
+
+        # Round and clip data corners
+        data_corners = np.array(
+            [np.floor(data_corners[0]), np.ceil(data_corners[1])]
+        ).astype(int)
+        data_corners = np.clip(
+            data_corners, self._extent_data[0], self._extent_data[1]
+        )
+
+        if self.dims.ndisplay == 2 and self.multiscale:
+            level, corners = compute_multiscale_level_and_corners(
+                data_corners, shape_threshold, self.downsample_factors,
+            )
+            if self.data_level != level or not np.all(
+                self.corner_pixels == corners
+            ):
+                self._data_level = level
+                self.corner_pixels = corners
+                self.refresh()
+
         else:
-            # Clip corner pixels inside data shape
-            new_corner_pixels = np.clip(
-                self.corner_pixels,
-                0,
-                np.subtract(self.level_shapes[self.data_level], 1),
-            )
-
-            # Scale to full resolution of the data
-            requested_shape = (
-                new_corner_pixels[1] - new_corner_pixels[0]
-            ) * self.downsample_factors[self.data_level]
-
-            downsample_factors = self.downsample_factors[
-                :, self.dims.displayed
-            ]
-
-            data_level = compute_multiscale_level(
-                requested_shape[self.dims.displayed],
-                shape_threshold,
-                downsample_factors,
-            )
-
-        if data_level != self.data_level:
-            # Set the data level, which will trigger a layer refresh and
-            # further updates including recalculation of the corner_pixels
-            # for the new level
-            self.data_level = data_level
-            self.refresh()
-        elif not np.all(self.corner_pixels == corner_pixels):
-            self.refresh()
+            self.corner_pixels = data_corners
 
     @property
     def displayed_coordinates(self):
@@ -730,8 +794,7 @@ class Layer(KeymapProvider, ABC):
         msg : string
             String containing a message that can be used as a status update.
         """
-        coordinates = self._transforms.simplified(self.coordinates)
-        full_coord = np.round(coordinates).astype(int)
+        full_coord = np.round(self.coordinates).astype(int)
 
         msg = f'{self.name} {full_coord}'
 

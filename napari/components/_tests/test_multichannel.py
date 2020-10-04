@@ -3,16 +3,23 @@ import numpy as np
 import pytest
 
 from napari.components import ViewerModel
-from napari.utils.colormaps import colormaps, ensure_colormap_tuple
+from napari.utils.colormaps import (
+    AVAILABLE_COLORMAPS,
+    CYMRGB,
+    MAGENTA_GREEN,
+    SIMPLE_COLORMAPS,
+    Colormap,
+    ensure_colormap,
+)
 from napari.utils.misc import ensure_iterable, ensure_sequence_of_iterables
 
-base_colormaps = colormaps.CYMRGB
-two_colormaps = colormaps.MAGENTA_GREEN
-green_cmap = colormaps.simple_colormaps['green']
-red_cmap = colormaps.simple_colormaps['red']
-fire = colormaps.AVAILABLE_COLORMAPS['fire']
-cmap_tuple = ("my_colormap", colormaps.Colormap(['g', 'm', 'y']))
-cmap_dict = {"your_colormap": colormaps.Colormap(['g', 'r', 'y'])}
+base_colormaps = CYMRGB
+two_colormaps = MAGENTA_GREEN
+green_cmap = SIMPLE_COLORMAPS['green']
+red_cmap = SIMPLE_COLORMAPS['red']
+blue_cmap = AVAILABLE_COLORMAPS['blue']
+cmap_tuple = ("my_colormap", Colormap(['g', 'm', 'y']))
+cmap_dict = {"your_colormap": Colormap(['g', 'r', 'y'])}
 
 MULTI_TUPLES = [[0.3, 0.7], [0.1, 0.9], [0.3, 0.9], [0.4, 0.9], [0.2, 0.9]]
 
@@ -45,8 +52,11 @@ multi_channel_test_data = [
     ((), {'colormap': cmap_tuple}),
     ((), {'colormap': cmap_dict}),
     ((), {'colormap': ['gray', 'blue', 'red', 'green', 'yellow']}),
-    ((), {'colormap': [green_cmap, red_cmap, fire, fire, green_cmap]}),
-    ((), {'colormap': [green_cmap, 'gray', cmap_tuple, fire, cmap_dict]}),
+    (
+        (),
+        {'colormap': [green_cmap, red_cmap, blue_cmap, blue_cmap, green_cmap]},
+    ),
+    ((), {'colormap': [green_cmap, 'gray', cmap_tuple, blue_cmap, cmap_dict]}),
     ((), {'scale': MULTI_TUPLES}),
     ((), {'translate': MULTI_TUPLES}),
     ((), {'blending': 'translucent'}),
@@ -101,11 +111,11 @@ def test_multichannel(shape, kwargs):
         # make sure colors have been assigned properly
         if 'colormap' not in kwargs:
             if n_channels == 1:
-                assert viewer.layers[i].colormap[0] == 'gray'
+                assert viewer.layers[i].colormap.name == 'gray'
             elif n_channels == 2:
-                assert viewer.layers[i].colormap[0] == two_colormaps[i]
+                assert viewer.layers[i].colormap.name == two_colormaps[i]
             else:
-                assert viewer.layers[i].colormap[0] == base_colormaps[i]
+                assert viewer.layers[i].colormap.name == base_colormaps[i]
         if 'blending' not in kwargs:
             assert viewer.layers[i].blending == 'additive'
         for key, expectation in kwargs.items():
@@ -114,9 +124,9 @@ def test_multichannel(shape, kwargs):
                 expectation = ensure_sequence_of_iterables(expectation)
             elif key == 'colormap' and expectation is not None:
                 if isinstance(expectation, list):
-                    exp = [ensure_colormap_tuple(c)[0] for c in expectation]
+                    exp = [ensure_colormap(c).name for c in expectation]
                 else:
-                    exp, _ = ensure_colormap_tuple(expectation)
+                    exp = ensure_colormap(expectation).name
                 expectation = ensure_iterable(exp)
             else:
                 expectation = ensure_iterable(expectation)
@@ -124,7 +134,7 @@ def test_multichannel(shape, kwargs):
 
             result = getattr(viewer.layers[i], key)
             if key == 'colormap':  # colormaps are tuples of (name, cmap)
-                result = result[0]
+                result = result.name
             assert np.all(result == expectation[i])
 
 
@@ -147,7 +157,7 @@ def test_multichannel_multiscale():
                 )
             ]
         )
-        assert viewer.layers[i].colormap[0] == base_colormaps[i]
+        assert viewer.layers[i].colormap.name == base_colormaps[i]
 
 
 def test_multichannel_implicit_multiscale():
@@ -169,7 +179,7 @@ def test_multichannel_implicit_multiscale():
                 )
             ]
         )
-        assert viewer.layers[i].colormap[0] == base_colormaps[i]
+        assert viewer.layers[i].colormap.name == base_colormaps[i]
 
 
 def test_multichannel_dask_array():
@@ -181,7 +191,7 @@ def test_multichannel_dask_array():
     assert len(viewer.layers) == data.shape[0]
     for i in range(data.shape[0]):
         assert viewer.layers[i].data.shape == data.shape[1:]
-        assert isinstance(viewer.layers[i].data, da.Array)
+        assert isinstance(viewer.layers[i].data, type(data))
 
 
 def test_forgot_multichannel_error_hint():

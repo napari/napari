@@ -17,7 +17,6 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ...components.dims_constants import DimsMode
 from ...utils.events import Event
 from .._constants import LoopMode
 from ..dialogs.qt_modal import QtPopup
@@ -91,13 +90,13 @@ class QtDimSliderWidget(QWidget):
     def _set_slice_from_label(self):
         """Update the dims point based on the curslice_label."""
         val = int(self.curslice_label.text())
-        max_allowed = self.dims.max_indices[self.axis]
+        max_allowed = self.dims.nsteps[self.axis] - 1
         if val > max_allowed:
             val = max_allowed
             self.curslice_label.setText(str(val))
         self.curslice_label.clearFocus()
         self.qt_dims.setFocus()
-        self.dims.set_point(self.axis, val)
+        self.dims.set_current_step(self.axis, val)
 
     def _create_axis_label_widget(self):
         """Create the axis label widget which accompanies its slider."""
@@ -119,24 +118,20 @@ class QtDimSliderWidget(QWidget):
 
         We split this out as a separate function for perfmon.
         """
-        self.dims.set_point(self.axis, value)
+        self.dims.set_current_step(self.axis, value)
 
     def _create_range_slider_widget(self):
         """Creates a range slider widget for a given axis."""
-        _range = self.dims.range[self.axis]
         # Set the maximum values of the range slider to be one step less than
         # the range of the layer as otherwise the slider can move beyond the
         # shape of the layer as the endpoint is included
-        _range = (_range[0], _range[1] - _range[2], _range[2])
-        point = self.dims.point[self.axis]
-
         slider = ModifiedScrollBar(Qt.Horizontal)
         slider.setFocusPolicy(Qt.NoFocus)
-        slider.setMinimum(int(_range[0]))
-        slider.setMaximum(int(_range[1]))
-        slider.setSingleStep(int(_range[2]))
-        slider.setPageStep(int(_range[2]))
-        slider.setValue(point)
+        slider.setMinimum(0)
+        slider.setMaximum(self.dims.nsteps[self.axis] - 1)
+        slider.setSingleStep(1)
+        slider.setPageStep(1)
+        slider.setValue(self.dims.current_step[self.axis])
 
         # Listener to be used for sending events back to model:
         slider.valueChanged.connect(self._value_changed)
@@ -189,46 +184,36 @@ class QtDimSliderWidget(QWidget):
         """Updates range for slider."""
         displayed_sliders = self.qt_dims._displayed_sliders
 
-        _range = self.dims.range[self.axis]
-        _range = (_range[0], _range[1] - _range[2], _range[2])
-        if _range not in (None, (None, None, None)):
-            if _range[1] == 0:
-                displayed_sliders[self.axis] = False
-                self.dims.last_used = None
-                self.hide()
-            else:
-                if (
-                    not displayed_sliders[self.axis]
-                    and self.axis not in self.dims.displayed
-                ):
-                    displayed_sliders[self.axis] = True
-                    self.dims.last_used = self.axis
-                    self.show()
-                self.slider.setMinimum(int(_range[0]))
-                self.slider.setMaximum(int(_range[1]))
-                self.slider.setSingleStep(int(_range[2]))
-                self.slider.setPageStep(int(_range[2]))
-                maxi = self.dims.max_indices[self.axis]
-                self.totslice_label.setText(str(int(maxi)))
-                self.totslice_label.setAlignment(Qt.AlignLeft)
-                self._update_slice_labels()
-        else:
+        nsteps = self.dims.nsteps[self.axis] - 1
+        if nsteps == 0:
             displayed_sliders[self.axis] = False
+            self.qt_dims.last_used = None
             self.hide()
+        else:
+            if (
+                not displayed_sliders[self.axis]
+                and self.axis not in self.dims.displayed
+            ):
+                displayed_sliders[self.axis] = True
+                self.last_used = self.axis
+                self.show()
+            self.slider.setMinimum(0)
+            self.slider.setMaximum(nsteps)
+            self.slider.setSingleStep(1)
+            self.slider.setPageStep(1)
+            self.slider.setValue(self.dims.current_step[self.axis])
+            self.totslice_label.setText(str(nsteps))
+            self.totslice_label.setAlignment(Qt.AlignLeft)
+            self._update_slice_labels()
 
     def _update_slider(self):
         """Update dimension slider."""
-        mode = self.dims.mode[self.axis]
-        if mode == DimsMode.POINT:
-            self.slider.setValue(int(self.dims.point[self.axis]))
-            self._update_slice_labels()
+        self.slider.setValue(self.dims.current_step[self.axis])
+        self._update_slice_labels()
 
     def _update_slice_labels(self):
         """Update slice labels to match current dimension slider position."""
-        step = self.dims.range[self.axis][2]
-        self.curslice_label.setText(
-            str(int(self.dims.point[self.axis] // step))
-        )
+        self.curslice_label.setText(str(self.dims.current_step[self.axis]))
         self.curslice_label.setAlignment(Qt.AlignRight)
 
     @property
@@ -573,11 +558,11 @@ class AnimationWorker(QObject):
         self.set_fps(self.slider.fps)
         self.set_frame_range(slider.frame_range)
 
-        # after dims.set_point is called, it will emit a dims.events.axis()
+        # after dims.set_current_step is called, it will emit a dims.events.current_step()
         # we use this to update this threads current frame (in case it
         # was some other event that updated the axis)
-        self.dims.events.axis.connect(self._on_axis_changed)
-        self.current = max(self.dims.point[self.axis], self.min_point)
+        self.dims.events.current_step.connect(self._on_axis_changed)
+        self.current = max(self.dims.current_step[self.axis], self.min_point)
         self.current = min(self.current, self.max_point)
         self.timer = QTimer()
 
@@ -620,7 +605,7 @@ class AnimationWorker(QObject):
         frame_range : tuple(int, int)
             Frame range as tuple/list with range (minimum_frame, maximum_frame)
         """
-        self.dimsrange = self.dims.range[self.axis]
+        self.dimsrange = (0, self.dims.nsteps[self.axis], 1)
 
         if frame_range is not None:
             if frame_range[0] >= frame_range[1]:
@@ -691,7 +676,7 @@ class AnimationWorker(QObject):
                 self.current = self.min_point + self.current - self.max_point
             else:  # loop_mode == 'once'
                 return self.finish()
-        with self.dims.events.axis.blocker(self._on_axis_changed):
+        with self.dims.events.current_step.blocker(self._on_axis_changed):
             self.frame_requested.emit(self.axis, self.current)
         # using a singleShot timer here instead of timer.start() because
         # it makes it easier to update the interval using signals/slots
