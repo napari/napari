@@ -23,7 +23,7 @@ def test_as_generator_function():
 
 # qtbot is necessary for qthreading here.
 # note: pytest-cov cannot check coverage of code run in the other thread.
-def test_thread_worker(qtbot):
+def test_thread_worker(qtbot, monkeypatch):
     """Test basic threadworker on a function"""
 
     func_val = [0]
@@ -40,6 +40,15 @@ def test_thread_worker(qtbot):
         test_val[0] = 1
         assert v == 1
         print("[test] end", file=sys.stderr)
+
+    orig_fun = qthreading.WorkerBase.run
+
+    def wrap_fun(self):
+        print("[wrap_fun] start", file=sys.stderr)
+        orig_fun(self)
+        print("[wrap_fun] end", file=sys.stderr)
+
+    monkeypatch.setattr(qthreading.WorkerBase, "run", wrap_fun)
 
     thread_func = qthreading.thread_worker(
         func, connect={'returned': test}, start_thread=False
