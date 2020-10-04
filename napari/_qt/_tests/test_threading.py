@@ -46,6 +46,7 @@ def test_thread_worker(qtbot):
     assert isinstance(worker, qthreading.FunctionWorker)
     assert func_val[0] == 0
     with qtbot.waitSignal(worker.finished, timeout=10000):
+        print("start", file=sys.stderr)
         worker.start()
         QCoreApplication.processEvents()
     assert func_val[0] == 1
