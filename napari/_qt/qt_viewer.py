@@ -104,7 +104,6 @@ class QtViewer(QSplitter):
         self.layerButtons = QtLayerButtons(self.viewer)
         self.viewerButtons = QtViewerButtons(self.viewer)
         self._console = None
-        self._position = (0,) * self.viewer.dims.ndisplay
 
         layerList = QWidget()
         layerList.setObjectName('layerList')
@@ -502,28 +501,28 @@ class QtViewer(QSplitter):
         dialog.show()
 
     @property
-    def scale_factor(self):
-        """float: Conversion factor from canvas pixels to world coordinates.
+    def _canvas2world_scale(self):
+        """float: Scale factor from canvas pixels to world coordinates.
         """
         return np.linalg.norm(
             np.subtract(
-                self._transform_position([1, 1]),
-                self._transform_position([0, 0]),
+                self._map_canvas2worldslice([1, 1]),
+                self._map_canvas2worldslice([0, 0]),
             )
         ) / np.linalg.norm([1, 1])
 
-    def _transform_position(self, position):
-        """Transform cursor position from canvas space into world slice.
+    def _map_canvas2worldslice(self, position):
+        """Map position from canvas pixels into world slice coordinates.
 
         Parameters
         ----------
         position : 2-tuple
-            Cursor position in canvas (x, y).
+            Position in canvas (x, y).
 
         Returns
         -------
         coords : tuple
-            Coordinates of cursor in world space for displayed dimensions only.
+            Coordinates in world slice (i.e. for displayed dimensions only).
             Has length equal to the number of displayed dimensions, either 2
             or 3.
         """
@@ -532,28 +531,19 @@ class QtViewer(QSplitter):
         mapped_position = transform.map(list(position))[:nd]
         return tuple(mapped_position[::-1])
 
-    def coordinates_of_canvas_corners(self):
-        """Find location of the corners of canvas in data coordinates.
-
-        This method should only be used during 2D image viewing. The result
-        depends on the current pan and zoom position.
+    @property
+    def _canvas_corners_in_worldslice(self):
+        """Location of the corners of canvas in world coordinates.
 
         Returns
         -------
-        corner_pixels : array
-            Coordinates of top left and bottom right canvas pixel in the data.
+        corners : 2-tuple
+            Coordinates of top left and bottom right canvas pixel in the world.
         """
         # Find image coordinate of top left canvas pixel
-        tl_raw = np.floor(self._transform_position([0, 0]))
-        br_raw = np.ceil(self._transform_position(self.canvas.size))
-
-        top_left = np.zeros(self.viewer.dims.ndim)
-        bottom_right = np.zeros(self.viewer.dims.ndim)
-        for d, tl, br in zip(self.viewer.dims.displayed, tl_raw, br_raw):
-            top_left[d] = tl
-            bottom_right[d] = br
-
-        return np.array([top_left, bottom_right]).astype(int)
+        top_left = self._map_canvas2worldslice([0, 0])
+        bottom_right = self._map_canvas2worldslice(self.canvas.size)
+        return top_left, bottom_right
 
     def on_mouse_wheel(self, event):
         """Called whenever mouse wheel activated in canvas.
@@ -571,8 +561,7 @@ class QtViewer(QSplitter):
         layer = self.viewer.active_layer
         if layer is not None:
             # update cursor position in layer
-            self._position = list(event.pos)
-            layer.position = self._transform_position(self._position)
+            layer.position = self._map_canvas2worldslice(list(event.pos))
             mouse_wheel_callbacks(layer, event)
 
     def on_mouse_press(self, event):
@@ -592,8 +581,7 @@ class QtViewer(QSplitter):
         layer = self.viewer.active_layer
         if layer is not None:
             # update cursor position in layer
-            self._position = list(event.pos)
-            layer.position = self._transform_position(self._position)
+            layer.position = self._map_canvas2worldslice(list(event.pos))
             mouse_press_callbacks(layer, event)
 
     def on_mouse_move(self, event):
@@ -612,8 +600,7 @@ class QtViewer(QSplitter):
         layer = self.viewer.active_layer
         if layer is not None:
             # update cursor position in layer
-            self._position = list(event.pos)
-            layer.position = self._transform_position(self._position)
+            layer.position = self._map_canvas2worldslice(list(event.pos))
             mouse_move_callbacks(layer, event)
 
     def on_mouse_release(self, event):
@@ -632,8 +619,7 @@ class QtViewer(QSplitter):
         layer = self.viewer.active_layer
         if layer is not None:
             # update cursor position in layer
-            self._position = list(event.pos)
-            layer.position = self._transform_position(self._position)
+            layer.position = self._map_canvas2worldslice(list(event.pos))
             mouse_release_callbacks(layer, event)
 
     def on_key_press(self, event):
@@ -681,18 +667,11 @@ class QtViewer(QSplitter):
         the camera is moved and is connected in the `QtViewer`.
         """
         for layer in self.viewer.layers:
-            layer.scale_factor = self.scale_factor
-            old_corner_pixels = layer.corner_pixels
-            layer.corner_pixels = self.coordinates_of_canvas_corners()[
-                :, -layer.ndim :
-            ]
-
-            # For 2D multiscale data determine if new data has been requested
-            if layer.multiscale and layer.dims.ndisplay == 2:
-                layer._update_multiscale(
-                    corner_pixels=old_corner_pixels,
-                    shape_threshold=self.canvas.size,
-                )
+            layer._update_draw(
+                scale_factor=self._canvas2world_scale,
+                corner_pixels=self._canvas_corners_in_worldslice,
+                shape_threshold=self.canvas.size,
+            )
 
     def keyPressEvent(self, event):
         """Called whenever a key is pressed.

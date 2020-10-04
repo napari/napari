@@ -13,7 +13,10 @@ from ...utils.misc import ROOT_DIR
 from ...utils.naming import magic_name
 from ...utils.status_messages import format_float, status_format
 from ..transforms import ScaleTranslate, TransformChain
-from ..utils.layer_utils import compute_multiscale_level, convert_to_uint8
+from ..utils.layer_utils import (
+    compute_multiscale_level_and_corners,
+    convert_to_uint8,
+)
 from ._base_constants import Blending
 
 
@@ -749,53 +752,52 @@ class Layer(KeymapProvider, ABC):
         self._value = self.get_value()
         self.status = self.get_message()
 
-    def _update_multiscale(self, corner_pixels, shape_threshold):
-        """Refresh layer multiscale if new resolution level or tile is required.
+    def _update_draw(self, scale_factor, corner_pixels, shape_threshold):
+        """Update canvas scale and corner values on draw.
+
+        For layer multiscale determing if a new resolution level or tile is
+        required.
 
         Parameters
         ----------
+        scale_factor : float
+            Scale factor going from canvas to world coordinates.
         corner_pixels : array
             Coordinates of the top-left and bottom-right canvas pixels in the
-            data space of each layer. The length of the tuple is equal to the
-            number of dimensions of the layer. If different from the current
-            layer corner_pixels the layer needs refreshing.
+            world slice coordinates.
         shape_threshold : tuple
-            Requested shape of field of view in data coordinates
+            Requested shape of field of view in data coordinates.
         """
+        self.scale_factor = scale_factor
 
-        if len(self.dims.displayed) == 3:
-            data_level = corner_pixels.shape[1] - 1
+        full_corners = np.zeros((2, self.dims.ndim))
+        for d, tl, br in zip(
+            self.dims.displayed, corner_pixels[0], corner_pixels[1]
+        ):
+            full_corners[0, d] = tl
+            full_corners[1, d] = br
+
+        data_corners = self._transforms[1:].simplified.inverse(full_corners)
+        data_corners = np.array(
+            [np.floor(data_corners[0]), np.ceil(data_corners[1])]
+        ).astype(int)
+        data_corners = np.clip(
+            data_corners, self._extent_data[0], self._extent_data[1]
+        )
+
+        if self.dims.ndisplay == 2 and self.multiscale:
+            level, corners = compute_multiscale_level_and_corners(
+                data_corners, shape_threshold, self.downsample_factors,
+            )
+            if self.data_level != level or not np.all(
+                self.corner_pixels == corners
+            ):
+                self._data_level = level
+                self.corner_pixels = corners
+                self.refresh()
+
         else:
-            # Clip corner pixels inside data shape
-            new_corner_pixels = np.clip(
-                self.corner_pixels,
-                0,
-                np.subtract(self.level_shapes[self.data_level], 1),
-            )
-
-            # Scale to full resolution of the data
-            requested_shape = (
-                new_corner_pixels[1] - new_corner_pixels[0]
-            ) * self.downsample_factors[self.data_level]
-
-            downsample_factors = self.downsample_factors[
-                :, self.dims.displayed
-            ]
-
-            data_level = compute_multiscale_level(
-                requested_shape[self.dims.displayed],
-                shape_threshold,
-                downsample_factors,
-            )
-
-        if data_level != self.data_level:
-            # Set the data level, which will trigger a layer refresh and
-            # further updates including recalculation of the corner_pixels
-            # for the new level
-            self.data_level = data_level
-            self.refresh()
-        elif not np.all(self.corner_pixels == corner_pixels):
-            self.refresh()
+            self.corner_pixels = data_corners
 
     @property
     def displayed_coordinates(self):
