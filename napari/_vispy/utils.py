@@ -1,8 +1,9 @@
-from ..layers import Image, Points, Shapes, Surface, Vectors
+from ..layers import Image, Points, Shapes, Surface, Tracks, Vectors
 from .vispy_image_layer import VispyImageLayer
 from .vispy_points_layer import VispyPointsLayer
 from .vispy_shapes_layer import VispyShapesLayer
 from .vispy_surface_layer import VispySurfaceLayer
+from .vispy_tracks_layer import VispyTracksLayer
 from .vispy_vectors_layer import VispyVectorsLayer
 
 layer_to_visual = {
@@ -11,6 +12,7 @@ layer_to_visual = {
     Shapes: VispyShapesLayer,
     Surface: VispySurfaceLayer,
     Vectors: VispyVectorsLayer,
+    Tracks: VispyTracksLayer,
 }
 
 

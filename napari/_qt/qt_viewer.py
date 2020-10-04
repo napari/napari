@@ -1,3 +1,5 @@
+import os.path
+from copy import copy
 from pathlib import Path
 
 import numpy as np
@@ -27,6 +29,7 @@ from ..utils.io import imsave
 from ..utils.key_bindings import components_to_key_combo
 from ..utils.theme import template
 from .dialogs.qt_about_key_bindings import QtAboutKeyBindings
+from .dialogs.screenshot_dialog import ScreenshotDialog
 from .tracing.qt_performance import QtPerformance
 from .utils import QImg2array, circle_pixmap, square_pixmap
 from .widgets.qt_dims import QtDims
@@ -363,28 +366,16 @@ class QtViewer(QSplitter):
             Numpy array of type ubyte and shape (h, w, 4). Index [0, 0] is the
             upper-left corner of the rendered region.
         """
-        img = self.canvas.native.grabFramebuffer()
+        img = QImg2array(self.canvas.native.grabFramebuffer())
         if path is not None:
-            imsave(path, QImg2array(img))  # scikit-image imsave method
-        return QImg2array(img)
+            imsave(path, img)  # scikit-image imsave method
+        return img
 
     def _screenshot_dialog(self):
         """Save screenshot of current display, default .png"""
-        filename, _ = QFileDialog.getSaveFileName(
-            parent=self,
-            caption='Save screenshot',
-            directory=self._last_visited_dir,  # home dir by default
-            filter="Image files (*.png *.bmp *.gif *.tif *.tiff)",  # first one used by default
-            # jpg and jpeg not included as they don't support an alpha channel
-        )
-        if (filename != '') and (filename is not None):
-            # double check that an appropriate extension has been added as the
-            # filter option does not always add an extension on linux and windows
-            # see https://bugreports.qt.io/browse/QTBUG-27186
-            image_extensions = ('.bmp', '.gif', '.png', '.tif', '.tiff')
-            if not filename.endswith(image_extensions):
-                filename = filename + '.png'
-            self.screenshot(path=filename)
+        dial = ScreenshotDialog(self.screenshot, self, self._last_visited_dir)
+        if dial.exec_():
+            self._last_visited_dir = os.path.dirname(dial.selectedFiles()[0])
 
     def _open_files_dialog(self):
         """Add files from the menubar."""
@@ -515,23 +506,51 @@ class QtViewer(QSplitter):
         dialog = QtAboutKeyBindings(self.viewer, parent=self)
         dialog.show()
 
-    def on_draw(self, event):
-        """Called whenever drawn in canvas. Called for all layers, not just top
+    @property
+    def _canvas2world_scale(self):
+        """list: Scale factors from canvas pixels to world coordinates."""
+        return np.subtract(
+            self._map_canvas2world([1, 1]), self._map_canvas2world([0, 0]),
+        )
+
+    def _map_canvas2world(self, position):
+        """Map position from canvas pixels into world coordinates.
+
+        Parameters
+        ----------
+        position : 2-tuple
+            Position in canvas (x, y).
+
+        Returns
+        -------
+        coords : tuple
+            Position in world coordinates, matches the total dimensionality
+            of the viewer.
         """
-        if isinstance(self.view.camera, ArcballCamera):
-            self.viewer.camera._center = self.view.camera.center[::-1]
-            self.viewer.camera._size = self.view.camera.scale_factor
+        nd = self.viewer.dims.ndisplay
+        transform = self.view.camera.transform.inverse
+        mapped_position = transform.map(list(position))[:nd]
+        position_world_slice = mapped_position[::-1]
 
-            # Do conversion from quaternion representation to euler angles
-            ang = quaternion2euler(self.view.camera._quaternion, degrees=True)
-            self.viewer.camera._angles = ang
-        else:
-            # Assumes default camera has the same properties as PanZoomCamera
-            self.viewer.camera._center = self.view.camera.rect.center[::-1]
-            self.viewer.camera._size = np.max(self.view.camera.rect.size)
+        position_world = copy(self.viewer.dims.point)
+        for i, d in enumerate(self.viewer.dims.displayed):
+            position_world[d] = position_world_slice[i]
 
-        for visual in self.layer_to_visual.values():
-            visual.on_draw(event)
+        return tuple(position_world)
+
+    @property
+    def _canvas_corners_in_world(self):
+        """Location of the corners of canvas in world coordinates.
+
+        Returns
+        -------
+        corners : 2-tuple
+            Coordinates of top left and bottom right canvas pixel in the world.
+        """
+        # Find corners of canvas in world coordinates
+        top_left = self._map_canvas2world([0, 0])
+        bottom_right = self._map_canvas2world(self.canvas.size)
+        return np.array([top_left, bottom_right])
 
     def on_mouse_wheel(self, event):
         """Called whenever mouse wheel activated in canvas.
@@ -548,9 +567,8 @@ class QtViewer(QSplitter):
 
         layer = self.viewer.active_layer
         if layer is not None:
-            visual = self.layer_to_visual[layer]
-            visual._position = list(event.pos)
-            layer.position = visual._transform_position(visual._position)
+            # set cursor position in world coordinates
+            layer.position = self._map_canvas2world(list(event.pos))
             mouse_wheel_callbacks(layer, event)
 
     def on_mouse_press(self, event):
@@ -569,10 +587,8 @@ class QtViewer(QSplitter):
 
         layer = self.viewer.active_layer
         if layer is not None:
-            # update cursor position in visual and layer
-            visual = self.layer_to_visual[layer]
-            visual._position = list(event.pos)
-            layer.position = visual._transform_position(visual._position)
+            # set cursor position in world coordinates
+            layer.position = self._map_canvas2world(list(event.pos))
             mouse_press_callbacks(layer, event)
 
     def on_mouse_move(self, event):
@@ -590,10 +606,8 @@ class QtViewer(QSplitter):
 
         layer = self.viewer.active_layer
         if layer is not None:
-            # update cursor position in visual and layer
-            visual = self.layer_to_visual[layer]
-            visual._position = list(event.pos)
-            layer.position = visual._transform_position(visual._position)
+            # set cursor position in world coordinates
+            layer.position = self._map_canvas2world(list(event.pos))
             mouse_move_callbacks(layer, event)
 
     def on_mouse_release(self, event):
@@ -611,10 +625,8 @@ class QtViewer(QSplitter):
 
         layer = self.viewer.active_layer
         if layer is not None:
-            # update cursor position in visual and layer
-            visual = self.layer_to_visual[layer]
-            visual._position = list(event.pos)
-            layer.position = visual._transform_position(visual._position)
+            # set cursor position in world coordinates
+            layer.position = self._map_canvas2world(list(event.pos))
             mouse_release_callbacks(layer, event)
 
     def on_key_press(self, event):
@@ -654,6 +666,34 @@ class QtViewer(QSplitter):
             return
         combo = components_to_key_combo(event.key.name, event.modifiers)
         self.viewer.release_key(combo)
+
+    def on_draw(self, event):
+        """Called whenever the canvas is drawn.
+
+        This is triggered from vispy whenever new data is sent to the canvas or
+        the camera is moved and is connected in the `QtViewer`.
+        """
+        if isinstance(self.view.camera, ArcballCamera):
+            self.viewer.camera._center = self.view.camera.center[::-1]
+            self.viewer.camera._size = self.view.camera.scale_factor
+
+            # Do conversion from quaternion representation to euler angles
+            ang = quaternion2euler(self.view.camera._quaternion, degrees=True)
+            self.viewer.camera._angles = ang
+        else:
+            # Assumes default camera has the same properties as PanZoomCamera
+            self.viewer.camera._center = self.view.camera.rect.center[::-1]
+            self.viewer.camera._size = np.max(self.view.camera.rect.size)
+
+        for layer in self.viewer.layers:
+            if layer.ndim <= self.viewer.dims.ndim:
+                layer._update_draw(
+                    scale_factors=self._canvas2world_scale[-layer.ndim :],
+                    corner_pixels=self._canvas_corners_in_world[
+                        :, -layer.ndim :
+                    ],
+                    shape_threshold=self.canvas.size,
+                )
 
     def keyPressEvent(self, event):
         """Called whenever a key is pressed.
