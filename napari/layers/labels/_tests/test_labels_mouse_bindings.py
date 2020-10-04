@@ -36,13 +36,13 @@ def test_paint(Event, brush_shape, expected_sum):
     layer.brush_shape = brush_shape
     layer.mode = 'paint'
     layer.selected_label = 3
-    layer.coordinates = (0, 0)
+    layer.position = (0, 0)
 
     # Simulate click
     event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
     mouse_press_callbacks(layer, event)
 
-    layer.coordinates = (19, 19)
+    layer.position = (19, 19)
 
     # Simulate drag
     event = ReadOnlyWrapper(Event(type='mouse_move', is_dragging=True))
@@ -72,13 +72,13 @@ def test_erase(Event, brush_shape, expected_sum):
     layer.mode = 'erase'
     layer.brush_shape = brush_shape
     layer.selected_label = 3
-    layer.coordinates = (0, 0)
+    layer.position = (0, 0)
 
     # Simulate click
     event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
     mouse_press_callbacks(layer, event)
 
-    layer.coordinates = (19, 19)
+    layer.position = (19, 19)
 
     # Simulate drag
     event = ReadOnlyWrapper(Event(type='mouse_move', is_dragging=True))
@@ -106,14 +106,14 @@ def test_pick(Event):
     assert layer.selected_label == 1
 
     layer.mode = 'pick'
-    layer.coordinates = (0, 0)
+    layer.position = (0, 0)
 
     # Simulate click
     event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
     mouse_press_callbacks(layer, event)
     assert layer.selected_label == 2
 
-    layer.coordinates = (19, 19)
+    layer.position = (19, 19)
 
     # Simulate click
     event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
@@ -133,7 +133,7 @@ def test_fill(Event):
     assert np.unique(layer.data[-5:, :5]) == 1
 
     layer.mode = 'fill'
-    layer.coordinates = (0, 0)
+    layer.position = (0, 0)
     layer.selected_label = 4
 
     # Simulate click
@@ -144,7 +144,7 @@ def test_fill(Event):
     assert np.unique(layer.data[:5, -5:]) == 1
     assert np.unique(layer.data[-5:, :5]) == 1
 
-    layer.coordinates = (19, 19)
+    layer.position = (19, 19)
     layer.selected_label = 5
 
     # Simulate click
@@ -170,7 +170,7 @@ def test_fill_nD_plane(Event):
     assert np.unique(layer.data[0, 8:10, 8:10]) == 2
 
     layer.mode = 'fill'
-    layer.coordinates = (0, 0, 0)
+    layer.position = (0, 0, 0)
     layer.selected_label = 4
 
     # Simulate click
@@ -183,7 +183,7 @@ def test_fill_nD_plane(Event):
     assert np.unique(layer.data[-5:, :5, -5:]) == 1
     assert np.unique(layer.data[0, 8:10, 8:10]) == 2
 
-    layer.coordinates = (0, 19, 19)
+    layer.position = (0, 19, 19)
     layer.selected_label = 5
 
     # Simulate click
@@ -214,7 +214,7 @@ def test_fill_nD_all(Event):
 
     layer.n_dimensional = True
     layer.mode = 'fill'
-    layer.coordinates = (0, 0, 0)
+    layer.position = (0, 0, 0)
     layer.selected_label = 4
 
     # Simulate click
@@ -226,7 +226,7 @@ def test_fill_nD_all(Event):
     assert np.unique(layer.data[-5:, :5, -5:]) == 1
     assert np.unique(layer.data[0, 8:10, 8:10]) == 2
 
-    layer.coordinates = (0, 19, 19)
+    layer.position = (0, 19, 19)
     layer.selected_label = 5
 
     # Simulate click
