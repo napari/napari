@@ -1,4 +1,5 @@
 import inspect
+import sys
 import time
 
 import pytest
@@ -29,6 +30,7 @@ def test_thread_worker(qtbot):
     test_val = [0]
 
     def func():
+        print("[func]", file=sys.stderr)
         func_val[0] = 1
         return 1
 
