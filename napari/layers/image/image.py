@@ -729,7 +729,9 @@ class Image(IntensityVisualizationMixin, Layer):
             Value of the data at the coord.
         """
         if self.multiscale:
-            coord = self._transforms[0].inverse(self.coordinates)
+            # for multiscale data map the coordinate from the data back to
+            # the tile
+            coord = self._transforms['tile2data'].inverse(self.coordinates)
         else:
             coord = self.coordinates
 
