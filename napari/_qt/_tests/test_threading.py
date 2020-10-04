@@ -1,9 +1,7 @@
 import inspect
-import sys
 import time
 
 import pytest
-from qtpy.QtCore import QCoreApplication
 
 from napari._qt import qthreading
 
@@ -23,33 +21,20 @@ def test_as_generator_function():
 
 # qtbot is necessary for qthreading here.
 # note: pytest-cov cannot check coverage of code run in the other thread.
-@pytest.mark.parametrize("wait", [1000, 10000, 20000, 40000, 80000, 200000])
-def test_thread_worker(qtbot, monkeypatch, wait):
+@pytest.mark.parametrize("wait", [10000, 20000, 40000, 80000, 200000])
+def test_thread_worker(qtbot, wait):
     """Test basic threadworker on a function"""
 
     func_val = [0]
     test_val = [0]
 
     def func():
-        print("[func]", file=sys.stderr)
         func_val[0] = 1
-        print("[func] end", file=sys.stderr)
         return 1
 
     def test(v):
-        print("[test]", file=sys.stderr)
         test_val[0] = 1
         assert v == 1
-        print("[test] end", file=sys.stderr)
-
-    orig_fun = qthreading.WorkerBase.run
-
-    def wrap_fun(self):
-        print("[wrap_fun] start", file=sys.stderr)
-        orig_fun(self)
-        print("[wrap_fun] end", file=sys.stderr)
-
-    monkeypatch.setattr(qthreading.WorkerBase, "run", wrap_fun)
 
     thread_func = qthreading.thread_worker(
         func, connect={'returned': test}, start_thread=False
@@ -58,7 +43,6 @@ def test_thread_worker(qtbot, monkeypatch, wait):
     assert isinstance(worker, qthreading.FunctionWorker)
     assert func_val[0] == 0
     with qtbot.waitSignal(worker.finished, timeout=wait):
-        print("start", file=sys.stderr)
         worker.start()
     assert func_val[0] == 1
     assert test_val[0] == 1
