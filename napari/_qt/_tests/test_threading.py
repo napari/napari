@@ -1,5 +1,4 @@
 import inspect
-import sys
 import time
 
 import pytest
@@ -30,16 +29,12 @@ def test_thread_worker(qtbot):
     test_val = [0]
 
     def func():
-        print("[func] begin", file=sys.stderr)
         func_val[0] = 1
-        print("[func] end", file=sys.stderr)
         return 1
 
     def test(v):
-        print("[test] begin", file=sys.stderr)
         test_val[0] = 1
         assert v == 1
-        print("[test] test", file=sys.stderr)
 
     thread_func = qthreading.thread_worker(
         func, connect={'returned': test}, start_thread=False
@@ -48,7 +43,6 @@ def test_thread_worker(qtbot):
     assert isinstance(worker, qthreading.FunctionWorker)
     assert func_val[0] == 0
     with qtbot.waitSignal(worker.finished, timeout=10000):
-        print("before start", file=sys.stderr)
         worker.start()
         QCoreApplication.processEvents()
     assert func_val[0] == 1
