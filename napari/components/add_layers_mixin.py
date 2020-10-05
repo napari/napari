@@ -902,6 +902,100 @@ class AddLayersMixin:
         self.add_layer(layer)
         return layer
 
+    def add_tracks(
+        self,
+        data,
+        *,
+        properties=None,
+        graph=None,
+        tail_width=2,
+        tail_length=30,
+        name=None,
+        metadata=None,
+        scale=None,
+        translate=None,
+        opacity=1,
+        blending='additive',
+        visible=True,
+        colormap='turbo',
+        color_by='track_id',
+        colormaps_dict=None,
+    ) -> layers.Tracks:
+        """Add a tracks layer to the layers list.
+
+        Parameters
+        ----------
+        data : array (N, D+1)
+            Coordinates for N points in D+1 dimensions. ID,T,(Z),Y,X. The first
+            axis is the integer ID of the track. D is either 3 or 4 for planar
+            or volumetric timeseries respectively.
+        properties : dict {str: array (N,)}, DataFrame
+            Properties for each point. Each property should be an array of length N,
+            where N is the number of points.
+        graph : dict {int: list}
+            Graph representing associations between tracks. Dictionary defines the
+            mapping between a track ID and the parents of the track. This can be
+            one (the track has one parent, and the parent has >=1 child) in the
+            case of track splitting, or more than one (the track has multiple
+            parents, but only one child) in the case of track merging.
+            See examples/tracks_3d_with_graph.py
+        color_by: str
+            Track property (from property keys) by which to color vertices.
+        tail_width : float
+            Width of the track tails in pixels.
+        tail_length : float
+            Length of the track tails in units of time.
+        colormap : str
+            Default colormap to use to set vertex colors. Specialized colormaps,
+            relating to specified properties can be passed to the layer via
+            colormaps_dict.
+        colormaps_dict : dict {str: napari.utils.Colormap}
+            Optional dictionary mapping each property to a colormap for that
+            property. This allows each property to be assigned a specific colormap,
+            rather than having a global colormap for everything.
+        name : str
+            Name of the layer.
+        metadata : dict
+            Layer metadata.
+        scale : tuple of float
+            Scale factors for the layer.
+        translate : tuple of float
+            Translation values for the layer.
+        opacity : float
+            Opacity of the layer visual, between 0.0 and 1.0.
+        blending : str
+            One of a list of preset blending modes that determines how RGB and
+            alpha values of the layer visual get mixed. Allowed values are
+            {'opaque', 'translucent', and 'additive'}.
+        visible : bool
+            Whether the layer visual is currently being displayed.
+
+        Returns
+        -------
+        layer : :class:`napari.layers.Tracks`
+            The newly-created tracks layer.
+
+        """
+        layer = layers.Tracks(
+            data,
+            properties=properties,
+            graph=graph,
+            tail_width=tail_width,
+            tail_length=tail_length,
+            name=name,
+            metadata=metadata,
+            scale=scale,
+            translate=translate,
+            opacity=opacity,
+            blending=blending,
+            visible=visible,
+            colormap=colormap,
+            color_by=color_by,
+            colormaps_dict=colormaps_dict,
+        )
+        self.add_layer(layer)
+        return layer
+
     def open(
         self,
         path: Union[str, Sequence[str]],

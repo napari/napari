@@ -9,7 +9,7 @@ They will need to have a [PyPI](https://pypi.org) account with upload permission
 
 You will also need the additional `release` dependencies (`pip install -e .[release]`) to complete the release process.
 
-> [`MANIFEST.in`](../MANIFEST.in) determines which non-Python files are included.
+> [`MANIFEST.in`](https://github.com/napari/napari/blob/master/MANIFEST.in) determines which non-Python files are included.
 > Make sure to check that all necessary ones are listed before beginning the release process.
 
 The `napari/napari` repository must have a PyPI API token as a GitHub secret.
