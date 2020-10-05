@@ -39,6 +39,11 @@ class StatWindow:
     ----------
     size : int
         The size of the window.
+
+    Attributes
+    ----------
+    values : ndarray
+        The values in our window.
     """
 
     def __init__(self, size: int):
@@ -46,10 +51,10 @@ class StatWindow:
         self.values = np.array([])  # float64 array
 
         # Once the window is full we insert values at this index, the
-        # index loops through the slots circularly.
+        # index loops through the slots circularly, forever.
         self.index = 0
 
-    def add(self, value: float):
+    def add(self, value: float) -> None:
         """Add one value to the window.
 
         Parameters
