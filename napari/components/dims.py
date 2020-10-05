@@ -104,7 +104,7 @@ class Dims:
         """Number of slider steps for each dimension.
         """
         return [
-            int((max_val - min_val - step_size) // step_size) + 1
+            int((max_val - min_val) // step_size) + 1
             for min_val, max_val, step_size in self._range
         ]
 
@@ -327,7 +327,7 @@ class Dims:
             Value of the point.
         """
         axis = self._assert_axis_in_bounds(axis)
-        step = np.round(np.clip(value, 0, self.nsteps[axis])).astype(int)
+        step = np.round(np.clip(value, 0, self.nsteps[axis] - 1)).astype(int)
 
         if self._current_step[axis] != step:
             self._current_step[axis] = step

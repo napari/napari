@@ -216,7 +216,7 @@ class QtDims(QWidget):
         width = 0
         for ax, maxi in enumerate(self.dims.nsteps):
             if self._displayed_sliders[ax]:
-                length = len(str(maxi))
+                length = len(str(maxi - 1))
                 if length > width:
                     width = length
         # gui width of a string of length `width`

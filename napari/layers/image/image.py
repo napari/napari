@@ -468,7 +468,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
     @property
     def shape(self):
-        """Size of layer in data coordinates (compatibility).
+        """Size of layer in world coordinates (compatibility).
 
         Returns
         -------
