@@ -90,7 +90,7 @@ class QtDimSliderWidget(QWidget):
     def _set_slice_from_label(self):
         """Update the dims point based on the curslice_label."""
         val = int(self.curslice_label.text())
-        max_allowed = self.dims.nsteps[self.axis] - 1
+        max_allowed = self.dims.nsteps[self.axis]
         if val > max_allowed:
             val = max_allowed
             self.curslice_label.setText(str(val))
@@ -128,7 +128,7 @@ class QtDimSliderWidget(QWidget):
         slider = ModifiedScrollBar(Qt.Horizontal)
         slider.setFocusPolicy(Qt.NoFocus)
         slider.setMinimum(0)
-        slider.setMaximum(self.dims.nsteps[self.axis] - 1)
+        slider.setMaximum(self.dims.nsteps[self.axis])
         slider.setSingleStep(1)
         slider.setPageStep(1)
         slider.setValue(self.dims.current_step[self.axis])
@@ -184,7 +184,7 @@ class QtDimSliderWidget(QWidget):
         """Updates range for slider."""
         displayed_sliders = self.qt_dims._displayed_sliders
 
-        nsteps = self.dims.nsteps[self.axis] - 1
+        nsteps = self.dims.nsteps[self.axis]
         if nsteps == 0:
             displayed_sliders[self.axis] = False
             self.qt_dims.last_used = None

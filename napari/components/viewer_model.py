@@ -307,7 +307,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         scene_size = extent[1] - extent[0]
         corner = extent[0]
         shape = [
-            np.round(s / sc).astype('int') if s > 0 else 1
+            np.round(s / sc).astype('int') + 1 if s > 0 else 1
             for s, sc in zip(scene_size, scale)
         ]
         empty_labels = np.zeros(shape, dtype=int)
@@ -378,7 +378,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             ndim = extent.shape[1]
             self.dims.ndim = ndim
             for i in range(ndim):
-                self.dims.set_range(i, (extent[0, i], extent[1, i] + 1, ss[i]))
+                self.dims.set_range(i, (extent[0, i], extent[1, i], ss[i]))
         self.events.layers_change()
 
     def _update_status(self, event):

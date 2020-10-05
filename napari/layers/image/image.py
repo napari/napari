@@ -3,6 +3,7 @@
 import os
 import types
 import warnings
+from copy import copy
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -465,6 +466,24 @@ class Image(IntensityVisualizationMixin, Layer):
         """
         return self._slice.loaded
 
+    @property
+    def shape(self):
+        """Size of layer in data coordinates (compatibility).
+
+        Returns
+        -------
+        shape : tuple
+        """
+        # To Do: Deprecate when full world coordinate refactor
+        # is complete
+
+        extent = copy(self._extent_data)
+        extent[1] = extent[1] + 1
+        extent = self._transforms['data2world'](extent)
+
+        # Rounding is for backwards compatibility reasons.
+        return tuple(np.round(extent[1] - extent[0]).astype(int))
+
     def _get_state(self):
         """Get dictionary of layer state.
 
@@ -524,7 +543,7 @@ class Image(IntensityVisualizationMixin, Layer):
         ) or np.any(
             np.greater(
                 [indices[ax] for ax in not_disp],
-                [extent[1, ax] - 1 for ax in not_disp],
+                [extent[1, ax] for ax in not_disp],
             )
         ):
             return

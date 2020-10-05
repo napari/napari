@@ -327,7 +327,7 @@ class Dims:
             Value of the point.
         """
         axis = self._assert_axis_in_bounds(axis)
-        step = np.round(np.clip(value, 0, self.nsteps[axis] - 1)).astype(int)
+        step = np.round(np.clip(value, 0, self.nsteps[axis])).astype(int)
 
         if self._current_step[axis] != step:
             self._current_step[axis] = step

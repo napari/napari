@@ -450,7 +450,7 @@ class Layer(KeymapProvider, ABC):
 
     @property
     def shape(self):
-        """Size of layer in world coordinates (compatibility).
+        """Size of layer in data coordinates (compatibility).
 
         Returns
         -------
