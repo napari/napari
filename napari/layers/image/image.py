@@ -329,7 +329,7 @@ class Image(IntensityVisualizationMixin, Layer):
         -------
         extent_data : array, shape (2, D)
         """
-        shape = self.level_shapes[0]
+        shape = np.subtract(self.level_shapes[0], 1)
         return np.vstack([np.zeros(len(shape)), shape])
 
     @property
