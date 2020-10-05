@@ -1,4 +1,5 @@
 from contextlib import contextmanager
+from distutils.version import LooseVersion
 
 import dask
 import dask.array as da
@@ -6,8 +7,6 @@ import numpy as np
 import pytest
 
 from napari import layers, utils, viewer
-
-dask_version = tuple(map(int, dask.__version__.split(".")))
 
 
 def test_dask_array_creates_cache():
@@ -85,7 +84,8 @@ def delayed_dask_stack():
 
 
 @pytest.mark.skipif(
-    dask_version < (2, 15, 0), reason="requires dask 2.15.0 or higher"
+    dask.__version__ < LooseVersion('2.15.0'),
+    reason="requires dask 2.15.0 or higher",
 )
 @pytest.mark.sync_only
 def test_dask_optimized_slicing(delayed_dask_stack, monkeypatch):
@@ -118,7 +118,8 @@ def test_dask_optimized_slicing(delayed_dask_stack, monkeypatch):
 
 
 @pytest.mark.skipif(
-    dask_version < (2, 15, 0), reason="requires dask 2.15.0 or higher"
+    dask.__version__ < LooseVersion('2.15.0'),
+    reason="requires dask 2.15.0 or higher",
 )
 @pytest.mark.sync_only
 def test_dask_unoptimized_slicing(delayed_dask_stack, monkeypatch):
