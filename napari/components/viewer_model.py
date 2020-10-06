@@ -470,8 +470,8 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             Size of the grid that is being used.
         """
         extent = self._sliced_extent_world
-        scene_size = extent[1] - extent[0]
-        translate_2d = np.multiply(scene_size[-2:], position)
+        scene_shift = extent[1] - extent[0] + 1
+        translate_2d = np.multiply(scene_shift[-2:], position)
         translate = [0] * layer.ndim
         translate[-2:] = translate_2d
         layer.translate_grid = translate
