@@ -480,7 +480,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
     def experimental(self):
         """Experimental commands for IPython console.
 
-        For example run "viewer.experimental.loader.help".
+        For example run "viewer.experimental.cmds.loader.help".
         """
         from .experimental.commands import ExperimentalNamespace
 
