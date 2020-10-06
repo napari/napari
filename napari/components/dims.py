@@ -97,7 +97,7 @@ class Dims:
     def _current_step(self):
         """Tuple of int: value of slider position for each dimension."""
         step = [
-            (value - min_val) / step_size
+            int((value - min_val) // step_size)
             for (min_val, max_val, step_size), value in zip(
                 self._range, self.point
             )
