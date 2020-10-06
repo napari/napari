@@ -1,3 +1,4 @@
+import os
 import warnings
 from functools import partial
 from typing import List
@@ -21,8 +22,6 @@ from napari.utils import io
 try:
     from skimage.data import image_fetcher
 except ImportError:
-    import os
-
     from skimage.data import data_dir
 
     class image_fetcher:
@@ -352,3 +351,17 @@ def perfmon_only(request):
         pytest.skip("running with --perfmon-only")
     if not perfmon_flag and perfmon_test:
         pytest.skip("not running with --perfmon-only")
+
+
+# _PYTEST_RAISE=1 will prevent pytest from handling exceptions.
+# Use with a debugger that's set to break on "unhandled exceptions".
+# https://github.com/pytest-dev/pytest/issues/7409
+if os.getenv('_PYTEST_RAISE', "0") != "0":
+
+    @pytest.hookimpl(tryfirst=True)
+    def pytest_exception_interact(call):
+        raise call.excinfo.value
+
+    @pytest.hookimpl(tryfirst=True)
+    def pytest_internalerror(excinfo):
+        raise excinfo.value
