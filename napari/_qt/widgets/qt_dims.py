@@ -56,10 +56,12 @@ class QtDims(QWidget):
         # Update the number of sliders now that the dims have been added
         self._update_nsliders()
         self.dims.events.ndim.connect(self._update_nsliders)
-        self.dims.events.current_step.connect(
-            lambda ev: self._update_slider(ev.axis)
+        self.dims.point.events.changed.connect(
+            lambda ev: self._update_slider(ev.index)
         )
-        self.dims.events.range.connect(lambda ev: self._update_range(ev.axis))
+        self.dims.range.events.changed.connect(
+            lambda ev: self._update_range(ev.index)
+        )
         self.dims.events.ndisplay.connect(self._update_display)
         self.dims.events.order.connect(self._update_display)
 
@@ -155,7 +157,7 @@ class QtDims(QWidget):
             The napari event that triggered this method, by default None.
         """
         widgets = reversed(list(enumerate(self.slider_widgets)))
-        nsteps = self.dims.nsteps
+        nsteps = self.dims._nsteps
         for (axis, widget) in widgets:
             if axis in self.dims.displayed or nsteps[axis] <= 1:
                 # Displayed dimensions correspond to non displayed sliders
@@ -214,7 +216,7 @@ class QtDims(QWidget):
         largest dimensions, plus a little padding.
         """
         width = 0
-        for ax, maxi in enumerate(self.dims.nsteps):
+        for ax, maxi in enumerate(self.dims._nsteps):
             if self._displayed_sliders[ax]:
                 length = len(str(maxi - 1))
                 if length > width:

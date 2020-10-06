@@ -222,7 +222,7 @@ class Labels(Image):
 
         self.dims.events.ndisplay.connect(self._reset_history)
         self.dims.events.order.connect(self._reset_history)
-        self.dims.events.current_step.connect(self._reset_history)
+        self.dims.point.events.changed.connect(self._reset_history)
 
     @property
     def contiguous(self):

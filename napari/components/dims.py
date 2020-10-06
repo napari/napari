@@ -1,410 +1,347 @@
-from copy import copy
-from typing import Sequence, Union
+# from copy import copy
+# from typing import Sequence, Union
 
-import numpy as np
+# import numpy as np
 
-from ..utils.events import EmitterGroup
+# from ..utils.events import EmitterGroup, EventedList
 
 
-class Dims:
-    """Dimensions object modeling slicing and displaying.
+# class Dims:
+#     """Dimensions object modeling slicing and displaying.
 
-    Parameters
-    ----------
-    ndim : int, optional
-        Number of dimensions
-    ndisplay : int, optional
-        Number of displayed dimensions.
-    order : list of int, optional
-        Order in which dimensions are displayed where the last two or last
-        three dimensions correspond to row x column or plane x row x column if
-        ndisplay is 2 or 3.
-    axis_labels : list of str, optional
-        Dimension names
+#     Parameters
+#     ----------
+#     ndim : int, optional
+#         Number of dimensions.
+#     ndisplay : int, optional
+#         Number of displayed dimensions.
+#     order : list of int, optional
+#         Order in which dimensions are displayed where the last two or last
+#         three dimensions correspond to row x column or plane x row x column if
+#         ndisplay is 2 or 3.
+#     axis_labels : list of str, optional
+#         Dimension names.
 
-    Attributes
-    ----------
-    events : EmitterGroup
-        Event emitter group
-    range : list of 3-tuple
-        List of tuples (min, max, step), one for each dimension. In a world
-        coordinates space.
-    point : list of float
-        List of floats setting the current value of the range slider when in
-        POINT mode, one for each dimension. In a world coordinates space.
-    current_step : tuple of int
-        Tuple the slider position for each dims slider, in slider coordinates.
-    nsteps : tuple of int
-        Number of steps available to each slider.
-    ndim : int
-        Number of dimensions.
-    displayed : tuple
-        List of dimensions that are displayed.
-    not_displayed : tuple
-        List of dimensions that are not displayed.
-    displayed_order : tuple
-        Order of only displayed dimensions.
-    """
+#     Attributes
+#     ----------
+#     events : EmitterGroup
+#         Event emitter group
+#     range : list of 3-tuple
+#         List of tuples (min, max, step), one for each dimension. In a world
+#         coordinates space.
+#     point : list of float
+#         List of floats setting the current value of the range slider when in
+#         POINT mode, one for each dimension. In a world coordinates space.
+#     nsteps : tuple of int
+#         Number of steps available to each slider.
+#     ndim : int
+#         Number of dimensions.
+#     displayed : tuple
+#         List of dimensions that are displayed.
+#     not_displayed : tuple
+#         List of dimensions that are not displayed.
+#     displayed_order : tuple
+#         Order of only displayed dimensions.
+#     """
 
-    def __init__(self, ndim=None, *, ndisplay=2, order=None, axis_labels=None):
-        super().__init__()
+#     def __init__(self, ndim=None, *, ndisplay=2, order=None, axis_labels=None):
+#         super().__init__()
 
-        # Events:
-        self.events = EmitterGroup(
-            source=self,
-            auto_connect=True,
-            current_step=None,
-            axis_labels=None,
-            ndim=None,
-            ndisplay=None,
-            order=None,
-            range=None,
-            camera=None,
-            deprecated={"axis": "current_step"},
-        )
-        self._range = []
-        self._current_step = []
-        self._order = []
-        self._axis_labels = []
-        self._scroll_progress = 0
-        self.last_used = None
-        self._ndisplay = 2 if ndisplay is None else ndisplay
+#         # Events:
+#         self.events = EmitterGroup(
+#             source=self,
+#             auto_connect=True,
+#             ndim=None,
+#             ndisplay=None,
+#             order=None,
+#             camera=None,
+#         )
+#         self._range = EventedList()
+#         self._order = ()
+#         self._point = EventedList()
+#         self._axis_labels = EventedList()
+#         self._scroll_progress = 0
+#         self.last_used = None
+#         self._ndisplay = 2 if ndisplay is None else ndisplay
 
-        if ndim is None and order is None and axis_labels is None:
-            ndim = self._ndisplay
-        elif ndim is None and order is None:
-            ndim = len(axis_labels)
-        elif ndim is None and axis_labels is None:
-            ndim = len(order)
-        self.ndim = ndim
+#         if ndim is None and order is None and axis_labels is None:
+#             ndim = self._ndisplay
+#         elif ndim is None and order is None:
+#             ndim = len(axis_labels)
+#         elif ndim is None and axis_labels is None:
+#             ndim = len(order)
+#         self.ndim = ndim
 
-        if order is not None:
-            if len(order) != ndim:
-                raise ValueError(
-                    f"Length of order must be identical to ndim."
-                    f" ndim is {ndim} while order is {order}."
-                )
-            self._order = order
-        if axis_labels is not None:
-            if len(axis_labels) != ndim:
-                raise ValueError(
-                    f"Length of axis labels must be identical to ndim."
-                    f" ndim is {ndim} while axis labels is {axis_labels}."
-                )
-            self._axis_labels = list(axis_labels)
+#         if axis_labels is not None:
+#             self.axis_labels = axis_labels
 
-    @property
-    def range(self):
-        """List of 3-tuple: (min, max, step size) of each dimension.
-        """
-        return copy(self._range)
+#         if order is not None:
+#             self.order = order
 
-    @property
-    def nsteps(self):
-        """Number of slider steps for each dimension.
-        """
-        return [
-            int((max_val - min_val - step_size) // step_size) + 1
-            for min_val, max_val, step_size in self._range
-        ]
+#     @property
+#     def range(self):
+#         """List of 3-tuple: (min, max, step size) of each dimension.
+#         """
+#         return self._range
 
-    @property
-    def current_step(self):
-        """Tuple of int: value of slider position for each dimension."""
-        return copy(self._current_step)
+#     @property
+#     def _nsteps(self):
+#         """Number of slider steps for each dimension."""
+#         return [
+#             int((max_val - min_val - step_size) // step_size) + 1
+#             for min_val, max_val, step_size in self._range
+#         ]
 
-    @property
-    def point(self):
-        """List of float: value of each dimension."""
-        # The point value is computed from the current_step
-        point = [
-            min_val + step_size * value
-            for (min_val, max_val, step_size), value in zip(
-                self._range, self._current_step
-            )
-        ]
-        return point
+#     @property
+#     def _current_step(self):
+#         """Tuple of int: value of slider position for each dimension."""
+#         step = [
+#             (value - min_val) / step_size
+#             for (min_val, max_val, step_size), value in zip(
+#                 self._range, self.point
+#             )
+#         ]
+#         return step
 
-    @property
-    def axis_labels(self):
-        """List of labels for each axis."""
-        return copy(self._axis_labels)
+#     @property
+#     def point(self):
+#         """List of float: value of each dimension."""
+#         # The point value is computed from the current_step
+#         return self._point
 
-    @axis_labels.setter
-    def axis_labels(self, labels):
-        if self._axis_labels == labels:
-            return
+#     @point.setter
+#     def point(self, point):
+#         if list(self.point) == point:
+#             return
 
-        if len(labels) != self.ndim:
-            raise ValueError(
-                f"Number of labels doesn't match number of dimensions. Number"
-                f" of given labels was {len(labels)}, number of dimensions is"
-                f" {self.ndim}. Note: If you wish to keep some of the "
-                "dimensions unlabeled, use '' instead."
-            )
+#         if len(point) != self.ndim:
+#             raise ValueError(
+#                 f"Number of points doesn't match number of dimensions. Number"
+#                 f" of given points was {len(point)}, number of dimensions is"
+#                 f" {self.ndim}."
+#             )
 
-        self._axis_labels = list(labels)
-        for axis in range(self.ndim):
-            self.events.axis_labels(axis=axis)
+#         for i, p in enumerate(list(point)):
+#             self._point[i] = p
 
-    @property
-    def order(self):
-        """List of int: Display order of dimensions."""
-        return copy(self._order)
+#     @property
+#     def axis_labels(self):
+#         """List of labels for each axis."""
+#         return self._axis_labels
 
-    @order.setter
-    def order(self, order):
-        if np.all(self._order == order):
-            return
+#     @axis_labels.setter
+#     def axis_labels(self, labels):
+#         if list(self.axis_labels) == labels:
+#             return
 
-        if not len(order) == self.ndim:
-            raise ValueError(
-                f"Invalid ordering {order} for {self.ndim} dimensions"
-            )
+#         if len(labels) != self.ndim:
+#             raise ValueError(
+#                 f"Number of labels doesn't match number of dimensions. Number"
+#                 f" of given labels was {len(labels)}, number of dimensions is"
+#                 f" {self.ndim}. Note: If you wish to keep some of the "
+#                 "dimensions unlabeled, use '' instead."
+#             )
 
-        self._order = order
-        self.events.order()
-        self.events.camera()
+#         for i, ax in enumerate(list(labels)):
+#             self._axis_labels[i] = ax
 
-    @property
-    def ndim(self):
-        """Returns the number of dimensions.
+#     @property
+#     def order(self):
+#         """Tuple of int: Display order of dimensions."""
+#         return self._order
 
-        Returns
-        -------
-        ndim : int
-            Number of dimensions
-        """
-        return len(self.point)
+#     @order.setter
+#     def order(self, order):
+#         if self._order == tuple(order):
+#             return
 
-    @ndim.setter
-    def ndim(self, ndim):
-        cur_ndim = self.ndim
-        if cur_ndim == ndim:
-            return
-        elif ndim > cur_ndim:
-            # Range value is (min, max, step) for the entire slider
-            self._range = [(0, 2, 1)] * (ndim - cur_ndim) + self._range
-            # Point is the slider value if in point mode
-            self._current_step = [0] * (ndim - cur_ndim) + self._current_step
-            self._order = list(range(ndim - cur_ndim)) + [
-                o + ndim - cur_ndim for o in self.order
-            ]
-            # Append new "default" labels to existing ones
-            if self._axis_labels == list(map(str, range(cur_ndim))):
-                self._axis_labels = list(map(str, range(ndim)))
-            else:
-                self._axis_labels = (
-                    list(map(str, range(ndim - cur_ndim))) + self._axis_labels
-                )
+#         if not set(order) == set(range(self.ndim)):
+#             raise ValueError(
+#                 f"Invalid ordering {order} for {self.ndim} dimensions"
+#             )
 
-            # Notify listeners that the number of dimensions have changed
-            self.events.ndim()
+#         self._order = tuple(order)
+#         self.events.order()
+#         self.events.camera()
 
-            # Notify listeners of which dimensions have been affected
-            for axis_changed in range(ndim - cur_ndim):
-                self.events.current_step(axis=axis_changed)
-        elif ndim < cur_ndim:
-            self._range = self._range[-ndim:]
-            self._current_step = self._current_step[-ndim:]
-            self._order = self._reorder_after_dim_reduction(
-                self._order[-ndim:]
-            )
-            self._axis_labels = self._axis_labels[-ndim:]
+#     @property
+#     def ndim(self):
+#         """Returns the number of dimensions.
 
-            # Notify listeners that the number of dimensions have changed
-            self.events.ndim()
+#         Returns
+#         -------
+#         ndim : int
+#             Number of dimensions
+#         """
+#         return len(self.point)
 
-    def _reorder_after_dim_reduction(self, order):
-        """Ensure current dimension order is preserved after dims are dropped.
+#     @ndim.setter
+#     def ndim(self, ndim):
+#         cur_ndim = self.ndim
+#         if cur_ndim == ndim:
+#             return
+#         elif ndim > cur_ndim:
+#             for i in range(ndim - cur_ndim):
+#                 # Range value is (min, max, step) for the entire slider
+#                 self.range.insert(0, (0, 2, 1))
+#                 # Point is the slider value
+#                 self.point.insert(0, 0)
+#                 # Insert new default axis labels
+#                 total = ndim - cur_ndim - 1
+#                 self.axis_labels.insert(0, str(total - i))
 
-        Parameters
-        ----------
-        order : list-like
-            The data to reorder.
+#             self._order = tuple(range(ndim - cur_ndim)) + tuple(
+#                 [o + ndim - cur_ndim for o in self.order]
+#             )
 
-        Returns
-        -------
-        arr : list
-            The original array with the unneeded dimension
-            thrown away.
-        """
-        arr = np.array(order)
-        arr[np.argsort(arr)] = range(len(arr))
-        return arr.tolist()
+#             # If axis labels were previouly ordered, preserve full ordering
+#             if list(self.axis_labels[ndim - cur_ndim :]) == list(
+#                 map(str, range(cur_ndim))
+#             ):
+#                 for i in range(ndim - cur_ndim, ndim):
+#                     self._axis_labels[i] = str(i)
 
-    @property
-    def ndisplay(self):
-        """Int: Number of displayed dimensions."""
-        return self._ndisplay
+#         elif ndim < cur_ndim:
+#             for i in range(cur_ndim - ndim):
+#                 self.range.pop(0)
+#                 self.point.pop(0)
+#                 self.axis_labels.pop(0)
 
-    @ndisplay.setter
-    def ndisplay(self, ndisplay):
-        if self._ndisplay == ndisplay:
-            return
+#             self._order = tuple(
+#                 reorder_after_dim_reduction(self._order[-ndim:])
+#             )
 
-        if ndisplay not in (2, 3):
-            raise ValueError(
-                f"Invalid number of dimensions to be displayed {ndisplay}"
-            )
+#         # Notify listeners that the number of dimensions have changed
+#         self.events.ndim()
 
-        self._ndisplay = ndisplay
-        self.events.ndisplay()
-        self.events.camera()
+#     @property
+#     def ndisplay(self):
+#         """Int: Number of displayed dimensions."""
+#         return self._ndisplay
 
-    @property
-    def displayed(self):
-        """Tuple: Dimensions that are displayed."""
-        return self.order[-self.ndisplay :]
+#     @ndisplay.setter
+#     def ndisplay(self, ndisplay):
+#         if self._ndisplay == ndisplay:
+#             return
 
-    @property
-    def not_displayed(self):
-        """Tuple: Dimensions that are not displayed."""
-        return self.order[: -self.ndisplay]
+#         if ndisplay not in (2, 3):
+#             raise ValueError(
+#                 f"Invalid number of dimensions to be displayed {ndisplay}"
+#             )
 
-    @property
-    def displayed_order(self):
-        """Tuple: Order of only displayed dimensions."""
-        order = np.array(self.displayed)
-        order[np.argsort(order)] = list(range(len(order)))
-        return tuple(order)
+#         self._ndisplay = ndisplay
+#         self.events.ndisplay()
+#         self.events.camera()
 
-    def reset(self):
-        """Reset dims values to initial states."""
-        for axis in range(self.ndim):
-            # Range value is (min, max, step) for the entire slider
-            self._range[axis] = (0, 2, 1)
-            # Point is the slider value if in point mode
-            self._current_step[axis] = 0
-            self._order[axis] = axis
-            # Default axis labels go from "-ndim" to "-1" so new axes can easily be added
-            self._axis_labels[axis] = str(axis - self.ndim)
+#     @property
+#     def displayed(self):
+#         """Tuple: Dimensions that are displayed."""
+#         return list(self.order[-self.ndisplay :])
 
-    def set_range(self, axis: int, _range: Sequence[Union[int, float]]):
-        """Sets the range (min, max, step) for a given dimension.
+#     @property
+#     def not_displayed(self):
+#         """Tuple: Dimensions that are not displayed."""
+#         return list(self.order[: -self.ndisplay])
 
-        Parameters
-        ----------
-        axis : int
-            Dimension index.
-        _range : tuple
-            Range specified as (min, max, step).
-        """
-        axis = self._assert_axis_in_bounds(axis)
-        if self.range[axis] != _range:
-            self._range[axis] = _range
-            self.events.range(axis=axis)
+#     @property
+#     def displayed_order(self):
+#         """Tuple: Order of only displayed dimensions."""
+#         order = np.array(self.displayed)
+#         order[np.argsort(order)] = list(range(len(order)))
+#         return tuple(order)
 
-    def set_point(self, axis: int, value: Union[int, float]):
-        """Sets point to slice dimension in world coordinates.
+#     def reset(self):
+#         """Reset dims values to initial states."""
+#         for axis in range(self.ndim):
+#             # Range value is (min, max, step) for the entire slider
+#             self.range[axis] = (0, 2, 1)
+#             # Point is the slider value if in point mode
+#             self.point[axis] = 0
+#             # Default axis labels go from "-ndim" to "-1" so new axes can easily be added
+#             self.axis_labels[axis] = str(axis - self.ndim)
+#         self.order = tuple(range(self.ndim))
 
-        The desired point gets transformed into an integer step
-        of the slider and stored in the current_step.
+#     def set_range(self, axis: int, value: Sequence[Union[int, float]]):
+#         """Sets the range (min, max, step) for a given dimension.
 
-        Parameters
-        ----------
-        axis : int
-            Dimension index.
-        value : int or float
-            Value of the point.
-        """
-        axis = self._assert_axis_in_bounds(axis)
-        (min_val, max_val, step_size) = self._range[axis]
-        raw_step = (value - min_val) / step_size
-        self.set_current_step(axis, raw_step)
+#         Parameters
+#         ----------
+#         axis : int
+#             Dimension index.
+#         value : tuple
+#             Range specified as (min, max, step).
+#         """
+#         warnings.warn(
+#             f'To be deprecated, use self.range[axis] =' f' value instead.'
+#         )
+#         self.range[axis] = value
 
-    def set_current_step(self, axis: int, value: int):
-        """Sets the slider step at which to slice this dimension.
+#     def set_point(self, axis: int, value: Union[int, float]):
+#         """Sets the point at which to slice this dimension.
 
-        The position of the slider in world coordinates gets
-        calculated from the current_step of the slider.
+#         Parameters
+#         ----------
+#         axis : int
+#             Dimension index.
+#         value : int or float
+#             Value of the point.
+#         """
+#         warnings.warn(
+#             f'To be deprecated, use self.point[axis] =' f' value instead.'
+#         )
+#         self.point[axis] = value
 
-        Parameters
-        ----------
-        axis : int
-            Dimension index.
-        value : int or float
-            Value of the point.
-        """
-        axis = self._assert_axis_in_bounds(axis)
-        step = np.round(np.clip(value, 0, self.nsteps[axis] - 1)).astype(int)
+#     def set_axis_label(self, axis: int, label: str):
+#         """Sets a new axis label for the given axis.
 
-        if self._current_step[axis] != step:
-            self._current_step[axis] = step
-            self.events.current_step(axis=axis, value=step)
+#         Parameters
+#         ----------
+#         axis : int
+#             Dimension index
+#         label : str
+#             Given label
+#         """
+#         warnings.warn(
+#             f'To be deprecated, use self.axis_labels[axis] ='
+#             f' value instead.'
+#         )
+#         self.axis_labels[axis] = label
 
-    def _increment_dims_right(self, axis: int = None):
-        """Increment dimensions to the right along given axis, or last used axis if None
+#     def _increment_dims_right(self, axis: int = None):
+#         """Increment dimensions to the right along given axis, or last used axis if None
 
-        Parameters
-        ----------
-        axis : int, optional
-            Axis along which to increment dims, by default None
-        """
-        if axis is None:
-            axis = self.last_used
-        if axis is not None:
-            self.set_current_step(axis, self.current_step[axis] + 1)
+#         Parameters
+#         ----------
+#         axis : int, optional
+#             Axis along which to increment dims, by default None
+#         """
+#         if axis is None:
+#             axis = self.last_used
+#         if axis is not None:
+#             self.set_current_step(axis, self.current_step[axis] + 1)
 
-    def _increment_dims_left(self, axis: int = None):
-        """Increment dimensions to the left along given axis, or last used axis if None
+#     def _increment_dims_left(self, axis: int = None):
+#         """Increment dimensions to the left along given axis, or last used axis if None
 
-        Parameters
-        ----------
-        axis : int, optional
-            Axis along which to increment dims, by default None
-        """
-        if axis is None:
-            axis = self.last_used
-        if axis is not None:
-            self.set_current_step(axis, self.current_step[axis] - 1)
+#         Parameters
+#         ----------
+#         axis : int, optional
+#             Axis along which to increment dims, by default None
+#         """
+#         if axis is None:
+#             axis = self.last_used
+#         if axis is not None:
+#             self.set_current_step(axis, self.current_step[axis] - 1)
 
-    def set_axis_label(self, axis: int, label: str):
-        """Sets a new axis label for the given axis.
+#     def _roll(self):
+#         """Roll order of dimensions for display."""
+#         order = np.array(self.order)
+#         nsteps = np.array(self.nsteps)
+#         order[nsteps > 1] = np.roll(order[nsteps > 1], 1)
+#         self.order = list(order)
 
-        Parameters
-        ----------
-        axis : int
-            Dimension index
-        label : str
-            Given label
-        """
-        axis = self._assert_axis_in_bounds(axis)
-        if self.axis_labels[axis] != str(label):
-            self._axis_labels[axis] = str(label)
-            self.events.axis_labels(axis=axis)
-
-    def _assert_axis_in_bounds(self, axis: int) -> int:
-        """Assert a given value is inside the existing axes of the image.
-
-        Returns
-        -------
-        axis : int
-            The axis which was checked for validity.
-
-        Raises
-        ------
-        ValueError
-            The given axis index is out of bounds.
-        """
-        if axis not in range(-self.ndim, self.ndim):
-            msg = (
-                f'Axis {axis} not defined for dimensionality {self.ndim}. '
-                f'Must be in [{-self.ndim}, {self.ndim}).'
-            )
-            raise ValueError(msg)
-
-        return axis % self.ndim
-
-    def _roll(self):
-        """Roll order of dimensions for display."""
-        order = np.array(self.order)
-        nsteps = np.array(self.nsteps)
-        order[nsteps > 1] = np.roll(order[nsteps > 1], 1)
-        self.order = list(order)
-
-    def _transpose(self):
-        """Transpose displayed dimensions."""
-        order = copy(self.order)
-        order[-2], order[-1] = order[-1], order[-2]
-        self.order = order
+#     def _transpose(self):
+#         """Transpose displayed dimensions."""
+#         order = copy(self.order)
+#         order[-2], order[-1] = order[-1], order[-2]
+#         self.order = order
