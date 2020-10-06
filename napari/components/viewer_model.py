@@ -378,7 +378,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             ndim = extent.shape[1]
             self.dims.ndim = ndim
             for i in range(ndim):
-                self.dims.set_range(i, (extent[0, i], extent[1, i], ss[i]))
+                self.dims.range[i] = (extent[0, i], extent[1, i], ss[i])
         self.events.layers_change()
 
     def _update_status(self, event):
