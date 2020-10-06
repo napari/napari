@@ -482,6 +482,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
 
         For example run "viewer.experimental.loader.help".
         """
-        from .experimental.commands import CommandProcessor
+        from .experimental.commands import ExperimentalNamespace
 
-        return CommandProcessor(self.layers)
+        return ExperimentalNamespace(self.layers)

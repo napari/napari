@@ -21,15 +21,15 @@ LOAD_TYPE_STR = {
 
 HELP_STR = f"""
 {highlight("Available Commands:")}
-viewer.loader.help
-viewer.loader.cache
-viewer.loader.config
-viewer.loader.layers
-viewer.loader.levels(index)
-viewer.loader.loads(index)
-viewer.loader.set_default(index)
-viewer.loader.set_sync(index)
-viewer.loader.set_async(index)
+loader.help
+loader.cache
+loader.config
+loader.layers
+loader.levels(index)
+loader.loads(index)
+loader.set_default(index)
+loader.set_sync(index)
+loader.set_async(index)
 """
 
 
