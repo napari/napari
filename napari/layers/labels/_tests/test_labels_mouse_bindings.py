@@ -170,7 +170,7 @@ def test_fill_nD_plane(Event):
     assert np.unique(layer.data[0, 8:10, 8:10]) == 2
 
     layer.mode = 'fill'
-    layer.position = (0, 0)
+    layer.position = (0, 0, 0)
     layer.selected_label = 4
 
     # Simulate click
@@ -183,7 +183,7 @@ def test_fill_nD_plane(Event):
     assert np.unique(layer.data[-5:, :5, -5:]) == 1
     assert np.unique(layer.data[0, 8:10, 8:10]) == 2
 
-    layer.position = (19, 19)
+    layer.position = (0, 19, 19)
     layer.selected_label = 5
 
     # Simulate click
@@ -214,7 +214,7 @@ def test_fill_nD_all(Event):
 
     layer.n_dimensional = True
     layer.mode = 'fill'
-    layer.position = (0, 0)
+    layer.position = (0, 0, 0)
     layer.selected_label = 4
 
     # Simulate click
@@ -226,7 +226,7 @@ def test_fill_nD_all(Event):
     assert np.unique(layer.data[-5:, :5, -5:]) == 1
     assert np.unique(layer.data[0, 8:10, 8:10]) == 2
 
-    layer.position = (19, 19)
+    layer.position = (0, 19, 19)
     layer.selected_label = 5
 
     # Simulate click

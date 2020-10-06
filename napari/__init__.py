@@ -68,6 +68,7 @@ from .view_layers import (
     view_points,
     view_shapes,
     view_surface,
+    view_tracks,
     view_vectors,
 )
 from .viewer import Viewer

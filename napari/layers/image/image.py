@@ -555,20 +555,15 @@ class Image(IntensityVisualizationMixin, Layer):
             self._transforms['tile2data'].scale = scale
 
             if self.dims.ndisplay == 2:
-                corner_pixels = np.clip(
-                    self.corner_pixels,
-                    0,
-                    np.subtract(self.level_shapes[self.data_level], 1),
-                )
-
                 for d in self.dims.displayed:
                     indices[d] = slice(
-                        corner_pixels[0, d], corner_pixels[1, d] + 1, 1
+                        self.corner_pixels[0, d],
+                        self.corner_pixels[1, d] + 1,
+                        1,
                     )
                 self._transforms['tile2data'].translate = (
-                    corner_pixels[0] * self._transforms['tile2data'].scale
+                    self.corner_pixels[0] * self._transforms['tile2data'].scale
                 )
-
             image = self.data[level][tuple(indices)]
             image_indices = indices
 
@@ -733,7 +728,15 @@ class Image(IntensityVisualizationMixin, Layer):
         value : tuple
             Value of the data at the coord.
         """
-        coord = np.round(self.coordinates).astype(int)
+        if self.multiscale:
+            # for multiscale data map the coordinate from the data back to
+            # the tile
+            coord = self._transforms['tile2data'].inverse(self.coordinates)
+        else:
+            coord = self.coordinates
+
+        coord = np.round(coord).astype(int)
+
         raw = self._slice.image.raw
         if self.rgb:
             shape = raw.shape[:-1]

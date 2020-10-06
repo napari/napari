@@ -8,7 +8,7 @@ import numpy as np
 
 from ....layers.base.base import Layer
 from ....types import ArrayLike, Dict
-from ....utils.perf import block_timer
+from ....utils.perf import PerfEvent, block_timer
 from ._utils import get_data_id
 
 LOGGER = logging.getLogger("napari.async")
@@ -17,7 +17,7 @@ LOGGER = logging.getLogger("napari.async")
 SliceTuple = Tuple[Optional[int], Optional[int], Optional[int]]
 
 
-def _flatten(indices):
+def _flatten(indices) -> tuple:
     """Return a flat tuple of integers to represent the indices.
 
     Slice objects are not hashable, so we convert them.
@@ -93,6 +93,8 @@ class ChunkRequest:
         The key of the request.
     chunks : Dict[str, ArrayLike]
         The chunk arrays we need to load.
+    timers : Dict[str, PerfEvent]
+        Timing information about chunk load time.
     """
 
     def __init__(self, key: ChunkKey, chunks: Dict[str, ArrayLike]):
@@ -104,7 +106,7 @@ class ChunkRequest:
         self.key = key
         self.chunks = chunks
 
-        self.timers = {}
+        self.timers: Dict[str, PerfEvent] = {}
 
     @property
     def num_chunks(self) -> int:
@@ -118,18 +120,25 @@ class ChunkRequest:
 
     @property
     def in_memory(self) -> bool:
-        """True if all chunks are ndarrays."""
+        """Return True if all chunks are ndarrays."""
         return all(isinstance(x, np.ndarray) for x in self.chunks.values())
 
     @contextlib.contextmanager
     def chunk_timer(self, name):
         """Time a block of code and save the PerfEvent in self.timers.
 
+        We want to time our loads whether perfmon is enabled or not, since
+        the auto-async feature needs to work in all cases.
+
         Parameters
         ----------
         name : str
             The name of the timer.
 
+        Yields
+        ------
+        PerfEvent
+            The timing event for the block.
         """
         with block_timer(name) as event:
             yield event
@@ -138,7 +147,8 @@ class ChunkRequest:
     def load_chunks(self):
         """Load all of our chunks now in this thread.
 
-        We time the overall load plus the load of each chunk.
+        We time the overall load with the special name "load_chunks" and then
+        we time each chunk as it loads, using it's array name as the key.
         """
         with self.chunk_timer("load_chunks"):
             for key, array in self.chunks.items():
@@ -158,13 +168,25 @@ class ChunkRequest:
             self.chunks[key] = array.transpose(order)
 
     @property
-    def image(self):
-        """The image chunk if we have one or None."""
+    def image(self) -> Optional[ArrayLike]:
+        """The image chunk or None.
+
+        Returns
+        -------
+        Optional[ArrayLike]
+            The image chunk or None if we don't have one.
+        """
         return self.chunks.get('image')
 
     @property
     def thumbnail_source(self):
-        """The chunk to use as the thumbnail_source or None."""
+        """The chunk to use as the thumbnail_source or None.
+
+        Returns
+        -------
+        Optional[ArrayLike]
+            The thumbnail_source chunk or None if we don't have one.
+        """
         try:
             return self.chunks['thumbnail_source']
         except KeyError:

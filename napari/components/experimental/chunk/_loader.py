@@ -74,20 +74,23 @@ class ChunkLoader:
     ----------
     synchronous : bool
         If True all requests are loaded synchronously.
+    num_workers : int
+        The number of workers.
     executor : PoolExecutor
-        Our thread pool executor.
+        The thread or process pool executor.
     futures : Dict[int, List[Future]]
         In progress futures for each layer (data_id).
-    cache : ChunkCache
-        Cache of previously loaded chunks.
-    events : EmitterGroup
-        We only signal one event: chunk_loaded.
     layer_map : Dict[int, LayerInfo]
         Stores a LayerInfo about each layer we are tracking.
+    cache : ChunkCache
+        Cache of previously loaded chunks.
+    delay_queue : DelayQueue
+        Requests sit in here for a bit before submission.
+    events : EmitterGroup
+        We only signal one event: chunk_loaded.
     """
 
     def __init__(self):
-        # Config settings.
         self.synchronous: bool = async_config.synchronous
         self.num_workers: int = async_config.num_workers
         self.use_processes: bool = async_config.use_processes
@@ -100,8 +103,8 @@ class ChunkLoader:
         self.layer_map: Dict[int, LayerInfo] = {}
         self.cache: ChunkCache = ChunkCache()
 
-        # Delay queue prevents us from spamming the worker pool when the
-        # user is rapidly scrolling through slices.
+        # The DelayeQueue prevents us from spamming the worker pool when
+        # the user is rapidly scrolling through slices.
         self.delay_queue = DelayQueue(
             async_config.delay_queue_ms, self._submit_async
         )
@@ -172,9 +175,9 @@ class ChunkLoader:
         # Clear any pending requests for this specific data_id.
         self._clear_pending(request.key.data_id)
 
-        # Add to the delay queue, the delay queue will
-        # ChunkLoader_submit_async() later on if the delay expires without
-        # the request getting cancelled.
+        # Add to the delay queue, the delay queue will call our
+        # _submit_async() method later on if the delay expires without the
+        # request getting cancelled.
         self.delay_queue.add(request)
 
     def _load_synchronously(self, request: ChunkRequest) -> bool:
@@ -255,8 +258,8 @@ class ChunkLoader:
         """
         LOGGER.debug("ChunkLoader._clear_pending %d", data_id)
 
-        # Clear delay queue first. This are trivial to clear because they
-        # have not even been submitted to the worker pool.
+        # Clear delay queue first. These requests are trivial to clear
+        # because they have not even been submitted to the worker pool.
         self.delay_queue.clear(data_id)
 
         # Get list of futures we submitted to the pool.
@@ -391,7 +394,7 @@ class ChunkLoader:
             # Result blocks until the future is done or cancelled
             [future.result() for future in future_list]
 
-    def wait_for_data_is(self, data_id: int) -> None:
+    def wait_for_data_id(self, data_id: int) -> None:
         """Wait for the given data to be loaded.
 
         Parameters
@@ -418,7 +421,7 @@ class ChunkLoader:
 
 @contextmanager
 def synchronous_loading(enabled):
-    """Context object to temporarily disable async loading.
+    """Context object to enable or disable async loading.
 
     with synchronous_loading(True):
         layer = Image(data)
