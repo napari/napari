@@ -79,10 +79,13 @@ class ChunkedSliceData(ImageSliceData):
         satisfied_request = chunk_loader.load_chunk(self.request)
 
         if satisfied_request is None:
-            return False  # load was async
+            return False  # Load was async.
 
+        # Load was sync.
         self.request = satisfied_request
-        return True  # load was sync
+        self.image = self.request.chunks.get('image')
+        self.thumbnail_image = self.request.chunks.get('thumbnail_source')
+        return True
 
     @classmethod
     def from_request(cls, layer: Layer, request: ChunkRequest):

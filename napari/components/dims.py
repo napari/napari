@@ -398,7 +398,10 @@ class Dims:
 
     def _roll(self):
         """Roll order of dimensions for display."""
-        self.order = np.roll(self.order, 1)
+        order = np.array(self.order)
+        nsteps = np.array(self.nsteps)
+        order[nsteps > 1] = np.roll(order[nsteps > 1], 1)
+        self.order = list(order)
 
     def _transpose(self):
         """Transpose displayed dimensions."""
