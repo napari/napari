@@ -482,15 +482,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
 
         For example run "viewer.experimental.loader.help".
         """
-        return ExperimentalCommands(self.layers)
+        from .experimental.commands import CommandProcessor
 
-
-class ExperimentalCommands:
-    def __init__(self, layers):
-        self.layers = layers
-
-    @property
-    def loader(self):
-        from ..components.experimental.chunk._commands import LoaderCommands
-
-        return LoaderCommands(self.layers)
+        return CommandProcessor(self.layers)
