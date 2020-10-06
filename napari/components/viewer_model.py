@@ -475,3 +475,13 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         translate = [0] * layer.ndim
         translate[-2:] = translate_2d
         layer.translate_grid = translate
+
+    @property
+    def experimental(self):
+        """Experimental commands for IPython console.
+
+        For example run "viewer.experimental.cmds.loader.help".
+        """
+        from .experimental.commands import ExperimentalNamespace
+
+        return ExperimentalNamespace(self.layers)
