@@ -175,7 +175,6 @@ class Dims:
                 self.range.pop(0)
                 self.point.pop(0)
                 self.axis_labels.pop(0)
-            reorder_after_dim_reduction = 1
             self._order = tuple(
                 reorder_after_dim_reduction(self._order[-ndim:])
             )
@@ -331,3 +330,20 @@ class Dims:
         order = copy(self.order)
         order[-2], order[-1] = order[-1], order[-2]
         self.order = order
+
+
+def reorder_after_dim_reduction(order):
+    """Ensure current dimension order is preserved after dims are dropped.
+    Parameters
+    ----------
+    order : list-like
+        The data to reorder.
+    Returns
+    -------
+    arr : list
+        The original array with the unneeded dimension
+        thrown away.
+    """
+    arr = np.array(order)
+    arr[np.argsort(arr)] = range(len(arr))
+    return arr.tolist()

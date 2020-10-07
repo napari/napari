@@ -64,8 +64,6 @@ class EventedList(TypedMutableSequence[_T]):
         emitted after ``value`` is moved from ``index`` to ``new_index``
     changed (index: int, old_value: T, value: T)
         emitted when ``index`` is set from ``old_value`` to ``value``
-    changed <OVERLOAD> (index: slice, old_value: List[_T], value: List[_T])
-        emitted when ``index`` is set from ``old_value`` to ``value``
     reordered (value: self)
         emitted when the list is reordered (eg. moved/reversed).
     """
@@ -123,10 +121,15 @@ class EventedList(TypedMutableSequence[_T]):
                 for i, v in zip(indices, value):
                     self.__setitem__(i, v)
             else:
-                del self[key]
                 start = key.start or 0
+                stop = key.stop or len(self)
+                if not stop - start == len(value):
+                    raise ValueError(
+                        f"attempt to assign sequence of size {len(value)} to "
+                        f"extended slice of size {stop - start}"
+                    )
                 for i, v in enumerate(value):
-                    self.insert(start + i, v)
+                    self.__setitem__(start + i, v)
         else:
             super().__setitem__(key, value)
             self.events.changed(index=key, old_value=old, value=value)

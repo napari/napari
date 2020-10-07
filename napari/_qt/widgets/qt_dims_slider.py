@@ -693,14 +693,6 @@ class AnimationWorker(QObject):
         if (
             hasattr(event, 'index')
             and event.index == self.axis
-            and hasattr(event, 'new_value')
+            and hasattr(event, 'value')
         ):
-            self.current = event.new_value
-        elif (
-            hasattr(event, 'index')
-            and type(event.index) is list
-            and self.axis in event.index
-            and hasattr(event, 'new_value')
-        ):
-            axis = event.index.index(self.axis)
-            self.current = event.new_value[axis]
+            self.current = event.value
