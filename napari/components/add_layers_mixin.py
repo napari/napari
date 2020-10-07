@@ -76,7 +76,7 @@ class AddLayersMixin:
         visible=True,
         multiscale=None,
     ) -> Union[layers.Image, List[layers.Image]]:
-        """Add an image layer to the layers list.
+        """Add an image layer to the layer list.
 
         Parameters
         ----------
