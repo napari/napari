@@ -157,7 +157,7 @@ class QtDims(QWidget):
             The napari event that triggered this method, by default None.
         """
         widgets = reversed(list(enumerate(self.slider_widgets)))
-        nsteps = self.dims._nsteps
+        nsteps = self.dims.nsteps
         for (axis, widget) in widgets:
             if axis in self.dims.displayed or nsteps[axis] <= 1:
                 # Displayed dimensions correspond to non displayed sliders
@@ -216,7 +216,7 @@ class QtDims(QWidget):
         largest dimensions, plus a little padding.
         """
         width = 0
-        for ax, maxi in enumerate(self.dims._nsteps):
+        for ax, maxi in enumerate(self.dims.nsteps):
             if self._displayed_sliders[ax]:
                 length = len(str(maxi - 1))
                 if length > width:

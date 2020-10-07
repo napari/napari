@@ -102,6 +102,7 @@ class Dims:
                 self._range, self.point
             )
         ]
+        print('b', step, self.point, self._range)
         return step
 
     @property
@@ -320,7 +321,8 @@ class Dims:
         value : int or float
             Value of the point.
         """
-        step = np.round(np.clip(value, 0, self._nsteps[axis] - 1)).astype(int)
+        print('aa', axis, value)
+        step = np.round(np.clip(value, 0, self.nsteps[axis] - 1)).astype(int)
 
         min_val, max_val, step_size = self.range[axis]
         self.point[axis] = min_val + step_size * step
