@@ -97,7 +97,7 @@ class TrackManager:
         return self._data
 
     @data.setter
-    def data(self, data: np.ndarray):
+    def data(self, data: Union[list, np.ndarray]):
         """ set the vertex data and build the vispy arrays for display """
 
         # convert data to a numpy array if it is not already one
