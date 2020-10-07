@@ -490,18 +490,18 @@ def test_sliced_world_extent():
 
     # Empty data is taken to be 512 x 512
     np.testing.assert_allclose(viewer._sliced_extent_world[0], (0, 0))
-    np.testing.assert_allclose(viewer._sliced_extent_world[1], (512, 512))
+    np.testing.assert_allclose(viewer._sliced_extent_world[1], (511, 511))
 
     # Add one layer
     viewer.add_image(
         np.random.random((6, 10, 15)), scale=(3, 1, 1), translate=(10, 20, 5)
     )
     np.testing.assert_allclose(viewer.layers._extent_world[0], (10, 20, 5))
-    np.testing.assert_allclose(viewer.layers._extent_world[1], (28, 30, 20))
+    np.testing.assert_allclose(viewer.layers._extent_world[1], (25, 29, 19))
     np.testing.assert_allclose(viewer._sliced_extent_world[0], (20, 5))
-    np.testing.assert_allclose(viewer._sliced_extent_world[1], (30, 20))
+    np.testing.assert_allclose(viewer._sliced_extent_world[1], (29, 19))
 
     # Change displayed dims order
     viewer.dims.order = (1, 2, 0)
     np.testing.assert_allclose(viewer._sliced_extent_world[0], (5, 10))
-    np.testing.assert_allclose(viewer._sliced_extent_world[1], (20, 28))
+    np.testing.assert_allclose(viewer._sliced_extent_world[1], (19, 25))
