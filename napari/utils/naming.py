@@ -84,8 +84,7 @@ def magic_name(value, *, path_prefix):
                     and varmap[name] is value
                 ):
                     return name
+        return None
     finally:
         # Prevent stack frame leak
         del frame
-
-    return None
