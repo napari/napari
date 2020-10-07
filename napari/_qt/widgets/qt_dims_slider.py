@@ -172,7 +172,7 @@ class QtDimSliderWidget(QWidget):
     def _update_label(self):
         """Update dimension slider label."""
         with self.dims.axis_labels.events.changed.blocker():
-            self.dims.axis_label[self.axis] = self.axis_label.text()
+            self.dims.axis_labels[self.axis] = self.axis_label.text()
         self.axis_label_changed.emit(self.axis, self.axis_label.text())
 
     def _clear_label_focus(self):

@@ -313,7 +313,7 @@ def test_swappable_dims():
 
     # Swap dims
     viewer.dims.order = [0, 2, 1, 3]
-    assert viewer.dims.order == [0, 2, 1, 3]
+    assert viewer.dims.order == (0, 2, 1, 3)
     assert np.all(
         viewer.layers[image_name]._data_view == image_data[0, :, 0, :]
     )

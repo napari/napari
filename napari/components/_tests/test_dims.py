@@ -28,16 +28,16 @@ def test_display():
     Test display setting.
     """
     dims = Dims(4)
-    assert dims.order == [0, 1, 2, 3]
+    assert dims.order == (0, 1, 2, 3)
     assert dims.ndisplay == 2
 
     dims.order = [2, 3, 1, 0]
-    assert dims.order == [2, 3, 1, 0]
+    assert dims.order == (2, 3, 1, 0)
 
 
 def test_order_with_init():
     dims = Dims(3, order=[0, 2, 1])
-    assert dims.order == [0, 2, 1]
+    assert dims.order == (0, 2, 1)
 
 
 def test_labels_with_init():
@@ -103,7 +103,7 @@ def test_order_when_changing_ndim():
     dims.ndim = 5
     # Test that new dims get appended to the beginning of lists
     assert dims.point == [0, 2, 0, 0, 0]
-    assert dims.order == [0, 1, 2, 3, 4]
+    assert dims.order == (0, 1, 2, 3, 4)
     assert dims.axis_labels == ['0', '1', '2', '3', '4']
 
     dims.set_range(2, (0, 4, 1))
@@ -111,7 +111,7 @@ def test_order_when_changing_ndim():
     dims.ndim = 3
     # Test that dims get removed from the beginning of lists
     assert dims.point == [3, 0, 0]
-    assert dims.order == [0, 1, 2]
+    assert dims.order == (0, 1, 2)
     assert dims.axis_labels == ['2', '3', '4']
 
 
@@ -121,25 +121,9 @@ def test_labels_order_when_changing_dims():
     assert dims.axis_labels == ['0', '1', '2', '3', '4']
 
 
-@pytest.mark.parametrize(
-    "ndim, ax_input, expected", [(2, 1, 1), (2, -1, 1), (4, -3, 1)]
-)
-def test_assert_axis_in_bounds(ndim, ax_input, expected):
-    dims = Dims(ndim)
-    actual = dims._assert_axis_in_bounds(ax_input)
-    assert actual == expected
-
-
-@pytest.mark.parametrize("ndim, ax_input", [(2, 2), (2, -3)])
-def test_assert_axis_out_of_bounds(ndim, ax_input):
-    dims = Dims(ndim)
-    with pytest.raises(ValueError):
-        dims._assert_axis_in_bounds(ax_input)
-
-
 def test_axis_labels_str_to_list():
     dims = Dims()
-    dims.axis_labels = 'TX'
+    dims.axis_labels[:] = 'TX'
     assert dims.axis_labels == ['T', 'X']
 
 
@@ -150,11 +134,11 @@ def test_roll():
     dims.set_range(1, (0, 10, 1))
     dims.set_range(2, (0, 10, 1))
     dims.set_range(3, (0, 10, 1))
-    assert dims.order == [0, 1, 2, 3]
+    assert dims.order == (0, 1, 2, 3)
     dims._roll()
-    assert dims.order == [3, 0, 1, 2]
+    assert dims.order == (3, 0, 1, 2)
     dims._roll()
-    assert dims.order == [2, 3, 0, 1]
+    assert dims.order == (2, 3, 0, 1)
 
 
 def test_roll_skip_dummy_axis_1():
@@ -164,11 +148,11 @@ def test_roll_skip_dummy_axis_1():
     dims.set_range(1, (0, 10, 1))
     dims.set_range(2, (0, 10, 1))
     dims.set_range(3, (0, 10, 1))
-    assert dims.order == [0, 1, 2, 3]
+    assert dims.order == (0, 1, 2, 3)
     dims._roll()
-    assert dims.order == [0, 3, 1, 2]
+    assert dims.order == (0, 3, 1, 2)
     dims._roll()
-    assert dims.order == [0, 2, 3, 1]
+    assert dims.order == (0, 2, 3, 1)
 
 
 def test_roll_skip_dummy_axis_2():
@@ -178,11 +162,11 @@ def test_roll_skip_dummy_axis_2():
     dims.set_range(1, (0, 0, 1))
     dims.set_range(2, (0, 10, 1))
     dims.set_range(3, (0, 10, 1))
-    assert dims.order == [0, 1, 2, 3]
+    assert dims.order == (0, 1, 2, 3)
     dims._roll()
-    assert dims.order == [3, 1, 0, 2]
+    assert dims.order == (3, 1, 0, 2)
     dims._roll()
-    assert dims.order == [2, 1, 3, 0]
+    assert dims.order == (2, 1, 3, 0)
 
 
 def test_roll_skip_dummy_axis_3():
@@ -192,8 +176,8 @@ def test_roll_skip_dummy_axis_3():
     dims.set_range(1, (0, 0, 1))
     dims.set_range(2, (0, 10, 1))
     dims.set_range(3, (0, 0, 1))
-    assert dims.order == [0, 1, 2, 3]
+    assert dims.order == (0, 1, 2, 3)
     dims._roll()
-    assert dims.order == [2, 1, 0, 3]
+    assert dims.order == (2, 1, 0, 3)
     dims._roll()
-    assert dims.order == [0, 1, 2, 3]
+    assert dims.order == (0, 1, 2, 3)

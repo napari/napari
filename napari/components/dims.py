@@ -1,5 +1,4 @@
 import warnings
-from copy import copy
 from typing import Sequence, Union
 
 import numpy as np
@@ -74,7 +73,7 @@ class Dims:
         self.ndim = ndim
 
         if axis_labels is not None:
-            self.axis_labels = axis_labels
+            self.axis_labels[:] = axis_labels
 
         if order is not None:
             self.order = order
@@ -327,7 +326,7 @@ class Dims:
 
     def _transpose(self):
         """Transpose displayed dimensions."""
-        order = copy(self.order)
+        order = list(self.order)
         order[-2], order[-1] = order[-1], order[-2]
         self.order = order
 

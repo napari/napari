@@ -13,7 +13,7 @@ def test_translated_images():
     assert viewer.dims.range[0] == (0, 20 - 1, 1)
     assert viewer.dims.range[1] == (0, 10 - 1, 1)
     assert viewer.dims.range[2] == (0, 10 - 1, 1)
-    assert viewer.dims.nsteps == [20, 10, 10]
+    assert viewer.dims.nsteps == (20, 10, 10)
     for i in range(viewer.dims.nsteps[0]):
         viewer.dims.set_current_step(0, i)
         assert viewer.dims.current_step[0] == i
@@ -29,7 +29,7 @@ def test_scaled_images():
     assert viewer.dims.range[0] == (0, 10 - 1, 1)
     assert viewer.dims.range[1] == (0, 10 - 1, 1)
     assert viewer.dims.range[2] == (0, 10 - 1, 1)
-    assert viewer.dims.nsteps == [10, 10, 10]
+    assert viewer.dims.nsteps == (10, 10, 10)
     for i in range(viewer.dims.nsteps[0]):
         viewer.dims.set_current_step(0, i)
         assert viewer.dims.current_step[0] == i
@@ -45,7 +45,7 @@ def test_scaled_and_translated_images():
     assert viewer.dims.range[0] == (0, 20 - 2, 1)
     assert viewer.dims.range[1] == (0, 10 - 1, 1)
     assert viewer.dims.range[2] == (0, 10 - 1, 1)
-    assert viewer.dims.nsteps == [19, 10, 10]
+    assert viewer.dims.nsteps == (19, 10, 10)
     for i in range(viewer.dims.nsteps[0]):
         viewer.dims.set_current_step(0, i)
         assert viewer.dims.current_step[0] == i
@@ -61,7 +61,7 @@ def test_both_scaled_and_translated_images():
     assert viewer.dims.range[0] == (0, 40 - 2, 2)
     assert viewer.dims.range[1] == (0, 10 - 1, 1)
     assert viewer.dims.range[2] == (0, 10 - 1, 1)
-    assert viewer.dims.nsteps == [20, 10, 10]
+    assert viewer.dims.nsteps == (20, 10, 10)
     for i in range(viewer.dims.nsteps[0]):
         viewer.dims.set_current_step(0, i)
         assert viewer.dims.current_step[0] == i
