@@ -9,16 +9,24 @@ from napari.layers import Tracks
 #     assert pts.data.shape == (0, 4)
 
 
-def test_tracks_layer_2dt_ndim():
+data_array_2dt = np.zeros((1, 4))
+data_list_2dt = list(data_array_2dt)
+
+
+@pytest.mark.parametrize("data", [data_array_2dt, data_list_2dt])
+def test_tracks_layer_2dt_ndim(data):
     """Test instantiating Tracks layer, check 2D+t dimensionality."""
-    data = np.zeros((1, 4))
     layer = Tracks(data)
     assert layer.ndim == 3
 
 
-def test_tracks_layer_3dt_ndim():
+data_array_3dt = np.zeros((1, 5))
+data_list_3dt = list(data_array_3dt)
+
+
+@pytest.mark.parametrize("data", [data_array_3dt, data_list_3dt])
+def test_tracks_layer_3dt_ndim(data):
     """Test instantiating Tracks layer, check 3D+t dimensionality."""
-    data = np.zeros((1, 5))
     layer = Tracks(data)
     assert layer.ndim == 4
 
