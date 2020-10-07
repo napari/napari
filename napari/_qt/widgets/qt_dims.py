@@ -122,6 +122,9 @@ class QtDims(QWidget):
         axis : int
             Axis index.
         """
+        if type(axis) is list:
+            for a in axis:
+                self._update_slider(a)
 
         if axis >= len(self.slider_widgets):
             return

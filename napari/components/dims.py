@@ -86,24 +86,22 @@ class Dims:
         return self._range
 
     @property
-    def _nsteps(self):
-        """Number of slider steps for each dimension."""
-        return [
+    def nsteps(self):
+        """Tuple of int: Number of slider steps for each dimension."""
+        return tuple(
             int((max_val - min_val - step_size) // step_size) + 1
             for min_val, max_val, step_size in self._range
-        ]
+        )
 
     @property
-    def _current_step(self):
+    def current_step(self):
         """Tuple of int: value of slider position for each dimension."""
-        step = [
+        return tuple(
             int((value - min_val) // step_size)
             for (min_val, max_val, step_size), value in zip(
                 self._range, self.point
             )
-        ]
-        print('b', step, self.point, self._range)
-        return step
+        )
 
     @property
     def point(self):
@@ -111,41 +109,10 @@ class Dims:
         # The point value is computed from the current_step
         return self._point
 
-    @point.setter
-    def point(self, point):
-        if list(self.point) == point:
-            return
-
-        if len(point) != self.ndim:
-            raise ValueError(
-                f"Number of points doesn't match number of dimensions. Number"
-                f" of given points was {len(point)}, number of dimensions is"
-                f" {self.ndim}."
-            )
-
-        for i, p in enumerate(list(point)):
-            self._point[i] = p
-
     @property
     def axis_labels(self):
         """List of labels for each axis."""
         return self._axis_labels
-
-    @axis_labels.setter
-    def axis_labels(self, labels):
-        if list(self.axis_labels) == labels:
-            return
-
-        if len(labels) != self.ndim:
-            raise ValueError(
-                f"Number of labels doesn't match number of dimensions. Number"
-                f" of given labels was {len(labels)}, number of dimensions is"
-                f" {self.ndim}. Note: If you wish to keep some of the "
-                "dimensions unlabeled, use '' instead."
-            )
-
-        for i, ax in enumerate(list(labels)):
-            self._axis_labels[i] = ax
 
     @property
     def order(self):
@@ -321,7 +288,6 @@ class Dims:
         value : int or float
             Value of the point.
         """
-        print('aa', axis, value)
         step = np.round(np.clip(value, 0, self.nsteps[axis] - 1)).astype(int)
 
         min_val, max_val, step_size = self.range[axis]

@@ -696,3 +696,11 @@ class AnimationWorker(QObject):
             and hasattr(event, 'new_value')
         ):
             self.current = event.new_value
+        elif (
+            hasattr(event, 'index')
+            and type(event.index) is list
+            and self.axis in event.index
+            and hasattr(event, 'new_value')
+        ):
+            axis = event.index.index(self.axis)
+            self.current = event.new_value[axis]

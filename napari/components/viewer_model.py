@@ -324,7 +324,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         layers = layers or self.layers
         for layer in layers:
             layer._slice_dims(
-                self.dims.point, self.dims.ndisplay, self.dims.order
+                list(self.dims.point), self.dims.ndisplay, self.dims.order
             )
 
     def _toggle_theme(self):
