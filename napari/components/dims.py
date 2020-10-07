@@ -104,7 +104,7 @@ class Dims:
         """Number of slider steps for each dimension.
         """
         return [
-            int((max_val - min_val - step_size) // step_size) + 1
+            int((max_val - min_val) // step_size) + 1
             for min_val, max_val, step_size in self._range
         ]
 
@@ -398,7 +398,10 @@ class Dims:
 
     def _roll(self):
         """Roll order of dimensions for display."""
-        self.order = np.roll(self.order, 1)
+        order = np.array(self.order)
+        nsteps = np.array(self.nsteps)
+        order[nsteps > 1] = np.roll(order[nsteps > 1], 1)
+        self.order = list(order)
 
     def _transpose(self):
         """Transpose displayed dimensions."""

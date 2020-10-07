@@ -33,7 +33,7 @@ installation
 ------------
 
 napari can be installed on most macOS, Linux, and Windows systems with
-Python 3.6, 3.7 and 3.8 using pip:
+Python 3.7 and 3.8 using pip:
 
 .. code-block:: console
 
