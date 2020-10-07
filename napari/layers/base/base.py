@@ -665,7 +665,7 @@ class Layer(KeymapProvider, ABC):
 
         # If no slide data has changed, then do nothing
         if (
-            np.all(order == self.dims.order)
+            tuple(order) == self.dims.order
             and ndisplay == self.dims.ndisplay
             and np.all(point[offset:] == self._dims_point)
         ):
