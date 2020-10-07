@@ -100,6 +100,9 @@ class TrackManager:
     def data(self, data: np.ndarray):
         """ set the vertex data and build the vispy arrays for display """
 
+        # convert data to a numpy array if it is not already one
+        data = np.asarray(data)
+
         # check check the formatting of the incoming track data
         self._data = self._validate_track_data(data)
 
