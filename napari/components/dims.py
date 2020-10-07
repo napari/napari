@@ -89,7 +89,7 @@ class Dims:
     def nsteps(self):
         """Tuple of int: Number of slider steps for each dimension."""
         return tuple(
-            int((max_val - min_val - step_size) // step_size) + 1
+            int((max_val - min_val) // step_size) + 1
             for min_val, max_val, step_size in self._range
         )
 

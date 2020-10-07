@@ -40,10 +40,14 @@ linux_task:
       PY_VER: "3.8"
       PYTEST_FLAGS: ""
     env:
-      PY_VER: "3.8"
+      PY_VER: "3.8"      
+      PYTEST_FLAGS: --perfmon-only
       NAPARI_PERFMON: "1"
-      PYTEST_FLAGS: "--perfmon-only"
-  
+    env:
+      PY_VER: "3.8"
+      PYTEST_FLAGS: --async_only
+      NAPARI_ASYNC: "1"
+
   name: linux ${PY_VER}
 
   container:

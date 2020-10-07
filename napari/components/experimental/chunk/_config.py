@@ -21,6 +21,7 @@ DEFAULT_ASYNC_CONFIG = {
     "log_path": None,
     "synchronous": False,
     "num_workers": 6,
+    "use_processes": False,
     "auto_sync_ms": 30,
     "delay_queue_ms": 100,
 }
@@ -34,6 +35,7 @@ AsyncConfig = namedtuple(
         "log_path",
         "synchronous",
         "num_workers",
+        "use_processes",
         "auto_sync_ms",
         "delay_queue_ms",
     ],
@@ -51,7 +53,7 @@ def _log_to_file(path: str) -> None:
     if path:
         fh = logging.FileHandler(path)
         LOGGER.addHandler(fh)
-        LOGGER.setLevel(logging.INFO)
+        LOGGER.setLevel(logging.DEBUG)
 
 
 def _load_config(config_path: str) -> dict:
@@ -113,11 +115,12 @@ def _create_async_config(data: dict) -> AsyncConfig:
         The config settings to use.
     """
     config = AsyncConfig(
-        data.get("log_path"),
-        data.get("synchronous", True),
-        data.get("num_workers", 6),
-        data.get("async_sync_ms", 30),
-        data.get("delay_queue_ms", 100),
+        log_path=data.get("log_path"),
+        synchronous=data.get("synchronous", True),
+        num_workers=data.get("num_workers", 6),
+        use_processes=data.get("use_processes", False),
+        auto_sync_ms=data.get("auto_sync_ms", 30),
+        delay_queue_ms=data.get("delay_queue_ms", 0.1),
     )
 
     _log_to_file(config.log_path)

@@ -109,6 +109,16 @@ class ChunkRequest:
         self.timers: Dict[str, PerfEvent] = {}
 
     @property
+    def num_chunks(self) -> int:
+        """Return the number of chunks in this request."""
+        return len(self.chunks)
+
+    @property
+    def num_bytes(self) -> int:
+        """Return the number of bytes that were loaded."""
+        return sum(array.nbytes for array in self.chunks.values())
+
+    @property
     def in_memory(self) -> bool:
         """Return True if all chunks are ndarrays."""
         return all(isinstance(x, np.ndarray) for x in self.chunks.values())
