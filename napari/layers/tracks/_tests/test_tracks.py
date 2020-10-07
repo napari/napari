@@ -28,9 +28,14 @@ def test_tracks_layer_2dt_ndim(data):
 
 data_array_3dt = np.zeros((1, 5))
 data_list_3dt = list(data_array_3dt)
+dataframe_3dt = pd.DataFrame(
+    data=data_array_3dt, columns=['track_id', 't', 'z', 'y', 'x']
+)
 
 
-@pytest.mark.parametrize("data", [data_array_3dt, data_list_3dt])
+@pytest.mark.parametrize(
+    "data", [data_array_3dt, data_list_3dt, dataframe_3dt]
+)
 def test_tracks_layer_3dt_ndim(data):
     """Test instantiating Tracks layer, check 3D+t dimensionality."""
     layer = Tracks(data)
