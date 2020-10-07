@@ -1,4 +1,5 @@
 import numpy as np
+import pandas as pd
 import pytest
 
 from napari.layers import Tracks
@@ -11,9 +12,14 @@ from napari.layers import Tracks
 
 data_array_2dt = np.zeros((1, 4))
 data_list_2dt = list(data_array_2dt)
+dataframe_2dt = pd.DataFrame(
+    data=data_array_2dt, columns=['track_id', 't', 'y', 'x']
+)
 
 
-@pytest.mark.parametrize("data", [data_array_2dt, data_list_2dt])
+@pytest.mark.parametrize(
+    "data", [data_array_2dt, data_list_2dt, dataframe_2dt]
+)
 def test_tracks_layer_2dt_ndim(data):
     """Test instantiating Tracks layer, check 2D+t dimensionality."""
     layer = Tracks(data)
