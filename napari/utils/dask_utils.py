@@ -2,6 +2,7 @@
 """
 import warnings
 from contextlib import contextmanager
+from distutils.version import LooseVersion
 from typing import Callable, ContextManager, Optional
 
 import dask
@@ -167,8 +168,7 @@ def configure_dask(data) -> Callable[[], ContextManager[dict]]:
     """
     if _is_dask_data(data):
         create_dask_cache()  # creates one if it doesn't exist
-        dask_version = tuple(map(int, dask.__version__.split(".")))
-        if dask_version < (2, 15, 0):
+        if dask.__version__ < LooseVersion('2.15.0'):
             warnings.warn(
                 'For best performance with Dask arrays in napari, please '
                 'upgrade Dask to v2.15.0 or later. Current version is '

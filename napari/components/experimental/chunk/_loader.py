@@ -2,8 +2,14 @@
 """
 import logging
 import os
-from concurrent.futures import CancelledError, Future, ThreadPoolExecutor
-from typing import Dict, List, Optional
+from concurrent.futures import (
+    CancelledError,
+    Future,
+    ProcessPoolExecutor,
+    ThreadPoolExecutor,
+)
+from contextlib import contextmanager
+from typing import Dict, List, Optional, Union
 
 from ....types import ArrayLike
 from ....utils.events import EmitterGroup
@@ -15,6 +21,9 @@ from ._request import ChunkKey, ChunkRequest
 
 LOGGER = logging.getLogger("napari.async")
 
+# Executor for either a thread pool or a process pool.
+PoolExecutor = Union[ThreadPoolExecutor, ProcessPoolExecutor]
+
 
 def _is_enabled(env_var) -> bool:
     """Return True if env_var is defined and not zero."""
@@ -22,7 +31,7 @@ def _is_enabled(env_var) -> bool:
 
 
 def _chunk_loader_worker(request: ChunkRequest) -> ChunkRequest:
-    """This is the worker thread that loads the array.
+    """This is the worker thread or process that loads the array.
 
     We call np.asarray() in a worker because it might lead to IO or
     computation which would block the GUI thread.
@@ -36,21 +45,39 @@ def _chunk_loader_worker(request: ChunkRequest) -> ChunkRequest:
     return request
 
 
+def _create_executor(use_processes: bool, num_workers: int) -> PoolExecutor:
+    """Return the thread or process pool executor.
+
+    Parameters
+    ----------
+    use_processes : bool
+        If True use processes, otherwise threads.
+    num_workers : int
+        The number of worker threads or processes.
+    """
+    if use_processes:
+        LOGGER.debug("ChunkLoader process pool num_workers=%d", num_workers)
+        return ProcessPoolExecutor(max_workers=num_workers)
+
+    LOGGER.debug("ChunkLoader thread pool num_workers=%d", num_workers)
+    return ThreadPoolExecutor(max_workers=num_workers)
+
+
 class ChunkLoader:
-    """Loads chunks synchronously or asynchronously in worker threads.
+    """Loads chunks synchronously or asynchronously in worker thread or processes.
 
     We cannot call np.asarray() in the GUI thread because it might block on
     IO or a computation. So the ChunkLoader calls np.asarray() in a worker
-    thread if doing async loading.
+    if doing async loading.
 
     Attributes
     ----------
     synchronous : bool
         If True all requests are loaded synchronously.
     num_workers : int
-        The number of worker threads.
-    executor : ThreadPoolExecutor
-        Our thread pool executor.
+        The number of workers.
+    executor : PoolExecutor
+        The thread or process pool executor.
     futures : Dict[int, List[Future]]
         In progress futures for each layer (data_id).
     layer_map : Dict[int, LayerInfo]
@@ -66,8 +93,12 @@ class ChunkLoader:
     def __init__(self):
         self.synchronous: bool = async_config.synchronous
         self.num_workers: int = async_config.num_workers
+        self.use_processes: bool = async_config.use_processes
 
-        self.executor = ThreadPoolExecutor(max_workers=self.num_workers)
+        self.executor: PoolExecutor = _create_executor(
+            self.use_processes, self.num_workers
+        )
+
         self.futures: Dict[int, List[Future]] = {}
         self.layer_map: Dict[int, LayerInfo] = {}
         self.cache: ChunkCache = ChunkCache()
@@ -289,7 +320,7 @@ class ChunkLoader:
 
         Notes
         -----
-        This method may be called in the worker thread. The
+        This method may be called in a worker thread. The
         concurrent.futures documentation very intentionally does not
         specify which thread the future's done callback will be called in,
         only that it will be called in some thread in the current process.
@@ -355,6 +386,71 @@ class ChunkLoader:
         except KeyError:
             pass  # We weren't tracking that layer yet.
 
+    def wait_for_all(self):
+        """Wait for all in-progress requests to finish."""
+        self.delay_queue.flush()
 
-# Global instance
+        for data_id, future_list in self.futures.items():
+            # Result blocks until the future is done or cancelled
+            [future.result() for future in future_list]
+
+    def wait_for_data_id(self, data_id: int) -> None:
+        """Wait for the given data to be loaded.
+
+        Parameters
+        ----------
+        data_id : int
+            Wait on chunks for this data_id.
+        """
+        try:
+            future_list = self.futures[data_id]
+        except KeyError:
+            LOGGER.warn("ChunkLoader.wait: no futures for data_id %d", data_id)
+            return
+
+        LOGGER.info(
+            "ChunkLoader.wait: waiting on %d futures for %d",
+            len(future_list),
+            data_id,
+        )
+
+        # Call result() will block until the future has finished or was cancelled.
+        [future.result() for future in future_list]
+        del self.futures[data_id]
+
+
+@contextmanager
+def synchronous_loading(enabled):
+    """Context object to enable or disable async loading.
+
+    with synchronous_loading(True):
+        layer = Image(data)
+        ... use layer ...
+    """
+    previous = chunk_loader.synchronous
+    chunk_loader.synchronous = enabled
+    yield
+    chunk_loader.synchronous = previous
+
+
+def wait_for_async():
+    """Wait for all asynchronous loads to finish."""
+    chunk_loader.wait_for_all()
+
+
+"""
+There is one global chunk_loader instance to handle async loading for all
+Viewer instances. There are two main reasons we do this instead of one
+ChunkLoader per Viewer:
+
+1. We size the ChunkCache as a fraction of RAM, so having more than one
+   cache would use too much RAM.
+
+2. We might size the thread pool for optimal performance, and having
+   multiple pools would result in more workers than we want.
+
+Think of the ChunkLoader as a shared resource like "the filesystem" where
+multiple clients can be access it at the same time, but it is the interface
+to just one physical resource.
+"""
 chunk_loader = ChunkLoader()
