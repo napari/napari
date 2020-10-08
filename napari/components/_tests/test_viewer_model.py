@@ -112,10 +112,10 @@ def test_add_points():
 
 def test_add_empty_points_to_empty_viewer():
     viewer = ViewerModel()
-    pts = viewer.add_points(name='empty points')
-    assert pts.dims.ndim == 2
-    pts.add([1000.0, 27.0])
-    assert pts.data.shape == (1, 2)
+    layer = viewer.add_points(name='empty points')
+    assert layer.ndim == 2
+    layer.add([1000.0, 27.0])
+    assert layer.data.shape == (1, 2)
 
 
 def test_add_empty_points_on_top_of_image():
@@ -123,10 +123,10 @@ def test_add_empty_points_on_top_of_image():
     image = np.random.random((8, 64, 64))
     # add_image always returns the corresponding layer
     _ = viewer.add_image(image)
-    pts = viewer.add_points()
-    assert pts.dims.ndim == 3
-    pts.add([5.0, 32.0, 61.0])
-    assert pts.data.shape == (1, 3)
+    layer = viewer.add_points(ndim=3)
+    assert layer.ndim == 3
+    layer.add([5.0, 32.0, 61.0])
+    assert layer.data.shape == (1, 3)
 
 
 def test_add_empty_shapes_layer():
@@ -134,8 +134,8 @@ def test_add_empty_shapes_layer():
     image = np.random.random((8, 64, 64))
     # add_image always returns the corresponding layer
     _ = viewer.add_image(image)
-    shp = viewer.add_shapes()
-    assert shp.dims.ndim == 3
+    layer = viewer.add_shapes(ndim=3)
+    assert layer.ndim == 3
 
 
 def test_add_vectors():
@@ -490,18 +490,18 @@ def test_sliced_world_extent():
 
     # Empty data is taken to be 512 x 512
     np.testing.assert_allclose(viewer._sliced_extent_world[0], (0, 0))
-    np.testing.assert_allclose(viewer._sliced_extent_world[1], (512, 512))
+    np.testing.assert_allclose(viewer._sliced_extent_world[1], (511, 511))
 
     # Add one layer
     viewer.add_image(
         np.random.random((6, 10, 15)), scale=(3, 1, 1), translate=(10, 20, 5)
     )
     np.testing.assert_allclose(viewer.layers._extent_world[0], (10, 20, 5))
-    np.testing.assert_allclose(viewer.layers._extent_world[1], (28, 30, 20))
+    np.testing.assert_allclose(viewer.layers._extent_world[1], (25, 29, 19))
     np.testing.assert_allclose(viewer._sliced_extent_world[0], (20, 5))
-    np.testing.assert_allclose(viewer._sliced_extent_world[1], (30, 20))
+    np.testing.assert_allclose(viewer._sliced_extent_world[1], (29, 19))
 
     # Change displayed dims order
     viewer.dims.order = (1, 2, 0)
     np.testing.assert_allclose(viewer._sliced_extent_world[0], (5, 10))
-    np.testing.assert_allclose(viewer._sliced_extent_world[1], (20, 28))
+    np.testing.assert_allclose(viewer._sliced_extent_world[1], (19, 25))

@@ -34,13 +34,20 @@ class QtLayerButtons(QFrame):
             self.viewer,
             'new_points',
             'New points layer',
-            lambda: self.viewer.add_points(data=None),
+            lambda: self.viewer.add_points(
+                ndim=max(self.viewer.dims.ndim, 2),
+                scale=self.viewer.layers._step_size,
+            ),
         )
+
         self.newShapesButton = QtViewerPushButton(
             self.viewer,
             'new_shapes',
             'New shapes layer',
-            lambda: self.viewer.add_shapes(data=None),
+            lambda: self.viewer.add_shapes(
+                ndim=max(self.viewer.dims.ndim, 2),
+                scale=self.viewer.layers._step_size,
+            ),
         )
         self.newLabelsButton = QtViewerPushButton(
             self.viewer,
