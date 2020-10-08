@@ -193,6 +193,7 @@ win_task:
     - only_if: $CIRRUS_PR != ""
       env:
         PY_VER: "3.8"
+        PIP_FLAGS: ""
 
   name: windows ${PY_VER}
   windows_container:
@@ -230,12 +231,12 @@ win_task:
       - type requirements\test.txt
     populate_script:
       - python -m pip install --retries 3 --upgrade pip
-      - python -m pip install --retries 3 -r requirements/test.txt %PIP_FLAGS
+      - python -m pip install --retries 3 -r requirements/test.txt %PIP_FLAGS%
 
   install_script:
     - python -m pip install --retries 3 --upgrade pip
-    - python -m pip install --retries 3 -r requirements/test.txt %PIP_FLAGS
-    - python -m pip install -e .[pyside2] %PIP_FLAGS
+    - python -m pip install --retries 3 -r requirements/test.txt %PIP_FLAGS%
+    - python -m pip install -e .[pyside2] %PIP_FLAGS%
 
   check_script:
     - conda list
