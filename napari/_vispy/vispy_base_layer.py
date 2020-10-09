@@ -126,7 +126,7 @@ class VispyBaseLayer(ABC):
         raise NotImplementedError()
 
     def _on_visible_change(self, event=None):
-        self.node.visible = self.layer.visible and self.layer.loaded
+        self.node.visible = self.layer.visible
 
     def _on_opacity_change(self, event=None):
         self.node.opacity = self.layer.opacity
@@ -158,7 +158,7 @@ class VispyBaseLayer(ABC):
             self.translate = translate[::-1]
 
     def _on_loaded_change(self, event=None):
-        self.node.visible = self.layer.visible and self.layer.loaded
+        self.node.visible = self.layer.visible
 
     def _reset_base(self):
         self._on_visible_change()
