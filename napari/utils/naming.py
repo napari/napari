@@ -70,8 +70,10 @@ def magic_name(value, *, path_prefix):
         while (
             inspect.isframe(frame)
             and inspect.iscode(frame.f_code)
-            and frame.f_code.co_filename.startswith(path_prefix)
-            or frame.f_code.co_filename == "<string>"
+            and (
+                frame.f_code.co_filename.startswith(path_prefix)
+                or frame.f_code.co_filename == "<string>"
+            )
         ):
             frame = frame.f_back
 
