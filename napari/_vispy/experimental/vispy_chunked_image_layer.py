@@ -2,10 +2,11 @@ import warnings
 
 import numpy as np
 from vispy.color import Colormap as VispyColormap
+from vispy.visuals import Visual
 
 from ..image import Image as ImageNode
-from ..vispy_base_layer import VispyBaseLayer
 from ..volume import Volume as VolumeNode
+from .vispy_chunked_base_layer import VispyChunkedBaseLayer
 
 texture_dtypes = [
     np.dtype(np.int8),
@@ -16,11 +17,19 @@ texture_dtypes = [
 ]
 
 
-class VispyChunkedImageLayer(VispyBaseLayer):
-    def __init__(self, layer):
+class ImageChunk:
+    def __init__(self):
         self._image_node = ImageNode(None, method='auto')
         self._volume_node = VolumeNode(np.zeros((1, 1, 1)), clim=[0, 1])
-        super().__init__(layer, self._image_node)
+
+    def get_node(self, ndisplay: int) -> Visual:
+        return self._image_node if (ndisplay == 2) else self._volume_node
+
+
+class VispyChunkedImageLayer(VispyChunkedBaseLayer):
+    def __init__(self, layer):
+        self.image_chunk = ImageChunk()
+        super().__init__(layer, self.image_chunk.get_node(2))
         self._array_like = True
 
         self.layer.events.rendering.connect(self._on_rendering_change)
@@ -40,11 +49,7 @@ class VispyChunkedImageLayer(VispyBaseLayer):
 
         parent = self.node.parent
         self.node.parent = None
-
-        if self.layer.dims.ndisplay == 2:
-            self.node = self._image_node
-        else:
-            self.node = self._volume_node
+        self.node = self.image_chunk.get_node(self.layer.dims.ndisplay)
 
         if data is None:
             data = np.zeros((1,) * self.layer.dims.ndisplay)
