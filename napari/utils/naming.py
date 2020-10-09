@@ -64,7 +64,10 @@ def magic_name(value, *, path_prefix):
     frame = inspect.currentframe().f_back
     code = frame.f_code
 
-    while code.co_filename.startswith(path_prefix):
+    while (
+        code.co_filename.startswith(path_prefix)
+        or code.co_filename == "<string>"
+    ):
         frame = frame.f_back
         code = frame.f_code
 
