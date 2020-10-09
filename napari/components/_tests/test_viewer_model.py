@@ -123,7 +123,7 @@ def test_add_empty_points_on_top_of_image():
     image = np.random.random((8, 64, 64))
     # add_image always returns the corresponding layer
     _ = viewer.add_image(image)
-    layer = viewer.add_points()
+    layer = viewer.add_points(ndim=3)
     assert layer.ndim == 3
     layer.add([5.0, 32.0, 61.0])
     assert layer.data.shape == (1, 3)
@@ -134,7 +134,7 @@ def test_add_empty_shapes_layer():
     image = np.random.random((8, 64, 64))
     # add_image always returns the corresponding layer
     _ = viewer.add_image(image)
-    layer = viewer.add_shapes()
+    layer = viewer.add_shapes(ndim=3)
     assert layer.ndim == 3
 
 

@@ -41,6 +41,9 @@ class Points(Layer):
     ----------
     data : array (N, D)
         Coordinates for N points in D dimensions.
+    ndim : int
+        Number of dimensions for shapes. When data is not None, ndim must be D.
+        An empty points layer can be instantiated with arbitrary ndim.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each point. Each property should be an array of length N,
         where N is the number of points.
@@ -219,6 +222,7 @@ class Points(Layer):
         self,
         data=None,
         *,
+        ndim=None,
         properties=None,
         text=None,
         symbol='o',
@@ -242,10 +246,16 @@ class Points(Layer):
         visible=True,
     ):
         if data is None:
-            data = np.empty((0, 2))
+            if ndim is None:
+                ndim = 2
+            data = np.empty((0, ndim))
         else:
             data = np.atleast_2d(data)
-        ndim = data.shape[1]
+            data_ndim = data.shape[1]
+            if ndim is not None and ndim != data_ndim:
+                raise ValueError("Points dimensions must be equal to ndim")
+            ndim = data_ndim
+
         super().__init__(
             data,
             ndim,
@@ -1195,6 +1205,7 @@ class Points(Layer):
                 'text': self.text._get_state(),
                 'n_dimensional': self.n_dimensional,
                 'size': self.size,
+                'ndim': self.ndim,
                 'data': self.data,
             }
         )
