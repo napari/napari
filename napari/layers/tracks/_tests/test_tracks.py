@@ -57,13 +57,18 @@ def test_track_layer_data():
     assert np.all(layer.data == data)
 
 
-def test_track_layer_properties():
+properties_dict = {'time': np.arange(100)}
+properties_df = pd.DataFrame(properties_dict)
+
+
+@pytest.mark.parametrize("properties", [{}, properties_dict, properties_df])
+def test_track_layer_properties(properties):
     """Test properties."""
     data = np.zeros((100, 4))
     data[:, 1] = np.arange(100)
-    properties = {'time': data[:, 1]}
     layer = Tracks(data, properties=properties)
-    assert layer.properties == properties
+    for k, v in properties.items():
+        np.testing.assert_equal(layer.properties[k], v)
 
 
 def test_track_layer_graph():
