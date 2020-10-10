@@ -500,7 +500,7 @@ def triangulate_ellipse(corners, num_segments=100):
     vec = adjusted[1] - adjusted[0]
     len_vec = np.linalg.norm(vec)
     if len_vec > 0:
-        # rotation to be axis aligned
+        # rotate to be axis aligned
         norm_vec = vec / len_vec
         if corners.shape[1] == 2:
             transform = np.array(
@@ -525,7 +525,7 @@ def triangulate_ellipse(corners, num_segments=100):
     vertices[1:, 1] = radii[1] * np.sin(theta)
 
     if len_vec > 0:
-        # rotation back
+        # rotate back
         vertices = np.matmul(vertices, transform.T)
 
     # Shift back to center

@@ -2060,7 +2060,7 @@ class Shapes(Layer):
         self.selected_data = set()
         self._finish_drawing()
 
-    def _rotation_box(self, angle, center=[0, 0]):
+    def _rotate_box(self, angle, center=[0, 0]):
         """Perform a rotation on the selected box.
 
         Parameters
@@ -2395,7 +2395,7 @@ class Shapes(Layer):
                         )
                     self.refresh()
                 elif vertex == 8:
-                    # Rotation handle is being dragged so rotation object
+                    # Rotation handle is being dragged so rotate object
                     handle = self._selected_box[Box.HANDLE]
                     if self._drag_start is None:
                         self._fixed_vertex = self._selected_box[Box.CENTER]
@@ -2421,7 +2421,7 @@ class Shapes(Layer):
                         angle = new_angle - fixed_angle
 
                     for index in self.selected_data:
-                        self._data_view.rotation(
+                        self._data_view.rotate(
                             index, angle, center=self._fixed_vertex
                         )
                     self._rotation_box(angle, center=self._fixed_vertex)
