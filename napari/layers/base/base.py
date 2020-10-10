@@ -85,6 +85,19 @@ class Layer(KeymapProvider, ABC):
         Scale factors for the layer.
     translate : tuple of float
         Translation values for the layer.
+    rotation : float, 3-tuple of float, or n-D array.
+        If a float convert into a 2D rotation matrix using that value as an
+        angle. If 3-tuple convert into a 3D rotation matrix, rolling a yaw,
+        pitch, roll convention. Otherwise assume an nD rotation. Angle
+        conversion are done either using degrees or radians depending on the
+        degrees boolean parameter.
+    shear : 1-D array
+        A vector of shear values for an upper triangular n-D shear matrix.
+    affine: n-D array or napari.layers.transforms.Affine
+        (N+1, N+1) matrix where first (N, N) entries correspond to a linear
+        transform and the final column is a lenght N translation vector and
+        a 1 or a napari AffineTransform object. If provided then, scale,
+        rotation, and shear values are ignored.
     multiscale : bool
         Whether the data is multiscale or not. Multiscale data is
         represented by a list of data objects and should go from largest to

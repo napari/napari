@@ -104,7 +104,7 @@ def expand_upper_triangular(vector):
 
     Decomposition is based on code from https://github.com/matthew-brett/transforms3d.
     In particular, the `striu2mat` function in the `shears` module.
-    https://github.com/matthew-brett/transforms3d/blob/master/transforms3d/shears.py#L30.
+    https://github.com/matthew-brett/transforms3d/blob/0.3.1/transforms3d/shears.py#L30-L77.
 
     Parameters
     ----------
@@ -158,7 +158,7 @@ def decompose_linear_matrix(matrix) -> (np.array, np.array, np.array):
 
     Decomposition is based on code from https://github.com/matthew-brett/transforms3d.
     In particular, the `decompose` function in the `affines` module.
-    https://github.com/matthew-brett/transforms3d/blob/master/transforms3d/affines.py#L156.
+    https://github.com/matthew-brett/transforms3d/blob/0.3.1/transforms3d/affines.py#L156-L246.
 
     Parameters
     ----------
