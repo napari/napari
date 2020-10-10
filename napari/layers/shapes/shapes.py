@@ -134,10 +134,10 @@ class Shapes(Layer):
         Scale factors for the layer.
     translate : tuple of float
         Translation values for the layer.
-    rotate : float, 3-tuple of float, or n-D array.
-        If a float convert into a 2D rotate matrix using that value as an
-        angle. If 3-tuple convert into a 3D rotate matrix, rolling a yaw,
-        pitch, roll convention. Otherwise assume an nD rotate. Angle
+    rotation : float, 3-tuple of float, or n-D array.
+        If a float convert into a 2D rotation matrix using that value as an
+        angle. If 3-tuple convert into a 3D rotation matrix, rolling a yaw,
+        pitch, roll convention. Otherwise assume an nD rotation. Angle
         conversion are done either using degrees or radians depending on the
         degrees boolean parameter.
     shear : 1-D array
@@ -146,7 +146,7 @@ class Shapes(Layer):
         (N+1, N+1) matrix where first (N, N) entries correspond to a linear
         transform and the final column is a lenght N translation vector and
         a 1 or a napari AffineTransform object. If provided then, scale,
-        rotate, and shear values are ignored.
+        rotation, and shear values are ignored.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -226,7 +226,7 @@ class Shapes(Layer):
         `None` if no shapes are selected, otherwise a 10x2 array of vertices of
         the interaction box. The first 8 points are the corners and midpoints
         of the box. The 9th point is the center of the box, and the last point
-        is the location of the rotation handle that can be used to rotate the
+        is the location of the rotation handle that can be used to rotation the
         box.
     _drag_start : None | np.ndarray
         If a drag has been started and is in progress then a length 2 array of
@@ -315,7 +315,7 @@ class Shapes(Layer):
         metadata=None,
         scale=None,
         translate=None,
-        rotate=None,
+        rotation=None,
         shear=None,
         affine=None,
         opacity=0.7,
@@ -339,7 +339,7 @@ class Shapes(Layer):
             metadata=metadata,
             scale=scale,
             translate=translate,
-            rotate=rotate,
+            rotation=rotation,
             shear=shear,
             affine=affine,
             opacity=opacity,
@@ -1789,7 +1789,7 @@ class Shapes(Layer):
             are the corners and midpoints of the box in clockwise order
             starting in the upper-left corner. The 9th point is the center of
             the box, and the last point is the location of the rotation handle
-            that can be used to rotate the box
+            that can be used to rotation the box
         """
         if isinstance(index, (list, np.ndarray, set)):
             if len(index) == 0:
@@ -2060,7 +2060,7 @@ class Shapes(Layer):
         self.selected_data = set()
         self._finish_drawing()
 
-    def _rotate_box(self, angle, center=[0, 0]):
+    def _rotation_box(self, angle, center=[0, 0]):
         """Perform a rotation on the selected box.
 
         Parameters
@@ -2395,7 +2395,7 @@ class Shapes(Layer):
                         )
                     self.refresh()
                 elif vertex == 8:
-                    # Rotation handle is being dragged so rotate object
+                    # Rotation handle is being dragged so rotation object
                     handle = self._selected_box[Box.HANDLE]
                     if self._drag_start is None:
                         self._fixed_vertex = self._selected_box[Box.CENTER]
@@ -2421,10 +2421,10 @@ class Shapes(Layer):
                         angle = new_angle - fixed_angle
 
                     for index in self.selected_data:
-                        self._data_view.rotate(
+                        self._data_view.rotation(
                             index, angle, center=self._fixed_vertex
                         )
-                    self._rotate_box(angle, center=self._fixed_vertex)
+                    self._rotation_box(angle, center=self._fixed_vertex)
                     self.refresh()
             else:
                 self._is_selecting = True

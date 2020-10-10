@@ -614,7 +614,7 @@ class ShapeList:
         self.add(shape, shape_index=index)
         self._update_z_order()
 
-    def rotate(self, index, angle, center=None):
+    def rotation(self, index, angle, center=None):
         """Performs a rotation on a single shape located at index
 
         Parameters
@@ -626,7 +626,7 @@ class ShapeList:
         center : list
             length 2 list specifying coordinate of center of rotation.
         """
-        self.shapes[index].rotate(angle, center=center)
+        self.shapes[index].rotation(angle, center=center)
         self._update_mesh_vertices(index, edge=True, face=True)
 
     def flip(self, index, axis, center=None):

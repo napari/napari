@@ -305,7 +305,7 @@ class Shape(ABC):
             self.transform(transform)
             self.shift(center)
 
-    def rotate(self, angle, center=None):
+    def rotation(self, angle, center=None):
         """Performs a rotation on the shape
 
         Parameters

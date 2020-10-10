@@ -238,10 +238,10 @@ class Affine(Transform):
 
     Parameters
     ----------
-    rotate : float, 3-tuple of float, or n-D array.
-        If a float convert into a 2D rotate linear_matrix using that value as an
-        angle. If 3-tuple convert into a 3D rotate linear_matrix, rolling a yaw,
-        pitch, roll convention. Otherwise assume an nD rotate. Angle
+    rotation : float, 3-tuple of float, or n-D array.
+        If a float convert into a 2D rotation linear_matrix using that value as an
+        angle. If 3-tuple convert into a 3D rotation linear_matrix, rolling a yaw,
+        pitch, roll convention. Otherwise assume an nD rotation. Angle
         conversion are done either using degrees or radians depending on the
         degrees boolean parameter.
     scale : 1-D array
@@ -258,15 +258,15 @@ class Affine(Transform):
         without modification. An empty translation vector implies no
         translation.
     linear_matrix : n-D array, optional
-        (N, N) matrix with linear transform. If provided then scale, rotate,
+        (N, N) matrix with linear transform. If provided then scale, rotation,
         and shear values are ignored.
     affine_matrix : n-D array, optional
         (N+1, N+1) matrix where first (N, N) entries correspond to a linear
         transform and the final column is a lenght N translation vector and
-        a 1. If provided then linear_matrix, scale, rotate, and shear values
+        a 1. If provided then linear_matrix, scale, rotation, and shear values
         are ignored.
     degrees : bool
-        Boolean if rotate angles are provided in degrees
+        Boolean if rotation angles are provided in degrees
     name : string
         A string name for the transform.
     """
@@ -276,7 +276,7 @@ class Affine(Transform):
         scale=(1.0,),
         translate=(0.0,),
         *,
-        rotate=None,
+        rotation=None,
         shear=None,
         linear_matrix=None,
         affine_matrix=None,
@@ -287,16 +287,16 @@ class Affine(Transform):
 
         if affine_matrix is not None:
             linear_matrix = affine_matrix[:-1, :-1]
-            translate = affine_matrix[-1, :-1]
+            translate = affine_matrix[:-1, -1]
         elif linear_matrix is not None:
             linear_matrix = np.array(linear_matrix)
         else:
-            if rotate is None:
-                rotate = np.eye(len(scale))
+            if rotation is None:
+                rotation = np.eye(len(scale))
             if shear is None:
                 shear = np.eye(len(scale))
             linear_matrix = compose_linear_matrix(
-                rotate, scale, shear, degrees=degrees
+                rotation, scale, shear, degrees=degrees
             )
 
         ndim = max(linear_matrix.shape[0], len(translate))
@@ -332,19 +332,19 @@ class Affine(Transform):
     @scale.setter
     def scale(self, scale):
         """Set the scale of the transform."""
-        rotate, _, shear = decompose_linear_matrix(self.linear_matrix)
-        self.linear_matrix = compose_linear_matrix(rotate, scale, shear)
+        rotation, _, shear = decompose_linear_matrix(self.linear_matrix)
+        self.linear_matrix = compose_linear_matrix(rotation, scale, shear)
 
     @property
-    def rotate(self) -> np.array:
-        """Return the rotate of the transform."""
+    def rotation(self) -> np.array:
+        """Return the rotation of the transform."""
         return decompose_linear_matrix(self.linear_matrix)[0]
 
-    @rotate.setter
-    def rotate(self, rotate):
-        """Set the rotate of the transform."""
+    @rotation.setter
+    def rotation(self, rotation):
+        """Set the rotation of the transform."""
         _, scale, shear = decompose_linear_matrix(self.linear_matrix)
-        self.linear_matrix = compose_linear_matrix(rotate, scale, shear)
+        self.linear_matrix = compose_linear_matrix(rotation, scale, shear)
 
     @property
     def shear(self) -> np.array:
@@ -354,22 +354,22 @@ class Affine(Transform):
     @shear.setter
     def shear(self, shear):
         """Set the shear of the transform."""
-        rotate, scale, _ = decompose_linear_matrix(self.linear_matrix)
-        self.linear_matrix = compose_linear_matrix(rotate, scale, shear)
+        rotation, scale, _ = decompose_linear_matrix(self.linear_matrix)
+        self.linear_matrix = compose_linear_matrix(rotation, scale, shear)
 
     @property
     def affine_matrix(self) -> np.array:
         """Return the affine matrix for the transform."""
         matrix = np.eye(self.ndim + 1, self.ndim + 1)
         matrix[:-1, :-1] = self.linear_matrix
-        matrix[-1, :-1] = self.translate
+        matrix[:-1, -1] = self.translate
         return matrix
 
     @affine_matrix.setter
     def affine_matrix(self, affine_matrix):
         """Set the affine matrix for the transform."""
         self.linear_matrix = affine_matrix[:-1, :-1]
-        self.translate = affine_matrix[-1, :-1]
+        self.translate = affine_matrix[:-1, -1]
 
     @property
     def inverse(self) -> 'Affine':

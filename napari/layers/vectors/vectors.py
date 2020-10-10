@@ -61,10 +61,10 @@ class Vectors(Layer):
         Scale factors for the layer.
     translate : tuple of float
         Translation values for the layer.
-    rotate : float, 3-tuple of float, or n-D array.
-        If a float convert into a 2D rotate matrix using that value as an
-        angle. If 3-tuple convert into a 3D rotate matrix, rolling a yaw,
-        pitch, roll convention. Otherwise assume an nD rotate. Angle
+    rotation : float, 3-tuple of float, or n-D array.
+        If a float convert into a 2D rotation matrix using that value as an
+        angle. If 3-tuple convert into a 3D rotation matrix, rolling a yaw,
+        pitch, roll convention. Otherwise assume an nD rotation. Angle
         conversion are done either using degrees or radians depending on the
         degrees boolean parameter.
     shear : 1-D array
@@ -73,7 +73,7 @@ class Vectors(Layer):
         (N+1, N+1) matrix where first (N, N) entries correspond to a linear
         transform and the final column is a lenght N translation vector and
         a 1 or a napari AffineTransform object. If provided then, scale,
-        rotate, and shear values are ignored.
+        rotation, and shear values are ignored.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -155,7 +155,7 @@ class Vectors(Layer):
         metadata=None,
         scale=None,
         translate=None,
-        rotate=None,
+        rotation=None,
         shear=None,
         affine=None,
         opacity=0.7,
@@ -170,7 +170,7 @@ class Vectors(Layer):
             metadata=metadata,
             scale=scale,
             translate=translate,
-            rotate=rotate,
+            rotation=rotation,
             shear=shear,
             affine=affine,
             opacity=opacity,
