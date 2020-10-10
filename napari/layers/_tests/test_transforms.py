@@ -1,3 +1,4 @@
+import numpy as np
 import numpy.testing as npt
 import pytest
 
@@ -68,16 +69,25 @@ def test_scale_translate_identity_default(Transform):
     npt.assert_allclose(new_coord, coord)
 
 
+def test_rotation():
+    coord = [10, 13]
+    transform = Affine(rotation=90, degrees=True)
+    new_coord = transform(coord)
+    # As rotation by 90 degrees, can use [-y, x]
+    target_coord = [-coord[1], coord[0]]
+    npt.assert_allclose(new_coord, target_coord)
+
+
 def test_scale_translate_rotation():
     coord = [10, 13]
     transform = Affine(
         scale=[2, 3], translate=[8, -5], rotation=90, degrees=True
     )
     new_coord = transform(coord)
-    pre_rotation = [2 * 10, 3 * 13]
-    # As rotation by 90 degrees, can use [y, -x]
-    post_rotation = [pre_rotation[1], -pre_rotation[0]]
-    target_coord = [post_rotation[0] + 8, post_rotation[1] - 5]
+    # As rotation by 90 degrees, can use [-y, x]
+    post_rotation = [-coord[1], coord[0]]
+    post_scale = np.multiply(post_rotation, [2, 3])
+    target_coord = np.add(post_scale, [8, -5])
     npt.assert_allclose(new_coord, target_coord)
 
 
@@ -97,10 +107,10 @@ def test_scale_translate_rotation_inverse():
         scale=[2, 3], translate=[8, -5], rotation=90, degrees=True
     )
     new_coord = transform(coord)
-    pre_rotation = [2 * 10, 3 * 13]
-    # As rotation by 90 degrees, can use [y, -x]
-    post_rotation = [pre_rotation[1], -pre_rotation[0]]
-    target_coord = [post_rotation[0] + 8, post_rotation[1] - 5]
+    # As rotation by 90 degrees, can use [-y, x]
+    post_rotation = [-coord[1], coord[0]]
+    post_scale = np.multiply(post_rotation, [2, 3])
+    target_coord = np.add(post_scale, [8, -5])
     npt.assert_allclose(new_coord, target_coord)
 
     inverted_new_coord = transform.inverse(new_coord)

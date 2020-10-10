@@ -529,7 +529,20 @@ class Layer(KeymapProvider, ABC):
         -------
         extent_world : array, shape (2, D)
         """
-        return self._transforms['data2world'](self._extent_data)
+        # Get full nD bounding box
+        data_extent = self._extent_data
+        D = data_extent.shape[1]
+        full_data_extent = np.array(np.meshgrid(*data_extent.T)).T.reshape(
+            -1, D
+        )
+        full_world_extent = self._transforms['data2world'](full_data_extent)
+        world_extent = np.array(
+            [
+                np.min(full_world_extent, axis=0),
+                np.max(full_world_extent, axis=0),
+            ]
+        )
+        return world_extent
 
     @property
     def _slice_indices(self):
