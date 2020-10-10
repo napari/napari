@@ -600,6 +600,28 @@ def test_selecting_shapes():
     assert layer.selected_data == set()
 
 
+def test_removing_all_shapes_empty_list():
+    """Test removing all shapes with an empty list."""
+    data = 20 * np.random.random((10, 4, 2))
+    np.random.seed(0)
+    layer = Shapes(data)
+    assert layer.nshapes == 10
+
+    layer.data = []
+    assert layer.nshapes == 0
+
+
+def test_removing_all_shapes_empty_array():
+    """Test removing all shapes with an empty list."""
+    data = 20 * np.random.random((10, 4, 2))
+    np.random.seed(0)
+    layer = Shapes(data)
+    assert layer.nshapes == 10
+
+    layer.data = np.empty((0, 2))
+    assert layer.nshapes == 0
+
+
 def test_removing_selected_shapes():
     """Test removing selected shapes."""
     np.random.seed(0)

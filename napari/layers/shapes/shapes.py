@@ -521,11 +521,15 @@ class Shapes(Layer):
         self._data_view = ShapeList()
         self.add(data, shape_type=shape_type)
 
-        adding = len(data)
-        # handle case where data is just a single shape
-        if np.asarray(data[0]).ndim == 1:
-            adding = 1
-        self.text.add(self.current_properties, adding)
+        if len(data) == 0:
+            # If no new shapes
+            n_new_shapes = 0
+        elif np.array(data[0]).ndim == 1:
+            # If a single array for a shape
+            n_new_shapes = 1
+        else:
+            n_new_shapes = len(data)
+        self.text.add(self.current_properties, n_new_shapes)
 
         self._update_dims()
         self.events.data()
@@ -1441,7 +1445,10 @@ class Shapes(Layer):
         if edge_width is None:
             edge_width = self.current_edge_width
 
-        if np.array(data[0]).ndim == 1:
+        if len(data) == 0:
+            # If no new shapes
+            n_new_shapes = 0
+        elif np.array(data[0]).ndim == 1:
             # If a single array for a shape
             n_new_shapes = 1
         else:
