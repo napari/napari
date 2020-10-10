@@ -561,7 +561,7 @@ class Layer(KeymapProvider, ABC):
             ):
                 warnings.warn(
                     'Non-orthogonal slicing is being requested, but'
-                    'is not fully supported'
+                    ' is not fully supported.'
                 )
 
         slice_inv_transform = inv_transform.set_slice(self.dims.not_displayed)
