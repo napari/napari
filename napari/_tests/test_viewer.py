@@ -75,6 +75,8 @@ def test_add_layer(make_test_viewer, layer_class, data, ndim, visible):
 def test_add_layer_magic_name(
     make_test_viewer, layer_class, a_unique_name, ndim
 ):
+    """Test magic_name works when using add_* for layers"""
+    # Tests for issue #1709
     viewer = make_test_viewer()  # noqa: F841
     layer = eval_with_filename(
         "add_layer_by_type(viewer, layer_class, a_unique_name)", "somefile.py",
