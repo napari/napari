@@ -1,8 +1,15 @@
+import os
 import sys
 
 from napari_plugin_engine import PluginManager
 
+from ..utils._appdirs import user_site_packages
+from ..utils.misc import running_as_bundled_app
 from . import _builtins, hook_specifications
+
+if sys.platform.startswith('linux') and running_as_bundled_app():
+    sys.path.append(user_site_packages())
+
 
 # the main plugin manager instance for the `napari` plugin namespace.
 plugin_manager = PluginManager(

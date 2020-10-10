@@ -222,7 +222,7 @@ class Labels(Image):
 
         self.dims.events.ndisplay.connect(self._reset_history)
         self.dims.events.order.connect(self._reset_history)
-        self.dims.events.axis.connect(self._reset_history)
+        self.dims.events.current_step.connect(self._reset_history)
 
     @property
     def contiguous(self):
@@ -382,6 +382,11 @@ class Labels(Image):
         self._selected_color = self.get_color(selected_label)
         self.events.selected_label()
 
+        # note: self.color_mode returns a string and this comparison fails,
+        # so use self._color_mode
+        if self._color_mode == LabelColorMode.SELECTED:
+            self.refresh()
+
     @property
     def color_mode(self):
         """Color mode to change how color is represented.
@@ -389,6 +394,8 @@ class Labels(Image):
         AUTO (default) allows color to be set via a hash function with a seed.
 
         DIRECT allows color of each label to be set directly by a color dict.
+
+        SELECTED allows only selected labels to be visible.
         """
         return str(self._color_mode)
 
@@ -404,6 +411,8 @@ class Labels(Image):
         elif color_mode == LabelColorMode.AUTO:
             self._label_color_index = {}
             self.colormap = self._random_colormap
+        elif color_mode == LabelColorMode.SELECTED:
+            pass
         else:
             raise ValueError("Unsupported Color Mode")
 
@@ -564,6 +573,28 @@ class Labels(Image):
             image = np.where(
                 raw > 0, low_discrepancy_image(raw, self._seed), 0
             )
+        elif self._color_mode == LabelColorMode.SELECTED:
+            selected = self._selected_label
+            # we were in direct mode previously
+            if self._label_color_index:
+                if selected not in self._label_color_index:
+                    selected = None
+                index = self._label_color_index
+                image = np.where(
+                    raw == selected,
+                    index[selected],
+                    np.where(
+                        raw != self._background_label,
+                        index[None],
+                        index[self._background_label],
+                    ),
+                )
+            else:
+                image = np.where(
+                    raw == selected,
+                    low_discrepancy_image(selected, self._seed),
+                    0,
+                )
         else:
             raise ValueError("Unsupported Color Mode")
         return image
@@ -594,7 +625,7 @@ class Labels(Image):
     def _save_history(self):
         self._redo_history = deque()
         if not self._block_saving:
-            self._undo_history.append(self.data[self.dims.indices].copy())
+            self._undo_history.append(self.data[self._slice_indices].copy())
             self._trim_history()
 
     def _load_history(self, before, after):
@@ -602,8 +633,8 @@ class Labels(Image):
             return
 
         prev = before.pop()
-        after.append(self.data[self.dims.indices].copy())
-        self.data[self.dims.indices] = prev
+        after.append(self.data[self._slice_indices].copy())
+        self.data[self._slice_indices] = prev
 
         self.refresh()
 
@@ -671,7 +702,7 @@ class Labels(Image):
 
         if not (self.n_dimensional or self.ndim == 2):
             # if working with just the slice, update the rest of the raw data
-            self.data[tuple(self.dims.indices)] = labels
+            self.data[tuple(self._slice_indices)] = labels
 
         if refresh is True:
             self.refresh()

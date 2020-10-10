@@ -8,7 +8,7 @@ class QtPluginTable(QDialog):
     def __init__(self, parent, plugin_manager=None):
         super().__init__(parent)
         if not plugin_manager:
-            from ..plugins import plugin_manager
+            from ...plugins import plugin_manager
 
         self.setMaximumHeight(800)
         self.setMaximumWidth(1280)

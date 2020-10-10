@@ -1,4 +1,5 @@
 import logging
+
 import pytest
 
 from napari._qt.exceptions import ExceptionHandler
