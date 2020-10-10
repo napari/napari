@@ -97,6 +97,10 @@ class Tracks(Layer):
             # convert data to a numpy array if it is not already one
             data = np.asarray(data)
 
+        # in absence of properties make the default an empty dict
+        if properties is None:
+            properties = {}
+
         # set the track data dimensions (remove ID from data)
         ndim = data.shape[1] - 1
 
@@ -144,7 +148,7 @@ class Tracks(Layer):
 
         # set the data, properties and graph
         self.data = data
-        self.properties = properties or {}
+        self.properties = properties
         self.graph = graph or {}
 
         self.color_by = color_by
