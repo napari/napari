@@ -226,7 +226,7 @@ class Shapes(Layer):
         `None` if no shapes are selected, otherwise a 10x2 array of vertices of
         the interaction box. The first 8 points are the corners and midpoints
         of the box. The 9th point is the center of the box, and the last point
-        is the location of the rotation handle that can be used to rotation the
+        is the location of the rotation handle that can be used to rotate the
         box.
     _drag_start : None | np.ndarray
         If a drag has been started and is in progress then a length 2 array of
@@ -1789,7 +1789,7 @@ class Shapes(Layer):
             are the corners and midpoints of the box in clockwise order
             starting in the upper-left corner. The 9th point is the center of
             the box, and the last point is the location of the rotation handle
-            that can be used to rotation the box
+            that can be used to rotate the box
         """
         if isinstance(index, (list, np.ndarray, set)):
             if len(index) == 0:
@@ -2060,7 +2060,7 @@ class Shapes(Layer):
         self.selected_data = set()
         self._finish_drawing()
 
-    def _rotation_box(self, angle, center=[0, 0]):
+    def _rotate_box(self, angle, center=[0, 0]):
         """Perform a rotation on the selected box.
 
         Parameters
@@ -2395,7 +2395,7 @@ class Shapes(Layer):
                         )
                     self.refresh()
                 elif vertex == 8:
-                    # Rotation handle is being dragged so rotation object
+                    # Rotation handle is being dragged so rotate object
                     handle = self._selected_box[Box.HANDLE]
                     if self._drag_start is None:
                         self._fixed_vertex = self._selected_box[Box.CENTER]
@@ -2421,10 +2421,10 @@ class Shapes(Layer):
                         angle = new_angle - fixed_angle
 
                     for index in self.selected_data:
-                        self._data_view.rotation(
+                        self._data_view.rotate(
                             index, angle, center=self._fixed_vertex
                         )
-                    self._rotation_box(angle, center=self._fixed_vertex)
+                    self._rotate_box(angle, center=self._fixed_vertex)
                     self.refresh()
             else:
                 self._is_selecting = True
