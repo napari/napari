@@ -36,6 +36,8 @@ from .widgets.qt_layerlist import QtLayerList
 from .widgets.qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
 
+from .._vispy import VispyAxesVisual, create_vispy_visual  # isort:skip
+
 
 class KeyModifierFilterSceneCanvas(SceneCanvas):
     """SceneCanvas overriding VisPy when mouse wheel events have modifiers."""
@@ -173,6 +175,10 @@ class QtViewer(QSplitter):
         self.view = self.canvas.central_widget.add_view()
         self._update_camera()
 
+        self.axes = VispyAxesVisual(
+            self.viewer, parent=self.view.scene, order=1e6
+        )
+
         main_widget = QWidget()
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(10, 22, 10, 2)
@@ -261,8 +267,6 @@ class QtViewer(QSplitter):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        from .._vispy import create_vispy_visual
-
         layers = event.source
         layer = event.item
         vispy_layer = create_vispy_visual(layer)

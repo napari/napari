@@ -58,6 +58,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             palette=Event,
             grid=Event,
             layers_change=Event,
+            axes_visible=Event,
         )
 
         self.dims = Dims(
@@ -73,6 +74,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self._cursor_size = None
         self._interactive = True
         self._active_layer = None
+        self._axes_visible = False
         self._grid_size = (1, 1)
         self.grid_stride = 1
 
@@ -134,6 +136,17 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
                 f"Theme '{theme}' not found; "
                 f"options are {list(self.themes)}."
             )
+
+    @property
+    def axes_visible(self):
+        """bool: If axes visual is visible or not.
+        """
+        return self._axes_visible
+
+    @axes_visible.setter
+    def axes_visible(self, axes_visible):
+        self._axes_visible = axes_visible
+        self.events.axes_visible()
 
     @property
     def grid_size(self):
