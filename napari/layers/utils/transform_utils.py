@@ -191,15 +191,15 @@ def decompose_linear_matrix(matrix) -> (np.array, np.array, np.array):
     """
     n = matrix.shape[0]
 
-    upper_tri = np.linalg.cholesky(np.dot(matrix.T, matrix)).T
+    rotation, upper_tri = np.linalg.qr(matrix)
+
     scale = np.diag(upper_tri).copy()
     upper_tri_normalized = upper_tri / scale[:, np.newaxis]
 
-    rotation = np.dot(matrix, np.linalg.inv(upper_tri))
     if np.linalg.det(rotation) < 0:
         scale[0] *= -1
         upper_tri[0] *= -1
-        rotation = np.dot(matrix, np.linalg.inv(upper_tri))
+        rotation = matrix @ np.linalg.inv(upper_tri)
 
     shear = upper_tri_normalized[np.triu(np.ones((n, n)), 1).astype(bool)]
 
