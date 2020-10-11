@@ -107,7 +107,7 @@ class Points(Layer):
         degrees boolean parameter.
     shear : 1-D array or float or n-D array
         Either a vector of upper triangular values, a float which is the shear
-        value for the last dimension of an upper or lower triangular n-D shear
+        value for the first axes, or an upper or lower triangular n-D shear
         matrix.
     affine: n-D array or napari.layers.transforms.Affine
         (N+1, N+1) matrix where first (N, N) entries correspond to a linear

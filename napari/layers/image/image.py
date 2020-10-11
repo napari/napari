@@ -84,7 +84,7 @@ class Image(IntensityVisualizationMixin, Layer):
         degrees boolean parameter.
     shear : 1-D array or float or n-D array
         Either a vector of upper triangular values, a float which is the shear
-        value for the last dimension of an upper or lower triangular n-D shear
+        value for the first axes, or an upper or lower triangular n-D shear
         matrix.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.

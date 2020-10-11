@@ -19,7 +19,7 @@ def compose_linear_matrix(rotation, scale, shear, degrees=True) -> np.array:
         An empty translation vector implies no scaling.
     shear : 1-D array or float or n-D array
         Either a vector of upper triangular values, a float which is the shear
-        value for the last dimension of an upper or lower triangular n-D shear
+        value for the first axes, or an upper or lower triangular n-D shear
         matrix.
 
     Returns
