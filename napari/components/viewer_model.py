@@ -76,7 +76,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self._active_layer = None
         self._grid_size = (1, 1)
         self.grid_stride = 1
-        self._scale_bar_visible = True
+        self._scale_bar_visible = False
 
         self._palette = None
         self.theme = 'dark'

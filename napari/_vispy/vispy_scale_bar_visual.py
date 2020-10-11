@@ -19,25 +19,25 @@ class VispyScaleBarVisual:
                 [1, 5, -1],
             ]
         )
-        self._color = [1, 1, 1, 1]
+        self._color = 'white'
         self._target_length = 100
         self.viewer = viewer
         self.node = Line(
             connect='segments', method='gl', parent=parent, width=3
         )
         self.node.order = order
-        self.node.set_data(self._data, color=self._color)
+        self.node.set_data(self._data, self.color)
         self.node.transform = STTransform()
         self.node.transform.translate = [66, 14, 0, 0]
 
         self.text_node = Text(pos=[0, 0], parent=parent)
         self.text_node.order = order
-        self.text_node.color = self._color
         self.text_node.transform = STTransform()
         self.text_node.transform.translate = [33, 16, 0, 0]
         self.text_node.font_size = 10
         self.text_node.anchors = ('center', 'center')
         self.text_node.text = f'{1}'
+        self.text_node.color = self.color
 
         self.viewer.events.scale_bar_visible.connect(self._on_visible_change)
         self._on_visible_change(None)
@@ -55,7 +55,6 @@ class VispyScaleBarVisual:
         """
         # If scale has not changed, do not redraw
         if abs(np.log10(self._scale) - np.log10(scale)) < 1e-4:
-            print('ee')
             return
         self._scale = scale
 
@@ -83,6 +82,17 @@ class VispyScaleBarVisual:
         # Update scalebar and text
         self.node.transform.scale = [scale, 1, 1, 1]
         self.text_node.text = f'{target_world_pixels_rounded:.4g}'
+
+    @property
+    def color(self):
+        """str: scale bar color"""
+        return self._color
+
+    @color.setter
+    def color(self, color):
+        self._color = color
+        self.node.set_data(self._data, self._color)
+        self.text_node.color = self._color
 
     def _on_visible_change(self, event):
         """Change visibiliy of axes."""

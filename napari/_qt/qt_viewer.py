@@ -684,7 +684,6 @@ class QtViewer(QSplitter):
         """
         scale_factor = self._canvas2world_scale
         if self.viewer.scale_bar_visible:
-            print('asfasd', scale_factor)
             self.scale_bar.update_scale(scale_factor)
 
         for layer in self.viewer.layers:
