@@ -36,6 +36,8 @@ from .widgets.qt_layerlist import QtLayerList
 from .widgets.qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
 
+from .._vispy import VispyWelcomeVisual  # isort:skip
+
 
 class KeyModifierFilterSceneCanvas(SceneCanvas):
     """SceneCanvas overriding VisPy when mouse wheel events have modifiers."""
@@ -172,6 +174,10 @@ class QtViewer(QSplitter):
 
         self.view = self.canvas.central_widget.add_view()
         self._update_camera()
+
+        self.welcome = VispyWelcomeVisual(
+            self.viewer, parent=self.view, order=1e6
+        )
 
         main_widget = QWidget()
         main_layout = QVBoxLayout()
