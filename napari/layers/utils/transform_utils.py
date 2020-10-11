@@ -17,8 +17,10 @@ def compose_linear_matrix(rotation, scale, shear, degrees=True) -> np.array:
         in leading dimensions, so that, for example, a scale of [4, 18, 34] in
         3D can be used as a scale of [1, 4, 18, 34] in 4D without modification.
         An empty translation vector implies no scaling.
-    shear : n-D array
-        An n-D shear matrix.
+    shear : 1-D array or float or n-D array
+        Either a vector of upper triangular values, a float which is the shear
+        value for the last dimension of an upper or lower triangular n-D shear
+        matrix.
 
     Returns
     -------
@@ -76,20 +78,26 @@ def compose_linear_matrix(rotation, scale, shear, degrees=True) -> np.array:
     else:
         # Otherwise assume a full nD rotation matrix has been passed
         rotation_mat = np.array(rotation)
+    n_rotation = rotation_mat.shape[0]
 
     # Convert a scale vector to an nD diagonal matrix
     scale_mat = np.diag(scale)
+    n_scale = scale_mat.shape[0]
 
     # Check if an upper-triangular representation of shear or
     # a full nD shear matrix has been passed
-    if np.array(shear).ndim == 1:
+    if np.isscalar(shear):
+        shear = [shear]
+    if len(shear) == 1:
+        n_shear = max(n_scale, n_rotation)
+        shear_mat = np.eye(n_shear, n_shear)
+        shear_mat[0, -1] = shear[0]
+    elif np.array(shear).ndim == 1:
         shear_mat = expand_upper_triangular(shear)
     else:
         shear_mat = np.array(shear)
 
     # Check the dimensionality of the transforms and pad as needed
-    n_scale = scale_mat.shape[0]
-    n_rotation = rotation_mat.shape[0]
     n_shear = shear_mat.shape[0]
     ndim = max(n_scale, n_rotation, n_shear)
 

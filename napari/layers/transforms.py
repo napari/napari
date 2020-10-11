@@ -249,8 +249,10 @@ class Affine(Transform):
         in leading dimensions, so that, for example, a scale of [4, 18, 34] in
         3D can be used as a scale of [1, 4, 18, 34] in 4D without modification.
         An empty translation vector implies no scaling.
-    shear : 1-D array
-        A vector of shear values for an upper triangular n-D shear linear_matrix.
+    shear : 1-D array or float or n-D array
+        Either a vector of upper triangular values, a float which is the shear
+        value for the last dimension of an upper or lower triangular n-D shear
+        matrix.
     translate : 1-D array
         A 1-D array of factors to shift each axis by. Translation is broadcast
         to 0 in leading dimensions, so that, for example, a translation of
