@@ -296,7 +296,7 @@ class Affine(Transform):
             if rotation is None:
                 rotation = np.eye(len(scale))
             if shear is None:
-                shear = np.eye(len(scale))
+                shear = 0
             linear_matrix = compose_linear_matrix(
                 rotation, scale, shear, degrees=degrees
             )
