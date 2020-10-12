@@ -1,6 +1,11 @@
+from os.path import dirname, join
+
 import numpy as np
-from vispy.scene.visuals import Line, Text
+from imageio import imread
+from vispy.scene.visuals import Text
 from vispy.visuals.transforms import STTransform
+
+from .image import Image as ImageNode
 
 
 class VispyWelcomeVisual:
@@ -9,33 +14,45 @@ class VispyWelcomeVisual:
 
     def __init__(self, viewer, parent=None, order=0):
 
-        self._data = np.array(
-            [
-                [0, 0, -1],
-                [1, 0, -1],
-                [0, -5, -1],
-                [0, 5, -1],
-                [1, -5, -1],
-                [1, 5, -1],
-            ]
-        )
-        self._target_length = 100
+        if parent is not None:
+            center = np.divide(parent.canvas.size, 2)
+        else:
+            center = np.array([256, 256])
+
+        logopath = join(dirname(__file__), '..', 'resources', 'logo.png')
+        logo = imread(logopath)
+
+        self._logo = np.mean(logo[..., :3], axis=2)
         self.viewer = viewer
-        self.node = Line(
-            connect='segments', method='gl', parent=parent, width=3
-        )
+        self.node = ImageNode(parent=parent)
         self.node.order = order
-        self.node.set_data(self._data, [0.7, 0.7, 0.7, 1])
+
+        self.node.set_data(self._logo)
+        self.node.cmap = 'gray'
         self.node.transform = STTransform()
-        self.node.transform.translate = [66, 14, 0, 0]
+        center_logo = [center[0] - 100, 1 / 2 * center[1] - 100]
+        self.node.transform.translate = [center_logo[0], center_logo[1], 0, 0]
+        self.node.transform.scale = [
+            200 / self._logo.shape[0],
+            200 / self._logo.shape[0],
+            0,
+            0,
+        ]
 
         self.text_node = Text(pos=[0, 0], parent=parent)
         self.text_node.order = order
         self.text_node.transform = STTransform()
-        self.text_node.transform.translate = [300, 400, 0, 0]
-        self.text_node.font_size = 30
+        self.text_node.transform.translate = [
+            center[0],
+            4 / 3 * center[1],
+            0,
+            0,
+        ]
+        self.text_node.font_size = 25
         self.text_node.anchors = ('center', 'center')
-        self.text_node.text = 'Drag file(s) here to open or use File Open'
+        self.text_node.text = (
+            'Drag file(s) here to open \n or \n use File -> Open File(s)'
+        )
         self.text_node.color = [0.7, 0.7, 0.7, 1]
 
         self.viewer.events.layers_change.connect(self._on_visible_change)
