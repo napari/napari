@@ -58,7 +58,6 @@ class VispyBaseLayer(ABC):
         self.layer.events.blending.connect(self._on_blending_change)
         self.layer.events.scale.connect(self._on_scale_change)
         self.layer.events.translate.connect(self._on_translate_change)
-        self.layer.events.loaded.connect(self._on_loaded_change)
 
     @property
     def _master_transform(self):
@@ -126,7 +125,7 @@ class VispyBaseLayer(ABC):
         raise NotImplementedError()
 
     def _on_visible_change(self, event=None):
-        self.node.visible = self.layer.visible and self.layer.loaded
+        self.node.visible = self.layer.visible
 
     def _on_opacity_change(self, event=None):
         self.node.opacity = self.layer.opacity
@@ -156,9 +155,6 @@ class VispyBaseLayer(ABC):
             self.translate = translate[::-1] - scale[::-1] / 2
         else:
             self.translate = translate[::-1]
-
-    def _on_loaded_change(self, event=None):
-        self.node.visible = self.layer.visible and self.layer.loaded
 
     def _reset_base(self):
         self._on_visible_change()
