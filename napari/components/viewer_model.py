@@ -74,7 +74,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self._cursor_size = None
         self._interactive = True
         self._active_layer = None
-        self._axes_visible = False
+        self._axes_visible = True
         self._grid_size = (1, 1)
         self.grid_stride = 1
 
