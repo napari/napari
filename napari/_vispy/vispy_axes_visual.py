@@ -73,12 +73,16 @@ class VispyAxesVisual:
         self.axes.events.visible.connect(self._on_visible_change)
         self.axes.events.colored.connect(self._on_data_change)
         self.axes.events.dashed.connect(self._on_data_change)
+        self.axes.events.centered.connect(
+            lambda e: self.update_scale(self._scale, self._center)
+        )
 
         self._on_visible_change(None)
         self._on_data_change(None)
 
         self._scale = 0.1
-        self.update_scale(1)
+        self._center = np.array([0, 0, 0])
+        self.update_scale(1, self._center)
 
     def _on_visible_change(self, event):
         """Change visibiliy of axes."""
@@ -100,22 +104,37 @@ class VispyAxesVisual:
                 color = self._default_color
         self.node.set_data(data, color)
 
-    def update_scale(self, scale):
+    def update_scale(self, scale, center, force=True):
         """Update axes length based on canvas2world scale.
 
         Parameters
         ----------
         scale : float
             Scale going from canvas pixels to world coorindates.
+        center : 3-tuple
+            Center of camera in world coordinates.
+        force : bool
+            Whether to force a refresh.
         """
-        # If scale has not changed, do not redraw
-        if abs(np.log10(self._scale) - np.log10(scale)) < 1e-4:
+        # If scale and center have not changed, do not redraw
+        if (
+            not force
+            and abs(np.log10(self._scale) - np.log10(scale)) < 1e-4
+            and np.all(abs(np.subtract(self._center, center)) < 1e-9)
+        ):
             return
         self._scale = scale
+        self._center = center
 
         scale_canvas2world = self._scale
         target_canvas_pixels = self._target_length
         scale = target_canvas_pixels * scale_canvas2world
 
+        if self.axes.centered:
+            translate = np.array(center)
+        else:
+            translate = [0, 0, 0]
+
         # Update axes scale
         self.node.transform.scale = [scale, scale, scale, 1]
+        self.node.transform.translate = list(translate) + [0]

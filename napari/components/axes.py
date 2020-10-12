@@ -26,6 +26,9 @@ class Axes:
     background_color : np.ndarray
         Background color of canvas. If axes are not colored
         then they have the color opposite of this color.
+    centered : bool
+        If axes are at the camera center or not. If not they
+        are at the world coordinates origin. Default False.
     """
 
     def __init__(self):
@@ -37,11 +40,13 @@ class Axes:
             visible=None,
             colored=None,
             dashed=None,
+            centered=None,
         )
         self._visible = False
         self._colored = True
         self._background_color = np.array([1, 1, 1])
         self._dashed = False
+        self._centered = False
 
     @property
     def visible(self):
@@ -82,3 +87,13 @@ class Axes:
     def dashed(self, dashed):
         self._dashed = dashed
         self.events.dashed()
+
+    @property
+    def centered(self):
+        """bool: If axes are at the camera center or not."""
+        return self._centered
+
+    @centered.setter
+    def centered(self, centered):
+        self._centered = centered
+        self.events.centered()

@@ -683,7 +683,9 @@ class QtViewer(QSplitter):
         """
         scale_factor = self._canvas2world_scale
         if self.viewer.axes.visible:
-            self.axes.update_scale(scale_factor)
+            self.axes.update_scale(
+                scale_factor, self.view.camera.center, force=False
+            )
 
         for layer in self.viewer.layers:
             if layer.ndim <= self.viewer.dims.ndim:
