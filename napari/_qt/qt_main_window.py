@@ -254,7 +254,7 @@ class Window:
         self.view_menu.addAction(toggle_theme)
 
         axes_menu = QMenu('Axes', parent=self._qt_window)
-        ag = QActionGroup(self._qt_window, exclusive=True)
+        ag = QActionGroup(self._qt_window)
         axes_menu.addAction(
             QAction('None', parent=ag, checkable=True, checked=True)
         )
