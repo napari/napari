@@ -9,7 +9,6 @@ from qtpy.QtCore import Qt
 from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import (
     QAction,
-    QActionGroup,
     QApplication,
     QDockWidget,
     QHBoxLayout,
@@ -254,13 +253,30 @@ class Window:
         self.view_menu.addAction(toggle_theme)
 
         axes_menu = QMenu('Axes', parent=self._qt_window)
-        ag = QActionGroup(self._qt_window)
-        axes_menu.addAction(
-            QAction('None', parent=ag, checkable=True, checked=True)
+        axes_visible_action = QAction(
+            'Visible',
+            parent=self._qt_window,
+            checkable=True,
+            checked=self.qt_viewer.viewer.axes.visible,
         )
-        axes_menu.addAction(QAction('Colored', parent=ag, checkable=True))
-        axes_menu.addAction(QAction('Dashed', parent=ag, checkable=True))
-        ag.triggered.connect(self._toggle_axes)
+        axes_visible_action.triggered.connect(self._toggle_axes_visible)
+        axes_colored_action = QAction(
+            'Colored',
+            parent=self._qt_window,
+            checkable=True,
+            checked=self.qt_viewer.viewer.axes.colored,
+        )
+        axes_colored_action.triggered.connect(self._toggle_axes_colored)
+        axes_dashed_action = QAction(
+            'Dashed',
+            parent=self._qt_window,
+            checkable=True,
+            checked=self.qt_viewer.viewer.axes.dashed,
+        )
+        axes_dashed_action.triggered.connect(self._toggle_axes_dashed)
+        axes_menu.addAction(axes_visible_action)
+        axes_menu.addAction(axes_colored_action)
+        axes_menu.addAction(axes_dashed_action)
         self.view_menu.addSeparator()
         self.view_menu.addMenu(axes_menu)
         self.view_menu.addSeparator()
@@ -350,18 +366,14 @@ class Window:
         )
         self.help_menu.addAction(about_key_bindings)
 
-    def _toggle_axes(self, action):
-        text = action.text()
-        if text == 'None':
-            self.qt_viewer.viewer.axes_visible = False
-        elif text == 'Colored':
-            self.qt_viewer.viewer.axes_visible = True
-            self.qt_viewer.viewer.axes_style = 'Colored'
-        elif text == 'Dashed':
-            self.qt_viewer.viewer.axes_visible = True
-            self.qt_viewer.viewer.axes_style = 'Dashed'
-        else:
-            raise ValueError(f'Axes selction {text} not recognized')
+    def _toggle_axes_visible(self, state):
+        self.qt_viewer.viewer.axes.visible = state
+
+    def _toggle_axes_colored(self, state):
+        self.qt_viewer.viewer.axes.colored = state
+
+    def _toggle_axes_dashed(self, state):
+        self.qt_viewer.viewer.axes.dashed = state
 
     def add_dock_widget(
         self,

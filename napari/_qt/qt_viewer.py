@@ -176,7 +176,7 @@ class QtViewer(QSplitter):
         self._update_camera()
 
         self.axes = VispyAxesVisual(
-            self.viewer, parent=self.view.scene, order=1e6
+            self.viewer.axes, parent=self.view.scene, order=1e6
         )
 
         main_widget = QWidget()
@@ -476,7 +476,7 @@ class QtViewer(QSplitter):
             )
         self.setStyleSheet(themed_stylesheet)
         self.canvas.bgcolor = self.viewer.palette['canvas']
-        self.axes._on_axes_style_change(None)
+        self.viewer.axes.background_color = self.viewer.palette['canvas']
 
     def toggle_console_visibility(self, event=None):
         """Toggle console visible and not visible.
@@ -682,7 +682,7 @@ class QtViewer(QSplitter):
         the camera is moved and is connected in the `QtViewer`.
         """
         scale_factor = self._canvas2world_scale
-        if self.viewer.axes_visible:
+        if self.viewer.axes.visible:
             self.axes.update_scale(scale_factor)
 
         for layer in self.viewer.layers:

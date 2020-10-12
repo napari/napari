@@ -2,9 +2,6 @@ import numpy as np
 from vispy.scene.visuals import Line
 from vispy.visuals.transforms import STTransform
 
-from ..components._viewer_constants import AxesStyle
-from ..utils.colormaps.standardize_color import transform_color
-
 
 def make_dashed_line(num_dashes, axis):
     """Make a dashed line.
@@ -31,14 +28,10 @@ def make_dashed_line(num_dashes, axis):
 
 
 class VispyAxesVisual:
-    """Axes indicating world coordinate origin and orientation.
+    """Axes indicating world coordinate origin and orientation."""
 
-    Axes are colored x=cyan, y=yellow, z=magenta or dashed with
-    x=solid, y=dotted, z=dashed, depending on styling.
-    """
-
-    def __init__(self, viewer, parent=None, order=0):
-        self.viewer = viewer
+    def __init__(self, axes, parent=None, order=0):
+        self.axes = axes
 
         self._default_data = np.array(
             [[0, 0, 0], [1, 0, 0], [0, 0, 0], [0, 1, 0], [0, 0, 0], [0, 0, 1]]
@@ -61,7 +54,14 @@ class VispyAxesVisual:
             ],
             axis=0,
         )
-        self._dashed_color = 'white'
+        self._dashed_color = np.concatenate(
+            [
+                [[0, 1, 1, 1], [0, 1, 1, 1]],
+                [[1, 1, 0, 1]] * 4 * 2,
+                [[1, 0, 1, 1]] * 8 * 2,
+            ],
+            axis=0,
+        )
 
         self._target_length = 100
         self.node = Line(
@@ -70,30 +70,35 @@ class VispyAxesVisual:
         self.node.transform = STTransform()
         self.node.order = order
 
-        self.viewer.events.axes_visible.connect(self._on_visible_change)
-        self.viewer.events.axes_style.connect(self._on_axes_style_change)
+        self.axes.events.visible.connect(self._on_visible_change)
+        self.axes.events.colored.connect(self._on_data_change)
+        self.axes.events.dashed.connect(self._on_data_change)
+
         self._on_visible_change(None)
-        self._on_axes_style_change(None)
+        self._on_data_change(None)
 
         self._scale = 0.1
         self.update_scale(1)
 
     def _on_visible_change(self, event):
         """Change visibiliy of axes."""
-        self.node.visible = self.viewer.axes_visible
+        self.node.visible = self.axes.visible
 
-    def _on_axes_style_change(self, event):
+    def _on_data_change(self, event):
         """Change style of axes."""
-        if self.viewer._axes_style == AxesStyle.COLORED:
-            self.node.set_data(self._default_data, color=self._default_color)
-        elif self.viewer._axes_style == AxesStyle.DASHED:
-            bgcolor = transform_color(self.viewer.palette['canvas'])[0]
-            self._dashed_color = np.subtract(1, bgcolor)[:3]
-            self.node.set_data(self._dashed_data, self._dashed_color)
+        if self.axes.dashed:
+            data = self._dashed_data
         else:
-            raise ValueError(
-                f'Axes style {self.viewer.axes_style} not recognized'
-            )
+            data = self._default_data
+
+        if not self.axes.colored:
+            color = np.subtract(1, self.axes.background_color)[:3]
+        else:
+            if self.axes.dashed:
+                color = self._dashed_color
+            else:
+                color = self._default_color
+        self.node.set_data(data, color)
 
     def update_scale(self, scale):
         """Update axes length based on canvas2world scale.

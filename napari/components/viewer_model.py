@@ -3,9 +3,9 @@ import numpy as np
 from ..utils.events import EmitterGroup, Event
 from ..utils.key_bindings import KeymapHandler, KeymapProvider
 from ..utils.theme import palettes
-from ._viewer_constants import AxesStyle
 from ._viewer_mouse_bindings import dims_scroll
 from .add_layers_mixin import AddLayersMixin
+from .axes import Axes
 from .dims import Dims
 from .layerlist import LayerList
 
@@ -59,8 +59,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             palette=Event,
             grid=Event,
             layers_change=Event,
-            axes_visible=Event,
-            axes_style=Event,
         )
 
         self.dims = Dims(
@@ -69,6 +67,8 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
 
         self.layers = LayerList()
 
+        self.axes = Axes()
+
         self._status = 'Ready'
         self._help = ''
         self._title = title
@@ -76,8 +76,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self._cursor_size = None
         self._interactive = True
         self._active_layer = None
-        self._axes_visible = False
-        self._axes_style = AxesStyle('colored')
         self._grid_size = (1, 1)
         self.grid_stride = 1
 
@@ -139,17 +137,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
                 f"Theme '{theme}' not found; "
                 f"options are {list(self.themes)}."
             )
-
-    @property
-    def axes_visible(self):
-        """bool: If axes visual is visible or not.
-        """
-        return self._axes_visible
-
-    @axes_visible.setter
-    def axes_visible(self, axes_visible):
-        self._axes_visible = axes_visible
-        self.events.axes_visible()
 
     @property
     def grid_size(self):
@@ -264,23 +251,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             self.keymap_providers.insert(0, active_layer)
 
         self.events.active_layer(item=self._active_layer)
-
-    @property
-    def axes_style(self):
-        """AXESSTYLE: Style for Axes.
-
-        Determines style of the axes for display.
-            AxesStyle.COLORED
-                Axes are colored with x=cyan, y=yellow, z=magenta.
-            AxesStyle.DASHED
-                Axes are dashed with x=solid, y=dotted, z=dashed.
-        """
-        return str(self._style)
-
-    @axes_style.setter
-    def axes_style(self, axes_style):
-        self._axes_style = AxesStyle(axes_style)
-        self.events.axes_style()
 
     @property
     def _sliced_extent_world(self) -> np.ndarray:
