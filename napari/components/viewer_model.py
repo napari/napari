@@ -3,6 +3,7 @@ import numpy as np
 from ..utils.events import EmitterGroup, Event
 from ..utils.key_bindings import KeymapHandler, KeymapProvider
 from ..utils.theme import palettes
+from ._viewer_constants import AxesStyle
 from ._viewer_mouse_bindings import dims_scroll
 from .add_layers_mixin import AddLayersMixin
 from .dims import Dims
@@ -59,6 +60,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             grid=Event,
             layers_change=Event,
             axes_visible=Event,
+            axes_style=Event,
         )
 
         self.dims = Dims(
@@ -75,6 +77,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self._interactive = True
         self._active_layer = None
         self._axes_visible = True
+        self._axes_style = AxesStyle('colored')
         self._grid_size = (1, 1)
         self.grid_stride = 1
 
@@ -261,6 +264,23 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             self.keymap_providers.insert(0, active_layer)
 
         self.events.active_layer(item=self._active_layer)
+
+    @property
+    def axes_style(self):
+        """AXESSTYLE: Style for Axes.
+
+        Determines style of the axes for display.
+            AxesStyle.COLORED
+                Axes are colored with x=cyan, y=yellow, z=magenta.
+            AxesStyle.DASHED
+                Axes are dashed with x=solid, y=dotted, z=dashed.
+        """
+        return str(self._style)
+
+    @axes_style.setter
+    def axes_style(self, axes_style):
+        self._axes_style = AxesStyle(axes_style)
+        self.events.axes_style()
 
     @property
     def _sliced_extent_world(self) -> np.ndarray:
