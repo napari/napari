@@ -3,6 +3,7 @@ from vispy.scene.visuals import Line
 from vispy.visuals.transforms import STTransform
 
 from ..components._viewer_constants import AxesStyle
+from ..utils.colormaps.standardize_color import transform_color
 
 
 def make_dashed_line(num_dashes, axis):
@@ -37,6 +38,7 @@ class VispyAxesVisual:
     """
 
     def __init__(self, viewer, parent=None, order=0):
+        self.viewer = viewer
 
         self._default_data = np.array(
             [[0, 0, 0], [1, 0, 0], [0, 0, 0], [0, 1, 0], [0, 0, 0], [0, 0, 1]]
@@ -62,7 +64,6 @@ class VispyAxesVisual:
         self._dashed_color = 'white'
 
         self._target_length = 100
-        self.viewer = viewer
         self.node = Line(
             connect='segments', method='gl', parent=parent, width=3
         )
@@ -86,7 +87,9 @@ class VispyAxesVisual:
         if self.viewer._axes_style == AxesStyle.COLORED:
             self.node.set_data(self._default_data, color=self._default_color)
         elif self.viewer._axes_style == AxesStyle.DASHED:
-            self.node.set_data(self._dashed_data, color='white')
+            bgcolor = transform_color(self.viewer.palette['canvas'])[0]
+            self._dashed_color = np.subtract(1, bgcolor)[:3]
+            self.node.set_data(self._dashed_data, self._dashed_color)
         else:
             raise ValueError(
                 f'Axes style {self.viewer.axes_style} not recognized'

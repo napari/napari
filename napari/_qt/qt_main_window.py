@@ -9,11 +9,13 @@ from qtpy.QtCore import Qt
 from qtpy.QtGui import QIcon, QKeySequence
 from qtpy.QtWidgets import (
     QAction,
+    QActionGroup,
     QApplication,
     QDockWidget,
     QHBoxLayout,
     QLabel,
     QMainWindow,
+    QMenu,
     QShortcut,
     QStatusBar,
     QWidget,
@@ -251,6 +253,18 @@ class Window:
         self.view_menu.addAction(toggle_visible)
         self.view_menu.addAction(toggle_theme)
 
+        axes_menu = QMenu('Axes', parent=self._qt_window)
+        ag = QActionGroup(self._qt_window, exclusive=True)
+        axes_menu.addAction(
+            QAction('None', parent=ag, checkable=True, checked=True)
+        )
+        axes_menu.addAction(QAction('Colored', parent=ag, checkable=True))
+        axes_menu.addAction(QAction('Dashed', parent=ag, checkable=True))
+        ag.triggered.connect(self._toggle_axes)
+        self.view_menu.addSeparator()
+        self.view_menu.addMenu(axes_menu)
+        self.view_menu.addSeparator()
+
     def _add_window_menu(self):
         """Add 'Window' menu to app menubar."""
         exit_action = QAction("Close Window", self._qt_window)
@@ -335,6 +349,19 @@ class Window:
             self.qt_viewer.show_key_bindings_dialog
         )
         self.help_menu.addAction(about_key_bindings)
+
+    def _toggle_axes(self, action):
+        text = action.text()
+        if text == 'None':
+            self.qt_viewer.viewer.axes_visible = False
+        elif text == 'Colored':
+            self.qt_viewer.viewer.axes_visible = True
+            self.qt_viewer.viewer.axes_style = 'Colored'
+        elif text == 'Dashed':
+            self.qt_viewer.viewer.axes_visible = True
+            self.qt_viewer.viewer.axes_style = 'Dashed'
+        else:
+            raise ValueError(f'Axes selction {text} not recognized')
 
     def add_dock_widget(
         self,

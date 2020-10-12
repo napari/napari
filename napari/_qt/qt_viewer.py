@@ -476,6 +476,7 @@ class QtViewer(QSplitter):
             )
         self.setStyleSheet(themed_stylesheet)
         self.canvas.bgcolor = self.viewer.palette['canvas']
+        self.axes._on_axes_style_change(None)
 
     def toggle_console_visibility(self, event=None):
         """Toggle console visible and not visible.
