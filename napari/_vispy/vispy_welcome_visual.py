@@ -21,8 +21,11 @@ class VispyWelcomeVisual:
 
         logopath = join(dirname(__file__), '..', 'resources', 'logo.png')
         logo = imread(logopath)
-
-        self._logo = np.mean(logo[..., :3], axis=2)
+        logo_colored = np.mean(logo[..., :3], axis=2)
+        logo[..., :3] = np.stack(
+            [logo_colored, logo_colored, logo_colored], axis=2
+        )
+        self._logo = logo
         self.viewer = viewer
         self.node = ImageNode(parent=parent)
         self.node.order = order
