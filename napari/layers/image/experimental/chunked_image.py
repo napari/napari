@@ -1,4 +1,4 @@
-"""Image class.
+"""ChunkedImage class.
 """
 import types
 import warnings
@@ -6,20 +6,21 @@ import warnings
 import numpy as np
 from scipy import ndimage as ndi
 
-from ...utils.colormaps import AVAILABLE_COLORMAPS
-from ...utils.events import Event
-from ...utils.status_messages import format_float
-from ..base import Layer
-from ..intensity_mixin import IntensityVisualizationMixin
-from ..utils.layer_utils import calc_data_range
-from ._image_constants import Interpolation, Interpolation3D, Rendering
-from ._image_slice import ImageSlice
-from ._image_slice_data import ImageSliceData
-from ._image_utils import guess_multiscale, guess_rgb
+from ....components.experimental.chunk import ChunkRequest
+from ....utils.colormaps import AVAILABLE_COLORMAPS
+from ....utils.events import Event
+from ....utils.status_messages import format_float
+from ...base import Layer
+from ...intensity_mixin import IntensityVisualizationMixin
+from ...utils.layer_utils import calc_data_range
+from .._image_constants import Interpolation, Interpolation3D, Rendering
+from .._image_slice import ImageSlice
+from .._image_utils import guess_multiscale, guess_rgb
+from ._chunked_slice_data import ChunkedSliceData
 
 
 # Mixin must come before Layer
-class Image(IntensityVisualizationMixin, Layer):
+class ChunkedImage(IntensityVisualizationMixin, Layer):
     """Image layer.
 
     Parameters
@@ -585,10 +586,10 @@ class Image(IntensityVisualizationMixin, Layer):
             thumbnail_source = None
 
         # Load our images, might be sync or async.
-        data = ImageSliceData(self, image_indices, image, thumbnail_source)
+        data = ChunkedSliceData(self, image_indices, image, thumbnail_source)
         self._load_slice(data)
 
-    def _load_slice(self, data: ImageSliceData):
+    def _load_slice(self, data: ChunkedSliceData):
         """Load the image and maybe thumbnail source.
 
         Parameters
@@ -603,7 +604,7 @@ class Image(IntensityVisualizationMixin, Layer):
             # property is now false, since the load is in progress.
             self.events.loaded()
 
-    def _on_data_loaded(self, data: ImageSliceData, sync: bool) -> None:
+    def _on_data_loaded(self, data: ChunkedSliceData, sync: bool) -> None:
         """The given data a was loaded, use it now.
 
         This routine is called synchronously from _load_async() above, or
@@ -741,3 +742,15 @@ class Image(IntensityVisualizationMixin, Layer):
             value = (self.data_level, value)
 
         return value
+
+    def on_chunk_loaded(self, request: ChunkRequest) -> None:
+        """An asynchronous ChunkRequest was loaded.
+
+        Parameters
+        ----------
+        request : ChunkRequest
+            This request was loaded.
+        """
+        # Convert the ChunkRequest to SliceData and use it.
+        data = ChunkedSliceData.from_request(self, request)
+        self._on_data_loaded(data, sync=False)

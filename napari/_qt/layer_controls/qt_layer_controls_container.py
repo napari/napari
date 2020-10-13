@@ -1,3 +1,5 @@
+import os
+
 from qtpy.QtWidgets import QFrame, QStackedWidget
 
 from ...layers import Image, Labels, Points, Shapes, Surface, Tracks, Vectors
@@ -9,6 +11,8 @@ from .qt_surface_controls import QtSurfaceControls
 from .qt_tracks_controls import QtTracksControls
 from .qt_vectors_controls import QtVectorsControls
 
+_use_async = os.getenv("NAPARI_ASYNC", "0") != "0"
+
 layer_to_controls = {
     Labels: QtLabelsControls,
     Image: QtImageControls,  # must be after Labels layer
@@ -18,6 +22,12 @@ layer_to_controls = {
     Vectors: QtVectorsControls,
     Tracks: QtTracksControls,
 }
+
+if _use_async:
+    # Add controls for experimental ChunkedImage layer.
+    from ...layers.image.experimental import ChunkedImage
+
+    layer_to_controls[ChunkedImage] = QtImageControls
 
 
 def create_qt_layer_controls(layer):

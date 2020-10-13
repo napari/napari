@@ -17,6 +17,27 @@ from ..utils.misc import is_sequence
 
 logger = getLogger(__name__)
 
+_use_async = os.getenv("NAPARI_ASYNC", "0") != "0"
+
+
+def _get_image_class():
+    """Return regular Image class or special async ChunkedImage class."""
+    if not _use_async:
+        return layers.Image  # Normal image class.
+
+    from ..components.experimental.chunk import async_config
+
+    if not async_config.chunked_visuals:
+        return layers.Image  # Normal image class.
+
+    # We want chunked visuals.
+    from ..layers.image.experimental.chunked_image import ChunkedImage
+
+    return ChunkedImage
+
+
+_image_class = _get_image_class()
+
 
 class AddLayersMixin:
     """A mixin that adds add_* methods for adding layers to the ViewerModel.
@@ -80,7 +101,7 @@ class AddLayersMixin:
         blending=None,
         visible=True,
         multiscale=None,
-    ) -> Union[layers.Image, List[layers.Image]]:
+    ) -> Union[_image_class, List[_image_class]]:
         """Add an image layer to the layers list.
 
         Parameters
@@ -220,13 +241,13 @@ class AddLayersMixin:
                         "did you mean to specify a 'channel_axis'? "
                     )
 
-            return self.add_layer(layers.Image(data, **kwargs))
+            return self.add_layer(_image_class(data, **kwargs))
         else:
             layerdata_list = split_channels(data, channel_axis, **kwargs)
 
             layer_list = list()
             for image, i_kwargs, _ in layerdata_list:
-                layer = self.add_layer(layers.Image(image, **i_kwargs))
+                layer = self.add_layer(_image_class(image, **i_kwargs))
                 layer_list.append(layer)
 
             return layer_list

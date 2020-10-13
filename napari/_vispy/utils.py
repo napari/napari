@@ -32,6 +32,13 @@ layer_to_visual = {
     Tracks: VispyTracksLayer,
 }
 
+# Added experimental layer only when using async.
+if _use_async:
+    from ..layers.image.experimental import ChunkedImage
+    from .experimental.vispy_chunked_image_layer import VispyChunkedImageLayer
+
+    layer_to_visual[ChunkedImage] = VispyChunkedImageLayer
+
 
 def create_vispy_visual(layer):
     """Create vispy visual for a layer based on its layer type.

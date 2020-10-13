@@ -23,11 +23,10 @@ DEFAULT_ASYNC_CONFIG = {
     "num_workers": 6,
     "auto_sync_ms": 30,
     "delay_queue_ms": 100,
+    "chunked_visuals": False,
 }
 
-# The sync config settings. It's called AsyncConfig and not
-# ChunkLoaderConfig because async might require settings related to
-# graphics or something else which isn't really ChunkLoader related.
+# The async config settings.
 AsyncConfig = namedtuple(
     "AsyncConfig",
     [
@@ -36,6 +35,7 @@ AsyncConfig = namedtuple(
         "num_workers",
         "auto_sync_ms",
         "delay_queue_ms",
+        "chunked_visuals",
     ],
 )
 
@@ -118,6 +118,7 @@ def _create_async_config(data: dict) -> AsyncConfig:
         data.get("num_workers", 6),
         data.get("async_sync_ms", 30),
         data.get("delay_queue_ms", 100),
+        data.get("chunked_visuals", False),
     )
 
     _log_to_file(config.log_path)
