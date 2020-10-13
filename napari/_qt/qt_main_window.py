@@ -274,17 +274,17 @@ class Window:
             checked=self.qt_viewer.viewer.axes.dashed,
         )
         axes_dashed_action.triggered.connect(self._toggle_axes_dashed)
-        axes_centered_action = QAction(
-            'Centered',
+        axes_arrows_action = QAction(
+            'Arrows',
             parent=self._qt_window,
             checkable=True,
-            checked=self.qt_viewer.viewer.axes.centered,
+            checked=self.qt_viewer.viewer.axes.arrows,
         )
-        axes_centered_action.triggered.connect(self._toggle_axes_centered)
+        axes_arrows_action.triggered.connect(self._toggle_axes_arrows)
         axes_menu.addAction(axes_visible_action)
         axes_menu.addAction(axes_colored_action)
         axes_menu.addAction(axes_dashed_action)
-        axes_menu.addAction(axes_centered_action)
+        axes_menu.addAction(axes_arrows_action)
         self.view_menu.addSeparator()
         self.view_menu.addMenu(axes_menu)
         self.view_menu.addSeparator()
@@ -383,8 +383,8 @@ class Window:
     def _toggle_axes_dashed(self, state):
         self.qt_viewer.viewer.axes.dashed = state
 
-    def _toggle_axes_centered(self, state):
-        self.qt_viewer.viewer.axes.centered = state
+    def _toggle_axes_arrows(self, state):
+        self.qt_viewer.viewer.axes.arrows = state
 
     def add_dock_widget(
         self,
