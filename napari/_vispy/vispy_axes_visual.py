@@ -58,21 +58,16 @@ def make_arrow_head(num_segments, axis):
 class VispyAxesVisual:
     """Axes indicating world coordinate origin and orientation."""
 
-    def __init__(self, axes, parent=None, order=0):
+    def __init__(self, axes, dims, parent=None, order=0):
         self.axes = axes
+        self.dims = dims
 
         self._default_data = np.array(
             [[0, 0, 0], [1, 0, 0], [0, 0, 0], [0, 1, 0], [0, 0, 0], [0, 0, 1]]
         )
-        self._default_color = np.array(
-            [
-                [0, 1, 1, 1],
-                [0, 1, 1, 1],
-                [1, 1, 0, 1],
-                [1, 1, 0, 1],
-                [1, 0, 1, 1],
-                [1, 0, 1, 1],
-            ]
+        self._default_color = np.concatenate(
+            [[[1, 0, 1, 1]] * 2, [[1, 1, 0, 1]] * 2, [[0, 1, 1, 1]] * 2],
+            axis=0,
         )
         self._dashed_data = np.concatenate(
             [
@@ -84,9 +79,9 @@ class VispyAxesVisual:
         )
         self._dashed_color = np.concatenate(
             [
-                [[0, 1, 1, 1]] * 2,
+                [[1, 0, 1, 1]] * 2,
                 [[1, 1, 0, 1]] * 4 * 2,
-                [[1, 0, 1, 1]] * 8 * 2,
+                [[0, 1, 1, 1]] * 8 * 2,
             ],
             axis=0,
         )
@@ -100,9 +95,9 @@ class VispyAxesVisual:
         self._default_arrow_faces = faces.astype(int)
         self._default_arrow_color = np.concatenate(
             [
-                [[0, 1, 1, 1]] * 100,
-                [[1, 1, 0, 1]] * 100,
                 [[1, 0, 1, 1]] * 100,
+                [[1, 1, 0, 1]] * 100,
+                [[0, 1, 1, 1]] * 100,
             ],
             axis=0,
         )
@@ -118,6 +113,7 @@ class VispyAxesVisual:
         self.axes.events.colored.connect(self._on_data_change)
         self.axes.events.dashed.connect(self._on_data_change)
         self.axes.events.arrows.connect(self._on_data_change)
+        self.dims.events.order.connect(self._on_data_change)
 
         self._on_visible_change(None)
         self._on_data_change(None)
@@ -155,9 +151,16 @@ class VispyAxesVisual:
             arrow_faces = np.array([[0, 1, 2]])
             arrow_color = [[0, 0, 0, 0]]
 
-        self.node._subvisuals[0].set_data(data, color)
+        order = tuple(self.dims.order[-3:])
+        if len(order) == 2:
+            order = (0,) + tuple(np.add(order, 1))
+        order = tuple([i % 3 for i in order[::-1]])
+
+        self.node._subvisuals[0].set_data(data[:, order], color)
         self.node._subvisuals[1].set_data(
-            vertices=arrow_vertices, faces=arrow_faces, face_colors=arrow_color
+            vertices=arrow_vertices[:, order],
+            faces=arrow_faces,
+            face_colors=arrow_color,
         )
 
     def update_scale(self, scale):

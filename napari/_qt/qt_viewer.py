@@ -176,7 +176,10 @@ class QtViewer(QSplitter):
         self._update_camera()
 
         self.axes = VispyAxesVisual(
-            self.viewer.axes, parent=self.view.scene, order=1e6
+            self.viewer.axes,
+            self.viewer.dims,
+            parent=self.view.scene,
+            order=1e6,
         )
 
         main_widget = QWidget()
