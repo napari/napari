@@ -10,21 +10,8 @@ from .vispy_vectors_layer import VispyVectorsLayer
 
 _use_async = os.getenv("NAPARI_ASYNC", "0") != "0"
 
-
-def _vispy_image_layer():
-    """Return which Vispy Image Layer to use."""
-    if _use_async:
-        from .experimental.vispy_chunked_image_layer import (
-            VispyChunkedImageLayer,
-        )
-
-        return VispyChunkedImageLayer
-    else:
-        return VispyImageLayer
-
-
 layer_to_visual = {
-    Image: _vispy_image_layer(),
+    Image: VispyImageLayer,
     Points: VispyPointsLayer,
     Shapes: VispyShapesLayer,
     Surface: VispySurfaceLayer,
