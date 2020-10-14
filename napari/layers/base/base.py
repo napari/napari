@@ -768,9 +768,14 @@ class Layer(KeymapProvider, ABC):
         )
 
         if self.dims.ndisplay == 2 and self.multiscale:
-            level, corners = compute_multiscale_level_and_corners(
-                data_corners, shape_threshold, self.downsample_factors,
+            level, displayed_corners = compute_multiscale_level_and_corners(
+                data_corners[:, self.dims.displayed],
+                shape_threshold,
+                self.downsample_factors[:, self.dims.displayed],
             )
+            corners = np.zeros((2, self.ndim))
+            corners[:, self.dims.displayed] = displayed_corners
+            corners = corners.astype(int)
             if self.data_level != level or not np.all(
                 self.corner_pixels == corners
             ):

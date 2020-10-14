@@ -158,3 +158,20 @@ def test_image_screenshot_zoomed(make_test_viewer):
     np.testing.assert_allclose(
         screenshot[-screen_offset, -screen_offset], target_center
     )
+
+
+@pytest.mark.skipif(
+    sys.platform.startswith('win') or not os.getenv("CI"),
+    reason='Screenshot tests are not supported on napari windows CI.',
+)
+def test_5D_multiscale(make_test_viewer):
+    """Test 5D multiscale data."""
+    # Show must be true to trigger multiscale draw and corner estimation
+    viewer = make_test_viewer(show=True)
+    shapes = [(1, 2, 5, 20, 20), (1, 2, 5, 10, 10), (1, 2, 5, 5, 5)]
+    np.random.seed(0)
+    data = [np.random.random(s) for s in shapes]
+    layer = viewer.add_image(data, multiscale=True)
+    assert layer.data == data
+    assert layer.multiscale is True
+    assert layer.ndim == len(shapes[0])
