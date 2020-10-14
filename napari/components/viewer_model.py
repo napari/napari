@@ -5,6 +5,7 @@ from ..utils.key_bindings import KeymapHandler, KeymapProvider
 from ..utils.theme import palettes
 from ._viewer_mouse_bindings import dims_scroll
 from .add_layers_mixin import AddLayersMixin
+from .axes import Axes
 from .dims import Dims
 from .layerlist import LayerList
 
@@ -65,6 +66,8 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         )
 
         self.layers = LayerList()
+
+        self.axes = Axes()
 
         self._status = 'Ready'
         self._help = ''

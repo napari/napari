@@ -36,6 +36,8 @@ from .widgets.qt_layerlist import QtLayerList
 from .widgets.qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
 
+from .._vispy import VispyAxesVisual, create_vispy_visual  # isort:skip
+
 
 class KeyModifierFilterSceneCanvas(SceneCanvas):
     """SceneCanvas overriding VisPy when mouse wheel events have modifiers."""
@@ -173,6 +175,13 @@ class QtViewer(QSplitter):
         self.view = self.canvas.central_widget.add_view()
         self._update_camera()
 
+        self.axes = VispyAxesVisual(
+            self.viewer.axes,
+            self.viewer.dims,
+            parent=self.view.scene,
+            order=1e6,
+        )
+
         main_widget = QWidget()
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(10, 22, 10, 2)
@@ -261,8 +270,6 @@ class QtViewer(QSplitter):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        from .._vispy import create_vispy_visual
-
         layers = event.source
         layer = event.item
         vispy_layer = create_vispy_visual(layer)
@@ -472,6 +479,7 @@ class QtViewer(QSplitter):
             )
         self.setStyleSheet(themed_stylesheet)
         self.canvas.bgcolor = self.viewer.palette['canvas']
+        self.viewer.axes.background_color = self.viewer.palette['canvas']
 
     def toggle_console_visibility(self, event=None):
         """Toggle console visible and not visible.
@@ -504,9 +512,17 @@ class QtViewer(QSplitter):
     @property
     def _canvas2world_scale(self):
         """list: Scale factors from canvas pixels to world coordinates."""
-        return np.subtract(
-            self._map_canvas2world([1, 1]), self._map_canvas2world([0, 0]),
-        )
+        if isinstance(self.view.camera, PanZoomCamera):
+            return 1 / self.view.camera.transform.scale[0]
+        elif isinstance(self.view.camera, ArcballCamera):
+            # Note magic number 598 is empirically determined so that
+            # Arcball camera and PanZoomCamera match
+            scale_factor = self.view.camera.scale_factor / 598
+            return scale_factor
+        else:
+            raise ValueError(
+                f'Camera type {type(self.view.camera)} not recognized'
+            )
 
     def _map_canvas2world(self, position):
         """Map position from canvas pixels into world coordinates.
@@ -668,10 +684,14 @@ class QtViewer(QSplitter):
         This is triggered from vispy whenever new data is sent to the canvas or
         the camera is moved and is connected in the `QtViewer`.
         """
+        scale_factor = self._canvas2world_scale
+        if self.viewer.axes.visible:
+            self.axes.update_scale(scale_factor)
+
         for layer in self.viewer.layers:
             if layer.ndim <= self.viewer.dims.ndim:
                 layer._update_draw(
-                    scale_factors=self._canvas2world_scale[-layer.ndim :],
+                    scale_factor=scale_factor,
                     corner_pixels=self._canvas_corners_in_world[
                         :, -layer.ndim :
                     ],

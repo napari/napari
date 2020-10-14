@@ -14,6 +14,7 @@ from qtpy.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QMainWindow,
+    QMenu,
     QShortcut,
     QStatusBar,
     QWidget,
@@ -251,6 +252,43 @@ class Window:
         self.view_menu.addAction(toggle_visible)
         self.view_menu.addAction(toggle_theme)
 
+        axes_menu = QMenu('Axes', parent=self._qt_window)
+        axes_visible_action = QAction(
+            'Visible',
+            parent=self._qt_window,
+            checkable=True,
+            checked=self.qt_viewer.viewer.axes.visible,
+        )
+        axes_visible_action.triggered.connect(self._toggle_axes_visible)
+        axes_colored_action = QAction(
+            'Colored',
+            parent=self._qt_window,
+            checkable=True,
+            checked=self.qt_viewer.viewer.axes.colored,
+        )
+        axes_colored_action.triggered.connect(self._toggle_axes_colored)
+        axes_dashed_action = QAction(
+            'Dashed',
+            parent=self._qt_window,
+            checkable=True,
+            checked=self.qt_viewer.viewer.axes.dashed,
+        )
+        axes_dashed_action.triggered.connect(self._toggle_axes_dashed)
+        axes_arrows_action = QAction(
+            'Arrows',
+            parent=self._qt_window,
+            checkable=True,
+            checked=self.qt_viewer.viewer.axes.arrows,
+        )
+        axes_arrows_action.triggered.connect(self._toggle_axes_arrows)
+        axes_menu.addAction(axes_visible_action)
+        axes_menu.addAction(axes_colored_action)
+        axes_menu.addAction(axes_dashed_action)
+        axes_menu.addAction(axes_arrows_action)
+        self.view_menu.addSeparator()
+        self.view_menu.addMenu(axes_menu)
+        self.view_menu.addSeparator()
+
     def _add_window_menu(self):
         """Add 'Window' menu to app menubar."""
         exit_action = QAction("Close Window", self._qt_window)
@@ -335,6 +373,18 @@ class Window:
             self.qt_viewer.show_key_bindings_dialog
         )
         self.help_menu.addAction(about_key_bindings)
+
+    def _toggle_axes_visible(self, state):
+        self.qt_viewer.viewer.axes.visible = state
+
+    def _toggle_axes_colored(self, state):
+        self.qt_viewer.viewer.axes.colored = state
+
+    def _toggle_axes_dashed(self, state):
+        self.qt_viewer.viewer.axes.dashed = state
+
+    def _toggle_axes_arrows(self, state):
+        self.qt_viewer.viewer.axes.arrows = state
 
     def add_dock_widget(
         self,
