@@ -45,7 +45,7 @@ def _create_tile(ul, ur, ll, lr) -> np.ndarray:
     return ndi.zoom(full_size_tile, zoom, prefilter=False, order=0)
 
 
-def _combine_tiles(tiles):
+def _create_higher_level(tiles):
     """Combine each 2x2 group of tiles into one downsampled tile
 
     """
@@ -67,7 +67,7 @@ def _combine_tiles(tiles):
     return new_tiles
 
 
-def _print_tiles(tiles):
+def _print_level_tiles(tiles):
     """Print information about these tiles.
     """
     num_rows = len(tiles)
@@ -86,47 +86,103 @@ def _print_tiles(tiles):
             pass  # print(tile.shape)
 
 
+def _build_tree(levels, level_index, row, col):
+    if level_index < 0:
+        return None
+
+    print(f"Building level = {level_index}")
+    level = levels[level_index]
+    next_index = level_index - 1
+
+    nrow = row * 2
+    ncol = col * 2
+
+    node = OctreeNode(level[row][col])
+    node.children = [
+        _build_tree(levels, next_index, nrow, ncol),
+        _build_tree(levels, next_index, nrow, ncol + 1),
+        _build_tree(levels, next_index, nrow + 1, ncol),
+        _build_tree(levels, next_index, nrow + 1, ncol + 1),
+    ]
+
+    return node
+
+
+def _print_levels(levels):
+    print(f"{len(levels)} levels:")
+    for level in levels:
+        _print_level_tiles(level)
+
+
+def _print_tiles(node, level=0):
+    assert node is not None
+    assert node.tile is not None
+    print(f"level={level} shape={node.tile.shape}")
+    for child in node.children:
+        if child is not None:
+            _print_tiles(child, level + 1)
+
+
+class OctreeNode:
+    """Octree Node.
+
+    Child indexes
+    -------------
+    OCTREE_TODO: This order was picked arbitrarily, if there is another
+    ordering which makes more sense, we should switch to it.
+
+    -Z [0..3]
+    +Z [4..7]
+
+        -X X+
+    -Y 0 1
+    +Y 3 2
+
+        -X X+
+    -Y 4 5
+    +Y 7 6
+    """
+
+    def __init__(self, tile):
+        assert tile is not None
+        self.tile = tile
+        self.children = None
+
+
 class Octree:
-    class Node:
-        """Octree Node.
+    def __init__(self, root: OctreeNode):
+        self.root = root
 
-        Child indexes
-        -------------
-        OCTREE_TODO: This order was picked arbitrarily, if there is another
-        ordering which makes more sense, we should switch to it.
+    def print_info(self):
+        _print_tiles(self.root)
 
-        -Z [0..3]
-        +Z [4..7]
-
-          -X X+
-        -Y 0 1
-        +Y 3 2
-
-          -X X+
-        -Y 4 5
-        +Y 7 6
-        """
-
-        def __init__(self):
-            self.children = None
-
-    def __init__(self):
-        self.root = self.Node()
+    @classmethod
+    def from_levels(cls, levels):
+        root_level = len(levels) - 1
+        root = _build_tree(levels, root_level, 0, 0)
+        return cls(root)
 
     @classmethod
     def from_image(cls, image: np.ndarray):
+        """Create octree from given single image.
+
+        Parameters
+        ----------
+        image : ndarray
+            Create the octree for this single image.
+        """
         TILE_SIZE = 64
         tiles = _create_tiles(image, TILE_SIZE)
         levels = [tiles]
 
-        # Keep combining until there is one root tile.
+        # Keep combining tiles until there is one root tile.
         while len(levels[-1]) > 1:
-            next_level = _combine_tiles(levels[-1])
+            next_level = _create_higher_level(levels[-1])
             levels.append(next_level)
 
-        print(f"{len(levels)} levels:")
-        for level in levels:
-            _print_tiles(level)
+        _print_levels(levels)
+
+        return Octree.from_levels(levels)
 
 
 if __name__ == "__main__":
