@@ -12,7 +12,7 @@ def make_dashed_line(num_dashes, axis):
     ----------
     num_dashes : int
         Number of dashes in the line.
-    axis :
+    axis : int
         Axis which is dashed.
 
     Returns
