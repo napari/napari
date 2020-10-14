@@ -70,7 +70,11 @@ class Window:
         self._qt_window.setAttribute(Qt.WA_DeleteOnClose)
         self._qt_window.setUnifiedTitleAndToolBarOnMac(True)
 
-        self._on_screen_change()
+        # since we initialize canvas before window, we need to manually connect them again.
+        if hasattr(self.qt_viewer.canvas, "_backend"):
+            self._qt_window.windowHandle().screenChanged.connect(
+                self.qt_viewer.canvas._backend.screen_changed
+            )
         self._qt_center = QWidget(self._qt_window)
 
         self._qt_window.setCentralWidget(self._qt_center)
@@ -118,18 +122,6 @@ class Window:
 
         if show:
             self.show()
-
-    def _on_screen_change(self):
-        """
-        since we initialize canvas before window, we need to manually connect them again.
-        """
-        try:
-            self._qt_window.windowHandle().screenChanged.connect(
-                self.qt_viewer.canvas._backend.screen_changed
-            )
-        except AttributeError:
-            # either not PyQt5 backend or no parent window available
-            pass
 
     def _add_menubar(self):
         """Add menubar to napari app."""
