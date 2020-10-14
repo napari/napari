@@ -71,7 +71,7 @@ class Window:
         self._qt_window.setUnifiedTitleAndToolBarOnMac(True)
 
         # since we initialize canvas before window, we need to manually connect them again.
-        if hasattr(self.qt_viewer.canvas, "_backend"):
+        if hasattr(self._qt_window, "windowHandle"):
             self._qt_window.windowHandle().screenChanged.connect(
                 self.qt_viewer.canvas._backend.screen_changed
             )
