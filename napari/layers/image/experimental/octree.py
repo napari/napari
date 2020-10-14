@@ -97,7 +97,7 @@ def _build_tree(levels, level_index, row, col):
     nrow = row * 2
     ncol = col * 2
 
-    node = OctreeNode(level[row][col])
+    node = OctreeNode(row, col, level[row][col])
     node.children = [
         _build_tree(levels, next_index, nrow, ncol),
         _build_tree(levels, next_index, nrow, ncol + 1),
@@ -117,7 +117,7 @@ def _print_levels(levels):
 def _print_tiles(node, level=0):
     assert node is not None
     assert node.tile is not None
-    print(f"level={level} shape={node.tile.shape}")
+    node.print_info(level)
     for child in node.children:
         if child is not None:
             _print_tiles(child, level + 1)
@@ -143,10 +143,18 @@ class OctreeNode:
     +Y 7 6
     """
 
-    def __init__(self, tile):
+    def __init__(self, row, col, tile):
         assert tile is not None
+        self.row = row
+        self.col = col
         self.tile = tile
         self.children = None
+
+    def print_info(self, level):
+        indent = "    " * level
+        print(
+            f"{indent}level={level} row={self.row:>3}, col={self.col:>3} shape={self.tile.shape}"
+        )
 
 
 class Octree:
