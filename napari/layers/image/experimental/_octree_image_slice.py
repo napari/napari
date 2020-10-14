@@ -7,6 +7,7 @@ from typing import Callable
 import numpy as np
 
 from ....types import ArrayLike
+from ....utils.perf import block_timer
 from .._image_view import ImageView
 from ._chunked_image_loader import ChunkedImageLoader
 from ._chunked_slice_data import ChunkedSliceData
@@ -84,9 +85,12 @@ class OctreeImageSlice:
         self.image.raw = image
         self.thumbnail.raw = thumbnail_source
 
-        # TODO_OCTREE: for testing only
-        self._octree = Octree.from_image(image)
-        self._octree.print_tiles()
+        # TODO_OCTREE: Create an octree as a test... the expection is this
+        # is a *single* scale image and we create an octree on the fly just
+        # so we have something to render.
+        with block_timer("create octree", print_time=True):
+            self._octree = Octree.from_image(image)
+        # self._octree.print_tiles()
 
     def load(self, data: ChunkedSliceData) -> bool:
         """Load this data into the slice.

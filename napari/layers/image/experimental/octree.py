@@ -95,7 +95,7 @@ def _build_tree(levels, level_index, row, col):
     if level_index < 0:
         return None
 
-    print(f"Building level = {level_index}")
+    # print(f"Building level = {level_index}")
     level = levels[level_index]
     next_index = level_index - 1
 
@@ -193,7 +193,7 @@ class Octree:
             next_level = _create_higher_level(levels[-1])
             levels.append(next_level)
 
-        _print_levels(levels)
+        # _print_levels(levels)
 
         return Octree.from_levels(levels)
 
