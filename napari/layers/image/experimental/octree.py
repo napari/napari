@@ -33,6 +33,18 @@ def _create_tiles(array: np.ndarray, tile_size: int) -> np.ndarray:
     return tiles
 
 
+def _create_tile(ul, ur, ll, lr) -> np.ndarray:
+    """Create one tile from four child tiles.
+    """
+    row1 = np.hstack((ul, ur))
+    row2 = np.hstack((ll, lr))
+    full_size_tile = np.vstack((row1, row2))
+
+    # Downsample by half.
+    zoom = [0.5, 0.5, 1]
+    return ndi.zoom(full_size_tile, zoom, prefilter=False, order=0)
+
+
 def _combine_tiles(tiles):
     """Combine each 2x2 group of tiles into one downsampled tile
 
@@ -43,18 +55,13 @@ def _combine_tiles(tiles):
     for row in range(0, len(tiles), 2):
         row_tiles = []
         for col in range(0, len(tiles[row]), 2):
-            ul = tiles[row][col]
-            ur = tiles[row][col + 1]
-            ll = tiles[row + 1][col]
-            lr = tiles[row + 1][col + 1]
-            row1 = np.hstack((ul, ur))
-            row2 = np.hstack((ll, lr))
-            tile = np.vstack((row1, row2))
-
-            zoom = [0.5, 0.5, 1]
-            small_tile = ndi.zoom(tile, zoom, prefilter=False, order=0)
-
-            row_tiles.append(small_tile)
+            tile = _create_tile(
+                tiles[row][col],
+                tiles[row][col + 1],
+                tiles[row + 1][col],
+                tiles[row + 1][col + 1],
+            )
+            row_tiles.append(tile)
         new_tiles.append(row_tiles)
 
     return new_tiles
