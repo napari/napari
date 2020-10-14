@@ -69,6 +69,7 @@ class Window:
         self._qt_window = QMainWindow()
         self._qt_window.setAttribute(Qt.WA_DeleteOnClose)
         self._qt_window.setUnifiedTitleAndToolBarOnMac(True)
+        self._qt_window.windowHandle().screenChanged.connect(self.qt_viewer.canvas._backend.screen_changed)
         self._qt_center = QWidget(self._qt_window)
 
         self._qt_window.setCentralWidget(self._qt_center)
