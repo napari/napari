@@ -27,13 +27,12 @@ def _get_image_class():
 
     from ..components.experimental.chunk import async_config
 
-    if not async_config.chunked_visuals:
+    if not async_config.octree_visuals:
         return layers.Image  # Normal image class: async.
 
-    # We want octree visuals.
     from ..layers.image.experimental.octree_image import OctreeImage
 
-    return OctreeImage
+    return OctreeImage  # Octree visuals: async.
 
 
 _image_class = _get_image_class()
