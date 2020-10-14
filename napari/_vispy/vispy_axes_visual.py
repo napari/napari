@@ -18,7 +18,9 @@ def make_dashed_line(num_dashes, axis):
     Returns
     -------
     np.ndarray
-        Dashed line.
+        Dashed line, of shape (num_dashes, 3) with zeros in
+        the non dashed axes and line segments in the dashed
+        axis.
     """
     dashes = np.linspace(0, 1, num_dashes * 2)
     dashed_line_ends = np.concatenate(
@@ -58,46 +60,51 @@ def make_arrow_head(num_segments, axis):
 class VispyAxesVisual:
     """Axes indicating world coordinate origin and orientation."""
 
+    _NUM_SEGMENTS_ARROWHEAD = 100
+
     def __init__(self, axes, dims, parent=None, order=0):
         self.axes = axes
         self.dims = dims
 
+        # note order is z, y, x
         self._default_data = np.array(
-            [[0, 0, 0], [1, 0, 0], [0, 0, 0], [0, 1, 0], [0, 0, 0], [0, 0, 1]]
+            [[0, 0, 0], [0, 0, 1], [0, 0, 0], [0, 1, 0], [0, 0, 0], [1, 0, 0]]
         )
         self._default_color = np.concatenate(
-            [[[1, 0, 1, 1]] * 2, [[1, 1, 0, 1]] * 2, [[0, 1, 1, 1]] * 2],
+            [[[0, 1, 1, 1]] * 2, [[1, 1, 0, 1]] * 2, [[1, 0, 1, 1]] * 2],
             axis=0,
         )
+        # note order is z, y, x
         self._dashed_data = np.concatenate(
             [
-                [[0, 0, 0], [1, 0, 0]],
+                [[0, 0, 0], [0, 0, 1]],
                 make_dashed_line(4, axis=1),
-                make_dashed_line(8, axis=2),
+                make_dashed_line(8, axis=0),
             ],
             axis=0,
         )
         self._dashed_color = np.concatenate(
             [
-                [[1, 0, 1, 1]] * 2,
+                [[0, 1, 1, 1]] * 2,
                 [[1, 1, 0, 1]] * 4 * 2,
-                [[0, 1, 1, 1]] * 8 * 2,
+                [[1, 0, 1, 1]] * 8 * 2,
             ],
             axis=0,
         )
         vertices = np.empty((0, 3))
         faces = np.empty((0, 3))
+        # note order is z, y, x
         for axis in range(3):
-            v, f = make_arrow_head(100, axis)
+            v, f = make_arrow_head(self._NUM_SEGMENTS_ARROWHEAD, 2 - axis)
             faces = np.concatenate([faces, f + len(vertices)], axis=0)
             vertices = np.concatenate([vertices, v], axis=0)
         self._default_arrow_vertices = vertices
         self._default_arrow_faces = faces.astype(int)
         self._default_arrow_color = np.concatenate(
             [
-                [[1, 0, 1, 1]] * 100,
-                [[1, 1, 0, 1]] * 100,
-                [[0, 1, 1, 1]] * 100,
+                [[0, 1, 1, 1]] * self._NUM_SEGMENTS_ARROWHEAD,
+                [[1, 1, 0, 1]] * self._NUM_SEGMENTS_ARROWHEAD,
+                [[1, 0, 1, 1]] * self._NUM_SEGMENTS_ARROWHEAD,
             ],
             axis=0,
         )
@@ -118,8 +125,7 @@ class VispyAxesVisual:
         self._on_visible_change(None)
         self._on_data_change(None)
 
-        self._scale = 0.1
-        self.update_scale(1)
+        self._scale = 1
 
     def _on_visible_change(self, event):
         """Change visibiliy of axes."""
@@ -134,7 +140,7 @@ class VispyAxesVisual:
 
         if not self.axes.colored:
             color = np.subtract(1, self.axes.background_color)[:3]
-            arrow_color = [color] * 300
+            arrow_color = [color] * self._NUM_SEGMENTS_ARROWHEAD * 3
         else:
             if self.axes.dashed:
                 color = self._dashed_color
@@ -151,9 +157,14 @@ class VispyAxesVisual:
             arrow_faces = np.array([[0, 1, 2]])
             arrow_color = [[0, 0, 0, 0]]
 
+        # Color based on displayed dimensions
         order = tuple(self.dims.order[-3:])
         if len(order) == 2:
+            # If only two dimensions are displayed pad with a third
+            # zeroth axis
             order = (0,) + tuple(np.add(order, 1))
+        # map any axes > 2 into the (0, 1, 2) range and reverse the
+        # order of the axes to account for numpy to vispy ordering
         order = tuple([i % 3 for i in order[::-1]])
 
         self.node._subvisuals[0].set_data(data[:, order], color)
