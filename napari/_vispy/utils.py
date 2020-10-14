@@ -21,10 +21,10 @@ layer_to_visual = {
 
 # Added experimental layer only when using async.
 if _use_async:
-    from ..layers.image.experimental import ChunkedImage
-    from .experimental.vispy_chunked_image_layer import VispyChunkedImageLayer
+    from ..layers.image.experimental import OctreeImage
+    from .experimental.vispy_octree_image_layer import VispyOctreeImageLayer
 
-    layer_to_visual[ChunkedImage] = VispyChunkedImageLayer
+    layer_to_visual[OctreeImage] = VispyOctreeImageLayer
 
 
 def create_vispy_visual(layer):

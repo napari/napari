@@ -7,7 +7,7 @@ from vispy.gloo import gl
 from vispy.visuals.transforms import STTransform
 
 
-class VispyChunkedBaseLayer(ABC):
+class VispyOctreeBaseLayer(ABC):
     """Base object for individual layer views
 
     Meant to be subclassed.

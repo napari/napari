@@ -24,10 +24,10 @@ layer_to_controls = {
 }
 
 if _use_async:
-    # Add controls for experimental ChunkedImage layer.
-    from ...layers.image.experimental import ChunkedImage
+    # Add controls for experimental OctreeImage layer.
+    from ...layers.image.experimental import OctreeImage
 
-    layer_to_controls[ChunkedImage] = QtImageControls
+    layer_to_controls[OctreeImage] = QtImageControls
 
 
 def create_qt_layer_controls(layer):

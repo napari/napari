@@ -1,7 +1,4 @@
-"""ChunkedImageSlice class.
-
-Chunked async uses this class.
-Regular async uses the regular ImageSlice.
+"""OctreeImageSlice class.
 """
 import logging
 import os
@@ -20,7 +17,7 @@ LOGGER = logging.getLogger("napari.async")
 _use_async = os.getenv("NAPARI_ASYNC", "0") != "0"
 
 
-class ChunkedImageSlice:
+class OctreeImageSlice:
     """The slice of the image that we are currently viewing.
 
     Parameters
@@ -50,14 +47,14 @@ class ChunkedImageSlice:
         image_converter: Callable[[ArrayLike], ArrayLike],
         rgb: bool = False,
     ):
-        LOGGER.debug("ImageSlice.__init__")
+        LOGGER.debug("OctreeImageSlice.__init__")
         self.image: ImageView = ImageView(image, image_converter)
         self.thumbnail: ImageView = ImageView(image, image_converter)
         self.rgb = rgb
         self.loader = ChunkedImageLoader()
         self._octree = None
 
-        # With async there can be a gap between when the ImageSlice is
+        # With async there can be a gap between when the OctreeImageSlice is
         # created and the data is actually loaded. However initialize
         # as True in case we aren't even doing async loading.
         self.loaded = True

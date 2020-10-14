@@ -21,19 +21,19 @@ _use_async = os.getenv("NAPARI_ASYNC", "0") != "0"
 
 
 def _get_image_class():
-    """Return regular Image class or special async ChunkedImage class."""
+    """Return regular Image class or special async OctreeImage class."""
     if not _use_async:
-        return layers.Image  # Normal image class.
+        return layers.Image  # Normal image class: not async.
 
     from ..components.experimental.chunk import async_config
 
     if not async_config.chunked_visuals:
-        return layers.Image  # Normal image class.
+        return layers.Image  # Normal image class: async.
 
-    # We want chunked visuals.
-    from ..layers.image.experimental.chunked_image import ChunkedImage
+    # We want octree visuals.
+    from ..layers.image.experimental.octree_image import OctreeImage
 
-    return ChunkedImage
+    return OctreeImage
 
 
 _image_class = _get_image_class()

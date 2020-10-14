@@ -6,7 +6,7 @@ from vispy.visuals import Visual
 
 from ..image import Image as ImageNode
 from ..volume import Volume as VolumeNode
-from .vispy_chunked_base_layer import VispyChunkedBaseLayer
+from .vispy_octree_base_layer import VispyOctreeBaseLayer
 
 texture_dtypes = [
     np.dtype(np.int8),
@@ -26,7 +26,7 @@ class ImageChunk:
         return self._image_node if (ndisplay == 2) else self._volume_node
 
 
-class VispyChunkedImageLayer(VispyChunkedBaseLayer):
+class VispyOctreeImageLayer(VispyOctreeBaseLayer):
     def __init__(self, layer):
         self.image_chunk = ImageChunk()
         super().__init__(layer, self.image_chunk.get_node(2))

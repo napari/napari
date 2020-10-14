@@ -1,4 +1,4 @@
-"""ChunkedImage class.
+"""OctreeImage class.
 """
 import types
 import warnings
@@ -15,12 +15,12 @@ from ...intensity_mixin import IntensityVisualizationMixin
 from ...utils.layer_utils import calc_data_range
 from .._image_constants import Interpolation, Interpolation3D, Rendering
 from .._image_utils import guess_multiscale, guess_rgb
-from ._chunked_image_slice import ChunkedImageSlice
 from ._chunked_slice_data import ChunkedSliceData
+from ._octree_image_slice import OctreeImageSlice
 
 
 # Mixin must come before Layer
-class ChunkedImage(IntensityVisualizationMixin, Layer):
+class OctreeImage(IntensityVisualizationMixin, Layer):
     """Image layer.
 
     Parameters
@@ -251,7 +251,7 @@ class ChunkedImage(IntensityVisualizationMixin, Layer):
     def _new_empty_slice(self):
         """Initialize the current slice to an empty image.
         """
-        self._slice = ChunkedImageSlice(
+        self._slice = OctreeImageSlice(
             self._get_empty_image(), self._raw_to_displayed, self.rgb
         )
         self._empty = True
@@ -581,7 +581,7 @@ class ChunkedImage(IntensityVisualizationMixin, Layer):
             image = self.data[image_indices]
 
             # For single-scale we don't request a separate thumbnail_source
-            # from the ChunkLoader because in ChunkedImageSlice.chunk_loaded we
+            # from the ChunkLoader because in OctreeImageSlice.chunk_loaded we
             # call request.thumbnail_source() and it knows to just use the
             # image itself is there is no explicit thumbnail_source.
             thumbnail_source = None

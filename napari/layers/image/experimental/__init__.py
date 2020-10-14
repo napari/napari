@@ -1,1 +1,1 @@
-from .chunked_image import ChunkedImage
+from .octree_image import OctreeImage
