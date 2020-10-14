@@ -1,5 +1,6 @@
 from typing import Dict, Tuple, Union
 
+import dask
 import numpy as np
 
 from ...utils.colormaps import Colormap
@@ -36,6 +37,7 @@ def calc_data_range(data):
             [np.max(data[idx]) for idx in idxs],
             [np.min(data[idx]) for idx in idxs],
         ]
+        reduced_data = dask.compute(*reduced_data)  # compute everything in one go
     else:
         reduced_data = data
 
