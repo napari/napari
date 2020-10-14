@@ -12,6 +12,11 @@ def _create_tiles(array: np.ndarray, tile_size: int) -> np.ndarray:
     """
     Return an NxM array of (tile_size, tile_size) ndarrays except the edge
     tiles might be smaller if the array did not divide evenly.
+
+    TODO_OCTREE: Maybe use slices_from_chunks from dask.array.core, but
+    right now this is just for testing, real multi-scale images will
+    already be chunked. Although on-the-fly chunking might be something
+    we eventually tackle.
     """
     if array.ndim != 3:
         raise ValueError(f"Unexpected array dimension {array.ndim}")
@@ -161,7 +166,7 @@ class Octree:
     def __init__(self, root: OctreeNode):
         self.root = root
 
-    def print_info(self):
+    def print_tiles(self):
         _print_tiles(self.root)
 
     @classmethod
