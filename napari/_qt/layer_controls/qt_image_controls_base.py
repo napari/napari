@@ -46,6 +46,7 @@ class QtBaseImageControls(QtLayerControls):
         self.layer.events.colormap.connect(self._on_colormap_change)
         self.layer.events.gamma.connect(self.gamma_slider_update)
         self.layer.events.contrast_limits.connect(self._on_clims_change)
+
         comboBox = QComboBox(self)
         comboBox.setObjectName("colormapComboBox")
         comboBox.addItems(self.layer.colormaps)
