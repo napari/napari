@@ -7,7 +7,7 @@ class VispyScaleBarVisual:
     """Scale bar in world coordinates.
     """
 
-    def __init__(self, viewer, parent=None, order=0):
+    def __init__(self, scale_bar, parent=None, order=0):
 
         self._data = np.array(
             [
@@ -19,14 +19,15 @@ class VispyScaleBarVisual:
                 [1, 5, -1],
             ]
         )
-        self._color = 'white'
+        self._default_color = np.array([1, 0, 1, 1])
         self._target_length = 100
-        self.viewer = viewer
+        self._scale = 1
+        self.scale_bar = scale_bar
+
         self.node = Line(
             connect='segments', method='gl', parent=parent, width=3
         )
         self.node.order = order
-        self.node.set_data(self._data, self.color)
         self.node.transform = STTransform()
         self.node.transform.translate = [66, 14, 0, 0]
 
@@ -37,13 +38,13 @@ class VispyScaleBarVisual:
         self.text_node.font_size = 10
         self.text_node.anchors = ('center', 'center')
         self.text_node.text = f'{1}'
-        self.text_node.color = self.color
 
-        self.viewer.events.scale_bar_visible.connect(self._on_visible_change)
+        self.scale_bar.events.visible.connect(self._on_visible_change)
+        self.scale_bar.events.colored.connect(self._on_data_change)
+        self.scale_bar.events.ticks.connect(self._on_data_change)
+
         self._on_visible_change(None)
-
-        self._scale = 0.1
-        self.update_scale(1)
+        self._on_data_change(None)
 
     def update_scale(self, scale):
         """Update scale bar length based on canvas2world scale.
@@ -83,18 +84,22 @@ class VispyScaleBarVisual:
         self.node.transform.scale = [scale, 1, 1, 1]
         self.text_node.text = f'{target_world_pixels_rounded:.4g}'
 
-    @property
-    def color(self):
-        """str: scale bar color"""
-        return self._color
+    def _on_data_change(self, event):
+        """Change color and data of scale bar."""
+        if self.scale_bar.colored:
+            color = self._default_color
+        else:
+            color = np.subtract(1, self.scale_bar.background_color)[:3]
 
-    @color.setter
-    def color(self, color):
-        self._color = color
-        self.node.set_data(self._data, self._color)
-        self.text_node.color = self._color
+        if self.scale_bar.ticks:
+            data = self._data
+        else:
+            data = self._data[:2]
+
+        self.node.set_data(data, color)
+        self.text_node.color = color
 
     def _on_visible_change(self, event):
-        """Change visibiliy of axes."""
-        self.node.visible = self.viewer.scale_bar_visible
-        self.text_node.visible = self.viewer.scale_bar_visible
+        """Change visibiliy of scale bar."""
+        self.node.visible = self.scale_bar.visible
+        self.text_node.visible = self.scale_bar.visible

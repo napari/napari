@@ -8,6 +8,7 @@ from .add_layers_mixin import AddLayersMixin
 from .axes import Axes
 from .dims import Dims
 from .layerlist import LayerList
+from .scale_bar import ScaleBar
 
 
 class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
@@ -59,7 +60,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             palette=Event,
             grid=Event,
             layers_change=Event,
-            scale_bar_visible=Event,
         )
 
         self.dims = Dims(
@@ -69,6 +69,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self.layers = LayerList()
 
         self.axes = Axes()
+        self.scale_bar = ScaleBar()
 
         self._status = 'Ready'
         self._help = ''
@@ -79,7 +80,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self._active_layer = None
         self._grid_size = (1, 1)
         self.grid_stride = 1
-        self._scale_bar_visible = False
 
         self._palette = None
         self.theme = 'dark'
@@ -117,6 +117,8 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             return
 
         self._palette = palette
+        self.axes.background_color = self.palette['canvas']
+        self.scale_bar.background_color = self.palette['canvas']
         self.events.palette()
 
     @property
@@ -139,17 +141,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
                 f"Theme '{theme}' not found; "
                 f"options are {list(self.themes)}."
             )
-
-    @property
-    def scale_bar_visible(self):
-        """bool: If scale bar visual is visible or not.
-        """
-        return self._scale_bar_visible
-
-    @scale_bar_visible.setter
-    def scale_bar_visible(self, scale_bar_visible):
-        self._scale_bar_visible = scale_bar_visible
-        self.events.scale_bar_visible()
 
     @property
     def grid_size(self):

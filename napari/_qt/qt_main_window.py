@@ -251,7 +251,9 @@ class Window:
         self.view_menu = self.main_menu.addMenu('&View')
         self.view_menu.addAction(toggle_visible)
         self.view_menu.addAction(toggle_theme)
+        self.view_menu.addSeparator()
 
+        # Add axes menu
         axes_menu = QMenu('Axes', parent=self._qt_window)
         axes_visible_action = QAction(
             'Visible',
@@ -285,8 +287,40 @@ class Window:
         axes_menu.addAction(axes_colored_action)
         axes_menu.addAction(axes_dashed_action)
         axes_menu.addAction(axes_arrows_action)
-        self.view_menu.addSeparator()
         self.view_menu.addMenu(axes_menu)
+
+        # Add scale bar menu
+        scale_bar_menu = QMenu('Scale Bar', parent=self._qt_window)
+        scale_bar_visible_action = QAction(
+            'Visible',
+            parent=self._qt_window,
+            checkable=True,
+            checked=self.qt_viewer.viewer.scale_bar.visible,
+        )
+        scale_bar_visible_action.triggered.connect(
+            self._toggle_scale_bar_visible
+        )
+        scale_bar_colored_action = QAction(
+            'Colored',
+            parent=self._qt_window,
+            checkable=True,
+            checked=self.qt_viewer.viewer.scale_bar.colored,
+        )
+        scale_bar_colored_action.triggered.connect(
+            self._toggle_scale_bar_colored
+        )
+        scale_bar_ticks_action = QAction(
+            'Ticks',
+            parent=self._qt_window,
+            checkable=True,
+            checked=self.qt_viewer.viewer.scale_bar.ticks,
+        )
+        scale_bar_ticks_action.triggered.connect(self._toggle_scale_bar_ticks)
+        scale_bar_menu.addAction(scale_bar_visible_action)
+        scale_bar_menu.addAction(scale_bar_colored_action)
+        scale_bar_menu.addAction(scale_bar_ticks_action)
+        self.view_menu.addMenu(scale_bar_menu)
+
         self.view_menu.addSeparator()
 
     def _add_window_menu(self):
@@ -373,6 +407,15 @@ class Window:
             self.qt_viewer.show_key_bindings_dialog
         )
         self.help_menu.addAction(about_key_bindings)
+
+    def _toggle_scale_bar_visible(self, state):
+        self.qt_viewer.viewer.scale_bar.visible = state
+
+    def _toggle_scale_bar_colored(self, state):
+        self.qt_viewer.viewer.scale_bar.colored = state
+
+    def _toggle_scale_bar_ticks(self, state):
+        self.qt_viewer.viewer.scale_bar.ticks = state
 
     def _toggle_axes_visible(self, state):
         self.qt_viewer.viewer.axes.visible = state
