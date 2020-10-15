@@ -145,23 +145,6 @@ def add_events_to_class(cls: Type[C]) -> Type[C]:
     return cls
 
 
-def getattr_with_conversion(self: C, name: str) -> Any:
-    """Modified __getattr__ method that allows class override.
-
-    Parameters
-    ----------
-    self : C
-        An instance of the decorated dataclass of Type[C]
-    name : str
-        The name of the attribute being retrieved.
-
-    Returns
-    -------
-    value : Any
-        The value being retrieved
-    """
-
-
 # make the actual getter/setter functions that the property will use
 @tz.curry
 def prop_getter(priv_name: str, fcoerce: Callable, obj) -> Any:
