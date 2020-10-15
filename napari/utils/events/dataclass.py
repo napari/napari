@@ -305,8 +305,6 @@ class Property:
     def __init_subclass__(cls, *args, **kwargs):
         raise TypeError(f"Cannot subclass {cls.__module__}.Property")
 
-    import typing_extensions
-
     @_te._tp_cache
     def __class_getitem__(cls, params):
         if not isinstance(params, tuple) or not (1 < len(params) < 4):
