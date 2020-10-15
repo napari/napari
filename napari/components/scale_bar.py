@@ -2,6 +2,7 @@ import numpy as np
 
 from ..utils.colormaps.standardize_color import transform_color
 from ..utils.events import EmitterGroup
+from ._viewer_constants import Position
 
 
 class ScaleBar:
@@ -19,6 +20,10 @@ class ScaleBar:
         background.
     events : EmitterGroup
         Event emitter group
+    position : str
+        Position of the scale bar in the canvas. Must be one of
+        'top left', 'top right', 'bottom right', 'bottom left'.
+        Default value is 'bottom right'.
     ticks : bool
         If scale bar has ticks at ends or not.
     visible : bool
@@ -33,12 +38,14 @@ class ScaleBar:
             auto_connect=True,
             visible=None,
             colored=None,
+            position=None,
             ticks=None,
         )
-        self._visible = False
+        self._visible = True
         self._colored = False
         self._background_color = np.array([1, 1, 1])
         self._ticks = True
+        self._position = Position('bottom_right')
 
     @property
     def visible(self):
@@ -79,3 +86,23 @@ class ScaleBar:
     def ticks(self, ticks):
         self._ticks = ticks
         self.events.ticks()
+
+    @property
+    def position(self):
+        """Position: Location of scale bar in canvas.
+
+        Postion.TOP_LEFT
+             Top left of the canvas.
+        Postion.TOP_RIGHT
+             Top right of the canvas.
+        Postion.BOTTOM_RIGHT
+             Bottom right of the canvas.
+        Postion.BOTTOM_LEFT
+             Bottom left of the canvas.
+        """
+        return str(self._position)
+
+    @position.setter
+    def position(self, position):
+        self._position = Position(position)
+        self.events.position()

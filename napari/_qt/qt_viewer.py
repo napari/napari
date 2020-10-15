@@ -188,6 +188,7 @@ class QtViewer(QSplitter):
         self.scale_bar = VispyScaleBarVisual(
             self.viewer.scale_bar, parent=self.view, order=1e6 + 1
         )
+        self.canvas.events.resize.connect(self.scale_bar._on_position_change)
 
         main_widget = QWidget()
         main_layout = QVBoxLayout()

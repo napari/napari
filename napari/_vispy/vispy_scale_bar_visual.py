@@ -2,6 +2,8 @@ import numpy as np
 from vispy.scene.visuals import Line, Text
 from vispy.visuals.transforms import STTransform
 
+from ..components._viewer_constants import Position
+
 
 class VispyScaleBarVisual:
     """Scale bar in world coordinates.
@@ -29,12 +31,10 @@ class VispyScaleBarVisual:
         )
         self.node.order = order
         self.node.transform = STTransform()
-        self.node.transform.translate = [66, 14, 0, 0]
 
         self.text_node = Text(pos=[0, 0], parent=parent)
         self.text_node.order = order
         self.text_node.transform = STTransform()
-        self.text_node.transform.translate = [33, 16, 0, 0]
         self.text_node.font_size = 10
         self.text_node.anchors = ('center', 'center')
         self.text_node.text = f'{1}'
@@ -42,9 +42,11 @@ class VispyScaleBarVisual:
         self.scale_bar.events.visible.connect(self._on_visible_change)
         self.scale_bar.events.colored.connect(self._on_data_change)
         self.scale_bar.events.ticks.connect(self._on_data_change)
+        self.scale_bar.events.position.connect(self._on_position_change)
 
         self._on_visible_change(None)
         self._on_data_change(None)
+        self._on_position_change(None)
 
     def update_scale(self, scale):
         """Update scale bar length based on canvas2world scale.
@@ -80,8 +82,16 @@ class VispyScaleBarVisual:
         )
         scale = target_canvas_pixels_rounded
 
+        if self.scale_bar._position in [
+            Position.TOP_RIGHT,
+            Position.BOTTOM_RIGHT,
+        ]:
+            sign = -1
+        else:
+            sign = 1
+
         # Update scalebar and text
-        self.node.transform.scale = [scale, 1, 1, 1]
+        self.node.transform.scale = [sign * scale, 1, 1, 1]
         self.text_node.text = f'{target_world_pixels_rounded:.4g}'
 
     def _on_data_change(self, event):
@@ -103,3 +113,52 @@ class VispyScaleBarVisual:
         """Change visibiliy of scale bar."""
         self.node.visible = self.scale_bar.visible
         self.text_node.visible = self.scale_bar.visible
+
+    def _on_position_change(self, event):
+        """Change position of scale bar."""
+        if self.scale_bar._position == Position.TOP_LEFT:
+            sign = 1
+            self.node.transform.translate = [66, 14, 0, 0]
+            self.text_node.transform.translate = [33, 16, 0, 0]
+        elif self.scale_bar._position == Position.TOP_RIGHT:
+            sign = -1
+            canvas_size = list(self.node.canvas.size)
+            self.node.transform.translate = [canvas_size[0] - 66, 14, 0, 0]
+            self.text_node.transform.translate = [
+                canvas_size[0] - 33,
+                16,
+                0,
+                0,
+            ]
+        elif self.scale_bar._position == Position.BOTTOM_RIGHT:
+            sign = -1
+            canvas_size = list(self.node.canvas.size)
+            self.node.transform.translate = [
+                canvas_size[0] - 66,
+                canvas_size[1] - 16,
+                0,
+                0,
+            ]
+            self.text_node.transform.translate = [
+                canvas_size[0] - 33,
+                canvas_size[1] - 14,
+                0,
+                0,
+            ]
+        elif self.scale_bar._position == Position.BOTTOM_LEFT:
+            sign = 1
+            canvas_size = list(self.node.canvas.size)
+            self.node.transform.translate = [66, canvas_size[1] - 16, 0, 0]
+            self.text_node.transform.translate = [
+                33,
+                canvas_size[1] - 14,
+                0,
+                0,
+            ]
+        else:
+            raise ValueError(
+                f'Position {self.scale_bar.position}' ' not recognized.'
+            )
+
+        scale = abs(self.node.transform.scale[0])
+        self.node.transform.scale = [sign * scale, 1, 1, 1]
