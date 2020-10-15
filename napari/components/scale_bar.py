@@ -41,7 +41,7 @@ class ScaleBar:
             position=None,
             ticks=None,
         )
-        self._visible = True
+        self._visible = False
         self._colored = False
         self._background_color = np.array([1, 1, 1])
         self._ticks = True
