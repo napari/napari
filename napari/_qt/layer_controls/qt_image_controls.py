@@ -88,6 +88,8 @@ class QtImageControls(QtBaseImageControls):
         colormap_layout = QHBoxLayout()
         if hasattr(self.layer, 'rgb') and self.layer.rgb:
             colormap_layout.addWidget(QLabel("RGB"))
+            self.colormapComboBox.setVisible(False)
+            self.colorbarLabel.setVisible(False)
         else:
             colormap_layout.addWidget(self.colorbarLabel)
             colormap_layout.addWidget(self.colormapComboBox)
@@ -116,10 +118,6 @@ class QtImageControls(QtBaseImageControls):
         self.grid_layout.setRowStretch(9, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
-
-        if layer.rgb is True:
-            self.colormapComboBox.setDisabled(True)
-            colormap_layout.itemAt(0).widget().setVisible(False)
 
     def changeInterpolation(self, text):
         """Change interpolation mode for image display.
