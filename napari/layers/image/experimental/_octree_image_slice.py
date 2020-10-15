@@ -9,6 +9,7 @@ import numpy as np
 from ....types import ArrayLike
 from ....utils.perf import block_timer
 from .._image_view import ImageView
+from . import ChunkData
 from ._chunked_image_loader import ChunkedImageLoader
 from ._chunked_slice_data import ChunkedSliceData
 from .octree import Octree
@@ -128,3 +129,9 @@ class OctreeImageSlice:
         self._set_raw_images(data.image, data.thumbnail_source)
         self.loaded = True
         return True  # data was used.
+
+    @property
+    def view_chunks(self):
+        """Chunks currently in view."""
+        data = self._octree.root.tile
+        return ChunkData(0, 0, data)
