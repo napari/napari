@@ -406,8 +406,3 @@ def dataclass(
 def _get_state(self):
     """Get dictionary of dataclass fiels."""
     return _dc.asdict(self)
-
-
-# TODO: docs on when to do initVar vs classVar
-# viewerModel
-# see if we can get Layer (base class) to work without others...
