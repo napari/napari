@@ -36,7 +36,11 @@ from .widgets.qt_layerlist import QtLayerList
 from .widgets.qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
 
-from .._vispy import VispyScaleBarVisual  # isort:skip
+from .._vispy import (  # isort:skip
+    VispyAxesVisual,
+    VispyScaleBarVisual,
+    create_vispy_visual,
+)
 
 
 class KeyModifierFilterSceneCanvas(SceneCanvas):
@@ -176,7 +180,13 @@ class QtViewer(QSplitter):
         self._update_camera()
 
         self.scale_bar = VispyScaleBarVisual(
-            self.viewer, parent=self.view, order=1e6
+            self.viewer, parent=self.view, order=1e6 + 1
+        )
+        self.axes = VispyAxesVisual(
+            self.viewer.axes,
+            self.viewer.dims,
+            parent=self.view.scene,
+            order=1e6,
         )
 
         main_widget = QWidget()
@@ -267,8 +277,6 @@ class QtViewer(QSplitter):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        from .._vispy import create_vispy_visual
-
         layers = event.source
         layer = event.item
         vispy_layer = create_vispy_visual(layer)
@@ -478,6 +486,7 @@ class QtViewer(QSplitter):
             )
         self.setStyleSheet(themed_stylesheet)
         self.canvas.bgcolor = self.viewer.palette['canvas']
+        self.viewer.axes.background_color = self.viewer.palette['canvas']
 
     def toggle_console_visibility(self, event=None):
         """Toggle console visible and not visible.
@@ -685,6 +694,8 @@ class QtViewer(QSplitter):
         scale_factor = self._canvas2world_scale
         if self.viewer.scale_bar_visible:
             self.scale_bar.update_scale(scale_factor)
+        if self.viewer.axes.visible:
+            self.axes.update_scale(scale_factor)
 
         for layer in self.viewer.layers:
             if layer.ndim <= self.viewer.dims.ndim:
