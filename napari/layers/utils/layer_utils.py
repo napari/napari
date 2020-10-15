@@ -37,7 +37,8 @@ def calc_data_range(data):
             [np.max(data[idx]) for idx in idxs],
             [np.min(data[idx]) for idx in idxs],
         ]
-        reduced_data = dask.compute(*reduced_data)  # compute everything in one go
+        # compute everything in one go
+        reduced_data = dask.compute(*reduced_data)
     else:
         reduced_data = data
 
