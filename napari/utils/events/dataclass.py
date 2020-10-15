@@ -150,7 +150,7 @@ def getattr_with_conversion(self: C, name: str) -> Any:
 
     Parameters
     ----------
-    self : T
+    self : C
         An instance of the decorated dataclass of Type[C]
     name : str
         The name of the attribute being retrieved.
