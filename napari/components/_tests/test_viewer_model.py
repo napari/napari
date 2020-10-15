@@ -123,7 +123,7 @@ def test_add_empty_points_on_top_of_image():
     image = np.random.random((8, 64, 64))
     # add_image always returns the corresponding layer
     _ = viewer.add_image(image)
-    layer = viewer.add_points()
+    layer = viewer.add_points(ndim=3)
     assert layer.ndim == 3
     layer.add([5.0, 32.0, 61.0])
     assert layer.data.shape == (1, 3)
@@ -134,7 +134,7 @@ def test_add_empty_shapes_layer():
     image = np.random.random((8, 64, 64))
     # add_image always returns the corresponding layer
     _ = viewer.add_image(image)
-    layer = viewer.add_shapes()
+    layer = viewer.add_shapes(ndim=3)
     assert layer.ndim == 3
 
 
@@ -490,18 +490,18 @@ def test_sliced_world_extent():
 
     # Empty data is taken to be 512 x 512
     np.testing.assert_allclose(viewer._sliced_extent_world[0], (0, 0))
-    np.testing.assert_allclose(viewer._sliced_extent_world[1], (512, 512))
+    np.testing.assert_allclose(viewer._sliced_extent_world[1], (511, 511))
 
     # Add one layer
     viewer.add_image(
         np.random.random((6, 10, 15)), scale=(3, 1, 1), translate=(10, 20, 5)
     )
     np.testing.assert_allclose(viewer.layers._extent_world[0], (10, 20, 5))
-    np.testing.assert_allclose(viewer.layers._extent_world[1], (28, 30, 20))
+    np.testing.assert_allclose(viewer.layers._extent_world[1], (25, 29, 19))
     np.testing.assert_allclose(viewer._sliced_extent_world[0], (20, 5))
-    np.testing.assert_allclose(viewer._sliced_extent_world[1], (30, 20))
+    np.testing.assert_allclose(viewer._sliced_extent_world[1], (29, 19))
 
     # Change displayed dims order
     viewer.dims.order = (1, 2, 0)
     np.testing.assert_allclose(viewer._sliced_extent_world[0], (5, 10))
-    np.testing.assert_allclose(viewer._sliced_extent_world[1], (20, 28))
+    np.testing.assert_allclose(viewer._sliced_extent_world[1], (19, 25))

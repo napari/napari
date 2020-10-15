@@ -171,7 +171,7 @@ Generators for the Win!
         def my_generator():
             for i in range(10):
                 yield i
-        
+
 
 **Use a generator!** By writing our decorated function as a generator that
 ``yields`` results instead of a function that ``returns`` a single result at
@@ -261,7 +261,7 @@ button that aborts the worker when clicked:
 .. code-block:: python
    :linenos:
    :emphasize-lines: 19,29
-    
+
     import time
     import napari
     from qtpy.QtWidgets import QPushButton
@@ -334,7 +334,7 @@ hits "0":
 
     import napari
     import time
-    
+
     from napari.qt.threading import thread_worker
     from qtpy.QtWidgets import QLineEdit, QLabel, QWidget, QVBoxLayout
     from qtpy.QtGui import QDoubleValidator
@@ -460,7 +460,7 @@ depending on your function type. The following three examples are equivalent:
 .. code-block:: python
 
     from napari.qt.threading import FunctionWorker
-    
+
     def my_function(arg1, arg2=None):
        ...
 
@@ -490,11 +490,10 @@ keep in mind the following guidelines:
    <napari.qt.threading.WorkerBase.work>`.
 
 2. When implementing the :meth:`~napari.qt.threading.WorkerBase.work` method,
-it is 
-   important that you periodically check ``self.abort_requested`` in your
+   it is important that you periodically check ``self.abort_requested`` in your
    thread loop, and exit the thread accordingly, otherwise ``napari`` will not
    be able to gracefully exit a long-running thread.
-     
+
      .. code-block:: python
 
         def work(self):
