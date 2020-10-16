@@ -350,9 +350,11 @@ class Tracks(Layer):
             from warnings import warn
 
             warn(
-                (f"Previous color_by key {self._color_by} not present in"
-                " new properties. Falling back to track_id"),
-                UserWarning
+                (
+                    f"Previous color_by key {self._color_by} not present in"
+                    " new properties. Falling back to track_id"
+                ),
+                UserWarning,
             )
             self._color_by = 'track_id'
         self._manager.properties = properties
