@@ -75,7 +75,7 @@ def test_affine_properties():
     )
     npt.assert_allclose(transform.translate, [8, -5])
     npt.assert_allclose(transform.scale, [2, 3])
-    npt.assert_almost_equal(transform.rotation, [[0, 1], [-1, 0]])
+    npt.assert_almost_equal(transform.rotation, [[0, -1], [1, 0]])
     npt.assert_almost_equal(transform.shear, [1])
 
 
@@ -83,8 +83,8 @@ def test_rotation():
     coord = [10, 13]
     transform = Affine(rotation=90, degrees=True)
     new_coord = transform(coord)
-    # As rotation by 90 degrees, can use [y, -x]
-    target_coord = [coord[1], -coord[0]]
+    # As rotation by 90 degrees, can use [-y, x]
+    target_coord = [-coord[1], coord[0]]
     npt.assert_allclose(new_coord, target_coord)
 
 
@@ -95,8 +95,8 @@ def test_scale_translate_rotation():
     )
     new_coord = transform(coord)
     post_scale = np.multiply(coord, [2, 3])
-    # As rotation by 90 degrees, can use [y, -x]
-    post_rotation = [post_scale[1], -post_scale[0]]
+    # As rotation by 90 degrees, can use [-y, x]
+    post_rotation = [-post_scale[1], post_scale[0]]
     target_coord = np.add(post_rotation, [8, -5])
     npt.assert_allclose(new_coord, target_coord)
 
@@ -108,8 +108,8 @@ def test_scale_translate_rotation_inverse():
     )
     new_coord = transform(coord)
     post_scale = np.multiply(coord, [2, 3])
-    # As rotation by 90 degrees, can use [y, -x]
-    post_rotation = [post_scale[1], -post_scale[0]]
+    # As rotation by 90 degrees, can use [-y, x]
+    post_rotation = [-post_scale[1], post_scale[0]]
     target_coord = np.add(post_rotation, [8, -5])
     npt.assert_allclose(new_coord, target_coord)
 
