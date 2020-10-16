@@ -69,28 +69,6 @@ def test_scale_translate_identity_default(Transform):
     npt.assert_allclose(new_coord, coord)
 
 
-def test_rotation():
-    coord = [10, 13]
-    transform = Affine(rotation=90, degrees=True)
-    new_coord = transform(coord)
-    # As rotation by 90 degrees, can use [-y, x]
-    target_coord = [-coord[1], coord[0]]
-    npt.assert_allclose(new_coord, target_coord)
-
-
-def test_scale_translate_rotation():
-    coord = [10, 13]
-    transform = Affine(
-        scale=[2, 3], translate=[8, -5], rotation=90, degrees=True
-    )
-    new_coord = transform(coord)
-    # As rotation by 90 degrees, can use [-y, x]
-    post_rotation = [-coord[1], coord[0]]
-    post_scale = np.multiply(post_rotation, [2, 3])
-    target_coord = np.add(post_scale, [8, -5])
-    npt.assert_allclose(new_coord, target_coord)
-
-
 def test_affine_properties():
     transform = Affine(
         scale=[2, 3], translate=[8, -5], rotation=90, shear=[1], degrees=True
@@ -101,16 +79,38 @@ def test_affine_properties():
     npt.assert_almost_equal(transform.shear, [1])
 
 
+def test_rotation():
+    coord = [10, 13]
+    transform = Affine(rotation=90, degrees=True)
+    new_coord = transform(coord)
+    # As rotation by 90 degrees, can use [y, -x]
+    target_coord = [coord[1], -coord[0]]
+    npt.assert_allclose(new_coord, target_coord)
+
+
+def test_scale_translate_rotation():
+    coord = [10, 13]
+    transform = Affine(
+        scale=[2, 3], translate=[8, -5], rotation=90, degrees=True
+    )
+    new_coord = transform(coord)
+    post_scale = np.multiply(coord, [2, 3])
+    # As rotation by 90 degrees, can use [y, -x]
+    post_rotation = [post_scale[1], -post_scale[0]]
+    target_coord = np.add(post_rotation, [8, -5])
+    npt.assert_allclose(new_coord, target_coord)
+
+
 def test_scale_translate_rotation_inverse():
     coord = [10, 13]
     transform = Affine(
         scale=[2, 3], translate=[8, -5], rotation=90, degrees=True
     )
     new_coord = transform(coord)
-    # As rotation by 90 degrees, can use [-y, x]
-    post_rotation = [-coord[1], coord[0]]
-    post_scale = np.multiply(post_rotation, [2, 3])
-    target_coord = np.add(post_scale, [8, -5])
+    post_scale = np.multiply(coord, [2, 3])
+    # As rotation by 90 degrees, can use [y, -x]
+    post_rotation = [post_scale[1], -post_scale[0]]
+    target_coord = np.add(post_rotation, [8, -5])
     npt.assert_allclose(new_coord, target_coord)
 
     inverted_new_coord = transform.inverse(new_coord)
@@ -149,3 +149,74 @@ def test_scale_translate_rotation_shear_compose():
     new_coord_1 = transform_c(coord)
     new_coord_2 = transform_b(transform_a(coord))
     npt.assert_allclose(new_coord_1, new_coord_2)
+
+
+@pytest.mark.parametrize('dimensionality', [2, 3])
+def test_affine_matrix(dimensionality):
+    np.random.seed(0)
+    N = dimensionality
+    A = np.eye(N + 1)
+    A[:-1, :-1] = np.random.random((N, N))
+    A[:-1, -1] = np.random.random(N)
+
+    # Create transform
+    transform = Affine(affine_matrix=A)
+
+    # Check affine was passed correctly
+    np.testing.assert_almost_equal(transform.affine_matrix, A)
+
+    # Create input vector
+    x = np.ones(N + 1)
+    x[:-1] = np.random.random(N)
+
+    # Apply transform and direct matrix multiplication
+    result_transform = transform(x[:-1])
+    result_mat_multiply = (A @ x)[:-1]
+
+    np.testing.assert_almost_equal(result_transform, result_mat_multiply)
+
+
+@pytest.mark.parametrize('dimensionality', [2, 3])
+def test_affine_matrix_compose(dimensionality):
+    np.random.seed(0)
+    N = dimensionality
+    A = np.eye(N + 1)
+    A[:-1, :-1] = np.random.random((N, N))
+    A[:-1, -1] = np.random.random(N)
+
+    B = np.eye(N + 1)
+    B[:-1, :-1] = np.random.random((N, N))
+    B[:-1, -1] = np.random.random(N)
+
+    # Create transform
+    transform_A = Affine(affine_matrix=A)
+    transform_B = Affine(affine_matrix=B)
+
+    # Check affine was passed correctly
+    np.testing.assert_almost_equal(transform_A.affine_matrix, A)
+    np.testing.assert_almost_equal(transform_B.affine_matrix, B)
+
+    # Compose tranform and directly matrix multiply
+    transform_C = transform_B.compose(transform_A)
+    C = B @ A
+    np.testing.assert_almost_equal(transform_C.affine_matrix, C)
+
+
+@pytest.mark.parametrize('dimensionality', [2, 3])
+def test_affine_matrix_inverse(dimensionality):
+    np.random.seed(0)
+    N = dimensionality
+    A = np.eye(N + 1)
+    A[:-1, :-1] = np.random.random((N, N))
+    A[:-1, -1] = np.random.random(N)
+
+    # Create transform
+    transform = Affine(affine_matrix=A)
+
+    # Check affine was passed correctly
+    np.testing.assert_almost_equal(transform.affine_matrix, A)
+
+    # Check inverse is create correctly
+    np.testing.assert_almost_equal(
+        transform.inverse.affine_matrix, np.linalg.inv(A)
+    )

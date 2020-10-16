@@ -319,7 +319,7 @@ class Affine(Transform):
         translate = np.concatenate(
             ([0.0] * (coords.shape[1] - len(self.translate)), self.translate)
         )
-        return np.atleast_1d(np.squeeze(coords @ linear_matrix + translate))
+        return np.atleast_1d(np.squeeze(coords @ linear_matrix.T + translate))
 
     @property
     def ndim(self) -> int:
@@ -376,15 +376,12 @@ class Affine(Transform):
     @property
     def inverse(self) -> 'Affine':
         """Return the inverse transform."""
-        linear_matrix = np.linalg.inv(self.linear_matrix)
-        translate = -self.translate @ linear_matrix
-        return Affine(linear_matrix=linear_matrix, translate=translate)
+        return Affine(affine_matrix=np.linalg.inv(self.affine_matrix))
 
     def compose(self, transform: 'Affine') -> 'Affine':
         """Return the composite of this transform and the provided one."""
-        linear_matrix = transform.linear_matrix @ self.linear_matrix
-        translate = self.translate + transform.translate @ self.linear_matrix
-        return Affine(linear_matrix=linear_matrix, translate=translate)
+        affine_matrix = self.affine_matrix @ transform.affine_matrix
+        return Affine(affine_matrix=affine_matrix)
 
     def set_slice(self, axes: Sequence[int]) -> 'Affine':
         """Return a transform subset to the visible dimensions.
