@@ -117,31 +117,30 @@ class VispyBaseLayer(ABC):
             self.layer.dims.displayed
         )
         # convert NumPy axis ordering to VisPy axis ordering
-        # using a conjugation operation
-        if self.layer.dims.ndisplay == 2:
-            t_form = np.array([[0, 1], [-1, 0]])
-        else:
-            t_form = np.array([[0, 0, 1], [0, 1, 0], [1, 0, 0]])
-        t_form_h = np.eye(t_form.shape[0] + 1)
-        t_form_h[:-1, :-1] = t_form
-        affine = t_form_h @ transform.affine_matrix @ t_form_h.T
-        matrix = affine[:-1, :-1]
-        translate = affine[:-1, -1]
+        # by reversing the axes order and flipping the linear
+        # matrix
+        translate = transform.translate[::-1]
+        matrix = transform.linear_matrix[::-1, ::-1].T
 
-        # Embed in 4x4 affine matrix
+        # Embed in the top left corner of a 4x4 affine matrix
         affine_matrix = np.eye(4)
         affine_matrix[: matrix.shape[0], : matrix.shape[1]] = matrix
+        affine_matrix[-1, : len(translate)] = translate
+
         if self._array_like:
-            # Perform pixel offset
-            d2w_matrix = (
+            # Perform pixel offset to shift origin from top left corner
+            # of pixel to center of pixel
+            offset_matrix = (
                 self.layer._transforms['data2world']
                 .set_slice(self.layer.dims.displayed)
                 .linear_matrix
             )
-            d2w_matrix = t_form @ d2w_matrix @ t_form.T
-            offset = -d2w_matrix.T @ np.ones(matrix.shape[1]) / 2
-            translate += offset
-        affine_matrix[-1, : len(translate)] = translate
+            offset = -offset_matrix @ np.ones(offset_matrix.shape[1]) / 2
+            # Convert NumPy axis ordering to VisPy axis ordering
+            # and embed in full affine matrix
+            affine_offset = np.eye(4)
+            affine_offset[-1, : len(offset)] = offset[::-1]
+            affine_matrix = affine_matrix @ affine_offset
         self._master_transform.matrix = affine_matrix
 
     def _reset_base(self):
