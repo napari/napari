@@ -71,7 +71,7 @@ class AddLayersMixin:
         metadata=None,
         scale=None,
         translate=None,
-        rotation=None,
+        rotate=None,
         shear=None,
         affine=None,
         opacity=1,
@@ -148,7 +148,7 @@ class AddLayersMixin:
             Translation values for the layer. If a list then must be a list of
             tuples of float with the same length as the axis that is being
             expanded as channels.
-        rotation : float, 3-tuple of float, n-D array or list.
+        rotate : float, 3-tuple of float, n-D array or list.
             If a float convert into a 2D rotation matrix using that value as an
             angle. If 3-tuple convert into a 3D rotation matrix, rolling a yaw,
             pitch, roll convention. Otherwise assume an nD rotation. Angle
@@ -163,7 +163,7 @@ class AddLayersMixin:
             (N+1, N+1) matrix where first (N, N) entries correspond to a linear
             transform and the final column is a lenght N translation vector and
             a 1 or a napari AffineTransform object. If provided then, scale,
-            rotation, and shear values are ignored.
+            rotate, and shear values are ignored.
         opacity : float or list
             Opacity of the layer visual, between 0.0 and 1.0.  If a list then
             must be same length as the axis that is being expanded as channels.
@@ -213,7 +213,7 @@ class AddLayersMixin:
             'metadata': metadata,
             'scale': scale,
             'translate': translate,
-            'rotation': rotation,
+            'rotate': rotate,
             'shear': shear,
             'affine': affine,
             'opacity': opacity,
@@ -226,7 +226,7 @@ class AddLayersMixin:
         iterable_kwargs = {
             'scale',
             'translate',
-            'rotation',
+            'rotate',
             'shear',
             'affine',
             'contrast_limits',

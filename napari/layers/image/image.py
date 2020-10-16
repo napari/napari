@@ -76,7 +76,7 @@ class Image(IntensityVisualizationMixin, Layer):
         Scale factors for the layer.
     translate : tuple of float
         Translation values for the layer.
-    rotation : float, 3-tuple of float, or n-D array.
+    rotate : float, 3-tuple of float, or n-D array.
         If a float convert into a 2D rotation matrix using that value as an
         angle. If 3-tuple convert into a 3D rotation matrix, rolling a yaw,
         pitch, roll convention. Otherwise assume an nD rotation. Angle
@@ -172,7 +172,7 @@ class Image(IntensityVisualizationMixin, Layer):
         metadata=None,
         scale=None,
         translate=None,
-        rotation=None,
+        rotate=None,
         shear=None,
         affine=None,
         opacity=1,
@@ -210,7 +210,7 @@ class Image(IntensityVisualizationMixin, Layer):
             metadata=metadata,
             scale=scale,
             translate=translate,
-            rotation=rotation,
+            rotate=rotate,
             shear=shear,
             affine=affine,
             opacity=opacity,

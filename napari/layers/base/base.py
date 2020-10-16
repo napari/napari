@@ -33,7 +33,7 @@ class Layer(KeymapProvider, ABC):
         Scale factors for the layer.
     translate : tuple of float
         Translation values for the layer.
-    rotation : float, 3-tuple of float, or n-D array.
+    rotate : float, 3-tuple of float, or n-D array.
         If a float convert into a 2D rotation matrix using that value as an
         angle. If 3-tuple convert into a 3D rotation matrix, rolling a yaw,
         pitch, roll convention. Otherwise assume an nD rotation. Angle
@@ -47,7 +47,7 @@ class Layer(KeymapProvider, ABC):
         (N+1, N+1) matrix where first (N, N) entries correspond to a linear
         transform and the final column is a lenght N translation vector and
         a 1 or a napari AffineTransform object. If provided then, scale,
-        rotation, and shear values are ignored.
+        rotate, and shear values are ignored.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -87,7 +87,7 @@ class Layer(KeymapProvider, ABC):
         Scale factors for the layer.
     translate : tuple of float
         Translation values for the layer.
-    rotation : float, 3-tuple of float, or n-D array.
+    rotate : float, 3-tuple of float, or n-D array.
         If a float convert into a 2D rotation matrix using that value as an
         angle. If 3-tuple convert into a 3D rotation matrix, rolling a yaw,
         pitch, roll convention. Otherwise assume an nD rotation. Angle
@@ -101,7 +101,7 @@ class Layer(KeymapProvider, ABC):
         (N+1, N+1) matrix where first (N, N) entries correspond to a linear
         transform and the final column is a lenght N translation vector and
         a 1 or a napari AffineTransform object. If provided then, scale,
-        rotation, and shear values are ignored.
+        rotate, and shear values are ignored.
     multiscale : bool
         Whether the data is multiscale or not. Multiscale data is
         represented by a list of data objects and should go from largest to
@@ -160,7 +160,7 @@ class Layer(KeymapProvider, ABC):
         metadata=None,
         scale=None,
         translate=None,
-        rotation=None,
+        rotate=None,
         shear=None,
         affine=None,
         opacity=1,
@@ -213,7 +213,7 @@ class Layer(KeymapProvider, ABC):
             data2world_transform = Affine(
                 scale,
                 translate,
-                rotation=rotation,
+                rotate=rotate,
                 shear=shear,
                 name='data2world',
             )
@@ -262,7 +262,7 @@ class Layer(KeymapProvider, ABC):
             deselect=Event,
             scale=Event,
             translate=Event,
-            rotation=Event,
+            rotate=Event,
             shear=Event,
             affine=Event,
             data=Event,
@@ -413,15 +413,15 @@ class Layer(KeymapProvider, ABC):
         self.events.translate()
 
     @property
-    def rotation(self):
+    def rotate(self):
         """array: Rotation matrix in world coordinates."""
-        return self._transforms['data2world'].rotation
+        return self._transforms['data2world'].rotate
 
-    @rotation.setter
-    def rotation(self, rotation):
-        self._transforms['data2world'].rotation = rotation
+    @rotate.setter
+    def rotate(self, rotate):
+        self._transforms['data2world'].rotate = rotate
         self._update_dims()
-        self.events.rotation()
+        self.events.rotate()
 
     @property
     def shear(self):
@@ -617,7 +617,7 @@ class Layer(KeymapProvider, ABC):
             'metadata': self.metadata,
             'scale': list(self.scale),
             'translate': list(self.translate),
-            'rotation': [list(r) for r in self.rotation],
+            'rotate': [list(r) for r in self.rotate],
             'shear': list(self.shear),
             'opacity': self.opacity,
             'blending': self.blending,

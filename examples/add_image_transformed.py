@@ -8,4 +8,4 @@ import napari
 
 with napari.gui_qt():
     # create the viewer with an image
-    viewer = napari.view_image(data.astronaut(), rgb=True, rotation=45)
+    viewer = napari.view_image(data.astronaut(), rgb=True, rotate=45)

@@ -123,7 +123,7 @@ def test_multichannel(shape, kwargs):
             if key in {
                 'scale',
                 'translate',
-                'rotation',
+                'rotate',
                 'scale',
                 'contrast_limits',
                 'metadata',

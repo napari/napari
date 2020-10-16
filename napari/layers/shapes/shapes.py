@@ -134,7 +134,7 @@ class Shapes(Layer):
         Scale factors for the layer.
     translate : tuple of float
         Translation values for the layer.
-    rotation : float, 3-tuple of float, or n-D array.
+    rotate : float, 3-tuple of float, or n-D array.
         If a float convert into a 2D rotation matrix using that value as an
         angle. If 3-tuple convert into a 3D rotation matrix, rolling a yaw,
         pitch, roll convention. Otherwise assume an nD rotation. Angle
@@ -148,7 +148,7 @@ class Shapes(Layer):
         (N+1, N+1) matrix where first (N, N) entries correspond to a linear
         transform and the final column is a lenght N translation vector and
         a 1 or a napari AffineTransform object. If provided then, scale,
-        rotation, and shear values are ignored.
+        rotate, and shear values are ignored.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -317,7 +317,7 @@ class Shapes(Layer):
         metadata=None,
         scale=None,
         translate=None,
-        rotation=None,
+        rotate=None,
         shear=None,
         affine=None,
         opacity=0.7,
@@ -341,7 +341,7 @@ class Shapes(Layer):
             metadata=metadata,
             scale=scale,
             translate=translate,
-            rotation=rotation,
+            rotate=rotate,
             shear=shear,
             affine=affine,
             opacity=opacity,

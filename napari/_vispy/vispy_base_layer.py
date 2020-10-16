@@ -58,7 +58,7 @@ class VispyBaseLayer(ABC):
         self.layer.events.blending.connect(self._on_blending_change)
         self.layer.events.scale.connect(self._on_matrix_change)
         self.layer.events.translate.connect(self._on_matrix_change)
-        self.layer.events.rotation.connect(self._on_matrix_change)
+        self.layer.events.rotate.connect(self._on_matrix_change)
         self.layer.events.shear.connect(self._on_matrix_change)
         self.layer.events.affine.connect(self._on_matrix_change)
 
@@ -83,7 +83,7 @@ class VispyBaseLayer(ABC):
     def scale(self):
         """sequence of float: Scale factors."""
         matrix = self._master_transform.matrix[:-1, :-1]
-        rotation, upper_tri = np.linalg.qr(matrix)
+        _, upper_tri = np.linalg.qr(matrix)
         return np.diag(upper_tri).copy()
 
     @property

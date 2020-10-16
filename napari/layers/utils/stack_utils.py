@@ -163,7 +163,7 @@ def stack_to_images(stack: Image, axis: int, **kwargs: Dict,) -> List[Image]:
         meta['scale'].pop(axis)
         meta['translate'].pop(axis)
 
-    meta['rotation'] = None
+    meta['rotate'] = None
     meta['shear'] = None
     meta['affine'] = None
 

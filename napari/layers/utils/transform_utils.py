@@ -1,12 +1,12 @@
 import numpy as np
 
 
-def compose_linear_matrix(rotation, scale, shear, degrees=True) -> np.array:
-    """Compose linear transform matrix from rotation, shear, scale.
+def compose_linear_matrix(rotate, scale, shear, degrees=True) -> np.array:
+    """Compose linear transform matrix from rotate, shear, scale.
 
     Parameters
     ----------
-    rotation : float, 3-tuple of float, or n-D array.
+    rotate : float, 3-tuple of float, or n-D array.
         If a float convert into a 2D rotation matrix using that value as an
         angle. If 3-tuple convert into a 3D rotation matrix, rolling a yaw,
         pitch, roll convention. Otherwise assume an nD rotation. Angle
@@ -27,28 +27,28 @@ def compose_linear_matrix(rotation, scale, shear, degrees=True) -> np.array:
     matrix : array
         nD array representing the composed linear transform.
     """
-    if np.isscalar(rotation):
+    if np.isscalar(rotate):
         # If a scalar is passed assume it is a single rotation angle
         # for a 2D rotation
         if degrees:
-            theta = np.deg2rad(rotation)
+            theta = np.deg2rad(rotate)
         else:
-            theta = rotation
-        rotation_mat = np.array(
+            theta = rotate
+        rotate_mat = np.array(
             [[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]]
         )
-    elif np.array(rotation).ndim == 1 and len(rotation) == 3:
+    elif np.array(rotate).ndim == 1 and len(rotate) == 3:
         # If a 3-tuple is passed assume it is three rotation angles for
         # a roll, pitch, and yaw for a 3D rotation. For more details see
         # https://en.wikipedia.org/wiki/Rotation_matrix#General_rotations
         if degrees:
-            alpha = np.deg2rad(rotation[0])
-            beta = np.deg2rad(rotation[1])
-            gamma = np.deg2rad(rotation[2])
+            alpha = np.deg2rad(rotate[0])
+            beta = np.deg2rad(rotate[1])
+            gamma = np.deg2rad(rotate[2])
         else:
-            alpha = rotation[0]
-            beta = rotation[1]
-            gamma = rotation[2]
+            alpha = rotate[0]
+            beta = rotate[1]
+            gamma = rotate[2]
         R_alpha = np.array(
             [
                 [np.cos(alpha), np.sin(alpha), 0],
@@ -70,11 +70,11 @@ def compose_linear_matrix(rotation, scale, shear, degrees=True) -> np.array:
                 [0, np.sin(gamma), np.cos(gamma)],
             ]
         )
-        rotation_mat = R_alpha @ R_beta @ R_gamma
+        rotate_mat = R_alpha @ R_beta @ R_gamma
     else:
         # Otherwise assume a full nD rotation matrix has been passed
-        rotation_mat = np.array(rotation)
-    n_rotation = rotation_mat.shape[0]
+        rotate_mat = np.array(rotate)
+    n_rotate = rotate_mat.shape[0]
 
     # Convert a scale vector to an nD diagonal matrix
     scale_mat = np.diag(scale)
@@ -85,7 +85,7 @@ def compose_linear_matrix(rotation, scale, shear, degrees=True) -> np.array:
     if np.isscalar(shear):
         shear = [shear]
     if len(shear) == 1:
-        n_shear = max(n_scale, n_rotation)
+        n_shear = max(n_scale, n_rotate)
         shear_mat = np.eye(n_shear, n_shear)
         shear_mat[0, -1] = shear[0]
     elif np.array(shear).ndim == 1:
@@ -95,12 +95,12 @@ def compose_linear_matrix(rotation, scale, shear, degrees=True) -> np.array:
 
     # Check the dimensionality of the transforms and pad as needed
     n_shear = shear_mat.shape[0]
-    ndim = max(n_scale, n_rotation, n_shear)
+    ndim = max(n_scale, n_rotate, n_shear)
 
     full_scale = embed_in_identity_matrix(scale_mat, ndim)
-    full_rotation = embed_in_identity_matrix(rotation_mat, ndim)
+    full_rotate = embed_in_identity_matrix(rotate_mat, ndim)
     full_shear = embed_in_identity_matrix(shear_mat, ndim)
-    return full_rotation @ full_scale @ full_shear
+    return full_rotate @ full_scale @ full_shear
 
 
 def expand_upper_triangular(vector):
@@ -158,7 +158,7 @@ def embed_in_identity_matrix(matrix, ndim):
 
 
 def decompose_linear_matrix(matrix) -> (np.array, np.array, np.array):
-    """Decompose linear transform matrix into rotation, scale, shear.
+    """Decompose linear transform matrix into rotate, scale, shear.
 
     Decomposition is based on code from https://github.com/matthew-brett/transforms3d.
     In particular, the `decompose` function in the `affines` module.
@@ -171,7 +171,7 @@ def decompose_linear_matrix(matrix) -> (np.array, np.array, np.array):
 
     Returns
     -------
-    rotation : float, 3-tuple of float, or n-D array.
+    rotate : float, 3-tuple of float, or n-D array.
         If a float convert into a 2D rotation matrix using that value as an
         angle. If 3-tuple convert into a 3D rotation matrix, rolling a yaw,
         pitch, roll convention. Otherwise assume an nD rotation. Angle
@@ -187,16 +187,16 @@ def decompose_linear_matrix(matrix) -> (np.array, np.array, np.array):
     """
     n = matrix.shape[0]
 
-    rotation, upper_tri = np.linalg.qr(matrix)
+    rotate, upper_tri = np.linalg.qr(matrix)
 
     scale = np.diag(upper_tri).copy()
     upper_tri_normalized = upper_tri / scale[:, np.newaxis]
 
-    if np.linalg.det(rotation) < 0:
+    if np.linalg.det(rotate) < 0:
         scale[0] *= -1
         upper_tri[0] *= -1
-        rotation = matrix @ np.linalg.inv(upper_tri)
+        rotate = matrix @ np.linalg.inv(upper_tri)
 
     shear = upper_tri_normalized[np.triu(np.ones((n, n)), 1).astype(bool)]
 
-    return rotation, scale, shear
+    return rotate, scale, shear
