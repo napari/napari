@@ -346,6 +346,9 @@ class Tracks(Layer):
     @properties.setter
     def properties(self, properties: Dict[str, np.ndarray]):
         """ set track properties """
+        if self._color_by not in properties.keys():
+            from warnings import warn
+            warn("existing color_by key not present in new properties", UserWarning)
         self._manager.properties = properties
         self.events.properties()
         self.events.color_by()
