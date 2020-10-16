@@ -70,6 +70,7 @@ def test_track_layer_properties(properties):
     for k, v in properties.items():
         np.testing.assert_equal(layer.properties[k], v)
 
+
 def test_track_layer_colorby_nonexistant():
     """Test error handling for non-existant properties with color_by"""
     data = np.zeros((100, 4))
