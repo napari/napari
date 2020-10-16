@@ -3,6 +3,7 @@
 # from napari.utils.colormaps import AVAILABLE_COLORMAPS
 
 from typing import Dict, List, Union
+from warnings import warn
 
 import numpy as np
 
@@ -347,8 +348,6 @@ class Tracks(Layer):
     def properties(self, properties: Dict[str, np.ndarray]):
         """ set track properties """
         if self._color_by not in [*properties.keys(), 'track_id']:
-            from warnings import warn
-
             warn(
                 (
                     f"Previous color_by key {self._color_by} not present in"
