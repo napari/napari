@@ -56,7 +56,6 @@ def test_track_layer_data():
     layer = Tracks(data)
     assert np.all(layer.data == data)
 
-
 properties_dict = {'time': np.arange(100)}
 properties_df = pd.DataFrame(properties_dict)
 
@@ -83,6 +82,23 @@ def test_track_layer_colorby_nonexistant():
                     properties=properties_dict,
                     color_by=non_existant_property
                     )
+
+def test_track_layer_properties_changed_colorby():
+    """Test behaviour when changes to properties invalidate current color_by"""
+    properties_dict_1 = {'time': np.arange(100), 'prop1': np.arange(100)}
+    properties_dict_2 = {'time': np.arange(100), 'prop2': np.arange(100)}
+    data = np.zeros((100, 4))
+    data[:, 1] = np.arange(100)
+    layer = Tracks(
+                    data, 
+                    properties=properties_dict_1,
+                    color_by='prop1'
+                    )
+    # test warning is raised
+    with pytest.warns(UserWarning):
+        layer.properties = properties_dict_2
+    # test default fallback
+    assert layer.color_by == 'track_id'
 
 
 def test_track_layer_graph():
