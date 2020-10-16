@@ -71,6 +71,34 @@ def test_track_layer_properties(properties):
         np.testing.assert_equal(layer.properties[k], v)
 
 
+@pytest.mark.filterwarnings("ignore:.*track_id.*:UserWarning")
+def test_track_layer_colorby_nonexistant():
+    """Test error handling for non-existant properties with color_by"""
+    data = np.zeros((100, 4))
+    data[:, 1] = np.arange(100)
+    non_existant_property = 'not_a_valid_key'
+    assert non_existant_property not in properties_dict.keys()
+    with pytest.raises(ValueError):
+        Tracks(
+            data, properties=properties_dict, color_by=non_existant_property
+        )
+
+
+@pytest.mark.filterwarnings("ignore:.*track_id.*:UserWarning")
+def test_track_layer_properties_changed_colorby():
+    """Test behaviour when changes to properties invalidate current color_by"""
+    properties_dict_1 = {'time': np.arange(100), 'prop1': np.arange(100)}
+    properties_dict_2 = {'time': np.arange(100), 'prop2': np.arange(100)}
+    data = np.zeros((100, 4))
+    data[:, 1] = np.arange(100)
+    layer = Tracks(data, properties=properties_dict_1, color_by='prop1')
+    # test warning is raised
+    with pytest.warns(UserWarning):
+        layer.properties = properties_dict_2
+    # test default fallback
+    assert layer.color_by == 'track_id'
+
+
 def test_track_layer_graph():
     """Test track layer graph."""
     data = np.zeros((100, 4))
