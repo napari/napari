@@ -5,8 +5,10 @@ from ..utils.key_bindings import KeymapHandler, KeymapProvider
 from ..utils.theme import palettes
 from ._viewer_mouse_bindings import dims_scroll
 from .add_layers_mixin import AddLayersMixin
+from .axes import Axes
 from .dims import Dims
 from .layerlist import LayerList
+from .scale_bar import ScaleBar
 
 
 class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
@@ -66,6 +68,9 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
 
         self.layers = LayerList()
 
+        self.axes = Axes()
+        self.scale_bar = ScaleBar()
+
         self._status = 'Ready'
         self._help = ''
         self._title = title
@@ -112,6 +117,8 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             return
 
         self._palette = palette
+        self.axes.background_color = self.palette['canvas']
+        self.scale_bar.background_color = self.palette['canvas']
         self.events.palette()
 
     @property
