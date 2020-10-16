@@ -14,7 +14,7 @@ from ._track_utils import TrackManager
 
 
 class Tracks(Layer):
-    """ Tracks layer.
+    """Tracks layer.
 
     Parameters
     ----------
@@ -303,8 +303,8 @@ class Tracks(Layer):
 
     @property
     def use_fade(self) -> bool:
-        """ toggle whether we fade the tail of the track, depending on whether
-        the time dimension is displayed """
+        """toggle whether we fade the tail of the track, depending on whether
+        the time dimension is displayed"""
         return 0 in self.dims.not_displayed
 
     @property
@@ -348,8 +348,13 @@ class Tracks(Layer):
         """ set track properties """
         if self._color_by not in [*properties.keys(), 'track_id']:
             from warnings import warn
-            warn(f"Previous color_by key {self._color_by} not present in new properties.Falling back to track_id", UserWarning)
-            self._color_by='track_id'
+
+            warn(
+                (f"Previous color_by key {self._color_by} not present in"
+                " new properties. Falling back to track_id")
+                UserWarning,
+            )
+            self._color_by = 'track_id'
         self._manager.properties = properties
         self.events.properties()
         self.events.color_by()
@@ -486,8 +491,8 @@ class Tracks(Layer):
 
     @property
     def track_colors(self) -> np.ndarray:
-        """ return the vertex colors according to the currently selected
-        property """
+        """return the vertex colors according to the currently selected
+        property"""
         return self._track_colors
 
     @property
