@@ -346,7 +346,7 @@ class Tracks(Layer):
     @properties.setter
     def properties(self, properties: Dict[str, np.ndarray]):
         """ set track properties """
-        if self._color_by not in properties.keys():
+        if self._color_by not in [*properties.keys(), 'track_id']:
             from warnings import warn
             warn(f"Previous color_by key {self._color_by} not present in new properties.Falling back to track_id", UserWarning)
             self._color_by='track_id'
