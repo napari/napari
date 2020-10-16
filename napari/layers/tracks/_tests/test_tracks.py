@@ -56,6 +56,7 @@ def test_track_layer_data():
     layer = Tracks(data)
     assert np.all(layer.data == data)
 
+
 properties_dict = {'time': np.arange(100)}
 properties_df = pd.DataFrame(properties_dict)
 
@@ -69,6 +70,7 @@ def test_track_layer_properties(properties):
     for k, v in properties.items():
         np.testing.assert_equal(layer.properties[k], v)
 
+
 @pytest.mark.filterwarnings("ignore:.*track_id.*:UserWarning")
 def test_track_layer_colorby_nonexistant():
     """Test error handling for non-existant properties with color_by"""
@@ -78,10 +80,9 @@ def test_track_layer_colorby_nonexistant():
     assert non_existant_property not in properties_dict.keys()
     with pytest.raises(ValueError):
         layer = Tracks(
-                    data, 
-                    properties=properties_dict,
-                    color_by=non_existant_property
-                    )
+            data, properties=properties_dict, color_by=non_existant_property
+        )
+
 
 @pytest.mark.filterwarnings("ignore:.*track_id.*:UserWarning")
 def test_track_layer_properties_changed_colorby():
@@ -90,11 +91,7 @@ def test_track_layer_properties_changed_colorby():
     properties_dict_2 = {'time': np.arange(100), 'prop2': np.arange(100)}
     data = np.zeros((100, 4))
     data[:, 1] = np.arange(100)
-    layer = Tracks(
-                    data, 
-                    properties=properties_dict_1,
-                    color_by='prop1'
-                    )
+    layer = Tracks(data, properties=properties_dict_1, color_by='prop1')
     # test warning is raised
     with pytest.warns(UserWarning):
         layer.properties = properties_dict_2
