@@ -423,7 +423,7 @@ class Tracks(Layer):
     def color_by(self, color_by: str):
         """ set the property to color vertices by """
         if color_by not in self.properties_to_color_by:
-            raise ValueError(f"{color_by} is not a valid property key")
+            raise ValueError(f'{color_by} is not a valid property key')
         self._color_by = color_by
         self._recolor_tracks()
         self.events.color_by()
