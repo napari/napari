@@ -37,8 +37,6 @@ def compose_linear_matrix(rotation, scale, shear, degrees=True) -> np.array:
         rotation_mat = np.array(
             [[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]]
         )
-        # convert to numpy coordinates
-        rotation_mat = rotation_mat[::-1, ::-1]
     elif np.array(rotation).ndim == 1 and len(rotation) == 3:
         # If a 3-tuple is passed assume it is three rotation angles for
         # a roll, pitch, and yaw for a 3D rotation. For more details see
@@ -73,8 +71,6 @@ def compose_linear_matrix(rotation, scale, shear, degrees=True) -> np.array:
             ]
         )
         rotation_mat = R_alpha @ R_beta @ R_gamma
-        # convert to numpy coordinates
-        rotation_mat = rotation_mat[::-1, ::-1]
     else:
         # Otherwise assume a full nD rotation matrix has been passed
         rotation_mat = np.array(rotation)

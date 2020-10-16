@@ -83,7 +83,7 @@ class VispyBaseLayer(ABC):
     def scale(self):
         """sequence of float: Scale factors."""
         matrix = self._master_transform.matrix[:-1, :-1]
-        upper_tri = np.linalg.cholesky(np.dot(matrix.T, matrix)).T
+        rotation, upper_tri = np.linalg.qr(matrix)
         return np.diag(upper_tri).copy()
 
     @property
@@ -117,18 +117,29 @@ class VispyBaseLayer(ABC):
             self.layer.dims.displayed
         )
         # convert NumPy axis ordering to VisPy axis ordering
-        matrix = transform.linear_matrix[::-1, ::-1]
-        translate = transform.translate[::-1]
+        # using a conjugation operation
+        if self.layer.dims.ndisplay == 2:
+            t_form = np.array([[0, 1], [-1, 0]])
+        else:
+            t_form = np.array([[0, 0, 1], [0, 1, 0], [1, 0, 0]])
+        t_form_h = np.eye(t_form.shape[0] + 1)
+        t_form_h[:-1, :-1] = t_form
+        affine = t_form_h @ transform.affine_matrix @ t_form_h.T
+        matrix = affine[:-1, :-1]
+        translate = affine[:-1, -1]
+
         # Embed in 4x4 affine matrix
         affine_matrix = np.eye(4)
         affine_matrix[: matrix.shape[0], : matrix.shape[1]] = matrix
         if self._array_like:
-            matrix = (
+            # Perform pixel offset
+            d2w_matrix = (
                 self.layer._transforms['data2world']
                 .set_slice(self.layer.dims.displayed)
-                .linear_matrix[::-1, ::-1]
+                .linear_matrix
             )
-            offset = -matrix.T @ np.ones(matrix.shape[1]) / 2
+            d2w_matrix = t_form @ d2w_matrix @ t_form.T
+            offset = -d2w_matrix.T @ np.ones(matrix.shape[1]) / 2
             translate += offset
         affine_matrix[-1, : len(translate)] = translate
         self._master_transform.matrix = affine_matrix
