@@ -80,7 +80,7 @@ def test_track_layer_colorby_nonexistant():
     with pytest.raises(ValueError):
         layer = Tracks(
                     data, 
-                    properties=properties_dict(),
+                    properties=properties_dict,
                     color_by=non_existant_property
                     )
 
