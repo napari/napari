@@ -70,6 +70,19 @@ def test_track_layer_properties(properties):
     for k, v in properties.items():
         np.testing.assert_equal(layer.properties[k], v)
 
+def test_track_layer_colorby_nonexistant():
+    """Test error handling for non-existant properties with color_by"""
+    data = np.zeros((100, 4))
+    data[:, 1] = np.arange(100)
+    non_existant_property = '42'
+    assert non_existant_property not in properties_dict.keys()
+    with pytest.raises(ValueError):
+        layer = Tracks(
+                    data, 
+                    properties=properties_dict(),
+                    color_by=non_existant_property
+                    )
+
 
 def test_track_layer_graph():
     """Test track layer graph."""
