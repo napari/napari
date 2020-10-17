@@ -1,9 +1,9 @@
 """VispyTiledImageLayer class.
 """
-from ..vispy_image_layer import VispyImageLayer
+from .vispy_image_layer2 import VispyImageLayer2
 
 
-class VispyTiledImageLayer(VispyImageLayer):
+class VispyTiledImageLayer(VispyImageLayer2):
     """Tiled images using multiple ImageNodes.
 
     Render a set of image tiles. For example render the set of tiles that
