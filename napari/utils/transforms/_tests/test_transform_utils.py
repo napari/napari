@@ -34,4 +34,4 @@ def test_shear_matrix_from_angle():
     """Test creating a shear matrix from an angle."""
     matrix = shear_matrix_from_angle(35)
     np.testing.assert_almost_equal(np.diag(matrix), [1] * 3)
-    np.testing.assert_almost_equal(matrix[-1, 0], np.tan(np.deg2rad(35)))
+    np.testing.assert_almost_equal(matrix[-1, 0], np.tan(np.deg2rad(55)))
