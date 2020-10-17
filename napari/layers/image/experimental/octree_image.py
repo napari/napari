@@ -282,6 +282,11 @@ class OctreeImage(IntensityVisualizationMixin, Layer):
         return self._slice.view_chunks
 
     @property
+    def _data_view(self):
+        """Viewable image for the current slice. (compatibility)"""
+        return self._slice.view_chunks[0].data
+
+    @property
     def _data_raw(self):
         """Raw image for the current slice. (compatibility)"""
         return self._slice.image.raw

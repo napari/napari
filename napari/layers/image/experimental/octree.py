@@ -8,6 +8,13 @@ from scipy import ndimage as ndi
 #    Upper
 
 
+class ChunkData:
+    def __init__(self, x, y, data):
+        self.x = x
+        self.y = y
+        self.data = data
+
+
 def _create_tiles(array: np.ndarray, tile_size: int) -> np.ndarray:
     """
     Return an NxM array of (tile_size, tile_size) ndarrays except the edge
