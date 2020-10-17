@@ -208,7 +208,7 @@ def shear_matrix_from_angle(angle, ndim=3, axes=(-1, 0)):
     Parameters
     ----------
     angle : float
-        Angle in degress.
+        Angle in degrees.
     ndim : int
         Dimensionality of the shear matrix
     axes : 2-tuple of int
