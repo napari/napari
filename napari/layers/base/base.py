@@ -12,7 +12,7 @@ from ...utils.key_bindings import KeymapProvider
 from ...utils.misc import ROOT_DIR
 from ...utils.naming import magic_name
 from ...utils.status_messages import format_float, status_format
-from ..transforms import Affine, TransformChain
+from ...utils.transforms import Affine, TransformChain
 from ..utils.layer_utils import (
     compute_multiscale_level_and_corners,
     convert_to_uint8,
@@ -39,11 +39,10 @@ class Layer(KeymapProvider, ABC):
         pitch, roll convention. Otherwise assume an nD rotation. Angle
         conversion are done either using degrees or radians depending on the
         degrees boolean parameter.
-    shear : 1-D array or float or n-D array
-        Either a vector of upper triangular values, a float which is the shear
-        value for the first axes, or an upper or lower triangular n-D shear
-        matrix.
-    affine: n-D array or napari.layers.transforms.Affine
+    shear : 1-D array or n-D array
+        Either a vector of upper triangular values, or an nD shear matrix with
+        ones along the main diagonal.
+    affine: n-D array or napari.utils.transforms.Affine
         (N+1, N+1) matrix where first (N, N) entries correspond to a linear
         transform and the final column is a lenght N translation vector and
         a 1 or a napari AffineTransform object. If provided then, scale,
@@ -93,11 +92,10 @@ class Layer(KeymapProvider, ABC):
         pitch, roll convention. Otherwise assume an nD rotation. Angle
         conversion are done either using degrees or radians depending on the
         degrees boolean parameter.
-    shear : 1-D array or float or n-D array
-        Either a vector of upper triangular values, a float which is the shear
-        value for the first axes, or an upper or lower triangular n-D shear
-        matrix.
-    affine: n-D array or napari.layers.transforms.Affine
+    shear : 1-D array or n-D array
+        Either a vector of upper triangular values, or an nD shear matrix with
+        ones along the main diagonal.
+    affine: n-D array or napari.utils.transforms.Affine
         (N+1, N+1) matrix where first (N, N) entries correspond to a linear
         transform and the final column is a lenght N translation vector and
         a 1 or a napari AffineTransform object. If provided then, scale,
@@ -228,7 +226,7 @@ class Layer(KeymapProvider, ABC):
             raise ValueError(
                 (
                     f'affine input not recgonized '
-                    f'must be either napari.layers.transforms.Affine, '
+                    f'must be either napari.utils.transforms.Affine, '
                     f'ndarray or None. Got {type(affine)}'
                 )
             )
@@ -436,7 +434,7 @@ class Layer(KeymapProvider, ABC):
 
     @property
     def affine(self):
-        """napari.layers.transforms.Affine: Affine transform."""
+        """napari.utils.transforms.Affine: Affine transform."""
         return self._transforms['data2world']
 
     @affine.setter
@@ -450,7 +448,7 @@ class Layer(KeymapProvider, ABC):
             raise ValueError(
                 (
                     f'affine input not recgonized '
-                    f'must be either napari.layers.transforms.Affine '
+                    f'must be either napari.utils.transforms.Affine '
                     f'or ndarray. Got {type(affine)}'
                 )
             )

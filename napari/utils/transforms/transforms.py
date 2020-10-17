@@ -1,10 +1,11 @@
+import warnings
 from typing import Sequence
 
 import numpy as np
 import toolz as tz
 
-from ..utils.list import ListModel
-from .utils.transform_utils import (
+from ..list import ListModel
+from .transform_utils import (
     compose_linear_matrix,
     decompose_linear_matrix,
     embed_in_identity_matrix,
@@ -249,10 +250,9 @@ class Affine(Transform):
         in leading dimensions, so that, for example, a scale of [4, 18, 34] in
         3D can be used as a scale of [1, 4, 18, 34] in 4D without modification.
         An empty translation vector implies no scaling.
-    shear : 1-D array or float or n-D array
-        Either a vector of upper triangular values, a float which is the shear
-        value for the first axes, or an upper or lower triangular n-D shear
-        matrix.
+    shear : 1-D array or n-D array
+        Either a vector of upper triangular values, or an nD shear matrix with
+        ones along the main diagonal.
     translate : 1-D array
         A 1-D array of factors to shift each axis by. Translation is broadcast
         to 0 in leading dimensions, so that, for example, a translation of
@@ -296,7 +296,7 @@ class Affine(Transform):
             if rotate is None:
                 rotate = np.eye(len(scale))
             if shear is None:
-                shear = 0
+                shear = np.eye(len(scale))
             linear_matrix = compose_linear_matrix(
                 rotate, scale, shear, degrees=degrees
             )
@@ -357,6 +357,12 @@ class Affine(Transform):
     def shear(self, shear):
         """Set the shear of the transform."""
         rotate, scale, _ = decompose_linear_matrix(self.linear_matrix)
+        if np.array(shear).dim == 2:
+            warnings.warn(
+                'Non upper diagonal shear matrix passed so '
+                'reseting rotate to the identity.'
+            )
+            rotate = np.eye(rotate.shape[0])
         self.linear_matrix = compose_linear_matrix(rotate, scale, shear)
 
     @property

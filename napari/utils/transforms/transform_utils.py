@@ -17,10 +17,9 @@ def compose_linear_matrix(rotate, scale, shear, degrees=True) -> np.array:
         in leading dimensions, so that, for example, a scale of [4, 18, 34] in
         3D can be used as a scale of [1, 4, 18, 34] in 4D without modification.
         An empty translation vector implies no scaling.
-    shear : 1-D array or float or n-D array
-        Either a vector of upper triangular values, a float which is the shear
-        value for the first axes, or an upper or lower triangular n-D shear
-        matrix.
+    shear : 1-D array or n-D array
+        Either a vector of upper triangular values, or an nD shear matrix with
+        ones along the main diagonal.
 
     Returns
     -------
@@ -83,12 +82,13 @@ def compose_linear_matrix(rotate, scale, shear, degrees=True) -> np.array:
     # Check if an upper-triangular representation of shear or
     # a full nD shear matrix has been passed
     if np.isscalar(shear):
-        shear = [shear]
-    if len(shear) == 1:
-        n_shear = max(n_scale, n_rotate)
-        shear_mat = np.eye(n_shear, n_shear)
-        shear_mat[0, -1] = shear[0]
-    elif np.array(shear).ndim == 1:
+        raise ValueError(
+            'Scalars are not valid values for shear.'
+            ' Shear must be an upper triangular vector'
+            ' or square matrix with ones along the main'
+            ' diagonal.'
+        )
+    if np.array(shear).ndim == 1:
         shear_mat = expand_upper_triangular(shear)
     else:
         shear_mat = np.array(shear)
@@ -200,3 +200,26 @@ def decompose_linear_matrix(matrix) -> (np.array, np.array, np.array):
     shear = upper_tri_normalized[np.triu(np.ones((n, n)), 1).astype(bool)]
 
     return rotate, scale, shear
+
+
+def shear_matrix_from_angle(angle, ndim=3, axes=(-1, 0)):
+    """Create a shear matrix from an angle.
+
+    Parameters
+    ----------
+    angle : float
+        Angle in degress.
+    ndim : int
+        Dimensionality of the shear matrix
+    axes : 2-tuple of int
+        Location of the angle in the shear matrix.
+        Default is the lower left value.
+
+    Returns
+    -------
+    matrix : np.ndarray
+        Shear matrix with ones along the main diagonal
+    """
+    matrix = np.eye(ndim)
+    matrix[axes] = np.tan(np.deg2rad(90 - angle))
+    return matrix

@@ -82,10 +82,9 @@ class Image(IntensityVisualizationMixin, Layer):
         pitch, roll convention. Otherwise assume an nD rotation. Angle
         conversion are done either using degrees or radians depending on the
         degrees boolean parameter.
-    shear : 1-D array or float or n-D array
-        Either a vector of upper triangular values, a float which is the shear
-        value for the first axes, or an upper or lower triangular n-D shear
-        matrix.
+    shear : 1-D array or n-D array
+        Either a vector of upper triangular values, or an nD shear matrix with
+        ones along the main diagonal.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str

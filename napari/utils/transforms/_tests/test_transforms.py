@@ -2,7 +2,7 @@ import numpy as np
 import numpy.testing as npt
 import pytest
 
-from napari.layers.transforms import Affine, ScaleTranslate
+from napari.utils.transforms import Affine, ScaleTranslate
 
 
 @pytest.mark.parametrize('Transform', [ScaleTranslate, Affine])
