@@ -1,4 +1,5 @@
 import warnings
+from typing import Optional
 
 import numpy as np
 from vispy.color import Colormap as VispyColormap
@@ -83,7 +84,7 @@ class VispyImageLayer2(VispyBaseLayer):
         self.node.order = self.order
         self.reset()
 
-    def _get_max_texture_size(self):
+    def _get_max_texture_size(self) -> Optional[int]:
         """Return maximum size of the texture or None if no max size."""
         ndisplay = self.layer.dims.ndisplay
         if self.MAX_TEXTURE_SIZE_2D is not None and ndisplay == 2:
@@ -117,22 +118,32 @@ class VispyImageLayer2(VispyBaseLayer):
             return np.expand_dims(data, axis=0)
         return data
 
-    def _wrong_visual(self):
-        """Return True if need to toggle the visual type."""
+    def _wrong_visual(self) -> bool:
+        """Return whether the current visual is the wrong type.
+
+        bool
+            True if the visual is currently the wrong type.
+        """
         ndisplay = self.layer.dims.ndisplay
         return (ndisplay == 3 and not isinstance(self.node, VolumeNode)) or (
             ndisplay == 2 and not isinstance(self.node, ImageNode)
         )
 
-    def _on_data_change(self, event=None):
+    def _on_data_change(self, event=None) -> None:
         """Our self.layer._data_view has been updated, update our node.
         """
         if not self.layer.loaded:
-            # Do nothing if we are not yet loaded. Calling astype below could
-            # be very expensive. Lets not do it until our data has been loaded.
+            # Do nothing if we are not yet loaded.
             return
 
-        data = self.layer._data_view
+        self._set_new_data(self.layer._data_view)
+
+    def _set_new_data(self, data) -> None:
+        """Configure our node to display this new data.
+
+        data
+            The new data to display.
+        """
         data = _convert_dtype(data)
         data = self._expand_dims(data)
         data = self._resize_texture(data)
@@ -144,7 +155,6 @@ class VispyImageLayer2(VispyBaseLayer):
 
         self.node.visible = False if self.layer._empty else self.layer.visible
 
-        # Call to update order of translation values with new dims:
         self._on_scale_change()
         self._on_translate_change()
         self.node.update()
