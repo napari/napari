@@ -1,6 +1,15 @@
 """VispyTiledImageLayer class.
 """
+from vispy.visuals.transforms import STTransform
+
+from ...layers.image.experimental.octree import ChunkData
+from ..image import Image as ImageNode
 from .vispy_image_layer2 import VispyImageLayer2
+
+
+class ImageChunk:
+    def __init__(self):
+        self.node = ImageNode(None, method='auto')
 
 
 class VispyTiledImageLayer(VispyImageLayer2):
@@ -13,11 +22,13 @@ class VispyTiledImageLayer(VispyImageLayer2):
     child ImageNode for every image tile. The set of child ImageNodes will
     change over time as the user pans/zooms in the octree.
 
+    Future Work
+    -----------
+
     This class will likely need to be replaced at some point. We plan to
     write a TiledImageVisual class which stores the tile textures in an
-    atlas-like tile cache. Then in one draw command it can draw the
-    currently visible tiles in the right positions, using the right texture
-    coordinates.
+    atlas-like tile cache. Then in one draw command it can draw the all the
+    visible tiles in the right positions using texture coordinates.
 
     One reason TiledImageVisual will be faster is today calling
     ImageNode.set_data() causes a 15-20ms hiccup when that visual is next
@@ -25,15 +36,51 @@ class VispyTiledImageLayer(VispyImageLayer2):
     texture into VRAM should be under 2ms. However at least 4ms is spent
     rebuilding the shader alone.
 
-    Since we might need to draw 10+ new tiles at one time, the delay could
-    be up to 200ms total, which might be quite a noticeable glitch.
+    Since we might need to draw 10+ new tiles at one time, the total delay
+    could be up to 200ms total, which is too slow.
 
     However, this initial approach with separate ImageVisuals should be a
     good starting point, since it will let us iron out the octree
     implementation and the tile placement math. Then we can upgrade
     to the new TiledImageVisual when its ready, and everything should
-    still work fine.
+    still look the same, it will just be faster.
     """
 
     def __init__(self, layer):
+        self.chunks = {}
+
+        # This will call our self._on_data_change().
         super().__init__(layer)
+
+    def _create_image_chunk(self, chunk: ChunkData):
+        """Add a new chunk.
+
+        Parameters
+        ----------
+        chunk : ChunkData
+            The data used to create the new chunk.
+        """
+        image_chunk = ImageChunk()
+
+        # Our parent VispyImageLayer potentially does a lot of processing
+        # when setting the data for a node.
+        self._set_new_data(chunk.data, image_chunk.node)
+
+        # Make the new ImageChunk a child positioned with us.
+        image_chunk.node.parent = self.node
+        image_chunk.node.transform = STTransform(translate=chunk.pos)
+
+        return image_chunk
+
+    def _on_data_change(self, event=None) -> None:
+        """Our self.layer._data_view has been updated, update our node.
+        """
+        if not self.layer.loaded:
+            # Do nothing if we are not yet loaded.
+            return
+
+        for chunk in self.layer.view_chunks:
+            chunk_id = id(chunk.data)
+            if chunk_id not in self.chunks:
+                pass
+                self.chunks[chunk_id] = self._create_image_chunk(chunk)

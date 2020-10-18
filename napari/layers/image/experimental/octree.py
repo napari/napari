@@ -1,18 +1,32 @@
 """Octree class.
 """
+from typing import Tuple
+
 import numpy as np
 from scipy import ndimage as ndi
 
-# from enum import IntEnum
-# class ChildIndex(IntEnum):
-#    Upper
+from ....types import ArrayLike
 
 
 class ChunkData:
-    def __init__(self, x, y, data):
-        self.x = x
-        self.y = y
+    """One chunk of the full image.
+
+    A chunk is a 2D tile or a 3D sub-volume.
+
+    Parameters
+    ----------
+    data : ArrayLike
+        The data to draw for this chunk.
+    pos : Tuple[float, float]
+        The x, y coordinates of the chunk.
+    size : float
+        The size of the chunk, the chunk is square/cubic.
+    """
+
+    def __init__(self, data: ArrayLike, pos: Tuple[float, float], size: float):
         self.data = data
+        self.pos = pos
+        self.size = size
 
 
 def _create_tiles(array: np.ndarray, tile_size: int) -> np.ndarray:

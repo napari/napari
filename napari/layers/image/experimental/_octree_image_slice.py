@@ -133,4 +133,4 @@ class OctreeImageSlice:
     def view_chunks(self):
         """Chunks currently in view."""
         data = self._octree.root.tile
-        return [ChunkData(0, 0, data)]
+        return [ChunkData(data, [0, 0], 1)]

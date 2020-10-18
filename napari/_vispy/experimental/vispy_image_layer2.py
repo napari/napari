@@ -136,6 +136,7 @@ class VispyImageLayer2(VispyBaseLayer):
             # Do nothing if we are not yet loaded.
             return
 
+        # Pass the data to our node.
         self._set_new_data(self.layer._data_view, self.node)
 
     def _set_new_data(self, data, node) -> None:
