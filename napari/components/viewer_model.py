@@ -292,6 +292,10 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         center = [0] * (self.dims.ndisplay - len(center)) + list(center)
 
         self.camera.center = center
+        # zoom is definied as the number of canvas pixels per world pixel
+        # assuming a canvas of minimum height or width of 600, the default
+        # value used below will zoom such that the whole field of view
+        # will occupyt 90% of the canvas
         self.camera.zoom = 0.9 * 600 / np.max(size[-2:])
         self.camera.angles = (0, 0, 90)
 
