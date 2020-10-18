@@ -9,7 +9,7 @@ def test_camera(make_test_viewer):
     vispy_view = viewer.window.qt_viewer.view
 
     np.random.seed(0)
-    data = np.random.random((10, 10, 10))
+    data = np.random.random((11, 11, 11))
     viewer.add_image(data)
 
     # Test default values camera values are used and vispy camera has been
@@ -33,24 +33,23 @@ def test_camera(make_test_viewer):
     assert vispy_view.camera.scale_factor == 11
 
     # Update camera model and check vispy camera changes in 3D
-    center = (20, 10, 15)
-    size = 100
-    angles = (-20, 10, -45)
-    viewer.camera.update(center=center, size=size, angles=angles)
+    viewer.camera.center = (20, 10, 15)
+    viewer.camera.zoom = 2
+    viewer.camera.angles = (-20, 10, -45)
     assert viewer.camera.ndisplay == 3
-    assert viewer.camera.center == center
-    assert viewer.camera.size == size
-    assert viewer.camera.angles == angles
+    assert viewer.camera.center == (20, 10, 15)
+    assert viewer.camera.zoom == 2
+    assert viewer.camera.angles == (-20, 10, -45)
     assert isinstance(vispy_view.camera, ArcballCamera)
-    assert vispy_view.camera.center == center[::-1]
-    assert vispy_view.camera.scale_factor == 100
+    assert vispy_view.camera.center == (15, 10, 20)
+    assert vispy_view.camera.scale_factor == 1200
 
     # Zoom and pan vispy camera and check camera model changes in 3D
     vispy_view.camera.center = (12, -2, 8)
-    vispy_view.camera.scale_factor = 20
+    vispy_view.camera.scale_factor = 1800
     viewer.window.qt_viewer.on_draw(None)
     assert viewer.camera.center == (8, -2, 12)
-    assert viewer.camera.size == 20
+    assert viewer.camera.zoom == 3
 
     # Update angle and check roundtrip is correct
     angles = (12, 53, 92)
@@ -66,33 +65,27 @@ def test_camera(make_test_viewer):
     assert isinstance(vispy_view.camera, PanZoomCamera)
 
     # Update camera model and check vispy camera changes in 2D
-    center = (20, 30)
-    size = 200
-    angles = (-20, 10, -45)
-    viewer.camera.update(center=center, size=size, angles=angles)
+    viewer.camera.center = (20, 30)
+    viewer.camera.zoom = 4
     assert viewer.camera.ndisplay == 2
-    assert viewer.camera.center == center
-    assert viewer.camera.size == size
-    assert viewer.camera.angles == angles
+    assert viewer.camera.center == (20, 30)
+    assert viewer.camera.zoom == 4
     assert isinstance(vispy_view.camera, PanZoomCamera)
     assert vispy_view.camera.rect.center == (30.0, 20.0)
-    assert vispy_view.camera.rect.size == (200.0, 200.0)
+    assert vispy_view.camera.rect.size == (2400.0, 2400.0)
 
     # Zoom and pan vispy camera and check camera model changes in 2D
     vispy_view.camera.zoom(2)
     viewer.window.qt_viewer.on_draw(None)
-    assert vispy_view.camera.rect.size == (400.0, 400.0)
-    assert viewer.camera.size == 400
+    assert vispy_view.camera.rect.size == (4800.0, 4800.0)
+    assert viewer.camera.zoom == 8
 
     vispy_view.camera.zoom(0.5)
     viewer.window.qt_viewer.on_draw(None)
-    assert vispy_view.camera.rect.size == (200.0, 200.0)
-    assert viewer.camera.size == 200
+    assert vispy_view.camera.rect.size == (2400.0, 2400.0)
+    assert viewer.camera.zoom == 4
 
     vispy_view.camera.rect = (-20, -30, 40, 10)
     viewer.window.qt_viewer.on_draw(None)
     assert viewer.camera.center == (-25, 0)
-    assert viewer.camera.size == 40
-
-    # Close the viewer
-    viewer.window.close()
+    assert viewer.camera.zoom == 0.05

@@ -8,11 +8,13 @@ class Camera:
     ----------
     dims : napari.components.Dims
         Dims model of the viewer.
-    zoom : float
-        Scale from canvas pixels to world pixels.
     angles : 3-tuple
         Euler angles of camera in 3D viewing (rx, ry, rz), in degrees.
         Only used during 3D viewing.
+    center : 2-tuple or 3-tuple
+        Center of the camera for either 2D or 3D viewing.
+    zoom : float
+        Scale from canvas pixels to world pixels.
 
     Attributes
     ----------
@@ -27,11 +29,16 @@ class Camera:
         Scale from canvas pixels to world pixels.
     """
 
-    def __init__(self, dims, *, zoom=1, angles=(0, 0, 90)):
-
+    def __init__(self, dims, *, center=None, zoom=1, angles=(0, 0, 90)):
         self._dims = dims
+
+        if center is None:
+            center = (0,) * self._dims.ndisplay
+        center = center[-self._dims.ndisplay :]
+
         self._zoom = zoom
         self._angles = angles
+        self._center = center
 
         self.events = EmitterGroup(
             source=self,
@@ -44,7 +51,7 @@ class Camera:
     @property
     def center(self):
         """tuple: Center point of camera view for 2D or 3D viewing."""
-        return tuple(self._dims.point[d] for d in self._dims.displayed)
+        return self._center
 
     @center.setter
     def center(self, center):
@@ -55,9 +62,7 @@ class Camera:
                 f'Center must be same length as currently displayed'
                 f' dimensions, got {len(center)} need {self.ndisplay}.'
             )
-        axes = self._dims.displayed
-        for axis, value in zip(axes, center):
-            self._dims.set_point(axis, value)
+        self._center = tuple(center)
         self.events.center()
 
     @property

@@ -504,7 +504,6 @@ def test_sliced_world_extent():
     # Change displayed dims order
     viewer.dims.order = (1, 2, 0)
     np.testing.assert_allclose(viewer._sliced_extent_world[0], (5, 10))
-    np.testing.assert_allclose(viewer._sliced_extent_world[1], (20, 28))
     np.testing.assert_allclose(viewer._sliced_extent_world[1], (19, 25))
 
 
@@ -520,26 +519,17 @@ def test_camera():
 
     assert viewer.dims.ndisplay == 2
     assert viewer.camera.ndisplay == 2
-    assert viewer.camera.center == (7.5, 10)
+    assert viewer.camera.center == (7, 9.5)
     assert viewer.camera.angles == (0, 0, 90)
 
     viewer.dims.ndisplay = 3
     assert viewer.dims.ndisplay == 3
     assert viewer.camera.ndisplay == 3
-    assert viewer.camera.center == (5, 7.5, 10)
+    assert viewer.camera.center == (4.5, 7, 9.5)
     assert viewer.camera.angles == (0, 0, 90)
 
     viewer.dims.ndisplay = 2
     assert viewer.dims.ndisplay == 2
     assert viewer.camera.ndisplay == 2
-    assert viewer.camera.center == (7.5, 10)
+    assert viewer.camera.center == (7, 9.5)
     assert viewer.camera.angles == (0, 0, 90)
-
-    center = (20, 45)
-    size = 300
-    angles = (-20, 10, -45)
-    viewer.camera.update(center=center, size=size, angles=angles)
-    assert viewer.camera.ndisplay == 2
-    assert viewer.camera.center == center
-    assert viewer.camera.size == size
-    assert viewer.camera.angles == angles
