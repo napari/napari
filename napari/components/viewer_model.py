@@ -67,7 +67,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         )
 
         self.layers = LayerList()
-        self.camera = Camera()
+        self.camera = Camera(self.dims)
 
         self.axes = Axes()
         self.scale_bar = ScaleBar()
@@ -85,9 +85,10 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self._palette = None
         self.theme = 'dark'
 
-        self.dims.events.camera.connect(self.reset_view)
         self.dims.events.ndisplay.connect(self._update_layers)
+        self.dims.events.ndisplay.connect(self.reset_view, position='last')
         self.dims.events.order.connect(self._update_layers)
+        self.dims.events.order.connect(self.reset_view, position='last')
         self.dims.events.current_step.connect(self._update_layers)
         self.layers.events.changed.connect(self._update_active_layer)
         self.layers.events.changed.connect(self._update_grid)
@@ -278,9 +279,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             return self.layers._extent_world[:, self.dims.displayed]
 
     def reset_view(self, event=None):
-        """Resets the camera's view using `event.rect` a 4-tuple of the x, y
-        corner position followed by width and height of the camera
-        """
+        """Reset the camera view."""
 
         extent = self._sliced_extent_world
         scene_size = extent[1] - extent[0]
@@ -289,13 +288,12 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         if len(scene_size) > len(grid_size):
             grid_size = [1] * (len(scene_size) - len(grid_size)) + grid_size
         size = np.multiply(scene_size, grid_size)
-        center = np.add(corner, np.divide(size, 2))
+        center = np.add(corner, np.divide(size, 2))[-self.dims.ndisplay :]
+        center = [0] * (self.dims.ndisplay - len(center)) + list(center)
 
-        self.camera.update(
-            center=center[-self.dims.ndisplay :],
-            size=1.1 * np.max(size[-2:]),
-            angles=(0, 0, 90),
-        )
+        self.camera.center = center
+        self.camera.zoom = 1.1 * np.max(size[-2:]) / 600
+        self.camera.angles = (0, 0, 90)
 
     def _new_labels(self):
         """Create new labels layer filling full world coordinates space."""

@@ -178,7 +178,7 @@ class QtViewer(QSplitter):
         self.canvas.connect(self.on_draw)
 
         self.view = self.canvas.central_widget.add_view()
-        self._update_camera()
+        self._on_reset_view(None)
 
         self.axes = VispyAxesVisual(
             self.viewer.axes,
@@ -215,14 +215,13 @@ class QtViewer(QSplitter):
 
         self.viewer.events.interactive.connect(self._on_interactive)
         self.viewer.events.cursor.connect(self._on_cursor)
-        self.viewer.camera.events.update.connect(self._on_reset_view)
+        self.viewer.camera.events.zoom.connect(self._on_reset_view)
+        self.viewer.camera.events.center.connect(self._on_reset_view)
+        self.viewer.camera.events.angles.connect(self._on_reset_view)
         self.viewer.events.palette.connect(self._update_palette)
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
         self.viewer.layers.events.added.connect(self._add_layer)
         self.viewer.layers.events.removed.connect(self._remove_layer)
-        self.viewer.dims.events.camera.connect(
-            lambda event: self._update_camera()
-        )
         # stop any animations whenever the layers change
         self.viewer.events.layers_change.connect(lambda x: self.dims.stop())
 
@@ -315,8 +314,8 @@ class QtViewer(QSplitter):
         self.canvas._draw_order.clear()
         self.canvas.update()
 
-    def _update_camera(self):
-        """Update the viewer camera."""
+    def _match_ndisplay_camera(self):
+        """Toggle camera to match number of displayed dimensions."""
         if self.viewer.dims.ndisplay == 3:
             # Set a 3D camera
             if not isinstance(self.view.camera, ArcballCamera):
@@ -325,7 +324,6 @@ class QtViewer(QSplitter):
                 # self.view.camera.flip = (0, 1, 0)
 
                 self.view.camera.viewbox_key_event = viewbox_key_event
-                self.viewer.reset_view()
         else:
             # Set 2D camera
             if not isinstance(self.view.camera, PanZoomCamera):
@@ -336,7 +334,6 @@ class QtViewer(QSplitter):
                 self.view.camera.flip = (0, 1, 0)
 
                 self.view.camera.viewbox_key_event = viewbox_key_event
-                self.viewer.reset_view()
 
     def _save_layers_dialog(self, selected=False):
         """Save layers (all or selected) to disk, using ``LayerList.save()``.
@@ -465,6 +462,7 @@ class QtViewer(QSplitter):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
+        self._match_ndisplay_camera()
         if isinstance(self.view.camera, ArcballCamera):
             quat = self.view.camera._quaternion.create_from_euler_angles(
                 *self.viewer.camera.angles, degrees=True,
@@ -472,14 +470,15 @@ class QtViewer(QSplitter):
             self.view.camera._quaternion = quat
             # switch from numpy ordering to vispy ordering
             self.view.camera.center = self.viewer.camera.center[::-1]
-            self.view.camera.scale_factor = self.viewer.camera.size
+            self.view.camera.scale_factor = self.viewer.camera.zoom * 600
         else:
             # Assumes default camera has the same properties as PanZoomCamera
             # switch from numpy ordering to vispy ordering
             corner = np.subtract(
-                self.viewer.camera.center[::-1], self.viewer.camera.size / 2
+                self.viewer.camera.center[::-1],
+                self.viewer.camera.zoom * 600 / 2,
             )
-            rectangle = tuple(corner) + (self.viewer.camera.size,) * 2
+            rectangle = tuple(corner) + (self.viewer.camera.zoom * 600,) * 2
             self.view.camera.rect = rectangle
 
     def _update_palette(self, event=None):
@@ -702,30 +701,40 @@ class QtViewer(QSplitter):
         This is triggered from vispy whenever new data is sent to the canvas or
         the camera is moved and is connected in the `QtViewer`.
         """
-        if isinstance(self.view.camera, ArcballCamera):
-            # switch from vispy ordering to numpy ordering
-            self.viewer.camera._center = self.view.camera.center[::-1]
-            self.viewer.camera._size = self.view.camera.scale_factor
+        with self.viewer.dims.events.blocker_all():
+            with self.viewer.camera.events.blocker_all():
+                self.viewer.camera.zoom = self._canvas2world_scale
+                if (
+                    isinstance(self.view.camera, ArcballCamera)
+                    and self.viewer.dims.ndisplay == 3
+                ):
+                    # switch from vispy ordering to numpy ordering
+                    self.viewer.camera.center = self.view.camera.center[::-1]
 
-            # Do conversion from quaternion representation to euler angles
-            ang = quaternion2euler(self.view.camera._quaternion, degrees=True)
-            self.viewer.camera._angles = ang
-        else:
-            # Assumes default camera has the same properties as PanZoomCamera
-            # switch from vispy ordering to numpy ordering
-            self.viewer.camera._center = self.view.camera.rect.center[::-1]
-            self.viewer.camera._size = np.max(self.view.camera.rect.size)
+                    # Do conversion from quaternion representation to euler angles
+                    ang = quaternion2euler(
+                        self.view.camera._quaternion, degrees=True
+                    )
+                    self.viewer.camera.angles = ang
+                elif (
+                    isinstance(self.view.camera, PanZoomCamera)
+                    and self.viewer.dims.ndisplay == 2
+                ):
+                    # Assumes default camera has the same properties as PanZoomCamera
+                    # switch from vispy ordering to numpy ordering
+                    self.viewer.camera.center = self.view.camera.rect.center[
+                        ::-1
+                    ]
 
-        scale_factor = self._canvas2world_scale
         if self.viewer.scale_bar.visible:
-            self.scale_bar.update_scale(scale_factor)
+            self.scale_bar.update_scale(self.viewer.camera.zoom)
         if self.viewer.axes.visible:
-            self.axes.update_scale(scale_factor)
+            self.axes.update_scale(self.viewer.camera.zoom)
 
         for layer in self.viewer.layers:
             if layer.ndim <= self.viewer.dims.ndim:
                 layer._update_draw(
-                    scale_factor=scale_factor,
+                    scale_factor=self.viewer.camera.zoom,
                     corner_pixels=self._canvas_corners_in_world[
                         :, -layer.ndim :
                     ],

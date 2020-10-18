@@ -6,61 +6,80 @@ class Camera:
 
     Parameters
     ----------
-    center : 2-tuple or 3-tuple
-        Center point of camera view for 2D or 3D viewing in world slice
-        coordinates.
-    size : float
-        Max size to display in canvas in world coordinates.
+    dims : napari.components.Dims
+        Dims model of the viewer.
+    zoom : float
+        Scale from canvas pixels to world pixels.
     angles : 3-tuple
         Euler angles of camera in 3D viewing (rx, ry, rz), in degrees.
+        Only used during 3D viewing.
+
+    Attributes
+    ----------
+    angles : 3-tuple
+        Euler angles of camera in 3D viewing (rx, ry, rz), in degrees.
+        Only used during 3D viewing.
+    center : 2-tuple or 3-tuple
+        Center of the camera for either 2D or 3D viewing.
+    ndisplay : int
+        Number of displayed dimensions, must be either 2 or 3.
+    zoom : float
+        Scale from canvas pixels to world pixels.
     """
 
-    def __init__(self, *, center=(0, 0), size=1, angles=(0, 0, 90)):
+    def __init__(self, dims, *, zoom=1, angles=(0, 0, 90)):
 
-        self._center = center
-        self._size = size
+        self._dims = dims
+        self._zoom = zoom
         self._angles = angles
 
         self.events = EmitterGroup(
-            source=self, auto_connect=True, update=None, ndisplay=None,
+            source=self,
+            auto_connect=True,
+            angles=None,
+            zoom=None,
+            center=None,
         )
 
     @property
     def center(self):
         """tuple: Center point of camera view for 2D or 3D viewing."""
-        return self._center
+        return tuple(self._dims.point[d] for d in self._dims.displayed)
 
     @center.setter
     def center(self, center):
-        if self._center == tuple(center):
+        if self.center == tuple(center):
             return
-        ndisplay = len(center)
-        if ndisplay not in [2, 3]:
+        if self.ndisplay != len(center):
             raise ValueError(
-                f'Center must be length 2 or 3, got length {ndisplay}.'
+                f'Center must be same length as currently displayed'
+                f' dimensions, got {len(center)} need {self.ndisplay}.'
             )
-        old_ndisplay = self.ndisplay
-        self._center = tuple(center)
-        if old_ndisplay != ndisplay:
-            self.events.ndisplay()
-        self.events.update()
+        axes = self._dims.displayed
+        for axis, value in zip(axes, center):
+            self._dims.set_point(axis, value)
+        self.events.center()
 
     @property
     def ndisplay(self):
         """int: Dimensionality of the camera rendering."""
-        return len(self.center)
+        return self._dims.ndisplay
+
+    @ndisplay.setter
+    def ndisplay(self, ndisplay):
+        self._dims.ndisplay = ndisplay
 
     @property
-    def size(self):
-        """float: Max size to display in canvas in world coordinates."""
-        return self._size
+    def zoom(self):
+        """float: Scale from canvas pixels to world pixels."""
+        return self._zoom
 
-    @size.setter
-    def size(self, size):
-        if self._size == size:
+    @zoom.setter
+    def zoom(self, zoom):
+        if self._zoom == zoom:
             return
-        self._size = size
-        self.events.update()
+        self._zoom = zoom
+        self.events.zoom()
 
     @property
     def angles(self):
@@ -69,27 +88,7 @@ class Camera:
 
     @angles.setter
     def angles(self, angles):
-        if self._angles == angles:
+        if self._angles == tuple(angles):
             return
-        self._angles = angles
-        self.events.update()
-
-    def update(self, center=None, size=None, angles=None):
-        """Update camera position to new values.
-
-        Parameters
-        ----------
-        center : tuple
-            Center point of camera view for 2D or 3D viewing in world slice
-            coordinates.
-        size : float
-            Max size to display in canvas in world coordinates.
-        angles : 3-tuple
-            Euler angles of camera in 3D viewing (rx, ry, rz), in degrees.
-        """
-        if center is not None:
-            self.center = center
-        if size is not None:
-            self.size = size
-        if angles is not None:
-            self.angles = angles
+        self._angles = tuple(angles)
+        self.events.angles()
