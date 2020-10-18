@@ -291,6 +291,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         center = np.add(corner, np.divide(size, 2))[-self.dims.ndisplay :]
         center = [0] * (self.dims.ndisplay - len(center)) + list(center)
 
+        print('hellooo!!!!')
         self.camera.center = center
         self.camera.zoom = 1.1 * np.max(size[-2:]) / 600
         self.camera.angles = (0, 0, 90)

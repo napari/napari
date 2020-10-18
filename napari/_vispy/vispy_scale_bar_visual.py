@@ -9,7 +9,9 @@ class VispyScaleBarVisual:
     """Scale bar in world coordinates.
     """
 
-    def __init__(self, scale_bar, parent=None, order=0):
+    def __init__(self, scale_bar, camera, parent=None, order=0):
+        self._scale_bar = scale_bar
+        self._camera = camera
 
         self._data = np.array(
             [
@@ -24,7 +26,6 @@ class VispyScaleBarVisual:
         self._default_color = np.array([1, 0, 1, 1])
         self._target_length = 100
         self._scale = 1
-        self.scale_bar = scale_bar
 
         self.node = Line(
             connect='segments', method='gl', parent=parent, width=3
@@ -39,23 +40,24 @@ class VispyScaleBarVisual:
         self.text_node.anchors = ('center', 'center')
         self.text_node.text = f'{1}'
 
-        self.scale_bar.events.visible.connect(self._on_visible_change)
-        self.scale_bar.events.colored.connect(self._on_data_change)
-        self.scale_bar.events.ticks.connect(self._on_data_change)
-        self.scale_bar.events.position.connect(self._on_position_change)
+        self._scale_bar.events.visible.connect(self._on_visible_change)
+        self._scale_bar.events.colored.connect(self._on_data_change)
+        self._scale_bar.events.ticks.connect(self._on_data_change)
+        self._scale_bar.events.position.connect(self._on_position_change)
+        self._camera.events.zoom.connect(self._on_zoom_change)
 
         self._on_visible_change(None)
         self._on_data_change(None)
         self._on_position_change(None)
 
-    def update_scale(self, scale):
-        """Update scale bar length based on canvas2world scale.
-
-        Parameters
-        ----------
-        scale : float
-            Scale going from canvas pixels to world coorindates.
+    def _on_zoom_change(self, event):
+        """Update axes length based on zoom scale.
         """
+        if not self._scale_bar.visible:
+            return
+
+        scale = self._camera.zoom
+
         # If scale has not changed, do not redraw
         if abs(np.log10(self._scale) - np.log10(scale)) < 1e-4:
             return
@@ -82,7 +84,7 @@ class VispyScaleBarVisual:
         )
         scale = target_canvas_pixels_rounded
 
-        if self.scale_bar._position in [
+        if self._scale_bar._position in [
             Position.TOP_RIGHT,
             Position.BOTTOM_RIGHT,
         ]:
@@ -96,12 +98,12 @@ class VispyScaleBarVisual:
 
     def _on_data_change(self, event):
         """Change color and data of scale bar."""
-        if self.scale_bar.colored:
+        if self._scale_bar.colored:
             color = self._default_color
         else:
-            color = np.subtract(1, self.scale_bar.background_color)[:3]
+            color = np.subtract(1, self._scale_bar.background_color)[:3]
 
-        if self.scale_bar.ticks:
+        if self._scale_bar.ticks:
             data = self._data
         else:
             data = self._data[:2]
@@ -111,16 +113,16 @@ class VispyScaleBarVisual:
 
     def _on_visible_change(self, event):
         """Change visibiliy of scale bar."""
-        self.node.visible = self.scale_bar.visible
-        self.text_node.visible = self.scale_bar.visible
+        self.node.visible = self._scale_bar.visible
+        self.text_node.visible = self._scale_bar.visible
 
     def _on_position_change(self, event):
         """Change position of scale bar."""
-        if self.scale_bar._position == Position.TOP_LEFT:
+        if self._scale_bar._position == Position.TOP_LEFT:
             sign = 1
             self.node.transform.translate = [66, 14, 0, 0]
             self.text_node.transform.translate = [33, 16, 0, 0]
-        elif self.scale_bar._position == Position.TOP_RIGHT:
+        elif self._scale_bar._position == Position.TOP_RIGHT:
             sign = -1
             canvas_size = list(self.node.canvas.size)
             self.node.transform.translate = [canvas_size[0] - 66, 14, 0, 0]
@@ -130,7 +132,7 @@ class VispyScaleBarVisual:
                 0,
                 0,
             ]
-        elif self.scale_bar._position == Position.BOTTOM_RIGHT:
+        elif self._scale_bar._position == Position.BOTTOM_RIGHT:
             sign = -1
             canvas_size = list(self.node.canvas.size)
             self.node.transform.translate = [
@@ -145,7 +147,7 @@ class VispyScaleBarVisual:
                 0,
                 0,
             ]
-        elif self.scale_bar._position == Position.BOTTOM_LEFT:
+        elif self._scale_bar._position == Position.BOTTOM_LEFT:
             sign = 1
             canvas_size = list(self.node.canvas.size)
             self.node.transform.translate = [66, canvas_size[1] - 16, 0, 0]
@@ -157,7 +159,7 @@ class VispyScaleBarVisual:
             ]
         else:
             raise ValueError(
-                f'Position {self.scale_bar.position}' ' not recognized.'
+                f'Position {self._scale_bar.position}' ' not recognized.'
             )
 
         scale = abs(self.node.transform.scale[0])
