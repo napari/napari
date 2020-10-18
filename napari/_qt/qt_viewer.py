@@ -520,16 +520,20 @@ class QtViewer(QSplitter):
     def _canvas2world_scale(self):
         """list: Scale factors from canvas pixels to world coordinates."""
         if isinstance(self.view.camera, PanZoomCamera):
-            return 1 / self.view.camera.transform.scale[0]
+            scale_factor = 1 / self.view.camera.transform.scale[0]
         elif isinstance(self.view.camera, ArcballCamera):
-            # Note magic number 598 is empirically determined so that
-            # Arcball camera and PanZoomCamera match
-            scale_factor = self.view.camera.scale_factor / 598
-            return scale_factor
+            # For fov = 0.0 normalize scale factor by canvas size to get scale factor.
+            # Note that the scaling is stored in the `_projection` property of the
+            # camera which is updated in vispy here
+            # https://github.com/vispy/vispy/blob/v0.6.5/vispy/scene/cameras/perspective.py#L301-L313
+            scale_factor = self.view.camera.scale_factor / np.min(
+                self.view.canvas.size
+            )
         else:
             raise ValueError(
                 f'Camera type {type(self.view.camera)} not recognized'
             )
+        return scale_factor
 
     def _map_canvas2world(self, position):
         """Map position from canvas pixels into world coordinates.
