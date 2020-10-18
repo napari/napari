@@ -43,7 +43,7 @@ class VispyCamera:
                 self._view.camera._quaternion, degrees=True
             )
         else:
-            angles = (0, 0, 0)
+            angles = (0, 0, 90)
         return angles
 
     @angles.setter
@@ -91,15 +91,14 @@ class VispyCamera:
             scale = np.min(
                 [self._view.camera.rect.width, self._view.camera.rect.height]
             )
-        zoom = scale / canvas_size
+        zoom = canvas_size / scale
         return zoom
 
     @zoom.setter
     def zoom(self, zoom):
         if self.zoom == zoom:
             return
-
-        scale = self._camera.zoom * np.min(self._view.canvas.size)
+        scale = np.min(self._view.canvas.size) / zoom
         if self._view.camera == self._3D_camera:
             self._view.camera.scale_factor = scale
         else:

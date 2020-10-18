@@ -14,6 +14,7 @@ def test_camera():
     camera.center = center
     assert camera.ndisplay == 3
     assert camera.center == center
+    assert camera.angles == (0, 0, 90)
 
     zoom = 200
     camera.zoom = zoom

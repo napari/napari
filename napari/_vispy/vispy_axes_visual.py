@@ -182,7 +182,7 @@ class VispyAxesVisual:
         if not self._axes.visible:
             return
 
-        scale = self._camera.zoom
+        scale = 1 / self._camera.zoom
 
         # If scale has not changed, do not redraw
         if abs(np.log10(self._scale) - np.log10(scale)) < 1e-4:

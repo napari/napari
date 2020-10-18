@@ -89,7 +89,10 @@ class Camera:
     @property
     def angles(self):
         """3-tuple: Euler angles of camera in 3D viewing, in degrees."""
-        return self._angles
+        if self.ndisplay == 3:
+            return self._angles
+        else:
+            return (0, 0, 90)
 
     @angles.setter
     def angles(self, angles):

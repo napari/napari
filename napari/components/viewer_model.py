@@ -292,7 +292,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         center = [0] * (self.dims.ndisplay - len(center)) + list(center)
 
         self.camera.center = center
-        self.camera.zoom = 1.1 * np.max(size[-2:]) / 600
+        self.camera.zoom = 0.9 * 600 / np.max(size[-2:])
         self.camera.angles = (0, 0, 90)
 
     def _new_labels(self):

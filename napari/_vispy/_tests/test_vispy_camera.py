@@ -1,12 +1,10 @@
 import numpy as np
-from vispy.scene import ArcballCamera, PanZoomCamera
-from vispy.util.quaternion import Quaternion
 
 
 def test_camera(make_test_viewer):
-    """Test vispy camera model interaction."""
+    """Test vispy camera creation in 2D."""
     viewer = make_test_viewer()
-    vispy_view = viewer.window.qt_viewer.view
+    vispy_camera = viewer.window.qt_viewer.camera
 
     np.random.seed(0)
     data = np.random.random((11, 11, 11))
@@ -16,76 +14,133 @@ def test_camera(make_test_viewer):
     # updated
     assert viewer.dims.ndisplay == 2
     assert viewer.camera.ndisplay == 2
-    assert viewer.camera.center == (5.0, 5.0)
-    assert viewer.camera.angles == (0, 0, 90)
-    assert isinstance(vispy_view.camera, PanZoomCamera)
-    assert vispy_view.camera.rect.center == (5.0, 5.0)
-    assert vispy_view.camera.rect.size == (11, 11)
 
-    # Change to 3D display and check vispy camera changes
-    viewer.dims.ndisplay = 3
-    assert viewer.dims.ndisplay == 3
-    assert viewer.camera.ndisplay == 3
-    assert viewer.camera.center == (5.0, 5.0, 5.0)
-    assert viewer.camera.angles == (0, 0, 90)
-    assert isinstance(vispy_view.camera, ArcballCamera)
-    assert vispy_view.camera.center == (5.0, 5.0, 5.0)
-    assert vispy_view.camera.scale_factor == 11
+    np.testing.assert_almost_equal(viewer.camera.angles, (0, 0, 90))
+    np.testing.assert_almost_equal(viewer.camera.center, (5.0, 5.0))
+    np.testing.assert_almost_equal(viewer.camera.angles, vispy_camera.angles)
+    np.testing.assert_almost_equal(viewer.camera.center, vispy_camera.center)
+    np.testing.assert_almost_equal(viewer.camera.zoom, vispy_camera.zoom)
 
-    # Update camera model and check vispy camera changes in 3D
-    viewer.camera.center = (20, 10, 15)
-    viewer.camera.zoom = 2
-    viewer.camera.angles = (-20, 10, -45)
-    assert viewer.camera.ndisplay == 3
-    assert viewer.camera.center == (20, 10, 15)
-    assert viewer.camera.zoom == 2
-    assert viewer.camera.angles == (-20, 10, -45)
-    assert isinstance(vispy_view.camera, ArcballCamera)
-    assert vispy_view.camera.center == (15, 10, 20)
-    assert vispy_view.camera.scale_factor == 1200
 
-    # Zoom and pan vispy camera and check camera model changes in 3D
-    vispy_view.camera.center = (12, -2, 8)
-    vispy_view.camera.scale_factor = 1800
-    viewer.window.qt_viewer.on_draw(None)
-    assert viewer.camera.center == (8, -2, 12)
-    assert viewer.camera.zoom == 3
+def test_vispy_camera_update_from_model(make_test_viewer):
+    """Test vispy camera update from model in 2D."""
+    viewer = make_test_viewer()
+    vispy_camera = viewer.window.qt_viewer.camera
 
-    # Update angle and check roundtrip is correct
-    angles = (12, 53, 92)
-    q = Quaternion.create_from_euler_angles(*angles, degrees=True)
-    vispy_view.camera._quaternion = q
-    viewer.window.qt_viewer.on_draw(None)
-    np.testing.assert_allclose(viewer.camera.angles, angles)
+    np.random.seed(0)
+    data = np.random.random((11, 11, 11))
+    viewer.add_image(data)
 
-    # Change back to 2D display and check vispy camera changes
-    viewer.dims.ndisplay = 2
+    # Test default values camera values are used and vispy camera has been
+    # updated
     assert viewer.dims.ndisplay == 2
     assert viewer.camera.ndisplay == 2
-    assert isinstance(vispy_view.camera, PanZoomCamera)
 
-    # Update camera model and check vispy camera changes in 2D
-    viewer.camera.center = (20, 30)
+    # Update camera center and zoom
+    viewer.camera.center = (11, 12)
     viewer.camera.zoom = 4
+
+    np.testing.assert_almost_equal(viewer.camera.angles, (0, 0, 90))
+    np.testing.assert_almost_equal(viewer.camera.center, (11, 12))
+    np.testing.assert_almost_equal(viewer.camera.zoom, 4)
+    np.testing.assert_almost_equal(viewer.camera.angles, vispy_camera.angles)
+    np.testing.assert_almost_equal(viewer.camera.center, vispy_camera.center)
+    np.testing.assert_almost_equal(viewer.camera.zoom, vispy_camera.zoom)
+
+
+def test_camera_model_update_from_vispy(make_test_viewer):
+    """Test camera model updates from vispy in 2D."""
+    viewer = make_test_viewer()
+    vispy_camera = viewer.window.qt_viewer.camera
+
+    np.random.seed(0)
+    data = np.random.random((11, 11, 11))
+    viewer.add_image(data)
+
+    # Test default values camera values are used and vispy camera has been
+    # updated
+    assert viewer.dims.ndisplay == 2
     assert viewer.camera.ndisplay == 2
-    assert viewer.camera.center == (20, 30)
-    assert viewer.camera.zoom == 4
-    assert isinstance(vispy_view.camera, PanZoomCamera)
-    assert vispy_view.camera.rect.center == (30.0, 20.0)
-    assert vispy_view.camera.rect.size == (2400.0, 2400.0)
 
-    # Zoom and pan vispy camera and check camera model changes in 2D
-    vispy_view.camera.zoom(2)
-    viewer.window.qt_viewer.on_draw(None)
-    assert vispy_view.camera.rect.size == (4800.0, 4800.0)
-    assert viewer.camera.zoom == 8
+    # Update vispy camera center and zoom
+    vispy_camera.center = (11, 12)
+    vispy_camera.zoom = 4
+    vispy_camera.on_draw(None)
 
-    vispy_view.camera.zoom(0.5)
-    viewer.window.qt_viewer.on_draw(None)
-    assert vispy_view.camera.rect.size == (2400.0, 2400.0)
-    assert viewer.camera.zoom == 4
+    np.testing.assert_almost_equal(viewer.camera.angles, (0, 0, 90))
+    np.testing.assert_almost_equal(viewer.camera.center, (11, 12))
+    np.testing.assert_almost_equal(viewer.camera.zoom, 4)
+    np.testing.assert_almost_equal(viewer.camera.angles, vispy_camera.angles)
+    np.testing.assert_almost_equal(viewer.camera.center, vispy_camera.center)
+    np.testing.assert_almost_equal(viewer.camera.zoom, vispy_camera.zoom)
 
-    vispy_view.camera.rect = (-20, -30, 40, 10)
-    viewer.window.qt_viewer.on_draw(None)
-    assert viewer.camera.center == (-25, 0)
-    assert viewer.camera.zoom == 0.05
+
+def test_3D_camera(make_test_viewer):
+    """Test vispy camera creation in 3D."""
+    viewer = make_test_viewer()
+    vispy_camera = viewer.window.qt_viewer.camera
+
+    np.random.seed(0)
+    data = np.random.random((11, 11, 11))
+    viewer.add_image(data)
+
+    viewer.dims.ndisplay = 3
+    assert viewer.camera.ndisplay == 3
+
+    # Test camera values have updated
+    np.testing.assert_almost_equal(viewer.camera.angles, (0, 0, 90))
+    np.testing.assert_almost_equal(viewer.camera.center, (5.0, 5.0, 5.0))
+    np.testing.assert_almost_equal(viewer.camera.angles, vispy_camera.angles)
+    np.testing.assert_almost_equal(viewer.camera.center, vispy_camera.center)
+    np.testing.assert_almost_equal(viewer.camera.zoom, vispy_camera.zoom)
+
+
+def test_vispy_camera_update_from_model_3D(make_test_viewer):
+    """Test vispy camera update from model in 3D."""
+    viewer = make_test_viewer()
+    vispy_camera = viewer.window.qt_viewer.camera
+
+    np.random.seed(0)
+    data = np.random.random((11, 11, 11))
+    viewer.add_image(data)
+
+    viewer.dims.ndisplay = 3
+    assert viewer.camera.ndisplay == 3
+
+    # Update camera angles, center, and zoom
+    viewer.camera.angles = (24, 12, -19)
+    viewer.camera.center = (11, 12, 15)
+    viewer.camera.zoom = 4
+
+    np.testing.assert_almost_equal(viewer.camera.angles, (24, 12, -19))
+    np.testing.assert_almost_equal(viewer.camera.center, (11, 12, 15))
+    np.testing.assert_almost_equal(viewer.camera.zoom, 4)
+    np.testing.assert_almost_equal(viewer.camera.angles, vispy_camera.angles)
+    np.testing.assert_almost_equal(viewer.camera.center, vispy_camera.center)
+    np.testing.assert_almost_equal(viewer.camera.zoom, vispy_camera.zoom)
+
+
+def test_camera_model_update_from_vispy_3D(make_test_viewer):
+    """Test camera model updates from vispy in 3D."""
+    viewer = make_test_viewer()
+    vispy_camera = viewer.window.qt_viewer.camera
+
+    np.random.seed(0)
+    data = np.random.random((11, 11, 11))
+    viewer.add_image(data)
+
+    viewer.dims.ndisplay = 3
+    assert viewer.camera.ndisplay == 3
+
+    # Update vispy camera angles, center, and zoom
+    viewer.camera.angles = (24, 12, -19)
+    vispy_camera.center = (11, 12, 15)
+    vispy_camera.zoom = 4
+    vispy_camera.on_draw(None)
+
+    np.testing.assert_almost_equal(viewer.camera.angles, (24, 12, -19))
+    np.testing.assert_almost_equal(viewer.camera.center, (11, 12, 15))
+    np.testing.assert_almost_equal(viewer.camera.zoom, 4)
+    np.testing.assert_almost_equal(viewer.camera.angles, vispy_camera.angles)
+    np.testing.assert_almost_equal(viewer.camera.center, vispy_camera.center)
+    np.testing.assert_almost_equal(viewer.camera.zoom, vispy_camera.zoom)
