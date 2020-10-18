@@ -86,9 +86,9 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self.theme = 'dark'
 
         self.dims.events.ndisplay.connect(self._update_layers)
-        self.dims.events.ndisplay.connect(self.reset_view, position='last')
+        self.dims.events.ndisplay.connect(self.reset_view)
         self.dims.events.order.connect(self._update_layers)
-        self.dims.events.order.connect(self.reset_view, position='last')
+        self.dims.events.order.connect(self.reset_view)
         self.dims.events.current_step.connect(self._update_layers)
         self.layers.events.changed.connect(self._update_active_layer)
         self.layers.events.changed.connect(self._update_grid)
@@ -291,7 +291,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         center = np.add(corner, np.divide(size, 2))[-self.dims.ndisplay :]
         center = [0] * (self.dims.ndisplay - len(center)) + list(center)
 
-        print('hellooo!!!!')
         self.camera.center = center
         self.camera.zoom = 1.1 * np.max(size[-2:]) / 600
         self.camera.angles = (0, 0, 90)

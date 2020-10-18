@@ -75,7 +75,7 @@ class VispyCamera:
     def center(self, center):
         if self.center == tuple(center):
             return
-        self._view.camera.center = center
+        self._view.camera.center = center[::-1]
 
     @property
     def zoom(self):
