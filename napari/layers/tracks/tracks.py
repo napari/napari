@@ -3,6 +3,7 @@
 # from napari.utils.colormaps import AVAILABLE_COLORMAPS
 
 from typing import Dict, List, Union
+from warnings import warn
 
 import numpy as np
 
@@ -14,7 +15,7 @@ from ._track_utils import TrackManager
 
 
 class Tracks(Layer):
-    """ Tracks layer.
+    """Tracks layer.
 
     Parameters
     ----------
@@ -93,6 +94,13 @@ class Tracks(Layer):
         # if not provided with any data, set up an empty layer in 2D+t
         if data is None:
             data = np.empty((0, 4))
+        else:
+            # convert data to a numpy array if it is not already one
+            data = np.asarray(data)
+
+        # in absence of properties make the default an empty dict
+        if properties is None:
+            properties = {}
 
         # set the track data dimensions (remove ID from data)
         ndim = data.shape[1] - 1
@@ -141,7 +149,7 @@ class Tracks(Layer):
 
         # set the data, properties and graph
         self.data = data
-        self.properties = properties or {}
+        self.properties = properties
         self.graph = graph or {}
 
         self.color_by = color_by
@@ -296,8 +304,8 @@ class Tracks(Layer):
 
     @property
     def use_fade(self) -> bool:
-        """ toggle whether we fade the tail of the track, depending on whether
-        the time dimension is displayed """
+        """toggle whether we fade the tail of the track, depending on whether
+        the time dimension is displayed"""
         return 0 in self.dims.not_displayed
 
     @property
@@ -339,6 +347,15 @@ class Tracks(Layer):
     @properties.setter
     def properties(self, properties: Dict[str, np.ndarray]):
         """ set track properties """
+        if self._color_by not in [*properties.keys(), 'track_id']:
+            warn(
+                (
+                    f"Previous color_by key {self._color_by} not present in"
+                    " new properties. Falling back to track_id"
+                ),
+                UserWarning,
+            )
+            self._color_by = 'track_id'
         self._manager.properties = properties
         self.events.properties()
         self.events.color_by()
@@ -416,7 +433,7 @@ class Tracks(Layer):
     def color_by(self, color_by: str):
         """ set the property to color vertices by """
         if color_by not in self.properties_to_color_by:
-            return
+            raise ValueError(f'{color_by} is not a valid property key')
         self._color_by = color_by
         self._recolor_tracks()
         self.events.color_by()
@@ -475,8 +492,8 @@ class Tracks(Layer):
 
     @property
     def track_colors(self) -> np.ndarray:
-        """ return the vertex colors according to the currently selected
-        property """
+        """return the vertex colors according to the currently selected
+        property"""
         return self._track_colors
 
     @property

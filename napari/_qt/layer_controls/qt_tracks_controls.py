@@ -40,8 +40,9 @@ class QtTracksControls(QtLayerControls):
         # keys
         self.color_by_combobox = QComboBox()
         self.color_by_combobox.addItems(self.layer.properties_to_color_by)
+
         self.colormap_combobox = QComboBox()
-        self.colormap_combobox.addItems(AVAILABLE_COLORMAPS.keys())
+        self.colormap_combobox.addItems(list(AVAILABLE_COLORMAPS.keys()))
 
         # slider for track tail length
         self.tail_length_slider = QSlider(Qt.Horizontal)
@@ -99,7 +100,6 @@ class QtTracksControls(QtLayerControls):
 
         self._on_tail_length_change()
         self._on_tail_width_change()
-        self._on_properties_change()
         self._on_colormap_change()
         self._on_color_by_change()
 

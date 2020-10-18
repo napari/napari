@@ -5,9 +5,11 @@ from ..utils.key_bindings import KeymapHandler, KeymapProvider
 from ..utils.theme import palettes
 from ._viewer_mouse_bindings import dims_scroll
 from .add_layers_mixin import AddLayersMixin
+from .axes import Axes
 from .camera import Camera
 from .dims import Dims
 from .layerlist import LayerList
+from .scale_bar import ScaleBar
 
 
 class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
@@ -67,6 +69,9 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self.layers = LayerList()
         self.camera = Camera()
 
+        self.axes = Axes()
+        self.scale_bar = ScaleBar()
+
         self._status = 'Ready'
         self._help = ''
         self._title = title
@@ -113,6 +118,8 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             return
 
         self._palette = palette
+        self.axes.background_color = self.palette['canvas']
+        self.scale_bar.background_color = self.palette['canvas']
         self.events.palette()
 
     @property
@@ -297,7 +304,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         scene_size = extent[1] - extent[0]
         corner = extent[0]
         shape = [
-            np.round(s / sc).astype('int') if s > 0 else 1
+            np.round(s / sc).astype('int') + 1 if s > 0 else 1
             for s, sc in zip(scene_size, scale)
         ]
         empty_labels = np.zeros(shape, dtype=int)
@@ -460,8 +467,18 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             Size of the grid that is being used.
         """
         extent = self._sliced_extent_world
-        scene_size = extent[1] - extent[0]
-        translate_2d = np.multiply(scene_size[-2:], position)
+        scene_shift = extent[1] - extent[0] + 1
+        translate_2d = np.multiply(scene_shift[-2:], position)
         translate = [0] * layer.ndim
         translate[-2:] = translate_2d
         layer.translate_grid = translate
+
+    @property
+    def experimental(self):
+        """Experimental commands for IPython console.
+
+        For example run "viewer.experimental.cmds.loader.help".
+        """
+        from .experimental.commands import ExperimentalNamespace
+
+        return ExperimentalNamespace(self.layers)

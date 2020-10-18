@@ -179,3 +179,10 @@ class DelayQueue(threading.Thread):
                 return self.entries[0].submit_time - now
         else:
             return None  # There are no more entries.
+
+    def flush(self):
+        """Submit all entries right now."""
+        with self.lock:
+            for entry in self.entries:
+                self.submit_func(entry.request)
+            self.entries = []
