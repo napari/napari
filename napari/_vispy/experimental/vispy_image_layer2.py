@@ -136,9 +136,9 @@ class VispyImageLayer2(VispyBaseLayer):
             # Do nothing if we are not yet loaded.
             return
 
-        self._set_new_data(self.layer._data_view)
+        self._set_new_data(self.layer._data_view, self.node)
 
-    def _set_new_data(self, data) -> None:
+    def _set_new_data(self, data, node) -> None:
         """Configure our node to display this new data.
 
         data
@@ -151,13 +151,13 @@ class VispyImageLayer2(VispyBaseLayer):
         if self._wrong_visual():
             self._on_display_change(data)
         else:
-            self.node.set_data(data)
+            node.set_data(data)
 
         self.node.visible = False if self.layer._empty else self.layer.visible
 
         self._on_scale_change()
         self._on_translate_change()
-        self.node.update()
+        node.update()
 
     def _on_interpolation_change(self, event=None):
         self.node.interpolation = self.layer.interpolation
