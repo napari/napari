@@ -71,6 +71,9 @@ class AddLayersMixin:
         metadata=None,
         scale=None,
         translate=None,
+        rotate=None,
+        shear=None,
+        affine=None,
         opacity=1,
         blending=None,
         visible=True,
@@ -145,6 +148,23 @@ class AddLayersMixin:
             Translation values for the layer. If a list then must be a list of
             tuples of float with the same length as the axis that is being
             expanded as channels.
+        rotate : float, 3-tuple of float, n-D array or list.
+            If a float convert into a 2D rotation matrix using that value as an
+            angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
+            pitch, roll convention. Otherwise assume an nD rotation. Angles are
+            assumed to be in degrees. They can be converted from radians with
+            np.degrees if needed. If a list then must have same length as
+            the axis that is being expanded as channels.
+        shear : 1-D array or list.
+            A vector of shear values for an upper triangular n-D shear matrix.
+            If a list then must have same length as the axis that is being
+            expanded as channels.
+        affine: n-D array or napari.utils.transforms.Affine
+            (N+1, N+1) affine transformation matrix in homogeneous coordinates.
+            The first (N, N) entries correspond to a linear transform and
+            the final column is a lenght N translation vector and a 1 or a napari
+            AffineTransform object. If provided then, scale, rotate, and shear
+            values are ignored.
         opacity : float or list
             Opacity of the layer visual, between 0.0 and 1.0.  If a list then
             must be same length as the axis that is being expanded as channels.
@@ -194,6 +214,9 @@ class AddLayersMixin:
             'metadata': metadata,
             'scale': scale,
             'translate': translate,
+            'rotate': rotate,
+            'shear': shear,
+            'affine': affine,
             'opacity': opacity,
             'blending': blending,
             'visible': visible,
@@ -201,7 +224,15 @@ class AddLayersMixin:
         }
 
         # these arguments are *already* iterables in the single-channel case.
-        iterable_kwargs = {'scale', 'translate', 'contrast_limits', 'metadata'}
+        iterable_kwargs = {
+            'scale',
+            'translate',
+            'rotate',
+            'shear',
+            'affine',
+            'contrast_limits',
+            'metadata',
+        }
 
         if channel_axis is None:
             kwargs['colormap'] = kwargs['colormap'] or 'gray'
