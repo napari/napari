@@ -56,6 +56,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             title=Event,
             interactive=Event,
             cursor=Event,
+            reset_view=Event,
             active_layer=Event,
             palette=Event,
             grid=Event,
@@ -298,6 +299,11 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         # will occupyt 90% of the canvas
         self.camera.zoom = 0.9 * 600 / np.max(size[-2:])
         self.camera.angles = (0, 0, 90)
+        self.events.reset_view(
+            center=self.camera.center,
+            zoom=self.camera.zoom,
+            angles=self.camera.angles,
+        )
 
     def _new_labels(self):
         """Create new labels layer filling full world coordinates space."""
