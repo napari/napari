@@ -787,10 +787,10 @@ class Image(IntensityVisualizationMixin, Layer):
 
         return value
 
+    # One additional method for async
     if _use_async:
         from ...components.experimental.chunk import ChunkRequest
 
-        # Add one extra method of async.
         def on_chunk_loaded(self, request: ChunkRequest) -> None:
             """An asynchronous ChunkRequest was loaded.
 
@@ -800,5 +800,5 @@ class Image(IntensityVisualizationMixin, Layer):
                 This request was loaded.
             """
             # Convert the ChunkRequest to SliceData and use it.
-            data = ChunkedSliceData.from_request(self, request)
+            data = SliceDataClass.from_request(self, request)
             self._on_data_loaded(data, sync=False)
