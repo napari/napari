@@ -156,6 +156,8 @@ class OctreeImage(IntensityVisualizationMixin, Layer):
         visible=True,
         multiscale=None,
     ):
+        self._octree_level = None
+
         if isinstance(data, types.GeneratorType):
             data = list(data)
 
@@ -197,6 +199,7 @@ class OctreeImage(IntensityVisualizationMixin, Layer):
             rendering=Event,
             iso_threshold=Event,
             attenuation=Event,
+            octree_level=Event,
         )
 
         # Set data
@@ -248,11 +251,19 @@ class OctreeImage(IntensityVisualizationMixin, Layer):
         # Trigger generation of view slice and thumbnail
         self._update_dims()
 
+    def set_octree_level(self, level):
+        self._octree_level = level
+        self.refresh()  # Create new slice with this level.
+
     def _new_empty_slice(self):
         """Initialize the current slice to an empty image.
         """
         self._slice = OctreeImageSlice(
-            self._get_empty_image(), self._raw_to_displayed, self.rgb
+            self._get_empty_image(),
+            self._raw_to_displayed,
+            self.rgb,
+            self._octree_level,
+            self.events,
         )
         self._empty = True
 
@@ -631,6 +642,9 @@ class OctreeImage(IntensityVisualizationMixin, Layer):
         if not self._slice.on_loaded(data):
             # Slice rejected it, was it for the wrong indices?
             return
+
+        self._octree_level = self._slice._octree_level
+        self.events.octree_level()
 
         # Notify the world.
         if self.multiscale:

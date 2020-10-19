@@ -187,6 +187,7 @@ class Octree:
     def __init__(self, root: OctreeNode, levels):
         self.root = root
         self.levels = levels  # temporary?
+        self.num_levels = len(self.levels)
 
     def print_tiles(self):
         _print_tiles(self.root)

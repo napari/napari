@@ -1,5 +1,6 @@
 """VispyTiledImageLayer class.
 """
+import numpy as np
 from vispy.visuals.transforms import STTransform
 
 from ...layers.image.experimental.octree import ChunkData
@@ -52,6 +53,14 @@ class VispyTiledImageLayer(VispyImageLayer2):
         # This will call our self._on_data_change().
         super().__init__(layer)
 
+    def _outline_chunk(self, data):
+        line = np.array([255, 255, 255])
+        data[0, :, :] = line
+        data[-1, :, :] = line
+        data[:, 0, :] = line
+        data[:, -1, :] = line
+        return data
+
     def _create_image_chunk(self, chunk: ChunkData):
         """Add a new chunk.
 
@@ -62,9 +71,11 @@ class VispyTiledImageLayer(VispyImageLayer2):
         """
         image_chunk = ImageChunk()
 
+        data = self._outline_chunk(chunk.data)
+
         # Our parent VispyImageLayer potentially does a lot of processing
         # when setting the data for a node.
-        self._set_new_data(chunk.data, image_chunk.node)
+        self._set_new_data(data, image_chunk.node)
 
         # Make the new ImageChunk a child positioned with us.
         image_chunk.node.parent = self.node
@@ -73,7 +84,7 @@ class VispyTiledImageLayer(VispyImageLayer2):
         # pos = [512, 0]
         # size = 7
 
-        print(pos, size)
+        # print(pos, size)
 
         image_chunk.node.transform = STTransform(
             translate=pos, scale=[size, size]
@@ -91,5 +102,5 @@ class VispyTiledImageLayer(VispyImageLayer2):
         for chunk in self.layer.view_chunks:
             chunk_id = id(chunk.data)
             if chunk_id not in self.chunks:
-                print(f"Adding chunk {chunk_id}")
+                # print(f"Adding chunk {chunk_id}")
                 self.chunks[chunk_id] = self._create_image_chunk(chunk)

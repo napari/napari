@@ -7,7 +7,9 @@ from typing import Callable
 import numpy as np
 
 from ....types import ArrayLike
-from ....utils.perf import block_timer
+from ....utils.events import EmitterGroup
+
+# from ....utils.perf import block_timer
 from .._image_view import ImageView
 from ._chunked_image_loader import ChunkedImageLoader
 from ._chunked_slice_data import ChunkedSliceData
@@ -46,19 +48,25 @@ class OctreeImageSlice:
         self,
         image: ArrayLike,
         image_converter: Callable[[ArrayLike], ArrayLike],
-        rgb: bool = False,
+        rgb: bool,
+        octree_level: int,
+        events: EmitterGroup,
     ):
         LOGGER.debug("OctreeImageSlice.__init__")
         self.image: ImageView = ImageView(image, image_converter)
         self.thumbnail: ImageView = ImageView(image, image_converter)
         self.rgb = rgb
         self.loader = ChunkedImageLoader()
-        self._octree = None
 
         # With async there can be a gap between when the OctreeImageSlice is
         # created and the data is actually loaded. However initialize
         # as True in case we aren't even doing async loading.
         self.loaded = True
+
+        self._octree = None
+        self._octree_level = octree_level
+
+        self.events = events
 
     def _set_raw_images(
         self, image: ArrayLike, thumbnail_source: ArrayLike
@@ -88,8 +96,13 @@ class OctreeImageSlice:
         # TODO_OCTREE: Create an octree as a test... the expection is this
         # is a *single* scale image and we create an octree on the fly just
         # so we have something to render.
-        with block_timer("create octree", print_time=True):
-            self._octree = Octree.from_image(image)
+        # with block_timer("create octree", print_time=True):
+        self._octree = Octree.from_image(image)
+
+        # None means use coarsest level.
+        if self._octree_level is None:
+            self._octree_level = self._octree.num_levels - 1
+
         # self._octree.print_tiles()
 
     def load(self, data: ChunkedSliceData) -> bool:
@@ -132,13 +145,14 @@ class OctreeImageSlice:
     @property
     def view_chunks(self):
         """Chunks currently in view."""
-        # return [ChunkData(self._octree.root.tile, [0, 0], 64)]
-        levels = self._octree.levels[-2]  # as test render 2nd level (4 nodes)
+        print(f"view_chunks: octree_level={self._octree_level}")
+        level = self._octree.levels[self._octree_level]
+        nrows = len(level)
         chunks = []
         x = 0
         y = 0
-        size = 0.5
-        for row in levels:
+        size = 1 / nrows
+        for row in level:
             x = 0
             for tile in row:
                 chunks.append(ChunkData(tile, [x, y], size))

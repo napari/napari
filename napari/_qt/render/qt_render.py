@@ -16,6 +16,8 @@ class QtRender(QWidget):
         """
         super().__init__()
         self.layer = layer
+
+        self.layer.events.octree_level.connect(self._on_octree_level)
         layout = QVBoxLayout()
 
         spin_layout = QHBoxLayout()
@@ -25,7 +27,7 @@ class QtRender(QWidget):
         self.spin_level.setSingleStep(1)
         self.spin_level.setMinimum(0)
         self.spin_level.setMaximum(10)
-        self.spin_level.valueChanged.connect(self.changeSelection)
+        self.spin_level.valueChanged.connect(self._on_spin)
         self.spin_level.setAlignment(Qt.AlignCenter)
 
         label = QLabel("Quadtree Level:")
@@ -35,14 +37,19 @@ class QtRender(QWidget):
         layout.addLayout(spin_layout)
         self.setLayout(layout)
 
-    def changeSelection(self, value):
-        """Change currently selected label.
+        # Get initial value.
+        self._on_octree_level()
+
+    def _on_spin(self, value):
+        """Level spinbox changed..
 
         Parameters
         ----------
         value : int
-            Index of label to select.
+            New value of the spinbox
         """
-        self.layer.selected_label = value
-        self.selectionSpinBox.clearFocus()
-        self.setFocus()
+        self.layer.set_octree_level(value)
+
+    def _on_octree_level(self, event=None):
+        value = self.layer._slice._octree_level
+        self.spin_level.setValue(value)
