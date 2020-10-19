@@ -20,18 +20,22 @@ _use_async = os.getenv("NAPARI_ASYNC", "0") != "0"
 
 
 def _get_image_class():
-    """Return regular Image class or special async OctreeImage class."""
+    """Return regular Image class or special async OctreeImage class.
+
+    If using async AND async_config's "octree_visuals" is set then
+    we use OctreeImage. Otherwise we use the regular Image class.
+    """
     if not _use_async:
-        return layers.Image  # Normal image class: not async.
+        return layers.Image
 
     from ..components.experimental.chunk import async_config
 
     if not async_config.octree_visuals:
-        return layers.Image  # Normal image class: async.
+        return layers.Image
 
     from ..layers.image.experimental.octree_image import OctreeImage
 
-    return OctreeImage  # Octree visuals: async.
+    return OctreeImage
 
 
 _image_class = _get_image_class()
