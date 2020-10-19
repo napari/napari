@@ -11,6 +11,7 @@ from napari._tests.utils import (
     check_viewer_functioning,
     layer_test_data,
 )
+from napari.utils._tests.test_naming import eval_with_filename
 
 
 def test_viewer(make_test_viewer):
@@ -68,6 +69,19 @@ def test_add_layer(make_test_viewer, layer_class, data, ndim, visible):
     # Run all class key bindings
     for func in layer.class_keymap.values():
         func(layer)
+
+
+@pytest.mark.parametrize('layer_class, a_unique_name, ndim', layer_test_data)
+def test_add_layer_magic_name(
+    make_test_viewer, layer_class, a_unique_name, ndim
+):
+    """Test magic_name works when using add_* for layers"""
+    # Tests for issue #1709
+    viewer = make_test_viewer()  # noqa: F841
+    layer = eval_with_filename(
+        "add_layer_by_type(viewer, layer_class, a_unique_name)", "somefile.py",
+    )
+    assert layer.name == "a_unique_name"
 
 
 def test_screenshot(make_test_viewer):
@@ -194,3 +208,43 @@ def test_roll_traspose_update(make_test_viewer, layer_class, data, ndim):
     # Transpose and check again:
     viewer.dims._transpose()
     check_view_transform_consistency(layer, viewer, transf_dict)
+
+
+def test_toggling_axes(make_test_viewer):
+    """Test toggling axes."""
+    viewer = make_test_viewer()
+
+    # Check axes are not visible
+    assert not viewer.axes.visible
+
+    # Make axes visible
+    viewer.axes.visible = True
+    assert viewer.axes.visible
+
+    # Enter 3D rendering and check axes still visible
+    viewer.dims.ndisplay = 3
+    assert viewer.axes.visible
+
+    # Make axes not visible
+    viewer.axes.visible = False
+    assert not viewer.axes.visible
+
+
+def test_toggling_scale_bar(make_test_viewer):
+    """Test toggling scale bar."""
+    viewer = make_test_viewer()
+
+    # Check scale bar is not visible
+    assert not viewer.scale_bar.visible
+
+    # Make scale bar visible
+    viewer.scale_bar.visible = True
+    assert viewer.scale_bar.visible
+
+    # Enter 3D rendering and check scale bar is still visible
+    viewer.dims.ndisplay = 3
+    assert viewer.scale_bar.visible
+
+    # Make scale bar not visible
+    viewer.scale_bar.visible = False
+    assert not viewer.scale_bar.visible

@@ -119,8 +119,7 @@ class VispyImageLayer(VispyBaseLayer):
             self.node.visible = self.layer.visible
 
         # Call to update order of translation values with new dims:
-        self._on_scale_change()
-        self._on_translate_change()
+        self._on_matrix_change()
         self.node.update()
 
     def _on_interpolation_change(self, event=None):
@@ -194,7 +193,7 @@ class VispyImageLayer(VispyBaseLayer):
             for i, d in enumerate(self.layer.dims.displayed):
                 scale[d] = downsample[i]
             self.layer._transforms['tile2data'].scale = scale
-            self._on_scale_change()
+            self._on_matrix_change()
             slices = tuple(slice(None, None, ds) for ds in downsample)
             data = data[slices]
         return data

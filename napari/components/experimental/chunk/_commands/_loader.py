@@ -291,6 +291,7 @@ class LoaderCommands:
             ('log_path', src.log_path),
             ('synchronous', src.synchronous),
             ('num_workers', src.num_workers),
+            ('use_processes', src.use_processes),
             ('auto_sync_ms', src.auto_sync_ms),
             ('delay_queue_ms', src.delay_queue_ms),
         ]

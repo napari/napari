@@ -160,7 +160,7 @@ def test_roll():
 def test_roll_skip_dummy_axis_1():
     """Test basic roll skips axis with length 1."""
     dims = Dims(ndim=4)
-    dims.set_range(0, (0, 1, 1))
+    dims.set_range(0, (0, 0, 1))
     dims.set_range(1, (0, 10, 1))
     dims.set_range(2, (0, 10, 1))
     dims.set_range(3, (0, 10, 1))
@@ -174,8 +174,8 @@ def test_roll_skip_dummy_axis_1():
 def test_roll_skip_dummy_axis_2():
     """Test basic roll skips axis with length 1 when not first."""
     dims = Dims(ndim=4)
-    dims.set_range(1, (0, 10, 1))
-    dims.set_range(1, (0, 1, 1))
+    dims.set_range(0, (0, 10, 1))
+    dims.set_range(1, (0, 0, 1))
     dims.set_range(2, (0, 10, 1))
     dims.set_range(3, (0, 10, 1))
     assert dims.order == [0, 1, 2, 3]
@@ -188,10 +188,10 @@ def test_roll_skip_dummy_axis_2():
 def test_roll_skip_dummy_axis_3():
     """Test basic roll skips all axes with length 1."""
     dims = Dims(ndim=4)
-    dims.set_range(1, (0, 10, 1))
-    dims.set_range(1, (0, 1, 1))
+    dims.set_range(0, (0, 10, 1))
+    dims.set_range(1, (0, 0, 1))
     dims.set_range(2, (0, 10, 1))
-    dims.set_range(3, (0, 1, 1))
+    dims.set_range(3, (0, 0, 1))
     assert dims.order == [0, 1, 2, 3]
     dims._roll()
     assert dims.order == [2, 1, 0, 3]
