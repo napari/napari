@@ -19,7 +19,7 @@ def test_decompose_linear_matrix():
     B = compose_linear_matrix(rotate, scale, shear)
     np.testing.assert_almost_equal(A, B)
 
-    # Deompose linear matrix and check it matches
+    # Decompose linear matrix and check it matches
     rotate_B, scale_B, shear_B = decompose_linear_matrix(B)
     np.testing.assert_almost_equal(rotate, rotate_B)
     np.testing.assert_almost_equal(scale, scale_B)
