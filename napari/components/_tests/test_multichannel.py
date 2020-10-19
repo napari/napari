@@ -124,7 +124,7 @@ def test_multichannel(shape, kwargs):
                 'scale',
                 'translate',
                 'rotate',
-                'scale',
+                'shear',
                 'contrast_limits',
                 'metadata',
             }:

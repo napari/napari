@@ -1,17 +1,17 @@
 import numpy as np
 
 
-def compose_linear_matrix(rotate, scale, shear, degrees=True) -> np.array:
+def compose_linear_matrix(rotate, scale, shear) -> np.array:
     """Compose linear transform matrix from rotate, shear, scale.
 
     Parameters
     ----------
     rotate : float, 3-tuple of float, or n-D array.
         If a float convert into a 2D rotation matrix using that value as an
-        angle. If 3-tuple convert into a 3D rotation matrix, rolling a yaw,
-        pitch, roll convention. Otherwise assume an nD rotation. Angle
-        conversion are done either using degrees or radians depending on the
-        degrees boolean parameter.
+        angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
+        pitch, roll convention. Otherwise assume an nD rotation. Angles are
+        assumed to be in degrees. They can be converted from radians with
+        np.degrees if needed.
     scale : 1-D array
         A 1-D array of factors to scale each axis by. Scale is broadcast to 1
         in leading dimensions, so that, for example, a scale of [4, 18, 34] in
@@ -29,10 +29,7 @@ def compose_linear_matrix(rotate, scale, shear, degrees=True) -> np.array:
     if np.isscalar(rotate):
         # If a scalar is passed assume it is a single rotation angle
         # for a 2D rotation
-        if degrees:
-            theta = np.deg2rad(rotate)
-        else:
-            theta = rotate
+        theta = np.deg2rad(rotate)
         rotate_mat = np.array(
             [[np.cos(theta), -np.sin(theta)], [np.sin(theta), np.cos(theta)]]
         )
@@ -40,14 +37,9 @@ def compose_linear_matrix(rotate, scale, shear, degrees=True) -> np.array:
         # If a 3-tuple is passed assume it is three rotation angles for
         # a roll, pitch, and yaw for a 3D rotation. For more details see
         # https://en.wikipedia.org/wiki/Rotation_matrix#General_rotations
-        if degrees:
-            alpha = np.deg2rad(rotate[0])
-            beta = np.deg2rad(rotate[1])
-            gamma = np.deg2rad(rotate[2])
-        else:
-            alpha = rotate[0]
-            beta = rotate[1]
-            gamma = rotate[2]
+        alpha = np.deg2rad(rotate[0])
+        beta = np.deg2rad(rotate[1])
+        gamma = np.deg2rad(rotate[2])
         R_alpha = np.array(
             [
                 [np.cos(alpha), np.sin(alpha), 0],
@@ -132,7 +124,7 @@ def expand_upper_triangular(vector):
 
 
 def embed_in_identity_matrix(matrix, ndim):
-    """Embed an MxM matrix in a larger NxN identity matrix.
+    """Embed an MxM matrix bottom right of larger NxN identity matrix.
 
     Parameters
     ----------
@@ -173,10 +165,10 @@ def decompose_linear_matrix(matrix) -> (np.array, np.array, np.array):
     -------
     rotate : float, 3-tuple of float, or n-D array.
         If a float convert into a 2D rotation matrix using that value as an
-        angle. If 3-tuple convert into a 3D rotation matrix, rolling a yaw,
-        pitch, roll convention. Otherwise assume an nD rotation. Angle
-        conversion are done either using degrees or radians depending on the
-        degrees boolean parameter.
+        angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
+        pitch, roll convention. Otherwise assume an nD rotation. Angles are
+        assumed to be in degrees. They can be converted from radians with
+        np.degrees if needed.
     scale : 1-D array
         A 1-D array of factors to scale each axis by. Scale is broadcast to 1
         in leading dimensions, so that, for example, a scale of [4, 18, 34] in

@@ -240,11 +240,11 @@ class Affine(Transform):
     Parameters
     ----------
     rotate : float, 3-tuple of float, or n-D array.
-        If a float convert into a 2D rotation linear_matrix using that value as an
-        angle. If 3-tuple convert into a 3D rotation linear_matrix, rolling a yaw,
-        pitch, roll convention. Otherwise assume an nD rotation. Angle
-        conversion are done either using degrees or radians depending on the
-        degrees boolean parameter.
+        If a float convert into a 2D rotation matrix using that value as an
+        angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
+        pitch, roll convention. Otherwise assume an nD rotation. Angles are
+        assumed to be in degrees. They can be converted from radians with
+        np.degrees if needed.
     scale : 1-D array
         A 1-D array of factors to scale each axis by. Scale is broadcast to 1
         in leading dimensions, so that, for example, a scale of [4, 18, 34] in
@@ -263,14 +263,17 @@ class Affine(Transform):
         (N, N) matrix with linear transform. If provided then scale, rotate,
         and shear values are ignored.
     affine_matrix : n-D array, optional
-        (N+1, N+1) matrix where first (N, N) entries correspond to a linear
-        transform and the final column is a lenght N translation vector and
-        a 1. If provided then linear_matrix, scale, rotate, and shear values
-        are ignored.
-    degrees : bool
-        Boolean if rotation angles are provided in degrees
+        (N+1, N+1) affine transformation matrix in homogeneous coordinates [1]_.
+        The first (N, N) entries correspond to a linear transform and
+        the final column is a lenght N translation vector and a 1 or a napari
+        AffineTransform object. If provided then, scale, rotate, and shear
+        values are ignored.
     name : string
         A string name for the transform.
+
+    References
+    ----------
+    [1] https://en.wikipedia.org/wiki/Homogeneous_coordinates.
     """
 
     def __init__(
@@ -282,7 +285,6 @@ class Affine(Transform):
         shear=None,
         linear_matrix=None,
         affine_matrix=None,
-        degrees=True,
         name=None,
     ):
         super().__init__(name=name)
@@ -297,9 +299,7 @@ class Affine(Transform):
                 rotate = np.eye(len(scale))
             if shear is None:
                 shear = np.eye(len(scale))
-            linear_matrix = compose_linear_matrix(
-                rotate, scale, shear, degrees=degrees
-            )
+            linear_matrix = compose_linear_matrix(rotate, scale, shear)
 
         ndim = max(linear_matrix.shape[0], len(translate))
         self.linear_matrix = embed_in_identity_matrix(linear_matrix, ndim)
