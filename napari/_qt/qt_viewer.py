@@ -249,12 +249,11 @@ class QtViewer(QSplitter):
     def _create_render_dock_widget(self):
         """Create the dock widget that shows async controls.
         """
-        # Avoid circular import.
-        from .render.qt_render_container import QtRenderContainer
-
         _use_async = os.getenv("NAPARI_ASYNC", "0") != "0"
         if not _use_async:
             return None
+
+        from .experimental.qt_render_container import QtRenderContainer
 
         return QtViewerDockWidget(
             self,
