@@ -89,6 +89,7 @@ class QtViewer(QSplitter):
     raw_stylesheet = get_stylesheet()
 
     def __init__(self, viewer):
+        # Avoid circular import.
         from .layer_controls import QtLayerControlsContainer
 
         super().__init__()
@@ -146,7 +147,11 @@ class QtViewer(QSplitter):
         self.dockLayerList.setMaximumWidth(258)
         self.dockLayerList.setMinimumWidth(258)
 
+        # Only created if using perfmon.
         self.dockPerformance = self._create_performance_dock_widget()
+
+        # Only created if using async rendering.
+        self.dockRender = self._create_render_dock_widget()
 
         # This dictionary holds the corresponding vispy visual for each layer
         self.layer_to_visual = {}
@@ -222,6 +227,24 @@ class QtViewer(QSplitter):
             name='performance',
             area='bottom',
             shortcut='Ctrl+Shift+P',
+        )
+
+    def _create_render_dock_widget(self):
+        """Create the dock widget that shows async controls.
+        """
+        # Avoid circular import.
+        from .render.qt_render_container import QtRenderContainer
+
+        _use_async = os.getenv("NAPARI_ASYNC", "0") != "0"
+        if not _use_async:
+            return None
+
+        return QtViewerDockWidget(
+            self,
+            QtRenderContainer(self.viewer),
+            name='render',
+            area='right',
+            shortcut='Ctrl+Shift+A',
         )
 
     @property

@@ -139,6 +139,7 @@ class VispyBaseLayer(ABC):
         scale = self.layer._transforms.simplified.set_slice(
             self.layer.dims.displayed
         ).scale
+        print(f"scale={scale}")
         # convert NumPy axis ordering to VisPy axis ordering
         self.scale = scale[::-1]
 
@@ -146,6 +147,7 @@ class VispyBaseLayer(ABC):
         translate = self.layer._transforms.simplified.set_slice(
             self.layer.dims.displayed
         ).translate
+        print(f"translate={translate}")
         # convert NumPy axis ordering to VisPy axis ordering
         if self._array_like:
             scale = (

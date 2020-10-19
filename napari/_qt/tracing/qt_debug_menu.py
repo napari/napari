@@ -8,10 +8,14 @@ Menu Items
 Trace File -> Start Tracing...
 Trace File -> Stop Tracing
 """
+import os
+
 from qtpy.QtCore import QTimer
 from qtpy.QtWidgets import QAction, QFileDialog
 
 from ...utils import perf
+
+_use_async = os.getenv("NAPARI_ASYNC", "0") != "0"
 
 
 def _ensure_extension(filename: str, extension: str):
@@ -32,9 +36,10 @@ class DebugMenu:
         """
         self.debug_menu = main_window.main_menu.addMenu('&Debug')
 
-        self.perf = PerformanceSubMenu(
-            main_window, self.debug_menu.addMenu("Performance Trace")
-        )
+        if perf.USE_PERFMON:
+            self.perf = PerformanceSubMenu(
+                main_window, self.debug_menu.addMenu("Performance Trace")
+            )
 
 
 class PerformanceSubMenu:
