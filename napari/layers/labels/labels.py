@@ -4,7 +4,11 @@ from typing import Dict, Union
 import numpy as np
 from scipy import ndimage as ndi
 
-from ...utils.colormaps import colormaps
+from ...utils.colormaps import (
+    color_dict_to_colormap,
+    label_colormap,
+    low_discrepancy_image,
+)
 from ...utils.events import Event
 from ...utils.status_messages import format_float
 from ..image import Image
@@ -44,6 +48,21 @@ class Labels(Image):
         Scale factors for the layer.
     translate : tuple of float
         Translation values for the layer.
+    rotate : float, 3-tuple of float, or n-D array.
+        If a float convert into a 2D rotation matrix using that value as an
+        angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
+        pitch, roll convention. Otherwise assume an nD rotation. Angles are
+        assumed to be in degrees. They can be converted from radians with
+        np.degrees if needed.
+    shear : 1-D array or n-D array
+        Either a vector of upper triangular values, or an nD shear matrix with
+        ones along the main diagonal.
+    affine: n-D array or napari.utils.transforms.Affine
+        (N+1, N+1) affine transformation matrix in homogeneous coordinates.
+        The first (N, N) entries correspond to a linear transform and
+        the final column is a lenght N translation vector and a 1 or a napari
+        AffineTransform object. If provided then, scale, rotate, and shear
+        values are ignored.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -139,6 +158,9 @@ class Labels(Image):
         metadata=None,
         scale=None,
         translate=None,
+        rotate=None,
+        shear=None,
+        affine=None,
         opacity=0.7,
         blending='translucent',
         visible=True,
@@ -148,10 +170,7 @@ class Labels(Image):
         self._seed = seed
         self._background_label = 0
         self._num_colors = num_colors
-        self._random_colormap = (
-            'random',
-            colormaps.label_colormap(self.num_colors),
-        )
+        self._random_colormap = label_colormap(self.num_colors)
         self._color_mode = LabelColorMode.AUTO
         self._brush_shape = LabelBrushShape.CIRCLE
 
@@ -181,6 +200,9 @@ class Labels(Image):
             metadata=metadata,
             scale=scale,
             translate=translate,
+            rotate=rotate,
+            shear=shear,
+            affine=affine,
             opacity=opacity,
             blending=blending,
             visible=visible,
@@ -221,7 +243,7 @@ class Labels(Image):
 
         self.dims.events.ndisplay.connect(self._reset_history)
         self.dims.events.order.connect(self._reset_history)
-        self.dims.events.axis.connect(self._reset_history)
+        self.dims.events.current_step.connect(self._reset_history)
 
     @property
     def contiguous(self):
@@ -275,10 +297,7 @@ class Labels(Image):
     @num_colors.setter
     def num_colors(self, num_colors):
         self._num_colors = num_colors
-        self.colormap = (
-            self._colormap_name,
-            colormaps.label_colormap(num_colors),
-        )
+        self.colormap = label_colormap(num_colors)
         self.refresh()
         self._selected_color = self.get_color(self.selected_label)
         self.events.selected_label()
@@ -384,6 +403,11 @@ class Labels(Image):
         self._selected_color = self.get_color(selected_label)
         self.events.selected_label()
 
+        # note: self.color_mode returns a string and this comparison fails,
+        # so use self._color_mode
+        if self._color_mode == LabelColorMode.SELECTED:
+            self.refresh()
+
     @property
     def color_mode(self):
         """Color mode to change how color is represented.
@@ -391,6 +415,8 @@ class Labels(Image):
         AUTO (default) allows color to be set via a hash function with a seed.
 
         DIRECT allows color of each label to be set directly by a color dict.
+
+        SELECTED allows only selected labels to be visible.
         """
         return str(self._color_mode)
 
@@ -398,15 +424,16 @@ class Labels(Image):
     def color_mode(self, color_mode: Union[str, LabelColorMode]):
         color_mode = LabelColorMode(color_mode)
         if color_mode == LabelColorMode.DIRECT:
-            (
-                custom_colormap,
-                label_color_index,
-            ) = colormaps.color_dict_to_colormap(self.color)
+            (custom_colormap, label_color_index,) = color_dict_to_colormap(
+                self.color
+            )
             self.colormap = custom_colormap
             self._label_color_index = label_color_index
         elif color_mode == LabelColorMode.AUTO:
             self._label_color_index = {}
             self.colormap = self._random_colormap
+        elif color_mode == LabelColorMode.SELECTED:
+            pass
         else:
             raise ValueError("Unsupported Color Mode")
 
@@ -565,8 +592,30 @@ class Labels(Image):
             )[inv].reshape(raw.shape)
         elif self._color_mode == LabelColorMode.AUTO:
             image = np.where(
-                raw > 0, colormaps._low_discrepancy_image(raw, self._seed), 0
+                raw > 0, low_discrepancy_image(raw, self._seed), 0
             )
+        elif self._color_mode == LabelColorMode.SELECTED:
+            selected = self._selected_label
+            # we were in direct mode previously
+            if self._label_color_index:
+                if selected not in self._label_color_index:
+                    selected = None
+                index = self._label_color_index
+                image = np.where(
+                    raw == selected,
+                    index[selected],
+                    np.where(
+                        raw != self._background_label,
+                        index[None],
+                        index[self._background_label],
+                    ),
+                )
+            else:
+                image = np.where(
+                    raw == selected,
+                    low_discrepancy_image(selected, self._seed),
+                    0,
+                )
         else:
             raise ValueError("Unsupported Color Mode")
         return image
@@ -580,7 +629,7 @@ class Labels(Image):
             col = None
         else:
             val = self._raw_to_displayed(np.array([label]))
-            col = self.colormap[1][val].rgba[0]
+            col = self.colormap.map(val)[0]
         return col
 
     def _reset_history(self, event=None):
@@ -597,7 +646,7 @@ class Labels(Image):
     def _save_history(self):
         self._redo_history = deque()
         if not self._block_saving:
-            self._undo_history.append(self.data[self.dims.indices].copy())
+            self._undo_history.append(self.data[self._slice_indices].copy())
             self._trim_history()
 
     def _load_history(self, before, after):
@@ -605,8 +654,8 @@ class Labels(Image):
             return
 
         prev = before.pop()
-        after.append(self.data[self.dims.indices].copy())
-        self.data[self.dims.indices] = prev
+        after.append(self.data[self._slice_indices].copy())
+        self.data[self._slice_indices] = prev
 
         self.refresh()
 
@@ -674,7 +723,7 @@ class Labels(Image):
 
         if not (self.n_dimensional or self.ndim == 2):
             # if working with just the slice, update the rest of the raw data
-            self.data[tuple(self.dims.indices)] = labels
+            self.data[tuple(self._slice_indices)] = labels
 
         if refresh is True:
             self.refresh()

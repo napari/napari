@@ -2,10 +2,10 @@ import dask.array as da
 import numpy as np
 import pytest
 import xarray as xr
-from vispy.color import Colormap
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Image
+from napari.utils import Colormap
 
 
 def test_random_image():
@@ -17,7 +17,6 @@ def test_random_image():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape
-    assert layer.dims.range == [(0, m, 1) for m in shape]
     assert layer.rgb is False
     assert layer.multiscale is False
     assert layer._data_view.shape == shape[-2:]
@@ -33,7 +32,6 @@ def test_negative_image():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape
-    assert layer.dims.range == [(0, m, 1) for m in shape]
     assert layer.rgb is False
     assert layer._data_view.shape == shape[-2:]
 
@@ -43,7 +41,6 @@ def test_negative_image():
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
     assert layer.shape == shape
-    assert layer.dims.range == [(0, m, 1) for m in shape]
     assert layer.rgb is False
     assert layer._data_view.shape == shape[-2:]
 
@@ -222,7 +219,6 @@ def test_changing_image():
     assert np.all(layer.data == data_b)
     assert layer.ndim == len(shape_b)
     assert layer.shape == shape_b
-    assert layer.dims.range == [(0, m, 1) for m in shape_b]
     assert layer.rgb is False
     assert layer._data_view.shape == shape_b[-2:]
 
@@ -241,7 +237,6 @@ def test_changing_image_dims():
     assert np.all(layer.data == data_b)
     assert layer.ndim == len(shape_b)
     assert layer.shape == shape_b
-    assert layer.dims.range == [(0, m, 1) for m in shape_b]
     assert layer.rgb is False
     assert layer._data_view.shape == shape_b[-2:]
 
@@ -330,36 +325,36 @@ def test_colormaps():
     np.random.seed(0)
     data = np.random.random((10, 15))
     layer = Image(data)
-    assert layer.colormap[0] == 'gray'
-    assert type(layer.colormap[1]) == Colormap
+    assert layer.colormap.name == 'gray'
+    assert isinstance(layer.colormap, Colormap)
 
     layer.colormap = 'magma'
-    assert layer.colormap[0] == 'magma'
-    assert type(layer.colormap[1]) == Colormap
+    assert layer.colormap.name == 'magma'
+    assert isinstance(layer.colormap, Colormap)
 
     cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.3, 0.7, 0.2, 1.0]])
     layer.colormap = 'custom', cmap
-    assert layer.colormap[0] == 'custom'
-    assert layer.colormap[1] == cmap
+    assert layer.colormap.name == 'custom'
+    assert layer.colormap == cmap
 
     cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.7, 0.2, 0.6, 1.0]])
     layer.colormap = {'new': cmap}
-    assert layer.colormap[0] == 'new'
-    assert layer.colormap[1] == cmap
+    assert layer.colormap.name == 'new'
+    assert layer.colormap == cmap
 
     layer = Image(data, colormap='magma')
-    assert layer.colormap[0] == 'magma'
-    assert type(layer.colormap[1]) == Colormap
+    assert layer.colormap.name == 'magma'
+    assert isinstance(layer.colormap, Colormap)
 
     cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.3, 0.7, 0.2, 1.0]])
     layer = Image(data, colormap=('custom', cmap))
-    assert layer.colormap[0] == 'custom'
-    assert layer.colormap[1] == cmap
+    assert layer.colormap.name == 'custom'
+    assert layer.colormap == cmap
 
     cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.7, 0.2, 0.6, 1.0]])
     layer = Image(data, colormap={'new': cmap})
-    assert layer.colormap[0] == 'new'
-    assert layer.colormap[1] == cmap
+    assert layer.colormap.name == 'new'
+    assert layer.colormap == cmap
 
 
 def test_contrast_limits():
@@ -619,5 +614,5 @@ def test_world_data_extent():
     shape = (6, 10, 15)
     data = np.random.random(shape)
     layer = Image(data)
-    extent = np.array(((0,) * 3, shape))
+    extent = np.array(((0,) * 3, np.subtract(shape, 1)))
     check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))

@@ -1,5 +1,9 @@
+"""Image class.
+"""
+import os
 import types
 import warnings
+from copy import copy
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -12,7 +16,18 @@ from ..intensity_mixin import IntensityVisualizationMixin
 from ..utils.layer_utils import calc_data_range
 from ._image_constants import Interpolation, Interpolation3D, Rendering
 from ._image_slice import ImageSlice
+from ._image_slice_data import ImageSliceData
 from ._image_utils import guess_multiscale, guess_rgb
+
+_use_async = os.getenv("NAPARI_ASYNC", "0") != "0"
+
+# Use sync or async SliceData class.
+if _use_async:
+    from .experimental._chunked_slice_data import ChunkedSliceData
+
+    SliceDataClass = ChunkedSliceData
+else:
+    SliceDataClass = ImageSliceData
 
 
 # Mixin must come before Layer
@@ -30,7 +45,7 @@ class Image(IntensityVisualizationMixin, Layer):
         Whether the image is rgb RGB or RGBA. If not specified by user and
         the last dimension of the data has length 3 or 4 it will be set as
         `True`. If `False` the image is interpreted as a luminance image.
-    colormap : str, vispy.Color.Colormap, tuple, dict
+    colormap : str, napari.utils.Colormap, tuple, dict
         Colormap to use for luminance images. If a string must be the name
         of a supported colormap from vispy or matplotlib. If a tuple the
         first value must be a string to assign as a name to a colormap and
@@ -61,6 +76,15 @@ class Image(IntensityVisualizationMixin, Layer):
         Scale factors for the layer.
     translate : tuple of float
         Translation values for the layer.
+    rotate : float, 3-tuple of float, or n-D array.
+        If a float convert into a 2D rotation matrix using that value as an
+        angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
+        pitch, roll convention. Otherwise assume an nD rotation. Angles are
+        assumed to be in degrees. They can be converted from radians with
+        np.degrees if needed.
+    shear : 1-D array or n-D array
+        Either a vector of upper triangular values, or an nD shear matrix with
+        ones along the main diagonal.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -94,7 +118,7 @@ class Image(IntensityVisualizationMixin, Layer):
         Whether the data is a multiscale image or not. Multiscale data is
         represented by a list of array like image data. The first image in the
         list should be the largest.
-    colormap : 2-tuple of str, vispy.color.Colormap
+    colormap : 2-tuple of str, napari.utils.Colormap
         The first is the name of the current colormap, and the second value is
         the colormap. Colormaps are used for luminance images, if the image is
         rgb the colormap is ignored.
@@ -120,7 +144,7 @@ class Image(IntensityVisualizationMixin, Layer):
         Attenuation rate for attenuated maximum intensity projection.
 
     Extended Summary
-    ----------
+    ----------------
     _data_view : array (N, M), (N, M, 3), or (N, M, 4)
         Image data for the currently viewed slice. Must be 2D image data, but
         can be multidimensional for RGB or RGBA images if multidimensional is
@@ -147,6 +171,9 @@ class Image(IntensityVisualizationMixin, Layer):
         metadata=None,
         scale=None,
         translate=None,
+        rotate=None,
+        shear=None,
+        affine=None,
         opacity=1,
         blending='translucent',
         visible=True,
@@ -182,6 +209,9 @@ class Image(IntensityVisualizationMixin, Layer):
             metadata=metadata,
             scale=scale,
             translate=translate,
+            rotate=rotate,
+            shear=shear,
+            affine=affine,
             opacity=opacity,
             blending=blending,
             visible=visible,
@@ -216,10 +246,7 @@ class Image(IntensityVisualizationMixin, Layer):
             self._thumbnail_level = 0
         self.corner_pixels[1] = self.level_shapes[self._data_level]
 
-        # Initialize the current slice to an empty image.
-        self._slice = ImageSlice(
-            self._get_empty_image(), self._raw_to_displayed
-        )
+        self._new_empty_slice()
 
         # Set contrast_limits and colormaps
         self._gamma = gamma
@@ -245,6 +272,14 @@ class Image(IntensityVisualizationMixin, Layer):
 
         # Trigger generation of view slice and thumbnail
         self._update_dims()
+
+    def _new_empty_slice(self):
+        """Initialize the current slice to an empty image.
+        """
+        self._slice = ImageSlice(
+            self._get_empty_image(), self._raw_to_displayed, self.rgb
+        )
+        self._empty = True
 
     def _get_empty_image(self):
         """Get empty image to use as the default before data is loaded.
@@ -310,7 +345,7 @@ class Image(IntensityVisualizationMixin, Layer):
         -------
         extent_data : array, shape (2, D)
         """
-        shape = self.level_shapes[0]
+        shape = np.subtract(self.level_shapes[0], 1)
         return np.vstack([np.zeros(len(shape)), shape])
 
     @property
@@ -437,6 +472,33 @@ class Image(IntensityVisualizationMixin, Layer):
         self._rendering = Rendering(rendering)
         self.events.rendering()
 
+    @property
+    def loaded(self):
+        """Has the data for this layer been loaded yet.
+
+        With asynchronous loading the layer might exist but its data
+        for the current slice has not been loaded.
+        """
+        return self._slice.loaded
+
+    @property
+    def shape(self):
+        """Size of layer in world coordinates (compatibility).
+
+        Returns
+        -------
+        shape : tuple
+        """
+        # To Do: Deprecate when full world coordinate refactor
+        # is complete
+
+        extent = copy(self._extent_data)
+        extent[1] = extent[1] + 1
+        extent = self._transforms['data2world'](extent)
+
+        # Rounding is for backwards compatibility reasons.
+        return tuple(np.round(extent[1] - extent[0]).astype(int))
+
     def _get_state(self):
         """Get dictionary of layer state.
 
@@ -450,7 +512,7 @@ class Image(IntensityVisualizationMixin, Layer):
             {
                 'rgb': self.rgb,
                 'multiscale': self.multiscale,
-                'colormap': self.colormap[0],
+                'colormap': self.colormap.name,
                 'contrast_limits': self.contrast_limits,
                 'interpolation': self.interpolation,
                 'rendering': self.rendering,
@@ -482,8 +544,25 @@ class Image(IntensityVisualizationMixin, Layer):
 
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
+        self._new_empty_slice()
         not_disp = self.dims.not_displayed
-        order = self._get_order()
+
+        # Check if requested slice outside of data range
+        indices = np.array(self._slice_indices)
+        extent = self._extent_data
+        if np.any(
+            np.less(
+                [indices[ax] for ax in not_disp],
+                [extent[0, ax] for ax in not_disp],
+            )
+        ) or np.any(
+            np.greater(
+                [indices[ax] for ax in not_disp],
+                [extent[1, ax] for ax in not_disp],
+            )
+        ):
+            return
+        self._empty = False
 
         if self.multiscale:
             # If 3d redering just show lowest level of multiscale
@@ -492,7 +571,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
             # Slice currently viewed level
             level = self.data_level
-            indices = np.array(self.dims.indices)
+            indices = np.array(self._slice_indices)
             downsampled_indices = (
                 indices[not_disp] / self.downsample_factors[level, not_disp]
             )
@@ -510,28 +589,20 @@ class Image(IntensityVisualizationMixin, Layer):
             self._transforms['tile2data'].scale = scale
 
             if self.dims.ndisplay == 2:
-                corner_pixels = np.clip(
-                    self.corner_pixels,
-                    0,
-                    np.subtract(self.level_shapes[self.data_level], 1),
-                )
-
                 for d in self.dims.displayed:
                     indices[d] = slice(
-                        corner_pixels[0, d], corner_pixels[1, d] + 1, 1
+                        self.corner_pixels[0, d],
+                        self.corner_pixels[1, d] + 1,
+                        1,
                     )
                 self._transforms['tile2data'].translate = (
-                    corner_pixels[0]
-                    * self._transforms['data2world'].scale
-                    * self._transforms['tile2data'].scale
+                    self.corner_pixels[0] * self._transforms['tile2data'].scale
                 )
-
-            image = np.transpose(
-                np.asarray(self.data[level][tuple(indices)]), order
-            )
+            image = self.data[level][tuple(indices)]
+            image_indices = indices
 
             # Slice thumbnail
-            indices = np.array(self.dims.indices)
+            indices = np.array(self._slice_indices)
             downsampled_indices = (
                 indices[not_disp]
                 / self.downsample_factors[self._thumbnail_level, not_disp]
@@ -546,28 +617,85 @@ class Image(IntensityVisualizationMixin, Layer):
             )
             indices[not_disp] = downsampled_indices
 
-            thumbnail_source = np.asarray(
-                self.data[self._thumbnail_level][tuple(indices)]
-            ).transpose(order)
+            thumbnail_source = self.data[self._thumbnail_level][tuple(indices)]
         else:
-            self._transforms['tile2data'].scale = np.ones(self.dims.ndim)
-            image = np.asarray(self.data[self.dims.indices]).transpose(order)
-            thumbnail_source = image
+            self._transforms['tile2data'].scale = np.ones(self.ndim)
+            image_indices = self._slice_indices
+            image = self.data[image_indices]
 
-        if self.rgb and image.dtype.kind == 'f':
-            self._slice.image.raw = np.clip(image, 0, 1)
-            self._slice.thumbnail.raw = np.clip(thumbnail_source, 0, 1)
+            # For single-scale we don't request a separate thumbnail_source
+            # from the ChunkLoader because in ImageSlice.chunk_loaded we
+            # call request.thumbnail_source() and it knows to just use the
+            # image itself is there is no explicit thumbnail_source.
+            thumbnail_source = None
+
+        # Load our images, might be sync or async.
+        data = SliceDataClass(self, image_indices, image, thumbnail_source)
+        self._load_slice(data)
+
+    def _load_slice(self, data: SliceDataClass):
+        """Load the image and maybe thumbnail source.
+
+        Parameters
+        ----------
+        data : Slice
+        """
+        if self._slice.load(data):
+            # The load was synchronous.
+            self._on_data_loaded(data, sync=True)
         else:
-            self._slice.image.raw = image
-            self._slice.thumbnail.raw = thumbnail_source
+            # The load will be asynchronous. Signal that our self.loaded
+            # property is now false, since the load is in progress.
+            self.events.loaded()
 
+    def _on_data_loaded(self, data: SliceDataClass, sync: bool) -> None:
+        """The given data a was loaded, use it now.
+
+        This routine is called synchronously from _load_async() above, or
+        it is called asynchronously sometime later when the ChunkLoader
+        finishes loading the data in a worker thread or process.
+
+        Parameters
+        ----------
+        request : ChunkRequest
+            The request that was satisfied/loaded.
+        sync : bool
+            If True the chunk was loaded synchronously.
+        """
+        # Transpose after the load.
+        data.transpose(self._get_order())
+
+        # Pass the loaded data to the slice.
+        if not self._slice.on_loaded(data):
+            # Slice rejected it, was it for the wrong indices?
+            return
+
+        # Notify the world.
         if self.multiscale:
             self.events.scale()
             self.events.translate()
 
+        # Announcing we are in the loaded state will make our node visible
+        # if it was invisible during the load.
+        self.events.loaded()
+
+        if not sync:
+            # TODO_ASYNC: Avoid calling self.refresh(), because it would
+            # call our _set_view_slice(). Do we need a "refresh without
+            # set_view_slice()" method that we can call?
+
+            self.events.set_data()  # update vispy
+            self._update_thumbnail()
+
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""
+        if not self._slice.loaded:
+            # ASYNC_TODO: Do not compute the thumbnail until we are loaded.
+            # Is there a nicer way to prevent this from getting called?
+            return
+
         image = self._slice.thumbnail.view
+
         if self.dims.ndisplay == 3 and self.dims.ndim > 2:
             image = np.max(image, axis=0)
 
@@ -620,8 +748,8 @@ class Image(IntensityVisualizationMixin, Layer):
             if color_range != 0:
                 downsampled = (downsampled - low) / color_range
             downsampled = downsampled ** self.gamma
-            color_array = self.colormap[1][downsampled.ravel()]
-            colormapped = color_array.rgba.reshape(downsampled.shape + (4,))
+            color_array = self.colormap.map(downsampled.ravel())
+            colormapped = color_array.reshape(downsampled.shape + (4,))
             colormapped[..., 3] *= self.opacity
         self.thumbnail = colormapped
 
@@ -634,7 +762,15 @@ class Image(IntensityVisualizationMixin, Layer):
         value : tuple
             Value of the data at the coord.
         """
-        coord = np.round(self.coordinates).astype(int)
+        if self.multiscale:
+            # for multiscale data map the coordinate from the data back to
+            # the tile
+            coord = self._transforms['tile2data'].inverse(self.coordinates)
+        else:
+            coord = self.coordinates
+
+        coord = np.round(coord).astype(int)
+
         raw = self._slice.image.raw
         if self.rgb:
             shape = raw.shape[:-1]
@@ -650,3 +786,19 @@ class Image(IntensityVisualizationMixin, Layer):
             value = (self.data_level, value)
 
         return value
+
+    # One additional method for async
+    if _use_async:
+        from ...components.experimental.chunk import ChunkRequest
+
+        def on_chunk_loaded(self, request: ChunkRequest) -> None:
+            """An asynchronous ChunkRequest was loaded.
+
+            Parameters
+            ----------
+            request : ChunkRequest
+                This request was loaded.
+            """
+            # Convert the ChunkRequest to SliceData and use it.
+            data = SliceDataClass.from_request(self, request)
+            self._on_data_loaded(data, sync=False)

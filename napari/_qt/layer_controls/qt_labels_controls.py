@@ -327,6 +327,7 @@ class QtLabelsControls(QtLayerControls):
         new_mode : str
             AUTO (default) allows color to be set via a hash function with a seed.
             DIRECT allows color of each label to be set directly by a color dictionary.
+            SELECTED allows only selected labels to be visible.
         """
         self.layer.color_mode = new_mode
 
@@ -411,7 +412,7 @@ class QtLabelsControls(QtLayerControls):
             index = self.colorModeComboBox.findText(
                 self.layer.color_mode, Qt.MatchFixedString
             )
-            self.blendComboBox.setCurrentIndex(index)
+            self.colorModeComboBox.setCurrentIndex(index)
 
     def _on_brush_shape_change(self, event=None):
         """Receive brush shape change event and update dropdown menu.
@@ -461,6 +462,7 @@ class QtColorBox(QWidget):
         self.setToolTip('Selected label color')
 
         self.layer.events.selected_label.connect(self.update_color)
+        self.layer.events.opacity.connect(self.update_color)
 
     def update_color(self, event):
         """Receive layer model label selection change event & update colorbox.
@@ -494,8 +496,8 @@ class QtColorBox(QWidget):
                         painter.setBrush(QColor(25, 25, 25))
                     painter.drawRect(i * 4, j * 4, 5, 5)
         else:
-            color = 255 * self.layer._selected_color
-            color = color.astype(int)
+            color = np.multiply(self.layer._selected_color, self.layer.opacity)
+            color = np.round(255 * color).astype(int)
             painter.setPen(QColor(*list(color)))
             painter.setBrush(QColor(*list(color)))
             painter.drawRect(0, 0, self._height, self._height)
