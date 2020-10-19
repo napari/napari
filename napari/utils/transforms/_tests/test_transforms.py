@@ -70,9 +70,7 @@ def test_scale_translate_identity_default(Transform):
 
 
 def test_affine_properties():
-    transform = Affine(
-        scale=[2, 3], translate=[8, -5], rotate=90, shear=[1], degrees=True
-    )
+    transform = Affine(scale=[2, 3], translate=[8, -5], rotate=90, shear=[1])
     npt.assert_allclose(transform.translate, [8, -5])
     npt.assert_allclose(transform.scale, [2, 3])
     npt.assert_almost_equal(transform.rotate, [[0, -1], [1, 0]])
@@ -81,7 +79,7 @@ def test_affine_properties():
 
 def test_rotate():
     coord = [10, 13]
-    transform = Affine(rotate=90, degrees=True)
+    transform = Affine(rotate=90)
     new_coord = transform(coord)
     # As rotate by 90 degrees, can use [-y, x]
     target_coord = [-coord[1], coord[0]]
@@ -90,9 +88,7 @@ def test_rotate():
 
 def test_scale_translate_rotate():
     coord = [10, 13]
-    transform = Affine(
-        scale=[2, 3], translate=[8, -5], rotate=90, degrees=True
-    )
+    transform = Affine(scale=[2, 3], translate=[8, -5], rotate=90)
     new_coord = transform(coord)
     post_scale = np.multiply(coord, [2, 3])
     # As rotate by 90 degrees, can use [-y, x]
@@ -103,9 +99,7 @@ def test_scale_translate_rotate():
 
 def test_scale_translate_rotate_inverse():
     coord = [10, 13]
-    transform = Affine(
-        scale=[2, 3], translate=[8, -5], rotate=90, degrees=True
-    )
+    transform = Affine(scale=[2, 3], translate=[8, -5], rotate=90)
     new_coord = transform(coord)
     post_scale = np.multiply(coord, [2, 3])
     # As rotate by 90 degrees, can use [-y, x]
@@ -119,12 +113,8 @@ def test_scale_translate_rotate_inverse():
 
 def test_scale_translate_rotate_compose():
     coord = [10, 13]
-    transform_a = Affine(
-        scale=[2, 3], translate=[8, -5], rotate=25, degrees=True
-    )
-    transform_b = Affine(
-        scale=[0.3, 1.4], translate=[-2.2, 3], rotate=65, degrees=True
-    )
+    transform_a = Affine(scale=[2, 3], translate=[8, -5], rotate=25)
+    transform_b = Affine(scale=[0.3, 1.4], translate=[-2.2, 3], rotate=65)
     transform_c = transform_b.compose(transform_a)
 
     new_coord_1 = transform_c(coord)
@@ -134,15 +124,9 @@ def test_scale_translate_rotate_compose():
 
 def test_scale_translate_rotate_shear_compose():
     coord = [10, 13]
-    transform_a = Affine(
-        scale=[2, 3], translate=[8, -5], rotate=25, shear=[1], degrees=True
-    )
+    transform_a = Affine(scale=[2, 3], translate=[8, -5], rotate=25, shear=[1])
     transform_b = Affine(
-        scale=[0.3, 1.4],
-        translate=[-2.2, 3],
-        rotate=65,
-        shear=[-0.5],
-        degrees=True,
+        scale=[0.3, 1.4], translate=[-2.2, 3], rotate=65, shear=[-0.5],
     )
     transform_c = transform_b.compose(transform_a)
 
