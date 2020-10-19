@@ -2,6 +2,7 @@
 """
 import types
 import warnings
+from copy import copy
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -65,6 +66,15 @@ class OctreeImage(IntensityVisualizationMixin, Layer):
         Scale factors for the layer.
     translate : tuple of float
         Translation values for the layer.
+    rotate : float, 3-tuple of float, or n-D array.
+        If a float convert into a 2D rotation matrix using that value as an
+        angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
+        pitch, roll convention. Otherwise assume an nD rotation. Angles are
+        assumed to be in degrees. They can be converted from radians with
+        np.degrees if needed.
+    shear : 1-D array or n-D array
+        Either a vector of upper triangular values, or an nD shear matrix with
+        ones along the main diagonal.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -151,6 +161,9 @@ class OctreeImage(IntensityVisualizationMixin, Layer):
         metadata=None,
         scale=None,
         translate=None,
+        rotate=None,
+        shear=None,
+        affine=None,
         opacity=1,
         blending='translucent',
         visible=True,
@@ -188,6 +201,9 @@ class OctreeImage(IntensityVisualizationMixin, Layer):
             metadata=metadata,
             scale=scale,
             translate=translate,
+            rotate=rotate,
+            shear=shear,
+            affine=affine,
             opacity=opacity,
             blending=blending,
             visible=visible,
@@ -221,7 +237,6 @@ class OctreeImage(IntensityVisualizationMixin, Layer):
         else:
             self._data_level = 0
             self._thumbnail_level = 0
-
         self.corner_pixels[1] = self.level_shapes[self._data_level]
 
         self._new_empty_slice()
@@ -482,6 +497,24 @@ class OctreeImage(IntensityVisualizationMixin, Layer):
         """
         return self._slice.loaded
 
+    @property
+    def shape(self):
+        """Size of layer in world coordinates (compatibility).
+
+        Returns
+        -------
+        shape : tuple
+        """
+        # To Do: Deprecate when full world coordinate refactor
+        # is complete
+
+        extent = copy(self._extent_data)
+        extent[1] = extent[1] + 1
+        extent = self._transforms['data2world'](extent)
+
+        # Rounding is for backwards compatibility reasons.
+        return tuple(np.round(extent[1] - extent[0]).astype(int))
+
     def _get_state(self):
         """Get dictionary of layer state.
 
@@ -541,7 +574,7 @@ class OctreeImage(IntensityVisualizationMixin, Layer):
         ) or np.any(
             np.greater(
                 [indices[ax] for ax in not_disp],
-                [extent[1, ax] - 1 for ax in not_disp],
+                [extent[1, ax] for ax in not_disp],
             )
         ):
             return
