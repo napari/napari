@@ -40,6 +40,8 @@ SIMPLE_COLORMAPS = {
     for name, color in zip(primary_color_names, primary_colors)
 }
 
+# dictionay for bop colormap objects
+BOP_COLORMAPS = {k: Colormap(v) for k, v in bopd.items()}
 
 def _all_rgb():
     """Return all 256**3 valid rgb tuples."""
@@ -335,13 +337,10 @@ def vispy_or_mpl_colormap(name):
         colormap = Colormap(name=name, colors=mpl_colors)
     return colormap
 
-# dictionay for bop colormap objects
-bop_colormaps = {k: Colormap(v) for k, v in bopd.items()}
-
 # A dictionary mapping names to VisPy colormap objects
 ALL_COLORMAPS = {k: vispy_or_mpl_colormap(k) for k in matplotlib_colormaps}
 ALL_COLORMAPS.update(SIMPLE_COLORMAPS)
-ALL_COLORMAPS.update(bop_colormaps)
+ALL_COLORMAPS.update(BOP_COLORMAPS)
 
 # ... sorted alphabetically by name
 AVAILABLE_COLORMAPS = {k: v for k, v in sorted(ALL_COLORMAPS.items())}
