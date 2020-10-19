@@ -54,7 +54,7 @@ class VispyTiledImageLayer(VispyImageLayer2):
         super().__init__(layer)
 
     def _outline_chunk(self, data):
-        line = np.array([255, 255, 255])
+        line = np.array([255, 0, 0])
         data[0, :, :] = line
         data[-1, :, :] = line
         data[:, 0, :] = line

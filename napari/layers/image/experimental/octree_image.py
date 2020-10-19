@@ -251,8 +251,18 @@ class OctreeImage(IntensityVisualizationMixin, Layer):
         # Trigger generation of view slice and thumbnail
         self._update_dims()
 
-    def set_octree_level(self, level):
-        self._octree_level = level
+    @property
+    def octree_level(self):
+        return self._octree_level
+
+    @octree_level.setter
+    def octree_level(self, level):
+        max_level = self._slice.num_octree_levels - 1
+        if level > max_level:
+            self._octree_level = max_level
+            self.events.octree_level()  # Report we modified the request.
+        else:
+            self._octree_level = level
         self.refresh()  # Create new slice with this level.
 
     def _new_empty_slice(self):

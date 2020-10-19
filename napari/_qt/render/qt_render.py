@@ -41,15 +41,15 @@ class QtRender(QWidget):
         self._on_octree_level()
 
     def _on_spin(self, value):
-        """Level spinbox changed..
+        """Level spinbox changed.
 
         Parameters
         ----------
         value : int
             New value of the spinbox
         """
-        self.layer.set_octree_level(value)
+        self.layer.octree_level = value
 
     def _on_octree_level(self, event=None):
-        value = self.layer._slice._octree_level
+        value = self.layer.octree_level
         self.spin_level.setValue(value)

@@ -68,6 +68,10 @@ class OctreeImageSlice:
 
         self.events = events
 
+    @property
+    def num_octree_levels(self):
+        return self._octree.num_levels
+
     def _set_raw_images(
         self, image: ArrayLike, thumbnail_source: ArrayLike
     ) -> None:
