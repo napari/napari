@@ -118,6 +118,7 @@ def _create_async_config(data: dict) -> AsyncConfig:
         log_path=data.get("log_path"),
         synchronous=data.get("synchronous", True),
         num_workers=data.get("num_workers", 6),
+        use_processes=data.get("use_processes", False),
         async_sync_ms=data.get("async_sync_ms", 30),
         delay_queue_ms=data.get("delay_queue_ms", 100),
         octree_visuals=data.get("octree_visuals", False),
