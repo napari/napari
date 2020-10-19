@@ -1,6 +1,6 @@
-"""This module contains the color map dictionaries for BOP Lookup table take
-from https://github.com/cleterrier/ChrisLUTs to make it compatable with napari's
-colormap classes alll the values in the color map are normalized (divid by 255).
+"""This module contains the colormap dictionaries for BOP lookup tables take
+from https://github.com/cleterrier/ChrisLUTs. To make it compatable with napari's
+colormap classes, all the values in the colormap are normalized (divid by 255).
 """
 
 bop_blue = [
@@ -781,4 +781,8 @@ bop_purple = [
     [0.5803921568627451, 0.12549019607843137, 0.5803921568627451],
 ]
 
-bopd = {"BOPBlue": bop_blue, "BOPOrange": bop_orange, "BOPPurple": bop_purple}
+bopd = {
+    "bop blue": bop_blue,
+    "bop orange": bop_orange,
+    "bop purple": bop_purple,
+}

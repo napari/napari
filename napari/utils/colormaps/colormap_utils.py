@@ -5,9 +5,9 @@ import numpy as np
 from vispy.color import BaseColormap as VispyColormap
 from vispy.color import get_colormap, get_colormaps
 
+from .bop_colors import bopd
 from .colormap import Colormap
 from .vendored import cm, colorconv
-from .bop_colors import bopd
 
 _matplotlib_list_file = os.path.join(
     os.path.dirname(__file__), 'matplotlib_cmaps.txt'
@@ -41,7 +41,8 @@ SIMPLE_COLORMAPS = {
 }
 
 # dictionay for bop colormap objects
-BOP_COLORMAPS = {k: Colormap(v) for k, v in bopd.items()}
+BOP_COLORMAPS = {k: Colormap(v, name=k) for k, v in bopd.items()}
+
 
 def _all_rgb():
     """Return all 256**3 valid rgb tuples."""
@@ -336,6 +337,7 @@ def vispy_or_mpl_colormap(name):
         mpl_colors = mpl_cmap(np.linspace(0, 1, 256))
         colormap = Colormap(name=name, colors=mpl_colors)
     return colormap
+
 
 # A dictionary mapping names to VisPy colormap objects
 ALL_COLORMAPS = {k: vispy_or_mpl_colormap(k) for k in matplotlib_colormaps}
