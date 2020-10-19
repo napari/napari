@@ -299,6 +299,9 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         # will occupyt 90% of the canvas
         self.camera.zoom = 0.9 * 600 / np.max(size[-2:])
         self.camera.angles = (0, 0, 90)
+
+        # Emit a reset view event, which is no longer used internally, but
+        # which maybe useful for building on napari.
         self.events.reset_view(
             center=self.camera.center,
             zoom=self.camera.zoom,
