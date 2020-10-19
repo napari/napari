@@ -223,11 +223,11 @@ class Layer(KeymapProvider, ABC):
             affine.name = 'data2world'
             data2world_transform = affine
         else:
-            raise ValueError(
+            raise TypeError(
                 (
-                    f'affine input not recgonized '
-                    f'must be either napari.utils.transforms.Affine, '
-                    f'ndarray or None. Got {type(affine)}'
+                    'affine input not recognized. '
+                    'must be either napari.utils.transforms.Affine, '
+                    f'ndarray, or None. Got {type(affine)}'
                 )
             )
 
@@ -445,10 +445,10 @@ class Layer(KeymapProvider, ABC):
             affine.name = 'data2world'
             self._transforms['data2world'] = affine
         else:
-            raise ValueError(
+            raise TypeError(
                 (
-                    f'affine input not recgonized '
-                    f'must be either napari.utils.transforms.Affine '
+                    'affine input not recognized. '
+                    'must be either napari.utils.transforms.Affine '
                     f'or ndarray. Got {type(affine)}'
                 )
             )
