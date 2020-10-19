@@ -6,6 +6,7 @@ from vispy.color import BaseColormap, Colormap, get_colormap, get_colormaps
 
 from ...types import ValidColormapArg
 from .vendored import cm, colorconv
+from .bop_colors import bopd
 
 _matplotlib_list_file = os.path.join(
     os.path.dirname(__file__), 'matplotlib_cmaps.txt'
@@ -320,11 +321,14 @@ class TransGrays(BaseColormap):
 colormaps_3D = {"fire": TransFire(), "gray_trans": TransGrays()}
 colormaps_3D = {k: v for k, v in sorted(colormaps_3D.items())}
 
+# dictionay for bop colormap objects
+bop_colormaps = {k: Colormap(v) for k, v in bopd.items()}
 
 # A dictionary mapping names to VisPy colormap objects
 ALL_COLORMAPS = {k: vispy_or_mpl_colormap(k) for k in matplotlib_colormaps}
 ALL_COLORMAPS.update(simple_colormaps)
 ALL_COLORMAPS.update(colormaps_3D)
+ALL_COLORMAPS.update(bop_colormaps)
 
 # ... sorted alphabetically by name
 AVAILABLE_COLORMAPS = {k: v for k, v in sorted(ALL_COLORMAPS.items())}
