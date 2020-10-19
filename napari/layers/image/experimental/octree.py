@@ -184,8 +184,9 @@ class OctreeNode:
 
 
 class Octree:
-    def __init__(self, root: OctreeNode):
+    def __init__(self, root: OctreeNode, levels):
         self.root = root
+        self.levels = levels  # temporary?
 
     def print_tiles(self):
         _print_tiles(self.root)
@@ -194,7 +195,7 @@ class Octree:
     def from_levels(cls, levels):
         root_level = len(levels) - 1
         root = _build_tree(levels, root_level, 0, 0)
-        return cls(root)
+        return cls(root, levels)
 
     @classmethod
     def from_image(cls, image: np.ndarray):

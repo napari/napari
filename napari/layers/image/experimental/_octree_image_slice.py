@@ -132,5 +132,16 @@ class OctreeImageSlice:
     @property
     def view_chunks(self):
         """Chunks currently in view."""
-        data = self._octree.root.tile
-        return [ChunkData(data, [0, 0], 1)]
+        # return [ChunkData(self._octree.root.tile, [0, 0], 64)]
+        levels = self._octree.levels[-2]  # as test render 2nd level (4 nodes)
+        chunks = []
+        x = 0
+        y = 0
+        size = 0.5
+        for row in levels:
+            x = 0
+            for tile in row:
+                chunks.append(ChunkData(tile, [x, y], size))
+                x += size
+            y += size
+        return chunks

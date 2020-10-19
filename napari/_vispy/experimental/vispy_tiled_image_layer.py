@@ -68,7 +68,16 @@ class VispyTiledImageLayer(VispyImageLayer2):
 
         # Make the new ImageChunk a child positioned with us.
         image_chunk.node.parent = self.node
-        image_chunk.node.transform = STTransform(translate=chunk.pos)
+        pos = [chunk.pos[0] * 1024, chunk.pos[1] * 1024]
+        size = chunk.size * 16
+        # pos = [512, 0]
+        # size = 7
+
+        print(pos, size)
+
+        image_chunk.node.transform = STTransform(
+            translate=pos, scale=[size, size]
+        )
 
         return image_chunk
 
@@ -82,5 +91,5 @@ class VispyTiledImageLayer(VispyImageLayer2):
         for chunk in self.layer.view_chunks:
             chunk_id = id(chunk.data)
             if chunk_id not in self.chunks:
-                pass
+                print(f"Adding chunk {chunk_id}")
                 self.chunks[chunk_id] = self._create_image_chunk(chunk)
