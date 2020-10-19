@@ -1,11 +1,14 @@
 """Octree class.
 """
-from typing import Tuple
+from typing import List, Tuple
 
 import numpy as np
 from scipy import ndimage as ndi
 
 from ....types import ArrayLike
+
+TileArray = List[List[np.ndarray]]
+Levels = List[TileArray]
 
 
 class ChunkData:
@@ -34,10 +37,15 @@ def _create_tiles(array: np.ndarray, tile_size: int) -> np.ndarray:
     Return an NxM array of (tile_size, tile_size) ndarrays except the edge
     tiles might be smaller if the array did not divide evenly.
 
-    TODO_OCTREE: Maybe use slices_from_chunks from dask.array.core, but
-    right now this is just for testing, real multi-scale images will
-    already be chunked. Although on-the-fly chunking might be something
-    we eventually tackle.
+    TODO_OCTREE: slices_from_chunks from dask.array.core possibly does
+    the same thing, if we are going to use this in production.
+
+    Parameters
+    ----------
+    array : np.ndarray
+        The array to create tiles out of.
+    tiles_size : int
+        Edge length of the square tiles.
     """
     if array.ndim != 3:
         raise ValueError(f"Unexpected array dimension {array.ndim}")
@@ -59,20 +67,37 @@ def _create_tiles(array: np.ndarray, tile_size: int) -> np.ndarray:
     return tiles
 
 
-def _create_downsampled_tile(ul, ur, ll, lr) -> np.ndarray:
-    """Create one tile from four child tiles.
+def _create_downsampled_tile(
+    ul: np.ndarray, ur: np.ndarray, ll: np.ndarray, lr: np.ndarray
+) -> np.ndarray:
+    """Create one parent tile from four child tiles.
+
+    Parameters
+    ----------
+    ul : np.ndarray
+        Upper left child tile.
+    ur : np.ndarray
+        Upper right child tile.
+    ll : np.ndarray
+        Lower left child tile.
+    lr : np.ndarray
+        Lower right child tile.
     """
     row1 = np.hstack((ul, ur))
     row2 = np.hstack((ll, lr))
     combined_tile = np.vstack((row1, row2))
 
-    zoom = [0.5, 0.5, 1]
-    return ndi.zoom(combined_tile, zoom)
+    # Down sample by half.
+    return ndi.zoom(combined_tile, [0.5, 0.5, 1])
 
 
-def _create_higher_level(tiles):
-    """Combine each 2x2 group of tiles into one downsampled tile
+def _create_coarser_level(tiles: TileArray) -> TileArray:
+    """Return the next coarser level of tiles.
 
+    Combine each 2x2 group of tiles into one downsampled tile.
+
+    tiles : TileArray
+        The tiles to combine.
     """
 
     new_tiles = []
@@ -111,7 +136,21 @@ def _print_level_tiles(tiles):
             pass  # print(tile.shape)
 
 
-def _build_tree(levels, level_index, row, col):
+def _create_node(levels: Levels, level_index: int, row: int = 0, col: int = 0):
+    """Return an Octree node and its child nodes recursively.
+
+    Parameters
+    ----------
+    levels : Levels
+        The tiles in each level of the octree.
+    level_index : int
+        Create a node at this level.
+    row : int
+        Create a node at this ro.
+    col : int
+        Create a node at this col.
+    """
+
     if level_index < 0:
         return None
 
@@ -124,16 +163,23 @@ def _build_tree(levels, level_index, row, col):
 
     node = OctreeNode(row, col, level[row][col])
     node.children = [
-        _build_tree(levels, next_index, nrow, ncol),
-        _build_tree(levels, next_index, nrow, ncol + 1),
-        _build_tree(levels, next_index, nrow + 1, ncol),
-        _build_tree(levels, next_index, nrow + 1, ncol + 1),
+        _create_node(levels, next_index, nrow, ncol),
+        _create_node(levels, next_index, nrow, ncol + 1),
+        _create_node(levels, next_index, nrow + 1, ncol),
+        _create_node(levels, next_index, nrow + 1, ncol + 1),
     ]
 
     return node
 
 
-def _print_levels(levels):
+def _print_levels(levels: Levels):
+    """Print information about the levels.
+
+    Parameters
+    ----------
+    levels : Levels
+        Print information about these levels.
+    """
     print(f"{len(levels)} levels:")
     for level in levels:
         _print_level_tiles(level)
@@ -153,7 +199,7 @@ class OctreeNode:
 
     Child indexes
     -------------
-    OCTREE_TODO: This order was picked arbitrarily, if there is another
+    OCTREE_TODO: This order was picked arbitrarily. If there is another
     ordering which makes more sense, we should switch to it.
 
     -Z [0..3]
@@ -166,35 +212,72 @@ class OctreeNode:
         -X X+
     -Y 4 5
     +Y 7 6
+
+    Parameters
+    ----------
+    row : int
+        The row of this octree node in its level.
+    col : int
+        The col of this octree node in its level.
+    data : np.ndarray
+        The image data for this octree node.
     """
 
-    def __init__(self, row, col, tile):
-        assert tile is not None
+    def __init__(self, row: int, col: int, data: np.ndarray):
+        assert data is not None
+        assert row >= 0
+        assert col >= 0
         self.row = row
         self.col = col
-        self.tile = tile
+        self.data = data
         self.children = None
 
     def print_info(self, level):
+        """Print information about this octree node.
+
+        level : int
+            The level of this node in the tree.
+        """
         indent = "    " * level
         print(
-            f"{indent}level={level} row={self.row:>3}, col={self.col:>3} shape={self.tile.shape}"
+            f"{indent}level={level} row={self.row:>3}, col={self.col:>3} "
+            f"shape={self.tile.shape}"
         )
 
 
 class Octree:
-    def __init__(self, root: OctreeNode, levels):
+    """An octree.
+
+    Parameters
+    ----------
+    root : OctreeNode
+        The root of the tree.
+    levels : Levels
+        All the levels of the tree
+
+    TODO_OCTREE: Do we need/want to store self.levels?
+    """
+
+    def __init__(self, root: OctreeNode, levels: Levels):
         self.root = root
-        self.levels = levels  # temporary?
+        self.levels = levels
         self.num_levels = len(self.levels)
 
     def print_tiles(self):
+        """Print information about our tiles."""
         _print_tiles(self.root)
 
     @classmethod
-    def from_levels(cls, levels):
+    def from_levels(cls, levels: Levels):
+        """Create a tree from the given levels.
+
+        Parameters
+        ----------
+        levels : Levels
+            All the tiles to include in the tree.
+        """
         root_level = len(levels) - 1
-        root = _build_tree(levels, root_level, 0, 0)
+        root = _create_node(levels, root_level)
         return cls(root, levels)
 
     @classmethod
@@ -212,7 +295,7 @@ class Octree:
 
         # Keep combining tiles until there is one root tile.
         while len(levels[-1]) > 1:
-            next_level = _create_higher_level(levels[-1])
+            next_level = _create_coarser_level(levels[-1])
             levels.append(next_level)
 
         # _print_levels(levels)
