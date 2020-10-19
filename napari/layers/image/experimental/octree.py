@@ -59,16 +59,15 @@ def _create_tiles(array: np.ndarray, tile_size: int) -> np.ndarray:
     return tiles
 
 
-def _create_tile(ul, ur, ll, lr) -> np.ndarray:
+def _create_downsampled_tile(ul, ur, ll, lr) -> np.ndarray:
     """Create one tile from four child tiles.
     """
     row1 = np.hstack((ul, ur))
     row2 = np.hstack((ll, lr))
-    full_size_tile = np.vstack((row1, row2))
+    combined_tile = np.vstack((row1, row2))
 
-    # Downsample by half.
     zoom = [0.5, 0.5, 1]
-    return ndi.zoom(full_size_tile, zoom, prefilter=False, order=0)
+    return ndi.zoom(combined_tile, zoom)
 
 
 def _create_higher_level(tiles):
@@ -81,7 +80,7 @@ def _create_higher_level(tiles):
     for row in range(0, len(tiles), 2):
         row_tiles = []
         for col in range(0, len(tiles[row]), 2):
-            tile = _create_tile(
+            tile = _create_downsampled_tile(
                 tiles[row][col],
                 tiles[row][col + 1],
                 tiles[row + 1][col],
