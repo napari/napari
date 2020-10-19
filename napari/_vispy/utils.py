@@ -8,8 +8,6 @@ from .vispy_surface_layer import VispySurfaceLayer
 from .vispy_tracks_layer import VispyTracksLayer
 from .vispy_vectors_layer import VispyVectorsLayer
 
-_use_async = os.getenv("NAPARI_ASYNC", "0") != "0"
-
 layer_to_visual = {
     Image: VispyImageLayer,
     Points: VispyPointsLayer,
@@ -19,8 +17,7 @@ layer_to_visual = {
     Tracks: VispyTracksLayer,
 }
 
-# Added experimental layer only when using async.
-if _use_async:
+if os.getenv("NAPARI_ASYNC", "0") != "0":
     from ..layers.image.experimental import OctreeImage
     from .experimental.vispy_tiled_image_layer import VispyTiledImageLayer
 

@@ -235,33 +235,31 @@ class QtViewer(QSplitter):
     def _create_performance_dock_widget(self):
         """Create the dock widget that shows performance metrics.
         """
-        if not perf.USE_PERFMON:
-            return None
-
-        return QtViewerDockWidget(
-            self,
-            QtPerformance(),
-            name='performance',
-            area='bottom',
-            shortcut='Ctrl+Shift+P',
-        )
+        if perf.USE_PERFMON:
+            return QtViewerDockWidget(
+                self,
+                QtPerformance(),
+                name='performance',
+                area='bottom',
+                shortcut='Ctrl+Shift+P',
+            )
+        return None
 
     def _create_render_dock_widget(self):
         """Create the dock widget that shows async controls.
         """
-        _use_async = os.getenv("NAPARI_ASYNC", "0") != "0"
-        if not _use_async:
+        if os.getenv("NAPARI_ASYNC", "0") != "0":
+            from .experimental.qt_render_container import QtRenderContainer
+
+            return QtViewerDockWidget(
+                self,
+                QtRenderContainer(self.viewer),
+                name='render',
+                area='right',
+                shortcut='Ctrl+Shift+A',
+            )
+        else:
             return None
-
-        from .experimental.qt_render_container import QtRenderContainer
-
-        return QtViewerDockWidget(
-            self,
-            QtRenderContainer(self.viewer),
-            name='render',
-            area='right',
-            shortcut='Ctrl+Shift+A',
-        )
 
     @property
     def console(self):

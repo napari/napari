@@ -35,8 +35,6 @@ from .utils import QImg2array
 from .widgets.qt_plugin_sorter import QtPluginSorter
 from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
 
-_use_async = os.getenv("NAPARI_ASYNC", "0") != "0"
-
 
 class Window:
     """Application window that contains the menu bar and viewer.
@@ -122,7 +120,7 @@ class Window:
         else:
             self._debug_menu = None
 
-        if _use_async:
+        if os.getenv("NAPARI_ASYNC", "0") != "0":
             self._add_viewer_dock_widget(self.qt_viewer.dockRender)
 
         if show:

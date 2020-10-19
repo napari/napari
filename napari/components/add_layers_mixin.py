@@ -16,26 +16,28 @@ from ..utils.misc import is_sequence
 
 logger = getLogger(__name__)
 
-_use_async = os.getenv("NAPARI_ASYNC", "0") != "0"
+
+def _get_async_image_class():
+    """Return layer.Image or OctreeImage.
+
+    Use octree only if octree_visuals is true.
+    """
+    from ..components.experimental.chunk import async_config
+
+    if async_config.octree_visuals:
+        from ..layers.image.experimental.octree_image import OctreeImage
+
+        return OctreeImage
+
+    return layers.Image
 
 
 def _get_image_class():
-    """Return regular Image class or special async OctreeImage class.
-
-    If using async AND async_config's "octree_visuals" is set then
-    we use OctreeImage. Otherwise we use the regular Image class.
-    """
-    if not _use_async:
+    """Return layer.Image or OctreeImage."""
+    if os.getenv("NAPARI_ASYNC", "0") != "0":
+        return _get_async_image_class()
+    else:
         return layers.Image
-
-    from ..components.experimental.chunk import async_config
-
-    if not async_config.octree_visuals:
-        return layers.Image
-
-    from ..layers.image.experimental.octree_image import OctreeImage
-
-    return OctreeImage
 
 
 _image_class = _get_image_class()

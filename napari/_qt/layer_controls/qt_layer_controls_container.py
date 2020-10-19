@@ -11,8 +11,6 @@ from .qt_surface_controls import QtSurfaceControls
 from .qt_tracks_controls import QtTracksControls
 from .qt_vectors_controls import QtVectorsControls
 
-_use_async = os.getenv("NAPARI_ASYNC", "0") != "0"
-
 layer_to_controls = {
     Labels: QtLabelsControls,
     Image: QtImageControls,  # must be after Labels layer
@@ -23,7 +21,7 @@ layer_to_controls = {
     Tracks: QtTracksControls,
 }
 
-if _use_async:
+if os.getenv("NAPARI_ASYNC", "0") != "0":
     # Add controls for experimental OctreeImage layer.
     from ...layers.image.experimental import OctreeImage
 
