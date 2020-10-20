@@ -5,7 +5,7 @@ from vispy.visuals.transforms import STTransform
 
 from ...layers.image.experimental.octree import ChunkData
 from ..image import Image as ImageNode
-from .vispy_image_layer2 import VispyImageLayer2
+from ..vispy_image_layer import VispyImageLayer
 
 
 class ImageChunk:
@@ -13,7 +13,7 @@ class ImageChunk:
         self.node = ImageNode(None, method='auto')
 
 
-class VispyTiledImageLayer(VispyImageLayer2):
+class VispyTiledImageLayer(VispyImageLayer):
     """Tiled images using multiple ImageNodes.
 
     Render a set of image tiles. For example render the set of tiles that
@@ -73,9 +73,8 @@ class VispyTiledImageLayer(VispyImageLayer2):
 
         data = self._outline_chunk(chunk.data)
 
-        # Our parent VispyImageLayer potentially does a lot of processing
-        # when setting the data for a node.
-        self._set_new_data(data, image_chunk.node)
+        # Parent VispyImageLayer will process the data then set it.
+        self._set_node_data(image_chunk.node, data)
 
         # Make the new ImageChunk a child positioned with us.
         image_chunk.node.parent = self.node
