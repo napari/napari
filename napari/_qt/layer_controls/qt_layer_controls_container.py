@@ -22,8 +22,7 @@ layer_to_controls = {
 }
 
 if os.getenv("NAPARI_ASYNC", "0") != "0":
-    # Add controls for experimental OctreeImage layer.
-    from ...layers.image.experimental import OctreeImage
+    from ...layers.image.experimental.octree_image import OctreeImage
 
     layer_to_controls[OctreeImage] = QtImageControls
 

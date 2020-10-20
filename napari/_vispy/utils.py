@@ -18,10 +18,13 @@ layer_to_visual = {
 }
 
 if os.getenv("NAPARI_ASYNC", "0") != "0":
-    from ..layers.image.experimental import OctreeImage
+    from ..layers.image.experimental.octree_image import OctreeImage
     from .experimental.vispy_tiled_image_layer import VispyTiledImageLayer
 
-    layer_to_visual[OctreeImage] = VispyTiledImageLayer
+    # Put OctreeImage in front so we hit that before plain Image
+    original = layer_to_visual.copy()
+    layer_to_visual = {OctreeImage: VispyTiledImageLayer}
+    layer_to_visual.update(original)
 
 
 def create_vispy_visual(layer):
