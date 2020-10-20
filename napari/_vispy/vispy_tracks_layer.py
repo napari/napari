@@ -5,7 +5,7 @@ from .vispy_base_layer import VispyBaseLayer
 
 
 class VispyTracksLayer(VispyBaseLayer):
-    """ VispyTracksLayer
+    """VispyTracksLayer
 
     Track layer for visualizing tracks.
 
@@ -65,8 +65,7 @@ class VispyTracksLayer(VispyBaseLayer):
 
         self.node.update()
         # Call to update order of translation values with new dims:
-        self._on_scale_change()
-        self._on_translate_change()
+        self._on_matrix_change()
 
     def _on_appearance_change(self, event=None):
         """ change the appearance of the data """
@@ -84,9 +83,12 @@ class VispyTracksLayer(VispyBaseLayer):
 
         # set the width of the track tails
         self.node._subvisuals[0].set_data(
-            width=self.layer.tail_width, color=self.layer.track_colors,
+            width=self.layer.tail_width,
+            color=self.layer.track_colors,
         )
-        self.node._subvisuals[2].set_data(width=self.layer.tail_width,)
+        self.node._subvisuals[2].set_data(
+            width=self.layer.tail_width,
+        )
 
     def _on_tracks_change(self, event=None):
         """ update the shader when the track data changes """
@@ -104,8 +106,7 @@ class VispyTracksLayer(VispyBaseLayer):
         )
 
         # Call to update order of translation values with new dims:
-        self._on_scale_change()
-        self._on_translate_change()
+        self._on_matrix_change()
 
     def _on_graph_change(self, event=None):
         """ update the shader when the graph data changes """
@@ -131,5 +132,4 @@ class VispyTracksLayer(VispyBaseLayer):
         )
 
         # Call to update order of translation values with new dims:
-        self._on_scale_change()
-        self._on_translate_change()
+        self._on_matrix_change()
