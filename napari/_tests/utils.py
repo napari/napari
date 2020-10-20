@@ -17,6 +17,7 @@ Used as pytest params for testing layer add and view functionality (Layer class,
 layer_test_data = [
     (Image, np.random.random((10, 15)), 2),
     (Image, np.random.random((10, 15, 20)), 3),
+    (Image, np.random.random((5, 10, 15, 20)), 4),
     (Image, [np.random.random(s) for s in [(40, 20), (20, 10), (10, 5)]], 2),
     (Labels, np.random.randint(20, size=(10, 15)), 2),
     (Labels, np.random.randint(20, size=(6, 10, 15)), 3),
@@ -39,14 +40,14 @@ layer_test_data = [
         np.column_stack(
             (np.ones(20), np.arange(20), np.random.random((20, 2)))
         ),
-        2,
+        4,
     ),
     (
         Tracks,
         np.column_stack(
             (np.ones(20), np.arange(20), np.random.random((20, 3)))
         ),
-        3,
+        5,
     ),
 ]
 
