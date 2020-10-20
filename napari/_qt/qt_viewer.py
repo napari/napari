@@ -249,17 +249,19 @@ class QtViewer(QSplitter):
         """Create the dock widget that shows async controls.
         """
         if os.getenv("NAPARI_ASYNC", "0") != "0":
-            from .experimental.qt_render_container import QtRenderContainer
+            from ..components.experimental.chunk import async_config
 
-            return QtViewerDockWidget(
-                self,
-                QtRenderContainer(self.viewer),
-                name='render',
-                area='right',
-                shortcut='Ctrl+Shift+A',
-            )
-        else:
-            return None
+            if async_config.octree_visuals:
+                from .experimental.qt_render_container import QtRenderContainer
+
+                return QtViewerDockWidget(
+                    self,
+                    QtRenderContainer(self.viewer),
+                    name='render',
+                    area='right',
+                    shortcut='Ctrl+Shift+R',
+                )
+        return None
 
     @property
     def console(self):
