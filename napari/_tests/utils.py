@@ -40,14 +40,14 @@ layer_test_data = [
         np.column_stack(
             (np.ones(20), np.arange(20), np.random.random((20, 2)))
         ),
-        4,
+        3,
     ),
     (
         Tracks,
         np.column_stack(
             (np.ones(20), np.arange(20), np.random.random((20, 3)))
         ),
-        5,
+        4,
     ),
 ]
 
