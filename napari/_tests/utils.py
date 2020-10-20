@@ -14,7 +14,6 @@ from napari.layers import (
 """
 Used as pytest params for testing layer add and view functionality (Layer class, data, ndim)
 """
-np.random.seed(0)
 layer_test_data = [
     (Image, np.random.random((10, 15)), 2),
     (Image, np.random.random((10, 15, 20)), 3),
