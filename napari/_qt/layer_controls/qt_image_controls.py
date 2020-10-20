@@ -86,8 +86,13 @@ class QtImageControls(QtBaseImageControls):
         self._on_ndisplay_change()
 
         colormap_layout = QHBoxLayout()
-        colormap_layout.addWidget(self.colorbarLabel)
-        colormap_layout.addWidget(self.colormapComboBox)
+        if hasattr(self.layer, 'rgb') and self.layer.rgb:
+            colormap_layout.addWidget(QLabel("RGB"))
+            self.colormapComboBox.setVisible(False)
+            self.colorbarLabel.setVisible(False)
+        else:
+            colormap_layout.addWidget(self.colorbarLabel)
+            colormap_layout.addWidget(self.colormapComboBox)
         colormap_layout.addStretch(1)
 
         # grid_layout created in QtLayerControls
