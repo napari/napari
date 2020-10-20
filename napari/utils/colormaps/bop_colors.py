@@ -1,4 +1,4 @@
-"""This module contains the colormap dictionaries for BOP lookup tables take
+"""This module contains the colormap dictionaries for BOP lookup tables taken
 from https://github.com/cleterrier/ChrisLUTs. To make it compatible with napari's
 colormap classes, all the values in the colormap are normalized (divide by 255).
 """
