@@ -14,6 +14,7 @@ from napari.layers import (
 """
 Used as pytest params for testing layer add and view functionality (Layer class, data, ndim)
 """
+np.random.seed(0)
 layer_test_data = [
     (Image, np.random.random((10, 15)), 2),
     (Image, np.random.random((10, 15, 20)), 3),
@@ -34,8 +35,28 @@ layer_test_data = [
         ),
         3,
     ),
-    (Tracks, np.zeros((1, 4)), 3),
-    (Tracks, np.zeros((1, 5)), 4),
+    (
+        Tracks,
+        np.concatenate(
+            [
+                np.expand_dims(list(range(8)), axis=1),
+                np.random.randint(4, size=(8, 3)),
+            ],
+            axis=1,
+        ),
+        3,
+    ),
+    (
+        Tracks,
+        np.concatenate(
+            [
+                np.expand_dims(list(range(8)), axis=1),
+                np.random.randint(4, size=(8, 4)),
+            ],
+            axis=1,
+        ),
+        4,
+    ),
 ]
 
 
