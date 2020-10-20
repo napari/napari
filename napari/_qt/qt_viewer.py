@@ -162,7 +162,10 @@ class QtViewer(QSplitter):
         )
 
         self.canvas = KeyModifierFilterSceneCanvas(
-            keys=None, vsync=True, parent=self, size=self.viewer._canvas_size,
+            keys=None,
+            vsync=True,
+            parent=self,
+            size=self.viewer._canvas_size[::-1],
         )
         self.canvas.events.ignore_callback_errors = False
         self.canvas.events.draw.connect(self.dims.enable_play)
@@ -524,7 +527,7 @@ class QtViewer(QSplitter):
         event : vispy.util.event.Event
             The vispy event that triggered this method.
         """
-        self.viewer._canvas_size = tuple(self.canvas.size)
+        self.viewer._canvas_size = tuple(self.canvas.size[::-1])
 
     def on_mouse_wheel(self, event):
         """Called whenever mouse wheel activated in canvas.

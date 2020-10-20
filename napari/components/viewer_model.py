@@ -82,8 +82,8 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self._active_layer = None
         self._grid_size = (1, 1)
         self.grid_stride = 1
-        # 2-tuple indicating width and height
-        self._canvas_size = (800, 600)
+        # 2-tuple indicating height and width
+        self._canvas_size = (600, 800)
         self._palette = None
         self.theme = 'dark'
 
@@ -296,10 +296,13 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self.camera.center = center
         # zoom is definied as the number of canvas pixels per world pixel
         # The default value used below will zoom such that the whole field
-        # of view will occupyt 95% of the canvas on the most filled axis
-        self.camera.zoom = 0.95 * np.min(
-            np.divide(self._canvas_size[::-1], size[-2:])
-        )
+        # of view will occupy 95% of the canvas on the most filled axis
+        if np.max(size) == 0:
+            self.camera.zoom = 0.95 * np.min(self._canvas_size)
+        else:
+            self.camera.zoom = 0.95 * np.min(
+                [c / s for c, s in zip(self._canvas_size, size[-2:]) if s > 0]
+            )
         self.camera.angles = (0, 0, 90)
 
         # Emit a reset view event, which is no longer used internally, but
