@@ -41,7 +41,6 @@ class OctreeImage(Image):
             self._raw_to_displayed,
             self.rgb,
             self._octree_level,
-            self.events,
         )
         self._empty = True
 
