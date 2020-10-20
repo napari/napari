@@ -66,14 +66,17 @@ class VispyImageLayer(VispyBaseLayer):
         return data.astype(dtype)
 
     def _on_data_change(self, event=None):
-        """Our self.layer._data_view has been updated, update our node.
-        """
         if not self.layer.loaded:
             # Do nothing if we are not yet loaded. Calling astype below could
             # be very expensive. Lets not do it until our data has been loaded.
             return
 
-        data = self.layer._data_view
+        self._set_node_data(self.node, self.layer._data_view)
+
+    def _set_node_data(self, node, data):
+        """Our self.layer._data_view has been updated, update our node.
+        """
+
         dtype = np.dtype(data.dtype)
         if dtype not in texture_dtypes:
             try:
@@ -103,24 +106,22 @@ class VispyImageLayer(VispyBaseLayer):
 
         # Check if ndisplay has changed current node type needs updating
         if (
-            self.layer.dims.ndisplay == 3
-            and not isinstance(self.node, VolumeNode)
+            self.layer.dims.ndisplay == 3 and not isinstance(node, VolumeNode)
         ) or (
-            self.layer.dims.ndisplay == 2
-            and not isinstance(self.node, ImageNode)
+            self.layer.dims.ndisplay == 2 and not isinstance(node, ImageNode)
         ):
             self._on_display_change(data)
         else:
-            self.node.set_data(data)
+            node.set_data(data)
 
         if self.layer._empty:
-            self.node.visible = False
+            node.visible = False
         else:
-            self.node.visible = self.layer.visible
+            node.visible = self.layer.visible
 
         # Call to update order of translation values with new dims:
         self._on_matrix_change()
-        self.node.update()
+        node.update()
 
     def _on_interpolation_change(self, event=None):
         self.node.interpolation = self.layer.interpolation

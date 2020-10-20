@@ -110,15 +110,14 @@ class Window:
         self.qt_viewer.viewer.events.palette.connect(self._update_palette)
 
         if perf.USE_PERFMON:
-            # Add DebugMenu if using perfmon. The DebugMenu is intended to
-            # contain non-perfmon stuff as well. When it does we will want
-            # a separate env variable for it.
+            # Add DebugMenu and dockPerformance if using perfmon.
             self._debug_menu = DebugMenu(self)
-
-            # The QtPerformance widget only exists if we are using perfmon.
             self._add_viewer_dock_widget(self.qt_viewer.dockPerformance)
         else:
             self._debug_menu = None
+
+        if self.qt_viewer.dockRender is not None:
+            self._add_viewer_dock_widget(self.qt_viewer.dockRender)
 
         if show:
             self.show()

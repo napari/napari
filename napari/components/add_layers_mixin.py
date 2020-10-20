@@ -17,6 +17,32 @@ from ..utils.misc import is_sequence
 logger = getLogger(__name__)
 
 
+def _get_async_image_class():
+    """Return layer.Image or OctreeImage.
+
+    Use octree only if octree_visuals is true.
+    """
+    from ..components.experimental.chunk import async_config
+
+    if async_config.octree_visuals:
+        from ..layers.image.experimental.octree_image import OctreeImage
+
+        return OctreeImage
+
+    return layers.Image
+
+
+def _get_image_class():
+    """Return layer.Image or OctreeImage."""
+    if os.getenv("NAPARI_ASYNC", "0") != "0":
+        return _get_async_image_class()
+    else:
+        return layers.Image
+
+
+_image_class = _get_image_class()
+
+
 class AddLayersMixin:
     """A mixin that adds add_* methods for adding layers to the ViewerModel.
 
@@ -246,13 +272,13 @@ class AddLayersMixin:
                         "did you mean to specify a 'channel_axis'? "
                     )
 
-            return self.add_layer(layers.Image(data, **kwargs))
+            return self.add_layer(_image_class(data, **kwargs))
         else:
             layerdata_list = split_channels(data, channel_axis, **kwargs)
 
             layer_list = list()
             for image, i_kwargs, _ in layerdata_list:
-                layer = self.add_layer(layers.Image(image, **i_kwargs))
+                layer = self.add_layer(_image_class(image, **i_kwargs))
                 layer_list.append(layer)
 
             return layer_list

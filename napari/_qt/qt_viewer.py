@@ -95,6 +95,7 @@ class QtViewer(QSplitter):
     raw_stylesheet = get_stylesheet()
 
     def __init__(self, viewer):
+        # Avoid circular import.
         from .layer_controls import QtLayerControlsContainer
 
         super().__init__()
@@ -152,7 +153,11 @@ class QtViewer(QSplitter):
         self.dockLayerList.setMaximumWidth(258)
         self.dockLayerList.setMinimumWidth(258)
 
+        # Only created if using perfmon.
         self.dockPerformance = self._create_performance_dock_widget()
+
+        # Only created if using async rendering.
+        self.dockRender = self._create_render_dock_widget()
 
         # This dictionary holds the corresponding vispy visual for each layer
         self.layer_to_visual = {}
@@ -230,16 +235,33 @@ class QtViewer(QSplitter):
     def _create_performance_dock_widget(self):
         """Create the dock widget that shows performance metrics.
         """
-        if not perf.USE_PERFMON:
-            return None
+        if perf.USE_PERFMON:
+            return QtViewerDockWidget(
+                self,
+                QtPerformance(),
+                name='performance',
+                area='bottom',
+                shortcut='Ctrl+Shift+P',
+            )
+        return None
 
-        return QtViewerDockWidget(
-            self,
-            QtPerformance(),
-            name='performance',
-            area='bottom',
-            shortcut='Ctrl+Shift+P',
-        )
+    def _create_render_dock_widget(self):
+        """Create the dock widget that shows async controls.
+        """
+        if os.getenv("NAPARI_ASYNC", "0") != "0":
+            from ..components.experimental.chunk import async_config
+
+            if async_config.octree_visuals:
+                from .experimental.qt_render_container import QtRenderContainer
+
+                return QtViewerDockWidget(
+                    self,
+                    QtRenderContainer(self.viewer),
+                    name='render',
+                    area='right',
+                    shortcut='Ctrl+Shift+R',
+                )
+        return None
 
     @property
     def console(self):

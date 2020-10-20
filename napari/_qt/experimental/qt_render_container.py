@@ -1,58 +1,13 @@
-import os
+"""QtRenderContainer """
+
 
 from qtpy.QtWidgets import QFrame, QStackedWidget
 
-from ...layers import Image, Labels, Points, Shapes, Surface, Tracks, Vectors
-from .qt_image_controls import QtImageControls
-from .qt_labels_controls import QtLabelsControls
-from .qt_points_controls import QtPointsControls
-from .qt_shapes_controls import QtShapesControls
-from .qt_surface_controls import QtSurfaceControls
-from .qt_tracks_controls import QtTracksControls
-from .qt_vectors_controls import QtVectorsControls
-
-layer_to_controls = {
-    Labels: QtLabelsControls,
-    Image: QtImageControls,  # must be after Labels layer
-    Points: QtPointsControls,
-    Shapes: QtShapesControls,
-    Surface: QtSurfaceControls,
-    Vectors: QtVectorsControls,
-    Tracks: QtTracksControls,
-}
-
-if os.getenv("NAPARI_ASYNC", "0") != "0":
-    from ...layers.image.experimental.octree_image import OctreeImage
-
-    layer_to_controls[OctreeImage] = QtImageControls
+from .qt_render import QtRender
 
 
-def create_qt_layer_controls(layer):
-    """
-    Create a qt controls widget for a layer based on its layer type.
-
-    Parameters
-    ----------
-    layer : napari.layers._base_layer.Layer
-        Layer that needs its controls widget created.
-
-    Returns
-    -------
-    controls : napari.layers.base.QtLayerControls
-        Qt controls widget
-    """
-
-    for layer_type, controls in layer_to_controls.items():
-        if isinstance(layer, layer_type):
-            return controls(layer)
-
-    raise TypeError(
-        f'Could not find QtControls for layer of type {type(layer)}'
-    )
-
-
-class QtLayerControlsContainer(QStackedWidget):
-    """Container widget for QtLayerControl widgets.
+class QtRenderContainer(QStackedWidget):
+    """Container widget for QtRender widgets.
 
     Parameters
     ----------
@@ -71,6 +26,7 @@ class QtLayerControlsContainer(QStackedWidget):
     """
 
     def __init__(self, viewer):
+
         super().__init__()
         self.setProperty("emphasized", True)
         self.viewer = viewer
@@ -104,6 +60,14 @@ class QtLayerControlsContainer(QStackedWidget):
             controls = self.widgets[layer]
             self.setCurrentWidget(controls)
 
+    def _get_widget(self, layer):
+        from ...layers.image.experimental.octree_image import OctreeImage
+
+        if isinstance(layer, OctreeImage):
+            return QtRender(layer)
+        else:
+            return self.empty_widget
+
     def _add(self, event):
         """Add the controls target layer to the list of control widgets.
 
@@ -113,7 +77,7 @@ class QtLayerControlsContainer(QStackedWidget):
             Event with the target layer at `event.item`.
         """
         layer = event.item
-        controls = create_qt_layer_controls(layer)
+        controls = self._get_widget(layer)
         self.addWidget(controls)
         self.widgets[layer] = controls
 
