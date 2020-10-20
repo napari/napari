@@ -37,25 +37,17 @@ layer_test_data = [
     ),
     (
         Tracks,
-        np.concatenate(
-            [
-                np.expand_dims(list(range(8)), axis=1),
-                np.random.randint(4, size=(8, 3)),
-            ],
-            axis=1,
+        np.column_stack(
+            (np.ones(20), np.arange(20), np.random.random((20, 2)))
         ),
-        3,
+        2,
     ),
     (
         Tracks,
-        np.concatenate(
-            [
-                np.expand_dims(list(range(8)), axis=1),
-                np.random.randint(4, size=(8, 4)),
-            ],
-            axis=1,
+        np.column_stack(
+            (np.ones(20), np.arange(20), np.random.random((20, 3)))
         ),
-        4,
+        3,
     ),
 ]
 
