@@ -7,8 +7,8 @@ from .quaternion import quaternion2euler
 class VispyCamera:
     """Vipsy camera for both 2D and 3D rendering.
 
-    Paramters
-    ---------
+    Parameters
+    ----------
     view : vispy.scene.widgets.viewbox.ViewBox
         Viewbox for current scene.
     camera : napari.components.Camera
