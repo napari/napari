@@ -67,7 +67,11 @@ class OctreeImageSlice(ImageSlice):
         """Return the chunks currently in view."""
         print(f"view_chunks: octree_level={self._octree_level}")
 
-        # TODO_OCTREE: soon we will compute the appropriate level
+        # This will be None if we have not been drawn yet.
+        if self._data_corners is None:
+            return []
+
+        # TODO_OCTREE: soon we will compute which level to draw.
         level = self._octree.levels[self._octree_level]
 
-        return level.chunks
+        return level.get_chunks(self._data_corners)

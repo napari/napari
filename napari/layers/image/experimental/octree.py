@@ -10,6 +10,8 @@ from ....types import ArrayLike
 TileArray = List[List[np.ndarray]]
 Levels = List[TileArray]
 
+TILE_SIZE = 64
+
 
 class ChunkData:
     """One chunk of the full image.
@@ -119,47 +121,6 @@ def _create_coarser_level(tiles: TileArray) -> TileArray:
     return new_tiles
 
 
-def _print_level_tiles(tiles):
-    """Print information about these tiles.
-    """
-    num_rows = len(tiles)
-
-    num_cols = None
-    for row in tiles:
-        if num_cols is None:
-            num_cols = len(row)
-        else:
-            assert num_cols == len(row)
-
-    print(f"{num_rows} x {num_cols} = {num_rows * num_cols}")
-
-    for row in tiles:
-        for tile in row:
-            pass  # print(tile.shape)
-
-
-def _print_levels(levels: Levels):
-    """Print information about the levels.
-
-    Parameters
-    ----------
-    levels : Levels
-        Print information about these levels.
-    """
-    print(f"{len(levels)} levels:")
-    for level in levels:
-        _print_level_tiles(level)
-
-
-def _print_tiles(node, level=0):
-    assert node is not None
-    assert node.tile is not None
-    node.print_info(level)
-    for child in node.children:
-        if child is not None:
-            _print_tiles(child, level + 1)
-
-
 class OctreeLevel:
     """One level of the octree.
 
@@ -169,6 +130,8 @@ class OctreeLevel:
     def __init__(self, level_index: int, tiles: TileArray):
         self.level_index = level_index
         self.tiles = tiles
+        self.num_rows = len(self.tiles)
+        self.num_cols = len(self.tiles[0])
 
     def print_info(self):
         """Print information about this level."""
@@ -176,24 +139,42 @@ class OctreeLevel:
         ncols = len(self.tiles[0])
         print(f"level={self.level_index} dim={nrows}x{ncols}")
 
-    @property
-    def chunks(self):
-        nrows = len(self.tiles)
+    def get_chunks(self, data_corners) -> List[ChunkData]:
+        """Return chunks that are within this rectangular region of the data.
+
+        Parameters
+        ----------
+        data_corners
+            Return chunks within this rectangular region.
+        """
         chunks = []
-        x = 0
-        y = 0
-        size = 1 / nrows
-        for row in self.tiles:
-            x = 0
-            for tile in row:
-                chunks.append(ChunkData(tile, [x, y], size))
-                x += size
-            y += size
+        data_rows = [data_corners[0][1], data_corners[1][1]]
+        data_cols = [data_corners[0][2], data_corners[1][2]]
+        for row in self.row_range(data_rows):
+            for col in self.column_range(data_cols):
+                tile = self.tiles[row][col]
+                y = row * TILE_SIZE
+                x = col * TILE_SIZE
+                chunks.append(ChunkData(tile, [x, y], TILE_SIZE))
         return chunks
+
+    def tile_range(self, span, num_tiles):
+        """Return tiles indices for image coordinates [span[0]..span[1]]."""
+        tile_span = [span[0] / TILE_SIZE, (span[1] / TILE_SIZE) + 1]
+        tile_span = [max(tile_span[0], 0), min(tile_span[1], num_tiles)]
+        return range(int(tile_span[0]), int(tile_span[1]))
+
+    def row_range(self, span):
+        """Return row indices which span image coordinates [y0..y1]."""
+        return self.tile_range(span, self.num_rows)
+
+    def column_range(self, span):
+        """Return column indices which span image coordinates [x0..x1]."""
+        return self.tile_range(span, self.num_cols)
 
 
 class Octree:
-    """A region octree to hold images.
+    """A region octree to hold 2D or 3D images.
 
     Today the octree is full/complete meaning every node has 4 or 8
     children, and every leaf node is at the same level of the tree. This
@@ -203,7 +184,7 @@ class Octree:
     Since we are a complete tree we don't need actual nodes with references
     to the node's children. Instead, every level is just an array, and
     going from parent to child or child to parent is trivial, you just
-    need to of double or half the indexes.
+    need to double or half the indexes.
 
 
     Future Work
@@ -240,7 +221,6 @@ class Octree:
         image : ndarray
             Create the octree for this single image.
         """
-        TILE_SIZE = 64
         tiles = _create_tiles(image, TILE_SIZE)
         levels = [tiles]
 

@@ -98,6 +98,11 @@ class VispyTiledImageLayer(VispyImageLayer):
             # Do nothing if we are not yet loaded.
             return
 
+        # For now start over each time.
+        for image_chunk in self.chunks.values():
+            image_chunk.node.parent = None
+        self.chunks = {}
+
         for chunk in self.layer.view_chunks:
             chunk_id = id(chunk.data)
             if chunk_id not in self.chunks:
