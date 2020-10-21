@@ -486,7 +486,8 @@ class Layer(KeymapProvider, ABC):
     def dims(self):
         warnings.warn(
             "The layer dims parameter is deprecated and will be removed in version 0.4.1",
-            DeprecationWarning,
+            category=DeprecationWarning,
+            stacklevel=2,
         )
         return self._dims
 
