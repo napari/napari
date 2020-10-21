@@ -12,7 +12,7 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
     QWidget,
 )
-from vispy.scene import ArcballCamera, PanZoomCamera, SceneCanvas
+from vispy.scene import SceneCanvas
 from vispy.visuals.transforms import ChainTransform
 
 from ..resources import get_stylesheet
@@ -38,6 +38,7 @@ from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
 
 from .._vispy import (  # isort:skip
     VispyAxesVisual,
+    VispyCamera,
     VispyScaleBarVisual,
     create_vispy_visual,
 )
@@ -166,7 +167,10 @@ class QtViewer(QSplitter):
         )
 
         self.canvas = KeyModifierFilterSceneCanvas(
-            keys=None, vsync=True, parent=self
+            keys=None,
+            vsync=True,
+            parent=self,
+            size=self.viewer._canvas_size[::-1],
         )
         self.canvas.events.ignore_callback_errors = False
         self.canvas.events.draw.connect(self.dims.enable_play)
@@ -180,18 +184,26 @@ class QtViewer(QSplitter):
         self.canvas.connect(self.on_key_release)
         self.canvas.connect(self.on_mouse_wheel)
         self.canvas.connect(self.on_draw)
+        self.canvas.connect(self.on_resize)
 
         self.view = self.canvas.central_widget.add_view()
-        self._update_camera()
+        self.camera = VispyCamera(
+            self.view, self.viewer.camera, self.viewer.dims
+        )
+        self.canvas.connect(self.camera.on_draw)
 
         self.axes = VispyAxesVisual(
             self.viewer.axes,
+            self.viewer.camera,
             self.viewer.dims,
             parent=self.view.scene,
             order=1e6,
         )
         self.scale_bar = VispyScaleBarVisual(
-            self.viewer.scale_bar, parent=self.view, order=1e6 + 1
+            self.viewer.scale_bar,
+            self.viewer.camera,
+            parent=self.view,
+            order=1e6 + 1,
         )
         self.canvas.events.resize.connect(self.scale_bar._on_position_change)
 
@@ -219,14 +231,10 @@ class QtViewer(QSplitter):
 
         self.viewer.events.interactive.connect(self._on_interactive)
         self.viewer.events.cursor.connect(self._on_cursor)
-        self.viewer.events.reset_view.connect(self._on_reset_view)
         self.viewer.events.palette.connect(self._update_palette)
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
         self.viewer.layers.events.added.connect(self._add_layer)
         self.viewer.layers.events.removed.connect(self._remove_layer)
-        self.viewer.dims.events.camera.connect(
-            lambda event: self._update_camera()
-        )
         # stop any animations whenever the layers change
         self.viewer.events.layers_change.connect(lambda x: self.dims.stop())
 
@@ -335,29 +343,6 @@ class QtViewer(QSplitter):
             vispy_layer.order = i
         self.canvas._draw_order.clear()
         self.canvas.update()
-
-    def _update_camera(self):
-        """Update the viewer camera."""
-        if self.viewer.dims.ndisplay == 3:
-            # Set a 3D camera
-            if not isinstance(self.view.camera, ArcballCamera):
-                self.view.camera = ArcballCamera(name="ArcballCamera", fov=0)
-                # flip y-axis to have correct alignment
-                # self.view.camera.flip = (0, 1, 0)
-
-                self.view.camera.viewbox_key_event = viewbox_key_event
-                self.viewer.reset_view()
-        else:
-            # Set 2D camera
-            if not isinstance(self.view.camera, PanZoomCamera):
-                self.view.camera = PanZoomCamera(
-                    aspect=1, name="PanZoomCamera"
-                )
-                # flip y-axis to have correct alignment
-                self.view.camera.flip = (0, 1, 0)
-
-                self.view.camera.viewbox_key_event = viewbox_key_event
-                self.viewer.reset_view()
 
     def _save_layers_dialog(self, selected=False):
         """Save layers (all or selected) to disk, using ``LayerList.save()``.
@@ -478,25 +463,6 @@ class QtViewer(QSplitter):
             q_cursor = self._cursors[cursor]
         self.canvas.native.setCursor(q_cursor)
 
-    def _on_reset_view(self, event):
-        """Reset view of the rendered scene.
-
-        Parameters
-        ----------
-        event : napari.utils.event.Event
-            The napari event that triggered this method.
-        """
-        if isinstance(self.view.camera, ArcballCamera):
-            quat = self.view.camera._quaternion.create_from_axis_angle(
-                *event.quaternion
-            )
-            self.view.camera._quaternion = quat
-            self.view.camera.center = event.center
-            self.view.camera.scale_factor = event.scale_factor
-        else:
-            # Assumes default camera has the same properties as PanZoomCamera
-            self.view.camera.rect = event.rect
-
     def _update_palette(self, event=None):
         """Update the napari GUI theme."""
         # template and apply the primary stylesheet
@@ -538,25 +504,6 @@ class QtViewer(QSplitter):
         dialog = QtAboutKeyBindings(self.viewer, parent=self)
         dialog.show()
 
-    @property
-    def _canvas2world_scale(self):
-        """list: Scale factors from canvas pixels to world coordinates."""
-        if isinstance(self.view.camera, PanZoomCamera):
-            scale_factor = 1 / self.view.camera.transform.scale[0]
-        elif isinstance(self.view.camera, ArcballCamera):
-            # For fov = 0.0 normalize scale factor by canvas size to get scale factor.
-            # Note that the scaling is stored in the `_projection` property of the
-            # camera which is updated in vispy here
-            # https://github.com/vispy/vispy/blob/v0.6.5/vispy/scene/cameras/perspective.py#L301-L313
-            scale_factor = self.view.camera.scale_factor / np.min(
-                self.view.canvas.size
-            )
-        else:
-            raise ValueError(
-                f'Camera type {type(self.view.camera)} not recognized'
-            )
-        return scale_factor
-
     def _map_canvas2world(self, position):
         """Map position from canvas pixels into world coordinates.
 
@@ -595,6 +542,14 @@ class QtViewer(QSplitter):
         top_left = self._map_canvas2world([0, 0])
         bottom_right = self._map_canvas2world(self.canvas.size)
         return np.array([top_left, bottom_right])
+
+    def on_resize(self, event):
+        """Called whenever canvas is resized.
+
+        event : vispy.util.event.Event
+            The vispy event that triggered this method.
+        """
+        self.viewer._canvas_size = tuple(self.canvas.size[::-1])
 
     def on_mouse_wheel(self, event):
         """Called whenever mouse wheel activated in canvas.
@@ -717,16 +672,10 @@ class QtViewer(QSplitter):
         This is triggered from vispy whenever new data is sent to the canvas or
         the camera is moved and is connected in the `QtViewer`.
         """
-        scale_factor = self._canvas2world_scale
-        if self.viewer.scale_bar.visible:
-            self.scale_bar.update_scale(scale_factor)
-        if self.viewer.axes.visible:
-            self.axes.update_scale(scale_factor)
-
         for layer in self.viewer.layers:
             if layer.ndim <= self.viewer.dims.ndim:
                 layer._update_draw(
-                    scale_factor=scale_factor,
+                    scale_factor=1 / self.viewer.camera.zoom,
                     corner_pixels=self._canvas_corners_in_world[
                         :, -layer.ndim :
                     ],
@@ -809,14 +758,3 @@ class QtViewer(QSplitter):
             self.console.close()
         self.dockConsole.deleteLater()
         event.accept()
-
-
-def viewbox_key_event(event):
-    """ViewBox key event handler.
-
-    Parameters
-    ----------
-    event : napari.utils.event.Event
-        The napari event that triggered this method.
-    """
-    return

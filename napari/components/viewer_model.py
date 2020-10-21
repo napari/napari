@@ -6,6 +6,7 @@ from ..utils.theme import palettes
 from ._viewer_mouse_bindings import dims_scroll
 from .add_layers_mixin import AddLayersMixin
 from .axes import Axes
+from .camera import Camera
 from .dims import Dims
 from .layerlist import LayerList
 from .scale_bar import ScaleBar
@@ -67,6 +68,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         )
 
         self.layers = LayerList()
+        self.camera = Camera(self.dims)
 
         self.axes = Axes()
         self.scale_bar = ScaleBar()
@@ -80,13 +82,15 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self._active_layer = None
         self._grid_size = (1, 1)
         self.grid_stride = 1
-
+        # 2-tuple indicating height and width
+        self._canvas_size = (600, 800)
         self._palette = None
         self.theme = 'dark'
 
-        self.dims.events.camera.connect(self.reset_view)
         self.dims.events.ndisplay.connect(self._update_layers)
+        self.dims.events.ndisplay.connect(self.reset_view)
         self.dims.events.order.connect(self._update_layers)
+        self.dims.events.order.connect(self.reset_view)
         self.dims.events.current_step.connect(self._update_layers)
         self.layers.events.changed.connect(self._update_active_layer)
         self.layers.events.changed.connect(self._update_grid)
@@ -277,9 +281,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             return self.layers._extent_world[:, self.dims.displayed]
 
     def reset_view(self, event=None):
-        """Resets the camera's view using `event.rect` a 4-tuple of the x, y
-        corner position followed by width and height of the camera
-        """
+        """Reset the camera view."""
 
         extent = self._sliced_extent_world
         scene_size = extent[1] - extent[0]
@@ -288,24 +290,28 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         if len(scene_size) > len(grid_size):
             grid_size = [1] * (len(scene_size) - len(grid_size)) + grid_size
         size = np.multiply(scene_size, grid_size)
-        centroid = np.add(corner, np.divide(size, 2))
+        center = np.add(corner, np.divide(size, 2))[-self.dims.ndisplay :]
+        center = [0] * (self.dims.ndisplay - len(center)) + list(center)
 
-        if self.dims.ndisplay == 2:
-            # For a PanZoomCamera emit a 4-tuple of the rect
-            corner = np.subtract(corner, np.multiply(0.05, size))[::-1]
-            size = np.multiply(1.1, size)[::-1]
-            rect = tuple(corner) + tuple(size)
-            self.events.reset_view(rect=rect)
+        self.camera.center = center
+        # zoom is definied as the number of canvas pixels per world pixel
+        # The default value used below will zoom such that the whole field
+        # of view will occupy 95% of the canvas on the most filled axis
+        if np.max(size) == 0:
+            self.camera.zoom = 0.95 * np.min(self._canvas_size)
         else:
-            # For an ArcballCamera emit the center and scale_factor
-            center = centroid[::-1]
-            scale_factor = 1.1 * np.max(size[-2:])
-            # set initial camera angle so that it matches top layer of 2D view
-            # when transitioning to 3D view
-            quaternion = [np.pi / 2, 1, 0, 0]
-            self.events.reset_view(
-                center=center, scale_factor=scale_factor, quaternion=quaternion
+            self.camera.zoom = (
+                0.95 * np.min(self._canvas_size) / np.max(size[-2:])
             )
+        self.camera.angles = (0, 0, 90)
+
+        # Emit a reset view event, which is no longer used internally, but
+        # which maybe useful for building on napari.
+        self.events.reset_view(
+            center=self.camera.center,
+            zoom=self.camera.zoom,
+            angles=self.camera.angles,
+        )
 
     def _new_labels(self):
         """Create new labels layer filling full world coordinates space."""
