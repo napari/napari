@@ -235,7 +235,14 @@ class ScaleTranslate(Transform):
 class Affine(Transform):
     """n-dimensional affine transformation class.
 
-    The affine transform is represented as a n+1 dimensionsal linear_matrix
+    The affine transform can be represented as a n+1 dimensionsal
+    transformation matrix in homogenous coordinates [1]_, an n
+    dimensional matrix and a length n translation vector, or be
+    composed and decomposed from scale, rotate, and shear
+    transformations.
+
+    The affine_matrix representation can be used for easy compatibility
+    with other libraries that can generate affine transformations.
 
     Parameters
     ----------
@@ -266,8 +273,8 @@ class Affine(Transform):
         (N+1, N+1) affine transformation matrix in homogeneous coordinates [1]_.
         The first (N, N) entries correspond to a linear transform and
         the final column is a lenght N translation vector and a 1 or a napari
-        AffineTransform object. If provided then, scale, rotate, and shear
-        values are ignored.
+        AffineTransform object. If provided then translate, scale, rotate, and
+        shear values are ignored.
     name : string
         A string name for the transform.
 
