@@ -59,7 +59,7 @@ class Dims:
             ndisplay=None,
             order=None,
             range=None,
-            camera=None,
+            deprecated={"axis": "current_step", "camera": "ndisplay"},
         )
         self._range = []
         self._current_step = []
@@ -103,7 +103,7 @@ class Dims:
         """Number of slider steps for each dimension.
         """
         return [
-            int((max_val - min_val - step_size) // step_size) + 1
+            int((max_val - min_val) // step_size) + 1
             for min_val, max_val, step_size in self._range
         ]
 
@@ -163,7 +163,6 @@ class Dims:
 
         self._order = order
         self.events.order()
-        self.events.camera()
 
     @property
     def ndim(self):
@@ -246,10 +245,8 @@ class Dims:
             raise ValueError(
                 f"Invalid number of dimensions to be displayed {ndisplay}"
             )
-
         self._ndisplay = ndisplay
         self.events.ndisplay()
-        self.events.camera()
 
     @property
     def displayed(self):
@@ -397,7 +394,10 @@ class Dims:
 
     def _roll(self):
         """Roll order of dimensions for display."""
-        self.order = np.roll(self.order, 1)
+        order = np.array(self.order)
+        nsteps = np.array(self.nsteps)
+        order[nsteps > 1] = np.roll(order[nsteps > 1], 1)
+        self.order = list(order)
 
     def _transpose(self):
         """Transpose displayed dimensions."""

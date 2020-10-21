@@ -24,7 +24,7 @@ We're working on [tutorials](https://napari.org/tutorials/), but you can also qu
 ### from pip, with "batteries included"
 
 napari can be installed on most macOS, Linux, and Windows systems with
-Python 3.6, 3.7 and 3.8 using pip:
+Python 3.7 and 3.8 using pip:
 
 ```sh
 pip install napari[all]
@@ -121,20 +121,20 @@ For more details on how to use `napari` checkout our [tutorials](https://napari.
 
 ## mission, values, and roadmap
 
-For more information about our plans for `napari` you can read our [mission and values statement](./docs/source/developers/MISSION_AND_VALUES.md), which includes more details on our vision for supporting a plugin ecosystem around napari. We also have
-a [roadmap](./docs/source/developers/ROADMAP_0_3.md) that captures current development priorities within the project.
+For more information about our plans for `napari` you can read our [mission and values statement](https://napari.org/docs/dev/developers/MISSION_AND_VALUES.html), which includes more details on our vision for supporting a plugin ecosystem around napari. We also have
+a [roadmap](https://napari.org/docs/dev/developers/ROADMAP_0_3.html) that captures current development priorities within the project.
 
 ## contributing
 
-Contributions are encouraged! Please read our [contributing guide](./docs/source/developers/CONTRIBUTING.md) to get started. Given that we're in an early stage, you may want to reach out on our [Github Issues](https://github.com/napari/napari/issues) before jumping in.
+Contributions are encouraged! Please read our [contributing guide](https://napari.org/docs/dev/developers/CONTRIBUTING.html) to get started. Given that we're in an early stage, you may want to reach out on our [Github Issues](https://github.com/napari/napari/issues) before jumping in.
 
 ## code of conduct
 
-`napari` has a [Code of Conduct](./docs/source/developers/CODE_OF_CONDUCT.md) that should be honored by everyone who participates in the `napari` community.
+`napari` has a [Code of Conduct](https://napari.org/docs/dev/developers/CODE_OF_CONDUCT.html) that should be honored by everyone who participates in the `napari` community.
 
 ## governance
 
-You can learn more about how the `napari` project is organized and managed from our [governance model](./docs/source/developers/GOVERNANCE.md), which includes information about, and ways to contact, the [@napari/steering-council](https://github.com/orgs/napari/teams/steering-council) and [@napari/core-devs](https://github.com/orgs/napari/teams/core-devs).
+You can learn more about how the `napari` project is organized and managed from our [governance model](https://napari.org/docs/dev/developers/GOVERNANCE.html), which includes information about, and ways to contact, the [@napari/steering-council](https://github.com/orgs/napari/teams/steering-council) and [@napari/core-devs](https://github.com/orgs/napari/teams/core-devs).
 
 ## citing napari
 

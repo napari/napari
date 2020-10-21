@@ -34,7 +34,7 @@ class VispySurfaceLayer(VispyBaseLayer):
             vertex_values = np.array([0])
         else:
             # Offsetting so pixels now centered
-            vertices = self.layer._data_view[:, ::-1] + 0.5
+            vertices = self.layer._data_view[:, ::-1]
             faces = self.layer._view_faces
             vertex_values = self.layer._view_vertex_values
 
@@ -49,8 +49,7 @@ class VispySurfaceLayer(VispyBaseLayer):
         )
         self.node.update()
         # Call to update order of translation values with new dims:
-        self._on_scale_change()
-        self._on_translate_change()
+        self._on_matrix_change()
 
     def _on_colormap_change(self, event=None):
         if self.layer.gamma != 1:

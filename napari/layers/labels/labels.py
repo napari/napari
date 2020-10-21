@@ -48,6 +48,21 @@ class Labels(Image):
         Scale factors for the layer.
     translate : tuple of float
         Translation values for the layer.
+    rotate : float, 3-tuple of float, or n-D array.
+        If a float convert into a 2D rotation matrix using that value as an
+        angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
+        pitch, roll convention. Otherwise assume an nD rotation. Angles are
+        assumed to be in degrees. They can be converted from radians with
+        np.degrees if needed.
+    shear : 1-D array or n-D array
+        Either a vector of upper triangular values, or an nD shear matrix with
+        ones along the main diagonal.
+    affine: n-D array or napari.utils.transforms.Affine
+        (N+1, N+1) affine transformation matrix in homogeneous coordinates.
+        The first (N, N) entries correspond to a linear transform and
+        the final column is a lenght N translation vector and a 1 or a napari
+        AffineTransform object. If provided then, scale, rotate, and shear
+        values are ignored.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -143,6 +158,9 @@ class Labels(Image):
         metadata=None,
         scale=None,
         translate=None,
+        rotate=None,
+        shear=None,
+        affine=None,
         opacity=0.7,
         blending='translucent',
         visible=True,
@@ -182,6 +200,9 @@ class Labels(Image):
             metadata=metadata,
             scale=scale,
             translate=translate,
+            rotate=rotate,
+            shear=shear,
+            affine=affine,
             opacity=opacity,
             blending=blending,
             visible=visible,
@@ -382,6 +403,11 @@ class Labels(Image):
         self._selected_color = self.get_color(selected_label)
         self.events.selected_label()
 
+        # note: self.color_mode returns a string and this comparison fails,
+        # so use self._color_mode
+        if self._color_mode == LabelColorMode.SELECTED:
+            self.refresh()
+
     @property
     def color_mode(self):
         """Color mode to change how color is represented.
@@ -389,6 +415,8 @@ class Labels(Image):
         AUTO (default) allows color to be set via a hash function with a seed.
 
         DIRECT allows color of each label to be set directly by a color dict.
+
+        SELECTED allows only selected labels to be visible.
         """
         return str(self._color_mode)
 
@@ -404,6 +432,8 @@ class Labels(Image):
         elif color_mode == LabelColorMode.AUTO:
             self._label_color_index = {}
             self.colormap = self._random_colormap
+        elif color_mode == LabelColorMode.SELECTED:
+            pass
         else:
             raise ValueError("Unsupported Color Mode")
 
@@ -564,6 +594,28 @@ class Labels(Image):
             image = np.where(
                 raw > 0, low_discrepancy_image(raw, self._seed), 0
             )
+        elif self._color_mode == LabelColorMode.SELECTED:
+            selected = self._selected_label
+            # we were in direct mode previously
+            if self._label_color_index:
+                if selected not in self._label_color_index:
+                    selected = None
+                index = self._label_color_index
+                image = np.where(
+                    raw == selected,
+                    index[selected],
+                    np.where(
+                        raw != self._background_label,
+                        index[None],
+                        index[self._background_label],
+                    ),
+                )
+            else:
+                image = np.where(
+                    raw == selected,
+                    low_discrepancy_image(selected, self._seed),
+                    0,
+                )
         else:
             raise ValueError("Unsupported Color Mode")
         return image

@@ -227,8 +227,9 @@ class LayerList(ListModel):
                     axis=1,
                 )
 
-        min_vals = np.nan_to_num(min_v[::-1], nan=0)
-        max_vals = np.nan_to_num(max_v[::-1], nan=512)
+        min_vals = np.nan_to_num(min_v[::-1])
+        max_vals = np.copy(max_v[::-1])
+        max_vals[np.isnan(max_vals)] = 511
 
         return np.vstack([min_vals, max_vals])
 

@@ -9,6 +9,23 @@ build-backend = "setuptools.build_meta"
 [tool.setuptools_scm]
 write_to = "napari/_version.py"
 
+[tool.briefcase]
+project_name = "napari"
+bundle = "com.napari"
+author = "napari"
+url = "https://napari.org/"
+license = "BSD license"
+# version populated in bundle.py
+version = "0.0.1"
+
+[tool.briefcase.app.napari]
+formal_name = "napari"
+description = "napari: a multi-dimensional image viewer"
+sources = ['napari']
+icon = "resources/icon"
+# populated in bundle.py
+requires = []
+
 [tool.black]
 target-version = ['py36', 'py37', 'py38']
 skip-string-normalization = true
@@ -28,25 +45,29 @@ exclude = '''
     | dist
     | examples
     | vendored
+    | _vendor
   )/
   | napari/resources/qt.py
+  | tools/minreq.py
 )
 '''
 
 [tool.check-manifest]
 ignore = [
+  "bundle.py",
   ".cirrus.yml",
   ".pre-commit-config.yaml",
   "asv.conf.json",
   "codecov.yml",
   "Makefile",
   "napari/_version.py",  # added during build by setuptools_scm
+  "tools/minreq.py",
 ]
 
 [tool.isort]
 profile = "black"
 line_length = 79
-skip_glob = ["*examples/*", "*vendored*"]
+skip_glob = ["*examples/*", "*vendored*", "*_vendor*"]
 
 [tool.pytest.ini_options]
 filterwarnings = [
@@ -58,4 +79,3 @@ filterwarnings = [
 markers = [
     "perfmon: marks tests that require perfmon to be enabled"
 ]
-

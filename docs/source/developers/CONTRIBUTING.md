@@ -39,12 +39,12 @@ pre-commit install
 ```
 
 Upon committing, your code will be formatted according to our [`black`
-configuration](../pyproject.toml), which includes the settings
+configuration](https://github.com/napari/napari/blob/master/pyproject.toml), which includes the settings
 `skip-string-normalization = true` and `max-line-length = 79`. To learn more,
 see [`black`'s documentation](https://black.readthedocs.io/en/stable/).
 
 Code will also be linted to enforce the stylistic and logistical rules specified
-in our [`flake8` configuration](../setup.cfg), which currently ignores
+in our [`flake8` configuration](https://github.com/napari/napari/blob/master/setup.cfg), which currently ignores
 [E203](https://lintlyci.github.io/Flake8Rules/rules/E203.html),
 [E501](https://lintlyci.github.io/Flake8Rules/rules/E501.html),
 [W503](https://lintlyci.github.io/Flake8Rules/rules/W503.html) and

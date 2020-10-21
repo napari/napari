@@ -37,7 +37,7 @@ class VispyShapesLayer(VispyBaseLayer):
         # Note that the indices of the vertices need to be resversed to
         # go from numpy style to xyz
         if vertices is not None:
-            vertices = vertices[:, ::-1] + 0.5
+            vertices = vertices[:, ::-1]
 
         if len(vertices) == 0 or len(faces) == 0:
             vertices = np.zeros((3, self.layer._dims.ndisplay))
@@ -52,8 +52,7 @@ class VispyShapesLayer(VispyBaseLayer):
         )
 
         # Call to update order of translation values with new dims:
-        self._on_scale_change()
-        self._on_translate_change()
+        self._on_matrix_change()
         self._on_text_change(update_node=False)
         self.node.update()
 
@@ -64,8 +63,6 @@ class VispyShapesLayer(VispyBaseLayer):
         if vertices is None or len(vertices) == 0 or len(faces) == 0:
             vertices = np.zeros((3, self.layer._dims.ndisplay))
             faces = np.array([[0, 1, 2]])
-        else:
-            vertices = vertices + 0.5
 
         self.node._subvisuals[1].set_data(
             vertices=vertices, faces=faces, color=self.layer._highlight_color
@@ -85,7 +82,6 @@ class VispyShapesLayer(VispyBaseLayer):
             vertices = np.zeros((1, self.layer._dims.ndisplay))
             size = 0
         else:
-            vertices = vertices + 0.5
             size = self.layer._vertex_size
 
         self.node._subvisuals[3].set_data(
@@ -101,8 +97,6 @@ class VispyShapesLayer(VispyBaseLayer):
         if pos is None or len(pos) == 0:
             pos = np.zeros((1, self.layer._dims.ndisplay))
             width = 0
-        else:
-            pos = pos + 0.5
 
         self.node._subvisuals[2].set_data(
             pos=pos, color=edge_color, width=width

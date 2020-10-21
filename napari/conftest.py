@@ -1,3 +1,4 @@
+import os
 import warnings
 from functools import partial
 from typing import List
@@ -8,6 +9,7 @@ from qtpy.QtWidgets import QApplication
 
 from napari import Viewer
 from napari.components import LayerList
+from napari.experimental import chunk_loader, synchronous_loading
 from napari.layers import Image, Labels, Points, Shapes, Vectors
 from napari.plugins._builtins import (
     napari_write_image,
@@ -20,8 +22,6 @@ from napari.utils import io
 try:
     from skimage.data import image_fetcher
 except ImportError:
-    import os
-
     from skimage.data import data_dir
 
     class image_fetcher:
@@ -46,6 +46,9 @@ def pytest_addoption(parser):
     --perfmon-only
         Run only perfmon test.
 
+    --aysnc_only
+        Run only asynchronous tests, not sync ones.
+
     Notes
     -----
     Due to the placement of this conftest.py file, you must specifically name
@@ -66,6 +69,13 @@ def pytest_addoption(parser):
         action="store_true",
         default=False,
         help="run only perfmon tests",
+    )
+
+    parser.addoption(
+        "--async_only",
+        action="store_true",
+        default=False,
+        help="run only asynchronous tests",
     )
 
 
@@ -308,6 +318,30 @@ def single_tiff():
     return [image_fetcher.fetch('data/multipage.tif')]
 
 
+# Currently we cannot run async and async in the invocation of pytest
+# because we get a segfault for unknown reasons. So for now:
+# "pytest" runs sync_only
+# "pytest napari --async_only" runs async only
+@pytest.fixture(scope="session", autouse=True)
+def configure_loading(request):
+    """Configure async/async loading."""
+    async_mode = request.config.getoption("--async_only")
+    if async_mode:
+        with synchronous_loading(False):
+            yield
+    else:
+        yield  # Sync so do nothing.
+
+
+@pytest.fixture(autouse=True)
+def skip_sync_only(request):
+    """Skip tests depending on our sync/async settings."""
+    async_mode = not chunk_loader.synchronous
+    sync_only_test = request.node.get_closest_marker('sync_only')
+    if async_mode and sync_only_test:
+        pytest.skip("running with --async_only")
+
+
 @pytest.fixture(autouse=True)
 def perfmon_only(request):
     """If flag is set, only run the perfmon tests."""
@@ -317,3 +351,17 @@ def perfmon_only(request):
         pytest.skip("running with --perfmon-only")
     if not perfmon_flag and perfmon_test:
         pytest.skip("not running with --perfmon-only")
+
+
+# _PYTEST_RAISE=1 will prevent pytest from handling exceptions.
+# Use with a debugger that's set to break on "unhandled exceptions".
+# https://github.com/pytest-dev/pytest/issues/7409
+if os.getenv('_PYTEST_RAISE', "0") != "0":
+
+    @pytest.hookimpl(tryfirst=True)
+    def pytest_exception_interact(call):
+        raise call.excinfo.value
+
+    @pytest.hookimpl(tryfirst=True)
+    def pytest_internalerror(excinfo):
+        raise excinfo.value

@@ -1,7 +1,15 @@
 import numpy as np
 
 from napari import Viewer
-from napari.layers import Image, Labels, Points, Shapes, Surface, Vectors
+from napari.layers import (
+    Image,
+    Labels,
+    Points,
+    Shapes,
+    Surface,
+    Tracks,
+    Vectors,
+)
 
 """
 Used as pytest params for testing layer add and view functionality (Layer class, data, ndim)
@@ -9,6 +17,7 @@ Used as pytest params for testing layer add and view functionality (Layer class,
 layer_test_data = [
     (Image, np.random.random((10, 15)), 2),
     (Image, np.random.random((10, 15, 20)), 3),
+    (Image, np.random.random((5, 10, 15, 20)), 4),
     (Image, [np.random.random(s) for s in [(40, 20), (20, 10), (10, 5)]], 2),
     (Labels, np.random.randint(20, size=(10, 15)), 2),
     (Labels, np.random.randint(20, size=(6, 10, 15)), 3),
@@ -26,10 +35,24 @@ layer_test_data = [
         ),
         3,
     ),
+    (
+        Tracks,
+        np.column_stack(
+            (np.ones(20), np.arange(20), 20 * np.random.random((20, 2)))
+        ),
+        3,
+    ),
+    (
+        Tracks,
+        np.column_stack(
+            (np.ones(20), np.arange(20), 20 * np.random.random((20, 3)))
+        ),
+        4,
+    ),
 ]
 
 
-classes = [Labels, Points, Vectors, Shapes, Surface, Image]
+classes = [Labels, Points, Vectors, Shapes, Surface, Tracks, Image]
 names = [cls.__name__.lower() for cls in classes]
 layer2addmethod = {
     cls: getattr(Viewer, 'add_' + name) for cls, name in zip(classes, names)

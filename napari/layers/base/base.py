@@ -12,8 +12,11 @@ from ...utils.key_bindings import KeymapProvider
 from ...utils.misc import ROOT_DIR
 from ...utils.naming import magic_name
 from ...utils.status_messages import format_float, status_format
-from ..transforms import ScaleTranslate, TransformChain
-from ..utils.layer_utils import compute_multiscale_level, convert_to_uint8
+from ...utils.transforms import Affine, TransformChain
+from ..utils.layer_utils import (
+    compute_multiscale_level_and_corners,
+    convert_to_uint8,
+)
 from ._base_constants import Blending
 
 
@@ -30,6 +33,21 @@ class Layer(KeymapProvider, ABC):
         Scale factors for the layer.
     translate : tuple of float
         Translation values for the layer.
+    rotate : float, 3-tuple of float, or n-D array.
+        If a float convert into a 2D rotation matrix using that value as an
+        angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
+        pitch, roll convention. Otherwise assume an nD rotation. Angles are
+        assumed to be in degrees. They can be converted from radians with
+        np.degrees if needed.
+    shear : 1-D array or n-D array
+        Either a vector of upper triangular values, or an nD shear matrix with
+        ones along the main diagonal.
+    affine: n-D array or napari.utils.transforms.Affine
+        (N+1, N+1) affine transformation matrix in homogeneous coordinates.
+        The first (N, N) entries correspond to a linear transform and
+        the final column is a lenght N translation vector and a 1 or a napari
+        AffineTransform object. If provided then, scale, rotate, and shear
+        values are ignored.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -69,6 +87,21 @@ class Layer(KeymapProvider, ABC):
         Scale factors for the layer.
     translate : tuple of float
         Translation values for the layer.
+    rotate : float, 3-tuple of float, or n-D array.
+        If a float convert into a 2D rotation matrix using that value as an
+        angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
+        pitch, roll convention. Otherwise assume an nD rotation. Angles are
+        assumed to be in degrees. They can be converted from radians with
+        np.degrees if needed.
+    shear : 1-D array or n-D array
+        Either a vector of upper triangular values, or an nD shear matrix with
+        ones along the main diagonal.
+    affine: n-D array or napari.utils.transforms.Affine
+        (N+1, N+1) affine transformation matrix in homogeneous coordinates.
+        The first (N, N) entries correspond to a linear transform and
+        the final column is a lenght N translation vector and a 1 or a napari
+        AffineTransform object. If provided then, scale, rotate, and shear
+        values are ignored.
     multiscale : bool
         Whether the data is multiscale or not. Multiscale data is
         represented by a list of data objects and should go from largest to
@@ -76,14 +109,14 @@ class Layer(KeymapProvider, ABC):
     z_index : int
         Depth of the layer visual relative to other visuals in the scenecanvas.
     coordinates : tuple of float
-        Coordinates of the cursor in the data space of each layer. The length
-        of the tuple is equal to the number of dimensions of the layer.
+        Cursor position in data coordinates.
     corner_pixels : array
         Coordinates of the top-left and bottom-right canvas pixels in the data
-        space of each layer. The length of the tuple is equal to the number of
-        dimensions of the layer.
-    position : 2-tuple of int
-        Cursor position in the image space of only the displayed dimensions.
+        coordinates of each layer. For multiscale data the coordinates are in
+        the space of the currently viewed data level, not the highest resolution
+        level.
+    position : tuple
+        Cursor position in world coordinates.
     shape : tuple of int
         Size of the data in the layer.
     ndim : int
@@ -127,6 +160,9 @@ class Layer(KeymapProvider, ABC):
         metadata=None,
         scale=None,
         translate=None,
+        rotate=None,
+        shear=None,
+        affine=None,
         opacity=1,
         blending='translucent',
         visible=True,
@@ -155,11 +191,6 @@ class Layer(KeymapProvider, ABC):
 
         self._dims = Dims(ndim)
 
-        if scale is None:
-            scale = [1] * ndim
-        if translate is None:
-            translate = [0] * ndim
-
         # Create a transform chain consisting of three transforms:
         # 1. `tile2data`: An initial transform only needed displaying tiles
         #   of an image. It maps pixels of the tile into the coordinate space
@@ -172,20 +203,45 @@ class Layer(KeymapProvider, ABC):
         #   coordinate.
         # 3. `world2grid`: An additional transform mapping world-coordinates
         #   into a grid for looking at layers side-by-side.
+
+        # First create the `data2world` transform from the input parameters
+        if affine is None:
+            if scale is None:
+                scale = [1] * ndim
+            if translate is None:
+                translate = [0] * ndim
+            data2world_transform = Affine(
+                scale,
+                translate,
+                rotate=rotate,
+                shear=shear,
+                name='data2world',
+            )
+        elif isinstance(affine, np.ndarray) or isinstance(affine, list):
+            data2world_transform = Affine(
+                affine_matrix=np.array(affine), name='data2world',
+            )
+        elif isinstance(affine, Affine):
+            affine.name = 'data2world'
+            data2world_transform = affine
+        else:
+            raise TypeError(
+                (
+                    'affine input not recognized. '
+                    'must be either napari.utils.transforms.Affine, '
+                    f'ndarray, or None. Got {type(affine)}'
+                )
+            )
+
         self._transforms = TransformChain(
             [
-                ScaleTranslate(
-                    np.ones(ndim), np.zeros(ndim), name='tile2data'
-                ),
-                ScaleTranslate(scale, translate, name='data2world'),
-                ScaleTranslate(
-                    np.ones(ndim), np.zeros(ndim), name='world2grid'
-                ),
+                Affine(np.ones(ndim), np.zeros(ndim), name='tile2data'),
+                data2world_transform,
+                Affine(np.ones(ndim), np.zeros(ndim), name='world2grid'),
             ]
         )
 
-        self.coordinates = (0,) * ndim
-        self._position = (0,) * self._dims.ndisplay
+        self._position = (0,) * self._dims.ndim
         self._dims_point = [0] * ndim
         self.corner_pixels = np.zeros((2, ndim), dtype=int)
         self._editable = True
@@ -206,6 +262,9 @@ class Layer(KeymapProvider, ABC):
             deselect=Event,
             scale=Event,
             translate=Event,
+            rotate=Event,
+            shear=Event,
+            affine=Event,
             data=Event,
             name=Event,
             thumbnail=Event,
@@ -354,6 +413,51 @@ class Layer(KeymapProvider, ABC):
         self.events.translate()
 
     @property
+    def rotate(self):
+        """array: Rotation matrix in world coordinates."""
+        return self._transforms['data2world'].rotate
+
+    @rotate.setter
+    def rotate(self, rotate):
+        self._transforms['data2world'].rotate = rotate
+        self._update_dims()
+        self.events.rotate()
+
+    @property
+    def shear(self):
+        """array: Sheer matrix in world coordinates."""
+        return self._transforms['data2world'].shear
+
+    @shear.setter
+    def shear(self, shear):
+        self._transforms['data2world'].shear = shear
+        self._update_dims()
+        self.events.shear()
+
+    @property
+    def affine(self):
+        """napari.utils.transforms.Affine: Affine transform."""
+        return self._transforms['data2world']
+
+    @affine.setter
+    def affine(self, affine):
+        if isinstance(affine, np.ndarray) or isinstance(affine, list):
+            self._transforms['data2world'].affine_matrix = np.array(affine)
+        elif isinstance(affine, Affine):
+            affine.name = 'data2world'
+            self._transforms['data2world'] = affine
+        else:
+            raise TypeError(
+                (
+                    'affine input not recognized. '
+                    'must be either napari.utils.transforms.Affine '
+                    f'or ndarray. Got {type(affine)}'
+                )
+            )
+        self._update_dims()
+        self.events.affine()
+
+    @property
     def translate_grid(self):
         """list: Factors to shift the layer by."""
         return self._transforms['world2grid'].translate
@@ -367,46 +471,37 @@ class Layer(KeymapProvider, ABC):
 
     @property
     def position(self):
-        """tuple of int: Cursor position in image of displayed dimensions."""
+        """tuple: Cursor position in world slice coordinates."""
         return self._position
 
     @position.setter
     def position(self, position):
-        if self._position == position:
+        _position = position[-self.ndim :]
+        if self._position == _position:
             return
-        self._position = position
-        self._update_coordinates()
+        self._position = _position
+        self._update_value_and_status()
 
     def _update_dims(self, event=None):
         """Updates dims model, which is useful after data has been changed."""
         ndim = self._get_ndim()
-        ndisplay = self._dims.ndisplay
-
-        # If the dimensionality is changing then if the number of dimensions
-        # is becoming smaller trim the property from the beginning, and if
-        # the number of dimensions is becoming larger pad from the beginning
-        if len(self.position) > ndisplay:
-            self._position = self._position[-ndisplay:]
-        elif len(self.position) < ndisplay:
-            self._position = (0,) * (ndisplay - len(self.position)) + tuple(
-                self.position
-            )
 
         old_ndim = self._dims.ndim
         if old_ndim > ndim:
             keep_axes = range(old_ndim - ndim, old_ndim)
             self._transforms = self._transforms.set_slice(keep_axes)
             self._dims_point = self._dims_point[-ndim:]
+            self._position = self._position[-ndim:]
         elif old_ndim < ndim:
             new_axes = range(ndim - old_ndim)
             self._transforms = self._transforms.expand_dims(new_axes)
-            self.coordinates = (0,) * (ndim - old_ndim) + self.coordinates
             self._dims_point = [0] * (ndim - old_ndim) + self._dims_point
+            self._position = (0,) * (ndim - old_ndim) + self._position
 
         self._dims.ndim = ndim
 
         self.refresh()
-        self._update_coordinates()
+        self._update_value_and_status()
 
     @property
     @abstractmethod
@@ -438,25 +533,52 @@ class Layer(KeymapProvider, ABC):
         -------
         extent_world : array, shape (2, D)
         """
-        return self._transforms['data2world'](self._extent_data)
+        # Get full nD bounding box
+        data_extent = self._extent_data
+        D = data_extent.shape[1]
+        full_data_extent = np.array(np.meshgrid(*data_extent.T)).T.reshape(
+            -1, D
+        )
+        full_world_extent = self._transforms['data2world'](full_data_extent)
+        world_extent = np.array(
+            [
+                np.min(full_world_extent, axis=0),
+                np.max(full_world_extent, axis=0),
+            ]
+        )
+        return world_extent
 
     @property
     def _slice_indices(self):
         """(D, ) array: Slice indices in data coordinates."""
-        world_pts = [self._dims_point[ax] for ax in self._dims.not_displayed]
+        # clipping plane in world coordinates
+        # clipping_plane = [1, 0, 0]
         inv_transform = self._transforms['data2world'].inverse
-        data_pts = inv_transform.set_slice(self._dims.not_displayed)(world_pts)
+        # data_clipping_plane = inv_transform(clipping_plane)
+
+        if self.ndim > self._dims.ndisplay:
+            clipping_plane = np.ones(self.ndim)
+            clipping_plane[-self._dims.ndisplay :] = 0
+            mapped_clipping_plane = inv_transform(clipping_plane)
+            if not np.allclose(
+                mapped_clipping_plane[-self._dims.ndisplay :], 0
+            ):
+                warnings.warn(
+                    'Non-orthogonal slicing is being requested, but'
+                    ' is not fully supported. Data is displayed without'
+                    ' applying an out-of-slice rotation or shear component.'
+                )
+
+        slice_inv_transform = inv_transform.set_slice(self._dims.not_displayed)
+
+        world_pts = [self._dims_point[ax] for ax in self._dims.not_displayed]
+        data_pts = slice_inv_transform(world_pts)
         # A round is taken to convert these values to slicing integers
         data_pts = np.round(data_pts).astype(int)
 
         indices = [slice(None)] * self.ndim
         for i, ax in enumerate(self._dims.not_displayed):
             indices[ax] = data_pts[i]
-
-        coords = list(self.coordinates)
-        for d in self._dims.not_displayed:
-            coords[d] = indices[d]
-        self.coordinates = tuple(coords)
 
         return tuple(indices)
 
@@ -496,6 +618,8 @@ class Layer(KeymapProvider, ABC):
             'metadata': self.metadata,
             'scale': list(self.scale),
             'translate': list(self.translate),
+            'rotate': [list(r) for r in self.rotate],
+            'shear': list(self.shear),
             'opacity': self.opacity,
             'blending': self.blending,
             'visible': self.visible,
@@ -735,67 +859,65 @@ class Layer(KeymapProvider, ABC):
             self.set_view_slice()
             self.events.set_data()
             self._update_thumbnail()
-            self._update_coordinates()
+            self._update_value_and_status()
             self._set_highlight(force=True)
 
-    def _update_coordinates(self):
-        """Insert the cursor position into the correct position in the
-        tuple of indices and update the cursor coordinates.
-        """
-        coords = list(self.coordinates)
-        for d, p in zip(self._dims.displayed, self.position):
-            coords[d] = p
-        self.coordinates = tuple(coords)
+    @property
+    def coordinates(self):
+        """Cursor position in data coordinates."""
+        # Note we ignore the first transform which is tile2data
+        return tuple(self._transforms[1:].simplified.inverse(self.position))
+
+    def _update_value_and_status(self):
+        """Update value and status message."""
         self._value = self.get_value()
         self.status = self.get_message()
 
-    def _update_multiscale(self, corner_pixels, shape_threshold):
-        """Refresh layer multiscale if new resolution level or tile is required.
-
+    def _update_draw(self, scale_factor, corner_pixels, shape_threshold):
+        """Update canvas scale and corner values on draw.
+        For layer multiscale determing if a new resolution level or tile is
+        required.
         Parameters
         ----------
+        scale_factor : float
+            Scale factor going from canvas to world coordinates.
         corner_pixels : array
             Coordinates of the top-left and bottom-right canvas pixels in the
-            data space of each layer. The length of the tuple is equal to the
-            number of dimensions of the layer. If different from the current
-            layer corner_pixels the layer needs refreshing.
+            world coordinates.
         shape_threshold : tuple
-            Requested shape of field of view in data coordinates
+            Requested shape of field of view in data coordinates.
         """
+        # Note we ignore the first transform which is tile2data
+        data_corners = self._transforms[1:].simplified.inverse(corner_pixels)
 
-        if len(self._dims.displayed) == 3:
-            data_level = corner_pixels.shape[1] - 1
-        else:
-            # Clip corner pixels inside data shape
-            new_corner_pixels = np.clip(
-                self.corner_pixels,
-                0,
-                np.subtract(self.level_shapes[self.data_level], 1),
-            )
+        self.scale_factor = scale_factor
 
-            # Scale to full resolution of the data
-            requested_shape = (
-                new_corner_pixels[1] - new_corner_pixels[0]
-            ) * self.downsample_factors[self.data_level]
+        # Round and clip data corners
+        data_corners = np.array(
+            [np.floor(data_corners[0]), np.ceil(data_corners[1])]
+        ).astype(int)
+        data_corners = np.clip(
+            data_corners, self._extent_data[0], self._extent_data[1]
+        )
 
-            downsample_factors = self.downsample_factors[
-                :, self._dims.displayed
-            ]
-
-            data_level = compute_multiscale_level(
-                requested_shape[self._dims.displayed],
+        if self._dims.ndisplay == 2 and self.multiscale:
+            level, displayed_corners = compute_multiscale_level_and_corners(
+                data_corners[:, self._dims.displayed],
                 shape_threshold,
-                downsample_factors,
+                self.downsample_factors[:, self._dims.displayed],
             )
+            corners = np.zeros((2, self.ndim))
+            corners[:, self._dims.displayed] = displayed_corners
+            corners = corners.astype(int)
+            if self.data_level != level or not np.all(
+                self.corner_pixels == corners
+            ):
+                self._data_level = level
+                self.corner_pixels = corners
+                self.refresh()
 
-        if data_level != self.data_level:
-            # Set the data level, which will trigger a layer refresh and
-            # further updates including recalculation of the corner_pixels
-            # for the new level
-            self.data_level = data_level
-            self.refresh()
-        elif not np.all(self.corner_pixels == corner_pixels):
-            self.refresh()
+        else:
+            self.corner_pixels = data_corners
 
     @property
     def displayed_coordinates(self):
@@ -810,8 +932,7 @@ class Layer(KeymapProvider, ABC):
         msg : string
             String containing a message that can be used as a status update.
         """
-        coordinates = self._transforms.simplified(self.coordinates)
-        full_coord = np.round(coordinates).astype(int)
+        full_coord = np.round(self.coordinates).astype(int)
 
         msg = f'{self.name} {full_coord}'
 

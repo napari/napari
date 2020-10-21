@@ -1,3 +1,4 @@
+import os
 import platform
 import sys
 from os.path import dirname, join
@@ -11,6 +12,8 @@ from ._qt.qt_viewer import QtViewer
 from ._qt.qthreading import create_worker, wait_for_workers_to_quit
 from .components import ViewerModel
 from .utils.perf import perf_config
+
+_use_async = os.getenv("NAPARI_ASYNC", "0") != "0"
 
 
 class Viewer(ViewerModel):
@@ -166,6 +169,14 @@ class Viewer(ViewerModel):
     def close(self):
         """Close the viewer window."""
         self.window.close()
+
+        if _use_async:
+            from .components.experimental.chunk import chunk_loader
+
+            # TODO_ASYNC: Find a cleaner way to do this? Fixes some tests.
+            # https://github.com/napari/napari/issues/1500
+            for layer in self.layers:
+                chunk_loader.on_layer_deleted(layer)
 
     def __str__(self):
         """Simple string representation"""

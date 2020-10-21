@@ -41,6 +41,9 @@ class Points(Layer):
     ----------
     data : array (N, D)
         Coordinates for N points in D dimensions.
+    ndim : int
+        Number of dimensions for shapes. When data is not None, ndim must be D.
+        An empty points layer can be instantiated with arbitrary ndim.
     properties : dict {str: array (N,)}, DataFrame
         Properties for each point. Each property should be an array of length N,
         where N is the number of points.
@@ -96,6 +99,21 @@ class Points(Layer):
         Scale factors for the layer.
     translate : tuple of float
         Translation values for the layer.
+    rotate : float, 3-tuple of float, or n-D array.
+        If a float convert into a 2D rotation matrix using that value as an
+        angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
+        pitch, roll convention. Otherwise assume an nD rotation. Angles are
+        assumed to be in degrees. They can be converted from radians with
+        np.degrees if needed.
+    shear : 1-D array or n-D array
+        Either a vector of upper triangular values, or an nD shear matrix with
+        ones along the main diagonal.
+    affine: n-D array or napari.utils.transforms.Affine
+        (N+1, N+1) affine transformation matrix in homogeneous coordinates.
+        The first (N, N) entries correspond to a linear transform and
+        the final column is a lenght N translation vector and a 1 or a napari
+        AffineTransform object. If provided then, scale, rotate, and shear
+        values are ignored.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -219,6 +237,7 @@ class Points(Layer):
         self,
         data=None,
         *,
+        ndim=None,
         properties=None,
         text=None,
         symbol='o',
@@ -237,15 +256,24 @@ class Points(Layer):
         metadata=None,
         scale=None,
         translate=None,
+        rotate=None,
+        shear=None,
+        affine=None,
         opacity=1,
         blending='translucent',
         visible=True,
     ):
         if data is None:
-            data = np.empty((0, 2))
+            if ndim is None:
+                ndim = 2
+            data = np.empty((0, ndim))
         else:
             data = np.atleast_2d(data)
-        ndim = data.shape[1]
+            data_ndim = data.shape[1]
+            if ndim is not None and ndim != data_ndim:
+                raise ValueError("Points dimensions must be equal to ndim")
+            ndim = data_ndim
+
         super().__init__(
             data,
             ndim,
@@ -253,6 +281,9 @@ class Points(Layer):
             metadata=metadata,
             scale=scale,
             translate=translate,
+            rotate=rotate,
+            shear=shear,
+            affine=affine,
             opacity=opacity,
             blending=blending,
             visible=visible,
@@ -390,6 +421,8 @@ class Points(Layer):
         else:
             self._current_edge_color = self.edge_color[-1]
             self._current_face_color = self.face_color[-1]
+            self._face_color = np.empty((0, 4))
+            self._edge_color = np.empty((0, 4))
             self.current_properties = {}
 
         # Trigger generation of view slice and thumbnail
@@ -548,7 +581,12 @@ class Points(Layer):
             )
             new_colors = np.tile(fc, (adding, 1))
         colors = getattr(self, f'{attribute}_color')
-        setattr(self, f'_{attribute}_color', np.vstack((colors, new_colors)))
+        if len(colors) == 0:
+            setattr(self, f'_{attribute}_color', new_colors)
+        else:
+            setattr(
+                self, f'_{attribute}_color', np.vstack((colors, new_colors))
+            )
 
     @property
     def properties(self) -> Dict[str, np.ndarray]:
@@ -997,13 +1035,27 @@ class Points(Layer):
             The name of the attribute to set the color of.
             Should be 'edge' for edge_color or 'face' for face_color.
         """
-        transformed_color_cycle, transformed_colors = transform_color_cycle(
-            color_cycle=color_cycle,
-            elem_name=f'{attribute}_color_cycle',
-            default="white",
-        )
-        setattr(self, f'_{attribute}_color_cycle_values', transformed_colors)
-        setattr(self, f'_{attribute}_color_cycle', transformed_color_cycle)
+        if isinstance(color_cycle, dict):
+            if None not in color_cycle:
+                color_cycle[None] = 'white'
+            transformed_colors = {
+                key: transform_color(value)[0]
+                for key, value in color_cycle.items()
+            }
+            setattr(self, f'_{attribute}_color_cycle', transformed_colors)
+        else:
+            (
+                transformed_color_cycle,
+                transformed_colors,
+            ) = transform_color_cycle(
+                color_cycle=color_cycle,
+                elem_name=f'{attribute}_color_cycle',
+                default="white",
+            )
+            setattr(
+                self, f'_{attribute}_color_cycle_values', transformed_colors
+            )
+            setattr(self, f'_{attribute}_color_cycle', transformed_color_cycle)
         color_mode = getattr(self, f'_{attribute}_color_mode')
         if color_mode == ColorMode.CYCLE:
             self.refresh_colors(update_color_mapping=True)
@@ -1050,12 +1102,15 @@ class Points(Layer):
                 color_properties = self.properties[color_property]
                 if update_color_mapping:
                     color_cycle = getattr(self, f'_{attribute}_color_cycle')
-                    color_cycle_map = {
-                        k: np.squeeze(transform_color(c))
-                        for k, c in zip(
-                            np.unique(color_properties), color_cycle
-                        )
-                    }
+                    if isinstance(color_cycle, dict):
+                        color_cycle_map = color_cycle
+                    else:
+                        color_cycle_map = {
+                            k: np.squeeze(transform_color(c))
+                            for k, c in zip(
+                                np.unique(color_properties), color_cycle
+                            )
+                        }
                     setattr(
                         self, f'{attribute}_color_cycle_map', color_cycle_map
                     )
@@ -1077,7 +1132,14 @@ class Points(Layer):
                         )
                         for prop in props_to_add:
                             color_cycle_map[prop] = np.squeeze(
-                                transform_color(next(color_cycle))
+                                transform_color(
+                                    color_cycle[prop]
+                                    if isinstance(color_cycle, dict)
+                                    and prop in color_cycle
+                                    else color_cycle[None]
+                                    if isinstance(color_cycle, dict)
+                                    else next(color_cycle)
+                                )
                             )
                         setattr(
                             self,
@@ -1130,6 +1192,8 @@ class Points(Layer):
                 return True
             else:
                 return False
+        elif isinstance(color, dict):
+            return True
         elif isinstance(color, (list, np.ndarray)):
             return False
         else:
@@ -1162,6 +1226,7 @@ class Points(Layer):
                 'text': self.text._get_state(),
                 'n_dimensional': self.n_dimensional,
                 'size': self.size,
+                'ndim': self.ndim,
                 'data': self.data,
             }
         )
@@ -1175,12 +1240,13 @@ class Points(Layer):
     @selected_data.setter
     def selected_data(self, selected_data):
         self._selected_data = set(selected_data)
-        selected = []
-        for c in self._selected_data:
-            if c in self._indices_view:
-                ind = list(self._indices_view).index(c)
-                selected.append(ind)
-        self._selected_view = selected
+        self._selected_view = list(
+            np.intersect1d(
+                np.array(list(self._selected_data)),
+                self._indices_view,
+                return_indices=True,
+            )[2]
+        )
 
         # Update properties based on selected points
         if len(self._selected_data) == 0:
@@ -1479,12 +1545,13 @@ class Points(Layer):
         self._view_size_scale = scale
         self._indices_view = indices
         # get the selected points that are in view
-        selected = []
-        for c in self.selected_data:
-            if c in self._indices_view:
-                ind = list(self._indices_view).index(c)
-                selected.append(ind)
-        self._selected_view = selected
+        self._selected_view = list(
+            np.intersect1d(
+                np.array(list(self._selected_data)),
+                self._indices_view,
+                return_indices=True,
+            )[2]
+        )
         with self.events.highlight.blocker():
             self._set_highlight(force=True)
 

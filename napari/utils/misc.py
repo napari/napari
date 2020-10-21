@@ -1,5 +1,6 @@
 """Miscellaneous utility functions.
 """
+import builtins
 import collections.abc
 import inspect
 import itertools
@@ -12,6 +13,45 @@ from urllib.parse import urlparse
 import numpy as np
 
 ROOT_DIR = path.dirname(path.dirname(__file__))
+
+try:
+    from importlib import metadata as importlib_metadata
+except ImportError:
+    import importlib_metadata  # type: ignore
+
+
+def running_as_bundled_app() -> bool:
+    """Infer whether we are running as a briefcase bundle"""
+    # https://github.com/beeware/briefcase/issues/412
+    # https://github.com/beeware/briefcase/pull/425
+    # this assumes the name of the app stays "napari"
+    try:
+        return importlib_metadata.metadata("napari").get("App-ID") is not None
+    except importlib_metadata.PackageNotFoundError:
+        """When bundled in another app. Return false to not conflict with napari bundle"""
+        return False
+
+
+def in_jupyter() -> bool:
+    """Return true if we're running in jupyter notebook/lab or qtconsole."""
+    try:
+        from IPython import get_ipython
+
+        return get_ipython().__class__.__name__ == 'ZMQInteractiveShell'
+    except Exception:
+        pass
+    return False
+
+
+def in_ipython() -> bool:
+    """Return true if we're running in an IPython interactive shell."""
+    try:
+        from IPython import get_ipython
+
+        return get_ipython().__class__.__name__ == 'TerminalInteractiveShell'
+    except Exception:
+        pass
+    return False
 
 
 def str_to_rgb(arg):
@@ -151,7 +191,7 @@ class StringEnumMeta(EnumMeta):
             else:
                 raise ValueError(
                     f'{cls} may only be called with a `str`'
-                    f' or an instance of {cls}'
+                    f' or an instance of {cls}. Got {builtins.type(value)}'
                 )
 
         # otherwise create new Enum class

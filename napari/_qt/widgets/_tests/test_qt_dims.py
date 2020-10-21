@@ -172,7 +172,7 @@ def test_singleton_dims(qtbot):
     """
     ndim = 4
     dims = Dims(ndim)
-    dims.set_range(0, (0, 1, 1))
+    dims.set_range(0, (0, 0, 1))
     view = QtDims(dims)
     qtbot.addWidget(view)
 
