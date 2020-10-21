@@ -30,7 +30,7 @@ class QtRender(QWidget):
         self.spin_level.valueChanged.connect(self._on_spin)
         self.spin_level.setAlignment(Qt.AlignCenter)
 
-        label = QLabel("Quadtree Level:")
+        label = QLabel("Octree Level:")
         spin_layout.addWidget(label)
         spin_layout.addWidget(self.spin_level)
 
@@ -50,6 +50,11 @@ class QtRender(QWidget):
         """
         self.layer.octree_level = value
 
+        # Focus stuff to prevent double-stepping.
+        self.spin_level.clearFocus()
+        self.setFocus()
+
     def _on_octree_level(self, event=None):
+        """Set SpinBox to match the layer's new octree_level."""
         value = self.layer.octree_level
         self.spin_level.setValue(value)
