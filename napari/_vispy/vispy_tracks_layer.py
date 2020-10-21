@@ -51,7 +51,7 @@ class VispyTracksLayer(VispyBaseLayer):
         self._on_appearance_change()
 
     def _on_data_change(self, event=None):
-        """ update the display """
+        """Update the display."""
 
         # update the shaders
         self.track_shader.current_time = self.layer.current_time
@@ -68,7 +68,7 @@ class VispyTracksLayer(VispyBaseLayer):
         self._on_matrix_change()
 
     def _on_appearance_change(self, event=None):
-        """ change the appearance of the data """
+        """Change the appearance of the data."""
 
         # update shader properties related to appearance
         self.track_shader.use_fade = self.layer.use_fade
@@ -88,7 +88,7 @@ class VispyTracksLayer(VispyBaseLayer):
         self.node._subvisuals[2].set_data(width=self.layer.tail_width,)
 
     def _on_tracks_change(self, event=None):
-        """ update the shader when the track data changes """
+        """Update the shader when the track data changes."""
 
         self.track_shader.use_fade = self.layer.use_fade
         self.track_shader.tail_length = self.layer.tail_length
@@ -106,7 +106,7 @@ class VispyTracksLayer(VispyBaseLayer):
         self._on_matrix_change()
 
     def _on_graph_change(self, event=None):
-        """ update the shader when the graph data changes """
+        """Update the shader when the graph data changes."""
 
         self.graph_shader.use_fade = self.layer.use_fade
         self.graph_shader.tail_length = self.layer.tail_length
@@ -130,3 +130,11 @@ class VispyTracksLayer(VispyBaseLayer):
 
         # Call to update order of translation values with new dims:
         self._on_matrix_change()
+
+    def _on_opacity_change(self, event=None):
+        """Change the opacity of the track and graph vertices. Overides the
+        base layer `_on_opacity_change`."""
+        # self.node.opacity = self.layer.opacity
+        self.track_shader.opacity = self.layer.opacity
+        self.graph_shader.opacity = self.layer.opacity
+        self.node.update()
