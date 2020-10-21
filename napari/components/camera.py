@@ -55,8 +55,8 @@ class Camera:
 
     @center.setter
     def center(self, center):
-        # if self.center == tuple(center):
-        #     return
+        if self.center == tuple(center):
+            return
         if self.ndisplay != len(center):
             raise ValueError(
                 f'Center must be same length as currently displayed'
@@ -81,8 +81,8 @@ class Camera:
 
     @zoom.setter
     def zoom(self, zoom):
-        # if self._zoom == zoom:
-        #     return
+        if self._zoom == zoom:
+            return
         self._zoom = zoom
         self.events.zoom()
 
@@ -96,7 +96,7 @@ class Camera:
 
     @angles.setter
     def angles(self, angles):
-        # if self._angles == tuple(angles):
-        #     return
+        if self._angles == tuple(angles):
+            return
         self._angles = tuple(angles)
         self.events.angles()

@@ -6,10 +6,18 @@ from .quaternion import quaternion2euler
 
 class VispyCamera:
     """Vipsy camera for both 2D and 3D rendering.
+
+    Paramters
+    ---------
+    view : vispy.scene.widgets.viewbox.ViewBox
+        Viewbox for current scene.
+    camera : napari.components.Camera
+        napari camera model.
+    dims : napari.components.Dims
+        napari dims model.
     """
 
     def __init__(self, view, camera, dims):
-
         self._view = view
         self._camera = camera
         self._dims = dims
@@ -142,7 +150,7 @@ def viewbox_key_event(event):
 
     Parameters
     ----------
-    event : napari.utils.event.Event
-        The napari event that triggered this method.
+    event : vispy.util.event.Event
+        The vispy event that triggered this method.
     """
     return
