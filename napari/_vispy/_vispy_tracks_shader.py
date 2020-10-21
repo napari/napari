@@ -29,9 +29,6 @@ class TrackShader(Filter):
         this will enable/disable tail fading with time
     vertex_time : 1D array, list
         a vector describing the time associated with each vertex
-    opacity : int, float
-        scales the maximum opacity of the vertices
-
 
     TODO
     ----
@@ -68,7 +65,7 @@ class TrackShader(Filter):
             }
 
             // set the vertex alpha according to the fade
-            v_track_color.a = alpha * $opacity;
+            v_track_color.a = alpha;
         }
     """
 
@@ -82,7 +79,7 @@ class TrackShader(Filter):
             }
 
             // interpolate
-            gl_FragColor.a = clamp(v_track_color.a, 0.0, 1.0);
+            gl_FragColor.a = clamp(v_track_color.a * gl_FragColor.a, 0.0, 1.0);
         }
     """
 
@@ -90,7 +87,6 @@ class TrackShader(Filter):
         self,
         current_time: Union[int, float] = 0,
         tail_length: Union[int, float] = 30,
-        opacity: float = 1.0,
         use_fade: bool = True,
         vertex_time: Union[List, np.ndarray] = None,
     ):
@@ -99,20 +95,10 @@ class TrackShader(Filter):
             vcode=self.VERT_SHADER, vpos=3, fcode=self.FRAG_SHADER, fpos=9
         )
 
-        self.opacity = opacity
         self.current_time = current_time
         self.tail_length = tail_length
         self.use_fade = use_fade
         self.vertex_time = vertex_time
-
-    @property
-    def opacity(self) -> float:
-        return self._opacity
-
-    @opacity.setter
-    def opacity(self, opacity: float):
-        self._opacity = np.clip(opacity, 0.0, 1.0)
-        self.vshader['opacity'] = self._opacity
 
     @property
     def current_time(self) -> Union[int, float]:

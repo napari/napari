@@ -130,11 +130,3 @@ class VispyTracksLayer(VispyBaseLayer):
 
         # Call to update order of translation values with new dims:
         self._on_matrix_change()
-
-    def _on_opacity_change(self, event=None):
-        """Change the opacity of the track and graph vertices. Overides the
-        base layer `_on_opacity_change`."""
-        # self.node.opacity = self.layer.opacity
-        self.track_shader.opacity = self.layer.opacity
-        self.graph_shader.opacity = self.layer.opacity
-        self.node.update()
