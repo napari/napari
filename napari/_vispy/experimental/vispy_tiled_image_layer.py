@@ -85,9 +85,7 @@ class VispyTiledImageLayer(VispyImageLayer):
 
         # print(pos, size)
 
-        image_chunk.node.transform = STTransform(
-            translate=pos, scale=[size, size]
-        )
+        image_chunk.node.transform = STTransform(translate=pos, scale=size)
 
         return image_chunk
 

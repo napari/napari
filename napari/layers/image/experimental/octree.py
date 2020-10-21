@@ -28,7 +28,12 @@ class ChunkData:
         The size of the chunk, the chunk is square/cubic.
     """
 
-    def __init__(self, data: ArrayLike, pos: Tuple[float, float], size: float):
+    def __init__(
+        self,
+        data: ArrayLike,
+        pos: Tuple[float, float],
+        size: Tuple[float, float],
+    ):
         self.data = data
         self.pos = pos
         self.size = size
@@ -148,14 +153,37 @@ class OctreeLevel:
             Return chunks within this rectangular region.
         """
         chunks = []
+
+        # TODO_OCTREE: generalize with data_corner indices we need to use.
         data_rows = [data_corners[0][1], data_corners[1][1]]
         data_cols = [data_corners[0][2], data_corners[1][2]]
+
+        print(f"get_chunks rows={data_rows} cols={data_cols}")
+
+        # Iterate over every tile in the rectangular region.
         for row in self.row_range(data_rows):
             for col in self.column_range(data_cols):
-                tile = self.tiles[row][col]
-                y = row * TILE_SIZE
-                x = col * TILE_SIZE
-                chunks.append(ChunkData(tile, [x, y], TILE_SIZE))
+
+                data = self.tiles[row][col]
+
+                # The [X, Y] position of this tile in the whole image.
+                pos = [col / self.num_cols, row / self.num_rows]
+
+                # The [X, Y] shape of this specific tile, if it's an edge or
+                # corner it might be smaller than full size.
+                tile_shape = np.array([data.shape[1], data.shape[0]])
+
+                # The [X, Y] fractional size of the tile, 1.0 means it's
+                # a full size tile. Edge and corners can be smaller.
+                tile_fraction = tile_shape / TILE_SIZE
+
+                # The [X, Y] size of the tile relative to the full image,
+                # where 1.0 means it spans the full image.
+                tile_size = tile_fraction / (self.num_cols, self.num_rows)
+
+                print(f"ChunkData pos={pos} size={tile_size}")
+                chunks.append(ChunkData(data, pos, tile_size))
+
         return chunks
 
     def tile_range(self, span, num_tiles):
