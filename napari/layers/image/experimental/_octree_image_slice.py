@@ -5,7 +5,7 @@ from typing import Callable
 
 from ....types import ArrayLike
 from .._image_slice import ImageSlice
-from .octree import ChunkData, Octree
+from .octree import Octree
 
 LOGGER = logging.getLogger("napari.async")
 
@@ -20,15 +20,18 @@ class OctreeImageSlice(ImageSlice):
         image_converter: Callable[[ArrayLike], ArrayLike],
         rgb: bool,
         octree_level: int,
+        data_corners,
     ):
         LOGGER.debug("OctreeImageSlice.__init__")
         super().__init__(image, image_converter, rgb)
 
         self._octree = None
         self._octree_level = octree_level
+        self._data_corners = data_corners
 
     @property
-    def num_octree_levels(self):
+    def num_octree_levels(self) -> int:
+        """Return the number of levels in the octree."""
         return self._octree.num_levels
 
     def _set_raw_images(
@@ -61,18 +64,10 @@ class OctreeImageSlice(ImageSlice):
 
     @property
     def view_chunks(self):
-        """Chunks currently in view."""
+        """Return the chunks currently in view."""
         print(f"view_chunks: octree_level={self._octree_level}")
+
+        # TODO_OCTREE: soon we will compute the appropriate level
         level = self._octree.levels[self._octree_level]
-        nrows = len(level)
-        chunks = []
-        x = 0
-        y = 0
-        size = 1 / nrows
-        for row in level:
-            x = 0
-            for tile in row:
-                chunks.append(ChunkData(tile, [x, y], size))
-                x += size
-            y += size
-        return chunks
+
+        return level.chunks

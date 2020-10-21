@@ -53,6 +53,8 @@ def _create_tiles(array: np.ndarray, tile_size: int) -> np.ndarray:
 
     tiles = []
 
+    print(f"_create_tiles array={array.shape} tile_size={tile_size}")
+
     row = 0
     while row < rows:
         row_tiles = []
@@ -136,42 +138,6 @@ def _print_level_tiles(tiles):
             pass  # print(tile.shape)
 
 
-def _create_node(levels: Levels, level_index: int, row: int = 0, col: int = 0):
-    """Return an Octree node and its child nodes recursively.
-
-    Parameters
-    ----------
-    levels : Levels
-        The tiles in each level of the octree.
-    level_index : int
-        Create a node at this level.
-    row : int
-        Create a node at this ro.
-    col : int
-        Create a node at this col.
-    """
-
-    if level_index < 0:
-        return None
-
-    # print(f"Building level = {level_index}")
-    level = levels[level_index]
-    next_index = level_index - 1
-
-    nrow = row * 2
-    ncol = col * 2
-
-    node = OctreeNode(row, col, level[row][col])
-    node.children = [
-        _create_node(levels, next_index, nrow, ncol),
-        _create_node(levels, next_index, nrow, ncol + 1),
-        _create_node(levels, next_index, nrow + 1, ncol),
-        _create_node(levels, next_index, nrow + 1, ncol + 1),
-    ]
-
-    return node
-
-
 def _print_levels(levels: Levels):
     """Print information about the levels.
 
@@ -194,91 +160,76 @@ def _print_tiles(node, level=0):
             _print_tiles(child, level + 1)
 
 
-class OctreeNode:
-    """Octree Node.
+class OctreeLevel:
+    """One level of the octree.
 
-    Child indexes
-    -------------
-    OCTREE_TODO: This order was picked arbitrarily. If there is another
-    ordering which makes more sense, we should switch to it.
-
-    -Z [0..3]
-    +Z [4..7]
-
-        -X X+
-    -Y 0 1
-    +Y 3 2
-
-        -X X+
-    -Y 4 5
-    +Y 7 6
-
-    Parameters
-    ----------
-    row : int
-        The row of this octree node in its level.
-    col : int
-        The col of this octree node in its level.
-    data : np.ndarray
-        The image data for this octree node.
+    A level contains a 2D or 3D array of tiles.
     """
 
-    def __init__(self, row: int, col: int, data: np.ndarray):
-        assert data is not None
-        assert row >= 0
-        assert col >= 0
-        self.row = row
-        self.col = col
-        self.data = data
-        self.children = None
+    def __init__(self, level_index: int, tiles: TileArray):
+        self.level_index = level_index
+        self.tiles = tiles
 
-    def print_info(self, level):
-        """Print information about this octree node.
+    def print_info(self):
+        """Print information about this level."""
+        nrows = len(self.tiles)
+        ncols = len(self.tiles[0])
+        print(f"level={self.level_index} dim={nrows}x{ncols}")
 
-        level : int
-            The level of this node in the tree.
-        """
-        indent = "    " * level
-        print(
-            f"{indent}level={level} row={self.row:>3}, col={self.col:>3} "
-            f"shape={self.tile.shape}"
-        )
+    @property
+    def chunks(self):
+        nrows = len(self.tiles)
+        chunks = []
+        x = 0
+        y = 0
+        size = 1 / nrows
+        for row in self.tiles:
+            x = 0
+            for tile in row:
+                chunks.append(ChunkData(tile, [x, y], size))
+                x += size
+            y += size
+        return chunks
 
 
 class Octree:
-    """An octree.
+    """A region octree to hold images.
+
+    Today the octree is full/complete meaning every node has 4 or 8
+    children, and every leaf node is at the same level of the tree. This
+    makes sense for region/image trees, because the image exists
+    everywhere.
+
+    Since we are a complete tree we don't need actual nodes with references
+    to the node's children. Instead, every level is just an array, and
+    going from parent to child or child to parent is trivial, you just
+    need to of double or half the indexes.
+
+
+    Future Work
+    -----------
+    Support geometry, like points and meshes, not just images. For geometry
+    a sparse octree might make more sense. With geometry there might be
+    lots of empty space in between small dense pockets of geometry. Some
+    parts of tree might need to be very deep, but it would be a waste to be
+    that deep everywhere.
 
     Parameters
     ----------
-    root : OctreeNode
-        The root of the tree.
     levels : Levels
         All the levels of the tree
-
-    TODO_OCTREE: Do we need/want to store self.levels?
     """
 
-    def __init__(self, root: OctreeNode, levels: Levels):
-        self.root = root
-        self.levels = levels
+    def __init__(self, levels: Levels):
+        self.levels = [
+            OctreeLevel(i, level) for (i, level) in enumerate(levels)
+        ]
         self.num_levels = len(self.levels)
 
-    def print_tiles(self):
+    def print_info(self):
         """Print information about our tiles."""
-        _print_tiles(self.root)
-
-    @classmethod
-    def from_levels(cls, levels: Levels):
-        """Create a tree from the given levels.
-
-        Parameters
-        ----------
-        levels : Levels
-            All the tiles to include in the tree.
-        """
-        root_level = len(levels) - 1
-        root = _create_node(levels, root_level)
-        return cls(root, levels)
+        for level in self.levels:
+            level.print_info()
 
     @classmethod
     def from_image(cls, image: np.ndarray):
@@ -300,7 +251,7 @@ class Octree:
 
         # _print_levels(levels)
 
-        return Octree.from_levels(levels)
+        return Octree(levels)
 
 
 if __name__ == "__main__":
