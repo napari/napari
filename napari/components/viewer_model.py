@@ -434,8 +434,8 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         """
         n_grid_squares = np.ceil(len(self.layers) / abs(stride)).astype(int)
         if n_row is None and n_column is None:
-            n_row = np.ceil(np.sqrt(n_grid_squares)).astype(int)
-            n_column = n_row
+            n_column = np.ceil(np.sqrt(n_grid_squares)).astype(int)
+            n_row = np.ceil(n_grid_squares / n_column).astype(int)
         elif n_row is None:
             n_row = np.ceil(n_grid_squares / n_column).astype(int)
         elif n_column is None:

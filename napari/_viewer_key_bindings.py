@@ -124,7 +124,7 @@ def reset_view(viewer):
 def toggle_grid(viewer):
     """Toggle grid mode."""
     if np.all(viewer.grid_size == (1, 1)):
-        viewer.grid_view()
+        viewer.grid_view(stride=viewer.grid_stride)
     else:
         viewer.stack_view()
 
