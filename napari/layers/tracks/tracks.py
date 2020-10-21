@@ -55,6 +55,15 @@ class Tracks(Layer):
         Scale factors for the layer.
     translate : tuple of float
         Translation values for the layer.
+    rotate : float, 3-tuple of float, or n-D array.
+        If a float convert into a 2D rotation matrix using that value as an
+        angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
+        pitch, roll convention. Otherwise assume an nD rotation. Angles are
+        assumed to be in degrees. They can be converted from radians with
+        np.degrees if needed.
+    shear : 1-D array or n-D array
+        Either a vector of upper triangular values, or an nD shear matrix with
+        ones along the main diagonal.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -83,6 +92,9 @@ class Tracks(Layer):
         metadata=None,
         scale=None,
         translate=None,
+        rotate=None,
+        shear=None,
+        affine=None,
         opacity=1,
         blending='additive',
         visible=True,
@@ -112,6 +124,9 @@ class Tracks(Layer):
             metadata=metadata,
             scale=scale,
             translate=translate,
+            rotate=rotate,
+            shear=shear,
+            affine=affine,
             opacity=opacity,
             blending=blending,
             visible=visible,
@@ -194,11 +209,9 @@ class Tracks(Layer):
                 'data': self.data,
                 'properties': self.properties,
                 'graph': self.graph,
-                'display_id': self.display_id,
-                'display_tail': self.display_tail,
-                'display_graph': self.display_graph,
                 'color_by': self.color_by,
                 'colormap': self.colormap,
+                'colormaps_dict': self.colormaps_dict,
                 'tail_width': self.tail_width,
                 'tail_length': self.tail_length,
             }
