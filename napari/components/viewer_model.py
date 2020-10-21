@@ -300,8 +300,11 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         if np.max(size) == 0:
             self.camera.zoom = 0.95 * np.min(self._canvas_size)
         else:
-            self.camera.zoom = 0.95 * np.min(
-                [c / s for c, s in zip(self._canvas_size, size[-2:]) if s > 0]
+            # self.camera.zoom = 0.95 * np.min(
+            #     [c / s for c, s in zip(self._canvas_size, size[-2:]) if s > 0]
+            # )
+            self.camera.zoom = (
+                0.95 * np.min(self._canvas_size) / np.max(size[-2:])
             )
         self.camera.angles = (0, 0, 90)
 
