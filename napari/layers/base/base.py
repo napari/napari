@@ -482,6 +482,14 @@ class Layer(KeymapProvider, ABC):
         self._position = _position
         self._update_value_and_status()
 
+    @property
+    def dims(self):
+        warnings.warn(
+            "The layer dims parameter is deprecated and will be removed in version 0.4.1",
+            DeprecationWarning,
+        )
+        return self._dims
+
     def _update_dims(self, event=None):
         """Updates dims model, which is useful after data has been changed."""
         ndim = self._get_ndim()
