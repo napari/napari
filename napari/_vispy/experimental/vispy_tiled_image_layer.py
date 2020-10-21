@@ -78,12 +78,11 @@ class VispyTiledImageLayer(VispyImageLayer):
 
         # Make the new ImageChunk a child positioned with us.
         image_chunk.node.parent = self.node
-        pos = [chunk.pos[0] * 1024, chunk.pos[1] * 1024]
-        size = chunk.size * 16
-        # pos = [512, 0]
-        # size = 7
 
-        # print(pos, size)
+        pos = chunk.pos
+
+        # TODO_OCTREE: Where is this 16 coming from? It's needed here.
+        size = chunk.size * 16
 
         image_chunk.node.transform = STTransform(translate=pos, scale=size)
 

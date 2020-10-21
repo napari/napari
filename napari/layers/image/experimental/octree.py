@@ -1,6 +1,6 @@
 """Octree class.
 """
-from typing import List, Tuple
+from typing import List, Optional, Tuple
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -76,25 +76,71 @@ def _create_tiles(array: np.ndarray, tile_size: int) -> np.ndarray:
     return tiles
 
 
+def _get_tile(tiles: TileArray, row, col):
+    try:
+        return tiles[row][col]
+    except IndexError:
+        return None
+
+
+def _none(items):
+    return all(x is None for x in items)
+
+
+def _combine_tiles(*tiles) -> np.ndarray:
+    """Combine 1-4 tiles into a single tile.
+
+    Parameters
+    ----------
+    tiles
+        The 4 child tiles, some might be None.
+    """
+    if len(tiles) != 4:
+        raise ValueError("Must have 4 values")
+
+    if tiles[0] is None:
+        raise ValueError("Position 0 cannot be None")
+
+    # The layout of the children is:
+    # 0 1
+    # 2 3
+    if _none(tiles[1:4]):
+        # 0 X
+        # X X
+        return tiles[0]
+    elif _none(tiles[2:4]):
+        # 0 1
+        # X X
+        return np.hstack(tiles[0:2])
+    elif _none((tiles[1], tiles[3])):
+        # 0 X
+        # 2 X
+        return np.vstack((tiles[0], tiles[2]))
+    else:
+        # 0 1
+        # 2 3
+        row1 = np.hstack(tiles[0:2])
+        row2 = np.hstack(tiles[2:4])
+        return np.vstack((row1, row2))
+
+
 def _create_downsampled_tile(
-    ul: np.ndarray, ur: np.ndarray, ll: np.ndarray, lr: np.ndarray
+    tiles: Tuple[
+        np.ndarray,
+        Optional[np.ndarray],
+        Optional[np.ndarray],
+        Optional[np.ndarray],
+    ]
 ) -> np.ndarray:
     """Create one parent tile from four child tiles.
 
     Parameters
     ----------
-    ul : np.ndarray
-        Upper left child tile.
-    ur : np.ndarray
-        Upper right child tile.
-    ll : np.ndarray
-        Lower left child tile.
-    lr : np.ndarray
-        Lower right child tile.
+    tiles
+        The 4 child tiles, some could be None.
     """
-    row1 = np.hstack((ul, ur))
-    row2 = np.hstack((ll, lr))
-    combined_tile = np.vstack((row1, row2))
+    # Combine 1-4 tiles together.
+    combined_tile = _combine_tiles(tiles)
 
     # Down sample by half.
     return ndi.zoom(combined_tile, [0.5, 0.5, 1])
@@ -114,11 +160,16 @@ def _create_coarser_level(tiles: TileArray) -> TileArray:
     for row in range(0, len(tiles), 2):
         row_tiles = []
         for col in range(0, len(tiles[row]), 2):
+            # The layout of the children is:
+            # 0 1
+            # 2 3
             tile = _create_downsampled_tile(
-                tiles[row][col],
-                tiles[row][col + 1],
-                tiles[row + 1][col],
-                tiles[row + 1][col + 1],
+                (
+                    _get_tile(tiles, row, col),
+                    _get_tile(tiles, row, col + 1),
+                    _get_tile(tiles, row + 1, col),
+                    _get_tile(tiles, row + 1, col + 1),
+                )
             )
             row_tiles.append(tile)
         new_tiles.append(row_tiles)
@@ -132,7 +183,8 @@ class OctreeLevel:
     A level contains a 2D or 3D array of tiles.
     """
 
-    def __init__(self, level_index: int, tiles: TileArray):
+    def __init__(self, image_shape, level_index: int, tiles: TileArray):
+        self.image_shape = image_shape
         self.level_index = level_index
         self.tiles = tiles
         self.num_rows = len(self.tiles)
@@ -166,8 +218,12 @@ class OctreeLevel:
 
                 data = self.tiles[row][col]
 
-                # The [X, Y] position of this tile in the whole image.
-                pos = [col / self.num_cols, row / self.num_rows]
+                # The [X, Y] position of this tile in from [0..1] range
+                # where 1 is the size of the full image.
+                pos_normalized = np.array(
+                    (col / self.num_cols, row / self.num_rows)
+                )
+                pos = pos_normalized * self.image_shape[:2]
 
                 # The [X, Y] shape of this specific tile, if it's an edge or
                 # corner it might be smaller than full size.
@@ -229,9 +285,11 @@ class Octree:
         All the levels of the tree
     """
 
-    def __init__(self, levels: Levels):
+    def __init__(self, image_shape, levels: Levels):
+        self.image_shape = image_shape
         self.levels = [
-            OctreeLevel(i, level) for (i, level) in enumerate(levels)
+            OctreeLevel(image_shape, i, level)
+            for (i, level) in enumerate(levels)
         ]
         self.num_levels = len(self.levels)
 
@@ -249,6 +307,7 @@ class Octree:
         image : ndarray
             Create the octree for this single image.
         """
+        image_shape = image.shape
         tiles = _create_tiles(image, TILE_SIZE)
         levels = [tiles]
 
@@ -259,7 +318,7 @@ class Octree:
 
         # _print_levels(levels)
 
-        return Octree(levels)
+        return Octree(image_shape, levels)
 
 
 if __name__ == "__main__":
