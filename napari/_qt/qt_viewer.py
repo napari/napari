@@ -36,7 +36,11 @@ from .widgets.qt_layerlist import QtLayerList
 from .widgets.qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
 
-from .._vispy import VispyAxesVisual, create_vispy_visual  # isort:skip
+from .._vispy import (  # isort:skip
+    VispyAxesVisual,
+    VispyScaleBarVisual,
+    create_vispy_visual,
+)
 
 
 class KeyModifierFilterSceneCanvas(SceneCanvas):
@@ -91,6 +95,7 @@ class QtViewer(QSplitter):
     raw_stylesheet = get_stylesheet()
 
     def __init__(self, viewer):
+        # Avoid circular import.
         from .layer_controls import QtLayerControlsContainer
 
         super().__init__()
@@ -148,7 +153,11 @@ class QtViewer(QSplitter):
         self.dockLayerList.setMaximumWidth(258)
         self.dockLayerList.setMinimumWidth(258)
 
+        # Only created if using perfmon.
         self.dockPerformance = self._create_performance_dock_widget()
+
+        # Only created if using async rendering.
+        self.dockRender = self._create_render_dock_widget()
 
         # This dictionary holds the corresponding vispy visual for each layer
         self.layer_to_visual = {}
@@ -181,6 +190,10 @@ class QtViewer(QSplitter):
             parent=self.view.scene,
             order=1e6,
         )
+        self.scale_bar = VispyScaleBarVisual(
+            self.viewer.scale_bar, parent=self.view, order=1e6 + 1
+        )
+        self.canvas.events.resize.connect(self.scale_bar._on_position_change)
 
         main_widget = QWidget()
         main_layout = QVBoxLayout()
@@ -222,16 +235,33 @@ class QtViewer(QSplitter):
     def _create_performance_dock_widget(self):
         """Create the dock widget that shows performance metrics.
         """
-        if not perf.USE_PERFMON:
-            return None
+        if perf.USE_PERFMON:
+            return QtViewerDockWidget(
+                self,
+                QtPerformance(),
+                name='performance',
+                area='bottom',
+                shortcut='Ctrl+Shift+P',
+            )
+        return None
 
-        return QtViewerDockWidget(
-            self,
-            QtPerformance(),
-            name='performance',
-            area='bottom',
-            shortcut='Ctrl+Shift+P',
-        )
+    def _create_render_dock_widget(self):
+        """Create the dock widget that shows async controls.
+        """
+        if os.getenv("NAPARI_ASYNC", "0") != "0":
+            from ..components.experimental.chunk import async_config
+
+            if async_config.octree_visuals:
+                from .experimental.qt_render_container import QtRenderContainer
+
+                return QtViewerDockWidget(
+                    self,
+                    QtRenderContainer(self.viewer),
+                    name='render',
+                    area='right',
+                    shortcut='Ctrl+Shift+R',
+                )
+        return None
 
     @property
     def console(self):
@@ -479,7 +509,6 @@ class QtViewer(QSplitter):
             )
         self.setStyleSheet(themed_stylesheet)
         self.canvas.bgcolor = self.viewer.palette['canvas']
-        self.viewer.axes.background_color = self.viewer.palette['canvas']
 
     def toggle_console_visibility(self, event=None):
         """Toggle console visible and not visible.
@@ -513,16 +542,20 @@ class QtViewer(QSplitter):
     def _canvas2world_scale(self):
         """list: Scale factors from canvas pixels to world coordinates."""
         if isinstance(self.view.camera, PanZoomCamera):
-            return 1 / self.view.camera.transform.scale[0]
+            scale_factor = 1 / self.view.camera.transform.scale[0]
         elif isinstance(self.view.camera, ArcballCamera):
-            # Note magic number 598 is empirically determined so that
-            # Arcball camera and PanZoomCamera match
-            scale_factor = self.view.camera.scale_factor / 598
-            return scale_factor
+            # For fov = 0.0 normalize scale factor by canvas size to get scale factor.
+            # Note that the scaling is stored in the `_projection` property of the
+            # camera which is updated in vispy here
+            # https://github.com/vispy/vispy/blob/v0.6.5/vispy/scene/cameras/perspective.py#L301-L313
+            scale_factor = self.view.camera.scale_factor / np.min(
+                self.view.canvas.size
+            )
         else:
             raise ValueError(
                 f'Camera type {type(self.view.camera)} not recognized'
             )
+        return scale_factor
 
     def _map_canvas2world(self, position):
         """Map position from canvas pixels into world coordinates.
@@ -685,6 +718,8 @@ class QtViewer(QSplitter):
         the camera is moved and is connected in the `QtViewer`.
         """
         scale_factor = self._canvas2world_scale
+        if self.viewer.scale_bar.visible:
+            self.scale_bar.update_scale(scale_factor)
         if self.viewer.axes.visible:
             self.axes.update_scale(scale_factor)
 

@@ -52,8 +52,7 @@ class VispyShapesLayer(VispyBaseLayer):
         )
 
         # Call to update order of translation values with new dims:
-        self._on_scale_change()
-        self._on_translate_change()
+        self._on_matrix_change()
         self._on_text_change(update_node=False)
         self.node.update()
 

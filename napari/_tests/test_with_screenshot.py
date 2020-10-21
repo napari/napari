@@ -435,8 +435,34 @@ def test_axes_visible(make_test_viewer):
     assert viewer.axes.visible
     assert screenshot[..., :-1].max() > 0
 
-    # Make axes in visible and check they are gone
+    # Make axes not visible and check they are gone
     viewer.axes.visible = False
     screenshot = viewer.screenshot(canvas_only=True)
     assert not viewer.axes.visible
+    assert screenshot[..., :-1].max() == 0
+
+
+@pytest.mark.skipif(
+    sys.platform.startswith('win') or not os.getenv("CI"),
+    reason='Screenshot tests are not supported on napari windows CI.',
+)
+def test_scale_bar_visible(make_test_viewer):
+    """Test that something appears when scale bar becomes visible."""
+    viewer = make_test_viewer(show=True)
+
+    # Check scale bar is not visible
+    screenshot = viewer.screenshot(canvas_only=True)
+    assert not viewer.scale_bar.visible
+    assert screenshot[..., :-1].max() == 0
+
+    # Make scale bar visible and check something is seen
+    viewer.scale_bar.visible = True
+    screenshot = viewer.screenshot(canvas_only=True)
+    assert viewer.scale_bar.visible
+    assert screenshot[..., :-1].max() > 0
+
+    # Make scale bar not visible and check it is gone
+    viewer.scale_bar.visible = False
+    screenshot = viewer.screenshot(canvas_only=True)
+    assert not viewer.scale_bar.visible
     assert screenshot[..., :-1].max() == 0
