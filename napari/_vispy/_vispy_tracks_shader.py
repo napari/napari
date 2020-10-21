@@ -77,12 +77,12 @@ class TrackShader(Filter):
         void apply_track_shading() {
 
             // if the alpha is below the threshold, discard the fragment
-            if( v_track_color.a <= 0.1 ) {
+            if( v_track_color.a <= 0.0 ) {
                 discard;
             }
 
             // interpolate
-            gl_FragColor.a = clamp(v_track_color.a, 0.1, 1.0);
+            gl_FragColor.a = clamp(v_track_color.a, 0.0, 1.0);
         }
     """
 
