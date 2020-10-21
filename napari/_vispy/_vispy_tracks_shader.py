@@ -6,7 +6,7 @@ from vispy.visuals.filters.base_filter import Filter
 
 
 class TrackShader(Filter):
-    """ TrackShader
+    """TrackShader.
 
     Custom vertex and fragment shaders for visualizing tracks quickly with
     vispy. The central assumption is that the tracks are rendered as a
@@ -78,8 +78,14 @@ class TrackShader(Filter):
     FRAG_SHADER = """
         varying vec4 v_track_color;
         void apply_track_shading() {
+
+            // if the alpha is below the threshold, discard the fragment
+            if( v_track_color.a <= 0.1 ) {
+                discard;
+            }
+
             // interpolate
-            gl_FragColor.a = clamp(v_track_color.a, 0.0, 1.0);
+            gl_FragColor.a = clamp(v_track_color.a, 0.1, 1.0);
         }
     """
 
