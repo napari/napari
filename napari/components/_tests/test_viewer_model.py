@@ -339,7 +339,7 @@ def test_grid():
 
     # enter grid view
     viewer.grid_view()
-    assert np.all(viewer.grid_size == (3, 3))
+    assert np.all(viewer.grid_size == (2, 3))
     assert viewer.grid_stride == 1
     translations = [layer.translate_grid for layer in viewer.layers]
     expected_translations = [
