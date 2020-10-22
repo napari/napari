@@ -21,7 +21,7 @@ def test_combine():
     tiles = [np.array(_square(i)) for i in range(4)]
 
     with pytest.raises(ValueError):
-        _combine_tiles(tiles[0])  # Too few values.
+        _combine_tiles(tiles[0], tiles[1], tiles[2])  # Too few values.
 
     with pytest.raises(ValueError):
         _combine_tiles(tiles[0], None, None, None, None)  # Too many values.

@@ -1,6 +1,6 @@
 """Octree class.
 """
-from typing import List, Optional, Tuple
+from typing import List, Tuple
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -87,7 +87,7 @@ def _none(items):
     return all(x is None for x in items)
 
 
-def _combine_tiles(*tiles) -> np.ndarray:
+def _combine_tiles(*tiles: np.ndarray) -> np.ndarray:
     """Combine 1-4 tiles into a single tile.
 
     Parameters
@@ -124,14 +124,7 @@ def _combine_tiles(*tiles) -> np.ndarray:
         return np.vstack((row1, row2))
 
 
-def _create_downsampled_tile(
-    tiles: Tuple[
-        np.ndarray,
-        Optional[np.ndarray],
-        Optional[np.ndarray],
-        Optional[np.ndarray],
-    ]
-) -> np.ndarray:
+def _create_downsampled_tile(*tiles: np.ndarray) -> np.ndarray:
     """Create one parent tile from four child tiles.
 
     Parameters
@@ -140,7 +133,7 @@ def _create_downsampled_tile(
         The 4 child tiles, some could be None.
     """
     # Combine 1-4 tiles together.
-    combined_tile = _combine_tiles(tiles)
+    combined_tile = _combine_tiles(*tiles)
 
     # Down sample by half.
     return ndi.zoom(combined_tile, [0.5, 0.5, 1])
@@ -163,14 +156,13 @@ def _create_coarser_level(tiles: TileArray) -> TileArray:
             # The layout of the children is:
             # 0 1
             # 2 3
-            tile = _create_downsampled_tile(
-                (
-                    _get_tile(tiles, row, col),
-                    _get_tile(tiles, row, col + 1),
-                    _get_tile(tiles, row + 1, col),
-                    _get_tile(tiles, row + 1, col + 1),
-                )
+            group = (
+                _get_tile(tiles, row, col),
+                _get_tile(tiles, row, col + 1),
+                _get_tile(tiles, row + 1, col),
+                _get_tile(tiles, row + 1, col + 1),
             )
+            tile = _create_downsampled_tile(*group)
             row_tiles.append(tile)
         new_tiles.append(row_tiles)
 
@@ -244,9 +236,10 @@ class OctreeLevel:
 
     def tile_range(self, span, num_tiles):
         """Return tiles indices for image coordinates [span[0]..span[1]]."""
-        tile_span = [span[0] / TILE_SIZE, (span[1] / TILE_SIZE) + 1]
-        tile_span = [max(tile_span[0], 0), min(tile_span[1], num_tiles)]
-        return range(int(tile_span[0]), int(tile_span[1]))
+        span = [span[0] / TILE_SIZE, (span[1] / TILE_SIZE) + 1]
+        span_clamped = [max(span[0], 0), min(span[1], num_tiles)]
+        span_int = (int(x) for x in span_clamped)
+        return range(*span_int)
 
     def row_range(self, span):
         """Return row indices which span image coordinates [y0..y1]."""
