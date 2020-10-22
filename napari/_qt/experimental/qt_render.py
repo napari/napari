@@ -58,8 +58,32 @@ class QtCreateTestImageButton(QPushButton):
             self.clicked.connect(slot)
 
 
+class SpinBox:
+    def __init__(
+        self, parent, label_text: str, initial_value: int, spin_range: range
+    ):
+        label = QLabel(label_text)
+
+        box = QSpinBox()
+        box.setKeyboardTracking(False)
+        box.setMinimum(spin_range.start)
+        box.setMaximum(spin_range.stop)
+        box.setSingleStep(spin_range.step)
+        box.setAlignment(Qt.AlignCenter)
+        box.setValue(initial_value)
+        self.box = box
+
+        layout = QHBoxLayout()
+        layout.addWidget(label)
+        layout.addWidget(box)
+        parent.addLayout(layout)
+
+    def value(self) -> int:
+        return self.box.value()
+
+
 class QtTestImage(QFrame):
-    """Create a new test image.
+    """Frame with controls to create a new test image.
 
     Parameters
     ----------
@@ -74,17 +98,23 @@ class QtTestImage(QFrame):
         super().__init__()
         self.viewer = viewer
 
+        layout = QVBoxLayout()
+        layout.addStretch(1)
+        size_range = range(1, 2048, 100)
+        self.width = SpinBox(layout, "Image Width", 1024, size_range)
+        self.height = SpinBox(layout, "Image Height", 1024, size_range)
+
         create = QPushButton("Create Test Image")
         create.setToolTip("Create a new test image")
         create.clicked.connect(self._create_test_image)
 
-        layout = QVBoxLayout()
         layout.addWidget(create)
         self.setLayout(layout)
         self.image_index = 0
 
     def _create_test_image(self):
-        size = (1000, 1030)
+        """Create a new test image."""
+        size = (self.width.value(), self.height.value())
         images = [create_tiled_text_array(x, 16, 16, size) for x in range(5)]
         data = np.stack(images, axis=0)
         return self.viewer.add_image(data, rgb=True, name=_get_image_name())
@@ -121,6 +151,7 @@ class QtRender(QWidget):
         spin_layout.addWidget(self.spin_level)
 
         layout.addLayout(spin_layout)
+        layout.addStretch(1)
         layout.addWidget(QtTestImage(viewer))
         self.setLayout(layout)
 
