@@ -32,11 +32,11 @@ class ChunkData:
         self,
         data: ArrayLike,
         pos: Tuple[float, float],
-        size: Tuple[float, float],
+        scale: Tuple[float, float],
     ):
         self.data = data
         self.pos = pos
-        self.size = size
+        self.scale = scale
 
 
 def _create_tiles(array: np.ndarray, tile_size: int) -> np.ndarray:
@@ -140,15 +140,22 @@ def _create_downsampled_tile(*tiles: np.ndarray) -> np.ndarray:
 
 
 def _create_coarser_level(tiles: TileArray) -> TileArray:
-    """Return the next coarser level of tiles.
+    """Return a level that is one level coarser.
 
     Combine each 2x2 group of tiles into one downsampled tile.
 
+    Parameters
+    ----------
     tiles : TileArray
         The tiles to combine.
+
+    Returns
+    -------
+    TileArray
+        The coarser level of tiles.
     """
 
-    new_tiles = []
+    level = []
 
     for row in range(0, len(tiles), 2):
         row_tiles = []
@@ -164,9 +171,9 @@ def _create_coarser_level(tiles: TileArray) -> TileArray:
             )
             tile = _create_downsampled_tile(*group)
             row_tiles.append(tile)
-        new_tiles.append(row_tiles)
+        level.append(row_tiles)
 
-    return new_tiles
+    return level
 
 
 class OctreeLevel:
@@ -175,8 +182,8 @@ class OctreeLevel:
     A level contains a 2D or 3D array of tiles.
     """
 
-    def __init__(self, image_shape, level_index: int, tiles: TileArray):
-        self.image_shape = image_shape
+    def __init__(self, base_shape, level_index: int, tiles: TileArray):
+        self.base_shape = base_shape
         self.level_index = level_index
         self.tiles = tiles
         self.num_rows = len(self.tiles)
@@ -204,33 +211,40 @@ class OctreeLevel:
 
         print(f"get_chunks rows={data_rows} cols={data_cols}")
 
+        row_range = self.row_range(data_rows)
+        col_range = self.column_range(data_cols)
+
+        height = sum(self.tiles[row][0].shape[0] for row in row_range)
+        width = sum(self.tiles[0][col].shape[1] for col in col_range)
+        scale = [
+            self.base_shape[1] / width,
+            self.base_shape[0] / height,
+        ]
+
         # Iterate over every tile in the rectangular region.
-        for row in self.row_range(data_rows):
-            for col in self.column_range(data_cols):
+        for row in row_range:
+            for col in col_range:
+                data = self.tiles[row][col]
+                print(f"row = {row} col = {col} shape={data.shape}")
+
+        x = y = 0
+
+        # Iterate over every tile in the rectangular region.
+        for row in row_range:
+            x = 0
+            for col in col_range:
 
                 data = self.tiles[row][col]
+                pos = [x, y]
+                scale_value = 2 ** self.level_index
+                scale = [scale_value, scale_value]
+                print(f"scale={scale}")
 
-                # The [X, Y] position of this tile in from [0..1] range
-                # where 1 is the size of the full image.
-                pos_normalized = np.array(
-                    (col / self.num_cols, row / self.num_rows)
-                )
-                pos = pos_normalized * self.image_shape[:2]
+                print(f"ChunkData pos={pos} size={scale}")
+                chunks.append(ChunkData(data, pos, scale))
 
-                # The [X, Y] shape of this specific tile, if it's an edge or
-                # corner it might be smaller than full size.
-                tile_shape = np.array([data.shape[1], data.shape[0]])
-
-                # The [X, Y] fractional size of the tile, 1.0 means it's
-                # a full size tile. Edge and corners can be smaller.
-                tile_fraction = tile_shape / TILE_SIZE
-
-                # The [X, Y] size of the tile relative to the full image,
-                # where 1.0 means it spans the full image.
-                tile_size = tile_fraction / (self.num_cols, self.num_rows)
-
-                print(f"ChunkData pos={pos} size={tile_size}")
-                chunks.append(ChunkData(data, pos, tile_size))
+                x += data.shape[1]
+            y += data.shape[0]
 
         return chunks
 
@@ -250,8 +264,12 @@ class OctreeLevel:
         return self.tile_range(span, self.num_cols)
 
 
+def _one_tile(tiles: TileArray) -> bool:
+    return len(tiles) == 1 and len(tiles[0]) == 1
+
+
 class Octree:
-    """A region octree to hold 2D or 3D images.
+    """A region octree that holds hold 2D or 3D images.
 
     Today the octree is full/complete meaning every node has 4 or 8
     children, and every leaf node is at the same level of the tree. This
@@ -263,25 +281,28 @@ class Octree:
     going from parent to child or child to parent is trivial, you just
     need to double or half the indexes.
 
+    Future Work: Geometry
+    ---------------------
+    Eventually we want our octree to hold geometry, not just images.
+    Geometry such as points and meshes. For geometry a sparse octree might
+    make more sense than this full/complete region octree.
 
-    Future Work
-    -----------
-    Support geometry, like points and meshes, not just images. For geometry
-    a sparse octree might make more sense. With geometry there might be
-    lots of empty space in between small dense pockets of geometry. Some
-    parts of tree might need to be very deep, but it would be a waste to be
-    that deep everywhere.
+    With geometry there might be lots of empty space in between small dense
+    pockets of geometry. Some parts of tree might need to be very deep, but
+    it would be a waste for the tree to be that deep everywhere.
 
     Parameters
     ----------
+    base_shape : Tuple[int, int]
+        The shape of the full base image.
     levels : Levels
-        All the levels of the tree
+        All the levels of the tree.
     """
 
-    def __init__(self, image_shape, levels: Levels):
-        self.image_shape = image_shape
+    def __init__(self, base_shape: Tuple[int, int], levels: Levels):
+        self.base_shape = base_shape
         self.levels = [
-            OctreeLevel(image_shape, i, level)
+            OctreeLevel(base_shape, i, level)
             for (i, level) in enumerate(levels)
         ]
         self.num_levels = len(self.levels)
@@ -305,7 +326,7 @@ class Octree:
         levels = [tiles]
 
         # Keep combining tiles until there is one root tile.
-        while len(levels[-1]) > 1:
+        while not _one_tile(levels[-1]):
             next_level = _create_coarser_level(levels[-1])
             levels.append(next_level)
 

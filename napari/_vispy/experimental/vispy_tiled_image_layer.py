@@ -54,6 +54,7 @@ class VispyTiledImageLayer(VispyImageLayer):
         super().__init__(layer)
 
     def _outline_chunk(self, data):
+        data = data.copy()
         line = np.array([255, 0, 0])
         data[0, :, :] = line
         data[-1, :, :] = line
@@ -71,7 +72,11 @@ class VispyTiledImageLayer(VispyImageLayer):
         """
         image_chunk = ImageChunk()
 
+        print(f"BEFORE = {chunk.data.shape}")
+
         data = self._outline_chunk(chunk.data)
+
+        print(f"AFTER = {data.shape}")
 
         # Parent VispyImageLayer will process the data then set it.
         self._set_node_data(image_chunk.node, data)
@@ -80,11 +85,10 @@ class VispyTiledImageLayer(VispyImageLayer):
         image_chunk.node.parent = self.node
 
         pos = chunk.pos
+        scale = chunk.scale
 
-        # TODO_OCTREE: Where is this 16 coming from? It's needed here.
-        size = chunk.size * 16
-
-        image_chunk.node.transform = STTransform(translate=pos, scale=size)
+        print(f"SCALE={scale}")
+        image_chunk.node.transform = STTransform(translate=pos, scale=scale)
 
         return image_chunk
 
@@ -95,7 +99,7 @@ class VispyTiledImageLayer(VispyImageLayer):
             # Do nothing if we are not yet loaded.
             return
 
-        # For now start over each time.
+        # For now, nuke all the old chunks.
         for image_chunk in self.chunks.values():
             image_chunk.node.parent = None
         self.chunks = {}
@@ -103,5 +107,4 @@ class VispyTiledImageLayer(VispyImageLayer):
         for chunk in self.layer.view_chunks:
             chunk_id = id(chunk.data)
             if chunk_id not in self.chunks:
-                # print(f"Adding chunk {chunk_id}")
                 self.chunks[chunk_id] = self._create_image_chunk(chunk)

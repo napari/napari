@@ -23,6 +23,7 @@ class OctreeImageSlice(ImageSlice):
         data_corners,
     ):
         LOGGER.debug("OctreeImageSlice.__init__")
+        print(f"OctreeImageSlice data_corners={data_corners}")
         super().__init__(image, image_converter, rgb)
 
         self._octree = None
