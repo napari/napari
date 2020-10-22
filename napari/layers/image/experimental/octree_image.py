@@ -21,16 +21,25 @@ class OctreeImage(Image):
 
     @property
     def octree_level(self):
+        """Return the currently displayed octree level."""
         return self._octree_level
 
+    @property
+    def num_octree_levels(self) -> int:
+        """Return the total number of octree levels."""
+        return self._slice.num_octree_levels
+
     @octree_level.setter
-    def octree_level(self, level):
-        max_level = self._slice.num_octree_levels - 1
-        if level > max_level:
-            self._octree_level = max_level
-            self.events.octree_level()  # Report we modified the request.
-        else:
-            self._octree_level = level
+    def octree_level(self, level: int):
+        """Set the octree level we should be displaying.
+
+        Parameters
+        ----------
+        level : int
+            Display this octree level.
+        """
+        assert 0 <= level < self.num_octree_levels
+        self._octree_level = level
         self.refresh()  # Create new slice with this level.
 
     def _new_empty_slice(self):

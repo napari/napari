@@ -58,12 +58,50 @@ class QtCreateTestImageButton(QPushButton):
             self.clicked.connect(slot)
 
 
-class SpinBox:
+class RenderSpinBox:
+    """A SpinBox for the QtRender widget.
+
+    This was cobbled together and is probably not good Qt to emulate,
+    current QtRender is a developer visible tool only.
+    """
+
     def __init__(
-        self, parent, label_text: str, initial_value: int, spin_range: range
+        self,
+        parent,
+        label_text: str,
+        initial_value: int,
+        spin_range: range,
+        connect=None,
     ):
         label = QLabel(label_text)
+        self.box = self._create_spin_box(initial_value, spin_range)
+        self.connect = connect
 
+        if connect is not None:
+            self.box.valueChanged.connect(connect)
+
+        layout = QHBoxLayout()
+        layout.addWidget(label)
+        layout.addWidget(self.box)
+        parent.addLayout(layout)
+
+    def _create_spin_box(
+        self, initial_value: int, spin_range: range
+    ) -> QSpinBox:
+        """Return one configured QSpinBox.
+
+        Parameters
+        ----------
+        initial_value : int
+            The initial value of the QSpinBox.
+        spin_range : range
+            The start/stop/step of the QSpinBox.
+
+        Return
+        ------
+        QSpinBox
+            The configured QSpinBox.
+        """
         box = QSpinBox()
         box.setKeyboardTracking(False)
         box.setMinimum(spin_range.start)
@@ -71,15 +109,25 @@ class SpinBox:
         box.setSingleStep(spin_range.step)
         box.setAlignment(Qt.AlignCenter)
         box.setValue(initial_value)
-        self.box = box
+        box.valueChanged.connect(self._on_change)
+        return box
 
-        layout = QHBoxLayout()
-        layout.addWidget(label)
-        layout.addWidget(box)
-        parent.addLayout(layout)
+    def _on_change(self) -> None:
+        """Called when the spin box value was changed."""
+        # We must clearFocus or it would double-step, no idea why.
+        self.box.clearFocus()
+
+        # Notify any connection we have.
+        if self.connect is not None:
+            self.connect()
 
     def value(self) -> int:
+        """Return the current value of the QSpinBox."""
         return self.box.value()
+
+    def set(self, value) -> None:
+        """Set the current value of the QSpinBox."""
+        self.box.setValue(value)
 
 
 class QtTestImage(QFrame):
@@ -101,8 +149,8 @@ class QtTestImage(QFrame):
         layout = QVBoxLayout()
         layout.addStretch(1)
         size_range = range(1, 2048, 100)
-        self.width = SpinBox(layout, "Image Width", 1024, size_range)
-        self.height = SpinBox(layout, "Image Height", 1024, size_range)
+        self.width = RenderSpinBox(layout, "Image Width", 1024, size_range)
+        self.height = RenderSpinBox(layout, "Image Height", 1024, size_range)
 
         create = QPushButton("Create Test Image")
         create.setToolTip("Create a new test image")
@@ -136,21 +184,15 @@ class QtRender(QWidget):
         self.layer.events.octree_level.connect(self._on_octree_level)
         layout = QVBoxLayout()
 
-        spin_layout = QHBoxLayout()
+        max_level = layer.num_octree_levels - 1
+        self.spin_level = RenderSpinBox(
+            layout,
+            "Octree Level",
+            max_level,
+            range(0, max_level, 1),
+            connect=self._on_new_level,
+        )
 
-        self.spin_level = QSpinBox()
-        self.spin_level.setKeyboardTracking(False)
-        self.spin_level.setSingleStep(1)
-        self.spin_level.setMinimum(0)
-        self.spin_level.setMaximum(10)
-        self.spin_level.valueChanged.connect(self._on_spin)
-        self.spin_level.setAlignment(Qt.AlignCenter)
-
-        label = QLabel("Octree Level:")
-        spin_layout.addWidget(label)
-        spin_layout.addWidget(self.spin_level)
-
-        layout.addLayout(spin_layout)
         layout.addStretch(1)
         layout.addWidget(QtTestImage(viewer))
         self.setLayout(layout)
@@ -158,7 +200,7 @@ class QtRender(QWidget):
         # Get initial value.
         self._on_octree_level()
 
-    def _on_spin(self, value):
+    def _on_new_level(self, value):
         """Level spinbox changed.
 
         Parameters
@@ -168,11 +210,7 @@ class QtRender(QWidget):
         """
         self.layer.octree_level = value
 
-        # Focus stuff to prevent double-stepping.
-        self.spin_level.clearFocus()
-        self.setFocus()
-
     def _on_octree_level(self, event=None):
         """Set SpinBox to match the layer's new octree_level."""
         value = self.layer.octree_level
-        self.spin_level.setValue(value)
+        self.spin_level.set(value)
