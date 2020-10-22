@@ -167,6 +167,13 @@ class ScaleTranslate(Transform):
 
     def __init__(self, scale=(1.0,), translate=(0.0,), *, name=None):
         super().__init__(name=name)
+
+        if len(scale) > len(translate):
+            translate = [0] * (len(scale) - len(translate)) + list(translate)
+
+        if len(translate) > len(scale):
+            scale = [1] * (len(translate) - len(scale)) + list(scale)
+
         self.scale = np.array(scale)
         self.translate = np.array(translate)
 
