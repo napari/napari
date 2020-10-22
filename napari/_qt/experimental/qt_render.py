@@ -1,7 +1,93 @@
 """QtAsync widget.
 """
+import numpy as np
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QHBoxLayout, QLabel, QSpinBox, QVBoxLayout, QWidget
+from qtpy.QtWidgets import (
+    QFrame,
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QSpinBox,
+    QVBoxLayout,
+    QWidget,
+)
+
+from .test_image import create_tiled_text_array
+
+# Global index for image names.
+image_index = 0
+
+
+def _get_image_name() -> str:
+    """Return a name like "test-image-002" for the image.
+
+    Use a global so not matter which QtRender widget you use, you get a
+    unique name.
+    """
+    global image_index
+    index = image_index
+    image_index += 1
+    return f"test-image-{index:003}"
+
+
+# Global so no matter where you create the test image it increases.
+test_image_index = 0
+
+
+class QtCreateTestImageButton(QPushButton):
+    """Push button to create a new test image.
+
+    Parameters
+    ----------
+    viewer : napari.components.ViewerModel
+        Napari viewer containing the rendered scene, layers, and controls.
+
+    Attributes
+    ----------
+    viewer : napari.components.ViewerModel
+        Napari viewer containing the rendered scene, layers, and controls.
+    """
+
+    def __init__(self, viewer, slot=None):
+        super().__init__("Create Test Image")
+
+        self.viewer = viewer
+        self.setToolTip("Add a new test image.")
+
+        if slot is not None:
+            self.clicked.connect(slot)
+
+
+class QtTestImage(QFrame):
+    """Create a new test image.
+
+    Parameters
+    ----------
+    viewer : Viewer
+        The napari viewer.
+
+    Attributes
+    ----------
+    """
+
+    def __init__(self, viewer):
+        super().__init__()
+        self.viewer = viewer
+
+        create = QPushButton("Create Test Image")
+        create.setToolTip("Create a new test image")
+        create.clicked.connect(self._create_test_image)
+
+        layout = QVBoxLayout()
+        layout.addWidget(create)
+        self.setLayout(layout)
+        self.image_index = 0
+
+    def _create_test_image(self):
+        size = (1000, 1030)
+        images = [create_tiled_text_array(x, 16, 16, size) for x in range(5)]
+        data = np.stack(images, axis=0)
+        return self.viewer.add_image(data, rgb=True, name=_get_image_name())
 
 
 class QtRender(QWidget):
@@ -11,7 +97,7 @@ class QtRender(QWidget):
     ----------
     """
 
-    def __init__(self, layer):
+    def __init__(self, viewer, layer):
         """Create our windgets.
         """
         super().__init__()
@@ -35,6 +121,7 @@ class QtRender(QWidget):
         spin_layout.addWidget(self.spin_level)
 
         layout.addLayout(spin_layout)
+        layout.addWidget(QtTestImage(viewer))
         self.setLayout(layout)
 
         # Get initial value.
