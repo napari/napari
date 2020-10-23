@@ -77,7 +77,7 @@ def test_affine_properties():
     npt.assert_almost_equal(transform.shear, [1])
 
 
-def test_affine_properties_settters():
+def test_affine_properties_setters():
     transform = Affine()
     transform.translate = [8, -5]
     npt.assert_allclose(transform.translate, [8, -5])
