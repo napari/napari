@@ -16,7 +16,7 @@ def test_scale_translate(Transform):
 
 
 @pytest.mark.parametrize('Transform', [ScaleTranslate, Affine])
-def test_scale_translate_braodcast_scale(Transform):
+def test_scale_translate_broadcast_scale(Transform):
     coord = [1, 10, 13]
     transform = Transform(scale=[4, 2, 3], translate=[8, -5], name='st')
     new_coord = transform(coord)
@@ -28,7 +28,7 @@ def test_scale_translate_braodcast_scale(Transform):
 
 
 @pytest.mark.parametrize('Transform', [ScaleTranslate, Affine])
-def test_scale_translate_braodcast_translate(Transform):
+def test_scale_translate_broadcast_translate(Transform):
     coord = [1, 10, 13]
     transform = Transform(scale=[2, 3], translate=[5, 8, -5], name='st')
     new_coord = transform(coord)
