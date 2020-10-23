@@ -47,23 +47,16 @@ class QtImageInfo(QFrame):
     def __init__(self, layer):
         super().__init__()
         self.layer = layer
-        self.layout = QtImageInfoLayout(layer, self._on_new_octree_level)
+
+        def _update_layer(value):
+            self.layer.octree_level = value
+
+        self.layout = QtImageInfoLayout(layer, _update_layer)
         self.setLayout(self.layout)
 
-        # Get initial value and hook to event.
-        self._on_octree_level()
-        self.layer.events.octree_level.connect(self._on_octree_level)
+        def _update_layout(event=None):
+            self.layout.octree_level.set(self.layer.octree_level)
 
-    def _on_new_octree_level(self, value):
-        """Level spinbox changed.
-
-        Parameters
-        ----------
-        value : int
-            New value of the spinbox
-        """
-        self.layer.octree_level = value
-
-    def _on_octree_level(self, _event=None):
-        """Set SpinBox to match the layer's new octree_level."""
-        self.layout.octree_level.set(self.layer.octree_level)
+        # Update layout now and hook to event for future updates.
+        _update_layout()
+        self.layer.events.octree_level.connect(_update_layout)
