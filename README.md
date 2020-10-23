@@ -42,6 +42,7 @@ Installing command via pip (see `Specifying a GUI Backend` below regarding the `
 pip install napari[all]
 ```
  
+(See `Specifying a GUI Backend` below for an explanation of the `[all]` notation.)
 Note: while not strictly required, it is *highly* recommended to install
 napari into a clean virtual environment using an environment manager like
 [conda](https://docs.conda.io/en/latest/miniconda.html) or
