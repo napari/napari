@@ -46,11 +46,10 @@ class LabeledSpinBox:
         """
         spin = QSpinBox()
 
-        spin.setValue(initial_value)
-
         spin.setMinimum(spin_range.start)
         spin.setMaximum(spin_range.stop)
         spin.setSingleStep(spin_range.step)
+        spin.setValue(initial_value)
 
         spin.setKeyboardTracking(False)  # correct?
         spin.setAlignment(Qt.AlignCenter)
