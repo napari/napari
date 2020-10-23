@@ -278,12 +278,9 @@ class QtLabelsControls(QtLayerControls):
 
     def toggle_selected_mode(self, state):
         if state == Qt.Checked:
-            self.change_color_mode("SELECTED")
+            self.layer.filter_to_selected = True
         else:
-            if self.layer._label_color_index:
-                self.change_color_mode("DIRECT")
-            else:
-                self.change_color_mode("AUTO")
+            self.layer.filter_to_selected = False
 
     def changeSize(self, value):
         """Change paint brush size.
@@ -342,7 +339,6 @@ class QtLabelsControls(QtLayerControls):
         new_mode : str
             AUTO (default) allows color to be set via a hash function with a seed.
             DIRECT allows color of each label to be set directly by a color dictionary.
-            SELECTED allows only selected labels to be visible.
         """
         self.layer.color_mode = new_mode
 

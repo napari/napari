@@ -173,6 +173,7 @@ class Labels(Image):
         self._random_colormap = label_colormap(self.num_colors)
         self._color_mode = LabelColorMode.AUTO
         self._brush_shape = LabelBrushShape.CIRCLE
+        self._filter_to_selected = False
 
         if properties is None:
             self._properties = {}
@@ -405,7 +406,7 @@ class Labels(Image):
 
         # note: self.color_mode returns a string and this comparison fails,
         # so use self._color_mode
-        if self._color_mode == LabelColorMode.SELECTED:
+        if self.filter_to_selected:
             self.refresh()
 
     @property
@@ -415,8 +416,6 @@ class Labels(Image):
         AUTO (default) allows color to be set via a hash function with a seed.
 
         DIRECT allows color of each label to be set directly by a color dict.
-
-        SELECTED allows only selected labels to be visible.
         """
         return str(self._color_mode)
 
@@ -432,8 +431,7 @@ class Labels(Image):
         elif color_mode == LabelColorMode.AUTO:
             self._label_color_index = {}
             self.colormap = self._random_colormap
-        elif color_mode == LabelColorMode.SELECTED:
-            pass
+
         else:
             raise ValueError("Unsupported Color Mode")
 
@@ -442,6 +440,17 @@ class Labels(Image):
         self.events.color_mode()
         self.events.colormap()
         self.events.selected_label()
+        self.refresh()
+
+    @property
+    def filter_to_selected(self):
+        """Whether to filter displayed labels to only the selected label or not
+        """
+        return self._filter_to_selected
+
+    @filter_to_selected.setter
+    def filter_to_selected(self, filter):
+        self._filter_to_selected = filter
         self.refresh()
 
     @property
@@ -594,7 +603,10 @@ class Labels(Image):
             image = np.where(
                 raw > 0, low_discrepancy_image(raw, self._seed), 0
             )
-        elif self._color_mode == LabelColorMode.SELECTED:
+        else:
+            raise ValueError("Unsupported Color Mode")
+
+        if self.filter_to_selected:
             selected = self._selected_label
             # we were in direct mode previously
             if self._label_color_index:
@@ -616,8 +628,7 @@ class Labels(Image):
                     low_discrepancy_image(selected, self._seed),
                     0,
                 )
-        else:
-            raise ValueError("Unsupported Color Mode")
+
         return image
 
     def new_colormap(self):
