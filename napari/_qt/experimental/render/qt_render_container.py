@@ -1,7 +1,8 @@
-"""QtRenderContainer """
+"""QtRenderContainer class.
+"""
 
 
-from qtpy.QtWidgets import QFrame, QStackedWidget
+from qtpy.QtWidgets import QStackedWidget
 
 from .qt_render import QtRender
 
@@ -16,7 +17,7 @@ class QtRenderContainer(QStackedWidget):
 
     Attributes
     ----------
-    empty_widget : qtpy.QtWidgets.QFrame
+    empty_widget : qtpy.QtWidgets.QFramed
         Empty placeholder frame for when no layer is selected.
     viewer : napari.components.ViewerModel
         Napari viewer containing the rendered scene, layers, and controls.
@@ -32,8 +33,8 @@ class QtRenderContainer(QStackedWidget):
         self.viewer = viewer
 
         self.setMouseTracking(True)
-        self.empty_widget = QFrame()
-        self.widgets = {}
+        self.empty_widget = QtRender(viewer)
+        self._widgets = {}
         self.addWidget(self.empty_widget)
         self._display(None)
 
@@ -57,7 +58,7 @@ class QtRenderContainer(QStackedWidget):
         if layer is None:
             self.setCurrentWidget(self.empty_widget)
         else:
-            controls = self.widgets[layer]
+            controls = self._widgets[layer]
             self.setCurrentWidget(controls)
 
     def _add(self, event):
@@ -71,7 +72,7 @@ class QtRenderContainer(QStackedWidget):
         layer = event.item
         controls = QtRender(self.viewer, layer)
         self.addWidget(controls)
-        self.widgets[layer] = controls
+        self._widgets[layer] = controls
 
     def _remove(self, event):
         """Remove the controls target layer from the list of control widgets.
@@ -82,8 +83,8 @@ class QtRenderContainer(QStackedWidget):
             Event with the target layer at `event.item`.
         """
         layer = event.item
-        controls = self.widgets[layer]
+        controls = self._widgets[layer]
         self.removeWidget(controls)
         controls.deleteLater()
         controls = None
-        del self.widgets[layer]
+        del self._widgets[layer]

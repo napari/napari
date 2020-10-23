@@ -9,22 +9,23 @@ from ....layers.image.experimental.octree_image import OctreeImage
 from .qt_image_info import QtImageInfo, QtOctreeInfo
 from .qt_test_image import QtTestImage
 
-# Global so no matter where you create the test image it increases.
-test_image_index = 0
-
 
 class QtRender(QWidget):
     """Dockable widget for render controls.
 
-    Attributes
+    Parameters
     ----------
+    viewer : Viewer
+        The napari viewer.
+    layer : Optional[Layer]
+        The layer we are associated with if any.
     """
 
-    def __init__(self, viewer, layer):
+    def __init__(self, viewer, layer=None):
         """Create our windgets.
         """
         super().__init__()
-        self.layer = layer
+        self.viewer = viewer
         self.mini_map = None
 
         layout = QVBoxLayout()
@@ -39,11 +40,11 @@ class QtRender(QWidget):
             layout.addWidget(self.mini_map)
 
         layout.addStretch(1)
-        layout.addWidget(QtTestImage(viewer, layer))
+        layout.addWidget(QtTestImage(viewer))
         self.setLayout(layout)
 
-        if self.mini_map is not None:
-            self._update_map()
+        # if self.mini_map is not None:
+        #    self._update_map()
 
     def _update_map(self):
         data = np.zeros((50, 50, 4), dtype=np.uint8)

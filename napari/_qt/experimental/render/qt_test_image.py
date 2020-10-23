@@ -67,18 +67,15 @@ class QtTestImage(QFrame):
     ----------
     viewer : Viewer
         The napari viewer.
-    layer : Layer
-        The layer we are hook up to.
     """
 
     # This is a class attribute so that we use a unique index napari-wide,
     # not just within in this one QtRender widget, this one layer.
     image_index = 0
 
-    def __init__(self, viewer, layer):
+    def __init__(self, viewer):
         super().__init__()
         self.viewer = viewer
-        self.layer = layer
         self.layout = QtTestImageLayout(self._create_test_image)
         self.setLayout(self.layout)
 
