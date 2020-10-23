@@ -72,23 +72,14 @@ class VispyTiledImageLayer(VispyImageLayer):
         """
         image_chunk = ImageChunk()
 
-        print(f"BEFORE = {chunk.data.shape}")
-
         data = self._outline_chunk(chunk.data)
-
-        print(f"AFTER = {data.shape}")
 
         # Parent VispyImageLayer will process the data then set it.
         self._set_node_data(image_chunk.node, data)
 
-        # Make the new ImageChunk a child positioned with us.
+        # Add this new ImageChunk as child of self.node, transformed into place.
         image_chunk.node.parent = self.node
-
-        pos = chunk.pos
-        scale = chunk.scale
-
-        print(f"SCALE={scale}")
-        image_chunk.node.transform = STTransform(translate=pos, scale=scale)
+        image_chunk.node.transform = STTransform(chunk.scale, chunk.pos)
 
         return image_chunk
 

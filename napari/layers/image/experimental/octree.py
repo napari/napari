@@ -186,6 +186,8 @@ class OctreeLevel:
         self.base_shape = base_shape
         self.level_index = level_index
         self.tiles = tiles
+
+        self.scale = 2 ** self.level_index
         self.num_rows = len(self.tiles)
         self.num_cols = len(self.tiles[0])
 
@@ -216,6 +218,7 @@ class OctreeLevel:
 
         height = sum(self.tiles[row][0].shape[0] for row in row_range)
         width = sum(self.tiles[0][col].shape[1] for col in col_range)
+        print(f"height = {height} width = {width}")
         scale = [
             self.base_shape[1] / width,
             self.base_shape[0] / height,
@@ -225,26 +228,31 @@ class OctreeLevel:
         for row in row_range:
             for col in col_range:
                 data = self.tiles[row][col]
-                print(f"row = {row} col = {col} shape={data.shape}")
+                # print(f"row = {row} col = {col} shape={data.shape}")
 
-        x = y = 0
+        scale = self.scale
+        scale_vec = [scale, scale]
 
         # Iterate over every tile in the rectangular region.
+        y = 0
         for row in row_range:
             x = 0
             for col in col_range:
 
                 data = self.tiles[row][col]
                 pos = [x, y]
-                scale_value = 2 ** self.level_index
-                scale = [scale_value, scale_value]
-                print(f"scale={scale}")
 
-                print(f"ChunkData pos={pos} size={scale}")
-                chunks.append(ChunkData(data, pos, scale))
+                if 0 not in data.shape:
+                    print(
+                        f"ChunkData shape={data.shape} pos={pos} scale={scale_vec}"
+                    )
+                    chunks.append(ChunkData(data, pos, scale_vec))
 
-                x += data.shape[1]
-            y += data.shape[0]
+                try:
+                    x += data.shape[1] * scale
+                except TypeError:
+                    print("wha!")
+            y += data.shape[0] * scale
 
         return chunks
 
