@@ -7,6 +7,7 @@ from ._viewer_mouse_bindings import dims_scroll
 from .add_layers_mixin import AddLayersMixin
 from .axes import Axes
 from .camera import Camera
+from .cursor import Cursor
 from .dims import Dims
 from .layerlist import LayerList
 from .scale_bar import ScaleBar
@@ -55,7 +56,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             help=Event,
             title=Event,
             interactive=Event,
-            cursor=Event,
             reset_view=Event,
             active_layer=Event,
             palette=Event,
@@ -69,15 +69,14 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
 
         self.layers = LayerList()
         self.camera = Camera(self.dims)
-
+        self.cursor = Cursor()
         self.axes = Axes()
         self.scale_bar = ScaleBar()
 
         self._status = 'Ready'
         self._help = ''
         self._title = title
-        self._cursor = 'standard'
-        self._cursor_size = None
+
         self._interactive = True
         self._active_layer = None
         self._grid_size = (1, 1)
@@ -214,32 +213,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self.events.interactive()
 
     @property
-    def cursor(self):
-        """string: String identifying cursor displayed over canvas.
-        """
-        return self._cursor
-
-    @cursor.setter
-    def cursor(self, cursor):
-        if cursor == self.cursor:
-            return
-        self._cursor = cursor
-        self.events.cursor()
-
-    @property
-    def cursor_size(self):
-        """int | None: Size of cursor if custom. None is yields default size
-        """
-        return self._cursor_size
-
-    @cursor_size.setter
-    def cursor_size(self, cursor_size):
-        if cursor_size == self.cursor_size:
-            return
-        self._cursor_size = cursor_size
-        self.events.cursor()
-
-    @property
     def active_layer(self):
         """int: index of active_layer
         """
@@ -371,13 +344,13 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         if active_layer is None:
             self.status = 'Ready'
             self.help = ''
-            self.cursor = 'standard'
+            self.cursor.style = 'standard'
             self.interactive = True
             self.active_layer = None
         else:
             self.status = active_layer.status
             self.help = active_layer.help
-            self.cursor = active_layer.cursor
+            self.cursor.style = active_layer.cursor
             self.interactive = active_layer.interactive
             self.active_layer = active_layer
 
@@ -408,11 +381,11 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
 
     def _update_cursor(self, event):
         """Set the viewer cursor with the `event.cursor` string."""
-        self.cursor = event.cursor
+        self.cursor.style = event.cursor
 
     def _update_cursor_size(self, event):
         """Set the viewer cursor_size with the `event.cursor_size` int."""
-        self.cursor_size = event.cursor_size
+        self.cursor.size = event.cursor_size
 
     def grid_view(self, n_row=None, n_column=None, stride=1):
         """Arrange the current layers is a 2D grid.

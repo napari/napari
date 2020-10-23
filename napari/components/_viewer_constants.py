@@ -17,3 +17,23 @@ class Position(StringEnum):
     TOP_RIGHT = auto()
     BOTTOM_RIGHT = auto()
     BOTTOM_LEFT = auto()
+
+
+class CursorStyle(StringEnum):
+    """CursorStyle: Style on the cursor.
+
+    Sets the style of the cursor
+            * square: A square
+            * circle: A circle
+            * cross: A cross
+            * forbidden: A forbidden symbol
+            * pointing: A finger for pointing
+            * standard: The standard cursor
+    """
+
+    SQUARE = auto()
+    CIRCLE = auto()
+    CROSS = auto()
+    FORBIDDEN = auto()
+    POINTING = auto()
+    STANDARD = auto()

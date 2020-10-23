@@ -230,7 +230,7 @@ class QtViewer(QSplitter):
         self._update_palette()
 
         self.viewer.events.interactive.connect(self._on_interactive)
-        self.viewer.events.cursor.connect(self._on_cursor)
+        self.viewer.cursor.events.style.connect(self._on_cursor)
         self.viewer.events.palette.connect(self._update_palette)
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
         self.viewer.layers.events.added.connect(self._add_layer)
@@ -446,9 +446,9 @@ class QtViewer(QSplitter):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        cursor = self.viewer.cursor
+        cursor = self.viewer.cursor.style
         if cursor == 'square':
-            size = self.viewer.cursor_size
+            size = self.viewer.cursor.size
             # make sure the square fits within the current canvas
             if size < 8 or size > (
                 min(*self.viewer.window.qt_viewer.canvas.size) - 4
@@ -457,7 +457,7 @@ class QtViewer(QSplitter):
             else:
                 q_cursor = QCursor(square_pixmap(size))
         elif cursor == 'circle':
-            size = self.viewer.cursor_size
+            size = self.viewer.cursor.size
             q_cursor = QCursor(circle_pixmap(size))
         else:
             q_cursor = self._cursors[cursor]
@@ -562,12 +562,13 @@ class QtViewer(QSplitter):
             return
 
         event = ReadOnlyWrapper(event)
+        self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
         mouse_wheel_callbacks(self.viewer, event)
 
         layer = self.viewer.active_layer
         if layer is not None:
             # set cursor position in world coordinates
-            layer.position = self._map_canvas2world(list(event.pos))
+            layer.position = self.viewer.cursor.position
             mouse_wheel_callbacks(layer, event)
 
     def on_mouse_press(self, event):
@@ -582,12 +583,13 @@ class QtViewer(QSplitter):
             return
 
         event = ReadOnlyWrapper(event)
+        self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
         mouse_press_callbacks(self.viewer, event)
 
         layer = self.viewer.active_layer
         if layer is not None:
             # set cursor position in world coordinates
-            layer.position = self._map_canvas2world(list(event.pos))
+            layer.position = self.viewer.cursor.position
             mouse_press_callbacks(layer, event)
 
     def on_mouse_move(self, event):
@@ -601,12 +603,13 @@ class QtViewer(QSplitter):
         if event.pos is None:
             return
 
+        self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
         mouse_move_callbacks(self.viewer, event)
 
         layer = self.viewer.active_layer
         if layer is not None:
             # set cursor position in world coordinates
-            layer.position = self._map_canvas2world(list(event.pos))
+            layer.position = self.viewer.cursor.position
             mouse_move_callbacks(layer, event)
 
     def on_mouse_release(self, event):
@@ -620,12 +623,13 @@ class QtViewer(QSplitter):
         if event.pos is None:
             return
 
+        self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
         mouse_release_callbacks(self.viewer, event)
 
         layer = self.viewer.active_layer
         if layer is not None:
             # set cursor position in world coordinates
-            layer.position = self._map_canvas2world(list(event.pos))
+            layer.position = self.viewer.cursor.position
             mouse_release_callbacks(layer, event)
 
     def on_key_press(self, event):
