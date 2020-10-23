@@ -1,5 +1,7 @@
 """RenderSpinBox class.
 """
+from typing import Callable
+
 from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QHBoxLayout, QLabel, QSpinBox
 
@@ -8,7 +10,23 @@ class QtLabeledSpinBox(QHBoxLayout):
     """A label plus a SpinBox for the QtRender widget.
 
     This was cobbled together quickly for QtRender. We could probably use
-    some napari-standard control instead? This is probably not good Qt.
+    some napari-standard control instead?
+
+    Parameters
+    ----------
+    label_text : str
+        The label shown next to the spin box.
+    initial_value : int
+        The initial value of the spin box.
+    spin_range : range
+        The min/max/step of the spin box.
+    connect : Callable[[int], None]
+        Called when the user changes the value of the spin box.
+
+    Attributes
+    ----------
+    spin : QSpinBox
+        The spin box.
     """
 
     def __init__(
@@ -16,7 +34,7 @@ class QtLabeledSpinBox(QHBoxLayout):
         label_text: str,
         initial_value: int,
         spin_range: range,
-        connect=None,
+        connect: Callable[[int], None] = None,
     ):
         super().__init__()
         self.connect = connect
@@ -65,23 +83,3 @@ class QtLabeledSpinBox(QHBoxLayout):
         # Notify any connection we have.
         if self.connect is not None:
             self.connect(value)
-
-    def value(self) -> int:
-        """Return the current value of the QSpinBox.
-
-        Return
-        ------
-        int
-            The current value of the SpinBox.
-        """
-        return self.spin.value()
-
-    def set(self, value: int) -> None:
-        """Set the current value of the SpinBox.
-
-        Parameters
-        ----------
-        value : int
-            Set SpinBox to this value.
-        """
-        self.spin.setValue(value)

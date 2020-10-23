@@ -29,14 +29,14 @@ class QtTestImageLayout(QVBoxLayout):
         self.addLayout(self.width)
         self.addLayout(self.height)
 
-        # Create test image button.
+        # Test image button.
         button = QPushButton("Create Test Image")
         button.setToolTip("Create a new test image")
         button.clicked.connect(on_create)
         self.addWidget(button)
 
     def get_size(self) -> Tuple[int, int]:
-        return (self.width.value(), self.height.value())
+        return (self.width.spin.value(), self.height.spin.value())
 
 
 class QtTestImage(QFrame):
