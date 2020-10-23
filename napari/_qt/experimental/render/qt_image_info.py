@@ -1,12 +1,44 @@
 """QtImageInfo class.
 """
-from qtpy.QtWidgets import QFrame, QLabel, QLayout, QVBoxLayout
+from qtpy.QtWidgets import QFrame, QLabel, QVBoxLayout
 
 from .qt_labeled_spin_box import LabeledSpinBox
 
 
+class QtImageInfoLayout(QVBoxLayout):
+    """Layout of the image info frame.
+
+    Parameters
+    ----------
+    layer : Layer
+        The layer we are associated with.
+    on_new_octree_level
+        Call this when the octree level is changed.
+    """
+
+    def __init__(self, layer, on_new_octree_level):
+        super().__init__()
+
+        # Octree level SpinBox.
+        max_level = layer.num_octree_levels - 1
+        self.octree_level = LabeledSpinBox(
+            self,
+            "Octree Level",
+            max_level,
+            range(0, max_level, 1),
+            connect=on_new_octree_level,
+        )
+
+        # Dimension information labels.
+        shape = layer.data.shape
+        height, width = shape[1:3]  # Which dims are really width/height?
+        self.addWidget(QLabel(f"Shape: {shape}"))
+        self.addWidget(QLabel(f"Width: {width}"))
+        self.addWidget(QLabel(f"Height: {height}"))
+
+
 class QtImageInfo(QFrame):
-    """Frame showing an images octree level and dimensions.
+    """Frame showing the octree level and image dimensions.
 
     layer : Layer
         Show info about this layer.
@@ -15,57 +47,14 @@ class QtImageInfo(QFrame):
     def __init__(self, layer):
         super().__init__()
         self.layer = layer
-        self.setLayout(self._create_layout())
+        self.layout = QtImageInfoLayout(layer, self._on_new_octree_level)
+        self.setLayout(self.layout)
 
         # Get initial value and hook to event.
         self._on_octree_level()
         self.layer.events.octree_level.connect(self._on_octree_level)
 
-    def _create_layout(self) -> QLayout:
-        """Create layout for image info.
-
-        Return
-        ------
-        QLayout
-            The frame's layout.
-        """
-        layout = QVBoxLayout()
-
-        self._add_octree_spin_box(layout)
-        self._add_dimensions(layout)
-
-        return layout
-
-    def _add_octree_spin_box(self, layout: QLayout) -> None:
-        """Add a SpinBox to display and set the octree level.
-
-        layout : QLayout
-            Add SpinBox to this layout.
-        """
-        max_level = self.layer.num_octree_levels - 1
-        self.spin_level = LabeledSpinBox(
-            layout,
-            "Octree Level",
-            max_level,
-            range(0, max_level, 1),
-            connect=self._on_new_level,
-        )
-
-    def _add_dimensions(self, layout: QLayout) -> None:
-        """Add dimension labels to layout.
-
-        Parameters
-        ----------
-        layout : QLayout
-            Add dimension labels to this layout.
-        """
-        shape = self.layer.data.shape
-        height, width = shape[1:3]  # which dims are width/height?
-        layout.addWidget(QLabel(f"Shape: {shape}"))
-        layout.addWidget(QLabel(f"Width: {width}"))
-        layout.addWidget(QLabel(f"Height: {height}"))
-
-    def _on_new_level(self, value):
+    def _on_new_octree_level(self, value):
         """Level spinbox changed.
 
         Parameters
@@ -77,5 +66,4 @@ class QtImageInfo(QFrame):
 
     def _on_octree_level(self, _event=None):
         """Set SpinBox to match the layer's new octree_level."""
-        value = self.layer.octree_level
-        self.spin_level.set(value)
+        self.layout.octree_level.set(self.layer.octree_level)
