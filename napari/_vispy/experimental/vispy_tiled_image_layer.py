@@ -1,6 +1,7 @@
 """VispyTiledImageLayer class.
 """
 import numpy as np
+from vispy.scene.visuals import Compound, Line
 from vispy.visuals.transforms import STTransform
 
 from ...layers.image.experimental.octree import ChunkData
@@ -53,14 +54,11 @@ class VispyTiledImageLayer(VispyImageLayer):
         # This will call our self._on_data_change().
         super().__init__(layer)
 
-    def _outline_chunk(self, data):
-        data = data.copy()
-        line = np.array([255, 0, 0])
-        data[0, :, :] = line
-        data[-1, :, :] = line
-        data[:, 0, :] = line
-        data[:, -1, :] = line
-        return data
+        self.line = Line(connect='segments', color=(1, 0, 0, 1), width=10)
+        self.compound = Compound([self.line])
+        self.compound.parent = self.node
+
+        self.line_verts = np.zeros((0, 2), dtype=np.float32)
 
     def _create_image_chunk(self, chunk: ChunkData):
         """Add a new chunk.
@@ -72,13 +70,33 @@ class VispyTiledImageLayer(VispyImageLayer):
         """
         image_chunk = ImageChunk()
 
-        data = self._outline_chunk(chunk.data)
+        x, y = chunk.pos
+        h, w = chunk.data.shape[:2]
+        w *= chunk.scale[1]
+        h *= chunk.scale[0]
+
+        pos = np.zeros((8, 2), dtype=np.float32)
+        pos[0, :] = [x, y]
+        pos[1, :] = [x + w, y]
+
+        pos[2, :] = [x + w, y]
+        pos[3, :] = [x + w, y + h]
+
+        pos[4, :] = [x + w, y + h]
+        pos[5, :] = [x, y + h]
+
+        pos[6, :] = [x, y + h]
+        pos[7, :] = [x, y]
+        self.line_verts = np.vstack([self.line_verts, pos])
+        self.line.set_data(self.line_verts)
+
+        # data = self._outline_chunk(chunk.data)
 
         # Parent VispyImageLayer will process the data then set it.
-        self._set_node_data(image_chunk.node, data)
+        self._set_node_data(image_chunk.node, chunk.data)
 
         # Add this new ImageChunk as child of self.node, transformed into place.
-        image_chunk.node.parent = self.node
+        # image_chunk.node.parent = self.node
         image_chunk.node.transform = STTransform(chunk.scale, chunk.pos)
 
         return image_chunk
@@ -94,6 +112,7 @@ class VispyTiledImageLayer(VispyImageLayer):
         for image_chunk in self.chunks.values():
             image_chunk.node.parent = None
         self.chunks = {}
+        self.line_verts = np.zeros((0, 2), dtype=np.float32)
 
         for chunk in self.layer.view_chunks:
             chunk_id = id(chunk.data)
