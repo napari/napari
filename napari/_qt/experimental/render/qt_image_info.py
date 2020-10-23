@@ -43,9 +43,11 @@ class QtImageInfo(QFrame):
         layout : QLayout
             Add dimension labels to this layout.
         """
-        height, width = self.layer.data.shape[1:3]  # fix dims
-        layout.addWidget(QLabel(f"Image Width: {width}"))
-        layout.addWidget(QLabel(f"Image Height: {height}"))
+        shape = self.layer.data.shape
+        height, width = shape[1:3]  # which dims are width/height?
+        layout.addWidget(QLabel(f"Shape: {shape}"))
+        layout.addWidget(QLabel(f"Width: {width}"))
+        layout.addWidget(QLabel(f"Height: {height}"))
 
     def _on_new_level(self, value):
         """Level spinbox changed.
