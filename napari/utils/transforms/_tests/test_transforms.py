@@ -101,6 +101,18 @@ def test_affine_properties():
     npt.assert_almost_equal(transform.shear, [1])
 
 
+def test_affine_properties_setters():
+    transform = Affine()
+    transform.translate = [8, -5]
+    npt.assert_allclose(transform.translate, [8, -5])
+    transform.scale = [2, 3]
+    npt.assert_allclose(transform.scale, [2, 3])
+    transform.rotate = 90
+    npt.assert_almost_equal(transform.rotate, [[0, -1], [1, 0]])
+    transform.shear = [1]
+    npt.assert_almost_equal(transform.shear, [1])
+
+
 def test_rotate():
     coord = [10, 13]
     transform = Affine(rotate=90)

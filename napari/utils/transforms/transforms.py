@@ -371,7 +371,7 @@ class Affine(Transform):
     def shear(self, shear):
         """Set the shear of the transform."""
         rotate, scale, _ = decompose_linear_matrix(self.linear_matrix)
-        if np.array(shear).dim == 2:
+        if np.array(shear).ndim == 2:
             warnings.warn(
                 'Non upper diagonal shear matrix passed so '
                 'reseting rotate to the identity.'
