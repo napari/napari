@@ -22,12 +22,12 @@ class QtImageInfoLayout(QVBoxLayout):
         # Octree level SpinBox.
         max_level = layer.num_octree_levels - 1
         self.octree_level = LabeledSpinBox(
-            self,
             "Octree Level",
             max_level,
             range(0, max_level, 1),
             connect=on_new_octree_level,
         )
+        self.addLayout(self.octree_level)
 
         # Dimension information labels.
         shape = layer.data.shape

@@ -24,8 +24,10 @@ class QtTestImageLayout(QVBoxLayout):
 
         # Dimension controls.
         size_range = range(1, 65536, 100)
-        self.width = LabeledSpinBox(self, "Image Width", 1024, size_range)
-        self.height = LabeledSpinBox(self, "Image Height", 1024, size_range)
+        self.width = LabeledSpinBox("Image Width", 1024, size_range)
+        self.height = LabeledSpinBox("Image Height", 1024, size_range)
+        self.addLayout(self.width)
+        self.addLayout(self.height)
 
         # Create test image button.
         button = QPushButton("Create Test Image")
