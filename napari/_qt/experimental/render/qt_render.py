@@ -4,7 +4,9 @@ import numpy as np
 from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import QLabel, QVBoxLayout, QWidget
 
-from .qt_image_info import QtImageInfo
+from ....layers.image import Image
+from ....layers.image.experimental.octree_image import OctreeImage
+from .qt_image_info import QtImageInfo, QtOctreeInfo
 from .qt_test_image import QtTestImage
 
 # Global so no matter where you create the test image it increases.
@@ -23,18 +25,27 @@ class QtRender(QWidget):
         """
         super().__init__()
         self.layer = layer
+        self.mini_map = None
 
         layout = QVBoxLayout()
 
-        layout.addWidget(QtImageInfo(layer))
+        if isinstance(layer, Image):
+            layout.addWidget(QtImageInfo(layer))
 
-        self.mini_map = QLabel()
-        layout.addWidget(self.mini_map)
+        if isinstance(layer, OctreeImage):
+            layout.addWidget(QtOctreeInfo(layer))
+
+            self.mini_map = QLabel()
+            layout.addWidget(self.mini_map)
 
         layout.addStretch(1)
         layout.addWidget(QtTestImage(viewer, layer))
         self.setLayout(layout)
 
+        if self.mini_map is not None:
+            self._update_map()
+
+    def _update_map(self):
         data = np.zeros((50, 50, 4), dtype=np.uint8)
         data[:, 25, :] = (255, 255, 255, 255)
         data[25, :, :] = (255, 255, 255, 255)

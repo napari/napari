@@ -60,14 +60,6 @@ class QtRenderContainer(QStackedWidget):
             controls = self.widgets[layer]
             self.setCurrentWidget(controls)
 
-    def _get_widget(self, layer):
-        from ....layers.image.experimental.octree_image import OctreeImage
-
-        if isinstance(layer, OctreeImage):
-            return QtRender(self.viewer, layer)
-        else:
-            return self.empty_widget
-
     def _add(self, event):
         """Add the controls target layer to the list of control widgets.
 
@@ -77,7 +69,7 @@ class QtRenderContainer(QStackedWidget):
             Event with the target layer at `event.item`.
         """
         layer = event.item
-        controls = self._get_widget(layer)
+        controls = QtRender(self.viewer, layer)
         self.addWidget(controls)
         self.widgets[layer] = controls
 
