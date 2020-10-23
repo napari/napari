@@ -390,7 +390,6 @@ class AddLayersMixin:
 
         # glean layer names from filename. These will be used as *fallback*
         # names, if the plugin does not return a name kwarg in their meta dict.
-        filenames = []
         if isinstance(path_or_paths, str):
             filenames = itertools.repeat(path_or_paths)
         elif is_sequence(path_or_paths):
