@@ -91,6 +91,11 @@ class QtLabelsControls(QtLayerControls):
         self.selectionSpinBox.setAlignment(Qt.AlignCenter)
         self._on_selection_change()
 
+        selectedColorCheckbox = QCheckBox()
+        selectedColorCheckbox.setToolTip("Display only selected label")
+        selectedColorCheckbox.stateChanged.connect(self.toggle_selected_mode)
+        self.selectedColorCheckbox = selectedColorCheckbox
+
         sld = QSlider(Qt.Horizontal)
         sld.setFocusPolicy(Qt.NoFocus)
         sld.setMinimum(1)
@@ -188,6 +193,7 @@ class QtLabelsControls(QtLayerControls):
         color_layout = QHBoxLayout()
         color_layout.addWidget(QtColorBox(layer))
         color_layout.addWidget(self.selectionSpinBox)
+        color_layout.addWidget(self.selectedColorCheckbox)
 
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
@@ -269,6 +275,15 @@ class QtLabelsControls(QtLayerControls):
         self.layer.selected_label = value
         self.selectionSpinBox.clearFocus()
         self.setFocus()
+
+    def toggle_selected_mode(self, state):
+        if state == Qt.Checked:
+            self.change_color_mode("SELECTED")
+        else:
+            if self.layer._label_color_index:
+                self.change_color_mode("DIRECT")
+            else:
+                self.change_color_mode("AUTO")
 
     def changeSize(self, value):
         """Change paint brush size.
