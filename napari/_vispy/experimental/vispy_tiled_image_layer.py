@@ -8,10 +8,50 @@ from ...layers.image.experimental.octree import ChunkData
 from ..image import Image as ImageNode
 from ..vispy_image_layer import VispyImageLayer
 
+GRID_WIDTH = 3
+GRID_COLOR = (1, 0, 0, 1)
+
 
 class ImageChunk:
     def __init__(self):
         self.node = ImageNode(None, method='auto')
+
+
+def _get_chunk_verts(chunk: ChunkData) -> np.ndarray:
+    x, y = chunk.pos
+    h, w = chunk.data.shape[:2]
+    w *= chunk.scale[1]
+    h *= chunk.scale[0]
+
+    pos = np.zeros((8, 2), dtype=np.float32)
+    pos[0, :] = [x, y]
+    pos[1, :] = [x + w, y]
+
+    pos[2, :] = [x + w, y]
+    pos[3, :] = [x + w, y + h]
+
+    pos[4, :] = [x + w, y + h]
+    pos[5, :] = [x, y + h]
+
+    pos[6, :] = [x, y + h]
+    pos[7, :] = [x, y]
+    return pos
+
+
+class TileGrid:
+    def __init__(self):
+        self.reset()
+        self.line = Line(
+            connect='segments', color=GRID_COLOR, width=GRID_WIDTH
+        )
+
+    def reset(self) -> None:
+        self.verts = np.zeros((0, 2), dtype=np.float32)
+
+    def add_chunk(self, chunk: ChunkData) -> None:
+        chunk_verts = _get_chunk_verts(chunk)
+        self.verts = np.vstack([self.verts, chunk_verts])
+        self.line.set_data(self.verts)
 
 
 class VispyTiledImageLayer(VispyImageLayer):
@@ -54,8 +94,10 @@ class VispyTiledImageLayer(VispyImageLayer):
         # This will call our self._on_data_change().
         super().__init__(layer)
 
-        self.line = Line(connect='segments', color=(1, 0, 0, 1), width=10)
-        self.compound = Compound([self.line])
+        self.grid = TileGrid()
+
+        # We don't need a compound but probably will...
+        self.compound = Compound([self.grid.line])
         self.compound.parent = self.node
 
         self.line_verts = np.zeros((0, 2), dtype=np.float32)
@@ -70,27 +112,7 @@ class VispyTiledImageLayer(VispyImageLayer):
         """
         image_chunk = ImageChunk()
 
-        x, y = chunk.pos
-        h, w = chunk.data.shape[:2]
-        w *= chunk.scale[1]
-        h *= chunk.scale[0]
-
-        pos = np.zeros((8, 2), dtype=np.float32)
-        pos[0, :] = [x, y]
-        pos[1, :] = [x + w, y]
-
-        pos[2, :] = [x + w, y]
-        pos[3, :] = [x + w, y + h]
-
-        pos[4, :] = [x + w, y + h]
-        pos[5, :] = [x, y + h]
-
-        pos[6, :] = [x, y + h]
-        pos[7, :] = [x, y]
-        self.line_verts = np.vstack([self.line_verts, pos])
-        self.line.set_data(self.line_verts)
-
-        # data = self._outline_chunk(chunk.data)
+        self.grid.add_chunk(chunk)
 
         # Parent VispyImageLayer will process the data then set it.
         self._set_node_data(image_chunk.node, chunk.data)
