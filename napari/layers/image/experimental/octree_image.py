@@ -72,3 +72,17 @@ class OctreeImage(Image):
 
         if has_event:
             self.events.octree_level()
+
+    def _update_draw(self, scale_factor, corner_pixels, shape_threshold):
+
+        # If self._data_corners was not set yet, we have not been drawn
+        # yet, and we need to refresh to draw ourselves for the first time.
+        need_refresh = self._data_corners is None
+
+        self._data_corners = self._transforms[1:].simplified.inverse(
+            corner_pixels
+        )
+        super()._update_draw(scale_factor, corner_pixels, shape_threshold)
+
+        if need_refresh:
+            self.refresh()

@@ -285,9 +285,6 @@ class Layer(KeymapProvider, ABC):
         self._persisted_mouse_event = {}
         self._mouse_drag_gen = {}
 
-        # Set in self._update_draw().
-        self._data_corners = None
-
     def __str__(self):
         """Return self.name."""
         return self.name
@@ -892,7 +889,6 @@ class Layer(KeymapProvider, ABC):
         """
         # Note we ignore the first transform which is tile2data
         data_corners = self._transforms[1:].simplified.inverse(corner_pixels)
-        self._data_corners = data_corners
 
         self.scale_factor = scale_factor
 
