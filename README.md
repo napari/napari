@@ -27,8 +27,8 @@ If you want to contribute back to napari codebase, you need to install from sour
 If you do not want to use napari as python code and only use it as GUI app, the bundled app is the easiest way to install.
 This is also the only method that does not require python knowledge to work with napari, see the [from bundled app](https://napari.org/tutorials/fundamentals/installation#installing-as-a-bundled-app) section.
 
-If you are using napari while using python to programmatically interact with the app, you can either install via pip or source code, 
-however we recommend that you use conda to help managing the virtual environment, otherwise you may see compilation issues that are specific to machines.
+If you are using napari from Python to programmatically interact with the app, you can install via pip, conda-forge, or from source.
+We recommend that you use conda to help manage the virtual environment. Otherwise you may see compilation issues that are specific to your particular machine, which is difficult for us to debug.
 
 
 ### from pip, with "batteries included"
