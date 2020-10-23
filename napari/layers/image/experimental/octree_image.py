@@ -16,6 +16,7 @@ class OctreeImage(Image):
 
     def __init__(self, *args, **kwargs):
         self._octree_level = None
+        self._data_corners = None
         super().__init__(*args, **kwargs)
         self.events.add(octree_level=Event)
 
