@@ -252,7 +252,9 @@ class QtViewer(QSplitter):
             from ..components.experimental.chunk import async_config
 
             if async_config.octree_visuals:
-                from .experimental.qt_render_container import QtRenderContainer
+                from .experimental.render.qt_render_container import (
+                    QtRenderContainer,
+                )
 
                 return QtViewerDockWidget(
                     self,
