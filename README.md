@@ -22,7 +22,7 @@ We're working on [tutorials](https://napari.org/tutorials/), but you can also qu
 ## installation
 
 ### which distribution to install
-If you want to contribute back to napari codebase, you need to install from source code, see [from source](#from-source)
+If you want to contribute back to napari codebase, you need to install from source code: see the [from source](#from-source) section.
 
 If you do not want to use napari as python code and only use it as GUI app, the bundled app is the easiest way to install, 
 this is also the only method that does not require python knowledge to work with napari, see [from bundled app](https://napari.org/tutorials/fundamentals/installation#installing-as-a-bundled-app)
