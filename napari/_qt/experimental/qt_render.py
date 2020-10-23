@@ -2,10 +2,12 @@
 """
 import numpy as np
 from qtpy.QtCore import Qt
+from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import (
     QFrame,
     QHBoxLayout,
     QLabel,
+    QLayout,
     QPushButton,
     QSpinBox,
     QVBoxLayout,
@@ -32,30 +34,6 @@ def _get_image_name() -> str:
 
 # Global so no matter where you create the test image it increases.
 test_image_index = 0
-
-
-class QtCreateTestImageButton(QPushButton):
-    """Push button to create a new test image.
-
-    Parameters
-    ----------
-    viewer : napari.components.ViewerModel
-        Napari viewer containing the rendered scene, layers, and controls.
-
-    Attributes
-    ----------
-    viewer : napari.components.ViewerModel
-        Napari viewer containing the rendered scene, layers, and controls.
-    """
-
-    def __init__(self, viewer, slot=None):
-        super().__init__("Create Test Image")
-
-        self.viewer = viewer
-        self.setToolTip("Add a new test image.")
-
-        if slot is not None:
-            self.clicked.connect(slot)
 
 
 class RenderSpinBox:
@@ -130,6 +108,58 @@ class RenderSpinBox:
         self.box.setValue(value)
 
 
+class QtImageInfo(QFrame):
+    def __init__(self, layer):
+        super().__init__()
+        self.layer = layer
+        self.setLayout(self._create_layout())
+
+        # Get initial value and hook to event.
+        self._on_octree_level()
+        self.layer.events.octree_level.connect(self._on_octree_level)
+
+    def _create_layout(self) -> QLayout:
+        """Create layout for image info."""
+        layout = QVBoxLayout()
+        max_level = self.layer.num_octree_levels - 1
+        self.spin_level = RenderSpinBox(
+            layout,
+            "Octree Level",
+            max_level,
+            range(0, max_level, 1),
+            connect=self._on_new_level,
+        )
+        self._add_dimensions(layout)
+        return layout
+
+    def _add_dimensions(self, layout: QLayout) -> None:
+        """Add dimension labels to layout.
+
+        Parameters
+        ----------
+        layout : QLayout
+            Add dimension labels to this layout.
+        """
+        height, width = self.layer.data.shape[1:3]  # fix dims
+        layout.addWidget(QLabel(f"Image Width: {width}"))
+        layout.addWidget(QLabel(f"Image Height: {height}"))
+
+    def _on_new_level(self, value):
+        """Level spinbox changed.
+
+        Parameters
+        ----------
+        value : int
+            New value of the spinbox
+        """
+        self.layer.octree_level = value
+
+    def _on_octree_level(self, event=None):
+        """Set SpinBox to match the layer's new octree_level."""
+        value = self.layer.octree_level
+        self.spin_level.set(value)
+
+
 class QtTestImage(QFrame):
     """Frame with controls to create a new test image.
 
@@ -142,9 +172,10 @@ class QtTestImage(QFrame):
     ----------
     """
 
-    def __init__(self, viewer):
+    def __init__(self, viewer, layer):
         super().__init__()
         self.viewer = viewer
+        self.layer = layer
 
         layout = QVBoxLayout()
         layout.addStretch(1)
@@ -181,40 +212,22 @@ class QtRender(QWidget):
         super().__init__()
         self.layer = layer
 
-        self.layer.events.octree_level.connect(self._on_octree_level)
         layout = QVBoxLayout()
 
-        max_level = layer.num_octree_levels - 1
-        self.spin_level = RenderSpinBox(
-            layout,
-            "Octree Level",
-            max_level,
-            range(0, max_level, 1),
-            connect=self._on_new_level,
-        )
+        layout.addWidget(QtImageInfo(layer))
 
-        height, width = self.layer.data.shape[1:3]  # fix dims
-        layout.addWidget(QLabel(f"Image Width: {width}"))
-        layout.addWidget(QLabel(f"Image Height: {height}"))
+        self.mini_map = QLabel()
+        layout.addWidget(self.mini_map)
 
         layout.addStretch(1)
-        layout.addWidget(QtTestImage(viewer))
+        layout.addWidget(QtTestImage(viewer, layer))
         self.setLayout(layout)
 
-        # Get initial value.
-        self._on_octree_level()
+        data = np.zeros((50, 50, 4), dtype=np.uint8)
+        data[:, 25, :] = (255, 255, 255, 255)
+        data[25, :, :] = (255, 255, 255, 255)
 
-    def _on_new_level(self, value):
-        """Level spinbox changed.
-
-        Parameters
-        ----------
-        value : int
-            New value of the spinbox
-        """
-        self.layer.octree_level = value
-
-    def _on_octree_level(self, event=None):
-        """Set SpinBox to match the layer's new octree_level."""
-        value = self.layer.octree_level
-        self.spin_level.set(value)
+        image = QImage(
+            data, data.shape[1], data.shape[0], QImage.Format_RGBA8888,
+        )
+        self.mini_map.setPixmap(QPixmap.fromImage(image))
