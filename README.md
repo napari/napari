@@ -96,7 +96,7 @@ For more information or troubleshooting see our [installation tutorial](https://
 > ```
 
 ## simple example
-(Below examples require `scikit-image` package to run, we only use data samples from this package for demonstrating purpose, you can use your own dataset if you wish not to install this package)
+(The examples below require the `scikit-image` package to run. We just use data samples from this package for demonstration purposes. If you change the examples to use your own dataset, you may not need to install this package.)
 
 From inside an IPython shell (started with `ipython --gui=qt`) or jupyter notebook (after running a cell with magic command `%gui qt`) you can open up an interactive viewer by calling
 
