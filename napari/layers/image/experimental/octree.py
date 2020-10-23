@@ -197,6 +197,22 @@ class OctreeLevel:
         ncols = len(self.tiles[0])
         print(f"level={self.level_index} dim={nrows}x{ncols}")
 
+    def draw_mini_map(self, row_range: range, col_range: range):
+        """Draw mini-map with X's for which tiles we are drawing."""
+
+        def _within(value, value_range):
+            return value >= value_range.start and value < value_range.stop
+
+        for row in range(0, self.num_rows):
+            for col in range(0, self.num_cols):
+                if _within(row, row_range) and _within(col, col_range):
+                    marker = "X"
+                else:
+                    marker = "."
+                print(marker, end='')
+
+            print("")
+
     def get_chunks(self, data_corners) -> List[ChunkData]:
         """Return chunks that are within this rectangular region of the data.
 
@@ -211,56 +227,44 @@ class OctreeLevel:
         data_rows = [data_corners[0][1], data_corners[1][1]]
         data_cols = [data_corners[0][2], data_corners[1][2]]
 
-        print(f"get_chunks rows={data_rows} cols={data_cols}")
-
         row_range = self.row_range(data_rows)
         col_range = self.column_range(data_cols)
 
-        height = sum(self.tiles[row][0].shape[0] for row in row_range)
-        width = sum(self.tiles[0][col].shape[1] for col in col_range)
-        print(f"height = {height} width = {width}")
-        scale = [
-            self.base_shape[1] / width,
-            self.base_shape[0] / height,
-        ]
-
-        # Iterate over every tile in the rectangular region.
-        for row in row_range:
-            for col in col_range:
-                data = self.tiles[row][col]
-                # print(f"row = {row} col = {col} shape={data.shape}")
+        self.draw_mini_map(row_range, col_range)
 
         scale = self.scale
         scale_vec = [scale, scale]
 
         # Iterate over every tile in the rectangular region.
-        y = 0
+        data = None
+        y = row_range.start * TILE_SIZE
         for row in row_range:
-            x = 0
+            x = col_range.start * TILE_SIZE
             for col in col_range:
 
                 data = self.tiles[row][col]
                 pos = [x, y]
 
                 if 0 not in data.shape:
-                    print(
-                        f"ChunkData shape={data.shape} pos={pos} scale={scale_vec}"
-                    )
                     chunks.append(ChunkData(data, pos, scale_vec))
 
-                try:
-                    x += data.shape[1] * scale
-                except TypeError:
-                    print("wha!")
+                x += data.shape[1] * scale
             y += data.shape[0] * scale
 
         return chunks
 
     def tile_range(self, span, num_tiles):
-        """Return tiles indices for image coordinates [span[0]..span[1]]."""
-        span = [span[0] / TILE_SIZE, (span[1] / TILE_SIZE) + 1]
-        span_clamped = [max(span[0], 0), min(span[1], num_tiles)]
-        span_int = (int(x) for x in span_clamped)
+        """Return tiles indices needed to draw the span."""
+
+        def _clamp(val, min_val, max_val):
+            return max(min(val, max_val), min_val)
+
+        tiles = [span[0] / TILE_SIZE, span[1] / TILE_SIZE]
+        new_min = _clamp(tiles[0], 0, num_tiles - 1)
+        new_max = _clamp(tiles[1], 0, num_tiles - 1)
+        clamped = [new_min, new_max + 1]
+
+        span_int = [int(x) for x in clamped]
         return range(*span_int)
 
     def row_range(self, span):

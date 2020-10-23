@@ -23,7 +23,6 @@ class OctreeImageSlice(ImageSlice):
         data_corners,
     ):
         LOGGER.debug("OctreeImageSlice.__init__")
-        print(f"OctreeImageSlice data_corners={data_corners}")
         super().__init__(image, image_converter, rgb)
 
         self._octree = None
@@ -66,7 +65,6 @@ class OctreeImageSlice(ImageSlice):
     @property
     def view_chunks(self):
         """Return the chunks currently in view."""
-        print(f"view_chunks: octree_level={self._octree_level}")
 
         # This will be None if we have not been drawn yet.
         if self._data_corners is None:
