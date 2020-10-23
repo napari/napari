@@ -7,29 +7,6 @@ from .qt_labeled_spin_box import LabeledSpinBox
 from .test_image import create_tiled_text_array
 
 
-class ImageNamer:
-    """Provides unique name for test images.
-
-    The index is global, so it does not matter which QtRender widget,
-     which layer, is creating the image, the next available name
-    is always given.
-    """
-
-    image_index = 0
-
-    def get_name(self) -> str:
-        """Return a name like "test-image-002" for the image.
-
-        Return
-        ------
-        str
-            The image name.
-        """
-        index = self.image_index
-        self.image_index += 1
-        return f"test-image-{index:003}"
-
-
 class QtTestImage(QFrame):
     """Frame with controls to create a new test image.
 
@@ -42,11 +19,13 @@ class QtTestImage(QFrame):
     ----------
     """
 
+    # This is a class attribute to provide a unique index napari-wide.
+    image_index = 0
+
     def __init__(self, viewer, layer):
         super().__init__()
         self.viewer = viewer
         self.layer = layer
-        self.namer = ImageNamer()
 
         layout = QVBoxLayout()
         layout.addStretch(1)
@@ -67,6 +46,18 @@ class QtTestImage(QFrame):
         size = (self.width.value(), self.height.value())
         images = [create_tiled_text_array(x, 16, 16, size) for x in range(5)]
         data = np.stack(images, axis=0)
-        name = self.namer.get_name()
+        name = self._create_image_name()
 
         return self.viewer.add_image(data, rgb=True, name=name)
+
+    def _create_image_name(self) -> str:
+        """Return a name like "test-image-002" for the image.
+
+        Return
+        ------
+        str
+            The image name.
+        """
+        name = f"test-image-{QtTestImage.image_index:003}"
+        QtTestImage.image_index += 1
+        return name
