@@ -16,6 +16,30 @@ def test_scale_translate(Transform):
 
 
 @pytest.mark.parametrize('Transform', [ScaleTranslate, Affine])
+def test_scale_translate_broadcast_scale(Transform):
+    coord = [1, 10, 13]
+    transform = Transform(scale=[4, 2, 3], translate=[8, -5], name='st')
+    new_coord = transform(coord)
+    target_coord = [4, 2 * 10 + 8, 3 * 13 - 5]
+    assert transform.name == 'st'
+    npt.assert_allclose(transform.scale, [4, 2, 3])
+    npt.assert_allclose(transform.translate, [0, 8, -5])
+    npt.assert_allclose(new_coord, target_coord)
+
+
+@pytest.mark.parametrize('Transform', [ScaleTranslate, Affine])
+def test_scale_translate_broadcast_translate(Transform):
+    coord = [1, 10, 13]
+    transform = Transform(scale=[2, 3], translate=[5, 8, -5], name='st')
+    new_coord = transform(coord)
+    target_coord = [6, 2 * 10 + 8, 3 * 13 - 5]
+    assert transform.name == 'st'
+    npt.assert_allclose(transform.scale, [1, 2, 3])
+    npt.assert_allclose(transform.translate, [5, 8, -5])
+    npt.assert_allclose(new_coord, target_coord)
+
+
+@pytest.mark.parametrize('Transform', [ScaleTranslate, Affine])
 def test_scale_translate_inverse(Transform):
     coord = [10, 13]
     transform = Transform(scale=[2, 3], translate=[8, -5])
