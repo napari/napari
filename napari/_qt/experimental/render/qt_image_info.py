@@ -46,17 +46,16 @@ class QtImageInfo(QFrame):
 
     def __init__(self, layer):
         super().__init__()
-        self.layer = layer
 
         def _update_layer(value):
-            self.layer.octree_level = value
+            layer.octree_level = value
 
-        self.layout = QtImageInfoLayout(layer, _update_layer)
-        self.setLayout(self.layout)
+        layout = QtImageInfoLayout(layer, _update_layer)
+        self.setLayout(layout)
 
         def _update_layout(event=None):
-            self.layout.octree_level.set(self.layer.octree_level)
+            layout.octree_level.set(layer.octree_level)
 
         # Update layout now and hook to event for future updates.
         _update_layout()
-        self.layer.events.octree_level.connect(_update_layout)
+        layer.events.octree_level.connect(_update_layout)
