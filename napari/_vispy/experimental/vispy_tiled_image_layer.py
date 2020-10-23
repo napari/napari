@@ -1,16 +1,88 @@
 """VispyTiledImageLayer class.
 """
 import numpy as np
+from vispy.scene.visuals import Line
 from vispy.visuals.transforms import STTransform
 
 from ...layers.image.experimental.octree import ChunkData
 from ..image import Image as ImageNode
 from ..vispy_image_layer import VispyImageLayer
 
+GRID_WIDTH = 3
+GRID_COLOR = (1, 0, 0, 1)
+
+
+def _chunk_outline(chunk: ChunkData) -> np.ndarray:
+    """Return line verts that outline the given chunk.
+
+    Parameters
+    ----------
+    chunk : ChunkData
+        Create outline of this chunk.
+
+    Return
+    ------
+    np.ndarray
+        The chunk verts for 'segments' mode.
+    """
+    x, y = chunk.pos
+    h, w = chunk.data.shape[:2]
+    w *= chunk.scale[1]
+    h *= chunk.scale[0]
+
+    # Outline very chunk which means we double-draw all interior lines,
+    # but we can worry about that later if it causes perf or other issues.
+    return np.array(
+        (
+            [x, y],
+            [x + w, y],
+            [x + w, y],
+            [x + w, y + h],
+            [x + w, y + h],
+            [x, y + h],
+            [x, y + h],
+            [x, y],
+        ),
+        dtype=np.float32,
+    )
+
 
 class ImageChunk:
+    """The ImageNode for a single chunk.
+
+    This class will grow soon...
+    """
+
     def __init__(self):
         self.node = ImageNode(None, method='auto')
+        self.node.order = 0
+
+
+class TileGrid:
+    """The grid that shows the outlines of all the tiles."""
+
+    def __init__(self):
+        self.reset()
+        self.line = Line(
+            connect='segments', color=GRID_COLOR, width=GRID_WIDTH
+        )
+        self.line.order = 10
+
+    def reset(self) -> None:
+        """Reset the grid to have no lines."""
+        self.verts = np.zeros((0, 2), dtype=np.float32)
+
+    def add_chunk_outline(self, chunk: ChunkData) -> None:
+        """Add the outline of the given chunk to the grid.
+
+        Parameters
+        ----------
+        chunk : ChunkData
+            Add the outline of this chunk.
+        """
+        chunk_verts = _chunk_outline(chunk)
+        self.verts = np.vstack([self.verts, chunk_verts])
+        self.line.set_data(self.verts)
 
 
 class VispyTiledImageLayer(VispyImageLayer):
@@ -49,17 +121,12 @@ class VispyTiledImageLayer(VispyImageLayer):
 
     def __init__(self, layer):
         self.chunks = {}
+        self.grid = TileGrid()
 
         # This will call our self._on_data_change().
         super().__init__(layer)
 
-    def _outline_chunk(self, data):
-        line = np.array([255, 0, 0])
-        data[0, :, :] = line
-        data[-1, :, :] = line
-        data[:, 0, :] = line
-        data[:, -1, :] = line
-        return data
+        self.grid.line.parent = self.node
 
     def _create_image_chunk(self, chunk: ChunkData):
         """Add a new chunk.
@@ -71,23 +138,14 @@ class VispyTiledImageLayer(VispyImageLayer):
         """
         image_chunk = ImageChunk()
 
-        data = self._outline_chunk(chunk.data)
+        self.grid.add_chunk_outline(chunk)
 
         # Parent VispyImageLayer will process the data then set it.
-        self._set_node_data(image_chunk.node, data)
+        self._set_node_data(image_chunk.node, chunk.data)
 
-        # Make the new ImageChunk a child positioned with us.
+        # Add this new ImageChunk as child of self.node, transformed into place.
         image_chunk.node.parent = self.node
-        pos = [chunk.pos[0] * 1024, chunk.pos[1] * 1024]
-        size = chunk.size * 16
-        # pos = [512, 0]
-        # size = 7
-
-        # print(pos, size)
-
-        image_chunk.node.transform = STTransform(
-            translate=pos, scale=[size, size]
-        )
+        image_chunk.node.transform = STTransform(chunk.scale, chunk.pos)
 
         return image_chunk
 
@@ -98,8 +156,13 @@ class VispyTiledImageLayer(VispyImageLayer):
             # Do nothing if we are not yet loaded.
             return
 
+        # For now, nuke all the old chunks.
+        for image_chunk in self.chunks.values():
+            image_chunk.node.parent = None
+        self.chunks = {}
+        self.grid.reset()
+
         for chunk in self.layer.view_chunks:
             chunk_id = id(chunk.data)
             if chunk_id not in self.chunks:
-                # print(f"Adding chunk {chunk_id}")
                 self.chunks[chunk_id] = self._create_image_chunk(chunk)

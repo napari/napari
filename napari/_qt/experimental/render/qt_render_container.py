@@ -61,10 +61,10 @@ class QtRenderContainer(QStackedWidget):
             self.setCurrentWidget(controls)
 
     def _get_widget(self, layer):
-        from ...layers.image.experimental.octree_image import OctreeImage
+        from ....layers.image.experimental.octree_image import OctreeImage
 
         if isinstance(layer, OctreeImage):
-            return QtRender(layer)
+            return QtRender(self.viewer, layer)
         else:
             return self.empty_widget
 
