@@ -37,7 +37,8 @@ napari can be installed on most macOS, Linux, and Windows systems with
 Python 3.7 and 3.8 using pip. However, for windows users, you need to preinstall [Microsoft Visual C++ Build Tools](https://visualstudio.microsoft.com/downloads/)
 in order to install vispy (one of the dependency packages) on windows machines.
 
-Installing command via pip (see `Specifying a GUI Backend` below regarding the `[all]` notation):
+The simplest command to install with pip is:
+
 ```sh
 pip install napari[all]
 ```
