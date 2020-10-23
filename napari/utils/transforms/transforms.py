@@ -167,6 +167,13 @@ class ScaleTranslate(Transform):
 
     def __init__(self, scale=(1.0,), translate=(0.0,), *, name=None):
         super().__init__(name=name)
+
+        if len(scale) > len(translate):
+            translate = [0] * (len(scale) - len(translate)) + list(translate)
+
+        if len(translate) > len(scale):
+            scale = [1] * (len(translate) - len(scale)) + list(scale)
+
         self.scale = np.array(scale)
         self.translate = np.array(translate)
 
@@ -235,7 +242,14 @@ class ScaleTranslate(Transform):
 class Affine(Transform):
     """n-dimensional affine transformation class.
 
-    The affine transform is represented as a n+1 dimensionsal linear_matrix
+    The affine transform can be represented as a n+1 dimensionsal
+    transformation matrix in homogenous coordinates [1]_, an n
+    dimensional matrix and a length n translation vector, or be
+    composed and decomposed from scale, rotate, and shear
+    transformations.
+
+    The affine_matrix representation can be used for easy compatibility
+    with other libraries that can generate affine transformations.
 
     Parameters
     ----------
@@ -266,8 +280,8 @@ class Affine(Transform):
         (N+1, N+1) affine transformation matrix in homogeneous coordinates [1]_.
         The first (N, N) entries correspond to a linear transform and
         the final column is a lenght N translation vector and a 1 or a napari
-        AffineTransform object. If provided then, scale, rotate, and shear
-        values are ignored.
+        AffineTransform object. If provided then translate, scale, rotate, and
+        shear values are ignored.
     name : string
         A string name for the transform.
 
@@ -357,7 +371,7 @@ class Affine(Transform):
     def shear(self, shear):
         """Set the shear of the transform."""
         rotate, scale, _ = decompose_linear_matrix(self.linear_matrix)
-        if np.array(shear).dim == 2:
+        if np.array(shear).ndim == 2:
             warnings.warn(
                 'Non upper diagonal shear matrix passed so '
                 'reseting rotate to the identity.'

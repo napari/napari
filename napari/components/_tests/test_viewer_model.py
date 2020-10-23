@@ -339,7 +339,7 @@ def test_grid():
 
     # enter grid view
     viewer.grid_view()
-    assert np.all(viewer.grid_size == (3, 3))
+    assert np.all(viewer.grid_size == (2, 3))
     assert viewer.grid_stride == 1
     translations = [layer.translate_grid for layer in viewer.layers]
     expected_translations = [
@@ -505,3 +505,31 @@ def test_sliced_world_extent():
     viewer.dims.order = (1, 2, 0)
     np.testing.assert_allclose(viewer._sliced_extent_world[0], (5, 10))
     np.testing.assert_allclose(viewer._sliced_extent_world[1], (19, 25))
+
+
+def test_camera():
+    """Test camera."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    data = np.random.random((10, 15, 20))
+    viewer.add_image(data)
+    assert len(viewer.layers) == 1
+    assert np.all(viewer.layers[0].data == data)
+    assert viewer.dims.ndim == 3
+
+    assert viewer.dims.ndisplay == 2
+    assert viewer.camera.ndisplay == 2
+    assert viewer.camera.center == (7, 9.5)
+    assert viewer.camera.angles == (0, 0, 90)
+
+    viewer.dims.ndisplay = 3
+    assert viewer.dims.ndisplay == 3
+    assert viewer.camera.ndisplay == 3
+    assert viewer.camera.center == (4.5, 7, 9.5)
+    assert viewer.camera.angles == (0, 0, 90)
+
+    viewer.dims.ndisplay = 2
+    assert viewer.dims.ndisplay == 2
+    assert viewer.camera.ndisplay == 2
+    assert viewer.camera.center == (7, 9.5)
+    assert viewer.camera.angles == (0, 0, 90)

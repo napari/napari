@@ -46,8 +46,8 @@ class Layer(KeymapProvider, ABC):
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
         the final column is a lenght N translation vector and a 1 or a napari
-        AffineTransform object. If provided then, scale, rotate, and shear
-        values are ignored.
+        AffineTransform object. If provided then translate, scale, rotate, and
+        shear values are ignored.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -100,8 +100,8 @@ class Layer(KeymapProvider, ABC):
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
         the final column is a lenght N translation vector and a 1 or a napari
-        AffineTransform object. If provided then, scale, rotate, and shear
-        values are ignored.
+        AffineTransform object. If provided then translate, scale, rotate, and
+        shear values are ignored.
     multiscale : bool
         Whether the data is multiscale or not. Multiscale data is
         represented by a list of data objects and should go from largest to
@@ -189,7 +189,7 @@ class Layer(KeymapProvider, ABC):
         self.scale_factor = 1
         self.multiscale = multiscale
 
-        self.dims = Dims(ndim)
+        self._dims = Dims(ndim)
 
         # Create a transform chain consisting of three transforms:
         # 1. `tile2data`: An initial transform only needed displaying tiles
@@ -241,7 +241,7 @@ class Layer(KeymapProvider, ABC):
             ]
         )
 
-        self._position = (0,) * self.dims.ndim
+        self._position = (0,) * self._dims.ndim
         self._dims_point = [0] * ndim
         self.corner_pixels = np.zeros((2, ndim), dtype=int)
         self._editable = True
@@ -482,11 +482,23 @@ class Layer(KeymapProvider, ABC):
         self._position = _position
         self._update_value_and_status()
 
+    @property
+    def dims(self):
+        warnings.warn(
+            (
+                "The layer.dims parameter is deprecated and will be removed in version 0.4.1."
+                " Instead you should use the viewer.dims parameter on the main viewer object."
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        return self._dims
+
     def _update_dims(self, event=None):
         """Updates dims model, which is useful after data has been changed."""
         ndim = self._get_ndim()
 
-        old_ndim = self.dims.ndim
+        old_ndim = self._dims.ndim
         if old_ndim > ndim:
             keep_axes = range(old_ndim - ndim, old_ndim)
             self._transforms = self._transforms.set_slice(keep_axes)
@@ -498,7 +510,7 @@ class Layer(KeymapProvider, ABC):
             self._dims_point = [0] * (ndim - old_ndim) + self._dims_point
             self._position = (0,) * (ndim - old_ndim) + self._position
 
-        self.dims.ndim = ndim
+        self._dims.ndim = ndim
 
         self.refresh()
         self._update_value_and_status()
@@ -556,12 +568,12 @@ class Layer(KeymapProvider, ABC):
         inv_transform = self._transforms['data2world'].inverse
         # data_clipping_plane = inv_transform(clipping_plane)
 
-        if self.ndim > self.dims.ndisplay:
+        if self.ndim > self._dims.ndisplay:
             clipping_plane = np.ones(self.ndim)
-            clipping_plane[-self.dims.ndisplay :] = 0
+            clipping_plane[-self._dims.ndisplay :] = 0
             mapped_clipping_plane = inv_transform(clipping_plane)
             if not np.allclose(
-                mapped_clipping_plane[-self.dims.ndisplay :], 0
+                mapped_clipping_plane[-self._dims.ndisplay :], 0
             ):
                 warnings.warn(
                     'Non-orthogonal slicing is being requested, but'
@@ -569,15 +581,15 @@ class Layer(KeymapProvider, ABC):
                     ' applying an out-of-slice rotation or shear component.'
                 )
 
-        slice_inv_transform = inv_transform.set_slice(self.dims.not_displayed)
+        slice_inv_transform = inv_transform.set_slice(self._dims.not_displayed)
 
-        world_pts = [self._dims_point[ax] for ax in self.dims.not_displayed]
+        world_pts = [self._dims_point[ax] for ax in self._dims.not_displayed]
         data_pts = slice_inv_transform(world_pts)
         # A round is taken to convert these values to slicing integers
         data_pts = np.round(data_pts).astype(int)
 
         indices = [slice(None)] * self.ndim
-        for i, ax in enumerate(self.dims.not_displayed):
+        for i, ax in enumerate(self._dims.not_displayed):
             indices[ax] = data_pts[i]
 
         return tuple(indices)
@@ -671,7 +683,7 @@ class Layer(KeymapProvider, ABC):
     @property
     def ndim(self):
         """int: Number of dimensions in the data."""
-        return self.dims.ndim
+        return self._dims.ndim
 
     @property
     def selected(self):
@@ -801,14 +813,14 @@ class Layer(KeymapProvider, ABC):
 
         # If no slide data has changed, then do nothing
         if (
-            np.all(order == self.dims.order)
-            and ndisplay == self.dims.ndisplay
+            np.all(order == self._dims.order)
+            and ndisplay == self._dims.ndisplay
             and np.all(point[offset:] == self._dims_point)
         ):
             return
 
-        self.dims.order = order
-        self.dims.ndisplay = ndisplay
+        self._dims.order = order
+        self._dims.ndisplay = ndisplay
 
         # Update the point values
         self._dims_point = point[offset:]
@@ -900,14 +912,14 @@ class Layer(KeymapProvider, ABC):
             data_corners, self._extent_data[0], self._extent_data[1]
         )
 
-        if self.dims.ndisplay == 2 and self.multiscale:
+        if self._dims.ndisplay == 2 and self.multiscale:
             level, displayed_corners = compute_multiscale_level_and_corners(
-                data_corners[:, self.dims.displayed],
+                data_corners[:, self._dims.displayed],
                 shape_threshold,
-                self.downsample_factors[:, self.dims.displayed],
+                self.downsample_factors[:, self._dims.displayed],
             )
             corners = np.zeros((2, self.ndim))
-            corners[:, self.dims.displayed] = displayed_corners
+            corners[:, self._dims.displayed] = displayed_corners
             corners = corners.astype(int)
             if self.data_level != level or not np.all(
                 self.corner_pixels == corners
@@ -922,7 +934,7 @@ class Layer(KeymapProvider, ABC):
     @property
     def displayed_coordinates(self):
         """list: List of currently displayed coordinates."""
-        return [self.coordinates[i] for i in self.dims.displayed]
+        return [self.coordinates[i] for i in self._dims.displayed]
 
     def get_message(self):
         """Generate a status message based on the coordinates and value

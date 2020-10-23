@@ -16,6 +16,30 @@ def test_scale_translate(Transform):
 
 
 @pytest.mark.parametrize('Transform', [ScaleTranslate, Affine])
+def test_scale_translate_broadcast_scale(Transform):
+    coord = [1, 10, 13]
+    transform = Transform(scale=[4, 2, 3], translate=[8, -5], name='st')
+    new_coord = transform(coord)
+    target_coord = [4, 2 * 10 + 8, 3 * 13 - 5]
+    assert transform.name == 'st'
+    npt.assert_allclose(transform.scale, [4, 2, 3])
+    npt.assert_allclose(transform.translate, [0, 8, -5])
+    npt.assert_allclose(new_coord, target_coord)
+
+
+@pytest.mark.parametrize('Transform', [ScaleTranslate, Affine])
+def test_scale_translate_broadcast_translate(Transform):
+    coord = [1, 10, 13]
+    transform = Transform(scale=[2, 3], translate=[5, 8, -5], name='st')
+    new_coord = transform(coord)
+    target_coord = [6, 2 * 10 + 8, 3 * 13 - 5]
+    assert transform.name == 'st'
+    npt.assert_allclose(transform.scale, [1, 2, 3])
+    npt.assert_allclose(transform.translate, [5, 8, -5])
+    npt.assert_allclose(new_coord, target_coord)
+
+
+@pytest.mark.parametrize('Transform', [ScaleTranslate, Affine])
 def test_scale_translate_inverse(Transform):
     coord = [10, 13]
     transform = Transform(scale=[2, 3], translate=[8, -5])
@@ -74,6 +98,18 @@ def test_affine_properties():
     npt.assert_allclose(transform.translate, [8, -5])
     npt.assert_allclose(transform.scale, [2, 3])
     npt.assert_almost_equal(transform.rotate, [[0, -1], [1, 0]])
+    npt.assert_almost_equal(transform.shear, [1])
+
+
+def test_affine_properties_setters():
+    transform = Affine()
+    transform.translate = [8, -5]
+    npt.assert_allclose(transform.translate, [8, -5])
+    transform.scale = [2, 3]
+    npt.assert_allclose(transform.scale, [2, 3])
+    transform.rotate = 90
+    npt.assert_almost_equal(transform.rotate, [[0, -1], [1, 0]])
+    transform.shear = [1]
     npt.assert_almost_equal(transform.shear, [1])
 
 

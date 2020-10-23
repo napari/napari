@@ -62,9 +62,10 @@ class VispyAxesVisual:
 
     _NUM_SEGMENTS_ARROWHEAD = 100
 
-    def __init__(self, axes, dims, parent=None, order=0):
-        self.axes = axes
-        self.dims = dims
+    def __init__(self, axes, camera, dims, parent=None, order=0):
+        self._axes = axes
+        self._dims = dims
+        self._camera = camera
 
         # note order is z, y, x
         self._default_data = np.array(
@@ -116,11 +117,12 @@ class VispyAxesVisual:
         self.node.transform = STTransform()
         self.node.order = order
 
-        self.axes.events.visible.connect(self._on_visible_change)
-        self.axes.events.colored.connect(self._on_data_change)
-        self.axes.events.dashed.connect(self._on_data_change)
-        self.axes.events.arrows.connect(self._on_data_change)
-        self.dims.events.order.connect(self._on_data_change)
+        self._axes.events.visible.connect(self._on_visible_change)
+        self._axes.events.colored.connect(self._on_data_change)
+        self._axes.events.dashed.connect(self._on_data_change)
+        self._axes.events.arrows.connect(self._on_data_change)
+        self._dims.events.order.connect(self._on_data_change)
+        self._camera.events.zoom.connect(self._on_zoom_change)
 
         self._on_visible_change(None)
         self._on_data_change(None)
@@ -129,27 +131,27 @@ class VispyAxesVisual:
 
     def _on_visible_change(self, event):
         """Change visibiliy of axes."""
-        self.node.visible = self.axes.visible
+        self.node.visible = self._axes.visible
 
     def _on_data_change(self, event):
         """Change style of axes."""
-        if self.axes.dashed:
+        if self._axes.dashed:
             data = self._dashed_data
         else:
             data = self._default_data
 
-        if not self.axes.colored:
-            color = np.subtract(1, self.axes.background_color)[:3]
+        if not self._axes.colored:
+            color = np.subtract(1, self._axes.background_color)[:3]
             arrow_color = [color] * self._NUM_SEGMENTS_ARROWHEAD * 3
         else:
-            if self.axes.dashed:
+            if self._axes.dashed:
                 color = self._dashed_color
                 arrow_color = self._default_arrow_color
             else:
                 color = self._default_color
                 arrow_color = self._default_arrow_color
 
-        if self.axes.arrows:
+        if self._axes.arrows:
             arrow_vertices = self._default_arrow_vertices
             arrow_faces = self._default_arrow_faces
         else:
@@ -158,7 +160,7 @@ class VispyAxesVisual:
             arrow_color = [[0, 0, 0, 0]]
 
         # Color based on displayed dimensions
-        order = tuple(self.dims.order[-3:])
+        order = tuple(self._dims.order[-3:])
         if len(order) == 2:
             # If only two dimensions are displayed pad with a third
             # zeroth axis
@@ -174,19 +176,18 @@ class VispyAxesVisual:
             face_colors=arrow_color,
         )
 
-    def update_scale(self, scale):
-        """Update axes length based on canvas2world scale.
-
-        Parameters
-        ----------
-        scale : float
-            Scale going from canvas pixels to world coorindates.
+    def _on_zoom_change(self, event):
+        """Update axes length based on zoom scale.
         """
+        if not self._axes.visible:
+            return
+
+        scale = 1 / self._camera.zoom
+
         # If scale has not changed, do not redraw
         if abs(np.log10(self._scale) - np.log10(scale)) < 1e-4:
             return
         self._scale = scale
-
         scale_canvas2world = self._scale
         target_canvas_pixels = self._target_length
         scale = target_canvas_pixels * scale_canvas2world

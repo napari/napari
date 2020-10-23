@@ -61,8 +61,8 @@ class Labels(Image):
         (N+1, N+1) affine transformation matrix in homogeneous coordinates.
         The first (N, N) entries correspond to a linear transform and
         the final column is a lenght N translation vector and a 1 or a napari
-        AffineTransform object. If provided then, scale, rotate, and shear
-        values are ignored.
+        AffineTransform object. If provided then translate, scale, rotate, and
+        shear values are ignored.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -241,9 +241,9 @@ class Labels(Image):
         self._update_dims()
         self._set_editable()
 
-        self.dims.events.ndisplay.connect(self._reset_history)
-        self.dims.events.order.connect(self._reset_history)
-        self.dims.events.current_step.connect(self._reset_history)
+        self._dims.events.ndisplay.connect(self._reset_history)
+        self._dims.events.order.connect(self._reset_history)
+        self._dims.events.current_step.connect(self._reset_history)
 
     @property
     def contiguous(self):
@@ -555,7 +555,7 @@ class Labels(Image):
     def _set_editable(self, editable=None):
         """Set editable mode based on layer properties."""
         if editable is None:
-            if self.multiscale or self.dims.ndisplay == 3:
+            if self.multiscale or self._dims.ndisplay == 3:
                 self.editable = False
             else:
                 self.editable = True
@@ -706,7 +706,7 @@ class Labels(Image):
         else:
             # work with just the sliced image
             labels = self._data_raw
-            slice_coord = tuple(int_coord[d] for d in self.dims.displayed)
+            slice_coord = tuple(int_coord[d] for d in self._dims.displayed)
 
         matches = labels == old_label
         if self.contiguous:
@@ -747,7 +747,7 @@ class Labels(Image):
             self._save_history()
         brush_size_dims = [self.brush_size] * self.ndim
         if not self.n_dimensional and self.ndim > 2:
-            for i in self.dims.not_displayed:
+            for i in self._dims.not_displayed:
                 brush_size_dims[i] = 1
 
         if self.brush_shape == "square":
@@ -769,8 +769,8 @@ class Labels(Image):
             slice_coord = [int(np.round(c)) for c in coord]
             shape = self.data.shape
             if not self.n_dimensional and self.ndim > 2:
-                coord = [coord[i] for i in self.dims.displayed]
-                shape = [shape[i] for i in self.dims.displayed]
+                coord = [coord[i] for i in self._dims.displayed]
+                shape = [shape[i] for i in self._dims.displayed]
 
             sphere_dims = len(coord)
             # Ensure circle doesn't have spurious point
@@ -791,9 +791,9 @@ class Labels(Image):
             # or expand coordinate if 3rd dim in 2D image
             slice_coord_temp = [m for m in mask_indices.T]
             if not self.n_dimensional and self.ndim > 2:
-                for j, i in enumerate(self.dims.displayed):
+                for j, i in enumerate(self._dims.displayed):
                     slice_coord[i] = slice_coord_temp[j]
-                for i in self.dims.not_displayed:
+                for i in self._dims.not_displayed:
                     slice_coord[i] = slice_coord[i] * np.ones(
                         mask_indices.shape[0], dtype=int
                     )
