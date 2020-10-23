@@ -1,4 +1,5 @@
 import os.path
+import warnings
 from copy import copy
 from pathlib import Path
 
@@ -372,8 +373,13 @@ class QtViewer(QSplitter):
             caption=f'Save {"selected" if selected else "all"} layers',
             directory=self._last_visited_dir,  # home dir by default
         )
+
         if filename:
-            self.viewer.layers.save(filename, selected=selected)
+            with warnings.catch_warnings(record=True) as wa:
+                saved = self.viewer.layers.save(filename, selected=selected)
+                error_messages = "\n".join([str(x.message.args[0]) for x in wa])
+            if not saved:
+                QMessageBox().warning(self, "Save failed", f"File {filename} save failed.\n{error_messages}")
 
     def screenshot(self, path=None):
         """Take currently displayed screen and convert to an image array.
