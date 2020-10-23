@@ -1,7 +1,7 @@
 """VispyTiledImageLayer class.
 """
 import numpy as np
-from vispy.scene.visuals import Compound, Line
+from vispy.scene.visuals import Line
 from vispy.visuals.transforms import STTransform
 
 from ...layers.image.experimental.octree import ChunkData
@@ -12,44 +12,75 @@ GRID_WIDTH = 3
 GRID_COLOR = (1, 0, 0, 1)
 
 
-class ImageChunk:
-    def __init__(self):
-        self.node = ImageNode(None, method='auto')
+def _chunk_outline(chunk: ChunkData) -> np.ndarray:
+    """Return line verts that outline the given chunk.
 
+    Parameters
+    ----------
+    chunk : ChunkData
+        Create outline of this chunk.
 
-def _get_chunk_verts(chunk: ChunkData) -> np.ndarray:
+    Return
+    ------
+    np.ndarray
+        The chunk verts for 'segments' mode.
+    """
     x, y = chunk.pos
     h, w = chunk.data.shape[:2]
     w *= chunk.scale[1]
     h *= chunk.scale[0]
 
-    pos = np.zeros((8, 2), dtype=np.float32)
-    pos[0, :] = [x, y]
-    pos[1, :] = [x + w, y]
+    # Outline very chunk which means we double-draw all interior lines,
+    # but we can worry about that later if it causes perf or other issues.
+    return np.array(
+        (
+            [x, y],
+            [x + w, y],
+            [x + w, y],
+            [x + w, y + h],
+            [x + w, y + h],
+            [x, y + h],
+            [x, y + h],
+            [x, y],
+        ),
+        dtype=np.float32,
+    )
 
-    pos[2, :] = [x + w, y]
-    pos[3, :] = [x + w, y + h]
 
-    pos[4, :] = [x + w, y + h]
-    pos[5, :] = [x, y + h]
+class ImageChunk:
+    """The ImageNode for a single chunk.
 
-    pos[6, :] = [x, y + h]
-    pos[7, :] = [x, y]
-    return pos
+    This class will grow soon...
+    """
+
+    def __init__(self):
+        self.node = ImageNode(None, method='auto')
+        self.node.order = 0
 
 
 class TileGrid:
+    """The grid that shows the outlines of all the tiles."""
+
     def __init__(self):
         self.reset()
         self.line = Line(
             connect='segments', color=GRID_COLOR, width=GRID_WIDTH
         )
+        self.line.order = 10
 
     def reset(self) -> None:
+        """Reset the grid to have no lines."""
         self.verts = np.zeros((0, 2), dtype=np.float32)
 
-    def add_chunk(self, chunk: ChunkData) -> None:
-        chunk_verts = _get_chunk_verts(chunk)
+    def add_chunk_outline(self, chunk: ChunkData) -> None:
+        """Add the outline of the given chunk to the grid.
+
+        Parameters
+        ----------
+        chunk : ChunkData
+            Add the outline of this chunk.
+        """
+        chunk_verts = _chunk_outline(chunk)
         self.verts = np.vstack([self.verts, chunk_verts])
         self.line.set_data(self.verts)
 
@@ -90,17 +121,12 @@ class VispyTiledImageLayer(VispyImageLayer):
 
     def __init__(self, layer):
         self.chunks = {}
+        self.grid = TileGrid()
 
         # This will call our self._on_data_change().
         super().__init__(layer)
 
-        self.grid = TileGrid()
-
-        # We don't need a compound but probably will...
-        self.compound = Compound([self.grid.line])
-        self.compound.parent = self.node
-
-        self.line_verts = np.zeros((0, 2), dtype=np.float32)
+        self.grid.line.parent = self.node
 
     def _create_image_chunk(self, chunk: ChunkData):
         """Add a new chunk.
@@ -112,13 +138,13 @@ class VispyTiledImageLayer(VispyImageLayer):
         """
         image_chunk = ImageChunk()
 
-        self.grid.add_chunk(chunk)
+        self.grid.add_chunk_outline(chunk)
 
         # Parent VispyImageLayer will process the data then set it.
         self._set_node_data(image_chunk.node, chunk.data)
 
         # Add this new ImageChunk as child of self.node, transformed into place.
-        # image_chunk.node.parent = self.node
+        image_chunk.node.parent = self.node
         image_chunk.node.transform = STTransform(chunk.scale, chunk.pos)
 
         return image_chunk
@@ -134,7 +160,7 @@ class VispyTiledImageLayer(VispyImageLayer):
         for image_chunk in self.chunks.values():
             image_chunk.node.parent = None
         self.chunks = {}
-        self.line_verts = np.zeros((0, 2), dtype=np.float32)
+        self.grid.reset()
 
         for chunk in self.layer.view_chunks:
             chunk_id = id(chunk.data)
