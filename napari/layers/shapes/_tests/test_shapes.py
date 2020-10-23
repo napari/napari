@@ -600,6 +600,28 @@ def test_selecting_shapes():
     assert layer.selected_data == set()
 
 
+def test_removing_all_shapes_empty_list():
+    """Test removing all shapes with an empty list."""
+    data = 20 * np.random.random((10, 4, 2))
+    np.random.seed(0)
+    layer = Shapes(data)
+    assert layer.nshapes == 10
+
+    layer.data = []
+    assert layer.nshapes == 0
+
+
+def test_removing_all_shapes_empty_array():
+    """Test removing all shapes with an empty list."""
+    data = 20 * np.random.random((10, 4, 2))
+    np.random.seed(0)
+    layer = Shapes(data)
+    assert layer.nshapes == 10
+
+    layer.data = np.empty((0, 2))
+    assert layer.nshapes == 0
+
+
 def test_removing_selected_shapes():
     """Test removing selected shapes."""
     np.random.seed(0)
@@ -849,7 +871,6 @@ def test_color_direct(attribute: str):
     color_array[list(selected_data)] = colorarray_green
     layer_color = getattr(layer, f'{attribute}_color')
     np.testing.assert_allclose(color_array, layer_color)
-
     # Add new shape and test its color
     new_shape = np.random.random((1, 4, 2))
     layer.selected_data = set()
@@ -876,6 +897,19 @@ def test_color_direct(attribute: str):
     color_array = np.tile([[0, 0, 0, 1]], (len(layer.data), 1))
     layer_color = getattr(layer, f'{attribute}_color')
     np.testing.assert_allclose(color_array, layer_color)
+
+
+@pytest.mark.parametrize("attribute", ['edge', 'face'])
+def test_single_shape_properties(attribute):
+    """Test creating single shape with properties"""
+    shape = (4, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer_kwargs = {f'{attribute}_color': 'red'}
+    layer = Shapes(data, **layer_kwargs)
+    layer_color = getattr(layer, f'{attribute}_color')
+    assert len(layer_color) == 1
+    np.testing.assert_allclose([1, 0, 0, 1], layer_color[0])
 
 
 color_cycle_str = ['red', 'blue']
