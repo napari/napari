@@ -22,7 +22,10 @@ def draw_text_tiled(image, text, nrows=1, ncols=1):
 
     print(f"Creating {nrows}x{ncols} text image: {text}")
 
-    font = ImageFont.truetype('Arial Black.ttf', size=74)
+    try:
+        font = ImageFont.truetype('Arial Black.ttf', size=74)
+    except OSError:
+        font = ImageFont.load_default()
     (text_width, text_height) = font.getsize(text)
 
     color = 'rgb(255, 255, 255)'  # white
