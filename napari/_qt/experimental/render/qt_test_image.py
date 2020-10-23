@@ -5,7 +5,7 @@ from typing import Callable, Tuple
 import numpy as np
 from qtpy.QtWidgets import QFrame, QPushButton, QVBoxLayout
 
-from .qt_labeled_spin_box import LabeledSpinBox
+from .qt_labeled_spin_box import QtLabeledSpinBox
 from .test_image import create_tiled_text_array
 
 
@@ -24,8 +24,8 @@ class QtTestImageLayout(QVBoxLayout):
 
         # Dimension controls.
         size_range = range(1, 65536, 100)
-        self.width = LabeledSpinBox("Image Width", 1024, size_range)
-        self.height = LabeledSpinBox("Image Height", 1024, size_range)
+        self.width = QtLabeledSpinBox("Image Width", 1024, size_range)
+        self.height = QtLabeledSpinBox("Image Height", 1024, size_range)
         self.addLayout(self.width)
         self.addLayout(self.height)
 

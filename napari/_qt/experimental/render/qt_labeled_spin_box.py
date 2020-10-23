@@ -4,7 +4,7 @@ from qtpy.QtCore import Qt
 from qtpy.QtWidgets import QHBoxLayout, QLabel, QSpinBox
 
 
-class LabeledSpinBox(QHBoxLayout):
+class QtLabeledSpinBox(QHBoxLayout):
     """A label plus a SpinBox for the QtRender widget.
 
     This was cobbled together quickly for QtRender. We could probably use

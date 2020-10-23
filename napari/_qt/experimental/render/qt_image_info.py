@@ -2,7 +2,7 @@
 """
 from qtpy.QtWidgets import QFrame, QLabel, QVBoxLayout
 
-from .qt_labeled_spin_box import LabeledSpinBox
+from .qt_labeled_spin_box import QtLabeledSpinBox
 
 
 class QtImageInfoLayout(QVBoxLayout):
@@ -21,7 +21,7 @@ class QtImageInfoLayout(QVBoxLayout):
 
         # Octree level SpinBox.
         max_level = layer.num_octree_levels - 1
-        self.octree_level = LabeledSpinBox(
+        self.octree_level = QtLabeledSpinBox(
             "Octree Level",
             max_level,
             range(0, max_level, 1),
