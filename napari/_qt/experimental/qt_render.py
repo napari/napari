@@ -112,14 +112,14 @@ class RenderSpinBox:
         box.valueChanged.connect(self._on_change)
         return box
 
-    def _on_change(self) -> None:
+    def _on_change(self, value) -> None:
         """Called when the spin box value was changed."""
         # We must clearFocus or it would double-step, no idea why.
         self.box.clearFocus()
 
         # Notify any connection we have.
         if self.connect is not None:
-            self.connect()
+            self.connect(value)
 
     def value(self) -> int:
         """Return the current value of the QSpinBox."""
@@ -192,6 +192,10 @@ class QtRender(QWidget):
             range(0, max_level, 1),
             connect=self._on_new_level,
         )
+
+        height, width = self.layer.data.shape[1:3]  # fix dims
+        layout.addWidget(QLabel(f"Image Width: {width}"))
+        layout.addWidget(QLabel(f"Image Height: {height}"))
 
         layout.addStretch(1)
         layout.addWidget(QtTestImage(viewer))
