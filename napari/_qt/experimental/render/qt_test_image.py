@@ -1,6 +1,6 @@
 """QtTestImage class.
 """
-from typing import Tuple
+from typing import Callable, Tuple
 
 import numpy as np
 from qtpy.QtWidgets import QFrame, QPushButton, QVBoxLayout
@@ -10,7 +10,15 @@ from .test_image import create_tiled_text_array
 
 
 class QtTestImageLayout(QVBoxLayout):
-    def __init__(self, on_create):
+    """Layout for the Test Image frame.
+
+    Parameters
+    ----------
+    on_create : Callable[[], None]
+        Called when the create test image button is pressed.
+    """
+
+    def __init__(self, on_create: Callable[[], None]):
         super().__init__()
         self.addStretch(1)
 
@@ -40,7 +48,8 @@ class QtTestImage(QFrame):
         The layer we are hook up to.
     """
 
-    # This is a class attribute to provide a unique index napari-wide.
+    # This is a class attribute so that we use a unique index napari-wide,
+    # not just within in this one QtRender widget, this one layer.
     image_index = 0
 
     def __init__(self, viewer, layer):
@@ -55,18 +64,8 @@ class QtTestImage(QFrame):
         size = self.layout.get_size()
         images = [create_tiled_text_array(x, 16, 16, size) for x in range(5)]
         data = np.stack(images, axis=0)
-        name = self._create_image_name()
 
-        self.viewer.add_image(data, rgb=True, name=name)
-
-    def _create_image_name(self) -> str:
-        """Return a unique image name.
-
-        Return
-        ------
-        str
-            The image name such as "test-image-002".
-        """
-        name = f"test-image-{QtTestImage.image_index:003}"
+        unique_name = f"test-image-{QtTestImage.image_index:003}"
         QtTestImage.image_index += 1
-        return name
+
+        self.viewer.add_image(data, rgb=True, name=unique_name)
