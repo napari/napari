@@ -19,19 +19,27 @@ class OctreeImageSlice(ImageSlice):
         image: ArrayLike,
         image_converter: Callable[[ArrayLike], ArrayLike],
         rgb: bool,
+        tile_size: int,
         octree_level: int,
         data_corners,
     ):
         LOGGER.debug("OctreeImageSlice.__init__")
         super().__init__(image, image_converter, rgb)
 
+        self._tile_size = tile_size
         self._octree = None
         self._octree_level = octree_level
         self._data_corners = data_corners
 
     @property
     def num_octree_levels(self) -> int:
-        """Return the number of levels in the octree."""
+        """Return the number of levels in the octree.
+
+        Return
+        ------
+        int
+            The number of levels in the octree.
+        """
         return self._octree.num_levels
 
     def _set_raw_images(
@@ -54,10 +62,14 @@ class OctreeImageSlice(ImageSlice):
         # is a *single* scale image and we create an octree on the fly just
         # so we have something to render.
         # with block_timer("create octree", print_time=True):
-        self._octree = Octree.from_image(image)
+        self._octree = Octree.from_image(image, self._tile_size)
 
-        # None means use coarsest level.
-        if self._octree_level is None:
+        # Set to max level if we had no previous level (None) or if
+        # our previous level was too high for this new tree.
+        if (
+            self._octree_level is None
+            or self._octree_level >= self._octree.num_levels
+        ):
             self._octree_level = self._octree.num_levels - 1
 
         # self._octree.print_tiles()

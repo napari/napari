@@ -23,11 +23,15 @@ class QtTestImageLayout(QVBoxLayout):
         self.addStretch(1)
 
         # Dimension controls.
-        size_range = range(1, 65536, 100)
-        self.width = QtLabeledSpinBox("Image Width", 1024, size_range)
-        self.height = QtLabeledSpinBox("Image Height", 1024, size_range)
+        image_size_range = range(1, 65536, 100)
+        self.width = QtLabeledSpinBox("Image Width", 1024, image_size_range)
+        self.height = QtLabeledSpinBox("Image Height", 1024, image_size_range)
         self.addLayout(self.width)
         self.addLayout(self.height)
+
+        tile_size_range = range(1, 4096, 100)
+        self.tile_size = QtLabeledSpinBox("Tile Size", 64, tile_size_range)
+        self.addLayout(self.tile_size)
 
         # Test image button.
         button = QPushButton("Create Test Image")
@@ -35,8 +39,25 @@ class QtTestImageLayout(QVBoxLayout):
         button.clicked.connect(on_create)
         self.addWidget(button)
 
-    def get_size(self) -> Tuple[int, int]:
+    def get_image_size(self) -> Tuple[int, int]:
+        """Return the configured image size.
+
+        Return
+        ------
+        Tuple[int, int]
+            The [width, height] requested by the user.
+        """
         return (self.width.spin.value(), self.height.spin.value())
+
+    def get_tile_size(self) -> int:
+        """Return the configured tile size.
+
+        Return
+        ------
+        int
+            The requested tile size.
+        """
+        return self.tile_size.spin.value()
 
 
 class QtTestImage(QFrame):
@@ -63,11 +84,14 @@ class QtTestImage(QFrame):
 
     def _create_test_image(self) -> None:
         """Create a new test image."""
-        size = self.layout.get_size()
-        images = [create_tiled_text_array(x, 16, 16, size) for x in range(5)]
+        image_size = self.layout.get_image_size()
+        images = [
+            create_tiled_text_array(x, 16, 16, image_size) for x in range(5)
+        ]
         data = np.stack(images, axis=0)
 
         unique_name = f"test-image-{QtTestImage.image_index:003}"
         QtTestImage.image_index += 1
 
-        self.viewer.add_image(data, rgb=True, name=unique_name)
+        layer = self.viewer.add_image(data, rgb=True, name=unique_name)
+        layer.tile_size = self.layout.get_tile_size()

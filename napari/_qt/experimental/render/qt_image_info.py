@@ -31,12 +31,14 @@ class QtImageInfoLayout(QVBoxLayout):
         )
         self.addLayout(self.octree_level)
 
-        # Dimension information labels.
         shape = layer.data.shape
         height, width = shape[1:3]  # Which dims are really width/height?
+
+        # Dimension related labels.
         self.addWidget(QLabel(f"Shape: {shape}"))
         self.addWidget(QLabel(f"Width: {width}"))
         self.addWidget(QLabel(f"Height: {height}"))
+        self.addWidget(QLabel(f"Tile Size: {layer.tile_size}"))
 
 
 class QtImageInfo(QFrame):

@@ -5,6 +5,8 @@ from ..image import Image
 from ._chunked_slice_data import ChunkedSliceData
 from ._octree_image_slice import OctreeImageSlice
 
+DEFAULT_TILE_SIZE = 64
+
 
 class OctreeImage(Image):
     """OctreeImage layer.
@@ -15,10 +17,19 @@ class OctreeImage(Image):
     """
 
     def __init__(self, *args, **kwargs):
+        self._tile_size = DEFAULT_TILE_SIZE
         self._octree_level = None
         self._data_corners = None
         super().__init__(*args, **kwargs)
         self.events.add(octree_level=Event)
+
+    @property
+    def tile_size(self) -> int:
+        return self._tile_size
+
+    @tile_size.setter
+    def tile_size(self, tile_size: int) -> None:
+        self._tile_size = tile_size
 
     @property
     def octree_level(self):
@@ -50,6 +61,7 @@ class OctreeImage(Image):
             self._get_empty_image(),
             self._raw_to_displayed,
             self.rgb,
+            self._tile_size,
             self._octree_level,
             self._data_corners,
         )

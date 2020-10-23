@@ -10,8 +10,6 @@ from ....types import ArrayLike
 TileArray = List[List[np.ndarray]]
 Levels = List[TileArray]
 
-TILE_SIZE = 64
-
 
 class ChunkData:
     """One chunk of the full image.
@@ -176,14 +174,20 @@ def _create_coarser_level(tiles: TileArray) -> TileArray:
     return level
 
 
+class OctreeInfo:
+    def __init__(self, base_shape, tile_size: int):
+        self.base_shape = base_shape
+        self.tile_size = tile_size
+
+
 class OctreeLevel:
     """One level of the octree.
 
     A level contains a 2D or 3D array of tiles.
     """
 
-    def __init__(self, base_shape, level_index: int, tiles: TileArray):
-        self.base_shape = base_shape
+    def __init__(self, info: OctreeInfo, level_index: int, tiles: TileArray):
+        self.info = info
         self.level_index = level_index
         self.tiles = tiles
 
@@ -235,11 +239,13 @@ class OctreeLevel:
         scale = self.scale
         scale_vec = [scale, scale]
 
+        tile_size = self.info.tile_size
+
         # Iterate over every tile in the rectangular region.
         data = None
-        y = row_range.start * TILE_SIZE
+        y = row_range.start * tile_size
         for row in row_range:
-            x = col_range.start * TILE_SIZE
+            x = col_range.start * tile_size
             for col in col_range:
 
                 data = self.tiles[row][col]
@@ -259,7 +265,9 @@ class OctreeLevel:
         def _clamp(val, min_val, max_val):
             return max(min(val, max_val), min_val)
 
-        tiles = [span[0] / TILE_SIZE, span[1] / TILE_SIZE]
+        tile_size = self.info.tile_size
+
+        tiles = [span[0] / tile_size, span[1] / tile_size]
         new_min = _clamp(tiles[0], 0, num_tiles - 1)
         new_max = _clamp(tiles[1], 0, num_tiles - 1)
         clamped = [new_min, new_max + 1]
@@ -325,7 +333,7 @@ class Octree:
             level.print_info()
 
     @classmethod
-    def from_image(cls, image: np.ndarray):
+    def from_image(cls, image: np.ndarray, tile_size: int):
         """Create octree from given single image.
 
         Parameters
@@ -333,8 +341,8 @@ class Octree:
         image : ndarray
             Create the octree for this single image.
         """
-        image_shape = image.shape
-        tiles = _create_tiles(image, TILE_SIZE)
+        info = OctreeInfo(image.shape, tile_size)
+        tiles = _create_tiles(image, info.tile_size)
         levels = [tiles]
 
         # Keep combining tiles until there is one root tile.
@@ -344,7 +352,7 @@ class Octree:
 
         # _print_levels(levels)
 
-        return Octree(image_shape, levels)
+        return Octree(info, levels)
 
 
 if __name__ == "__main__":
