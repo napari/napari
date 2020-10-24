@@ -17,7 +17,7 @@ class QtRenderContainer(QStackedWidget):
 
     Attributes
     ----------
-    empty_widget : qtpy.QtWidgets.QFramed
+    empty_widget : qtpy.QtWidgets.QFrame
         Empty placeholder frame for when no layer is selected.
     viewer : napari.components.ViewerModel
         Napari viewer containing the rendered scene, layers, and controls.
@@ -33,7 +33,12 @@ class QtRenderContainer(QStackedWidget):
         self.viewer = viewer
 
         self.setMouseTracking(True)
+
+        # We show QtRender even when there is no layer. However in that
+        # case it only shows the "create test image" controls, the controls
+        # that can be used to create a new layer.
         self.empty_widget = QtRender(viewer)
+
         self._widgets = {}
         self.addWidget(self.empty_widget)
         self._display(None)

@@ -4,7 +4,13 @@ import os
 
 
 def _set(env_var: str) -> bool:
-    """Return True if the env variable is set to a non-zero value."""
+    """Return True if the env variable set and non-zero.
+
+    Return
+    ------
+    bool
+        True if the env var was set to a non-zero value.
+    """
     return os.getenv(env_var, "0") != "0"
 
 
