@@ -18,7 +18,7 @@ class QtRender(QWidget):
     viewer : Viewer
         The napari viewer.
     layer : Optional[Layer]
-        The layer we are associated with if any.
+        Show controls for this layer, or test image controls if no layer.
     """
 
     def __init__(self, viewer, layer=None):

@@ -13,7 +13,7 @@ class QtImageInfoLayout(QVBoxLayout):
     Parameters
     ----------
     layer : Layer
-        The layer we are associated with.
+        Show info for this layer.
     """
 
     def __init__(self, layer):
@@ -22,7 +22,7 @@ class QtImageInfoLayout(QVBoxLayout):
         shape = layer.data.shape
         height, width = shape[1:3]  # Which dims are really width/height?
 
-        # Dimension related labels.
+        # Dimension labels.
         self.addWidget(QLabel(f"Shape: {shape}"))
         self.addWidget(QLabel(f"Width: {width}"))
         self.addWidget(QLabel(f"Height: {height}"))
@@ -48,7 +48,7 @@ class QtOctreeInfoLayout(QVBoxLayout):
     Parameters
     ----------
     layer : Layer
-        The layer we are associated with.
+        Show octree info for this layer
     on_new_octree_level : Callable[[int], None]
         Call this when the octree level is changed.
     """

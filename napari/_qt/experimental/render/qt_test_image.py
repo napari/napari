@@ -8,6 +8,12 @@ from qtpy.QtWidgets import QFrame, QPushButton, QVBoxLayout
 from .qt_labeled_spin_box import QtLabeledSpinBox
 from .test_image import create_tiled_text_array
 
+TILE_SIZE_DEFAULT = 256
+TILE_SIZE_RANGE = range(1, 4096, 100)
+
+IMAGE_SIZE_DEFAULT = (1024, 1024)  # (width, height)
+IMAGE_SIZE_RANGE = range(1, 65536, 100)
+
 
 class QtTestImageLayout(QVBoxLayout):
     """Layout for the Test Image frame.
@@ -23,14 +29,19 @@ class QtTestImageLayout(QVBoxLayout):
         self.addStretch(1)
 
         # Dimension controls.
-        image_size_range = range(1, 65536, 100)
-        self.width = QtLabeledSpinBox("Image Width", 1024, image_size_range)
-        self.height = QtLabeledSpinBox("Image Height", 1024, image_size_range)
+
+        self.width = QtLabeledSpinBox(
+            "Image Width", IMAGE_SIZE_DEFAULT[0], IMAGE_SIZE_RANGE
+        )
+        self.height = QtLabeledSpinBox(
+            "Image Height", IMAGE_SIZE_DEFAULT[1], IMAGE_SIZE_RANGE
+        )
         self.addLayout(self.width)
         self.addLayout(self.height)
 
-        tile_size_range = range(1, 4096, 100)
-        self.tile_size = QtLabeledSpinBox("Tile Size", 256, tile_size_range)
+        self.tile_size = QtLabeledSpinBox(
+            "Tile Size", TILE_SIZE_DEFAULT, TILE_SIZE_RANGE
+        )
         self.addLayout(self.tile_size)
 
         # Test image button.

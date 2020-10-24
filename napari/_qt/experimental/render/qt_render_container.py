@@ -35,8 +35,7 @@ class QtRenderContainer(QStackedWidget):
         self.setMouseTracking(True)
 
         # We show QtRender even when there is no layer. However in that
-        # case it only shows the "create test image" controls, the controls
-        # that can be used to create a new layer.
+        # case it only shows the controls to create a new test image/layer.
         self.empty_widget = QtRender(viewer)
 
         self._widgets = {}
