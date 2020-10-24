@@ -1,5 +1,6 @@
 import warnings
 from abc import ABC, abstractmethod
+from collections import namedtuple
 from contextlib import contextmanager
 from typing import List, Optional
 
@@ -18,6 +19,8 @@ from ..utils.layer_utils import (
     convert_to_uint8,
 )
 from ._base_constants import Blending
+
+Extent = namedtuple('Extent', 'data world step')
 
 
 class Layer(KeymapProvider, ABC):
@@ -561,6 +564,15 @@ class Layer(KeymapProvider, ABC):
         return world_extent
 
     @property
+    def extent(self) -> Extent:
+        """Extent of layer in data and world coordinates."""
+        return Extent(
+            data=self._extent_data,
+            world=self._extent_world,
+            step=abs(self.scale),
+        )
+
+    @property
     def _slice_indices(self):
         """(D, ) array: Slice indices in data coordinates."""
         # clipping plane in world coordinates
@@ -602,8 +614,15 @@ class Layer(KeymapProvider, ABC):
         -------
         shape : tuple
         """
-        # To Do: Deprecate when full world coordinate refactor
-        # is complete
+        warnings.warn(
+            (
+                "The shape parameter is deprecated and will be removed in version 0.4.1."
+                " Instead you should use the extent.data and extent.world parameters"
+                " to get the extent of the data in data or world coordinates."
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
 
         extent = self._extent_world
         # Rounding is for backwards compatibility reasons.
@@ -909,7 +928,7 @@ class Layer(KeymapProvider, ABC):
             [np.floor(data_corners[0]), np.ceil(data_corners[1])]
         ).astype(int)
         data_corners = np.clip(
-            data_corners, self._extent_data[0], self._extent_data[1]
+            data_corners, self.extent.data[0], self.extent.data[1]
         )
 
         if self._dims.ndisplay == 2 and self.multiscale:
