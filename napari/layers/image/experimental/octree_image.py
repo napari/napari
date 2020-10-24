@@ -21,7 +21,7 @@ class OctreeImage(Image):
         self._octree_level = None
         self._data_corners = None
         super().__init__(*args, **kwargs)
-        self.events.add(octree_level=Event)
+        self.events.add(octree_level=Event, tile_size=Event)
 
     @property
     def tile_size(self) -> int:
@@ -30,16 +30,14 @@ class OctreeImage(Image):
     @tile_size.setter
     def tile_size(self, tile_size: int) -> None:
         self._tile_size = tile_size
+        self.events.tile_size()
+        self._slice = None
+        self.refresh()
 
     @property
     def octree_level(self):
         """Return the currently displayed octree level."""
         return self._octree_level
-
-    @property
-    def num_octree_levels(self) -> int:
-        """Return the total number of octree levels."""
-        return self._slice.num_octree_levels
 
     @octree_level.setter
     def octree_level(self, level: int):
@@ -52,7 +50,13 @@ class OctreeImage(Image):
         """
         assert 0 <= level < self.num_octree_levels
         self._octree_level = level
+        self.events.octree_level()
         self.refresh()  # Create new slice with this level.
+
+    @property
+    def num_octree_levels(self) -> int:
+        """Return the total number of octree levels."""
+        return self._slice.num_octree_levels
 
     def _new_empty_slice(self):
         """Initialize the current slice to an empty image.

@@ -42,6 +42,15 @@ class QtImageInfo(QFrame):
         self.setLayout(layout)
 
 
+class TileSizeLabel(QLabel):
+    def __init__(self, value):
+        super().__init__()
+        self.update(value)
+
+    def update(self, value: int) -> None:
+        self.setText(f"Tile Size: {value}")
+
+
 class QtOctreeInfoLayout(QVBoxLayout):
     """Layout of the octree info frame.
 
@@ -66,7 +75,19 @@ class QtOctreeInfoLayout(QVBoxLayout):
         )
         self.addLayout(self.octree_level)
 
-        self.addWidget(QLabel(f"Tile Size: {layer.tile_size}"))
+        self.tile_size = TileSizeLabel(layer.tile_size)
+        self.addWidget(self.tile_size)
+
+    def update(self, layer):
+        """Update the layout with latest information for the layer.
+
+        Parameters
+        ----------
+        layer : Layer
+            Update with information from this layer.
+        """
+        self.octree_level.spin.setValue(layer.octree_level)
+        self.tile_size.update(layer.tile_size)
 
 
 class QtOctreeInfo(QFrame):
@@ -82,13 +103,14 @@ class QtOctreeInfo(QFrame):
         def _update_layer(value):
             layer.octree_level = value
 
-        layout = QtOctreeInfoLayout(layer, _update_layer)
-        self.setLayout(layout)
+        self.layout = QtOctreeInfoLayout(layer, _update_layer)
+        self.setLayout(self.layout)
 
         def _update_layout(event=None):
             if layer.octree_level is not None:
-                layout.octree_level.spin.setValue(layer.octree_level)
+                self.layout.update(layer)
 
         # Update layout now and hook to event for future updates.
         _update_layout()
         layer.events.octree_level.connect(_update_layout)
+        layer.events.tile_size.connect(_update_layout)
