@@ -5,7 +5,7 @@ from ..image import Image
 from ._chunked_slice_data import ChunkedSliceData
 from ._octree_image_slice import OctreeImageSlice
 
-DEFAULT_TILE_SIZE = 64
+DEFAULT_TILE_SIZE = 256
 
 
 class OctreeImage(Image):

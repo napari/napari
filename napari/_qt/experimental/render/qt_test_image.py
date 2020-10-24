@@ -30,7 +30,7 @@ class QtTestImageLayout(QVBoxLayout):
         self.addLayout(self.height)
 
         tile_size_range = range(1, 4096, 100)
-        self.tile_size = QtLabeledSpinBox("Tile Size", 64, tile_size_range)
+        self.tile_size = QtLabeledSpinBox("Tile Size", 256, tile_size_range)
         self.addLayout(self.tile_size)
 
         # Test image button.
