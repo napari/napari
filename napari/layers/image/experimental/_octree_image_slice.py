@@ -4,6 +4,7 @@ import logging
 from typing import Callable
 
 from ....types import ArrayLike
+from ....utils.perf import block_timer
 from .._image_slice import ImageSlice
 from .octree import Octree
 
@@ -64,8 +65,8 @@ class OctreeImageSlice(ImageSlice):
         # TODO_OCTREE: Create an octree as a test... the expection is this
         # is a *single* scale image and we create an octree on the fly just
         # so we have something to render.
-        # with block_timer("create octree", print_time=True):
-        self._octree = Octree.from_image(image, self._tile_size)
+        with block_timer("Octree.from_image", print_time=True):
+            self._octree = Octree.from_image(image, self._tile_size)
 
         # Set to max level if we had no previous level (None) or if
         # our previous level was too high for this new tree.
