@@ -42,30 +42,6 @@ class QtImageInfo(QFrame):
         self.setLayout(layout)
 
 
-class TileSizeLabel(QLabel):
-    """Lable showing the layer's tile size.
-
-    Parameters
-    ----------
-    value : int
-        The tile size (e.g. 256).
-    """
-
-    def __init__(self, value):
-        super().__init__()
-        self.update(value)
-
-    def update(self, value: int) -> None:
-        """Update the label with the new given size.
-
-        Parameters
-        ----------
-        value : int
-            The tile size (e.g. 256).
-        """
-        self.setText(f"Tile Size: {value}")
-
-
 class QtOctreeInfoLayout(QVBoxLayout):
     """Layout of the octree info frame.
 
@@ -84,14 +60,16 @@ class QtOctreeInfoLayout(QVBoxLayout):
         max_level = layer.num_octree_levels - 1
         self.octree_level = QtLabeledSpinBox(
             "Octree Level",
-            max_level,
+            0,
             range(0, max_level, 1),
             connect=on_new_octree_level,
         )
         self.addLayout(self.octree_level)
 
-        self.tile_size = TileSizeLabel(layer.tile_size)
+        self.tile_size = QLabel()
         self.addWidget(self.tile_size)
+
+        self.update(layer)
 
     def update(self, layer):
         """Update the layout with latest information for the layer.
@@ -102,7 +80,9 @@ class QtOctreeInfoLayout(QVBoxLayout):
             Update with information from this layer.
         """
         self.octree_level.spin.setValue(layer.octree_level)
-        self.tile_size.update(layer.tile_size)
+
+        size = layer.tile_size
+        self.tile_size.setText(f"Tile Size: {size}x{size}")
 
 
 class QtOctreeInfo(QFrame):
