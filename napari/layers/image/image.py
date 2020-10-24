@@ -493,8 +493,15 @@ class Image(IntensityVisualizationMixin, Layer):
         -------
         shape : tuple
         """
-        # To Do: Deprecate when full world coordinate refactor
-        # is complete
+        warnings.warn(
+            (
+                "The shape attribute is deprecated and will be removed in version 0.4.1."
+                " Instead you should use the extent.data and extent.world attributes"
+                " to get the extent of the data in data or world coordinates."
+            ),
+            category=FutureWarning,
+            stacklevel=2,
+        )
 
         extent = copy(self._extent_data)
         extent[1] = extent[1] + 1
