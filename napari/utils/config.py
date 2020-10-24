@@ -3,9 +3,9 @@
 import os
 
 
-def _set(var: str) -> bool:
-    """Return True if the environment variable is set is not 0."""
-    return os.getenv(var, "0") != "0"
+def _set(env_var: str) -> bool:
+    """Return True if the env variable is set to a non-zero value."""
+    return os.getenv(env_var, "0") != "0"
 
 
 #
@@ -23,8 +23,8 @@ def _set(var: str) -> bool:
 # B) Octree Rendering
 #
 # Image layers construct and render out of an octree. This is a WIP and is
-# not very functional yet. Octree rendering implies that async loading is
-# enabled.
+# not useful yet. We working out the datastructure. Octree rendering
+# implies that async loading is enabled.
 #
 # Two options for async loading without the octree:
 #
