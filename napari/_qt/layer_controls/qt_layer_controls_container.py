@@ -1,3 +1,5 @@
+import os
+
 from qtpy.QtWidgets import QFrame, QStackedWidget
 
 from ...layers import Image, Labels, Points, Shapes, Surface, Tracks, Vectors
@@ -18,6 +20,11 @@ layer_to_controls = {
     Vectors: QtVectorsControls,
     Tracks: QtTracksControls,
 }
+
+if os.getenv("NAPARI_ASYNC", "0") != "0":
+    from ...layers.image.experimental.octree_image import OctreeImage
+
+    layer_to_controls[OctreeImage] = QtImageControls
 
 
 def create_qt_layer_controls(layer):

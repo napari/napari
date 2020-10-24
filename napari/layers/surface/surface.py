@@ -43,6 +43,21 @@ class Surface(IntensityVisualizationMixin, Layer):
         Scale factors for the layer.
     translate : tuple of float
         Translation values for the layer.
+    rotate : float, 3-tuple of float, or n-D array.
+        If a float convert into a 2D rotation matrix using that value as an
+        angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
+        pitch, roll convention. Otherwise assume an nD rotation. Angles are
+        assumed to be in degrees. They can be converted from radians with
+        np.degrees if needed.
+    shear : 1-D array or n-D array
+        Either a vector of upper triangular values, or an nD shear matrix with
+        ones along the main diagonal.
+    affine: n-D array or napari.utils.transforms.Affine
+        (N+1, N+1) affine transformation matrix in homogeneous coordinates.
+        The first (N, N) entries correspond to a linear transform and
+        the final column is a lenght N translation vector and a 1 or a napari
+        AffineTransform object. If provided then translate, scale, rotate, and
+        shear values are ignored.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -104,6 +119,9 @@ class Surface(IntensityVisualizationMixin, Layer):
         metadata=None,
         scale=None,
         translate=None,
+        rotate=None,
+        shear=None,
+        affine=None,
         opacity=1,
         blending='translucent',
         visible=True,
@@ -118,6 +136,9 @@ class Surface(IntensityVisualizationMixin, Layer):
             metadata=metadata,
             scale=scale,
             translate=translate,
+            rotate=rotate,
+            shear=shear,
+            affine=affine,
             opacity=opacity,
             blending=blending,
             visible=visible,
@@ -136,7 +157,7 @@ class Surface(IntensityVisualizationMixin, Layer):
         self.contrast_limits = self._contrast_limits
 
         # Data containing vectors in the currently viewed slice
-        self._data_view = np.zeros((0, self.dims.ndisplay))
+        self._data_view = np.zeros((0, self._dims.ndisplay))
         self._view_faces = np.zeros((0, 3))
         self._view_vertex_values = []
 
@@ -263,7 +284,7 @@ class Surface(IntensityVisualizationMixin, Layer):
                     must be non-displayed dimensions. Data will not be
                     visible."""
                 )
-                self._data_view = np.zeros((0, self.dims.ndisplay))
+                self._data_view = np.zeros((0, self._dims.ndisplay))
                 self._view_faces = np.zeros((0, 3))
                 self._view_vertex_values = []
                 return
@@ -275,24 +296,24 @@ class Surface(IntensityVisualizationMixin, Layer):
             indices = np.array(self._slice_indices[-vertex_ndim:])
             disp = [
                 d
-                for d in np.subtract(self.dims.displayed, values_ndim)
+                for d in np.subtract(self._dims.displayed, values_ndim)
                 if d >= 0
             ]
             not_disp = [
                 d
-                for d in np.subtract(self.dims.not_displayed, values_ndim)
+                for d in np.subtract(self._dims.not_displayed, values_ndim)
                 if d >= 0
             ]
         else:
             self._view_vertex_values = self.vertex_values
             indices = np.array(self._slice_indices)
-            not_disp = list(self.dims.not_displayed)
-            disp = list(self.dims.displayed)
+            not_disp = list(self._dims.not_displayed)
+            disp = list(self._dims.displayed)
 
         self._data_view = self.vertices[:, disp]
         if len(self.vertices) == 0:
             self._view_faces = np.zeros((0, 3))
-        elif vertex_ndim > self.dims.ndisplay:
+        elif vertex_ndim > self._dims.ndisplay:
             vertices = self.vertices[:, not_disp].astype('int')
             triangles = vertices[self.faces]
             matches = np.all(triangles == indices[not_disp], axis=(1, 2))

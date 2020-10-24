@@ -256,7 +256,7 @@ def test_grid_mode(make_test_viewer):
 
     # enter grid view
     viewer.grid_view()
-    assert np.all(viewer.grid_size == (3, 3))
+    assert np.all(viewer.grid_size == (2, 3))
     assert viewer.grid_stride == 1
     translations = [layer.translate_grid for layer in viewer.layers]
     expected_translations = [
@@ -276,9 +276,9 @@ def test_grid_mode(make_test_viewer):
         (1 / 3, 1 / 3),
         (1 / 3, 1 / 2),
         (1 / 3, 2 / 3),
-        (1 / 2, 1 / 3),
-        (1 / 2, 1 / 2),
-        (1 / 2, 2 / 3),
+        (2 / 3, 1 / 3),
+        (2 / 3, 1 / 2),
+        (2 / 3, 2 / 3),
     ]
     # BGRMYC color order
     color = [
@@ -300,15 +300,6 @@ def test_grid_mode(make_test_viewer):
 
     # check screenshot
     screenshot = viewer.screenshot(canvas_only=True)
-    # sample 6 squares of the grid and check they have right colors
-    pos = [
-        (1 / 3, 1 / 3),
-        (1 / 3, 1 / 2),
-        (1 / 3, 2 / 3),
-        (1 / 2, 1 / 3),
-        (1 / 2, 1 / 2),
-        (1 / 2, 2 / 3),
-    ]
     # CGRMYB color order
     color = [
         [0, 255, 255, 255],
@@ -414,3 +405,55 @@ def test_labels_painting(make_test_viewer):
     # Check that painting has now occurred
     assert layer.data.max() > 0
     assert screenshot[:, :, :2].max() > 0
+
+
+@pytest.mark.skipif(
+    sys.platform.startswith('win') or not os.getenv("CI"),
+    reason='Screenshot tests are not supported on napari windows CI.',
+)
+def test_axes_visible(make_test_viewer):
+    """Test that something appears when axes become visible."""
+    viewer = make_test_viewer(show=True)
+
+    # Check axes are not visible
+    screenshot = viewer.screenshot(canvas_only=True)
+    assert not viewer.axes.visible
+    assert screenshot[..., :-1].max() == 0
+
+    # Make axes visible and check something is seen
+    viewer.axes.visible = True
+    screenshot = viewer.screenshot(canvas_only=True)
+    assert viewer.axes.visible
+    assert screenshot[..., :-1].max() > 0
+
+    # Make axes not visible and check they are gone
+    viewer.axes.visible = False
+    screenshot = viewer.screenshot(canvas_only=True)
+    assert not viewer.axes.visible
+    assert screenshot[..., :-1].max() == 0
+
+
+@pytest.mark.skipif(
+    sys.platform.startswith('win') or not os.getenv("CI"),
+    reason='Screenshot tests are not supported on napari windows CI.',
+)
+def test_scale_bar_visible(make_test_viewer):
+    """Test that something appears when scale bar becomes visible."""
+    viewer = make_test_viewer(show=True)
+
+    # Check scale bar is not visible
+    screenshot = viewer.screenshot(canvas_only=True)
+    assert not viewer.scale_bar.visible
+    assert screenshot[..., :-1].max() == 0
+
+    # Make scale bar visible and check something is seen
+    viewer.scale_bar.visible = True
+    screenshot = viewer.screenshot(canvas_only=True)
+    assert viewer.scale_bar.visible
+    assert screenshot[..., :-1].max() > 0
+
+    # Make scale bar not visible and check it is gone
+    viewer.scale_bar.visible = False
+    screenshot = viewer.screenshot(canvas_only=True)
+    assert not viewer.scale_bar.visible
+    assert screenshot[..., :-1].max() == 0

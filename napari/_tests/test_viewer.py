@@ -208,3 +208,43 @@ def test_roll_traspose_update(make_test_viewer, layer_class, data, ndim):
     # Transpose and check again:
     viewer.dims._transpose()
     check_view_transform_consistency(layer, viewer, transf_dict)
+
+
+def test_toggling_axes(make_test_viewer):
+    """Test toggling axes."""
+    viewer = make_test_viewer()
+
+    # Check axes are not visible
+    assert not viewer.axes.visible
+
+    # Make axes visible
+    viewer.axes.visible = True
+    assert viewer.axes.visible
+
+    # Enter 3D rendering and check axes still visible
+    viewer.dims.ndisplay = 3
+    assert viewer.axes.visible
+
+    # Make axes not visible
+    viewer.axes.visible = False
+    assert not viewer.axes.visible
+
+
+def test_toggling_scale_bar(make_test_viewer):
+    """Test toggling scale bar."""
+    viewer = make_test_viewer()
+
+    # Check scale bar is not visible
+    assert not viewer.scale_bar.visible
+
+    # Make scale bar visible
+    viewer.scale_bar.visible = True
+    assert viewer.scale_bar.visible
+
+    # Enter 3D rendering and check scale bar is still visible
+    viewer.dims.ndisplay = 3
+    assert viewer.scale_bar.visible
+
+    # Make scale bar not visible
+    viewer.scale_bar.visible = False
+    assert not viewer.scale_bar.visible

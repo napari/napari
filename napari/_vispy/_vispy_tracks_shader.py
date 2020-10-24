@@ -6,7 +6,7 @@ from vispy.visuals.filters.base_filter import Filter
 
 
 class TrackShader(Filter):
-    """ TrackShader
+    """TrackShader.
 
     Custom vertex and fragment shaders for visualizing tracks quickly with
     vispy. The central assumption is that the tracks are rendered as a
@@ -30,17 +30,11 @@ class TrackShader(Filter):
     vertex_time : 1D array, list
         a vector describing the time associated with each vertex
 
-
     TODO
     ----
     - the track is still displayed, albeit with fading, once the track has
      finished but is still within the 'tail_length' window. Should it
      disappear?
-    - check the shader positioning within the GL pipeline, currently
-     overrides layer opacity settings
-
-    vertex_mask: 1D array, list
-        a vector describing whether to mask each vertex
 
     """
 
@@ -78,15 +72,21 @@ class TrackShader(Filter):
     FRAG_SHADER = """
         varying vec4 v_track_color;
         void apply_track_shading() {
+
+            // if the alpha is below the threshold, discard the fragment
+            if( v_track_color.a <= 0.0 ) {
+                discard;
+            }
+
             // interpolate
-            gl_FragColor.a = clamp(v_track_color.a, 0.0, 1.0);
+            gl_FragColor.a = clamp(v_track_color.a * gl_FragColor.a, 0.0, 1.0);
         }
     """
 
     def __init__(
         self,
-        current_time=0,
-        tail_length=30,
+        current_time: Union[int, float] = 0,
+        tail_length: Union[int, float] = 30,
         use_fade: bool = True,
         vertex_time: Union[List, np.ndarray] = None,
     ):

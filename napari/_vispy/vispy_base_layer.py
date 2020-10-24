@@ -4,7 +4,7 @@ from functools import lru_cache
 import numpy as np
 from vispy.app import Canvas
 from vispy.gloo import gl
-from vispy.visuals.transforms import STTransform
+from vispy.visuals.transforms import MatrixTransform
 
 
 class VispyBaseLayer(ABC):
@@ -36,7 +36,7 @@ class VispyBaseLayer(ABC):
 
     Extended Summary
     ----------------
-    _master_transform : vispy.visuals.transforms.STTransform
+    _master_transform : vispy.visuals.transforms.MatrixTransform
         Transform positioning the layer visual inside the scenecanvas.
     """
 
@@ -56,20 +56,35 @@ class VispyBaseLayer(ABC):
         self.layer.events.visible.connect(self._on_visible_change)
         self.layer.events.opacity.connect(self._on_opacity_change)
         self.layer.events.blending.connect(self._on_blending_change)
-        self.layer.events.scale.connect(self._on_scale_change)
-        self.layer.events.translate.connect(self._on_translate_change)
+        self.layer.events.scale.connect(self._on_matrix_change)
+        self.layer.events.translate.connect(self._on_matrix_change)
+        self.layer.events.rotate.connect(self._on_matrix_change)
+        self.layer.events.shear.connect(self._on_matrix_change)
+        self.layer.events.affine.connect(self._on_matrix_change)
 
     @property
     def _master_transform(self):
-        """vispy.visuals.transforms.STTransform:
+        """vispy.visuals.transforms.MatrixTransform:
         Central node's firstmost transform.
         """
         # whenever a new parent is set, the transform is reset
         # to a NullTransform so we reset it here
-        if not isinstance(self.node.transform, STTransform):
-            self.node.transform = STTransform()
+        if not isinstance(self.node.transform, MatrixTransform):
+            self.node.transform = MatrixTransform()
 
         return self.node.transform
+
+    @property
+    def translate(self):
+        """sequence of float: Translation values."""
+        return self._master_transform.matrix[-1, :]
+
+    @property
+    def scale(self):
+        """sequence of float: Scale factors."""
+        matrix = self._master_transform.matrix[:-1, :-1]
+        _, upper_tri = np.linalg.qr(matrix)
+        return np.diag(upper_tri).copy()
 
     @property
     def order(self):
@@ -82,43 +97,6 @@ class VispyBaseLayer(ABC):
     @order.setter
     def order(self, order):
         self.node.order = order
-
-    @property
-    def scale(self):
-        """sequence of float: Scale factors."""
-        return self._master_transform.scale
-
-    @scale.setter
-    def scale(self, scale):
-        # Avoid useless update if nothing changed in the displayed dims
-        # Note that the master_transform scale is always a 4-vector so pad
-        padded_scale = np.pad(
-            scale, ((0, 4 - len(scale))), constant_values=1, mode='constant'
-        )
-        if self.scale is not None and np.all(self.scale == padded_scale):
-            return
-        self._master_transform.scale = padded_scale
-
-    @property
-    def translate(self):
-        """sequence of float: Translation values."""
-        return self._master_transform.translate
-
-    @translate.setter
-    def translate(self, translate):
-        # Avoid useless update if nothing changed in the displayed dims
-        # Note that the master_transform translate is always a 4-vector so pad
-        padded_translate = np.pad(
-            translate,
-            ((0, 4 - len(translate))),
-            constant_values=1,
-            mode='constant',
-        )
-        if self.translate is not None and np.all(
-            self.translate == padded_translate
-        ):
-            return
-        self._master_transform.translate = padded_translate
 
     @abstractmethod
     def _on_data_change(self, event=None):
@@ -134,34 +112,44 @@ class VispyBaseLayer(ABC):
         self.node.set_gl_state(self.layer.blending)
         self.node.update()
 
-    def _on_scale_change(self, event=None):
-        scale = self.layer._transforms.simplified.set_slice(
-            self.layer.dims.displayed
-        ).scale
+    def _on_matrix_change(self, event=None):
+        transform = self.layer._transforms.simplified.set_slice(
+            self.layer._dims.displayed
+        )
         # convert NumPy axis ordering to VisPy axis ordering
-        self.scale = scale[::-1]
+        # by reversing the axes order and flipping the linear
+        # matrix
+        translate = transform.translate[::-1]
+        matrix = transform.linear_matrix[::-1, ::-1].T
 
-    def _on_translate_change(self, event=None):
-        translate = self.layer._transforms.simplified.set_slice(
-            self.layer.dims.displayed
-        ).translate
-        # convert NumPy axis ordering to VisPy axis ordering
-        if self._array_like:
-            scale = (
+        # Embed in the top left corner of a 4x4 affine matrix
+        affine_matrix = np.eye(4)
+        affine_matrix[: matrix.shape[0], : matrix.shape[1]] = matrix
+        affine_matrix[-1, : len(translate)] = translate
+
+        if self._array_like and self.layer._dims.ndisplay == 2:
+            # Perform pixel offset to shift origin from top left corner
+            # of pixel to center of pixel.
+            # Note this offset is only required for array like data in
+            # 2D.
+            offset_matrix = (
                 self.layer._transforms['data2world']
-                .set_slice(self.layer.dims.displayed)
-                .scale
+                .set_slice(self.layer._dims.displayed)
+                .linear_matrix
             )
-            self.translate = translate[::-1] - scale[::-1] / 2
-        else:
-            self.translate = translate[::-1]
+            offset = -offset_matrix @ np.ones(offset_matrix.shape[1]) / 2
+            # Convert NumPy axis ordering to VisPy axis ordering
+            # and embed in full affine matrix
+            affine_offset = np.eye(4)
+            affine_offset[-1, : len(offset)] = offset[::-1]
+            affine_matrix = affine_matrix @ affine_offset
+        self._master_transform.matrix = affine_matrix
 
     def _reset_base(self):
         self._on_visible_change()
         self._on_opacity_change()
         self._on_blending_change()
-        self._on_scale_change()
-        self._on_translate_change()
+        self._on_matrix_change()
 
 
 @lru_cache()

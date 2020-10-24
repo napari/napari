@@ -14,6 +14,7 @@ from qtpy.QtWidgets import (
     QHBoxLayout,
     QLabel,
     QMainWindow,
+    QMenu,
     QShortcut,
     QStatusBar,
     QWidget,
@@ -68,6 +69,12 @@ class Window:
         self._qt_window = QMainWindow()
         self._qt_window.setAttribute(Qt.WA_DeleteOnClose)
         self._qt_window.setUnifiedTitleAndToolBarOnMac(True)
+
+        # since we initialize canvas before window, we need to manually connect them again.
+        if self._qt_window.windowHandle() is not None:
+            self._qt_window.windowHandle().screenChanged.connect(
+                self.qt_viewer.canvas._backend.screen_changed
+            )
         self._qt_center = QWidget(self._qt_window)
 
         self._qt_window.setCentralWidget(self._qt_center)
@@ -103,15 +110,14 @@ class Window:
         self.qt_viewer.viewer.events.palette.connect(self._update_palette)
 
         if perf.USE_PERFMON:
-            # Add DebugMenu if using perfmon. The DebugMenu is intended to
-            # contain non-perfmon stuff as well. When it does we will want
-            # a separate env variable for it.
+            # Add DebugMenu and dockPerformance if using perfmon.
             self._debug_menu = DebugMenu(self)
-
-            # The QtPerformance widget only exists if we are using perfmon.
             self._add_viewer_dock_widget(self.qt_viewer.dockPerformance)
         else:
             self._debug_menu = None
+
+        if self.qt_viewer.dockRender is not None:
+            self._add_viewer_dock_widget(self.qt_viewer.dockRender)
 
         if show:
             self.show()
@@ -250,6 +256,77 @@ class Window:
         self.view_menu = self.main_menu.addMenu('&View')
         self.view_menu.addAction(toggle_visible)
         self.view_menu.addAction(toggle_theme)
+        self.view_menu.addSeparator()
+
+        # Add axes menu
+        axes_menu = QMenu('Axes', parent=self._qt_window)
+        axes_visible_action = QAction(
+            'Visible',
+            parent=self._qt_window,
+            checkable=True,
+            checked=self.qt_viewer.viewer.axes.visible,
+        )
+        axes_visible_action.triggered.connect(self._toggle_axes_visible)
+        axes_colored_action = QAction(
+            'Colored',
+            parent=self._qt_window,
+            checkable=True,
+            checked=self.qt_viewer.viewer.axes.colored,
+        )
+        axes_colored_action.triggered.connect(self._toggle_axes_colored)
+        axes_dashed_action = QAction(
+            'Dashed',
+            parent=self._qt_window,
+            checkable=True,
+            checked=self.qt_viewer.viewer.axes.dashed,
+        )
+        axes_dashed_action.triggered.connect(self._toggle_axes_dashed)
+        axes_arrows_action = QAction(
+            'Arrows',
+            parent=self._qt_window,
+            checkable=True,
+            checked=self.qt_viewer.viewer.axes.arrows,
+        )
+        axes_arrows_action.triggered.connect(self._toggle_axes_arrows)
+        axes_menu.addAction(axes_visible_action)
+        axes_menu.addAction(axes_colored_action)
+        axes_menu.addAction(axes_dashed_action)
+        axes_menu.addAction(axes_arrows_action)
+        self.view_menu.addMenu(axes_menu)
+
+        # Add scale bar menu
+        scale_bar_menu = QMenu('Scale Bar', parent=self._qt_window)
+        scale_bar_visible_action = QAction(
+            'Visible',
+            parent=self._qt_window,
+            checkable=True,
+            checked=self.qt_viewer.viewer.scale_bar.visible,
+        )
+        scale_bar_visible_action.triggered.connect(
+            self._toggle_scale_bar_visible
+        )
+        scale_bar_colored_action = QAction(
+            'Colored',
+            parent=self._qt_window,
+            checkable=True,
+            checked=self.qt_viewer.viewer.scale_bar.colored,
+        )
+        scale_bar_colored_action.triggered.connect(
+            self._toggle_scale_bar_colored
+        )
+        scale_bar_ticks_action = QAction(
+            'Ticks',
+            parent=self._qt_window,
+            checkable=True,
+            checked=self.qt_viewer.viewer.scale_bar.ticks,
+        )
+        scale_bar_ticks_action.triggered.connect(self._toggle_scale_bar_ticks)
+        scale_bar_menu.addAction(scale_bar_visible_action)
+        scale_bar_menu.addAction(scale_bar_colored_action)
+        scale_bar_menu.addAction(scale_bar_ticks_action)
+        self.view_menu.addMenu(scale_bar_menu)
+
+        self.view_menu.addSeparator()
 
     def _add_window_menu(self):
         """Add 'Window' menu to app menubar."""
@@ -335,6 +412,27 @@ class Window:
             self.qt_viewer.show_key_bindings_dialog
         )
         self.help_menu.addAction(about_key_bindings)
+
+    def _toggle_scale_bar_visible(self, state):
+        self.qt_viewer.viewer.scale_bar.visible = state
+
+    def _toggle_scale_bar_colored(self, state):
+        self.qt_viewer.viewer.scale_bar.colored = state
+
+    def _toggle_scale_bar_ticks(self, state):
+        self.qt_viewer.viewer.scale_bar.ticks = state
+
+    def _toggle_axes_visible(self, state):
+        self.qt_viewer.viewer.axes.visible = state
+
+    def _toggle_axes_colored(self, state):
+        self.qt_viewer.viewer.axes.colored = state
+
+    def _toggle_axes_dashed(self, state):
+        self.qt_viewer.viewer.axes.dashed = state
+
+    def _toggle_axes_arrows(self, state):
+        self.qt_viewer.viewer.axes.arrows = state
 
     def add_dock_widget(
         self,

@@ -1,3 +1,5 @@
+import os
+
 from ..layers import Image, Points, Shapes, Surface, Tracks, Vectors
 from .vispy_image_layer import VispyImageLayer
 from .vispy_points_layer import VispyPointsLayer
@@ -14,6 +16,15 @@ layer_to_visual = {
     Vectors: VispyVectorsLayer,
     Tracks: VispyTracksLayer,
 }
+
+if os.getenv("NAPARI_ASYNC", "0") != "0":
+    from ..layers.image.experimental.octree_image import OctreeImage
+    from .experimental.vispy_tiled_image_layer import VispyTiledImageLayer
+
+    # Put OctreeImage in front so we hit that before plain Image
+    original = layer_to_visual.copy()
+    layer_to_visual = {OctreeImage: VispyTiledImageLayer}
+    layer_to_visual.update(original)
 
 
 def create_vispy_visual(layer):

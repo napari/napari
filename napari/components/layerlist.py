@@ -248,7 +248,7 @@ class LayerList(ListModel):
         if len(self) == 0:
             return np.ones(self.ndim)
         else:
-            scales = [layer.scale[::-1] for layer in self]
+            scales = [abs(layer.scale[::-1]) for layer in self]
             full_scales = list(
                 np.array(
                     list(itertools.zip_longest(*scales, fillvalue=np.nan))
