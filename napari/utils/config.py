@@ -29,8 +29,7 @@ def _set(env_var: str) -> bool:
 # B) Octree Rendering
 #
 # Image layers construct and render out of an octree. This is a WIP and is
-# not useful yet. We working out the datastructure. Octree rendering
-# implies that async loading is enabled.
+# not useful yet. Octree rendering implies that async loading is enabled.
 #
 # Two options for async loading without the octree:
 #
