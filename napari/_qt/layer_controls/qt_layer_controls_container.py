@@ -1,8 +1,7 @@
-import os
-
 from qtpy.QtWidgets import QFrame, QStackedWidget
 
 from ...layers import Image, Labels, Points, Shapes, Surface, Tracks, Vectors
+from ...utils import config
 from .qt_image_controls import QtImageControls
 from .qt_labels_controls import QtLabelsControls
 from .qt_points_controls import QtPointsControls
@@ -21,7 +20,7 @@ layer_to_controls = {
     Tracks: QtTracksControls,
 }
 
-if os.getenv("NAPARI_ASYNC", "0") != "0":
+if config.async_loading:
     from ...layers.image.experimental.octree_image import OctreeImage
 
     layer_to_controls[OctreeImage] = QtImageControls

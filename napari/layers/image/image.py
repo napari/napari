@@ -1,6 +1,5 @@
 """Image class.
 """
-import os
 import types
 import warnings
 from copy import copy
@@ -8,6 +7,7 @@ from copy import copy
 import numpy as np
 from scipy import ndimage as ndi
 
+from ...utils import config
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
 from ...utils.status_messages import format_float
@@ -19,10 +19,8 @@ from ._image_slice import ImageSlice
 from ._image_slice_data import ImageSliceData
 from ._image_utils import guess_multiscale, guess_rgb
 
-_use_async = os.getenv("NAPARI_ASYNC", "0") != "0"
-
 # Use sync or async SliceData class.
-if _use_async:
+if config.async_loading:
     from .experimental._chunked_slice_data import ChunkedSliceData
 
     SliceDataClass = ChunkedSliceData
@@ -794,7 +792,7 @@ class Image(IntensityVisualizationMixin, Layer):
         return value
 
     # One additional method for async
-    if _use_async:
+    if config.async_loading:
         from ...components.experimental.chunk import ChunkRequest
 
         def on_chunk_loaded(self, request: ChunkRequest) -> None:

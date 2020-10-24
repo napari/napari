@@ -1,4 +1,3 @@
-import os
 from typing import TYPE_CHECKING, Optional
 
 import numpy as np
@@ -17,7 +16,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-_use_async = os.getenv("NAPARI_ASYNC", "0") != "0"
+from ...utils import config
 
 if TYPE_CHECKING:
     from ..experimental.qt_chunk_receiver import QtChunkReceiver
@@ -36,7 +35,7 @@ def _create_chunk_receiver(parent: QObject) -> 'Optional[QtChunkReceiver]':
     Optional[QtChunkReceiver]
         The QtChunkReceiver instance to use.
     """
-    if _use_async:
+    if config.async_loading:
         from ..experimental.qt_chunk_receiver import QtChunkReceiver
 
         return QtChunkReceiver(parent)

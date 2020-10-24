@@ -86,7 +86,8 @@ class QtOctreeInfo(QFrame):
         self.setLayout(layout)
 
         def _update_layout(event=None):
-            layout.octree_level.spin.setValue(layer.octree_level)
+            if layer.octree_level is not None:
+                layout.octree_level.spin.setValue(layer.octree_level)
 
         # Update layout now and hook to event for future updates.
         _update_layout()

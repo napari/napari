@@ -40,7 +40,10 @@ class OctreeImageSlice(ImageSlice):
         int
             The number of levels in the octree.
         """
-        return self._octree.num_levels
+        if self._octree is None:
+            return 0
+        else:
+            return self._octree.num_levels
 
     def _set_raw_images(
         self, image: ArrayLike, thumbnail_source: ArrayLike

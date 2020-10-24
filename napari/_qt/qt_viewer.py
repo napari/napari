@@ -16,7 +16,7 @@ from vispy.scene import SceneCanvas
 from vispy.visuals.transforms import ChainTransform
 
 from ..resources import get_stylesheet
-from ..utils import perf
+from ..utils import config, perf
 from ..utils.interactions import (
     ReadOnlyWrapper,
     mouse_move_callbacks,
@@ -256,21 +256,18 @@ class QtViewer(QSplitter):
     def _create_render_dock_widget(self):
         """Create the dock widget that shows async controls.
         """
-        if os.getenv("NAPARI_ASYNC", "0") != "0":
-            from ..components.experimental.chunk import async_config
+        if config.async_octree:
+            from .experimental.render.qt_render_container import (
+                QtRenderContainer,
+            )
 
-            if async_config.octree_visuals:
-                from .experimental.render.qt_render_container import (
-                    QtRenderContainer,
-                )
-
-                return QtViewerDockWidget(
-                    self,
-                    QtRenderContainer(self.viewer),
-                    name='render',
-                    area='right',
-                    shortcut='Ctrl+Shift+R',
-                )
+            return QtViewerDockWidget(
+                self,
+                QtRenderContainer(self.viewer),
+                name='render',
+                area='right',
+                shortcut='Ctrl+Shift+R',
+            )
         return None
 
     @property

@@ -7,10 +7,9 @@ import os
 from collections import namedtuple
 from pathlib import Path
 
-LOGGER = logging.getLogger("napari.async")
+from ....utils import config
 
-# NAPARI_ASYNC is the main environment variable to turn on async.
-ASYNC_ENV_VAR = "NAPARI_ASYNC"
+LOGGER = logging.getLogger("napari.async")
 
 # NAPARI_ASYNC=0 will use these settings, although currently with async
 # in experimental this module will not even be imported if NAPARI_ASYNC=0.
@@ -24,7 +23,6 @@ DEFAULT_ASYNC_CONFIG = {
     "use_processes": False,
     "auto_sync_ms": 30,
     "delay_queue_ms": 100,
-    "octree_visuals": False,
 }
 
 # The async config settings.
@@ -37,7 +35,6 @@ AsyncConfig = namedtuple(
         "use_processes",
         "auto_sync_ms",
         "delay_queue_ms",
-        "octree_visuals",
     ],
 )
 
@@ -74,9 +71,7 @@ def _load_config(config_path: str) -> dict:
         # Produce a nice error message like:
         #     Config file NAPARI_ASYNC=missing-file.json not found
         raise FileNotFoundError(
-            errno.ENOENT,
-            f"Config file {ASYNC_ENV_VAR}={path} not found",
-            path,
+            errno.ENOENT, f"Config file NAPARI_ASYNC={path} not found", path,
         )
 
     with path.open() as infile:
@@ -91,14 +86,15 @@ def _get_config_data() -> dict:
     dict
         The config data we should use.
     """
-    value = os.getenv(ASYNC_ENV_VAR)
+    value = os.getenv("NAPARI_ASYNC")
+
+    if value == "1" or config.async_octree:
+        return DEFAULT_ASYNC_CONFIG  # Async is enabled with defaults.
 
     if value is None or value == "0":
         return DEFAULT_SYNC_CONFIG  # Async is disabled.
-    elif value == "1":
-        return DEFAULT_ASYNC_CONFIG  # Async is enabled with defaults.
-    else:
-        return _load_config(value)  # Load the user's config file.
+
+    return _load_config(value)  # Load the user's JSON config file.
 
 
 def _create_async_config(data: dict) -> AsyncConfig:
@@ -121,7 +117,6 @@ def _create_async_config(data: dict) -> AsyncConfig:
         use_processes=data.get("use_processes", False),
         auto_sync_ms=data.get("auto_sync_ms", 30),
         delay_queue_ms=data.get("delay_queue_ms", 100),
-        octree_visuals=data.get("octree_visuals", False),
     )
 
     _log_to_file(config.log_path)
