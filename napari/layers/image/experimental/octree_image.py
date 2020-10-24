@@ -72,6 +72,11 @@ class OctreeImage(Image):
         self._empty = True
 
     @property
+    def intersection(self):
+        """Chunks in the current slice which in currently in view."""
+        return self._slice.intersection
+
+    @property
     def view_chunks(self):
         """Chunks in the current slice which in currently in view."""
         return self._slice.view_chunks
