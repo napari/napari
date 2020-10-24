@@ -6,6 +6,7 @@ import numpy as np
 from scipy import ndimage as ndi
 
 from ....types import ArrayLike
+from ....utils.perf import block_timer
 
 TileArray = List[List[np.ndarray]]
 Levels = List[TileArray]
@@ -342,12 +343,15 @@ class Octree:
             Create the octree for this single image.
         """
         info = OctreeInfo(image.shape, tile_size)
-        tiles = _create_tiles(image, info.tile_size)
+
+        with block_timer("create_tiles", print_time=True):
+            tiles = _create_tiles(image, info.tile_size)
         levels = [tiles]
 
         # Keep combining tiles until there is one root tile.
         while not _one_tile(levels[-1]):
-            next_level = _create_coarser_level(levels[-1])
+            with block_timer("_create_coarser_level", print_time=True):
+                next_level = _create_coarser_level(levels[-1])
             levels.append(next_level)
 
         # _print_levels(levels)

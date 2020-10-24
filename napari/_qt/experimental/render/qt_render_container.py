@@ -1,7 +1,8 @@
-"""QtRenderContainer """
+"""QtRenderContainer class.
+"""
 
 
-from qtpy.QtWidgets import QFrame, QStackedWidget
+from qtpy.QtWidgets import QStackedWidget
 
 from .qt_render import QtRender
 
@@ -32,8 +33,12 @@ class QtRenderContainer(QStackedWidget):
         self.viewer = viewer
 
         self.setMouseTracking(True)
-        self.empty_widget = QFrame()
-        self.widgets = {}
+
+        # We show QtRender even when there is no layer. However in that
+        # case it only shows the controls to create a new test image/layer.
+        self.empty_widget = QtRender(viewer)
+
+        self._widgets = {}
         self.addWidget(self.empty_widget)
         self._display(None)
 
@@ -57,16 +62,8 @@ class QtRenderContainer(QStackedWidget):
         if layer is None:
             self.setCurrentWidget(self.empty_widget)
         else:
-            controls = self.widgets[layer]
+            controls = self._widgets[layer]
             self.setCurrentWidget(controls)
-
-    def _get_widget(self, layer):
-        from ....layers.image.experimental.octree_image import OctreeImage
-
-        if isinstance(layer, OctreeImage):
-            return QtRender(self.viewer, layer)
-        else:
-            return self.empty_widget
 
     def _add(self, event):
         """Add the controls target layer to the list of control widgets.
@@ -77,9 +74,9 @@ class QtRenderContainer(QStackedWidget):
             Event with the target layer at `event.item`.
         """
         layer = event.item
-        controls = self._get_widget(layer)
+        controls = QtRender(self.viewer, layer)
         self.addWidget(controls)
-        self.widgets[layer] = controls
+        self._widgets[layer] = controls
 
     def _remove(self, event):
         """Remove the controls target layer from the list of control widgets.
@@ -90,8 +87,8 @@ class QtRenderContainer(QStackedWidget):
             Event with the target layer at `event.item`.
         """
         layer = event.item
-        controls = self.widgets[layer]
+        controls = self._widgets[layer]
         self.removeWidget(controls)
         controls.deleteLater()
         controls = None
-        del self.widgets[layer]
+        del self._widgets[layer]

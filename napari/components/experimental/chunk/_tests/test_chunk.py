@@ -1,11 +1,10 @@
 """Tests for components.experimental.chunk."""
-import os
-
 import numpy as np
 import pytest
 
 from napari.components.experimental.chunk import ChunkKey, chunk_loader
 from napari.layers.image import Image
+from napari.utils import config
 
 
 def _create_layer() -> Image:
@@ -51,8 +50,7 @@ def test_chunk_key():
 
 def test_loader():
     """Test ChunkRequest and the ChunkLoader."""
-    use_async = os.getenv("NAPARI_ASYNC", "0") != "0"
-    if not use_async:
+    if not config.async_loading:
         return  # temporary until we add the @async_only pytest mark
 
     layer = _create_layer()
