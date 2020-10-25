@@ -181,6 +181,12 @@ class OctreeInfo:
         self.tile_size = tile_size
 
 
+class OctreeIntersection:
+    def __init__(self, shape: Tuple[int, int], ranges: Tuple[range, range]):
+        self.shape = shape
+        self.ranges = ranges
+
+
 class OctreeLevel:
     """One level of the octree.
 
@@ -202,21 +208,17 @@ class OctreeLevel:
         ncols = len(self.tiles[0])
         print(f"level={self.level_index} dim={nrows}x{ncols}")
 
-    def draw_mini_map(self, row_range: range, col_range: range):
-        """Draw mini-map with X's for which tiles we are drawing."""
+    def get_intersection(self, data_corners) -> OctreeIntersection:
+        # TODO_OCTREE: generalize with data_corner indices we need to use.
+        data_rows = [data_corners[0][1], data_corners[1][1]]
+        data_cols = [data_corners[0][2], data_corners[1][2]]
 
-        def _within(value, value_range):
-            return value >= value_range.start and value < value_range.stop
+        row_range = self.row_range(data_rows)
+        col_range = self.column_range(data_cols)
 
-        for row in range(0, self.num_rows):
-            for col in range(0, self.num_cols):
-                if _within(row, row_range) and _within(col, col_range):
-                    marker = "X"
-                else:
-                    marker = "."
-                print(marker, end='')
-
-            print("")
+        return OctreeIntersection(
+            [self.num_rows, self.num_cols], [row_range, col_range]
+        )
 
     def get_chunks(self, data_corners) -> List[ChunkData]:
         """Return chunks that are within this rectangular region of the data.
@@ -228,26 +230,21 @@ class OctreeLevel:
         """
         chunks = []
 
-        # TODO_OCTREE: generalize with data_corner indices we need to use.
-        data_rows = [data_corners[0][1], data_corners[1][1]]
-        data_cols = [data_corners[0][2], data_corners[1][2]]
-
-        row_range = self.row_range(data_rows)
-        col_range = self.column_range(data_cols)
-
-        self.draw_mini_map(row_range, col_range)
+        intersection = self.get_intersection(data_corners)
 
         scale = self.scale
         scale_vec = [scale, scale]
 
         tile_size = self.info.tile_size
 
+        ranges = intersection.ranges
+
         # Iterate over every tile in the rectangular region.
         data = None
-        y = row_range.start * tile_size
-        for row in row_range:
-            x = col_range.start * tile_size
-            for col in col_range:
+        y = ranges[0].start * tile_size
+        for row in ranges[0]:
+            x = ranges[1].start * tile_size
+            for col in ranges[1]:
 
                 data = self.tiles[row][col]
                 pos = [x, y]
