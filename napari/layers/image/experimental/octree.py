@@ -215,7 +215,11 @@ class OctreeLevel:
         print(f"level={self.level_index} dim={nrows}x{ncols}")
 
     def get_intersection(self, data_corners) -> OctreeIntersection:
-        # TODO_OCTREE: generalize with data_corner indices we need to use.
+
+        # TODO_OCTREE: we should scale the corners somewhere else?
+        data_corners /= self.scale
+
+        # TODO_OCTREE: fix this for any dims
         data_rows = [data_corners[0][1], data_corners[1][1]]
         data_cols = [data_corners[0][2], data_corners[1][2]]
 
@@ -270,11 +274,14 @@ class OctreeLevel:
             return max(min(val, max_val), min_val)
 
         tile_size = self.info.tile_size
+        print(tile_size)
 
         tiles = [span[0] / tile_size, span[1] / tile_size]
+        print(f"tiles = {tiles}")
         new_min = _clamp(tiles[0], 0, num_tiles - 1)
         new_max = _clamp(tiles[1], 0, num_tiles - 1)
         clamped = [new_min, new_max + 1]
+        print(f"clamped = {clamped}")
 
         span_int = [int(x) for x in clamped]
         return range(*span_int)
