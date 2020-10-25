@@ -91,15 +91,10 @@ class OctreeImageSlice(ImageSlice):
 
         return level.get_chunks(self._data_corners)
 
-    @property
-    def intersection(self):
+    def get_intersection(self, data_corners):
         """Return the intersection with the octree.."""
-
-        # This will be None if we have not been drawn yet.
-        if self._data_corners is None:
-            return None
 
         # TODO_OCTREE: soon we will compute which level to draw.
         level = self._octree.levels[self._octree_level]
 
-        return level.get_intersection(self._data_corners)
+        return level.get_intersection(data_corners)

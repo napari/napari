@@ -186,6 +186,12 @@ class OctreeIntersection:
         self.shape = shape
         self.ranges = ranges
 
+    def is_visible(self, row, col):
+        def _inside(value, value_range):
+            return value >= value_range.start and value < value_range.stop
+
+        return _inside(row, self.ranges[0]) and _inside(col, self.ranges[1])
+
 
 class OctreeLevel:
     """One level of the octree.
@@ -347,7 +353,9 @@ class Octree:
 
         # Keep combining tiles until there is one root tile.
         while not _one_tile(levels[-1]):
-            with block_timer("_create_coarser_level", print_time=True):
+            with block_timer(
+                f"Create coarser level {len(levels)}:", print_time=True
+            ):
                 next_level = _create_coarser_level(levels[-1])
             levels.append(next_level)
 
