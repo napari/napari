@@ -211,6 +211,10 @@ class QtViewer(QSplitter):
         self.welcome = VispyWelcomeVisual(
             self.viewer, parent=self.view, order=1e6 + 2
         )
+        self.viewer.events.layers_change.connect(
+            self.welcome._on_visible_change
+        )
+        self.viewer.events.palette.connect(self.welcome._on_palette_change)
         self.canvas.events.resize.connect(self.welcome._on_canvas_change)
 
         main_widget = QWidget()
