@@ -1,6 +1,7 @@
 from os.path import dirname, join
 
 import numpy as np
+import scipy.ndimage as ndi
 from imageio import imread
 from vispy.scene.visuals import Text
 from vispy.visuals.transforms import STTransform
@@ -80,6 +81,11 @@ class VispyWelcomeVisual:
         new_logo[self._logo_border, :3] = foreground_color
         new_logo[np.invert(self._logo_border), :3] = background_color
         new_logo[..., -1] = self._logo_raw[..., -1] * 0.7
+
+        # Do a convolution to smooth any pixelation
+        kernel = np.array([[0, 0.5, 0], [0.5, 1, 0.5], [0, 0.5, 0]])
+        kernel = np.expand_dims(kernel / np.sum(kernel), axis=2)
+        new_logo = ndi.convolve(new_logo, kernel)
 
         self._logo = new_logo
         self.node.set_data(self._logo)
