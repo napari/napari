@@ -61,6 +61,9 @@ class QtViewer(QSplitter):
     ----------
     viewer : napari.components.ViewerModel
         Napari viewer containing the rendered scene, layers, and controls.
+    welcome : bool
+        Flag to show a welcome message when no layers are present in the
+        canvas.
 
     Attributes
     ----------
@@ -96,7 +99,7 @@ class QtViewer(QSplitter):
 
     raw_stylesheet = get_stylesheet()
 
-    def __init__(self, viewer):
+    def __init__(self, viewer, welcome=True):
         # Avoid circular import.
         from .layer_controls import QtLayerControlsContainer
 
@@ -208,14 +211,16 @@ class QtViewer(QSplitter):
         )
         self.canvas.events.resize.connect(self.scale_bar._on_position_change)
 
-        self.welcome = VispyWelcomeVisual(
-            self.viewer, parent=self.view, order=1e6 + 2
-        )
-        self.viewer.events.layers_change.connect(
-            self.welcome._on_visible_change
-        )
-        self.viewer.events.palette.connect(self.welcome._on_palette_change)
-        self.canvas.events.resize.connect(self.welcome._on_canvas_change)
+        self._show_welcome = welcome
+        if self._show_welcome:
+            self.welcome = VispyWelcomeVisual(
+                self.viewer, parent=self.view, order=-100
+            )
+            self.viewer.events.layers_change.connect(
+                self.welcome._on_visible_change
+            )
+            self.viewer.events.palette.connect(self.welcome._on_palette_change)
+            self.canvas.events.resize.connect(self.welcome._on_canvas_change)
 
         main_widget = QWidget()
         main_layout = QVBoxLayout()
