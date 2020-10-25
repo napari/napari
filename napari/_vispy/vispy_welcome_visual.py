@@ -37,8 +37,8 @@ class VispyWelcomeVisual:
         self.text_node.transform = STTransform()
         self.text_node.anchors = ('center', 'center')
         self.text_node.text = (
-            'drag and drop file(s) here\n\n'
-            'use the File menu\n\n'
+            'drag and drop file(s) here\n'
+            'use the File Open menu\n'
             'call a viewer.add_* method'
         )
         self.text_node.color = np.divide(
@@ -56,13 +56,13 @@ class VispyWelcomeVisual:
             < 255 / 2
         ):
             foreground_color = np.divide(
-                str_to_rgb(darken(self._viewer.palette['foreground'], 60)), 255
+                str_to_rgb(darken(self._viewer.palette['foreground'], 50)), 255
             )
             background_color = np.divide(
-                str_to_rgb(darken(self._viewer.palette['background'], 80)), 255
+                str_to_rgb(darken(self._viewer.palette['background'], 70)), 255
             )
             text_color = np.divide(
-                str_to_rgb(lighten(self._viewer.palette['background'], 10)), 255
+                str_to_rgb(darken(self._viewer.palette['foreground'], 50)), 255
             )
         else:
             foreground_color = np.divide(
@@ -117,7 +117,7 @@ class VispyWelcomeVisual:
             0,
         ]
 
-        self.text_node.font_size = center[1] / 22
+        self.text_node.font_size = center[1] / 24
         self.text_node.transform.translate = [
             center[0],
             1.45 * center[1],
