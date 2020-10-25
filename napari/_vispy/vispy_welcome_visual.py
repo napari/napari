@@ -37,9 +37,9 @@ class VispyWelcomeVisual:
         self.text_node.transform = STTransform()
         self.text_node.anchors = ('center', 'center')
         self.text_node.text = (
-            'Drag and drop file(s) here\n'
-            'Use File : Open File(s)\n'
-            'Call a viewer.add_* method'
+            'drag and drop file(s) here\n\n'
+            'use the File menu\n\n'
+            'call a viewer.add_* method'
         )
         self.text_node.color = np.divide(
             str_to_rgb(darken(self._viewer.palette['foreground'], 30)), 255
@@ -56,13 +56,13 @@ class VispyWelcomeVisual:
             < 255 / 2
         ):
             foreground_color = np.divide(
-                str_to_rgb(darken(self._viewer.palette['foreground'], 30)), 255
+                str_to_rgb(darken(self._viewer.palette['foreground'], 60)), 255
             )
             background_color = np.divide(
-                str_to_rgb(darken(self._viewer.palette['background'], 30)), 255
+                str_to_rgb(darken(self._viewer.palette['background'], 80)), 255
             )
             text_color = np.divide(
-                str_to_rgb(self._viewer.palette['background']), 255
+                str_to_rgb(lighten(self._viewer.palette['background'], 10)), 255
             )
         else:
             foreground_color = np.divide(
@@ -107,7 +107,7 @@ class VispyWelcomeVisual:
         # Calculate some good default positions for the logo and text
         center_logo = [
             center[0] - center[1] / 2.4,
-            2 / 3 * center[1] - center[1] / 2.4,
+            2 / 3 * center[1] - center[1] / 3,
         ]
         self.node.transform.translate = [center_logo[0], center_logo[1], 0, 0]
         self.node.transform.scale = [
@@ -120,7 +120,7 @@ class VispyWelcomeVisual:
         self.text_node.font_size = center[1] / 22
         self.text_node.transform.translate = [
             center[0],
-            4 / 3 * center[1],
+            1.45 * center[1],
             0,
             0,
         ]
