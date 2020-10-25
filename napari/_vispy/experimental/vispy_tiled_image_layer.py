@@ -4,7 +4,7 @@ import numpy as np
 from vispy.scene.visuals import Line
 from vispy.visuals.transforms import STTransform
 
-from ...layers.image.experimental.octree import ChunkData
+from ...layers.image.experimental.octree_util import ChunkData
 from ..image import Image as ImageNode
 from ..vispy_image_layer import VispyImageLayer
 

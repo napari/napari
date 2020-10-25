@@ -6,8 +6,8 @@ import numpy as np
 from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import QLabel
 
-from ....layers.image.experimental.octree import OctreeIntersection
 from ....layers.image.experimental.octree_image import OctreeImage
+from ....layers.image.experimental.octree_util import OctreeIntersection
 
 MAP_WIDTH = 200
 
@@ -85,4 +85,5 @@ class MiniMap(QLabel):
                 x1 = x0 + tile_size - 1
 
                 data[y0:y1, x0:x1, :] = COLOR_ON if visible else COLOR_OFF
+
         return data
