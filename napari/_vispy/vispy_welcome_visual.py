@@ -5,6 +5,7 @@ from imageio import imread
 from vispy.scene.visuals import Text
 from vispy.visuals.transforms import STTransform
 
+from ..utils.misc import str_to_rgb
 from .image import Image as ImageNode
 
 
@@ -14,15 +15,29 @@ class VispyWelcomeVisual:
 
     def __init__(self, viewer, parent=None, order=0):
 
+        self._viewer = viewer
+
         # Load logo and make grayscale
         logopath = join(dirname(__file__), '..', 'resources', 'logo.png')
         logo = imread(logopath)
-        logo_gray = np.mean(logo[..., :3], axis=2)
-        logo[..., :3] = np.stack([logo_gray, logo_gray, logo_gray], axis=2)
-        logo[..., -1] = logo[..., -1] * 0.9
+        self._raw_logo = logo
 
-        self._logo = logo
-        self._viewer = viewer
+        new_logo = np.zeros(logo.shape)
+        logo_border = np.all(logo[..., :3] == [38, 40, 61], axis=2)
+        new_logo[logo_border, :3] = np.divide(
+            str_to_rgb(self._viewer.palette['foreground']), 255
+        )
+        new_logo[np.invert(logo_border), :3] = np.divide(
+            str_to_rgb(self._viewer.palette['background']), 255
+        )
+        new_logo[..., -1] = logo[..., -1] * 0.9
+        # print(logo_gray.shape)
+        # print(logo_gray.max())
+        # #logo_gray = np.mean(logo[..., :3], axis=2)
+        # logo[..., :3] = np.stack([logo_gray, logo_gray, logo_gray], axis=2)
+        # logo[..., -1] = logo[..., -1] * 0.9
+
+        self._logo = new_logo
         self.node = ImageNode(parent=parent)
         self.node.order = order
 
