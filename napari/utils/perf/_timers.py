@@ -177,7 +177,7 @@ def block_timer(
     if timers:
         timers.add_event(event)
     if print_time:
-        print(f"{name} {event.duration_ms}ms")
+        print(f"{name} {event.duration_ms:.3f}ms")
 
 
 if USE_PERFMON:
