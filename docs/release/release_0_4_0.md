@@ -1,7 +1,7 @@
 # napari 0.4.0
 
 We're happy to announce the release of napari 0.4.0! This might be our biggest
-release ever — see below for highlights. Note also that, following the [NEP-29
+release yet — see below for highlights. Note also that, following the [NEP-29
 deprecation policy](https://numpy.org/neps/nep-0029-deprecation_policy.html),
 we have dropped support for Python 3.6: napari 0.4 requires Python 3.7 or
 higher to run.
@@ -25,8 +25,8 @@ Thanks to the global coordinate system we are now able to display a scale bar,
 axis directions, and provide a cursor model that reports the current cursor
 coordinates within the current world view. (Currently, physical units are not
 supported, but they are coming soon!) We can also natively display data
-transformed with an arbitrary affine transform, making it easy to view lattice
-light sheet data straight out of the microscope!
+transformed with an arbitrary affine transform, making it easy to view things
+like light sheet data straight out of the microscope!
 
 We have also added a new layer type, our first in over a year, to display
 tracking data. Many thanks to Alan Lowe from UCL/The Turing Institute for this
