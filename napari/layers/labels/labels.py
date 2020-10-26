@@ -512,6 +512,8 @@ class Labels(Image):
             self.help = 'hold <space> to pan/zoom, click to pick a label'
             self.mouse_drag_callbacks.append(pick)
         elif mode == Mode.PAINT:
+            # Note we have to reset the brush size to tigger an event
+            # This will be fixed in an upcomming PR
             self.brush_size = self.brush_size
             self.cursor = self.brush_shape
             self.interactive = False
@@ -529,6 +531,8 @@ class Labels(Image):
             self.help = 'hold <space> to pan/zoom, click to fill a label'
             self.mouse_drag_callbacks.append(draw)
         elif mode == Mode.ERASE:
+            # Note we have to reset the brush size to tigger an event
+            # This will be fixed in an upcomming PR
             self.brush_size = self.brush_size
             self.cursor = self.brush_shape
             self.interactive = False
