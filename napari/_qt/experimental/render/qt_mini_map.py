@@ -51,7 +51,7 @@ class MiniMap(QLabel):
             The intersection we are drawing on the map.
         """
         data = self._get_map_data(intersection)
-        width, height = data.shape[:2]
+        height, width = data.shape[:2]
         image = QImage(data, width, height, QImage.Format_RGBA8888)
         self.setPixmap(QPixmap.fromImage(image))
 
@@ -64,7 +64,7 @@ class MiniMap(QLabel):
             The intersection we are drawing on the map.
         """
         tile_shape = intersection.info.tile_shape
-        aspect = tile_shape[1] / tile_shape[0]
+        aspect = intersection.info.octree_info.aspect
 
         map_shape = (MAP_WIDTH, math.ceil(MAP_WIDTH / aspect))
         tile_size = math.ceil(map_shape[1] / tile_shape[1])
@@ -84,11 +84,15 @@ class MiniMap(QLabel):
 
                 data[y0:y1, x0:x1, :] = COLOR_SEEN if visible else COLOR_UNSEEN
 
-        y0, y1 = intersection.normalized_rows * map_shape[1]
-        x0, x1 = intersection.normalized_cols * map_shape[0]
+        y0, y1 = intersection.normalized_rows * (map_shape[0] - 1)
+        x0, x1 = intersection.normalized_cols * (map_shape[1] - 1)
 
+        # TODO_OCTREE: set with one slice operation
         for y in range(int(y0), int(y1)):
             for x in range(int(x0), int(x1)):
-                data[y, x, :] = COLOR_VIEW
+                try:
+                    data[y, x, :] = COLOR_VIEW
+                except IndexError:
+                    pass
 
         return data

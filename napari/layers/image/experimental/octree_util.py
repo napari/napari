@@ -17,6 +17,7 @@ Int2 = np.ndarray  # [x, x] dtype=numpy.int32
 class OctreeInfo:
     def __init__(self, base_shape, tile_size: int):
         self.base_shape = base_shape
+        self.aspect = base_shape[1] / base_shape[0]
         self.tile_size = tile_size
 
 
