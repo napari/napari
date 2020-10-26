@@ -32,7 +32,9 @@ class VispyWelcomeVisual:
         self.node.cmap = 'gray'
         self.node.transform = STTransform()
 
-        self.text_node = Text(pos=[0, 0], parent=parent, bold=True)
+        self.text_node = Text(
+            pos=[0, 0], parent=parent, method='gpu', bold=False
+        )
         self.text_node.order = order
         self.text_node.transform = STTransform()
         self.text_node.anchors = ('center', 'center')
@@ -61,9 +63,7 @@ class VispyWelcomeVisual:
             background_color = np.divide(
                 str_to_rgb(darken(self._viewer.palette['background'], 70)), 255
             )
-            text_color = np.divide(
-                str_to_rgb(darken(self._viewer.palette['foreground'], 50)), 255
-            )
+            text_color = np.multiply(foreground_color, [0.2, 0.45, 0.7])
         else:
             foreground_color = np.divide(
                 str_to_rgb(lighten(self._viewer.palette['foreground'], 30)),
@@ -74,7 +74,7 @@ class VispyWelcomeVisual:
                 255,
             )
             text_color = np.divide(
-                str_to_rgb(darken(self._viewer.palette['background'], 40)), 255
+                str_to_rgb(darken(self._viewer.palette['background'], 60)), 255
             )
 
         new_logo = np.zeros(self._logo_raw.shape)
