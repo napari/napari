@@ -167,6 +167,13 @@ class ScaleTranslate(Transform):
 
     def __init__(self, scale=(1.0,), translate=(0.0,), *, name=None):
         super().__init__(name=name)
+
+        if len(scale) > len(translate):
+            translate = [0] * (len(scale) - len(translate)) + list(translate)
+
+        if len(translate) > len(scale):
+            scale = [1] * (len(translate) - len(scale)) + list(scale)
+
         self.scale = np.array(scale)
         self.translate = np.array(translate)
 
@@ -364,7 +371,7 @@ class Affine(Transform):
     def shear(self, shear):
         """Set the shear of the transform."""
         rotate, scale, _ = decompose_linear_matrix(self.linear_matrix)
-        if np.array(shear).dim == 2:
+        if np.array(shear).ndim == 2:
             warnings.warn(
                 'Non upper diagonal shear matrix passed so '
                 'reseting rotate to the identity.'

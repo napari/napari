@@ -10,6 +10,7 @@ from ..layers.image._image_utils import guess_labels
 from ..layers.utils.stack_utils import split_channels
 from ..plugins.io import read_data_with_plugins
 from ..types import FullLayerData, LayerData
+from ..utils import config
 from ..utils._register import create_func as create_add_method
 from ..utils.colormaps import ensure_colormap
 from ..utils.misc import is_sequence
@@ -18,13 +19,8 @@ logger = getLogger(__name__)
 
 
 def _get_async_image_class():
-    """Return layer.Image or OctreeImage.
-
-    Use octree only if octree_visuals is true.
-    """
-    from ..components.experimental.chunk import async_config
-
-    if async_config.octree_visuals:
+    """Return layer.Image or OctreeImage."""
+    if config.async_octree:
         from ..layers.image.experimental.octree_image import OctreeImage
 
         return OctreeImage
@@ -34,7 +30,7 @@ def _get_async_image_class():
 
 def _get_image_class():
     """Return layer.Image or OctreeImage."""
-    if os.getenv("NAPARI_ASYNC", "0") != "0":
+    if config.async_loading:
         return _get_async_image_class()
     else:
         return layers.Image
@@ -390,6 +386,7 @@ class AddLayersMixin:
 
         # glean layer names from filename. These will be used as *fallback*
         # names, if the plugin does not return a name kwarg in their meta dict.
+        filenames = []
         if isinstance(path_or_paths, str):
             filenames = itertools.repeat(path_or_paths)
         elif is_sequence(path_or_paths):

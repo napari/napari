@@ -339,7 +339,7 @@ def test_grid():
 
     # enter grid view
     viewer.grid_view()
-    assert np.all(viewer.grid_size == (3, 3))
+    assert np.all(viewer.grid_size == (2, 3))
     assert viewer.grid_stride == 1
     translations = [layer.translate_grid for layer in viewer.layers]
     expected_translations = [
@@ -496,8 +496,8 @@ def test_sliced_world_extent():
     viewer.add_image(
         np.random.random((6, 10, 15)), scale=(3, 1, 1), translate=(10, 20, 5)
     )
-    np.testing.assert_allclose(viewer.layers._extent_world[0], (10, 20, 5))
-    np.testing.assert_allclose(viewer.layers._extent_world[1], (25, 29, 19))
+    np.testing.assert_allclose(viewer.layers.extent.world[0], (10, 20, 5))
+    np.testing.assert_allclose(viewer.layers.extent.world[1], (25, 29, 19))
     np.testing.assert_allclose(viewer._sliced_extent_world[0], (20, 5))
     np.testing.assert_allclose(viewer._sliced_extent_world[1], (29, 19))
 

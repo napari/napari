@@ -256,7 +256,7 @@ def test_grid_mode(make_test_viewer):
 
     # enter grid view
     viewer.grid_view()
-    assert np.all(viewer.grid_size == (3, 3))
+    assert np.all(viewer.grid_size == (2, 3))
     assert viewer.grid_stride == 1
     translations = [layer.translate_grid for layer in viewer.layers]
     expected_translations = [
@@ -276,9 +276,9 @@ def test_grid_mode(make_test_viewer):
         (1 / 3, 1 / 3),
         (1 / 3, 1 / 2),
         (1 / 3, 2 / 3),
-        (1 / 2, 1 / 3),
-        (1 / 2, 1 / 2),
-        (1 / 2, 2 / 3),
+        (2 / 3, 1 / 3),
+        (2 / 3, 1 / 2),
+        (2 / 3, 2 / 3),
     ]
     # BGRMYC color order
     color = [
@@ -300,15 +300,6 @@ def test_grid_mode(make_test_viewer):
 
     # check screenshot
     screenshot = viewer.screenshot(canvas_only=True)
-    # sample 6 squares of the grid and check they have right colors
-    pos = [
-        (1 / 3, 1 / 3),
-        (1 / 3, 1 / 2),
-        (1 / 3, 2 / 3),
-        (1 / 2, 1 / 3),
-        (1 / 2, 1 / 2),
-        (1 / 2, 2 / 3),
-    ]
     # CGRMYB color order
     color = [
         [0, 255, 255, 255],

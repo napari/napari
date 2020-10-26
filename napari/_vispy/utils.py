@@ -1,6 +1,5 @@
-import os
-
 from ..layers import Image, Points, Shapes, Surface, Tracks, Vectors
+from ..utils import config
 from .vispy_image_layer import VispyImageLayer
 from .vispy_points_layer import VispyPointsLayer
 from .vispy_shapes_layer import VispyShapesLayer
@@ -17,7 +16,7 @@ layer_to_visual = {
     Tracks: VispyTracksLayer,
 }
 
-if os.getenv("NAPARI_ASYNC", "0") != "0":
+if config.async_loading:
     from ..layers.image.experimental.octree_image import OctreeImage
     from .experimental.vispy_tiled_image_layer import VispyTiledImageLayer
 

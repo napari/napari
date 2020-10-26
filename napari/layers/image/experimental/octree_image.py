@@ -5,6 +5,8 @@ from ..image import Image
 from ._chunked_slice_data import ChunkedSliceData
 from ._octree_image_slice import OctreeImageSlice
 
+DEFAULT_TILE_SIZE = 256
+
 
 class OctreeImage(Image):
     """OctreeImage layer.
@@ -15,23 +17,46 @@ class OctreeImage(Image):
     """
 
     def __init__(self, *args, **kwargs):
+        self._tile_size = DEFAULT_TILE_SIZE
         self._octree_level = None
+        self._data_corners = None
         super().__init__(*args, **kwargs)
-        self.events.add(octree_level=Event)
+        self.events.add(octree_level=Event, tile_size=Event)
+
+    @property
+    def tile_size(self) -> int:
+        return self._tile_size
+
+    @tile_size.setter
+    def tile_size(self, tile_size: int) -> None:
+        self._tile_size = tile_size
+        self.events.tile_size()
+        self._slice = None
+        self.refresh()
 
     @property
     def octree_level(self):
+        """Return the currently displayed octree level."""
         return self._octree_level
 
     @octree_level.setter
-    def octree_level(self, level):
-        max_level = self._slice.num_octree_levels - 1
-        if level > max_level:
-            self._octree_level = max_level
-            self.events.octree_level()  # Report we modified the request.
-        else:
-            self._octree_level = level
+    def octree_level(self, level: int):
+        """Set the octree level we should be displaying.
+
+        Parameters
+        ----------
+        level : int
+            Display this octree level.
+        """
+        assert 0 <= level < self.num_octree_levels
+        self._octree_level = level
+        self.events.octree_level()
         self.refresh()  # Create new slice with this level.
+
+    @property
+    def num_octree_levels(self) -> int:
+        """Return the total number of octree levels."""
+        return self._slice.num_octree_levels
 
     def _new_empty_slice(self):
         """Initialize the current slice to an empty image.
@@ -40,7 +65,9 @@ class OctreeImage(Image):
             self._get_empty_image(),
             self._raw_to_displayed,
             self.rgb,
+            self._tile_size,
             self._octree_level,
+            self._data_corners,
         )
         self._empty = True
 
@@ -62,3 +89,17 @@ class OctreeImage(Image):
 
         if has_event:
             self.events.octree_level()
+
+    def _update_draw(self, scale_factor, corner_pixels, shape_threshold):
+
+        # If self._data_corners was not set yet, we have not been drawn
+        # yet, and we need to refresh to draw ourselves for the first time.
+        need_refresh = self._data_corners is None
+
+        self._data_corners = self._transforms[1:].simplified.inverse(
+            corner_pixels
+        )
+        super()._update_draw(scale_factor, corner_pixels, shape_threshold)
+
+        if need_refresh:
+            self.refresh()

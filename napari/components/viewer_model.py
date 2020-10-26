@@ -251,7 +251,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
                 [np.zeros(self.dims.ndim), np.repeat(512, self.dims.ndim)]
             )
         else:
-            return self.layers._extent_world[:, self.dims.displayed]
+            return self.layers.extent.world[:, self.dims.displayed]
 
     def reset_view(self, event=None):
         """Reset the camera view."""
@@ -288,8 +288,8 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
 
     def _new_labels(self):
         """Create new labels layer filling full world coordinates space."""
-        extent = self.layers._extent_world
-        scale = self.layers._step_size
+        extent = self.layers.extent.world
+        scale = self.layers.extent.step
         scene_size = extent[1] - extent[0]
         corner = extent[0]
         shape = [
@@ -359,8 +359,8 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             self.dims.ndim = 2
             self.dims.reset()
         else:
-            extent = self.layers._extent_world
-            ss = self.layers._step_size
+            extent = self.layers.extent.world
+            ss = self.layers.extent.step
             ndim = extent.shape[1]
             self.dims.ndim = ndim
             for i in range(ndim):
@@ -407,8 +407,8 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         """
         n_grid_squares = np.ceil(len(self.layers) / abs(stride)).astype(int)
         if n_row is None and n_column is None:
-            n_row = np.ceil(np.sqrt(n_grid_squares)).astype(int)
-            n_column = n_row
+            n_column = np.ceil(np.sqrt(n_grid_squares)).astype(int)
+            n_row = np.ceil(n_grid_squares / n_column).astype(int)
         elif n_row is None:
             n_row = np.ceil(n_grid_squares / n_column).astype(int)
         elif n_column is None:

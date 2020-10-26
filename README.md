@@ -21,15 +21,29 @@ We're working on [tutorials](https://napari.org/tutorials/), but you can also qu
 
 ## installation
 
+### which distribution to install
+If you want to contribute back to napari codebase, you need to install from source code: see the [from source](#from-source) section.
+
+If you do not want to use napari as python code and only use it as GUI app, the bundled app is the easiest way to install.
+This is also the only method that does not require python knowledge to work with napari, see the [from bundled app](https://napari.org/tutorials/fundamentals/installation#installing-as-a-bundled-app) section.
+
+If you are using napari from Python to programmatically interact with the app, you can install via pip, conda-forge, or from source.
+We recommend that you use conda to help manage the virtual environment. Otherwise you may see compilation issues that are specific to your particular machine, which is difficult for us to debug.
+
+
 ### from pip, with "batteries included"
 
 napari can be installed on most macOS, Linux, and Windows systems with
-Python 3.7 and 3.8 using pip:
+Python 3.7 and 3.8 using pip. However, for Windows users, you need to preinstall [Microsoft Visual C++ Build Tools](https://visualstudio.microsoft.com/downloads/)
+in order to install VisPy (one of the packages we depend on) on Windows machines.
+
+The simplest command to install with pip is:
 
 ```sh
 pip install napari[all]
 ```
-
+ 
+(See `Specifying a GUI Backend` below for an explanation of the `[all]` notation.)
 Note: while not strictly required, it is *highly* recommended to install
 napari into a clean virtual environment using an environment manager like
 [conda](https://docs.conda.io/en/latest/miniconda.html) or
@@ -82,6 +96,7 @@ For more information or troubleshooting see our [installation tutorial](https://
 > ```
 
 ## simple example
+(The examples below require the `scikit-image` package to run. We just use data samples from this package for demonstration purposes. If you change the examples to use your own dataset, you may not need to install this package.)
 
 From inside an IPython shell (started with `ipython --gui=qt`) or jupyter notebook (after running a cell with magic command `%gui qt`) you can open up an interactive viewer by calling
 
