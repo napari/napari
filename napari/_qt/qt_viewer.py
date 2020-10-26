@@ -381,10 +381,8 @@ class QtViewer(QSplitter):
                     [str(x.message.args[0]) for x in wa]
                 )
             if not saved:
-                QMessageBox().warning(
-                    self,
-                    "Save failed",
-                    f"File {filename} save failed.\n{error_messages}",
+                raise IOError(
+                    f"File {filename} save failed.\n{error_messages}"
                 )
 
     def screenshot(self, path=None):
