@@ -273,7 +273,12 @@ class Labels(Image):
     @brush_size.setter
     def brush_size(self, brush_size):
         self._brush_size = int(brush_size)
-        self.cursor_size = self._brush_size / self.scale_factor
+        data2world_scale = np.mean(
+            [self.scale[d] for d in self._dims.displayed]
+        )
+        self.cursor_size = (
+            self._brush_size / self.scale_factor * data2world_scale
+        )
         self.status = format_float(self.brush_size)
         self.events.brush_size()
 
@@ -507,7 +512,9 @@ class Labels(Image):
             self.help = 'hold <space> to pan/zoom, click to pick a label'
             self.mouse_drag_callbacks.append(pick)
         elif mode == Mode.PAINT:
-            self.cursor_size = self.brush_size / self.scale_factor
+            # Note we have to reset the brush size to tigger an event
+            # This will be fixed in an upcomming PR
+            self.brush_size = self.brush_size
             self.cursor = self.brush_shape
             self.interactive = False
             self.help = (
@@ -524,7 +531,9 @@ class Labels(Image):
             self.help = 'hold <space> to pan/zoom, click to fill a label'
             self.mouse_drag_callbacks.append(draw)
         elif mode == Mode.ERASE:
-            self.cursor_size = self.brush_size / self.scale_factor
+            # Note we have to reset the brush size to tigger an event
+            # This will be fixed in an upcomming PR
+            self.brush_size = self.brush_size
             self.cursor = self.brush_shape
             self.interactive = False
             self.help = 'hold <space> to pan/zoom, drag to erase a label'
