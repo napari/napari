@@ -84,15 +84,13 @@ class MiniMap(QLabel):
 
                 data[y0:y1, x0:x1, :] = COLOR_SEEN if visible else COLOR_UNSEEN
 
-        y0, y1 = intersection.normalized_rows * (map_shape[0] - 1)
-        x0, x1 = intersection.normalized_cols * (map_shape[1] - 1)
+        max_y = map_shape[0] - 1
+        max_x = map_shape[1] - 1
 
-        # TODO_OCTREE: set with one slice operation
-        for y in range(int(y0), int(y1)):
-            for x in range(int(x0), int(x1)):
-                try:
-                    data[y, x, :] = COLOR_VIEW
-                except IndexError:
-                    pass
+        rows = (intersection.normalized_rows * max_y).astype(int)
+        cols = (intersection.normalized_cols * max_x).astype(int)
+
+        # TODO_OCTREE: more compact way to do this?
+        data[rows[0] : rows[1], cols[0] : cols[1], :] = COLOR_VIEW
 
         return data
