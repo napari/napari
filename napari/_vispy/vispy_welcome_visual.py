@@ -63,6 +63,8 @@ class VispyWelcomeVisual:
             background_color = np.divide(
                 str_to_rgb(darken(self._viewer.palette['background'], 70)), 255
             )
+            # Note this unsual scaling is done to preserve color balance on
+            # rendering by VisPy, which appears to be off when opacity < 1
             text_color = np.multiply(foreground_color, [0.2, 0.45, 0.7])
         else:
             foreground_color = np.divide(
@@ -89,6 +91,8 @@ class VispyWelcomeVisual:
 
         self._logo = new_logo
         self.node.set_data(self._logo)
+        # Having opacity < 1 improves blending but throws color balance
+        # off which needs to be adjusted if desired
         self.text_node.color = list(text_color) + [0.7]
 
     def _on_visible_change(self, event):
