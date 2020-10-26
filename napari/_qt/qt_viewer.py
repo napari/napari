@@ -6,13 +6,7 @@ from pathlib import Path
 import numpy as np
 from qtpy.QtCore import QCoreApplication, QSize, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
-from qtpy.QtWidgets import (
-    QFileDialog,
-    QMessageBox,
-    QSplitter,
-    QVBoxLayout,
-    QWidget,
-)
+from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 from vispy.scene import SceneCanvas
 from vispy.visuals.transforms import ChainTransform
 
@@ -365,8 +359,7 @@ class QtViewer(QSplitter):
                 '\nor use "Save all layers..."'
             )
         if msg:
-            QMessageBox.warning(self, "Nothing to save", msg, QMessageBox.Ok)
-            return
+            raise IOError("Nothing to save")
 
         filename, _ = QFileDialog.getSaveFileName(
             parent=self,
