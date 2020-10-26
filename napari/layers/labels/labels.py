@@ -777,6 +777,8 @@ class Labels(Image):
             # Ensure circle doesn't have spurious point
             # on edge by keeping radius as ##.5
             # Note we use the scaled brush size now in data coordinates
+            # We don't support elliptical brushes yet, so for non-isotropic
+            # scaling in the displayed dimensions we approximate with a mean
             radius = (
                 np.floor(
                     np.mean([brush_size_dims[d] for d in self._dims.displayed])
