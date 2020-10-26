@@ -1,6 +1,11 @@
 # napari 0.4.0
 
-We're happy to announce the release of napari 0.4.0!
+We're happy to announce the release of napari 0.4.0! This might be our biggest
+release ever — see below for highlights. Note also that, following the [NEP-29
+deprecation policy](https://numpy.org/neps/nep-0029-deprecation_policy.html),
+we have dropped support for Python 3.6: napari 0.4 requires Python 3.7 or
+higher to run.
+
 napari is a fast, interactive, multi-dimensional image viewer for Python.
 It's designed for browsing, annotating, and analyzing large multi-dimensional
 images. It's built on top of Qt (for the GUI), vispy (for performant GPU-based
