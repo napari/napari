@@ -11,8 +11,9 @@ from ....layers.image.experimental.octree_util import OctreeIntersection
 
 MAP_WIDTH = 200
 
-COLOR_ON = (255, 0, 0, 255)
-COLOR_OFF = (80, 80, 80, 255)
+COLOR_SEEN = (255, 0, 0, 255)
+COLOR_UNSEEN = (80, 80, 80, 255)
+COLOR_VIEW = (227, 220, 111, 255)
 
 
 class MiniMap(QLabel):
@@ -65,17 +66,17 @@ class MiniMap(QLabel):
         intersection : OctreeIntersection
             The intersection we are drawing on the map.
         """
-        shape = intersection.shape
-        aspect = shape[1] / shape[0]
+        tile_shape = intersection.info.tile_shape
+        aspect = tile_shape[1] / tile_shape[0]
 
         map_shape = (MAP_WIDTH, math.ceil(MAP_WIDTH / aspect))
-        tile_size = math.ceil(map_shape[1] / shape[1])
+        tile_size = math.ceil(map_shape[1] / tile_shape[1])
 
         bitmap_shape = map_shape + (4,)
         data = np.zeros(bitmap_shape, dtype=np.uint8)
 
-        for row in range(0, shape[0]):
-            for col in range(0, shape[1]):
+        for row in range(0, tile_shape[0]):
+            for col in range(0, tile_shape[1]):
                 visible = intersection.is_visible(row, col)
 
                 y0 = row * tile_size + 1
@@ -84,6 +85,13 @@ class MiniMap(QLabel):
                 x0 = col * tile_size + 1
                 x1 = x0 + tile_size - 1
 
-                data[y0:y1, x0:x1, :] = COLOR_ON if visible else COLOR_OFF
+                data[y0:y1, x0:x1, :] = COLOR_SEEN if visible else COLOR_UNSEEN
+
+        y0, y1 = intersection.normalized_rows * map_shape[1]
+        x0, x1 = intersection.normalized_cols * map_shape[0]
+
+        for y in range(int(y0), int(y1)):
+            for x in range(int(x0), int(x1)):
+                data[y, x, :] = COLOR_VIEW
 
         return data

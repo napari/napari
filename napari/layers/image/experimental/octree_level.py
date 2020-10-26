@@ -2,23 +2,31 @@
 """
 from typing import List
 
-from .octree_util import ChunkData, OctreeInfo, OctreeIntersection, TileArray
+from .octree_util import (
+    ChunkData,
+    OctreeInfo,
+    OctreeIntersection,
+    OctreeLevelInfo,
+    TileArray,
+)
 
 
 class OctreeLevel:
     """One level of the octree.
 
-    A level contains a 2D or 3D array of tiles.
+    A level contains a 2D array of tiles.
+
+    Soon might also contain a 3D array of sub-volumes.
     """
 
-    def __init__(self, info: OctreeInfo, level_index: int, tiles: TileArray):
-        self.info = info
-        self.level_index = level_index
-        self.tiles = tiles
+    def __init__(
+        self, octree_info: OctreeInfo, level_index: int, tiles: TileArray
+    ):
+        self.info = OctreeLevelInfo(
+            octree_info, level_index, [len(tiles), len(tiles[0])]
+        )
 
-        self.scale = 2 ** self.level_index
-        self.num_rows = len(self.tiles)
-        self.num_cols = len(self.tiles[0])
+        self.tiles = tiles
 
     def print_info(self):
         """Print information about this level."""
@@ -28,19 +36,7 @@ class OctreeLevel:
 
     def get_intersection(self, data_corners) -> OctreeIntersection:
 
-        # TODO_OCTREE: we should scale the corners somewhere else?
-        data_corners /= self.scale
-
-        # TODO_OCTREE: fix this for any dims
-        data_rows = [data_corners[0][1], data_corners[1][1]]
-        data_cols = [data_corners[0][2], data_corners[1][2]]
-
-        row_range = self.row_range(data_rows)
-        col_range = self.column_range(data_cols)
-
-        return OctreeIntersection(
-            [self.num_rows, self.num_cols], [row_range, col_range]
-        )
+        return OctreeIntersection(self.info, data_corners)
 
     def get_chunks(self, data_corners) -> List[ChunkData]:
         """Return chunks that are within this rectangular region of the data.
@@ -54,19 +50,17 @@ class OctreeLevel:
 
         intersection = self.get_intersection(data_corners)
 
-        scale = self.scale
+        scale = self.info.scale
         scale_vec = [scale, scale]
 
-        tile_size = self.info.tile_size
-
-        ranges = intersection.ranges
+        tile_size = self.info.octree_info.tile_size
 
         # Iterate over every tile in the rectangular region.
         data = None
-        y = ranges[0].start * tile_size
-        for row in ranges[0]:
-            x = ranges[1].start * tile_size
-            for col in ranges[1]:
+        y = intersection.row_range.start * tile_size
+        for row in intersection.row_range:
+            x = intersection.col_range.start * tile_size
+            for col in intersection.col_range:
 
                 data = self.tiles[row][col]
                 pos = [x, y]
@@ -78,30 +72,3 @@ class OctreeLevel:
             y += data.shape[0] * scale
 
         return chunks
-
-    def tile_range(self, span, num_tiles):
-        """Return tiles indices needed to draw the span."""
-
-        def _clamp(val, min_val, max_val):
-            return max(min(val, max_val), min_val)
-
-        tile_size = self.info.tile_size
-        print(tile_size)
-
-        tiles = [span[0] / tile_size, span[1] / tile_size]
-        print(f"tiles = {tiles}")
-        new_min = _clamp(tiles[0], 0, num_tiles - 1)
-        new_max = _clamp(tiles[1], 0, num_tiles - 1)
-        clamped = [new_min, new_max + 1]
-        print(f"clamped = {clamped}")
-
-        span_int = [int(x) for x in clamped]
-        return range(*span_int)
-
-    def row_range(self, span):
-        """Return row indices which span image coordinates [y0..y1]."""
-        return self.tile_range(span, self.num_rows)
-
-    def column_range(self, span):
-        """Return column indices which span image coordinates [x0..x1]."""
-        return self.tile_range(span, self.num_cols)
