@@ -15,7 +15,28 @@ For more information, examples, and documentation, please visit our website at
 https://napari.org
 
 ## Highlights
+napari 0.4.0 is the culmination of months of improvements to our data models.
+It finally brings the data from all layers into a consistent, global coordinate
+system. This means our display is more accurate (we aim for pixel-perfect
+precision), and it will be easier to build applications for accurate
+measurement on top of napari.
 
+Thanks to the global coordinate system we are now able to display a scale bar,
+axis directions, and provide a cursor model that reports the current cursor
+coordinates within the current world view. (Currently, physical units are not
+supported, but they are coming soon!) We can also natively display data
+transformed with an arbitrary affine transform, making it easy to view lattice
+light sheet data straight out of the microscope!
+
+We have also added a new layer type, our first in over a year, to display
+tracking data. Many thanks to Alan Lowe from UCL/The Turing Institute for this
+contribution!
+
+Finally, our experimental asynchronous rendering mode continues to be improved.
+Use the `NAPARI_ASYNC=1` environment variable to try it, and please report
+issues at https://github.com/napari/napari/issues.
+
+We thank the many contributors who have made this release possible!
 
 ## New Features
 - Add camera model (#854)
