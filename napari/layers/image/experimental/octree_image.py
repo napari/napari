@@ -61,13 +61,21 @@ class OctreeImage(Image):
     def _new_empty_slice(self):
         """Initialize the current slice to an empty image.
         """
+        # TODO_OCTREE: fix ndim stuff
+        if self._data_corners is None:
+            data_corners = None
+        elif self.ndim == 2:
+            data_corners = self._data_corners
+        else:
+            data_corners = self._data_corners[:, 1:3]
+
         self._slice = OctreeImageSlice(
             self._get_empty_image(),
             self._raw_to_displayed,
             self.rgb,
             self._tile_size,
             self._octree_level,
-            self._data_corners,
+            data_corners,
         )
         self._empty = True
 
