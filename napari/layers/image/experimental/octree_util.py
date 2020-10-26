@@ -36,7 +36,6 @@ class OctreeIntersection:
         self.info = info
         self.data_corners = data_corners
 
-        # TODO_OCTREE: generalize dimensions...
         # TODO_OCTREE: don't split rows/cols?
         self.rows: Float2 = data_corners[:, 0]
         self.cols: Float2 = data_corners[:, 1]

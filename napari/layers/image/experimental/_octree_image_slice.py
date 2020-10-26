@@ -1,12 +1,13 @@
 """OctreeImageSlice class.
 """
 import logging
-from typing import Callable
+from typing import Callable, List
 
 from ....types import ArrayLike
 from ....utils.perf import block_timer
 from .._image_slice import ImageSlice
 from .octree import Octree
+from .octree_util import ChunkData
 
 LOGGER = logging.getLogger("napari.async")
 
@@ -22,7 +23,6 @@ class OctreeImageSlice(ImageSlice):
         rgb: bool,
         tile_size: int,
         octree_level: int,
-        data_corners,
     ):
         LOGGER.debug("OctreeImageSlice.__init__")
         super().__init__(image, image_converter, rgb)
@@ -30,7 +30,6 @@ class OctreeImageSlice(ImageSlice):
         self._tile_size = tile_size
         self._octree = None
         self._octree_level = octree_level
-        self._data_corners = data_corners
 
     @property
     def num_octree_levels(self) -> int:
@@ -78,23 +77,17 @@ class OctreeImageSlice(ImageSlice):
 
         # self._octree.print_tiles()
 
-    @property
-    def view_chunks(self):
+    def get_view_chunks(self, corners_2d) -> List[ChunkData]:
         """Return the chunks currently in view."""
-
-        # This will be None if we have not been drawn yet.
-        if self._data_corners is None:
-            return []
 
         # TODO_OCTREE: soon we will compute which level to draw.
         level = self._octree.levels[self._octree_level]
 
-        return level.get_chunks(self._data_corners)
+        return level.get_chunks(corners_2d)
 
-    def get_intersection(self, data_corners):
+    def get_intersection(self, corners_2d):
         """Return the intersection with the octree.."""
 
         # TODO_OCTREE: soon we will compute which level to draw.
         level = self._octree.levels[self._octree_level]
-
-        return level.get_intersection(data_corners)
+        return level.get_intersection(corners_2d)

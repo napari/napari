@@ -37,11 +37,8 @@ class MiniMap(QLabel):
 
     def update(self) -> None:
         """Update the minimap to show latest intersection."""
-        layer_slice = self.layer._slice
-        if layer_slice is None:
-            return None
+        intersection = self.layer.get_intersection(self.data_corners)
 
-        intersection = layer_slice.get_intersection(self.data_corners)
         if intersection is not None:
             self._draw_map(intersection)
 

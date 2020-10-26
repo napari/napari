@@ -4,6 +4,7 @@ from ....utils.events import Event
 from ..image import Image
 from ._chunked_slice_data import ChunkedSliceData
 from ._octree_image_slice import OctreeImageSlice
+from .octree_util import OctreeIntersection
 
 DEFAULT_TILE_SIZE = 256
 
@@ -61,21 +62,12 @@ class OctreeImage(Image):
     def _new_empty_slice(self):
         """Initialize the current slice to an empty image.
         """
-        # TODO_OCTREE: fix ndim stuff
-        if self._data_corners is None:
-            data_corners = None
-        elif self.ndim == 2:
-            data_corners = self._data_corners
-        else:
-            data_corners = self._data_corners[:, 1:3]
-
         self._slice = OctreeImageSlice(
             self._get_empty_image(),
             self._raw_to_displayed,
             self.rgb,
             self._tile_size,
             self._octree_level,
-            data_corners,
         )
         self._empty = True
 
@@ -87,7 +79,12 @@ class OctreeImage(Image):
     @property
     def view_chunks(self):
         """Chunks in the current slice which in currently in view."""
-        return self._slice.view_chunks
+        # This will be None if we have not been drawn yet.
+        if self._data_corners is None:
+            return []
+
+        corners_2d = self._corners_2d(self._data_corners)
+        return self._slice.get_view_chunks(corners_2d)
 
     def _on_data_loaded(self, data: ChunkedSliceData, sync: bool) -> None:
         """The given data a was loaded, use it now."""
@@ -116,3 +113,20 @@ class OctreeImage(Image):
 
         if need_refresh:
             self.refresh()
+
+    def get_intersection(self, data_corners) -> OctreeIntersection:
+        if self._slice is None:
+            return None
+
+        corners_2d = self._corners_2d(data_corners)
+        return self._slice.get_intersection(corners_2d)
+
+    def _corners_2d(self, data_corners):
+        """
+        Get data corners in 2d.
+        """
+        # TODO_OCTREE: This is placeholder. Need to handle dims correctly.
+        if self.ndim == 2:
+            return data_corners
+        else:
+            return data_corners[:, 1:3]
