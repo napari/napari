@@ -11,9 +11,8 @@ It's designed for browsing, annotating, and analyzing large multi-dimensional
 images. It's built on top of Qt (for the GUI), vispy (for performant GPU-based
 rendering), and the scientific Python stack (numpy, scipy).
 
-
-For more information, examples, and documentation, please visit our website:
-https://github.com/napari/napari
+For more information, examples, and documentation, please visit our website at
+https://napari.org
 
 ## Highlights
 
