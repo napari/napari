@@ -744,6 +744,7 @@ class Labels(Image):
         if refresh is True:
             self._save_history()
         brush_size_dims = [self.brush_size] * self.ndim
+        # Scale the brush size from world coorinates to data coordinates
         brush_size_dims = np.divide(brush_size_dims, self.scale)
 
         if not self.n_dimensional and self.ndim > 2:
@@ -775,6 +776,7 @@ class Labels(Image):
             sphere_dims = len(coord)
             # Ensure circle doesn't have spurious point
             # on edge by keeping radius as ##.5
+            # Note we use the scaled brush size now in data coordinates
             radius = (
                 np.floor(
                     np.mean([brush_size_dims[d] for d in self._dims.displayed])
