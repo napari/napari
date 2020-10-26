@@ -154,7 +154,7 @@ We thank the many contributors who have made this release possible!
 ## 16 reviewers added to this release (alphabetical)
 
 - [Alan R Lowe](https://github.com/napari/napari/commits?author=quantumjot) - @quantumjot
-- [alisterburt](https://github.com/napari/napari/commits?author=alisterburt) - @alisterburt
+- [Alister Burt](https://github.com/napari/napari/commits?author=alisterburt) - @alisterburt
 - [Ben Cooper](https://github.com/napari/napari/commits?author=bkcooper) - @bkcooper
 - [David Hoese](https://github.com/napari/napari/commits?author=djhoese) - @djhoese
 - [Davis Bennett](https://github.com/napari/napari/commits?author=d-v-b) - @d-v-b
