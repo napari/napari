@@ -231,6 +231,7 @@ class QtViewer(QSplitter):
 
         self.viewer.events.interactive.connect(self._on_interactive)
         self.viewer.cursor.events.style.connect(self._on_cursor)
+        self.viewer.cursor.events.size.connect(self._on_cursor)
         self.viewer.events.palette.connect(self._update_palette)
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
         self.viewer.layers.events.added.connect(self._add_layer)
@@ -446,8 +447,13 @@ class QtViewer(QSplitter):
             The napari event that triggered this method.
         """
         cursor = self.viewer.cursor.style
-        if cursor == 'square':
+        # Scale size by zoom if needed
+        if self.viewer.cursor.scaled:
+            size = self.viewer.cursor.size * self.viewer.camera.zoom
+        else:
             size = self.viewer.cursor.size
+
+        if cursor == 'square':
             # make sure the square fits within the current canvas
             if size < 8 or size > (
                 min(*self.viewer.window.qt_viewer.canvas.size) - 4
@@ -456,10 +462,10 @@ class QtViewer(QSplitter):
             else:
                 q_cursor = QCursor(square_pixmap(size))
         elif cursor == 'circle':
-            size = self.viewer.cursor.size
             q_cursor = QCursor(circle_pixmap(size))
         else:
             q_cursor = self._cursors[cursor]
+
         self.canvas.native.setCursor(q_cursor)
 
     def _update_palette(self, event=None):
