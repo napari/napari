@@ -91,6 +91,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self.dims.events.order.connect(self._update_layers)
         self.dims.events.order.connect(self.reset_view)
         self.dims.events.current_step.connect(self._update_layers)
+        self.cursor.events.position.connect(self._on_cursor_position_change)
         self.layers.events.changed.connect(self._update_active_layer)
         self.layers.events.changed.connect(self._update_grid)
         self.layers.events.changed.connect(self._on_layers_change)
@@ -386,6 +387,11 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
     def _update_cursor_size(self, event):
         """Set the viewer cursor_size with the `event.cursor_size` int."""
         self.cursor.size = event.cursor_size
+
+    def _on_cursor_position_change(self, event):
+        """Set the layer cursor position."""
+        for layer in self.layers:
+            layer.position = self.cursor.position
 
     def grid_view(self, n_row=None, n_column=None, stride=1):
         """Arrange the current layers is a 2D grid.

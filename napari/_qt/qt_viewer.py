@@ -572,8 +572,6 @@ class QtViewer(QSplitter):
 
         layer = self.viewer.active_layer
         if layer is not None:
-            # set cursor position in world coordinates
-            layer.position = self.viewer.cursor.position
             mouse_wheel_callbacks(layer, event)
 
     def on_mouse_press(self, event):
@@ -593,8 +591,6 @@ class QtViewer(QSplitter):
 
         layer = self.viewer.active_layer
         if layer is not None:
-            # set cursor position in world coordinates
-            layer.position = self.viewer.cursor.position
             mouse_press_callbacks(layer, event)
 
     def on_mouse_move(self, event):
@@ -613,8 +609,6 @@ class QtViewer(QSplitter):
 
         layer = self.viewer.active_layer
         if layer is not None:
-            # set cursor position in world coordinates
-            layer.position = self.viewer.cursor.position
             mouse_move_callbacks(layer, event)
 
     def on_mouse_release(self, event):
@@ -633,8 +627,6 @@ class QtViewer(QSplitter):
 
         layer = self.viewer.active_layer
         if layer is not None:
-            # set cursor position in world coordinates
-            layer.position = self.viewer.cursor.position
             mouse_release_callbacks(layer, event)
 
     def on_key_press(self, event):
