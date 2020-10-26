@@ -53,5 +53,5 @@ def test_downsample_value(make_test_viewer, shape):
     expected_values = [0.0, 0.0, 0.0, 1.0]
 
     for test_point, expected_value in zip(test_points, expected_values):
-        layer.position = test_point
+        viewer.cursor.position = test_point
         assert layer.get_value() == expected_value

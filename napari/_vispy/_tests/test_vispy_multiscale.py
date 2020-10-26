@@ -28,17 +28,17 @@ def test_multiscale(make_test_viewer):
     assert np.all(layer.corner_pixels[1] >= np.subtract(shapes[2], 1))
 
     # Test value at top left corner of image
-    layer.position = (0, 0)
+    viewer.cursor.position = (0, 0)
     value = layer.get_value()
     np.testing.assert_allclose(value, (2, data[2][(0, 0)]))
 
     # Test value at bottom right corner of image
-    layer.position = (3995, 2995)
+    viewer.cursor.position = (3995, 2995)
     value = layer.get_value()
     np.testing.assert_allclose(value, (2, data[2][(999, 749)]))
 
     # Test value outside image
-    layer.position = (4000, 3000)
+    viewer.cursor.position = (4000, 3000)
     value = layer.get_value()
     assert value[1] is None
 

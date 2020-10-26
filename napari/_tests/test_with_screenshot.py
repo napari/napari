@@ -375,7 +375,7 @@ def test_labels_painting(make_test_viewer):
     assert screenshot[:, :, :2].max() == 0
 
     # Enter paint mode
-    layer.position = (0, 0)
+    viewer.cursor.position = (0, 0)
     layer.mode = 'paint'
     layer.selected_label = 3
 
@@ -388,7 +388,7 @@ def test_labels_painting(make_test_viewer):
     event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
     mouse_press_callbacks(layer, event)
 
-    layer.position = (100, 100)
+    viewer.cursor.position = (100, 100)
 
     # Simulate drag
     event = ReadOnlyWrapper(Event(type='mouse_move', is_dragging=True))
