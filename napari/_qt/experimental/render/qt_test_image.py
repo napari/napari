@@ -1,4 +1,4 @@
-"""QtTestImage class.
+"""QtTestImage and QtTestImageLayout classes.
 """
 from typing import Callable, Tuple
 
@@ -16,7 +16,7 @@ IMAGE_SIZE_RANGE = range(1, 65536, 100)
 
 
 class QtTestImageLayout(QVBoxLayout):
-    """Layout for the Test Image frame.
+    """Controls to a create a new test image layer.
 
     Parameters
     ----------
