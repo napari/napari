@@ -2,13 +2,8 @@
 """
 from typing import List
 
-from .octree_util import (
-    ChunkData,
-    OctreeInfo,
-    OctreeIntersection,
-    OctreeLevelInfo,
-    TileArray,
-)
+from .octree_intersection import OctreeIntersection
+from .octree_util import ChunkData, OctreeInfo, OctreeLevelInfo, TileArray
 
 
 class OctreeLevel:

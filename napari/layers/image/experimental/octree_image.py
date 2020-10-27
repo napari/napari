@@ -4,7 +4,8 @@ from ....utils.events import Event
 from ..image import Image
 from ._chunked_slice_data import ChunkedSliceData
 from ._octree_image_slice import OctreeImageSlice
-from .octree_util import OctreeInfo, OctreeIntersection, OctreeLevelInfo
+from .octree_intersection import OctreeIntersection
+from .octree_util import OctreeInfo, OctreeLevelInfo
 
 DEFAULT_TILE_SIZE = 256
 

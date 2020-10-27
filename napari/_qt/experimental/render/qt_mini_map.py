@@ -6,8 +6,8 @@ import numpy as np
 from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import QLabel
 
+from ....layers.image.experimental import OctreeIntersection
 from ....layers.image.experimental.octree_image import OctreeImage
-from ....layers.image.experimental.octree_util import OctreeIntersection
 
 # Width of the map in the dockable widget.
 MAP_WIDTH = 200
