@@ -2,9 +2,27 @@
 """
 from typing import Callable
 
-from qtpy.QtWidgets import QFrame, QLabel, QVBoxLayout
+import numpy as np
+from qtpy.QtWidgets import QComboBox, QFrame, QHBoxLayout, QLabel, QVBoxLayout
 
-from .qt_labeled_spin_box import QtLabeledSpinBox
+
+class QtOctreeLevelCombo(QHBoxLayout):
+    def __init__(self, layer, update_layer):
+        super().__init__()
+
+        self.addWidget(QLabel("Octree Level"))
+
+        current_level = layer.octree_level
+        levels = [str(x) for x in np.arange(0, layer.num_octree_levels)]
+
+        self.octree_level = QComboBox()
+        self.octree_level.addItems(levels)
+        self.octree_level.activated[int].connect(update_layer)
+        self.octree_level.setCurrentIndex(current_level)
+        self.addWidget(self.octree_level)
+
+    def set_level(self, level):
+        self.octree_level.setCurrentIndex(level)
 
 
 class QtOctreeInfoLayout(QVBoxLayout):
@@ -18,17 +36,10 @@ class QtOctreeInfoLayout(QVBoxLayout):
         Call this when the octree level is changed.
     """
 
-    def __init__(self, layer, on_new_octree_level: Callable[[int], None]):
+    def __init__(self, layer, update_layer: Callable[[int], None]):
         super().__init__()
 
-        # SpinBox showing the layer's current octree level.
-        max_level = layer.num_octree_levels - 1
-        self.octree_level = QtLabeledSpinBox(
-            "Octree Level",
-            0,
-            range(0, max_level, 1),
-            connect=on_new_octree_level,
-        )
+        self.octree_level = QtOctreeLevelCombo(layer, update_layer)
         self.addLayout(self.octree_level)
 
         self.tile_size = QLabel()
@@ -44,7 +55,7 @@ class QtOctreeInfoLayout(QVBoxLayout):
         layer : Layer
             Update with information from this layer.
         """
-        self.octree_level.spin.setValue(layer.octree_level)
+        self.octree_level.set_level(layer.octree_level)
 
         size = layer.tile_size
         self.tile_size.setText(f"Tile Size: {size}x{size}")
@@ -70,7 +81,7 @@ class QtOctreeInfo(QFrame):
             if layer.octree_level is not None:
                 self.layout.update(layer)
 
-        # Update layout now and hook to event for future updates.
+        # Initial update and connect for future updates.
         _update_layout()
         layer.events.octree_level.connect(_update_layout)
         layer.events.tile_size.connect(_update_layout)
