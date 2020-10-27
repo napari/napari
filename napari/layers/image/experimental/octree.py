@@ -1,6 +1,6 @@
 """Octree class.
 """
-from typing import List, Tuple
+from typing import List
 
 import numpy as np
 from scipy import ndimage as ndi
@@ -184,11 +184,10 @@ class Octree:
         All the levels of the tree.
     """
 
-    def __init__(self, base_shape: Tuple[int, int], levels: Levels):
-        self.base_shape = base_shape
+    def __init__(self, info: OctreeInfo, levels: Levels):
+        self.info = info
         self.levels = [
-            OctreeLevel(base_shape, i, level)
-            for (i, level) in enumerate(levels)
+            OctreeLevel(info, i, level) for (i, level) in enumerate(levels)
         ]
         self.num_levels = len(self.levels)
 

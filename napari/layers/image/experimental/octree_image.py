@@ -4,7 +4,7 @@ from ....utils.events import Event
 from ..image import Image
 from ._chunked_slice_data import ChunkedSliceData
 from ._octree_image_slice import OctreeImageSlice
-from .octree_util import OctreeIntersection
+from .octree_util import OctreeInfo, OctreeIntersection, OctreeLevelInfo
 
 DEFAULT_TILE_SIZE = 256
 
@@ -21,8 +21,9 @@ class OctreeImage(Image):
         self._tile_size = DEFAULT_TILE_SIZE
         self._octree_level = None
         self._data_corners = None
+        self._auto_level = False
         super().__init__(*args, **kwargs)
-        self.events.add(octree_level=Event, tile_size=Event)
+        self.events.add(auto_level=Event, octree_level=Event, tile_size=Event)
 
     @property
     def tile_size(self) -> int:
@@ -34,6 +35,29 @@ class OctreeImage(Image):
         self.events.tile_size()
         self._slice = None
         self.refresh()
+
+    @property
+    def octree_info(self) -> OctreeInfo:
+        if self._slice is None:
+            return None
+        else:
+            return self._slice.octree_info
+
+    @property
+    def octree_level_info(self) -> OctreeLevelInfo:
+        if self._slice is None:
+            return None
+        else:
+            return self._slice.octree_level_info
+
+    @property
+    def auto_level(self) -> bool:
+        return self._auto_level
+
+    @auto_level.setter
+    def auto_level(self, value: bool) -> None:
+        self._auto_level = value
+        self.events.auto_level()
 
     @property
     def octree_level(self):

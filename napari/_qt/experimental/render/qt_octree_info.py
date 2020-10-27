@@ -5,24 +5,33 @@ from typing import Callable
 import numpy as np
 from qtpy.QtWidgets import QComboBox, QFrame, QHBoxLayout, QLabel, QVBoxLayout
 
+AUTO_INDEX = 0
 
-class QtOctreeLevelCombo(QHBoxLayout):
-    def __init__(self, layer, update_layer):
+
+def _index_to_level(index):
+    return index - 1  # Since AUTO is index 0
+
+
+def _level_to_index(level):
+    return level + 1  # Since AUTO is index 0
+
+
+class QtLevelCombo(QHBoxLayout):
+    def __init__(self, num_levels, set_level):
         super().__init__()
 
         self.addWidget(QLabel("Octree Level"))
 
-        current_level = layer.octree_level
-        levels = [str(x) for x in np.arange(0, layer.num_octree_levels)]
+        levels = [str(x) for x in np.arange(0, num_levels)]
+        items = ["AUTO"] + levels
 
-        self.octree_level = QComboBox()
-        self.octree_level.addItems(levels)
-        self.octree_level.activated[int].connect(update_layer)
-        self.octree_level.setCurrentIndex(current_level)
-        self.addWidget(self.octree_level)
+        self.level = QComboBox()
+        self.level.addItems(items)
+        self.level.activated[int].connect(set_level)
+        self.addWidget(self.level)
 
-    def set_level(self, level):
-        self.octree_level.setCurrentIndex(level)
+    def set_index(self, index):
+        self.level.setCurrentIndex(index)
 
 
 class QtOctreeInfoLayout(QVBoxLayout):
@@ -36,29 +45,70 @@ class QtOctreeInfoLayout(QVBoxLayout):
         Call this when the octree level is changed.
     """
 
-    def __init__(self, layer, update_layer: Callable[[int], None]):
+    def __init__(
+        self, layer, set_level: Callable[[int], None],
+    ):
         super().__init__()
 
-        self.octree_level = QtOctreeLevelCombo(layer, update_layer)
-        self.addLayout(self.octree_level)
+        self.level = QtLevelCombo(layer.num_octree_levels, set_level)
+        self.addLayout(self.level)
 
-        self.tile_size = QLabel()
-        self.addWidget(self.tile_size)
+        # TODO_OCTREE: make this some type of key:value display?
+        self.level_label = QLabel()
+        self.addWidget(self.level_label)
 
-        self.update(layer)
+        self.tile_shape_label = QLabel()
+        self.addWidget(self.tile_shape_label)
 
-    def update(self, layer):
-        """Update the layout with latest information for the layer.
+        self.tile_size_label = QLabel()
+        self.addWidget(self.tile_size_label)
+
+        self.image_shape_label = QLabel()
+        self.addWidget(self.image_shape_label)
+
+        self.base_shape_label = QLabel()
+        self.addWidget(self.base_shape_label)
+
+        self.set_layout(layer)  # Initial settings.
+
+    def set_layout(self, layer):
+        """Set controls based on the layer.
 
         Parameters
         ----------
         layer : Layer
-            Update with information from this layer.
+            Set controls based on this layer.
         """
-        self.octree_level.set_level(layer.octree_level)
+        if layer.auto_level:
+            self.level.set_index(AUTO_INDEX)
+        else:
+            self.level.set_index(_level_to_index(layer.octree_level))
+
+        self._set_labels(layer)
+
+    def _set_labels(self, layer) -> None:
+
+        level = layer.octree_level
+        self.level_label.setText(f"Level: {level}")
+
+        level_info = layer.octree_level_info
+
+        def _shape_str(shape) -> str:
+            return f"{shape[1]}x{shape[0]}"
+
+        tile_shape = level_info.tile_shape
+        self.tile_shape_label.setText(f"Tile Shape: {_shape_str(tile_shape)}")
 
         size = layer.tile_size
-        self.tile_size.setText(f"Tile Size: {size}x{size}")
+        self.tile_size_label.setText(f"Tile Size: {size}x{size}")
+
+        image_shape = level_info.image_shape
+        self.image_shape_label.setText(
+            f"Image Shape: {_shape_str(image_shape)}"
+        )
+
+        base_shape = level_info.octree_info.base_shape
+        self.base_shape_label.setText(f"Base Shape: {_shape_str(base_shape)}")
 
 
 class QtOctreeInfo(QFrame):
@@ -70,18 +120,22 @@ class QtOctreeInfo(QFrame):
 
     def __init__(self, layer):
         super().__init__()
-
-        def _update_layer(value):
-            layer.octree_level = value
-
-        self.layout = QtOctreeInfoLayout(layer, _update_layer)
+        self.layer = layer
+        self.layout = QtOctreeInfoLayout(layer, self._set_level)
         self.setLayout(self.layout)
 
-        def _update_layout(event=None):
-            if layer.octree_level is not None:
-                self.layout.update(layer)
-
         # Initial update and connect for future updates.
-        _update_layout()
-        layer.events.octree_level.connect(_update_layout)
-        layer.events.tile_size.connect(_update_layout)
+        self._set_layout()
+        layer.events.auto_level.connect(self._set_layout)
+        layer.events.octree_level.connect(self._set_layout)
+        layer.events.tile_size.connect(self._set_layout)
+
+    def _set_layout(self, event=None):
+        self.layout.set_layout(self.layer)
+
+    def _set_level(self, value):
+        if value == AUTO_INDEX:
+            self.layer.auto_level = True
+        else:
+            self.layer.auto_level = False
+            self.layer.octree_level = _index_to_level(value)

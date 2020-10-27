@@ -7,7 +7,7 @@ from ....types import ArrayLike
 from ....utils.perf import block_timer
 from .._image_slice import ImageSlice
 from .octree import Octree
-from .octree_util import ChunkData
+from .octree_util import ChunkData, OctreeInfo, OctreeLevelInfo
 
 LOGGER = logging.getLogger("napari.async")
 
@@ -91,3 +91,17 @@ class OctreeImageSlice(ImageSlice):
         # TODO_OCTREE: soon we will compute which level to draw.
         level = self._octree.levels[self._octree_level]
         return level.get_intersection(corners_2d)
+
+    @property
+    def octree_info(self) -> OctreeInfo:
+        if self._octree is None:
+            return None
+        else:
+            return self._octree.info
+
+    @property
+    def octree_level_info(self) -> OctreeLevelInfo:
+        if self._octree is None:
+            return None
+        else:
+            return self._octree.levels[self._octree_level].info
