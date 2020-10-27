@@ -35,13 +35,15 @@ class VispyWelcomeVisual:
         self.text_node = Text(
             pos=[0, 0], parent=parent, method='gpu', bold=False
         )
+        # self.text_node.blending = 'additive'
         self.text_node.order = order
         self.text_node.transform = STTransform()
-        self.text_node.anchors = ('center', 'center')
+        self.text_node.anchors = ('left', 'center')
         self.text_node.text = (
-            'drag and drop file(s) here\n'
-            'use the File Open menu\n'
-            'call a viewer.add_* method'
+            'to add data:\n'
+            '   - drag and drop file(s) here\n'
+            '   - select File > Open from the menu\n'
+            '   - call a viewer.add_* method'
         )
         self.text_node.color = np.divide(
             str_to_rgb(darken(self._viewer.palette['foreground'], 30)), 255
@@ -123,7 +125,7 @@ class VispyWelcomeVisual:
 
         self.text_node.font_size = center[1] / 24
         self.text_node.transform.translate = [
-            center[0],
+            center[0] - center[1] / 2.4,
             1.45 * center[1],
             0,
             0,
