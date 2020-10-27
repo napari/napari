@@ -31,7 +31,10 @@ class OctreeLevelInfo:
         self.scale = 2 ** self.level_index
 
         base = self.octree_info.base_shape
-        self.image_shape = (base[0] / self.scale, base[1] / self.scale)
+        self.image_shape = (
+            int(base[0] / self.scale),
+            int(base[1] / self.scale),
+        )
 
         self.tile_shape = tile_shape
 

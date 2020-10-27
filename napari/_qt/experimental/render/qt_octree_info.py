@@ -3,7 +3,16 @@
 from typing import Callable
 
 import numpy as np
-from qtpy.QtWidgets import QComboBox, QFrame, QHBoxLayout, QLabel, QVBoxLayout
+from qtpy.QtWidgets import (
+    QComboBox,
+    QFrame,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QTableWidget,
+    QTableWidgetItem,
+    QVBoxLayout,
+)
 
 AUTO_INDEX = 0
 
@@ -53,21 +62,13 @@ class QtOctreeInfoLayout(QVBoxLayout):
         self.level = QtLevelCombo(layer.num_octree_levels, set_level)
         self.addLayout(self.level)
 
-        # TODO_OCTREE: make this some type of key:value display?
-        self.level_label = QLabel()
-        self.addWidget(self.level_label)
-
-        self.tile_shape_label = QLabel()
-        self.addWidget(self.tile_shape_label)
-
-        self.tile_size_label = QLabel()
-        self.addWidget(self.tile_size_label)
-
-        self.image_shape_label = QLabel()
-        self.addWidget(self.image_shape_label)
-
-        self.base_shape_label = QLabel()
-        self.addWidget(self.base_shape_label)
+        self.table = QTableWidget()
+        self.table.verticalHeader().setVisible(False)
+        self.table.horizontalHeader().setVisible(False)
+        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.table.resizeRowsToContents()
+        self.table.setShowGrid(False)
+        self.addWidget(self.table)
 
         self.set_layout(layer)  # Initial settings.
 
@@ -84,31 +85,22 @@ class QtOctreeInfoLayout(QVBoxLayout):
         else:
             self.level.set_index(_level_to_index(layer.octree_level))
 
-        self._set_labels(layer)
-
-    def _set_labels(self, layer) -> None:
-
-        level = layer.octree_level
-        self.level_label.setText(f"Level: {level}")
-
         level_info = layer.octree_level_info
 
-        def _shape_str(shape) -> str:
+        def _str(shape) -> str:
             return f"{shape[1]}x{shape[0]}"
 
-        tile_shape = level_info.tile_shape
-        self.tile_shape_label.setText(f"Tile Shape: {_shape_str(tile_shape)}")
-
-        size = layer.tile_size
-        self.tile_size_label.setText(f"Tile Size: {size}x{size}")
-
-        image_shape = level_info.image_shape
-        self.image_shape_label.setText(
-            f"Image Shape: {_shape_str(image_shape)}"
-        )
-
-        base_shape = level_info.octree_info.base_shape
-        self.base_shape_label.setText(f"Base Shape: {_shape_str(base_shape)}")
+        values = {
+            "Level": str(layer.octree_level),
+            "Tile Shape": _str(level_info.tile_shape),
+            "Tile Size": _str([layer.tile_size, layer.tile_size]),
+            "Layer Shape": _str(level_info.image_shape),
+        }
+        self.table.setRowCount(len(values))
+        self.table.setColumnCount(2)
+        for i, (key, value) in enumerate(values.items()):
+            self.table.setItem(i, 0, QTableWidgetItem(key))
+            self.table.setItem(i, 1, QTableWidgetItem(value))
 
 
 class QtOctreeInfo(QFrame):

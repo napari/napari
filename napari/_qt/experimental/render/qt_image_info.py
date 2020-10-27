@@ -17,13 +17,10 @@ class QtImageInfoLayout(QVBoxLayout):
     def __init__(self, layer):
         super().__init__()
 
+        # TODO_OCTREE: This class was going to have more, if not
+        # we can get rid of it.
         shape = layer.data.shape
-        height, width = shape[1:3]  # Which dims are really width/height?
-
-        # Dimension labels.
         self.addWidget(QLabel(f"Shape: {shape}"))
-        self.addWidget(QLabel(f"Width: {width}"))
-        self.addWidget(QLabel(f"Height: {height}"))
 
 
 class QtImageInfo(QFrame):
