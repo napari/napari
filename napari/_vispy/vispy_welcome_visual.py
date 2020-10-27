@@ -32,14 +32,18 @@ class VispyWelcomeVisual:
         self.node.cmap = 'gray'
         self.node.transform = STTransform()
 
-        self.text_node = Text(pos=[0, 0], parent=parent, bold=True)
+        self.text_node = Text(
+            pos=[0, 0], parent=parent, method='gpu', bold=False
+        )
+        # self.text_node.blending = 'additive'
         self.text_node.order = order
         self.text_node.transform = STTransform()
-        self.text_node.anchors = ('center', 'center')
+        self.text_node.anchors = ('left', 'center')
         self.text_node.text = (
-            'drag and drop file(s) here\n'
-            'use the File Open menu\n'
-            'call a viewer.add_* method'
+            'to add data:\n'
+            '   - drag and drop file(s) here\n'
+            '   - select File > Open from the menu\n'
+            '   - call a viewer.add_* method'
         )
         self.text_node.color = np.divide(
             str_to_rgb(darken(self._viewer.palette['foreground'], 30)), 255
@@ -61,9 +65,9 @@ class VispyWelcomeVisual:
             background_color = np.divide(
                 str_to_rgb(darken(self._viewer.palette['background'], 70)), 255
             )
-            text_color = np.divide(
-                str_to_rgb(darken(self._viewer.palette['foreground'], 50)), 255
-            )
+            # Note this unsual scaling is done to preserve color balance on
+            # rendering by VisPy, which appears to be off when opacity < 1
+            text_color = np.multiply(foreground_color, [0.4, 0.65, 0.9])
         else:
             foreground_color = np.divide(
                 str_to_rgb(lighten(self._viewer.palette['foreground'], 30)),
@@ -74,7 +78,7 @@ class VispyWelcomeVisual:
                 255,
             )
             text_color = np.divide(
-                str_to_rgb(darken(self._viewer.palette['background'], 40)), 255
+                str_to_rgb(darken(self._viewer.palette['background'], 60)), 255
             )
 
         new_logo = np.zeros(self._logo_raw.shape)
@@ -89,6 +93,8 @@ class VispyWelcomeVisual:
 
         self._logo = new_logo
         self.node.set_data(self._logo)
+        # Having opacity < 1 improves blending but throws color balance
+        # off which needs to be adjusted if desired
         self.text_node.color = list(text_color) + [0.7]
 
     def _on_visible_change(self, event):
@@ -119,7 +125,7 @@ class VispyWelcomeVisual:
 
         self.text_node.font_size = center[1] / 24
         self.text_node.transform.translate = [
-            center[0],
+            center[0] - center[1] / 2.4,
             1.45 * center[1],
             0,
             0,
