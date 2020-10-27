@@ -20,7 +20,7 @@ class QtRender(QWidget):
     viewer : Viewer
         The napari viewer.
     layer : Optional[Layer]
-        Show controls for this layer, or test image controls if no layer.
+        Show controls for this layer. If no layer show minimal controls.
     """
 
     def __init__(self, viewer, layer=None):
@@ -32,19 +32,23 @@ class QtRender(QWidget):
 
         layout = QVBoxLayout()
 
+        # Basic info for any image layer.
         if isinstance(layer, Image):
             layout.addWidget(QtImageInfo(layer))
 
+        # Octree specific controls and minimap.
         if isinstance(layer, OctreeImage):
             layout.addWidget(QtOctreeInfo(layer))
 
             self.mini_map = MiniMap(viewer, layer)
             layout.addWidget(self.mini_map)
-            self.viewer.camera.events.center.connect(self._update)
+            self.viewer.camera.events.center.connect(self._on_camera_move)
 
+        # Controls to create a new test image.
         layout.addStretch(1)
         layout.addWidget(QtTestImage(viewer))
         self.setLayout(layout)
 
-    def _update(self, event=None):
+    def _on_camera_move(self, event=None):
+        """Called when the camera was moved."""
         self.mini_map.update()

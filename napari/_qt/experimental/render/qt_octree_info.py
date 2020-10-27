@@ -46,11 +46,14 @@ class QtLevelCombo(QHBoxLayout):
 class QtOctreeInfoLayout(QVBoxLayout):
     """OctreeImage specific information.
 
+    Combo base to choose octree layer or set to AUTO for the normal rendering
+    mode where the correct level is chosen automatically. (not working yet)
+
     Parameters
     ----------
     layer : Layer
         Show octree info for this layer
-    on_new_octree_level : Callable[[int], None]
+    set_level : Callable[[int], None]
         Call this when the octree level is changed.
     """
 
