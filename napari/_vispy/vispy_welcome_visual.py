@@ -65,7 +65,7 @@ class VispyWelcomeVisual:
             )
             # Note this unsual scaling is done to preserve color balance on
             # rendering by VisPy, which appears to be off when opacity < 1
-            text_color = np.multiply(foreground_color, [0.2, 0.45, 0.7])
+            text_color = np.multiply(foreground_color, [0.4, 0.65, 0.9])
         else:
             foreground_color = np.divide(
                 str_to_rgb(lighten(self._viewer.palette['foreground'], 30)),
