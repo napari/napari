@@ -44,7 +44,7 @@ class QtLevelCombo(QHBoxLayout):
 
 
 class QtOctreeInfoLayout(QVBoxLayout):
-    """Layout of the octree info frame.
+    """OctreeImage specific information.
 
     Parameters
     ----------
@@ -62,15 +62,20 @@ class QtOctreeInfoLayout(QVBoxLayout):
         self.level = QtLevelCombo(layer.num_octree_levels, set_level)
         self.addLayout(self.level)
 
-        self.table = QTableWidget()
-        self.table.verticalHeader().setVisible(False)
-        self.table.horizontalHeader().setVisible(False)
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.table.resizeRowsToContents()
-        self.table.setShowGrid(False)
+        self.table = self._create_table()
         self.addWidget(self.table)
 
         self.set_layout(layer)  # Initial settings.
+
+    def _create_table(self) -> QTableWidget:
+        """Create and configure a new table widget."""
+        table = QTableWidget()
+        table.verticalHeader().setVisible(False)
+        table.horizontalHeader().setVisible(False)
+        table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        table.resizeRowsToContents()
+        table.setShowGrid(False)
+        return table
 
     def set_layout(self, layer):
         """Set controls based on the layer.
@@ -85,11 +90,19 @@ class QtOctreeInfoLayout(QVBoxLayout):
         else:
             self.level.set_index(_level_to_index(layer.octree_level))
 
-        level_info = layer.octree_level_info
+        self._set_table(layer)
+
+    def _set_table(self, layer) -> None:
+        """Set the table based on the layer.
+
+        layer : OctreeImage
+            Set values from this layer.
+        """
 
         def _str(shape) -> str:
             return f"{shape[1]}x{shape[0]}"
 
+        level_info = layer.octree_level_info
         tile_shape = _str(level_info.tile_shape)
 
         values = {
@@ -97,6 +110,7 @@ class QtOctreeInfoLayout(QVBoxLayout):
             "Tile Shape": _str([layer.tile_size, layer.tile_size]),
             "Layer Shape": _str(level_info.image_shape),
         }
+
         self.table.setRowCount(len(values))
         self.table.setColumnCount(2)
         for i, (key, value) in enumerate(values.items()):
@@ -124,9 +138,17 @@ class QtOctreeInfo(QFrame):
         layer.events.tile_size.connect(self._set_layout)
 
     def _set_layout(self, event=None):
+        """Set layout controls based on the layer."""
         self.layout.set_layout(self.layer)
 
-    def _set_level(self, value):
+    def _set_level(self, value: int) -> None:
+        """Set octree level in the layer.
+
+        Parameters
+        ----------
+        value : int
+            The new level index.
+        """
         if value == AUTO_INDEX:
             self.layer.auto_level = True
         else:
