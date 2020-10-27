@@ -90,10 +90,11 @@ class QtOctreeInfoLayout(QVBoxLayout):
         def _str(shape) -> str:
             return f"{shape[1]}x{shape[0]}"
 
+        tile_shape = _str(level_info.tile_shape)
+
         values = {
-            "Level": str(layer.octree_level),
-            "Tile Shape": _str(level_info.tile_shape),
-            "Tile Size": _str([layer.tile_size, layer.tile_size]),
+            "Level": f"{layer.octree_level} ({tile_shape} tiles)",
+            "Tile Shape": _str([layer.tile_size, layer.tile_size]),
             "Layer Shape": _str(level_info.image_shape),
         }
         self.table.setRowCount(len(values))
