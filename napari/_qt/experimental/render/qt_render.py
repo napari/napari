@@ -6,8 +6,9 @@ from qtpy.QtWidgets import QVBoxLayout, QWidget
 
 from ....layers.image import Image
 from ....layers.image.experimental.octree_image import OctreeImage
-from .qt_image_info import QtImageInfo, QtOctreeInfo
+from .qt_image_info import QtImageInfo
 from .qt_mini_map import MiniMap
+from .qt_octree_info import QtOctreeInfo
 from .qt_test_image import QtTestImage
 
 

@@ -30,8 +30,9 @@ def _chunk_outline(chunk: ChunkData) -> np.ndarray:
     w *= chunk.scale[1]
     h *= chunk.scale[0]
 
-    # Outline very chunk which means we double-draw all interior lines,
-    # but we can worry about that later if it causes perf or other issues.
+    # We draw lines on all four sides of the chunk. This means are
+    # double-drawing all interior lines in the grid. We can draw less if
+    # performance is an issue.
     return np.array(
         (
             [x, y],
