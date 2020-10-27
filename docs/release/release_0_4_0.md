@@ -110,6 +110,7 @@ We thank the many contributors who have made this release possible!
 - Fix scaled painting (#1772)
 - Fix setup config duplication of dask requirement (#1778)
 - Adjust welcome colors of text (#1780)
+- Fix gray to grays for vispy (#1784)
 
 ## API Changes and Deprecations
 - Make layer dims private (#1581)

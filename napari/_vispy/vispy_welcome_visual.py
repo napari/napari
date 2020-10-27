@@ -29,13 +29,12 @@ class VispyWelcomeVisual:
         self.node = ImageNode(parent=parent)
         self.node.order = order
 
-        self.node.cmap = 'gray'
+        self.node.cmap = 'grays'
         self.node.transform = STTransform()
 
         self.text_node = Text(
             pos=[0, 0], parent=parent, method='gpu', bold=False
         )
-        # self.text_node.blending = 'additive'
         self.text_node.order = order
         self.text_node.transform = STTransform()
         self.text_node.anchors = ('left', 'center')
