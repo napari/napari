@@ -20,11 +20,18 @@ layer_to_visual = {
 # Camera-dependent layers.
 layer_to_visual_camera = {}
 
-if config.async_loading:
+if config.async_octree:
     from ..layers.image.experimental.octree_image import OctreeImage
     from .experimental.vispy_tiled_image_layer import VispyTiledImageLayer
 
     layer_to_visual_camera = {OctreeImage: VispyTiledImageLayer}
+
+
+def _get_visual_class(layer, visual_map):
+    for layer_type, visual in visual_map.items():
+        if isinstance(layer, layer_type):
+            return visual
+    return None
 
 
 def create_vispy_visual(layer, camera):
@@ -41,14 +48,16 @@ def create_vispy_visual(layer, camera):
         Vispy visual node
     """
     # Check camera layers first.
-    for layer_type, visual in layer_to_visual_camera.items():
-        if isinstance(layer, layer_type):
-            return visual(layer, camera)
+    visual = _get_visual_class(layer, layer_to_visual_camera)
 
-    # Then regular layers.
-    for layer_type, visual in layer_to_visual.items():
-        if isinstance(layer, layer_type):
-            return visual(layer)
+    if visual is not None:
+        return visual(layer, camera)
+
+    # Check regular layers.
+    visual = _get_visual_class(layer, layer_to_visual)
+
+    if visual is not None:
+        return visual(layer)
 
     raise TypeError(
         f'Could not find VispyLayer for layer of type {type(layer)}'

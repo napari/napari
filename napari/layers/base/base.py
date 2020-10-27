@@ -963,7 +963,10 @@ class Layer(KeymapProvider, ABC):
         msg : string
             String containing a message that can be used as a status update.
         """
-        full_coord = np.round(self.coordinates).astype(int)
+        if self.coordinates is None:
+            full_coord = ""
+        else:
+            full_coord = np.round(self.coordinates).astype(int)
 
         msg = f'{self.name} {full_coord}'
 

@@ -320,7 +320,7 @@ class QtViewer(QSplitter):
         """
         layers = event.source
         layer = event.item
-        vispy_layer = create_vispy_visual(layers, self.viewer.camera)
+        vispy_layer = create_vispy_visual(layer, self.viewer.camera)
         vispy_layer.node.parent = self.view.scene
         vispy_layer.order = len(layers) - 1
         self.layer_to_visual[layer] = vispy_layer

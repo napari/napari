@@ -780,6 +780,9 @@ class Image(IntensityVisualizationMixin, Layer):
         else:
             coord = self.coordinates
 
+        if coord is None:
+            return None
+
         coord = np.round(coord).astype(int)
 
         raw = self._slice.image.raw

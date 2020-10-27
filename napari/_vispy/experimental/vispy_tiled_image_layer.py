@@ -124,7 +124,8 @@ class VispyTiledImageLayer(VispyImageLayer):
     still look the same, it will just be faster.
     """
 
-    def __init__(self, layer):
+    def __init__(self, layer, camera):
+        self.camera = camera
         self.chunks = {}
         self.grid = TileGrid()
 
@@ -132,6 +133,8 @@ class VispyTiledImageLayer(VispyImageLayer):
         super().__init__(layer)
 
         self.grid.line.parent = self.node
+
+        self.camera.events.center.connect(self._on_camera_move)
 
     def _create_image_chunk(self, chunk: ChunkData):
         """Create a new ImageChunk object.
@@ -161,8 +164,9 @@ class VispyTiledImageLayer(VispyImageLayer):
             # Do nothing if we are not yet loaded.
             return
 
-        print(f"VispyTiled: delete {len(self.chunks)} chunks")
+        self._get_view_chunks()
 
+    def _get_view_chunks(self) -> None:
         # For now, nuke all the old chunks. Soon we will keep the ones
         # which are still being drawn.
         for image_chunk in self.chunks.values():
@@ -179,3 +183,7 @@ class VispyTiledImageLayer(VispyImageLayer):
             chunk_id = id(chunk.data)
             if chunk_id not in self.chunks:
                 self.chunks[chunk_id] = self._create_image_chunk(chunk)
+
+    def _on_camera_move(self, event=None):
+        print("VispyTiledImageLayer._on_camera_move")
+        self._get_view_chunks()
