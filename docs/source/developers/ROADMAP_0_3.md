@@ -14,39 +14,71 @@ The [mission](MISSION_AND_VALUES.md#our-mission) of napari is to be a foundation
 
 Once the above goals are met, we will develop napari's capabilities for image processing and analysis. We are prioritizing the robustness and polish of the core viewer before adding advanced features or support for functional or interactive plugins to ensure that plugin development will happen against a solid foundation, and because we have repeatedly encountered biologists and other scientists who have trouble even looking at their data, and annotating it. We are prioritizing the downloadable application with reader / writer plugin management so that we can start getting feedback from non-coding users to better understand their needs.
 
+> Note added Novemember 2020. We have now finished our 0.3 series of releases. Overall we made good progress towards these priorites. We now provide cross-platform support for downloadable app that you can install reader and writer plugins into. We added support for world coordinates, we reduced the number of bugs, and we've begun begun to support asynchronous rendering and improve performance. We also had some highlights that weren't on our roadmap including contributions from the community like the Tracks layer. We've added more documentation and tutorials, but a redesign of our website is still in progress. For a detailed lookback at the work that was done during the `0.3` series of releases you can look at comments under the individual bullet items in below that we have added as we made our [0.4 roadmap](ROADMAP_0_4.md).
+
 ## Make the data viewing and annotation capabilities bug-free, fast and easy to use
 
 - **Better support for viewing big datasets**. Currently, napari is fast when viewing on-disk datasets that can be naturally sliced along one axis (e.g. a time series) *and where loading one slice is fast*. However, when the loading is slow, the napari UI itself becomes slow, sometimes to the point of being unusable. We aim to improve this by making views and interactions non-blocking ([#845](https://github.com/napari/napari/issues/845)), and improving caching ([#718](https://github.com/napari/napari/issues/718)). We will also ensure that napari can be used `headless` without the GUI.
 
+    > We've made good progress towards `asynchronous` loading of data in our [async](https://github.com/napari/napari/labels/async) work, but we still have much more to do. The async functionality can be enabled right now in an opt in fashion but is still considered experimental as we develop it further. We're also working on an octree  which will enable better multiscale rendering, see this [rendering explanation note](https://napari.org/docs/dev/explanations/rendering.html). We will continue this work during the 0.4 series of releases.
+
+
 - **Improving the performance of operations on in-memory data**. Even when data is loaded in memory, some operations, such as label and shape painting, slicing along large numbers of points, or adjusting contrast and gamma, can be slow. We will continue developing our [benchmark suite](https://github.com/napari/napari/blob/master/docs/developers/BENCHMARKS.md) and work to integrate it into our development process. See the [`performance` label](https://github.com/napari/napari/labels/performance) for a current list of issues related to performance.
+
+    > We've improved some perfomance issues, such as adjusting gamma and contrast limits, which now happen on the shader, but still have more to go. Painting in labels remains slow for large datasets and still needs to be improved. We added an [explantory note on perfomance](https://napari.org/docs/dev/explanations/performance.html) to detail how we're thinking about perfomance in napari and ensuring it stays high. We've also added some [perfomance monitoring tooling](https://napari.org/docs/dev/events/perfmon.html) that will help us during this process. We will continue this work during the 0.4 series of releases.
 
 - Add a unified **world coordinate system**. Scientists need to measure data that comes from a real space with physical dimensions. Currently, napari has no concept of the space in which data lives: everything is unitless. Further, it is unclear at various parts in the UI whether a coordinate has been transformed. And finally, some data are acquired with distortions, such as skew in data collected on stage-scanning lightsheet microscopes, and napari should be able to account for those distortions by chaining together transforms - including affine and ultimately deformable transforms. We are tracking progress in this area in the [World Coordinates project board](https://github.com/napari/napari/projects/10).
 
+    > We have completed our world coordinate system, including support for a affine transforms, a scale bar, and an axes rotation visual. We have more work to do to add support for physical units which will come in the 0.4 series of releases, non-orthogonal slicing, and non-rigid transforms, which will be saved for future roadmaps.
+
 - Ensure **easy installation with a success rate close to 100%**. We can still struggle with installation of Qt in some cases, and have had problems with dependency conflicts with other Python packages. We have recently added a [conda-forge package](https://github.com/conda-forge/napari-feedstock) and are working towards distributing bundled applications in [#496](https://github.com/napari/napari/pull/496). See the [`installation` label](https://github.com/napari/napari/labels/installation) for a current list of issues related to installation.
+
+    > We have made good progress on improving the success rate of our installation process, and encounter less installation related new issues.
 
 - **Eliminate all known bugs**. See the [`bug` label](https://github.com/napari/napari/labels/bug) for a current list of known bugs. We also want to make it easier for users to report bugs ([#1090](https://github.com/napari/napari/issues/1090)). Additionally, when bugs are encountered, we want to examine whether an improved software architecture could have prevented them. For example, we are undertaking a refactor to centralize event handling within napari and avoid circular, out of order, or repeated function calls ([#1040](https://github.com/napari/napari/issues/1040)). In the process of eliminating bugs we should also ensure that our continuous integration, i.e. automatic testing of each change on cloud infrastructure, is robust, and that we have increased coverage of our tests, including more GUI tests with screenshots. See the [`tests` label](https://github.com/napari/napari/labels/tests) for more information about our tests.
 
+    > We've reduced the number of open [`bug`](https://github.com/napari/napari/labels/bug) labeled issues by more than 20% in the past two months from > 80 to < 60 and added some more screenshot and GUI tests, but test coverage of the GUI can still be improved.
+
 - **Improve support for annotation** of points [#858](https://github.com/napari/napari/issues/858), shapes [#177](https://github.com/napari/napari/issues/177), labels, and images [#209](https://github.com/napari/napari/issues/209) including text rendering [#600](https://github.com/napari/napari/pull/600).
+
+    > We've now added support to label points with text and somewhat improved color handling for our points, shapes, and labels layers, but have more work to do to standardize those improvements and reduce code duplication. 
 
 - Add **linked multi-canvas support** ([#760](https://github.com/napari/napari/issues/760)) to allow orthogonal views, or linked views of two datasets, for example to select keypoints for image alignment, or simultaneous 2D slices with 3D rendering.
 
+    > We have not done this work yet, and this work will be moved to our 0.4 series of releases.
+
 - Add **layer groups** [#970](https://github.com/napari/napari/issues/970), which allow operating on many layers simultaneously making the viewer easier to use for multispectral or multimodal data, or, in the context of multiple canvases, where one wants to assign different groups to different canvases.
 
+    > We have not done this work yet, and this work will be moved to our 0.4 series of releases.
+
 - Improve the **user interface and design** of the viewer to make it easier to use. A [napari design audit](https://github.com/napari/napari/issues/469) last year dramatically improved the usability of the viewer. We must continue to run through these periodically to ensure the UI is friendly to new users, particularly non-programmers. See the [`design` label](https://github.com/napari/napari/labels/design) for more information.
+
+    > We have conducted a product heuristics analysis to [identify design and usability issues](https://github.com/napari/product-heuristics-2020), and will now be working during the 0.4 series of releases to implement them.
 
 ## Make a downloadable application with basic plugin management and persistent settings
 
 - Distribute **a bundled application for each major OS** [#496](https://github.com/napari/napari/pull/496) to allow scientists to use napari without requiring a Python development environment, which can be difficult to install and maintain. The bundle should contain the necessary machinery to add plugins [#1074](https://github.com/napari/napari/issues/1074).
 
+    > We have succeeded in providing a bundled app that you can install plugins into. We have more work to do around plugin management that will continue in our 0.4 series of releases.
+
 - Support for reader plugins [#937](https://github.com/napari/napari/pull/937) and writer plugins [#1068](https://github.com/napari/napari/issues/1068) to allow **viewing of domain-specific data and saving of annotations**. For more details see the [`plugins` label](https://github.com/napari/napari/labels/plugins) on our repository.
 
+    > We have a fairly stable specification for adding both [reader and writer plugins](https://napari.org/docs/dev/plugins/hook_specifications.html) that is being used in the community.
+
 - Support for persistent settings [#834](https://github.com/napari/napari/pull/834) to allow **saving of preferences** between launches of the viewer.
+    
+    > We have not done this work yet, and this work will be moved to our 0.4 series of releases.
+
 
 ## Provide accessible documentation, tutorials, and demos
 
 - Improve our website [napari.org](https://napari.org) to provide easy access to all napari related materials, including the [**four types of documentation**](https://www.divio.com/blog/documentation/): learning-oriented tutorials, goal-oriented how-to-guides or galleries, understanding-oriented explanations (including developer resources), and a comprehensive API reference. See [#764](https://github.com/napari/napari/issues/764) and the [`documentation` label](https://github.com/napari/napari/labels/documentation) on the napari repository for more details.
 
+    > We have begun the design work for this but have not begun the implementation yet. This work will be moved to our 0.4 series of releases.
+
 - Add a **napari human interface guide** for plugin developers, akin to [Apple's Human Interface Guidelines](https://developer.apple.com/design/human-interface-guidelines/). We want such a guide to promote best practices and ensure that plugins provide a consistent user experience.
+
+    > We have not done this work yet, and this work will be moved to our 0.4 series of releases.
 
 ## Work prioritized for future roadmaps
 
