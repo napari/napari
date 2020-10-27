@@ -77,7 +77,7 @@ class OctreeImageSlice(ImageSlice):
 
         # self._octree.print_tiles()
 
-    def get_view_chunks(self, corners_2d) -> List[ChunkData]:
+    def get_visible_chunks(self, corners_2d) -> List[ChunkData]:
         """Return the chunks currently in view."""
 
         # TODO_OCTREE: soon we will compute which level to draw.

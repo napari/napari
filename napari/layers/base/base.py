@@ -897,7 +897,12 @@ class Layer(KeymapProvider, ABC):
     def coordinates(self):
         """Cursor position in data coordinates."""
         # Note we ignore the first transform which is tile2data
-        return tuple(self._transforms[1:].simplified.inverse(self.position))
+        try:
+            return tuple(
+                self._transforms[1:].simplified.inverse(self.position)
+            )
+        except ValueError:
+            pass  # TODO_OCTREE: temporary until we debug this
 
     def _update_value_and_status(self):
         """Update value and status message."""

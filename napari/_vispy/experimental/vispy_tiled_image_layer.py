@@ -54,7 +54,8 @@ class ImageChunk:
     This class will grow soon...
     """
 
-    def __init__(self):
+    def __init__(self, data_id):
+        self.data_id = data_id
         self.node = ImageNode(None, method='auto')
         self.node.order = 0
 
@@ -126,7 +127,7 @@ class VispyTiledImageLayer(VispyImageLayer):
 
     def __init__(self, layer, camera):
         self.camera = camera
-        self.chunks = {}
+        self.image_chunks = {}
         self.grid = TileGrid()
 
         # This will call our self._on_data_change().
@@ -144,7 +145,7 @@ class VispyTiledImageLayer(VispyImageLayer):
         chunk : ChunkData
             The data used to create the new image chunk.
         """
-        image_chunk = ImageChunk()
+        image_chunk = ImageChunk(id(chunk.data))
 
         self.grid.add_chunk(chunk)
 
@@ -164,26 +165,42 @@ class VispyTiledImageLayer(VispyImageLayer):
             # Do nothing if we are not yet loaded.
             return
 
-        self._get_view_chunks()
+        self._update_visible_chunks()
 
-    def _get_view_chunks(self) -> None:
-        # For now, nuke all the old chunks. Soon we will keep the ones
-        # which are still being drawn.
-        for image_chunk in self.chunks.values():
-            image_chunk.node.parent = None
-        self.chunks = {}
-        self.grid.reset()
+    def _update_visible_chunks(self) -> None:
 
-        chunks = self.layer.view_chunks
+        # Get the currently visible chunks.
+        visible_chunks = self.layer.visible_chunks
 
-        print(f"VispyTiled: create {len(chunks)} chunks")
+        # Data id's of the visible chunks
+        visible_ids = set([id(chunk.data) for chunk in visible_chunks])
 
-        # Create the new chunks.
-        for chunk in chunks:
+        num_start = len(self.image_chunks)
+
+        # Create new chunks.
+        for chunk in visible_chunks:
             chunk_id = id(chunk.data)
-            if chunk_id not in self.chunks:
-                self.chunks[chunk_id] = self._create_image_chunk(chunk)
+            if chunk_id not in self.image_chunks:
+                self.image_chunks[chunk_id] = self._create_image_chunk(chunk)
+
+        num_peak = len(self.image_chunks)
+        num_created = num_peak - num_start
+
+        # Remove stale chunks.
+        for image_chunk in list(self.image_chunks.values()):
+            data_id = image_chunk.data_id
+            if data_id not in visible_ids:
+                image_chunk.node.parent = None
+                del self.image_chunks[data_id]
+
+        num_final = len(self.image_chunks)
+        num_deleted = num_peak - num_final
+
+        if num_created > 0 or num_deleted > 0:
+            print(
+                f"VispyTiled: start: {num_start} created: {num_created} "
+                f"deleted: {num_deleted} final: {num_final}"
+            )
 
     def _on_camera_move(self, event=None):
-        print("VispyTiledImageLayer._on_camera_move")
-        self._get_view_chunks()
+        self._update_visible_chunks()

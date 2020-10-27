@@ -102,14 +102,14 @@ class OctreeImage(Image):
         return self._slice.intersection
 
     @property
-    def view_chunks(self):
+    def visible_chunks(self):
         """Chunks in the current slice which in currently in view."""
         # This will be None if we have not been drawn yet.
         if self._data_corners is None:
             return []
 
         corners_2d = self._corners_2d(self._data_corners)
-        return self._slice.get_view_chunks(corners_2d)
+        return self._slice.get_visible_chunks(corners_2d)
 
     def _on_data_loaded(self, data: ChunkedSliceData, sync: bool) -> None:
         """The given data a was loaded, use it now."""
@@ -127,6 +127,7 @@ class OctreeImage(Image):
 
     def _update_draw(self, scale_factor, corner_pixels, shape_threshold):
 
+        print(f"update_draw: {corner_pixels}")
         # If self._data_corners was not set yet, we have not been drawn
         # yet, and we need to refresh to draw ourselves for the first time.
         need_refresh = self._data_corners is None
