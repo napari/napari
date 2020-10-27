@@ -7,6 +7,7 @@ from .vispy_surface_layer import VispySurfaceLayer
 from .vispy_tracks_layer import VispyTracksLayer
 from .vispy_vectors_layer import VispyVectorsLayer
 
+# Regular layers: no camera.
 layer_to_visual = {
     Image: VispyImageLayer,
     Points: VispyPointsLayer,
@@ -16,17 +17,17 @@ layer_to_visual = {
     Tracks: VispyTracksLayer,
 }
 
+# Camera-dependent layers.
+layer_to_visual_camera = {}
+
 if config.async_loading:
     from ..layers.image.experimental.octree_image import OctreeImage
     from .experimental.vispy_tiled_image_layer import VispyTiledImageLayer
 
-    # Put OctreeImage in front so we hit that before plain Image
-    original = layer_to_visual.copy()
-    layer_to_visual = {OctreeImage: VispyTiledImageLayer}
-    layer_to_visual.update(original)
+    layer_to_visual_camera = {OctreeImage: VispyTiledImageLayer}
 
 
-def create_vispy_visual(layer):
+def create_vispy_visual(layer, camera):
     """Create vispy visual for a layer based on its layer type.
 
     Parameters
@@ -39,6 +40,12 @@ def create_vispy_visual(layer):
     visual : vispy.scene.visuals.VisualNode
         Vispy visual node
     """
+    # Check camera layers first.
+    for layer_type, visual in layer_to_visual_camera.items():
+        if isinstance(layer, layer_type):
+            return visual(layer, camera)
+
+    # Then regular layers.
     for layer_type, visual in layer_to_visual.items():
         if isinstance(layer, layer_type):
             return visual(layer)
