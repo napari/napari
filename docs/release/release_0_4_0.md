@@ -77,7 +77,7 @@ We thank the many contributors who have made this release possible!
 - Compute all min/max values in one pass with Dask (#1731)
 - Async-15: Octree Rendering (#1751)
 - Async-16: New utils.config.py (#1769)
-
+- Add warning on failed save (#1770)
 
 ## Bug Fixes
 - Status bar value bug for automatically down-sampled images (#1577)
@@ -108,14 +108,14 @@ We thank the many contributors who have made this release possible!
 - Fix flipped transform (#1757)
 - Fix warning that filenames might not be set (#1765)
 - Fix scaled painting (#1772)
-
+- Fix setup config duplication of dask requirement (#1778)
+- Adjust welcome colors of text (#1780)
 
 ## API Changes and Deprecations
 - Make layer dims private (#1581)
 - Drop Python 3.6 (#1652)
 - Make signals public attribute of WorkerBase (#1681)
 - Add extent named tuple (#1771)
-
 
 ## Build Tools and Docs
 - New perfmon doc (#1634)
@@ -151,7 +151,7 @@ We thank the many contributors who have made this release possible!
 - [Ziyang Liu](https://github.com/napari/napari/commits?author=ziyangczi) - @ziyangczi
 
 
-## 16 reviewers added to this release (alphabetical)
+## 18 reviewers added to this release (alphabetical)
 
 - [Alan R Lowe](https://github.com/napari/napari/commits?author=quantumjot) - @quantumjot
 - [Alister Burt](https://github.com/napari/napari/commits?author=alisterburt) - @alisterburt
@@ -164,6 +164,8 @@ We thank the many contributors who have made this release possible!
 - [Justine Larsen](https://github.com/napari/napari/commits?author=justinelarsen) - @justinelarsen
 - [Kevin Yamauchi](https://github.com/napari/napari/commits?author=kevinyamauchi) - @kevinyamauchi
 - [Kira Evans](https://github.com/napari/napari/commits?author=kne42) - @kne42
+- [Lia Prins](https://github.com/napari/napari/commits?author=liaprins-czi) - @liaprins-czi
+- [Lucy Obus](https://github.com/napari/napari/commits?author=LCObus) - @LCObus
 - [Mark Kittisopikul](https://github.com/napari/napari/commits?author=mkitti) - @mkitti
 - [Nicholas Sofroniew](https://github.com/napari/napari/commits?author=sofroniewn) - @sofroniewn
 - [Philip Winston](https://github.com/napari/napari/commits?author=pwinston) - @pwinston
