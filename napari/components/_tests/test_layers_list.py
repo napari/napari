@@ -534,31 +534,31 @@ def test_world_extent():
     layers = LayerList()
 
     # Empty data is taken to be 512 x 512
-    np.testing.assert_allclose(layers._extent_world[0], (0, 0))
-    np.testing.assert_allclose(layers._extent_world[1], (511, 511))
-    np.testing.assert_allclose(layers._step_size, (1, 1))
+    np.testing.assert_allclose(layers.extent.world[0], (0, 0))
+    np.testing.assert_allclose(layers.extent.world[1], (511, 511))
+    np.testing.assert_allclose(layers.extent.step, (1, 1))
 
     # Add one layer
     layer_a = Image(
         np.random.random((6, 10, 15)), scale=(3, 1, 1), translate=(10, 20, 5)
     )
     layers.append(layer_a)
-    np.testing.assert_allclose(layer_a._extent_world[0], (10, 20, 5))
-    np.testing.assert_allclose(layer_a._extent_world[1], (25, 29, 19))
-    np.testing.assert_allclose(layers._extent_world[0], (10, 20, 5))
-    np.testing.assert_allclose(layers._extent_world[1], (25, 29, 19))
-    np.testing.assert_allclose(layers._step_size, (3, 1, 1))
+    np.testing.assert_allclose(layer_a.extent.world[0], (10, 20, 5))
+    np.testing.assert_allclose(layer_a.extent.world[1], (25, 29, 19))
+    np.testing.assert_allclose(layers.extent.world[0], (10, 20, 5))
+    np.testing.assert_allclose(layers.extent.world[1], (25, 29, 19))
+    np.testing.assert_allclose(layers.extent.step, (3, 1, 1))
 
     # Add another layer
     layer_b = Image(
         np.random.random((8, 6, 15)), scale=(6, 2, 1), translate=(-5, -10, 10)
     )
     layers.append(layer_b)
-    np.testing.assert_allclose(layer_b._extent_world[0], (-5, -10, 10))
-    np.testing.assert_allclose(layer_b._extent_world[1], (37, 0, 24))
-    np.testing.assert_allclose(layers._extent_world[0], (-5, -10, 5))
-    np.testing.assert_allclose(layers._extent_world[1], (37, 29, 24))
-    np.testing.assert_allclose(layers._step_size, (3, 1, 1))
+    np.testing.assert_allclose(layer_b.extent.world[0], (-5, -10, 10))
+    np.testing.assert_allclose(layer_b.extent.world[1], (37, 0, 24))
+    np.testing.assert_allclose(layers.extent.world[0], (-5, -10, 5))
+    np.testing.assert_allclose(layers.extent.world[1], (37, 29, 24))
+    np.testing.assert_allclose(layers.extent.step, (3, 1, 1))
 
 
 def test_world_extent_mixed_ndim():
@@ -569,13 +569,13 @@ def test_world_extent_mixed_ndim():
     # Add 3D layer
     layer_a = Image(np.random.random((15, 15, 15)), scale=(4, 12, 2))
     layers.append(layer_a)
-    np.testing.assert_allclose(layers._extent_world[1], (56, 168, 28))
+    np.testing.assert_allclose(layers.extent.world[1], (56, 168, 28))
 
     # Add 2D layer
     layer_b = Image(np.random.random((10, 10)), scale=(6, 4))
     layers.append(layer_b)
-    np.testing.assert_allclose(layers._extent_world[1], (56, 168, 36))
-    np.testing.assert_allclose(layers._step_size, (4, 6, 2))
+    np.testing.assert_allclose(layers.extent.world[1], (56, 168, 36))
+    np.testing.assert_allclose(layers.extent.step, (4, 6, 2))
 
 
 def test_world_extent_mixed_flipped():
@@ -591,7 +591,7 @@ def test_world_extent_mixed_flipped():
     )
     layers.append(layer)
     np.testing.assert_allclose(layer.scale, (1, -1))
-    np.testing.assert_allclose(layers._step_size, (1, 1))
+    np.testing.assert_allclose(layers.extent.step, (1, 1))
 
 
 def test_ndim():

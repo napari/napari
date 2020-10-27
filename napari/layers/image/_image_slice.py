@@ -1,19 +1,17 @@
 """ImageSlice class.
 """
 import logging
-import os
 from typing import Callable
 
 import numpy as np
 
 from ...types import ArrayLike
+from ...utils import config
 from ._image_loader import ImageLoader
 from ._image_slice_data import ImageSliceData
 from ._image_view import ImageView
 
 LOGGER = logging.getLogger("napari.async")
-
-_use_async = os.getenv("NAPARI_ASYNC", "0") != "0"
 
 
 def _create_loader_class() -> ImageLoader:
@@ -24,7 +22,7 @@ def _create_loader_class() -> ImageLoader:
     ImageLoader
         ImageLoader for sync or ChunkImageLoader for async.
     """
-    if _use_async:
+    if config.async_loading:
         from .experimental._chunked_image_loader import ChunkedImageLoader
 
         return ChunkedImageLoader()

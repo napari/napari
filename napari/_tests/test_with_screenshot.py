@@ -375,7 +375,7 @@ def test_labels_painting(make_test_viewer):
     assert screenshot[:, :, :2].max() == 0
 
     # Enter paint mode
-    layer.position = (0, 0)
+    viewer.cursor.position = (0, 0)
     layer.mode = 'paint'
     layer.selected_label = 3
 
@@ -388,7 +388,7 @@ def test_labels_painting(make_test_viewer):
     event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
     mouse_press_callbacks(layer, event)
 
-    layer.position = (100, 100)
+    viewer.cursor.position = (100, 100)
 
     # Simulate drag
     event = ReadOnlyWrapper(Event(type='mouse_move', is_dragging=True))
@@ -411,26 +411,51 @@ def test_labels_painting(make_test_viewer):
     sys.platform.startswith('win') or not os.getenv("CI"),
     reason='Screenshot tests are not supported on napari windows CI.',
 )
+def test_welcome(make_test_viewer):
+    """Test that something appears when axes become visible."""
+    viewer = make_test_viewer(show=True)
+
+    # Check something is visible
+    screenshot = viewer.screenshot(canvas_only=True)
+    assert len(viewer.layers) == 0
+    assert screenshot[..., :-1].max() > 0
+
+    # Check adding zeros image makes it go away
+    viewer.add_image(np.zeros((1, 1)))
+    screenshot = viewer.screenshot(canvas_only=True)
+    assert len(viewer.layers) == 1
+    assert screenshot[..., :-1].max() == 0
+
+    # Remove layer and check something is visible again
+    viewer.layers.pop(0)
+    screenshot = viewer.screenshot(canvas_only=True)
+    assert len(viewer.layers) == 0
+    assert screenshot[..., :-1].max() > 0
+
+
+@pytest.mark.skipif(
+    sys.platform.startswith('win') or not os.getenv("CI"),
+    reason='Screenshot tests are not supported on napari windows CI.',
+)
 def test_axes_visible(make_test_viewer):
     """Test that something appears when axes become visible."""
     viewer = make_test_viewer(show=True)
 
     # Check axes are not visible
-    screenshot = viewer.screenshot(canvas_only=True)
+    launch_screenshot = viewer.screenshot(canvas_only=True)
     assert not viewer.axes.visible
-    assert screenshot[..., :-1].max() == 0
 
     # Make axes visible and check something is seen
     viewer.axes.visible = True
-    screenshot = viewer.screenshot(canvas_only=True)
+    on_screenshot = viewer.screenshot(canvas_only=True)
     assert viewer.axes.visible
-    assert screenshot[..., :-1].max() > 0
+    assert abs(on_screenshot - launch_screenshot).max() > 0
 
     # Make axes not visible and check they are gone
     viewer.axes.visible = False
-    screenshot = viewer.screenshot(canvas_only=True)
+    off_screenshot = viewer.screenshot(canvas_only=True)
     assert not viewer.axes.visible
-    assert screenshot[..., :-1].max() == 0
+    np.testing.assert_almost_equal(launch_screenshot, off_screenshot)
 
 
 @pytest.mark.skipif(
@@ -442,18 +467,17 @@ def test_scale_bar_visible(make_test_viewer):
     viewer = make_test_viewer(show=True)
 
     # Check scale bar is not visible
-    screenshot = viewer.screenshot(canvas_only=True)
+    launch_screenshot = viewer.screenshot(canvas_only=True)
     assert not viewer.scale_bar.visible
-    assert screenshot[..., :-1].max() == 0
 
     # Make scale bar visible and check something is seen
     viewer.scale_bar.visible = True
-    screenshot = viewer.screenshot(canvas_only=True)
+    on_screenshot = viewer.screenshot(canvas_only=True)
     assert viewer.scale_bar.visible
-    assert screenshot[..., :-1].max() > 0
+    assert abs(on_screenshot - launch_screenshot).max() > 0
 
     # Make scale bar not visible and check it is gone
     viewer.scale_bar.visible = False
-    screenshot = viewer.screenshot(canvas_only=True)
+    off_screenshot = viewer.screenshot(canvas_only=True)
     assert not viewer.scale_bar.visible
-    assert screenshot[..., :-1].max() == 0
+    np.testing.assert_almost_equal(launch_screenshot, off_screenshot)
