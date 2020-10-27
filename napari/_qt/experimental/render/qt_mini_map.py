@@ -9,14 +9,28 @@ from qtpy.QtWidgets import QLabel
 from ....layers.image.experimental.octree_image import OctreeImage
 from ....layers.image.experimental.octree_util import OctreeIntersection
 
+# Width of the map in the dockable widget.
 MAP_WIDTH = 200
 
-COLOR_SEEN = (255, 0, 0, 255)
-COLOR_UNSEEN = (80, 80, 80, 255)
-COLOR_VIEW = (227, 220, 111, 255)
+# Tiles are seen if they are visible within the current view, otherwise unseen.
+COLOR_SEEN = (255, 0, 0, 255)  # red
+COLOR_UNSEEN = (80, 80, 80, 255)  # gray
+
+# The view bounds itself is drawn on top of the seen/unseen tiles.
+COLOR_VIEW = (227, 220, 111, 255)  # yellow
 
 
 class MiniMap(QLabel):
+    """A small bitmap that shows the view bounds and which tiles are seen.
+
+    Parameters
+    ----------
+    viewer : Viewer
+        The napari viewer.
+    layer : OctreeImage
+        The octree image we are viewing.
+    """
+
     def __init__(self, viewer, layer: OctreeImage):
         super().__init__()
         self.viewer = viewer
@@ -25,9 +39,8 @@ class MiniMap(QLabel):
     @property
     def data_corners(self):
         """Return data corners for current view in this layer."""
-        # TODO_OCTREE: We need a nice way to access this? Or somehow get the
-        # layer to give us the corner_pixels without directly querying the
-        # camera.
+        # TODO_OCTREE: We should not calculate this here. We should query
+        # the layer or something to get these corner pixels.
         qt_viewer = self.viewer.window.qt_viewer
         ndim = self.layer.ndim
         xform = self.layer._transforms[1:].simplified
@@ -37,6 +50,7 @@ class MiniMap(QLabel):
 
     def update(self) -> None:
         """Update the minimap to show latest intersection."""
+        # This actually performs the intersection, but it's very fast.
         intersection = self.layer.get_intersection(self.data_corners)
 
         if intersection is not None:
