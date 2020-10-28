@@ -1,6 +1,6 @@
 """VispyTiledImageLayer class.
 """
-from typing import List
+from typing import List, Optional
 
 import numpy as np
 from vispy.scene.visuals import Line
@@ -14,7 +14,11 @@ from ..vispy_image_layer import VispyImageLayer
 GRID_WIDTH = 3
 GRID_COLOR = (1, 0, 0, 1)
 
-INITIAL_POOL_SIZE = 100
+INITIAL_POOL_SIZE = 30
+
+# So grid draws on top of the image tiles.
+IMAGE_NODE_ORDER = 0
+LINE_VISUAL_ORDER = 10
 
 
 def _chunk_outline(chunk: ChunkData) -> np.ndarray:
@@ -59,32 +63,38 @@ class ImageChunk:
     This class will grow soon...
     """
 
-    def __init__(self, chunk_data: ChunkData, node=None):
+    def __init__(self, chunk_data: ChunkData, node: Optional[ImageNode]):
         self.chunk_data = chunk_data
         self.data_id = id(chunk_data.data)
-        if node is None:
-            self.node = ImageNode(None, method='auto')
-        else:
-            self.node = node
-        self.node.order = 0
+        self.node = node  # If None it means no ImageVisual was available
 
 
 class ImageNodePool:
     def __init__(self):
         size = INITIAL_POOL_SIZE
-        with block_timer(
-            f"ImageNodePool: create pool size {size}", print_time=True
-        ):
+        timer_msg = f"ImageNodePool: create pool size {size}"
+        with block_timer(timer_msg, print_time=True):
             self.nodes = self._create_pool(size)
-        self.index = 0
 
     def _create_pool(self, size):
-        return [ImageNode(None, method='auto') for x in range(size)]
+        nodes = [ImageNode(None, method='auto') for x in range(size)]
+        for node in nodes:
+            node.order = IMAGE_NODE_ORDER
+        return nodes
 
-    def get_node(self):
-        node = self.nodes[self.index]
-        self.index += 1
-        return node
+    def get_node(self) -> ImageNode:
+        if len(self.nodes) > 1:
+            return self.nodes.pop()
+
+        # Pool is empty, we could create more but too many ImageVisuals seems
+        # to lead to crashes... for now just hard cut off until we figure
+        # that out.
+        return None
+
+    def return_node(self, node) -> None:
+        if node is not None:
+            node.parent = None
+            self.nodes.append(node)
 
 
 class TileGrid:
@@ -96,7 +106,7 @@ class TileGrid:
 
     def _create_line(self):
         line = Line(connect='segments', color=GRID_COLOR, width=GRID_WIDTH)
-        line.order = 10
+        line.order = LINE_VISUAL_ORDER
         line.parent = self.parent
         return line
 
@@ -178,14 +188,15 @@ class VispyTiledImageLayer(VispyImageLayer):
         node = self.pool.get_node()
         image_chunk = ImageChunk(chunk_data, node)
 
-        # Parent VispyImageLayer will process the data then set it.
-        self._set_node_data(image_chunk.node, chunk_data.data)
+        if image_chunk.node is not None:
+            # Parent VispyImageLayer will process the data then set it.
+            self._set_node_data(image_chunk.node, chunk_data.data)
 
-        # Add this new ImageChunk as child of self.node, transformed into place.
-        image_chunk.node.parent = self.node
-        image_chunk.node.transform = STTransform(
-            chunk_data.scale, chunk_data.pos
-        )
+            # Add this new ImageChunk as child of self.node, transformed into place.
+            image_chunk.node.parent = self.node
+            image_chunk.node.transform = STTransform(
+                chunk_data.scale, chunk_data.pos
+            )
 
         return image_chunk
 
@@ -202,6 +213,8 @@ class VispyTiledImageLayer(VispyImageLayer):
         # Get the currently visible chunks.
         visible_chunks = self.layer.visible_chunks
 
+        num_seen = len(visible_chunks)
+
         # Data id's of the visible chunks
         visible_ids = set([id(chunk.data) for chunk in visible_chunks])
 
@@ -212,7 +225,6 @@ class VispyTiledImageLayer(VispyImageLayer):
             chunk_id = id(chunk.data)
             if chunk_id not in self.image_chunks:
                 self.image_chunks[chunk_id] = self._create_image_chunk(chunk)
-                break  # testing: one at a time
 
         num_peak = len(self.image_chunks)
         num_created = num_peak - num_start
@@ -221,7 +233,7 @@ class VispyTiledImageLayer(VispyImageLayer):
         for image_chunk in list(self.image_chunks.values()):
             data_id = image_chunk.data_id
             if data_id not in visible_ids:
-                image_chunk.node.parent = None
+                self.pool.return_node(image_chunk.node)
                 del self.image_chunks[data_id]
 
         num_final = len(self.image_chunks)
@@ -229,10 +241,12 @@ class VispyTiledImageLayer(VispyImageLayer):
 
         self.grid.add_chunks(self.image_chunks.values())
 
+        num_pool = len(self.pool.nodes)
+
         if num_created > 0 or num_deleted > 0:
             print(
-                f"VispyTiled: start: {num_start} created: {num_created} "
-                f"deleted: {num_deleted} final: {num_final}"
+                f"VispyTiled: seen: {num_seen} start: {num_start} created: {num_created} "
+                f"deleted: {num_deleted} final: {num_final} pool: {num_pool}"
             )
 
     def _on_camera_move(self, event=None):
