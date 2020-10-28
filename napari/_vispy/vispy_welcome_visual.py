@@ -36,7 +36,7 @@ class VispyWelcomeVisual:
         self.text_node = Text(
             pos=[0, 0], parent=parent, method='gpu', bold=False
         )
-        self.text_node.order = order + 1
+        self.text_node.order = order
         self.text_node.transform = STTransform()
         self.text_node.anchors = ('left', 'center')
         self.text_node.text = (
