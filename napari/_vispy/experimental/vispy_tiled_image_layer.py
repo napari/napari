@@ -3,7 +3,6 @@
 from typing import List
 
 import numpy as np
-from qtpy.QtCore import QTimer
 from vispy.scene.visuals import Line
 from vispy.visuals.transforms import STTransform
 
@@ -110,12 +109,13 @@ class TileGrid:
             Add the outline of these chunks
         """
         # TODO_OCTREE: create in one go without vstack
-        self.verts = np.zeros((0, 2), dtype=np.float32)
+        verts = np.zeros((0, 2), dtype=np.float32)
         for image_chunk in chunks:
             chunk_verts = _chunk_outline(image_chunk.chunk_data)
-            self.verts = np.vstack([self.verts, chunk_verts])
+            verts = np.vstack([verts, chunk_verts])
 
-        self.line.set_data(self.verts)
+        self.line.set_data(verts)
+        self.verts = verts
 
 
 class VispyTiledImageLayer(VispyImageLayer):
@@ -153,16 +153,19 @@ class VispyTiledImageLayer(VispyImageLayer):
     """
 
     def __init__(self, layer, camera):
+        self.ready = False
         self.camera = camera
         self.image_chunks = {}
         self.grid = None  # Can't create until after super() init
         self.pool = ImageNodePool()
 
-        # This will call our self._on_data_change().
+        # This will call our self._on_data_change() but we guard
+        # that with self.read as a hack.
         super().__init__(layer)
 
         self.grid = TileGrid(self.node)
         self.camera.events.center.connect(self._on_camera_move)
+        self.ready = True
 
     def _create_image_chunk(self, chunk_data: ChunkData):
         """Create a new ImageChunk object.
@@ -189,8 +192,7 @@ class VispyTiledImageLayer(VispyImageLayer):
     def _on_data_change(self, event=None) -> None:
         """Our self.layer._data_view has been updated, update our node.
         """
-        if not self.layer.loaded:
-            # Do nothing if we are not yet loaded.
+        if not self.layer.loaded or not self.ready:
             return
 
         self._update_visible_chunks()
@@ -225,11 +227,7 @@ class VispyTiledImageLayer(VispyImageLayer):
         num_final = len(self.image_chunks)
         num_deleted = num_peak - num_final
 
-        def _add_chunks():
-            self.grid.add_chunks(self.image_chunks.values())
-
-        if self.grid is not None:
-            QTimer.singleShot(100, _add_chunks)
+        self.grid.add_chunks(self.image_chunks.values())
 
         if num_created > 0 or num_deleted > 0:
             print(
