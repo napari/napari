@@ -109,7 +109,7 @@ class OctreeImage(Image):
             return []
 
         corners_2d = self._corners_2d(self._data_corners)
-        return self._slice.get_visible_chunks(corners_2d)
+        return self._slice.get_visible_chunks(corners_2d, self._auto_level)
 
     def _on_data_loaded(self, data: ChunkedSliceData, sync: bool) -> None:
         """The given data a was loaded, use it now."""
@@ -144,7 +144,7 @@ class OctreeImage(Image):
             return None
 
         corners_2d = self._corners_2d(data_corners)
-        return self._slice.get_intersection(corners_2d)
+        return self._slice.get_intersection(corners_2d, self.auto_level)
 
     def _corners_2d(self, data_corners):
         """
