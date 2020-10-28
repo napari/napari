@@ -1,11 +1,13 @@
 """OctreeImage class.
 """
+from typing import List
+
 from ....utils.events import Event
 from ..image import Image
 from ._chunked_slice_data import ChunkedSliceData
 from ._octree_image_slice import OctreeImageSlice
 from .octree_intersection import OctreeIntersection
-from .octree_util import OctreeInfo, OctreeLevelInfo
+from .octree_util import ChunkData, OctreeInfo, OctreeLevelInfo
 
 DEFAULT_TILE_SIZE = 64
 
@@ -22,7 +24,7 @@ class OctreeImage(Image):
         self._tile_size = DEFAULT_TILE_SIZE
         self._octree_level = None
         self._data_corners = None
-        self._auto_level = False
+        self._auto_level = True
         super().__init__(*args, **kwargs)
         self.events.add(auto_level=Event, octree_level=Event, tile_size=Event)
 
@@ -102,7 +104,7 @@ class OctreeImage(Image):
         return self._slice.intersection
 
     @property
-    def visible_chunks(self):
+    def visible_chunks(self) -> List[ChunkData]:
         """Chunks in the current slice which in currently in view."""
         # This will be None if we have not been drawn yet.
         if self._data_corners is None:
