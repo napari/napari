@@ -66,6 +66,7 @@ class VispyAxesVisual:
         self._axes = axes
         self._dims = dims
         self._camera = camera
+        self._scale = 1
 
         # note order is z, y, x
         self._default_data = np.array(
@@ -127,11 +128,10 @@ class VispyAxesVisual:
         self._on_visible_change(None)
         self._on_data_change(None)
 
-        self._scale = 1
-
     def _on_visible_change(self, event):
         """Change visibiliy of axes."""
         self.node.visible = self._axes.visible
+        self._on_zoom_change(None)
 
     def _on_data_change(self, event):
         """Change style of axes."""
