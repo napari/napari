@@ -231,7 +231,9 @@ class VispyTiledImageLayer(VispyImageLayer):
         # later on if it becomes available.
         node = self.pool.get_node()
         image_chunk = ImageChunk(chunk_data, node)
-        self._add_image_chunk_node(image_chunk)
+
+        if node is not None:
+            self._add_image_chunk_node(image_chunk)
 
         return image_chunk
 
@@ -248,19 +250,16 @@ class VispyTiledImageLayer(VispyImageLayer):
         image_chunk : ImageChunk
             Add this chunk's node to the scene.
         """
-        if image_chunk.node is None:
-            # Can't add it until there is an ImageVisual assigned. Hopefully
-            # one will be assigned later.
-            return
-
         node = image_chunk.node
+        assert node
+
         chunk_data = image_chunk.chunk_data
 
-        # Class VispyImageLayer._set_node_data to process the data and
-        # get it ready to be displayed.
+        # Call VispyImageLayer._set_node_data() to process the data assign
+        # it to the ImageVisual node.
         self._set_node_data(node, chunk_data.data)
 
-        # Add under us, transformed into the right place.
+        # Add the node under us, transformed into the right place.
         node.parent = self._tiled_visual_parent
         node.transform = STTransform(chunk_data.scale, chunk_data.pos)
         node.order = IMAGE_NODE_ORDER
@@ -333,11 +332,13 @@ class VispyTiledImageLayer(VispyImageLayer):
             try:
                 image_chunk = self.image_chunks[chunk_id]
                 if image_chunk.node is None:
-                    # The ImageChunk already existed but there was no ImageVisual
-                    # for. Attempt to assign one from the pool. If the pool
-                    # is empty pool.get_node() will return None.
-                    image_chunk.node = self.pool.get_node()
-                    self._add_image_chunk_node(image_chunk)
+                    # The ImageChunk already existed but there was no
+                    # ImageVisual available. Attempt to assign one from the
+                    # pool again. If still not available we do nothing.
+                    node = self.pool.get_node()
+                    if node is not None:
+                        image_chunk.node = node
+                        self._add_image_chunk_node(image_chunk)
             except KeyError:
                 # There is no ImageChunk for this ChunkData, so create a
                 # new ImageChunk. It will get an ImageVisual if one is
@@ -346,7 +347,7 @@ class VispyTiledImageLayer(VispyImageLayer):
                 self.image_chunks[chunk_id] = self._create_image_chunk(chunk)
 
     def _remove_stale_chunks(self, visible_ids: Set[int]) -> None:
-        """Remove stale chunks no longer visible.
+        """Remove stale chunks which are not longer visible.
 
         Parameters
         ----------
