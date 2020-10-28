@@ -1,15 +1,21 @@
 """VispyTiledImageLayer class.
 """
+from typing import List
+
 import numpy as np
+from qtpy.QtCore import QTimer
 from vispy.scene.visuals import Line
 from vispy.visuals.transforms import STTransform
 
 from ...layers.image.experimental.octree_util import ChunkData
+from ...utils.perf import block_timer
 from ..image import Image as ImageNode
 from ..vispy_image_layer import VispyImageLayer
 
 GRID_WIDTH = 3
 GRID_COLOR = (1, 0, 0, 1)
+
+INITIAL_POOL_SIZE = 100
 
 
 def _chunk_outline(chunk: ChunkData) -> np.ndarray:
@@ -54,40 +60,61 @@ class ImageChunk:
     This class will grow soon...
     """
 
-    def __init__(self, data_id):
-        self.data_id = data_id
-        self.node = ImageNode(None, method='auto')
+    def __init__(self, chunk_data: ChunkData, node=None):
+        self.chunk_data = chunk_data
+        self.data_id = id(chunk_data.data)
+        if node is None:
+            self.node = ImageNode(None, method='auto')
+        else:
+            self.node = node
         self.node.order = 0
+
+
+class ImageNodePool:
+    def __init__(self):
+        size = INITIAL_POOL_SIZE
+        with block_timer(
+            f"ImageNodePool: create pool size {size}", print_time=True
+        ):
+            self.nodes = self._create_pool(size)
+        self.index = 0
+
+    def _create_pool(self, size):
+        return [ImageNode(None, method='auto') for x in range(size)]
+
+    def get_node(self):
+        node = self.nodes[self.index]
+        self.index += 1
+        return node
 
 
 class TileGrid:
     """The grid that shows the outlines of all the tiles."""
 
-    def __init__(self):
-        self.reset()
-        self.line = Line(
-            connect='segments', color=GRID_COLOR, width=GRID_WIDTH
-        )
-        self.line.order = 10
+    def __init__(self, parent):
+        self.parent = parent
+        self.line = self._create_line()
 
-    def reset(self) -> None:
-        """Reset the grid to have no lines."""
-        self.verts = np.zeros((0, 2), dtype=np.float32)
+    def _create_line(self):
+        line = Line(connect='segments', color=GRID_COLOR, width=GRID_WIDTH)
+        line.order = 10
+        line.parent = self.parent
+        return line
 
-    def add_chunk(self, chunk: ChunkData) -> None:
-        """Add the outline of the given chunk to the grid.
+    def add_chunks(self, chunks: List[ImageChunk]) -> None:
+        """Add the outline of the given chunks to the grid.
 
         Parameters
         ----------
-        chunk : ChunkData
-            Add the outline of this chunk.
+        chunks : List[ImageChunks]
+            Add the outline of these chunks
         """
-        chunk_verts = _chunk_outline(chunk)
+        # TODO_OCTREE: create in one go without vstack
+        self.verts = np.zeros((0, 2), dtype=np.float32)
+        for image_chunk in chunks:
+            chunk_verts = _chunk_outline(image_chunk.chunk_data)
+            self.verts = np.vstack([self.verts, chunk_verts])
 
-        # Clear verts first. Prevents segfault when we modify self.verts.
-        self.line.set_data([])
-
-        self.verts = np.vstack([self.verts, chunk_verts])
         self.line.set_data(self.verts)
 
 
@@ -128,33 +155,34 @@ class VispyTiledImageLayer(VispyImageLayer):
     def __init__(self, layer, camera):
         self.camera = camera
         self.image_chunks = {}
-        self.grid = TileGrid()
+        self.grid = None  # Can't create until after super() init
+        self.pool = ImageNodePool()
 
         # This will call our self._on_data_change().
         super().__init__(layer)
 
-        self.grid.line.parent = self.node
-
+        self.grid = TileGrid(self.node)
         self.camera.events.center.connect(self._on_camera_move)
 
-    def _create_image_chunk(self, chunk: ChunkData):
+    def _create_image_chunk(self, chunk_data: ChunkData):
         """Create a new ImageChunk object.
 
         Parameters
         ----------
-        chunk : ChunkData
+        chunk_data : ChunkData
             The data used to create the new image chunk.
         """
-        image_chunk = ImageChunk(id(chunk.data))
-
-        self.grid.add_chunk(chunk)
+        node = self.pool.get_node()
+        image_chunk = ImageChunk(chunk_data, node)
 
         # Parent VispyImageLayer will process the data then set it.
-        self._set_node_data(image_chunk.node, chunk.data)
+        self._set_node_data(image_chunk.node, chunk_data.data)
 
         # Add this new ImageChunk as child of self.node, transformed into place.
         image_chunk.node.parent = self.node
-        image_chunk.node.transform = STTransform(chunk.scale, chunk.pos)
+        image_chunk.node.transform = STTransform(
+            chunk_data.scale, chunk_data.pos
+        )
 
         return image_chunk
 
@@ -182,6 +210,7 @@ class VispyTiledImageLayer(VispyImageLayer):
             chunk_id = id(chunk.data)
             if chunk_id not in self.image_chunks:
                 self.image_chunks[chunk_id] = self._create_image_chunk(chunk)
+                break  # testing: one at a time
 
         num_peak = len(self.image_chunks)
         num_created = num_peak - num_start
@@ -195,6 +224,12 @@ class VispyTiledImageLayer(VispyImageLayer):
 
         num_final = len(self.image_chunks)
         num_deleted = num_peak - num_final
+
+        def _add_chunks():
+            self.grid.add_chunks(self.image_chunks.values())
+
+        if self.grid is not None:
+            QTimer.singleShot(100, _add_chunks)
 
         if num_created > 0 or num_deleted > 0:
             print(
