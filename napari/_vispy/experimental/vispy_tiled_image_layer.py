@@ -1,28 +1,32 @@
 """VispyTiledImageLayer class.
 """
-from typing import List, Optional
+from typing import List, Optional, Set
 
 import numpy as np
+from vispy.scene.node import Node
 from vispy.scene.visuals import Line
 from vispy.visuals.transforms import STTransform
 
 from ...layers.image.experimental.octree_util import ChunkData
 from ...utils.perf import block_timer
-from ..image import Image as ImageNode
+from ..image import Image as ImageVisual
 from ..vispy_image_layer import VispyImageLayer
 
+# Grid is optionally drawn while debugging to show tile boundaries.
 GRID_WIDTH = 3
 GRID_COLOR = (1, 0, 0, 1)
 
-INITIAL_POOL_SIZE = 30
-
-# So grid draws on top of the image tiles.
+# Set order to the grid draws on top of the image tiles.
 IMAGE_NODE_ORDER = 0
 LINE_VISUAL_ORDER = 10
 
+# We are seeing crashing when creating too many ImageVisual's so we are
+# experimenting with having a reusable pool of them.
+INITIAL_POOL_SIZE = 30
+
 
 def _chunk_outline(chunk: ChunkData) -> np.ndarray:
-    """Return the line verts that outline the given chunk.
+    """Return the line verts that outline the one given chunk.
 
     Parameters
     ----------
@@ -32,7 +36,7 @@ def _chunk_outline(chunk: ChunkData) -> np.ndarray:
     Return
     ------
     np.ndarray
-        The chunk verts for 'segments' mode.
+        The chunk verts for a line drawn with the 'segments' mode.
     """
     x, y = chunk.pos
     h, w = chunk.data.shape[:2]
@@ -40,8 +44,8 @@ def _chunk_outline(chunk: ChunkData) -> np.ndarray:
     h *= chunk.scale[0]
 
     # We draw lines on all four sides of the chunk. This means are
-    # double-drawing all interior lines in the grid. We can draw less if
-    # performance is an issue.
+    # double-drawing all interior lines in the grid. We can avoid
+    # this duplication if it becomes a performance issue.
     return np.array(
         (
             [x, y],
@@ -58,67 +62,104 @@ def _chunk_outline(chunk: ChunkData) -> np.ndarray:
 
 
 class ImageChunk:
-    """The ImageNode for a single chunk.
+    """Holds the ImageVisual for a single chunk.
 
-    This class will grow soon...
+    Parameters
+    ----------
+    chunk : ChunkData
+        The data for the ImageChunk.
+    node : Optional[ImageVisual]
+        The ImageVisual if one was available.
     """
 
-    def __init__(self, chunk_data: ChunkData, node: Optional[ImageNode]):
+    # TODO_OCTREE: make this a namedtuple if it doesn't grow.
+    def __init__(self, chunk_data: ChunkData, node: Optional[ImageVisual]):
         self.chunk_data = chunk_data
         self.data_id = id(chunk_data.data)
         self.node = node  # If None it means no ImageVisual was available
 
 
-class ImageNodePool:
+class ImageVisualPool:
+    """A reusable pool of ImageVisuals.
+
+    Because we are seeing crashes if we create too many ImageVisuals we have
+    a reusable pool of them.
+
+    Attributes
+    ----------
+    nodes : List[ImageVisual]
+        The available nodes in the pool.
+    """
+
     def __init__(self):
         size = INITIAL_POOL_SIZE
-        timer_msg = f"ImageNodePool: create pool size {size}"
-        with block_timer(timer_msg, print_time=True):
-            self.nodes = self._create_pool(size)
+        with block_timer("ImageVisualPool.__init__") as event:
+            self.nodes = [
+                ImageVisual(None, method='auto') for x in range(size)
+            ]
 
-    def _create_pool(self, size):
-        nodes = [ImageNode(None, method='auto') for x in range(size)]
-        for node in nodes:
-            node.order = IMAGE_NODE_ORDER
-        return nodes
+        ms = event.duration_ms
+        each_ms = event.duration_ms / size
+        print(f"ImageVisualPool: Created {size} @ {each_ms}ms each = {ms}ms")
 
-    def get_node(self) -> ImageNode:
-        if len(self.nodes) > 1:
-            return self.nodes.pop()
+    def get_node(self) -> Optional[ImageVisual]:
+        """Get an available ImageVisual.
 
-        # Pool is empty, we could create more but too many ImageVisuals seems
-        # to lead to crashes... for now just hard cut off until we figure
-        # that out.
-        return None
+        Return
+        ------
+        Optional[ImageVisual]
+            An ImageVisual if one was available in the pool.
+        """
+        if len(self.nodes) == 0:
+            # Pool is empty, no visual for now. The ImageChunk might get
+            # assigned a ImageVisual later if it stays in view.
+            return None
 
-    def return_node(self, node) -> None:
+        # Assign an available ImageVisual.
+        return self.nodes.pop()
+
+    def return_node(self, node: ImageVisual) -> None:
+        """Return a node that's no number being used."""
         if node is not None:
-            node.parent = None
+            node.parent = None  # Remove from the Scene Graph.
             self.nodes.append(node)
 
 
 class TileGrid:
-    """The grid that shows the outlines of all the tiles."""
+    """The grid that shows the outlines of all the tiles.
 
-    def __init__(self, parent):
+    Attributes
+    ----------
+    parent : Node
+        The parent of the grid.
+    """
+
+    def __init__(self, parent: Node):
         self.parent = parent
         self.line = self._create_line()
 
-    def _create_line(self):
+    def _create_line(self) -> Line:
+        """Create the Line visual for the grid.
+
+        Return
+        ------
+        Line
+            The new Line visual.
+        """
         line = Line(connect='segments', color=GRID_COLOR, width=GRID_WIDTH)
         line.order = LINE_VISUAL_ORDER
         line.parent = self.parent
         return line
 
-    def add_chunks(self, chunks: List[ImageChunk]) -> None:
-        """Add the outline of the given chunks to the grid.
+    def update_grid(self, chunks: List[ImageChunk]) -> None:
+        """Update grid for this set of chunks.
 
         Parameters
         ----------
         chunks : List[ImageChunks]
-            Add the outline of these chunks
+            Add a grid that outlines these chunks.
         """
-        # TODO_OCTREE: create in one go without vstack
+        # TODO_OCTREE: create in one go without vstack?
         verts = np.zeros((0, 2), dtype=np.float32)
         for image_chunk in chunks:
             chunk_verts = _chunk_outline(image_chunk.chunk_data)
@@ -129,13 +170,13 @@ class TileGrid:
 
 
 class VispyTiledImageLayer(VispyImageLayer):
-    """Tiled images using multiple ImageNodes.
+    """Tiled images using multiple ImageVisuals.
 
     Render a set of image tiles. For example render the set of tiles that
     need to be drawn from an octree in order to depict the current view.
 
-    We create a parent ImageNode, which is current empty. Then we create a
-    child ImageNode for every image tile. The set of child ImageNodes will
+    We create a parent ImageVisual, which is current empty. Then we create a
+    child ImageVisual for every image tile. The set of child ImageVisuals will
     change over time as the user pans/zooms in the octree.
 
     Future Work
@@ -147,7 +188,7 @@ class VispyTiledImageLayer(VispyImageLayer):
     visible tiles in the right positions using texture coordinates.
 
     One reason TiledImageVisual will be faster is today calling
-    ImageNode.set_data() causes a 15-20ms hiccup when that visual is next
+    ImageVisual.set_data() causes a 15-20ms hiccup when that visual is next
     drawn. It's not clear why the hiccup is so big, since transfering the
     texture into VRAM should be under 2ms. However at least 4ms is spent
     rebuilding the shader alone.
@@ -167,7 +208,7 @@ class VispyTiledImageLayer(VispyImageLayer):
         self.camera = camera
         self.image_chunks = {}
         self.grid = None  # Can't create until after super() init
-        self.pool = ImageNodePool()
+        self.pool = ImageVisualPool()
 
         # This will call our self._on_data_change() but we guard
         # that with self.read as a hack.
@@ -185,20 +226,44 @@ class VispyTiledImageLayer(VispyImageLayer):
         chunk_data : ChunkData
             The data used to create the new image chunk.
         """
+        # If no node is available then get_node() returns None and we
+        # create the ImageChunk with no ImageVisual. One can be added
+        # later on if it becomes available.
         node = self.pool.get_node()
         image_chunk = ImageChunk(chunk_data, node)
-
-        if image_chunk.node is not None:
-            # Parent VispyImageLayer will process the data then set it.
-            self._set_node_data(image_chunk.node, chunk_data.data)
-
-            # Add this new ImageChunk as child of self.node, transformed into place.
-            image_chunk.node.parent = self.node
-            image_chunk.node.transform = STTransform(
-                chunk_data.scale, chunk_data.pos
-            )
+        self._add_image_chunk_node(image_chunk)
 
         return image_chunk
+
+    @property
+    def _tiled_visual_parent(self):
+        """Return the parent under which ImageVisuals should be added."""
+        return self.node  # This is VispyBaseLayer.node
+
+    def _add_image_chunk_node(self, image_chunk: ImageChunk) -> None:
+        """Add an ImageChunk's node to the scene.
+
+        Parameters
+        ----------
+        image_chunk : ImageChunk
+            Add this chunk's node to the scene.
+        """
+        if image_chunk.node is None:
+            # Can't add it until there is an ImageVisual assigned. Hopefully
+            # one will be assigned later.
+            return
+
+        node = image_chunk.node
+        chunk_data = image_chunk.chunk_data
+
+        # Class VispyImageLayer._set_node_data to process the data and
+        # get it ready to be displayed.
+        self._set_node_data(node, chunk_data.data)
+
+        # Add under us, transformed into the right place.
+        node.parent = self._tiled_visual_parent
+        node.transform = STTransform(chunk_data.scale, chunk_data.pos)
+        node.order = IMAGE_NODE_ORDER
 
     def _on_data_change(self, event=None) -> None:
         """Our self.layer._data_view has been updated, update our node.
@@ -206,10 +271,19 @@ class VispyTiledImageLayer(VispyImageLayer):
         if not self.layer.loaded or not self.ready:
             return
 
-        self._update_visible_chunks()
+        self._update_image_chunks()
 
-    def _update_visible_chunks(self) -> None:
+    def _update_image_chunks(self) -> None:
+        """Update all ImageChunks that we are managing.
 
+        The basic algorithm is:
+        1) Assign ImageChunks and/or ImageVisuals to any chunks that
+        are currently visible. We might run out of visuals from the pool.
+
+        2) Remove no longer visible chunks and return them to the pool.
+
+        3) Create the optional grid around only the visible chunks.
+        """
         # Get the currently visible chunks.
         visible_chunks = self.layer.visible_chunks
 
@@ -220,26 +294,19 @@ class VispyTiledImageLayer(VispyImageLayer):
 
         num_start = len(self.image_chunks)
 
-        # Create new chunks.
-        for chunk in visible_chunks:
-            chunk_id = id(chunk.data)
-            if chunk_id not in self.image_chunks:
-                self.image_chunks[chunk_id] = self._create_image_chunk(chunk)
+        # Create ImageChunks/ImageVisuals for all visible chunks.
+        self._update_visible(visible_chunks)
 
         num_peak = len(self.image_chunks)
         num_created = num_peak - num_start
 
-        # Remove stale chunks.
-        for image_chunk in list(self.image_chunks.values()):
-            data_id = image_chunk.data_id
-            if data_id not in visible_ids:
-                self.pool.return_node(image_chunk.node)
-                del self.image_chunks[data_id]
+        # Remove chunks no longer visible.
+        self._remove_stale_chunks(visible_ids)
 
         num_final = len(self.image_chunks)
         num_deleted = num_peak - num_final
 
-        self.grid.add_chunks(self.image_chunks.values())
+        self.grid.update_grid(self.image_chunks.values())
 
         num_pool = len(self.pool.nodes)
 
@@ -249,5 +316,48 @@ class VispyTiledImageLayer(VispyImageLayer):
                 f"deleted: {num_deleted} final: {num_final} pool: {num_pool}"
             )
 
+    def _update_visible(self, visible_chunks: List[ChunkData]) -> None:
+        """Create or update all visible ImageChunks.
+
+        Go through all visible chunks:
+        1) Create a new ImageChunk if one doesn't exist.
+        2) Create a new ImageVisual if the existing ImageChunk does
+           not have a visual, because none were available in the pool.
+
+        Parameters
+        ----------
+        visible_chunks : List[ChunkData]
+        """
+        for chunk in visible_chunks:
+            chunk_id = id(chunk.data)
+            try:
+                image_chunk = self.image_chunks[chunk_id]
+                if image_chunk.node is None:
+                    # The ImageChunk already existed but there was no ImageVisual
+                    # for. Attempt to assign one from the pool. If the pool
+                    # is empty pool.get_node() will return None.
+                    image_chunk.node = self.pool.get_node()
+                    self._add_image_chunk_node(image_chunk)
+            except KeyError:
+                # There is no ImageChunk for this ChunkData, so create a
+                # new ImageChunk. It will get an ImageVisual if one is
+                # available from the pool. Otherwise maybe its ImageVisual
+                # will be assigned later.
+                self.image_chunks[chunk_id] = self._create_image_chunk(chunk)
+
+    def _remove_stale_chunks(self, visible_ids: Set[int]) -> None:
+        """Remove stale chunks no longer visible.
+
+        Parameters
+        ----------
+        visible_ids : Set[int]
+            The data_id's of the currently visible chunks.
+        """
+        for image_chunk in list(self.image_chunks.values()):
+            data_id = image_chunk.data_id
+            if data_id not in visible_ids:
+                self.pool.return_node(image_chunk.node)
+                del self.image_chunks[data_id]
+
     def _on_camera_move(self, event=None):
-        self._update_visible_chunks()
+        self._update_image_chunks()
