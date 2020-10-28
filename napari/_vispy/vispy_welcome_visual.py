@@ -1,3 +1,4 @@
+import sys
 from os.path import dirname, join
 
 import numpy as np
@@ -35,7 +36,7 @@ class VispyWelcomeVisual:
         self.text_node = Text(
             pos=[0, 0], parent=parent, method='gpu', bold=False
         )
-        self.text_node.order = order
+        self.text_node.order = order + 1
         self.text_node.transform = STTransform()
         self.text_node.anchors = ('left', 'center')
         self.text_node.text = (
@@ -64,9 +65,12 @@ class VispyWelcomeVisual:
             background_color = np.divide(
                 str_to_rgb(darken(self._viewer.palette['background'], 70)), 255
             )
-            # Note this unsual scaling is done to preserve color balance on
-            # rendering by VisPy, which appears to be off when opacity < 1
-            text_color = np.multiply(foreground_color, [0.4, 0.65, 0.9])
+            text_color = foreground_color
+            if sys.platform == 'darwin':
+                # Note this unsual scaling is done to preserve color balance on
+                # rendering by VisPy, which appears to be off when opacity < 1.
+                # It only needs to be done on a mac.
+                text_color = np.multiply(text_color, [0.4, 0.65, 0.9])
         else:
             foreground_color = np.divide(
                 str_to_rgb(lighten(self._viewer.palette['foreground'], 30)),
