@@ -7,7 +7,7 @@ from ._octree_image_slice import OctreeImageSlice
 from .octree_intersection import OctreeIntersection
 from .octree_util import OctreeInfo, OctreeLevelInfo
 
-DEFAULT_TILE_SIZE = 256
+DEFAULT_TILE_SIZE = 128
 
 
 class OctreeImage(Image):
@@ -127,7 +127,6 @@ class OctreeImage(Image):
 
     def _update_draw(self, scale_factor, corner_pixels, shape_threshold):
 
-        print(f"update_draw: {corner_pixels}")
         # If self._data_corners was not set yet, we have not been drawn
         # yet, and we need to refresh to draw ourselves for the first time.
         need_refresh = self._data_corners is None
