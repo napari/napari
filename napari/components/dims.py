@@ -131,6 +131,20 @@ class Dims:
         return point
 
     @property
+    def mode(self):
+        mode = [
+            DimsMode(0) for _ in range(self.ndim)
+        ]
+        return mode
+
+    @property
+    def interval(self):
+        """TODO: figure out how to initialise this sensibly now that range is in the world coordinates space
+        """
+        pass
+
+
+    @property
     def axis_labels(self):
         """List of labels for each axis."""
         return copy(self._axis_labels)
