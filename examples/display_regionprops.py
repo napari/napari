@@ -1,4 +1,4 @@
-from typing import Dict, List
+from typing import Dict, List, Tuple
 import numpy as np
 from skimage.measure import regionprops_table
 from skimage.util import map_array
@@ -59,8 +59,11 @@ def IDR_fetch_image(image_id: int, progressbar: bool = True) -> np.ndarray:
     return np.einsum("jmikl", _tmp)
 
 
-def get_video_and_segmentations(image_id: int):
-    # video
+def get_video(image_id: int):
+    """ Return IDR timelapse video with ID image_id
+    as dask array. Download if necessary and cache 
+    on disk as Zarr. Returns the cached version from
+    disk if present"""
     img_file = f"{image_id}.zarr"
     if not pathlib.Path(img_file).exists():
         print("Downloading sample image sequence from IDR.")
@@ -71,12 +74,26 @@ def get_video_and_segmentations(image_id: int):
             f"Opening previously downloaded sample image sequence: {img_file}."
         )
         raw_video = da.from_zarr(img_file)
-    # segmentation
-    _p = pathlib.Path(img_file)
-    label_path = _p.parent / (_p.stem + "_labels.zarr")
-    if label_path.exists():
-        print(f"Reading existing segmentation from {str(label_path)}.")
-        labels = np.asarray(da.from_zarr(str(label_path)))
+    return raw_video
+
+def get_video_segmentation(image_id: int):
+    """ Return nucleus segmentation as label image
+    from IDR timelapse video with ID image_id
+    as dask array. 
+    If necessary, the segmentation is calculated 
+    slice by slice using cellpose and cached as a zarr file 
+    on disk.
+    If the cached zarr file is found, it is read.
+    
+    Returns both the raw timelapse video and 
+    the segmentation.
+    """
+    raw_video = get_video(image_id)
+    label_file = f"{image_id}_labels.zarr"
+
+    if pathlib.Path(label_file).exists():
+        print(f"Reading existing segmentation from {label_file}.")
+        labels = np.asarray(da.from_zarr(label_file))
     else:
         print(
             "No existing segmentation found. Segmenting timelapse using cellpose:"
@@ -84,7 +101,7 @@ def get_video_and_segmentations(image_id: int):
         import mxnet
         from cellpose import models
 
-        model = models.Cellpose(device=mxnet.cpu(), model_type='nuclei')
+        model = models.Cellpose(device=mxnet.gpu(), model_type='nuclei')
 
         def _segment_cellpose(img):
             _labels, _, _, _ = model.eval(
@@ -95,19 +112,21 @@ def get_video_and_segmentations(image_id: int):
         labels = np.asarray(
             [_segment_cellpose(_frame) for _frame in tqdm(raw_video)]
         )
-        print(f"Saving segmentation as {str(label_path)}")
-        da.from_array(labels).to_zarr(str(label_path))
+        print(f"Saving segmentation as {label_file}")
+        labels=np.squeeze(labels)     
+        da.from_array(labels).to_zarr(label_file)
 
-    labels = np.squeeze(labels)
     return raw_video, labels
-
 
 def integrated_intensity(mask, intensity):
     return np.sum(intensity[mask])
 
-
 def measure_timelapse_features(vid, seg, properties, extra_properties):
+    """Given a timelapse sequence vid and a corresponding
+    label image seg, compute regionprops properties and extra_properties
+    for all frames."""
     def _measure_frame(frame, frameseg):
+        """measures properties in a single frame"""
         _frame_props = regionprops_table(
             label_image=np.asarray(frameseg),
             intensity_image=np.asarray(frame),
@@ -116,7 +135,7 @@ def measure_timelapse_features(vid, seg, properties, extra_properties):
         )
         return _frame_props
 
-    return map(_measure_frame, tqdm(vid), seg)
+    return list(map(_measure_frame, tqdm(vid), seg))
 
 
 def heatmap(
@@ -128,17 +147,20 @@ def heatmap(
     return np.asarray(list(map(_map_frame, labels, measurements)))
 
 
+###
+###
+
+
 print("Obtaining raw image sequence and segmentation:")
-vid, seg = get_video_and_segmentations(IDR_imageID)
+vid, seg = get_video_segmentation(IDR_imageID)
 print("Calculating region properties:")
-measurements = list(
-    measure_timelapse_features(
+measurements = measure_timelapse_features(
         vid,
         seg,
         props + props_intensity,
         extra_properties=(integrated_intensity,),
-    )
 )
+
 print("Generating measurement colormap overlays")
 area_map = heatmap(seg, measurements, 'area')
 mean_int_map = heatmap(seg, measurements, 'mean_intensity')
