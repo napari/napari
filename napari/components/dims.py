@@ -39,6 +39,11 @@ class Dims:
         Number of steps available to each slider.
     ndim : int
         Number of dimensions.
+    mode : list of DimsMode
+        list of DimsMode, one for each dimension.
+    interval : list of 2-tuple
+        List of tuples (min, max) setting the current selection of the range
+        slider when in INTERVAL mode, one for each dimension
     displayed : tuple
         List of dimensions that are displayed.
     not_displayed : tuple
