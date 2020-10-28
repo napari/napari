@@ -60,8 +60,11 @@ class OctreeLevel:
                 data = self.tiles[row][col]
                 pos = [x, y]
 
+                # Skip tiles with zero area (why are there any?)
                 if 0 not in data.shape:
-                    chunks.append(ChunkData(data, pos, scale_vec))
+                    print(f"pos={pos}")
+                    level_index = self.info.level_index
+                    chunks.append(ChunkData(level_index, data, pos, scale_vec))
 
                 x += data.shape[1] * scale
             y += data.shape[0] * scale

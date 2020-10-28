@@ -159,9 +159,11 @@ class TileGrid:
         chunks : List[ImageChunks]
             Add a grid that outlines these chunks.
         """
+        print(f"update_grid with {len(chunks)} nodes")
         # TODO_OCTREE: create in one go without vstack?
         verts = np.zeros((0, 2), dtype=np.float32)
         for image_chunk in chunks:
+            print(f"image_chunk.chunk_data.pos = {image_chunk.chunk_data.pos}")
             chunk_verts = _chunk_outline(image_chunk.chunk_data)
             verts = np.vstack([verts, chunk_verts])
 
@@ -260,8 +262,8 @@ class VispyTiledImageLayer(VispyImageLayer):
         self._set_node_data(node, chunk_data.data)
 
         # Add the node under us, transformed into the right place.
-        node.parent = self._tiled_visual_parent
         node.transform = STTransform(chunk_data.scale, chunk_data.pos)
+        node.parent = self._tiled_visual_parent
         node.order = IMAGE_NODE_ORDER
 
     def _on_data_change(self, event=None) -> None:
@@ -288,8 +290,8 @@ class VispyTiledImageLayer(VispyImageLayer):
 
         num_seen = len(visible_chunks)
 
-        # Data id's of the visible chunks
-        visible_ids = set([id(chunk.data) for chunk in visible_chunks])
+        # Set is keyed by id(chunk_data.data) and chunk_data.level_index
+        visible_set = set(visible_chunks)
 
         num_start = len(self.image_chunks)
 
@@ -300,7 +302,7 @@ class VispyTiledImageLayer(VispyImageLayer):
         num_created = num_peak - num_start
 
         # Remove chunks no longer visible.
-        self._remove_stale_chunks(visible_ids)
+        self._remove_stale_chunks(visible_set)
 
         num_final = len(self.image_chunks)
         num_deleted = num_peak - num_final
@@ -327,10 +329,17 @@ class VispyTiledImageLayer(VispyImageLayer):
         ----------
         visible_chunks : List[ChunkData]
         """
-        for chunk in visible_chunks:
-            chunk_id = id(chunk.data)
-            try:
-                image_chunk = self.image_chunks[chunk_id]
+        for chunk_data in visible_chunks:
+            if chunk_data not in self.image_chunks:
+                # There is no ImageChunk for this ChunkData, so create a
+                # new ImageChunk. It will get an ImageVisual if one is
+                # available from the pool. Otherwise maybe its ImageVisual
+                # will be assigned later.
+                self.image_chunks[chunk_data] = self._create_image_chunk(
+                    chunk_data
+                )
+            else:
+                image_chunk = self.image_chunks[chunk_data]
                 if image_chunk.node is None:
                     # The ImageChunk already existed but there was no
                     # ImageVisual available. Attempt to assign one from the
@@ -339,14 +348,8 @@ class VispyTiledImageLayer(VispyImageLayer):
                     if node is not None:
                         image_chunk.node = node
                         self._add_image_chunk_node(image_chunk)
-            except KeyError:
-                # There is no ImageChunk for this ChunkData, so create a
-                # new ImageChunk. It will get an ImageVisual if one is
-                # available from the pool. Otherwise maybe its ImageVisual
-                # will be assigned later.
-                self.image_chunks[chunk_id] = self._create_image_chunk(chunk)
 
-    def _remove_stale_chunks(self, visible_ids: Set[int]) -> None:
+    def _remove_stale_chunks(self, visible_set: Set[ChunkData]) -> None:
         """Remove stale chunks which are not longer visible.
 
         Parameters
@@ -355,10 +358,10 @@ class VispyTiledImageLayer(VispyImageLayer):
             The data_id's of the currently visible chunks.
         """
         for image_chunk in list(self.image_chunks.values()):
-            data_id = image_chunk.data_id
-            if data_id not in visible_ids:
+            chunk_data = image_chunk.chunk_data
+            if chunk_data not in visible_set:
                 self.pool.return_node(image_chunk.node)
-                del self.image_chunks[data_id]
+                del self.image_chunks[chunk_data]
 
     def _on_camera_move(self, event=None):
         self._update_image_chunks()
