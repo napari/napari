@@ -7,7 +7,7 @@ from ._octree_image_slice import OctreeImageSlice
 from .octree_intersection import OctreeIntersection
 from .octree_util import OctreeInfo, OctreeLevelInfo
 
-DEFAULT_TILE_SIZE = 128
+DEFAULT_TILE_SIZE = 64
 
 
 class OctreeImage(Image):

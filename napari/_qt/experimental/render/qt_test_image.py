@@ -8,7 +8,7 @@ from qtpy.QtWidgets import QFrame, QPushButton, QVBoxLayout
 from .qt_labeled_spin_box import QtLabeledSpinBox
 from .test_image import create_tiled_text_array
 
-TILE_SIZE_DEFAULT = 128
+TILE_SIZE_DEFAULT = 64
 TILE_SIZE_RANGE = range(1, 4096, 100)
 
 IMAGE_SIZE_DEFAULT = (1024, 1024)  # (width, height)

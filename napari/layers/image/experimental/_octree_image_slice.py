@@ -73,7 +73,7 @@ class OctreeImageSlice(ImageSlice):
             self._octree_level is None
             or self._octree_level >= self._octree.num_levels
         ):
-            self._octree_level = self._octree.num_levels - 1
+            self._octree_level = 0  # self._octree.num_levels - 1
 
         # self._octree.print_tiles()
 
