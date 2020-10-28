@@ -115,6 +115,7 @@ class VispyScaleBarVisual:
         """Change visibiliy of scale bar."""
         self.node.visible = self._scale_bar.visible
         self.text_node.visible = self._scale_bar.visible
+        self._on_zoom_change(None)
 
     def _on_position_change(self, event):
         """Change position of scale bar."""
