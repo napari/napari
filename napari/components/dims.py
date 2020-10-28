@@ -139,9 +139,11 @@ class Dims:
 
     @property
     def interval(self):
-        """TODO: figure out how to initialise this sensibly now that range is in the world coordinates space
-        """
-        pass
+        interval = [
+            (min_val, max_val) for (min_val, max_val, _) in self.range
+        ]
+        return interval
+
 
 
     @property
