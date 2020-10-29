@@ -897,12 +897,7 @@ class Layer(KeymapProvider, ABC):
     def coordinates(self):
         """Cursor position in data coordinates."""
         # Note we ignore the first transform which is tile2data
-        try:
-            return tuple(
-                self._transforms[1:].simplified.inverse(self.position)
-            )
-        except ValueError:
-            pass  # TODO_OCTREE: temporary until we debug this
+        return tuple(self._transforms[1:].simplified.inverse(self.position))
 
     def _update_value_and_status(self):
         """Update value and status message."""
@@ -968,10 +963,7 @@ class Layer(KeymapProvider, ABC):
         msg : string
             String containing a message that can be used as a status update.
         """
-        if self.coordinates is None:
-            full_coord = ""
-        else:
-            full_coord = np.round(self.coordinates).astype(int)
+        full_coord = np.round(self.coordinates).astype(int)
 
         msg = f'{self.name} {full_coord}'
 

@@ -152,6 +152,7 @@ class VispyBaseLayer(ABC):
         self._on_matrix_change()
 
     def _on_camera_move(self, event=None):
+        """Camera was moved."""
         pass
 
 
