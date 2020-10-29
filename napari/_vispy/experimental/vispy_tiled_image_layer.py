@@ -73,10 +73,12 @@ class ImageChunk:
     """
 
     # TODO_OCTREE: make this a namedtuple if it doesn't grow.
-    def __init__(self, chunk_data: ChunkData, node: Optional[ImageVisual]):
+    def __init__(self, chunk_data: ChunkData):
         self.chunk_data = chunk_data
         self.data_id = id(chunk_data.data)
-        self.node = node  # If None it means no ImageVisual was available
+
+        # ImageVisual should be assigned later
+        self.node = None
 
 
 class ImageVisualPool:
@@ -330,25 +332,29 @@ class VispyTiledImageLayer(VispyImageLayer):
         ----------
         visible_chunks : List[ChunkData]
         """
+        track_view = self.layer.track_view
+
         for chunk_data in visible_chunks:
             if chunk_data.key not in self.image_chunks:
-                # There is no ImageChunk for this ChunkData, so create a
-                # new ImageChunk. It will get an ImageVisual if one is
-                # available from the pool. Otherwise maybe its ImageVisual
-                # will be assigned later.
-                self.image_chunks[chunk_data.key] = self._create_image_chunk(
-                    chunk_data
-                )
-            else:
-                image_chunk = self.image_chunks[chunk_data.key]
-                if image_chunk.node is None:
-                    # The ImageChunk already existed but there was no
-                    # ImageVisual available. Attempt to assign one from the
-                    # pool again. If still not available we do nothing.
-                    node = self.pool.get_node()
-                    if node is not None:
-                        image_chunk.node = node
-                        self._add_image_chunk_node(image_chunk)
+                # Create an ImageChunk for this ChunkData.
+                self.image_chunks[chunk_data.key] = ImageChunk(chunk_data)
+
+            if not track_view:
+                # We are not actively create ImageVisuals, for example to
+                # "freeze" the view for debugging. So we're done.
+                continue
+
+            # Whether we just created this ImageChunk or it's older, if it
+            # doesn't have an ImageVisual try to add one one
+            image_chunk = self.image_chunks[chunk_data.key]
+            if image_chunk.node is None:
+                # The ImageChunk already existed but there was no
+                # ImageVisual available. Attempt to assign one from the
+                # pool again. If still not available we do nothing.
+                node = self.pool.get_node()
+                if node is not None:
+                    image_chunk.node = node
+                    self._add_image_chunk_node(image_chunk)
 
     def _remove_stale_chunks(self, visible_set: Set[ChunkData]) -> None:
         """Remove stale chunks which are not longer visible.

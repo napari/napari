@@ -4,6 +4,7 @@ from typing import Callable
 
 import numpy as np
 from qtpy.QtWidgets import (
+    QCheckBox,
     QComboBox,
     QFrame,
     QHBoxLayout,
@@ -58,12 +59,20 @@ class QtOctreeInfoLayout(QVBoxLayout):
     """
 
     def __init__(
-        self, layer, set_level: Callable[[int], None],
+        self,
+        layer,
+        set_level: Callable[[int], None],
+        set_track: Callable[[int], None],
     ):
         super().__init__()
 
         self.level = QtLevelCombo(layer.num_octree_levels, set_level)
         self.addLayout(self.level)
+
+        self.track = QCheckBox("Track View")
+        self.track.stateChanged.connect(set_track)
+        self.track.setChecked(layer.track_view)
+        self.addWidget(self.track)
 
         self.table = self._create_table()
         self.addWidget(self.table)
@@ -135,7 +144,9 @@ class QtOctreeInfo(QFrame):
     def __init__(self, layer):
         super().__init__()
         self.layer = layer
-        self.layout = QtOctreeInfoLayout(layer, self._set_level)
+        self.layout = QtOctreeInfoLayout(
+            layer, self._set_level, self._set_track
+        )
         self.setLayout(self.layout)
 
         # Initial update and connect for future updates.
@@ -161,3 +172,6 @@ class QtOctreeInfo(QFrame):
         else:
             self.layer.auto_level = False
             self.layer.octree_level = _index_to_level(value)
+
+    def _set_track(self, value: int) -> None:
+        self.layer.track_view = value != 0

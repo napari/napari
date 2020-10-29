@@ -25,8 +25,17 @@ class OctreeImage(Image):
         self._octree_level = None
         self._data_corners = None
         self._auto_level = True
+        self._track_view = True
         super().__init__(*args, **kwargs)
         self.events.add(auto_level=Event, octree_level=Event, tile_size=Event)
+
+    @property
+    def track_view(self) -> bool:
+        return self._track_view
+
+    @track_view.setter
+    def track_view(self, value) -> None:
+        self._track_view = value
 
     @property
     def tile_size(self) -> int:
@@ -110,8 +119,10 @@ class OctreeImage(Image):
         if self._data_corners is None:
             return []
 
+        auto_level = self.auto_level and self.track_view
+
         corners_2d = self._corners_2d(self._data_corners)
-        chunks = self._slice.get_visible_chunks(corners_2d, self._auto_level)
+        chunks = self._slice.get_visible_chunks(corners_2d, auto_level)
         self._octree_level = self._slice._octree_level
         self.events.octree_level()
         return chunks
