@@ -81,6 +81,7 @@ class OctreeImageSlice(ImageSlice):
         """Return the chunks currently in view."""
 
         level_index = self._get_octree_level(corners_2d, auto_level)
+        self._octree_level = level_index
         level = self._octree.levels[level_index]
         return level.get_chunks(corners_2d)
 

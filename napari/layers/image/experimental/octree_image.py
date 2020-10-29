@@ -111,7 +111,10 @@ class OctreeImage(Image):
             return []
 
         corners_2d = self._corners_2d(self._data_corners)
-        return self._slice.get_visible_chunks(corners_2d, self._auto_level)
+        chunks = self._slice.get_visible_chunks(corners_2d, self._auto_level)
+        self._octree_level = self._slice._octree_level
+        self.events.octree_level()
+        return chunks
 
     def _on_data_loaded(self, data: ChunkedSliceData, sync: bool) -> None:
         """The given data a was loaded, use it now."""
