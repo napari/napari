@@ -1,4 +1,4 @@
-"""QtOctreeInfo class.
+"""QtOctreeInfo and QtOctreeInfoLayout classes.
 """
 from typing import Callable
 
@@ -15,33 +15,65 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
 )
 
-AUTO_INDEX = 0
+from ....layers.image.experimental.octree_image import OctreeImage
+
+IntCallback = Callable[[int], None]
 
 
-def _index_to_level(index):
-    return index - 1  # Since AUTO is index 0
+class QtSimpleTable(QTableWidget):
+    def __init__(self):
+        super().__init__()
+        self.verticalHeader().setVisible(False)
+        self.horizontalHeader().setVisible(False)
+        self.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.resizeRowsToContents()
+        self.setShowGrid(False)
 
+    def set_values(self, values: dict) -> None:
+        """Populate the table with keys and values.
 
-def _level_to_index(level):
-    return level + 1  # Since AUTO is index 0
+        values : dict
+            Populate with these keys and values.
+        """
+        self.setRowCount(len(values))
+        self.setColumnCount(2)
+        for i, (key, value) in enumerate(values.items()):
+            self.setItem(i, 0, QTableWidgetItem(key))
+            self.setItem(i, 1, QTableWidgetItem(value))
 
 
 class QtLevelCombo(QHBoxLayout):
-    def __init__(self, num_levels, set_level):
+    """Combo box to choose an octree level or AUTO.
+
+    Parameters
+    ----------
+    num_levels : int
+    """
+
+    def __init__(self, num_levels: int, on_set_level: IntCallback):
         super().__init__()
 
         self.addWidget(QLabel("Octree Level"))
 
-        levels = [str(x) for x in np.arange(0, num_levels)]
-        items = ["AUTO"] + levels
+        # AUTO means napari selects the appropriate octree level
+        # dynamically as you zoom in or out.
+        items = ["AUTO"] + [str(x) for x in np.arange(0, num_levels)]
 
         self.level = QComboBox()
         self.level.addItems(items)
-        self.level.activated[int].connect(set_level)
+        self.level.activated[int].connect(on_set_level)
         self.addWidget(self.level)
 
-    def set_index(self, index):
-        self.level.setCurrentIndex(index)
+    def set_index(self, index: int) -> None:
+        """Set the dropdown's value.
+
+        Parameters
+        ----------
+        index : int
+            Index of dropdown where AUTO is index 0.
+        """
+        # Add one because AUTO is at index 0.
+        self.level.setCurrentIndex(0 if index is None else (index + 1))
 
 
 class QtOctreeInfoLayout(QVBoxLayout):
@@ -52,59 +84,45 @@ class QtOctreeInfoLayout(QVBoxLayout):
 
     Parameters
     ----------
-    layer : Layer
-        Show octree info for this layer
-    set_level : Callable[[int], None]
+    layer : OctreeImage
+        Show octree info for this layer.
+    on_set_level : IntCallback
         Call this when the octree level is changed.
     """
 
     def __init__(
         self,
-        layer,
-        set_level: Callable[[int], None],
-        set_track: Callable[[int], None],
+        layer: OctreeImage,
+        on_set_level: IntCallback,
+        on_set_track: IntCallback,
     ):
         super().__init__()
 
-        self.level = QtLevelCombo(layer.num_octree_levels, set_level)
+        self.level = QtLevelCombo(layer.num_octree_levels, on_set_level)
         self.addLayout(self.level)
 
         self.track = QCheckBox("Track View")
-        self.track.stateChanged.connect(set_track)
+        self.track.stateChanged.connect(on_set_track)
         self.track.setChecked(layer.track_view)
         self.addWidget(self.track)
 
-        self.table = self._create_table()
+        self.table = QtSimpleTable()
         self.addWidget(self.table)
 
         self.set_layout(layer)  # Initial settings.
 
-    def _create_table(self) -> QTableWidget:
-        """Create and configure a new table widget."""
-        table = QTableWidget()
-        table.verticalHeader().setVisible(False)
-        table.horizontalHeader().setVisible(False)
-        table.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        table.resizeRowsToContents()
-        table.setShowGrid(False)
-        return table
-
-    def set_layout(self, layer):
+    def set_layout(self, layer: OctreeImage):
         """Set controls based on the layer.
 
         Parameters
         ----------
-        layer : Layer
+        layer : OctreeImage
             Set controls based on this layer.
         """
-        if layer.auto_level:
-            self.level.set_index(AUTO_INDEX)
-        else:
-            self.level.set_index(_level_to_index(layer.octree_level))
+        self.level.set_index(0 if layer.auto_level else layer.octree_level + 1)
+        self.table.set_values(self._get_values(layer))
 
-        self._set_table(layer)
-
-    def _set_table(self, layer) -> None:
+    def _get_values(self, layer: OctreeImage) -> None:
         """Set the table based on the layer.
 
         layer : OctreeImage
@@ -120,32 +138,27 @@ class QtOctreeInfoLayout(QVBoxLayout):
         tile_shape_str = _str(tile_shape)
         num_tiles = tile_shape[0] * tile_shape[1]
 
-        values = {
+        return {
             "Level": f"{layer.octree_level}",
             "Tiles": f"{tile_shape_str} = {num_tiles}",
             "Tile Shape": _str([layer.tile_size, layer.tile_size]),
             "Layer Shape": _str(level_info.image_shape),
         }
 
-        self.table.setRowCount(len(values))
-        self.table.setColumnCount(2)
-        for i, (key, value) in enumerate(values.items()):
-            self.table.setItem(i, 0, QTableWidgetItem(key))
-            self.table.setItem(i, 1, QTableWidgetItem(value))
-
 
 class QtOctreeInfo(QFrame):
     """Frame showing the octree level and tile size.
 
-    layer : Layer
+    layer : OctreeImage
         Show info about this layer.
     """
 
-    def __init__(self, layer):
+    def __init__(self, layer: OctreeImage):
         super().__init__()
         self.layer = layer
+
         self.layout = QtOctreeInfoLayout(
-            layer, self._set_level, self._set_track
+            layer, self._on_set_level, self._on_set_track
         )
         self.setLayout(self.layout)
 
@@ -159,7 +172,7 @@ class QtOctreeInfo(QFrame):
         """Set layout controls based on the layer."""
         self.layout.set_layout(self.layer)
 
-    def _set_level(self, value: int) -> None:
+    def _on_set_level(self, value: int) -> None:
         """Set octree level in the layer.
 
         Parameters
@@ -167,11 +180,17 @@ class QtOctreeInfo(QFrame):
         value : int
             The new level index.
         """
-        if value == AUTO_INDEX:
+        # Drop down has AUTO at index 0.
+        if value == 0:
             self.layer.auto_level = True
         else:
             self.layer.auto_level = False
-            self.layer.octree_level = _index_to_level(value)
+            self.layer.octree_level = value - 1
 
-    def _set_track(self, value: int) -> None:
+    def _on_set_track(self, value: int) -> None:
+        """Set whether rendering should track the current value.
+
+        value : int
+            If non-zero then rendering track the view as it moves.
+        """
         self.layer.track_view = value != 0

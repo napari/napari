@@ -93,7 +93,7 @@ class MiniMap(QLabel):
         data = np.zeros(bitmap_shape, dtype=np.uint8)
 
         # Tile size in bitmap coordinates.
-        tile_size = map_shape[1] / tile_shape[1]
+        tile_size: float = map_shape[1] / tile_shape[1]
 
         # Leave a bit of space between the tiles.
         edge = self.HALF_BORDER
@@ -113,6 +113,7 @@ class MiniMap(QLabel):
                 x0 = int(col * tile_size)
                 x1 = int(x0 + tile_size)
 
+                # Create a small border between tiles.
                 y0 += edge
                 y1 -= edge
                 x0 += edge
