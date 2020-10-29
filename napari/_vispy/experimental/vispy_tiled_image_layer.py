@@ -294,17 +294,19 @@ class VispyTiledImageLayer(VispyImageLayer):
 
         num_start = len(self.image_chunks)
 
-        # Create ImageChunks/ImageVisuals for all visible chunks.
-        self._update_visible(visible_chunks)
-
-        num_peak = len(self.image_chunks)
-        num_created = num_peak - num_start
-
         # Remove chunks no longer visible.
         self._remove_stale_chunks(visible_set)
 
+        num_low = len(self.image_chunks)
+        num_deleted = num_start - num_low
+
+        # Create ImageChunks/ImageVisuals for all visible chunks.
+        self._update_visible(visible_chunks)
+
         num_final = len(self.image_chunks)
-        num_deleted = num_peak - num_final
+        num_created = num_final - num_low
+
+        num_final = len(self.image_chunks)
 
         self.grid.update_grid(self.image_chunks.values())
 
