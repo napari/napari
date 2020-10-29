@@ -1,3 +1,4 @@
+import sys
 from os.path import dirname, join
 
 import numpy as np
@@ -29,13 +30,12 @@ class VispyWelcomeVisual:
         self.node = ImageNode(parent=parent)
         self.node.order = order
 
-        self.node.cmap = 'gray'
+        self.node.cmap = 'grays'
         self.node.transform = STTransform()
 
         self.text_node = Text(
             pos=[0, 0], parent=parent, method='gpu', bold=False
         )
-        # self.text_node.blending = 'additive'
         self.text_node.order = order
         self.text_node.transform = STTransform()
         self.text_node.anchors = ('left', 'center')
@@ -65,9 +65,17 @@ class VispyWelcomeVisual:
             background_color = np.divide(
                 str_to_rgb(darken(self._viewer.palette['background'], 70)), 255
             )
-            # Note this unsual scaling is done to preserve color balance on
-            # rendering by VisPy, which appears to be off when opacity < 1
-            text_color = np.multiply(foreground_color, [0.4, 0.65, 0.9])
+            text_color = foreground_color
+            if sys.platform == 'darwin':
+                # Note this unsual scaling is done to preserve color balance on
+                # rendering by VisPy, which appears to be off when opacity < 1.
+                # It only needs to be done on a mac, where we need opacity < 1
+                # to achieve good blending.
+                text_color = np.multiply(text_color, [0.4, 0.65, 0.9])
+                text_color = list(text_color) + [0.7]
+            else:
+                text_color = list(text_color) + [1]
+
         else:
             foreground_color = np.divide(
                 str_to_rgb(lighten(self._viewer.palette['foreground'], 30)),
@@ -93,9 +101,8 @@ class VispyWelcomeVisual:
 
         self._logo = new_logo
         self.node.set_data(self._logo)
-        # Having opacity < 1 improves blending but throws color balance
-        # off which needs to be adjusted if desired
-        self.text_node.color = list(text_color) + [0.7]
+
+        self.text_node.color = text_color
 
     def _on_visible_change(self, event):
         """Change visibiliy of axes."""

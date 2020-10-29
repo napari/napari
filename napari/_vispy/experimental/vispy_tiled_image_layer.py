@@ -26,7 +26,7 @@ INITIAL_POOL_SIZE = 25
 
 
 def _chunk_outline(chunk: ChunkData) -> np.ndarray:
-    """Return the line verts that outline the one given chunk.
+    """Return the line verts that outline this single chunk.
 
     Parameters
     ----------
