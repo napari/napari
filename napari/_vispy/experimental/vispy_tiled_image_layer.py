@@ -22,7 +22,7 @@ LINE_VISUAL_ORDER = 10
 
 # We are seeing crashing when creating too many ImageVisual's so we are
 # experimenting with having a reusable pool of them.
-INITIAL_POOL_SIZE = 20
+INITIAL_POOL_SIZE = 30
 
 
 def _chunk_outline(chunk: ChunkData) -> np.ndarray:
