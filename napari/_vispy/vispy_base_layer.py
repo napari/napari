@@ -151,6 +151,9 @@ class VispyBaseLayer(ABC):
         self._on_blending_change()
         self._on_matrix_change()
 
+    def _on_camera_move(self, event=None):
+        pass
+
 
 @lru_cache()
 def get_max_texture_sizes():

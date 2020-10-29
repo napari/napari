@@ -206,9 +206,8 @@ class VispyTiledImageLayer(VispyImageLayer):
     still look the same, it will just be faster.
     """
 
-    def __init__(self, layer, camera):
+    def __init__(self, layer):
         self.ready = False
-        self.camera = camera
         self.image_chunks = {}
         self.grid = None  # Can't create until after super() init
         self.pool = ImageVisualPool()
@@ -218,7 +217,6 @@ class VispyTiledImageLayer(VispyImageLayer):
         super().__init__(layer)
 
         self.grid = TileGrid(self.node)
-        self.camera.events.center.connect(self._on_camera_move)
         self.ready = True
 
     def _create_image_chunk(self, chunk_data: ChunkData):
@@ -371,4 +369,5 @@ class VispyTiledImageLayer(VispyImageLayer):
                 del self.image_chunks[chunk_data.key]
 
     def _on_camera_move(self, event=None):
+        super()._on_camera_move()
         self._update_image_chunks()

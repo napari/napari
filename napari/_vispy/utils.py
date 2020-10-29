@@ -1,5 +1,7 @@
-from ..layers import Image, Points, Shapes, Surface, Tracks, Vectors
+from ..components.camera import Camera
+from ..layers import Image, Layer, Points, Shapes, Surface, Tracks, Vectors
 from ..utils import config
+from .vispy_base_layer import VispyBaseLayer
 from .vispy_image_layer import VispyImageLayer
 from .vispy_points_layer import VispyPointsLayer
 from .vispy_shapes_layer import VispyShapesLayer
@@ -7,7 +9,6 @@ from .vispy_surface_layer import VispySurfaceLayer
 from .vispy_tracks_layer import VispyTracksLayer
 from .vispy_vectors_layer import VispyVectorsLayer
 
-# Regular layers: no camera.
 layer_to_visual = {
     Image: VispyImageLayer,
     Points: VispyPointsLayer,
@@ -17,24 +18,17 @@ layer_to_visual = {
     Tracks: VispyTracksLayer,
 }
 
-# Camera-dependent layers.
-layer_to_visual_camera = {}
-
 if config.async_octree:
     from ..layers.image.experimental.octree_image import OctreeImage
     from .experimental.vispy_tiled_image_layer import VispyTiledImageLayer
 
-    layer_to_visual_camera = {OctreeImage: VispyTiledImageLayer}
+    # Insert OctreeImage in front so it gets picked over plain Image.
+    new_order = {OctreeImage: VispyTiledImageLayer}
+    new_order.update(layer_to_visual)
+    layer_to_visual = new_order
 
 
-def _get_visual_class(layer, visual_map):
-    for layer_type, visual in visual_map.items():
-        if isinstance(layer, layer_type):
-            return visual
-    return None
-
-
-def create_vispy_visual(layer, camera):
+def create_vispy_visual(layer: Layer, camera: Camera) -> VispyBaseLayer:
     """Create vispy visual for a layer based on its layer type.
 
     Parameters
@@ -47,17 +41,14 @@ def create_vispy_visual(layer, camera):
     visual : vispy.scene.visuals.VisualNode
         Vispy visual node
     """
-    # Check camera layers first.
-    visual = _get_visual_class(layer, layer_to_visual_camera)
+    for layer_type, visual_class in layer_to_visual.items():
+        if isinstance(layer, layer_type):
+            visual = visual_class(layer)
 
-    if visual is not None:
-        return visual(layer, camera)
+            # Some visuals react to camera movements (e.g. VispyTiledImageLayer).
+            camera.events.center.connect(visual._on_camera_move)
 
-    # Check regular layers.
-    visual = _get_visual_class(layer, layer_to_visual)
-
-    if visual is not None:
-        return visual(layer)
+            return visual
 
     raise TypeError(
         f'Could not find VispyLayer for layer of type {type(layer)}'
