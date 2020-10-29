@@ -5,7 +5,7 @@ from typing import List, Optional, Set
 import numpy as np
 from vispy.scene.node import Node
 from vispy.scene.visuals import Line
-from vispy.visuals.transforms import STTransform
+from vispy.visuals.transforms import NullTransform, STTransform
 
 from ...layers.image.experimental.octree_util import ChunkData
 from ...utils.perf import block_timer
@@ -22,7 +22,7 @@ LINE_VISUAL_ORDER = 10
 
 # We are seeing crashing when creating too many ImageVisual's so we are
 # experimenting with having a reusable pool of them.
-INITIAL_POOL_SIZE = 30
+INITIAL_POOL_SIZE = 20
 
 
 def _chunk_outline(chunk: ChunkData) -> np.ndarray:
@@ -122,6 +122,7 @@ class ImageVisualPool:
         """Return a node that's no number being used."""
         if node is not None:
             node.parent = None  # Remove from the Scene Graph.
+            node.transform = NullTransform()
             self.nodes.append(node)
 
 
@@ -159,11 +160,9 @@ class TileGrid:
         chunks : List[ImageChunks]
             Add a grid that outlines these chunks.
         """
-        print(f"update_grid with {len(chunks)} nodes")
         # TODO_OCTREE: create in one go without vstack?
         verts = np.zeros((0, 2), dtype=np.float32)
         for image_chunk in chunks:
-            print(f"image_chunk.chunk_data.pos = {image_chunk.chunk_data.pos}")
             chunk_verts = _chunk_outline(image_chunk.chunk_data)
             verts = np.vstack([verts, chunk_verts])
 
@@ -291,7 +290,7 @@ class VispyTiledImageLayer(VispyImageLayer):
         num_seen = len(visible_chunks)
 
         # Set is keyed by id(chunk_data.data) and chunk_data.level_index
-        visible_set = set(visible_chunks)
+        visible_set = set([c.key for c in visible_chunks])
 
         num_start = len(self.image_chunks)
 
@@ -330,16 +329,16 @@ class VispyTiledImageLayer(VispyImageLayer):
         visible_chunks : List[ChunkData]
         """
         for chunk_data in visible_chunks:
-            if chunk_data not in self.image_chunks:
+            if chunk_data.key not in self.image_chunks:
                 # There is no ImageChunk for this ChunkData, so create a
                 # new ImageChunk. It will get an ImageVisual if one is
                 # available from the pool. Otherwise maybe its ImageVisual
                 # will be assigned later.
-                self.image_chunks[chunk_data] = self._create_image_chunk(
+                self.image_chunks[chunk_data.key] = self._create_image_chunk(
                     chunk_data
                 )
             else:
-                image_chunk = self.image_chunks[chunk_data]
+                image_chunk = self.image_chunks[chunk_data.key]
                 if image_chunk.node is None:
                     # The ImageChunk already existed but there was no
                     # ImageVisual available. Attempt to assign one from the
@@ -359,9 +358,9 @@ class VispyTiledImageLayer(VispyImageLayer):
         """
         for image_chunk in list(self.image_chunks.values()):
             chunk_data = image_chunk.chunk_data
-            if chunk_data not in visible_set:
+            if chunk_data.key not in visible_set:
                 self.pool.return_node(image_chunk.node)
-                del self.image_chunks[chunk_data]
+                del self.image_chunks[chunk_data.key]
 
     def _on_camera_move(self, event=None):
         self._update_image_chunks()

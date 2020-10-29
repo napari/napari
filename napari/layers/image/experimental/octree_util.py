@@ -69,5 +69,6 @@ class ChunkData:
         self.pos = pos
         self.scale = scale
 
-    def __hash__(self):
-        return hash((id(self.data), self.level_index))
+    @property
+    def key(self):
+        return (self.pos[0], self.pos[1], self.level_index)

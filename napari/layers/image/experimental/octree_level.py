@@ -50,11 +50,13 @@ class OctreeLevel:
 
         tile_size = self.info.octree_info.tile_size
 
+        scaled_size = tile_size * scale
+
         # Iterate over every tile in the rectangular region.
         data = None
-        y = intersection.row_range.start * tile_size
+        y = intersection.row_range.start * scaled_size
         for row in intersection.row_range:
-            x = intersection.col_range.start * tile_size
+            x = intersection.col_range.start * scaled_size
             for col in intersection.col_range:
 
                 data = self.tiles[row][col]
@@ -62,11 +64,10 @@ class OctreeLevel:
 
                 # Skip tiles with zero area (why are there any?)
                 if 0 not in data.shape:
-                    print(f"pos={pos}")
                     level_index = self.info.level_index
                     chunks.append(ChunkData(level_index, data, pos, scale_vec))
 
-                x += data.shape[1] * scale
-            y += data.shape[0] * scale
+                x += scaled_size
+            y += scaled_size
 
         return chunks
