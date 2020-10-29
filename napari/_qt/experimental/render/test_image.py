@@ -1,4 +1,8 @@
-"""create_text_image: create a PIL image with centered text.
+"""Create test images
+
+This is a throw-away file for creating a test image for octree rendering
+development. If we keep test images in the product long term we'll
+have a nicer way to generate them.
 """
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
@@ -59,15 +63,3 @@ def create_tiled_test_1(text, nrows, ncols, size=(1024, 1024)):
     image = Image.new('RGB', size)
     draw_text_tiled(image, text, nrows, ncols)
     return np.array(image)
-
-
-def test():
-    image = Image.new('RGB', (1024, 1024))
-    draw_text_tiled(image, "1", 10, 10)
-    outfile = "image.png"
-    image.save(outfile)
-    print(f"Wrote: {outfile}")
-
-
-if __name__ == '__main__':
-    test()

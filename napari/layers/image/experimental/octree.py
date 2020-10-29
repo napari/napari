@@ -1,41 +1,15 @@
 """Octree class.
 """
-from typing import List, Tuple
+from typing import List
 
 import numpy as np
 from scipy import ndimage as ndi
 
-from ....types import ArrayLike
 from ....utils.perf import block_timer
+from .octree_level import OctreeLevel
+from .octree_util import OctreeInfo, TileArray
 
-TileArray = List[List[np.ndarray]]
 Levels = List[TileArray]
-
-
-class ChunkData:
-    """One chunk of the full image.
-
-    A chunk is a 2D tile or a 3D sub-volume.
-
-    Parameters
-    ----------
-    data : ArrayLike
-        The data to draw for this chunk.
-    pos : Tuple[float, float]
-        The x, y coordinates of the chunk.
-    size : float
-        The size of the chunk, the chunk is square/cubic.
-    """
-
-    def __init__(
-        self,
-        data: ArrayLike,
-        pos: Tuple[float, float],
-        scale: Tuple[float, float],
-    ):
-        self.data = data
-        self.pos = pos
-        self.scale = scale
 
 
 def _create_tiles(array: np.ndarray, tile_size: int) -> np.ndarray:
@@ -175,116 +149,6 @@ def _create_coarser_level(tiles: TileArray) -> TileArray:
     return level
 
 
-class OctreeInfo:
-    def __init__(self, base_shape, tile_size: int):
-        self.base_shape = base_shape
-        self.tile_size = tile_size
-
-
-class OctreeLevel:
-    """One level of the octree.
-
-    A level contains a 2D or 3D array of tiles.
-    """
-
-    def __init__(self, info: OctreeInfo, level_index: int, tiles: TileArray):
-        self.info = info
-        self.level_index = level_index
-        self.tiles = tiles
-
-        self.scale = 2 ** self.level_index
-        self.num_rows = len(self.tiles)
-        self.num_cols = len(self.tiles[0])
-
-    def print_info(self):
-        """Print information about this level."""
-        nrows = len(self.tiles)
-        ncols = len(self.tiles[0])
-        print(f"level={self.level_index} dim={nrows}x{ncols}")
-
-    def draw_mini_map(self, row_range: range, col_range: range):
-        """Draw mini-map with X's for which tiles we are drawing."""
-
-        def _within(value, value_range):
-            return value >= value_range.start and value < value_range.stop
-
-        for row in range(0, self.num_rows):
-            for col in range(0, self.num_cols):
-                if _within(row, row_range) and _within(col, col_range):
-                    marker = "X"
-                else:
-                    marker = "."
-                print(marker, end='')
-
-            print("")
-
-    def get_chunks(self, data_corners) -> List[ChunkData]:
-        """Return chunks that are within this rectangular region of the data.
-
-        Parameters
-        ----------
-        data_corners
-            Return chunks within this rectangular region.
-        """
-        chunks = []
-
-        # TODO_OCTREE: generalize with data_corner indices we need to use.
-        data_rows = [data_corners[0][1], data_corners[1][1]]
-        data_cols = [data_corners[0][2], data_corners[1][2]]
-
-        row_range = self.row_range(data_rows)
-        col_range = self.column_range(data_cols)
-
-        self.draw_mini_map(row_range, col_range)
-
-        scale = self.scale
-        scale_vec = [scale, scale]
-
-        tile_size = self.info.tile_size
-
-        # Iterate over every tile in the rectangular region.
-        data = None
-        y = row_range.start * tile_size
-        for row in row_range:
-            x = col_range.start * tile_size
-            for col in col_range:
-
-                data = self.tiles[row][col]
-                pos = [x, y]
-
-                if 0 not in data.shape:
-                    chunks.append(ChunkData(data, pos, scale_vec))
-
-                x += data.shape[1] * scale
-            y += data.shape[0] * scale
-
-        return chunks
-
-    def tile_range(self, span, num_tiles):
-        """Return tiles indices needed to draw the span."""
-
-        def _clamp(val, min_val, max_val):
-            return max(min(val, max_val), min_val)
-
-        tile_size = self.info.tile_size
-
-        tiles = [span[0] / tile_size, span[1] / tile_size]
-        new_min = _clamp(tiles[0], 0, num_tiles - 1)
-        new_max = _clamp(tiles[1], 0, num_tiles - 1)
-        clamped = [new_min, new_max + 1]
-
-        span_int = [int(x) for x in clamped]
-        return range(*span_int)
-
-    def row_range(self, span):
-        """Return row indices which span image coordinates [y0..y1]."""
-        return self.tile_range(span, self.num_rows)
-
-    def column_range(self, span):
-        """Return column indices which span image coordinates [x0..x1]."""
-        return self.tile_range(span, self.num_cols)
-
-
 def _one_tile(tiles: TileArray) -> bool:
     return len(tiles) == 1 and len(tiles[0]) == 1
 
@@ -320,11 +184,10 @@ class Octree:
         All the levels of the tree.
     """
 
-    def __init__(self, base_shape: Tuple[int, int], levels: Levels):
-        self.base_shape = base_shape
+    def __init__(self, info: OctreeInfo, levels: Levels):
+        self.info = info
         self.levels = [
-            OctreeLevel(base_shape, i, level)
-            for (i, level) in enumerate(levels)
+            OctreeLevel(info, i, level) for (i, level) in enumerate(levels)
         ]
         self.num_levels = len(self.levels)
 
@@ -350,7 +213,9 @@ class Octree:
 
         # Keep combining tiles until there is one root tile.
         while not _one_tile(levels[-1]):
-            with block_timer("_create_coarser_level", print_time=True):
+            with block_timer(
+                f"Create coarser level {len(levels)}:", print_time=True
+            ):
                 next_level = _create_coarser_level(levels[-1])
             levels.append(next_level)
 

@@ -4,7 +4,7 @@ import numpy as np
 from vispy.scene.visuals import Line
 from vispy.visuals.transforms import STTransform
 
-from ...layers.image.experimental.octree import ChunkData
+from ...layers.image.experimental.octree_util import ChunkData
 from ..image import Image as ImageNode
 from ..vispy_image_layer import VispyImageLayer
 
@@ -13,7 +13,7 @@ GRID_COLOR = (1, 0, 0, 1)
 
 
 def _chunk_outline(chunk: ChunkData) -> np.ndarray:
-    """Return line verts that outline the given chunk.
+    """Return the line verts that outline the given chunk.
 
     Parameters
     ----------
@@ -30,8 +30,9 @@ def _chunk_outline(chunk: ChunkData) -> np.ndarray:
     w *= chunk.scale[1]
     h *= chunk.scale[0]
 
-    # Outline very chunk which means we double-draw all interior lines,
-    # but we can worry about that later if it causes perf or other issues.
+    # We draw lines on all four sides of the chunk. This means are
+    # double-drawing all interior lines in the grid. We can draw less if
+    # performance is an issue.
     return np.array(
         (
             [x, y],
@@ -72,7 +73,7 @@ class TileGrid:
         """Reset the grid to have no lines."""
         self.verts = np.zeros((0, 2), dtype=np.float32)
 
-    def add_chunk_outline(self, chunk: ChunkData) -> None:
+    def add_chunk(self, chunk: ChunkData) -> None:
         """Add the outline of the given chunk to the grid.
 
         Parameters
@@ -81,6 +82,10 @@ class TileGrid:
             Add the outline of this chunk.
         """
         chunk_verts = _chunk_outline(chunk)
+
+        # Clear verts first. Prevents segfault when we modify self.verts.
+        self.line.set_data([])
+
         self.verts = np.vstack([self.verts, chunk_verts])
         self.line.set_data(self.verts)
 
@@ -129,16 +134,16 @@ class VispyTiledImageLayer(VispyImageLayer):
         self.grid.line.parent = self.node
 
     def _create_image_chunk(self, chunk: ChunkData):
-        """Add a new chunk.
+        """Create a new ImageChunk object.
 
         Parameters
         ----------
         chunk : ChunkData
-            The data used to create the new chunk.
+            The data used to create the new image chunk.
         """
         image_chunk = ImageChunk()
 
-        self.grid.add_chunk_outline(chunk)
+        self.grid.add_chunk(chunk)
 
         # Parent VispyImageLayer will process the data then set it.
         self._set_node_data(image_chunk.node, chunk.data)
@@ -156,13 +161,21 @@ class VispyTiledImageLayer(VispyImageLayer):
             # Do nothing if we are not yet loaded.
             return
 
-        # For now, nuke all the old chunks.
+        print(f"VispyTiled: delete {len(self.chunks)} chunks")
+
+        # For now, nuke all the old chunks. Soon we will keep the ones
+        # which are still being drawn.
         for image_chunk in self.chunks.values():
             image_chunk.node.parent = None
         self.chunks = {}
         self.grid.reset()
 
-        for chunk in self.layer.view_chunks:
+        chunks = self.layer.view_chunks
+
+        print(f"VispyTiled: create {len(chunks)} chunks")
+
+        # Create the new chunks.
+        for chunk in chunks:
             chunk_id = id(chunk.data)
             if chunk_id not in self.chunks:
                 self.chunks[chunk_id] = self._create_image_chunk(chunk)
