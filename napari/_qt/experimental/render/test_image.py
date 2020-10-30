@@ -41,7 +41,7 @@ def draw_text_tiled(image, text, nrows=1, ncols=1):
             y = (row / nrows) * image.height - text_height / 2
 
             draw.text((x, y), text, fill=color, font=font)
-    draw.rectangle([0, 0, image.width, image.height], fill=color, width=5)
+    draw.rectangle([0, 0, image.width, image.height], outline=color, width=5)
 
 
 def create_text_array(text, nx=0.5, ny=0.5, size=(1024, 1024)):
