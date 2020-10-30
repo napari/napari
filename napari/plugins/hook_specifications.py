@@ -35,9 +35,10 @@ For more general background on the plugin hook calling mechanism, see the
 # developers, so comprehensive documentation with complete type annotations is
 # imperative!
 
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional, Tuple, Union
 
 from napari_plugin_engine import napari_hook_specification
+from qtpy.QtWidgets import QWidget
 
 from ..types import ReaderFunction, WriterFunction
 
@@ -316,4 +317,16 @@ def napari_write_vectors(path: str, data: Any, meta: dict) -> Optional[str]:
     path : str or None
         If data is successfully written, return the ``path`` that was written.
         Otherwise, if nothing was done, return ``None``.
+    """
+
+
+@napari_hook_specification()
+def napari_provide_dock_widget() -> List[Tuple[QWidget, dict]]:
+    """Provide dock widgets that can be added to the viewer.
+
+    Returns
+    -------
+    dock_widgets : list
+        List of 2-tuples, where each tuple has a widget and dictionary of
+        keyword arguments for the viewer.window.add_dock_widget method.
     """
