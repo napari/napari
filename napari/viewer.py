@@ -219,7 +219,3 @@ class Viewer(ViewerModel):
             # https://github.com/napari/napari/issues/1500
             for layer in self.layers:
                 chunk_loader.on_layer_deleted(layer)
-
-    def __str__(self):
-        """Simple string representation"""
-        return f'napari.Viewer: {self.title}'
