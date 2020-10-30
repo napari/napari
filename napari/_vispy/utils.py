@@ -1,4 +1,3 @@
-from ..components.camera import Camera
 from ..layers import Image, Layer, Points, Shapes, Surface, Tracks, Vectors
 from ..utils import config
 from .vispy_base_layer import VispyBaseLayer
@@ -28,7 +27,7 @@ if config.async_octree:
     layer_to_visual = new_order
 
 
-def create_vispy_visual(layer: Layer, camera: Camera) -> VispyBaseLayer:
+def create_vispy_visual(layer: Layer) -> VispyBaseLayer:
     """Create vispy visual for a layer based on its layer type.
 
     Parameters
@@ -43,12 +42,7 @@ def create_vispy_visual(layer: Layer, camera: Camera) -> VispyBaseLayer:
     """
     for layer_type, visual_class in layer_to_visual.items():
         if isinstance(layer, layer_type):
-            visual = visual_class(layer)
-
-            # Some visuals react to camera movements (e.g. VispyTiledImageLayer).
-            camera.events.center.connect(visual._on_camera_move)
-
-            return visual
+            return visual_class(layer)
 
     raise TypeError(
         f'Could not find VispyLayer for layer of type {type(layer)}'
