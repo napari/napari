@@ -44,7 +44,7 @@ def test_3D_labels():
     assert layer.editable is True
 
     layer._slice_dims(ndisplay=3)
-    assert layer.dims.ndisplay == 3
+    assert layer._dims.ndisplay == 3
     assert layer.editable is False
     assert layer.mode == 'pan_zoom'
 
@@ -555,5 +555,5 @@ def test_world_data_extent():
     shape = (6, 10, 15)
     data = np.random.randint(20, size=(shape))
     layer = Labels(data)
-    extent = np.array(((0,) * 3, shape))
+    extent = np.array(((0,) * 3, np.subtract(shape, 1)))
     check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))

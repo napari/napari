@@ -1,8 +1,10 @@
-from ..layers import Image, Points, Shapes, Surface, Vectors
+from ..layers import Image, Points, Shapes, Surface, Tracks, Vectors
+from ..utils import config
 from .vispy_image_layer import VispyImageLayer
 from .vispy_points_layer import VispyPointsLayer
 from .vispy_shapes_layer import VispyShapesLayer
 from .vispy_surface_layer import VispySurfaceLayer
+from .vispy_tracks_layer import VispyTracksLayer
 from .vispy_vectors_layer import VispyVectorsLayer
 
 layer_to_visual = {
@@ -11,7 +13,17 @@ layer_to_visual = {
     Shapes: VispyShapesLayer,
     Surface: VispySurfaceLayer,
     Vectors: VispyVectorsLayer,
+    Tracks: VispyTracksLayer,
 }
+
+if config.async_loading:
+    from ..layers.image.experimental.octree_image import OctreeImage
+    from .experimental.vispy_tiled_image_layer import VispyTiledImageLayer
+
+    # Put OctreeImage in front so we hit that before plain Image
+    original = layer_to_visual.copy()
+    layer_to_visual = {OctreeImage: VispyTiledImageLayer}
+    layer_to_visual.update(original)
 
 
 def create_vispy_visual(layer):

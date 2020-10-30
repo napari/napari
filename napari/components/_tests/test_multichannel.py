@@ -120,7 +120,14 @@ def test_multichannel(shape, kwargs):
             assert viewer.layers[i].blending == 'additive'
         for key, expectation in kwargs.items():
             # broadcast exceptions
-            if key in {'scale', 'translate', 'contrast_limits', 'metadata'}:
+            if key in {
+                'scale',
+                'translate',
+                'rotate',
+                'shear',
+                'contrast_limits',
+                'metadata',
+            }:
                 expectation = ensure_sequence_of_iterables(expectation)
             elif key == 'colormap' and expectation is not None:
                 if isinstance(expectation, list):
@@ -135,7 +142,10 @@ def test_multichannel(shape, kwargs):
             result = getattr(viewer.layers[i], key)
             if key == 'colormap':  # colormaps are tuples of (name, cmap)
                 result = result.name
-            assert np.all(result == expectation[i])
+            if isinstance(result, np.ndarray):
+                np.testing.assert_almost_equal(result, expectation[i])
+            else:
+                assert result == expectation[i]
 
 
 def test_multichannel_multiscale():
@@ -191,7 +201,7 @@ def test_multichannel_dask_array():
     assert len(viewer.layers) == data.shape[0]
     for i in range(data.shape[0]):
         assert viewer.layers[i].data.shape == data.shape[1:]
-        assert isinstance(viewer.layers[i].data, da.Array)
+        assert isinstance(viewer.layers[i].data, type(data))
 
 
 def test_forgot_multichannel_error_hint():

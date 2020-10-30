@@ -17,7 +17,7 @@ def test_multiscale(make_test_viewer):
 
     # Set canvas size to target amount
     viewer.window.qt_viewer.view.canvas.size = (800, 600)
-    list(viewer.window.qt_viewer.layer_to_visual.values())[0].on_draw(None)
+    viewer.window.qt_viewer.on_draw(None)
 
     # Check that current level is first large enough to fill the canvas with
     # a greater than one pixel depth
@@ -28,17 +28,17 @@ def test_multiscale(make_test_viewer):
     assert np.all(layer.corner_pixels[1] >= np.subtract(shapes[2], 1))
 
     # Test value at top left corner of image
-    layer.position = (0, 0)
+    viewer.cursor.position = (0, 0)
     value = layer.get_value()
     np.testing.assert_allclose(value, (2, data[2][(0, 0)]))
 
     # Test value at bottom right corner of image
-    layer.position = (999, 749)
+    viewer.cursor.position = (3995, 2995)
     value = layer.get_value()
     np.testing.assert_allclose(value, (2, data[2][(999, 749)]))
 
     # Test value outside image
-    layer.position = (1000, 750)
+    viewer.cursor.position = (4000, 3000)
     value = layer.get_value()
     assert value[1] is None
 
@@ -57,7 +57,7 @@ def test_3D_multiscale_image(make_test_viewer):
     assert viewer.layers[0].data_level == 1
 
     # Note that draw command must be explicitly triggered in our tests
-    list(viewer.window.qt_viewer.layer_to_visual.values())[0].on_draw(None)
+    viewer.window.qt_viewer.on_draw(None)
 
 
 @pytest.mark.skipif(
@@ -108,7 +108,7 @@ def test_multiscale_screenshot_zoomed(make_test_viewer):
 
     # Set zoom of camera to show highest resolution tile
     view.view.camera.rect = [1000, 1000, 200, 150]
-    list(view.layer_to_visual.values())[0].on_draw(None)
+    viewer.window.qt_viewer.on_draw(None)
 
     # Check that current level is bottom level of multiscale
     assert viewer.layers[0].data_level == 0
@@ -144,7 +144,7 @@ def test_image_screenshot_zoomed(make_test_viewer):
 
     # Set zoom of camera to show highest resolution tile
     view.view.camera.rect = [1000, 1000, 200, 150]
-    list(view.layer_to_visual.values())[0].on_draw(None)
+    viewer.window.qt_viewer.on_draw(None)
 
     screenshot = viewer.screenshot(canvas_only=True)
     center_coord = np.round(np.array(screenshot.shape[:2]) / 2).astype(np.int)
@@ -158,3 +158,20 @@ def test_image_screenshot_zoomed(make_test_viewer):
     np.testing.assert_allclose(
         screenshot[-screen_offset, -screen_offset], target_center
     )
+
+
+@pytest.mark.skipif(
+    sys.platform.startswith('win') or not os.getenv("CI"),
+    reason='Screenshot tests are not supported on napari windows CI.',
+)
+def test_5D_multiscale(make_test_viewer):
+    """Test 5D multiscale data."""
+    # Show must be true to trigger multiscale draw and corner estimation
+    viewer = make_test_viewer(show=True)
+    shapes = [(1, 2, 5, 20, 20), (1, 2, 5, 10, 10), (1, 2, 5, 5, 5)]
+    np.random.seed(0)
+    data = [np.random.random(s) for s in shapes]
+    layer = viewer.add_image(data, multiscale=True)
+    assert layer.data == data
+    assert layer.multiscale is True
+    assert layer.ndim == len(shapes[0])
