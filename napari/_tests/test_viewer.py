@@ -1,5 +1,4 @@
 import os
-import time
 
 import numpy as np
 import pytest
@@ -116,44 +115,6 @@ def test_screenshot(make_test_viewer):
     # Take screenshot with the viewer included
     screenshot = viewer.screenshot(canvas_only=False)
     assert screenshot.ndim == 3
-
-
-def test_update(make_test_viewer):
-    data = np.random.random((512, 512))
-    viewer = make_test_viewer()
-    layer = viewer.add_image(data)
-
-    def layer_update(*, update_period, num_updates):
-        # number of times to update
-
-        for k in range(num_updates):
-            time.sleep(update_period)
-
-            dat = np.random.random((512, 512))
-            layer.data = dat
-
-            assert layer.data.all() == dat.all()
-            # if you're looking at this as an example,
-            # it would be best to put a yield statement here...
-            # but we're testing how it handles not having a yield statement
-
-    # NOTE: The closure approach used here has the potential to throw an error:
-    # "RuntimeError: Internal C++ object () already deleted."
-    # if an enclosed object (like the layer here) is deleted in the main thread
-    # and then subsequently called in the other thread.
-    # Previously this error would have been invisible (raised only in the other
-    # thread). But because this can make debugging hard, the new
-    # `create_worker` approach reraises thread errors in the main thread by
-    # default.  To make this test pass, we now need to explicitly use
-    # `_ignore_errors=True`, because the `layer.data = dat` line will throw an
-    # error when called after the main thread is closed.
-    with pytest.warns(DeprecationWarning):
-        viewer.update(
-            layer_update,
-            update_period=0.01,
-            num_updates=100,
-            _ignore_errors=True,
-        )
 
 
 def test_changing_theme(make_test_viewer):
