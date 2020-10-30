@@ -26,7 +26,7 @@ def _opengl_context():
             canvas.close()
 
 
-@lru_cache
+@lru_cache()
 def get_max_texture_sizes() -> Tuple[int, int]:
     """Return the maximum texture sizes for 2D and 3D rendering.
 
