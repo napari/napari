@@ -19,15 +19,17 @@ class ViewerCanvas(SceneCanvas):
     """
 
     def __init__(self, *args, **kwargs):
+
+        # Since the base class is frozen we must create this attribute
+        # before called before super().__init__().
+        self.max_texture_sizes = None
+
         super().__init__(*args, **kwargs)
 
-        # Call this now so we query the OpenGL parameters while we know a
-        # Canvas exists. This prevents get_max_texture_sizes() from
-        # creating a temporary Canvas which can cause problems.
-        #
-        # If get_max_texture_sizes() is called a second time it will return
-        # the same values without actually executing the body of the function.
-        get_max_texture_sizes()
+        # Call get_max_texture_sizes() so we query OpenGL right now while
+        # we know a Canvas exists. The results of get_max_texture_sizes()
+        # are cached, so subsequent calls are instant.
+        self.max_texture_sizes = get_max_texture_sizes()
 
     def _process_mouse_event(self, event):
         """Ignore mouse wheel events which have modifiers."""
