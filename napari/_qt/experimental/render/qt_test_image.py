@@ -100,16 +100,20 @@ class QtTestImage(QFrame):
 
     def _create_test_image(self) -> None:
         """Create a new test image."""
-        # This config option will determine which type of class
-        # viewer.add_image() will create below.
+        # Configure whether viewer.add_image() will create regular Images
+        # or OctreeImages.
         config.create_octree_images = self.layout.octree.isChecked()
 
         image_size = self.layout.get_image_size()
+
+        # We have just one type of test image right now, with the little
+        # slice number digits in the image itself.
         images = [
             create_tiled_text_array(x, 16, 16, image_size) for x in range(5)
         ]
         data = np.stack(images, axis=0)
 
+        # Give each layer a unique name.
         unique_name = f"test-image-{QtTestImage.image_index:003}"
         QtTestImage.image_index += 1
 
