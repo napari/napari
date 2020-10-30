@@ -21,6 +21,8 @@ IntCallback = Callable[[int], None]
 
 
 class QtSimpleTable(QTableWidget):
+    """A table of keys and values."""
+
     def __init__(self):
         super().__init__()
         self.verticalHeader().setVisible(False)
