@@ -1,11 +1,11 @@
-"""ViewerCanvas class.
+"""VispyCanvas class.
 """
 from vispy.scene import SceneCanvas
 
 from .utils_gl import get_max_texture_sizes
 
 
-class ViewerCanvas(SceneCanvas):
+class VispyCanvas(SceneCanvas):
     """SceneCanvas for our QtViewer class.
 
     Add two features to SceneCanvas. Ignore mousewheel events with

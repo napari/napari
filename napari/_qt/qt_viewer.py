@@ -31,9 +31,9 @@ from .widgets.qt_viewer_buttons import QtLayerButtons, QtViewerButtons
 from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
 
 from .._vispy import (  # isort:skip
-    ViewerCanvas,
     VispyAxesVisual,
     VispyCamera,
+    VispyCanvas,
     VispyScaleBarVisual,
     VispyWelcomeVisual,
     create_vispy_visual,
@@ -157,7 +157,7 @@ class QtViewer(QSplitter):
             self.toggle_console_visibility
         )
 
-        self.canvas = ViewerCanvas(
+        self.canvas = VispyCanvas(
             keys=None,
             vsync=True,
             parent=self,
