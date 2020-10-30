@@ -21,14 +21,15 @@ class ViewerCanvas(SceneCanvas):
     def __init__(self, *args, **kwargs):
 
         # Since the base class is frozen we must create this attribute
-        # before called before super().__init__().
+        # before calling super().__init__().
         self.max_texture_sizes = None
 
         super().__init__(*args, **kwargs)
 
-        # Call get_max_texture_sizes() so we query OpenGL right now while
-        # we know a Canvas exists. The results of get_max_texture_sizes()
-        # are cached, so subsequent calls are instant.
+        # Call get_max_texture_sizes() here so that we query OpenGL right
+        # now while we know a Canvas exists. Later calls to
+        # get_max_texture_sizes() will return the same results because it's
+        # using an lru_cache.
         self.max_texture_sizes = get_max_texture_sizes()
 
     def _process_mouse_event(self, event):
