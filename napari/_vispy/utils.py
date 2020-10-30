@@ -1,5 +1,6 @@
-from ..layers import Image, Points, Shapes, Surface, Tracks, Vectors
+from ..layers import Image, Layer, Points, Shapes, Surface, Tracks, Vectors
 from ..utils import config
+from .vispy_base_layer import VispyBaseLayer
 from .vispy_image_layer import VispyImageLayer
 from .vispy_points_layer import VispyPointsLayer
 from .vispy_shapes_layer import VispyShapesLayer
@@ -16,17 +17,17 @@ layer_to_visual = {
     Tracks: VispyTracksLayer,
 }
 
-if config.async_loading:
+if config.async_octree:
     from ..layers.image.experimental.octree_image import OctreeImage
     from .experimental.vispy_tiled_image_layer import VispyTiledImageLayer
 
-    # Put OctreeImage in front so we hit that before plain Image
-    original = layer_to_visual.copy()
-    layer_to_visual = {OctreeImage: VispyTiledImageLayer}
-    layer_to_visual.update(original)
+    # Insert OctreeImage in front so it gets picked over plain Image.
+    new_order = {OctreeImage: VispyTiledImageLayer}
+    new_order.update(layer_to_visual)
+    layer_to_visual = new_order
 
 
-def create_vispy_visual(layer):
+def create_vispy_visual(layer: Layer) -> VispyBaseLayer:
     """Create vispy visual for a layer based on its layer type.
 
     Parameters
@@ -39,9 +40,9 @@ def create_vispy_visual(layer):
     visual : vispy.scene.visuals.VisualNode
         Vispy visual node
     """
-    for layer_type, visual in layer_to_visual.items():
+    for layer_type, visual_class in layer_to_visual.items():
         if isinstance(layer, layer_type):
-            return visual(layer)
+            return visual_class(layer)
 
     raise TypeError(
         f'Could not find VispyLayer for layer of type {type(layer)}'

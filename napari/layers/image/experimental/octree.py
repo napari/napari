@@ -189,7 +189,7 @@ class Octree:
         self.levels = [
             OctreeLevel(info, i, level) for (i, level) in enumerate(levels)
         ]
-        self.num_levels = len(self.levels)
+        self.num_levels = len(self.levels)  # move to self.info?
 
     def print_info(self):
         """Print information about our tiles."""

@@ -1,13 +1,15 @@
 """OctreeImage class.
 """
+from typing import List
+
 from ....utils.events import Event
 from ..image import Image
 from ._chunked_slice_data import ChunkedSliceData
 from ._octree_image_slice import OctreeImageSlice
 from .octree_intersection import OctreeIntersection
-from .octree_util import OctreeInfo, OctreeLevelInfo
+from .octree_util import ChunkData, OctreeInfo, OctreeLevelInfo
 
-DEFAULT_TILE_SIZE = 256
+DEFAULT_TILE_SIZE = 64
 
 
 class OctreeImage(Image):
@@ -22,9 +24,18 @@ class OctreeImage(Image):
         self._tile_size = DEFAULT_TILE_SIZE
         self._octree_level = None
         self._data_corners = None
-        self._auto_level = False
+        self._auto_level = True
+        self._track_view = True
         super().__init__(*args, **kwargs)
         self.events.add(auto_level=Event, octree_level=Event, tile_size=Event)
+
+    @property
+    def track_view(self) -> bool:
+        return self._track_view
+
+    @track_view.setter
+    def track_view(self, value) -> None:
+        self._track_view = value
 
     @property
     def tile_size(self) -> int:
@@ -102,14 +113,19 @@ class OctreeImage(Image):
         return self._slice.intersection
 
     @property
-    def view_chunks(self):
+    def visible_chunks(self) -> List[ChunkData]:
         """Chunks in the current slice which in currently in view."""
         # This will be None if we have not been drawn yet.
         if self._data_corners is None:
             return []
 
+        auto_level = self.auto_level and self.track_view
+
         corners_2d = self._corners_2d(self._data_corners)
-        return self._slice.get_view_chunks(corners_2d)
+        chunks = self._slice.get_visible_chunks(corners_2d, auto_level)
+        self._octree_level = self._slice._octree_level
+        self.events.octree_level()
+        return chunks
 
     def _on_data_loaded(self, data: ChunkedSliceData, sync: bool) -> None:
         """The given data a was loaded, use it now."""
@@ -144,7 +160,7 @@ class OctreeImage(Image):
             return None
 
         corners_2d = self._corners_2d(data_corners)
-        return self._slice.get_intersection(corners_2d)
+        return self._slice.get_intersection(corners_2d, self.auto_level)
 
     def _corners_2d(self, data_corners):
         """

@@ -3,12 +3,16 @@
 from typing import Callable, Tuple
 
 import numpy as np
-from qtpy.QtWidgets import QFrame, QPushButton, QVBoxLayout
+from qtpy.QtWidgets import QCheckBox, QFrame, QPushButton, QVBoxLayout
 
+from ....utils import config
 from .qt_labeled_spin_box import QtLabeledSpinBox
 from .test_image import create_tiled_text_array
 
-TILE_SIZE_DEFAULT = 256
+Callback = Callable[[], None]
+IntCallback = Callable[[int], None]
+
+TILE_SIZE_DEFAULT = 64
 TILE_SIZE_RANGE = range(1, 4096, 100)
 
 IMAGE_SIZE_DEFAULT = (1024, 1024)  # (width, height)
@@ -24,12 +28,11 @@ class QtTestImageLayout(QVBoxLayout):
         Called when the create test image button is pressed.
     """
 
-    def __init__(self, on_create: Callable[[], None]):
+    def __init__(self, on_create: Callback):
         super().__init__()
         self.addStretch(1)
 
         # Dimension controls.
-
         self.width = QtLabeledSpinBox(
             "Image Width", IMAGE_SIZE_DEFAULT[0], IMAGE_SIZE_RANGE
         )
@@ -44,7 +47,12 @@ class QtTestImageLayout(QVBoxLayout):
         )
         self.addLayout(self.tile_size)
 
-        # Test image button.
+        # Checkbox so we can choose between OctreeImage and regular Image.
+        self.octree = QCheckBox("Octree Image")
+        self.octree.setChecked(1)
+        self.addWidget(self.octree)
+
+        # The create button.
         button = QPushButton("Create Test Image")
         button.setToolTip("Create a new test image")
         button.clicked.connect(on_create)
@@ -92,12 +100,20 @@ class QtTestImage(QFrame):
 
     def _create_test_image(self) -> None:
         """Create a new test image."""
+        # Configure whether viewer.add_image() will create regular Images
+        # or OctreeImages.
+        config.create_octree_images = self.layout.octree.isChecked()
+
         image_size = self.layout.get_image_size()
+
+        # We have just one type of test image right now, with the little
+        # slice number digits in the image itself.
         images = [
             create_tiled_text_array(x, 16, 16, image_size) for x in range(5)
         ]
         data = np.stack(images, axis=0)
 
+        # Give each layer a unique name.
         unique_name = f"test-image-{QtTestImage.image_index:003}"
         QtTestImage.image_index += 1
 

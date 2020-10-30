@@ -73,24 +73,42 @@ class OctreeImageSlice(ImageSlice):
             self._octree_level is None
             or self._octree_level >= self._octree.num_levels
         ):
-            self._octree_level = self._octree.num_levels - 1
+            self._octree_level = 0  # self._octree.num_levels - 1
 
         # self._octree.print_tiles()
 
-    def get_view_chunks(self, corners_2d) -> List[ChunkData]:
+    def get_visible_chunks(self, corners_2d, auto_level) -> List[ChunkData]:
         """Return the chunks currently in view."""
 
-        # TODO_OCTREE: soon we will compute which level to draw.
-        level = self._octree.levels[self._octree_level]
-
+        level_index = self._get_octree_level(corners_2d, auto_level)
+        self._octree_level = level_index
+        level = self._octree.levels[level_index]
         return level.get_chunks(corners_2d)
 
-    def get_intersection(self, corners_2d):
-        """Return the intersection with the octree.."""
+    def get_intersection(self, corners_2d, auto_level: bool):
+        """Return the intersection with the octree."""
 
-        # TODO_OCTREE: soon we will compute which level to draw.
-        level = self._octree.levels[self._octree_level]
+        level_index = self._get_octree_level(corners_2d, auto_level)
+        level = self._octree.levels[level_index]
         return level.get_intersection(corners_2d)
+
+    def _get_octree_level(self, corners_2d, auto_level):
+        if auto_level:
+            width = corners_2d[1][1] - corners_2d[0][1]
+            tile_size = self._octree.info.tile_size
+            num_tiles = width / tile_size
+
+            # Compute from window width?
+            MAX_TILES = 5
+
+            # Slow way to start, redo this O(1).
+            for i, level in enumerate(self._octree.levels):
+                if (num_tiles / level.info.scale) < MAX_TILES:
+                    return i
+
+            return self._octree.num_levels - 1
+        else:
+            return self._octree_level
 
     @property
     def octree_info(self) -> OctreeInfo:

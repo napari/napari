@@ -49,3 +49,11 @@ def _set(env_var: str) -> bool:
 #
 async_octree = _set("NAPARI_OCTREE")
 async_loading = _set("NAPARI_ASYNC") or async_octree
+
+# The async_octree variable above determines whether the experimental
+# octree code is imported and available at all.
+#
+# This create_octree_images setting determins whether viewer.add_image()
+# creates OctreeImage or Image. The debug rendering UI toggles this
+# do we can make both types of images for comparison/debugging.
+create_octree_images = async_octree

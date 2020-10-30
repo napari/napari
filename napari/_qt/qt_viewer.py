@@ -7,7 +7,6 @@ import numpy as np
 from qtpy.QtCore import QCoreApplication, QSize, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
-from vispy.scene import SceneCanvas
 from vispy.visuals.transforms import ChainTransform
 
 from ..resources import get_stylesheet
@@ -34,19 +33,11 @@ from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
 from .._vispy import (  # isort:skip
     VispyAxesVisual,
     VispyCamera,
+    VispyCanvas,
     VispyScaleBarVisual,
     VispyWelcomeVisual,
     create_vispy_visual,
 )
-
-
-class KeyModifierFilterSceneCanvas(SceneCanvas):
-    """SceneCanvas overriding VisPy when mouse wheel events have modifiers."""
-
-    def _process_mouse_event(self, event):
-        if event.type == 'mouse_wheel' and len(event.modifiers) > 0:
-            return
-        super()._process_mouse_event(event)
 
 
 class QtViewer(QSplitter):
@@ -95,6 +86,7 @@ class QtViewer(QSplitter):
     raw_stylesheet = get_stylesheet()
 
     def __init__(self, viewer, welcome=True):
+
         # Avoid circular import.
         from .layer_controls import QtLayerControlsContainer
 
@@ -165,7 +157,7 @@ class QtViewer(QSplitter):
             self.toggle_console_visibility
         )
 
-        self.canvas = KeyModifierFilterSceneCanvas(
+        self.canvas = VispyCanvas(
             keys=None,
             vsync=True,
             parent=self,
@@ -321,6 +313,8 @@ class QtViewer(QSplitter):
         layers = event.source
         layer = event.item
         vispy_layer = create_vispy_visual(layer)
+        self.viewer.camera.events.center.connect(vispy_layer._on_camera_move)
+
         vispy_layer.node.parent = self.view.scene
         vispy_layer.order = len(layers) - 1
         self.layer_to_visual[layer] = vispy_layer
