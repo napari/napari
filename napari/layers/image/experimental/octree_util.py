@@ -56,10 +56,19 @@ class ChunkData:
 
     def __init__(
         self,
+        level_index: int,
         data: ArrayLike,
         pos: Tuple[float, float],
         scale: Tuple[float, float],
     ):
+        # We need level_index because id(data) is sometimes duplicated in
+        # adjacent layers, somehow. But it makes sense to include it
+        # anyway, it's an important aspect of the chunk.
+        self.level_index = level_index
         self.data = data
         self.pos = pos
         self.scale = scale
+
+    @property
+    def key(self):
+        return (self.pos[0], self.pos[1], self.level_index)

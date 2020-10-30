@@ -93,25 +93,31 @@ class MiniMap(QLabel):
         data = np.zeros(bitmap_shape, dtype=np.uint8)
 
         # Tile size in bitmap coordinates.
-        tile_size = math.ceil(map_shape[1] / tile_shape[1])
+        tile_size: float = map_shape[1] / tile_shape[1]
 
         # Leave a bit of space between the tiles.
         edge = self.HALF_BORDER
 
         # TODO_OCTREE: Can we remove these for loops? This is looping
         # over *tiles* not pixels. But still will add up.
-        for row in range(0, tile_shape[0]):
-            for col in range(0, tile_shape[1]):
+        for row in range(0, tile_shape[0] + 1):
+            for col in range(0, tile_shape[1] + 1):
 
                 # Is this tile in the view?
                 seen = intersection.is_visible(row, col)
 
                 # Coordinate for this one tile.
-                y0 = row * tile_size + edge
-                y1 = y0 + tile_size - edge
+                y0 = int(row * tile_size)
+                y1 = int(y0 + tile_size)
 
-                x0 = col * tile_size + edge
-                x1 = x0 + tile_size - edge
+                x0 = int(col * tile_size)
+                x1 = int(x0 + tile_size)
+
+                # Create a small border between tiles.
+                y0 += edge
+                y1 -= edge
+                x0 += edge
+                x1 -= edge
 
                 # Draw one tile.
                 data[y0:y1, x0:x1, :] = COLOR_SEEN if seen else COLOR_UNSEEN
