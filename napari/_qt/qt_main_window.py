@@ -20,7 +20,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ..plugins.dock_widgets import get_dock_widgets_from_plugin
+from ..plugins.experimental.dock_widgets import get_dock_widgets_from_plugin
 from ..resources import get_stylesheet
 from ..utils import perf
 from ..utils.io import imsave
