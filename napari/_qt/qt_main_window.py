@@ -4,6 +4,7 @@ wrap.
 """
 import os.path
 import time
+import warnings
 
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QIcon, QKeySequence
@@ -101,24 +102,37 @@ class Window:
 
         self._update_palette()
 
-        self._add_viewer_dock_widget(self.qt_viewer.dockConsole)
-        self._add_viewer_dock_widget(self.qt_viewer.dockLayerControls)
-        self._add_viewer_dock_widget(self.qt_viewer.dockLayerList)
+        self._add_viewer_dock_widget(
+            self.qt_viewer.dockConsole, self.window_menu
+        )
+        self._add_viewer_dock_widget(
+            self.qt_viewer.dockLayerControls, self.window_menu
+        )
+        self._add_viewer_dock_widget(
+            self.qt_viewer.dockLayerList, self.window_menu
+        )
 
         self.qt_viewer.viewer.events.status.connect(self._status_changed)
         self.qt_viewer.viewer.events.help.connect(self._help_changed)
         self.qt_viewer.viewer.events.title.connect(self._title_changed)
         self.qt_viewer.viewer.events.palette.connect(self._update_palette)
 
+        # Dictionary holding dock widgets from plugins
+        self._plugin_dock_widgets = {}
+
         if perf.USE_PERFMON:
             # Add DebugMenu and dockPerformance if using perfmon.
             self._debug_menu = DebugMenu(self)
-            self._add_viewer_dock_widget(self.qt_viewer.dockPerformance)
+            self._add_viewer_dock_widget(
+                self.qt_viewer.dockPerformance, self.window_menu
+            )
         else:
             self._debug_menu = None
 
         if self.qt_viewer.dockRender is not None:
-            self._add_viewer_dock_widget(self.qt_viewer.dockRender)
+            self._add_viewer_dock_widget(
+                self.qt_viewer.dockRender, self.window_menu
+            )
 
         if show:
             self.show()
@@ -367,6 +381,11 @@ class Window:
         report_plugin_action.triggered.connect(self._show_plugin_err_reporter)
         self.plugins_menu.addAction(report_plugin_action)
 
+        self._plugin_dock_widget_menu = QMenu(
+            'Dock Widgets', parent=self._qt_window
+        )
+        self.plugins_menu.addMenu(self._plugin_dock_widget_menu)
+
     def _show_plugin_list(self, plugin_manager=None):
         """Show dialog with a table of installed plugins and metadata."""
         QtPluginTable(self._qt_window).exec_()
@@ -476,10 +495,12 @@ class Window:
             allowed_areas=allowed_areas,
             shortcut=shortcut,
         )
-        self._add_viewer_dock_widget(dock_widget)
+        self._add_viewer_dock_widget(dock_widget, self.window_menu)
         return dock_widget
 
-    def _add_viewer_dock_widget(self, dock_widget: QtViewerDockWidget):
+    def _add_viewer_dock_widget(
+        self, dock_widget: QtViewerDockWidget, menu: QMenu
+    ):
         """Add a QtViewerDockWidget to the main window
 
         Parameters
@@ -494,7 +515,7 @@ class Window:
         action.setText(dock_widget.name)
         if dock_widget.shortcut is not None:
             action.setShortcut(dock_widget.shortcut)
-        self.window_menu.addAction(action)
+        menu.addAction(action)
 
     def remove_dock_widget(self, widget):
         """Removes specified dock widget.
@@ -507,40 +528,51 @@ class Window:
         if widget == 'all':
             for dw in self._qt_window.findChildren(QDockWidget):
                 self._qt_window.removeDockWidget(dw)
+                self.window_menu.removeAction(dw.toggleViewAction())
         else:
             self._qt_window.removeDockWidget(widget)
+            self.window_menu.removeAction(widget.toggleViewAction())
 
-    def _add_plugin_dock_widget(
-        self, plugin,
-    ):
-        """Convenience method to add a QDockWidget to the main window
+    def add_plugin_dock_widgets(self, plugin):
+        """Add dock widgets provided by a plugin if not already added.
 
         Parameters
         ----------
-        widget : QWidget
-            `widget` will be added as QDockWidget's main widget.
-        name : str, optional
-            Name of dock widget to appear in window menu.
-        area : str
-            Side of the main window to which the new dock widget will be added.
-            Must be in {'left', 'right', 'top', 'bottom'}
-        allowed_areas : list[str], optional
-            Areas, relative to main window, that the widget is allowed dock.
-            Each item in list must be in {'left', 'right', 'top', 'bottom'}
-            By default, all areas are allowed.
-        shortcut : str, optional
-            Keyboard shortcut to appear in dropdown menu.
-
-        Returns
-        -------
-        dock_widget : QtViewerDockWidget
-            `dock_widget` that can pass viewer events.
+        plugin : str
+            Name of plugin
         """
-        dock_widgets = get_dock_widgets_from_plugin(plugin)
-        for dock_widget_tuple in dock_widgets:
+        if plugin in self._plugin_dock_widgets.keys():
+            warnings.warn(
+                f'Plugin {plugin} dock widgets have already been added'
+            )
+            return
+
+        widget_list = get_dock_widgets_from_plugin(plugin)
+
+        dock_widgets = []
+        for dock_widget_tuple in widget_list:
             widget = dock_widget_tuple[0]
             kwargs = dock_widget_tuple[1]
-            self.add_dock_widget(widget, **kwargs)
+            kwargs['name'] = plugin
+            dock_widget = QtViewerDockWidget(self.qt_viewer, widget, **kwargs)
+            self._add_viewer_dock_widget(
+                dock_widget, self._plugin_dock_widget_menu
+            )
+            dock_widgets.append(dock_widget)
+
+        self._plugin_dock_widgets[plugin] = dock_widgets
+
+    def remove_plugin_dock_widgets(self, plugin):
+        """Remove dock widgets provided by a plugin.
+        """
+        if plugin not in self._plugin_dock_widgets.keys():
+            warnings.warn(f'Plugin {plugin} dock widgets not found')
+            return
+
+        dock_widgets = self._plugin_dock_widgets[plugin]
+        for dock_widget in dock_widgets:
+            self.remove_dock_widget(dock_widget)
+        del self._plugin_dock_widgets[plugin]
 
     def resize(self, width, height):
         """Resize the window.
