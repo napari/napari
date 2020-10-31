@@ -320,7 +320,6 @@ class QtPluginSorter(QWidget):
         layout.addWidget(self.hook_combo_box)
         layout.addLayout(doc_lay)
         layout.addWidget(self.hook_list)
-        layout.setContentsMargins(2, 0, 0, 0)
 
         if initial_hook is not None:
             self.set_hookname(initial_hook)

@@ -363,6 +363,7 @@ class QtPluginDialog(QDialog):
         self.v_splitter.setOrientation(Qt.Vertical)
         self.v_splitter.setMinimumWidth(500)
         self.plugin_sorter = QtPluginSorter(parent=self.h_splitter)
+        self.plugin_sorter.layout().setContentsMargins(2, 0, 0, 0)
         self.plugin_sorter.hide()
 
         installed = QWidget(self.v_splitter)
