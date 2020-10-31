@@ -204,6 +204,28 @@ class Viewer(ViewerModel):
             shortcut=shortcut,
         )
 
+    def remove_dock_widget(self, widget):
+        """Removes specified dock widget.
+
+        Parameters
+        ----------
+        widget : QWidget | str
+            If widget == 'all', all docked widgets will be removed.
+        """
+        self._window.remove_dock_widget(widget)
+
+    def resize(self, width, height):
+        """Resize the window.
+
+        Parameters
+        ----------
+        width : int
+            Width in logical pixels.
+        height : int
+            Height in logical pixels.
+        """
+        self._window.resize(width, height)
+
     def show(self):
         """Resize, show, and raise the viewer window."""
         self._window.show()
