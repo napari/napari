@@ -1,6 +1,7 @@
 import pytest
 
 from napari.components import Dims
+from napari.components.dims_constants import DimsMode
 
 
 def test_ndim():
@@ -202,3 +203,11 @@ def test_mode():
     """Test for presence of mode property"""
     dims = Dims()
     assert hasattr(dims, 'mode')
+
+def test_default_mode():
+    """Test for mode defaulting to Point and length of list changes on ndim change"""
+    dims = Dims(ndim=2)
+    assert dims.mode == [DimsMode.POINT for _ in range(dims.ndim)]
+
+    dims.ndim += 1
+    assert dims.mode == [DimsMode.POINT for _ in range(dims.ndim)]
