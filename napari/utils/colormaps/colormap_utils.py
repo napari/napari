@@ -5,6 +5,7 @@ import numpy as np
 from vispy.color import BaseColormap as VispyColormap
 from vispy.color import get_colormap, get_colormaps
 
+from .bop_colors import bopd
 from .colormap import Colormap
 from .vendored import cm, colorconv
 
@@ -38,6 +39,9 @@ SIMPLE_COLORMAPS = {
     name: Colormap(name=name, colors=[[0.0, 0.0, 0.0], color])
     for name, color in zip(primary_color_names, primary_colors)
 }
+
+# dictionay for bop colormap objects
+BOP_COLORMAPS = {k: Colormap(v, name=k) for k, v in bopd.items()}
 
 
 def _all_rgb():
@@ -338,6 +342,7 @@ def vispy_or_mpl_colormap(name):
 # A dictionary mapping names to VisPy colormap objects
 ALL_COLORMAPS = {k: vispy_or_mpl_colormap(k) for k in matplotlib_colormaps}
 ALL_COLORMAPS.update(SIMPLE_COLORMAPS)
+ALL_COLORMAPS.update(BOP_COLORMAPS)
 
 # ... sorted alphabetically by name
 AVAILABLE_COLORMAPS = {k: v for k, v in sorted(ALL_COLORMAPS.items())}

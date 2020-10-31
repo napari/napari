@@ -3,6 +3,7 @@ from unittest import mock
 
 import numpy as np
 import pytest
+from qtpy.QtWidgets import QMessageBox
 
 from napari._tests.utils import (
     add_layer_by_type,
@@ -55,7 +56,7 @@ def test_qt_viewer_toggle_console(make_test_viewer):
 
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
 def test_add_layer(make_test_viewer, layer_class, data, ndim):
-    viewer = make_test_viewer(ndisplay=ndim)
+    viewer = make_test_viewer(ndisplay=int(np.clip(ndim, 2, 3)))
     view = viewer.window.qt_viewer
 
     add_layer_by_type(viewer, layer_class, data)
@@ -221,6 +222,7 @@ def test_screenshot(make_test_viewer):
     assert screenshot.ndim == 3
 
 
+@pytest.mark.skip("new approach")
 def test_screenshot_dialog(make_test_viewer, tmpdir):
     """Test save screenshot functionality."""
     viewer = make_test_viewer()
@@ -249,8 +251,11 @@ def test_screenshot_dialog(make_test_viewer, tmpdir):
     # Save screenshot
     input_filepath = os.path.join(tmpdir, 'test-save-screenshot')
     mock_return = (input_filepath, '')
-    with mock.patch('napari._qt.qt_viewer.QFileDialog') as mocker:
+    with mock.patch('napari._qt.qt_viewer.QFileDialog') as mocker, mock.patch(
+        'napari._qt.qt_viewer.QMessageBox'
+    ) as mocker2:
         mocker.getSaveFileName.return_value = mock_return
+        mocker2.warning.return_value = QMessageBox.Yes
         viewer.window.qt_viewer._screenshot_dialog()
     # Assert behaviour is correct
     expected_filepath = input_filepath + '.png'  # add default file extension

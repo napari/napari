@@ -25,6 +25,6 @@ def entrypoint_plugin(tmp_path):
         "Version: 1.2.3\n"
         "Author-Email: example@example.com\n"
         "Home-Page: https://www.example.com\n"
-        "Requires-Python: >=3.6\n"
+        "Requires-Python: >=3.7\n"
     )
     return tmp_path

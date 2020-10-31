@@ -1,15 +1,33 @@
 """ImageSlice class.
 """
 import logging
-from typing import Callable, Optional
+from typing import Callable
 
 import numpy as np
 
-from ...components.chunk import ChunkKey, ChunkRequest, chunk_loader
 from ...types import ArrayLike
+from ...utils import config
+from ._image_loader import ImageLoader
+from ._image_slice_data import ImageSliceData
 from ._image_view import ImageView
 
 LOGGER = logging.getLogger("napari.async")
+
+
+def _create_loader_class() -> ImageLoader:
+    """Return correct ImageLoader for sync or async.
+
+    Return
+    ------
+    ImageLoader
+        ImageLoader for sync or ChunkImageLoader for async.
+    """
+    if config.async_loading:
+        from .experimental._chunked_image_loader import ChunkedImageLoader
+
+        return ChunkedImageLoader()
+    else:
+        return ImageLoader()
 
 
 class ImageSlice:
@@ -32,8 +50,6 @@ class ImageSlice:
         The source image used to compute the smaller thumbnail image.
     rgb : bool
         Is the image in RGB or RGBA format.
-    current_key : Optional[ChunkKey]
-        The ChunkKey we are currently showing or which is loading.
     loaded : bool
         Has the data for this slice been loaded yet.
     """
@@ -48,16 +64,14 @@ class ImageSlice:
         self.image: ImageView = ImageView(image, image_converter)
         self.thumbnail: ImageView = ImageView(image, image_converter)
         self.rgb = rgb
-
-        # We're showing nothing to start.
-        self.current_key: Optional[ChunkKey] = None
+        self.loader = _create_loader_class()
 
         # With async there can be a gap between when the ImageSlice is
         # created and the data is actually loaded. However initialize
         # as True in case we aren't even doing async loading.
         self.loaded = True
 
-    def set_raw_images(
+    def _set_raw_images(
         self, image: ArrayLike, thumbnail_source: ArrayLike
     ) -> None:
         """Set the image and its thumbnail.
@@ -71,60 +85,50 @@ class ImageSlice:
         thumbnail : ArrayLike
             Derive the thumbnail from this image.
         """
+        # Single scale images don't have a separate thumbnail so we just
+        # use the image itself.
+        if thumbnail_source is None:
+            thumbnail_source = image
+
         if self.rgb and image.dtype.kind == 'f':
             image = np.clip(image, 0, 1)
             thumbnail_source = np.clip(thumbnail_source, 0, 1)
         self.image.raw = image
         self.thumbnail.raw = thumbnail_source
-        self.loaded = True
 
-    def load_chunk(self, request: ChunkRequest) -> Optional[ChunkRequest]:
-        """Load the requested chunk asynchronously.
-
-        Parameters
-        ----------
-        request : ChunkRequest
-            Load this chunk sync or async.
-        """
-        LOGGER.debug("ImageSlice.load_chunk: %s", request.key)
-
-        if self.current_key is not None and self.current_key == request.key:
-            # We are already showing this slice, or its being loaded
-            # asynchronously.
-            return None
-
-        # Now "showing" this slice, even if it hasn't loaded yet.
-        self.current_key = request.key
-        self.loaded = False
-
-        # This will return a satisfied request if the load was synchronous.
-        # If it returns None that means a request was queued and it will be
-        # loaded in a worker thread or process.
-        return chunk_loader.load_chunk(request)
-
-    def on_chunk_loaded(self, request: ChunkRequest) -> bool:
-        """Chunk was loaded, show this new data.
+    def load(self, data: ImageSliceData) -> bool:
+        """Load this data into the slice.
 
         Parameters
         ----------
-        request : ChunkRequest
-            The chunk request that was loaded in a worker thread or process.
+        data : ImageSliceData
+            The data to load into this slice.
 
         Return
         ------
         bool
-            False if the chunk was for the wrong slice and was not used.
+            Return True if load was synchronous.
         """
-        # Is this the chunk we last requested?
-        if not self.current_key == request.key:
-            # Probably we are scrolling through slices and we are no longer
-            # showing this slice, so drop it. It should have been added
-            # to the cache so the load was not totally wasted.
-            LOGGER.debug("ImageSlice.chunk_loaded: reject %s", request.key)
-            return False
+        self.loaded = False  # False until self._on_loaded is calls
+        return self.loader.load(data)
 
-        LOGGER.debug("ImageSlice.chunk_loaded: accept %s", request.key)
+    def on_loaded(self, data: ImageSliceData) -> bool:
+        """Data was loaded, show the new data.
+
+        Parameters
+        ----------
+        data : ImageSliceData
+            The newly loaded data we want to show.
+
+        Return
+        ------
+        bool
+            True if the data was used, False if was for the wrong slice.
+        """
+        if not self.loader.match(data):
+            return False  # data was not used.
 
         # Display the newly loaded data.
-        self.set_raw_images(request.image, request.thumbnail_source)
-        return True
+        self._set_raw_images(data.image, data.thumbnail_source)
+        self.loaded = True
+        return True  # data was used.

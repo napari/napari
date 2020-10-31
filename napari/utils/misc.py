@@ -1,5 +1,6 @@
 """Miscellaneous utility functions.
 """
+import builtins
 import collections.abc
 import inspect
 import itertools
@@ -188,7 +189,7 @@ class StringEnumMeta(EnumMeta):
             else:
                 raise ValueError(
                     f'{cls} may only be called with a `str`'
-                    f' or an instance of {cls}'
+                    f' or an instance of {cls}. Got {builtins.type(value)}'
                 )
 
         # otherwise create new Enum class

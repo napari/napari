@@ -7,7 +7,7 @@ import os
 import re
 import shutil
 import sys
-from subprocess import check_call
+from subprocess import SubprocessError, check_call
 from typing import Dict, List, Tuple
 
 from ..utils.theme import palettes as _palettes
@@ -166,7 +166,7 @@ def _find_rcc_or_raise() -> str:
     for bin_name in ('pyrcc5', 'pyside2-rcc'):
         rcc_binary = shutil.which(bin_name, path=path)
         if rcc_binary:
-            return rcc_binary
+            yield rcc_binary
     raise FileNotFoundError(
         "Unable to find an executable to build Qt resources (icons).\n"
         "Tried: 'pyrcc5.bat', 'pyrcc5', 'pyside2-rcc'.\n"
@@ -209,8 +209,19 @@ def build_pyqt_resources(out_path: str, overwrite: bool = False) -> str:
     )
 
     # then convert it to a python file
-    check_call([_find_rcc_or_raise(), '-o', out_path, qrc_path])
-
+    # When user use pyenv to manage python version it create shortcut
+    # to inform in which environment command is available. For example:
+    # > pyenv: pyrcc5: command not found
+    #
+    #   The `pyrcc5' command exists in these Python versions:
+    #     3.7.4/envs/napari-pyqt5
+    #     napari-pyqt5
+    for name in _find_rcc_or_raise():
+        try:
+            check_call([name, '-o', out_path, qrc_path])
+            break
+        except SubprocessError:
+            pass
     # make sure we import from qtpy
     with open(out_path, "rt") as fin:
         data = fin.read()
