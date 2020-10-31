@@ -197,3 +197,8 @@ def test_roll_skip_dummy_axis_3():
     assert dims.order == [2, 1, 0, 3]
     dims._roll()
     assert dims.order == [0, 1, 2, 3]
+
+def test_mode():
+    """Test for presence of mode property"""
+    dims = Dims()
+    assert hasattr(dims, 'mode')

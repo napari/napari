@@ -144,8 +144,6 @@ class Dims:
         ]
         return interval
 
-
-
     @property
     def axis_labels(self):
         """List of labels for each axis."""
