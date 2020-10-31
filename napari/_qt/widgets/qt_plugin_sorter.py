@@ -272,6 +272,10 @@ class QtPluginSorter(QWidget):
 
         # populate comboBox with all of the hooks known by the plugin manager
         for name, hook_caller in plugin_manager.hooks.items():
+            # only show hooks with specifications
+            if not hook_caller.spec:
+                continue
+
             if firstresult_only:
                 # if the firstresult_only option is set
                 # we only want to include hook_specifications that declare the
