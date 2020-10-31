@@ -113,7 +113,7 @@ class Viewer(ViewerModel):
     def window(self):
         warnings.warn(
             (
-                "The viewer.window parameter is deprecated and will be removed in version 0.4.2."
+                "The viewer.window parameter is deprecated and will be removed in version 0.5.0."
                 " Instead you should use the viewer.add_dock_widget method to extend the GUI."
                 " Directly manipulation of the window is no longer supported."
             ),
