@@ -21,6 +21,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from ..plugins import plugin_manager as napari_plugin_manager
 from ..plugins.experimental.dock_widgets import get_dock_widgets_from_plugin
 from ..resources import get_stylesheet
 from ..utils import perf
@@ -102,15 +103,9 @@ class Window:
 
         self._update_palette()
 
-        self._add_viewer_dock_widget(
-            self.qt_viewer.dockConsole, self.window_menu
-        )
-        self._add_viewer_dock_widget(
-            self.qt_viewer.dockLayerControls, self.window_menu
-        )
-        self._add_viewer_dock_widget(
-            self.qt_viewer.dockLayerList, self.window_menu
-        )
+        self._add_viewer_dock_widget(self.qt_viewer.dockConsole)
+        self._add_viewer_dock_widget(self.qt_viewer.dockLayerControls)
+        self._add_viewer_dock_widget(self.qt_viewer.dockLayerList)
 
         self.qt_viewer.viewer.events.status.connect(self._status_changed)
         self.qt_viewer.viewer.events.help.connect(self._help_changed)
@@ -123,16 +118,12 @@ class Window:
         if perf.USE_PERFMON:
             # Add DebugMenu and dockPerformance if using perfmon.
             self._debug_menu = DebugMenu(self)
-            self._add_viewer_dock_widget(
-                self.qt_viewer.dockPerformance, self.window_menu
-            )
+            self._add_viewer_dock_widget(self.qt_viewer.dockPerformance)
         else:
             self._debug_menu = None
 
         if self.qt_viewer.dockRender is not None:
-            self._add_viewer_dock_widget(
-                self.qt_viewer.dockRender, self.window_menu
-            )
+            self._add_viewer_dock_widget(self.qt_viewer.dockRender)
 
         if show:
             self.show()
@@ -384,7 +375,26 @@ class Window:
         self._plugin_dock_widget_menu = QMenu(
             'Dock Widgets', parent=self._qt_window
         )
+        hook_caller = (
+            napari_plugin_manager.hook.napari_experimental_provide_dock_widget
+        )
+        for imp in hook_caller.get_hookimpls():
+            name = imp.plugin_name
+            action = QAction(
+                name, parent=self._qt_window, checkable=True, checked=False
+            )
+            action.triggered.connect(
+                lambda s: self._toggle_plugin_dock_widget(name, s)
+            )
+            self._plugin_dock_widget_menu.addAction(action)
         self.plugins_menu.addMenu(self._plugin_dock_widget_menu)
+
+    def _toggle_plugin_dock_widget(self, plugin, state):
+        """Toggle adding or removing plugin dock widgets."""
+        if state:
+            self.add_plugin_dock_widgets(plugin)
+        else:
+            self.remove_plugin_dock_widgets(plugin)
 
     def _show_plugin_list(self, plugin_manager=None):
         """Show dialog with a table of installed plugins and metadata."""
@@ -495,12 +505,10 @@ class Window:
             allowed_areas=allowed_areas,
             shortcut=shortcut,
         )
-        self._add_viewer_dock_widget(dock_widget, self.window_menu)
+        self._add_viewer_dock_widget(dock_widget)
         return dock_widget
 
-    def _add_viewer_dock_widget(
-        self, dock_widget: QtViewerDockWidget, menu: QMenu
-    ):
+    def _add_viewer_dock_widget(self, dock_widget: QtViewerDockWidget):
         """Add a QtViewerDockWidget to the main window
 
         Parameters
@@ -515,7 +523,7 @@ class Window:
         action.setText(dock_widget.name)
         if dock_widget.shortcut is not None:
             action.setShortcut(dock_widget.shortcut)
-        menu.addAction(action)
+        self.window_menu.addAction(action)
 
     def remove_dock_widget(self, widget):
         """Removes specified dock widget.
@@ -556,10 +564,7 @@ class Window:
             widget = dock_widget_tuple[0]
             kwargs = dock_widget_tuple[1]
             kwargs['name'] = plugin
-            dock_widget = QtViewerDockWidget(self.qt_viewer, widget, **kwargs)
-            self._add_viewer_dock_widget(
-                dock_widget, self._plugin_dock_widget_menu
-            )
+            dock_widget = self.add_dock_widget(widget, **kwargs)
             dock_widgets.append(dock_widget)
 
         self._plugin_dock_widgets[plugin] = dock_widgets
