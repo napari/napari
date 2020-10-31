@@ -1,5 +1,6 @@
 import os
 import sys
+from pathlib import Path
 from typing import List
 
 from napari_plugin_engine.dist import standard_metadata
@@ -23,6 +24,8 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+import napari.resources
+
 from ...plugins.pypi import (
     ProjectInfo,
     iter_napari_plugin_info,
@@ -36,10 +39,6 @@ from ..widgets.qt_plugin_sorter import QtPluginSorter
 from .qt_plugin_report import QtPluginErrReporter
 
 # TODO: add error icon and handle pip install errors
-# TODO: move loader gif
-LOADER = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), '..', 'resources', "loading.gif")
-)
 
 
 # TODO: add queue to handle clicks when already processing
@@ -381,7 +380,8 @@ class QtPluginDialog(QDialog):
 
         buttonBox = QHBoxLayout()
         self.working_indicator = QLabel("loading ...", self)
-        mov = QMovie(LOADER)
+        load_gif = str(Path(napari.resources.__file__).parent / "loading.gif")
+        mov = QMovie(load_gif)
         mov.setScaledSize(QSize(18, 18))
         self.working_indicator.setMovie(mov)
         mov.start()
