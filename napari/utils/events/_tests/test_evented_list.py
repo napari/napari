@@ -3,13 +3,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from napari.utils.events import (
-    EmitterGroup,
-    EventedList,
-    NestableEventedList,
-    TypedEventedList,
-    TypedNestableEventedList,
-)
+from napari.utils.events import EmitterGroup, EventedList, NestableEventedList
 
 
 @pytest.fixture
@@ -17,22 +11,7 @@ def regular_list():
     return list(range(5))
 
 
-def flatten(_lst):
-    return (
-        flatten(_lst[0]) + (flatten(_lst[1:]) if len(_lst) > 1 else [])
-        if isinstance(_lst, MutableSequence)
-        else [_lst]
-    )
-
-
-@pytest.fixture(
-    params=[
-        EventedList,
-        NestableEventedList,
-        TypedEventedList,
-        TypedNestableEventedList,
-    ]
-)
+@pytest.fixture(params=[EventedList, NestableEventedList])
 def test_list(request, regular_list):
     test_list = request.param(regular_list)
     test_list.events = Mock(wraps=test_list.events)
@@ -222,9 +201,27 @@ def test_slice(test_list, regular_list):
 NEST = [0, [10, [110, [1110, 1111, 1112], 112], 12], 2]
 
 
+def flatten(container):
+    """Flatten arbitrarily nested list.
+
+    Examples
+    --------
+    >>> a = [1, [2, [3], 4], 5]
+    >>> list(flatten(a))
+    [1, 2, 3, 4, 5]
+    """
+    for i in container:
+        if isinstance(i, MutableSequence):
+            for j in flatten(i):
+                yield j
+        else:
+            yield i
+
+
 def test_nested_indexing():
     """test that we can index a nested list with nl[1, 2, 3] syntax."""
     ne_list = NestableEventedList(NEST)
+    # 110 -> '110' -> (1, 1, 0)
     indices = [tuple(int(x) for x in str(n)) for n in flatten(NEST)]
     for index in indices:
         assert ne_list[index] == int("".join(map(str, index)))
@@ -312,29 +309,45 @@ def test_nested_move_multiple(source, dest, expectation):
 
 def test_arbitrary_child_events():
     """Test that any object that supports the events protocol bubbles events.
+
+    If you add an object that implements the ``SupportsEvents`` Protocol
+    (i.e. has an attribute ``events`` that is an ``EmitterGroup``), to a
+    ``NestableEventedList``, then the parent container will re-emit those
+    events (and this works recursively up to the root container).  The
+    index/indices of each child(ren) that bubbled the event will be added
+    to the event.
+
+    See docstring of :ref:`NestableEventedList` for more info.
     """
 
     class E:
         events = EmitterGroup(test=None)
 
+    # create a random object that emits events
     e_obj = E()
+    # and two nestable evented lists
     root = NestableEventedList()
     b = NestableEventedList()
-
+    # collect all events emitted by the root list
     observed = []
     root.events.connect(lambda e: observed.append(e))
 
+    # now append a list to root
     root.append(b)
+    # and append the event-emitter object to the nested list
     b.append(e_obj)
+    # then have the deeply nested event-emitter actually emit an event
     e_obj.events.test(value="hi")
 
+    # look at the (type, index, and value) of all of the events emitted by root
+    # and make sure they match expectations
     obs = [(e.type, e.index, getattr(e, 'value', None)) for e in observed]
     expected = [
-        ('inserting', 0, None),
-        ('inserted', 0, b),
-        ('inserting', (0, 0), None),
-        ('inserted', (0, 0), e_obj),
-        ('test', (0, 0), 'hi'),
+        ('inserting', 0, None),  # before we inserted b into root
+        ('inserted', 0, b),  # after b was inserted into root
+        ('inserting', (0, 0), None),  # before we inserted e_obj into b
+        ('inserted', (0, 0), e_obj),  # after e_obj was inserted into b
+        ('test', (0, 0), 'hi'),  # when e_obj emitted an event called "test"
     ]
     for o, e in zip(obs, expected):
         assert o == e
@@ -353,3 +366,15 @@ def test_evented_list_subclass():
     assert hasattr(lst, 'events')
     assert 'boom' in lst.events.emitters
     assert lst == [1, 2]
+
+
+def test_event_group_depr():
+    events = EmitterGroup(b=None, deprecated={"a": "b"})
+    with pytest.warns(FutureWarning):
+        assert events.b == events.a
+    with pytest.raises(AttributeError):
+        events.c.connect()
+    with pytest.warns(FutureWarning):
+        assert events["b"] == events["a"]
+    with pytest.raises(KeyError):
+        events["c"].connect()

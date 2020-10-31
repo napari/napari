@@ -4,8 +4,8 @@ Our perfmon system using this to patch in perf_timers, but this can be used
 for any type of patching. See patch_callables() below as the main entrypoint.
 """
 
-from importlib import import_module
 import types
+from importlib import import_module
 from typing import Callable, List, Set, Tuple, Union
 
 # The parent of a callable is a module or a class, class is of type "type".
@@ -57,7 +57,7 @@ def _patch_attribute(
         # Assume attribute_str is <function>.
         class_str = None
         parent = module
-        parent_str = module.__name___
+        parent_str = module.__name__
         callable_str = attribute_str
 
     try:
@@ -79,12 +79,15 @@ def _patch_attribute(
 def _import_module(target_str: str) -> Tuple[types.ModuleType, str]:
     """Import the module portion of this target string.
 
-    Try importing successively longer segments of the target_str. For example
-    with "napari.utils.chunk_loader.ChunkLoader.load_chunk" we will import:
+    Try importing successively longer segments of the target_str. For example:
+       napari.components.experimental.chunk._loader.ChunkLoader.load_chunk
+    will import:
         napari (success)
-        napari.utils (success)
-        napari.utils.chunk_loader (success)
-        napari.utils.chunk_loader.ChunkLoader (failure)
+        napari.components (success)
+        napari.components.experimental (success)
+        napari.components.experimental.chunk (success)
+        napari.components.experimental.chunk._loader (success)
+        napari.components.experimental.chunk._loader.ChunkLoader (failure, not a module)
 
     The last one fails because ChunkLoader is a class not a module.
 

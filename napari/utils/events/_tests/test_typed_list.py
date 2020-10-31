@@ -1,12 +1,18 @@
-from napari.utils.events.containers import (
-    TypedEventedList,
-    TypedList,
-    TypedNestableEventedList,
-)
 import pytest
 
+from napari.utils.events.containers import (
+    EventedList,
+    NestableEventedList,
+    TypedMutableSequence,
+)
 
-@pytest.fixture(params=[TypedList, TypedEventedList, TypedNestableEventedList])
+
+# this is a parametrized fixture, all tests using ``list_type`` will be run
+# once using each of the items in params
+# https://docs.pytest.org/en/stable/fixture.html#parametrizing-fixtures
+@pytest.fixture(
+    params=[TypedMutableSequence, EventedList, NestableEventedList]
+)
 def list_type(request):
     return request.param
 
@@ -36,9 +42,10 @@ def test_type_enforcement_with_slices(list_type):
     with pytest.raises(TypeError):
         a[4:4] = ['hi']
     with pytest.raises(ValueError):
-        a[4:8:2] = [1, 2, 3]  # not the right length
-    with pytest.raises(TypeError):
-        a[4:8:2] = [1, 2, 3, 'a']
+        a[2:9:2] = [1, 2, 3]  # not the right length
+    with pytest.raises(TypeError):  # right length, includes bad type
+        a[2:9:2] = [1, 2, 3, 'a']
+    assert a == list(range(10)), 'List has changed!'
 
 
 def test_multitype_enforcement(list_type):
@@ -61,12 +68,12 @@ def test_custom_lookup(list_type):
             self.data = data
 
     hi = Custom(name='hi')
-    tup = Custom(data=(1, 2, 3))
+    dct = Custom(data={'some': 'data'})
 
     a = list_type(
-        [Custom(), hi, Custom(), tup],
+        [Custom(), hi, Custom(), dct],
         basetype=Custom,
-        lookup={str: lambda x: x.name, tuple: lambda x: x.data},
+        lookup={str: lambda x: x.name, dict: lambda x: x.data},
     )
     # index with integer as usual
     assert a[1].name == 'hi'
@@ -75,10 +82,10 @@ def test_custom_lookup(list_type):
     # index with string also works
     assert a['hi'] == hi
 
-    # index with tuple will use the `tuple` type lookup
-    assert a[(1, 2, 3)].data == (1, 2, 3)
-    assert a.index((1, 2, 3)) == 3
-    assert a[(1, 2, 3)] == tup
+    # index with a dict will use the `dict` type lookup
+    assert a[{'some': 'data'}].data == {'some': 'data'}
+    assert a.index({'some': 'data'}) == 3
+    assert a[{'some': 'data'}] == dct
 
     # index still works with start/stop arguments
     with pytest.raises(ValueError):
@@ -102,7 +109,7 @@ def test_custom_lookup(list_type):
 def test_nested_type_enforcement():
     """Test that type enforcement also works with NestableLists."""
     data = [1, 2, [3, 4, [5, 6]]]
-    a = TypedNestableEventedList(data, basetype=int)
+    a = NestableEventedList(data, basetype=int)
     assert a[2, 2, 1] == 6
 
     # first level
@@ -123,10 +130,10 @@ def test_nested_type_enforcement():
 
     # also works during instantiation
     with pytest.raises(TypeError):
-        _ = TypedNestableEventedList([1, 1, ['string']], basetype=int)
+        _ = NestableEventedList([1, 1, ['string']], basetype=int)
 
     with pytest.raises(TypeError):
-        _ = TypedNestableEventedList([1, 2, [3, ['string']]], basetype=int)
+        _ = NestableEventedList([1, 2, [3, ['string']]], basetype=int)
 
 
 @pytest.mark.xfail(reason="Need to enable custom indexing on nestable lists")
@@ -140,7 +147,7 @@ def test_nested_custom_lookup():
     c2 = Custom(name='c2')
     c3 = Custom(name='c3')
 
-    a = TypedNestableEventedList(
+    a = NestableEventedList(
         [c, c1, [c2, [c3]]], basetype=Custom, lookup={str: lambda x: x.name},
     )
     # first level

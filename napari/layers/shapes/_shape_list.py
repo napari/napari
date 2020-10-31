@@ -1,8 +1,9 @@
 import numpy as np
+
 from ._mesh import Mesh
-from ._shapes_models import Shape, Line, Path
+from ._shapes_constants import ShapeType, shape_classes
+from ._shapes_models import Line, Path, Shape
 from ._shapes_utils import inside_triangles, triangles_intersect_box
-from ._shapes_constants import shape_classes, ShapeType
 
 
 class ShapeList:
@@ -210,7 +211,14 @@ class ShapeList:
         self.displayed_vertices = self._vertices[disp_vert]
         self.displayed_index = self._index[disp_vert]
 
-    def add(self, shape, face_color=None, edge_color=None, shape_index=None):
+    def add(
+        self,
+        shape,
+        face_color=None,
+        edge_color=None,
+        shape_index=None,
+        z_refresh=True,
+    ):
         """Adds a single Shape object
 
         Parameters
@@ -222,12 +230,17 @@ class ShapeList:
             If int then edits the shape date at current index. To be used in
             conjunction with `remove` when renumber is `False`. If None, then
             appends a new shape to end of shapes list
+        z_refresh : bool
+            If set to true, the mesh elements are reindexed with the new z order.
+            When shape_index is provided, z_refresh will be overwritten to false,
+            as the z indices will not change.
+            When adding a batch of shapes, set to false  and then call
+            ShapesList._update_z_order() once at the end.
         """
         if not issubclass(type(shape), Shape):
             raise ValueError('shape must be subclass of Shape')
 
         if shape_index is None:
-            z_refresh = True
             shape_index = len(self.shapes)
             self.shapes.append(shape)
             self._z_index = np.append(self._z_index, shape.z_index)
@@ -828,7 +841,9 @@ class ShapeList:
 
         return labels
 
-    def to_colors(self, colors_shape=None, zoom_factor=1, offset=[0, 0]):
+    def to_colors(
+        self, colors_shape=None, zoom_factor=1, offset=[0, 0], max_shapes=None
+    ):
         """Rasterize shapes to an RGBA image array.
 
         Each shape is embedded in an array of shape `colors_shape` with the
@@ -846,6 +861,11 @@ class ShapeList:
         offset : 2-tuple
             Offset subtracted from coordinates before multiplying by the
             zoom_factor. Used for putting negative coordinates into the mask.
+        max_shapes : None | int
+            If provided, this is the maximum number of shapes that will be rasterized.
+            If the number of shapes in view exceeds max_shapes, max_shapes shapes
+            will be randomly selected from the in view shapes. If set to None, no
+            maximum is applied. The default value is None.
 
         Returns
         -------
@@ -859,15 +879,24 @@ class ShapeList:
         colors = np.zeros(tuple(colors_shape) + (4,), dtype=float)
         colors[..., 3] = 1
 
-        for ind in self._z_order[::-1]:
-            if self._displayed[ind]:
-                mask = self.shapes[ind].to_mask(
-                    colors_shape, zoom_factor=zoom_factor, offset=offset
-                )
-                if type(self.shapes[ind]) in [Path, Line]:
-                    col = self._edge_color[ind]
-                else:
-                    col = self._face_color[ind]
-                colors[mask, :] = col
+        z_order = self._z_order[::-1]
+        shapes_in_view = np.argwhere(self._displayed)
+        z_order_in_view_mask = np.isin(z_order, shapes_in_view)
+        z_order_in_view = z_order[z_order_in_view_mask]
+
+        # If there are too many shapes to render responsively, just render
+        # the top max_shapes shapes
+        if max_shapes is not None and len(z_order_in_view) > max_shapes:
+            z_order_in_view = z_order_in_view[0:max_shapes]
+
+        for ind in z_order_in_view:
+            mask = self.shapes[ind].to_mask(
+                colors_shape, zoom_factor=zoom_factor, offset=offset
+            )
+            if type(self.shapes[ind]) in [Path, Line]:
+                col = self._edge_color[ind]
+            else:
+                col = self._face_color[ind]
+            colors[mask, :] = col
 
         return colors

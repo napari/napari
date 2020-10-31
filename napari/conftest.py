@@ -1,3 +1,4 @@
+import os
 import warnings
 from functools import partial
 from typing import List
@@ -8,6 +9,7 @@ from qtpy.QtWidgets import QApplication
 
 from napari import Viewer
 from napari.components import LayerList
+from napari.experimental import chunk_loader, synchronous_loading
 from napari.layers import Image, Labels, Points, Shapes, Vectors
 from napari.plugins._builtins import (
     napari_write_image,
@@ -21,7 +23,6 @@ try:
     from skimage.data import image_fetcher
 except ImportError:
     from skimage.data import data_dir
-    import os
 
     class image_fetcher:
         def fetch(data_name):
@@ -36,21 +37,45 @@ except ImportError:
 
 
 def pytest_addoption(parser):
-    """An option to show viewers during tests. (Hidden by default).
+    """Add napari specific command line options.
 
-    Showing viewers decreases test speed by about %18.  Note, due to the
-    placement of this conftest.py file, you must specify the napari folder (in
-    the pytest command) to use this flag.
+    --show-viewer
+        Show viewers during tests, they are hidden by default. Showing viewers
+        decreases test speed by around 20%.
 
-    Examples
-    --------
-    $ pytest napari --show-viewer
+    --perfmon-only
+        Run only perfmon test.
+
+    --aysnc_only
+        Run only asynchronous tests, not sync ones.
+
+    Notes
+    -----
+    Due to the placement of this conftest.py file, you must specifically name
+    the napari folder such as "pytest napari --show-viewer"
+
+    For --perfmon-only must also enable perfmon with env var:
+    NAPARI_PERFMON=1 pytest napari --perfmon-only
     """
     parser.addoption(
         "--show-viewer",
         action="store_true",
         default=False,
         help="don't show viewer during tests",
+    )
+
+    parser.addoption(
+        "--perfmon-only",
+        action="store_true",
+        default=False,
+        help="run only perfmon tests",
+    )
+
+    parser.addoption(
+        "--async_only",
+        action="store_true",
+        default=False,
+        help="run only asynchronous tests",
     )
 
 
@@ -189,9 +214,9 @@ def layer_data_and_types():
         ),
     ]
     extensions = ['.tif', '.tif', '.csv', '.csv']
-    layer_data = [l.as_layer_data_tuple() for l in layers]
+    layer_data = [layer.as_layer_data_tuple() for layer in layers]
     layer_types = [layer._type_string for layer in layers]
-    filenames = [l.name + e for l, e in zip(layers, extensions)]
+    filenames = [layer.name + e for layer, e in zip(layers, extensions)]
     return layers, layer_data, layer_types, filenames
 
 
@@ -291,3 +316,52 @@ def irregular_images():
 @pytest.fixture
 def single_tiff():
     return [image_fetcher.fetch('data/multipage.tif')]
+
+
+# Currently we cannot run async and async in the invocation of pytest
+# because we get a segfault for unknown reasons. So for now:
+# "pytest" runs sync_only
+# "pytest napari --async_only" runs async only
+@pytest.fixture(scope="session", autouse=True)
+def configure_loading(request):
+    """Configure async/async loading."""
+    async_mode = request.config.getoption("--async_only")
+    if async_mode:
+        with synchronous_loading(False):
+            yield
+    else:
+        yield  # Sync so do nothing.
+
+
+@pytest.fixture(autouse=True)
+def skip_sync_only(request):
+    """Skip tests depending on our sync/async settings."""
+    async_mode = not chunk_loader.synchronous
+    sync_only_test = request.node.get_closest_marker('sync_only')
+    if async_mode and sync_only_test:
+        pytest.skip("running with --async_only")
+
+
+@pytest.fixture(autouse=True)
+def perfmon_only(request):
+    """If flag is set, only run the perfmon tests."""
+    perfmon_flag = request.config.getoption("--perfmon-only")
+    perfmon_test = request.node.get_closest_marker('perfmon')
+    if perfmon_flag and not perfmon_test:
+        pytest.skip("running with --perfmon-only")
+    if not perfmon_flag and perfmon_test:
+        pytest.skip("not running with --perfmon-only")
+
+
+# _PYTEST_RAISE=1 will prevent pytest from handling exceptions.
+# Use with a debugger that's set to break on "unhandled exceptions".
+# https://github.com/pytest-dev/pytest/issues/7409
+if os.getenv('_PYTEST_RAISE', "0") != "0":
+
+    @pytest.hookimpl(tryfirst=True)
+    def pytest_exception_interact(call):
+        raise call.excinfo.value
+
+    @pytest.hookimpl(tryfirst=True)
+    def pytest_internalerror(excinfo):
+        raise excinfo.value

@@ -2,11 +2,18 @@
 """
 import os
 import threading
+from collections import namedtuple
 from typing import Optional
+
+# The span of time that the event ocurred.
+Span = namedtuple("Span", "start_ns end_ns")
+
+# What process/thread produced the event.
+Origin = namedtuple("Origin", "process_id thread_id")
 
 
 class PerfEvent:
-    """One perf event represents a span of time.
+    """A performance related event: timer, counter, etc.
 
     Parameters
     ----------
@@ -16,34 +23,43 @@ class PerfEvent:
         Start time in nanoseconds.
     end_ns : int
         End time in nanoseconds.
+    category :str
+        Comma separated categories such has "render,update".
     process_id : int
         The process id that produced the event.
     thread_id : int
         The thread id that produced the event.
-    category :str
-        Comma separated categories such has "render,update".
+    phase : str
+        The Chrome Tracing "phase" such as "X", "I", "C".
     **kwargs : dict
         Additional keyword arguments for the "args" field of the event.
 
 
     Attributes
     ----------
-    phase : str
-        The chrome://tracing "phase" (event type). The spec defines
-        around 20 phases we only support two right now:
-             "X" - Complete Events
-             "I" - Instant Events
+    name : str
+        The name of this event like "draw".
+    span : Span
+        The time span when the event happened.
+    category : str
+        Comma separated categories such has "render,update".
+    origin : Origin
+        The process and thread that produced the event.
     args : dict
-        Keyword arguments for this event, visible when you click on the event
-        in the chrome://tracing GUI.
-
+        Arbitrary keyword arguments for this event.
+    phase : str
+        The Chrome Tracing phase (event type):
+          "X" - Complete Events
+          "I" - Instant Events
+          "C" - Counter Events
     Notes
     -----
     The time stamps are from perf_counter_ns() and do not indicate time of
-    day. The origin is arbitrary, but subtracting two counters results in
-    a span of wall clock time.
+    day. The origin is arbitrary, but subtracting two counters results in a
+    valid span of wall clock time. If start is the same as the end the
+    event was instant.
 
-    Google for "Trace Event Format" for the full chrome://tracing spec.
+    Google the phrase "Trace Event Format" for the full Chrome Tracing spec.
     """
 
     def __init__(
@@ -52,41 +68,54 @@ class PerfEvent:
         start_ns: int,
         end_ns: int,
         category: Optional[str] = None,
-        process_id: int = os.getpid(),
-        thread_id: int = threading.get_ident(),
+        process_id: int = None,
+        thread_id: int = None,
+        phase: str = "X",  # "X" is a "complete event" in their spec.
         **kwargs: dict,
     ):
-        self.name = name
-        self.start_ns = start_ns
-        self.end_ns = end_ns
-        self.category = category
+        if process_id is None:
+            process_id = os.getpid()
+        if thread_id is None:
+            thread_id = threading.get_ident()
+
+        self.name: str = name
+        self.span: Span = Span(start_ns, end_ns)
+        self.category: str = category
+        self.origin: Origin = Origin(process_id, thread_id)
         self.args = kwargs
-        self.process_id = process_id
-        self.thread_id = thread_id
-        self.phase = "X"  # Complete Event
+        self.phase: str = phase
+
+    def update_end_ns(self, end_ns: int) -> None:
+        """Update our end_ns with this new end_ns.
+
+        Properties
+        ----------
+        end_ns : int
+            The new ending time in nanoseconds.
+        """
+        self.span = Span(self.span.start_ns, end_ns)
 
     @property
     def start_us(self):
-        return self.start_ns / 1e3
+        """Start time in microseconds."""
+        return self.span.start_ns / 1e3
 
     @property
     def start_ms(self):
-        return self.start_ns / 1e6
+        """Start time in milliseconds."""
+        return self.span.start_ns / 1e6
 
     @property
     def duration_ns(self):
-        return self.end_ns - self.start_ns
+        """Duration in nanoseconds."""
+        return self.span.end_ns - self.span.start_ns
 
     @property
     def duration_us(self):
+        """Duration in microseconds."""
         return self.duration_ns / 1e3
 
     @property
     def duration_ms(self):
+        """Duration in milliseconds."""
         return self.duration_ns / 1e6
-
-
-class InstantEvent(PerfEvent):
-    def __init__(self, name: str, time_ns: int, **kwargs):
-        super().__init__(name, time_ns, time_ns, **kwargs)
-        self.phase = "I"  # instant event

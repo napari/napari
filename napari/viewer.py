@@ -5,13 +5,13 @@ from os.path import dirname, join
 from qtpy.QtGui import QIcon
 from qtpy.QtWidgets import QApplication
 
-from .components import ViewerModel
+from . import __version__
 from ._qt.qt_main_window import Window
 from ._qt.qt_viewer import QtViewer
-from ._qt.threading import wait_for_workers_to_quit, create_worker
+from ._qt.qthreading import create_worker, wait_for_workers_to_quit
+from .components import ViewerModel
+from .utils import config
 from .utils.perf import perf_config
-
-from . import __version__
 
 
 class Viewer(ViewerModel):
@@ -39,6 +39,7 @@ class Viewer(ViewerModel):
 
     def __init__(
         self,
+        *,
         title='napari',
         ndisplay=2,
         order=None,
@@ -66,7 +67,9 @@ class Viewer(ViewerModel):
 
         if perf_config:
             if perf_config.trace_qt_events:
-                from ._qt.qt_event_tracing import convert_app_for_tracing
+                from ._qt.tracing.qt_event_tracing import (
+                    convert_app_for_tracing,
+                )
 
                 # For tracing Qt events we need a special QApplication. If
                 # using `gui_qt` we already have the special one, and no
@@ -164,6 +167,14 @@ class Viewer(ViewerModel):
     def close(self):
         """Close the viewer window."""
         self.window.close()
+
+        if config.async_loading:
+            from .components.experimental.chunk import chunk_loader
+
+            # TODO_ASYNC: Find a cleaner way to do this? Fixes some tests.
+            # https://github.com/napari/napari/issues/1500
+            for layer in self.layers:
+                chunk_loader.on_layer_deleted(layer)
 
     def __str__(self):
         """Simple string representation"""

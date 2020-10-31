@@ -1,7 +1,7 @@
-import numpy as np
 import dask.array as da
-import zarr
+import numpy as np
 import xarray as xr
+import zarr
 
 
 def test_dask_2D(make_test_viewer):
