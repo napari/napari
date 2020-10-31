@@ -288,17 +288,23 @@ class QtPluginDialog(QDialog):
         self.installer = Installer()
         self.setup_ui()
         self.installer.set_output_widget(self.stdout_text)
-        self.installer.process.started.connect(
-            lambda: self.show_status_btn.setChecked(True)
-        )
-        self.installer.process.finished.connect(
-            lambda: self.show_status_btn.setChecked(False)
-        )
-        self.installer.process.started.connect(self.working_indicator.show)
-        self.installer.process.finished.connect(self.working_indicator.hide)
-        self.installer.process.finished.connect(self.refresh)
-        self.installer.process.finished.connect(self.plugin_sorter.refresh)
+        self.installer.process.started.connect(self._on_installer_start)
+        self.installer.process.finished.connect(self._on_installer_done)
         self.refresh()
+
+    def _on_installer_start(self):
+        self.show_status_btn.setChecked(True)
+        self.working_indicator.show()
+        self.process_error_indicator.hide()
+
+    def _on_installer_done(self, exit_code, exit_status):
+        self.working_indicator.hide()
+        if exit_code:
+            self.process_error_indicator.show()
+        else:
+            self.show_status_btn.setChecked(False)
+        self.refresh()
+        self.plugin_sorter.refresh()
 
     def refresh(self):
         self.installed_list.clear()
@@ -380,6 +386,9 @@ class QtPluginDialog(QDialog):
 
         buttonBox = QHBoxLayout()
         self.working_indicator = QLabel("loading ...", self)
+        self.process_error_indicator = QLabel(self)
+        self.process_error_indicator.setObjectName("error_label")
+        self.process_error_indicator.hide()
         load_gif = str(Path(napari.resources.__file__).parent / "loading.gif")
         mov = QMovie(load_gif)
         mov.setScaledSize(QSize(18, 18))
@@ -392,6 +401,7 @@ class QtPluginDialog(QDialog):
         self.close_btn.clicked.connect(self.reject)
         buttonBox.addWidget(self.show_status_btn)
         buttonBox.addWidget(self.working_indicator)
+        buttonBox.addWidget(self.process_error_indicator)
         buttonBox.addStretch()
         buttonBox.addWidget(self.show_sorter_btn)
         buttonBox.addWidget(self.close_btn)
