@@ -46,7 +46,9 @@ from qtpy.QtWidgets import QWidget
 
 
 @napari_hook_specification()
-def napari_experimental_provide_dock_widget() -> List[Tuple[QWidget, dict]]:
+def napari_experimental_provide_dock_widget(
+    viewer,
+) -> List[Tuple[QWidget, dict]]:
     """Provide dock widgets that can be added to the viewer.
 
     Returns

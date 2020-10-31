@@ -6,7 +6,7 @@ from .. import plugin_manager as napari_plugin_manager
 
 
 def get_dock_widgets_from_plugin(
-    plugin, plugin_manager=napari_plugin_manager,
+    plugin, viewer, plugin_manager=napari_plugin_manager,
 ) -> List[Tuple[QWidget, dict]]:
     """Get a list of dock widgets from a plugin.
 
@@ -14,6 +14,8 @@ def get_dock_widgets_from_plugin(
     ----------
     plugin : str
         Name of the plugin to get dock widgets from.
+    viewer : napari.Viewer
+        napari Viewer object.
     plugin_manager : plugins.PluginManager, optional
         Instance of a napari PluginManager.  by default the main napari
         plugin_manager will be used.
@@ -37,4 +39,4 @@ def get_dock_widgets_from_plugin(
         )
 
     # Call the hook_caller
-    return hook_caller(_plugin=plugin_name)
+    return hook_caller(_plugin=plugin_name, viewer=viewer)

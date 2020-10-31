@@ -547,7 +547,9 @@ class Window:
             )
             return
 
-        widget_list = get_dock_widgets_from_plugin(plugin)
+        widget_list = get_dock_widgets_from_plugin(
+            plugin, self.qt_viewer.viewer
+        )
 
         dock_widgets = []
         for dock_widget_tuple in widget_list:
