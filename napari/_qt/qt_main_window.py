@@ -20,6 +20,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from ..plugins.experimental.dock_widgets import get_dock_widgets_from_plugin
 from ..resources import get_stylesheet
 from ..utils import perf
 from ..utils.io import imsave
@@ -508,6 +509,38 @@ class Window:
                 self._qt_window.removeDockWidget(dw)
         else:
             self._qt_window.removeDockWidget(widget)
+
+    def _add_plugin_dock_widget(
+        self, plugin,
+    ):
+        """Convenience method to add a QDockWidget to the main window
+
+        Parameters
+        ----------
+        widget : QWidget
+            `widget` will be added as QDockWidget's main widget.
+        name : str, optional
+            Name of dock widget to appear in window menu.
+        area : str
+            Side of the main window to which the new dock widget will be added.
+            Must be in {'left', 'right', 'top', 'bottom'}
+        allowed_areas : list[str], optional
+            Areas, relative to main window, that the widget is allowed dock.
+            Each item in list must be in {'left', 'right', 'top', 'bottom'}
+            By default, all areas are allowed.
+        shortcut : str, optional
+            Keyboard shortcut to appear in dropdown menu.
+
+        Returns
+        -------
+        dock_widget : QtViewerDockWidget
+            `dock_widget` that can pass viewer events.
+        """
+        dock_widgets = get_dock_widgets_from_plugin(plugin)
+        for dock_widget_tuple in dock_widgets:
+            widget = dock_widget_tuple[0]
+            kwargs = dock_widget_tuple[1]
+            self.add_dock_widget(widget, **kwargs)
 
     def resize(self, width, height):
         """Resize the window.
