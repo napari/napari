@@ -90,12 +90,12 @@ class QtLayerControlsContainer(QStackedWidget):
         Parameters
         ----------
         event : Event
-            Event with the target layer at `event.item`.
+            Event with the target layer at `event.value`.
         """
         if event is None:
             layer = None
         else:
-            layer = event.item
+            layer = event.value
 
         if layer is None:
             self.setCurrentWidget(self.empty_widget)
@@ -109,9 +109,9 @@ class QtLayerControlsContainer(QStackedWidget):
         Parameters
         ----------
         event : Event
-            Event with the target layer at `event.item`.
+            Event with the target layer at `event.value`.
         """
-        layer = event.item
+        layer = event.value
         controls = create_qt_layer_controls(layer)
         self.addWidget(controls)
         self.widgets[layer] = controls
@@ -122,9 +122,9 @@ class QtLayerControlsContainer(QStackedWidget):
         Parameters
         ----------
         event : Event
-            Event with the target layer at `event.item`.
+            Event with the target layer at `event.value`.
         """
-        layer = event.item
+        layer = event.value
         controls = self.widgets[layer]
         self.removeWidget(controls)
         controls.deleteLater()
