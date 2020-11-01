@@ -22,7 +22,7 @@ LINE_VISUAL_ORDER = 10
 
 # We are seeing crashing when creating too many ImageVisual's so we are
 # experimenting with having a reusable pool of them.
-INITIAL_POOL_SIZE = 25
+INITIAL_POOL_SIZE = 0
 
 
 def _chunk_outline(chunk: ChunkData) -> np.ndarray:
@@ -94,15 +94,17 @@ class ImageVisualPool:
     """
 
     def __init__(self):
-        size = INITIAL_POOL_SIZE
+        self.nodes = self._create_pool(INITIAL_POOL_SIZE)
+
+    def _create_pool(self, size):
         with block_timer("ImageVisualPool.__init__") as event:
-            self.nodes = [
-                ImageVisual(None, method='auto') for x in range(size)
-            ]
+            nodes = [ImageVisual(None, method='auto') for x in range(size)]
 
         ms = event.duration_ms
-        each_ms = event.duration_ms / size
+        each_ms = 0 if size == 0 else (event.duration_ms / size)
         print(f"ImageVisualPool: Created {size} @ {each_ms}ms each = {ms}ms")
+
+        return nodes
 
     def get_node(self) -> Optional[ImageVisual]:
         """Get an available ImageVisual.
@@ -112,6 +114,9 @@ class ImageVisualPool:
         Optional[ImageVisual]
             An ImageVisual if one was available in the pool.
         """
+        if INITIAL_POOL_SIZE == 0:
+            return ImageVisual(None, method='auto')
+
         if len(self.nodes) == 0:
             # Pool is empty, no visual for now. The ImageChunk might get
             # assigned a ImageVisual later if it stays in view.
@@ -125,7 +130,8 @@ class ImageVisualPool:
         if node is not None:
             node.parent = None  # Remove from the Scene Graph.
             node.transform = NullTransform()
-            self.nodes.append(node)
+            if INITIAL_POOL_SIZE > 0:
+                self.nodes.append(node)
 
 
 class TileGrid:
