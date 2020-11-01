@@ -94,9 +94,7 @@ class Window:
 
         if perf_config:
             if perf_config.trace_qt_events:
-                from ._qt.tracing.qt_event_tracing import (
-                    convert_app_for_tracing,
-                )
+                from .tracing.qt_event_tracing import convert_app_for_tracing
 
                 # For tracing Qt events we need a special QApplication. If
                 # using `gui_qt` we already have the special one, and no
