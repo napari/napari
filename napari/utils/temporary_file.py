@@ -1,6 +1,6 @@
-from tempfile import NamedTemporaryFile
-from contextlib import contextmanager
 import os
+from contextlib import contextmanager
+from tempfile import NamedTemporaryFile
 
 
 @contextmanager

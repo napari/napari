@@ -10,9 +10,9 @@ from qtpy.QtWidgets import (
     QGraphicsOpacityEffect,
     QHBoxLayout,
     QListWidget,
+    QSizePolicy,
     QVBoxLayout,
     QWidget,
-    QSizePolicy,
 )
 
 from ..utils.misc import is_sequence
@@ -86,8 +86,9 @@ def square_pixmap(size):
 
 
 @lru_cache(maxsize=64)
-def circle_pixmap(size):
+def circle_pixmap(size: int):
     """Create a white/black hollow circle pixmap. For use as labels cursor."""
+    size = int(size)
     pixmap = QPixmap(QSize(size, size))
     pixmap.fill(Qt.transparent)
     painter = QPainter(pixmap)

@@ -1,12 +1,13 @@
-from typing import List, Dict
 import itertools
+from typing import Dict, List
 
 import numpy as np
+
 from ...layers import Image
-from ...utils.colormaps import colormaps
 from ...layers.image._image_utils import guess_multiscale
-from ...utils.misc import ensure_iterable, ensure_sequence_of_iterables
 from ...types import FullLayerData
+from ...utils.colormaps import CYMRGB, MAGENTA_GREEN, Colormap
+from ...utils.misc import ensure_iterable, ensure_sequence_of_iterables
 
 
 def split_channels(
@@ -60,14 +61,16 @@ def split_channels(
             if n_channels == 1:
                 kwargs[key] = iter(['gray'])
             elif n_channels == 2:
-                kwargs[key] = iter(colormaps.MAGENTA_GREEN)
+                kwargs[key] = iter(MAGENTA_GREEN)
             else:
-                kwargs[key] = itertools.cycle(colormaps.CYMRGB)
+                kwargs[key] = itertools.cycle(CYMRGB)
 
         # make sure that iterable_kwargs are a *sequence* of iterables
         # for the multichannel case.  For example: if scale == (1, 2) &
         # n_channels = 3, then scale should == [(1, 2), (1, 2), (1, 2)]
-        elif key in iterable_kwargs:
+        elif key in iterable_kwargs or (
+            key == 'colormap' and isinstance(val, Colormap)
+        ):
             kwargs[key] = iter(ensure_sequence_of_iterables(val, n_channels))
         else:
             kwargs[key] = iter(ensure_iterable(val))
@@ -131,7 +134,7 @@ def stack_to_images(stack: Image, axis: int, **kwargs: Dict,) -> List[Image]:
         del meta[key]
 
     name = stack.name
-    num_dim = stack.dims.ndim
+    num_dim = stack.ndim
 
     if num_dim < 3:
         raise ValueError(
@@ -159,6 +162,10 @@ def stack_to_images(stack: Image, axis: int, **kwargs: Dict,) -> List[Image]:
         kwargs['rgb'] = False
         meta['scale'].pop(axis)
         meta['translate'].pop(axis)
+
+    meta['rotate'] = None
+    meta['shear'] = None
+    meta['affine'] = None
 
     meta.update(kwargs)
     imagelist = list()

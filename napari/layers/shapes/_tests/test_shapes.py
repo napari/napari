@@ -4,11 +4,10 @@ from itertools import cycle, islice
 import numpy as np
 import pandas as pd
 import pytest
-from vispy.color import get_colormap
 
+from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Shapes
 from napari.utils.colormaps.standardize_color import transform_color
-from napari._tests.utils import check_layer_world_data_extent
 
 
 def _make_cycled_properties(values, length):
@@ -32,7 +31,7 @@ def _make_cycled_properties(values, length):
 
 def test_empty_shapes():
     shp = Shapes()
-    assert shp.dims.ndim == 2
+    assert shp.ndim == 2
 
 
 properties_array = {'shape_type': _make_cycled_properties(['A', 'B'], 10)}
@@ -601,6 +600,28 @@ def test_selecting_shapes():
     assert layer.selected_data == set()
 
 
+def test_removing_all_shapes_empty_list():
+    """Test removing all shapes with an empty list."""
+    data = 20 * np.random.random((10, 4, 2))
+    np.random.seed(0)
+    layer = Shapes(data)
+    assert layer.nshapes == 10
+
+    layer.data = []
+    assert layer.nshapes == 0
+
+
+def test_removing_all_shapes_empty_array():
+    """Test removing all shapes with an empty list."""
+    data = 20 * np.random.random((10, 4, 2))
+    np.random.seed(0)
+    layer = Shapes(data)
+    assert layer.nshapes == 10
+
+    layer.data = np.empty((0, 2))
+    assert layer.nshapes == 0
+
+
 def test_removing_selected_shapes():
     """Test removing selected shapes."""
     np.random.seed(0)
@@ -758,6 +779,7 @@ def test_blending():
     assert layer.blending == 'opaque'
 
 
+@pytest.mark.filterwarnings("ignore:elementwise comparison fail:FutureWarning")
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
 def test_switch_color_mode(attribute):
     """Test switching between color modes"""
@@ -849,7 +871,6 @@ def test_color_direct(attribute: str):
     color_array[list(selected_data)] = colorarray_green
     layer_color = getattr(layer, f'{attribute}_color')
     np.testing.assert_allclose(color_array, layer_color)
-
     # Add new shape and test its color
     new_shape = np.random.random((1, 4, 2))
     layer.selected_data = set()
@@ -876,6 +897,19 @@ def test_color_direct(attribute: str):
     color_array = np.tile([[0, 0, 0, 1]], (len(layer.data), 1))
     layer_color = getattr(layer, f'{attribute}_color')
     np.testing.assert_allclose(color_array, layer_color)
+
+
+@pytest.mark.parametrize("attribute", ['edge', 'face'])
+def test_single_shape_properties(attribute):
+    """Test creating single shape with properties"""
+    shape = (4, 2)
+    np.random.seed(0)
+    data = 20 * np.random.random(shape)
+    layer_kwargs = {f'{attribute}_color': 'red'}
+    layer = Shapes(data, **layer_kwargs)
+    layer_color = getattr(layer, f'{attribute}_color')
+    assert len(layer_color) == 1
+    np.testing.assert_allclose([1, 0, 0, 1], layer_color[0])
 
 
 color_cycle_str = ['red', 'blue']
@@ -1079,7 +1113,7 @@ def test_color_colormap(attribute):
     new_colormap = 'viridis'
     setattr(layer, f'{attribute}_colormap', new_colormap)
     attribute_colormap = getattr(layer, f'{attribute}_colormap')
-    assert attribute_colormap[1] == get_colormap(new_colormap)
+    assert attribute_colormap.name == new_colormap
 
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
@@ -1104,7 +1138,8 @@ def test_colormap_with_categorical_properties(attribute):
     layer = Shapes(data, properties=properties)
 
     with pytest.raises(TypeError):
-        setattr(layer, f'{attribute}_color_mode', 'colormap')
+        with pytest.warns(UserWarning):
+            setattr(layer, f'{attribute}_color_mode', 'colormap')
 
 
 @pytest.mark.parametrize("attribute", ['edge', 'face'])
@@ -1119,9 +1154,9 @@ def test_add_colormap(attribute):
     args = {color_kwarg: 'shape_type', colormap_kwarg: 'viridis'}
     layer = Shapes(data, properties=annotations, **args)
 
-    setattr(layer, f'{attribute}_colormap', get_colormap('gray'))
+    setattr(layer, f'{attribute}_colormap', 'gray')
     layer_colormap = getattr(layer, f'{attribute}_colormap')
-    assert 'unnamed colormap' in layer_colormap[0]
+    assert layer_colormap.name == 'gray'
 
 
 def test_edge_width():

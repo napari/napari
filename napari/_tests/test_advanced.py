@@ -1,4 +1,5 @@
 import numpy as np
+import pytest
 
 
 def test_4D_5D_images(make_test_viewer):
@@ -156,6 +157,7 @@ def test_range_one_images_and_points(make_test_viewer):
     assert np.sum(view.dims._displayed_sliders) == 3
 
 
+@pytest.mark.filterwarnings("ignore::DeprecationWarning:jupyter_client")
 def test_update_console(make_test_viewer):
     """Test updating the console with local variables."""
     viewer = make_test_viewer()
@@ -181,7 +183,7 @@ def test_changing_display_surface(make_test_viewer):
     view = viewer.window.qt_viewer
 
     np.random.seed(0)
-    vertices = np.random.random((10, 3))
+    vertices = 20 * np.random.random((10, 3))
     faces = np.random.randint(10, size=(6, 3))
     values = np.random.random(10)
     data = (vertices, faces, values)

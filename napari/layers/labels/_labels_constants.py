@@ -1,5 +1,5 @@
-from enum import auto
 import sys
+from enum import auto
 
 from ...utils.misc import StringEnum
 
@@ -42,6 +42,8 @@ class LabelColorMode(StringEnum):
     AUTO (default) allows color to be set via a hash function with a seed.
 
     DIRECT allows color of each label to be set directly by a color dictionary.
+
+    SELECTED allows only selected labels to be visible
     """
 
     AUTO = auto()

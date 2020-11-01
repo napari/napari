@@ -1,9 +1,9 @@
 import numpy as np
 import pytest
 
-from napari.components import ViewerModel
 from napari._tests.utils import good_layer_data
-from napari.utils.colormaps import colormaps
+from napari.components import ViewerModel
+from napari.utils.colormaps import AVAILABLE_COLORMAPS, Colormap
 
 
 def test_viewer_model():
@@ -41,16 +41,16 @@ def test_add_image_colormap_variants():
     assert viewer.add_image(data, colormap='cubehelix')
 
     # as tuple
-    cmap_tuple = ("my_colormap", colormaps.Colormap(['g', 'm', 'y']))
+    cmap_tuple = ("my_colormap", Colormap(['g', 'm', 'y']))
     assert viewer.add_image(data, colormap=cmap_tuple)
 
     # as dict
-    cmap_dict = {"your_colormap": colormaps.Colormap(['g', 'r', 'y'])}
+    cmap_dict = {"your_colormap": Colormap(['g', 'r', 'y'])}
     assert viewer.add_image(data, colormap=cmap_dict)
 
     # as Colormap instance
-    fire = colormaps.AVAILABLE_COLORMAPS['fire']
-    assert viewer.add_image(data, colormap=fire)
+    blue_cmap = AVAILABLE_COLORMAPS['blue']
+    assert viewer.add_image(data, colormap=blue_cmap)
 
     # string values must be known colormap types
     with pytest.raises(KeyError) as err:
@@ -112,10 +112,10 @@ def test_add_points():
 
 def test_add_empty_points_to_empty_viewer():
     viewer = ViewerModel()
-    pts = viewer.add_points(name='empty points')
-    assert pts.dims.ndim == 2
-    pts.add([1000.0, 27.0])
-    assert pts.data.shape == (1, 2)
+    layer = viewer.add_points(name='empty points')
+    assert layer.ndim == 2
+    layer.add([1000.0, 27.0])
+    assert layer.data.shape == (1, 2)
 
 
 def test_add_empty_points_on_top_of_image():
@@ -123,10 +123,10 @@ def test_add_empty_points_on_top_of_image():
     image = np.random.random((8, 64, 64))
     # add_image always returns the corresponding layer
     _ = viewer.add_image(image)
-    pts = viewer.add_points()
-    assert pts.dims.ndim == 3
-    pts.add([5.0, 32.0, 61.0])
-    assert pts.data.shape == (1, 3)
+    layer = viewer.add_points(ndim=3)
+    assert layer.ndim == 3
+    layer.add([5.0, 32.0, 61.0])
+    assert layer.data.shape == (1, 3)
 
 
 def test_add_empty_shapes_layer():
@@ -134,8 +134,8 @@ def test_add_empty_shapes_layer():
     image = np.random.random((8, 64, 64))
     # add_image always returns the corresponding layer
     _ = viewer.add_image(image)
-    shp = viewer.add_shapes()
-    assert shp.dims.ndim == 3
+    layer = viewer.add_shapes(ndim=3)
+    assert layer.ndim == 3
 
 
 def test_add_vectors():
@@ -339,7 +339,7 @@ def test_grid():
 
     # enter grid view
     viewer.grid_view()
-    assert np.all(viewer.grid_size == (3, 3))
+    assert np.all(viewer.grid_size == (2, 3))
     assert viewer.grid_stride == 1
     translations = [layer.translate_grid for layer in viewer.layers]
     expected_translations = [
@@ -490,18 +490,46 @@ def test_sliced_world_extent():
 
     # Empty data is taken to be 512 x 512
     np.testing.assert_allclose(viewer._sliced_extent_world[0], (0, 0))
-    np.testing.assert_allclose(viewer._sliced_extent_world[1], (512, 512))
+    np.testing.assert_allclose(viewer._sliced_extent_world[1], (511, 511))
 
     # Add one layer
     viewer.add_image(
         np.random.random((6, 10, 15)), scale=(3, 1, 1), translate=(10, 20, 5)
     )
-    np.testing.assert_allclose(viewer.layers._extent_world[0], (10, 20, 5))
-    np.testing.assert_allclose(viewer.layers._extent_world[1], (28, 30, 20))
+    np.testing.assert_allclose(viewer.layers.extent.world[0], (10, 20, 5))
+    np.testing.assert_allclose(viewer.layers.extent.world[1], (25, 29, 19))
     np.testing.assert_allclose(viewer._sliced_extent_world[0], (20, 5))
-    np.testing.assert_allclose(viewer._sliced_extent_world[1], (30, 20))
+    np.testing.assert_allclose(viewer._sliced_extent_world[1], (29, 19))
 
     # Change displayed dims order
     viewer.dims.order = (1, 2, 0)
     np.testing.assert_allclose(viewer._sliced_extent_world[0], (5, 10))
-    np.testing.assert_allclose(viewer._sliced_extent_world[1], (20, 28))
+    np.testing.assert_allclose(viewer._sliced_extent_world[1], (19, 25))
+
+
+def test_camera():
+    """Test camera."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    data = np.random.random((10, 15, 20))
+    viewer.add_image(data)
+    assert len(viewer.layers) == 1
+    assert np.all(viewer.layers[0].data == data)
+    assert viewer.dims.ndim == 3
+
+    assert viewer.dims.ndisplay == 2
+    assert viewer.camera.ndisplay == 2
+    assert viewer.camera.center == (7, 9.5)
+    assert viewer.camera.angles == (0, 0, 90)
+
+    viewer.dims.ndisplay = 3
+    assert viewer.dims.ndisplay == 3
+    assert viewer.camera.ndisplay == 3
+    assert viewer.camera.center == (4.5, 7, 9.5)
+    assert viewer.camera.angles == (0, 0, 90)
+
+    viewer.dims.ndisplay = 2
+    assert viewer.dims.ndisplay == 2
+    assert viewer.camera.ndisplay == 2
+    assert viewer.camera.center == (7, 9.5)
+    assert viewer.camera.angles == (0, 0, 90)

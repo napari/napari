@@ -7,8 +7,8 @@ from typing import List, Optional
 
 import wrapt
 
-from ._timers import perf_timer
 from ._patcher import patch_callables
+from ._timers import perf_timer
 
 PERFMON_ENV_VAR = "NAPARI_PERFMON"
 
@@ -87,7 +87,7 @@ class PerfmonConfig:
 
         Call once at startup but after main() has started running. Do not
         call at module init or you will likely get circular dependencies.
-        This function potentially imports a lot of your modules.
+        This function potentially imports many modules.
         """
         if self.config_path is None:
             return  # disabled

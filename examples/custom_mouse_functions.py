@@ -16,7 +16,7 @@ with napari.gui_qt():
     labeled = ndi.label(blobs)[0]
     labels_layer = viewer.add_labels(labeled, name='blob ID')
 
-    @viewer.mouse_press_callbacks.append
+    @viewer.mouse_drag_callbacks.append
     def get_event(viewer, event):
         print(event)
 
@@ -50,3 +50,21 @@ with napari.gui_qt():
             msg = f'clicked at {cords} on background which is ignored'
         layer.status = msg
         print(msg)
+
+
+    # Handle click or drag events separately
+    @labels_layer.mouse_drag_callbacks.append
+    def click_drag(layer, event):
+        print('mouse down')
+        dragged = False
+        yield
+        # on move
+        while event.type == 'mouse_move':
+            print(event.pos)
+            dragged = True
+            yield
+        # on release
+        if dragged:
+            print('drag end')
+        else:
+            print('clicked!')

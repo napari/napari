@@ -1,8 +1,9 @@
 import numpy as np
 from skimage.transform import pyramid_gaussian
-from vispy.color import Colormap
-from napari.layers import Image
+
 from napari._tests.utils import check_layer_world_data_extent
+from napari.layers import Image
+from napari.utils import Colormap
 
 
 def test_random_multiscale():
@@ -230,36 +231,36 @@ def test_colormaps():
     np.random.seed(0)
     data = [np.random.random(s) for s in shapes]
     layer = Image(data, multiscale=True)
-    assert layer.colormap[0] == 'gray'
-    assert type(layer.colormap[1]) == Colormap
+    assert layer.colormap.name == 'gray'
+    assert isinstance(layer.colormap, Colormap)
 
     layer.colormap = 'magma'
-    assert layer.colormap[0] == 'magma'
-    assert type(layer.colormap[1]) == Colormap
+    assert layer.colormap.name == 'magma'
+    assert isinstance(layer.colormap, Colormap)
 
     cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.3, 0.7, 0.2, 1.0]])
     layer.colormap = 'custom', cmap
-    assert layer.colormap[0] == 'custom'
-    assert layer.colormap[1] == cmap
+    assert layer.colormap.name == 'custom'
+    assert layer.colormap == cmap
 
     cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.7, 0.2, 0.6, 1.0]])
     layer.colormap = {'new': cmap}
-    assert layer.colormap[0] == 'new'
-    assert layer.colormap[1] == cmap
+    assert layer.colormap.name == 'new'
+    assert layer.colormap == cmap
 
     layer = Image(data, multiscale=True, colormap='magma')
-    assert layer.colormap[0] == 'magma'
-    assert type(layer.colormap[1]) == Colormap
+    assert layer.colormap.name == 'magma'
+    assert isinstance(layer.colormap, Colormap)
 
     cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.3, 0.7, 0.2, 1.0]])
     layer = Image(data, multiscale=True, colormap=('custom', cmap))
-    assert layer.colormap[0] == 'custom'
-    assert layer.colormap[1] == cmap
+    assert layer.colormap.name == 'custom'
+    assert layer.colormap == cmap
 
     cmap = Colormap([[0.0, 0.0, 0.0, 0.0], [0.7, 0.2, 0.6, 1.0]])
     layer = Image(data, multiscale=True, colormap={'new': cmap})
-    assert layer.colormap[0] == 'new'
-    assert layer.colormap[1] == cmap
+    assert layer.colormap.name == 'new'
+    assert layer.colormap == cmap
 
 
 def test_contrast_limits():
@@ -390,5 +391,16 @@ def test_world_data_extent():
     shapes = [(6, 40, 80), (3, 20, 40), (1, 10, 20)]
     data = [np.random.random(s) for s in shapes]
     layer = Image(data)
-    extent = np.array(((0,) * 3, shapes[0]))
+    extent = np.array(((0,) * 3, np.subtract(shapes[0], 1)))
     check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
+
+
+def test_5D_multiscale():
+    """Test 5D multiscale data."""
+    shapes = [(1, 2, 5, 20, 20), (1, 2, 5, 10, 10), (1, 2, 5, 5, 5)]
+    np.random.seed(0)
+    data = [np.random.random(s) for s in shapes]
+    layer = Image(data, multiscale=True)
+    assert layer.data == data
+    assert layer.multiscale is True
+    assert layer.ndim == len(shapes[0])

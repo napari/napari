@@ -20,9 +20,8 @@ the final functions, along with introspection, and tab autocompletion, etc...
 """
 import inspect
 import sys
-import typing
 import textwrap
-
+import typing
 
 from numpydoc.docscrape import NumpyDocString
 
@@ -136,6 +135,7 @@ def _generate_view_function(layer_string: str, method_name: str = None):
             'typing': typing,
             'view_sig': view_sig,
             'Union': typing.Union,
+            'Optional': typing.Optional,
             'List': typing.List,
             'NoneType': type(None),
             'Sequence': typing.Sequence,
@@ -147,7 +147,15 @@ def _generate_view_function(layer_string: str, method_name: str = None):
     view_func.__doc__ = merge_docs(add_method, layer_string)
 
 
-for _layer in ('image', 'points', 'labels', 'shapes', 'surface', 'vectors'):
+for _layer in (
+    'image',
+    'points',
+    'labels',
+    'shapes',
+    'surface',
+    'vectors',
+    'tracks',
+):
     _generate_view_function(_layer)
 
 _generate_view_function('path', 'open')

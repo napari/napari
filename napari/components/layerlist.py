@@ -1,9 +1,15 @@
-import numpy as np
 import itertools
-from typing import Optional, List
+import warnings
+from collections import namedtuple
+from typing import List, Optional
+
+import numpy as np
+
 from ..layers import Layer
-from ..utils.naming import inc_name_count
 from ..utils.list import ListModel
+from ..utils.naming import inc_name_count
+
+Extent = namedtuple('Extent', 'data world step')
 
 
 def _add(event):
@@ -202,19 +208,31 @@ class LayerList(ListModel):
             min_v = [np.nan] * self.ndim
             max_v = [np.nan] * self.ndim
         else:
-            extrema = [layer._extent_world for layer in self]
+            extrema = [layer.extent.world for layer in self]
             mins = [e[0][::-1] for e in extrema]
             maxs = [e[1][::-1] for e in extrema]
 
-            min_v = np.nanmin(
-                list(itertools.zip_longest(*mins, fillvalue=np.nan)), axis=1
-            )
-            max_v = np.nanmax(
-                list(itertools.zip_longest(*maxs, fillvalue=np.nan)), axis=1
-            )
+            with warnings.catch_warnings():
+                # Taking the nanmin and nanmax of an axis of all nan
+                # raises a warning and returns nan for that axis
+                # as we have do an explict nan_to_num below this
+                # behaviour is acceptable and we can filter the
+                # warning
+                warnings.filterwarnings(
+                    'ignore', message='All-NaN axis encountered'
+                )
+                min_v = np.nanmin(
+                    list(itertools.zip_longest(*mins, fillvalue=np.nan)),
+                    axis=1,
+                )
+                max_v = np.nanmax(
+                    list(itertools.zip_longest(*maxs, fillvalue=np.nan)),
+                    axis=1,
+                )
 
-        min_vals = np.nan_to_num(min_v[::-1], nan=0)
-        max_vals = np.nan_to_num(max_v[::-1], nan=512)
+        min_vals = np.nan_to_num(min_v[::-1])
+        max_vals = np.copy(max_v[::-1])
+        max_vals[np.isnan(max_vals)] = 511
 
         return np.vstack([min_vals, max_vals])
 
@@ -233,7 +251,7 @@ class LayerList(ListModel):
         if len(self) == 0:
             return np.ones(self.ndim)
         else:
-            scales = [layer.scale[::-1] for layer in self]
+            scales = [layer.extent.step[::-1] for layer in self]
             full_scales = list(
                 np.array(
                     list(itertools.zip_longest(*scales, fillvalue=np.nan))
@@ -241,6 +259,13 @@ class LayerList(ListModel):
             )
             min_scales = np.nanmin(full_scales, axis=0)
             return min_scales[::-1]
+
+    @property
+    def extent(self) -> Extent:
+        """Extent of layers in data and world coordinates."""
+        return Extent(
+            data=None, world=self._extent_world, step=self._step_size
+        )
 
     @property
     def ndim(self) -> int:
@@ -318,8 +343,6 @@ class LayerList(ListModel):
         layers = self.selected if selected else list(self)
 
         if not layers:
-            import warnings
-
             warnings.warn(f"No layers {'selected' if selected else 'to save'}")
             return []
 

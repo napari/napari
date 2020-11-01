@@ -14,11 +14,8 @@ from numpydoc.docscrape import ClassDoc, FunctionDoc
 import napari
 from napari import Viewer
 from napari import layers as module
-from napari._tests.utils import (
-    check_viewer_functioning,
-    layer_test_data,
-)
-from napari.utils.misc import callsignature, camel_to_snake
+from napari._tests.utils import check_viewer_functioning, layer_test_data
+from napari.utils.misc import camel_to_snake
 
 layers = []
 
@@ -45,7 +42,7 @@ def test_docstring(layer):
     # check summary section
     method_summary = ' '.join(method_doc['Summary'])  # join multi-line summary
 
-    summary_format = 'Add an? .+? layer to the layers list.'
+    summary_format = 'Add an? .+? layer to the layer list.'
 
     assert re.match(
         summary_format, method_summary
@@ -125,43 +122,6 @@ def test_signature(layer):
             assert class_param in method_parameters.keys(), fail_msg
     else:
         assert class_parameters == method_parameters, fail_msg
-
-    code = inspect.getsource(method)
-
-    # Below, we test that somewhere in the source code of the method, a call to
-    # the corresponding Layer.__init__ method is made that has all of the same
-    # parameters.  add_image has a special implementation, and therefore
-    # requires a modified test.
-    if name == 'Image':
-        # it becomes very cumbersome to have to type out all of the
-        # parameters in add_image for both single images, and all the iterables
-        # when channel_axis is supplied, so the approach was changed in
-        # https://github.com/napari/napari/pull/1092
-        # this makes sure we're still passing all the proper arguments
-        args = re.search(r'kwargs = \{(.+?)\}', code, flags=re.S)
-        args = ' '.join(args.group(1).split())
-        # convert 'arg': arg -> arg=arg
-        args = 'data, ' + re.sub(r"['\"]([^'\"]+)['\"]:\s?", '\\1=', args)
-    else:
-        args = re.search(rf'layer = layers\.{name}\((.+?)\)', code, flags=re.S)
-        # get the arguments & normalize whitespace
-        args = ' '.join(args.group(1).split())
-
-    if args.endswith(','):  # remove tailing comma if present
-        args = args[:-1]
-
-    autogen = callsignature(layer)
-    autogen = autogen.replace(
-        # remove 'self' parameter
-        parameters=[p for k, p in autogen.parameters.items() if k != 'self']
-    )
-    autogen = str(autogen)[1:-1]  # remove parentheses
-
-    msg = (
-        'arguments improperly passed from convenience '
-        f'method to layer {name}'
-    )
-    assert args == autogen, msg
 
 
 @pytest.mark.parametrize('layer_type, data, ndim', layer_test_data)
