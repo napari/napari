@@ -91,11 +91,6 @@ class QtLabelsControls(QtLayerControls):
         self.selectionSpinBox.setAlignment(Qt.AlignCenter)
         self._on_selection_change()
 
-        selectedColorCheckbox = QCheckBox()
-        selectedColorCheckbox.setToolTip("Display only selected label")
-        selectedColorCheckbox.stateChanged.connect(self.toggle_selected_mode)
-        self.selectedColorCheckbox = selectedColorCheckbox
-
         sld = QSlider(Qt.Horizontal)
         sld.setFocusPolicy(Qt.NoFocus)
         sld.setMinimum(1)
@@ -124,6 +119,11 @@ class QtLabelsControls(QtLayerControls):
         preserve_labels_cb.stateChanged.connect(self.change_preserve_labels)
         self.preserveLabelsCheckBox = preserve_labels_cb
         self._on_preserve_labels_change()
+
+        selectedColorCheckbox = QCheckBox()
+        selectedColorCheckbox.setToolTip("Display only selected label")
+        selectedColorCheckbox.stateChanged.connect(self.toggle_selected_mode)
+        self.selectedColorCheckbox = selectedColorCheckbox
 
         # shuffle colormap button
         self.colormapUpdate = QtModePushButton(
@@ -193,7 +193,6 @@ class QtLabelsControls(QtLayerControls):
         color_layout = QHBoxLayout()
         color_layout.addWidget(QtColorBox(layer))
         color_layout.addWidget(self.selectionSpinBox)
-        color_layout.addWidget(self.selectedColorCheckbox)
 
         # grid_layout created in QtLayerControls
         # addWidget(widget, row, column, [row_span, column_span])
@@ -216,6 +215,8 @@ class QtLabelsControls(QtLayerControls):
         self.grid_layout.addWidget(self.ndimCheckBox, 7, 3, 1, 1)
         self.grid_layout.addWidget(QLabel('preserve labels:'), 8, 0, 1, 2)
         self.grid_layout.addWidget(self.preserveLabelsCheckBox, 8, 1, 1, 1)
+        self.grid_layout.addWidget(QLabel('show selected:'), 8, 2, 1, 2)
+        self.grid_layout.addWidget(self.selectedColorCheckbox, 8, 3, 1, 1)
         self.grid_layout.setRowStretch(9, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
