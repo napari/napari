@@ -141,7 +141,7 @@ class VispyCamera:
         Update camera model angles, center, and zoom.
         """
         global node_index
-        print(f"VispyCamera.on-draw: {node_index}")
+        print(f"VispyCamera.on_draw: {node_index}")
         Node()
         node_index += 1
         with self._camera.events.center.blocker(self._on_angles_change):
