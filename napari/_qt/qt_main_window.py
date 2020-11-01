@@ -3,6 +3,8 @@ Custom Qt widgets that serve as native objects that the public-facing elements
 wrap.
 """
 import os
+import platform
+import sys
 import time
 
 from qtpy.QtCore import Qt
@@ -20,16 +22,19 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from .. import __version__
 from ..resources import get_stylesheet
 from ..utils import perf
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter
+from ..utils.perf import perf_config
 from ..utils.theme import template
 from .dialogs.qt_about import QtAbout
 from .dialogs.qt_plugin_dialog import QtPluginDialog
 from .dialogs.qt_plugin_report import QtPluginErrReporter
 from .dialogs.screenshot_dialog import ScreenshotDialog
 from .qt_viewer import QtViewer
+from .qthreading import wait_for_workers_to_quit
 from .tracing.qt_debug_menu import DebugMenu
 from .utils import QImg2array
 from .widgets.qt_plugin_sorter import QtPluginSorter
@@ -41,7 +46,7 @@ class Window:
 
     Parameters
     ----------
-    qt_viewer : QtViewer
+    viewer : napari.components.ViewerModel
         Contained viewer widget.
 
     Attributes
@@ -60,11 +65,71 @@ class Window:
         Window menu.
     """
 
+    # set _napari_app_id to False to avoid overwriting dock icon on windows
+    # set _napari_app_id to custom string to prevent grouping different base viewer
+    _napari_app_id = 'napari.napari.viewer.' + str(__version__)
     raw_stylesheet = get_stylesheet()
 
-    def __init__(self, qt_viewer: QtViewer, *, show: bool = True):
+    def __init__(self, viewer, *, show: bool = True):
 
-        self.qt_viewer = qt_viewer
+        # Check there is a running app
+        # instance() returns the singleton instance if it exists, or None
+        app = QApplication.instance()
+        # if None, raise a RuntimeError with the appropriate message
+        if app is None:
+            message = (
+                "napari requires a Qt event loop to run. To create one, "
+                "try one of the following: \n"
+                "  - use the `napari.gui_qt()` context manager. See "
+                "https://github.com/napari/napari/tree/master/examples for"
+                " usage examples.\n"
+                "  - In IPython or a local Jupyter instance, use the "
+                "`%gui qt` magic command.\n"
+                "  - Launch IPython with the option `--gui=qt`.\n"
+                "  - (recommended) in your IPython configuration file, add"
+                " or uncomment the line `c.TerminalIPythonApp.gui = 'qt'`."
+                " Then, restart IPython."
+            )
+            raise RuntimeError(message)
+
+        if perf_config:
+            if perf_config.trace_qt_events:
+                from ._qt.tracing.qt_event_tracing import (
+                    convert_app_for_tracing,
+                )
+
+                # For tracing Qt events we need a special QApplication. If
+                # using `gui_qt` we already have the special one, and no
+                # conversion is done here. However when running inside
+                # IPython or Jupyter this is where we switch out the
+                # QApplication.
+                app = convert_app_for_tracing(app)
+
+            # Will patch based on config file.
+            perf_config.patch_callables()
+
+        if (
+            platform.system() == "Windows"
+            and not getattr(sys, 'frozen', False)
+            and self._napari_app_id
+        ):
+            import ctypes
+
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+                self._napari_app_id
+            )
+
+        logopath = os.path.join(
+            os.path.dirname(__file__), '..', 'resources', 'logo.png'
+        )
+        app.setWindowIcon(QIcon(logopath))
+
+        # see docstring of `wait_for_workers_to_quit` for caveats on killing
+        # workers at shutdown.
+        app.aboutToQuit.connect(wait_for_workers_to_quit)
+
+        # Connect the Viewer and create the Main Window
+        self.qt_viewer = QtViewer(viewer)
 
         self._qt_window = QMainWindow()
         self._qt_window.setAttribute(Qt.WA_DeleteOnClose)
