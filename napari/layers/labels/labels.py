@@ -173,7 +173,7 @@ class Labels(Image):
         self._random_colormap = label_colormap(self.num_colors)
         self._color_mode = LabelColorMode.AUTO
         self._brush_shape = LabelBrushShape.CIRCLE
-        self._filter_to_selected = False
+        self._show_selected_label = False
 
         if properties is None:
             self._properties = {}
@@ -406,7 +406,7 @@ class Labels(Image):
 
         # note: self.color_mode returns a string and this comparison fails,
         # so use self._color_mode
-        if self.filter_to_selected:
+        if self.show_selected_label:
             self.refresh()
 
     @property
@@ -443,14 +443,14 @@ class Labels(Image):
         self.refresh()
 
     @property
-    def filter_to_selected(self):
+    def show_selected_label(self):
         """Whether to filter displayed labels to only the selected label or not
         """
-        return self._filter_to_selected
+        return self._show_selected_label
 
-    @filter_to_selected.setter
-    def filter_to_selected(self, filter):
-        self._filter_to_selected = filter
+    @show_selected_label.setter
+    def show_selected_label(self, filter):
+        self._show_selected_label = filter
         self.refresh()
 
     @property
@@ -590,7 +590,7 @@ class Labels(Image):
             Image mapped between 0 and 1 to be displayed.
         """
         if (
-            not self.filter_to_selected
+            not self.show_selected_label
             and self._color_mode == LabelColorMode.DIRECT
         ):
             u, inv = np.unique(raw, return_inverse=True)
@@ -603,14 +603,15 @@ class Labels(Image):
                 ]
             )[inv].reshape(raw.shape)
         elif (
-            not self.filter_to_selected
+            not self.show_selected_label
             and self._color_mode == LabelColorMode.AUTO
         ):
             image = np.where(
                 raw > 0, low_discrepancy_image(raw, self._seed), 0
             )
         elif (
-            self.filter_to_selected and self._color_mode == LabelColorMode.AUTO
+            self.show_selected_label
+            and self._color_mode == LabelColorMode.AUTO
         ):
             selected = self._selected_label
             image = np.where(
@@ -619,7 +620,7 @@ class Labels(Image):
                 0,
             )
         elif (
-            self.filter_to_selected
+            self.show_selected_label
             and self._color_mode == LabelColorMode.DIRECT
         ):
             selected = self._selected_label

@@ -374,14 +374,14 @@ def test_label_color():
     assert len(col) == 4
 
 
-def test_filter_to_selected():
+def test_show_selected_label():
     """Test color of labels when filtering to selected labels"""
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
     original_color = layer.get_color(1)
 
-    layer.filter_to_selected = True
+    layer.show_selected_label = True
     original_background_color = layer.get_color(layer._background_label)
     none_color = layer.get_color(None)
     layer.selected_label = 1
