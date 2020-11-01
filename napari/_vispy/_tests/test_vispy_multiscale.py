@@ -61,8 +61,12 @@ def test_3D_multiscale_image(make_test_viewer):
 
 
 @pytest.mark.skipif(
-    sys.platform.startswith('win') or not os.getenv("CI"),
+    sys.platform.startswith('win') and os.getenv('CI'),
     reason='Screenshot tests are not supported on napari windows CI.',
+)
+@pytest.mark.skipif(
+    not os.getenv('CI') and not os.getenv('NAPARI_POPUP_TESTS'),
+    reason='Tests requiring pop-up napari windows are skipped locally by default.',
 )
 def test_multiscale_screenshot(make_test_viewer):
     """Test rendering of multiscale data with screenshot."""
@@ -91,8 +95,12 @@ def test_multiscale_screenshot(make_test_viewer):
 
 
 @pytest.mark.skipif(
-    sys.platform.startswith('win') or not os.getenv("CI"),
+    sys.platform.startswith('win') and os.getenv('CI'),
     reason='Screenshot tests are not supported on napari windows CI.',
+)
+@pytest.mark.skipif(
+    not os.getenv('CI') and not os.getenv('NAPARI_POPUP_TESTS'),
+    reason='Tests requiring pop-up napari windows are skipped locally by default.',
 )
 def test_multiscale_screenshot_zoomed(make_test_viewer):
     """Test rendering of multiscale data with screenshot after zoom."""
@@ -128,8 +136,12 @@ def test_multiscale_screenshot_zoomed(make_test_viewer):
 
 
 @pytest.mark.skipif(
-    sys.platform.startswith('win') or not os.getenv("CI"),
+    sys.platform.startswith('win') and os.getenv('CI'),
     reason='Screenshot tests are not supported on napari windows CI.',
+)
+@pytest.mark.skipif(
+    not os.getenv('CI') and not os.getenv('NAPARI_POPUP_TESTS'),
+    reason='Tests requiring pop-up napari windows are skipped locally by default.',
 )
 def test_image_screenshot_zoomed(make_test_viewer):
     """Test rendering of image data with screenshot after zoom."""
@@ -161,8 +173,12 @@ def test_image_screenshot_zoomed(make_test_viewer):
 
 
 @pytest.mark.skipif(
-    sys.platform.startswith('win') or not os.getenv("CI"),
+    sys.platform.startswith('win') and os.getenv('CI'),
     reason='Screenshot tests are not supported on napari windows CI.',
+)
+@pytest.mark.skipif(
+    not os.getenv('CI') and not os.getenv('NAPARI_POPUP_TESTS'),
+    reason='Tests requiring pop-up napari windows are skipped locally by default.',
 )
 def test_5D_multiscale(make_test_viewer):
     """Test 5D multiscale data."""
