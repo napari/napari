@@ -173,6 +173,7 @@ class Labels(Image):
         self._random_colormap = label_colormap(self.num_colors)
         self._color_mode = LabelColorMode.AUTO
         self._brush_shape = LabelBrushShape.CIRCLE
+        self._show_selected_label = False
 
         if properties is None:
             self._properties = {}
@@ -405,7 +406,7 @@ class Labels(Image):
 
         # note: self.color_mode returns a string and this comparison fails,
         # so use self._color_mode
-        if self._color_mode == LabelColorMode.SELECTED:
+        if self.show_selected_label:
             self.refresh()
 
     @property
@@ -415,8 +416,6 @@ class Labels(Image):
         AUTO (default) allows color to be set via a hash function with a seed.
 
         DIRECT allows color of each label to be set directly by a color dict.
-
-        SELECTED allows only selected labels to be visible.
         """
         return str(self._color_mode)
 
@@ -432,8 +431,7 @@ class Labels(Image):
         elif color_mode == LabelColorMode.AUTO:
             self._label_color_index = {}
             self.colormap = self._random_colormap
-        elif color_mode == LabelColorMode.SELECTED:
-            pass
+
         else:
             raise ValueError("Unsupported Color Mode")
 
@@ -442,6 +440,17 @@ class Labels(Image):
         self.events.color_mode()
         self.events.colormap()
         self.events.selected_label()
+        self.refresh()
+
+    @property
+    def show_selected_label(self):
+        """Whether to filter displayed labels to only the selected label or not
+        """
+        return self._show_selected_label
+
+    @show_selected_label.setter
+    def show_selected_label(self, filter):
+        self._show_selected_label = filter
         self.refresh()
 
     @property
@@ -578,7 +587,10 @@ class Labels(Image):
         image : array
             Image mapped between 0 and 1 to be displayed.
         """
-        if self._color_mode == LabelColorMode.DIRECT:
+        if (
+            not self.show_selected_label
+            and self._color_mode == LabelColorMode.DIRECT
+        ):
             u, inv = np.unique(raw, return_inverse=True)
             image = np.array(
                 [
@@ -588,34 +600,43 @@ class Labels(Image):
                     for x in u
                 ]
             )[inv].reshape(raw.shape)
-        elif self._color_mode == LabelColorMode.AUTO:
+        elif (
+            not self.show_selected_label
+            and self._color_mode == LabelColorMode.AUTO
+        ):
             image = np.where(
                 raw > 0, low_discrepancy_image(raw, self._seed), 0
             )
-        elif self._color_mode == LabelColorMode.SELECTED:
+        elif (
+            self.show_selected_label
+            and self._color_mode == LabelColorMode.AUTO
+        ):
             selected = self._selected_label
-            # we were in direct mode previously
-            if self._label_color_index:
-                if selected not in self._label_color_index:
-                    selected = None
-                index = self._label_color_index
-                image = np.where(
-                    raw == selected,
-                    index[selected],
-                    np.where(
-                        raw != self._background_label,
-                        index[None],
-                        index[self._background_label],
-                    ),
-                )
-            else:
-                image = np.where(
-                    raw == selected,
-                    low_discrepancy_image(selected, self._seed),
-                    0,
-                )
+            image = np.where(
+                raw == selected,
+                low_discrepancy_image(selected, self._seed),
+                0,
+            )
+        elif (
+            self.show_selected_label
+            and self._color_mode == LabelColorMode.DIRECT
+        ):
+            selected = self._selected_label
+            if selected not in self._label_color_index:
+                selected = None
+            index = self._label_color_index
+            image = np.where(
+                raw == selected,
+                index[selected],
+                np.where(
+                    raw != self._background_label,
+                    index[None],
+                    index[self._background_label],
+                ),
+            )
         else:
             raise ValueError("Unsupported Color Mode")
+
         return image
 
     def new_colormap(self):

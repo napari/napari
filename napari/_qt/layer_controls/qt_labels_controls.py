@@ -120,6 +120,11 @@ class QtLabelsControls(QtLayerControls):
         self.preserveLabelsCheckBox = preserve_labels_cb
         self._on_preserve_labels_change()
 
+        selectedColorCheckbox = QCheckBox()
+        selectedColorCheckbox.setToolTip("Display only selected label")
+        selectedColorCheckbox.stateChanged.connect(self.toggle_selected_mode)
+        self.selectedColorCheckbox = selectedColorCheckbox
+
         # shuffle colormap button
         self.colormapUpdate = QtModePushButton(
             None, 'shuffle', slot=self.changeColor, tooltip='shuffle colors',
@@ -210,6 +215,8 @@ class QtLabelsControls(QtLayerControls):
         self.grid_layout.addWidget(self.ndimCheckBox, 7, 3, 1, 1)
         self.grid_layout.addWidget(QLabel('preserve labels:'), 8, 0, 1, 2)
         self.grid_layout.addWidget(self.preserveLabelsCheckBox, 8, 1, 1, 1)
+        self.grid_layout.addWidget(QLabel('show selected:'), 8, 2, 1, 1)
+        self.grid_layout.addWidget(self.selectedColorCheckbox, 8, 3, 1, 1)
         self.grid_layout.setRowStretch(9, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
@@ -270,6 +277,12 @@ class QtLabelsControls(QtLayerControls):
         self.selectionSpinBox.clearFocus()
         self.setFocus()
 
+    def toggle_selected_mode(self, state):
+        if state == Qt.Checked:
+            self.layer.show_selected_label = True
+        else:
+            self.layer.show_selected_label = False
+
     def changeSize(self, value):
         """Change paint brush size.
 
@@ -327,7 +340,6 @@ class QtLabelsControls(QtLayerControls):
         new_mode : str
             AUTO (default) allows color to be set via a hash function with a seed.
             DIRECT allows color of each label to be set directly by a color dictionary.
-            SELECTED allows only selected labels to be visible.
         """
         self.layer.color_mode = new_mode
 
