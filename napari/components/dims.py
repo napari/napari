@@ -355,6 +355,30 @@ class Dims:
         if axis is not None:
             self.set_current_step(axis, self.current_step[axis] - 1)
 
+    def _focus_up(self):
+        """Shift focused dimension slider to be the next slider above."""
+        displayed = [d for d in self.displayed if self.nsteps[d] > 1]
+        if len(displayed) == 0:
+            return
+
+        if self.last_used is None:
+            self.last_used = displayed[-1]
+        else:
+            index = (displayed.index(self.last_used) + 1) % len(displayed)
+            self.last_used = displayed[index]
+
+    def _focus_down(self):
+        """Shift focused dimension slider to be the next slider bellow."""
+        displayed = [d for d in self.displayed if self.nsteps[d] > 1]
+        if len(displayed) == 0:
+            return
+
+        if self.last_used is None:
+            self.last_used = displayed[-1]
+        else:
+            index = (displayed.index(self.last_used) - 1) % len(displayed)
+            self.last_used = displayed[index]
+
     def set_axis_label(self, axis: int, label: str):
         """Sets a new axis label for the given axis.
 

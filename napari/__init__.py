@@ -54,10 +54,6 @@ del app
 vispy_logger = logging.getLogger('vispy')
 vispy_logger.setLevel(logging.WARNING)
 
-# Note that importing _viewer_key_bindings is needed as the Viewer gets
-# decorated with keybindings during that process, but it is not directly needed
-# by our users and so is deleted below
-# from . import _viewer_key_bindings  # noqa: F401
 from .viewer import Viewer  # isort:skip
 from ._qt import gui_qt
 from .plugins.io import save_layers
@@ -86,4 +82,3 @@ from scipy import stats  # noqa: F401
 
 del _magicgui
 del stats
-# del _viewer_key_bindings

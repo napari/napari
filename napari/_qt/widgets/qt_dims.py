@@ -277,30 +277,6 @@ class QtDims(QWidget):
         self.setMinimumHeight(int(nsliders * self.SLIDERHEIGHT))
         self.dims.last_used = None
 
-    def focus_up(self):
-        """Shift focused dimension slider to be the next slider above."""
-        displayed = list(np.nonzero(self._displayed_sliders)[0])
-        if len(displayed) == 0:
-            return
-
-        if self.dims.last_used is None:
-            self.dims.last_used = displayed[-1]
-        else:
-            index = (displayed.index(self.dims.last_used) + 1) % len(displayed)
-            self.dims.last_used = displayed[index]
-
-    def focus_down(self):
-        """Shift focused dimension slider to be the next slider bellow."""
-        displayed = list(np.nonzero(self._displayed_sliders)[0])
-        if len(displayed) == 0:
-            return
-
-        if self.dims.last_used is None:
-            self.dims.last_used = displayed[-1]
-        else:
-            index = (displayed.index(self.dims.last_used) - 1) % len(displayed)
-            self.dims.last_used = displayed[index]
-
     def play(
         self,
         axis: int = 0,

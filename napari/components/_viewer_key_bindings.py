@@ -1,4 +1,5 @@
 import numpy as np
+
 from .viewer_model import ViewerModel
 
 
@@ -33,6 +34,18 @@ def increment_dims_left(viewer):
 def increment_dims_right(viewer):
     """Increment dimensions slider to the right."""
     viewer.dims._increment_dims_right()
+
+
+@ViewerModel.bind_key('Alt-Up')
+def focus_axes_up(viewer):
+    """Move focus of dimensions slider up."""
+    viewer.dims._focus_up()
+
+
+@ViewerModel.bind_key('Alt-Down')
+def focus_axes_down(viewer):
+    """Move focus of dimensions slider down."""
+    viewer.dims._focus_down()
 
 
 @ViewerModel.bind_key('Control-E')
