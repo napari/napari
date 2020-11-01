@@ -169,6 +169,8 @@ class Tracks(Layer):
         self.display_graph = True
 
         # set the data, properties and graph
+        indices = np.lexsort((data[:, 1], data[:, 0]))
+        data = data[indices]
         self.data = data
         self.properties = properties
         self.graph = graph or {}
