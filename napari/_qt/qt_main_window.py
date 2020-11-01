@@ -2,7 +2,7 @@
 Custom Qt widgets that serve as native objects that the public-facing elements
 wrap.
 """
-import os.path
+import os
 import time
 
 from qtpy.QtCore import Qt
@@ -26,8 +26,8 @@ from ..utils.io import imsave
 from ..utils.misc import in_jupyter
 from ..utils.theme import template
 from .dialogs.qt_about import QtAbout
+from .dialogs.qt_plugin_dialog import QtPluginDialog
 from .dialogs.qt_plugin_report import QtPluginErrReporter
-from .dialogs.qt_plugin_table import QtPluginTable
 from .dialogs.screenshot_dialog import ScreenshotDialog
 from .qt_viewer import QtViewer
 from .tracing.qt_debug_menu import DebugMenu
@@ -88,7 +88,8 @@ class Window:
         self._add_file_menu()
         self._add_view_menu()
         self._add_window_menu()
-        self._add_plugins_menu()
+        if not os.getenv("DISABLE_ALL_PLUGINS"):
+            self._add_plugins_menu()
         self._add_help_menu()
 
         self._status_bar.showMessage('Ready')
@@ -341,17 +342,10 @@ class Window:
         """Add 'Plugins' menu to app menubar."""
         self.plugins_menu = self.main_menu.addMenu('&Plugins')
 
-        list_plugins_action = QAction(
-            "List Installed Plugins...", self._qt_window
-        )
-        list_plugins_action.setStatusTip('List installed plugins')
-        list_plugins_action.triggered.connect(self._show_plugin_list)
-        self.plugins_menu.addAction(list_plugins_action)
-
         pip_install_action = QAction(
             "Install/Uninstall Package(s)...", self._qt_window
         )
-        pip_install_action.triggered.connect(self._show_pip_install_dialog)
+        pip_install_action.triggered.connect(self._show_plugin_install_dialog)
         self.plugins_menu.addAction(pip_install_action)
 
         order_plugin_action = QAction("Plugin Call Order...", self._qt_window)
@@ -366,31 +360,25 @@ class Window:
         report_plugin_action.triggered.connect(self._show_plugin_err_reporter)
         self.plugins_menu.addAction(report_plugin_action)
 
-    def _show_plugin_list(self, plugin_manager=None):
-        """Show dialog with a table of installed plugins and metadata."""
-        QtPluginTable(self._qt_window).exec_()
-
     def _show_plugin_sorter(self):
         """Show dialog that allows users to sort the call order of plugins."""
         plugin_sorter = QtPluginSorter(parent=self._qt_window)
-        dock_widget = self.add_dock_widget(
-            plugin_sorter, name='Plugin Sorter', area="right"
-        )
-        plugin_sorter.finished.connect(dock_widget.close)
-        plugin_sorter.finished.connect(plugin_sorter.deleteLater)
-        plugin_sorter.finished.connect(dock_widget.deleteLater)
+        if hasattr(self, 'plugin_sorter_widget'):
+            self.plugin_sorter_widget.show()
+        else:
+            self.plugin_sorter_widget = self.add_dock_widget(
+                plugin_sorter, name='Plugin Sorter', area="right"
+            )
 
-    def _show_pip_install_dialog(self):
+    def _show_plugin_install_dialog(self):
         """Show dialog that allows users to sort the call order of plugins."""
-        from .qt_pip_dialog import QtPipDialog
 
-        dialog = QtPipDialog(self._qt_window)
-        dialog.exec_()
+        self.plugin_dialog = QtPluginDialog(self._qt_window)
+        self.plugin_dialog.exec_()
 
     def _show_plugin_err_reporter(self):
         """Show dialog that allows users to review and report plugin errors."""
-        plugin_sorter = QtPluginErrReporter(parent=self._qt_window)
-        plugin_sorter.exec_()
+        QtPluginErrReporter(parent=self._qt_window).exec_()
 
     def _add_help_menu(self):
         """Add 'Help' menu to app menubar."""

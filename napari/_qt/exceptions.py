@@ -7,7 +7,7 @@ from typing import Optional, Type
 
 from qtpy.QtCore import QObject, Signal
 
-from .qt_error_notification import NapariNotification
+from .dialogs.qt_error_notification import NapariNotification
 
 
 class ExceptionHandler(QObject):

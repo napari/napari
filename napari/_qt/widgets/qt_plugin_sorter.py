@@ -1,5 +1,6 @@
 """Provides a QtPluginSorter that allows the user to change plugin call order.
 """
+import re
 from typing import List, Optional, Union
 
 from napari_plugin_engine import HookCaller, HookImplementation, PluginManager
@@ -7,7 +8,6 @@ from qtpy.QtCore import QEvent, Qt, Signal, Slot
 from qtpy.QtWidgets import (
     QCheckBox,
     QComboBox,
-    QDialog,
     QFrame,
     QGraphicsOpacityEffect,
     QHBoxLayout,
@@ -21,6 +21,25 @@ from qtpy.QtWidgets import (
 
 from ...plugins import plugin_manager as napari_plugin_manager
 from ..utils import drag_with_pixmap
+
+
+def rst2html(text):
+    def ref(match):
+        _text = match.groups()[0].split()[0]
+        if _text.startswith("~"):
+            _text = _text.split(".")[-1]
+        return f'``{_text}``'
+
+    def link(match):
+        _text, _link = match.groups()[0].split('<')
+        return f'<a href="{_link.rstrip(">")}">{_text.strip()}</a>'
+
+    text = re.sub(r'\*\*([^\*]+)\*\*', '<strong>\\1</strong>', text)
+    text = re.sub(r'\*([^\*]+)\*', '<em>\\1</em>', text)
+    text = re.sub(r':[a-z]+:`([^`]+)`', ref, text, re.DOTALL)
+    text = re.sub(r'`([^`]+)`_', link, text, re.DOTALL)
+    text = re.sub(r'``([^`]+)``', '<code>\\1</code>', text)
+    return text.replace("\n", "<br>")
 
 
 class ImplementationListItem(QFrame):
@@ -201,7 +220,7 @@ class QtHookImplementationListWidget(QListWidget):
         self.hook_caller.bring_to_front(order)
 
 
-class QtPluginSorter(QDialog):
+class QtPluginSorter(QWidget):
     """Dialog that allows a user to change the call order of plugin hooks.
 
     A main QComboBox lets the user pick which hook specification they would
@@ -247,49 +266,65 @@ class QtPluginSorter(QDialog):
         firstresult_only: bool = True,
     ):
         super().__init__(parent)
-        self.setWindowModality(Qt.NonModal)
         self.plugin_manager = plugin_manager
-        self.layout = QVBoxLayout()
-        self.setLayout(self.layout)
         self.hook_combo_box = QComboBox()
-        self.hook_combo_box.addItem(self.NULL_OPTION)
+        self.hook_combo_box.addItem(self.NULL_OPTION, None)
 
         # populate comboBox with all of the hooks known by the plugin manager
-        hooks = []
         for name, hook_caller in plugin_manager.hooks.items():
+            # only show hooks with specifications
+            if not hook_caller.spec:
+                continue
+
             if firstresult_only:
                 # if the firstresult_only option is set
                 # we only want to include hook_specifications that declare the
                 # "firstresult" option as True.
                 if not hook_caller.spec.opts.get('firstresult', False):
                     continue
-            hooks.append(name)
-        self.hook_combo_box.addItems(hooks)
+            self.hook_combo_box.addItem(
+                name.replace("napari_", ""), hook_caller
+            )
         self.hook_combo_box.setToolTip(
             "select the hook specification to reorder"
         )
-        self.hook_combo_box.activated[str].connect(self.set_current_hook)
+        self.hook_combo_box.currentIndexChanged.connect(self._on_hook_change)
         self.hook_list = QtHookImplementationListWidget(parent=self)
 
         title = QLabel('Plugin Sorter')
-        title.setObjectName("h2")
-        self.layout.addWidget(title)
+        title.setObjectName("h3")
 
         instructions = QLabel(
             'Select a hook to rearrange, then drag and '
-            'drop plugins into the desired call order. '
-            '\nDisable plugins by unchecking their checkbox.'
+            'drop plugins into the desired call order.\n\n'
+            'Disable plugins for a specific hook by unchecking their checkbox.'
         )
         instructions.setWordWrap(True)
-        self.layout.addWidget(instructions)
 
-        self.layout.addWidget(self.hook_combo_box)
-        self.layout.addWidget(self.hook_list)
+        self.docstring = QLabel(self)
+        self.info = QLabel(self)
+        self.info.setObjectName("info_icon")
+        doc_lay = QHBoxLayout()
+        doc_lay.addWidget(self.docstring)
+        doc_lay.setStretch(0, 1)
+        doc_lay.addWidget(self.info)
+
+        self.docstring.setWordWrap(True)
+        self.docstring.setObjectName('small_text')
+        self.info.hide()
+        self.docstring.hide()
+
+        layout = QVBoxLayout(self)
+        layout.addWidget(title)
+        layout.addWidget(instructions)
+        layout.addWidget(self.hook_combo_box)
+        layout.addLayout(doc_lay)
+        layout.addWidget(self.hook_list)
+
         if initial_hook is not None:
-            self.hook_combo_box.setCurrentText(initial_hook)
-            self.set_current_hook(initial_hook)
+            self.set_hookname(initial_hook)
 
-    def set_current_hook(self, hook: str):
+    def set_hookname(self, hook: str):
         """Change the hook specification shown in the list widget.
 
         Parameters
@@ -297,8 +332,26 @@ class QtPluginSorter(QDialog):
         hook : str
             Name of the new hook specification to show.
         """
-        if hook == self.NULL_OPTION:
-            hook_caller = None
-        else:
-            hook_caller = getattr(self.plugin_manager.hooks, hook)
+        self.hook_combo_box.setCurrentText(hook.replace("napari_", ''))
+
+    def _on_hook_change(self, index):
+        hook_caller = self.hook_combo_box.currentData()
         self.hook_list.set_hook_caller(hook_caller)
+
+        if hook_caller:
+            doc = hook_caller.spec.function.__doc__
+            html = rst2html(doc.split("Parameters")[0].strip())
+            summary, fulldoc = html.split('<br>', 1)
+            while fulldoc.startswith('<br>'):
+                fulldoc = fulldoc[4:]
+            self.docstring.setText(summary.strip())
+            self.docstring.show()
+            self.info.show()
+            self.info.setToolTip(fulldoc.strip())
+        else:
+            self.docstring.hide()
+            self.info.hide()
+            self.docstring.setToolTip('')
+
+    def refresh(self):
+        self._on_hook_change(self.hook_combo_box.currentIndex())
