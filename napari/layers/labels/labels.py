@@ -589,7 +589,10 @@ class Labels(Image):
         image : array
             Image mapped between 0 and 1 to be displayed.
         """
-        if self._color_mode == LabelColorMode.DIRECT:
+        if (
+            not self.filter_to_selected
+            and self._color_mode == LabelColorMode.DIRECT
+        ):
             u, inv = np.unique(raw, return_inverse=True)
             image = np.array(
                 [
@@ -599,35 +602,41 @@ class Labels(Image):
                     for x in u
                 ]
             )[inv].reshape(raw.shape)
-        elif self._color_mode == LabelColorMode.AUTO:
+        elif (
+            not self.filter_to_selected
+            and self._color_mode == LabelColorMode.AUTO
+        ):
             image = np.where(
                 raw > 0, low_discrepancy_image(raw, self._seed), 0
             )
+        elif (
+            self.filter_to_selected and self._color_mode == LabelColorMode.AUTO
+        ):
+            selected = self._selected_label
+            image = np.where(
+                raw == selected,
+                low_discrepancy_image(selected, self._seed),
+                0,
+            )
+        elif (
+            self.filter_to_selected
+            and self._color_mode == LabelColorMode.DIRECT
+        ):
+            selected = self._selected_label
+            if selected not in self._label_color_index:
+                selected = None
+            index = self._label_color_index
+            image = np.where(
+                raw == selected,
+                index[selected],
+                np.where(
+                    raw != self._background_label,
+                    index[None],
+                    index[self._background_label],
+                ),
+            )
         else:
             raise ValueError("Unsupported Color Mode")
-
-        if self.filter_to_selected:
-            selected = self._selected_label
-            # we were in direct mode previously
-            if self._label_color_index:
-                if selected not in self._label_color_index:
-                    selected = None
-                index = self._label_color_index
-                image = np.where(
-                    raw == selected,
-                    index[selected],
-                    np.where(
-                        raw != self._background_label,
-                        index[None],
-                        index[self._background_label],
-                    ),
-                )
-            else:
-                image = np.where(
-                    raw == selected,
-                    low_discrepancy_image(selected, self._seed),
-                    0,
-                )
 
         return image
 
