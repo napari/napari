@@ -59,6 +59,7 @@ class Dims:
             ndisplay=None,
             order=None,
             range=None,
+            last_used=None,
             deprecated={"axis": "current_step", "camera": "ndisplay"},
         )
         self._range = []
@@ -66,7 +67,7 @@ class Dims:
         self._order = []
         self._axis_labels = []
         self._scroll_progress = 0
-        self.last_used = None
+        self._last_used = None
         self._ndisplay = 2 if ndisplay is None else ndisplay
 
         if ndim is None and order is None and axis_labels is None:
@@ -145,6 +146,18 @@ class Dims:
         self._axis_labels = list(labels)
         for axis in range(self.ndim):
             self.events.axis_labels(axis=axis)
+
+    @property
+    def last_used(self):
+        """int: Index of the last used slider."""
+        return self._last_used
+
+    @last_used.setter
+    def last_used(self, last_used):
+        if self._last_used == last_used:
+            return
+        self._last_used = last_used
+        self.events.last_used()
 
     @property
     def order(self):
