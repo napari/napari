@@ -20,6 +20,6 @@ from . import _viewer_key_bindings  # noqa: F401
 from .camera import Camera
 from .dims import Dims
 from .layerlist import LayerList
-from .viewer_model import ViewerModel
+from .viewer_model import ViewerModel  # noqa: F401
 
 del _viewer_key_bindings
