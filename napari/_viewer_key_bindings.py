@@ -1,15 +1,6 @@
 from .viewer import Viewer
 
 
-@Viewer.bind_key('Control-F')
-def toggle_fullscreen(viewer):
-    """Toggle fullscreen mode."""
-    if viewer.window._qt_window.isFullScreen():
-        viewer.window._qt_window.showNormal()
-    else:
-        viewer.window._qt_window.showFullScreen()
-
-
 @Viewer.bind_key('Alt-Up')
 def focus_axes_up(viewer):
     """Move focus of dimensions slider up."""

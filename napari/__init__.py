@@ -58,6 +58,7 @@ vispy_logger.setLevel(logging.WARNING)
 # decorated with keybindings during that process, but it is not directly needed
 # by our users and so is deleted below
 # from . import _viewer_key_bindings  # noqa: F401
+from .viewer import Viewer  # isort:skip
 from ._qt import gui_qt
 from .plugins.io import save_layers
 from .utils import _magicgui, sys_info
@@ -71,7 +72,6 @@ from .view_layers import (
     view_tracks,
     view_vectors,
 )
-from .viewer import Viewer
 
 # register napari object types with magicgui if it is installed
 _magicgui.register_types_with_magicgui()
