@@ -11,13 +11,3 @@ def focus_axes_up(viewer):
 def focus_axes_down(viewer):
     """Move focus of dimensions slider down."""
     viewer.window.qt_viewer.dims.focus_down()
-
-
-@Viewer.bind_key('Control-Alt-P')
-def play(viewer):
-    """Toggle animation on the first axis"""
-    if viewer.window.qt_viewer.dims.is_playing:
-        viewer.window.qt_viewer.dims.stop()
-    else:
-        axis = viewer.window.qt_viewer.dims.last_used or 0
-        viewer.window.qt_viewer.dims.play(axis)
