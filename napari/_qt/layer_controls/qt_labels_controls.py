@@ -216,7 +216,7 @@ class QtLabelsControls(QtLayerControls):
         self.grid_layout.addWidget(QLabel('preserve labels:'), 8, 0, 1, 2)
         self.grid_layout.addWidget(self.preserveLabelsCheckBox, 8, 1, 1, 1)
         self.grid_layout.addWidget(QLabel('show selected:'), 8, 2, 1, 2)
-        self.grid_layout.addWidget(self.selectedColorCheckbox, 8, 3, 1, 1)
+        self.grid_layout.addWidget(self.selectedColorCheckbox, 8, 4, 1, 1)
         self.grid_layout.setRowStretch(9, 1)
         self.grid_layout.setColumnStretch(1, 1)
         self.grid_layout.setSpacing(4)
@@ -279,9 +279,9 @@ class QtLabelsControls(QtLayerControls):
 
     def toggle_selected_mode(self, state):
         if state == Qt.Checked:
-            self.layer.filter_to_selected = True
+            self.layer.show_selected_label = True
         else:
-            self.layer.filter_to_selected = False
+            self.layer.show_selected_label = False
 
     def changeSize(self, value):
         """Change paint brush size.
