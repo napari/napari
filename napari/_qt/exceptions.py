@@ -47,7 +47,7 @@ class ExceptionHandler(QObject):
 
     def __init__(self, parent=None, *, gui_exceptions=True):
         super().__init__(parent)
-        self.gui_exceptions = (
+        self.gui_exceptions: bool = (
             False if _set_false("NAPARI_CATCH_ERRORS") else gui_exceptions
         )
         self.exit_on_error: bool = _set_true("NAPARI_EXIT_ON_ERROR")
