@@ -1,11 +1,10 @@
 import os
-import sys
 
 import numpy as np
 import pytest
 
 skip_on_win_ci = pytest.mark.skipif(
-    sys.platform.startswith('win') and os.getenv('CI'),
+    "sys.platform.startswith('win') and os.getenv('CI')",
     reason='Screenshot tests are not supported on windows CI.',
 )
 skip_local_popups = pytest.mark.skipif(
