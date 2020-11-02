@@ -1,9 +1,8 @@
-import os
-import sys
+# import os
+# import sys
 
 import numpy as np
 import pytest
-
 
 skip_on_win_ci = pytest.mark.skipif(
     "sys.platform.startswith('win') and os.getenv('CI')",
