@@ -1,8 +1,17 @@
-import os
-import sys
+# import os
+# import sys
 
 import numpy as np
 import pytest
+
+skip_on_win_ci = pytest.mark.skipif(
+    "sys.platform.startswith('win') and os.getenv('CI')",
+    reason='Screenshot tests are not supported on windows CI.',
+)
+skip_local_popups = pytest.mark.skipif(
+    "not os.getenv('CI') and not os.getenv('NAPARI_POPUP_TESTS')=='1'",
+    reason='Tests requiring GUI windows are skipped locally by default.',
+)
 
 
 def test_multiscale(make_test_viewer):
@@ -60,10 +69,8 @@ def test_3D_multiscale_image(make_test_viewer):
     viewer.window.qt_viewer.on_draw(None)
 
 
-@pytest.mark.skipif(
-    sys.platform.startswith('win') or not os.getenv("CI"),
-    reason='Screenshot tests are not supported on napari windows CI.',
-)
+@skip_on_win_ci
+@skip_local_popups
 def test_multiscale_screenshot(make_test_viewer):
     """Test rendering of multiscale data with screenshot."""
     viewer = make_test_viewer(show=True)
@@ -90,10 +97,8 @@ def test_multiscale_screenshot(make_test_viewer):
     )
 
 
-@pytest.mark.skipif(
-    sys.platform.startswith('win') or not os.getenv("CI"),
-    reason='Screenshot tests are not supported on napari windows CI.',
-)
+@skip_on_win_ci
+@skip_local_popups
 def test_multiscale_screenshot_zoomed(make_test_viewer):
     """Test rendering of multiscale data with screenshot after zoom."""
     viewer = make_test_viewer(show=True)
@@ -127,10 +132,8 @@ def test_multiscale_screenshot_zoomed(make_test_viewer):
     )
 
 
-@pytest.mark.skipif(
-    sys.platform.startswith('win') or not os.getenv("CI"),
-    reason='Screenshot tests are not supported on napari windows CI.',
-)
+@skip_on_win_ci
+@skip_local_popups
 def test_image_screenshot_zoomed(make_test_viewer):
     """Test rendering of image data with screenshot after zoom."""
     viewer = make_test_viewer(show=True)
@@ -160,10 +163,8 @@ def test_image_screenshot_zoomed(make_test_viewer):
     )
 
 
-@pytest.mark.skipif(
-    sys.platform.startswith('win') or not os.getenv("CI"),
-    reason='Screenshot tests are not supported on napari windows CI.',
-)
+@skip_on_win_ci
+@skip_local_popups
 def test_5D_multiscale(make_test_viewer):
     """Test 5D multiscale data."""
     # Show must be true to trigger multiscale draw and corner estimation
