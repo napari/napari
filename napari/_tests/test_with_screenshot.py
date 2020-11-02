@@ -12,6 +12,7 @@ from napari.utils.interactions import (
     mouse_release_callbacks,
 )
 
+
 skip_on_win_ci = pytest.mark.skipif(
     "sys.platform.startswith('win') and os.getenv('CI')",
     reason='Screenshot tests are not supported on windows CI.',
@@ -20,6 +21,7 @@ skip_local_popups = pytest.mark.skipif(
     "not os.getenv('CI') and not os.getenv('NAPARI_POPUP_TESTS')=='1'",
     reason='Tests requiring GUI windows are skipped locally by default.',
 )
+
 
 @skip_on_win_ci
 @skip_local_popups
