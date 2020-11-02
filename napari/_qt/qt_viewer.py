@@ -7,6 +7,7 @@ import numpy as np
 from qtpy.QtCore import QCoreApplication, QObject, QSize, Qt, QTimer
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
+from vispy.scene.node import Node
 from vispy.visuals.transforms import ChainTransform
 
 from ..resources import get_stylesheet
@@ -39,6 +40,8 @@ from .._vispy import (  # isort:skip
     create_vispy_visual,
 )
 
+_node_pool = []
+
 
 class CanvasUpdater(QObject):
     INTERVAL_MS = 10
@@ -54,6 +57,7 @@ class CanvasUpdater(QObject):
 
     def create(self):
         print(f"CanvasUpdater: {self.index}")
+        _node_pool.append(Node())
         self.index += 1
         self.qt_viewer.canvas.update()
 
