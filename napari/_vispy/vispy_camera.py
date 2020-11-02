@@ -1,7 +1,10 @@
 import numpy as np
 from vispy.scene import ArcballCamera, PanZoomCamera
+from vispy.scene.node import Node
 
 from .quaternion import quaternion2euler
+
+node_index = 0
 
 
 class VispyCamera:
@@ -137,6 +140,10 @@ class VispyCamera:
 
         Update camera model angles, center, and zoom.
         """
+        global node_index
+        print(f"VispyCamera.on_draw: {node_index}")
+        Node()
+        node_index += 1
         with self._camera.events.center.blocker(self._on_angles_change):
             self._camera.angles = self.angles
         with self._camera.events.center.blocker(self._on_center_change):
