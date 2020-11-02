@@ -57,6 +57,15 @@ def test_track_layer_data():
     assert np.all(layer.data == data)
 
 
+def test_track_layer_data_flipped():
+    """Test data flipped."""
+    data = np.zeros((100, 4))
+    data[:, 1] = np.arange(100)
+    data = np.flip(data, axis=0)
+    layer = Tracks(data)
+    assert np.all(layer.data == np.flip(data, axis=0))
+
+
 properties_dict = {'time': np.arange(100)}
 properties_df = pd.DataFrame(properties_dict)
 
