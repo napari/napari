@@ -1,6 +1,4 @@
 import collections
-import os
-import sys
 
 import numpy as np
 import pytest
@@ -11,6 +9,9 @@ from napari.utils.interactions import (
     mouse_press_callbacks,
     mouse_release_callbacks,
 )
+
+# import os
+# import sys
 
 
 skip_on_win_ci = pytest.mark.skipif(
@@ -67,7 +68,6 @@ def test_z_order_adding_removing_images(make_test_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 255, 0, 255])
 
 
-
 @skip_on_win_ci
 @skip_local_popups
 def test_z_order_images(make_test_viewer):
@@ -89,7 +89,6 @@ def test_z_order_images(make_test_viewer):
     np.testing.assert_almost_equal(screenshot[center], [255, 0, 0, 255])
 
 
-
 @skip_on_win_ci
 @skip_local_popups
 def test_z_order_image_points(make_test_viewer):
@@ -109,7 +108,6 @@ def test_z_order_image_points(make_test_viewer):
     center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
     # Check that red is now visible
     np.testing.assert_almost_equal(screenshot[center], [255, 0, 0, 255])
-
 
 
 @skip_on_win_ci
@@ -141,7 +139,6 @@ def test_z_order_images_after_ndisplay(make_test_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
 
 
-
 @skip_on_win_ci
 @skip_local_popups
 def test_z_order_image_points_after_ndisplay(make_test_viewer):
@@ -169,7 +166,6 @@ def test_z_order_image_points_after_ndisplay(make_test_viewer):
     center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
     # Check that blue is still visible
     np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
-
 
 
 @skip_on_win_ci
@@ -202,7 +198,6 @@ def test_changing_image_colormap(make_test_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
 
 
-
 @skip_on_win_ci
 @skip_local_popups
 def test_changing_image_gamma(make_test_viewer):
@@ -231,7 +226,6 @@ def test_changing_image_gamma(make_test_viewer):
     viewer.dims.ndisplay = 2
     screenshot = viewer.screenshot(canvas_only=True)
     assert screenshot[center + (0,)] < 80
-
 
 
 @skip_on_win_ci
@@ -330,7 +324,6 @@ def test_grid_mode(make_test_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 255, 255, 255])
 
 
-
 @skip_on_win_ci
 @skip_local_popups
 def test_changing_image_attenuation(make_test_viewer):
@@ -354,7 +347,6 @@ def test_changing_image_attenuation(make_test_viewer):
     center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
     # Check that rendering has been attenuated
     assert screenshot[center + (0,)] < 60
-
 
 
 @skip_on_win_ci
@@ -406,7 +398,6 @@ def test_labels_painting(make_test_viewer):
     assert screenshot[:, :, :2].max() > 0
 
 
-
 @skip_on_win_ci
 @skip_local_popups
 def test_welcome(make_test_viewer):
@@ -431,7 +422,6 @@ def test_welcome(make_test_viewer):
     assert screenshot[..., :-1].max() > 0
 
 
-
 @skip_on_win_ci
 @skip_local_popups
 def test_axes_visible(make_test_viewer):
@@ -453,7 +443,6 @@ def test_axes_visible(make_test_viewer):
     off_screenshot = viewer.screenshot(canvas_only=True)
     assert not viewer.axes.visible
     np.testing.assert_almost_equal(launch_screenshot, off_screenshot)
-
 
 
 @skip_on_win_ci
