@@ -82,7 +82,7 @@ def test_track_layer_properties(properties):
 
 
 @pytest.mark.parametrize("properties", [{}, properties_dict, properties_df])
-def test_track_layer_properties_filpped(properties):
+def test_track_layer_properties_flipped(properties):
     """Test properties."""
     data = np.zeros((100, 4))
     data[:, 1] = np.arange(100)
