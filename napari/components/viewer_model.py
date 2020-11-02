@@ -438,7 +438,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
 
     def _on_grid_change(self, event):
         """Arrange the current layers is a 2D grid."""
-        for i, layer in enumerate(self.layers):
+        for i, layer in enumerate(self.layers[::-1]):
             i_row, i_column = self.grid.position(i, len(self.layers))
             self._subplot(layer, (i_row, i_column))
 

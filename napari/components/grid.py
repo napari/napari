@@ -126,7 +126,7 @@ class Grid:
             n_row, n_column = self.actual_size(nlayers)
 
             # Adjust for forward or reverse ordering
-            if self.stride > 0:
+            if self.stride < 0:
                 adj_i = nlayers - index - 1
             else:
                 adj_i = index

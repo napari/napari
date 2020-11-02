@@ -331,16 +331,18 @@ def test_grid():
     for i in range(6):
         data = np.random.random((15, 15))
         viewer.add_image(data)
-    assert np.all(viewer.grid_size == (1, 1))
-    assert viewer.grid_stride == 1
+    assert not viewer.grid.enabled
+    assert viewer.grid.actual_size(6) == (1, 1)
+    assert viewer.grid.stride == 1
     translations = [layer.translate_grid for layer in viewer.layers]
     expected_translations = np.zeros((6, 2))
     np.testing.assert_allclose(translations, expected_translations)
 
     # enter grid view
     viewer.grid.enabled = True
-    assert np.all(viewer.grid_size == (2, 3))
-    assert viewer.grid_stride == 1
+    assert viewer.grid.enabled
+    assert viewer.grid.actual_size(6) == (2, 3)
+    assert viewer.grid.stride == 1
     translations = [layer.translate_grid for layer in viewer.layers]
     expected_translations = [
         [0, 0],
@@ -354,16 +356,19 @@ def test_grid():
 
     # return to stack view
     viewer.grid.enabled = False
-    assert np.all(viewer.grid_size == (1, 1))
-    assert viewer.grid_stride == 1
+    assert not viewer.grid.enabled
+    assert viewer.grid.actual_size(6) == (1, 1)
+    assert viewer.grid.stride == 1
     translations = [layer.translate_grid for layer in viewer.layers]
     expected_translations = np.zeros((6, 2))
     np.testing.assert_allclose(translations, expected_translations)
 
-    # reenter grid view
-    viewer.grid_view(n_column=2, n_row=3, stride=-2)
-    assert np.all(viewer.grid_size == (3, 2))
-    assert viewer.grid_stride == -2
+    # reenter grid view with new stride
+    viewer.grid.stride = -2
+    viewer.grid.enabled = True
+    assert viewer.grid.enabled
+    assert viewer.grid.actual_size(6) == (2, 2)
+    assert viewer.grid.stride == -2
     translations = [layer.translate_grid for layer in viewer.layers]
     expected_translations = [
         [0, 0],
