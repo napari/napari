@@ -23,8 +23,8 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from ..utils.misc import StringEnum
-from .qt_eliding_label import MultilineElidedLabel
+from ...utils.misc import StringEnum
+from ..widgets.qt_eliding_label import MultilineElidedLabel
 
 ActionSequence = Sequence[Tuple[str, Callable[[], None]]]
 

@@ -49,8 +49,3 @@ def test_get_packages_by_prefix(mock_get):
 def test_get_package_versions(mock_get):
     versions = pypi.get_package_versions('package')
     assert '0.1.0' in versions
-    # Test that we can clear the URL and VERSION CACHE
-    assert 'package' in pypi.VERSION_CACHE
-    pypi.clear_cache()
-    assert pypi.URL_CACHE == {}
-    assert pypi.VERSION_CACHE == {}

@@ -109,6 +109,10 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self._mouse_drag_gen = {}
         self._mouse_wheel_gen = {}
 
+    def __str__(self):
+        """Simple string representation"""
+        return f'napari.Viewer: {self.title}'
+
     @property
     def palette(self):
         """dict of str: str : Color palette with which to style the viewer.

@@ -14,6 +14,12 @@ if sys.platform.startswith('linux') and running_as_bundled_app():
     sys.path.append(user_site_packages())
 
 
+if os.name == 'nt':
+    # This is where plugins will be in bundled apps on windows
+    exe_dir = os.path.dirname(sys.executable)
+    winlib = os.path.join(exe_dir, "Lib", "site-packages")
+    sys.path.append(winlib)
+
 # the main plugin manager instance for the `napari` plugin namespace.
 plugin_manager = PluginManager(
     'napari', discover_entry_point='napari.plugin', discover_prefix='napari_'

@@ -88,6 +88,10 @@ class TransformChain(ListModel, Transform):
             iterable=transforms,
             lookup={str: lambda q, e: q == e.name},
         )
+        # The above super().__init__() will not call Transform.__init__().
+        # For that to work every __init__() called using super() needs to
+        # in turn call super().__init__(). So we call it explicitly here.
+        Transform.__init__(self)
 
     def __call__(self, coords):
         return tz.pipe(coords, *self)
