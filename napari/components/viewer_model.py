@@ -9,6 +9,7 @@ from .axes import Axes
 from .camera import Camera
 from .cursor import Cursor
 from .dims import Dims
+from .grid import Grid
 from .layerlist import LayerList
 from .scale_bar import ScaleBar
 
@@ -59,7 +60,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             reset_view=Event,
             active_layer=Event,
             palette=Event,
-            grid=Event,
             layers_change=Event,
         )
 
@@ -79,13 +79,14 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
 
         self._interactive = True
         self._active_layer = None
-        self._grid_size = (1, 1)
-        self.grid_stride = 1
+        self.grid = Grid()
         # 2-tuple indicating height and width
         self._canvas_size = (600, 800)
         self._palette = None
         self.theme = 'dark'
 
+        self.grid.events.update.connect(self.reset_view)
+        self.grid.events.update.connect(self._on_grid_change)
         self.dims.events.ndisplay.connect(self._update_layers)
         self.dims.events.ndisplay.connect(self.reset_view)
         self.dims.events.order.connect(self._update_layers)
@@ -93,7 +94,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self.dims.events.current_step.connect(self._update_layers)
         self.cursor.events.position.connect(self._on_cursor_position_change)
         self.layers.events.changed.connect(self._update_active_layer)
-        self.layers.events.changed.connect(self._update_grid)
+        self.layers.events.changed.connect(self._on_grid_change)
         self.layers.events.changed.connect(self._on_layers_change)
 
         self.keymap_providers = [self]
@@ -149,20 +150,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
                 f"Theme '{theme}' not found; "
                 f"options are {list(self.themes)}."
             )
-
-    @property
-    def grid_size(self):
-        """tuple: Size of grid
-        """
-        return self._grid_size
-
-    @grid_size.setter
-    def grid_size(self, grid_size):
-        if np.all(self.grid_size == grid_size):
-            return
-        self._grid_size = grid_size
-        self.reset_view()
-        self.events.grid()
 
     @property
     def status(self):
@@ -264,7 +251,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         extent = self._sliced_extent_world
         scene_size = extent[1] - extent[0]
         corner = extent[0]
-        grid_size = list(self.grid_size)
+        grid_size = list(self.grid.actual_size(len(self.layers)))
         if len(scene_size) > len(grid_size):
             grid_size = [1] * (len(scene_size) - len(grid_size)) + grid_size
         size = np.multiply(scene_size, grid_size)
@@ -397,61 +384,11 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         for layer in self.layers:
             layer.position = self.cursor.position
 
-    def grid_view(self, n_row=None, n_column=None, stride=1):
-        """Arrange the current layers is a 2D grid.
-
-        Default behaviour is to make a square 2D grid.
-
-        Parameters
-        ----------
-        n_row : int, optional
-            Number of rows in the grid.
-        n_column : int, optional
-            Number of column in the grid.
-        stride : int, optional
-            Number of layers to place in each grid square before moving on to
-            the next square. The default ordering is to place the most visible
-            layer in the top left corner of the grid. A negative stride will
-            cause the order in which the layers are placed in the grid to be
-            reversed.
-        """
-        n_grid_squares = np.ceil(len(self.layers) / abs(stride)).astype(int)
-        if n_row is None and n_column is None:
-            n_column = np.ceil(np.sqrt(n_grid_squares)).astype(int)
-            n_row = np.ceil(n_grid_squares / n_column).astype(int)
-        elif n_row is None:
-            n_row = np.ceil(n_grid_squares / n_column).astype(int)
-        elif n_column is None:
-            n_column = np.ceil(n_grid_squares / n_row).astype(int)
-
-        n_row = max(1, n_row)
-        n_column = max(1, n_column)
-        self.grid_size = (n_row, n_column)
-        self.grid_stride = stride
+    def _on_grid_change(self, event):
+        """Arrange the current layers is a 2D grid."""
         for i, layer in enumerate(self.layers):
-            if stride > 0:
-                adj_i = len(self.layers) - i - 1
-            else:
-                adj_i = i
-            adj_i = adj_i // abs(stride)
-            adj_i = adj_i % (n_row * n_column)
-            i_row = adj_i // n_column
-            i_column = adj_i % n_column
+            i_row, i_column = self.grid.position(i, len(self.layers))
             self._subplot(layer, (i_row, i_column))
-
-    def stack_view(self):
-        """Arrange the current layers is a stack.
-        """
-        self.grid_view(n_row=1, n_column=1, stride=1)
-
-    def _update_grid(self, event=None):
-        """Update grid with current grid values.
-        """
-        self.grid_view(
-            n_row=self.grid_size[0],
-            n_column=self.grid_size[1],
-            stride=self.grid_stride,
-        )
 
     def _subplot(self, layer, position):
         """Shift a layer to a specified position in a 2D grid.

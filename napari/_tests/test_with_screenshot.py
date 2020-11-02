@@ -250,7 +250,7 @@ def test_grid_mode(make_test_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
 
     # enter grid view
-    viewer.grid_view()
+    viewer.grid.enabled = True
     assert np.all(viewer.grid_size == (2, 3))
     assert viewer.grid_stride == 1
     translations = [layer.translate_grid for layer in viewer.layers]
@@ -311,7 +311,7 @@ def test_grid_mode(make_test_viewer):
         np.testing.assert_almost_equal(screenshot[coord], c)
 
     # retun to stack view
-    viewer.stack_view()
+    viewer.grid.enabled = False
     assert np.all(viewer.grid_size == (1, 1))
     assert viewer.grid_stride == 1
     translations = [layer.translate_grid for layer in viewer.layers]

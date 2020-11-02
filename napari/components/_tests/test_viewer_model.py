@@ -338,7 +338,7 @@ def test_grid():
     np.testing.assert_allclose(translations, expected_translations)
 
     # enter grid view
-    viewer.grid_view()
+    viewer.grid.enabled = True
     assert np.all(viewer.grid_size == (2, 3))
     assert viewer.grid_stride == 1
     translations = [layer.translate_grid for layer in viewer.layers]
@@ -353,7 +353,7 @@ def test_grid():
     np.testing.assert_allclose(translations, expected_translations[::-1])
 
     # return to stack view
-    viewer.stack_view()
+    viewer.grid.enabled = False
     assert np.all(viewer.grid_size == (1, 1))
     assert viewer.grid_stride == 1
     translations = [layer.translate_grid for layer in viewer.layers]
