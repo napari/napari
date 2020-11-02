@@ -12,15 +12,17 @@ from napari.utils.interactions import (
     mouse_release_callbacks,
 )
 
+skip_on_win_ci = pytest.mark.skipif(
+    "sys.platform.startswith('win') and os.getenv('CI')",
+    reason='Screenshot tests are not supported on windows CI.',
+)
+skip_local_popups = pytest.mark.skipif(
+    "not os.getenv('CI') and not os.getenv('NAPARI_POPUP_TESTS')=='1'",
+    reason='Tests requiring GUI windows are skipped locally by default.',
+)
 
-@pytest.mark.skipif(
-    sys.platform.startswith('win') and os.getenv('CI'),
-    reason='Screenshot tests are not supported on napari windows CI.',
-)
-@pytest.mark.skipif(
-    not os.getenv('CI') and not os.getenv('NAPARI_POPUP_TESTS'),
-    reason='Tests requiring pop-up napari windows are skipped locally by default.',
-)
+@skip_on_win_ci
+@skip_local_popups
 def test_z_order_adding_removing_images(make_test_viewer):
     """Test z order is correct after adding/ removing images."""
     data = np.ones((10, 10))
@@ -63,14 +65,9 @@ def test_z_order_adding_removing_images(make_test_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 255, 0, 255])
 
 
-@pytest.mark.skipif(
-    sys.platform.startswith('win') and os.getenv('CI'),
-    reason='Screenshot tests are not supported on napari windows CI.',
-)
-@pytest.mark.skipif(
-    not os.getenv('CI') and not os.getenv('NAPARI_POPUP_TESTS'),
-    reason='Tests requiring pop-up napari windows are skipped locally by default.',
-)
+
+@skip_on_win_ci
+@skip_local_popups
 def test_z_order_images(make_test_viewer):
     """Test changing order of images changes z order in display."""
     data = np.ones((10, 10))
@@ -90,14 +87,9 @@ def test_z_order_images(make_test_viewer):
     np.testing.assert_almost_equal(screenshot[center], [255, 0, 0, 255])
 
 
-@pytest.mark.skipif(
-    sys.platform.startswith('win') and os.getenv('CI'),
-    reason='Screenshot tests are not supported on napari windows CI.',
-)
-@pytest.mark.skipif(
-    not os.getenv('CI') and not os.getenv('NAPARI_POPUP_TESTS'),
-    reason='Tests requiring pop-up napari windows are skipped locally by default.',
-)
+
+@skip_on_win_ci
+@skip_local_popups
 def test_z_order_image_points(make_test_viewer):
     """Test changing order of image and points changes z order in display."""
     data = np.ones((10, 10))
@@ -117,14 +109,9 @@ def test_z_order_image_points(make_test_viewer):
     np.testing.assert_almost_equal(screenshot[center], [255, 0, 0, 255])
 
 
-@pytest.mark.skipif(
-    sys.platform.startswith('win') and os.getenv('CI'),
-    reason='Screenshot tests are not supported on napari windows CI.',
-)
-@pytest.mark.skipif(
-    not os.getenv('CI') and not os.getenv('NAPARI_POPUP_TESTS'),
-    reason='Tests requiring pop-up napari windows are skipped locally by default.',
-)
+
+@skip_on_win_ci
+@skip_local_popups
 def test_z_order_images_after_ndisplay(make_test_viewer):
     """Test z order of images remanins constant after chaning ndisplay."""
     data = np.ones((10, 10))
@@ -152,14 +139,9 @@ def test_z_order_images_after_ndisplay(make_test_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
 
 
-@pytest.mark.skipif(
-    sys.platform.startswith('win') and os.getenv('CI'),
-    reason='Screenshot tests are not supported on napari windows CI.',
-)
-@pytest.mark.skipif(
-    not os.getenv('CI') and not os.getenv('NAPARI_POPUP_TESTS'),
-    reason='Tests requiring pop-up napari windows are skipped locally by default.',
-)
+
+@skip_on_win_ci
+@skip_local_popups
 def test_z_order_image_points_after_ndisplay(make_test_viewer):
     """Test z order of image and points remanins constant after chaning ndisplay."""
     data = np.ones((10, 10))
@@ -187,14 +169,9 @@ def test_z_order_image_points_after_ndisplay(make_test_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
 
 
-@pytest.mark.skipif(
-    sys.platform.startswith('win') and os.getenv('CI'),
-    reason='Screenshot tests are not supported on napari windows CI.',
-)
-@pytest.mark.skipif(
-    not os.getenv('CI') and not os.getenv('NAPARI_POPUP_TESTS'),
-    reason='Tests requiring pop-up napari windows are skipped locally by default.',
-)
+
+@skip_on_win_ci
+@skip_local_popups
 def test_changing_image_colormap(make_test_viewer):
     """Test changing colormap changes rendering."""
     viewer = make_test_viewer(show=True)
@@ -223,14 +200,9 @@ def test_changing_image_colormap(make_test_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
 
 
-@pytest.mark.skipif(
-    sys.platform.startswith('win') and os.getenv('CI'),
-    reason='Screenshot tests are not supported on napari windows CI.',
-)
-@pytest.mark.skipif(
-    not os.getenv('CI') and not os.getenv('NAPARI_POPUP_TESTS'),
-    reason='Tests requiring pop-up napari windows are skipped locally by default.',
-)
+
+@skip_on_win_ci
+@skip_local_popups
 def test_changing_image_gamma(make_test_viewer):
     """Test changing gamma changes rendering."""
     viewer = make_test_viewer(show=True)
@@ -259,14 +231,9 @@ def test_changing_image_gamma(make_test_viewer):
     assert screenshot[center + (0,)] < 80
 
 
-@pytest.mark.skipif(
-    sys.platform.startswith('win') and os.getenv('CI'),
-    reason='Screenshot tests are not supported on napari windows CI.',
-)
-@pytest.mark.skipif(
-    not os.getenv('CI') and not os.getenv('NAPARI_POPUP_TESTS'),
-    reason='Tests requiring pop-up napari windows are skipped locally by default.',
-)
+
+@skip_on_win_ci
+@skip_local_popups
 def test_grid_mode(make_test_viewer):
     """Test changing gamma changes rendering."""
     viewer = make_test_viewer(show=True)
@@ -361,14 +328,9 @@ def test_grid_mode(make_test_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 255, 255, 255])
 
 
-@pytest.mark.skipif(
-    sys.platform.startswith('win') and os.getenv('CI'),
-    reason='Screenshot tests are not supported on napari windows CI.',
-)
-@pytest.mark.skipif(
-    not os.getenv('CI') and not os.getenv('NAPARI_POPUP_TESTS'),
-    reason='Tests requiring pop-up napari windows are skipped locally by default.',
-)
+
+@skip_on_win_ci
+@skip_local_popups
 def test_changing_image_attenuation(make_test_viewer):
     """Test changing attenuation value changes rendering."""
     data = np.zeros((100, 10, 10))
@@ -392,14 +354,9 @@ def test_changing_image_attenuation(make_test_viewer):
     assert screenshot[center + (0,)] < 60
 
 
-@pytest.mark.skipif(
-    sys.platform.startswith('win') and os.getenv('CI'),
-    reason='Screenshot tests are not supported on napari windows CI.',
-)
-@pytest.mark.skipif(
-    not os.getenv('CI') and not os.getenv('NAPARI_POPUP_TESTS'),
-    reason='Tests requiring pop-up napari windows are skipped locally by default.',
-)
+
+@skip_on_win_ci
+@skip_local_popups
 def test_labels_painting(make_test_viewer):
     """Test painting labels updates image."""
     data = np.zeros((100, 100))
@@ -447,14 +404,9 @@ def test_labels_painting(make_test_viewer):
     assert screenshot[:, :, :2].max() > 0
 
 
-@pytest.mark.skipif(
-    sys.platform.startswith('win') and os.getenv('CI'),
-    reason='Screenshot tests are not supported on napari windows CI.',
-)
-@pytest.mark.skipif(
-    not os.getenv('CI') and not os.getenv('NAPARI_POPUP_TESTS'),
-    reason='Tests requiring pop-up napari windows are skipped locally by default.',
-)
+
+@skip_on_win_ci
+@skip_local_popups
 def test_welcome(make_test_viewer):
     """Test that something appears when axes become visible."""
     viewer = make_test_viewer(show=True)
@@ -477,14 +429,9 @@ def test_welcome(make_test_viewer):
     assert screenshot[..., :-1].max() > 0
 
 
-@pytest.mark.skipif(
-    sys.platform.startswith('win') and os.getenv('CI'),
-    reason='Screenshot tests are not supported on napari windows CI.',
-)
-@pytest.mark.skipif(
-    not os.getenv('CI') and not os.getenv('NAPARI_POPUP_TESTS'),
-    reason='Tests requiring pop-up napari windows are skipped locally by default.',
-)
+
+@skip_on_win_ci
+@skip_local_popups
 def test_axes_visible(make_test_viewer):
     """Test that something appears when axes become visible."""
     viewer = make_test_viewer(show=True)
@@ -506,14 +453,9 @@ def test_axes_visible(make_test_viewer):
     np.testing.assert_almost_equal(launch_screenshot, off_screenshot)
 
 
-@pytest.mark.skipif(
-    sys.platform.startswith('win') and os.getenv('CI'),
-    reason='Screenshot tests are not supported on napari windows CI.',
-)
-@pytest.mark.skipif(
-    not os.getenv('CI') and not os.getenv('NAPARI_POPUP_TESTS'),
-    reason='Tests requiring pop-up napari windows are skipped locally by default.',
-)
+
+@skip_on_win_ci
+@skip_local_popups
 def test_scale_bar_visible(make_test_viewer):
     """Test that something appears when scale bar becomes visible."""
     viewer = make_test_viewer(show=True)
