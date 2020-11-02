@@ -59,4 +59,4 @@ async_loading = _set("NAPARI_ASYNC") or async_octree
 create_octree_images = async_octree
 
 # For debugging/test disable some Qt stuff.
-ALLOW_QT = False
+ALLOW_QT = True
