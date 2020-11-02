@@ -168,7 +168,6 @@ class Tracks(Layer):
         self.display_tail = True
         self.display_graph = True
 
-
         # set the data, properties and graph
         self.data = data
         self.properties = properties

@@ -149,7 +149,8 @@ class TrackManager:
     @properties.setter
     def properties(self, properties: Dict[str, np.ndarray]):
         """ set track properties """
-        # make copy so as not to mutate original 
+
+        # make copy so as not to mutate original
         properties = properties.copy()
 
         if not isinstance(properties, dict):
@@ -158,7 +159,7 @@ class TrackManager:
         if 'track_id' not in properties:
             properties['track_id'] = self.track_ids
 
-        # order properties
+        # order properties dict
         for prop in properties.keys():
             arr = np.array(properties[prop])
             arr = arr[self._order]
