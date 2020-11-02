@@ -225,25 +225,6 @@ class VispyTiledImageLayer(VispyImageLayer):
         self.grid = TileGrid(self.node)
         self.ready = True
 
-    def _create_image_chunk(self, chunk_data: ChunkData):
-        """Create a new ImageChunk object.
-
-        Parameters
-        ----------
-        chunk_data : ChunkData
-            The data used to create the new image chunk.
-        """
-        # If no node is available then get_node() returns None and we
-        # create the ImageChunk with no ImageVisual. One can be added
-        # later on if it becomes available.
-        node = self.pool.get_node()
-        image_chunk = ImageChunk(chunk_data, node)
-
-        if node is not None:
-            self._add_image_chunk_node(image_chunk)
-
-        return image_chunk
-
     @property
     def _tiled_visual_parent(self):
         """Return the parent under which ImageVisuals should be added."""
