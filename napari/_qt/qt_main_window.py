@@ -21,7 +21,7 @@ from qtpy.QtWidgets import (
 )
 
 from ..resources import get_stylesheet
-from ..utils import perf
+from ..utils import config, perf
 from ..utils.io import imsave
 from ..utils.misc import in_jupyter
 from ..utils.theme import template
@@ -100,24 +100,26 @@ class Window:
 
         self._update_palette()
 
-        self._add_viewer_dock_widget(self.qt_viewer.dockConsole)
-        self._add_viewer_dock_widget(self.qt_viewer.dockLayerControls)
-        self._add_viewer_dock_widget(self.qt_viewer.dockLayerList)
+        if config.ALLOW_QT:
+            self._add_viewer_dock_widget(self.qt_viewer.dockConsole)
+            self._add_viewer_dock_widget(self.qt_viewer.dockLayerControls)
+            self._add_viewer_dock_widget(self.qt_viewer.dockLayerList)
 
         self.qt_viewer.viewer.events.status.connect(self._status_changed)
         self.qt_viewer.viewer.events.help.connect(self._help_changed)
         self.qt_viewer.viewer.events.title.connect(self._title_changed)
         self.qt_viewer.viewer.events.palette.connect(self._update_palette)
 
-        if perf.USE_PERFMON:
-            # Add DebugMenu and dockPerformance if using perfmon.
-            self._debug_menu = DebugMenu(self)
-            self._add_viewer_dock_widget(self.qt_viewer.dockPerformance)
-        else:
-            self._debug_menu = None
+        if config.ALLOW_QT:
+            if perf.USE_PERFMON:
+                # Add DebugMenu and dockPerformance if using perfmon.
+                self._debug_menu = DebugMenu(self)
+                self._add_viewer_dock_widget(self.qt_viewer.dockPerformance)
+            else:
+                self._debug_menu = None
 
-        if self.qt_viewer.dockRender is not None:
-            self._add_viewer_dock_widget(self.qt_viewer.dockRender)
+            if self.qt_viewer.dockRender is not None:
+                self._add_viewer_dock_widget(self.qt_viewer.dockRender)
 
         if show:
             self.show()

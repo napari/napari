@@ -4,7 +4,7 @@ from copy import copy
 from pathlib import Path
 
 import numpy as np
-from qtpy.QtCore import QCoreApplication, QSize, Qt
+from qtpy.QtCore import QCoreApplication, QObject, QSize, Qt, QTimer
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 from vispy.visuals.transforms import ChainTransform
@@ -38,6 +38,24 @@ from .._vispy import (  # isort:skip
     VispyWelcomeVisual,
     create_vispy_visual,
 )
+
+
+class CanvasUpdater(QObject):
+    INTERVAL_MS = 10
+
+    def __init__(self, qt_viewer):
+        QObject.__init__(self, qt_viewer)
+
+        self.qt_viewer = qt_viewer
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.create)
+        self.timer.start(self.INTERVAL_MS)
+        self.index = 0
+
+    def create(self):
+        print(f"CanvasUpdater: {self.index}")
+        self.index += 1
+        self.qt_viewer.canvas.update()
 
 
 class QtViewer(QSplitter):
@@ -91,6 +109,7 @@ class QtViewer(QSplitter):
         from .layer_controls import QtLayerControlsContainer
 
         super().__init__()
+        self._updator = CanvasUpdater(self)
         self.setAttribute(Qt.WA_DeleteOnClose)
 
         QCoreApplication.setAttribute(
@@ -98,64 +117,72 @@ class QtViewer(QSplitter):
         )
 
         self.viewer = viewer
+
+        # if config.ALLOW_QT:
         self.dims = QtDims(self.viewer.dims)
         self.controls = QtLayerControlsContainer(self.viewer)
         self.layers = QtLayerList(self.viewer.layers)
         self.layerButtons = QtLayerButtons(self.viewer)
         self.viewerButtons = QtViewerButtons(self.viewer)
+
         self._console = None
 
-        layerList = QWidget()
-        layerList.setObjectName('layerList')
-        layerListLayout = QVBoxLayout()
-        layerListLayout.addWidget(self.layerButtons)
-        layerListLayout.addWidget(self.layers)
-        layerListLayout.addWidget(self.viewerButtons)
-        layerListLayout.setContentsMargins(8, 4, 8, 6)
-        layerList.setLayout(layerListLayout)
-        self.dockLayerList = QtViewerDockWidget(
-            self,
-            layerList,
-            name='layer list',
-            area='left',
-            allowed_areas=['left', 'right'],
-        )
-        self.dockLayerControls = QtViewerDockWidget(
-            self,
-            self.controls,
-            name='layer controls',
-            area='left',
-            allowed_areas=['left', 'right'],
-        )
-        self.dockConsole = QtViewerDockWidget(
-            self,
-            QWidget(),
-            name='console',
-            area='bottom',
-            allowed_areas=['top', 'bottom'],
-            shortcut='Ctrl+Shift+C',
-        )
-        self.dockConsole.setVisible(False)
-        # because the console is loaded lazily in the @getter, this line just
-        # gets (or creates) the console when the dock console is made visible.
-        self.dockConsole.visibilityChanged.connect(
-            lambda visible: self.console if visible else None
-        )
-        self.dockLayerControls.visibilityChanged.connect(self._constrain_width)
-        self.dockLayerList.setMaximumWidth(258)
-        self.dockLayerList.setMinimumWidth(258)
+        if config.ALLOW_QT:
+            layerList = QWidget()
+            layerList.setObjectName('layerList')
+            layerListLayout = QVBoxLayout()
+            layerListLayout.addWidget(self.layerButtons)
+            layerListLayout.addWidget(self.layers)
+            layerListLayout.addWidget(self.viewerButtons)
+            layerListLayout.setContentsMargins(8, 4, 8, 6)
+            layerList.setLayout(layerListLayout)
+            self.dockLayerList = QtViewerDockWidget(
+                self,
+                layerList,
+                name='layer list',
+                area='left',
+                allowed_areas=['left', 'right'],
+            )
+            self.dockLayerControls = QtViewerDockWidget(
+                self,
+                self.controls,
+                name='layer controls',
+                area='left',
+                allowed_areas=['left', 'right'],
+            )
+            self.dockConsole = QtViewerDockWidget(
+                self,
+                QWidget(),
+                name='console',
+                area='bottom',
+                allowed_areas=['top', 'bottom'],
+                shortcut='Ctrl+Shift+C',
+            )
+            self.dockConsole.setVisible(False)
+            # because the console is loaded lazily in the @getter, this line just
+            # gets (or creates) the console when the dock console is made visible.
+            self.dockConsole.visibilityChanged.connect(
+                lambda visible: self.console if visible else None
+            )
+            self.dockLayerControls.visibilityChanged.connect(
+                self._constrain_width
+            )
+            self.dockLayerList.setMaximumWidth(258)
+            self.dockLayerList.setMinimumWidth(258)
 
-        # Only created if using perfmon.
-        self.dockPerformance = self._create_performance_dock_widget()
+            # Only created if using perfmon.
+            self.dockPerformance = self._create_performance_dock_widget()
 
-        # Only created if using async rendering.
-        self.dockRender = self._create_render_dock_widget()
+            # Only created if using async rendering.
+            self.dockRender = self._create_render_dock_widget()
 
         # This dictionary holds the corresponding vispy visual for each layer
         self.layer_to_visual = {}
-        self.viewerButtons.consoleButton.clicked.connect(
-            self.toggle_console_visibility
-        )
+
+        if config.ALLOW_QT:
+            self.viewerButtons.consoleButton.clicked.connect(
+                self.toggle_console_visibility
+            )
 
         self.canvas = VispyCanvas(
             keys=None,
@@ -164,7 +191,10 @@ class QtViewer(QSplitter):
             size=self.viewer._canvas_size[::-1],
         )
         self.canvas.events.ignore_callback_errors = False
-        self.canvas.events.draw.connect(self.dims.enable_play)
+
+        if config.ALLOW_QT:
+            self.canvas.events.draw.connect(self.dims.enable_play)
+
         self.canvas.native.setMinimumSize(QSize(200, 200))
         self.canvas.context.set_depth_func('lequal')
 
@@ -183,37 +213,47 @@ class QtViewer(QSplitter):
         )
         self.canvas.connect(self.camera.on_draw)
 
-        self.axes = VispyAxesVisual(
-            self.viewer.axes,
-            self.viewer.camera,
-            self.viewer.dims,
-            parent=self.view.scene,
-            order=1e6,
-        )
-        self.scale_bar = VispyScaleBarVisual(
-            self.viewer.scale_bar,
-            self.viewer.camera,
-            parent=self.view,
-            order=1e6 + 1,
-        )
-        self.canvas.events.resize.connect(self.scale_bar._on_position_change)
+        if config.ALLOW_QT:
+            self.axes = VispyAxesVisual(
+                self.viewer.axes,
+                self.viewer.camera,
+                self.viewer.dims,
+                parent=self.view.scene,
+                order=1e6,
+            )
+            self.scale_bar = VispyScaleBarVisual(
+                self.viewer.scale_bar,
+                self.viewer.camera,
+                parent=self.view,
+                order=1e6 + 1,
+            )
+            self.canvas.events.resize.connect(
+                self.scale_bar._on_position_change
+            )
 
-        self._show_welcome = welcome
-        if self._show_welcome:
-            self.welcome = VispyWelcomeVisual(
-                self.viewer, parent=self.view, order=-100
-            )
-            self.viewer.events.layers_change.connect(
-                self.welcome._on_visible_change
-            )
-            self.viewer.events.palette.connect(self.welcome._on_palette_change)
-            self.canvas.events.resize.connect(self.welcome._on_canvas_change)
+            self._show_welcome = welcome
+            if self._show_welcome:
+                self.welcome = VispyWelcomeVisual(
+                    self.viewer, parent=self.view, order=-100
+                )
+                self.viewer.events.layers_change.connect(
+                    self.welcome._on_visible_change
+                )
+                self.viewer.events.palette.connect(
+                    self.welcome._on_palette_change
+                )
+                self.canvas.events.resize.connect(
+                    self.welcome._on_canvas_change
+                )
 
         main_widget = QWidget()
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(10, 22, 10, 2)
         main_layout.addWidget(self.canvas.native)
-        main_layout.addWidget(self.dims)
+
+        if config.ALLOW_QT:
+            main_layout.addWidget(self.dims)
+
         main_layout.setSpacing(10)
         main_widget.setLayout(main_layout)
 
