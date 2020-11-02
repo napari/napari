@@ -5,6 +5,9 @@ import numpy as np
 
 from .dims_constants import DimsMode
 from ..utils.events import EmitterGroup
+from ..utils.validators import validate_n_seq
+
+validate_2_tuple = validate_n_seq(2)
 
 
 class Dims:
@@ -60,6 +63,7 @@ class Dims:
             source=self,
             auto_connect=True,
             current_step=None,
+            interval=None,
             axis_labels=None,
             ndim=None,
             ndisplay=None,
@@ -348,6 +352,26 @@ class Dims:
         if self._current_step[axis] != step:
             self._current_step[axis] = step
             self.events.current_step(axis=axis, value=step)
+
+    def set_interval(self, axis: int, interval: tuple):
+        """Sets the interval slider interval at a given axis
+
+        Parameters
+        ----------
+        axis : int
+            Dimension index.
+        interval : 2-tuple of int or float
+            Value of min and max of the interval.
+        """
+        # validate inputs
+        axis = self._assert_axis_in_bounds(axis)
+        validate_2_tuple(interval)
+
+        # set interval
+        if self.interval[axis] == interval:
+            self.interval[axis] = interval
+            self.events.interval(axis=axis, value=interval)
+
 
     def _increment_dims_right(self, axis: int = None):
         """Increment dimensions to the right along given axis, or last used axis if None
