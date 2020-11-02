@@ -61,6 +61,7 @@ def test_track_layer_data_flipped():
     """Test data flipped."""
     data = np.zeros((100, 4))
     data[:, 1] = np.arange(100)
+    data[:, 0] = np.arange(100)
     data = np.flip(data, axis=0)
     layer = Tracks(data)
     assert np.all(layer.data == np.flip(data, axis=0))
@@ -78,6 +79,18 @@ def test_track_layer_properties(properties):
     layer = Tracks(data, properties=properties)
     for k, v in properties.items():
         np.testing.assert_equal(layer.properties[k], v)
+
+
+@pytest.mark.parametrize("properties", [{}, properties_dict, properties_df])
+def test_track_layer_properties_filpped(properties):
+    """Test properties."""
+    data = np.zeros((100, 4))
+    data[:, 1] = np.arange(100)
+    data[:, 0] = np.arange(100)
+    data = np.flip(data, axis=0)
+    layer = Tracks(data, properties=properties)
+    for k, v in properties.items():
+        np.testing.assert_equal(layer.properties[k], np.flip(v))
 
 
 @pytest.mark.filterwarnings("ignore:.*track_id.*:UserWarning")

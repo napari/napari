@@ -168,9 +168,7 @@ class Tracks(Layer):
         self.display_tail = True
         self.display_graph = True
 
-        # order track vertices according to ID and time
-        indices = np.lexsort((data[:, 1], data[:, 0]))
-        data = data[indices]
+
         # set the data, properties and graph
         self.data = data
         self.properties = properties

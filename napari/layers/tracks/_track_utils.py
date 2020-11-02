@@ -70,6 +70,7 @@ class TrackManager:
         # store the raw data here
         self._data = None
         self._properties = None
+        self._order = None
 
         # use a kdtree to help with fast lookup of the nearest track
         self._kdtree = None
@@ -102,6 +103,10 @@ class TrackManager:
 
         # convert data to a numpy array if it is not already one
         data = np.asarray(data)
+
+        # Sort data by ID then time
+        self._order = np.lexsort((data[:, 1], data[:, 0]))
+        data = data[self._order]
 
         # check check the formatting of the incoming track data
         self._data = self._validate_track_data(data)
@@ -144,11 +149,20 @@ class TrackManager:
     @properties.setter
     def properties(self, properties: Dict[str, np.ndarray]):
         """ set track properties """
+        # make copy so as not to mutate original 
+        properties = properties.copy()
+
         if not isinstance(properties, dict):
             properties, _ = dataframe_to_properties(properties)
 
         if 'track_id' not in properties:
             properties['track_id'] = self.track_ids
+
+        # order properties
+        for prop in properties.keys():
+            arr = np.array(properties[prop])
+            arr = arr[self._order]
+            properties[prop] = arr
 
         # check the formatting of incoming properties data
         self._properties = self._validate_track_properties(properties)
