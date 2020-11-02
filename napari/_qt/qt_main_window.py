@@ -25,7 +25,7 @@ from qtpy.QtWidgets import (
 
 from .. import __version__
 from ..plugins import plugin_manager as napari_plugin_manager
-from ..plugins.experimental.dock_widgets import get_dock_widgets_from_plugin
+from ..plugins.experimental.functions import get_function_widgets_from_plugin
 from ..resources import get_stylesheet
 from ..utils import perf
 from ..utils.io import imsave
@@ -433,8 +433,9 @@ class Window:
             'Dock Widgets', parent=self._qt_window
         )
         hook_caller = (
-            napari_plugin_manager.hook.napari_experimental_provide_dock_widget
+            napari_plugin_manager.hook.napari_experimental_provide_functions
         )
+
         for imp in hook_caller.get_hookimpls():
             name = imp.plugin_name
             action = QAction(
@@ -606,9 +607,7 @@ class Window:
             )
             return
 
-        widget_list = get_dock_widgets_from_plugin(
-            plugin, self.qt_viewer.viewer
-        )
+        widget_list = get_function_widgets_from_plugin(plugin)
 
         dock_widgets = []
         for dock_widget_tuple in widget_list:
@@ -617,7 +616,9 @@ class Window:
             kwargs['name'] = plugin
             dock_widget = self.add_dock_widget(widget, **kwargs)
             dock_widgets.append(dock_widget)
-
+            self.qt_viewer.viewer.layers.events.changed.connect(
+                lambda x: widget.refresh_choices("layer")
+            )
         self._plugin_dock_widgets[plugin] = dock_widgets
 
     def remove_plugin_dock_widgets(self, plugin):

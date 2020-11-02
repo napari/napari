@@ -38,7 +38,6 @@ For more general background on the plugin hook calling mechanism, see the
 from typing import List, Tuple
 
 from napari_plugin_engine import napari_hook_specification
-from qtpy.QtWidgets import QWidget
 
 # -------------------------------------------------------------------------- #
 #                                 GUI Hooks                                  #
@@ -46,14 +45,12 @@ from qtpy.QtWidgets import QWidget
 
 
 @napari_hook_specification()
-def napari_experimental_provide_dock_widget(
-    viewer,
-) -> List[Tuple[QWidget, dict]]:
-    """Provide dock widgets that can be added to the viewer.
+def napari_experimental_provide_functions() -> List[Tuple[callable, dict]]:
+    """Provide functions and args that can be passed to magicgui.
 
     Returns
     -------
-    dock_widgets : list
-        List of 2-tuples, where each tuple has a widget and dictionary of
-        keyword arguments for the viewer.window.add_dock_widget method.
+    functions : list
+        List of 2-tuples, where each tuple has a functions and dictionary of
+        keyword arguments for the magicgui decorator.
     """
