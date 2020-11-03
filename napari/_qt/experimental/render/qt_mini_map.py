@@ -104,6 +104,12 @@ class MiniMap(QLabel):
         scale_x = map_shape[1] / level.info.image_shape[1]
         scale_y = map_shape[0] / level.info.image_shape[0]
 
+        # OCTREE_TODO: This tile rendering code could be a lot better and
+        # faster. But we probably should be using OpenGL for the minimap,
+        # not using a Qt bitmap! If we used OpenGL the GPU would do most of
+        # the math and we'd have more options like alpha. Writing a bunch
+        # of fancy CPU code to render bitmaps by hand is probably something
+        # we do not want to be in the business of doing.
         y = 0
         for row, row_tiles in enumerate(level.tiles):
             x = 0
