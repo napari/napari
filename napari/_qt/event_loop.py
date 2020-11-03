@@ -10,22 +10,6 @@ from ..utils.perf import perf_config
 from .exceptions import ExceptionHandler
 
 
-class QApplicationNoCrash(QApplication):
-    """Experimental work around for pyqt5 crash.
-
-    This works around the specific crash in this bug/node-create branch.
-    Instead of crashing around 100 it goes at least past 10,000. No
-    idea why it prevents the crash since it basically does nothing.
-
-    However this does not prevent the crash with Octree so it's not actually
-    useful. Except to show how sensitive the problem is.
-    """
-
-    def notify(self, receiver, event):
-        """Just chain to base class."""
-        return QApplication.notify(self, receiver, event)
-
-
 def _create_application(argv) -> QApplication:
     """Create our QApplication.
 
