@@ -2,8 +2,14 @@
 """
 from typing import Callable, Tuple
 
-import numpy as np
-from qtpy.QtWidgets import QCheckBox, QFrame, QPushButton, QVBoxLayout
+from qtpy.QtWidgets import (
+    QCheckBox,
+    QComboBox,
+    QFrame,
+    QPushButton,
+    QVBoxLayout,
+)
+from skimage import data as skimage_data
 
 from ....utils import config
 from .qt_labeled_spin_box import QtLabeledSpinBox
@@ -52,6 +58,11 @@ class QtTestImageLayout(QVBoxLayout):
         self.octree.setChecked(1)
         self.addWidget(self.octree)
 
+        image_styles = ["Digits", "Astronaut"]
+        self.style = QComboBox()
+        self.style.addItems(image_styles)
+        self.addWidget(self.style)
+
         # The create button.
         button = QPushButton("Create Test Image")
         button.setToolTip("Create a new test image")
@@ -98,20 +109,22 @@ class QtTestImage(QFrame):
         self.layout = QtTestImageLayout(self._create_test_image)
         self.setLayout(self.layout)
 
+    def _get_image_data(self, index, image_size):
+        if index == 0:
+            # We have just one type of test image right now, with the little
+            # slice number digits in the image itself.
+            return create_tiled_text_array("0", 16, 16, image_size)
+        else:
+            return skimage_data.astronaut()
+
     def _create_test_image(self) -> None:
         """Create a new test image."""
-        # Configure whether viewer.add_image() will create regular Images
-        # or OctreeImages.
+        # We create regular Images or OctreeImages.
         config.create_octree_images = self.layout.octree.isChecked()
 
         image_size = self.layout.get_image_size()
-
-        # We have just one type of test image right now, with the little
-        # slice number digits in the image itself.
-        images = [
-            create_tiled_text_array(x, 16, 16, image_size) for x in range(5)
-        ]
-        data = np.stack(images, axis=0)
+        style_index = self.layout.style.currentIndex()
+        data = self._get_image_data(style_index, image_size)
 
         # Give each layer a unique name.
         unique_name = f"test-image-{QtTestImage.image_index:003}"
