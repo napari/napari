@@ -106,6 +106,10 @@ class Viewer(ViewerModel):
             axis_labels=axis_labels,
         )
         qt_viewer = QtViewer(self)
+
+        if config.DELAY_LOAD_VISUALS:
+            qt_viewer.add_visuals()
+
         self.window = Window(qt_viewer, show=show)
 
     def update_console(self, variables):

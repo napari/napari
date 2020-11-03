@@ -58,5 +58,5 @@ async_loading = _set("NAPARI_ASYNC") or async_octree
 # do we can make both types of images for comparison/debugging.
 create_octree_images = async_octree
 
-# For debugging/test disable some Qt stuff.
-ALLOW_QT = True
+# For debugging PR #1811 Crash
+DELAY_LOAD_VISUALS = False
