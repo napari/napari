@@ -57,6 +57,3 @@ async_loading = _set("NAPARI_ASYNC") or async_octree
 # creates OctreeImage or Image. The debug rendering UI toggles this
 # do we can make both types of images for comparison/debugging.
 create_octree_images = async_octree
-
-# For debugging PR #1811 Crash
-DELAY_LOAD_VISUALS = True

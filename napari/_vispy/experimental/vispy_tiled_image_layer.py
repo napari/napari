@@ -1,5 +1,6 @@
 """VispyTiledImageLayer class.
 """
+from collections import namedtuple
 from typing import List, Set
 
 import numpy as np
@@ -25,6 +26,10 @@ LINE_VISUAL_ORDER = 10
 INITIAL_POOL_SIZE = 0
 
 SHOW_GRID = True
+
+Stats = namedtuple(
+    'Stats', "num_seen num_start num_created num_deleted num_final"
+)
 
 
 class NullImageVisualPool:
@@ -263,11 +268,7 @@ class VispyTiledImageLayer(VispyImageLayer):
         if SHOW_GRID:
             self.grid.update_grid(self.image_chunks.values())
 
-        if num_created > 0 or num_deleted > 0:
-            print(
-                f"VispyTiled: seen: {num_seen} start: {num_start} created: {num_created} "
-                f"deleted: {num_deleted} final: {num_final}"
-            )
+        return Stats(num_seen, num_start, num_created, num_deleted, num_final)
 
     def _update_visible(self, visible_chunks: List[ChunkData]) -> None:
         """Create or update all visible ImageChunks.
@@ -321,5 +322,12 @@ class VispyTiledImageLayer(VispyImageLayer):
     def _on_camera_move(self, event=None):
         super()._on_camera_move()
 
-        with block_timer("_update_view", print_time=True):
-            self._update_view()
+        with block_timer("_update_view") as elapsed:
+            stats = self._update_view()
+
+        if stats.num_created > 0 or stats.num_deleted > 0:
+            print(
+                f"tiles: {stats.num_start} -> {stats.num_final} "
+                f"create: {stats.num_created} delete: {stats.num_deleted} "
+                f"total: {elapsed.duration_ms:.3f}ms"
+            )

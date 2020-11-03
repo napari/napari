@@ -58,7 +58,7 @@ class QtTestImageLayout(QVBoxLayout):
         self.octree.setChecked(1)
         self.addWidget(self.octree)
 
-        image_styles = ["Digits", "Astronaut"]
+        image_styles = ["Digits", "Astronaut", "Chelsea", "Coffee"]
         self.style = QComboBox()
         self.style.addItems(image_styles)
         self.addWidget(self.style)
@@ -110,12 +110,13 @@ class QtTestImage(QFrame):
         self.setLayout(self.layout)
 
     def _get_image_data(self, index, image_size):
-        if index == 0:
-            # We have just one type of test image right now, with the little
-            # slice number digits in the image itself.
-            return create_tiled_text_array("0", 16, 16, image_size)
-        else:
-            return skimage_data.astronaut()
+        images = {
+            0: lambda size: create_tiled_text_array("0", 16, 16, size),
+            1: lambda size: skimage_data.astronaut(),
+            2: lambda size: skimage_data.chelsea(),
+            3: lambda size: skimage_data.coffee(),
+        }
+        return images[index](image_size)
 
     def _create_test_image(self) -> None:
         """Create a new test image."""

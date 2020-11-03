@@ -205,9 +205,6 @@ class QtViewer(QSplitter):
         self.canvas.connect(self.on_draw)
         self.canvas.connect(self.on_resize)
 
-        if not config.DELAY_LOAD_VISUALS:
-            self.add_visuals(welcome)
-
         main_widget = QWidget()
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(10, 22, 10, 2)
@@ -248,7 +245,6 @@ class QtViewer(QSplitter):
             self._add_layer(layer)
 
         self.add_visuals(welcome)
-        self.canvas.add_visuals(self.view.scene)
 
     def add_visuals(self, welcome=True):
         self.view = self.canvas.central_widget.add_view()
