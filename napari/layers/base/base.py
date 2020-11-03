@@ -194,7 +194,7 @@ class Layer(KeymapProvider, ABC):
 
         self._dims = Dims(ndim)
 
-        # Create a transform chain consisting of three transforms:
+        # Create a transform chain consisting of two transforms:
         # 1. `tile2data`: An initial transform only needed displaying tiles
         #   of an image. It maps pixels of the tile into the coordinate space
         #   of the full resolution data and can usually be represented by a
@@ -204,8 +204,6 @@ class Layer(KeymapProvider, ABC):
         #   than the maximum allowed texture size of your graphics card.
         # 2. `data2world`: The main transform mapping data to a world-like
         #   coordinate.
-        # 3. `world2grid`: An additional transform mapping world-coordinates
-        #   into a grid for looking at layers side-by-side.
 
         # First create the `data2world` transform from the input parameters
         if affine is None:
@@ -240,7 +238,6 @@ class Layer(KeymapProvider, ABC):
             [
                 Affine(np.ones(ndim), np.zeros(ndim), name='tile2data'),
                 data2world_transform,
-                Affine(np.ones(ndim), np.zeros(ndim), name='world2grid'),
             ]
         )
 
@@ -463,14 +460,16 @@ class Layer(KeymapProvider, ABC):
     @property
     def translate_grid(self):
         """list: Factors to shift the layer by."""
-        return self._transforms['world2grid'].translate
-
-    @translate_grid.setter
-    def translate_grid(self, translate_grid):
-        if np.all(self.translate_grid == translate_grid):
-            return
-        self._transforms['world2grid'].translate = np.array(translate_grid)
-        self.events.translate()
+        warnings.warn(
+            (
+                "The layer.translate_grid attribue is deprecated and will be removed after version 0.4.3."
+                " Layer's no longer no about their position in a grid and this property should no longer"
+                " be used. It now returns a list of 0."
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        return [0] * self.ndim
 
     @property
     def position(self):

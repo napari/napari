@@ -88,7 +88,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self.theme = 'dark'
 
         self.grid.events.update.connect(self.reset_view)
-        self.grid.events.update.connect(self._on_grid_change)
         self.dims.events.ndisplay.connect(self._update_layers)
         self.dims.events.ndisplay.connect(self.reset_view)
         self.dims.events.order.connect(self._update_layers)
@@ -96,7 +95,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self.dims.events.current_step.connect(self._update_layers)
         self.cursor.events.position.connect(self._on_cursor_position_change)
         self.layers.events.changed.connect(self._update_active_layer)
-        self.layers.events.changed.connect(self._on_grid_change)
         self.layers.events.changed.connect(self._on_layers_change)
 
         self.keymap_providers = [self]
@@ -436,12 +434,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         for layer in self.layers:
             layer.position = self.cursor.position
 
-    def _on_grid_change(self, event):
-        """Arrange the current layers is a 2D grid."""
-        for i, layer in enumerate(self.layers[::-1]):
-            i_row, i_column = self.grid.position(i, len(self.layers))
-            self._subplot(layer, (i_row, i_column))
-
     def grid_view(self, n_row=None, n_column=None, stride=1):
         """Arrange the current layers is a 2D grid.
 
@@ -490,25 +482,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             stacklevel=2,
         )
         self.grid.enabled = False
-
-    def _subplot(self, layer, position):
-        """Shift a layer to a specified position in a 2D grid.
-
-        Parameters
-        ----------
-        layer : napari.layers.Layer
-            Layer that is to be moved.
-        position : 2-tuple of int
-            New position of layer in grid.
-        size : 2-tuple of int
-            Size of the grid that is being used.
-        """
-        extent = self._sliced_extent_world
-        scene_shift = extent[1] - extent[0] + 1
-        translate_2d = np.multiply(scene_shift[-2:], position)
-        translate = [0] * layer.ndim
-        translate[-2:] = translate_2d
-        layer.translate_grid = translate
 
     @property
     def experimental(self):

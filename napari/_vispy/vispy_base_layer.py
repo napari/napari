@@ -1,7 +1,12 @@
 from abc import ABC, abstractmethod
 
 import numpy as np
-from vispy.visuals.transforms import MatrixTransform
+from vispy.visuals.transforms import (
+    ChainTransform,
+    MatrixTransform,
+    NullTransform,
+    STTransform,
+)
 
 from .utils_gl import get_max_texture_sizes
 
@@ -66,14 +71,53 @@ class VispyBaseLayer(ABC):
     @property
     def _master_transform(self):
         """vispy.visuals.transforms.MatrixTransform:
+
         Central node's firstmost transform.
         """
         # whenever a new parent is set, the transform is reset
         # to a NullTransform so we reset it here
-        if not isinstance(self.node.transform, MatrixTransform):
-            self.node.transform = MatrixTransform()
+        if isinstance(self.node.transform, NullTransform):
+            self.node.transform = ChainTransform(
+                [STTransform(), MatrixTransform()]
+            )
 
-        return self.node.transform
+        return self.node.transform.transforms[1]
+
+    @property
+    def _grid_transform(self):
+        """vispy.visuals.transforms.MatrixTransform:
+
+        Transform used if viewer is in grid mode
+        """
+        # whenever a new parent is set, the transform is reset
+        # to a NullTransform so we reset it here
+        if not isinstance(self.node.transform, MatrixTransform):
+            self.node.transform = ChainTransform(
+                [STTransform(), MatrixTransform()]
+            )
+
+        return self.node.transform.transforms[0]
+
+    @property
+    def translate_grid(self):
+        """sequence of float: Grid translation values."""
+        return self._grid_transform.translate
+
+    @translate_grid.setter
+    def translate_grid(self, translate):
+        # Avoid useless update if nothing changed in the displayed dims
+        # Note that the grid_transform translate is always a 4-vector so pad
+        padded_translate = np.pad(
+            translate,
+            ((0, 4 - len(translate))),
+            constant_values=1,
+            mode='constant',
+        )
+        if self.translate_grid is not None and np.all(
+            self.translate_grid == padded_translate
+        ):
+            return
+        self._grid_transform.translate = padded_translate
 
     @property
     def translate(self):

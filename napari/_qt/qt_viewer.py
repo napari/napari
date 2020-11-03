@@ -238,6 +238,8 @@ class QtViewer(QSplitter):
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
         self.viewer.layers.events.added.connect(self._on_add_layer_change)
         self.viewer.layers.events.removed.connect(self._remove_layer)
+        self.viewer.grid.events.update.connect(self._on_grid_change)
+        self.viewer.layers.events.changed.connect(self._on_grid_change)
         # stop any animations whenever the layers change
         self.viewer.events.layers_change.connect(lambda x: self.dims.stop())
 
@@ -571,6 +573,33 @@ class QtViewer(QSplitter):
         top_left = self._map_canvas2world([0, 0])
         bottom_right = self._map_canvas2world(self.canvas.size)
         return np.array([top_left, bottom_right])
+
+    def _subplot(self, layer, position):
+        """Shift a layer to a specified position in a 2D grid.
+
+        Parameters
+        ----------
+        layer : napari.layers.Layer
+            Layer that is to be moved.
+        position : 2-tuple of int
+            New position of layer in grid.
+        """
+        extent = self.viewer._sliced_extent_world
+        scene_shift = extent[1] - extent[0] + 1
+        translate_2d = np.multiply(scene_shift[-2:], position)
+        translate = [0] * layer.ndim
+        translate[-2:] = translate_2d
+        visual = self.layer_to_visual[layer]
+        # go from NumPy to VisPy axis ordering
+        visual.translate_grid = translate[::-1]
+
+    def _on_grid_change(self, event):
+        """Arrange the current layers is a 2D grid."""
+        for i, layer in enumerate(self.viewer.layers[::-1]):
+            i_row, i_column = self.viewer.grid.position(
+                i, len(self.viewer.layers)
+            )
+            self._subplot(layer, (i_row, i_column))
 
     def on_resize(self, event):
         """Called whenever canvas is resized.
