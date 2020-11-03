@@ -6,6 +6,7 @@ import numpy as np
 from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import QLabel
 
+from ....components.viewer_model import ViewerModel
 from ....layers.image.experimental import OctreeIntersection
 from ....layers.image.experimental.octree_image import OctreeImage
 
@@ -23,6 +24,8 @@ COLOR_VIEW = (227, 220, 111, 255)  # yellow
 class MiniMap(QLabel):
     """A small bitmap that shows the view bounds and which tiles are seen.
 
+    Only works with OctreeImage layers.
+
     Parameters
     ----------
     viewer : Viewer
@@ -34,7 +37,7 @@ class MiniMap(QLabel):
     # Border between the tiles is twice this.
     HALF_BORDER = 1
 
-    def __init__(self, viewer, layer: OctreeImage):
+    def __init__(self, viewer: ViewerModel, layer: OctreeImage):
         super().__init__()
         self.viewer = viewer
         self.layer = layer
@@ -83,8 +86,8 @@ class MiniMap(QLabel):
         tile_shape = intersection.info.tile_shape
         aspect = intersection.info.octree_info.aspect
 
-        # Shape of the map bitmap.
-        map_shape = (MAP_WIDTH, math.ceil(MAP_WIDTH / aspect))
+        # Shape of the map bitmap: (row_pixels, col_pixels)
+        map_shape = math.ceil(MAP_WIDTH / aspect), MAP_WIDTH
 
         # The map shape with RGBA pixels
         bitmap_shape = map_shape + (4,)

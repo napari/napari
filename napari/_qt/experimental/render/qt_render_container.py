@@ -1,9 +1,8 @@
 """QtRenderContainer class.
 """
-
-
 from qtpy.QtWidgets import QStackedWidget
 
+from ....components.viewer_model import ViewerModel
 from .qt_render import QtRender
 
 
@@ -23,13 +22,13 @@ class QtRenderContainer(QStackedWidget):
     ----------
     default_widget : QtRender
         A minimal version fo QtRender if no layer is selected.
-    viewer : ViewerModel
+    viewer : Viewer
         Napari viewer.
     widgets : dict
         Maps layer to its QtRender widget.
     """
 
-    def __init__(self, viewer):
+    def __init__(self, viewer: ViewerModel):
 
         super().__init__()
         self.setProperty("emphasized", True)
