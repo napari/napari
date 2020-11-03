@@ -3,8 +3,11 @@ import numpy as np
 from ..utils.events import EmitterGroup
 
 
-class Grid:
-    """Grid mode.
+class GridCanvas:
+    """Grid for canvas.
+
+    Right now the only grid mode that is still inside one canvas with one
+    camera, but future grid modes could support multiple canvases.
 
     Attributes
     ----------
@@ -16,7 +19,7 @@ class Grid:
         Number of rows and columns in the grid. A value of -1 for either or
         both of will be used the row and column numbers will trigger an
         auto calculation of the necessary grid size to appropriately fill
-        all they layers at the appropriate stride.
+        all the layers at the appropriate stride.
     stride : int
         Number of layers to place in each grid square before moving on to
         the next square. The default ordering is to place the most visible
@@ -69,7 +72,7 @@ class Grid:
     def actual_size(self, nlayers=1):
         """Return the actual size of the grid.
 
-        This will return the size paramater, unless one of the row
+        This will return the size parameter, unless one of the row
         or column numbers is -1 in which case it will compute the
         optimal size of the grid given the number of layers and
         current stride.
