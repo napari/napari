@@ -1,3 +1,5 @@
+import warnings
+
 import numpy as np
 
 from ..utils.events import EmitterGroup, Event
@@ -9,6 +11,7 @@ from .axes import Axes
 from .camera import Camera
 from .cursor import Cursor
 from .dims import Dims
+from .grid import GridCanvas
 from .layerlist import LayerList
 from .scale_bar import ScaleBar
 
@@ -59,7 +62,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             reset_view=Event,
             active_layer=Event,
             palette=Event,
-            grid=Event,
             layers_change=Event,
         )
 
@@ -79,13 +81,14 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
 
         self._interactive = True
         self._active_layer = None
-        self._grid_size = (1, 1)
-        self.grid_stride = 1
+        self.grid = GridCanvas()
         # 2-tuple indicating height and width
         self._canvas_size = (600, 800)
         self._palette = None
         self.theme = 'dark'
 
+        self.grid.events.update.connect(self.reset_view)
+        self.grid.events.update.connect(self._on_grid_change)
         self.dims.events.ndisplay.connect(self._update_layers)
         self.dims.events.ndisplay.connect(self.reset_view)
         self.dims.events.order.connect(self._update_layers)
@@ -93,7 +96,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self.dims.events.current_step.connect(self._update_layers)
         self.cursor.events.position.connect(self._on_cursor_position_change)
         self.layers.events.changed.connect(self._update_active_layer)
-        self.layers.events.changed.connect(self._update_grid)
+        self.layers.events.changed.connect(self._on_grid_change)
         self.layers.events.changed.connect(self._on_layers_change)
 
         self.keymap_providers = [self]
@@ -152,17 +155,53 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
 
     @property
     def grid_size(self):
-        """tuple: Size of grid
-        """
-        return self._grid_size
+        """tuple: Size of grid."""
+        warnings.warn(
+            (
+                "The viewer.grid_size parameter is deprecated and will be removed after version 0.4.3."
+                " Instead you should use viewer.grid.size"
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.grid.size
 
     @grid_size.setter
     def grid_size(self, grid_size):
-        if np.all(self.grid_size == grid_size):
-            return
-        self._grid_size = grid_size
-        self.reset_view()
-        self.events.grid()
+        warnings.warn(
+            (
+                "The viewer.grid_size parameter is deprecated and will be removed after version 0.4.3."
+                " Instead you should use viewer.grid.size"
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        self.grid.size = grid_size
+
+    @property
+    def grid_stride(self):
+        """int: Number of layers in each grid square."""
+        warnings.warn(
+            (
+                "The viewer.grid_stride parameter is deprecated and will be removed after version 0.4.3."
+                " Instead you should use viewer.grid.stride"
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.grid.stride
+
+    @grid_stride.setter
+    def grid_stride(self, grid_stride):
+        warnings.warn(
+            (
+                "The viewer.grid_stride parameter is deprecated and will be removed after version 0.4.3."
+                " Instead you should use viewer.grid.stride"
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        self.grid.stride = grid_stride
 
     @property
     def status(self):
@@ -264,7 +303,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         extent = self._sliced_extent_world
         scene_size = extent[1] - extent[0]
         corner = extent[0]
-        grid_size = list(self.grid_size)
+        grid_size = list(self.grid.actual_size(len(self.layers)))
         if len(scene_size) > len(grid_size):
             grid_size = [1] * (len(scene_size) - len(grid_size)) + grid_size
         size = np.multiply(scene_size, grid_size)
@@ -397,6 +436,12 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         for layer in self.layers:
             layer.position = self.cursor.position
 
+    def _on_grid_change(self, event):
+        """Arrange the current layers is a 2D grid."""
+        for i, layer in enumerate(self.layers[::-1]):
+            i_row, i_column = self.grid.position(i, len(self.layers))
+            self._subplot(layer, (i_row, i_column))
+
     def grid_view(self, n_row=None, n_column=None, stride=1):
         """Arrange the current layers is a 2D grid.
 
@@ -415,43 +460,36 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             cause the order in which the layers are placed in the grid to be
             reversed.
         """
-        n_grid_squares = np.ceil(len(self.layers) / abs(stride)).astype(int)
-        if n_row is None and n_column is None:
-            n_column = np.ceil(np.sqrt(n_grid_squares)).astype(int)
-            n_row = np.ceil(n_grid_squares / n_column).astype(int)
-        elif n_row is None:
-            n_row = np.ceil(n_grid_squares / n_column).astype(int)
-        elif n_column is None:
-            n_column = np.ceil(n_grid_squares / n_row).astype(int)
-
-        n_row = max(1, n_row)
-        n_column = max(1, n_column)
-        self.grid_size = (n_row, n_column)
-        self.grid_stride = stride
-        for i, layer in enumerate(self.layers):
-            if stride > 0:
-                adj_i = len(self.layers) - i - 1
-            else:
-                adj_i = i
-            adj_i = adj_i // abs(stride)
-            adj_i = adj_i % (n_row * n_column)
-            i_row = adj_i // n_column
-            i_column = adj_i % n_column
-            self._subplot(layer, (i_row, i_column))
+        warnings.warn(
+            (
+                "The viewer.grid_view method is deprecated and will be removed after version 0.4.3."
+                " Instead you should use the viewer.grid.enabled = Turn to turn on the grid view,"
+                " and viewer.grid.size and viewer.grid.stride to set the size and stride of the"
+                " grid respectively."
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        self.grid.stride = stride
+        if n_row is None:
+            n_row = -1
+        if n_column is None:
+            n_column = -1
+        self.grid.size = (n_row, n_column)
+        self.grid.enabled = True
 
     def stack_view(self):
-        """Arrange the current layers is a stack.
+        """Arrange the current layers in a stack.
         """
-        self.grid_view(n_row=1, n_column=1, stride=1)
-
-    def _update_grid(self, event=None):
-        """Update grid with current grid values.
-        """
-        self.grid_view(
-            n_row=self.grid_size[0],
-            n_column=self.grid_size[1],
-            stride=self.grid_stride,
+        warnings.warn(
+            (
+                "The viewer.stack_view method is deprecated and will be removed after version 0.4.3."
+                " Instead you should use the viewer.grid.enabled = False to turn off the grid view."
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
         )
+        self.grid.enabled = False
 
     def _subplot(self, layer, position):
         """Shift a layer to a specified position in a 2D grid.

@@ -236,8 +236,9 @@ def test_grid_mode(make_test_viewer):
     data = np.ones((6, 15, 15))
     viewer.add_image(data, channel_axis=0, blending='translucent')
 
-    assert np.all(viewer.grid_size == (1, 1))
-    assert viewer.grid_stride == 1
+    assert not viewer.grid.enabled
+    assert viewer.grid.actual_size(6) == (1, 1)
+    assert viewer.grid.stride == 1
     translations = [layer.translate_grid for layer in viewer.layers]
     expected_translations = np.zeros((6, 2))
     np.testing.assert_allclose(translations, expected_translations)
@@ -248,9 +249,10 @@ def test_grid_mode(make_test_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
 
     # enter grid view
-    viewer.grid_view()
-    assert np.all(viewer.grid_size == (2, 3))
-    assert viewer.grid_stride == 1
+    viewer.grid.enabled = True
+    assert viewer.grid.enabled
+    assert viewer.grid.actual_size(6) == (2, 3)
+    assert viewer.grid.stride == 1
     translations = [layer.translate_grid for layer in viewer.layers]
     expected_translations = [
         [0, 0],
@@ -308,10 +310,11 @@ def test_grid_mode(make_test_viewer):
         )
         np.testing.assert_almost_equal(screenshot[coord], c)
 
-    # retun to stack view
-    viewer.stack_view()
-    assert np.all(viewer.grid_size == (1, 1))
-    assert viewer.grid_stride == 1
+    # return to stack view
+    viewer.grid.enabled = False
+    assert not viewer.grid.enabled
+    assert viewer.grid.actual_size(6) == (1, 1)
+    assert viewer.grid.stride == 1
     translations = [layer.translate_grid for layer in viewer.layers]
     expected_translations = np.zeros((6, 2))
     np.testing.assert_allclose(translations, expected_translations)
