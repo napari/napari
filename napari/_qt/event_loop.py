@@ -9,8 +9,6 @@ from qtpy.QtWidgets import QApplication, QSplashScreen
 from ..utils.perf import perf_config
 from .exceptions import ExceptionHandler
 
-AVOID_PYTQ5_CRASH = False
-
 
 class QApplicationNoCrash(QApplication):
     """Experimental work around for pyqt5 crash.
@@ -46,11 +44,7 @@ def _create_application(argv) -> QApplication:
 
         return QApplicationWithTracing(argv)
     else:
-        return (
-            QApplicationNoCrash(argv)
-            if AVOID_PYTQ5_CRASH
-            else QApplication(argv)
-        )
+        return QApplication(argv)
 
 
 @contextmanager
