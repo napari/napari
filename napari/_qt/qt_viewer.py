@@ -113,7 +113,7 @@ class QtViewer(QSplitter):
         from .layer_controls import QtLayerControlsContainer
 
         super().__init__()
-        self._updator = CanvasUpdater(self)
+        # self._updator = CanvasUpdater(self)
         self.setAttribute(Qt.WA_DeleteOnClose)
 
         QCoreApplication.setAttribute(
@@ -243,6 +243,12 @@ class QtViewer(QSplitter):
         self.viewer.events.layers_change.connect(lambda x: self.dims.stop())
 
         self.setAcceptDrops(True)
+
+        for layer in self.viewer.layers:
+            self._add_layer(layer)
+
+        self.add_visuals(welcome)
+        self.canvas.add_visuals(self.view.scene)
 
     def add_visuals(self, welcome=True):
         self.view = self.canvas.central_widget.add_view()

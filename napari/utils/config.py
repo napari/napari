@@ -59,4 +59,4 @@ async_loading = _set("NAPARI_ASYNC") or async_octree
 create_octree_images = async_octree
 
 # For debugging PR #1811 Crash
-DELAY_LOAD_VISUALS = False
+DELAY_LOAD_VISUALS = True

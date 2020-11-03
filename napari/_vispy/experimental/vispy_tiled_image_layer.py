@@ -1,11 +1,11 @@
 """VispyTiledImageLayer class.
 """
-from typing import List, Optional, Set
+from typing import List, Set
 
 import numpy as np
 from vispy.scene.node import Node
 from vispy.scene.visuals import Line
-from vispy.visuals.transforms import NullTransform, STTransform
+from vispy.visuals.transforms import STTransform
 
 from ...layers.image.experimental.octree_util import ChunkData
 from ...utils.perf import block_timer
@@ -23,6 +23,20 @@ LINE_VISUAL_ORDER = 10
 # We are seeing crashing when creating too many ImageVisual's so we are
 # experimenting with having a reusable pool of them.
 INITIAL_POOL_SIZE = 0
+
+SHOW_GRID = True
+
+
+class NullImageVisualPool:
+    """Allocate visuals without actually having a pool (for now).
+    """
+
+    def get_visual(self):
+        return ImageVisual(None, method='auto')
+
+    def return_visual(self, visual):
+        assert visual
+        visual.parent = None  # Remove from scene graph.
 
 
 def _chunk_outline(chunk: ChunkData) -> np.ndarray:
@@ -79,59 +93,6 @@ class ImageChunk:
 
         # ImageVisual should be assigned later
         self.node = None
-
-
-class ImageVisualPool:
-    """A reusable pool of ImageVisuals.
-
-    Because we are seeing crashes if we create too many ImageVisuals we have
-    a reusable pool of them.
-
-    Attributes
-    ----------
-    nodes : List[ImageVisual]
-        The available nodes in the pool.
-    """
-
-    def __init__(self):
-        self.nodes = self._create_pool(INITIAL_POOL_SIZE)
-
-    def _create_pool(self, size):
-        with block_timer("ImageVisualPool.__init__") as event:
-            nodes = [ImageVisual(None, method='auto') for x in range(size)]
-
-        ms = event.duration_ms
-        each_ms = 0 if size == 0 else (event.duration_ms / size)
-        print(f"ImageVisualPool: Created {size} @ {each_ms}ms each = {ms}ms")
-
-        return nodes
-
-    def get_node(self) -> Optional[ImageVisual]:
-        """Get an available ImageVisual.
-
-        Return
-        ------
-        Optional[ImageVisual]
-            An ImageVisual if one was available in the pool.
-        """
-        if INITIAL_POOL_SIZE == 0:
-            return ImageVisual(None, method='auto')
-
-        if len(self.nodes) == 0:
-            # Pool is empty, no visual for now. The ImageChunk might get
-            # assigned a ImageVisual later if it stays in view.
-            return None
-
-        # Assign an available ImageVisual.
-        return self.nodes.pop()
-
-    def return_node(self, node: ImageVisual) -> None:
-        """Return a node that's no number being used."""
-        if node is not None:
-            node.parent = None  # Remove from the Scene Graph.
-            node.transform = NullTransform()
-            if INITIAL_POOL_SIZE > 0:
-                self.nodes.append(node)
 
 
 class TileGrid:
@@ -215,14 +176,18 @@ class VispyTiledImageLayer(VispyImageLayer):
     def __init__(self, layer):
         self.ready = False
         self.image_chunks = {}
+        self.test_chunks = []
         self.grid = None  # Can't create until after super() init
-        self.pool = ImageVisualPool()
+
+        self.pool = NullImageVisualPool()
 
         # This will call our self._on_data_change() but we guard
         # that with self.read as a hack.
         super().__init__(layer)
 
-        self.grid = TileGrid(self.node)
+        if SHOW_GRID:
+            self.grid = TileGrid(self.node)
+
         self.ready = True
 
     @property
@@ -258,9 +223,9 @@ class VispyTiledImageLayer(VispyImageLayer):
         if not self.layer.loaded or not self.ready:
             return
 
-        self._update_image_chunks()
+        # self._update_image_chunks()
 
-    def _update_image_chunks(self) -> None:
+    def _update_view(self) -> None:
         """Update all ImageChunks that we are managing.
 
         The basic algorithm is:
@@ -295,14 +260,13 @@ class VispyTiledImageLayer(VispyImageLayer):
 
         num_final = len(self.image_chunks)
 
-        self.grid.update_grid(self.image_chunks.values())
-
-        num_pool = len(self.pool.nodes)
+        if SHOW_GRID:
+            self.grid.update_grid(self.image_chunks.values())
 
         if num_created > 0 or num_deleted > 0:
             print(
                 f"VispyTiled: seen: {num_seen} start: {num_start} created: {num_created} "
-                f"deleted: {num_deleted} final: {num_final} pool: {num_pool}"
+                f"deleted: {num_deleted} final: {num_final}"
             )
 
     def _update_visible(self, visible_chunks: List[ChunkData]) -> None:
@@ -336,10 +300,8 @@ class VispyTiledImageLayer(VispyImageLayer):
                 # The ImageChunk already existed but there was no
                 # ImageVisual available. Attempt to assign one from the
                 # pool again. If still not available we do nothing.
-                node = self.pool.get_node()
-                if node is not None:
-                    image_chunk.node = node
-                    self._add_image_chunk_node(image_chunk)
+                image_chunk.node = self.pool.get_visual()
+                self._add_image_chunk_node(image_chunk)
 
     def _remove_stale_chunks(self, visible_set: Set[ChunkData]) -> None:
         """Remove stale chunks which are not longer visible.
@@ -352,9 +314,12 @@ class VispyTiledImageLayer(VispyImageLayer):
         for image_chunk in list(self.image_chunks.values()):
             chunk_data = image_chunk.chunk_data
             if chunk_data.key not in visible_set:
-                self.pool.return_node(image_chunk.node)
+                if image_chunk.node is not None:
+                    self.pool.return_visual(image_chunk.node)
                 del self.image_chunks[chunk_data.key]
 
     def _on_camera_move(self, event=None):
         super()._on_camera_move()
-        self._update_image_chunks()
+
+        with block_timer("_update_view", print_time=True):
+            self._update_view()
