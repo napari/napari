@@ -11,7 +11,7 @@ from .axes import Axes
 from .camera import Camera
 from .cursor import Cursor
 from .dims import Dims
-from .grid import Grid
+from .grid import GridCanvas
 from .layerlist import LayerList
 from .scale_bar import ScaleBar
 
@@ -81,7 +81,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
 
         self._interactive = True
         self._active_layer = None
-        self.grid = Grid()
+        self.grid = GridCanvas()
         # 2-tuple indicating height and width
         self._canvas_size = (600, 800)
         self._palette = None

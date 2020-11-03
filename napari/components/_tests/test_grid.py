@@ -1,9 +1,9 @@
-from napari.components.grid import Grid
+from napari.components.grid import GridCanvas
 
 
 def test_grid_creation():
     """Test creating grid object"""
-    grid = Grid()
+    grid = GridCanvas()
     assert grid is not None
     assert not grid.enabled
     assert grid.size == (-1, -1)
@@ -12,14 +12,14 @@ def test_grid_creation():
 
 def test_size_stride_creation():
     """Test creating grid object"""
-    grid = Grid(size=(3, 4), stride=2)
+    grid = GridCanvas(size=(3, 4), stride=2)
     assert grid.size == (3, 4)
     assert grid.stride == 2
 
 
 def test_actual_size_and_position():
     """Test actual size"""
-    grid = Grid(enabled=True)
+    grid = GridCanvas(enabled=True)
     assert grid.enabled
 
     # 9 layers get put in a (3, 3) grid
@@ -45,7 +45,7 @@ def test_actual_size_and_position():
 
 def test_actual_size_with_stride():
     """Test actual size"""
-    grid = Grid(enabled=True, stride=2)
+    grid = GridCanvas(enabled=True, stride=2)
     assert grid.enabled
 
     # 7 layers get put in a (2, 2) grid
@@ -65,7 +65,7 @@ def test_actual_size_with_stride():
 
 def test_actual_size_and_position_negative_stride():
     """Test actual size"""
-    grid = Grid(enabled=True, stride=-1)
+    grid = GridCanvas(enabled=True, stride=-1)
     assert grid.enabled
 
     # 9 layers get put in a (3, 3) grid
@@ -78,7 +78,7 @@ def test_actual_size_and_position_negative_stride():
 
 def test_actual_size_grid_disabled():
     """Test actual size with grid disabled"""
-    grid = Grid()
+    grid = GridCanvas()
     assert not grid.enabled
     assert grid.actual_size(9) == (1, 1)
     assert grid.position(3, 9) == (0, 0)
