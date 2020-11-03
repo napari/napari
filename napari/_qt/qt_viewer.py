@@ -4,9 +4,10 @@ from copy import copy
 from pathlib import Path
 
 import numpy as np
-from qtpy.QtCore import QCoreApplication, QSize, Qt
+from qtpy.QtCore import QCoreApplication, QObject, QSize, Qt, QTimer
 from qtpy.QtGui import QCursor, QGuiApplication
 from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
+from vispy.scene.node import Node
 from vispy.visuals.transforms import ChainTransform
 
 from ..resources import get_stylesheet
@@ -38,6 +39,27 @@ from .._vispy import (  # isort:skip
     VispyWelcomeVisual,
     create_vispy_visual,
 )
+
+_node_pool = []
+
+
+class CanvasUpdater(QObject):
+    INTERVAL_MS = 10
+
+    def __init__(self, qt_viewer):
+        QObject.__init__(self, qt_viewer)
+
+        self.qt_viewer = qt_viewer
+        self.timer = QTimer(self)
+        self.timer.timeout.connect(self.create)
+        self.timer.start(self.INTERVAL_MS)
+        self.index = 0
+
+    def create(self):
+        print(f"CanvasUpdater: {self.index}")
+        _node_pool.append(Node())
+        self.index += 1
+        self.qt_viewer.canvas.update()
 
 
 class QtViewer(QSplitter):
@@ -91,6 +113,7 @@ class QtViewer(QSplitter):
         from .layer_controls import QtLayerControlsContainer
 
         super().__init__()
+        self._updator = CanvasUpdater(self)
         self.setAttribute(Qt.WA_DeleteOnClose)
 
         QCoreApplication.setAttribute(
@@ -98,11 +121,13 @@ class QtViewer(QSplitter):
         )
 
         self.viewer = viewer
+
         self.dims = QtDims(self.viewer.dims)
         self.controls = QtLayerControlsContainer(self.viewer)
         self.layers = QtLayerList(self.viewer.layers)
         self.layerButtons = QtLayerButtons(self.viewer)
         self.viewerButtons = QtViewerButtons(self.viewer)
+
         self._console = None
 
         layerList = QWidget()
@@ -153,6 +178,7 @@ class QtViewer(QSplitter):
 
         # This dictionary holds the corresponding vispy visual for each layer
         self.layer_to_visual = {}
+
         self.viewerButtons.consoleButton.clicked.connect(
             self.toggle_console_visibility
         )
@@ -164,7 +190,9 @@ class QtViewer(QSplitter):
             size=self.viewer._canvas_size[::-1],
         )
         self.canvas.events.ignore_callback_errors = False
+
         self.canvas.events.draw.connect(self.dims.enable_play)
+
         self.canvas.native.setMinimumSize(QSize(200, 200))
         self.canvas.context.set_depth_func('lequal')
 
@@ -177,43 +205,16 @@ class QtViewer(QSplitter):
         self.canvas.connect(self.on_draw)
         self.canvas.connect(self.on_resize)
 
-        self.view = self.canvas.central_widget.add_view()
-        self.camera = VispyCamera(
-            self.view, self.viewer.camera, self.viewer.dims
-        )
-        self.canvas.connect(self.camera.on_draw)
-
-        self.axes = VispyAxesVisual(
-            self.viewer.axes,
-            self.viewer.camera,
-            self.viewer.dims,
-            parent=self.view.scene,
-            order=1e6,
-        )
-        self.scale_bar = VispyScaleBarVisual(
-            self.viewer.scale_bar,
-            self.viewer.camera,
-            parent=self.view,
-            order=1e6 + 1,
-        )
-        self.canvas.events.resize.connect(self.scale_bar._on_position_change)
-
-        self._show_welcome = welcome
-        if self._show_welcome:
-            self.welcome = VispyWelcomeVisual(
-                self.viewer, parent=self.view, order=-100
-            )
-            self.viewer.events.layers_change.connect(
-                self.welcome._on_visible_change
-            )
-            self.viewer.events.palette.connect(self.welcome._on_palette_change)
-            self.canvas.events.resize.connect(self.welcome._on_canvas_change)
+        if not config.DELAY_LOAD_VISUALS:
+            self.add_visuals(welcome)
 
         main_widget = QWidget()
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(10, 22, 10, 2)
         main_layout.addWidget(self.canvas.native)
+
         main_layout.addWidget(self.dims)
+
         main_layout.setSpacing(10)
         main_widget.setLayout(main_layout)
 
@@ -242,6 +243,38 @@ class QtViewer(QSplitter):
         self.viewer.events.layers_change.connect(lambda x: self.dims.stop())
 
         self.setAcceptDrops(True)
+
+    def add_visuals(self, welcome=True):
+        self.view = self.canvas.central_widget.add_view()
+        self.camera = VispyCamera(
+            self.view, self.viewer.camera, self.viewer.dims
+        )
+        self.canvas.connect(self.camera.on_draw)
+        self.axes = VispyAxesVisual(
+            self.viewer.axes,
+            self.viewer.camera,
+            self.viewer.dims,
+            parent=self.view.scene,
+            order=1e6,
+        )
+        self.scale_bar = VispyScaleBarVisual(
+            self.viewer.scale_bar,
+            self.viewer.camera,
+            parent=self.view,
+            order=1e6 + 1,
+        )
+        self.canvas.events.resize.connect(self.scale_bar._on_position_change)
+
+        self._show_welcome = welcome
+        if self._show_welcome:
+            self.welcome = VispyWelcomeVisual(
+                self.viewer, parent=self.view, order=-100
+            )
+            self.viewer.events.layers_change.connect(
+                self.welcome._on_visible_change
+            )
+            self.viewer.events.palette.connect(self.welcome._on_palette_change)
+            self.canvas.events.resize.connect(self.welcome._on_canvas_change)
 
     def _create_performance_dock_widget(self):
         """Create the dock widget that shows performance metrics.
