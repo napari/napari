@@ -2,10 +2,18 @@ from typing import Dict, List, Tuple
 import numpy as np
 import napari
 from tqdm import tqdm
-from omero.gateway import BlitzGateway
 from itertools import product
 
-# Helper function to retrieve sample time-lapse movies
+try:
+    from omero.gateway import BlitzGateway
+except:
+    print("Could not import BlitzGateway which is")
+    print("required to download the sample datasets.")
+    print("Please install omero-py:")
+    print("https://pypi.org/project/omero-py/")
+    exit(-1)
+
+
 def IDR_fetch_image(image_id: int, progressbar: bool = True) -> np.ndarray:
     """
     Download the image with id image_id from the IDR
@@ -47,46 +55,77 @@ def IDR_fetch_image(image_id: int, progressbar: bool = True) -> np.ndarray:
 
     _tmp = np.asarray(list(idr_plane_iterator))
     _tmp = _tmp.reshape((nz, nc, nt, ny, nx))
+    # the following line reorders the axes (no summing, despite the name)
     return np.einsum("jmikl", _tmp)
-
-
-# Example:
 
 
 description = """
 3D-Kymographs in Napari
+=======================
 
-This example demonstrates that the volume rendering capabilities of napari can also
-be used to render 2d timelapse acquisitions as kymographs. Kymographs, also called 
-space-time images, can be a powerful tool to visualize dynamics of processes. However, 
-the most common way to visualize kymographs is to pick a single line through a 2D image
-and visualize the time domain as a second axes. By using volume rendering instead, we can 
-create a visualization that gives an overview of the complete spatial and time course
-from a single view.
+About
+=====
+This example demonstrates that the volume rendering capabilities of napari
+can also be used to render 2d timelapse acquisitions as kymographs. 
+Kymographs, also called space-time images, are a powerful tool to visualize
+the dynamics of processes.  
+The most common way to visualize kymographs is to pick a single line through
+a 2D image and visualize the time domain along a second axes. 
+Napari is not limited to 2D visualization an by harnessing its volume
+volume rendering capabilities, we can create a 3D kymograph, 
+a powerful visualization that provides an overview of the complete 
+spatial and temporal data from a single view.
 
-The sample data to demonstrate this is downloaded from IDR:
+Using napari's grid mode we can juxtapose multiple such 3D kymographs to
+highlight the differences in cell dynamics under different siRNA treatments. 
+
+The selected samples are from the Mitocheck screen and demonstrate siRNA 
+knockdowns of several genes. 
+The date is timelapse fluorescence microscopy of HeLa cells, with GFP-
+tagged histone revealing the chromosomes.
+
+In the juxtaposed kymographs the reduced branching for the mitotitic 
+phenotypes caused by INCENP, AURKB and KIF11 knockdown compared to 
+TMPRSS11A knockdown is immediately obvious.
+
+Data Source
+===========
+The samples to demonstrate this is downloaded from IDR:
 https://idr.openmicroscopy.org/webclient/?show=screen-1302
 
-and comes from the Mitocheck screen:
+Reference
+=========
+The data comes from the Mitocheck screen:
 
-Phenotypic profiling of the human genome by time-lapse microscopy reveals cell division genes. 
+Phenotypic profiling of the human genome by time-lapse microscopy reveals cell
+division genes. 
 
-Neumann B, Walter T, Hériché JK, Bulkescher J, Erfle H, Conrad C, Rogers P, Poser I, Held M, 
-Liebel U, Cetin C, Sieckmann F, Pau G, Kabbe R, Wünsche A, Satagopam V, Schmitz MH, Chapuis C,
-Gerlich DW, Schneider R, Eils R, Huber W, Peters JM, Hyman AA, Durbin R, Pepperkok R, Ellenberg J.
+Neumann B, Walter T, Hériché JK, Bulkescher J, Erfle H, Conrad C, Rogers P,
+Poser I, Held M, Liebel U, Cetin C, Sieckmann F, Pau G, Kabbe R, Wünsche A,
+Satagopam V, Schmitz MH, Chapuis C, Gerlich DW, Schneider R, Eils R, Huber W,
+Peters JM, Hyman AA, Durbin R, Pepperkok R, Ellenberg J.
 Nature. 2010 Apr 1;464(7289):721-7. 
 doi: 10.1038/nature08869. 
+
+Acknowledgements
+================
+Beate Neumann (EMBL) for helpful advice on mitotic phenotypes.
 
 """
 
 print(description)
 
 samples = (
-    {"IDRid": 1486532, "description": "??? knockdown", "vol": None},
+    {"IDRid": 2864587, "description": "AURKB knockdown", "vol": None},
     {"IDRid": 2862565, "description": "KIF11 knockdown", "vol": None},
+    {"IDRid": 2867896, "description": "INCENP knockdown", "vol": None},
+    {"IDRid": 1486532, "description": "TMPRSS11A knockdown", "vol": None},
 )
 
-print("---------------------")
+print("------------------------------------")
+print("Downloading sample datasets from IDR")
+print("this may take some time")
+print("------------------------------------")
 for s in samples:
     print(f"Downloading sample {s['IDRid']}.")
     print(f"Description: {s['description']}")
@@ -99,7 +138,11 @@ with napari.gui_qt():
         v.add_image(
             s["vol"], name=s['description'], scale=scale, blending="opaque"
         )
-    # oblique view angle onto the kymograph
-    v.camera.center = (230, 510, 670)
-    v.camera.angles = (-20, 30, -50)
-    v.camera.zoom = 0.3
+
+    v.grid.enabled = True  # show the volumes in grid mode
+    v.axes.visible = True  # magenta error shows time direction
+
+    # set an oblique view angle onto the kymograph grid
+    v.camera.center = (440, 880, 1490)
+    v.camera.angles = (-20, 23, -50)
+    v.camera.zoom = 0.17
