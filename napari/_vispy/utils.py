@@ -19,10 +19,12 @@ layer_to_visual = {
 
 if config.async_octree:
     from ..layers.image.experimental.octree_image import OctreeImage
-    from .experimental.vispy_tiled_image_layer import VispyTiledImageLayer
+    from .experimental.vispy_compound_image_layer import (
+        VispyCompoundImageLayer,
+    )
 
     # Insert OctreeImage in front so it gets picked over plain Image.
-    new_order = {OctreeImage: VispyTiledImageLayer}
+    new_order = {OctreeImage: VispyCompoundImageLayer}
     new_order.update(layer_to_visual)
     layer_to_visual = new_order
 
