@@ -24,6 +24,13 @@ TILE_SIZE_RANGE = range(1, 4096, 100)
 IMAGE_SIZE_DEFAULT = (1024, 1024)  # (width, height)
 IMAGE_SIZE_RANGE = range(1, 65536, 100)
 
+TEST_IMAGES = {
+    "Digits": lambda size: create_tiled_text_array("0", 16, 16, size),
+    "Astronaut": lambda size: skimage_data.astronaut(),
+    "Chelsea": lambda size: skimage_data.chelsea(),
+    "Coffee": lambda size: skimage_data.coffee(),
+}
+
 
 class QtTestImageLayout(QVBoxLayout):
     """Controls to a create a new test image layer.
@@ -58,9 +65,8 @@ class QtTestImageLayout(QVBoxLayout):
         self.octree.setChecked(1)
         self.addWidget(self.octree)
 
-        image_styles = ["Digits", "Astronaut", "Chelsea", "Coffee"]
         self.style = QComboBox()
-        self.style.addItems(image_styles)
+        self.style.addItems(TEST_IMAGES.keys())
         self.addWidget(self.style)
 
         # The create button.
@@ -109,23 +115,14 @@ class QtTestImage(QFrame):
         self.layout = QtTestImageLayout(self._create_test_image)
         self.setLayout(self.layout)
 
-    def _get_image_data(self, index, image_size):
-        images = {
-            0: lambda size: create_tiled_text_array("0", 16, 16, size),
-            1: lambda size: skimage_data.astronaut(),
-            2: lambda size: skimage_data.chelsea(),
-            3: lambda size: skimage_data.coffee(),
-        }
-        return images[index](image_size)
-
     def _create_test_image(self) -> None:
         """Create a new test image."""
         # We create regular Images or OctreeImages.
         config.create_octree_images = self.layout.octree.isChecked()
 
         image_size = self.layout.get_image_size()
-        style_index = self.layout.style.currentIndex()
-        data = self._get_image_data(style_index, image_size)
+        image_name = self.layout.style.currentText()
+        data = TEST_IMAGES[image_name](image_size)
 
         # Give each layer a unique name.
         unique_name = f"test-image-{QtTestImage.image_index:003}"
