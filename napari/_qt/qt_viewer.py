@@ -549,10 +549,7 @@ class QtViewer(QSplitter):
             Position in world coordinates, matches the total dimensionality
             of the viewer.
         """
-        nd = self.viewer.dims.ndisplay
-        transform = self.view.camera.transform.inverse
-        mapped_position = transform.map(list(position))[:nd]
-        position_world_slice = mapped_position[::-1]
+        position_world_slice = self.camera.map_canvas_to_worldslice(position)
 
         position_world = copy(self.viewer.dims.point)
         for i, d in enumerate(self.viewer.dims.displayed):

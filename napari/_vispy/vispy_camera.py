@@ -144,6 +144,27 @@ class VispyCamera:
         with self._camera.events.zoom.blocker(self._on_zoom_change):
             self._camera.zoom = self.zoom
 
+    def map_canvas_to_worldslice(self, position):
+        """Map position from canvas pixels into world slice coordinates.
+
+        Parameters
+        ----------
+        position : 2-tuple
+            Position in canvas (x, y).
+
+        Returns
+        -------
+        slice_position : 2-tuple or 3-tuple
+            Position in cursor in world slice coordinates, either length
+            2 or 3 depending on if in 2D or 3D rendering.
+        """
+        nd = self._camera.ndisplay
+        transform = self._view.camera.transform.inverse
+        mapped_position = transform.map(list(position))[:nd]
+        # Convert from Vispy to NumPy ordering
+        slice_position = mapped_position[::-1]
+        return slice_position
+
 
 def viewbox_key_event(event):
     """ViewBox key event handler.
