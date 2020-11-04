@@ -10,15 +10,15 @@ def test_grid_creation():
     assert grid.stride == 1
 
 
-def test_size_stride_creation():
+def test_shape_stride_creation():
     """Test creating grid object"""
-    grid = GridCanvas(size=(3, 4), stride=2)
+    grid = GridCanvas(shape=(3, 4), stride=2)
     assert grid.shape == (3, 4)
     assert grid.stride == 2
 
 
-def test_actual_size_and_position():
-    """Test actual size"""
+def test_actual_shape_and_position():
+    """Test actual shape"""
     grid = GridCanvas(enabled=True)
     assert grid.enabled
 
@@ -43,8 +43,8 @@ def test_actual_size_and_position():
     assert grid.position(8, 10) == (2, 0)
 
 
-def test_actual_size_with_stride():
-    """Test actual size"""
+def test_actual_shape_with_stride():
+    """Test actual shape"""
     grid = GridCanvas(enabled=True, stride=2)
     assert grid.enabled
 
@@ -63,8 +63,8 @@ def test_actual_size_with_stride():
     assert grid.position(2, 3) == (0, 1)
 
 
-def test_actual_size_and_position_negative_stride():
-    """Test actual size"""
+def test_actual_shape_and_position_negative_stride():
+    """Test actual shape"""
     grid = GridCanvas(enabled=True, stride=-1)
     assert grid.enabled
 
@@ -76,8 +76,8 @@ def test_actual_size_and_position_negative_stride():
     assert grid.position(8, 9) == (0, 0)
 
 
-def test_actual_size_grid_disabled():
-    """Test actual size with grid disabled"""
+def test_actual_shape_grid_disabled():
+    """Test actual shape with grid disabled"""
     grid = GridCanvas()
     assert not grid.enabled
     assert grid.actual_shape(9) == (1, 1)

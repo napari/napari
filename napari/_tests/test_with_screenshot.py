@@ -235,11 +235,12 @@ def test_grid_mode(make_test_viewer):
     # Add images
     data = np.ones((6, 15, 15))
     viewer.add_image(data, channel_axis=0, blending='translucent')
+    visuals = list(viewer.window.qt_viewer.layer_to_visual.values())
 
     assert not viewer.grid.enabled
     assert viewer.grid.actual_shape(6) == (1, 1)
     assert viewer.grid.stride == 1
-    translations = [layer.translate_grid for layer in viewer.layers]
+    translations = [vis.translate_grid[:2][::-1] for vis in visuals]
     expected_translations = np.zeros((6, 2))
     np.testing.assert_allclose(translations, expected_translations)
 
@@ -253,14 +254,14 @@ def test_grid_mode(make_test_viewer):
     assert viewer.grid.enabled
     assert viewer.grid.actual_shape(6) == (2, 3)
     assert viewer.grid.stride == 1
-    translations = [layer.translate_grid for layer in viewer.layers]
+    translations = [vis.translate_grid[:2][::-1] for vis in visuals]
     expected_translations = [
         [0, 0],
-        [0, 15],
-        [0, 30],
-        [15, 0],
-        [15, 15],
-        [15, 30],
+        [0, 14],
+        [0, 28],
+        [14, 0],
+        [14, 14],
+        [14, 28],
     ]
     np.testing.assert_allclose(translations, expected_translations[::-1])
 
@@ -315,7 +316,7 @@ def test_grid_mode(make_test_viewer):
     assert not viewer.grid.enabled
     assert viewer.grid.actual_shape(6) == (1, 1)
     assert viewer.grid.stride == 1
-    translations = [layer.translate_grid for layer in viewer.layers]
+    translations = [vis.translate_grid[:2][::-1] for vis in visuals]
     expected_translations = np.zeros((6, 2))
     np.testing.assert_allclose(translations, expected_translations)
 

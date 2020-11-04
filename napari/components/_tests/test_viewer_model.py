@@ -334,51 +334,12 @@ def test_grid():
     assert not viewer.grid.enabled
     assert viewer.grid.actual_shape(6) == (1, 1)
     assert viewer.grid.stride == 1
-    translations = [layer.translate_grid for layer in viewer.layers]
-    expected_translations = np.zeros((6, 2))
-    np.testing.assert_allclose(translations, expected_translations)
 
     # enter grid view
     viewer.grid.enabled = True
     assert viewer.grid.enabled
     assert viewer.grid.actual_shape(6) == (2, 3)
     assert viewer.grid.stride == 1
-    translations = [layer.translate_grid for layer in viewer.layers]
-    expected_translations = [
-        [0, 0],
-        [0, 15],
-        [0, 30],
-        [15, 0],
-        [15, 15],
-        [15, 30],
-    ]
-    np.testing.assert_allclose(translations, expected_translations[::-1])
-
-    # return to stack view
-    viewer.grid.enabled = False
-    assert not viewer.grid.enabled
-    assert viewer.grid.actual_shape(6) == (1, 1)
-    assert viewer.grid.stride == 1
-    translations = [layer.translate_grid for layer in viewer.layers]
-    expected_translations = np.zeros((6, 2))
-    np.testing.assert_allclose(translations, expected_translations)
-
-    # reenter grid view with new stride
-    viewer.grid.stride = -2
-    viewer.grid.enabled = True
-    assert viewer.grid.enabled
-    assert viewer.grid.actual_shape(6) == (2, 2)
-    assert viewer.grid.stride == -2
-    translations = [layer.translate_grid for layer in viewer.layers]
-    expected_translations = [
-        [0, 0],
-        [0, 0],
-        [0, 15],
-        [0, 15],
-        [15, 0],
-        [15, 0],
-    ]
-    np.testing.assert_allclose(translations, expected_translations)
 
 
 def test_add_remove_layer_dims_change():

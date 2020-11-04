@@ -613,15 +613,6 @@ def test_image_translate_broadcast():
     np.testing.assert_almost_equal(layer.translate, (0, 2, 2))
 
 
-def test_grid_translate():
-    np.random.seed(0)
-    data = np.random.random((10, 15))
-    layer = Image(data)
-    translate = np.array([15, 15])
-    layer.translate_grid = translate
-    np.testing.assert_allclose(layer.translate_grid, translate)
-
-
 def test_world_data_extent():
     """Test extent after applying transforms."""
     np.random.seed(0)
