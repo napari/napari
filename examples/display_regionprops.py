@@ -10,7 +10,13 @@ from omero.gateway import BlitzGateway
 from itertools import product
 
 # config
-IDR_imageID = 1512575
+#IDR_imageID = 1512575
+#IDR_imageID = 1490296 
+#IDR_imageID = 1486120 
+IDR_imageID =  1486532 # a few very fast moving abberant cells nice cell division
+#IDR_imageID =  1483589 # KIF11
+#IDR_imageID = 2862565 # KIF11 validation screen
+
 props = ['area', 'label']
 props_intensity = ['mean_intensity']
 
