@@ -147,35 +147,24 @@ class TileGrid:
 class VispyTiledImageLayer(VispyImageLayer):
     """Tiled images using multiple ImageVisuals.
 
-    Render a set of image tiles. For example render the set of tiles that
-    need to be drawn from an octree in order to depict the current view.
+    This was our initial rendering approach for the octree work. This layer
+    creates and manages tiles where each tile is a separate ImageVisual.
+    The ImageVisuals are all children of our VispyImageLayer node. We also
+    draw a grid under our VispyImageLayer node for debugging.
 
-    We create a parent ImageVisual, which is current empty. Then we create a
-    child ImageVisual for every image tile. The set of child ImageVisuals will
-    change over time as the user pans/zooms in the octree.
+    This works and produces good looking results. However creating separate
+    ImageVisuals is fairly slow. We think partly because each one rebuilds
+    its shader when it is created. Also as of Fall 2020 we were seeing
+    crashes that we think are related to modifying the scene graph. The
+    crashes were only under PyQt5, not with PySide2.
 
-    Future Work
-    -----------
-
-    This class will likely need to be replaced at some point. We plan to
-    write a TiledImageVisual class which stores the tile textures in an
-    atlas-like tile cache. Then in one draw command it can draw the all the
-    visible tiles in the right positions using texture coordinates.
-
-    One reason TiledImageVisual will be faster is today calling
-    ImageVisual.set_data() causes a 15-20ms hiccup when that visual is next
-    drawn. It's not clear why the hiccup is so big, since transfering the
-    texture into VRAM should be under 2ms. However at least 4ms is spent
-    rebuilding the shader alone.
-
-    Since we might need to draw 10+ new tiles at one time, the total delay
-    could be up to 200ms total, which is too slow.
-
-    However, this initial approach with separate ImageVisuals should be a
-    good starting point, since it will let us iron out the octree
-    implementation and the tile placement math. Then we can upgrade
-    to the new TiledImageVisual when its ready, and everything should
-    still look the same, it will just be faster.
+    For these reasons we are going to create a new TiledImageVisual that
+    internally manages tiles using a texture atlas. The advantage is that
+    it's one single visual so there are no scene graph operations when
+    adding or removing tiles. Also adding and removing tiles should be
+    fast, since the shader will not change. Finally rendering should be
+    fast, since in one draw operation we will draw all the tiles that
+    make up the image.
     """
 
     def __init__(self, layer):
