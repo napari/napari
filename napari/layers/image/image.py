@@ -1,12 +1,13 @@
 """Image class.
 """
-import os
 import types
 import warnings
+from copy import copy
 
 import numpy as np
 from scipy import ndimage as ndi
 
+from ...utils import config
 from ...utils.colormaps import AVAILABLE_COLORMAPS
 from ...utils.events import Event
 from ...utils.status_messages import format_float
@@ -18,10 +19,8 @@ from ._image_slice import ImageSlice
 from ._image_slice_data import ImageSliceData
 from ._image_utils import guess_multiscale, guess_rgb
 
-_use_async = os.getenv("NAPARI_ASYNC", "0") != "0"
-
 # Use sync or async SliceData class.
-if _use_async:
+if config.async_loading:
     from .experimental._chunked_slice_data import ChunkedSliceData
 
     SliceDataClass = ChunkedSliceData
@@ -75,6 +74,21 @@ class Image(IntensityVisualizationMixin, Layer):
         Scale factors for the layer.
     translate : tuple of float
         Translation values for the layer.
+    rotate : float, 3-tuple of float, or n-D array.
+        If a float convert into a 2D rotation matrix using that value as an
+        angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
+        pitch, roll convention. Otherwise assume an nD rotation. Angles are
+        assumed to be in degrees. They can be converted from radians with
+        np.degrees if needed.
+    shear : 1-D array or n-D array
+        Either a vector of upper triangular values, or an nD shear matrix with
+        ones along the main diagonal.
+    affine: n-D array or napari.utils.transforms.Affine
+        (N+1, N+1) affine transformation matrix in homogeneous coordinates.
+        The first (N, N) entries correspond to a linear transform and
+        the final column is a lenght N translation vector and a 1 or a napari
+        AffineTransform object. If provided then translate, scale, rotate, and
+        shear values are ignored.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -161,6 +175,9 @@ class Image(IntensityVisualizationMixin, Layer):
         metadata=None,
         scale=None,
         translate=None,
+        rotate=None,
+        shear=None,
+        affine=None,
         opacity=1,
         blending='translucent',
         visible=True,
@@ -196,6 +213,9 @@ class Image(IntensityVisualizationMixin, Layer):
             metadata=metadata,
             scale=scale,
             translate=translate,
+            rotate=rotate,
+            shear=shear,
+            affine=affine,
             opacity=opacity,
             blending=blending,
             visible=visible,
@@ -269,9 +289,9 @@ class Image(IntensityVisualizationMixin, Layer):
         """Get empty image to use as the default before data is loaded.
         """
         if self.rgb:
-            return np.zeros((1,) * self.dims.ndisplay + (3,))
+            return np.zeros((1,) * self._dims.ndisplay + (3,))
         else:
-            return np.zeros((1,) * self.dims.ndisplay)
+            return np.zeros((1,) * self._dims.ndisplay)
 
     def _get_order(self):
         """Return the order of the displayed dimensions."""
@@ -279,11 +299,11 @@ class Image(IntensityVisualizationMixin, Layer):
             # if rgb need to keep the final axis fixed during the
             # transpose. The index of the final axis depends on how many
             # axes are displayed.
-            return self.dims.displayed_order + (
-                max(self.dims.displayed_order) + 1,
+            return self._dims.displayed_order + (
+                max(self._dims.displayed_order) + 1,
             )
         else:
-            return self.dims.displayed_order
+            return self._dims.displayed_order
 
     @property
     def _data_view(self):
@@ -329,7 +349,7 @@ class Image(IntensityVisualizationMixin, Layer):
         -------
         extent_data : array, shape (2, D)
         """
-        shape = self.level_shapes[0]
+        shape = np.subtract(self.level_shapes[0], 1)
         return np.vstack([np.zeros(len(shape)), shape])
 
     @property
@@ -407,17 +427,17 @@ class Image(IntensityVisualizationMixin, Layer):
         str
             The current interpolation mode
         """
-        return str(self._interpolation[self.dims.ndisplay])
+        return str(self._interpolation[self._dims.ndisplay])
 
     @interpolation.setter
     def interpolation(self, interpolation):
         """Set current interpolation mode."""
-        if self.dims.ndisplay == 3:
-            self._interpolation[self.dims.ndisplay] = Interpolation3D(
+        if self._dims.ndisplay == 3:
+            self._interpolation[self._dims.ndisplay] = Interpolation3D(
                 interpolation
             )
         else:
-            self._interpolation[self.dims.ndisplay] = Interpolation(
+            self._interpolation[self._dims.ndisplay] = Interpolation(
                 interpolation
             )
         self.events.interpolation()
@@ -465,6 +485,31 @@ class Image(IntensityVisualizationMixin, Layer):
         """
         return self._slice.loaded
 
+    @property
+    def shape(self):
+        """Size of layer in world coordinates (compatibility).
+
+        Returns
+        -------
+        shape : tuple
+        """
+        warnings.warn(
+            (
+                "The shape attribute is deprecated and will be removed in version 0.4.1."
+                " Instead you should use the extent.data and extent.world attributes"
+                " to get the extent of the data in data or world coordinates."
+            ),
+            category=FutureWarning,
+            stacklevel=2,
+        )
+
+        extent = copy(self._extent_data)
+        extent[1] = extent[1] + 1
+        extent = self._transforms['data2world'](extent)
+
+        # Rounding is for backwards compatibility reasons.
+        return tuple(np.round(extent[1] - extent[0]).astype(int))
+
     def _get_state(self):
         """Get dictionary of layer state.
 
@@ -511,7 +556,7 @@ class Image(IntensityVisualizationMixin, Layer):
     def _set_view_slice(self):
         """Set the view given the indices to slice with."""
         self._new_empty_slice()
-        not_disp = self.dims.not_displayed
+        not_disp = self._dims.not_displayed
 
         # Check if requested slice outside of data range
         indices = np.array(self._slice_indices)
@@ -524,7 +569,7 @@ class Image(IntensityVisualizationMixin, Layer):
         ) or np.any(
             np.greater(
                 [indices[ax] for ax in not_disp],
-                [extent[1, ax] - 1 for ax in not_disp],
+                [extent[1, ax] for ax in not_disp],
             )
         ):
             return
@@ -532,7 +577,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
         if self.multiscale:
             # If 3d redering just show lowest level of multiscale
-            if self.dims.ndisplay == 3:
+            if self._dims.ndisplay == 3:
                 self.data_level = len(self.data) - 1
 
             # Slice currently viewed level
@@ -550,12 +595,12 @@ class Image(IntensityVisualizationMixin, Layer):
             indices[not_disp] = downsampled_indices
 
             scale = np.ones(self.ndim)
-            for d in self.dims.displayed:
+            for d in self._dims.displayed:
                 scale[d] = self.downsample_factors[self.data_level][d]
             self._transforms['tile2data'].scale = scale
 
-            if self.dims.ndisplay == 2:
-                for d in self.dims.displayed:
+            if self._dims.ndisplay == 2:
+                for d in self._dims.displayed:
                     indices[d] = slice(
                         self.corner_pixels[0, d],
                         self.corner_pixels[1, d] + 1,
@@ -662,7 +707,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
         image = self._slice.thumbnail.view
 
-        if self.dims.ndisplay == 3 and self.dims.ndim > 2:
+        if self._dims.ndisplay == 3 and self._dims.ndim > 2:
             image = np.max(image, axis=0)
 
         # float16 not supported by ndi.zoom
@@ -743,8 +788,8 @@ class Image(IntensityVisualizationMixin, Layer):
         else:
             shape = raw.shape
 
-        if all(0 <= c < s for c, s in zip(coord[self.dims.displayed], shape)):
-            value = raw[tuple(coord[self.dims.displayed])]
+        if all(0 <= c < s for c, s in zip(coord[self._dims.displayed], shape)):
+            value = raw[tuple(coord[self._dims.displayed])]
         else:
             value = None
 
@@ -754,7 +799,7 @@ class Image(IntensityVisualizationMixin, Layer):
         return value
 
     # One additional method for async
-    if _use_async:
+    if config.async_loading:
         from ...components.experimental.chunk import ChunkRequest
 
         def on_chunk_loaded(self, request: ChunkRequest) -> None:

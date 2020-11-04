@@ -1,9 +1,11 @@
 """Miscellaneous utility functions.
 """
+import builtins
 import collections.abc
 import inspect
 import itertools
 import re
+import sys
 from enum import Enum, EnumMeta
 from os import PathLike, fspath, path
 from typing import Optional, Sequence, Type, TypeVar
@@ -16,19 +18,16 @@ ROOT_DIR = path.dirname(path.dirname(__file__))
 try:
     from importlib import metadata as importlib_metadata
 except ImportError:
-    import importlib_metadata  # type: ignore
+    import importlib_metadata  # noqa
 
 
 def running_as_bundled_app() -> bool:
     """Infer whether we are running as a briefcase bundle"""
     # https://github.com/beeware/briefcase/issues/412
     # https://github.com/beeware/briefcase/pull/425
-    # this assumes the name of the app stays "napari"
-    try:
-        return importlib_metadata.metadata("napari").get("App-ID") is not None
-    except importlib_metadata.PackageNotFoundError:
-        """When bundled in another app. Return false to not conflict with napari bundle"""
-        return False
+    app_module = sys.modules['__main__'].__package__
+    metadata = importlib_metadata.metadata(app_module)
+    return 'Briefcase-Version' in metadata
 
 
 def in_jupyter() -> bool:
@@ -190,7 +189,7 @@ class StringEnumMeta(EnumMeta):
             else:
                 raise ValueError(
                     f'{cls} may only be called with a `str`'
-                    f' or an instance of {cls}'
+                    f' or an instance of {cls}. Got {builtins.type(value)}'
                 )
 
         # otherwise create new Enum class

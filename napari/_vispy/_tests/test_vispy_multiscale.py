@@ -4,6 +4,15 @@ import sys
 import numpy as np
 import pytest
 
+skip_on_win_ci = pytest.mark.skipif(
+    sys.platform.startswith('win') and os.getenv('CI', '0') != '0',
+    reason='Screenshot tests are not supported on windows CI.',
+)
+skip_local_popups = pytest.mark.skipif(
+    not os.getenv('CI') and os.getenv('NAPARI_POPUP_TESTS', '0') == '0',
+    reason='Tests requiring GUI windows are skipped locally by default.',
+)
+
 
 def test_multiscale(make_test_viewer):
     """Test rendering of multiscale data."""
@@ -28,17 +37,17 @@ def test_multiscale(make_test_viewer):
     assert np.all(layer.corner_pixels[1] >= np.subtract(shapes[2], 1))
 
     # Test value at top left corner of image
-    layer.position = (0, 0)
+    viewer.cursor.position = (0, 0)
     value = layer.get_value()
     np.testing.assert_allclose(value, (2, data[2][(0, 0)]))
 
     # Test value at bottom right corner of image
-    layer.position = (3995, 2995)
+    viewer.cursor.position = (3995, 2995)
     value = layer.get_value()
     np.testing.assert_allclose(value, (2, data[2][(999, 749)]))
 
     # Test value outside image
-    layer.position = (4000, 3000)
+    viewer.cursor.position = (4000, 3000)
     value = layer.get_value()
     assert value[1] is None
 
@@ -60,10 +69,8 @@ def test_3D_multiscale_image(make_test_viewer):
     viewer.window.qt_viewer.on_draw(None)
 
 
-@pytest.mark.skipif(
-    sys.platform.startswith('win') or not os.getenv("CI"),
-    reason='Screenshot tests are not supported on napari windows CI.',
-)
+@skip_on_win_ci
+@skip_local_popups
 def test_multiscale_screenshot(make_test_viewer):
     """Test rendering of multiscale data with screenshot."""
     viewer = make_test_viewer(show=True)
@@ -90,10 +97,8 @@ def test_multiscale_screenshot(make_test_viewer):
     )
 
 
-@pytest.mark.skipif(
-    sys.platform.startswith('win') or not os.getenv("CI"),
-    reason='Screenshot tests are not supported on napari windows CI.',
-)
+@skip_on_win_ci
+@skip_local_popups
 def test_multiscale_screenshot_zoomed(make_test_viewer):
     """Test rendering of multiscale data with screenshot after zoom."""
     viewer = make_test_viewer(show=True)
@@ -127,10 +132,8 @@ def test_multiscale_screenshot_zoomed(make_test_viewer):
     )
 
 
-@pytest.mark.skipif(
-    sys.platform.startswith('win') or not os.getenv("CI"),
-    reason='Screenshot tests are not supported on napari windows CI.',
-)
+@skip_on_win_ci
+@skip_local_popups
 def test_image_screenshot_zoomed(make_test_viewer):
     """Test rendering of image data with screenshot after zoom."""
     viewer = make_test_viewer(show=True)
@@ -158,3 +161,18 @@ def test_image_screenshot_zoomed(make_test_viewer):
     np.testing.assert_allclose(
         screenshot[-screen_offset, -screen_offset], target_center
     )
+
+
+@skip_on_win_ci
+@skip_local_popups
+def test_5D_multiscale(make_test_viewer):
+    """Test 5D multiscale data."""
+    # Show must be true to trigger multiscale draw and corner estimation
+    viewer = make_test_viewer(show=True)
+    shapes = [(1, 2, 5, 20, 20), (1, 2, 5, 10, 10), (1, 2, 5, 5, 5)]
+    np.random.seed(0)
+    data = [np.random.random(s) for s in shapes]
+    layer = viewer.add_image(data, multiscale=True)
+    assert layer.data == data
+    assert layer.multiscale is True
+    assert layer.ndim == len(shapes[0])

@@ -123,7 +123,7 @@ def test_add_empty_points_on_top_of_image():
     image = np.random.random((8, 64, 64))
     # add_image always returns the corresponding layer
     _ = viewer.add_image(image)
-    layer = viewer.add_points()
+    layer = viewer.add_points(ndim=3)
     assert layer.ndim == 3
     layer.add([5.0, 32.0, 61.0])
     assert layer.data.shape == (1, 3)
@@ -134,7 +134,7 @@ def test_add_empty_shapes_layer():
     image = np.random.random((8, 64, 64))
     # add_image always returns the corresponding layer
     _ = viewer.add_image(image)
-    layer = viewer.add_shapes()
+    layer = viewer.add_shapes(ndim=3)
     assert layer.ndim == 3
 
 
@@ -331,16 +331,18 @@ def test_grid():
     for i in range(6):
         data = np.random.random((15, 15))
         viewer.add_image(data)
-    assert np.all(viewer.grid_size == (1, 1))
-    assert viewer.grid_stride == 1
+    assert not viewer.grid.enabled
+    assert viewer.grid.actual_size(6) == (1, 1)
+    assert viewer.grid.stride == 1
     translations = [layer.translate_grid for layer in viewer.layers]
     expected_translations = np.zeros((6, 2))
     np.testing.assert_allclose(translations, expected_translations)
 
     # enter grid view
-    viewer.grid_view()
-    assert np.all(viewer.grid_size == (3, 3))
-    assert viewer.grid_stride == 1
+    viewer.grid.enabled = True
+    assert viewer.grid.enabled
+    assert viewer.grid.actual_size(6) == (2, 3)
+    assert viewer.grid.stride == 1
     translations = [layer.translate_grid for layer in viewer.layers]
     expected_translations = [
         [0, 0],
@@ -353,17 +355,20 @@ def test_grid():
     np.testing.assert_allclose(translations, expected_translations[::-1])
 
     # return to stack view
-    viewer.stack_view()
-    assert np.all(viewer.grid_size == (1, 1))
-    assert viewer.grid_stride == 1
+    viewer.grid.enabled = False
+    assert not viewer.grid.enabled
+    assert viewer.grid.actual_size(6) == (1, 1)
+    assert viewer.grid.stride == 1
     translations = [layer.translate_grid for layer in viewer.layers]
     expected_translations = np.zeros((6, 2))
     np.testing.assert_allclose(translations, expected_translations)
 
-    # reenter grid view
-    viewer.grid_view(n_column=2, n_row=3, stride=-2)
-    assert np.all(viewer.grid_size == (3, 2))
-    assert viewer.grid_stride == -2
+    # reenter grid view with new stride
+    viewer.grid.stride = -2
+    viewer.grid.enabled = True
+    assert viewer.grid.enabled
+    assert viewer.grid.actual_size(6) == (2, 2)
+    assert viewer.grid.stride == -2
     translations = [layer.translate_grid for layer in viewer.layers]
     expected_translations = [
         [0, 0],
@@ -490,18 +495,46 @@ def test_sliced_world_extent():
 
     # Empty data is taken to be 512 x 512
     np.testing.assert_allclose(viewer._sliced_extent_world[0], (0, 0))
-    np.testing.assert_allclose(viewer._sliced_extent_world[1], (512, 512))
+    np.testing.assert_allclose(viewer._sliced_extent_world[1], (511, 511))
 
     # Add one layer
     viewer.add_image(
         np.random.random((6, 10, 15)), scale=(3, 1, 1), translate=(10, 20, 5)
     )
-    np.testing.assert_allclose(viewer.layers._extent_world[0], (10, 20, 5))
-    np.testing.assert_allclose(viewer.layers._extent_world[1], (28, 30, 20))
+    np.testing.assert_allclose(viewer.layers.extent.world[0], (10, 20, 5))
+    np.testing.assert_allclose(viewer.layers.extent.world[1], (25, 29, 19))
     np.testing.assert_allclose(viewer._sliced_extent_world[0], (20, 5))
-    np.testing.assert_allclose(viewer._sliced_extent_world[1], (30, 20))
+    np.testing.assert_allclose(viewer._sliced_extent_world[1], (29, 19))
 
     # Change displayed dims order
     viewer.dims.order = (1, 2, 0)
     np.testing.assert_allclose(viewer._sliced_extent_world[0], (5, 10))
-    np.testing.assert_allclose(viewer._sliced_extent_world[1], (20, 28))
+    np.testing.assert_allclose(viewer._sliced_extent_world[1], (19, 25))
+
+
+def test_camera():
+    """Test camera."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    data = np.random.random((10, 15, 20))
+    viewer.add_image(data)
+    assert len(viewer.layers) == 1
+    assert np.all(viewer.layers[0].data == data)
+    assert viewer.dims.ndim == 3
+
+    assert viewer.dims.ndisplay == 2
+    assert viewer.camera.ndisplay == 2
+    assert viewer.camera.center == (7, 9.5)
+    assert viewer.camera.angles == (0, 0, 90)
+
+    viewer.dims.ndisplay = 3
+    assert viewer.dims.ndisplay == 3
+    assert viewer.camera.ndisplay == 3
+    assert viewer.camera.center == (4.5, 7, 9.5)
+    assert viewer.camera.angles == (0, 0, 90)
+
+    viewer.dims.ndisplay = 2
+    assert viewer.dims.ndisplay == 2
+    assert viewer.camera.ndisplay == 2
+    assert viewer.camera.center == (7, 9.5)
+    assert viewer.camera.angles == (0, 0, 90)

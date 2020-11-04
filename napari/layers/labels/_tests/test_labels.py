@@ -3,7 +3,6 @@ import pytest
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Labels
-from napari.layers.labels._labels_constants import LabelColorMode
 from napari.utils import Colormap
 
 
@@ -44,7 +43,7 @@ def test_3D_labels():
     assert layer.editable is True
 
     layer._slice_dims(ndisplay=3)
-    assert layer.dims.ndisplay == 3
+    assert layer._dims.ndisplay == 3
     assert layer.editable is False
     assert layer.mode == 'pan_zoom'
 
@@ -375,14 +374,14 @@ def test_label_color():
     assert len(col) == 4
 
 
-def test_selected_mode_label_color():
-    """Test color of labels in selected color mode"""
+def test_show_selected_label():
+    """Test color of labels when filtering to selected labels"""
     np.random.seed(0)
     data = np.random.randint(20, size=(10, 15))
     layer = Labels(data)
     original_color = layer.get_color(1)
 
-    layer.color_mode = LabelColorMode.SELECTED
+    layer.show_selected_label = True
     original_background_color = layer.get_color(layer._background_label)
     none_color = layer.get_color(None)
     layer.selected_label = 1
@@ -555,5 +554,5 @@ def test_world_data_extent():
     shape = (6, 10, 15)
     data = np.random.randint(20, size=(shape))
     layer = Labels(data)
-    extent = np.array(((0,) * 3, shape))
+    extent = np.array(((0,) * 3, np.subtract(shape, 1)))
     check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))

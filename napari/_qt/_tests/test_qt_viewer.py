@@ -56,7 +56,7 @@ def test_qt_viewer_toggle_console(make_test_viewer):
 
 @pytest.mark.parametrize('layer_class, data, ndim', layer_test_data)
 def test_add_layer(make_test_viewer, layer_class, data, ndim):
-    viewer = make_test_viewer(ndisplay=ndim)
+    viewer = make_test_viewer(ndisplay=int(np.clip(ndim, 2, 3)))
     view = viewer.window.qt_viewer
 
     add_layer_by_type(viewer, layer_class, data)

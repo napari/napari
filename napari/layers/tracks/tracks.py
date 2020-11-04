@@ -3,6 +3,7 @@
 # from napari.utils.colormaps import AVAILABLE_COLORMAPS
 
 from typing import Dict, List, Union
+from warnings import warn
 
 import numpy as np
 
@@ -14,7 +15,7 @@ from ._track_utils import TrackManager
 
 
 class Tracks(Layer):
-    """ Tracks layer.
+    """Tracks layer.
 
     Parameters
     ----------
@@ -54,6 +55,21 @@ class Tracks(Layer):
         Scale factors for the layer.
     translate : tuple of float
         Translation values for the layer.
+    rotate : float, 3-tuple of float, or n-D array.
+        If a float convert into a 2D rotation matrix using that value as an
+        angle. If 3-tuple convert into a 3D rotation matrix, using a yaw,
+        pitch, roll convention. Otherwise assume an nD rotation. Angles are
+        assumed to be in degrees. They can be converted from radians with
+        np.degrees if needed.
+    shear : 1-D array or n-D array
+        Either a vector of upper triangular values, or an nD shear matrix with
+        ones along the main diagonal.
+    affine: n-D array or napari.utils.transforms.Affine
+        (N+1, N+1) affine transformation matrix in homogeneous coordinates.
+        The first (N, N) entries correspond to a linear transform and
+        the final column is a lenght N translation vector and a 1 or a napari
+        AffineTransform object. If provided then translate, scale, rotate, and
+        shear values are ignored.
     opacity : float
         Opacity of the layer visual, between 0.0 and 1.0.
     blending : str
@@ -82,6 +98,9 @@ class Tracks(Layer):
         metadata=None,
         scale=None,
         translate=None,
+        rotate=None,
+        shear=None,
+        affine=None,
         opacity=1,
         blending='additive',
         visible=True,
@@ -93,6 +112,13 @@ class Tracks(Layer):
         # if not provided with any data, set up an empty layer in 2D+t
         if data is None:
             data = np.empty((0, 4))
+        else:
+            # convert data to a numpy array if it is not already one
+            data = np.asarray(data)
+
+        # in absence of properties make the default an empty dict
+        if properties is None:
+            properties = {}
 
         # set the track data dimensions (remove ID from data)
         ndim = data.shape[1] - 1
@@ -104,6 +130,9 @@ class Tracks(Layer):
             metadata=metadata,
             scale=scale,
             translate=translate,
+            rotate=rotate,
+            shear=shear,
+            affine=affine,
             opacity=opacity,
             blending=blending,
             visible=visible,
@@ -141,7 +170,7 @@ class Tracks(Layer):
 
         # set the data, properties and graph
         self.data = data
-        self.properties = properties or {}
+        self.properties = properties
         self.graph = graph or {}
 
         self.color_by = color_by
@@ -186,11 +215,9 @@ class Tracks(Layer):
                 'data': self.data,
                 'properties': self.properties,
                 'graph': self.graph,
-                'display_id': self.display_id,
-                'display_tail': self.display_tail,
-                'display_graph': self.display_graph,
                 'color_by': self.color_by,
                 'colormap': self.colormap,
+                'colormaps_dict': self.colormaps_dict,
                 'tail_width': self.tail_width,
                 'tail_length': self.tail_length,
             }
@@ -201,9 +228,9 @@ class Tracks(Layer):
         """Sets the view given the indices to slice with."""
 
         # if the displayed dims have changed, update the shader data
-        if self.dims.displayed != self._current_displayed_dims:
+        if self._dims.displayed != self._current_displayed_dims:
             # store the new dims
-            self._current_displayed_dims = self.dims.displayed
+            self._current_displayed_dims = self._dims.displayed
             # fire the events to update the shaders
             self.events.rebuild_tracks()
             self.events.rebuild_graph()
@@ -222,9 +249,9 @@ class Tracks(Layer):
 
         if self._view_data is not None and self.track_colors is not None:
             de = self._extent_data
-            min_vals = [de[0, i] for i in self.dims.displayed]
+            min_vals = [de[0, i] for i in self._dims.displayed]
             shape = np.ceil(
-                [de[1, i] - de[0, i] + 1 for i in self.dims.displayed]
+                [de[1, i] - de[0, i] + 1 for i in self._dims.displayed]
             ).astype(int)
             zoom_factor = np.divide(
                 self._thumbnail_shape[:2], shape[-2:]
@@ -272,10 +299,10 @@ class Tracks(Layer):
         if vertices is None:
             return
 
-        data = vertices[:, self.dims.displayed]
+        data = vertices[:, self._dims.displayed]
         # if we're only displaying two dimensions, then pad the display dim
         # with zeros
-        if self.dims.ndisplay == 2:
+        if self._dims.ndisplay == 2:
             data = np.pad(data, ((0, 0), (0, 1)), 'constant')
             return data[:, (1, 0, 2)]  # y, x, z -> x, y, z
         else:
@@ -296,9 +323,9 @@ class Tracks(Layer):
 
     @property
     def use_fade(self) -> bool:
-        """ toggle whether we fade the tail of the track, depending on whether
-        the time dimension is displayed """
-        return 0 in self.dims.not_displayed
+        """toggle whether we fade the tail of the track, depending on whether
+        the time dimension is displayed"""
+        return 0 in self._dims.not_displayed
 
     @property
     def data(self) -> np.ndarray:
@@ -339,6 +366,15 @@ class Tracks(Layer):
     @properties.setter
     def properties(self, properties: Dict[str, np.ndarray]):
         """ set track properties """
+        if self._color_by not in [*properties.keys(), 'track_id']:
+            warn(
+                (
+                    f"Previous color_by key {self._color_by} not present in"
+                    " new properties. Falling back to track_id"
+                ),
+                UserWarning,
+            )
+            self._color_by = 'track_id'
         self._manager.properties = properties
         self.events.properties()
         self.events.color_by()
@@ -416,7 +452,7 @@ class Tracks(Layer):
     def color_by(self, color_by: str):
         """ set the property to color vertices by """
         if color_by not in self.properties_to_color_by:
-            return
+            raise ValueError(f'{color_by} is not a valid property key')
         self._color_by = color_by
         self._recolor_tracks()
         self.events.color_by()
@@ -475,8 +511,8 @@ class Tracks(Layer):
 
     @property
     def track_colors(self) -> np.ndarray:
-        """ return the vertex colors according to the currently selected
-        property """
+        """return the vertex colors according to the currently selected
+        property"""
         return self._track_colors
 
     @property

@@ -1004,3 +1004,29 @@ def get_shape_ndim(data):
     else:
         ndim = np.array(data[0]).shape[1]
     return ndim
+
+
+def number_of_shapes(data):
+    """Determine number of shapes in the data.
+
+    Parameters
+    ----------
+    data : list or np.ndarray
+        Can either be no shapes, if empty, a
+        single shape or a list of shapes.
+
+    Returns
+    -------
+    n_shapes : int
+        Number of new shapes
+    """
+    if len(data) == 0:
+        # If no new shapes
+        n_shapes = 0
+    elif np.array(data[0]).ndim == 1:
+        # If a single array for a shape
+        n_shapes = 1
+    else:
+        n_shapes = len(data)
+
+    return n_shapes

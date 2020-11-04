@@ -1,19 +1,6 @@
-import os
-import platform
-import sys
-from os.path import dirname, join
-
-from qtpy.QtGui import QIcon
-from qtpy.QtWidgets import QApplication
-
-from . import __version__
-from ._qt.qt_main_window import Window
-from ._qt.qt_viewer import QtViewer
-from ._qt.qthreading import create_worker, wait_for_workers_to_quit
+from ._qt import Window
 from .components import ViewerModel
-from .utils.perf import perf_config
-
-_use_async = os.getenv("NAPARI_ASYNC", "0") != "0"
+from .utils import config
 
 
 class Viewer(ViewerModel):
@@ -35,10 +22,6 @@ class Viewer(ViewerModel):
         Whether to show the viewer after instantiation. by default True.
     """
 
-    # set _napari_app_id to False to avoid overwriting dock icon on windows
-    # set _napari_app_id to custom string to prevent grouping different base viewer
-    _napari_app_id = 'napari.napari.viewer.' + str(__version__)
-
     def __init__(
         self,
         *,
@@ -48,67 +31,13 @@ class Viewer(ViewerModel):
         axis_labels=None,
         show=True,
     ):
-        # instance() returns the singleton instance if it exists, or None
-        app = QApplication.instance()
-        # if None, raise a RuntimeError with the appropriate message
-        if app is None:
-            message = (
-                "napari requires a Qt event loop to run. To create one, "
-                "try one of the following: \n"
-                "  - use the `napari.gui_qt()` context manager. See "
-                "https://github.com/napari/napari/tree/master/examples for"
-                " usage examples.\n"
-                "  - In IPython or a local Jupyter instance, use the "
-                "`%gui qt` magic command.\n"
-                "  - Launch IPython with the option `--gui=qt`.\n"
-                "  - (recommended) in your IPython configuration file, add"
-                " or uncomment the line `c.TerminalIPythonApp.gui = 'qt'`."
-                " Then, restart IPython."
-            )
-            raise RuntimeError(message)
-
-        if perf_config:
-            if perf_config.trace_qt_events:
-                from ._qt.tracing.qt_event_tracing import (
-                    convert_app_for_tracing,
-                )
-
-                # For tracing Qt events we need a special QApplication. If
-                # using `gui_qt` we already have the special one, and no
-                # conversion is done here. However when running inside
-                # IPython or Jupyter this is where we switch out the
-                # QApplication.
-                app = convert_app_for_tracing(app)
-
-            # Will patch based on config file.
-            perf_config.patch_callables()
-
-        if (
-            platform.system() == "Windows"
-            and not getattr(sys, 'frozen', False)
-            and self._napari_app_id
-        ):
-            import ctypes
-
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
-                self._napari_app_id
-            )
-
-        logopath = join(dirname(__file__), 'resources', 'logo.png')
-        app.setWindowIcon(QIcon(logopath))
-
-        # see docstring of `wait_for_workers_to_quit` for caveats on killing
-        # workers at shutdown.
-        app.aboutToQuit.connect(wait_for_workers_to_quit)
-
         super().__init__(
             title=title,
             ndisplay=ndisplay,
             order=order,
             axis_labels=axis_labels,
         )
-        qt_viewer = QtViewer(self)
-        self.window = Window(qt_viewer, show=show)
+        self.window = Window(self, show=show)
 
     def update_console(self, variables):
         """Update console's namespace with desired variables.
@@ -152,16 +81,6 @@ class Viewer(ViewerModel):
             image = self.window.screenshot(path=path)
         return image
 
-    def update(self, func, *args, **kwargs):
-        import warnings
-
-        warnings.warn(
-            "Viewer.update() is deprecated, use "
-            "create_worker(func, *args, **kwargs) instead",
-            DeprecationWarning,
-        )
-        return create_worker(func, *args, **kwargs, _start_thread=True)
-
     def show(self):
         """Resize, show, and raise the viewer window."""
         self.window.show()
@@ -170,14 +89,10 @@ class Viewer(ViewerModel):
         """Close the viewer window."""
         self.window.close()
 
-        if _use_async:
+        if config.async_loading:
             from .components.experimental.chunk import chunk_loader
 
             # TODO_ASYNC: Find a cleaner way to do this? Fixes some tests.
             # https://github.com/napari/napari/issues/1500
             for layer in self.layers:
                 chunk_loader.on_layer_deleted(layer)
-
-    def __str__(self):
-        """Simple string representation"""
-        return f'napari.Viewer: {self.title}'

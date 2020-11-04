@@ -12,11 +12,18 @@ from napari.utils.interactions import (
     mouse_release_callbacks,
 )
 
-
-@pytest.mark.skipif(
-    sys.platform.startswith('win') or not os.getenv("CI"),
-    reason='Screenshot tests are not supported on napari windows CI.',
+skip_on_win_ci = pytest.mark.skipif(
+    sys.platform.startswith('win') and os.getenv('CI', '0') != '0',
+    reason='Screenshot tests are not supported on windows CI.',
 )
+skip_local_popups = pytest.mark.skipif(
+    not os.getenv('CI') and os.getenv('NAPARI_POPUP_TESTS', '0') == '0',
+    reason='Tests requiring GUI windows are skipped locally by default.',
+)
+
+
+@skip_on_win_ci
+@skip_local_popups
 def test_z_order_adding_removing_images(make_test_viewer):
     """Test z order is correct after adding/ removing images."""
     data = np.ones((10, 10))
@@ -59,10 +66,8 @@ def test_z_order_adding_removing_images(make_test_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 255, 0, 255])
 
 
-@pytest.mark.skipif(
-    sys.platform.startswith('win') or not os.getenv("CI"),
-    reason='Screenshot tests are not supported on napari windows CI.',
-)
+@skip_on_win_ci
+@skip_local_popups
 def test_z_order_images(make_test_viewer):
     """Test changing order of images changes z order in display."""
     data = np.ones((10, 10))
@@ -82,10 +87,8 @@ def test_z_order_images(make_test_viewer):
     np.testing.assert_almost_equal(screenshot[center], [255, 0, 0, 255])
 
 
-@pytest.mark.skipif(
-    sys.platform.startswith('win') or not os.getenv("CI"),
-    reason='Screenshot tests are not supported on napari windows CI.',
-)
+@skip_on_win_ci
+@skip_local_popups
 def test_z_order_image_points(make_test_viewer):
     """Test changing order of image and points changes z order in display."""
     data = np.ones((10, 10))
@@ -105,10 +108,8 @@ def test_z_order_image_points(make_test_viewer):
     np.testing.assert_almost_equal(screenshot[center], [255, 0, 0, 255])
 
 
-@pytest.mark.skipif(
-    sys.platform.startswith('win') or not os.getenv("CI"),
-    reason='Screenshot tests are not supported on napari windows CI.',
-)
+@skip_on_win_ci
+@skip_local_popups
 def test_z_order_images_after_ndisplay(make_test_viewer):
     """Test z order of images remanins constant after chaning ndisplay."""
     data = np.ones((10, 10))
@@ -136,10 +137,8 @@ def test_z_order_images_after_ndisplay(make_test_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
 
 
-@pytest.mark.skipif(
-    sys.platform.startswith('win') or not os.getenv("CI"),
-    reason='Screenshot tests are not supported on napari windows CI.',
-)
+@skip_on_win_ci
+@skip_local_popups
 def test_z_order_image_points_after_ndisplay(make_test_viewer):
     """Test z order of image and points remanins constant after chaning ndisplay."""
     data = np.ones((10, 10))
@@ -167,10 +166,8 @@ def test_z_order_image_points_after_ndisplay(make_test_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
 
 
-@pytest.mark.skipif(
-    sys.platform.startswith('win') or not os.getenv("CI"),
-    reason='Screenshot tests are not supported on napari windows CI.',
-)
+@skip_on_win_ci
+@skip_local_popups
 def test_changing_image_colormap(make_test_viewer):
     """Test changing colormap changes rendering."""
     viewer = make_test_viewer(show=True)
@@ -199,10 +196,8 @@ def test_changing_image_colormap(make_test_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
 
 
-@pytest.mark.skipif(
-    sys.platform.startswith('win') or not os.getenv("CI"),
-    reason='Screenshot tests are not supported on napari windows CI.',
-)
+@skip_on_win_ci
+@skip_local_popups
 def test_changing_image_gamma(make_test_viewer):
     """Test changing gamma changes rendering."""
     viewer = make_test_viewer(show=True)
@@ -231,10 +226,8 @@ def test_changing_image_gamma(make_test_viewer):
     assert screenshot[center + (0,)] < 80
 
 
-@pytest.mark.skipif(
-    sys.platform.startswith('win') or not os.getenv("CI"),
-    reason='Screenshot tests are not supported on napari windows CI.',
-)
+@skip_on_win_ci
+@skip_local_popups
 def test_grid_mode(make_test_viewer):
     """Test changing gamma changes rendering."""
     viewer = make_test_viewer(show=True)
@@ -243,8 +236,9 @@ def test_grid_mode(make_test_viewer):
     data = np.ones((6, 15, 15))
     viewer.add_image(data, channel_axis=0, blending='translucent')
 
-    assert np.all(viewer.grid_size == (1, 1))
-    assert viewer.grid_stride == 1
+    assert not viewer.grid.enabled
+    assert viewer.grid.actual_size(6) == (1, 1)
+    assert viewer.grid.stride == 1
     translations = [layer.translate_grid for layer in viewer.layers]
     expected_translations = np.zeros((6, 2))
     np.testing.assert_allclose(translations, expected_translations)
@@ -255,9 +249,10 @@ def test_grid_mode(make_test_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
 
     # enter grid view
-    viewer.grid_view()
-    assert np.all(viewer.grid_size == (3, 3))
-    assert viewer.grid_stride == 1
+    viewer.grid.enabled = True
+    assert viewer.grid.enabled
+    assert viewer.grid.actual_size(6) == (2, 3)
+    assert viewer.grid.stride == 1
     translations = [layer.translate_grid for layer in viewer.layers]
     expected_translations = [
         [0, 0],
@@ -276,9 +271,9 @@ def test_grid_mode(make_test_viewer):
         (1 / 3, 1 / 3),
         (1 / 3, 1 / 2),
         (1 / 3, 2 / 3),
-        (1 / 2, 1 / 3),
-        (1 / 2, 1 / 2),
-        (1 / 2, 2 / 3),
+        (2 / 3, 1 / 3),
+        (2 / 3, 1 / 2),
+        (2 / 3, 2 / 3),
     ]
     # BGRMYC color order
     color = [
@@ -300,15 +295,6 @@ def test_grid_mode(make_test_viewer):
 
     # check screenshot
     screenshot = viewer.screenshot(canvas_only=True)
-    # sample 6 squares of the grid and check they have right colors
-    pos = [
-        (1 / 3, 1 / 3),
-        (1 / 3, 1 / 2),
-        (1 / 3, 2 / 3),
-        (1 / 2, 1 / 3),
-        (1 / 2, 1 / 2),
-        (1 / 2, 2 / 3),
-    ]
     # CGRMYB color order
     color = [
         [0, 255, 255, 255],
@@ -324,10 +310,11 @@ def test_grid_mode(make_test_viewer):
         )
         np.testing.assert_almost_equal(screenshot[coord], c)
 
-    # retun to stack view
-    viewer.stack_view()
-    assert np.all(viewer.grid_size == (1, 1))
-    assert viewer.grid_stride == 1
+    # return to stack view
+    viewer.grid.enabled = False
+    assert not viewer.grid.enabled
+    assert viewer.grid.actual_size(6) == (1, 1)
+    assert viewer.grid.stride == 1
     translations = [layer.translate_grid for layer in viewer.layers]
     expected_translations = np.zeros((6, 2))
     np.testing.assert_allclose(translations, expected_translations)
@@ -338,10 +325,8 @@ def test_grid_mode(make_test_viewer):
     np.testing.assert_almost_equal(screenshot[center], [0, 255, 255, 255])
 
 
-@pytest.mark.skipif(
-    sys.platform.startswith('win') or not os.getenv("CI"),
-    reason='Screenshot tests are not supported on napari windows CI.',
-)
+@skip_on_win_ci
+@skip_local_popups
 def test_changing_image_attenuation(make_test_viewer):
     """Test changing attenuation value changes rendering."""
     data = np.zeros((100, 10, 10))
@@ -365,10 +350,8 @@ def test_changing_image_attenuation(make_test_viewer):
     assert screenshot[center + (0,)] < 60
 
 
-@pytest.mark.skipif(
-    sys.platform.startswith('win') or not os.getenv("CI"),
-    reason='Screenshot tests are not supported on napari windows CI.',
-)
+@skip_on_win_ci
+@skip_local_popups
 def test_labels_painting(make_test_viewer):
     """Test painting labels updates image."""
     data = np.zeros((100, 100))
@@ -384,7 +367,7 @@ def test_labels_painting(make_test_viewer):
     assert screenshot[:, :, :2].max() == 0
 
     # Enter paint mode
-    layer.position = (0, 0)
+    viewer.cursor.position = (0, 0)
     layer.mode = 'paint'
     layer.selected_label = 3
 
@@ -397,7 +380,7 @@ def test_labels_painting(make_test_viewer):
     event = ReadOnlyWrapper(Event(type='mouse_press', is_dragging=False))
     mouse_press_callbacks(layer, event)
 
-    layer.position = (100, 100)
+    viewer.cursor.position = (100, 100)
 
     # Simulate drag
     event = ReadOnlyWrapper(Event(type='mouse_move', is_dragging=True))
@@ -414,3 +397,73 @@ def test_labels_painting(make_test_viewer):
     # Check that painting has now occurred
     assert layer.data.max() > 0
     assert screenshot[:, :, :2].max() > 0
+
+
+@skip_on_win_ci
+@skip_local_popups
+def test_welcome(make_test_viewer):
+    """Test that something appears when axes become visible."""
+    viewer = make_test_viewer(show=True)
+
+    # Check something is visible
+    screenshot = viewer.screenshot(canvas_only=True)
+    assert len(viewer.layers) == 0
+    assert screenshot[..., :-1].max() > 0
+
+    # Check adding zeros image makes it go away
+    viewer.add_image(np.zeros((1, 1)))
+    screenshot = viewer.screenshot(canvas_only=True)
+    assert len(viewer.layers) == 1
+    assert screenshot[..., :-1].max() == 0
+
+    # Remove layer and check something is visible again
+    viewer.layers.pop(0)
+    screenshot = viewer.screenshot(canvas_only=True)
+    assert len(viewer.layers) == 0
+    assert screenshot[..., :-1].max() > 0
+
+
+@skip_on_win_ci
+@skip_local_popups
+def test_axes_visible(make_test_viewer):
+    """Test that something appears when axes become visible."""
+    viewer = make_test_viewer(show=True)
+
+    # Check axes are not visible
+    launch_screenshot = viewer.screenshot(canvas_only=True)
+    assert not viewer.axes.visible
+
+    # Make axes visible and check something is seen
+    viewer.axes.visible = True
+    on_screenshot = viewer.screenshot(canvas_only=True)
+    assert viewer.axes.visible
+    assert abs(on_screenshot - launch_screenshot).max() > 0
+
+    # Make axes not visible and check they are gone
+    viewer.axes.visible = False
+    off_screenshot = viewer.screenshot(canvas_only=True)
+    assert not viewer.axes.visible
+    np.testing.assert_almost_equal(launch_screenshot, off_screenshot)
+
+
+@skip_on_win_ci
+@skip_local_popups
+def test_scale_bar_visible(make_test_viewer):
+    """Test that something appears when scale bar becomes visible."""
+    viewer = make_test_viewer(show=True)
+
+    # Check scale bar is not visible
+    launch_screenshot = viewer.screenshot(canvas_only=True)
+    assert not viewer.scale_bar.visible
+
+    # Make scale bar visible and check something is seen
+    viewer.scale_bar.visible = True
+    on_screenshot = viewer.screenshot(canvas_only=True)
+    assert viewer.scale_bar.visible
+    assert abs(on_screenshot - launch_screenshot).max() > 0
+
+    # Make scale bar not visible and check it is gone
+    viewer.scale_bar.visible = False
+    off_screenshot = viewer.screenshot(canvas_only=True)
+    assert not viewer.scale_bar.visible
+    np.testing.assert_almost_equal(launch_screenshot, off_screenshot)

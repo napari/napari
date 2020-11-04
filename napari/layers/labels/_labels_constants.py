@@ -48,7 +48,6 @@ class LabelColorMode(StringEnum):
 
     AUTO = auto()
     DIRECT = auto()
-    SELECTED = auto()
 
 
 class LabelBrushShape(StringEnum):

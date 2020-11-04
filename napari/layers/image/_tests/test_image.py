@@ -599,6 +599,20 @@ def test_image_translate(translate):
     Image(data, translate=translate)
 
 
+def test_image_scale_broadcast():
+    """Test scale is broadcast."""
+    data = np.random.random((5, 10, 15))
+    layer = Image(data, scale=(2, 2))
+    np.testing.assert_almost_equal(layer.scale, (1, 2, 2))
+
+
+def test_image_translate_broadcast():
+    """Test translate is broadcast."""
+    data = np.random.random((5, 10, 15))
+    layer = Image(data, translate=(2, 2))
+    np.testing.assert_almost_equal(layer.translate, (0, 2, 2))
+
+
 def test_grid_translate():
     np.random.seed(0)
     data = np.random.random((10, 15))
@@ -614,5 +628,5 @@ def test_world_data_extent():
     shape = (6, 10, 15)
     data = np.random.random(shape)
     layer = Image(data)
-    extent = np.array(((0,) * 3, shape))
+    extent = np.array(((0,) * 3, np.subtract(shape, 1)))
     check_layer_world_data_extent(layer, extent, (3, 1, 1), (10, 20, 5))
