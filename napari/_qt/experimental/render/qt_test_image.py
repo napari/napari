@@ -12,7 +12,6 @@ from qtpy.QtWidgets import (
     QPushButton,
     QVBoxLayout,
 )
-from skimage import data as skimage_data
 
 from ....utils import config
 from .qt_labeled_spin_box import QtLabeledSpinBox
@@ -36,17 +35,30 @@ TEST_IMAGES = {
         "factory": lambda image_shape: create_test_image(
             "0", (16, 16), image_shape
         ),
-    },
-    "Astronaut": {
-        "shape": (512, 512),
-        "factory": lambda: skimage_data.astronaut(),
-    },
-    "Chelsea": {
-        "shape": (300, 451),
-        "factory": lambda: skimage_data.chelsea(),
-    },
-    "Coffee": {"shape": (400, 600), "factory": lambda: skimage_data.coffee()},
+    }
 }
+TEST_IMAGE_DEFAULT = "Digits"
+
+# Add skimage.data images if installed. Napari does not depend on
+# skimage but many developers will have it.
+try:
+    import skimage.data as data
+
+    TEST_IMAGES.update(
+        {
+            "Astronaut": {
+                "shape": (512, 512),
+                "factory": lambda: data.astronaut(),
+            },
+            "Chelsea": {
+                "shape": (300, 451),
+                "factory": lambda: data.chelsea(),
+            },
+            "Coffee": {"shape": (400, 600), "factory": lambda: data.coffee()},
+        }
+    )
+except ImportError:
+    pass  # These images won't be listed.
 
 
 class QtSetShape(QGroupBox):
@@ -140,7 +152,7 @@ class QtTestImageLayout(QVBoxLayout):
         self.addWidget(button)
 
         # Set the initially selected image.
-        self._on_name("Digits")
+        self._on_name(TEST_IMAGE_DEFAULT)
 
     def _on_name(self, value: str) -> None:
         """Called when a new image name is selected.
