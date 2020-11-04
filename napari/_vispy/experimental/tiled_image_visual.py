@@ -6,8 +6,8 @@ from .._vendored import ImageVisual
 class TiledImageVisual(ImageVisual):
     """Extend ImageVisual with a texture atlas of image tiles.
 
-    TiledImageVisual represents a single image that has broken down
-    spatially into square "tiles". The size of the tiles is configurable,
+    TiledImageVisual represents a single image that has been broken down
+    spatially into square tiles. The size of the tiles is configurable,
     but for example we might use 256x256 pixel tiles.
 
     The tiles are stored in large textures, also configurable. For example
