@@ -1,26 +1,11 @@
 from typing import Dict, List, Tuple
 import numpy as np
-from skimage.measure import regionprops_table
-from skimage.util import map_array
-import dask.array as da
 import napari
-import pathlib
 from tqdm import tqdm
 from omero.gateway import BlitzGateway
 from itertools import product
 
-# config
-#IDR_imageID = 1512575
-#IDR_imageID = 1490296 
-#IDR_imageID = 1486120 
-IDR_imageID =  1486532 # a few very fast moving abberant cells nice cell division
-#IDR_imageID =  1483589 # KIF11
-#IDR_imageID = 2862565 # KIF11 validation screen
-
-props = ['area', 'label']
-props_intensity = ['mean_intensity']
-
-
+# Helper function to retrieve sample time-lapse movies
 def IDR_fetch_image(image_id: int, progressbar: bool = True) -> np.ndarray:
     """
     Download the image with id image_id from the IDR
@@ -65,125 +50,56 @@ def IDR_fetch_image(image_id: int, progressbar: bool = True) -> np.ndarray:
     return np.einsum("jmikl", _tmp)
 
 
-def get_video(image_id: int):
-    """ Return IDR timelapse video with ID image_id
-    as dask array. Download if necessary and cache 
-    on disk as Zarr. Returns the cached version from
-    disk if present"""
-    img_file = f"{image_id}.zarr"
-    if not pathlib.Path(img_file).exists():
-        print("Downloading sample image sequence from IDR.")
-        raw_video = da.from_array(np.squeeze(IDR_fetch_image(image_id)))
-        da.to_zarr(raw_video, img_file)
-    else:
-        print(
-            f"Opening previously downloaded sample image sequence: {img_file}."
-        )
-        raw_video = da.from_zarr(img_file)
-    return raw_video
-
-def get_video_segmentation(image_id: int):
-    """ Return nucleus segmentation as label image
-    from IDR timelapse video with ID image_id
-    as dask array. 
-    If necessary, the segmentation is calculated 
-    slice by slice using cellpose and cached as a zarr file 
-    on disk.
-    If the cached zarr file is found, it is read.
-    
-    Returns both the raw timelapse video and 
-    the segmentation.
-    """
-    raw_video = get_video(image_id)
-    label_file = f"{image_id}_labels.zarr"
-
-    if pathlib.Path(label_file).exists():
-        print(f"Reading existing segmentation from {label_file}.")
-        labels = np.asarray(da.from_zarr(label_file))
-    else:
-        print(
-            "No existing segmentation found. Segmenting timelapse using cellpose:"
-        )
-        import mxnet
-        from cellpose import models
-
-        model = models.Cellpose(device=mxnet.gpu(), model_type='nuclei')
-
-        def _segment_cellpose(img):
-            _labels, _, _, _ = model.eval(
-                [np.asarray(img)], rescale=None, channels=[0, 0]
-            )
-            return _labels
-
-        labels = np.asarray(
-            [_segment_cellpose(_frame) for _frame in tqdm(raw_video)]
-        )
-        print(f"Saving segmentation as {label_file}")
-        labels=np.squeeze(labels)     
-        da.from_array(labels).to_zarr(label_file)
-
-    return raw_video, labels
-
-def integrated_intensity(mask, intensity):
-    return np.sum(intensity[mask])
-
-def measure_timelapse_features(vid, seg, properties, extra_properties):
-    """Given a timelapse sequence vid and a corresponding
-    label image seg, compute regionprops properties and extra_properties
-    for all frames."""
-    def _measure_frame(frame, frameseg):
-        """measures properties in a single frame"""
-        _frame_props = regionprops_table(
-            label_image=np.asarray(frameseg),
-            intensity_image=np.asarray(frame),
-            properties=properties,
-            extra_properties=extra_properties,
-        )
-        return _frame_props
-
-    return list(map(_measure_frame, tqdm(vid), seg))
+# Example:
 
 
-def heatmap(
-    labels, measurements: List[Dict[str, np.array]], property: str
-) -> np.ndarray:
-    def _map_frame(label_frame, meas_dict):
-        return map_array(label_frame, meas_dict["label"], meas_dict[property])
+description = """
+3D-Kymographs in Napari
 
-    return np.asarray(list(map(_map_frame, labels, measurements)))
+This example demonstrates that the volume rendering capabilities of napari can also
+be used to render 2d timelapse acquisitions as kymographs. Kymographs, also called 
+space-time images, can be a powerful tool to visualize dynamics of processes. However, 
+the most common way to visualize kymographs is to pick a single line through a 2D image
+and visualize the time domain as a second axes. By using volume rendering instead, we can 
+create a visualization that gives an overview of the complete spatial and time course
+from a single view.
 
+The sample data to demonstrate this is downloaded from IDR:
+https://idr.openmicroscopy.org/webclient/?show=screen-1302
 
-###
-###
+and comes from the Mitocheck screen:
 
+Phenotypic profiling of the human genome by time-lapse microscopy reveals cell division genes. 
 
-print("Obtaining raw image sequence and segmentation:")
-vid, seg = get_video_segmentation(IDR_imageID)
-print("Calculating region properties:")
-measurements = measure_timelapse_features(
-        vid,
-        seg,
-        props + props_intensity,
-        extra_properties=(integrated_intensity,),
+Neumann B, Walter T, Hériché JK, Bulkescher J, Erfle H, Conrad C, Rogers P, Poser I, Held M, 
+Liebel U, Cetin C, Sieckmann F, Pau G, Kabbe R, Wünsche A, Satagopam V, Schmitz MH, Chapuis C,
+Gerlich DW, Schneider R, Eils R, Huber W, Peters JM, Hyman AA, Durbin R, Pepperkok R, Ellenberg J.
+Nature. 2010 Apr 1;464(7289):721-7. 
+doi: 10.1038/nature08869. 
+
+"""
+
+print(description)
+
+samples = (
+    {"IDRid": 1486532, "description": "??? knockdown", "vol": None},
+    {"IDRid": 2862565, "description": "KIF11 knockdown", "vol": None},
 )
 
-print("Generating measurement colormap overlays")
-area_map = heatmap(seg, measurements, 'area')
-mean_int_map = heatmap(seg, measurements, 'mean_intensity')
-integrated_intensity_map = heatmap(seg, measurements, 'integrated_intensity')
+print("---------------------")
+for s in samples:
+    print(f"Downloading sample {s['IDRid']}.")
+    print(f"Description: {s['description']}")
+    s["vol"] = np.squeeze(IDR_fetch_image(s["IDRid"]))
 
 with napari.gui_qt():
-    v = napari.Viewer()
-    scale = (5, 1, 1)
-    v.add_image(vid, scale=scale)
-    v.add_labels(seg, scale=scale)
-    v.add_image(area_map, colormap='red', blending='additive', scale=scale)
-    v.add_image(
-        mean_int_map, colormap='green', blending='additive', scale=scale
-    )
-    v.add_image(
-        integrated_intensity_map,
-        colormap='blue',
-        blending='additive',
-        scale=scale,
-    )
+    v = napari.Viewer(ndisplay=3)
+    scale = (5, 1, 1)  # "stretch" time domain
+    for s in samples:
+        v.add_image(
+            s["vol"], name=s['description'], scale=scale, blending="opaque"
+        )
+    # oblique view angle onto the kymograph
+    v.camera.center = (230, 510, 670)
+    v.camera.angles = (-20, 30, -50)
+    v.camera.zoom = 0.3
