@@ -301,10 +301,12 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         extent = self._sliced_extent_world
         scene_size = extent[1] - extent[0]
         corner = extent[0]
-        grid_size = list(self.grid.actual_shape(len(self.layers)))
-        if len(scene_size) > len(grid_size):
-            grid_size = [1] * (len(scene_size) - len(grid_size)) + grid_size
-        size = np.multiply(scene_size, grid_size)
+        grid_shape = list(self.grid.actual_shape(len(self.layers)))
+        self.grid.size = tuple(scene_size[-2:])
+        if len(scene_size) > len(grid_shape):
+            grid_shape = [1] * (len(scene_size) - len(grid_shape)) + grid_shape
+        size = np.multiply(scene_size, grid_shape)
+
         center = np.add(corner, np.divide(size, 2))[-self.dims.ndisplay :]
         center = [0] * (self.dims.ndisplay - len(center)) + list(center)
 
@@ -431,8 +433,17 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
 
     def _on_cursor_position_change(self, event):
         """Set the layer cursor position."""
-        for layer in self.layers:
-            layer.position = self.cursor.position
+        for i, layer in enumerate(self.layers[::-1]):
+            # Offset the position of the cursor if in grid mode
+            if self.grid.enabled:
+                grid_position = self.grid.position(i, len(self.layers))
+                offset = np.multiply(grid_position, self.grid.size)
+                position = list(self.cursor.position)
+                position[self.dims.displayed[-1]] -= offset[-1]
+                position[self.dims.displayed[-2]] -= offset[-2]
+                layer.position = position
+            else:
+                layer.position = self.cursor.position
 
     def grid_view(self, n_row=None, n_column=None, stride=1):
         """Arrange the current layers is a 2D grid.

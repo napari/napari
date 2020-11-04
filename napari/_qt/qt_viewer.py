@@ -573,16 +573,13 @@ class QtViewer(QSplitter):
 
     def _on_grid_change(self, event):
         """Arrange the current layers is a 2D grid."""
-        extent = self.viewer._sliced_extent_world
-        scene_shift = extent[1] - extent[0] + 1
-        size = tuple(scene_shift[-2:])
-
+        # Place layers in grid in reverse order of layer list
         for i, layer in enumerate(self.viewer.layers[::-1]):
             i_row, i_column = self.viewer.grid.position(
                 i, len(self.viewer.layers)
             )
             visual = self.layer_to_visual[layer]
-            visual.subplot((i_row, i_column), size)
+            visual.subplot((i_row, i_column), self.viewer.grid.size)
 
     def on_resize(self, event):
         """Called whenever canvas is resized.
@@ -709,13 +706,24 @@ class QtViewer(QSplitter):
         This is triggered from vispy whenever new data is sent to the canvas or
         the camera is moved and is connected in the `QtViewer`.
         """
-        for layer in self.viewer.layers:
+        for i, layer in enumerate(self.viewer.layers[::-1]):
             if layer.ndim <= self.viewer.dims.ndim:
+                corner_pixels = copy(self._canvas_corners_in_world)
+                # Offset the position of the corners if in grid mode
+                if self.viewer.grid.enabled:
+                    grid_position = self.viewer.grid.position(
+                        i, len(self.viewer.layers)
+                    )
+                    offset = np.multiply(grid_position, self.viewer.grid.size)
+                    corner_pixels[:, self.viewer.dims.displayed[-1]] -= offset[
+                        -1
+                    ]
+                    corner_pixels[:, self.viewer.dims.displayed[-2]] -= offset[
+                        -2
+                    ]
                 layer._update_draw(
                     scale_factor=1 / self.viewer.camera.zoom,
-                    corner_pixels=self._canvas_corners_in_world[
-                        :, -layer.ndim :
-                    ],
+                    corner_pixels=corner_pixels[:, -layer.ndim :],
                     shape_threshold=self.canvas.size,
                 )
 

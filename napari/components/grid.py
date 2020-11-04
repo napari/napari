@@ -38,6 +38,8 @@ class GridCanvas:
         self._enabled = enabled
         self._stride = stride
         self._shape = shape
+        # Size of one grid cell in world units
+        self.size = (0, 0)
 
     @property
     def enabled(self):
@@ -127,7 +129,6 @@ class GridCanvas:
         """
         if self.enabled:
             n_row, n_column = self.actual_shape(nlayers)
-
             # Adjust for forward or reverse ordering
             if self.stride < 0:
                 adj_i = nlayers - index - 1
