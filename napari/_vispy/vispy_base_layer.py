@@ -98,26 +98,39 @@ class VispyBaseLayer(ABC):
 
         return self.node.transform.transforms[0]
 
-    @property
-    def translate_grid(self):
-        """sequence of float: Grid translation values."""
-        return self._grid_transform.translate
+    def subplot(self, position, size):
+        """Shift a layer to a specified position in a 2D grid.
 
-    @translate_grid.setter
-    def translate_grid(self, translate):
-        # Avoid useless update if nothing changed in the displayed dims
-        # Note that the grid_transform translate is always a 4-vector so pad
+        Parameters
+        ----------
+        position : 2-tuple of int
+            New position of layer in grid (row, column).
+        size : 2-tuple
+            Size of grid cell (height, width).
+        """
+        # Determine translation
+        translate = np.multiply(size, position)
+        # Convert from NumPy ordering to Vispy ordering
+        translate = translate[::-1]
+        # Pad to make a 4-vector for Vispy
         padded_translate = np.pad(
             translate,
             ((0, 4 - len(translate))),
             constant_values=1,
             mode='constant',
         )
+
+        # Check if translation value requires update
         if self.translate_grid is not None and np.all(
             self.translate_grid == padded_translate
         ):
             return
         self._grid_transform.translate = padded_translate
+
+    @property
+    def translate_grid(self):
+        """sequence of float: Translation values for grid offset."""
+        return self._grid_transform.translate
 
     @property
     def translate(self):
