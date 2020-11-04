@@ -91,7 +91,7 @@ class VispyBaseLayer(ABC):
         """
         # whenever a new parent is set, the transform is reset
         # to a NullTransform so we reset it here
-        if not isinstance(self.node.transform, MatrixTransform):
+        if isinstance(self.node.transform, NullTransform):
             self.node.transform = ChainTransform(
                 [STTransform(), MatrixTransform()]
             )

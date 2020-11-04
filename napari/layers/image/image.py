@@ -600,11 +600,10 @@ class Image(IntensityVisualizationMixin, Layer):
             self._transforms['tile2data'].scale = scale
 
             if self._dims.ndisplay == 2:
+                corner_pixels = self.corner_pixels.astype(int)
                 for d in self._dims.displayed:
                     indices[d] = slice(
-                        self.corner_pixels[0, d],
-                        self.corner_pixels[1, d] + 1,
-                        1,
+                        corner_pixels[0, d], corner_pixels[1, d] + 1, 1,
                     )
                 self._transforms['tile2data'].translate = (
                     self.corner_pixels[0] * self._transforms['tile2data'].scale

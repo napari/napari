@@ -919,7 +919,6 @@ class Layer(KeymapProvider, ABC):
         """
         # Note we ignore the first transform which is tile2data
         data_corners = self._transforms[1:].simplified.inverse(corner_pixels)
-
         self.scale_factor = scale_factor
 
         # Round and clip data corners

@@ -238,8 +238,11 @@ class QtViewer(QSplitter):
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
         self.viewer.layers.events.added.connect(self._on_add_layer_change)
         self.viewer.layers.events.removed.connect(self._remove_layer)
-        self.viewer.grid.events.update.connect(self._on_grid_change)
+        self.viewer.dims.events.ndisplay.connect(
+            self._on_grid_change, position='last'
+        )
         self.viewer.layers.events.changed.connect(self._on_grid_change)
+        self.viewer.grid.events.update.connect(self._on_grid_change)
         # stop any animations whenever the layers change
         self.viewer.events.layers_change.connect(lambda x: self.dims.stop())
 
