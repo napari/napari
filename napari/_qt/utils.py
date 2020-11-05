@@ -74,6 +74,7 @@ def disable_with_opacity(obj, widget_list, disabled):
 @lru_cache(maxsize=64)
 def square_pixmap(size):
     """Create a white/black hollow square pixmap. For use as labels cursor."""
+    size = max(int(size), 1)
     pixmap = QPixmap(QSize(size, size))
     pixmap.fill(Qt.transparent)
     painter = QPainter(pixmap)
@@ -88,7 +89,7 @@ def square_pixmap(size):
 @lru_cache(maxsize=64)
 def circle_pixmap(size: int):
     """Create a white/black hollow circle pixmap. For use as labels cursor."""
-    size = int(size)
+    size = max(int(size), 1)
     pixmap = QPixmap(QSize(size, size))
     pixmap.fill(Qt.transparent)
     painter = QPainter(pixmap)
