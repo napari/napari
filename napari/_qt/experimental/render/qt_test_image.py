@@ -9,15 +9,13 @@ from qtpy.QtWidgets import (
     QComboBox,
     QFrame,
     QGroupBox,
-    QHBoxLayout,
     QLabel,
     QPushButton,
     QVBoxLayout,
-    QWidget,
 )
 
 from ....utils import config
-from .qt_labeled_spin_box import QtLabeledSpinBox
+from .qt_render_widgets import QtLabeledComboBox, QtLabeledSpinBox
 from .test_image import create_test_image
 
 Callback = Callable[[], None]
@@ -68,44 +66,6 @@ try:
     )
 except ImportError:
     pass  # The skimage.data images won't be available.
-
-
-class QtLabeledCombo(QWidget):
-    """A generic ComboBox with a label.
-
-    Provide an options dict. The keys will be displayed as the text options
-    available to the user. The values are used by our set_value() and
-    get_value() methods.
-
-    Parameters
-    ----------
-    label : str
-        The text label for the control.
-    options : dict
-        We display the keys and return the values.
-    """
-
-    def __init__(self, label: str, options: dict):
-        super().__init__()
-        self.options = options
-        layout = QHBoxLayout()
-
-        self.combo = QComboBox()
-        self.combo.addItems(list(options.keys()))
-
-        layout.addWidget(QLabel(label))
-        layout.addWidget(self.combo)
-        layout.setContentsMargins(0, 0, 0, 0)
-        self.setLayout(layout)
-
-    def set_value(self, value):
-        for index, (key, opt_value) in enumerate(self.options.items()):
-            if opt_value == value:
-                self.combo.setCurrentIndex(index)
-
-    def get_value(self):
-        text = self.combo.currentText()
-        return self.options[text]
 
 
 class QtVariableShape(QGroupBox):
@@ -189,7 +149,7 @@ class QtTestImageLayout(QVBoxLayout):
         self.addWidget(self.tile_size)
 
         # Which type of image layer/visual to create.
-        self.image_type = QtLabeledCombo("Type", IMAGE_TYPES)
+        self.image_type = QtLabeledComboBox("Type", IMAGE_TYPES)
         self.image_type.set_value(config.create_image_type)
         self.image_type.combo.activated[str].connect(self._on_type)
         self.addWidget(self.image_type)

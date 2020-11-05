@@ -1,9 +1,12 @@
-"""RenderSpinBox class.
+"""QtLabeledComboBox and QtLabeledSpinBox classes.
+
+These were created for QtRender but are very generic. Maybe napari has something
+we can use instead of these?
 """
 from typing import Callable
 
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QHBoxLayout, QLabel, QSpinBox, QWidget
+from qtpy.QtWidgets import QComboBox, QHBoxLayout, QLabel, QSpinBox, QWidget
 
 
 class QtLabeledSpinBox(QWidget):
@@ -87,3 +90,41 @@ class QtLabeledSpinBox(QWidget):
         # Notify any connection we have.
         if self.connect is not None:
             self.connect(value)
+
+
+class QtLabeledComboBox(QWidget):
+    """A generic ComboBox with a label.
+
+    Provide an options dict. The keys will be displayed as the text options
+    available to the user. The values are used by our set_value() and
+    get_value() methods.
+
+    Parameters
+    ----------
+    label : str
+        The text label for the control.
+    options : dict
+        We display the keys and return the values.
+    """
+
+    def __init__(self, label: str, options: dict):
+        super().__init__()
+        self.options = options
+        layout = QHBoxLayout()
+
+        self.combo = QComboBox()
+        self.combo.addItems(list(options.keys()))
+
+        layout.addWidget(QLabel(label))
+        layout.addWidget(self.combo)
+        layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(layout)
+
+    def set_value(self, value):
+        for index, (key, opt_value) in enumerate(self.options.items()):
+            if opt_value == value:
+                self.combo.setCurrentIndex(index)
+
+    def get_value(self):
+        text = self.combo.currentText()
+        return self.options[text]
