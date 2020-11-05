@@ -13,6 +13,7 @@ from qtpy.QtWidgets import (
     QLabel,
     QPushButton,
     QVBoxLayout,
+    QWidget,
 )
 
 from ....utils import config
@@ -28,15 +29,14 @@ TILE_SIZE_RANGE = range(1, 4096, 100)
 IMAGE_SHAPE_DEFAULT = (1024, 1024)  # (height, width)
 IMAGE_SHAPE_RANGE = range(1, 65536, 100)
 
-# During development we all allow creation three types of images, so we
-# we can compare/test each one.
+# We can create 3 types of images layers.
 IMAGE_TYPES = {
     "Normal": config.CREATE_IMAGE_NORMAL,
     "Compound": config.CREATE_IMAGE_COMPOUND,
     "Tiled": config.CREATE_IMAGE_TILED,
 }
 
-# QtTest image has a dropdown for named images. If the "shape" is none then
+# Allow the user to pick test images by name. If the "shape" is none then
 # the user can chose the shape with two spin controls.
 TEST_IMAGES = {
     "Digits": {
@@ -70,8 +70,12 @@ except ImportError:
     pass  # The skimage.data images won't be available.
 
 
-class QtLabeledCombo(QHBoxLayout):
-    """A ComboBox with a label.
+class QtLabeledCombo(QWidget):
+    """A generic ComboBox with a label.
+
+    Provide an options dict. The keys will be displayed as the text options
+    available to the user. The values are used by our set_value() and
+    get_value() methods.
 
     Parameters
     ----------
@@ -84,10 +88,15 @@ class QtLabeledCombo(QHBoxLayout):
     def __init__(self, label: str, options: dict):
         super().__init__()
         self.options = options
-        self.addWidget(QLabel(label))
+        layout = QHBoxLayout()
+
         self.combo = QComboBox()
         self.combo.addItems(list(options.keys()))
-        self.addWidget(self.combo)
+
+        layout.addWidget(QLabel(label))
+        layout.addWidget(self.combo)
+        layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(layout)
 
     def set_value(self, value):
         for index, (key, opt_value) in enumerate(self.options.items()):
@@ -99,8 +108,8 @@ class QtLabeledCombo(QHBoxLayout):
         return self.options[text]
 
 
-class QtSetShape(QGroupBox):
-    """Controls to set the shape of an image."""
+class QtVariableShape(QGroupBox):
+    """Two spin boxes used to set the shape of an image."""
 
     def __init__(self):
         super().__init__("Dimensions")
@@ -109,11 +118,11 @@ class QtSetShape(QGroupBox):
         self.height = QtLabeledSpinBox(
             "Height", IMAGE_SHAPE_DEFAULT[0], IMAGE_SHAPE_RANGE
         )
-        layout.addLayout(self.height)
         self.width = QtLabeledSpinBox(
             "Width", IMAGE_SHAPE_DEFAULT[1], IMAGE_SHAPE_RANGE
         )
-        layout.addLayout(self.width)
+        layout.addWidget(self.height)
+        layout.addWidget(self.width)
         self.setLayout(layout)
 
     def get_shape(self) -> Tuple[int, int]:
@@ -128,7 +137,7 @@ class QtSetShape(QGroupBox):
 
 
 class QtFixedShape(QGroupBox):
-    """Controls to display the fixed shape of an image."""
+    """A label to display the fixed shape of an image."""
 
     def __init__(self):
         super().__init__("Details")
@@ -160,18 +169,16 @@ class QtTestImageLayout(QVBoxLayout):
         super().__init__()
         self.addStretch(1)
 
-        # List the test images we can create.
+        # Shows the test images we can create.
         self.name = QComboBox()
         self.name.addItems(TEST_IMAGES.keys())
         self.name.activated[str].connect(self._on_name)
         self.addWidget(self.name)
 
-        # Two types of images: those with a variable (settable) shape and
-        # those with a fixed shape.
-        ShapeControls = namedtuple('ShapeControls', "variable fixed")
-        self.shape_controls = ShapeControls(QtSetShape(), QtFixedShape())
-
+        # Create shape controls for "variable sized" or "fixed size" images.
         # Add both sets of controls, but only one set is visible at a time.
+        ShapeControls = namedtuple('ShapeControls', "variable fixed")
+        self.shape_controls = ShapeControls(QtVariableShape(), QtFixedShape())
         self.addWidget(self.shape_controls.variable)
         self.addWidget(self.shape_controls.fixed)
 
@@ -179,12 +186,13 @@ class QtTestImageLayout(QVBoxLayout):
         self.tile_size = QtLabeledSpinBox(
             "Tile Size", TILE_SIZE_DEFAULT, TILE_SIZE_RANGE
         )
-        self.addLayout(self.tile_size)
+        self.addWidget(self.tile_size)
 
-        # Which type of image layer/visual.
+        # Which type of image layer/visual to create.
         self.image_type = QtLabeledCombo("Type", IMAGE_TYPES)
         self.image_type.set_value(config.create_image_type)
-        self.addLayout(self.image_type)
+        self.image_type.combo.activated[str].connect(self._on_type)
+        self.addWidget(self.image_type)
 
         # The create button.
         button = QPushButton("Create Test Image")
@@ -217,6 +225,19 @@ class QtTestImageLayout(QVBoxLayout):
             self.shape_controls.variable.hide()
             self.shape_controls.fixed.show()
             self.shape_controls.fixed.set_shape(spec['shape'])
+
+    def _on_type(self, value: str) -> None:
+        """User changed which type image they want to create.
+
+        Parameters
+        ----------
+        value : str
+            The new image type.
+        """
+        # Only show tile_size for octree-based images.
+        self.tile_size.setVisible(
+            self.image_type.get_value() != config.CREATE_IMAGE_NORMAL
+        )
 
     def get_image_shape(self) -> Tuple[int, int]:
         """Return the configured image shape.

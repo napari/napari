@@ -3,10 +3,10 @@
 from typing import Callable
 
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QHBoxLayout, QLabel, QSpinBox
+from qtpy.QtWidgets import QHBoxLayout, QLabel, QSpinBox, QWidget
 
 
-class QtLabeledSpinBox(QHBoxLayout):
+class QtLabeledSpinBox(QWidget):
     """A label plus a SpinBox for the QtRender widget.
 
     This was cobbled together quickly for QtRender. We could probably use
@@ -38,10 +38,14 @@ class QtLabeledSpinBox(QHBoxLayout):
     ):
         super().__init__()
         self.connect = connect
+        layout = QHBoxLayout()
 
-        self.addWidget(QLabel(label_text))
         self.spin = self._create(initial_value, spin_range)
-        self.addWidget(self.spin)
+
+        layout.addWidget(QLabel(label_text))
+        layout.addWidget(self.spin)
+        layout.setContentsMargins(0, 0, 0, 0)
+        self.setLayout(layout)
 
     def _create(self, initial_value: int, spin_range: range) -> QSpinBox:
         """Return the configured QSpinBox.
