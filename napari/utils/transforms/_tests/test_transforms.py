@@ -240,3 +240,24 @@ def test_affine_matrix_inverse(dimensionality):
     np.testing.assert_almost_equal(
         transform.inverse.affine_matrix, np.linalg.inv(A)
     )
+
+
+def test_repeat_shear_setting():
+    """Test repeatedly settting shear lower triangular."""
+    # Note this test is needed to check lower triangular
+    # decomposition of shear is working
+    mat = np.eye(3)
+    mat[2, 0] = 0.5
+    transform = Affine(shear=mat)
+    # Check shear decomposed into lower triangular
+    np.testing.assert_almost_equal(mat, transform.shear)
+
+    # Set shear to same value
+    transform.shear = mat
+    # Check shear still decomposed into lower triangular
+    np.testing.assert_almost_equal(mat, transform.shear)
+
+    # Set shear to same value
+    transform.shear = mat
+    # Check shear still decomposed into lower triangular
+    np.testing.assert_almost_equal(mat, transform.shear)

@@ -233,7 +233,7 @@ def shear_matrix_from_angle(angle, ndim=3, axes=(-1, 0)):
 
 
 def is_upper_triangular(matrix):
-    """Check if a matrix is identity plus upper triangular.
+    """Check if a matrix is upper triangular.
 
     Parameters
     ----------
@@ -243,13 +243,13 @@ def is_upper_triangular(matrix):
     Returns
     -------
     bool
-        Whether matrix is identity plus upper triangular or not.
+        Whether matrix is upper triangular or not.
     """
-    return np.allclose(matrix, np.eye(matrix.shape[0]) + np.triu(matrix))
+    return np.allclose(matrix, np.triu(matrix))
 
 
 def is_lower_triangular(matrix):
-    """Check if a matrix is identity plus lower triangular.
+    """Check if a matrix is lower triangular.
 
     Parameters
     ----------
@@ -259,9 +259,9 @@ def is_lower_triangular(matrix):
     Returns
     -------
     bool
-        Whether matrix is identity plus lower triangular or not.
+        Whether matrix is lower triangular or not.
     """
-    return np.allclose(matrix, np.eye(matrix.shape[0]) + np.tril(matrix, -1))
+    return np.allclose(matrix, np.tril(matrix))
 
 
 def check_shear_triangular(matrix):
@@ -287,9 +287,9 @@ def check_shear_triangular(matrix):
             return False
         else:
             raise ValueError(
-                'Only upper triangular or lower triangular matrices are '
-                'accepted for shear. For other matrices, set the '
-                'affine_matrix or linear_matrix directly.'
+                f'Only upper triangular or lower triangular matrices are '
+                f'accepted for shear, got {matrix}. For other matrices, set the '
+                f'affine_matrix or linear_matrix directly.'
             )
     else:
         return True
