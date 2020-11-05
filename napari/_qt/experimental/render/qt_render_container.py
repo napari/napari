@@ -35,6 +35,7 @@ class QtRenderContainer(QStackedWidget):
         self.viewer = viewer
 
         self.setMouseTracking(True)
+        self.setMinimumWidth(250)
 
         # We show QtRender even if no layer is selected. But in that case the
         # only control are to create test images.
