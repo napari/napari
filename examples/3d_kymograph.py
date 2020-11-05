@@ -122,10 +122,13 @@ samples = (
     {"IDRid": 1486532, "description": "TMPRSS11A knockdown", "vol": None},
 )
 
-print("------------------------------------")
-print("Downloading sample datasets from IDR")
-print("this may take some time")
-print("------------------------------------")
+print("-------------------------------------------------------")
+print("Sample datasets will require ~490 MB download from IDR.")
+answer = input("Press Enter to proceed, 'n' to cancel: ")
+if answer.lower().startswith('n'):
+    print("User cancelled download. Exiting.")
+    exit(0)
+print("-------------------------------------------------------")
 for s in samples:
     print(f"Downloading sample {s['IDRid']}.")
     print(f"Description: {s['description']}")
