@@ -30,7 +30,7 @@ class Cursor:
     def __init__(self):
 
         self._position = None
-        self.scaled = False
+        self.scaled = True
         self._size = 1
         self._style = CursorStyle('standard')
 
