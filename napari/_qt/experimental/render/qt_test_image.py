@@ -1,13 +1,15 @@
 """QtTestImage and QtTestImageLayout classes.
+
+Creating test images is meant as an internal developer feature.
 """
 from collections import namedtuple
 from typing import Callable, Tuple
 
 from qtpy.QtWidgets import (
-    QCheckBox,
     QComboBox,
     QFrame,
     QGroupBox,
+    QHBoxLayout,
     QLabel,
     QPushButton,
     QVBoxLayout,
@@ -26,9 +28,16 @@ TILE_SIZE_RANGE = range(1, 4096, 100)
 IMAGE_SHAPE_DEFAULT = (1024, 1024)  # (height, width)
 IMAGE_SHAPE_RANGE = range(1, 65536, 100)
 
-# The test images which QtTestImage can create. There is a drop-down and
-# the user can pick any one of these. Some are fixed shape, while others
-# allow you to request a specific shape.
+# During development we all allow creation three types of images, so we
+# we can compare/test each one.
+IMAGE_TYPES = {
+    "Normal": config.CREATE_IMAGE_NORMAL,
+    "Compound": config.CREATE_IMAGE_COMPOUND,
+    "Tiled": config.CREATE_IMAGE_TILED,
+}
+
+# QtTest image has a dropdown for named images. If the "shape" is none then
+# the user can chose the shape with two spin controls.
 TEST_IMAGES = {
     "Digits": {
         "shape": None,
@@ -58,7 +67,36 @@ try:
         }
     )
 except ImportError:
-    pass  # These images won't be listed.
+    pass  # The skimage.data images won't be available.
+
+
+class QtLabeledCombo(QHBoxLayout):
+    """A ComboBox with a label.
+
+    Parameters
+    ----------
+    label : str
+        The text label for the control.
+    options : dict
+        We display the keys and return the values.
+    """
+
+    def __init__(self, label: str, options: dict):
+        super().__init__()
+        self.options = options
+        self.addWidget(QLabel(label))
+        self.combo = QComboBox()
+        self.combo.addItems(list(options.keys()))
+        self.addWidget(self.combo)
+
+    def set_value(self, value):
+        for index, (key, opt_value) in enumerate(self.options.items()):
+            if opt_value == value:
+                self.combo.setCurrentIndex(index)
+
+    def get_value(self):
+        text = self.combo.currentText()
+        return self.options[text]
 
 
 class QtSetShape(QGroupBox):
@@ -84,7 +122,7 @@ class QtSetShape(QGroupBox):
         Return
         ------
         Tuple[int, int]
-            The requestsed [height, width] shape.
+            The requested [height, width] shape.
         """
         return self.height.spin.value(), self.width.spin.value()
 
@@ -122,28 +160,31 @@ class QtTestImageLayout(QVBoxLayout):
         super().__init__()
         self.addStretch(1)
 
+        # List the test images we can create.
         self.name = QComboBox()
         self.name.addItems(TEST_IMAGES.keys())
         self.name.activated[str].connect(self._on_name)
         self.addWidget(self.name)
 
-        ShapeControls = namedtuple('ShapeControls', "set fixed")
+        # Two types of images: those with a variable (settable) shape and
+        # those with a fixed shape.
+        ShapeControls = namedtuple('ShapeControls', "variable fixed")
         self.shape_controls = ShapeControls(QtSetShape(), QtFixedShape())
 
-        # Add both, but only one will be visible at a time.
-        self.addWidget(self.shape_controls.set)
+        # Add both sets of controls, but only one set is visible at a time.
+        self.addWidget(self.shape_controls.variable)
         self.addWidget(self.shape_controls.fixed)
 
-        # User can always set the tile size. Tiles always square for now.
+        # The tile size is available with either type of octree layer.
         self.tile_size = QtLabeledSpinBox(
             "Tile Size", TILE_SIZE_DEFAULT, TILE_SIZE_RANGE
         )
         self.addLayout(self.tile_size)
 
-        # Checkbox so we can choose between OctreeImage and regular Image.
-        self.octree = QCheckBox("Octree Image")
-        self.octree.setChecked(1)
-        self.addWidget(self.octree)
+        # Which type of image layer/visual.
+        self.image_type = QtLabeledCombo("Type", IMAGE_TYPES)
+        self.image_type.set_value(config.create_image_type)
+        self.addLayout(self.image_type)
 
         # The create button.
         button = QPushButton("Create Test Image")
@@ -169,11 +210,11 @@ class QtTestImageLayout(QVBoxLayout):
 
         if spec['shape'] is None:
             # Image has a settable shape.
-            self.shape_controls.set.show()
+            self.shape_controls.variable.show()
             self.shape_controls.fixed.hide()
         else:
             # Image has a fixed shape.
-            self.shape_controls.set.hide()
+            self.shape_controls.variable.hide()
             self.shape_controls.fixed.show()
             self.shape_controls.fixed.set_shape(spec['shape'])
 
@@ -185,7 +226,7 @@ class QtTestImageLayout(QVBoxLayout):
         Tuple[int, int]
             The [height, width] shape requested by the user.
         """
-        return self.shape_controls.set.get_shape()
+        return self.shape_controls.variable.get_shape()
 
     def get_tile_size(self) -> int:
         """Return the configured tile size.
@@ -226,19 +267,20 @@ class QtTestImage(QFrame):
         factory = spec['factory']
 
         if spec['shape'] is None:
-            # Image has a settable shape provided by the UI.
+            # This image has a settable shape provided by the UI.
             shape = self.layout.get_image_shape()
             data = factory(shape)
         else:
-            # Image comes in just one specific shape.
+            # This image comes in just one specific shape.
             data = factory()
 
-        # Give each layer a unique name.
+        # Give each new layer a unique name.
         unique_name = f"test-image-{QtTestImage.image_index:003}"
         QtTestImage.image_index += 1
 
-        # Set config to create Octree or regular images.
-        config.create_octree_images = self.layout.octree.isChecked()
+        # Set config for which type of image to create.
+        image_type = self.layout.image_type.get_value()
+        config.create_image_type = image_type
 
         # Add the new image layer.
         layer = self.viewer.add_image(data, rgb=True, name=unique_name)

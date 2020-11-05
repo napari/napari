@@ -23,6 +23,8 @@ layer_to_controls = {
 if config.async_loading:
     from ...layers.image.experimental.octree_image import OctreeImage
 
+    # The user visible layer controls for OctreeImage layers are identical
+    # to the regular image layer controls, for now.
     layer_to_controls[OctreeImage] = QtImageControls
 
 

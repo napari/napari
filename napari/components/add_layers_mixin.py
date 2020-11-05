@@ -20,7 +20,7 @@ logger = getLogger(__name__)
 
 def _get_image_class() -> layers.Image:
     """Return Image or OctreeImage based config settings."""
-    if config.async_octree and config.create_octree_images:
+    if config.create_octree_image():
         from ..layers.image.experimental.octree_image import OctreeImage
 
         return OctreeImage

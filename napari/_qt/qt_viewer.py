@@ -260,8 +260,9 @@ class QtViewer(QSplitter):
         return None
 
     def _create_render_dock_widget(self):
-        """Create the dock widget that shows async controls.
+        """Create the dock widget that shows debug render controls.
         """
+        # We only show the render controls for octree right now.
         if config.async_octree:
             from .experimental.render.qt_render_container import (
                 QtRenderContainer,

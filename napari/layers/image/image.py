@@ -19,7 +19,7 @@ from ._image_slice import ImageSlice
 from ._image_slice_data import ImageSliceData
 from ._image_utils import guess_multiscale, guess_rgb
 
-# Use sync or async SliceData class.
+# Use special ChunkedSlideData for async.
 if config.async_loading:
     from .experimental._chunked_slice_data import ChunkedSliceData
 
@@ -798,7 +798,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
         return value
 
-    # One additional method for async
+    # For async we add an on_chunk_loaded() method.
     if config.async_loading:
         from ...components.experimental.chunk import ChunkRequest
 
