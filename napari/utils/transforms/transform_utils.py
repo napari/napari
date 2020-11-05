@@ -1,4 +1,5 @@
 import numpy as np
+import scipy.linalg
 
 
 def compose_linear_matrix(rotate, scale, shear) -> np.array:
@@ -149,7 +150,9 @@ def embed_in_identity_matrix(matrix, ndim):
         return full_matrix
 
 
-def decompose_linear_matrix(matrix) -> (np.array, np.array, np.array):
+def decompose_linear_matrix(
+    matrix, upper_triangular=True
+) -> (np.array, np.array, np.array):
     """Decompose linear transform matrix into rotate, scale, shear.
 
     Decomposition is based on code from https://github.com/matthew-brett/transforms3d.
@@ -160,6 +163,9 @@ def decompose_linear_matrix(matrix) -> (np.array, np.array, np.array):
     ----------
     matrix : np.array shape (N, N)
         nD array representing the composed linear transform.
+    upper_triangular : bool
+        Whether to decompose shear into an upper triangular or
+        lower triangular matrix.
 
     Returns
     -------
@@ -174,22 +180,31 @@ def decompose_linear_matrix(matrix) -> (np.array, np.array, np.array):
         in leading dimensions, so that, for example, a scale of [4, 18, 34] in
         3D can be used as a scale of [1, 4, 18, 34] in 4D without modification.
         An empty translation vector implies no scaling.
-    shear : n-D array
-        An n-D shear matrix.
+    shear : 1-D array or n-D array
+        1-D array of upper triangular values or an n-D matrix if lower
+        triangular.
     """
     n = matrix.shape[0]
 
-    rotate, upper_tri = np.linalg.qr(matrix)
+    if upper_triangular:
+        rotate, tri = scipy.linalg.qr(matrix)
+    else:
+        upper_tri, rotate = scipy.linalg.rq(matrix.T)
+        rotate = rotate.T
+        tri = upper_tri.T
 
-    scale = np.diag(upper_tri).copy()
-    upper_tri_normalized = upper_tri / scale[:, np.newaxis]
+    scale = np.diag(tri).copy()
+    tri_normalized = tri / scale[:, np.newaxis]
 
     if np.linalg.det(rotate) < 0:
         scale[0] *= -1
-        upper_tri[0] *= -1
-        rotate = matrix @ np.linalg.inv(upper_tri)
+        tri[0] *= -1
+        rotate = matrix @ np.linalg.inv(tri)
 
-    shear = upper_tri_normalized[np.triu(np.ones((n, n)), 1).astype(bool)]
+    if upper_triangular:
+        shear = tri_normalized[np.triu(np.ones((n, n)), 1).astype(bool)]
+    else:
+        shear = tri_normalized
 
     return rotate, scale, shear
 
@@ -215,3 +230,66 @@ def shear_matrix_from_angle(angle, ndim=3, axes=(-1, 0)):
     matrix = np.eye(ndim)
     matrix[axes] = np.tan(np.deg2rad(90 - angle))
     return matrix
+
+
+def is_upper_triangular(matrix):
+    """Check if a matrix is identity plus upper triangular.
+
+    Parameters
+    ----------
+    matrix : np.ndarray
+        Matrix to be checked.
+
+    Returns
+    -------
+    bool
+        Whether matrix is identity plus upper triangular or not.
+    """
+    return np.allclose(matrix, np.eye(matrix.shape[0]) + np.triu(matrix))
+
+
+def is_lower_triangular(matrix):
+    """Check if a matrix is identity plus lower triangular.
+
+    Parameters
+    ----------
+    matrix : np.ndarray
+        Matrix to be checked.
+
+    Returns
+    -------
+    bool
+        Whether matrix is identity plus lower triangular or not.
+    """
+    return np.allclose(matrix, np.eye(matrix.shape[0]) + np.tril(matrix, -1))
+
+
+def check_shear_triangular(matrix):
+    """Check if a matrix is triangular.
+
+    Raises an error if neither upper or lower triangular.
+    1-D arrays are taken to be upper triangular.
+
+    Parameters
+    ----------
+    matrix : np.ndarray
+        Matrix to be checked.
+
+    Returns
+    -------
+    bool
+        True if matrix upper triangular, False if not.
+    """
+    if np.array(matrix).ndim == 2:
+        if is_upper_triangular(matrix):
+            return True
+        elif is_lower_triangular(matrix):
+            return False
+        else:
+            raise ValueError(
+                'Only upper triangular or lower triangular matrices are '
+                'accepted for shear. For other matrices, set the '
+                'affine_matrix or linear_matrix directly.'
+            )
+    else:
+        return True
