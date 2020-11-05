@@ -472,10 +472,14 @@ class QtViewer(QSplitter):
         """
         cursor = self.viewer.cursor.style
         # Scale size by zoom if needed
+        size = self.viewer.cursor.size
+        if self.viewer.active_layer is not None:
+            size *= self.viewer.active_layer.scale[
+                (tuple(self.viewer.dims.displayed),)
+            ].max()
+
         if self.viewer.cursor.scaled:
-            size = self.viewer.cursor.size * self.viewer.camera.zoom
-        else:
-            size = self.viewer.cursor.size
+            size *= self.viewer.camera.zoom
 
         if cursor == 'square':
             # make sure the square fits within the current canvas
@@ -697,10 +701,11 @@ class QtViewer(QSplitter):
         This is triggered from vispy whenever new data is sent to the canvas or
         the camera is moved and is connected in the `QtViewer`.
         """
+        factor = self.viewer.camera.zoom
         for layer in self.viewer.layers:
             if layer.ndim <= self.viewer.dims.ndim:
                 layer._update_draw(
-                    scale_factor=1 / self.viewer.camera.zoom,
+                    scale_factor=1 / factor,
                     corner_pixels=self._canvas_corners_in_world[
                         :, -layer.ndim :
                     ],
