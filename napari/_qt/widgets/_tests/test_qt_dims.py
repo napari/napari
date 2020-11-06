@@ -76,7 +76,7 @@ def test_changing_focus(qtbot):
     assert view.dims.last_used is None
     view.dims._focus_down()
     view.dims._focus_up()
-    assert view.dims.last_used == 0
+    assert view.dims.last_used is None
 
     view.dims.ndim = 5
     assert view.dims.last_used == 2
