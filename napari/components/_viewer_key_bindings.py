@@ -115,9 +115,9 @@ def reset_view(viewer):
 def toggle_grid(viewer):
     """Toggle grid mode."""
     if np.all(viewer.grid_size == (1, 1)):
-        viewer.grid_view()
+        viewer.grid.enabled = True
     else:
-        viewer.stack_view()
+        viewer.grid.enabled = False
 
 
 @ViewerModel.bind_key('V')

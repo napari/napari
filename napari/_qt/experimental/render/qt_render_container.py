@@ -1,9 +1,8 @@
 """QtRenderContainer class.
 """
-
-
 from qtpy.QtWidgets import QStackedWidget
 
+from ....components.viewer_model import ViewerModel
 from .qt_render import QtRender
 
 
@@ -29,15 +28,17 @@ class QtRenderContainer(QStackedWidget):
         Maps layer to its QtRender widget.
     """
 
-    def __init__(self, viewer):
+    def __init__(self, viewer: ViewerModel):
 
         super().__init__()
         self.setProperty("emphasized", True)
         self.viewer = viewer
 
         self.setMouseTracking(True)
+        self.setMinimumWidth(250)
 
-        # We no layer is selected QtRender shows minimal controls.
+        # We show QtRender even if no layer is selected. But in that case the
+        # only control are to create test images.
         self.default_widget = QtRender(viewer)
 
         self._widgets = {}

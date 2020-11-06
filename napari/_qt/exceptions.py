@@ -10,6 +10,14 @@ from qtpy.QtCore import QObject, Signal
 from .dialogs.qt_error_notification import NapariNotification
 
 
+def _set_true(var) -> bool:
+    return os.getenv(var) in ('1', 'True')
+
+
+def _set_false(var) -> bool:
+    return os.getenv(var) in ('0', 'False')
+
+
 class ExceptionHandler(QObject):
     """General class to handle all uncaught exceptions in the Qt event loop.
 
@@ -25,6 +33,13 @@ class ExceptionHandler(QObject):
         As a result, exceptions will be shown in the GUI only (mostly) when
         running napari as ``napari`` or ``python -m napari`` from the command
         line.
+
+    Attributes
+    ----------
+    exit_on_error : bool
+        If True exit the program after reporting an exception. It will be
+        set True if the environment variable NAPARI_EXIT_ON_ERROR is set
+        to "1" or "True".
     """
 
     error = Signal(tuple)
@@ -32,10 +47,10 @@ class ExceptionHandler(QObject):
 
     def __init__(self, parent=None, *, gui_exceptions=True):
         super().__init__(parent)
-        if os.getenv("NAPARI_CATCH_ERRORS") in ('0', 'False'):
-            self.gui_exceptions = False
-        else:
-            self.gui_exceptions = gui_exceptions
+        self.gui_exceptions: bool = (
+            False if _set_false("NAPARI_CATCH_ERRORS") else gui_exceptions
+        )
+        self.exit_on_error: bool = _set_true("NAPARI_EXIT_ON_ERROR")
 
     def handle(
         self,
@@ -75,6 +90,9 @@ class ExceptionHandler(QObject):
             text = "".join(traceback.format_exception(etype, value, tb))
             logging.error("Unhandled exception:\n%s", text)
         self.error.emit((etype, value, tb))
+
+        if self.exit_on_error:
+            sys.exit(1)
 
     def _show_error_dialog(self, exception: BaseException):
         self.message = NapariNotification.from_exception(exception)

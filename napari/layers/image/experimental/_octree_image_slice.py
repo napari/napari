@@ -7,6 +7,7 @@ from ....types import ArrayLike
 from ....utils.perf import block_timer
 from .._image_slice import ImageSlice
 from .octree import Octree
+from .octree_intersection import OctreeIntersection
 from .octree_util import ChunkData, OctreeInfo, OctreeLevelInfo
 
 LOGGER = logging.getLogger("napari.async")
@@ -78,19 +79,30 @@ class OctreeImageSlice(ImageSlice):
         # self._octree.print_tiles()
 
     def get_visible_chunks(self, corners_2d, auto_level) -> List[ChunkData]:
-        """Return the chunks currently in view."""
+        """Return the chunks currently in view.
 
-        level_index = self._get_octree_level(corners_2d, auto_level)
-        self._octree_level = level_index
-        level = self._octree.levels[level_index]
-        return level.get_chunks(corners_2d)
+        Return
+        ------
+        List[ChunkData]
+            The chunks inside this intersection.
+        """
+        intersection = self.get_intersection(corners_2d, auto_level)
+
+        if auto_level:
+            # Set current level according to what was automatically selected.
+            level_index = intersection.level.info.level_index
+            self._octree_level = level_index
+
+        # Return the chunks in this intersection.
+        return intersection.get_chunks()
 
     def get_intersection(self, corners_2d, auto_level: bool):
         """Return the intersection with the octree."""
 
         level_index = self._get_octree_level(corners_2d, auto_level)
         level = self._octree.levels[level_index]
-        return level.get_intersection(corners_2d)
+
+        return OctreeIntersection(level, corners_2d)
 
     def _get_octree_level(self, corners_2d, auto_level):
         if auto_level:
