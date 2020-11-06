@@ -73,21 +73,21 @@ def test_changing_focus(qtbot):
     ndim = 2
     view = QtDims(Dims(ndim))
     qtbot.addWidget(view)
-    assert view.last_used is None
-    view.focus_down()
-    view.focus_up()
-    assert view.last_used is None
+    assert view.dims.last_used is None
+    view.dims._focus_down()
+    view.dims._focus_up()
+    assert view.dims.last_used == 0
 
     view.dims.ndim = 5
-    assert view.last_used == 2
-    view.focus_down()
-    assert view.last_used == 1
-    view.focus_up()
-    assert view.last_used == 2
-    view.focus_up()
-    assert view.last_used == 0
-    view.focus_down()
-    assert view.last_used == 2
+    assert view.dims.last_used == 2
+    view.dims._focus_down()
+    assert view.dims.last_used == 1
+    view.dims._focus_up()
+    assert view.dims.last_used == 2
+    view.dims._focus_up()
+    assert view.dims.last_used == 0
+    view.dims._focus_down()
+    assert view.dims.last_used == 2
 
 
 def test_changing_display(qtbot):
@@ -266,7 +266,7 @@ def test_slider_press_updates_last_used(qtbot):
 
     for i, widg in enumerate(view.slider_widgets):
         widg.slider.sliderPressed.emit()
-        assert view.last_used == i
+        assert view.dims.last_used == i
 
 
 @pytest.mark.skipif(
