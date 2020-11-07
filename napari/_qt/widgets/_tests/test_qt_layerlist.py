@@ -167,14 +167,7 @@ def test_clearing_layerlist(qtbot):
 
     qtbot.addWidget(view)
 
-    layer_a = Image(np.random.random((10, 10)))
-    layer_b = Image(np.random.random((15, 15)))
-    layer_c = Image(np.random.random((15, 15)))
-    layer_d = Image(np.random.random((15, 15)))
-    layers.append(layer_a)
-    layers.append(layer_b)
-    layers.append(layer_c)
-    layers.append(layer_d)
+    layers.extend([Image(np.random.random((15, 15))) for _ in range(4)])
 
     assert view.vbox_layout.count() == 2 * (len(layers) + 1)
     assert check_layout_layers(view.vbox_layout, layers)
