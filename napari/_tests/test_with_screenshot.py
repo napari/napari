@@ -80,7 +80,7 @@ def test_z_order_images(make_test_viewer):
     # Check that blue is visible
     np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
 
-    viewer.layers[0, 1] = viewer.layers[1, 0]
+    viewer.layers.move(1, 0)
     screenshot = viewer.screenshot(canvas_only=True)
     center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
     # Check that red is now visible
@@ -101,7 +101,7 @@ def test_z_order_image_points(make_test_viewer):
     # Check that blue is visible
     np.testing.assert_almost_equal(screenshot[center], [0, 0, 255, 255])
 
-    viewer.layers[0, 1] = viewer.layers[1, 0]
+    viewer.layers.move(1, 0)
     screenshot = viewer.screenshot(canvas_only=True)
     center = tuple(np.round(np.divide(screenshot.shape[:2], 2)).astype(int))
     # Check that red is now visible
@@ -290,8 +290,9 @@ def test_grid_mode(make_test_viewer):
         )
         np.testing.assert_almost_equal(screenshot[coord], c)
 
-    # reorder layers
-    viewer.layers[0, 5] = viewer.layers[5, 0]
+    # reorder layers, swapping 0 and 5
+    viewer.layers.move(5, 0)
+    viewer.layers.move(1, 6)
 
     # check screenshot
     screenshot = viewer.screenshot(canvas_only=True)
