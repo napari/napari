@@ -35,9 +35,10 @@ For more general background on the plugin hook calling mechanism, see the
 # developers, so comprehensive documentation with complete type annotations is
 # imperative!
 
-from typing import Any, List, Optional, Union
+from typing import Any, List, Optional, Sequence, Type, Union
 
 from napari_plugin_engine import napari_hook_specification
+from qtpy.QtWidgets import QWidget
 
 from ..types import ReaderFunction, WriterFunction
 
@@ -317,3 +318,25 @@ def napari_write_vectors(path: str, data: Any, meta: dict) -> Optional[str]:
         If data is successfully written, return the ``path`` that was written.
         Otherwise, if nothing was done, return ``None``.
     """
+
+
+# -------------------------------------------------------------------------- #
+#                                 GUI Hooks                                  #
+# -------------------------------------------------------------------------- #
+
+
+@napari_hook_specification(historic=True)
+def napari_experimental_provide_dock_widget() -> Union[
+    Type[QWidget], Sequence[Type[QWidget]]
+]:
+    """Provide QWidget classes that can be added to the viewer as dock widgets.
+
+    Returns
+    -------
+    dock_widgets : QWidget class or sequence of QWidget classes
+        The following class attributes may be used to control how how the
+        plugin appears in the menu.
+            napari_menu_name: The name that will appear in the plugin menu
+            napari_shortcut: A keyboard shortcut that may be used to open this
+    """
+    # TODO: handle menu name and keyboard shortcut conflicts.

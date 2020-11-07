@@ -423,6 +423,23 @@ class Window:
         report_plugin_action.triggered.connect(self._show_plugin_err_reporter)
         self.plugins_menu.addAction(report_plugin_action)
 
+        from ..plugins import dock_widgets
+
+        self._plugin_dock_widget_menu = QMenu('Dock Widgets', self._qt_window)
+
+        for name, wdg in dock_widgets.items():
+            action = QAction(name, parent=self._qt_window)
+            action.setCheckable(True)
+            shortcut = getattr(wdg, 'napari_shortcut', None)
+            if shortcut:
+                action.setShortcut(shortcut)
+            action.triggered.connect(
+                lambda s: self._toggle_plugin_dock_widget(name, s)
+            )
+            self._plugin_dock_widget_menu.addAction(action)
+
+        self.plugins_menu.addMenu(self._plugin_dock_widget_menu)
+
     def _show_plugin_sorter(self):
         """Show dialog that allows users to sort the call order of plugins."""
         plugin_sorter = QtPluginSorter(parent=self._qt_window)
@@ -484,6 +501,13 @@ class Window:
 
     def _toggle_axes_arrows(self, state):
         self.qt_viewer.viewer.axes.arrows = state
+
+    def _toggle_plugin_dock_widget(self, plugin, state):
+        """Toggle adding or removing plugin dock widgets."""
+        if state:
+            self.add_plugin_dock_widgets(plugin)
+        else:
+            self.remove_plugin_dock_widgets(plugin)
 
     def add_dock_widget(
         self,
