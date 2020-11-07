@@ -483,7 +483,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self.grid.enabled = True
 
     def stack_view(self):
-        """Arrange the current layers is a stack.
+        """Arrange the current layers in a stack.
         """
         warnings.warn(
             (

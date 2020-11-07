@@ -84,8 +84,8 @@ class Transform:
 class TransformChain(EventedList, Transform):
     def __init__(self, transforms=[]):
         super().__init__(
-            basetype=Transform,
             data=transforms,
+            basetype=Transform,
             lookup={str: lambda x: x.name},
         )
         # The above super().__init__() will not call Transform.__init__().
