@@ -332,7 +332,7 @@ def test_grid():
         data = np.random.random((15, 15))
         viewer.add_image(data)
     assert not viewer.grid.enabled
-    assert viewer.grid.actual_size(6) == (1, 1)
+    assert viewer.grid.actual_shape(6) == (1, 1)
     assert viewer.grid.stride == 1
     translations = [layer.translate_grid for layer in viewer.layers]
     expected_translations = np.zeros((6, 2))
@@ -341,7 +341,7 @@ def test_grid():
     # enter grid view
     viewer.grid.enabled = True
     assert viewer.grid.enabled
-    assert viewer.grid.actual_size(6) == (2, 3)
+    assert viewer.grid.actual_shape(6) == (2, 3)
     assert viewer.grid.stride == 1
     translations = [layer.translate_grid for layer in viewer.layers]
     expected_translations = [
@@ -357,7 +357,7 @@ def test_grid():
     # return to stack view
     viewer.grid.enabled = False
     assert not viewer.grid.enabled
-    assert viewer.grid.actual_size(6) == (1, 1)
+    assert viewer.grid.actual_shape(6) == (1, 1)
     assert viewer.grid.stride == 1
     translations = [layer.translate_grid for layer in viewer.layers]
     expected_translations = np.zeros((6, 2))
@@ -367,7 +367,7 @@ def test_grid():
     viewer.grid.stride = -2
     viewer.grid.enabled = True
     assert viewer.grid.enabled
-    assert viewer.grid.actual_size(6) == (2, 2)
+    assert viewer.grid.actual_shape(6) == (2, 2)
     assert viewer.grid.stride == -2
     translations = [layer.translate_grid for layer in viewer.layers]
     expected_translations = [

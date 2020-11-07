@@ -237,7 +237,7 @@ def test_grid_mode(make_test_viewer):
     viewer.add_image(data, channel_axis=0, blending='translucent')
 
     assert not viewer.grid.enabled
-    assert viewer.grid.actual_size(6) == (1, 1)
+    assert viewer.grid.actual_shape(6) == (1, 1)
     assert viewer.grid.stride == 1
     translations = [layer.translate_grid for layer in viewer.layers]
     expected_translations = np.zeros((6, 2))
@@ -251,7 +251,7 @@ def test_grid_mode(make_test_viewer):
     # enter grid view
     viewer.grid.enabled = True
     assert viewer.grid.enabled
-    assert viewer.grid.actual_size(6) == (2, 3)
+    assert viewer.grid.actual_shape(6) == (2, 3)
     assert viewer.grid.stride == 1
     translations = [layer.translate_grid for layer in viewer.layers]
     expected_translations = [
@@ -313,7 +313,7 @@ def test_grid_mode(make_test_viewer):
     # return to stack view
     viewer.grid.enabled = False
     assert not viewer.grid.enabled
-    assert viewer.grid.actual_size(6) == (1, 1)
+    assert viewer.grid.actual_shape(6) == (1, 1)
     assert viewer.grid.stride == 1
     translations = [layer.translate_grid for layer in viewer.layers]
     expected_translations = np.zeros((6, 2))

@@ -15,10 +15,10 @@ class GridCanvas:
         Event emitter group
     enabled : bool
         If grid is enabled or not.
-    size : 2-tuple of int
+    shape : 2-tuple of int
         Number of rows and columns in the grid. A value of -1 for either or
         both of will be used the row and column numbers will trigger an
-        auto calculation of the necessary grid size to appropriately fill
+        auto calculation of the necessary grid shape to appropriately fill
         all the layers at the appropriate stride.
     stride : int
         Number of layers to place in each grid square before moving on to
@@ -28,7 +28,7 @@ class GridCanvas:
         reversed.
     """
 
-    def __init__(self, *, size=(-1, -1), stride=1, enabled=False):
+    def __init__(self, *, shape=(-1, -1), stride=1, enabled=False):
 
         # Events:
         self.events = EmitterGroup(
@@ -37,7 +37,7 @@ class GridCanvas:
 
         self._enabled = enabled
         self._stride = stride
-        self._size = size
+        self._shape = shape
 
     @property
     def enabled(self):
@@ -50,13 +50,13 @@ class GridCanvas:
         self.events.update()
 
     @property
-    def size(self):
+    def shape(self):
         """2-tuple of int: Number of rows and columns in the grid."""
-        return self._size
+        return self._shape
 
-    @size.setter
-    def size(self, size):
-        self._size = tuple(size)
+    @shape.setter
+    def shape(self, shape):
+        self._shape = tuple(shape)
         self.events.update()
 
     @property
@@ -69,12 +69,12 @@ class GridCanvas:
         self._stride = stride
         self.events.update()
 
-    def actual_size(self, nlayers=1):
-        """Return the actual size of the grid.
+    def actual_shape(self, nlayers=1):
+        """Return the actual shape of the grid.
 
-        This will return the size parameter, unless one of the row
+        This will return the shape parameter, unless one of the row
         or column numbers is -1 in which case it will compute the
-        optimal size of the grid given the number of layers and
+        optimal shape of the grid given the number of layers and
         current stride.
 
         If the grid is not enabled, this will return (1, 1).
@@ -86,11 +86,11 @@ class GridCanvas:
 
         Returns
         -------
-        size : 2-tuple of int
+        shape : 2-tuple of int
             Number of rows and columns in the grid.
         """
         if self.enabled:
-            n_row, n_column = self.size
+            n_row, n_column = self.shape
             n_grid_squares = np.ceil(nlayers / abs(self.stride)).astype(int)
 
             if n_row == -1 and n_column == -1:
@@ -126,7 +126,7 @@ class GridCanvas:
             Row and column position of current index in the grid.
         """
         if self.enabled:
-            n_row, n_column = self.actual_size(nlayers)
+            n_row, n_column = self.actual_shape(nlayers)
 
             # Adjust for forward or reverse ordering
             if self.stride < 0:
