@@ -95,12 +95,12 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self.dims.events.order.connect(self.reset_view)
         self.dims.events.current_step.connect(self._update_layers)
         self.cursor.events.position.connect(self._on_cursor_position_change)
-        self.layers.events.inserted.connect(self._on_layers_change)
-        self.layers.events.removed.connect(self._on_layers_change)
-        self.layers.events.reordered.connect(self._on_layers_change)
         self.layers.events.inserted.connect(self._on_grid_change)
         self.layers.events.removed.connect(self._on_grid_change)
         self.layers.events.reordered.connect(self._on_grid_change)
+        self.layers.events.inserted.connect(self._on_layers_change)
+        self.layers.events.removed.connect(self._on_layers_change)
+        self.layers.events.reordered.connect(self._on_layers_change)
 
         self.keymap_providers = [self]
 
@@ -484,11 +484,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
 
     def stack_view(self):
         """Arrange the current layers is a stack.
-        """
-        self.grid_view(n_row=1, n_column=1, stride=1)
-
-    def _update_grid(self):
-        """Update grid with current grid values.
         """
         warnings.warn(
             (

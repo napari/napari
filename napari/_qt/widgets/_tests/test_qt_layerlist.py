@@ -160,6 +160,33 @@ def test_removing_layers(qtbot):
     assert check_layout_dividers(view.vbox_layout, len(layers))
 
 
+def test_clearing_layerlist(qtbot):
+    """Test clearing layer list."""
+    layers = LayerList()
+    view = QtLayerList(layers)
+
+    qtbot.addWidget(view)
+
+    layer_a = Image(np.random.random((10, 10)))
+    layer_b = Image(np.random.random((15, 15)))
+    layer_c = Image(np.random.random((15, 15)))
+    layer_d = Image(np.random.random((15, 15)))
+    layers.append(layer_a)
+    layers.append(layer_b)
+    layers.append(layer_c)
+    layers.append(layer_d)
+
+    assert view.vbox_layout.count() == 2 * (len(layers) + 1)
+    assert check_layout_layers(view.vbox_layout, layers)
+    assert check_layout_dividers(view.vbox_layout, len(layers))
+
+    layers.clear()
+    assert len(layers) == 0
+    assert view.vbox_layout.count() == 2 * (len(layers) + 1)
+    assert check_layout_layers(view.vbox_layout, layers)
+    assert check_layout_dividers(view.vbox_layout, len(layers))
+
+
 def test_reordering_layers(qtbot):
     """
     Test reordering layers.

@@ -50,6 +50,16 @@ def test_removing_layer():
     assert len(layers) == 0
 
 
+def test_popping_layer():
+    """Test popping a layer off layerlist."""
+    layers = LayerList()
+    layer = Image(np.random.random((10, 10)))
+    layers.append(layer)
+    assert len(layers) == 1
+    layers.pop(0)
+    assert len(layers) == 0
+
+
 def test_indexing():
     """
     Test indexing into a LayerList
@@ -110,6 +120,18 @@ def test_reordering():
     # Reverse layers
     layers.reverse()
     assert list(layers) == [layer_c, layer_a, layer_b]
+
+
+def test_clearing_layerlist():
+    """Test clearing layer list."""
+    layers = LayerList()
+    layer = Image(np.random.random((10, 10)))
+    layers.append(layer)
+    layers.append(layer)
+    assert len(layers) == 2
+
+    layers.clear()
+    assert len(layers) == 0
 
 
 def test_naming():
