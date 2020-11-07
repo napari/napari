@@ -134,49 +134,6 @@ def test_clearing_layerlist():
     assert len(layers) == 0
 
 
-def test_naming():
-    """
-    Test unique naming in LayerList
-    """
-    layers = LayerList()
-    layer_a = Image(np.random.random((10, 10)), name='img')
-    layer_b = Image(np.random.random((15, 15)), name='img')
-    layers.append(layer_a)
-    layers.append(layer_b)
-
-    assert [lay.name for lay in layers] == ['img', 'img [1]']
-
-    layer_b.name = 'chg'
-    assert [lay.name for lay in layers] == ['img', 'chg']
-
-    layer_a.name = 'chg'
-    assert [lay.name for lay in layers] == ['chg [1]', 'chg']
-
-
-def test_selection():
-    """
-    Test only last added is selected.
-    """
-    layers = LayerList()
-    layer_a = Image(np.random.random((10, 10)))
-    layers.append(layer_a)
-    assert layers[0].selected is True
-
-    layer_b = Image(np.random.random((15, 15)))
-    layers.append(layer_b)
-    assert [lay.selected for lay in layers] == [False, True]
-
-    layer_c = Image(np.random.random((15, 15)))
-    layers.append(layer_c)
-    assert [lay.selected for lay in layers] == [False] * 2 + [True]
-
-    for lay in layers:
-        lay.selected = True
-    layer_d = Image(np.random.random((15, 15)))
-    layers.append(layer_d)
-    assert [lay.selected for lay in layers] == [False] * 3 + [True]
-
-
 def test_unselect_all():
     """
     Test unselecting
@@ -212,6 +169,9 @@ def test_remove_selected():
     layers.append(layer_c)
 
     # remove last added layer as only one selected
+    layer_a.selected = False
+    layer_b.selected = False
+    layer_c.selected = True
     layers.remove_selected()
     assert list(layers) == [layer_a, layer_b]
 

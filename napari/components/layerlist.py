@@ -26,36 +26,8 @@ class LayerList(EventedList):
             data=data, basetype=Layer, lookup={str: lambda e: e.name},
         )
 
-        self.events.inserted.connect(self._inserted)
-        self.events.removed.connect(self._removed)
-
     def __newlike__(self, data):
         return LayerList(data)
-
-    def _inserted(self, event):
-        layer = event.value
-        layer.name = self._coerce_name(layer.name, layer)
-        layer.events.name.connect(lambda e: self._update_name(e))
-        layer.selected = True
-        self.unselect_all(ignore=layer)
-
-    def _removed(self, event):
-        # FIXME: Currently need complex logic to manage event connections
-        # when a layer gets disconnected, in case it gets connected again.
-        layer = event.value
-        layer.events.disconnect()
-        for em in layer.events.emitters.values():
-            em.disconnect()
-        layer.dims.events.disconnect()
-        for em in layer.dims.events.emitters.values():
-            em.disconnect()
-        # But then need to reconnect any events internal to the layer
-        layer.events.data.connect(lambda e: layer._set_editable())
-        layer.dims.events.ndisplay.connect(lambda e: layer._set_editable())
-        layer.dims.events.order.connect(layer.refresh)
-        layer.dims.events.ndisplay.connect(layer._update_dims)
-        layer.dims.events.order.connect(layer._update_dims)
-        layer.dims.events.axis.connect(layer.refresh)
 
     def _coerce_name(self, name, layer=None):
         """Coerce a name into a unique equivalent.
