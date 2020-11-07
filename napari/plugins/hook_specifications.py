@@ -336,7 +336,15 @@ def napari_experimental_provide_dock_widget() -> Union[
     dock_widgets : QWidget class or sequence of QWidget classes
         The following class attributes may be used to control how how the
         plugin appears in the menu.
-            napari_menu_name: The name that will appear in the plugin menu
-            napari_shortcut: A keyboard shortcut that may be used to open this
+            napari_menu_name (str): The name that will appear in the plugin
+                menu
+            napari_shortcut (str): A keyboard shortcut that may be used to open
+                this widget
+            napari_area (str): The initial area (relative to the viewer window)
+                to show this widget.  Must be one of "top", "left", "bottom",
+                "right"
+            napari_allowed_areas (List[str]): The areas (relative to the viewer
+                window) where this widget can be moved. List members must be
+                one of "top", "left", "bottom", "right".
     """
     # TODO: handle menu name and keyboard shortcut conflicts.
