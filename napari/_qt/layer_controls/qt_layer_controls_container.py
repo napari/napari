@@ -80,7 +80,7 @@ class QtLayerControlsContainer(QStackedWidget):
         self.addWidget(self.empty_widget)
         self._display(None)
 
-        self.viewer.layers.events.added.connect(self._add)
+        self.viewer.layers.events.inserted.connect(self._add)
         self.viewer.layers.events.removed.connect(self._remove)
         self.viewer.events.active_layer.connect(self._display)
 
@@ -90,12 +90,12 @@ class QtLayerControlsContainer(QStackedWidget):
         Parameters
         ----------
         event : Event
-            Event with the target layer at `event.value`.
+            Event with the target layer at `event.item`.
         """
         if event is None:
             layer = None
         else:
-            layer = event.value
+            layer = event.item
 
         if layer is None:
             self.setCurrentWidget(self.empty_widget)

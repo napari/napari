@@ -6,13 +6,13 @@ from typing import List, Optional
 import numpy as np
 
 from ..layers import Layer
-from ..utils.events import TypedEventedList
+from ..utils.events import EventedList
 from ..utils.naming import inc_name_count
 
 Extent = namedtuple('Extent', 'data world step')
 
 
-class LayerList(TypedEventedList):
+class LayerList(EventedList):
     """List-like layer collection with built-in reordering and callback hooks.
 
     Parameters
@@ -28,6 +28,9 @@ class LayerList(TypedEventedList):
 
         self.events.inserted.connect(self._inserted)
         self.events.removed.connect(self._removed)
+
+    def __newlike__(self, data):
+        return LayerList(data)
 
     def _inserted(self, event):
         layer = event.value

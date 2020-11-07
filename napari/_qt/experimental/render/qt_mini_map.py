@@ -6,7 +6,8 @@ import numpy as np
 from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import QLabel
 
-from ....layers.image.experimental import OctreeIntersection
+from ....components.viewer_model import ViewerModel
+from ....layers.image.experimental import OctreeIntersection, OctreeLevel
 from ....layers.image.experimental.octree_image import OctreeImage
 
 # Width of the map in the dockable widget.
@@ -23,6 +24,8 @@ COLOR_VIEW = (227, 220, 111, 255)  # yellow
 class MiniMap(QLabel):
     """A small bitmap that shows the view bounds and which tiles are seen.
 
+    Only works with OctreeImage layers.
+
     Parameters
     ----------
     viewer : Viewer
@@ -34,7 +37,7 @@ class MiniMap(QLabel):
     # Border between the tiles is twice this.
     HALF_BORDER = 1
 
-    def __init__(self, viewer, layer: OctreeImage):
+    def __init__(self, viewer: ViewerModel, layer: OctreeImage):
         super().__init__()
         self.viewer = viewer
         self.layer = layer
@@ -67,24 +70,25 @@ class MiniMap(QLabel):
         intersection : OctreeIntersection
             The intersection we are drawing on the map.
         """
-        data = self._get_map_data(intersection)
+        data = self._create_map_data(intersection)
         height, width = data.shape[:2]
         image = QImage(data, width, height, QImage.Format_RGBA8888)
         self.setPixmap(QPixmap.fromImage(image))
 
-    def _get_map_data(self, intersection: OctreeIntersection) -> np.ndarray:
-        """Get the image data to be draw in the map.
+    def _create_map_data(self, intersection: OctreeIntersection) -> np.ndarray:
+        """Return bitmap data for the map.
+
+        Draw the tiles and the intersection with those tiles.
 
         Parameters
         ----------
         intersection : OctreeIntersection
             Draw this intersection on the map.
         """
-        tile_shape = intersection.info.tile_shape
-        aspect = intersection.info.octree_info.aspect
+        aspect = intersection.level.info.octree_info.aspect
 
-        # Shape of the map bitmap.
-        map_shape = (MAP_WIDTH, math.ceil(MAP_WIDTH / aspect))
+        # Shape of the map bitmap: (row_pixels, col_pixels)
+        map_shape = math.ceil(MAP_WIDTH / aspect), MAP_WIDTH
 
         # The map shape with RGBA pixels
         bitmap_shape = map_shape + (4,)
@@ -92,26 +96,35 @@ class MiniMap(QLabel):
         # The bitmap data.
         data = np.zeros(bitmap_shape, dtype=np.uint8)
 
-        # Tile size in bitmap coordinates.
-        tile_size: float = map_shape[1] / tile_shape[1]
-
         # Leave a bit of space between the tiles.
         edge = self.HALF_BORDER
 
-        # TODO_OCTREE: Can we remove these for loops? This is looping
-        # over *tiles* not pixels. But still will add up.
-        for row in range(0, tile_shape[0] + 1):
-            for col in range(0, tile_shape[1] + 1):
+        level: OctreeLevel = intersection.level
 
+        scale_x = map_shape[1] / level.info.image_shape[1]
+        scale_y = map_shape[0] / level.info.image_shape[0]
+
+        # OCTREE_TODO: Consider this Qt bitmap rendering code just a rough
+        # proof-of-concept prototype. A real minimap should probably be a
+        # little OpenGL window, not a Qt bitmap. If we used OpenGL the GPU
+        # does most of the work and we get better quality and effects, like
+        # alpha and anti-aliasing. We do not want to spend a lot of time
+        # becoming good at "rendering" into Qt Bitmaps.
+        y = 0
+        for row, row_tiles in enumerate(level.tiles):
+            x = 0
+            for col, tile in enumerate(row_tiles):
                 # Is this tile in the view?
                 seen = intersection.is_visible(row, col)
 
-                # Coordinate for this one tile.
-                y0 = int(row * tile_size)
-                y1 = int(y0 + tile_size)
+                tile_x = tile.shape[1] * scale_x
+                tile_y = tile.shape[0] * scale_y
 
-                x0 = int(col * tile_size)
-                x1 = int(x0 + tile_size)
+                y0 = int(y)
+                x0 = int(x)
+
+                y1 = int(y + tile_y)
+                x1 = int(x + tile_x)
 
                 # Create a small border between tiles.
                 y0 += edge
@@ -119,8 +132,13 @@ class MiniMap(QLabel):
                 x0 += edge
                 x1 -= edge
 
+                # print(f"tile {row}, {col}: {y0}:{y1}  {x0}:{x1}")
+
                 # Draw one tile.
                 data[y0:y1, x0:x1, :] = COLOR_SEEN if seen else COLOR_UNSEEN
+
+                x += tile_x
+            y += tile_y
 
         self._draw_view(data, intersection)
         return data

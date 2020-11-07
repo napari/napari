@@ -168,6 +168,10 @@ class Bar(KeymapProvider):
     class_keymap = {'E': lambda x: setattr(x, 'E', 42)}
 
 
+class Baz(Bar):
+    class_keymap = {'F': lambda x: setattr(x, 'F', 16)}
+
+
 def test_handle_single_keymap_provider():
     foo = Foo()
 
@@ -264,6 +268,22 @@ def test_handle_multiple_keymap_providers():
     del foo.B
     handler.press_key('B')
     assert not hasattr(foo, 'B')
+
+
+def test_inherited_keymap():
+    baz = Baz()
+    handler = KeymapHandler()
+    handler.keymap_providers = [baz]
+
+    assert handler.keymap_chain.maps == [
+        _bind_keymap(baz.keymap, baz),
+        _bind_keymap(baz.class_keymap, baz),
+        _bind_keymap(Bar.class_keymap, baz),
+    ]
+    assert handler.active_keymap == {
+        'F': types.MethodType(baz.class_keymap['F'], baz),
+        'E': types.MethodType(Bar.class_keymap['E'], baz),
+    }
 
 
 def test_handle_on_release_bindings():

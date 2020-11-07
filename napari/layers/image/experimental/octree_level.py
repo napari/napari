@@ -1,9 +1,6 @@
 """OctreeLevel class
 """
-from typing import List
-
-from .octree_intersection import OctreeIntersection
-from .octree_util import ChunkData, OctreeInfo, OctreeLevelInfo, TileArray
+from .octree_util import OctreeInfo, OctreeLevelInfo, TileArray
 
 
 class OctreeLevel:
@@ -28,46 +25,3 @@ class OctreeLevel:
         nrows = len(self.tiles)
         ncols = len(self.tiles[0])
         print(f"level={self.level_index} dim={nrows}x{ncols}")
-
-    def get_intersection(self, data_corners) -> OctreeIntersection:
-
-        return OctreeIntersection(self.info, data_corners)
-
-    def get_chunks(self, data_corners) -> List[ChunkData]:
-        """Return chunks that are within this rectangular region of the data.
-
-        Parameters
-        ----------
-        data_corners
-            Return chunks within this rectangular region.
-        """
-        chunks = []
-
-        intersection = self.get_intersection(data_corners)
-
-        scale = self.info.scale
-        scale_vec = [scale, scale]
-
-        tile_size = self.info.octree_info.tile_size
-
-        scaled_size = tile_size * scale
-
-        # Iterate over every tile in the rectangular region.
-        data = None
-        y = intersection.row_range.start * scaled_size
-        for row in intersection.row_range:
-            x = intersection.col_range.start * scaled_size
-            for col in intersection.col_range:
-
-                data = self.tiles[row][col]
-                pos = [x, y]
-
-                # Skip tiles with zero area (why are there any?)
-                if 0 not in data.shape:
-                    level_index = self.info.level_index
-                    chunks.append(ChunkData(level_index, data, pos, scale_vec))
-
-                x += scaled_size
-            y += scaled_size
-
-        return chunks

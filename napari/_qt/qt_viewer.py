@@ -236,12 +236,15 @@ class QtViewer(QSplitter):
         self.viewer.cursor.events.size.connect(self._on_cursor)
         self.viewer.events.palette.connect(self._update_palette)
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
-        self.viewer.layers.events.inserted.connect(self._add_layer)
+        self.viewer.layers.events.inserted.connect(self._on_add_layer_change)
         self.viewer.layers.events.removed.connect(self._remove_layer)
         # stop any animations whenever the layers change
         self.viewer.events.layers_change.connect(lambda x: self.dims.stop())
 
         self.setAcceptDrops(True)
+
+        for layer in self.viewer.layers:
+            self._add_layer(layer)
 
     def _create_performance_dock_widget(self):
         """Create the dock widget that shows performance metrics.
@@ -302,7 +305,7 @@ class QtViewer(QSplitter):
         else:
             self.controls.setMaximumWidth(220)
 
-    def _add_layer(self, event):
+    def _on_add_layer_change(self, event):
         """When a layer is added, set its parent and order.
 
         Parameters
@@ -311,6 +314,16 @@ class QtViewer(QSplitter):
             The napari event that triggered this method.
         """
         layer = event.value
+        self._add_layer(layer)
+
+    def _add_layer(self, layer):
+        """When a layer is added, set its parent and order.
+
+        Parameters
+        ----------
+        layer : napari.layers.Layer
+            Layer to be added.
+        """
         vispy_layer = create_vispy_visual(layer)
         self.viewer.camera.events.center.connect(vispy_layer._on_camera_move)
 
