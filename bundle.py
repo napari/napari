@@ -94,18 +94,11 @@ def patch_dmgbuild():
     # see https://github.com/al45tair/dmgbuild/pull/18
     with open(core.__file__, 'r') as f:
         src = f.read()
-    if (
-        'max(total_size / 1024' not in src
-        and "all_args = ['/usr/bin/hdiutil', cmd]" not in src
-    ):
-        return
     with open(core.__file__, 'w') as f:
         f.write(
             src.replace(
-                'max(total_size / 1024', 'max(total_size / 1000'
-            ).replace(
-                "all_args = ['/usr/bin/hdiutil', cmd]",
-                "all_args = ['sudo', '/usr/bin/hdiutil', cmd]",
+                "shutil.rmtree(os.path.join(mount_point, '.Trashes'), True)",
+                "shutil.rmtree(os.path.join(mount_point, '.Trashes'), True);time.sleep(30)",
             )
         )
         print("patched dmgbuild.core")
