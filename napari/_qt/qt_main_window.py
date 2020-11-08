@@ -2,10 +2,12 @@
 Custom Qt widgets that serve as native objects that the public-facing elements
 wrap.
 """
+import inspect
 import os
 import platform
 import sys
 import time
+from typing import Dict, Union
 
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QIcon, QKeySequence
@@ -63,6 +65,8 @@ class Window:
         View menu.
     window_menu : qtpy.QtWidgets.QMenu
         Window menu.
+    dock_widgets : Dict[str, QtViewerDockWidget]
+        Dock widgets that have been added to the viewer.
     """
 
     # set _napari_app_id to False to avoid overwriting dock icon on windows
@@ -164,6 +168,7 @@ class Window:
 
         self._update_palette()
 
+        self.dock_widgets: Dict[str, QtViewerDockWidget] = dict()
         self._add_viewer_dock_widget(self.qt_viewer.dockConsole)
         self._add_viewer_dock_widget(self.qt_viewer.dockLayerControls)
         self._add_viewer_dock_widget(self.qt_viewer.dockLayerList)
@@ -403,6 +408,8 @@ class Window:
 
     def _add_plugins_menu(self):
         """Add 'Plugins' menu to app menubar."""
+        from .. import plugins
+
         self.plugins_menu = self.main_menu.addMenu('&Plugins')
 
         pip_install_action = QAction(
@@ -423,11 +430,9 @@ class Window:
         report_plugin_action.triggered.connect(self._show_plugin_err_reporter)
         self.plugins_menu.addAction(report_plugin_action)
 
-        from ..plugins import dock_widgets
-
         self._plugin_dock_widget_menu = QMenu('Dock Widgets', self._qt_window)
 
-        for name, wdg in dock_widgets.items():
+        for name, wdg in plugins.dock_widgets.items():
             action = QAction(name, parent=self._qt_window)
             action.setCheckable(True)
             shortcut = getattr(wdg, 'napari_shortcut', None)
@@ -502,12 +507,39 @@ class Window:
     def _toggle_axes_arrows(self, state):
         self.qt_viewer.viewer.axes.arrows = state
 
-    def _toggle_plugin_dock_widget(self, plugin, state):
+    def _toggle_plugin_dock_widget(self, key, state):
         """Toggle adding or removing plugin dock widgets."""
         if state:
-            self.add_plugin_dock_widgets(plugin)
+            from .. import plugins
+            from ..viewer import Viewer
+
+            Widget = plugins.dock_widgets[key]
+            sig = inspect.signature(Widget.__init__)
+            for param in sig.parameters.values():
+                if param.name == 'napari_viewer':
+                    wdg = Widget(napari_viewer=self.qt_viewer.viewer)
+                    break
+                if param.annotation in ('napari.viewer.Viewer', Viewer):
+                    wdg = Widget(**{param.name: self.qt_viewer.viewer})
+                    break
+                # cannot look for param.kind == param.VAR_KEYWORD because
+                # QWidget allows **kwargs but errs on unknown keyword arguments
+            else:
+                wdg = Widget()
+
+            area = getattr(wdg, 'napari_area', 'right')
+            allowed_areas = getattr(wdg, 'napari_allowed_areas', None)
+            # TODO: discuss the fact that a single shortcut can't be used
+            # for loading the widget from the plugin menu AND hide/show
+            # from the window menu.
+            # shortcut = getattr(wdg, 'napari_shortcut', None)
+            self.add_dock_widget(
+                wdg, name=key, area=area, allowed_areas=allowed_areas
+            )
         else:
-            self.remove_plugin_dock_widgets(plugin)
+            # TODO: discuss potential UI confusion of having widget toggle
+            # both in window menu as well as Plugins > DockWidgets
+            self.remove_dock_widget(key)
 
     def add_dock_widget(
         self,
@@ -569,8 +601,10 @@ class Window:
         if dock_widget.shortcut is not None:
             action.setShortcut(dock_widget.shortcut)
         self.window_menu.addAction(action)
+        # store reference to dock_widget
+        self.dock_widgets[dock_widget.name] = dock_widget
 
-    def remove_dock_widget(self, widget):
+    def remove_dock_widget(self, widget: Union[str, QDockWidget]):
         """Removes specified dock widget.
 
         Parameters
@@ -578,11 +612,26 @@ class Window:
         widget : QWidget | str
             If widget == 'all', all docked widgets will be removed.
         """
-        if widget == 'all':
-            for dw in self._qt_window.findChildren(QDockWidget):
-                self._qt_window.removeDockWidget(dw)
-        else:
-            self._qt_window.removeDockWidget(widget)
+        if isinstance(widget, str):
+            if widget == 'all':
+                for dw in self._qt_window.findChildren(QDockWidget):
+                    self._qt_window.removeDockWidget(dw)
+                return
+            elif widget not in self.dock_widgets:
+                raise KeyError(
+                    f"No current dock widget with key: {widget}\n"
+                    f"keys include: {set(self.dock_widgets)!r}"
+                )
+            widget = self.dock_widgets[widget]
+        if not isinstance(widget, QDockWidget):
+            raise TypeError(
+                "'widget' must be either a string or a QDockWidget "
+                "(not a generic QWidget)."
+            )
+        self._qt_window.removeDockWidget(widget)
+        for key, val in list(self.dock_widgets.items()):
+            if val == widget:
+                del self.dock_widgets[key]
 
     def resize(self, width, height):
         """Resize the window.
