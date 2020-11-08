@@ -508,12 +508,13 @@ class Window:
         self.qt_viewer.viewer.axes.arrows = state
 
     def _toggle_plugin_dock_widget(self, key, state):
-        """Toggle adding or removing plugin dock widgets."""
+        """Create or destroy a plugin dock widget."""
         if state:
             from .. import plugins
             from ..viewer import Viewer
 
             Widget = plugins.dock_widgets[key]
+            # if the signature is looking a for a napari viewer, pass it.
             sig = inspect.signature(Widget.__init__)
             for param in sig.parameters.values():
                 if param.name == 'napari_viewer':
@@ -525,10 +526,11 @@ class Window:
                 # cannot look for param.kind == param.VAR_KEYWORD because
                 # QWidget allows **kwargs but errs on unknown keyword arguments
             else:
+                # otherwise instantiate the widget without passing viewer
                 wdg = Widget()
 
-            area = getattr(wdg, 'napari_area', 'right')
-            allowed_areas = getattr(wdg, 'napari_allowed_areas', None)
+            area = getattr(Widget, 'napari_area', 'right')
+            allowed_areas = getattr(Widget, 'napari_allowed_areas', None)
             # TODO: discuss the fact that a single shortcut can't be used
             # for loading the widget from the plugin menu AND hide/show
             # from the window menu.
