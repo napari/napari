@@ -12,9 +12,17 @@ Float2 = np.ndarray  # [x, y] dtype=float64 (default type)
 
 
 class OctreeIntersection:
-    # TODO_OCTREE: this class needs a lot of work
+    """A view's intersection with the octree.
 
-    def __init__(self, level: OctreeLevel, corners_2d):
+    Parameters
+    ----------
+    level : OctreeLevel
+        The octree level that we intersected with.
+    corners_2d : np.ndarray
+        The lower left and upper right corners of the view in data coordinates.
+    """
+
+    def __init__(self, level: OctreeLevel, corners_2d: np.darray):
         self.level = level
         self.corners_2d = corners_2d
 
@@ -27,14 +35,18 @@ class OctreeIntersection:
 
         base = info.octree_info.base_shape
 
-        self.normalized_rows = np.clip(self.rows / base[0], 0, 1)
-        self.normalized_cols = np.clip(self.cols / base[1], 0, 1)
+        self.normalized = np.array(
+            [
+                np.clip(self.rows / base[0], 0, 1),
+                np.clip(self.cols / base[1], 0, 1),
+            ]
+        )
 
         self.rows /= info.scale
         self.cols /= info.scale
 
-        self.row_range = self.row_range(self.rows)
-        self.col_range = self.column_range(self.cols)
+        self._row_range = self.row_range(self.rows)
+        self._col_range = self.column_range(self.cols)
 
     def tile_range(self, span, num_tiles):
         """Return tiles indices needed to draw the span."""
@@ -74,9 +86,9 @@ class OctreeIntersection:
         """
 
         def _inside(value, value_range):
-            return value >= value_range.start and value < value_range.stop
+            return value_range.start <= value < value_range.stop
 
-        return _inside(row, self.row_range) and _inside(col, self.col_range)
+        return _inside(row, self._row_range) and _inside(col, self._col_range)
 
     def get_chunks(self) -> List[ChunkData]:
         """Return chunks inside this intersection.
@@ -99,10 +111,10 @@ class OctreeIntersection:
 
         # Iterate over every tile in the rectangular region.
         data = None
-        y = self.row_range.start * scaled_size
-        for row in self.row_range:
-            x = self.col_range.start * scaled_size
-            for col in self.col_range:
+        y = self._row_range.start * scaled_size
+        for row in self._row_range:
+            x = self._col_range.start * scaled_size
+            for col in self._col_range:
 
                 data = self.level.tiles[row][col]
                 pos = [x, y]

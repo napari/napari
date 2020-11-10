@@ -2,6 +2,8 @@
 """
 from typing import List
 
+import numpy as np
+
 from ....utils.events import Event
 from ..image import Image
 from ._chunked_slice_data import ChunkedSliceData
@@ -31,14 +33,35 @@ class OctreeImage(Image):
 
     @property
     def track_view(self) -> bool:
+        """Return True if we changing what's dispays as the view changes.
+
+        Return
+        ------
+        bool
+            True if we are tracking the current view.
+        """
         return self._track_view
 
     @track_view.setter
-    def track_view(self, value) -> None:
+    def track_view(self, value: bool) -> None:
+        """Set whether we are tracking the current view.
+
+        Parameters
+        ----------
+        value : bool
+            True if we should track the current view.
+        """
         self._track_view = value
 
     @property
     def tile_size(self) -> int:
+        """Return the edge length of single tile (e.g. 256).
+
+        Return
+        ------
+        int
+            The edge length of a single tile.
+        """
         return self._tile_size
 
     @tile_size.setter
@@ -50,24 +73,53 @@ class OctreeImage(Image):
 
     @property
     def octree_info(self) -> OctreeInfo:
+        """Return information about the current octree.
+
+        Return
+        ------
+        OctreeInfo
+            Information about the current octree.
+        """
         if self._slice is None:
             return None
-        else:
-            return self._slice.octree_info
+        return self._slice.octree_info
 
     @property
     def octree_level_info(self) -> OctreeLevelInfo:
+        """Return information about the current level of the current octree.
+
+        Returns
+        -------
+        OctreeLevelInfo
+            Information about the current octree level.
+        """
         if self._slice is None:
             return None
-        else:
-            return self._slice.octree_level_info
+        return self._slice.octree_level_info
 
     @property
     def auto_level(self) -> bool:
+        """Return True if we are computing the octree level automatically.
+
+        When viewing the octree normally, auto_level is always True, but
+        during debugging or other special situations it might be off.
+
+        Returns
+        -------
+        bool
+            True if we are computing the octree level automatically.
+        """
         return self._auto_level
 
     @auto_level.setter
     def auto_level(self, value: bool) -> None:
+        """Set whether we are choosing the octree level automatically.
+
+        Parameters
+        ----------
+        value : bool
+            True if we should determine the octree level automatically.
+        """
         self._auto_level = value
         self.events.auto_level()
 
@@ -108,11 +160,6 @@ class OctreeImage(Image):
         self._empty = True
 
     @property
-    def intersection(self):
-        """Chunks in the current slice which in currently in view."""
-        return self._slice.intersection
-
-    @property
     def visible_chunks(self) -> List[ChunkData]:
         """Chunks in the current slice which in currently in view."""
         # This will be None if we have not been drawn yet.
@@ -123,14 +170,14 @@ class OctreeImage(Image):
 
         corners_2d = self._corners_2d(self._data_corners)
         chunks = self._slice.get_visible_chunks(corners_2d, auto_level)
-        self._octree_level = self._slice._octree_level
+        self._octree_level = self._slice.octree_level
         self.events.octree_level()
         return chunks
 
     def _on_data_loaded(self, data: ChunkedSliceData, sync: bool) -> None:
         """The given data a was loaded, use it now."""
         super()._on_data_loaded(data, sync)
-        self._octree_level = self._slice._octree_level
+        self._octree_level = self._slice.octree_level
 
         # TODO_OCTREE: The first time _on_data_loaded() is called it's from
         # super().__init__() and the octree_level event has not been added
@@ -155,7 +202,19 @@ class OctreeImage(Image):
         if need_refresh:
             self.refresh()
 
-    def get_intersection(self, data_corners) -> OctreeIntersection:
+    def get_intersection(self, data_corners: np.ndarray) -> OctreeIntersection:
+        """The the interesection between these corners and the octree.
+
+        Parameters
+        ----------
+        data_corners : np.ndarray
+            The current canvas view in local data coordinates.
+
+        Returns
+        -------
+        OctreeIntersection
+            The intersection between the cornders and the octree.
+        """
         if self._slice is None:
             return None
 
@@ -169,5 +228,4 @@ class OctreeImage(Image):
         # TODO_OCTREE: This is placeholder. Need to handle dims correctly.
         if self.ndim == 2:
             return data_corners
-        else:
-            return data_corners[:, 1:3]
+        return data_corners[:, 1:3]

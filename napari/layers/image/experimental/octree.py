@@ -81,20 +81,20 @@ def _combine_tiles(*tiles: np.ndarray) -> np.ndarray:
         # 0 X
         # X X
         return tiles[0]
-    elif _none(tiles[2:4]):
+    if _none(tiles[2:4]):
         # 0 1
         # X X
         return np.hstack(tiles[0:2])
-    elif _none((tiles[1], tiles[3])):
+    if _none((tiles[1], tiles[3])):
         # 0 X
         # 2 X
         return np.vstack((tiles[0], tiles[2]))
-    else:
-        # 0 1
-        # 2 3
-        row1 = np.hstack(tiles[0:2])
-        row2 = np.hstack(tiles[2:4])
-        return np.vstack((row1, row2))
+
+    # 0 1
+    # 2 3
+    row1 = np.hstack(tiles[0:2])
+    row2 = np.hstack(tiles[2:4])
+    return np.vstack((row1, row2))
 
 
 def _create_downsampled_tile(*tiles: np.ndarray) -> np.ndarray:
@@ -222,7 +222,3 @@ class Octree:
         # _print_levels(levels)
 
         return Octree(info, levels)
-
-
-if __name__ == "__main__":
-    tree = Octree()

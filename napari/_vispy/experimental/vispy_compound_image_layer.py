@@ -3,28 +3,22 @@
 from collections import namedtuple
 from typing import List, Set
 
-import numpy as np
-from vispy.scene.node import Node
-from vispy.scene.visuals import Line
 from vispy.visuals.transforms import STTransform
 
 from ...layers.image.experimental.octree_util import ChunkData
 from ...utils.perf import block_timer
 from ..image import Image as ImageVisual
 from ..vispy_image_layer import VispyImageLayer
-
-# Grid is optionally drawn while debugging to show tile boundaries.
-GRID_WIDTH = 3
-GRID_COLOR = (1, 0, 0, 1)
+from .tile_grid import TileGrid
 
 # Set order to the grid draws on top of the image tiles.
 IMAGE_NODE_ORDER = 0
-LINE_VISUAL_ORDER = 10
 
 # We are seeing crashing when creating too many ImageVisual's so we are
 # experimenting with having a reusable pool of them.
 INITIAL_POOL_SIZE = 0
 
+# TODO_OCTREE: hook up to QtRender UI
 SHOW_GRID = True
 
 Stats = namedtuple(
@@ -33,51 +27,22 @@ Stats = namedtuple(
 
 
 class NullImageVisualPool:
-    """Allocate visuals without actually having a pool (for now).
+    """Allocate visuals with no pool.
+
+    We've experimented with visual pools to work around crashes with PyQt5.
+    Current we have no pool: we only work with PySide2.
     """
 
-    def get_visual(self):
+    @staticmethod
+    def get_visual():
+        """Just allocated the ImageVisual directly."""
         return ImageVisual(None, method='auto')
 
-    def return_visual(self, visual):
+    @staticmethod
+    def return_visual(visual):
+        """Just remove it from the scene graph."""
         assert visual
         visual.parent = None  # Remove from scene graph.
-
-
-def _chunk_outline(chunk: ChunkData) -> np.ndarray:
-    """Return the line verts that outline this single chunk.
-
-    Parameters
-    ----------
-    chunk : ChunkData
-        Create outline of this chunk.
-
-    Return
-    ------
-    np.ndarray
-        The chunk verts for a line drawn with the 'segments' mode.
-    """
-    x, y = chunk.pos
-    h, w = chunk.data.shape[:2]
-    w *= chunk.scale[1]
-    h *= chunk.scale[0]
-
-    # We draw lines on all four sides of the chunk. This means are
-    # double-drawing all interior lines in the grid. We can avoid
-    # this duplication if it becomes a performance issue.
-    return np.array(
-        (
-            [x, y],
-            [x + w, y],
-            [x + w, y],
-            [x + w, y + h],
-            [x + w, y + h],
-            [x, y + h],
-            [x, y + h],
-            [x, y],
-        ),
-        dtype=np.float32,
-    )
 
 
 class ImageChunk:
@@ -98,50 +63,6 @@ class ImageChunk:
 
         # ImageVisual should be assigned later
         self.node = None
-
-
-class TileGrid:
-    """The grid that shows the outlines of all the tiles.
-
-    Attributes
-    ----------
-    parent : Node
-        The parent of the grid.
-    """
-
-    def __init__(self, parent: Node):
-        self.parent = parent
-        self.line = self._create_line()
-
-    def _create_line(self) -> Line:
-        """Create the Line visual for the grid.
-
-        Return
-        ------
-        Line
-            The new Line visual.
-        """
-        line = Line(connect='segments', color=GRID_COLOR, width=GRID_WIDTH)
-        line.order = LINE_VISUAL_ORDER
-        line.parent = self.parent
-        return line
-
-    def update_grid(self, chunks: List[ImageChunk]) -> None:
-        """Update grid for this set of chunks.
-
-        Parameters
-        ----------
-        chunks : List[ImageChunks]
-            Add a grid that outlines these chunks.
-        """
-        # TODO_OCTREE: create in one go without vstack?
-        verts = np.zeros((0, 2), dtype=np.float32)
-        for image_chunk in chunks:
-            chunk_verts = _chunk_outline(image_chunk.chunk_data)
-            verts = np.vstack([verts, chunk_verts])
-
-        self.line.set_data(verts)
-        self.verts = verts
 
 
 class VispyCompoundImageLayer(VispyImageLayer):
@@ -236,7 +157,7 @@ class VispyCompoundImageLayer(VispyImageLayer):
         num_seen = len(visible_chunks)
 
         # Set is keyed by id(chunk_data.data) and chunk_data.level_index
-        visible_set = set([c.key for c in visible_chunks])
+        visible_set = set(c.key for c in visible_chunks)
 
         num_start = len(self.image_chunks)
 
