@@ -27,39 +27,6 @@ class OctreeInfo:
         self.tile_size = tile_size
 
 
-class OctreeLevelInfo:
-    """Information about one level of the octree.
-
-    Parameters
-    ----------
-    octree_info : OctreeInfo
-        Information about the entire octree.
-    level_index : int
-        The index of this level within the whole tree.
-    shape_in_tiles : Tuple[int, int]
-        The (height, width) dimensions of this level in terms of tiles.
-    """
-
-    def __init__(
-        self,
-        octree_info: OctreeInfo,
-        level_index: int,
-        shape_in_tiles: Tuple[int, int],
-    ):
-        self.octree_info = octree_info
-
-        self.level_index = level_index
-        self.scale = 2 ** self.level_index
-
-        base = self.octree_info.base_shape
-        self.image_shape = (
-            int(base[0] / self.scale),
-            int(base[1] / self.scale),
-        )
-
-        self.shape_in_tiles = shape_in_tiles
-
-
 # TODO_OCTREE: this class is placeholder, needs work
 class ChunkData:
     """One chunk of the full image.

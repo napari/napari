@@ -136,13 +136,13 @@ class QtOctreeInfoLayout(QVBoxLayout):
 
         level_info = layer.octree_level_info
 
-        tile_shape = level_info.tile_shape
-        tile_shape_str = _str(tile_shape)
-        num_tiles = tile_shape[0] * tile_shape[1]
+        shape_in_tiles = level_info.shape_in_tiles
+        shape_in_tiles_str = _str(shape_in_tiles)
+        num_tiles = shape_in_tiles[0] * shape_in_tiles[1]
 
         return {
             "Level": f"{layer.octree_level}",
-            "Tiles": f"{tile_shape_str} = {num_tiles}",
+            "Tiles": f"{shape_in_tiles_str} = {num_tiles}",
             "Tile Shape": _str([layer.tile_size, layer.tile_size]),
             "Layer Shape": _str(level_info.image_shape),
         }

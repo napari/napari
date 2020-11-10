@@ -8,7 +8,8 @@ from ....utils.perf import block_timer
 from .._image_slice import ImageSlice
 from .octree import Octree
 from .octree_intersection import OctreeIntersection
-from .octree_util import ChunkData, OctreeInfo, OctreeLevelInfo
+from .octree_level import OctreeLevelInfo
+from .octree_util import ChunkData, OctreeInfo
 
 LOGGER = logging.getLogger("napari.async")
 

@@ -176,7 +176,11 @@ class VispyCompoundImageLayer(VispyImageLayer):
         num_final = len(self.image_chunks)
 
         if SHOW_GRID:
-            self.grid.update_grid(self.image_chunks.values())
+            chunk_datas = [
+                image_chunk.chunk_data
+                for image_chunk in self.image_chunks.values()
+            ]
+            self.grid.update_grid(chunk_datas)
 
         return Stats(num_seen, num_start, num_created, num_deleted, num_final)
 

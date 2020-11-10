@@ -153,10 +153,13 @@ class MiniMap(QLabel):
         intersection : OctreeIntersection
             Draw the view in this intersection.
         """
-        max_y = data.shape[0] - 1
-        max_x = data.shape[1] - 1
+        # Max (row, col) dimensions of the bitmap we are writing into.
+        max_dim = np.array([data.shape[0] - 1, data.shape[1] - 1])
 
-        rows = (intersection.normalized_rows * max_y).astype(int)
-        cols = (intersection.normalized_cols * max_x).astype(int)
+        # Convert normalized ranges into bitmap pixel ranges
+        ranges = (intersection.normalized_range * max_dim).astype(int)
 
+        # Write the view color into this rectangular regions.
+        # TODO_OCTREE: must be a nicer way to index this?
+        rows, cols = ranges[0], ranges[1]
         data[rows[0] : rows[1], cols[0] : cols[1], :] = COLOR_VIEW

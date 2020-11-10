@@ -22,7 +22,7 @@ class OctreeIntersection:
         The lower left and upper right corners of the view in data coordinates.
     """
 
-    def __init__(self, level: OctreeLevel, corners_2d: np.darray):
+    def __init__(self, level: OctreeLevel, corners_2d: np.ndarray):
         self.level = level
         self.corners_2d = corners_2d
 
@@ -35,7 +35,7 @@ class OctreeIntersection:
 
         base = info.octree_info.base_shape
 
-        self.normalized = np.array(
+        self.normalized_range = np.array(
             [
                 np.clip(self.rows / base[0], 0, 1),
                 np.clip(self.cols / base[1], 0, 1),
@@ -68,12 +68,12 @@ class OctreeIntersection:
 
     def row_range(self, span: Tuple[float, float]) -> range:
         """Return row indices which span image coordinates [y0..y1]."""
-        tile_rows = self.level.info.tile_shape[0]
+        tile_rows = self.level.info.shape_in_tiles[0]
         return self.tile_range(span, tile_rows)
 
     def column_range(self, span: Tuple[float, float]) -> range:
         """Return column indices which span image coordinates [x0..x1]."""
-        tile_cols = self.level.info.tile_shape[1]
+        tile_cols = self.level.info.shape_in_tiles[1]
         return self.tile_range(span, tile_cols)
 
     def is_visible(self, row: int, col: int) -> bool:

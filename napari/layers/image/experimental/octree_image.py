@@ -9,7 +9,8 @@ from ..image import Image
 from ._chunked_slice_data import ChunkedSliceData
 from ._octree_image_slice import OctreeImageSlice
 from .octree_intersection import OctreeIntersection
-from .octree_util import ChunkData, OctreeInfo, OctreeLevelInfo
+from .octree_level import OctreeLevelInfo
+from .octree_util import ChunkData, OctreeInfo
 
 DEFAULT_TILE_SIZE = 64
 
