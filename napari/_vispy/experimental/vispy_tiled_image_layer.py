@@ -24,8 +24,8 @@ class ImageTile:
     ----------
     chunk : ChunkData
         The data used to create the tile.
-    node : Optional[ImageVisual]
-        The ImageVisual if one was available.
+    tile_index : int
+        the index of this tile in the texture atlas.
     """
 
     def __init__(self, chunk_data: ChunkData, tile_index: int):
