@@ -61,19 +61,21 @@ class TextureAtlas2D(Texture2D):
         # The full texture's chape in texels, for example 1024x1024.
         height = self.tile_shape[0] * self.shape_in_tiles[0]
         width = self.tile_shape[1] * self.shape_in_tiles[1]
-        self.texture_shape_texels = np.array([width, height], dtype=np.int32)
+
+        # TODO_OCTREE: Hardcode RGB for now
+        self.texture_shape = np.array([width, height, 3], dtype=np.int32)
 
         # Total number of texture slots in the atlas.
         self.num_slots_total = shape_in_tiles[0] * shape_in_tiles[1]
 
         # Free tile indexes.
-        self.free = set(range(0, self.num_slots_total + 1))
+        self.free = set(range(0, self.num_slots_total))
 
         if self.MARK_DELETED_TILES:
             self.deleted_tile_data = np.empty(self.tile_shape)
             self.deleted_tile_data[:] = (1, 0, 0)  # handle RGB or RGBA?
 
-        super().__init__(shape=tuple(self.texture_shape_texels))
+        super().__init__(shape=tuple(self.texture_shape))
 
     @property
     def num_slots_free(self) -> int:
@@ -118,8 +120,8 @@ class TextureAtlas2D(Texture2D):
     def _tex_coords(self, tile_index: int) -> np.ndarray:
 
         offset = self._offset(tile_index)
-        pos = offset / self.texture_shape_texels
-        shape = self.tile_shape[:2] / self.texture_shape_texels
+        pos = offset / self.texture_shape[:2]
+        shape = self.tile_shape[:2] / self.texture_shape[:2]
 
         quad = _QUAD.copy()
         quad[:, :2] *= shape
