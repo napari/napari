@@ -72,8 +72,9 @@ CREATE_IMAGE_COMPOUND = 2
 # This is a single visual that can draw many tiles.
 CREATE_IMAGE_TILED = 3
 
-# The QtTestImage widget toggles this config setting at runtime.
-create_image_type = CREATE_IMAGE_COMPOUND
+# The default type of image the QtTestImage widget will create. If the user
+# selects another type of image, the widget will change this config value.
+create_image_type = CREATE_IMAGE_TILED
 
 
 def create_octree_image() -> bool:

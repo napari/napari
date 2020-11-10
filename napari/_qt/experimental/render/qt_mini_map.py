@@ -104,7 +104,7 @@ class MiniMap(QLabel):
         scale_x = map_shape[1] / level.info.image_shape[1]
         scale_y = map_shape[0] / level.info.image_shape[0]
 
-        # OCTREE_TODO: Consider this Qt bitmap rendering code just a rough
+        # TODO_OCTREE: Consider this Qt bitmap rendering code just a rough
         # proof-of-concept prototype. A real minimap should probably be a
         # little OpenGL window, not a Qt bitmap. If we used OpenGL the GPU
         # does most of the work and we get better quality and effects, like

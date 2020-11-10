@@ -1,6 +1,6 @@
 """TiledImageVisual class
 """
-from typing import Dict, List, Set
+from typing import Dict, List, Optional, Set, Tuple
 
 import numpy as np
 from vispy.gloo.buffer import VertexBuffer
@@ -9,18 +9,27 @@ from ...layers.image.experimental.octree_util import ChunkData
 from ..vendored import ImageVisual
 from .texture_atlas import TexInfo, TextureAtlas2D
 
-# Tile shape in pixels. Hardcode for now.
-TILE_SHAPE = (512, 512)
-
 # Shape of she whole texture in tiles. Hardcode for now.
-TEXTURE_SHAPE = (4, 4)
+SHAPE_IN_TILES = (4, 4)
 
 
 # Two triangles to cover a [0..1, 0..1] quad.
 _QUAD = np.array(
-    [[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 0, 0], [1, 1, 0], [0, 1, 0]],
+    [
+        [0, 0, 0],
+        [1, 0, 0],
+        [1, 1, 0],
+        [0, 0, 0],
+        [0, 0, 0],
+        [1, 1, 0],
+        [0, 1, 0],
+        [0, 0, 0],
+    ],
     dtype=np.float32,
 )
+
+# Either 2d shape or 2d shape plus 3 or 4 colors.
+ImageShape = Tuple[int, int, Optional[int]]
 
 
 class TileData:
@@ -44,22 +53,24 @@ def _vert_quad(chunk_data: ChunkData):
 
     # TODO_OCTREE: store as np.array in ChunkData?
     scale = np.array(chunk_data.scale, dtype=np.float32)
+    scaled_shape = chunk_data.data.shape[:2] * scale
 
     # Modify XY's into place
-    quad[:, :2] *= chunk_data.data.shape * scale
+    quad[:, :2] *= scaled_shape
     quad[:, :2] += chunk_data.pos
 
     return quad
 
 
 def _tex_quad(chunk_data: ChunkData):
-    quad = _QUAD.copy()
+    quad = _QUAD.copy()[:, :2]
 
     # TODO_OCTREE: store as np.array in ChunkData?
     scale = np.array(chunk_data.scale, dtype=np.float32)
+    scaled_shape = chunk_data.data.shape[:2] * scale
 
     # Modify XY's into place
-    quad[:, :2] *= chunk_data.data.shape * scale
+    quad[:, :2] *= scaled_shape
     quad[:, :2] += chunk_data.pos
 
     return quad
@@ -95,13 +106,14 @@ class TiledImageVisual(ImageVisual):
     in the same large texture, there will be zero texture swaps.
     """
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+    def __init__(self, tile_shape: ImageShape, *args, **kwargs):
         self.tiles: Dict[int, TileData] = {}
-
         self._verts = VertexBuffer()
         self._tex_coords = VertexBuffer()
-        self.texture_atlas = TextureAtlas2D(TILE_SHAPE, TEXTURE_SHAPE)
+        self.texture_atlas = TextureAtlas2D(tile_shape, SHAPE_IN_TILES)
+
+        # This freezes the class, so can't add attributes after this.
+        super().__init__(*args, **kwargs)
 
     @property
     def num_tiles(self) -> int:
@@ -121,7 +133,7 @@ class TiledImageVisual(ImageVisual):
         List[ChunkData]
             The data for the chunks we are drawing.
         """
-        # OCTREE_TODO: return iterator instead?
+        # TODO_OCTREE: return iterator instead?
         return [tile_data.chunk_data for tile_data in self.tiles.values()]
 
     def __contains__(self, chunk_data):
@@ -175,15 +187,20 @@ class TiledImageVisual(ImageVisual):
                 self.remove_tile(tile_index)
 
     def _compute_buffers(self) -> None:
-
+        """Create the vertex and texture coordinate buffers."""
         verts = np.zeros((0, 3), dtype=np.float32)
         tex_coords = np.zeros((0, 2), dtype=np.float32)
 
         # TODO_OCTREE: avoid vstack, create one buffer up front
         # for all the verts/tex_coords in all the tiles?
         for tile_data in self.tiles.values():
-            verts = np.vstack(verts, _vert_quad(tile_data.chunk_data))
-            tex_coords = np.vstack(tex_coords, _tex_quad(tile_data.tex_info))
+            chunk_data = tile_data.chunk_data
+
+            vert_quad = _vert_quad(chunk_data)
+            verts = np.vstack((verts, vert_quad))
+
+            tex_quad = _tex_quad(chunk_data)
+            tex_coords = np.vstack((tex_coords, tex_quad))
 
         self._verts.set_data(verts.astype('float32'))
         self._tex_coords.set_data(tex_coords.astype('float32'))

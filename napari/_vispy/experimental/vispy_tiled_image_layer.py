@@ -37,17 +37,21 @@ class VispyTiledImageLayer(VispyImageLayer):
     """A tile image using a single TiledImageVisual."""
 
     def __init__(self, layer):
-        # VispyImageLayer creates an ImageNode which it passes to
-        # VispyBaseLayer and it becomes VispyBaseLayer.node. We don't use
-        # that visual to draw anything, to we put our TiledImageVisual
-        # under it in the scene graph.
+        # TODO_OCTREE:
         #
-        # OCTREE_TODO: We could later modify VispyImageLayer so we can pass
-        # it our TiledImageVisual and have that become VispyBaseLayer.node,
-        # so there is not an parent ImageVisual which is doing nothing.
+        # Our parent VispyImageLayer creates an ImageVisual that gets
+        # passed into VispyBaseLayer and it becomes VispyBaseLayer.node.
+        #
+        # We're not using this ImageVisual for anything except as a scene
+        # graph parent. So we could clean up these 3 classes to get rid
+        # of that do-nothing ImageVisual we if we wanted to:
+        #
+        # VispyTiledImageLayer -> VispyImageLayer -> VispyBaseLayer
+        #
+        # But it works fine like this.
         super().__init__(layer)
 
-        self.visual = TiledImageVisual()
+        self.visual = TiledImageVisual(tile_shape=layer.tile_shape)
 
         if SHOW_GRID:
             self.grid = TileGrid(self.node)
@@ -83,18 +87,18 @@ class VispyTiledImageLayer(VispyImageLayer):
         # TODO_OCTREE: use __hash__ not ChunkData.key?
         visible_set = set(c.key for c in visible_chunks)
 
-        num_start = len(self.num_tiles)
+        num_start = self.num_tiles
 
         # Remnove tiles for chunks which are no longer visible.
         self._remove_stale_tiles(visible_set)
 
-        num_low = len(self.num_tiles)
+        num_low = self.num_tiles
         num_deleted = num_start - num_low
 
         # Add tiles for visible chunks that do not already have a tile.
         self._add_new_tiles(visible_chunks)
 
-        num_final = len(self.num_tiles)
+        num_final = self.num_tiles
         num_created = num_final - num_low
 
         if SHOW_GRID:
@@ -113,7 +117,7 @@ class VispyTiledImageLayer(VispyImageLayer):
             return  # Not actively creating new visuals.
 
         for chunk_data in visible_chunks:
-            if chunk_data.key not in self.visual:
+            if chunk_data not in self.visual:
                 self._add_tile(chunk_data)  # Add a tile for this chunk.
 
     def _add_tile(self, chunk_data: ChunkData) -> ImageTile:

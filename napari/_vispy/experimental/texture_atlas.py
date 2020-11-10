@@ -48,30 +48,32 @@ class TextureAtlas2D(Texture2D):
     MARK_DELETED_TILES = True
 
     def __init__(
-        self, tile_shape: Tuple[int, int], texture_shape_tiles: Tuple[int, int]
+        self,
+        tile_shape: Tuple[int, int, int],
+        shape_in_tiles: Tuple[int, int],
     ):
-        super().__init__()
-
-        # Each tile's shape in texels.
+        # Each tile's shape in texels, for example 256x256.
         self.tile_shape = tile_shape
 
-        # The full texture's shape in terms of tiles.
-        self.texture_shape_tiles = texture_shape_tiles
+        # The full texture's shape in tiles, for example 4x4.
+        self.shape_in_tiles = shape_in_tiles
+
+        # The full texture's chape in texels, for example 1024x1024.
+        height = self.tile_shape[0] * self.shape_in_tiles[0]
+        width = self.tile_shape[1] * self.shape_in_tiles[1]
+        self.texture_shape_texels = np.array([width, height], dtype=np.int32)
 
         # Total number of texture slots in the atlas.
-        self.num_slots_total = texture_shape_tiles[0] * texture_shape_tiles[1]
-
-        height = self.tile_shape[0] * self.texture_shape_tiles[0]
-        width = self.tile_shape[1] * self.texture_shape_tiles[1]
-        self.texture_shape_texels = np.array([width, height], dtype=np.int32)
+        self.num_slots_total = shape_in_tiles[0] * shape_in_tiles[1]
 
         # Free tile indexes.
         self.free = set(range(0, self.num_slots_total + 1))
 
         if self.MARK_DELETED_TILES:
-            self.deleted_tile_data = np.fill(
-                self.tile_shape + (4,), (1, 0, 0, 1)
-            )
+            self.deleted_tile_data = np.empty(self.tile_shape)
+            self.deleted_tile_data[:] = (1, 0, 0)  # handle RGB or RGBA?
+
+        super().__init__(shape=tuple(self.texture_shape_texels))
 
     @property
     def num_slots_free(self) -> int:
@@ -108,7 +110,7 @@ class TextureAtlas2D(Texture2D):
         Tuple[int, int]
             The (X, Y) offset of this tile in texels.
         """
-        height_tiles, width_tiles = self.texture_shape_tiles
+        height_tiles, width_tiles = self.shape_in_tiles
         row = int(tile_index / height_tiles)
         col = tile_index % width_tiles
         return row * self.tile_shape[0], col * self.tile_shape[1]
@@ -117,7 +119,7 @@ class TextureAtlas2D(Texture2D):
 
         offset = self._offset(tile_index)
         pos = offset / self.texture_shape_texels
-        shape = self.tile_shape / self.texture_shape_texels
+        shape = self.tile_shape[:2] / self.texture_shape_texels
 
         quad = _QUAD.copy()
         quad[:, :2] *= shape
@@ -132,8 +134,11 @@ class TextureAtlas2D(Texture2D):
         ----------
         data : np.ndarray
         """
-
-        assert data.shape == self.tile_shape
+        if data.shape != self.tile_shape:
+            raise ValueError(
+                f"Tile shape {data.shape} does not match TextureAtlas2D "
+                f"tile size {self.tile_shape}"
+            )
 
         try:
             tile_index = self.free.pop()

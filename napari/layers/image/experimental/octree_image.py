@@ -56,7 +56,7 @@ class OctreeImage(Image):
 
     @property
     def tile_size(self) -> int:
-        """Return the edge length of single tile (e.g. 256).
+        """Return the edge length of single tile, for example 256.
 
         Return
         ------
@@ -64,6 +64,30 @@ class OctreeImage(Image):
             The edge length of a single tile.
         """
         return self._tile_size
+
+    @property
+    def tile_shape(self) -> tuple:
+        """Return the shape of a single tile, for example 256x256x3.
+
+        Return
+        ------
+        tuple
+            The shape of a single tile.
+        """
+        # TODO_OCTREE: Must be an easier way to get this shape based on
+        # information already stored in Image class?
+        if self.multiscale:
+            init_shape = self.data[0].shape
+        else:
+            init_shape = self.data.shape
+
+        tile_shape = (self.tile_size, self.tile_size)
+
+        if self.rgb:
+            # Add the color dimension (usually 3 or 4)
+            tile_shape += (init_shape[-1],)
+
+        return tile_shape
 
     @tile_size.setter
     def tile_size(self, tile_size: int) -> None:

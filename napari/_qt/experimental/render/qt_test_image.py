@@ -14,6 +14,7 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
 )
 
+from ....components.experimental.chunk import async_config
 from ....utils import config
 from .qt_render_widgets import QtLabeledComboBox, QtLabeledSpinBox
 from .test_image import create_test_image
@@ -21,7 +22,6 @@ from .test_image import create_test_image
 Callback = Callable[[], None]
 IntCallback = Callable[[int], None]
 
-TILE_SIZE_DEFAULT = 64
 TILE_SIZE_RANGE = range(1, 4096, 100)
 
 IMAGE_SHAPE_DEFAULT = (1024, 1024)  # (height, width)
@@ -33,6 +33,7 @@ IMAGE_TYPES = {
     "Compound": config.CREATE_IMAGE_COMPOUND,
     "Tiled": config.CREATE_IMAGE_TILED,
 }
+IMAGE_TYPE_DEFAULT = "Tiled"
 
 # Allow the user to pick test images by name. If the "shape" is none then
 # the user can chose the shape with two spin controls.
@@ -144,7 +145,7 @@ class QtTestImageLayout(QVBoxLayout):
 
         # The tile size is available with either type of octree layer.
         self.tile_size = QtLabeledSpinBox(
-            "Tile Size", TILE_SIZE_DEFAULT, TILE_SIZE_RANGE
+            "Tile Size", async_config.octree.tile_size, TILE_SIZE_RANGE
         )
         self.addWidget(self.tile_size)
 
@@ -265,4 +266,10 @@ class QtTestImage(QFrame):
 
         # Add the new image layer.
         layer = self.viewer.add_image(data, rgb=True, name=unique_name)
+
+        # We've not (yet?) added OctreeImage-specific arguments to the
+        # OctreeImage constructor, because those arguments are special
+        # since they have to match the viewer add_image() method.
+        #
+        # So for now we just set these after construction.
         layer.tile_size = self.layout.get_tile_size()
