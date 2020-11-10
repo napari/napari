@@ -169,7 +169,7 @@ class TiledImageVisual(ImageVisual):
         self.tiles: Dict[int, TileData] = {}
         self._verts = VertexBuffer()
         self._tex_coords = VertexBuffer()
-        self.texture_atlas = TextureAtlas2D(tile_shape, SHAPE_IN_TILES)
+        self._texture_atlas = TextureAtlas2D(tile_shape, SHAPE_IN_TILES)
 
         # This freezes the class, so can't add attributes after this.
         super().__init__(*args, **kwargs)
@@ -194,7 +194,7 @@ class TiledImageVisual(ImageVisual):
         int
             The number of tiles currently being drawn.
         """
-        return self.texture_atlas.num_slots_used
+        return self._texture_atlas.num_slots_used
 
     @property
     def chunk_data(self) -> List[ChunkData]:
@@ -222,7 +222,7 @@ class TiledImageVisual(ImageVisual):
         int
             The tile index.
         """
-        tex_info = self.texture_atlas.add_tile(chunk_data.data)
+        tex_info = self._texture_atlas.add_tile(chunk_data.data)
         tile_index = tex_info.tile_index
         self.tiles[tile_index] = TileData(chunk_data, tex_info)
         self._need_vertex_update = True
@@ -239,7 +239,7 @@ class TiledImageVisual(ImageVisual):
         """
         try:
             del self.tiles[tile_index]
-            self.texture_atlas.remove_tile(tile_index)
+            self._texture_atlas.remove_tile(tile_index)
         except IndexError:
             # TODO_OCTREE: for now just raise
             raise RuntimeError(f"Tile index {tile_index} not found.")
@@ -301,6 +301,10 @@ class TiledImageVisual(ImageVisual):
 
         if self._need_interpolation_update:
             self._build_interpolation()
+
+            # _build_interpolation() set this to self._texture so
+            # we set it to our atlas instead.
+            self._data_lookup_fn['texture'] = self._texture_atlas
 
         # Comment out for now but we need to this clim part?
         if self._need_texture_upload:
