@@ -72,6 +72,9 @@ class VispyTiledImageLayer(VispyImageLayer):
         """
         return self.visual.num_tiles
 
+    def _set_node_data(self, node, data):
+        pass
+
     def _update_view(self) -> None:
         """Add or removes tiles to match the current view.
 
