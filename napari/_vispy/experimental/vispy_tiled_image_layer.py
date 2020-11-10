@@ -3,11 +3,15 @@
 from collections import namedtuple
 from typing import List, Set
 
+from vispy.scene.visuals import create_visual_node
+
 from ...layers.image.experimental.octree_util import ChunkData
 from ...utils.perf import block_timer
 from ..vispy_image_layer import VispyImageLayer
 from .tile_grid import TileGrid
 from .tiled_image_visual import TiledImageVisual
+
+TiledImage = create_visual_node(TiledImageVisual)
 
 # TODO_OCTREE: hook up to QtRender UI
 SHOW_GRID = True
@@ -51,7 +55,8 @@ class VispyTiledImageLayer(VispyImageLayer):
         # But it works fine like this.
         super().__init__(layer)
 
-        self.visual = TiledImageVisual(tile_shape=layer.tile_shape)
+        self.visual = TiledImage(tile_shape=layer.tile_shape)
+        self.visual.parent = self.node
 
         if SHOW_GRID:
             self.grid = TileGrid(self.node)
