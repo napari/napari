@@ -146,7 +146,9 @@ class TextureAtlas2D(Texture2D):
             tile_index = self.free.pop()
         except KeyError:
             # TODO_OCTREE: just raise something for now
-            raise RuntimeError("Tile is wrong shape")
+            raise RuntimeError(
+                "All {self.num_slots} TextureAtlas2D slots are full"
+            )
 
         self._set_tile_data(tile_index, data)
         tex_coords = self._tex_coords(tile_index)
