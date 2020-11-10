@@ -14,6 +14,10 @@ def _set(env_var: str) -> bool:
     return os.getenv(env_var, "0") != "0"
 
 
+# Temporary
+allow_welcome_visual = False
+
+
 """
 Experimental Image Configuration.
 

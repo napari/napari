@@ -198,7 +198,7 @@ class QtViewer(QSplitter):
         )
         self.canvas.events.resize.connect(self.scale_bar._on_position_change)
 
-        self._show_welcome = welcome
+        self._show_welcome = welcome and config.allow_welcome_visual
         if self._show_welcome:
             self.welcome = VispyWelcomeVisual(
                 self.viewer, parent=self.view, order=-100
