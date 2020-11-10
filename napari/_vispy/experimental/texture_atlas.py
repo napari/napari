@@ -72,7 +72,7 @@ class TextureAtlas2D(Texture2D):
         self.free = set(range(0, self.num_slots_total))
 
         if self.MARK_DELETED_TILES:
-            self.deleted_tile_data = np.empty(self.tile_shape)
+            self.deleted_tile_data = np.empty(self.tile_shape, dtype=np.uint8)
             self.deleted_tile_data[:] = (1, 0, 0)  # handle RGB or RGBA?
 
         super().__init__(shape=tuple(self.texture_shape))
