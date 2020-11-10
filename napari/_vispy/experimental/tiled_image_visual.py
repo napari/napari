@@ -10,7 +10,7 @@ from ..vendored import ImageVisual
 from .texture_atlas import TexInfo, TextureAtlas2D
 
 # Shape of she whole texture in tiles. Hardcode for now.
-SHAPE_IN_TILES = (4, 4)
+SHAPE_IN_TILES = (16, 16)
 
 
 # Two triangles to cover a [0..1, 0..1] quad.
@@ -156,8 +156,6 @@ class TiledImageVisual(ImageVisual):
         tile_index = tex_info.tile_index
         self.tiles[tile_index] = TileData(chunk_data, tex_info)
 
-        self._compute_buffers()
-
         return tile_index
 
     def remove_tile(self, tile_index: int) -> None:
@@ -186,8 +184,12 @@ class TiledImageVisual(ImageVisual):
                 tile_index = tile_data.tex_info.tile_index
                 self.remove_tile(tile_index)
 
-    def _compute_buffers(self) -> None:
-        """Create the vertex and texture coordinate buffers."""
+    def _build_vertex_data(self):
+        """Build vertex and texture coordinate buffers.
+
+        This overrides ImageVisual._build_vertex_data(), it is called from
+        Image.Visual_prepare_draw().
+        """
         verts = np.zeros((0, 3), dtype=np.float32)
         tex_coords = np.zeros((0, 2), dtype=np.float32)
 
@@ -202,5 +204,6 @@ class TiledImageVisual(ImageVisual):
             tex_quad = _tex_quad(chunk_data)
             tex_coords = np.vstack((tex_coords, tex_quad))
 
-        self._verts.set_data(verts.astype('float32'))
-        self._tex_coords.set_data(tex_coords.astype('float32'))
+        # Set ImageVisual _subdiv_ buffers
+        self._subdiv_position = verts.astype('float32')
+        self._subdiv_texcoord = tex_coords.astype('float32')
