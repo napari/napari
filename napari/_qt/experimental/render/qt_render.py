@@ -7,7 +7,7 @@ from qtpy.QtWidgets import QVBoxLayout, QWidget
 from ....layers.image import Image
 from ....layers.image.experimental.octree_image import OctreeImage
 from .qt_image_info import QtImageInfo
-from .qt_mini_map import MiniMap
+from .qt_mini_map import QtMiniMap
 from .qt_octree_info import QtOctreeInfo
 from .qt_test_image import QtTestImage
 
@@ -40,7 +40,7 @@ class QtRender(QWidget):
         if isinstance(layer, OctreeImage):
             layout.addWidget(QtOctreeInfo(layer))
 
-            self.mini_map = MiniMap(viewer, layer)
+            self.mini_map = QtMiniMap(viewer, layer)
             layout.addWidget(self.mini_map)
             self.viewer.camera.events.center.connect(self._on_camera_move)
 

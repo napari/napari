@@ -21,15 +21,13 @@ COLOR_UNSEEN = (80, 80, 80, 255)  # gray
 COLOR_VIEW = (227, 220, 111, 255)  # yellow
 
 
-class MiniMap(QLabel):
+class QtMiniMap(QLabel):
     """A small bitmap that shows the view bounds and which tiles are seen.
 
     Only works with OctreeImage layers.
 
     Parameters
     ----------
-    viewer : Viewer
-        The napari viewer.
     layer : OctreeImage
         The octree image we are viewing.
     """
@@ -39,7 +37,6 @@ class MiniMap(QLabel):
 
     def __init__(self, viewer: ViewerModel, layer: OctreeImage):
         super().__init__()
-        self.viewer = viewer
         self.layer = layer
 
     def update(self) -> None:
