@@ -34,14 +34,14 @@ class VispySurfaceLayer(VispyBaseLayer):
             vertex_values = np.array([0])
         else:
             # Offsetting so pixels now centered
-            vertices = self.layer._data_view[:, ::-1] + 0.5
+            vertices = self.layer._data_view[:, ::-1]
             faces = self.layer._view_faces
             vertex_values = self.layer._view_vertex_values
 
         if (
             vertices is not None
-            and self.layer.dims.ndisplay == 3
-            and self.layer.dims.ndim == 2
+            and self.layer._dims.ndisplay == 3
+            and self.layer._dims.ndim == 2
         ):
             vertices = np.pad(vertices, ((0, 0), (0, 1)))
         self.node.set_data(
@@ -49,8 +49,7 @@ class VispySurfaceLayer(VispyBaseLayer):
         )
         self.node.update()
         # Call to update order of translation values with new dims:
-        self._on_scale_change()
-        self._on_translate_change()
+        self._on_matrix_change()
 
     def _on_colormap_change(self, event=None):
         if self.layer.gamma != 1:
@@ -62,7 +61,7 @@ class VispySurfaceLayer(VispyBaseLayer):
             cmap = VispyColormap(colors)
         else:
             cmap = VispyColormap(*self.layer.colormap)
-        if self.layer.dims.ndisplay == 3:
+        if self.layer._dims.ndisplay == 3:
             self.node.view_program['texture2D_LUT'] = (
                 cmap.texture_lut() if (hasattr(cmap, 'texture_lut')) else None
             )

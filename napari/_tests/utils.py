@@ -1,7 +1,15 @@
 import numpy as np
 
 from napari import Viewer
-from napari.layers import Image, Labels, Points, Shapes, Surface, Vectors
+from napari.layers import (
+    Image,
+    Labels,
+    Points,
+    Shapes,
+    Surface,
+    Tracks,
+    Vectors,
+)
 
 """
 Used as pytest params for testing layer add and view functionality (Layer class, data, ndim)
@@ -9,6 +17,7 @@ Used as pytest params for testing layer add and view functionality (Layer class,
 layer_test_data = [
     (Image, np.random.random((10, 15)), 2),
     (Image, np.random.random((10, 15, 20)), 3),
+    (Image, np.random.random((5, 10, 15, 20)), 4),
     (Image, [np.random.random(s) for s in [(40, 20), (20, 10), (10, 5)]], 2),
     (Labels, np.random.randint(20, size=(10, 15)), 2),
     (Labels, np.random.randint(20, size=(6, 10, 15)), 3),
@@ -26,10 +35,24 @@ layer_test_data = [
         ),
         3,
     ),
+    (
+        Tracks,
+        np.column_stack(
+            (np.ones(20), np.arange(20), 20 * np.random.random((20, 2)))
+        ),
+        3,
+    ),
+    (
+        Tracks,
+        np.column_stack(
+            (np.ones(20), np.arange(20), 20 * np.random.random((20, 3)))
+        ),
+        4,
+    ),
 ]
 
 
-classes = [Labels, Points, Vectors, Shapes, Surface, Image]
+classes = [Labels, Points, Vectors, Shapes, Surface, Tracks, Image]
 names = [cls.__name__.lower() for cls in classes]
 layer2addmethod = {
     cls: getattr(Viewer, 'add_' + name) for cls, name in zip(classes, names)
@@ -142,17 +165,17 @@ def check_layer_world_data_extent(layer, extent, scale, translate):
     translate : array, shape (D,)
         Translation to be applied to layer.
     """
-    np.testing.assert_almost_equal(layer._extent_data, extent)
-    np.testing.assert_almost_equal(layer._extent_world, extent)
+    np.testing.assert_almost_equal(layer.extent.data, extent)
+    np.testing.assert_almost_equal(layer.extent.world, extent)
 
     # Apply scale transformation
     layer.scale = scale
     scaled_extent = np.multiply(extent, scale)
-    np.testing.assert_almost_equal(layer._extent_data, extent)
-    np.testing.assert_almost_equal(layer._extent_world, scaled_extent)
+    np.testing.assert_almost_equal(layer.extent.data, extent)
+    np.testing.assert_almost_equal(layer.extent.world, scaled_extent)
 
     # Apply translation transformation
     layer.translate = translate
     translated_extent = np.add(scaled_extent, translate)
-    np.testing.assert_almost_equal(layer._extent_data, extent)
-    np.testing.assert_almost_equal(layer._extent_world, translated_extent)
+    np.testing.assert_almost_equal(layer.extent.data, extent)
+    np.testing.assert_almost_equal(layer.extent.world, translated_extent)

@@ -59,15 +59,15 @@ class Dims:
             ndisplay=None,
             order=None,
             range=None,
-            camera=None,
-            deprecated={"axis": "current_step"},
+            last_used=None,
+            deprecated={"axis": "current_step", "camera": "ndisplay"},
         )
         self._range = []
         self._current_step = []
         self._order = []
         self._axis_labels = []
         self._scroll_progress = 0
-        self.last_used = None
+        self._last_used = None
         self._ndisplay = 2 if ndisplay is None else ndisplay
 
         if ndim is None and order is None and axis_labels is None:
@@ -104,7 +104,7 @@ class Dims:
         """Number of slider steps for each dimension.
         """
         return [
-            int((max_val - min_val - step_size) // step_size) + 1
+            int((max_val - min_val) // step_size) + 1
             for min_val, max_val, step_size in self._range
         ]
 
@@ -148,6 +148,18 @@ class Dims:
             self.events.axis_labels(axis=axis)
 
     @property
+    def last_used(self):
+        """int: Index of the last used slider."""
+        return self._last_used
+
+    @last_used.setter
+    def last_used(self, last_used):
+        if self._last_used == last_used:
+            return
+        self._last_used = last_used
+        self.events.last_used()
+
+    @property
     def order(self):
         """List of int: Display order of dimensions."""
         return copy(self._order)
@@ -164,7 +176,6 @@ class Dims:
 
         self._order = order
         self.events.order()
-        self.events.camera()
 
     @property
     def ndim(self):
@@ -247,10 +258,8 @@ class Dims:
             raise ValueError(
                 f"Invalid number of dimensions to be displayed {ndisplay}"
             )
-
         self._ndisplay = ndisplay
         self.events.ndisplay()
-        self.events.camera()
 
     @property
     def displayed(self):
@@ -359,6 +368,30 @@ class Dims:
         if axis is not None:
             self.set_current_step(axis, self.current_step[axis] - 1)
 
+    def _focus_up(self):
+        """Shift focused dimension slider to be the next slider above."""
+        sliders = [d for d in self.not_displayed if self.nsteps[d] > 1]
+        if len(sliders) == 0:
+            return
+
+        if self.last_used is None:
+            self.last_used = sliders[-1]
+        else:
+            index = (sliders.index(self.last_used) + 1) % len(sliders)
+            self.last_used = sliders[index]
+
+    def _focus_down(self):
+        """Shift focused dimension slider to be the next slider bellow."""
+        sliders = [d for d in self.not_displayed if self.nsteps[d] > 1]
+        if len(sliders) == 0:
+            return
+
+        if self.last_used is None:
+            self.last_used = sliders[-1]
+        else:
+            index = (sliders.index(self.last_used) - 1) % len(sliders)
+            self.last_used = sliders[index]
+
     def set_axis_label(self, axis: int, label: str):
         """Sets a new axis label for the given axis.
 
@@ -398,7 +431,10 @@ class Dims:
 
     def _roll(self):
         """Roll order of dimensions for display."""
-        self.order = np.roll(self.order, 1)
+        order = np.array(self.order)
+        nsteps = np.array(self.nsteps)
+        order[nsteps > 1] = np.roll(order[nsteps > 1], 1)
+        self.order = list(order)
 
     def _transpose(self):
         """Transpose displayed dimensions."""

@@ -50,7 +50,7 @@ class QtImageControls(QtBaseImageControls):
         self.layer.events.rendering.connect(self._on_rendering_change)
         self.layer.events.iso_threshold.connect(self._on_iso_threshold_change)
         self.layer.events.attenuation.connect(self._on_attenuation_change)
-        self.layer.dims.events.ndisplay.connect(self._on_ndisplay_change)
+        self.layer._dims.events.ndisplay.connect(self._on_ndisplay_change)
         self.layer.events.data.connect(self._on_data_change)
         self.layer.events.complex_rendering.connect(
             self._on_complex_rendering_change
@@ -100,8 +100,13 @@ class QtImageControls(QtBaseImageControls):
         self.complexComboBox.currentTextChanged.connect(self.changeComplex)
 
         colormap_layout = QHBoxLayout()
-        colormap_layout.addWidget(self.colorbarLabel)
-        colormap_layout.addWidget(self.colormapComboBox)
+        if hasattr(self.layer, 'rgb') and self.layer.rgb:
+            colormap_layout.addWidget(QLabel("RGB"))
+            self.colormapComboBox.setVisible(False)
+            self.colorbarLabel.setVisible(False)
+        else:
+            colormap_layout.addWidget(self.colorbarLabel)
+            colormap_layout.addWidget(self.colormapComboBox)
         colormap_layout.addStretch(1)
 
         self._on_ndisplay_change()
@@ -275,7 +280,7 @@ class QtImageControls(QtBaseImageControls):
 
     def _update_interpolation_combo(self):
         self.interpComboBox.clear()
-        if self.layer.dims.ndisplay == 3:
+        if self.layer._dims.ndisplay == 3:
             interp_enum = Interpolation3D
         elif self.layer.is_complex:
             interp_enum = InterpolationComplex
@@ -297,7 +302,7 @@ class QtImageControls(QtBaseImageControls):
             The napari event that triggered this method, default is None.
         """
         self._update_interpolation_combo()
-        if self.layer.dims.ndisplay == 2:
+        if self.layer._dims.ndisplay == 2:
             self.isoThresholdSlider.hide()
             self.isoThresholdLabel.hide()
             self.attenuationSlider.hide()

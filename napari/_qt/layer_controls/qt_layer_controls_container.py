@@ -1,11 +1,13 @@
 from qtpy.QtWidgets import QFrame, QStackedWidget
 
-from ...layers import Image, Labels, Points, Shapes, Surface, Vectors
+from ...layers import Image, Labels, Points, Shapes, Surface, Tracks, Vectors
+from ...utils import config
 from .qt_image_controls import QtImageControls
 from .qt_labels_controls import QtLabelsControls
 from .qt_points_controls import QtPointsControls
 from .qt_shapes_controls import QtShapesControls
 from .qt_surface_controls import QtSurfaceControls
+from .qt_tracks_controls import QtTracksControls
 from .qt_vectors_controls import QtVectorsControls
 
 layer_to_controls = {
@@ -15,7 +17,13 @@ layer_to_controls = {
     Shapes: QtShapesControls,
     Surface: QtSurfaceControls,
     Vectors: QtVectorsControls,
+    Tracks: QtTracksControls,
 }
+
+if config.async_loading:
+    from ...layers.image.experimental.octree_image import OctreeImage
+
+    layer_to_controls[OctreeImage] = QtImageControls
 
 
 def create_qt_layer_controls(layer):
