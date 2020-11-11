@@ -394,8 +394,8 @@ class TiledImageVisual(ImageVisual):
         if self._need_interpolation_update:
             self._build_interpolation()
 
-            # _build_interpolation() set this to self._texture so
-            # we set it to our atlas instead.
+            # Set the texture to be our atlas, overriding what
+            # _build_interpolation() set it to.
             self._data_lookup_fn['texture'] = self._texture_atlas
 
         # TODO_OCTREE: we call our own _build_texture

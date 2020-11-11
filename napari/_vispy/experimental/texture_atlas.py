@@ -113,7 +113,7 @@ class TextureAtlas2D(Texture2D):
             The (X, Y) offset of this tile in texels.
         """
         height_tiles, width_tiles = self.shape_in_tiles
-        row = int(tile_index / height_tiles)
+        row = int(tile_index / width_tiles)
         col = tile_index % width_tiles
         return col * self.tile_shape[1], row * self.tile_shape[0]
 
@@ -180,13 +180,14 @@ class TextureAtlas2D(Texture2D):
             The new texture data for the tile.
         """
 
-        # Get (X, Y) offset of this tile within the larger texture.
-        offset = self._offset(tile_index)
+        # Covert (X, Y) offset of this tile within the larger texture
+        # in the the (row, col) that Texture2D expects.
+        offset = self._offset(tile_index)[::-1]
 
-        print(f"_set_tile_data tile_index={tile_index} offset={offset}")
+        print(f"_set_tile_data: {tile_index} -> {offset}")
 
-        # data = self.deleted_tile_data
-
-        # Call Texture2D.set_data() which will call glTexSubImage2D() under
-        # the hood to only upload the data for this one tile.
+        # Texture2D.set_data() will use glTexSubImage2D() under the hood to
+        # only write into the tile's portion of the larger texture. This is
+        # the main reason adding tiles to TextureAtlas2D is fast, we do not
+        # have to re-upload the whole texture each time.
         self.set_data(data, offset=offset, copy=True)
