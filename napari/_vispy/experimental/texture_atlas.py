@@ -50,6 +50,7 @@ class TextureAtlas2D(Texture2D):
         self,
         tile_shape: Tuple[int, int, int],
         shape_in_tiles: Tuple[int, int],
+        **kwargs,
     ):
         # Each tile's shape in texels, for example 256x256.
         self.tile_shape = tile_shape
@@ -74,7 +75,7 @@ class TextureAtlas2D(Texture2D):
             self.deleted_tile_data = np.empty(self.tile_shape, dtype=np.uint8)
             self.deleted_tile_data[:] = (1, 0, 0)  # handle RGB or RGBA?
 
-        super().__init__(shape=tuple(self.texture_shape))
+        super().__init__(shape=tuple(self.texture_shape), **kwargs)
 
     @property
     def num_slots_free(self) -> int:
@@ -183,6 +184,8 @@ class TextureAtlas2D(Texture2D):
         offset = self._offset(tile_index)
 
         print(f"_set_tile_data tile_index={tile_index} offset={offset}")
+
+        # data = self.deleted_tile_data
 
         # Call Texture2D.set_data() which will call glTexSubImage2D() under
         # the hood to only upload the data for this one tile.

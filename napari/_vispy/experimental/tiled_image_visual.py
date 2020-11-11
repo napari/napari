@@ -18,6 +18,8 @@ from ..vendored.image import (
 )
 from .texture_atlas import TexInfo, TextureAtlas2D
 
+draw_index = 0
+
 # Shape of she whole texture in tiles. Hardcode for now.
 SHAPE_IN_TILES = (16, 16)
 
@@ -107,6 +109,12 @@ class TileSet:
     def __init__(self):
         self._tiles = {}
         self._chunks = set()
+
+    def size(self) -> int:
+        return len(self._tiles)
+
+    def empty(self) -> int:
+        return self.size() == 0
 
     def add(self, tile_data: TileData) -> None:
         """Add this TiledData to the set.
@@ -202,12 +210,21 @@ class TiledImageVisual(ImageVisual):
         self._tiles = TileSet()
         self._verts = VertexBuffer()
         self._tex_coords = VertexBuffer()
-        self._texture_atlas = TextureAtlas2D(tile_shape, SHAPE_IN_TILES)
 
         self._clim = np.array([0, 1])  # Constant for now.
 
-        # This freezes the class, so can't add attributes after this.
         super().__init__(*args, **kwargs)
+
+        if self._interpolation == 'bilinear':
+            texture_interpolation = 'linear'
+        else:
+            texture_interpolation = 'nearest'
+
+        self.unfreeze()
+        self._texture_atlas = TextureAtlas2D(
+            tile_shape, SHAPE_IN_TILES, interpolation=texture_interpolation
+        )
+        self.freeze()
 
     @property
     def size(self):
@@ -287,6 +304,7 @@ class TiledImageVisual(ImageVisual):
         try:
             self._tiles.remove(tile_index)
             self._texture_atlas.remove_tile(tile_index)
+            self._need_vertex_update = True
         except IndexError:
             # TODO_OCTREE: for now just raise
             raise RuntimeError(f"Tile index {tile_index} not found.")
@@ -306,13 +324,24 @@ class TiledImageVisual(ImageVisual):
         """Build vertex and texture coordinate buffers.
 
         This overrides ImageVisual._build_vertex_data(), it is called from
-        Image.Visual_prepare_draw().
+        our _prepare_draw().
+
+        This is the heart of tiled rendering. Instead of drawing one quad
+        with one texture, we draw one quad per tile. And for each quad its
+        texture coordinates will pull from the right slot in the atlas.
+
+        So as the card draws the tiles, where it's sampling from the
+        texture will hop around in the atlas texture.
         """
+        if self._tiles.empty():
+            return
+
         verts = np.zeros((0, 2), dtype=np.float32)
         tex_coords = np.zeros((0, 2), dtype=np.float32)
 
-        # TODO_OCTREE: avoid vstack, create one buffer up front
-        # for all the verts/tex_coords in all the tiles?
+        # TODO_OCTREE: We can probably avoid vstack here if clever,
+        # maybe one one vertex buffer sized according to the max
+        # number of tiles we expect. But grow if needed.
         for tile_data in self._tiles.tile_data:
             chunk_data = tile_data.chunk_data
 
@@ -322,15 +351,16 @@ class TiledImageVisual(ImageVisual):
             tex_quad = tile_data.tex_info.tex_coord
             tex_coords = np.vstack((tex_coords, tex_quad))
 
-        # print("VERTS")
-        # print(verts)
+        global draw_index
+        print(f"VERTS: {draw_index}")
+        print(verts)
 
-        # print("TEX_COORDS")
-        # print(tex_coords)
+        print(f"TEX_COORDS: {draw_index}")
+        print(tex_coords)
 
         # Set the base ImageVisual _subdiv_ buffers
-        self._subdiv_position = verts.astype('float32')
-        self._subdiv_texcoord = tex_coords.astype('float32')
+        self._subdiv_position.set_data(verts)
+        self._subdiv_texcoord.set_data(tex_coords)
         self._need_vertex_update = False
 
     def _build_texture(self):
@@ -340,8 +370,40 @@ class TiledImageVisual(ImageVisual):
 
         self._texture_limits = np.array([0, 1])  # hardcode
         self._need_colortransform_update = True
-        # self._texture.set_data(data)
+
+        data = np.empty((1024, 1024, 3), dtype=np.uint8)
+        data[:] = (1, 0, 0)  # handle RGB or RGBA?
+
+        self._texture.set_data(data)
         self._need_texture_upload = False
+
+    # The interpolation code could be transferred to a dedicated filter
+    # function in visuals/filters as discussed in #1051
+    def _build_interpolation(self):
+        """Rebuild the _data_lookup_fn using different interpolations within
+        the shader
+        """
+        interpolation = self._interpolation
+        self._data_lookup_fn = self._interpolation_fun[interpolation]
+        self.shared_program.frag['get_data'] = self._data_lookup_fn
+
+        # only 'bilinear' uses 'linear' texture interpolation
+        if interpolation == 'bilinear':
+            texture_interpolation = 'linear'
+        else:
+            # 'nearest' (and also 'bilinear') doesn't use spatial_filters.frag
+            # so u_kernel and shape setting is skipped
+            texture_interpolation = 'nearest'
+            if interpolation != 'nearest':
+                self.shared_program['u_kernel'] = self._kerneltex
+                self._data_lookup_fn['shape'] = self._data.shape[:2][::-1]
+
+        if self._texture.interpolation != texture_interpolation:
+            self._texture.interpolation = texture_interpolation
+
+        self._data_lookup_fn['texture'] = self._texture_atlas
+
+        self._need_interpolation_update = False
 
     def _prepare_draw(self, view):
         """Override of ImageVisual._prepare_draw()
@@ -352,13 +414,16 @@ class TiledImageVisual(ImageVisual):
         # Comment out: we expect our self._data is None
         # if self._data is None:
         #    return False
+        global draw_index
+        print(f"TiledImageVisual._prepare_draw: {draw_index}")
+        draw_index += 1
 
         if self._need_interpolation_update:
             self._build_interpolation()
 
             # _build_interpolation() set this to self._texture so
             # we set it to our atlas instead.
-            self._data_lookup_fn['texture'] = self._texture_atlas
+            # self._data_lookup_fn['texture'] = self._texture_atlas
 
         # TODO_OCTREE: we call our own _build_texture
         if self._need_texture_upload:
@@ -382,6 +447,7 @@ class TiledImageVisual(ImageVisual):
         # TODO_OCTREE: we call our own _build_vertex_data()
         if self._need_vertex_update:
             self._build_vertex_data()
+            # ImageVisual._build_vertex_data(self)
 
         # TODO_OCTREE: we call the base class _update_method()
         if view._need_method_update:
