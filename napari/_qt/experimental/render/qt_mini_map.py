@@ -1,4 +1,4 @@
-"""MiniMap widget.
+"""QtMiniMap widget.
 """
 import math
 
@@ -6,7 +6,6 @@ import numpy as np
 from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import QLabel
 
-from ....components.viewer_model import ViewerModel
 from ....layers.image.experimental import OctreeIntersection, OctreeLevel
 from ....layers.image.experimental.octree_image import OctreeImage
 
@@ -35,7 +34,7 @@ class QtMiniMap(QLabel):
     # Border between the tiles is twice this.
     HALF_BORDER = 1
 
-    def __init__(self, viewer: ViewerModel, layer: OctreeImage):
+    def __init__(self, layer: OctreeImage):
         super().__init__()
         self.layer = layer
 

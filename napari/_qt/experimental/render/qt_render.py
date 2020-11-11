@@ -40,7 +40,7 @@ class QtRender(QWidget):
         if isinstance(layer, OctreeImage):
             layout.addWidget(QtOctreeInfo(layer))
 
-            self.mini_map = QtMiniMap(viewer, layer)
+            self.mini_map = QtMiniMap(layer)
             layout.addWidget(self.mini_map)
             self.viewer.camera.events.center.connect(self._on_camera_move)
 
