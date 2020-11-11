@@ -14,9 +14,6 @@ from .tiled_image_visual import TiledImageVisual
 # Create the scene graph Node version of this visual.
 TiledImageNode = create_visual_node(TiledImageVisual)
 
-# TODO_OCTREE: hook up to QtRender UI
-SHOW_GRID = True
-
 Stats = namedtuple(
     'Stats', "num_seen num_start num_created num_deleted num_final"
 )
@@ -55,8 +52,8 @@ class VispyTiledImageLayer(VispyImageLayer):
         self.visual = TiledImageNode(tile_shape=layer.tile_shape)
         self.visual.parent = self.node
 
-        if SHOW_GRID:
-            self.grid = TileGrid(self.node)
+        # For debugging
+        self.grid = TileGrid(self.node)
 
     @property
     def num_tiles(self) -> int:
@@ -108,8 +105,10 @@ class VispyTiledImageLayer(VispyImageLayer):
         num_final = self.num_tiles
         num_created = num_final - num_low
 
-        if SHOW_GRID:
+        if self.layer.show_grid:
             self.grid.update_grid(self.visual.chunk_data)
+        else:
+            self.grid.clear()
 
         return Stats(num_seen, num_start, num_created, num_deleted, num_final)
 

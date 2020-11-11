@@ -29,6 +29,9 @@ class OctreeImage(Image):
         self._data_corners = None
         self._auto_level = True
         self._track_view = True
+
+        self.show_grid = True  # Get/set directly.
+
         super().__init__(*args, **kwargs)
         self.events.add(auto_level=Event, octree_level=Event, tile_size=Event)
 

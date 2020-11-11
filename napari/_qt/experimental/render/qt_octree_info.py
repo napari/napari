@@ -97,16 +97,22 @@ class QtOctreeInfoLayout(QVBoxLayout):
         layer: OctreeImage,
         on_set_level: IntCallback,
         on_set_track: IntCallback,
+        on_set_grid: IntCallback,
     ):
         super().__init__()
-
-        self.level = QtLevelCombo(layer.num_octree_levels, on_set_level)
-        self.addLayout(self.level)
 
         self.track = QCheckBox("Track View")
         self.track.stateChanged.connect(on_set_track)
         self.track.setChecked(layer.track_view)
         self.addWidget(self.track)
+
+        self.track = QCheckBox("Show Grid")
+        self.track.stateChanged.connect(on_set_grid)
+        self.track.setChecked(layer.show_grid)
+        self.addWidget(self.track)
+
+        self.level = QtLevelCombo(layer.num_octree_levels, on_set_level)
+        self.addLayout(self.level)
 
         self.table = QtSimpleTable()
         self.addWidget(self.table)
@@ -160,7 +166,7 @@ class QtOctreeInfo(QFrame):
         self.layer = layer
 
         self.layout = QtOctreeInfoLayout(
-            layer, self._on_set_level, self._on_set_track
+            layer, self._on_set_level, self._on_set_track, self._on_set_grid
         )
         self.setLayout(self.layout)
 
@@ -190,9 +196,17 @@ class QtOctreeInfo(QFrame):
             self.layer.octree_level = value - 1
 
     def _on_set_track(self, value: int) -> None:
-        """Set whether rendering should track the current value.
+        """If True the tiles are updated based on the current view.
 
         value : int
-            If non-zero then rendering track the view as it moves.
+            If True draw tiles based on the current view.
         """
         self.layer.track_view = value != 0
+
+    def _on_set_grid(self, value: int) -> None:
+        """If True the layer draws a grid around the tiles.
+
+        value : int
+            If True draw the grid.
+        """
+        self.layer.show_grid = value != 0

@@ -66,7 +66,6 @@ class TileGrid:
     def __init__(self, parent: Node):
         self.parent = parent
         self.line = self._create_line()
-        self.verts = np.zeros((0, 2), dtype=np.float32)
 
     def _create_line(self) -> Line:
         """Create the Line visual for the grid.
@@ -96,4 +95,8 @@ class TileGrid:
             verts = np.vstack([verts, chunk_verts])
 
         self.line.set_data(verts)
-        self.verts = verts
+
+    def clear(self) -> None:
+        """Clear the grid so nothing is drawn."""
+        data = np.zeros((0, 2), dtype=np.float32)
+        self.line.set_data(data)
