@@ -109,7 +109,9 @@ def _create_downsampled_tile(*tiles: np.ndarray) -> np.ndarray:
     combined_tile = _combine_tiles(*tiles)
 
     # Down sample by half.
-    return ndi.zoom(combined_tile, [0.5, 0.5, 1])
+    return ndi.zoom(
+        combined_tile, [0.5, 0.5, 1], mode='nearest', prefilter=True, order=1
+    )
 
 
 def _create_coarser_level(tiles: TileArray) -> TileArray:
