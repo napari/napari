@@ -510,7 +510,6 @@ class VolumeVisual(Visual):
 
     @complex_mode.setter
     def complex_mode(self, value):
-        print("set", value)
         if value not in self._complex_modes:
             raise ValueError(
                 "complex_mode must be one of %s"
@@ -547,7 +546,6 @@ class VolumeVisual(Visual):
 
         self._last_data = vol
         if np.iscomplexobj(vol):
-            print("call", complex_renderers[self._complex_mode])
             vol = complex_renderers[self._complex_mode](vol)
 
         # Handle clim
