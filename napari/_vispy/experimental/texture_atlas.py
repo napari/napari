@@ -33,7 +33,7 @@ class TextureAtlas2D(Texture2D):
     # tile we do not need to waste bandwidth clearing the old texture data.
     # We just let that slot get written to later on. However for debugging
     # we can write into that spot to mark it as empty.
-    MARK_DELETED_TILES = True
+    MARK_DELETED_TILES = False
 
     def __init__(
         self,
@@ -71,7 +71,7 @@ class TextureAtlas2D(Texture2D):
 
         if self.MARK_DELETED_TILES:
             self.deleted_tile_data = np.empty(self.tile_shape, dtype=np.uint8)
-            self.deleted_tile_data[:] = (1, 0, 0)  # handle RGB or RGBA?
+            self.deleted_tile_data[:] = (1, 1, 1)  # handle RGB or RGBA?
 
         super().__init__(shape=tuple(self.texture_shape), **kwargs)
 

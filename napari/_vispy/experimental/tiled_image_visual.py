@@ -230,6 +230,9 @@ class TiledImageVisual(ImageVisual):
         )
         self.freeze()
 
+    def set_data(self, image):
+        pass
+
     @property
     def size(self):
         # TODO_OCTREE:

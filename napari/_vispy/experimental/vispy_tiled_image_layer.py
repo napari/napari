@@ -33,24 +33,10 @@ class VispyTiledImageLayer(VispyImageLayer):
     """
 
     def __init__(self, layer):
-        # TODO_OCTREE: Our parent VispyImageLayer creates an ImageVisual
-        # that gets passed into VispyBaseLayer and it becomes
-        # VispyBaseLayer.node.
-        #
-        # We're not using this ImageVisual for anything except as a scene
-        # graph parent. So we could clean up these 3 classes to get rid
-        # of that do-nothing ImageVisual we if we wanted to:
-        #
-        # VispyTiledImageLayer -> VispyImageLayer -> VispyBaseLayer
-        #
-        # We could maybe have VispyBaseLayer call a factory function where
-        # the derived VispyTiledImageLayer could create a TiledImageNode to
-        # be used as VispyBaseLayer.node.
-        super().__init__(layer)
 
-        # Put our visual under the VispyBasedLayer.node.
+        # We use our visual instead of ImageVisual's own.
         self.visual = TiledImageNode(tile_shape=layer.tile_shape)
-        self.visual.parent = self.node
+        super().__init__(layer, self.visual)
 
         # For debugging
         self.grid = TileGrid(self.node)
