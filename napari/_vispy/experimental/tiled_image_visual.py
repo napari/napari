@@ -1,6 +1,6 @@
 """TiledImageVisual class
 """
-from typing import List, Optional, Set, Tuple
+from typing import List, Set
 
 import numpy as np
 from vispy.gloo.buffer import VertexBuffer
@@ -28,9 +28,6 @@ SHAPE_IN_TILES = (16, 16)
 _QUAD = np.array(
     [[0, 0], [1, 0], [1, 1], [0, 0], [1, 1], [0, 1]], dtype=np.float32,
 )
-
-# Either 2d shape or 2d shape plus 3 or 4 colors.
-ImageShape = Tuple[int, int, Optional[int]]
 
 DATA_2D = True  # temporary
 
@@ -119,6 +116,10 @@ class TileSet:
             The number of tiles in the set.
         """
         return len(self._tiles)
+
+    def clear(self) -> None:
+        self._tiles.clear()
+        self._chunks.clear()
 
     def add(self, tile_data: TileData) -> None:
         """Add this TiledData to the set.
@@ -210,7 +211,8 @@ class TiledImageVisual(ImageVisual):
     in the same large texture, there will be zero texture swaps.
     """
 
-    def __init__(self, tile_shape: ImageShape, *args, **kwargs):
+    def __init__(self, tile_shape: np.ndarray, *args, **kwargs):
+        self.tile_shape = tile_shape
         self._tiles = TileSet()
         self._verts = VertexBuffer()
         self._tex_coords = VertexBuffer()
@@ -219,19 +221,32 @@ class TiledImageVisual(ImageVisual):
 
         super().__init__(*args, **kwargs)
 
+        self.unfreeze()
+        self._texture_atlas = self._create_texture_atlas(tile_shape)
+        self.freeze()
+
+    def _create_texture_atlas(self, tile_shape: np.ndarray) -> TextureAtlas2D:
         if self._interpolation == 'bilinear':
             texture_interpolation = 'linear'
         else:
             texture_interpolation = 'nearest'
 
-        self.unfreeze()
-        self._texture_atlas = TextureAtlas2D(
+        return TextureAtlas2D(
             tile_shape, SHAPE_IN_TILES, interpolation=texture_interpolation
         )
-        self.freeze()
 
     def set_data(self, image):
         pass
+
+    def set_tile_shape(self, tile_shape: np.ndarray):
+
+        # Set the new shape and clear all our previous tile information.
+        self.tile_shape = tile_shape
+        self._tiles.clear()
+
+        # Create the new atlas and tell the shader about it.
+        self._texture_atlas = self._create_texture_atlas(tile_shape)
+        self._data_lookup_fn['texture'] = self._texture_atlas
 
     @property
     def size(self):
@@ -277,7 +292,7 @@ class TiledImageVisual(ImageVisual):
             if not self._tiles.contains_chunk_data(chunk_data):
                 self.add_one_tile(chunk_data)
 
-    def add_one_tile(self, chunk_data: ChunkData) -> int:
+    def add_one_tile(self, chunk_data: ChunkData) -> None:
         """Add one tile to the tiled image.
 
         Parameters
@@ -292,13 +307,14 @@ class TiledImageVisual(ImageVisual):
         """
 
         tex_info = self._texture_atlas.add_tile(chunk_data.data)
-        tile_index = tex_info.tile_index
 
+        if tex_info is None:
+            return  # No slot available in the atlas.
+
+        tile_index = tex_info.tile_index
         print(f"add_tile tile_index={tile_index}")
         self._tiles.add(TileData(chunk_data, tex_info))
         self._need_vertex_update = True
-
-        return tile_index
 
     def remove_tile(self, tile_index: int) -> None:
         """Remove one tile from the image.

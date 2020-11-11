@@ -98,12 +98,23 @@ class VispyTiledImageLayer(VispyImageLayer):
 
         return Stats(num_seen, num_start, num_created, num_deleted, num_final)
 
+    def _update_tile_shape(self):
+        # This might be overly dynamic, but for now if we see there's
+        # a new tile shape we nuke our texture atlas and start over
+        # with the new tile shape. Maybe there should be some type of
+        # more explicit change required?
+        tile_shape = self.layer.tile_shape
+        if self.visual.tile_shape != tile_shape:
+            self.visual.set_tile_shape(tile_shape)
+
     def _on_camera_move(self, event=None):
         """Called on any camera movement.
 
         Update tiles based on which chunks are currently visible.
         """
         super()._on_camera_move()
+
+        self._update_tile_shape()
 
         with block_timer("_update_visible_chunks") as elapsed:
             stats = self._update_visible_chunks()
