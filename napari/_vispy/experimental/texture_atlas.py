@@ -40,10 +40,10 @@ class TextureAtlas2D(Texture2D):
         The (height, width) of the full texture in terms of tiles.
     """
 
-    # Mark removed tiles red for debugging. It's not necessary to modify
-    # the removed tile's texture data. It will just get overwritten when
-    # some future tile is added. But for debugging we can red it out, so
-    # that if we mistakenly draw it, we'll know.
+    # If True we mark removed tiles red for debugging. When we remove a
+    # tile we do not need to waste bandwidth clearing the old texture data.
+    # We just let that slot get written to later on. However for debugging
+    # we can write into that spot to mark it as empty.
     MARK_DELETED_TILES = True
 
     def __init__(
@@ -68,8 +68,8 @@ class TextureAtlas2D(Texture2D):
         # Total number of texture slots in the atlas.
         self.num_slots_total = shape_in_tiles[0] * shape_in_tiles[1]
 
-        # Free tile indexes.
-        self.free = set(range(0, self.num_slots_total))
+        # Every index is free to start.
+        self._free_indices = set(range(0, self.num_slots_total))
 
         if self.MARK_DELETED_TILES:
             self.deleted_tile_data = np.empty(self.tile_shape, dtype=np.uint8)
@@ -86,7 +86,7 @@ class TextureAtlas2D(Texture2D):
         int
             The number of available texture slots.
         """
-        return len(self.free)
+        return len(self._free_indices)
 
     @property
     def num_slots_used(self) -> int:
@@ -143,7 +143,7 @@ class TextureAtlas2D(Texture2D):
             )
 
         try:
-            tile_index = self.free.pop()
+            tile_index = self._free_indices.pop()
         except KeyError:
             # TODO_OCTREE: just raise something for now
             raise RuntimeError(
@@ -164,7 +164,7 @@ class TextureAtlas2D(Texture2D):
             The index of the tile to remove.
         """
         # The index is now a free slow.
-        self.free.add(tile_index)
+        self._free_indices.add(tile_index)
 
         if self.MARK_DELETED_TILES:
             self._set_tile_data(tile_index, self.deleted_tile_data)
