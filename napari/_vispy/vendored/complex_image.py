@@ -5,8 +5,52 @@ from vispy.visuals.shaders import Function, FunctionChain
 from vispy.ext.six import string_types
 
 
+_complex_mag = """
+    float comp2float(vec2 data) {
+        return sqrt(data.x * data.x + data.y * data.y);
+    }"""
+
+_complex_angle = """
+    float comp2float(vec2 data) {
+        return atan(data.y, data.x);
+    }"""
+
+_complex_real = """
+    float comp2float(vec2 data) {
+        return data.x;
+    }"""
+
+_complex_imaginary = """
+    float comp2float(vec2 data) {
+        return data.y;
+    }"""
+
+_apply_clim = """
+    float apply_clim(float data) {
+        data = data - $clim.x;
+        data = data / ($clim.y - $clim.x);
+        return max(data, 0);
+    }"""
+
+_apply_gamma = """
+    float apply_gamma(float data) {
+        return pow(data, $gamma);
+    }"""
+
+
 class ComplexImageVisual(ImageVisual):
     _complex_modes = {'magnitude', 'phase', 'real', 'imaginary'}
+
+    _texture_lookup = """
+        vec2 texture_lookup(vec2 texcoord) {
+            if(texcoord.x < 0.0 || texcoord.x > 1.0 ||
+            texcoord.y < 0.0 || texcoord.y > 1.0) {
+                discard;
+            }
+            vec4 real = texture2D($texture, texcoord);
+            vec4 imag = texture2D($texture_i, texcoord);
+            return vec2(real.x, imag.x);
+        }"""
 
     def __init__(
         self,
@@ -106,47 +150,3 @@ class ComplexImageVisual(ImageVisual):
             Function(cmap.glsl_map),
         ]
         return FunctionChain(None, chain)
-
-    _texture_lookup = """
-        vec2 texture_lookup(vec2 texcoord) {
-            if(texcoord.x < 0.0 || texcoord.x > 1.0 ||
-            texcoord.y < 0.0 || texcoord.y > 1.0) {
-                discard;
-            }
-            vec4 real = texture2D($texture, texcoord);
-            vec4 imag = texture2D($texture_i, texcoord);
-            return vec2(real.x, imag.x);
-        }"""
-
-
-_complex_mag = """
-    float comp2float(vec2 data) {
-        return sqrt(data.x * data.x + data.y * data.y);
-    }"""
-
-_complex_angle = """
-    float comp2float(vec2 data) {
-        return atan(data.y, data.x);
-    }"""
-
-_complex_real = """
-    float comp2float(vec2 data) {
-        return data.x;
-    }"""
-
-_complex_imaginary = """
-    float comp2float(vec2 data) {
-        return data.y;
-    }"""
-
-_apply_clim = """
-    float apply_clim(float data) {
-        data = data - $clim.x;
-        data = data / ($clim.y - $clim.x);
-        return max(data, 0);
-    }"""
-
-_apply_gamma = """
-    float apply_gamma(float data) {
-        return pow(data, $gamma);
-    }"""
