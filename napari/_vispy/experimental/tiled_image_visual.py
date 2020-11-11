@@ -110,11 +110,15 @@ class TileSet:
         self._tiles = {}
         self._chunks = set()
 
-    def size(self) -> int:
-        return len(self._tiles)
+    def __len__(self) -> int:
+        """Return the number of tiles in the set.
 
-    def empty(self) -> int:
-        return self.size() == 0
+        Return
+        ------
+        int
+            The number of tiles in the set.
+        """
+        return len(self._tiles)
 
     def add(self, tile_data: TileData) -> None:
         """Add this TiledData to the set.
@@ -268,10 +272,10 @@ class TiledImageVisual(ImageVisual):
         """
         for chunk_data in chunks:
             if not self._tiles.contains_chunk_data(chunk_data):
-                self.add_tile(chunk_data)
+                self.add_one_tile(chunk_data)
 
-    def add_tile(self, chunk_data: ChunkData) -> int:
-        """Add one tile to the image.
+    def add_one_tile(self, chunk_data: ChunkData) -> int:
+        """Add one tile to the tiled image.
 
         Parameters
         ----------
@@ -281,11 +285,12 @@ class TiledImageVisual(ImageVisual):
         Return
         ------
         int
-            The tile index.
+            The tile's index.
         """
 
         tex_info = self._texture_atlas.add_tile(chunk_data.data)
         tile_index = tex_info.tile_index
+
         print(f"add_tile tile_index={tile_index}")
         self._tiles.add(TileData(chunk_data, tex_info))
         self._need_vertex_update = True
@@ -333,8 +338,8 @@ class TiledImageVisual(ImageVisual):
         So as the card draws the tiles, where it's sampling from the
         texture will hop around in the atlas texture.
         """
-        if self._tiles.empty():
-            return
+        if len(self._tiles) == 0:
+            return  # Nothing to draw.
 
         verts = np.zeros((0, 2), dtype=np.float32)
         tex_coords = np.zeros((0, 2), dtype=np.float32)
@@ -351,22 +356,17 @@ class TiledImageVisual(ImageVisual):
             tex_quad = tile_data.tex_info.tex_coord
             tex_coords = np.vstack((tex_coords, tex_quad))
 
-        global draw_index
-        print(f"VERTS: {draw_index}")
-        print(verts)
-
-        print(f"TEX_COORDS: {draw_index}")
-        print(tex_coords)
-
         # Set the base ImageVisual _subdiv_ buffers
         self._subdiv_position.set_data(verts)
         self._subdiv_texcoord.set_data(tex_coords)
         self._need_vertex_update = False
 
     def _build_texture(self):
-        # TODO_OCTREE: Need to
-        #  do the clim stuff in in the base
-        # ImageVisual._build_texture but do it for each tile?
+        """Override of ImageVisual._build_texture().
+
+        TODO_OCTREE: This needs work. Need to do the clim stuff in in the
+        base ImageVisual._build_texture but do it for each tile?
+        """
         self._clim = np.array([0, 1])
 
         self._texture_limits = np.array([0, 1])  # hardcode
@@ -392,13 +392,13 @@ class TiledImageVisual(ImageVisual):
         draw_index += 1
 
         if self._need_interpolation_update:
+            # Call the base ImageVisual._build_interpolation()
             self._build_interpolation()
 
-            # Set the texture to be our atlas, overriding what
-            # _build_interpolation() set it to.
+            # But override to use our texture atlas.
             self._data_lookup_fn['texture'] = self._texture_atlas
 
-        # TODO_OCTREE: we call our own _build_texture
+        # We call our own _build_texture
         if self._need_texture_upload:
             self._build_texture()
 
@@ -417,11 +417,10 @@ class TiledImageVisual(ImageVisual):
                 else None
             )
 
-        # TODO_OCTREE: we call our own _build_vertex_data()
+        # We call our own _build_vertex_data()
         if self._need_vertex_update:
             self._build_vertex_data()
-            # ImageVisual._build_vertex_data(self)
 
-        # TODO_OCTREE: we call the base class _update_method()
+        # Call the normal ImageVisual._update_method() unchanged.
         if view._need_method_update:
             self._update_method(view)
