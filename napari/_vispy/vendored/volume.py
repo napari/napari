@@ -426,7 +426,13 @@ class VolumeVisual(Visual):
     """
 
     _interpolation_names = ['linear', 'nearest']
-    _complex_modes = {'magnitude', 'phase', 'real', 'imaginary'}
+
+    _complex_modes = {
+        'magnitude': np.abs,
+        'phase': np.angle,
+        'real': np.real,
+        'imaginary': np.imag,
+    }
 
     def __init__(
         self,
@@ -537,16 +543,9 @@ class VolumeVisual(Visual):
         if not ((vol.ndim == 3) or (vol.ndim == 4 and vol.shape[-1] <= 4)):
             raise ValueError('Volume visual needs a 3D image.')
 
-        complex_renderers = {
-            'magnitude': np.abs,
-            'phase': np.angle,
-            'real': np.real,
-            'imaginary': np.imag,
-        }
-
         self._last_data = vol
         if np.iscomplexobj(vol):
-            vol = complex_renderers[self._complex_mode](vol)
+            vol = self._complex_modes[self._complex_mode](vol)
 
         # Handle clim
         if clim is not None:
