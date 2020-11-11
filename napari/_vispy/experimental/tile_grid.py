@@ -8,16 +8,18 @@ from vispy.scene.visuals import Line
 
 from ...layers.image.experimental.octree_util import ChunkData
 
-# Grid is optionally drawn while debugging to show tile boundaries.
+# Draw with lines of this width and color.
 GRID_WIDTH = 3
 GRID_COLOR = (1, 0, 0, 1)
 
-# Set order to the grid draws on top of the image tiles.
+# Draw on tope of the tiles.
 LINE_VISUAL_ORDER = 10
 
 
 def _chunk_outline(chunk: ChunkData) -> np.ndarray:
-    """Return the line verts that outline this single chunk.
+    """Return the verts that outline this single chunk.
+
+    The Line is should be drawn in 'segments' mode.
 
     Parameters
     ----------
@@ -27,7 +29,7 @@ def _chunk_outline(chunk: ChunkData) -> np.ndarray:
     Return
     ------
     np.ndarray
-        The chunk verts for a line drawn with the 'segments' mode.
+        The verts for the outline.
     """
     x, y = chunk.pos
     h, w = chunk.data.shape[:2]
@@ -55,7 +57,9 @@ def _chunk_outline(chunk: ChunkData) -> np.ndarray:
 
 
 class TileGrid:
-    """The grid that shows the outlines of all the tiles for debugging.
+    """A grid to show the outline of all the tiles.
+
+    Created for debugging although could be shown for real as well.
 
     Attributes
     ----------
