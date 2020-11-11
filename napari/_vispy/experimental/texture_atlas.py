@@ -1,7 +1,7 @@
 """TextureAtlas2D class.
 """
 from collections import namedtuple
-from typing import Tuple
+from typing import Optional, Tuple
 
 import numpy as np
 from vispy.gloo import Texture2D
@@ -143,7 +143,7 @@ class TextureAtlas2D(Texture2D):
 
         return quad
 
-    def add_tile(self, data: np.ndarray) -> TexInfo:
+    def add_tile(self, data: np.ndarray) -> Optional[TexInfo]:
         """Add one tile to the atlas.
 
         Parameters
@@ -154,16 +154,13 @@ class TextureAtlas2D(Texture2D):
         if data.shape != self.tile_shape:
             raise ValueError(
                 f"Adding tile with shape {data.shape} does not match TextureAtlas2D "
-                f"internal tile shape {self.tile_shape}"
+                f"configured tile shape {self.tile_shape}"
             )
 
         try:
             tile_index = self._free_indices.pop()
         except KeyError:
-            raise RuntimeError(
-                f"No available TextureAtlas2D slots, "
-                f"all {self.num_slots_total} slots are full"
-            )
+            return None  # No available texture slots.
 
         # Upload the texture data for this one tile.
         self._set_tile_data(tile_index, data)
