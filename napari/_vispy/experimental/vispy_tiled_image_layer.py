@@ -22,22 +22,6 @@ Stats = namedtuple(
 )
 
 
-class ImageTile:
-    """Holds the data for one image tile.
-
-    Parameters
-    ----------
-    chunk : ChunkData
-        The data used to create the tile.
-    tile_index : int
-        the index of this tile in the texture atlas.
-    """
-
-    def __init__(self, chunk_data: ChunkData, tile_index: int):
-        self.chunk_data = chunk_data
-        self.tile_index = tile_index
-
-
 class VispyTiledImageLayer(VispyImageLayer):
     """A tiled image drawn using a single TiledImageVisual.
 
