@@ -5,7 +5,7 @@ from typing import Tuple
 import numpy as np
 from vispy.gloo import Texture2D
 
-# Two triangles to cover a [0..1, 0..1] quad.
+# Two triangles which cover a [0..1, 0..1] quad.
 _QUAD = np.array(
     [[0, 0], [1, 0], [1, 1], [0, 0], [1, 1], [0, 1]], dtype=np.float32,
 )
@@ -71,6 +71,15 @@ class TextureAtlas2D(Texture2D):
         # Every index is free to start.
         self._free_indices = set(range(0, self.num_slots_total))
 
+        # Pre-compute the texture coords for every tile. Otherwise we'd be
+        # calculating these over and over.
+        #
+        # TODO_OCTREE: Compute and store the coords for all the tiles in
+        # one single ndarray?
+        self._tex_coords = [
+            self._calc_tex_coords(i) for i in range(self.num_slots_total)
+        ]
+
         if self.MARK_DELETED_TILES:
             self.deleted_tile_data = np.empty(self.tile_shape, dtype=np.uint8)
             self.deleted_tile_data[:] = (1, 0, 0)  # handle RGB or RGBA?
@@ -117,8 +126,22 @@ class TextureAtlas2D(Texture2D):
         col = tile_index % width_tiles
         return col * self.tile_shape[1], row * self.tile_shape[0]
 
-    def _tex_coords(self, tile_index: int) -> np.ndarray:
+    def _calc_tex_coords(self, tile_index: int) -> np.ndarray:
+        """Return the texture coordinates for this tile.
 
+        This is only called from __init__ when we pre-compute the
+        texture coordinates for every tiles.
+
+        Parameters
+        ----------
+        tile_index : int
+            Return coordinates for this tile.
+
+        Return
+        ------
+        np.ndarray
+            A (6, 2) array of texture coordinates.
+        """
         offset = self._offset(tile_index)
         pos = offset / self.texture_shape[:2]
         shape = self.tile_shape[:2] / self.texture_shape[:2]
@@ -145,14 +168,16 @@ class TextureAtlas2D(Texture2D):
         try:
             tile_index = self._free_indices.pop()
         except KeyError:
-            # TODO_OCTREE: just raise something for now
             raise RuntimeError(
                 f"All {self.num_slots_total} TextureAtlas2D slots are full"
             )
 
+        # Upload the texture data for this tile.
         self._set_tile_data(tile_index, data)
-        tex_coords = self._tex_coords(tile_index)
 
+        # Return TexInfo. The caller will need the texture coordinates to
+        # render quads using our tiles.
+        tex_coords = self._tex_coords[tile_index]
         return TexInfo(tile_index, tex_coords)
 
     def remove_tile(self, tile_index: int) -> None:
