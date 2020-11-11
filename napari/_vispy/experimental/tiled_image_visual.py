@@ -1,6 +1,6 @@
 """TiledImageVisual class
 """
-from typing import Dict, List, Optional, Set, Tuple
+from typing import List, Optional, Set, Tuple
 
 import numpy as np
 from vispy.gloo.buffer import VertexBuffer
@@ -24,57 +24,20 @@ SHAPE_IN_TILES = (16, 16)
 
 # Two triangles to cover a [0..1, 0..1] quad.
 _QUAD = np.array(
-    [[0, 0], [1, 0], [1, 1], [0, 0], [0, 0], [1, 1], [0, 1], [0, 0]],
-    dtype=np.float32,
+    [[0, 0], [1, 0], [1, 1], [0, 0], [1, 1], [0, 1]], dtype=np.float32,
 )
 
 # Either 2d shape or 2d shape plus 3 or 4 colors.
 ImageShape = Tuple[int, int, Optional[int]]
 
-FRAG_SHADER = """
-uniform vec2 image_size;
-uniform int method;  // 0=subdivide, 1=impostor
-uniform sampler2D u_texture;
-varying vec2 v_texcoord;
-
-vec4 map_local_to_tex(vec4 x) {
-    // Cast ray from 3D viewport to surface of image
-    // (if $transform does not affect z values, then this
-    // can be optimized as simply $transform.map(x) )
-    vec4 p1 = $transform(x);
-    vec4 p2 = $transform(x + vec4(0, 0, 0.5, 0));
-    p1 /= p1.w;
-    p2 /= p2.w;
-    vec4 d = p2 - p1;
-    float f = p2.z / d.z;
-    vec4 p3 = p2 - d * f;
-
-    // finally map local to texture coords
-    return vec4(p3.xy / image_size, 0, 1);
-}
+DATA_2D = True  # temporary
 
 
-void main()
-{
-    vec2 texcoord;
-    if( method == 0 ) {
-        texcoord = v_texcoord;
-    }
-    else {
-        // vertex shader outputs clip coordinates;
-        // fragment shader maps to texture coordinates
-        texcoord = map_local_to_tex(vec4(v_texcoord, 0, 1)).xy;
-    }
+# TODO_OCTREE: Slightly modified from ImageVisual._build_color_transform
+# Hopefully we can use the real one soon.
+def _build_color_transform(_data, clim, gamma, cmap):
 
-    gl_FragColor = $color_transform($get_data(texcoord));
-}
-"""  # noqa
-
-
-# Slightly modified from ImageVisual._build_color_transform
-def _build_color_transform(data, clim, gamma, cmap):
-    # if data.ndim == 2 or data.shape[2] == 1:
-    if True:
+    if DATA_2D:
         fclim = Function(_apply_clim_float)
         fgamma = Function(_apply_gamma_float)
         fun = FunctionChain(
@@ -135,6 +98,76 @@ def _tex_quad(chunk_data: ChunkData):
     return quad
 
 
+class TileSet:
+    """The tiles we are drawing.
+
+    With a fast set membership test for ChunkData.
+    """
+
+    def __init__(self):
+        self._tiles = {}
+        self._chunks = set()
+
+    def add(self, tile_data: TileData) -> None:
+        """Add this TiledData to the set.
+
+        Parameters
+        ----------
+        tile_data : TileData
+            Add this to the set.
+        """
+        tile_index = tile_data.tex_info.tile_index
+        self._tiles[tile_index] = tile_data
+        self._chunks.add(tile_data.chunk_data.key)
+
+    def remove(self, tile_index: int) -> None:
+        """Remove the TileData at this index from the set.
+
+        tile_index : int
+            Remove the TileData at this index.
+        """
+        chunk_data = self._tiles[tile_index].chunk_data
+        del self._tiles[tile_index]
+        self._chunks.remove(chunk_data.key)
+
+    @property
+    def chunks(self) -> List[ChunkData]:
+        """Return all the chunk data that we have.
+
+        Return
+        ------
+        List[ChunkData]
+            All the chunk data in the set.
+        """
+        return [tile_data.chunk_data for tile_data in self._tiles.values()]
+
+    @property
+    def tile_data(self) -> List[TileData]:
+        """Return all the tile data in the set.
+
+        Return
+        ------
+        List[TileData]
+            All the tile data in the set.
+        """
+        return self._tiles.values()
+
+    def contains_chunk_data(self, chunk_data: ChunkData) -> bool:
+        """Return True if the set contains this chunk data.
+
+        Parameters
+        ----------
+        chunk_data : ChunkData
+            Check if ChunkData is in the set.
+
+        Return
+        ------
+        bool
+            True if the set contains this chunk data.
+        """
+        return chunk_data.key in self._chunks
+
+
 class TiledImageVisual(ImageVisual):
     """A larger image that's drawn using some number of smaller tiles.
 
@@ -166,10 +199,12 @@ class TiledImageVisual(ImageVisual):
     """
 
     def __init__(self, tile_shape: ImageShape, *args, **kwargs):
-        self.tiles: Dict[int, TileData] = {}
+        self._tiles = TileSet()
         self._verts = VertexBuffer()
         self._tex_coords = VertexBuffer()
         self._texture_atlas = TextureAtlas2D(tile_shape, SHAPE_IN_TILES)
+
+        self._clim = np.array([0, 1])  # Constant for now.
 
         # This freezes the class, so can't add attributes after this.
         super().__init__(*args, **kwargs)
@@ -183,7 +218,8 @@ class TiledImageVisual(ImageVisual):
         #
         # We don't have a self._data so what do we put here? Maybe need
         # a bounds for all the currently visible tiles?
-        return (0, 0)
+        # return self._texture_atlas.texture_shape[:2]
+        return (1024, 1024)
 
     @property
     def num_tiles(self) -> int:
@@ -203,11 +239,19 @@ class TiledImageVisual(ImageVisual):
         List[ChunkData]
             The data for the chunks we are drawing.
         """
-        # TODO_OCTREE: return iterator instead?
-        return [tile_data.chunk_data for tile_data in self.tiles.values()]
+        return self._tiles.chunks
 
-    def __contains__(self, chunk_data):
-        return chunk_data.key in self.tiles
+    def add_chunks(self, chunks: List[ChunkData]):
+        """Any any chunks that we are not already drawing.
+
+        Parameters
+        ----------
+        chunks : List[ChunkData]
+            Add any of these we are not already drawing.
+        """
+        for chunk_data in chunks:
+            if not self._tiles.contains_chunk_data(chunk_data):
+                self.add_tile(chunk_data)
 
     def add_tile(self, chunk_data: ChunkData) -> int:
         """Add one tile to the image.
@@ -222,9 +266,11 @@ class TiledImageVisual(ImageVisual):
         int
             The tile index.
         """
+
         tex_info = self._texture_atlas.add_tile(chunk_data.data)
         tile_index = tex_info.tile_index
-        self.tiles[tile_index] = TileData(chunk_data, tex_info)
+        print(f"add_tile tile_index={tile_index}")
+        self._tiles.add(TileData(chunk_data, tex_info))
         self._need_vertex_update = True
 
         return tile_index
@@ -237,8 +283,9 @@ class TiledImageVisual(ImageVisual):
         tile_index : int
             The tile to remove.
         """
+        print(f"remove_tile tiled_index={tile_index}")
         try:
-            del self.tiles[tile_index]
+            self._tiles.remove(tile_index)
             self._texture_atlas.remove_tile(tile_index)
         except IndexError:
             # TODO_OCTREE: for now just raise
@@ -250,8 +297,8 @@ class TiledImageVisual(ImageVisual):
         visible_set : Set[ChunkData]
             The set of currently visible chunks.
         """
-        for tile_data in list(self.tiles.values()):
-            if tile_data.chunk_data not in visible_set:
+        for tile_data in list(self._tiles.tile_data):
+            if tile_data.chunk_data.key not in visible_set:
                 tile_index = tile_data.tex_info.tile_index
                 self.remove_tile(tile_index)
 
@@ -266,18 +313,25 @@ class TiledImageVisual(ImageVisual):
 
         # TODO_OCTREE: avoid vstack, create one buffer up front
         # for all the verts/tex_coords in all the tiles?
-        for tile_data in self.tiles.values():
+        for tile_data in self._tiles.tile_data:
             chunk_data = tile_data.chunk_data
 
             vert_quad = _vert_quad(chunk_data)
             verts = np.vstack((verts, vert_quad))
 
-            tex_quad = _tex_quad(chunk_data)
+            tex_quad = tile_data.tex_info.tex_coord
             tex_coords = np.vstack((tex_coords, tex_quad))
 
-        # Set ImageVisual _subdiv_ buffers
+        # print("VERTS")
+        # print(verts)
+
+        # print("TEX_COORDS")
+        # print(tex_coords)
+
+        # Set the base ImageVisual _subdiv_ buffers
         self._subdiv_position = verts.astype('float32')
         self._subdiv_texcoord = tex_coords.astype('float32')
+        self._need_vertex_update = False
 
     def _build_texture(self):
         # TODO_OCTREE: Need to do the clim stuff in in the base
@@ -292,8 +346,8 @@ class TiledImageVisual(ImageVisual):
     def _prepare_draw(self, view):
         """Override of ImageVisual._prepare_draw()
 
-        We'll see how much of this actualy changes from the base class and
-        if we can avoid too much duplication.
+        TODO_OCTREE: See how much this changes from base class, if we can
+        avoid too much duplication. Or factor out some common methods.
         """
         # Comment out: we expect our self._data is None
         # if self._data is None:
@@ -306,11 +360,11 @@ class TiledImageVisual(ImageVisual):
             # we set it to our atlas instead.
             self._data_lookup_fn['texture'] = self._texture_atlas
 
-        # Comment out for now but we need to this clim part?
+        # TODO_OCTREE: we call our own _build_texture
         if self._need_texture_upload:
             self._build_texture()
 
-        # TODO_OCTREE: how does colortransform change?
+        # TODO_OCTREE: how does colortransform change for tiled?
         if self._need_colortransform_update:
             prg = view.view_program
             self.shared_program.frag[
@@ -325,8 +379,10 @@ class TiledImageVisual(ImageVisual):
                 else None
             )
 
+        # TODO_OCTREE: we call our own _build_vertex_data()
         if self._need_vertex_update:
             self._build_vertex_data()
 
+        # TODO_OCTREE: we call the base class _update_method()
         if view._need_method_update:
             self._update_method(view)

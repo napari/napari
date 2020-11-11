@@ -243,5 +243,5 @@ class VispyCompoundImageLayer(VispyImageLayer):
             print(
                 f"tiles: {stats.num_start} -> {stats.num_final} "
                 f"create: {stats.num_created} delete: {stats.num_deleted} "
-                f"total: {elapsed.duration_ms:.3f}ms"
+                f"time: {elapsed.duration_ms:.3f}ms"
             )

@@ -1,7 +1,7 @@
 """VispyTiledImageLayer class.
 """
 from collections import namedtuple
-from typing import List, Set
+from typing import List
 
 from vispy.scene.visuals import create_visual_node
 
@@ -63,12 +63,12 @@ class VispyTiledImageLayer(VispyImageLayer):
 
     @property
     def num_tiles(self) -> int:
-        """Return the number of tiles in the layer.
+        """Return the number of tiles currently being drawn.
 
         Return
         ------
         int
-            The number of tiles in the layer.
+            The number of tiles currently being drawn.
         """
         return self.visual.num_tiles
 
@@ -87,18 +87,18 @@ class VispyTiledImageLayer(VispyImageLayer):
         3) Create the optional grid around only the visible tiles.
         """
         # Get the currently visible chunks.
-        visible_chunks = self.layer.visible_chunks
+        visible_chunks: List[ChunkData] = self.layer.visible_chunks
 
         num_seen = len(visible_chunks)
 
         # The set is keyed by the chunk's position and level.
         # TODO_OCTREE: use __hash__ not ChunkData.key?
-        visible_set = set(c.key for c in visible_chunks)
+        visible_set = set(chunk_data.key for chunk_data in visible_chunks)
 
         num_start = self.num_tiles
 
         # Remnove tiles for chunks which are no longer visible.
-        self._remove_stale_tiles(visible_set)
+        self.visual.prune_tiles(visible_set)
 
         num_low = self.num_tiles
         num_deleted = num_start - num_low
@@ -124,37 +124,7 @@ class VispyTiledImageLayer(VispyImageLayer):
         if not self.layer.track_view:
             return  # Not actively creating new visuals.
 
-        for chunk_data in visible_chunks:
-            if chunk_data not in self.visual:
-                self._add_tile(chunk_data)  # Add a tile for this chunk.
-
-    def _add_tile(self, chunk_data: ChunkData) -> ImageTile:
-        """Create and return one new ImageTile for this chunk.
-
-        Parameters
-        ----------
-        chunk : ChunkData
-            Create an ImageTile for this chunk.
-
-        Returns
-        -------
-        ImageTile
-            The new ImageTile we created.
-        """
-        # TODO_OCTREE: we might need to do some (but not all) of the processing
-        # in our parent VispyImageLayer._set_node_data() class, but for now
-        # we do nothing...
-        self.visual.add_tile(chunk_data)
-
-    def _remove_stale_tiles(self, visible_set: Set[ChunkData]) -> None:
-        """Remove tiles for chunks which are no longer visible.
-
-        Parameters
-        ----------
-        visible_set : Set[ChunkData]
-            The currently visible chunks.
-        """
-        self.visual.prune_tiles(visible_set)
+        self.visual.add_chunks(visible_chunks)
 
     def _on_camera_move(self, event=None):
         super()._on_camera_move()
@@ -166,5 +136,5 @@ class VispyTiledImageLayer(VispyImageLayer):
             print(
                 f"tiles: {stats.num_start} -> {stats.num_final} "
                 f"create: {stats.num_created} delete: {stats.num_deleted} "
-                f"total: {elapsed.duration_ms:.3f}ms"
+                f"time: {elapsed.duration_ms:.3f}ms"
             )
