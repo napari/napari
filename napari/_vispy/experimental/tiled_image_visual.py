@@ -364,7 +364,8 @@ class TiledImageVisual(ImageVisual):
         self._need_vertex_update = False
 
     def _build_texture(self):
-        # TODO_OCTREE: Need to do the clim stuff in in the base
+        # TODO_OCTREE: Need to
+        #  do the clim stuff in in the base
         # ImageVisual._build_texture but do it for each tile?
         self._clim = np.array([0, 1])
 
@@ -376,34 +377,6 @@ class TiledImageVisual(ImageVisual):
 
         self._texture.set_data(data)
         self._need_texture_upload = False
-
-    # The interpolation code could be transferred to a dedicated filter
-    # function in visuals/filters as discussed in #1051
-    def _build_interpolation(self):
-        """Rebuild the _data_lookup_fn using different interpolations within
-        the shader
-        """
-        interpolation = self._interpolation
-        self._data_lookup_fn = self._interpolation_fun[interpolation]
-        self.shared_program.frag['get_data'] = self._data_lookup_fn
-
-        # only 'bilinear' uses 'linear' texture interpolation
-        if interpolation == 'bilinear':
-            texture_interpolation = 'linear'
-        else:
-            # 'nearest' (and also 'bilinear') doesn't use spatial_filters.frag
-            # so u_kernel and shape setting is skipped
-            texture_interpolation = 'nearest'
-            if interpolation != 'nearest':
-                self.shared_program['u_kernel'] = self._kerneltex
-                self._data_lookup_fn['shape'] = self._data.shape[:2][::-1]
-
-        if self._texture.interpolation != texture_interpolation:
-            self._texture.interpolation = texture_interpolation
-
-        self._data_lookup_fn['texture'] = self._texture_atlas
-
-        self._need_interpolation_update = False
 
     def _prepare_draw(self, view):
         """Override of ImageVisual._prepare_draw()
@@ -423,7 +396,7 @@ class TiledImageVisual(ImageVisual):
 
             # _build_interpolation() set this to self._texture so
             # we set it to our atlas instead.
-            # self._data_lookup_fn['texture'] = self._texture_atlas
+            self._data_lookup_fn['texture'] = self._texture_atlas
 
         # TODO_OCTREE: we call our own _build_texture
         if self._need_texture_upload:
