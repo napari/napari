@@ -39,13 +39,22 @@ class ImageTile:
 
 
 class VispyTiledImageLayer(VispyImageLayer):
-    """A tile image using a single TiledImageVisual."""
+    """A tiled image drawn using a single TiledImageVisual.
+
+    The original VispyCompoundImageLayer was a tiled image drawn with
+    an individual ImageVisual for each tile. That was slow and led
+    to crashes with PyQt5 so this version using a single TiledImageVisual
+    instead, which uses a TextureAtlas2D.
+
+    That way adding a tile does not result in scene graph changes, a full
+    texture upload, or a shader rebuild. So adding tiles is fast, it
+    only has to upload the texture data for that one tile.
+    """
 
     def __init__(self, layer):
-        # TODO_OCTREE:
-        #
-        # Our parent VispyImageLayer creates an ImageVisual that gets
-        # passed into VispyBaseLayer and it becomes VispyBaseLayer.node.
+        # TODO_OCTREE: Our parent VispyImageLayer creates an ImageVisual
+        # that gets passed into VispyBaseLayer and it becomes
+        # VispyBaseLayer.node.
         #
         # We're not using this ImageVisual for anything except as a scene
         # graph parent. So we could clean up these 3 classes to get rid
@@ -53,9 +62,12 @@ class VispyTiledImageLayer(VispyImageLayer):
         #
         # VispyTiledImageLayer -> VispyImageLayer -> VispyBaseLayer
         #
-        # But it works fine like this.
+        # We could maybe have VispyBaseLayer call a factory function where
+        # the derived VispyTiledImageLayer could create a TiledImageNode to
+        # be used as VispyBaseLayer.node.
         super().__init__(layer)
 
+        # Put our visual under the VispyBasedLayer.node.
         self.visual = TiledImageNode(tile_shape=layer.tile_shape)
         self.visual.parent = self.node
 
@@ -73,39 +85,41 @@ class VispyTiledImageLayer(VispyImageLayer):
         """
         return self.visual.num_tiles
 
-    def _set_node_data(self, node, data):
-        pass
+    def set_data(self, node, data):
+        """Set our data, not implemented."""
+        # ImageVisual has a set_data() method but we don't. We pull our
+        # data by calling self.layer.visible_chunks in our _update_view()
+        # method. And each chunk gets added to our visual as a separate
+        # tile.
+        raise NotImplementedError()
 
-    def _update_view(self) -> None:
-        """Add or removes tiles to match the current view.
+    def _update_visible_chunks(self) -> None:
+        """Add or remove tiles to match the currently visible chunks.
 
-        The basic algorithm is:
-        1) Create ImageTiles for any chunks that are currently visible which
-           do not have an ImageTile yet.
-
-        2) Remove ImageTiles for chunks which are no longer visible.
-
-        3) Create the optional grid around only the visible tiles.
+        1) Remove tiles which are no longer visible.
+        2) Create tiles for newly visible chunks.
+        3) Optionally update our grid to outline visible tiles.
         """
-        # Get the currently visible chunks.
+        # Get the currently visible chunk from the layer.
         visible_chunks: List[ChunkData] = self.layer.visible_chunks
 
         num_seen = len(visible_chunks)
 
-        # The set is keyed by the chunk's position and level.
+        # Create the visible set of chunks using their keys.
         # TODO_OCTREE: use __hash__ not ChunkData.key?
         visible_set = set(chunk_data.key for chunk_data in visible_chunks)
 
         num_start = self.num_tiles
 
-        # Remnove tiles for chunks which are no longer visible.
+        # Remove tiles for chunks which are no longer visible.
         self.visual.prune_tiles(visible_set)
 
         num_low = self.num_tiles
         num_deleted = num_start - num_low
 
-        # Add tiles for visible chunks that do not already have a tile.
-        self._add_new_tiles(visible_chunks)
+        if self.layer.track_view:
+            # Add tiles for visible chunks that do not already have a tile.
+            self.visual.add_chunks(visible_chunks)
 
         num_final = self.num_tiles
         num_created = num_final - num_low
@@ -115,23 +129,15 @@ class VispyTiledImageLayer(VispyImageLayer):
 
         return Stats(num_seen, num_start, num_created, num_deleted, num_final)
 
-    def _add_new_tiles(self, visible_chunks: List[ChunkData]) -> None:
-        """Add tiles for visible chunks that don't already have a tile.
-
-        Parameters
-        ----------
-        visible_chunks : List[ChunkData]
-        """
-        if not self.layer.track_view:
-            return  # Not actively creating new visuals.
-
-        self.visual.add_chunks(visible_chunks)
-
     def _on_camera_move(self, event=None):
+        """Called on any camera movement.
+
+        Update tiles based on which chunks are currently visible.
+        """
         super()._on_camera_move()
 
-        with block_timer("_update_view") as elapsed:
-            stats = self._update_view()
+        with block_timer("_update_visible_chunks") as elapsed:
+            stats = self._update_visible_chunks()
 
         if stats.num_created > 0 or stats.num_deleted > 0:
             print(
