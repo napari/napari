@@ -42,22 +42,10 @@ class MiniMap(QLabel):
         self.viewer = viewer
         self.layer = layer
 
-    @property
-    def data_corners(self):
-        """Return data corners for current view in this layer."""
-        # TODO_OCTREE: We should not calculate this here. We should query
-        # the layer or something to get these corner pixels.
-        qt_viewer = self.viewer.window.qt_viewer
-        ndim = self.layer.ndim
-        xform = self.layer._transforms[1:].simplified
-
-        corner_pixels = qt_viewer._canvas_corners_in_world[:, -ndim:]
-        return xform.inverse(corner_pixels)
-
     def update(self) -> None:
         """Update the minimap to show latest intersection."""
         # This actually performs the intersection, but it's very fast.
-        intersection = self.layer.get_intersection(self.data_corners)
+        intersection = self.layer.get_intersection()
 
         if intersection is not None:
             self._draw_map(intersection)

@@ -2,8 +2,6 @@
 """
 from typing import List
 
-import numpy as np
-
 from ....utils.events import Event
 from ..image import Image
 from ._chunked_slice_data import ChunkedSliceData
@@ -26,7 +24,7 @@ class OctreeImage(Image):
     def __init__(self, *args, **kwargs):
         self._tile_size = DEFAULT_TILE_SIZE
         self._octree_level = None
-        self._data_corners = None
+        self._corners_2d = None
         self._auto_level = True
         self._track_view = True
 
@@ -191,13 +189,12 @@ class OctreeImage(Image):
     def visible_chunks(self) -> List[ChunkData]:
         """Chunks in the current slice which in currently in view."""
         # This will be None if we have not been drawn yet.
-        if self._data_corners is None:
+        if self._corners_2d is None:
             return []
 
         auto_level = self.auto_level and self.track_view
 
-        corners_2d = self._corners_2d(self._data_corners)
-        chunks = self._slice.get_visible_chunks(corners_2d, auto_level)
+        chunks = self._slice.get_visible_chunks(self._corners_2d, auto_level)
         self._octree_level = self._slice.octree_level
         self.events.octree_level()
         return chunks
@@ -218,38 +215,32 @@ class OctreeImage(Image):
 
     def _update_draw(self, scale_factor, corner_pixels, shape_threshold):
 
-        # If self._data_corners was not set yet, we have not been drawn
-        # yet, and we need to refresh to draw ourselves for the first time.
-        need_refresh = self._data_corners is None
+        # Need refresh if have not been draw at all yet.
+        need_refresh = self._corners_2d is None
 
-        self._data_corners = self._transforms[1:].simplified.inverse(
-            corner_pixels
-        )
+        # Compute self._corners_2d which we use for intersections.
+        data_corners = self._transforms[1:].simplified.inverse(corner_pixels)
+        self._corners_2d = self._convert_to_corners_2d(data_corners)
+
         super()._update_draw(scale_factor, corner_pixels, shape_threshold)
 
         if need_refresh:
             self.refresh()
 
-    def get_intersection(self, data_corners: np.ndarray) -> OctreeIntersection:
-        """The the interesection between these corners and the octree.
-
-        Parameters
-        ----------
-        data_corners : np.ndarray
-            The current canvas view in local data coordinates.
+    def get_intersection(self) -> OctreeIntersection:
+        """The the interesection between the current view and the octree.
 
         Returns
         -------
         OctreeIntersection
-            The intersection between the cornders and the octree.
+            The intersection between the current view and the octree.
         """
         if self._slice is None:
             return None
 
-        corners_2d = self._corners_2d(data_corners)
-        return self._slice.get_intersection(corners_2d, self.auto_level)
+        return self._slice.get_intersection(self._corners_2d, self.auto_level)
 
-    def _corners_2d(self, data_corners):
+    def _convert_to_corners_2d(self, data_corners):
         """
         Get data corners in 2d.
         """

@@ -24,14 +24,17 @@ class OctreeIntersection:
 
     def __init__(self, level: OctreeLevel, corners_2d: np.ndarray):
         self.level = level
-        self.corners_2d = corners_2d
+
+        # We modify below with self.rows /= info.scale which we should
+        # probably not do!
+        self.corners_2d = corners_2d.copy()
 
         info = self.level.info
 
         # TODO_OCTREE: don't split rows/cols so all these pairs of variables
         # are just one variable each?
-        self.rows: Float2 = corners_2d[:, 0]
-        self.cols: Float2 = corners_2d[:, 1]
+        self.rows: Float2 = self.corners_2d[:, 0]
+        self.cols: Float2 = self.corners_2d[:, 1]
 
         base = info.octree_info.base_shape
 
