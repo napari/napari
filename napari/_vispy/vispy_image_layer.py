@@ -154,7 +154,8 @@ class VispyImageLayer(VispyBaseLayer):
             self.node.gamma = self.layer.gamma
 
     def _on_complex_change(self, event=None):
-        self.node.complex_mode = self.layer.complex_rendering
+        if isinstance(self.node, ComplexImageNode):
+            self.node.complex_mode = self.layer.complex_rendering
 
     def _on_iso_threshold_change(self, event=None):
         if isinstance(self.node, VolumeNode):
