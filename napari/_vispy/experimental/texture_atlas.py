@@ -7,8 +7,7 @@ from vispy.gloo import Texture2D
 
 # Two triangles to cover a [0..1, 0..1] quad.
 _QUAD = np.array(
-    [[0, 0, 0], [1, 0, 0], [1, 1, 0], [0, 0, 0], [1, 1, 0], [0, 1, 0]],
-    dtype=np.float32,
+    [[0, 0], [1, 0], [1, 1], [0, 0], [1, 1], [0, 1]], dtype=np.float32,
 )
 
 
@@ -115,7 +114,7 @@ class TextureAtlas2D(Texture2D):
         height_tiles, width_tiles = self.shape_in_tiles
         row = int(tile_index / height_tiles)
         col = tile_index % width_tiles
-        return row * self.tile_shape[0], col * self.tile_shape[1]
+        return col * self.tile_shape[1], row * self.tile_shape[0]
 
     def _tex_coords(self, tile_index: int) -> np.ndarray:
 
@@ -147,7 +146,7 @@ class TextureAtlas2D(Texture2D):
         except KeyError:
             # TODO_OCTREE: just raise something for now
             raise RuntimeError(
-                "All {self.num_slots} TextureAtlas2D slots are full"
+                f"All {self.num_slots_total} TextureAtlas2D slots are full"
             )
 
         self._set_tile_data(tile_index, data)
@@ -182,6 +181,8 @@ class TextureAtlas2D(Texture2D):
 
         # Get (X, Y) offset of this tile within the larger texture.
         offset = self._offset(tile_index)
+
+        print(f"_set_tile_data tile_index={tile_index} offset={offset}")
 
         # Call Texture2D.set_data() which will call glTexSubImage2D() under
         # the hood to only upload the data for this one tile.
