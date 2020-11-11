@@ -1,5 +1,6 @@
 """TextureAtlas2D class.
 """
+from collections import namedtuple
 from typing import Tuple
 
 import numpy as np
@@ -10,25 +11,13 @@ _QUAD = np.array(
     [[0, 0], [1, 0], [1, 1], [0, 0], [1, 1], [0, 1]], dtype=np.float32,
 )
 
-
-class TexInfo:
-    """Texture Information
-
-    Parameters
-    ----------
-    tile_index : int
-        The tile's index in the atlas.
-    tex_coord
-        The texture coordinates of the tile.
-    """
-
-    def __init__(self, tile_index, tex_coord):
-        self.tile_index = tile_index
-        self.tex_coord = tex_coord
+# TexInfo is returned from TextureAtlas2D.add_tile() so the caller has the
+# texture coordinates to render each tile in the atlas.
+TexInfo = namedtuple('TexInfo', "tile_index tex_coord")
 
 
 class TextureAtlas2D(Texture2D):
-    """Two-dimension texture atlas.
+    """A two-dimensional texture atlas.
 
     A single large texture with "slots" for smaller texture tiles.
 
@@ -58,24 +47,24 @@ class TextureAtlas2D(Texture2D):
         # The full texture's shape in tiles, for example 4x4.
         self.shape_in_tiles = shape_in_tiles
 
-        # The full texture's chape in texels, for example 1024x1024.
+        RGB = 3  # TODO_OCTREE: get from the data
+
+        # The full texture's shape in texels, for example 1024x1024.
         height = self.tile_shape[0] * self.shape_in_tiles[0]
         width = self.tile_shape[1] * self.shape_in_tiles[1]
-
-        # TODO_OCTREE: Hardcode RGB for now
-        self.texture_shape = np.array([width, height, 3], dtype=np.int32)
+        self.texture_shape = np.array([width, height, RGB], dtype=np.int32)
 
         # Total number of texture slots in the atlas.
         self.num_slots_total = shape_in_tiles[0] * shape_in_tiles[1]
 
-        # Every index is free to start.
+        # Every index is free initially.
         self._free_indices = set(range(0, self.num_slots_total))
 
         # Pre-compute the texture coords for every tile. Otherwise we'd be
-        # calculating these over and over.
+        # calculating these over and over as tiles are added.
         #
         # TODO_OCTREE: Compute and store the coords for all the tiles in
-        # one single ndarray?
+        # one single ndarray? That would be more compact.
         self._tex_coords = [
             self._calc_tex_coords(i) for i in range(self.num_slots_total)
         ]
@@ -109,7 +98,7 @@ class TextureAtlas2D(Texture2D):
         return self.num_slots_total - self.num_slots_free
 
     def _offset(self, tile_index: int) -> Tuple[int, int]:
-        """Return the (X, Y) offset into the atlas texture.
+        """Return the (X, Y) offset into the full atlas texture.
 
         Parameters
         ----------
@@ -124,6 +113,8 @@ class TextureAtlas2D(Texture2D):
         height_tiles, width_tiles = self.shape_in_tiles
         row = int(tile_index / width_tiles)
         col = tile_index % width_tiles
+
+        # Return as (X, Y).
         return col * self.tile_shape[1], row * self.tile_shape[0]
 
     def _calc_tex_coords(self, tile_index: int) -> np.ndarray:
@@ -158,21 +149,23 @@ class TextureAtlas2D(Texture2D):
         Parameters
         ----------
         data : np.ndarray
+            The image data for this one tile.
         """
         if data.shape != self.tile_shape:
             raise ValueError(
-                f"Tile shape {data.shape} does not match TextureAtlas2D "
-                f"tile size {self.tile_shape}"
+                f"Adding tile with shape {data.shape} does not match TextureAtlas2D "
+                f"internal tile shape {self.tile_shape}"
             )
 
         try:
             tile_index = self._free_indices.pop()
         except KeyError:
             raise RuntimeError(
-                f"All {self.num_slots_total} TextureAtlas2D slots are full"
+                f"No available TextureAtlas2D slots, "
+                f"all {self.num_slots_total} slots are full"
             )
 
-        # Upload the texture data for this tile.
+        # Upload the texture data for this one tile.
         self._set_tile_data(tile_index, data)
 
         # Return TexInfo. The caller will need the texture coordinates to
@@ -188,8 +181,7 @@ class TextureAtlas2D(Texture2D):
         tile_index : int
             The index of the tile to remove.
         """
-        # The index is now a free slow.
-        self._free_indices.add(tile_index)
+        self._free_indices.add(tile_index)  # This tile_index is now available.
 
         if self.MARK_DELETED_TILES:
             self._set_tile_data(tile_index, self.deleted_tile_data)
@@ -204,7 +196,6 @@ class TextureAtlas2D(Texture2D):
         data
             The new texture data for the tile.
         """
-
         # Covert (X, Y) offset of this tile within the larger texture
         # in the the (row, col) that Texture2D expects.
         offset = self._offset(tile_index)[::-1]
