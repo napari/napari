@@ -4,18 +4,10 @@ from typing import List, Set
 
 import numpy as np
 from vispy.gloo.buffer import VertexBuffer
-from vispy.visuals.shaders import Function, FunctionChain
 
 from ...layers.image.experimental.octree_util import ChunkData
 from ..vendored import ImageVisual
-from ..vendored.image import (
-    _apply_clim,
-    _apply_clim_float,
-    _apply_gamma,
-    _apply_gamma_float,
-    _c2l,
-    _null_color_transform,
-)
+from ..vendored.image import _build_color_transform
 from .texture_atlas import TexInfo, TextureAtlas2D
 
 # Shape of she whole texture in tiles. Hardcode for now.
@@ -28,27 +20,6 @@ _QUAD = np.array(
 )
 
 DATA_GRAYSCALE = False  # temporary
-
-
-# TODO_OCTREE: Slightly modified from ImageVisual._build_color_transform
-# Hopefully we can use the real one soon.
-def _build_color_transform(_data, clim, gamma, cmap):
-
-    if DATA_GRAYSCALE:
-        fclim = Function(_apply_clim_float)
-        fgamma = Function(_apply_gamma_float)
-        fun = FunctionChain(
-            None, [Function(_c2l), fclim, fgamma, Function(cmap.glsl_map)]
-        )
-    else:
-        fclim = Function(_apply_clim)
-        fgamma = Function(_apply_gamma)
-        fun = FunctionChain(
-            None, [Function(_null_color_transform), fclim, fgamma]
-        )
-    fclim['clim'] = clim
-    fgamma['gamma'] = gamma
-    return fun
 
 
 class TileData:
@@ -427,10 +398,11 @@ class TiledImageVisual(ImageVisual):
         # TODO_OCTREE: how does colortransform change for tiled?
         if self._need_colortransform_update:
             prg = view.view_program
+            grayscale = len(self.tile_shape) == 2 or self.tile_shape[2] == 1
             self.shared_program.frag[
                 'color_transform'
             ] = _build_color_transform(
-                self._data, self.clim_normalized, self.gamma, self.cmap
+                grayscale, self.clim_normalized, self.gamma, self.cmap
             )
             self._need_colortransform_update = False
             prg['texture2D_LUT'] = (
