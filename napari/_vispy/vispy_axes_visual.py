@@ -1,5 +1,5 @@
 import numpy as np
-from vispy.scene.visuals import Compound, Line, Mesh
+from vispy.scene.visuals import Compound, Line, Mesh, Text
 from vispy.visuals.transforms import STTransform
 
 from ..layers.shapes._shapes_utils import triangulate_ellipse
@@ -69,11 +69,17 @@ class VispyAxesVisual:
         self._scale = 1
 
         # note order is z, y, x
+        self._default_color = [[0, 1, 1, 1], [1, 1, 0, 1], [1, 0, 1, 1]]
         self._default_data = np.array(
             [[0, 0, 0], [0, 0, 1], [0, 0, 0], [0, 1, 0], [0, 0, 0], [1, 0, 0]]
         )
-        self._default_color = np.concatenate(
-            [[[0, 1, 1, 1]] * 2, [[1, 1, 0, 1]] * 2, [[1, 0, 1, 1]] * 2],
+        self._text_offsets = np.array([[1, 1, 1], [1, 1, 1], [1, 1, 1]])
+        self._default_line_color = np.concatenate(
+            [
+                [self._default_color[0]] * 2,
+                [self._default_color[1]] * 2,
+                [self._default_color[2]] * 2,
+            ],
             axis=0,
         )
         # note order is z, y, x
@@ -87,9 +93,9 @@ class VispyAxesVisual:
         )
         self._dashed_color = np.concatenate(
             [
-                [[0, 1, 1, 1]] * 2,
-                [[1, 1, 0, 1]] * 4 * 2,
-                [[1, 0, 1, 1]] * 8 * 2,
+                [self._default_color[0]] * 2,
+                [self._default_color[1]] * 4 * 2,
+                [self._default_color[2]] * 8 * 2,
             ],
             axis=0,
         )
@@ -104,19 +110,28 @@ class VispyAxesVisual:
         self._default_arrow_faces = faces.astype(int)
         self._default_arrow_color = np.concatenate(
             [
-                [[0, 1, 1, 1]] * self._NUM_SEGMENTS_ARROWHEAD,
-                [[1, 1, 0, 1]] * self._NUM_SEGMENTS_ARROWHEAD,
-                [[1, 0, 1, 1]] * self._NUM_SEGMENTS_ARROWHEAD,
+                [self._default_color[0]] * self._NUM_SEGMENTS_ARROWHEAD,
+                [self._default_color[1]] * self._NUM_SEGMENTS_ARROWHEAD,
+                [self._default_color[2]] * self._NUM_SEGMENTS_ARROWHEAD,
             ],
             axis=0,
         )
         self._target_length = 80
         self.node = Compound(
-            [Line(connect='segments', method='gl', width=3), Mesh()],
+            [Line(connect='segments', method='gl', width=3), Mesh(), Text()],
             parent=parent,
         )
         self.node.transform = STTransform()
         self.node.order = order
+
+        # Add a text node to display axes labels
+        self.text_node = self.node._subvisuals[2]
+        self.text_node.pos = (
+            self._default_data[1::2] + 0.1 * self._text_offsets
+        )
+        self.text_node.font_size = 10
+        self.text_node.anchors = ('center', 'center')
+        self.text_node.text = f'{1}'
 
         self._axes.events.visible.connect(self._on_visible_change)
         self._axes.events.colored.connect(self._on_data_change)
@@ -124,6 +139,7 @@ class VispyAxesVisual:
         self._axes.events.arrows.connect(self._on_data_change)
         self._dims.events.order.connect(self._on_data_change)
         self._camera.events.zoom.connect(self._on_zoom_change)
+        self._dims.events.axis_labels.connect(self._on_data_change)
 
         self._on_visible_change(None)
         self._on_data_change(None)
@@ -131,6 +147,7 @@ class VispyAxesVisual:
     def _on_visible_change(self, event):
         """Change visibiliy of axes."""
         self.node.visible = self._axes.visible
+        self.text_node.visible = self._axes.visible
         self._on_zoom_change(None)
 
     def _on_data_change(self, event):
@@ -148,7 +165,7 @@ class VispyAxesVisual:
                 color = self._dashed_color
                 arrow_color = self._default_arrow_color
             else:
-                color = self._default_color
+                color = self._default_line_color
                 arrow_color = self._default_arrow_color
 
         if self._axes.arrows:
@@ -175,6 +192,11 @@ class VispyAxesVisual:
             faces=arrow_faces,
             face_colors=arrow_color,
         )
+
+        axis_labels = [self._dims.axis_labels[d] for d in self._dims.displayed]
+        self.text_node.text = axis_labels
+        self.text_node.color = self._default_color
+        self.text_node.pos = data[1::2] + 0.1 * self._text_offsets
 
     def _on_zoom_change(self, event):
         """Update axes length based on zoom scale.
