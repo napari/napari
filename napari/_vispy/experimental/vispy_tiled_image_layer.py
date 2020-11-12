@@ -41,8 +41,9 @@ class VispyTiledImageLayer(VispyImageLayer):
 
     The benefit is adding or removing tiles does not cause any scene graph
     changes. And it does not cause the shader to be rebuilt either. It's
-    efficient because we only send one tile's worth of data to the card at
-    a time. Only the tile's footprint in the atlas texture gets modified.
+    bandwidth efficient because we only send one tile's worth of data to
+    the card at a time. Only the tile's footprint in the atlas texture gets
+    modified.
 
     Parameters
     ----------
@@ -78,14 +79,17 @@ class VispyTiledImageLayer(VispyImageLayer):
         return self.node.num_tiles
 
     def set_data(self, node, data):
-        """Set our data, not implemented."""
-        # ImageVisual has a set_data() method but we don't. No one can set
-        # the data for the whole image! We pull our data one chunk at a
-        # time by calling self.layer.visible_chunks in our _update_view()
-        # method.
+        """Set our image data, not implemented.
+
+        ImageVisual has a set_data() method but we don't. No one can set
+        the data for the whole image, that's why it's a tiled image in the
+        first place. Instead of set_data() we pull our data one chunk at a
+        time by calling self.layer.visible_chunks in our _update_view()
+        method.
+        """
         raise NotImplementedError()
 
-    def _update_visible_chunks(self) -> ChunkStats:
+    def _update_chunks(self) -> ChunkStats:
         """Add or remove tiles to match the chunks which are currently visible.
 
         1) Remove tiles which are no longer visible.
@@ -124,10 +128,14 @@ class VispyTiledImageLayer(VispyImageLayer):
         return stats
 
     def _update_tile_shape(self):
-        # This might be overly dynamic, but for now if we see there's
-        # a new tile shape we nuke our texture atlas and start over
-        # with the new tile shape. Maybe there should be some type of
-        # more explicit change required?
+        """Check if the tile shape was changed on us."""
+        # This might be overly dynamic, but for now if we see there's a new
+        # tile shape we nuke our texture atlas and start over with the new
+        # tile shape.
+        #
+        # We added this because the QtTestImage GUI sets the tile shape
+        # after the layer is created. But the ability might come in handy
+        # and it was not hard to implement.
         tile_shape = self.layer.tile_shape
         if self.node.tile_shape != tile_shape:
             self.node.set_tile_shape(tile_shape)
@@ -142,10 +150,10 @@ class VispyTiledImageLayer(VispyImageLayer):
         if not self.node.visible:
             return
 
-        self._update_tile_shape()
+        self._update_tile_shape()  # In case the tile shape changed!
 
-        with block_timer("_update_visible_chunks") as elapsed:
-            stats = self._update_visible_chunks()
+        with block_timer("_update_chunks") as elapsed:
+            stats = self._update_chunks()
 
         if stats.created > 0 or stats.deleted > 0:
             print(
