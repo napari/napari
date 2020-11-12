@@ -386,10 +386,6 @@ class TiledImageVisual(ImageVisual):
         self._texture_limits = np.array([0, 1])  # hardcode
         self._need_colortransform_update = True
 
-        data = np.empty((1024, 1024, 3), dtype=np.uint8)
-        data[:] = (1, 0, 0)  # handle RGB or RGBA?
-
-        self._texture.set_data(data)
         self._need_texture_upload = False
 
     def _prepare_draw(self, view):
