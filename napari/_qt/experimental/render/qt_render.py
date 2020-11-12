@@ -44,14 +44,16 @@ class QtRender(QWidget):
             self.mini_map = QtMiniMap(layer)
             layout.addWidget(self.mini_map)
 
-            self.frame_rate = QtFrameRate()
-            layout.addWidget(self.frame_rate)
-
             self.viewer.camera.events.center.connect(self._on_camera_move)
 
         # Controls to create a new test image.
         layout.addStretch(1)
         layout.addWidget(QtTestImage(viewer))
+
+        # Frame rate meter.
+        self.frame_rate = QtFrameRate()
+        layout.addWidget(self.frame_rate)
+
         self.setLayout(layout)
 
     def _on_camera_move(self, event=None):

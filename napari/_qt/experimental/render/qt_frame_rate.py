@@ -8,8 +8,8 @@ from qtpy.QtCore import QTimer
 from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import QLabel
 
-# Shape of the frame rate display.
-BITMAP_SHAPE = (40, 200, 4)
+# Shape of the frame rate bitmap.
+BITMAP_SHAPE = (20, 200, 4)
 
 # Left to right are segments.
 NUM_SEGMENTS = 30
