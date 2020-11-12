@@ -138,8 +138,9 @@ class VispyAxesVisual:
         self._axes.events.dashed.connect(self._on_data_change)
         self._axes.events.arrows.connect(self._on_data_change)
         self._dims.events.order.connect(self._on_data_change)
-        self._camera.events.zoom.connect(self._on_zoom_change)
+        self._dims.events.ndisplay.connect(self._on_data_change)
         self._dims.events.axis_labels.connect(self._on_data_change)
+        self._camera.events.zoom.connect(self._on_zoom_change)
 
         self._on_visible_change(None)
         self._on_data_change(None)
@@ -193,10 +194,16 @@ class VispyAxesVisual:
             face_colors=arrow_color,
         )
 
-        axis_labels = [self._dims.axis_labels[d] for d in self._dims.displayed]
+        # Get axis labels based on display dimensions
+        # TODO make work if not displaying last three axes
+        axis_labels = self._dims.axis_labels[-3:]
+        # axis_labels = [self._dims.axis_labels[d] for d in self._dims.order[-3:]]
+        axis_labels = axis_labels[::-1]
+        text_data = self._default_data[1::2]
+
         self.text_node.text = axis_labels
         self.text_node.color = self._default_color
-        self.text_node.pos = data[1::2] + 0.1 * self._text_offsets
+        self.text_node.pos = text_data[:, order] + 0.1 * self._text_offsets
 
     def _on_zoom_change(self, event):
         """Update axes length based on zoom scale.
