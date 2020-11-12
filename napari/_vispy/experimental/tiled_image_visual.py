@@ -116,6 +116,7 @@ class TileSet:
         return len(self._tiles)
 
     def clear(self) -> None:
+        """Clear out all our tiles and chunks. Forget everything."""
         self._tiles.clear()
         self._chunks.clear()
 
@@ -219,28 +220,46 @@ class TiledImageVisual(ImageVisual):
 
         super().__init__(*args, **kwargs)
 
+        # Must create after calling __init__ so self._interpolation exists.
         self.unfreeze()
         self._texture_atlas = self._create_texture_atlas(tile_shape)
         self.freeze()
 
     def _create_texture_atlas(self, tile_shape: np.ndarray) -> TextureAtlas2D:
-        if self._interpolation == 'bilinear':
-            texture_interpolation = 'linear'
-        else:
-            texture_interpolation = 'nearest'
+        """Create texture atlas up front or if we change texture shape.
 
-        return TextureAtlas2D(
-            tile_shape, SHAPE_IN_TILES, interpolation=texture_interpolation
-        )
+        Attributes
+        ----------
+        tile_shape : np.ndarray
+            The shape of our tiles like (256, 256, 4).
+
+        Return
+        ------
+        TextureAtlas2D
+            The newly created texture atlas.
+        """
+        interp = 'linear' if self._interpolation == 'bilinear' else 'nearest'
+        return TextureAtlas2D(tile_shape, SHAPE_IN_TILES, interpolation=interp)
 
     def set_data(self, image):
         pass
 
-    def set_tile_shape(self, tile_shape: np.ndarray):
+    def set_tile_shape(self, tile_shape: np.ndarray) -> None:
+        """Set the shape of our tiles.
 
-        # Set the new shape and clear all our previous tile information.
-        self.tile_shape = tile_shape
+        All tiles are the same shape in terms of texels. However they might
+        be drawn different sizes. For example a quadtree might draw one
+        tile 2X or 4X bigger than another tile.
+
+        Parameters
+        ----------
+        tile_shape : np.ndarray
+            Our tiles shape like (256, 256, 4)
+        """
+
+        # Clear all our previous tile information and set the new shape.
         self._tiles.clear()
+        self.tile_shape = tile_shape
 
         # Create the new atlas and tell the shader about it.
         self._texture_atlas = self._create_texture_atlas(tile_shape)
