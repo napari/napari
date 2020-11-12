@@ -236,7 +236,7 @@ class QtViewer(QSplitter):
         self.viewer.cursor.events.size.connect(self._on_cursor)
         self.viewer.events.palette.connect(self._update_palette)
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
-        self.viewer.layers.events.added.connect(self._on_add_layer_change)
+        self.viewer.layers.events.inserted.connect(self._on_add_layer_change)
         self.viewer.layers.events.removed.connect(self._remove_layer)
         # stop any animations whenever the layers change
         self.viewer.events.layers_change.connect(lambda x: self.dims.stop())
@@ -313,7 +313,7 @@ class QtViewer(QSplitter):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        layer = event.item
+        layer = event.value
         self._add_layer(layer)
 
     def _add_layer(self, layer):
@@ -339,7 +339,7 @@ class QtViewer(QSplitter):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        layer = event.item
+        layer = event.value
         vispy_layer = self.layer_to_visual[layer]
         vispy_layer.node.transforms = ChainTransform()
         vispy_layer.node.parent = None
