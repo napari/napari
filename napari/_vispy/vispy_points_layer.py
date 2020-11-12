@@ -29,6 +29,7 @@ class VispyPointsLayer(VispyBaseLayer):
         )
         self.layer.events.highlight.connect(self._on_highlight_change)
         self._on_data_change()
+        self._reset_base()
 
     def _on_data_change(self, event=None):
         if len(self.layer._indices_view) > 0:
