@@ -27,14 +27,14 @@ _QUAD = np.array(
     [[0, 0], [1, 0], [1, 1], [0, 0], [1, 1], [0, 1]], dtype=np.float32,
 )
 
-DATA_2D = True  # temporary
+DATA_GRAYSCALE = False  # temporary
 
 
 # TODO_OCTREE: Slightly modified from ImageVisual._build_color_transform
 # Hopefully we can use the real one soon.
 def _build_color_transform(_data, clim, gamma, cmap):
 
-    if DATA_2D:
+    if DATA_GRAYSCALE:
         fclim = Function(_apply_clim_float)
         fgamma = Function(_apply_gamma_float)
         fun = FunctionChain(
