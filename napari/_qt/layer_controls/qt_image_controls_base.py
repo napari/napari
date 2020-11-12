@@ -2,10 +2,20 @@ from contextlib import suppress
 from functools import partial
 
 import numpy as np
-from qtpy.QtCore import Qt
-from qtpy.QtGui import QImage, QPixmap
-from qtpy.QtWidgets import QComboBox, QLabel, QPushButton, QSlider
+from qtpy.QtCore import QModelIndex, QRect, Qt
+from qtpy.QtGui import QImage, QPainter, QPen, QPixmap
+from qtpy.QtWidgets import (
+    QComboBox,
+    QLabel,
+    QListView,
+    QPushButton,
+    QSlider,
+    QStyle,
+    QStyledItemDelegate,
+    QStyleOptionViewItem,
+)
 
+from ...utils.colormaps import ensure_colormap, make_colorbar
 from ..utils import qt_signals_blocked
 from ..widgets.qt_range_slider import QHRangeSlider
 from ..widgets.qt_range_slider_popup import QRangeSliderPopup
@@ -47,7 +57,7 @@ class QtBaseImageControls(QtLayerControls):
         self.layer.events.gamma.connect(self.gamma_slider_update)
         self.layer.events.contrast_limits.connect(self._on_clims_change)
 
-        comboBox = QComboBox(self)
+        comboBox = ColormapComboBox(self)
         comboBox.setObjectName("colormapComboBox")
         comboBox.addItems(self.layer.colormaps)
         comboBox._allitems = set(self.layer.colormaps)
@@ -296,3 +306,64 @@ def create_clim_reset_buttons(layer):
         range_btn.clicked.connect(reset_range)
 
     return reset_btn, range_btn
+
+
+class ColorStyledDelegate(QStyledItemDelegate):
+    """
+    Class for paint :py:class:`~.ColorComboBox` elements when list trigger
+
+    :param base_height: height of single list element
+    :param color_dict: Dict mapping name to colors
+    """
+
+    def __init__(self, base_height: int, **kwargs):
+        super().__init__(**kwargs)
+        self.base_height = base_height
+
+    def paint(
+        self,
+        painter: QPainter,
+        style: QStyleOptionViewItem,
+        model: QModelIndex,
+    ):
+        rect = QRect(
+            style.rect.x(),
+            style.rect.y() + 2,
+            style.rect.width() - 100,
+            style.rect.height() - 4,
+        )
+        rect2 = QRect(
+            style.rect.width() - 90,
+            style.rect.y() + 2,
+            style.rect.width(),
+            style.rect.height() - 4,
+        )
+        cbar = make_colorbar(ensure_colormap(model.data()), (18, 100))
+        image = QImage(
+            cbar, cbar.shape[1], cbar.shape[0], QImage.Format_RGBA8888,
+        )
+        painter.drawImage(rect, image)
+        painter.drawText(rect2, Qt.AlignCenter & Qt.AlignVCenter, model.data())
+        if int(style.state & QStyle.State_HasFocus):
+            painter.save()
+            pen = QPen()
+            pen.setWidth(5)
+            painter.setPen(pen)
+            painter.drawRect(rect)
+            painter.restore()
+
+    def sizeHint(self, style: QStyleOptionViewItem, model: QModelIndex):
+        res = super().sizeHint(style, model)
+        # print(res)
+        res.setHeight(self.base_height)
+        res.setWidth(max(500, res.width()))
+        return res
+
+
+class ColormapComboBox(QComboBox):
+    def __init__(self, parent):
+        super().__init__(parent)
+        view = QListView()
+        view.setMinimumWidth(250)
+        view.setItemDelegate(ColorStyledDelegate(30))
+        self.setView(view)
