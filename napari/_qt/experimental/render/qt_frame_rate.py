@@ -4,21 +4,21 @@ import math
 import time
 
 import numpy as np
+from qtpy.QtCore import QTimer
 from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import QLabel
 
 # Shape of the frame rate display.
 BITMAP_SHAPE = (40, 200, 4)
 
-# Left to right are bars.
-NUM_BARS = 9
+# Left to right are segments.
+NUM_SEGMENTS = 30
 
-# Each bar has this many vertical segments.
-NUM_SEGMENTS = 5
-
+# 16.7ms or faster is our minimum reading, one segment only.
 MIN_MS = 16.17
 LOG_MIN_MS = math.log10(MIN_MS)
 
+# 100ms will be all segments lit up.
 MAX_MS = 100
 LOG_MAX_MS = math.log10(MAX_MS)  # 4
 
@@ -26,14 +26,26 @@ GREEN = (57, 252, 3, 255)
 YELLOW = (252, 232, 3, 255)
 RED = (252, 78, 3, 255)
 
-SEGMENT_WIDTH = BITMAP_SHAPE[1] / NUM_BARS
-
-SEGMENT_SPACING = BITMAP_SHAPE[0] / NUM_SEGMENTS
-SEGMENT_HEIGHT = SEGMENT_SPACING - 2
+SEGMENT_SPACING = BITMAP_SHAPE[1] / NUM_SEGMENTS
+SEGMENT_GAP = 2
+SEGMENT_WIDTH = SEGMENT_SPACING - SEGMENT_GAP
 
 LIVE_SEGMENTS = 20
 
-BAR_COLOR = [GREEN, GREEN, GREEN, YELLOW, YELLOW, YELLOW, RED, RED, RED]
+PEAK_MS = 250
+PEAK_SECONDS = PEAK_MS / 1000
+
+
+def _bar_color(segment: int) -> tuple:
+    if segment < 10:
+        return GREEN
+    if segment < 20:
+        return YELLOW
+    return RED
+
+
+def _clamp(value, low, high):
+    return max(min(value, high), low)
 
 
 class QtFrameRate(QLabel):
@@ -42,20 +54,46 @@ class QtFrameRate(QLabel):
     def __init__(self):
         super().__init__()
         self._last_time = None
-        self.values = np.zeros((NUM_BARS,), dtype=np.int32)
-        self.past_bars = []
+        self.peaks = np.zeros((NUM_SEGMENTS,), dtype=np.float)
         self.data = np.zeros(BITMAP_SHAPE, dtype=np.uint8)
+        self.current_segment = 0
 
-    def update(self) -> None:
-        """Update the frame rate display."""
+        self._bar_color = [_bar_color(i) for i in range(NUM_SEGMENTS)]
+
+        self._timer = QTimer()
+        self._timer.setSingleShot(False)
+        self._timer.setInterval(20)
+        self._timer.timeout.connect(self._on_timer)
+
+    def _on_timer(self):
+        if self.current_segment > 0:
+            self.current_segment -= 1
+
         now = time.time()
-        if self._last_time is not None:
-            delta_ms = (now - self._last_time) * 1000
-            self._update_bars(delta_ms)
-            self._update_bitmap()
         self._last_time = now
 
-    def _update_bars(self, delta_ms: float) -> None:
+        for i in range(NUM_SEGMENTS):
+            if now - self.peaks[i] > PEAK_SECONDS:
+                self.peaks[i] = 0  # done
+
+        self._update_bitmap(now, self.current_segment)
+
+        if np.all(self.peaks == 0) and self.current_segment == 0:
+            self._timer.stop()
+
+    def on_camera_move(self) -> None:
+        now = time.time()
+        if self._last_time is not None:
+            if self._timer.isActive():
+                delta_ms = (now - self._last_time) * 1000
+                segment = self._get_segment(delta_ms)
+                self.peaks[segment] = now
+                self.current_segment = segment
+                self._update_bitmap(now, self.current_segment)
+        self._last_time = now
+        self._timer.start()
+
+    def _get_segment(self, delta_ms: float) -> None:
         """Update bars with this new interval.
 
         Parameters
@@ -63,25 +101,16 @@ class QtFrameRate(QLabel):
         delta_ms : float
             The current frame interval.
         """
-        self._remove_past_values()
+        if delta_ms <= 0:
+            log_value = 0
+        else:
+            # Create log value where MIN_MS has the value zero.
+            log_value = math.log10(delta_ms) - LOG_MIN_MS
 
-        def _clamp(value, low, high):
-            return max(min(value, high), low)
-
-        # Create log value where MIN_MS has the value zero.
-        log_value = math.log10(delta_ms) - LOG_MIN_MS
-
-        # Compute fraction [0..1] for the whole width (all bars)
+        # Compute fraction [0..1] for the whole width (all segments)
         # and then find the bar we need to increment.
         fraction = _clamp(log_value / LOG_MAX_MS, 0, 1)
-        current_bar = int(fraction * (NUM_BARS - 1))
-
-        # Increment the bar and save off the value.
-        self.values[current_bar] += 1
-        self.past_bars.append(current_bar)
-
-        # Make sure values are not too high.
-        self.values = np.clip(self.values, 0, NUM_SEGMENTS)
+        return int(fraction * (NUM_SEGMENTS - 1))
 
     def _remove_past_values(self) -> None:
         if len(self.past_bars) < LIVE_SEGMENTS:
@@ -94,7 +123,7 @@ class QtFrameRate(QLabel):
         # Make sure none go under 0.
         self.values = np.clip(self.values, 0, NUM_SEGMENTS)
 
-    def _update_image_data(self) -> np.ndarray:
+    def _update_image_data(self, now: float, segment: int) -> np.ndarray:
         """Return bitmap data for the display.
 
         Return
@@ -103,20 +132,27 @@ class QtFrameRate(QLabel):
             The bit image to display.
         """
         self.data.fill(0)
-        for bar_index in range(NUM_BARS):
-            bar_value = self.values[bar_index]
-            print(f"bar: {bar_index} -> {bar_value}")
-            for segment in range(bar_value + 1):
-                x0 = int(bar_index * SEGMENT_WIDTH)
-                x1 = int(x0 + SEGMENT_WIDTH)
-                y0 = BITMAP_SHAPE[0] - int(segment * SEGMENT_SPACING)
-                y1 = int(y0 + SEGMENT_HEIGHT)
-                self.data[y0:y1, x0:x1] = BAR_COLOR[bar_index]
+        for index in range(segment + 1):
+            self._draw_segment(index)
 
-    def _update_bitmap(self) -> None:
+        for i in range(NUM_SEGMENTS):
+            if self.peaks[i] != 0:
+                fraction = _clamp((now - self.peaks[i]) / PEAK_SECONDS, 0, 1)
+                alpha = 255 - (fraction * 255)
+                self._draw_segment(i, alpha)
+
+    def _draw_segment(self, segment: int, alpha=255):
+        x0 = int(segment * SEGMENT_SPACING)
+        x1 = int(x0 + SEGMENT_WIDTH)
+        y0 = 0
+        y1 = BITMAP_SHAPE[0]
+        color = self._bar_color[segment][:3] + (alpha,)
+        self.data[y0:y1, x0:x1] = color
+
+    def _update_bitmap(self, now: float, segment: int) -> None:
         """Update the bitmap with latest image data.
         """
-        self._update_image_data()
+        self._update_image_data(now, segment)
         height, width = BITMAP_SHAPE[:2]
         image = QImage(self.data, width, height, QImage.Format_RGBA8888)
         self.setPixmap(QPixmap.fromImage(image))
