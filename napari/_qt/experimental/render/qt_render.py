@@ -6,7 +6,7 @@ from qtpy.QtWidgets import QVBoxLayout, QWidget
 
 from ....layers.image import Image
 from ....layers.image.experimental.octree_image import OctreeImage
-from .qt_frame_rate import QtFrameRate
+from .qt_frame_rate2 import QtFrameRate2
 from .qt_image_info import QtImageInfo
 from .qt_mini_map import QtMiniMap
 from .qt_octree_info import QtOctreeInfo
@@ -44,7 +44,7 @@ class QtRender(QWidget):
             self.mini_map = QtMiniMap(layer)
             layout.addWidget(self.mini_map)
 
-            self.frame_rate = QtFrameRate()
+            self.frame_rate = QtFrameRate2()
             layout.addWidget(self.frame_rate)
 
             self.viewer.camera.events.center.connect(self._on_camera_move)
