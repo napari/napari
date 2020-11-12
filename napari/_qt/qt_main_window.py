@@ -586,6 +586,48 @@ class Window:
         else:
             self._qt_window.removeDockWidget(widget)
 
+    def add_magic_function(self, function, magic=None, dock=None):
+        """Turn a function into a dock widget via magic gui.
+
+        Parameters
+        ----------
+        function : callable
+            Function that you want to add.
+        magic : dict, optional
+            Keyword arguments to the magicgui function that
+            can be used to specify widget.
+        dock : dict, optional
+            Keyword arguments to add_dock_widget function
+            that specify how the widget gets added.
+
+        Returns
+        -------
+        dock_widget : QtViewerDockWidget
+            `dock_widget` that can pass viewer events.
+        """
+        from magicgui import magicgui
+
+        if dock is None:
+            dock = {}
+
+        if 'name' not in dock:
+            function_name = function.__name__
+            function_name.replace('_', ' ')
+            dock['name'] = function_name
+
+        if magic is None:
+            magic = {}
+
+        # Get widget from magicgui
+        widget = magicgui(**magic)(function).Gui()
+
+        # Keep the dropdown menus in the widget in sync with the layer model
+        self.qt_viewer.viewer.layers.events.changed.connect(
+            lambda x: widget.refresh_choices()
+        )
+
+        return self.add_dock_widget(widget, **dock)
+
     def resize(self, width, height):
         """Resize the window.
 
