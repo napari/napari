@@ -15,7 +15,7 @@ def _set(env_var: str) -> bool:
 
 
 # Temporary
-allow_welcome_visual = False
+allow_welcome_visual = True
 
 
 """
