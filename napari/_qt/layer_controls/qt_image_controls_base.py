@@ -308,6 +308,11 @@ def create_clim_reset_buttons(layer):
     return reset_btn, range_btn
 
 
+COLORMAP_WIDTH = 150
+TEXT_WIDTH = 100
+ENTRY_HEIGHT = 30
+
+
 class ColorStyledDelegate(QStyledItemDelegate):
     """
     Class for paint :py:class:`~.ColorComboBox` elements when list trigger
@@ -329,11 +334,11 @@ class ColorStyledDelegate(QStyledItemDelegate):
         rect = QRect(
             style.rect.x(),
             style.rect.y() + 2,
-            style.rect.width() - 100,
+            style.rect.width() - TEXT_WIDTH,
             style.rect.height() - 4,
         )
         rect2 = QRect(
-            style.rect.width() - 90,
+            style.rect.width() - TEXT_WIDTH + 10,
             style.rect.y() + 2,
             style.rect.width(),
             style.rect.height() - 4,
@@ -364,6 +369,6 @@ class ColormapComboBox(QComboBox):
     def __init__(self, parent):
         super().__init__(parent)
         view = QListView()
-        view.setMinimumWidth(250)
-        view.setItemDelegate(ColorStyledDelegate(30))
+        view.setMinimumWidth(COLORMAP_WIDTH + TEXT_WIDTH)
+        view.setItemDelegate(ColorStyledDelegate(ENTRY_HEIGHT))
         self.setView(view)
