@@ -60,7 +60,8 @@ class VispyWelcomeVisual:
             < 255 / 2
         ):
             foreground_color = np.divide(
-                str_to_rgb(darken(self._viewer.palette['foreground'], 50)), 255
+                str_to_rgb(lighten(self._viewer.palette['foreground'], 60)),
+                255,
             )
             background_color = np.divide(
                 str_to_rgb(darken(self._viewer.palette['background'], 70)), 255
