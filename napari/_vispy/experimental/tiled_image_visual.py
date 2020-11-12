@@ -18,8 +18,6 @@ from ..vendored.image import (
 )
 from .texture_atlas import TexInfo, TextureAtlas2D
 
-draw_index = 0
-
 # Shape of she whole texture in tiles. Hardcode for now.
 SHAPE_IN_TILES = (16, 16)
 
@@ -311,8 +309,6 @@ class TiledImageVisual(ImageVisual):
         if tex_info is None:
             return  # No slot available in the atlas.
 
-        tile_index = tex_info.tile_index
-        print(f"add_tile tile_index={tile_index}")
         self._tiles.add(TileData(chunk_data, tex_info))
         self._need_vertex_update = True
 
@@ -324,7 +320,6 @@ class TiledImageVisual(ImageVisual):
         tile_index : int
             The tile to remove.
         """
-        print(f"remove_tile tiled_index={tile_index}")
         try:
             self._tiles.remove(tile_index)
             self._texture_atlas.remove_tile(tile_index)
@@ -403,13 +398,6 @@ class TiledImageVisual(ImageVisual):
         TODO_OCTREE: See how much this changes from base class, if we can
         avoid too much duplication. Or factor out some common methods.
         """
-        # Comment out: we expect our self._data is None
-        # if self._data is None:
-        #    return False
-        global draw_index
-        print(f"TiledImageVisual._prepare_draw: {draw_index}")
-        draw_index += 1
-
         if self._need_interpolation_update:
             # Call the base ImageVisual._build_interpolation()
             self._build_interpolation()

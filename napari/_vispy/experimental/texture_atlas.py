@@ -197,8 +197,6 @@ class TextureAtlas2D(Texture2D):
         # in the the (row, col) that Texture2D expects.
         offset = self._offset(tile_index)[::-1]
 
-        print(f"_set_tile_data: {tile_index} -> {offset}")
-
         # Texture2D.set_data() will use glTexSubImage2D() under the hood to
         # only write into the tile's portion of the larger texture. This is
         # the main reason adding tiles to TextureAtlas2D is fast, we do not

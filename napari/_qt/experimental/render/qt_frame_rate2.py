@@ -53,15 +53,22 @@ class QtFrameRate2(QLabel):
         self._bar_color = [_bar_color(i) for i in range(NUM_SEGMENTS)]
 
     def update(self) -> None:
-        """Update the frame rate display."""
+        """Update the frame rate display.
+
+        This update() is called when the mouse moves. But it might have been
+        a long time since we were last called. And we don't want to count
+        that as a slow frame. So we use QTime.singleShot to time how long
+        the NEXT frame takes to draw, and use this instead.
+
+        This prevents us from having bogus long frame times.
+        """
 
         def _next_frame():
-            now = time.time()
-            delta_ms = (now - self._last_time) * 1000
+            delta_ms = (time.time() - self.last_frame_time) * 1000
             segment = self._get_segment(delta_ms)
             self._update_bitmap(segment)
 
-        self._last_time = time.time()
+        self.last_frame_time = time.time()
         QTimer.singleShot(0, _next_frame)
 
     def _get_segment(self, delta_ms: float) -> None:
@@ -77,8 +84,12 @@ class QtFrameRate2(QLabel):
         def _clamp(value, low, high):
             return max(min(value, high), low)
 
-        # Create log value where MIN_MS has the value zero.
-        log_value = math.log10(delta_ms) - LOG_MIN_MS
+        if delta_ms <= 0:
+            print(f"delta_ms = {delta_ms}")
+            log_value = 0
+        else:
+            # Create log value where MIN_MS has the value zero.
+            log_value = math.log10(delta_ms) - LOG_MIN_MS
 
         # Compute fraction [0..1] for the whole width (all segments)
         # and then find the bar we need to increment.
@@ -104,16 +115,13 @@ class QtFrameRate2(QLabel):
         np.ndarray
             The bit image to display.
         """
-        print(f"segment = {segment}")
         self.data.fill(0)
         for index in range(segment + 1):
             x0 = int(index * SEGMENT_SPACING)
             x1 = int(x0 + SEGMENT_WIDTH)
             y0 = 0
             y1 = BITMAP_SHAPE[0]
-            print(f"segment = {y0}:{y1} - {x0}:{x1}")
             color = self._bar_color[index]
-            print(f"color = {color}")
             self.data[y0:y1, x0:x1] = color
 
     def _update_bitmap(self, segment: int) -> None:
