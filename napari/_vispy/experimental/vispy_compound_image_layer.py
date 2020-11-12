@@ -236,6 +236,9 @@ class VispyCompoundImageLayer(VispyImageLayer):
     def _on_camera_move(self, event=None):
         super()._on_camera_move()
 
+        if not self.node.visible:
+            return
+
         with block_timer("_update_view") as elapsed:
             stats = self._update_view()
 

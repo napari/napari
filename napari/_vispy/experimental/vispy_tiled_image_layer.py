@@ -114,6 +114,9 @@ class VispyTiledImageLayer(VispyImageLayer):
         """
         super()._on_camera_move()
 
+        if not self.node.visible:
+            return
+
         self._update_tile_shape()
 
         with block_timer("_update_visible_chunks") as elapsed:
