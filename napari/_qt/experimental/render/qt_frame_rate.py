@@ -15,14 +15,6 @@ BITMAP_SHAPE = (20, 270, 4)
 # Left to right are segments.
 NUM_SEGMENTS = 30
 
-# 16.7ms or faster is our minimum reading, one segment only.
-MIN_MS = 16.17
-LOG_MIN_MS = math.log10(MIN_MS)
-
-# 100ms will be all segments lit up.
-MAX_MS = 100
-LOG_MAX_MS = math.log10(MAX_MS)  # 4
-
 # Don't use pure RGB, looks better?
 GREEN = (57, 252, 3, 255)
 YELLOW = (252, 232, 3, 255)
@@ -57,6 +49,15 @@ ALPHA_OFF = 25
 DECAY_MS = {"peak": [(0, 1000), (10, 2000), (20, 3000)], "active": [(0, 250)]}
 
 LED_COLORS = [(0, GREEN), (10, YELLOW), (20, RED)]
+
+# We should have better knobs for calibrating which framerates lead to
+# which colors. But experiments this gives:
+# GREEN: up to 31ms (32Hz)
+# YELLOW: up to 312ms (3.1Hz)
+# RED: up to 6000ms (0.16Hz)
+# makes the first yellow at 36ms
+PERFECT_MS = 16.7
+LOG_BASE = 1.35
 
 
 def _decay_seconds(index: int, decay_config) -> float:
@@ -110,19 +111,16 @@ def _get_peak(delta_seconds: float) -> None:
     delta_seconds : float
         The current frame interval.
     """
-    if delta_seconds <= 0:
-        delta_ms = 0
-        log_value = 0
-    else:
-        # Create log value where MIN_MS is zero.
-        delta_ms = delta_seconds * 1000
-        log_value = math.log10(delta_ms) - LOG_MIN_MS
 
-    # Compute fraction [0..1] for the whole width (all segments)
-    # and then return the max the semgent.
-    fraction = _clamp(log_value / LOG_MAX_MS, 0, 1)
-    peak = int(fraction * (NUM_SEGMENTS - 1))
-    print(f"{delta_ms} -> {peak}")
+    def _lerp(low: int, high: int, fraction: float) -> int:
+        return int(low + (high - low) * fraction)
+
+    if delta_seconds <= 0:
+        return 0
+
+    input_value = max((delta_seconds * 1000) - PERFECT_MS, 0) + 1
+    log_value = math.log(input_value, LOG_BASE)
+    peak = _clamp(int(log_value), 0, NUM_SEGMENTS - 1)
     return peak
 
 
@@ -213,17 +211,18 @@ class DecayTimes:
         return _lerp(ALPHA_OFF, ALPHA_MAX, fraction)
 
 
-def _print_mapping():
+def _print_calibration():
     """Print mapping from LED segment to millseconds.
 
     Since we don't yet have the reverse math figured out, we print out
     the mapping by sampling. Crude but works.
     """
+    print(f"LOG_BASE = {LOG_BASE}")
     previous = None
     for ms in range(0, 10000):
-        segment = _get_peak(ms)
+        segment = _get_peak(ms / 1000)
         if previous != segment:
-            print(f"ms: {ms} -> {segment}")
+            print(f"LED: {segment} -> {ms}ms")
             previous = segment
 
 
@@ -362,7 +361,7 @@ class QtFrameRate(QLabel):
         self._timer.setInterval(20)
         self._timer.timeout.connect(self._on_timer)
 
-        _print_mapping()  # Debugging.
+        # _print_calibration()  # Debugging.
 
     def _on_timer(self):
         """Animate the LEDs."""
