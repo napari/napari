@@ -101,19 +101,24 @@ class QtOctreeInfoLayout(QVBoxLayout):
     ):
         super().__init__()
 
+        # Checkbox to toggle if the drawn tiles should update as the view
+        # moves around. They normal state is yes.
         self.track = QCheckBox("Track View")
         self.track.stateChanged.connect(on_set_track)
         self.track.setChecked(layer.track_view)
         self.addWidget(self.track)
 
+        # Checkbox to toggle debug grid around the tiles.
         self.track = QCheckBox("Show Grid")
         self.track.stateChanged.connect(on_set_grid)
         self.track.setChecked(layer.show_grid)
         self.addWidget(self.track)
 
+        # Choose AUTO or which octree level to view.
         self.level = QtLevelCombo(layer.num_octree_levels, on_set_level)
         self.addLayout(self.level)
 
+        # Keys and values about the octree.
         self.table = QtSimpleTable()
         self.addWidget(self.table)
 
@@ -196,10 +201,10 @@ class QtOctreeInfo(QFrame):
             self.layer.octree_level = value - 1
 
     def _on_set_track(self, value: int) -> None:
-        """If True the tiles are updated based on the current view.
+        """If True we update tiles drawn based on the current view.
 
         value : int
-            If True draw tiles based on the current view.
+            If True we update tiles drawn based on the current view.
         """
         self.layer.track_view = value != 0
 
@@ -207,6 +212,6 @@ class QtOctreeInfo(QFrame):
         """If True the layer draws a grid around the tiles.
 
         value : int
-            If True draw the grid.
+            If True draw a grid around the tiles.
         """
         self.layer.show_grid = value != 0
