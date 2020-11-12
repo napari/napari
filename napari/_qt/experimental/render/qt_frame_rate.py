@@ -73,6 +73,13 @@ class QtFrameRate(QLabel):
         self._timer.setInterval(20)
         self._timer.timeout.connect(self._on_timer)
 
+        previous = None
+        for ms in range(0, 10000):
+            segment = self._get_segment(ms)
+            if previous != segment:
+                print(f"ms: {ms} -> {segment}")
+                previous = segment
+
     def _on_timer(self):
         if self.current_segment > 0:
             self.current_segment -= 1
