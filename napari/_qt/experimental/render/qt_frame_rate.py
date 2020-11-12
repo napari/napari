@@ -32,8 +32,15 @@ SEGMENT_WIDTH = SEGMENT_SPACING - SEGMENT_GAP
 
 LIVE_SEGMENTS = 20
 
-PEAK_MS = 250
-PEAK_SECONDS = PEAK_MS / 1000
+PEAK_MS = [250, 2000, 5000]
+
+
+def _peak_ms(segment: int) -> float:
+    if segment < 10:
+        return PEAK_MS[0]
+    if segment < 20:
+        return PEAK_MS[1]
+    return PEAK_MS[2]
 
 
 def _bar_color(segment: int) -> tuple:
@@ -59,6 +66,7 @@ class QtFrameRate(QLabel):
         self.current_segment = 0
 
         self._bar_color = [_bar_color(i) for i in range(NUM_SEGMENTS)]
+        self._peak_seconds = [_peak_ms(i) / 1000 for i in range(NUM_SEGMENTS)]
 
         self._timer = QTimer()
         self._timer.setSingleShot(False)
@@ -73,7 +81,7 @@ class QtFrameRate(QLabel):
         self._last_time = now
 
         for i in range(NUM_SEGMENTS):
-            if now - self.peaks[i] > PEAK_SECONDS:
+            if now - self.peaks[i] > self._peak_seconds[i]:
                 self.peaks[i] = 0  # done
 
         self._update_bitmap(now, self.current_segment)
@@ -137,7 +145,8 @@ class QtFrameRate(QLabel):
 
         for i in range(NUM_SEGMENTS):
             if self.peaks[i] != 0:
-                fraction = _clamp((now - self.peaks[i]) / PEAK_SECONDS, 0, 1)
+                duration = now - self.peaks[i]
+                fraction = _clamp(duration / self._peak_seconds[i], 0, 1)
                 alpha = 255 - (fraction * 255)
                 self._draw_segment(i, alpha)
 
