@@ -126,10 +126,8 @@ def _create_async_config(data: dict) -> AsyncConfig:
     octree_data = data.get("octree")
     if octree_data is None:
         octree_data = DEFAULT_OCTREE_CONFIG
-    else:
-        octree_config = OctreeConfig(
-            tile_size=octree_data.get("tile_size", 64)
-        )
+
+    octree_config = OctreeConfig(tile_size=octree_data.get("tile_size", 64))
 
     config = AsyncConfig(
         log_path=data.get("log_path"),
