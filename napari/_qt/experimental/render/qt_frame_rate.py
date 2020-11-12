@@ -1,4 +1,6 @@
 """QtFrameRate widget.
+
+Displays the framerate as colored LEDs.
 """
 import math
 import time
@@ -9,61 +11,74 @@ from qtpy.QtCore import QTimer
 from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import QLabel
 
-# Shape of the frame rate bitmap.
+# Shape of the bitmap.
 BITMAP_SHAPE = (20, 270, 4)
 
-# Left to right are segments.
+# Number of left to right LED segments.
 NUM_SEGMENTS = 30
 
-# Don't use pure RGB, looks better?
+# Spacing between segments, including the gap
+SEGMENT_SPACING = BITMAP_SHAPE[1] / NUM_SEGMENTS
+
+# Pixel gap between segments
+SEGMENT_GAP = 2
+SEGMENT_WIDTH = SEGMENT_SPACING - SEGMENT_GAP
+
+# DECAY_MS (X, Y) means if segment is at least X then keep that LED
+# on for Y milliseconds. Peak means we hit that exact value,
+# while active means it was a leading LED on the way to that peak.
+#
+# The general goals for the LEDs are:
+#
+# 1) The current peak is bright and easily visible.
+# 2) The LEDs leading up to the current peak are bright so that makes
+#    the current peak easier to see.
+# 3) The peaks decay more slowly than the leading LEDs. So the slow frames
+#    are visible even when the framerate has improved. So we can
+#    see the bad peaks for a while.
+#
+# Make yellow and green stay lit longer, so we don't miss them.
+DECAY_MS = {"peak": [(0, 1000), (10, 2000), (20, 3000)], "active": [(0, 250)]}
+
+# LEDs are colors GREEN -> YELLOW -> RED using slightly non-pure colors.
+# Colors were chosen quickly and could be tweaked.
 GREEN = (57, 252, 3, 255)
 YELLOW = (252, 232, 3, 255)
 RED = (252, 78, 3, 255)
 
-SEGMENT_SPACING = BITMAP_SHAPE[1] / NUM_SEGMENTS
-SEGMENT_GAP = 2
-SEGMENT_WIDTH = SEGMENT_SPACING - SEGMENT_GAP
-
-LIVE_SEGMENTS = 20
+# Ten segments of each color.
+LED_COLORS = [(0, GREEN), (10, YELLOW), (20, RED)]
 
 # LEDs decay from MAX to OFF. We leave them visible when off because it
 # looks better, and so you can see how high the meter goes.
 ALPHA_MAX = 255
 ALPHA_OFF = 25
 
-# DECAY_MS (X, Y) means if segment is at least X then keep that LED
-# on for Y milliseconds. Peak means we hit that exact value,
-# while active means it was a leading LED on the way to that peak.
-#
-# The general goals for the LED brightness is:
-#
-# 1) The current peak is bright and easily visible.
-# 2) The LEDs leading up to the current peak are bright so that makes
-#    the current peak easier to see.
-# 3) The peaks decay more slowly then the leading/active LEDs. So the slow
-#    frames are visible even when the framerate has improved.
-#
-# We want to see at a glance what the current frame rate is, but we want to
-# be able to see the "recent history" of slow frames, and see the pattern
-# of that slowness. Like one super slow frame, plus some medium-slow ones.
-DECAY_MS = {"peak": [(0, 1000), (10, 2000), (20, 3000)], "active": [(0, 250)]}
-
-LED_COLORS = [(0, GREEN), (10, YELLOW), (20, RED)]
-
 # We should have better knobs for calibrating which framerates lead to
-# which colors. But experiments this gives:
+# which colors. But playing around this values we now get:
+#
 # GREEN: up to 31ms (32Hz)
 # YELLOW: up to 312ms (3.1Hz)
 # RED: up to 6000ms (0.16Hz)
-# makes the first yellow at 36ms
+#
+# That seems pretty useful. Green is good, yellow is bad, red is awful.
+#
 PERFECT_MS = 16.7
 LOG_BASE = 1.35
+
+
+def _clamp(value, low, high):
+    return max(min(value, high), low)
+
+
+def _lerp(low: int, high: int, fraction: float) -> int:
+    return int(low + (high - low) * fraction)
 
 
 def _decay_seconds(index: int, decay_config) -> float:
     """Return duration in seconds the segment should stay on.
 
-    Called during init only to create a lookup table, for speed.
+    Only called during init to create a lookup table, for speed.
 
     Parameters
     ----------
@@ -85,7 +100,7 @@ def _decay_seconds(index: int, decay_config) -> float:
 def _led_color(index: int) -> tuple:
     """Return color of the given LED segment index.
 
-    Called during init only to create a lookup table, for speed.
+    Only called during init to create a lookup table, for speed.
 
     Parameters
     ----------
@@ -99,10 +114,6 @@ def _led_color(index: int) -> tuple:
     return (0, 0, 0, 0)
 
 
-def _clamp(value, low, high):
-    return max(min(value, high), low)
-
-
 def _get_peak(delta_seconds: float) -> None:
     """Get highest segment that should be lit up.
 
@@ -111,9 +122,6 @@ def _get_peak(delta_seconds: float) -> None:
     delta_seconds : float
         The current frame interval.
     """
-
-    def _lerp(low: int, high: int, fraction: float) -> int:
-        return int(low + (high - low) * fraction)
 
     if delta_seconds <= 0:
         return 0
@@ -125,7 +133,7 @@ def _get_peak(delta_seconds: float) -> None:
 
 
 class DecayTimes:
-    """Keep track of when LEDs last lit up.
+    """Keep track of when LEDs were last lit up.
 
     Parameters
     ----------
@@ -200,10 +208,6 @@ class DecayTimes:
         now : float
             The current time in seconds.
         """
-
-        def _lerp(low: int, high: int, fraction: float) -> int:
-            return int(low + (high - low) * fraction)
-
         duration = now - self._last[index]
         decay = self._decay[index]
         fraction = _clamp(1 - (duration / decay), 0, 1)
