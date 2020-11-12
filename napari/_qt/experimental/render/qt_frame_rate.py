@@ -56,14 +56,13 @@ ALPHA_OFF = 25
 # of that slowness. Like one super slow frame, plus some medium-slow ones.
 DECAY_MS = {"peak": [(0, 1000), (10, 2000), (20, 3000)], "active": [(0, 250)]}
 
-COLORS = [(0, GREEN), (10, YELLOW), (20, RED)]
+LED_COLORS = [(0, GREEN), (10, YELLOW), (20, RED)]
 
 
 def _decay_seconds(index: int, decay_config) -> float:
     """Return duration in seconds the segment should stay on.
 
-    This is only called during __init__ to create a lookup table, so
-    it doesn't matter how fast it is.
+    Called during init only to create a lookup table, for speed.
 
     Parameters
     ----------
@@ -82,8 +81,17 @@ def _decay_seconds(index: int, decay_config) -> float:
     return 0
 
 
-def _segment_color(index: int) -> tuple:
-    for limit, color in reversed(COLORS):
+def _led_color(index: int) -> tuple:
+    """Return color of the given LED segment index.
+
+    Called during init only to create a lookup table, for speed.
+
+    Parameters
+    ----------
+    index : int
+        The led segment index.
+    """
+    for limit, color in reversed(LED_COLORS):
         if index >= limit:
             return color
     assert False, "DECAY_MS table is messed up?"
@@ -118,21 +126,91 @@ def _get_peak(delta_seconds: float) -> None:
     return peak
 
 
-def _expire(now: float, array: np.ndarray, decay_seconds: np.ndarray) -> None:
-    # TODO_OCTREE: do this with numpy?
-    for index in range(NUM_SEGMENTS):
-        max_time = decay_seconds[index]
-        elapsed = now - array[index]
-        if elapsed > max_time:
-            array[index] = 0  # Segment went dark.
+class DecayTimes:
+    """Keep track of when LEDs last lit up.
 
+    Parameters
+    ----------
+    config : str
+        Config is 'active' or 'peak'.
+    """
 
-def _get_fraction(
-    now: float, index: int, array: np.array, decay_seconds: np.ndarray,
-) -> float:
-    duration = now - array[index]
-    decay = decay_seconds[index]
-    return _clamp(duration / decay, 0, 1)
+    def __init__(self, config: str):
+        count = NUM_SEGMENTS
+        decay_ms = DECAY_MS[config]
+        self._decay = np.array(
+            [_decay_seconds(i, decay_ms) for i in range(count)], dtype=np.float
+        )
+        self._last = np.zeros((count), dtype=np.float)
+
+    def is_off(self, index: int) -> bool:
+        """Return True if this LED is off.
+
+        Return
+        ------
+        bool
+            True if this LED is off.
+        """
+        return self._last[index] == 0
+
+    def all_off(self) -> bool:
+        """Return True if all LEDs are off.
+
+        Return
+        ------
+        bool
+            True if all LEDs are off.
+        """
+        return np.all(self._last == 0)
+
+    def mark(self, index: int, now: float) -> None:
+        """Mark that an LED has lit up.
+
+        Parameters
+        ----------
+        index : int
+            The LED segment index.
+        now : float
+            The current time in seconds.
+        """
+        self._last[index] = now
+
+    def expire(self, now: float) -> None:
+        """Zero out the last time of any expired LEDs
+
+        Parameters
+        ----------
+        now : float
+            The current time in seconds.
+        """
+        # LEDs would go dark when enough time as past, but we mark them
+        # zero so our all_off() function works, and we can turn off
+        # the QTimer.
+        for index in range(NUM_SEGMENTS):  # TODO_OCTREE: do this with numpy?
+            elapsed = now - self._last[index]
+            max_time = self._decay[index]
+            if elapsed > max_time:
+                self._last[index] = 0  # Segment went dark.
+
+    def get_alpha(self, now: float, index: int) -> int:
+        """Return alpha for this LED segment index.
+
+        Parameters
+        ----------
+        index : int
+            The LED segment index.
+        now : float
+            The current time in seconds.
+        """
+
+        def _lerp(low: int, high: int, fraction: float) -> int:
+            return int(low + (high - low) * fraction)
+
+        duration = now - self._last[index]
+        decay = self._decay[index]
+        fraction = _clamp(1 - (duration / decay), 0, 1)
+
+        return _lerp(ALPHA_OFF, ALPHA_MAX, fraction)
 
 
 def _print_mapping():
@@ -153,31 +231,20 @@ class LedState:
     """State of the LEDs in the frame rate display."""
 
     def __init__(self):
+
+        # Active means the LED lit up because it was leading LED before the
+        # peak value. While peaks means the framerate was that exact value.
+        self._active = DecayTimes('active')
+        self._peak = DecayTimes('peak')
+
+        # Color at each LED index.
+        self._color = np.array(
+            [_led_color(i) for i in range(NUM_SEGMENTS)], dtype=np.uint8
+        )
+
         self.peak = 0  # Current highest segment lit up
-        count = NUM_SEGMENTS
 
-        # Use numpy array lookups for speed, compactness.
-        self._color = np.zeros((count, 4), dtype=np.uint8)
-        self._decay_peak_seconds = np.zeros((count), dtype=np.float)
-        self._decay_active_seconds = np.zeros((count), dtype=np.float)
-
-        # Last time this LED segment was active, because
-        # it was leading up to the current peak.
-        self._last_active = np.zeros((count), dtype=np.float)
-
-        # Last time this LED segment was fully lit up, the
-        # peak was exactly on this LED
-        self._last_peak = np.zeros((count), dtype=np.float)
-
-        # Initialize.
-        for i in range(count):
-            self._color[i] = _segment_color(i)
-            self._decay_peak_seconds[i] = _decay_seconds(i, DECAY_MS['peak'])
-            self._decay_active_seconds[i] = _decay_seconds(
-                i, DECAY_MS['active']
-            )
-
-    def are_idle(self) -> bool:
+    def all_off(self) -> bool:
         """Return True if all LEDs are off.
 
         Return
@@ -185,9 +252,7 @@ class LedState:
         bool
             True if all LEDs are off.
         """
-        no_active = np.all(self._last_active == 0)
-        no_peak = np.all(self._last_peak == 0)
-        return no_active and no_peak
+        return self._active.all_off() and self._peak.all_off()
 
     def set_peak(self, now: float, delta_seconds: float) -> None:
         """Set the peak LED based on this frame time.
@@ -206,11 +271,11 @@ class LedState:
         # Mark everything before the peak as active. These light up and
         # fade but not as bright. So we can see the peaks.
         for index in range(self.peak):
-            self._last_active[index] = now
+            self._active.mark(index, now)
 
         # This specific LED gets fully lit up. That way we can see this
         # peak even when the leading LEDs have faded.
-        self._last_peak[self.peak] = now
+        self._peak.mark(self.peak, now)
 
     def update(self, now: float) -> None:
         """Update the LED states.
@@ -220,8 +285,8 @@ class LedState:
         now : float
             Current time in seconds.
         """
-        _expire(now, self._last_peak, self._decay_peak_seconds)
-        _expire(now, self._last_active, self._decay_active_seconds)
+        self._active.expire(now)
+        self._peak.expire(now)
 
     def get_color(self, now: float, index: int) -> np.ndarray:
         """Get color for this LED segment, including decay alpha.
@@ -258,25 +323,16 @@ class LedState:
             Alpha in range [0..255]
         """
 
-        def _alpha(fraction):
-            # This is lerp basically
-            return ALPHA_MAX - (fraction * (ALPHA_MAX - ALPHA_OFF))
-
-        if self._last_peak[index] == 0 and self._last_active[index] == 0:
+        if self._active.is_off(index) and self._peak.is_off(index):
             return ALPHA_OFF  # LED is totally off.
 
-        peak_fraction = _get_fraction(
-            now, index, self._last_peak, self._decay_peak_seconds
-        )
-        active_fraction = _get_fraction(
-            now, index, self._last_active, self._decay_active_seconds
+        # Draw whichever is brighter.
+        max_alpha = max(
+            self._active.get_alpha(now, index),
+            self._peak.get_alpha(now, index),
         )
 
-        peak_alpha = _alpha(peak_fraction)
-        active_alpha = _alpha(active_fraction)
-
-        print(f"{peak_alpha} - {active_alpha}")
-        return max(peak_alpha, active_alpha)
+        return max_alpha
 
 
 class QtFrameRate(QLabel):
@@ -315,7 +371,7 @@ class QtFrameRate(QLabel):
 
         # Turn off the time when there's nothing more to animate. So we use
         # zero CPU until the camera moves again.
-        if self.leds.are_idle():
+        if self.leds.all_off():
             self._timer.stop()
 
     def _draw(self, now: float) -> None:
