@@ -14,7 +14,8 @@ def _set(env_var: str) -> bool:
     return os.getenv(env_var, "0") != "0"
 
 
-# Temporary
+# Added this temporarily for octree debugging. The welcome visual causes
+# breakpoints to hit in image visual code. It's easier if we don't show it.
 allow_welcome_visual = True
 
 
