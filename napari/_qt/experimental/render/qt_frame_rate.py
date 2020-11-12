@@ -14,7 +14,7 @@ BITMAP_SHAPE = (20, 200, 4)
 NUM_BARS = 9
 
 # Each bar has this many verticle segments.
-NUM_SEGMENTS = 10
+NUM_SEGMENTS = 5
 
 MIN_MS = 16.17
 LOG_MIN_MS = math.log10(MIN_MS)
@@ -41,32 +41,24 @@ class QtFrameRate(QLabel):
         super().__init__()
         self._last_time = None
         self.values = np.zeros((NUM_BARS,), dtype=np.int32)
-        self.frame_counter = 0
         self.past_bars = []
+        self.data = np.zeros(BITMAP_SHAPE, dtype=np.uint8)
 
     def update(self) -> None:
         """Update the frame rate display."""
         now = time.time()
         if self._last_time is not None:
-            delta_seconds = now - self._last_time
-            self._mark(delta_seconds * 1000)
+            delta_ms = (now - self._last_time) * 1000
+            self._update_bars(delta_ms)
+            self._update_bitmap()
         self._last_time = now
 
-    def _mark(self, elapsed_ms: float) -> None:
-        """Mark the interval between two frames.
-        """
-        self.frame_counter += 1
-        data = self._get_bitmap_data(elapsed_ms)
-        height, width = BITMAP_SHAPE[:2]
-        image = QImage(data, width, height, QImage.Format_RGBA8888)
-        self.setPixmap(QPixmap.fromImage(image))
-
-    def _get_bitmap_data(self, elapsed_ms: float) -> np.ndarray:
-        """Return bitmap data for the display.
+    def _update_bars(self, delta_ms: float) -> None:
+        """Update bars with this new interval.
 
         Parameters
         ----------
-        elapsed_seconds : float
+        delta_ms : float
             The current frame interval.
         """
         if len(self.past_bars) > LIVE_SEGMENTS:
@@ -78,9 +70,9 @@ class QtFrameRate(QLabel):
             return max(min(value, high), low)
 
         # So if MIN_MS is 16.7 then log_value for 16.7ms is 0
-        log_value = math.log10(elapsed_ms) - LOG_MIN_MS
+        log_value = math.log10(delta_ms) - LOG_MIN_MS
 
-        # The log_fraction is [0..1] for covering all the bars.
+        # The log_fraction is [0..1] for the whole width (all bars).
         log_fraction = _clamp(log_value / LOG_MAX_MS, 0, 1)
 
         # Increment the bar for this value.
@@ -91,8 +83,15 @@ class QtFrameRate(QLabel):
         # Values should only be too high, but just clip.
         self.values = np.clip(self.values, 0, NUM_SEGMENTS)
 
-        data = np.zeros(BITMAP_SHAPE, dtype=np.uint8)
+    def _update_image_data(self) -> np.ndarray:
+        """Return bitmap data for the display.
 
+        Return
+        ----------
+        np.ndarray
+            The bit image to display.
+        """
+        self.data.fill(0)
         for bar_index in range(NUM_BARS):
             bar_value = self.values[bar_index]
             print(f"bar: {bar_index} -> {bar_value}")
@@ -101,6 +100,12 @@ class QtFrameRate(QLabel):
                 x1 = int(x0 + SEGMENT_WIDTH)
                 y0 = BITMAP_SHAPE[0] - int(segment * SEGMENT_HEIGHT)
                 y1 = int(y0 + SEGMENT_HEIGHT)
-                data[y0:y1, x0:x1] = BAR_COLOR[bar_index]
+                self.data[y0:y1, x0:x1] = BAR_COLOR[bar_index]
 
-        return data
+    def _update_bitmap(self) -> None:
+        """Update the bitmap with latest image data.
+        """
+        self._update_image_data()
+        height, width = BITMAP_SHAPE[:2]
+        image = QImage(self.data, width, height, QImage.Format_RGBA8888)
+        self.setPixmap(QPixmap.fromImage(image))
