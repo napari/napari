@@ -42,6 +42,27 @@ class TileInfo(NamedTuple):
         depth = 1 if ndim == 2 else shape[2]
         return cls(shape, ndim, height, width, depth)
 
+    def is_compatible(self, data: np.ndarray) -> bool:
+        """Return True if the given data is compatible with our tiles.
+
+        Parameters
+        ----------
+        data : np.ndarray
+            Return True if this data is compatible with our tiles.
+        """
+        if self.ndim != data.ndim:
+            return False  # Different number of dimensions.
+
+        if self.ndim == 3 and self.depth != data.shape[2]:
+            return False  # Different depths.
+
+        if data.shape[0] > self.height or data.shape[1] > self.width:
+            return False  # Data is too big for the tile.
+
+        # It's either an exact match, or it's compatible but smaller than
+        # the full tile, which is fine.
+        return True
+
 
 class TextureAtlas2D(Texture2D):
     """A two-dimensional texture atlas.
@@ -85,10 +106,11 @@ class TextureAtlas2D(Texture2D):
         self._free_indices = set(range(0, self.num_slots_total))
 
         # Pre-compute the texture coords for every tile. Otherwise we'd be
-        # calculating these over and over as tiles are added.
+        # calculating these over and over as tiles are added. These are for
+        # full tiles only. Edge and corner tiles will need custom texture
+        # coordinates based on their size.
         #
-        # TODO_OCTREE: Compute and store the coords for all the tiles in
-        # one single ndarray? That would be more compact.
+        # TODO_OCTREE: Put all these into one compact ndarray?
         self._tex_coords = [
             self._calc_tex_coords(i) for i in range(self.num_slots_total)
         ]
@@ -176,7 +198,7 @@ class TextureAtlas2D(Texture2D):
         data : np.ndarray
             The image data for this one tile.
         """
-        if data.shape != self.tile_info.shape:
+        if not self.tile_info.is_compatible(data):
             raise ValueError(
                 f"Adding tile with shape {data.shape} does not match TextureAtlas2D "
                 f"configured tile shape {self.tile_shape}"
