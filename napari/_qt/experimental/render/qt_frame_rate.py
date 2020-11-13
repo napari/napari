@@ -17,10 +17,10 @@ BITMAP_SHAPE = (20, 270, 4)
 # Number of left to right LED segments.
 NUM_SEGMENTS = 30
 
-# Spacing between segments, including the gap
+# Spacing between segments, including the gap.
 SEGMENT_SPACING = BITMAP_SHAPE[1] / NUM_SEGMENTS
 
-# Pixel gap between segments
+# Gap between segments in pixels.
 SEGMENT_GAP = 2
 SEGMENT_WIDTH = SEGMENT_SPACING - SEGMENT_GAP
 
@@ -114,22 +114,29 @@ def _led_color(index: int) -> tuple:
     return (0, 0, 0, 0)
 
 
-def _get_peak(delta_seconds: float) -> None:
+def _get_peak(delta_seconds: float) -> int:
     """Get highest segment that should be lit up.
 
     Parameters
     ----------
     delta_seconds : float
         The current frame interval.
+
+    Return
+    ------
+    int
+        The peak segment that should be lit up.
     """
 
     if delta_seconds <= 0:
         return 0
 
+    # Slide everything from PERFECT_MS on down to zero, or else we'd
+    # waste a lot of LEDs show stuff faster than 60Hz.
     input_value = max((delta_seconds * 1000) - PERFECT_MS, 0) + 1
+
     log_value = math.log(input_value, LOG_BASE)
-    peak = _clamp(int(log_value), 0, NUM_SEGMENTS - 1)
-    return peak
+    return _clamp(int(log_value), 0, NUM_SEGMENTS - 1)
 
 
 class DecayTimes:
@@ -169,34 +176,29 @@ class DecayTimes:
         """
         return np.all(self._last == 0)
 
-    def mark(self, index: int, now: float) -> None:
-        """Mark that an LED has lit up.
+    def mark(self, slicer: slice, now: float) -> None:
+        """Mark that one or more LEDs have lit up.
 
         Parameters
         ----------
-        index : int
-            The LED segment index.
+        slicer : slice
+            The LEDs to light up.
         now : float
             The current time in seconds.
         """
-        self._last[index] = now
+        self._last[slicer] = now
 
     def expire(self, now: float) -> None:
-        """Zero out the last time of any expired LEDs
+        """Zero out the last time of any expired LEDs.
 
         Parameters
         ----------
         now : float
             The current time in seconds.
         """
-        # LEDs would go dark when enough time as past, but we mark them
-        # zero so our all_off() function works, and we can turn off
-        # the QTimer.
-        for index in range(NUM_SEGMENTS):  # TODO_OCTREE: do this with numpy?
-            elapsed = now - self._last[index]
-            max_time = self._decay[index]
-            if elapsed > max_time:
-                self._last[index] = 0  # Segment went dark.
+        # Set self._last equal to zero for any LED which as gone dark.
+        elapsed = now - self._last
+        self._last[elapsed > self._decay] = 0
 
     def get_alpha(self, now: float, index: int) -> int:
         """Return alpha for this LED segment index.
@@ -273,12 +275,13 @@ class LedState:
 
         # Mark everything before the peak as active. These light up and
         # fade but not as bright. So we can see the peaks.
-        for index in range(self.peak):
-            self._active.mark(index, now)
+        up_to_peak = slice(0, self.peak + 1)
+        self._active.mark(up_to_peak, now)
 
         # This specific LED gets fully lit up. That way we can see this
         # peak even when the leading LEDs have faded.
-        self._peak.mark(self.peak, now)
+        only_peak = slice(self.peak, self.peak + 1)
+        self._peak.mark(only_peak, now)
 
     def update(self, now: float) -> None:
         """Update the LED states.
@@ -330,12 +333,10 @@ class LedState:
             return ALPHA_OFF  # LED is totally off.
 
         # Draw whichever is brighter.
-        max_alpha = max(
+        return max(
             self._active.get_alpha(now, index),
             self._peak.get_alpha(now, index),
         )
-
-        return max_alpha
 
 
 class QtFrameRate(QLabel):
@@ -347,40 +348,42 @@ class QtFrameRate(QLabel):
 
     def __init__(self):
         super().__init__()
-        # The per-LED config and state.
-        self.leds = LedState()
+
+        self.leds = LedState()  # The per-LED config and state.
 
         # The last time we were updated, either from mouse move or our
-        # timer.
+        # timer. We update _last_time in both cases.
         self._last_time: Optional[float] = None
 
         # The bitmap image we draw into.
         self._image = np.zeros(BITMAP_SHAPE, dtype=np.uint8)
 
-        # We animate on camera movements, but then we run this time to animate
-        # the display. When all the LEDs go off, we stop the timer to use
-        # zero CPU until another camera movement.
+        # We animate on camera movements, but then we use a timer to
+        # animate the display. When all the LEDs go off, we stop the timer
+        # so that we use zero CPU until another camera movement.
         self._timer = QTimer()
         self._timer.setSingleShot(False)
-        self._timer.setInterval(20)
+        self._timer.setInterval(33)
         self._timer.timeout.connect(self._on_timer)
 
         # _print_calibration()  # Debugging.
 
-    def _on_timer(self):
+    def _on_timer(self) -> None:
         """Animate the LEDs."""
         now = time.time()
         self._draw(now)  # Just animate and draw, no new peak.
 
-        # Turn off the time when there's nothing more to animate. So we use
-        # zero CPU until the camera moves again.
+        # Stop timer if nothing more to animation, save CPU.
         if self.leds.all_off():
             self._timer.stop()
 
     def _draw(self, now: float) -> None:
         """Animate the LEDs.
 
-        We turn off the time when there's nothing more to animate.
+        Parameters
+        ----------
+        now : float
+            The current time in seconds.
         """
         self.leds.update(now)  # Animates the LEDs.
         self._update_image(now)  # Draws our internal self._image
@@ -388,20 +391,21 @@ class QtFrameRate(QLabel):
 
         # We always update _last_time whether this was from a camera move
         # or the timer. This is the right thing to do since in either case
-        # it's marking a frame draw.
+        # it means a frame was drawn.
         self._last_time = now
 
     def on_camera_move(self) -> None:
-        """Update our display with the new framerate."""
+        """Update our display to show the new framerate."""
 
         # Only count this frame if the timer is active. This avoids
         # displaying a potentially super long frame since it might have
-        # been many seconds or minutes since the last movement. Ideally we
-        # could capture the draw time of that first frame, because if it's
-        # slow we should show it, but there's no easy/obvious way to do
-        # that today. And this will show everthing but that out of the
-        # blue first frame.
-        use_delta = self._timer.isActive() and self._last_time is not None
+        # been many seconds or minutes since the last camera movement.
+        #
+        # Ideally we should display the draw time of even that first frame,
+        # but there's no easy/obvious way to do that today. And this will
+        # show everthing except one frame.
+        first_time = self._last_time is None
+        use_delta = self._timer.isActive() and not first_time
         now = time.time()
 
         if use_delta:
@@ -410,52 +414,32 @@ class QtFrameRate(QLabel):
 
         self._draw(now)  # Draw the whole meter.
 
-        # Since there was activity, we need to animate the decay of what we
-        # displayed. The timer will be shut off them the LEDs go idle.
+        # Since there was activity, we need to start the timer so we can
+        # animate the decay of the LEDs. The timer will be shut off when
+        # all the LEDs go idle.
         self._timer.start()
 
     def _update_image(self, now: float) -> None:
-        """Update our self._image with the latest image.
+        """Update our self._image with the latest meter display.
 
         Parameters
         ----------
         now : float
             The current time in seconds.
-
-        Return
-        ----------
-        np.ndarray
-            The bit image to display.
         """
         self._image.fill(0)  # Start fresh each time.
 
-        # Draw each segment with the right color and alpha (decay).
+        # Draw each segment with the right color and alpha (due to decay).
+        # Would be cool to get all the colors in one numpy vectorized step!
         for index in range(NUM_SEGMENTS):
             color = self.leds.get_color(now, index)
-            self._draw_segment(index, color)
-
-    def _draw_segment(self, segment: int, color: np.ndarray):
-        """Draw one LED segment, one rectangle.
-
-        segment : int
-            Index of the segment we are drawing.
-        color : np.ndarray
-            Color as RGBA.
-        """
-        x0 = int(segment * SEGMENT_SPACING)
-        x1 = int(x0 + SEGMENT_WIDTH)
-        y0 = 0
-        y1 = BITMAP_SHAPE[0]
-        self._image[y0:y1, x0:x1] = color
+            x0 = int(index * SEGMENT_SPACING)
+            x1 = int(x0 + SEGMENT_WIDTH)
+            y0, y1 = 0, BITMAP_SHAPE[0]  # The whole height of the bitmap.
+            self._image[y0:y1, x0:x1] = color
 
     def _update_bitmap(self) -> None:
-        """Update the bitmap with latest image data.
-
-        now : float
-            Current time in seconds.
-        segment : int
-            Current highest segment to light up.
-        """
+        """Update the bitmap with latest image data."""
         height, width = BITMAP_SHAPE[:2]
         image = QImage(self._image, width, height, QImage.Format_RGBA8888)
         self.setPixmap(QPixmap.fromImage(image))
