@@ -94,7 +94,7 @@ class TiledImageVisual(ImageVisual):
     method BaseTexture.set_data() has an "offset" argument. When setting
     texture data with an offset under the hood Vispy calls
     glTexSubImage2D(). It will only update the rectangular region within
-    the texture that's being update.
+    the texture that's being updated.
 
     In addition, uploading new tiles does not cause the shader to be
     rebuilt. This is another reason TiledImageVisual is faster than
@@ -103,19 +103,28 @@ class TiledImageVisual(ImageVisual):
     Finally, rendering the tiles is also efficient. In one draw pass
     TiledImageVisual can render all the tiles. If all the tiles are stored
     in the same large texture, there will be zero texture swaps.
+
+    Parameters
+    ----------
+    tile_shape : np.ndarray
+        The shape of one tile like (256, 256, 3).
     """
 
     def __init__(self, tile_shape: np.ndarray, *args, **kwargs):
         self.tile_shape = tile_shape
-        self._tiles = TileSet()
+
+        self._tiles = TileSet()  # The tiles we are drawing.
+
+        # We populate these buffers, the shader draws using them.
         self._verts = VertexBuffer()
         self._tex_coords = VertexBuffer()
 
-        self._clim = np.array([0, 1])  # Constant for now.
+        self._clim = np.array([0, 1])  # TOOD_OCTREE: need to support clim
 
         super().__init__(*args, **kwargs)
 
-        # Must create after calling __init__ so self._interpolation exists.
+        # Must create the texture atlas after calling __init__ so
+        # the attribute self._interpolation exists.
         self.unfreeze()
         self._texture_atlas = self._create_texture_atlas(tile_shape)
         self.freeze()
@@ -136,7 +145,9 @@ class TiledImageVisual(ImageVisual):
         interp = 'linear' if self._interpolation == 'bilinear' else 'nearest'
         return TextureAtlas2D(tile_shape, SHAPE_IN_TILES, interpolation=interp)
 
-    def set_data(self, image):
+    def set_data(self, image) -> None:
+        # VispyImageLayer._on_display_change calls this with an empty image, but
+        # we can just ignore it.
         pass
 
     def set_tile_shape(self, tile_shape: np.ndarray) -> None:
@@ -162,7 +173,7 @@ class TiledImageVisual(ImageVisual):
 
     @property
     def size(self):
-        # TODO_OCTREE:
+        # TODO_OCTREE: need to compute the size...
         #
         # ImageVisual.size() does
         #     return self._data.shape[:2][::-1]
@@ -239,10 +250,9 @@ class TiledImageVisual(ImageVisual):
             self._texture_atlas.remove_tile(tile_index)
             self._need_vertex_update = True
         except IndexError:
-            # TODO_OCTREE: for now just raise
             raise RuntimeError(f"Tile index {tile_index} not found.")
 
-    def prune_tiles(self, visible_set: Set[ChunkData]):
+    def prune_tiles(self, visible_set: Set[ChunkData]) -> None:
         """Remove tiles that are not part of the given visible set.
 
         visible_set : Set[ChunkData]
@@ -253,7 +263,7 @@ class TiledImageVisual(ImageVisual):
                 tile_index = tile_data.tex_info.tile_index
                 self.remove_tile(tile_index)
 
-    def _build_vertex_data(self):
+    def _build_vertex_data(self) -> None:
         """Build vertex and texture coordinate buffers.
 
         This overrides ImageVisual._build_vertex_data(), it is called from
@@ -289,7 +299,7 @@ class TiledImageVisual(ImageVisual):
         self._subdiv_texcoord.set_data(tex_coords)
         self._need_vertex_update = False
 
-    def _build_texture(self):
+    def _build_texture(self) -> None:
         """Override of ImageVisual._build_texture().
 
         TODO_OCTREE: This needs work. Need to do the clim stuff in in the
@@ -302,7 +312,7 @@ class TiledImageVisual(ImageVisual):
 
         self._need_texture_upload = False
 
-    def _prepare_draw(self, view):
+    def _prepare_draw(self, view) -> None:
         """Override of ImageVisual._prepare_draw()
 
         TODO_OCTREE: See how much this changes from base class, if we can
