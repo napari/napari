@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import List
 
 from ...layers.image.experimental.octree_util import ChunkData
-from .texture_atlas import TexInfo
+from .texture_atlas import AtlasTile
 
 
 @dataclass
@@ -12,7 +12,7 @@ class TileData:
     """Statistics about chunks during the update process."""
 
     chunk_data: ChunkData  # The data that produced this tile.
-    tex_info: TexInfo  # Texture information from the texture atlas.
+    atlas_tile: AtlasTile  # Information from the texture atlas.
 
 
 class TileSet:
@@ -40,7 +40,7 @@ class TileSet:
         self._tiles.clear()
         self._chunks.clear()
 
-    def add(self, chunk_data: ChunkData, tex_info: TexInfo) -> None:
+    def add(self, chunk_data: ChunkData, atlas_tile: AtlasTile) -> None:
         """Add this TiledData to the set.
 
         Parameters
@@ -48,8 +48,8 @@ class TileSet:
         tile_data : TileData
             Add this to the set.
         """
-        tile_index = tex_info.tile_index
-        self._tiles[tile_index] = TileData(chunk_data, tex_info)
+        tile_index = atlas_tile.index
+        self._tiles[tile_index] = TileData(chunk_data, atlas_tile)
         self._chunks.add(chunk_data.key)
 
     def remove(self, tile_index: int) -> None:

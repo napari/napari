@@ -13,9 +13,9 @@ _QUAD = np.array(
     [[0, 0], [1, 0], [1, 1], [0, 0], [1, 1], [0, 1]], dtype=np.float32,
 )
 
-# TexInfo is returned from TextureAtlas2D.add_tile() so the caller has the
+# AtlasTile is returned from TextureAtlas2D.add_tile() so the caller has the
 # texture coordinates to render each tile in the atlas.
-TexInfo = namedtuple('TexInfo', "tile_index tex_coord")
+AtlasTile = namedtuple('AtlasTile', "index tex_coords")
 
 
 class TextureAtlas2D(Texture2D):
@@ -142,7 +142,7 @@ class TextureAtlas2D(Texture2D):
 
         return quad
 
-    def add_tile(self, data: np.ndarray) -> Optional[TexInfo]:
+    def add_tile(self, data: np.ndarray) -> Optional[AtlasTile]:
         """Add one tile to the atlas.
 
         Parameters
@@ -164,10 +164,10 @@ class TextureAtlas2D(Texture2D):
         # Upload the texture data for this one tile.
         self._set_tile_data(tile_index, data)
 
-        # Return TexInfo. The caller will need the texture coordinates to
+        # Return AtlasTile. The caller will need the texture coordinates to
         # render quads using our tiles.
         tex_coords = self._tex_coords[tile_index]
-        return TexInfo(tile_index, tex_coords)
+        return AtlasTile(tile_index, tex_coords)
 
     def remove_tile(self, tile_index: int) -> None:
         """Remove a tile from the texture atlas.
