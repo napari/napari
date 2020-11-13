@@ -7,6 +7,8 @@ from typing import NamedTuple, Optional, Tuple
 import numpy as np
 from vispy.gloo import Texture2D
 
+from ...layers.image.experimental.octree_util import ChunkData
+
 # Two triangles which cover a [0..1, 0..1] quad.
 _QUAD = np.array(
     [[0, 0], [1, 0], [1, 1], [0, 0], [1, 1], [0, 1]], dtype=np.float32,
@@ -21,6 +23,7 @@ class AtlasTile(NamedTuple):
     """
 
     index: int
+    verts: np.ndarray
     tex_coords: np.ndarray
 
 
@@ -73,7 +76,7 @@ class TextureAtlas2D(Texture2D):
     ----------
     tile_shape : tuple
         The (height, width) of one tile in texels.
-    texture_shape : Tuple[int, int]
+    shape_in_tiles : Tuple[int, int]
         The (height, width) of the full texture in terms of tiles.
     """
 
@@ -97,7 +100,7 @@ class TextureAtlas2D(Texture2D):
         # The full texture's shape in texels, for example 1024x1024.
         height = self.spec.height * self.shape_in_tiles[0]
         width = self.spec.width * self.shape_in_tiles[1]
-        self.texture_shape = np.array([width, height, depth], dtype=np.int32)
+        self.full_shape = np.array([width, height, depth], dtype=np.int32)
 
         # Total number of texture slots in the atlas.
         self.num_slots_total = shape_in_tiles[0] * shape_in_tiles[1]
@@ -111,8 +114,11 @@ class TextureAtlas2D(Texture2D):
         # coordinates based on their size.
         #
         # TODO_OCTREE: Put all these into one compact ndarray?
+        #
+        tile_shape = self.spec.shape  # Use the shape of a full tile.
         self._tex_coords = [
-            self._calc_tex_coords(i) for i in range(self.num_slots_total)
+            self._calc_tex_coords(tile_index, tile_shape)
+            for tile_index in range(self.num_slots_total)
         ]
 
         if self.MARK_DELETED_TILES:
@@ -120,7 +126,7 @@ class TextureAtlas2D(Texture2D):
             self.deleted_tile_data = np.empty(shape, dtype=np.uint8)
             self.deleted_tile_data[:] = (1, 1, 1)  # handle RGB or RGBA?
 
-        super().__init__(shape=tuple(self.texture_shape), **kwargs)
+        super().__init__(shape=tuple(self.full_shape), **kwargs)
 
     @property
     def num_slots_free(self) -> int:
@@ -145,7 +151,7 @@ class TextureAtlas2D(Texture2D):
         return self.num_slots_total - self.num_slots_free
 
     def _offset(self, tile_index: int) -> Tuple[int, int]:
-        """Return the (X, Y) offset into the full atlas texture.
+        """Return the (row, col) offset into the full atlas texture.
 
         Parameters
         ----------
@@ -155,16 +161,45 @@ class TextureAtlas2D(Texture2D):
         Return
         ------
         Tuple[int, int]
-            The (X, Y) offset of this tile in texels.
+            The (row, col) offset of this tile in texels.
         """
         width_tiles = self.shape_in_tiles[1]
-        row = int(tile_index / width_tiles)
+        try:
+            row = int(tile_index / width_tiles)
+        except TypeError:
+            pass
         col = tile_index % width_tiles
 
-        # Return as (X, Y).
-        return col * self.spec.width, row * self.spec.height
+        return row * self.spec.height, col * self.spec.width
 
-    def _calc_tex_coords(self, tile_index: int) -> np.ndarray:
+    def _vert_quad(self, chunk_data: ChunkData) -> np.ndarray:
+        """Return quad for the vertex buffer.
+
+        Parameters
+        ----------
+        chunk_data : ChunkData
+            Create a quad for this chunk.
+
+        Return
+        ------
+        np.darray
+            The quad vertices.
+        """
+        quad = _QUAD.copy()
+
+        # TODO_OCTREE: store as np.array in ChunkData?
+        scale = np.array(chunk_data.scale, dtype=np.float32)
+        scaled_shape = chunk_data.data.shape[:2] * scale
+
+        # Modify in place.
+        quad[:, :2] *= scaled_shape[::-1]  # Reverse into (X, Y) form.
+        quad[:, :2] += chunk_data.pos
+
+        return quad
+
+    def _calc_tex_coords(
+        self, tile_index: int, tile_shape: np.ndarray,
+    ) -> np.ndarray:
         """Return the texture coordinates for this tile.
 
         This is only called from __init__ when we pre-compute the
@@ -181,8 +216,11 @@ class TextureAtlas2D(Texture2D):
             A (6, 2) array of texture coordinates.
         """
         offset = self._offset(tile_index)
-        pos = offset / self.texture_shape[:2]
-        shape = self.spec.shape[:2] / self.texture_shape[:2]
+        pos = offset / self.full_shape[:2]
+        shape = tile_shape[:2] / self.full_shape[:2]
+
+        pos = pos[::-1]
+        shape = shape[::-1]
 
         quad = _QUAD.copy()
         quad[:, :2] *= shape
@@ -190,7 +228,7 @@ class TextureAtlas2D(Texture2D):
 
         return quad
 
-    def add_tile(self, data: np.ndarray) -> Optional[AtlasTile]:
+    def add_tile(self, chunk_data: ChunkData) -> Optional[AtlasTile]:
         """Add one tile to the atlas.
 
         Parameters
@@ -198,12 +236,14 @@ class TextureAtlas2D(Texture2D):
         data : np.ndarray
             The image data for this one tile.
         """
+        data = chunk_data.data
+
         if not self.spec.is_compatible(data):
             # It will be not compatible of number of dimensions or depth
             # are wrong. Or if the data is too big to fit in one tile.
             raise ValueError(
-                f"Data with shape {data.shape} is not compatible with this "
-                f"TextureAtlas2D with tile shape {self.spec.shape}"
+                f"Data with shape {chunk_data.data.shape} is not compatible "
+                f"with this TextureAtlas2D which has tile shape {self.spec.shape}"
             )
 
         try:
@@ -216,8 +256,32 @@ class TextureAtlas2D(Texture2D):
 
         # Return AtlasTile. The caller will need the texture coordinates to
         # render quads using our tiles.
-        tex_coords = self._tex_coords[tile_index]
-        return AtlasTile(tile_index, tex_coords)
+        verts = self._vert_quad(chunk_data)
+        tex_coords = self._get_tex_coords(tile_index, data)
+        return AtlasTile(tile_index, verts, tex_coords)
+
+    def _get_tex_coords(self, tile_index: int, data: np.ndarray) -> np.ndarray:
+        """Return the texture coordinates for this tile.
+
+        Parameters
+        ----------
+        tile_index : int
+            The index of this tile.
+        data : np.ndarray
+            The image data for this tile.
+
+        Return
+        ------
+        np.ndarray
+            The texture coordinates for the tile.
+        """
+        # If it's the exact size of our tiles. Return the pre-computed
+        # texture coordinates for this tile. Fast!
+        if self.spec.shape == data.shape:
+            return self._tex_coords[tile_index]
+
+        # It's smaller than a full size tile, so compute exact coords.
+        return self._calc_tex_coords(tile_index, data.shape)
 
     def remove_tile(self, tile_index: int) -> None:
         """Remove a tile from the texture atlas.
@@ -251,9 +315,8 @@ class TextureAtlas2D(Texture2D):
         data
             The texture data for the tile.
         """
-        # Reverse the (X, Y) offset of this tile within the larger texture
-        # into the the (row, col) that Texture2D expects.
-        offset = self._offset(tile_index)[::-1]
+        # The texel offset of this tile within the larger texture.
+        offset = self._offset(tile_index)
 
         # Texture2D.set_data() will use glTexSubImage2D() under the hood to
         # only write into the tile's portion of the larger texture. This is
