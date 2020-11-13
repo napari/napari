@@ -3,7 +3,7 @@
 A texture atlas is a large texture that stores many smaller texture tiles.
 """
 from collections import namedtuple
-from typing import Optional, Tuple
+from typing import NamedTuple, Optional, Tuple
 
 import numpy as np
 from vispy.gloo import Texture2D
@@ -16,6 +16,25 @@ _QUAD = np.array(
 # AtlasTile is returned from TextureAtlas2D.add_tile() so the caller has the
 # texture coordinates to render each tile in the atlas.
 AtlasTile = namedtuple('AtlasTile', "index tex_coords")
+
+
+class TileInfo(NamedTuple):
+    """Information about the tiles we are using in the atlas."""
+
+    shape: np.ndarray
+    ndim: int
+    height: int
+    width: int
+    depth: int
+
+    @classmethod
+    def from_shape(cls, shape: np.ndarray):
+        """Create a TileInfo from just the shape."""
+        ndim = len(shape)
+        assert ndim in [2, 3]  # 2D or 2D with color.
+        height, width = shape[:2]
+        depth = 1 if ndim == 2 else shape[2]
+        return cls(shape, ndim, height, width, depth)
 
 
 class TextureAtlas2D(Texture2D):
@@ -41,7 +60,7 @@ class TextureAtlas2D(Texture2D):
         self, tile_shape: tuple, shape_in_tiles: Tuple[int, int], **kwargs,
     ):
         # Each tile's shape in texels, for example (256, 256, 3).
-        self.tile_shape = tile_shape
+        self.tile_info = TileInfo.from_shape(tile_shape)
 
         # The full texture's shape in tiles, for example 4x4.
         self.shape_in_tiles = shape_in_tiles
@@ -49,8 +68,8 @@ class TextureAtlas2D(Texture2D):
         depth = 3  # TODO_OCTREE: get from the data
 
         # The full texture's shape in texels, for example 1024x1024.
-        height = self.tile_shape[0] * self.shape_in_tiles[0]
-        width = self.tile_shape[1] * self.shape_in_tiles[1]
+        height = self.tile_info.height * self.shape_in_tiles[0]
+        width = self.tile_info.width * self.shape_in_tiles[1]
         self.texture_shape = np.array([width, height, depth], dtype=np.int32)
 
         # Total number of texture slots in the atlas.
@@ -69,7 +88,8 @@ class TextureAtlas2D(Texture2D):
         ]
 
         if self.MARK_DELETED_TILES:
-            self.deleted_tile_data = np.empty(self.tile_shape, dtype=np.uint8)
+            shape = self.tile_info.shape
+            self.deleted_tile_data = np.empty(shape, dtype=np.uint8)
             self.deleted_tile_data[:] = (1, 1, 1)  # handle RGB or RGBA?
 
         super().__init__(shape=tuple(self.texture_shape), **kwargs)
@@ -114,7 +134,7 @@ class TextureAtlas2D(Texture2D):
         col = tile_index % width_tiles
 
         # Return as (X, Y).
-        return col * self.tile_shape[1], row * self.tile_shape[0]
+        return col * self.tile_info.width, row * self.tile_info.height
 
     def _calc_tex_coords(self, tile_index: int) -> np.ndarray:
         """Return the texture coordinates for this tile.
@@ -134,7 +154,7 @@ class TextureAtlas2D(Texture2D):
         """
         offset = self._offset(tile_index)
         pos = offset / self.texture_shape[:2]
-        shape = self.tile_shape[:2] / self.texture_shape[:2]
+        shape = self.tile_info.shape[:2] / self.texture_shape[:2]
 
         quad = _QUAD.copy()
         quad[:, :2] *= shape
@@ -150,7 +170,7 @@ class TextureAtlas2D(Texture2D):
         data : np.ndarray
             The image data for this one tile.
         """
-        if data.shape != self.tile_shape:
+        if data.shape != self.tile_info.shape:
             raise ValueError(
                 f"Adding tile with shape {data.shape} does not match TextureAtlas2D "
                 f"configured tile shape {self.tile_shape}"
