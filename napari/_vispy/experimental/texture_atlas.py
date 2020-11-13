@@ -1,4 +1,6 @@
 """TextureAtlas2D class.
+
+A texture atlas is a large texture that stores many smaller texture tiles.
 """
 from collections import namedtuple
 from typing import Optional, Tuple
@@ -23,7 +25,7 @@ class TextureAtlas2D(Texture2D):
 
     Parameters
     ----------
-    tile_shape : Tuple[int, int]
+    tile_shape : tuple
         The (height, width) of one tile in texels.
     texture_shape : Tuple[int, int]
         The (height, width) of the full texture in terms of tiles.
@@ -36,12 +38,9 @@ class TextureAtlas2D(Texture2D):
     MARK_DELETED_TILES = False
 
     def __init__(
-        self,
-        tile_shape: Tuple[int, int, int],
-        shape_in_tiles: Tuple[int, int],
-        **kwargs,
+        self, tile_shape: tuple, shape_in_tiles: Tuple[int, int], **kwargs,
     ):
-        # Each tile's shape in texels, for example 256x256.
+        # Each tile's shape in texels, for example (256, 256, 3).
         self.tile_shape = tile_shape
 
         # The full texture's shape in tiles, for example 4x4.

@@ -1,4 +1,6 @@
 """TiledImageVisual class
+
+A visual that draws tiles using a texture atlas.
 """
 from typing import List, Set
 
@@ -8,7 +10,8 @@ from vispy.gloo.buffer import VertexBuffer
 from ...layers.image.experimental.octree_util import ChunkData
 from ..vendored import ImageVisual
 from ..vendored.image import _build_color_transform
-from .texture_atlas import TexInfo, TextureAtlas2D
+from .texture_atlas import TextureAtlas2D
+from .tile_set import TileSet
 
 # Shape of she whole texture in tiles. Hardcode for now.
 SHAPE_IN_TILES = (16, 16)
@@ -19,26 +22,20 @@ _QUAD = np.array(
     [[0, 0], [1, 0], [1, 1], [0, 0], [1, 1], [0, 1]], dtype=np.float32,
 )
 
-DATA_GRAYSCALE = False  # temporary
 
-
-class TileData:
-    """Data related to one tile we are displaying.
+def _vert_quad(chunk_data: ChunkData) -> np.ndarray:
+    """Return quad for the vertex buffer.
 
     Parameters
     ----------
     chunk_data : ChunkData
-        The chunk data that produced this time.
-    tex_info : TexInfo
-        The texture information from our tiled visual.
+        Create a quad for this chunk.
+
+    Return
+    ------
+    np.darray
+        The quad vertices.
     """
-
-    def __init__(self, chunk_data: ChunkData, tex_info: TexInfo):
-        self.chunk_data = chunk_data
-        self.tex_info = tex_info
-
-
-def _vert_quad(chunk_data: ChunkData):
     quad = _QUAD.copy()
 
     # TODO_OCTREE: store as np.array in ChunkData?
@@ -52,7 +49,19 @@ def _vert_quad(chunk_data: ChunkData):
     return quad
 
 
-def _tex_quad(chunk_data: ChunkData):
+def _tex_quad(chunk_data: ChunkData) -> np.ndarray:
+    """Return quad for the texture coordinate buffer.
+
+    Parameters
+    ----------
+    chunk_data : ChunkData
+        Create a quad for this chunk.
+
+    Return
+    ------
+    np.darray
+        The quad texture coordinates.
+    """
     quad = _QUAD.copy()[:, :2]
 
     # TODO_OCTREE: store as np.array in ChunkData?
@@ -64,91 +73,6 @@ def _tex_quad(chunk_data: ChunkData):
     quad[:, :2] += chunk_data.pos
 
     return quad
-
-
-class TileSet:
-    """The tiles we are drawing.
-
-    With a fast set membership test for ChunkData.
-    """
-
-    def __init__(self):
-        self._tiles = {}
-        self._chunks = set()
-
-    def __len__(self) -> int:
-        """Return the number of tiles in the set.
-
-        Return
-        ------
-        int
-            The number of tiles in the set.
-        """
-        return len(self._tiles)
-
-    def clear(self) -> None:
-        """Clear out all our tiles and chunks. Forget everything."""
-        self._tiles.clear()
-        self._chunks.clear()
-
-    def add(self, tile_data: TileData) -> None:
-        """Add this TiledData to the set.
-
-        Parameters
-        ----------
-        tile_data : TileData
-            Add this to the set.
-        """
-        tile_index = tile_data.tex_info.tile_index
-        self._tiles[tile_index] = tile_data
-        self._chunks.add(tile_data.chunk_data.key)
-
-    def remove(self, tile_index: int) -> None:
-        """Remove the TileData at this index from the set.
-
-        tile_index : int
-            Remove the TileData at this index.
-        """
-        chunk_data = self._tiles[tile_index].chunk_data
-        del self._tiles[tile_index]
-        self._chunks.remove(chunk_data.key)
-
-    @property
-    def chunks(self) -> List[ChunkData]:
-        """Return all the chunk data that we have.
-
-        Return
-        ------
-        List[ChunkData]
-            All the chunk data in the set.
-        """
-        return [tile_data.chunk_data for tile_data in self._tiles.values()]
-
-    @property
-    def tile_data(self) -> List[TileData]:
-        """Return all the tile data in the set.
-
-        Return
-        ------
-        List[TileData]
-            All the tile data in the set.
-        """
-        return self._tiles.values()
-
-    def contains_chunk_data(self, chunk_data: ChunkData) -> bool:
-        """Return True if the set contains this chunk data.
-
-        Parameters
-        ----------
-        chunk_data : ChunkData
-            Check if ChunkData is in the set.
-
-        Return
-        ------
-        bool
-            True if the set contains this chunk data.
-        """
-        return chunk_data.key in self._chunks
 
 
 class TiledImageVisual(ImageVisual):
@@ -299,7 +223,7 @@ class TiledImageVisual(ImageVisual):
         if tex_info is None:
             return  # No slot available in the atlas.
 
-        self._tiles.add(TileData(chunk_data, tex_info))
+        self._tiles.add(chunk_data, tex_info)
         self._need_vertex_update = True
 
     def remove_tile(self, tile_index: int) -> None:

@@ -12,7 +12,7 @@ from ...layers.image.experimental.octree_util import ChunkData
 GRID_WIDTH = 3
 GRID_COLOR = (1, 0, 0, 1)
 
-# Draw on tope of the tiles.
+# Draw grid on top of the tiles.
 LINE_VISUAL_ORDER = 10
 
 
@@ -40,7 +40,7 @@ def _chunk_outline(chunk: ChunkData) -> np.ndarray:
     # double-drawing all interior lines in the grid. We can avoid
     # this duplication if it becomes a performance issue.
 
-    # TODO_OCTREE: use */+ like we do with quads
+    # TODO_OCTREE: construct from a _QUAD like we do elsewhere.
     return np.array(
         (
             [x, y],
