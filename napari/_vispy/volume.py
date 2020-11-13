@@ -7,7 +7,6 @@ from .vendored.volume import FRAG_SHADER, frag_dict
 
 BaseVolume = create_visual_node(BaseVolumeVisual)
 
-
 ATTENUATED_MIP_SNIPPETS = dict(
     before_loop="""
         float maxval = -99999.0; // The maximum encountered value
@@ -33,7 +32,6 @@ ATTENUATED_MIP_FRAG_SHADER = FRAG_SHADER.format(**ATTENUATED_MIP_SNIPPETS)
 
 frag_dict['attenuated_mip'] = ATTENUATED_MIP_FRAG_SHADER
 
-
 MINIP_SNIPPETS = dict(
     before_loop="""
         float minval = 99999.0; // The minimum encountered value
@@ -58,7 +56,8 @@ MINIP_SNIPPETS = dict(
 
 MINIP_FRAG_SHADER = FRAG_SHADER.format(**MINIP_SNIPPETS)
 
-frag_dict['minip'] = MINIP_FRAG_SHADER
+frag_dict['MinIP'] = MINIP_FRAG_SHADER
+
 
 # Custom volume class is needed for better 3D rendering
 class Volume(BaseVolume):
