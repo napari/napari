@@ -78,7 +78,7 @@ class VispyTiledImageLayer(VispyImageLayer):
         """
         return self.node.num_tiles
 
-    def set_data(self, node, data):
+    def set_data(self, node, data) -> None:
         """Set our image data, not implemented.
 
         ImageVisual has a set_data() method but we don't. No one can set
@@ -127,7 +127,7 @@ class VispyTiledImageLayer(VispyImageLayer):
 
         return stats
 
-    def _update_tile_shape(self):
+    def _update_tile_shape(self) -> None:
         """Check if the tile shape was changed on us."""
         # This might be overly dynamic, but for now if we see there's a new
         # tile shape we nuke our texture atlas and start over with the new
@@ -140,7 +140,7 @@ class VispyTiledImageLayer(VispyImageLayer):
         if self.node.tile_shape != tile_shape:
             self.node.set_tile_shape(tile_shape)
 
-    def _on_camera_move(self, event=None):
+    def _on_camera_move(self, event=None) -> None:
         """Called on any camera movement.
 
         Update tiles based on which chunks are currently visible.
