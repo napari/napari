@@ -95,9 +95,12 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self.dims.events.order.connect(self.reset_view)
         self.dims.events.current_step.connect(self._update_layers)
         self.cursor.events.position.connect(self._on_cursor_position_change)
-        self.layers.events.changed.connect(self._update_active_layer)
-        self.layers.events.changed.connect(self._on_grid_change)
-        self.layers.events.changed.connect(self._on_layers_change)
+        self.layers.events.inserted.connect(self._on_grid_change)
+        self.layers.events.removed.connect(self._on_grid_change)
+        self.layers.events.reordered.connect(self._on_grid_change)
+        self.layers.events.inserted.connect(self._on_layers_change)
+        self.layers.events.removed.connect(self._on_layers_change)
+        self.layers.events.reordered.connect(self._on_layers_change)
 
         self.keymap_providers = [self]
 
@@ -410,6 +413,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             for i in range(ndim):
                 self.dims.set_range(i, (extent[0, i], extent[1, i], ss[i]))
         self.events.layers_change()
+        self._update_active_layer(event)
 
     def _update_status(self, event):
         """Set the viewer status with the `event.status` string."""

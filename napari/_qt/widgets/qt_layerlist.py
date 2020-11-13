@@ -91,7 +91,7 @@ class QtLayerList(QScrollArea):
         self.setToolTip('Layer list')
         self.setSizePolicy(QSizePolicy.Fixed, QSizePolicy.Expanding)
 
-        self.layers.events.added.connect(self._add)
+        self.layers.events.inserted.connect(self._add)
         self.layers.events.removed.connect(self._remove)
         self.layers.events.reordered.connect(self._reorder)
 
@@ -101,14 +101,14 @@ class QtLayerList(QScrollArea):
         self.chunk_receiver = _create_chunk_receiver(self)
 
     def _add(self, event):
-        """Insert widget for layer `event.item` at index `event.index`.
+        """Insert widget for layer `event.value` at index `event.index`.
 
         Parameters
         ----------
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        layer = event.item
+        layer = event.value
         total = len(self.layers)
         index = 2 * (total - event.index) - 1
         widget = QtLayerWidget(layer)

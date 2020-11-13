@@ -317,9 +317,20 @@ class Window:
         toggle_theme.setShortcut('Ctrl+Shift+T')
         toggle_theme.setStatusTip('Toggle theme')
         toggle_theme.triggered.connect(self.qt_viewer.viewer._toggle_theme)
+        toggle_fullscreen = QAction('Toggle Full Screen', self._qt_window)
+        toggle_fullscreen.setShortcut('Ctrl+F')
+        toggle_fullscreen.setStatusTip('Toggle full screen')
+        toggle_fullscreen.triggered.connect(self._toggle_fullscreen)
+        toggle_play = QAction('Toggle Play', self._qt_window)
+        toggle_play.triggered.connect(self._toggle_play)
+        toggle_play.setShortcut('Ctrl+Alt+P')
+        toggle_play.setStatusTip('Toggle Play')
+
         self.view_menu = self.main_menu.addMenu('&View')
+        self.view_menu.addAction(toggle_fullscreen)
         self.view_menu.addAction(toggle_visible)
         self.view_menu.addAction(toggle_theme)
+        self.view_menu.addAction(toggle_play)
         self.view_menu.addSeparator()
 
         # Add axes menu
@@ -484,6 +495,21 @@ class Window:
 
     def _toggle_axes_arrows(self, state):
         self.qt_viewer.viewer.axes.arrows = state
+
+    def _toggle_fullscreen(self, event):
+        """Toggle fullscreen mode."""
+        if self._qt_window.isFullScreen():
+            self._qt_window.showNormal()
+        else:
+            self._qt_window.showFullScreen()
+
+    def _toggle_play(self, state):
+        """Toggle play."""
+        if self.qt_viewer.dims.is_playing:
+            self.qt_viewer.dims.stop()
+        else:
+            axis = self.qt_viewer.viewer.dims.last_used or 0
+            self.qt_viewer.dims.play(axis)
 
     def add_dock_widget(
         self,

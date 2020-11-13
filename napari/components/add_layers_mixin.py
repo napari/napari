@@ -58,7 +58,11 @@ class AddLayersMixin:
         layer.events.cursor.connect(self._update_cursor)
         layer.events.cursor_size.connect(self._update_cursor_size)
         layer.events.data.connect(self._on_layers_change)
+        layer.name = self.layers._coerce_name(layer.name, layer)
+        layer.events.name.connect(self.layers._update_name)
+        layer.selected = True
         self.layers.append(layer)
+        self.layers.unselect_all(ignore=layer)
         self._update_layers(layers=[layer])
 
         if len(self.layers) == 1:

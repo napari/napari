@@ -45,7 +45,7 @@ class QtRenderContainer(QStackedWidget):
         self.addWidget(self.default_widget)
         self._display(None)
 
-        self.viewer.layers.events.added.connect(self._add)
+        self.viewer.layers.events.inserted.connect(self._add)
         self.viewer.layers.events.removed.connect(self._remove)
         self.viewer.events.active_layer.connect(self._display)
 
@@ -55,12 +55,12 @@ class QtRenderContainer(QStackedWidget):
         Parameters
         ----------
         event : Event
-            Event with the target layer at `event.item`.
+            Event with the target layer at `event.value`.
         """
         if event is None:
             layer = None
         else:
-            layer = event.item
+            layer = event.value
 
         if layer is None:
             self.setCurrentWidget(self.default_widget)
@@ -74,9 +74,9 @@ class QtRenderContainer(QStackedWidget):
         Parameters
         ----------
         event : Event
-            Event with the target layer at `event.item`.
+            Event with the target layer at `event.value`.
         """
-        layer = event.item
+        layer = event.value
         controls = QtRender(self.viewer, layer)
         self.addWidget(controls)
         self._widgets[layer] = controls
@@ -87,9 +87,9 @@ class QtRenderContainer(QStackedWidget):
         Parameters
         ----------
         event : Event
-            Event with the target layer at `event.item`.
+            Event with the target layer at `event.value`.
         """
-        layer = event.item
+        layer = event.value
         controls = self._widgets[layer]
         self.removeWidget(controls)
         controls.deleteLater()
