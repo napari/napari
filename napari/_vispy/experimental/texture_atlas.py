@@ -2,7 +2,6 @@
 
 A texture atlas is a large texture that stores many smaller texture tiles.
 """
-from collections import namedtuple
 from typing import NamedTuple, Optional, Tuple
 
 import numpy as np
@@ -13,9 +12,16 @@ _QUAD = np.array(
     [[0, 0], [1, 0], [1, 1], [0, 0], [1, 1], [0, 1]], dtype=np.float32,
 )
 
-# AtlasTile is returned from TextureAtlas2D.add_tile() so the caller has the
-# texture coordinates to render each tile in the atlas.
-AtlasTile = namedtuple('AtlasTile', "index tex_coords")
+
+class AtlasTile(NamedTuple):
+    """Information about one specific tile in the atlas.
+
+    AtlasTile is returned from TextureAtlas2D.add_tile() so the caller has
+    the texture coordinates to render each tile in the atlas.
+    """
+
+    index: int
+    tex_coords: np.ndarray
 
 
 class TileInfo(NamedTuple):
