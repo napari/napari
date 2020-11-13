@@ -232,22 +232,21 @@ class TextureAtlas2D(Texture2D):
         if self.MARK_DELETED_TILES:
             self._set_tile_data(tile_index, self.deleted_tile_data)
 
-    def _set_tile_data(self, tile_index: int, data) -> None:
-        """Set the texture data for this one tile.
+    def _set_tile_data(self, tile_index: int, data: np.ndarray) -> None:
+        """Upload the texture data for this one tile.
 
         Parameters
         ----------
         tile_index : int
-            The index of the tile to set.
+            The index of the tile to upload.
         data
-            The new texture data for the tile.
+            The texture data for the tile.
         """
-        # Covert (X, Y) offset of this tile within the larger texture
-        # in the the (row, col) that Texture2D expects.
+        # Reverse the (X, Y) offset of this tile within the larger texture
+        # into the the (row, col) that Texture2D expects.
         offset = self._offset(tile_index)[::-1]
 
         # Texture2D.set_data() will use glTexSubImage2D() under the hood to
         # only write into the tile's portion of the larger texture. This is
-        # the main reason adding tiles to TextureAtlas2D is fast, we do not
-        # have to re-upload the whole texture each time.
+        # a big reason adding tiles to TextureAtlas2D is fast.
         self.set_data(data, offset=offset, copy=True)
