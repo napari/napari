@@ -60,7 +60,7 @@ class QtRenderContainer(QStackedWidget):
         if event is None:
             layer = None
         else:
-            layer = event.value
+            layer = event.item
 
         if layer is None:
             self.setCurrentWidget(self.default_widget)
