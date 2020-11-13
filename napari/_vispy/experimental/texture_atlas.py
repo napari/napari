@@ -199,9 +199,11 @@ class TextureAtlas2D(Texture2D):
             The image data for this one tile.
         """
         if not self.spec.is_compatible(data):
+            # It will be not compatible of number of dimensions or depth
+            # are wrong. Or if the data is too big to fit in one tile.
             raise ValueError(
-                f"Adding tile with shape {data.shape} does not match TextureAtlas2D "
-                f"configured tile shape {self.tile_shape}"
+                f"Data with shape {data.shape} is not compatible with this "
+                f"TextureAtlas2D with tile shape {self.spec.shape}"
             )
 
         try:
