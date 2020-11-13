@@ -1,6 +1,6 @@
 """Octree utility classes.
 """
-from typing import List, Tuple
+from typing import List, NamedTuple, Tuple
 
 import numpy as np
 
@@ -27,36 +27,31 @@ class OctreeInfo:
         self.tile_size = tile_size
 
 
-# TODO_OCTREE: this class is placeholder, needs work
-class ChunkData:
+class ChunkData(NamedTuple):
     """One chunk of the full image.
 
     A chunk is a 2D tile or a 3D sub-volume.
 
-    Parameters
+    We include level_index because id(data) is sometimes duplicated in #
+    adjacent levels, somehow. But it makes sense to include it anyway,
+    it's an important aspect of the chunk.
+
+    Attributes
     ----------
+    level_index : int
+        The octree level where this chunk is from.
     data : ArrayLike
         The data to draw for this chunk.
-    pos : Tuple[float, float]
+    pos : np.ndarray
         The x, y coordinates of the chunk.
-    size : float
-        The size of the chunk, the chunk is square/cubic.
+    scale : np.ndarray
+        The (x, y) scale of this chunk. Should be square/cubic.
     """
 
-    def __init__(
-        self,
-        level_index: int,
-        data: ArrayLike,
-        pos: Tuple[float, float],
-        scale: Tuple[float, float],
-    ):
-        # We need level_index because id(data) is sometimes duplicated in
-        # adjacent layers, somehow. But it makes sense to include it
-        # anyway, it's an important aspect of the chunk.
-        self.level_index = level_index
-        self.data = data
-        self.pos = pos
-        self.scale = scale
+    level_index: int
+    data: ArrayLike
+    pos: np.ndarray
+    scale: np.ndarray
 
     @property
     def key(self) -> Tuple[int, int, int]:

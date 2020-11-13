@@ -107,7 +107,7 @@ class OctreeIntersection:
         level_index = level_info.level_index
 
         scale = level_info.scale
-        scale_vec = [scale, scale]
+        scale_vec = np.array([scale, scale], dtype=np.float32)
 
         tile_size = level_info.octree_info.tile_size
         scaled_size = tile_size * scale
@@ -120,7 +120,7 @@ class OctreeIntersection:
             for col in self._col_range:
 
                 data = self.level.tiles[row][col]
-                pos = [x, y]
+                pos = np.array([x, y], dtype=np.float32)
 
                 # Only include chunks that have non-zero area. Not sure why
                 # some chunks are zero sized. But this will be a harmless

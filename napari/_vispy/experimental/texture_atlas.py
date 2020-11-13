@@ -187,8 +187,7 @@ class TextureAtlas2D(Texture2D):
         """
         quad = _QUAD.copy()
 
-        # TODO_OCTREE: store as np.array in ChunkData?
-        scale = np.array(chunk_data.scale, dtype=np.float32)
+        scale = chunk_data.scale
         scaled_shape = chunk_data.data.shape[:2] * scale
 
         # Modify in place.
