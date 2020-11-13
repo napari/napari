@@ -25,6 +25,9 @@ if TYPE_CHECKING:
 def _create_chunk_receiver(parent: QObject) -> 'Optional[QtChunkReceiver]':
     """Return a QtChunkReceiver or None if not using async.
 
+    The QtChunkReceiver object allows the ChunkLoader to pass newly
+    loaded chunks to the layers that requested them.
+
     Attributes
     ----------
     parent : QObject

@@ -92,7 +92,9 @@ class Viewer(ViewerModel):
         if config.async_loading:
             from .components.experimental.chunk import chunk_loader
 
-            # TODO_ASYNC: Find a cleaner way to do this? Fixes some tests.
+            # TODO_ASYNC: Find a cleaner way to do this? This fixes some
+            # tests. We are telling the ChunkLoader that this layer is
+            # going away:
             # https://github.com/napari/napari/issues/1500
             for layer in self.layers:
                 chunk_loader.on_layer_deleted(layer)

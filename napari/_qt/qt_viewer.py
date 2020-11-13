@@ -198,7 +198,7 @@ class QtViewer(QSplitter):
         )
         self.canvas.events.resize.connect(self.scale_bar._on_position_change)
 
-        self._show_welcome = welcome
+        self._show_welcome = welcome and config.allow_welcome_visual
         if self._show_welcome:
             self.welcome = VispyWelcomeVisual(
                 self.viewer, parent=self.view, order=-100
@@ -260,8 +260,9 @@ class QtViewer(QSplitter):
         return None
 
     def _create_render_dock_widget(self):
-        """Create the dock widget that shows async controls.
+        """Create the dock widget that shows debug render controls.
         """
+        # We only show the render controls for octree right now.
         if config.async_octree:
             from .experimental.render.qt_render_container import (
                 QtRenderContainer,

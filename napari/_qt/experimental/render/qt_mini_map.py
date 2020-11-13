@@ -1,4 +1,4 @@
-"""MiniMap widget.
+"""QtMiniMap widget.
 """
 import math
 
@@ -6,7 +6,6 @@ import numpy as np
 from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import QLabel
 
-from ....components.viewer_model import ViewerModel
 from ....layers.image.experimental import OctreeIntersection, OctreeLevel
 from ....layers.image.experimental.octree_image import OctreeImage
 
@@ -21,15 +20,13 @@ COLOR_UNSEEN = (80, 80, 80, 255)  # gray
 COLOR_VIEW = (227, 220, 111, 255)  # yellow
 
 
-class MiniMap(QLabel):
+class QtMiniMap(QLabel):
     """A small bitmap that shows the view bounds and which tiles are seen.
 
     Only works with OctreeImage layers.
 
     Parameters
     ----------
-    viewer : Viewer
-        The napari viewer.
     layer : OctreeImage
         The octree image we are viewing.
     """
@@ -37,27 +34,14 @@ class MiniMap(QLabel):
     # Border between the tiles is twice this.
     HALF_BORDER = 1
 
-    def __init__(self, viewer: ViewerModel, layer: OctreeImage):
+    def __init__(self, layer: OctreeImage):
         super().__init__()
-        self.viewer = viewer
         self.layer = layer
-
-    @property
-    def data_corners(self):
-        """Return data corners for current view in this layer."""
-        # TODO_OCTREE: We should not calculate this here. We should query
-        # the layer or something to get these corner pixels.
-        qt_viewer = self.viewer.window.qt_viewer
-        ndim = self.layer.ndim
-        xform = self.layer._transforms[1:].simplified
-
-        corner_pixels = qt_viewer._canvas_corners_in_world[:, -ndim:]
-        return xform.inverse(corner_pixels)
 
     def update(self) -> None:
         """Update the minimap to show latest intersection."""
         # This actually performs the intersection, but it's very fast.
-        intersection = self.layer.get_intersection(self.data_corners)
+        intersection = self.layer.get_intersection()
 
         if intersection is not None:
             self._draw_map(intersection)
@@ -104,7 +88,7 @@ class MiniMap(QLabel):
         scale_x = map_shape[1] / level.info.image_shape[1]
         scale_y = map_shape[0] / level.info.image_shape[0]
 
-        # OCTREE_TODO: Consider this Qt bitmap rendering code just a rough
+        # TODO_OCTREE: Consider this Qt bitmap rendering code just a rough
         # proof-of-concept prototype. A real minimap should probably be a
         # little OpenGL window, not a Qt bitmap. If we used OpenGL the GPU
         # does most of the work and we get better quality and effects, like
@@ -153,10 +137,13 @@ class MiniMap(QLabel):
         intersection : OctreeIntersection
             Draw the view in this intersection.
         """
-        max_y = data.shape[0] - 1
-        max_x = data.shape[1] - 1
+        # Max (row, col) dimensions of the bitmap we are writing into.
+        max_dim = np.array([data.shape[0] - 1, data.shape[1] - 1])
 
-        rows = (intersection.normalized_rows * max_y).astype(int)
-        cols = (intersection.normalized_cols * max_x).astype(int)
+        # Convert normalized ranges into bitmap pixel ranges
+        ranges = (intersection.normalized_range * max_dim).astype(int)
 
+        # Write the view color into this rectangular regions.
+        # TODO_OCTREE: must be a nicer way to index this?
+        rows, cols = ranges[0], ranges[1]
         data[rows[0] : rows[1], cols[0] : cols[1], :] = COLOR_VIEW

@@ -1,0 +1,354 @@
+"""TiledImageVisual class
+
+A visual that draws tiles using a texture atlas.
+"""
+from typing import List, Set
+
+import numpy as np
+from vispy.gloo.buffer import VertexBuffer
+
+from ...layers.image.experimental.octree_util import ChunkData
+from ..vendored import ImageVisual
+from ..vendored.image import _build_color_transform
+from .texture_atlas import TextureAtlas2D
+from .tile_set import TileSet
+
+# Shape of she whole texture in tiles. Hardcode for now.
+SHAPE_IN_TILES = (16, 16)
+
+
+# Two triangles to cover a [0..1, 0..1] quad.
+_QUAD = np.array(
+    [[0, 0], [1, 0], [1, 1], [0, 0], [1, 1], [0, 1]], dtype=np.float32,
+)
+
+
+def _vert_quad(chunk_data: ChunkData) -> np.ndarray:
+    """Return quad for the vertex buffer.
+
+    Parameters
+    ----------
+    chunk_data : ChunkData
+        Create a quad for this chunk.
+
+    Return
+    ------
+    np.darray
+        The quad vertices.
+    """
+    quad = _QUAD.copy()
+
+    # TODO_OCTREE: store as np.array in ChunkData?
+    scale = np.array(chunk_data.scale, dtype=np.float32)
+    scaled_shape = chunk_data.data.shape[:2] * scale
+
+    # Modify XY's into place
+    quad[:, :2] *= scaled_shape
+    quad[:, :2] += chunk_data.pos
+
+    return quad
+
+
+def _tex_quad(chunk_data: ChunkData) -> np.ndarray:
+    """Return quad for the texture coordinate buffer.
+
+    Parameters
+    ----------
+    chunk_data : ChunkData
+        Create a quad for this chunk.
+
+    Return
+    ------
+    np.darray
+        The quad texture coordinates.
+    """
+    quad = _QUAD.copy()[:, :2]
+
+    # TODO_OCTREE: store as np.array in ChunkData?
+    scale = np.array(chunk_data.scale, dtype=np.float32)
+    scaled_shape = chunk_data.data.shape[:2] * scale
+
+    # Modify XY's into place
+    quad[:, :2] *= scaled_shape
+    quad[:, :2] += chunk_data.pos
+
+    return quad
+
+
+class TiledImageVisual(ImageVisual):
+    """A larger image that's drawn using some number of smaller tiles.
+
+    TiledImageVisual draws a single large image using a set of square image
+    tiles. The size of the tiles is configurable, but 256x256 or 512x512
+    might be good choices. All the tiles in one TiledImageVisual are the
+    same size.
+
+    The tiles are stored in larger textures as an "atlas". An atlas is
+    basically just a texture which looks like a grid of smaller images. The
+    grid has no borders between the tiles. The size of the larger textures
+    is also configurable. For example a single 4096x4096 texture could
+    store 256 different 256x256 tiles.
+
+    Adding or removing tiles from a TiledImageVisual is efficient. Only the
+    bytes in the tile(s) being updated are sent to the card. The Vispy
+    method BaseTexture.set_data() has an "offset" argument. When setting
+    texture data with an offset under the hood Vispy calls
+    glTexSubImage2D(). It will only update the rectangular region within
+    the texture that's being updated.
+
+    In addition, uploading new tiles does not cause the shader to be
+    rebuilt. This is another reason TiledImageVisual is faster than
+    creating a stand-alone ImageVisuals to draw each tile.
+
+    Finally, rendering the tiles is also efficient. In one draw pass
+    TiledImageVisual can render all the tiles. If all the tiles are stored
+    in the same large texture, there will be zero texture swaps.
+
+    Parameters
+    ----------
+    tile_shape : np.ndarray
+        The shape of one tile like (256, 256, 3).
+    """
+
+    def __init__(self, tile_shape: np.ndarray, *args, **kwargs):
+        self.tile_shape = tile_shape
+
+        self._tiles = TileSet()  # The tiles we are drawing.
+
+        # We populate these buffers, the shader draws using them.
+        self._verts = VertexBuffer()
+        self._tex_coords = VertexBuffer()
+
+        self._clim = np.array([0, 1])  # TOOD_OCTREE: need to support clim
+
+        super().__init__(*args, **kwargs)
+
+        # Must create the texture atlas after calling __init__ so
+        # the attribute self._interpolation exists.
+        self.unfreeze()
+        self._texture_atlas = self._create_texture_atlas(tile_shape)
+        self.freeze()
+
+    def _create_texture_atlas(self, tile_shape: np.ndarray) -> TextureAtlas2D:
+        """Create texture atlas up front or if we change texture shape.
+
+        Attributes
+        ----------
+        tile_shape : np.ndarray
+            The shape of our tiles like (256, 256, 4).
+
+        Return
+        ------
+        TextureAtlas2D
+            The newly created texture atlas.
+        """
+        interp = 'linear' if self._interpolation == 'bilinear' else 'nearest'
+        return TextureAtlas2D(tile_shape, SHAPE_IN_TILES, interpolation=interp)
+
+    def set_data(self, image) -> None:
+        # VispyImageLayer._on_display_change calls this with an empty image, but
+        # we can just ignore it.
+        pass
+
+    def set_tile_shape(self, tile_shape: np.ndarray) -> None:
+        """Set the shape of our tiles.
+
+        All tiles are the same shape in terms of texels. However they might
+        be drawn different sizes. For example a quadtree might draw one
+        tile 2X or 4X bigger than another tile.
+
+        Parameters
+        ----------
+        tile_shape : np.ndarray
+            Our tiles shape like (256, 256, 4)
+        """
+
+        # Clear all our previous tile information and set the new shape.
+        self._tiles.clear()
+        self.tile_shape = tile_shape
+
+        # Create the new atlas and tell the shader about it.
+        self._texture_atlas = self._create_texture_atlas(tile_shape)
+        self._data_lookup_fn['texture'] = self._texture_atlas
+
+    @property
+    def size(self):
+        # TODO_OCTREE: need to compute the size...
+        #
+        # ImageVisual.size() does
+        #     return self._data.shape[:2][::-1]
+        #
+        # We don't have a self._data so what do we put here? Maybe need
+        # a bounds for all the currently visible tiles?
+        # return self._texture_atlas.texture_shape[:2]
+        return (1024, 1024)
+
+    @property
+    def num_tiles(self) -> int:
+        """Return the number tiles currently being drawn.
+
+        Return
+        ------
+        int
+            The number of tiles currently being drawn.
+        """
+        return self._texture_atlas.num_slots_used
+
+    @property
+    def chunk_data(self) -> List[ChunkData]:
+        """Return data for the chunks we are drawing.
+
+        List[ChunkData]
+            The data for the chunks we are drawing.
+        """
+        return self._tiles.chunks
+
+    def add_chunks(self, chunks: List[ChunkData]):
+        """Any any chunks that we are not already drawing.
+
+        Parameters
+        ----------
+        chunks : List[ChunkData]
+            Add any of these we are not already drawing.
+        """
+        for chunk_data in chunks:
+            if not self._tiles.contains_chunk_data(chunk_data):
+                self.add_one_tile(chunk_data)
+
+    def add_one_tile(self, chunk_data: ChunkData) -> None:
+        """Add one tile to the tiled image.
+
+        Parameters
+        ----------
+        chunk_data : ChunkData
+            The data for the tile we are adding.
+
+        Return
+        ------
+        int
+            The tile's index.
+        """
+
+        tex_info = self._texture_atlas.add_tile(chunk_data.data)
+
+        if tex_info is None:
+            return  # No slot available in the atlas.
+
+        self._tiles.add(chunk_data, tex_info)
+        self._need_vertex_update = True
+
+    def remove_tile(self, tile_index: int) -> None:
+        """Remove one tile from the image.
+
+        Parameters
+        ----------
+        tile_index : int
+            The tile to remove.
+        """
+        try:
+            self._tiles.remove(tile_index)
+            self._texture_atlas.remove_tile(tile_index)
+            self._need_vertex_update = True
+        except IndexError:
+            raise RuntimeError(f"Tile index {tile_index} not found.")
+
+    def prune_tiles(self, visible_set: Set[ChunkData]) -> None:
+        """Remove tiles that are not part of the given visible set.
+
+        visible_set : Set[ChunkData]
+            The set of currently visible chunks.
+        """
+        for tile_data in list(self._tiles.tile_data):
+            if tile_data.chunk_data.key not in visible_set:
+                tile_index = tile_data.tex_info.tile_index
+                self.remove_tile(tile_index)
+
+    def _build_vertex_data(self) -> None:
+        """Build vertex and texture coordinate buffers.
+
+        This overrides ImageVisual._build_vertex_data(), it is called from
+        our _prepare_draw().
+
+        This is the heart of tiled rendering. Instead of drawing one quad
+        with one texture, we draw one quad per tile. And for each quad its
+        texture coordinates will pull from the right slot in the atlas.
+
+        So as the card draws the tiles, where it's sampling from the
+        texture will hop around in the atlas texture.
+        """
+        if len(self._tiles) == 0:
+            return  # Nothing to draw.
+
+        verts = np.zeros((0, 2), dtype=np.float32)
+        tex_coords = np.zeros((0, 2), dtype=np.float32)
+
+        # TODO_OCTREE: We can probably avoid vstack here if clever,
+        # maybe one one vertex buffer sized according to the max
+        # number of tiles we expect. But grow if needed.
+        for tile_data in self._tiles.tile_data:
+            chunk_data = tile_data.chunk_data
+
+            vert_quad = _vert_quad(chunk_data)
+            verts = np.vstack((verts, vert_quad))
+
+            tex_quad = tile_data.tex_info.tex_coord
+            tex_coords = np.vstack((tex_coords, tex_quad))
+
+        # Set the base ImageVisual _subdiv_ buffers
+        self._subdiv_position.set_data(verts)
+        self._subdiv_texcoord.set_data(tex_coords)
+        self._need_vertex_update = False
+
+    def _build_texture(self) -> None:
+        """Override of ImageVisual._build_texture().
+
+        TODO_OCTREE: This needs work. Need to do the clim stuff in in the
+        base ImageVisual._build_texture but do it for each tile?
+        """
+        self._clim = np.array([0, 1])
+
+        self._texture_limits = np.array([0, 1])  # hardcode
+        self._need_colortransform_update = True
+
+        self._need_texture_upload = False
+
+    def _prepare_draw(self, view) -> None:
+        """Override of ImageVisual._prepare_draw()
+
+        TODO_OCTREE: See how much this changes from base class, if we can
+        avoid too much duplication. Or factor out some common methods.
+        """
+        if self._need_interpolation_update:
+            # Call the base ImageVisual._build_interpolation()
+            self._build_interpolation()
+
+            # But override to use our texture atlas.
+            self._data_lookup_fn['texture'] = self._texture_atlas
+
+        # We call our own _build_texture
+        if self._need_texture_upload:
+            self._build_texture()
+
+        # TODO_OCTREE: how does colortransform change for tiled?
+        if self._need_colortransform_update:
+            prg = view.view_program
+            grayscale = len(self.tile_shape) == 2 or self.tile_shape[2] == 1
+            self.shared_program.frag[
+                'color_transform'
+            ] = _build_color_transform(
+                grayscale, self.clim_normalized, self.gamma, self.cmap
+            )
+            self._need_colortransform_update = False
+            prg['texture2D_LUT'] = (
+                self.cmap.texture_lut()
+                if (hasattr(self.cmap, 'texture_lut'))
+                else None
+            )
+
+        # We call our own _build_vertex_data()
+        if self._need_vertex_update:
+            self._build_vertex_data()
+
+        # Call the normal ImageVisual._update_method() unchanged.
+        if view._need_method_update:
+            self._update_method(view)

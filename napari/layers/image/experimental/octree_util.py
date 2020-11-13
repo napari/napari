@@ -8,34 +8,23 @@ from ....types import ArrayLike
 
 TileArray = List[List[np.ndarray]]
 
-# TODO_OCTREE: These types might be a horrible idea but trying it for now.
-Int2 = np.ndarray  # [x, x] dtype=numpy.int32
 
-
-# TODO_OCTREE: this class is placeholder, needs work
 class OctreeInfo:
-    def __init__(self, base_shape, tile_size: int):
+    """Information about the entire octree.
+
+    Parameters
+    -----------
+    base_shape : Tuple[int, int]
+        The base shape of the entire image at full resolution.
+    tile_size : int
+        The edge length of one square tile (e.g. 256).
+    """
+
+    # TODO_OCTREE: will be namedtuple/dataclass if does not grow
+    def __init__(self, base_shape: Tuple[int, int], tile_size: int):
         self.base_shape = base_shape
         self.aspect = base_shape[1] / base_shape[0]
         self.tile_size = tile_size
-
-
-class OctreeLevelInfo:
-    def __init__(
-        self, octree_info: OctreeInfo, level_index: int, tile_shape: Int2
-    ):
-        self.octree_info = octree_info
-
-        self.level_index = level_index
-        self.scale = 2 ** self.level_index
-
-        base = self.octree_info.base_shape
-        self.image_shape = (
-            int(base[0] / self.scale),
-            int(base[1] / self.scale),
-        )
-
-        self.tile_shape = tile_shape
 
 
 # TODO_OCTREE: this class is placeholder, needs work
@@ -70,5 +59,9 @@ class ChunkData:
         self.scale = scale
 
     @property
-    def key(self):
+    def key(self) -> Tuple[int, int, int]:
+        """The unique key for this chunk.
+
+        Switch to __hash__? Didn't immediately work.
+        """
         return (self.pos[0], self.pos[1], self.level_index)
