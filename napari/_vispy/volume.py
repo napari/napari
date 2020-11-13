@@ -33,10 +33,11 @@ ATTENUATED_MIP_FRAG_SHADER = FRAG_SHADER.format(**ATTENUATED_MIP_SNIPPETS)
 
 frag_dict['attenuated_mip'] = ATTENUATED_MIP_FRAG_SHADER
 
+
 MINIP_SNIPPETS = dict(
     before_loop="""
         float minval = 99999.0; // The minimum encountered value
-        int mini = 0;  // Where the maximum value was encountered
+        int mini = 0;  // Where the minimum value was encountered
         """,
     in_loop="""
         if( val < minval ) {
