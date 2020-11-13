@@ -15,6 +15,31 @@ _QUAD = np.array(
 )
 
 
+def _chunk_verts(chunk_data: ChunkData) -> np.ndarray:
+    """Return a quad for the vertex buffer.
+
+    Parameters
+    ----------
+    chunk_data : ChunkData
+        Create a quad for this chunk.
+
+    Return
+    ------
+    np.darray
+        The quad vertices.
+    """
+    quad = _QUAD.copy()
+
+    scale = chunk_data.scale
+    scaled_shape = chunk_data.data.shape[:2] * scale
+
+    # Modify in place.
+    quad[:, :2] *= scaled_shape[::-1]  # Reverse into (X, Y) form.
+    quad[:, :2] += chunk_data.pos
+
+    return quad
+
+
 class AtlasTile(NamedTuple):
     """Information about one specific tile in the atlas.
 
@@ -172,30 +197,6 @@ class TextureAtlas2D(Texture2D):
 
         return row * self.spec.height, col * self.spec.width
 
-    def _vert_quad(self, chunk_data: ChunkData) -> np.ndarray:
-        """Return quad for the vertex buffer.
-
-        Parameters
-        ----------
-        chunk_data : ChunkData
-            Create a quad for this chunk.
-
-        Return
-        ------
-        np.darray
-            The quad vertices.
-        """
-        quad = _QUAD.copy()
-
-        scale = chunk_data.scale
-        scaled_shape = chunk_data.data.shape[:2] * scale
-
-        # Modify in place.
-        quad[:, :2] *= scaled_shape[::-1]  # Reverse into (X, Y) form.
-        quad[:, :2] += chunk_data.pos
-
-        return quad
-
     def _calc_tex_coords(
         self, tile_index: int, tile_shape: np.ndarray,
     ) -> np.ndarray:
@@ -255,7 +256,7 @@ class TextureAtlas2D(Texture2D):
 
         # Return AtlasTile. The caller will need the texture coordinates to
         # render quads using our tiles.
-        verts = self._vert_quad(chunk_data)
+        verts = _chunk_verts(chunk_data)
         tex_coords = self._get_tex_coords(tile_index, data)
         return AtlasTile(tile_index, verts, tex_coords)
 
