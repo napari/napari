@@ -235,6 +235,15 @@ class TextureAtlas2D(Texture2D):
     def _set_tile_data(self, tile_index: int, data: np.ndarray) -> None:
         """Upload the texture data for this one tile.
 
+        Note the data might be smaller than a full tile slot. If so we
+        don't really care what texels are in the rest of the tile's slot.
+        They will not be drawn because we'll use the correct texture
+        coordinates for the small tile.
+
+        We could instead pad this data up to a full tile size. So we always
+        upload the same full size. So there is no dead space. But for now
+        we send just the exact data and no more. A tiny bit faster.
+
         Parameters
         ----------
         tile_index : int
