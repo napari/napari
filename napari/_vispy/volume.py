@@ -7,7 +7,6 @@ from .vendored.volume import FRAG_SHADER, frag_dict
 
 BaseVolume = create_visual_node(BaseVolumeVisual)
 
-
 ATTENUATED_MIP_SNIPPETS = dict(
     before_loop="""
         float maxval = -99999.0; // The maximum encountered value
@@ -32,6 +31,23 @@ ATTENUATED_MIP_SNIPPETS = dict(
 ATTENUATED_MIP_FRAG_SHADER = FRAG_SHADER.format(**ATTENUATED_MIP_SNIPPETS)
 
 frag_dict['attenuated_mip'] = ATTENUATED_MIP_FRAG_SHADER
+
+AVG_SNIPPETS = dict(
+    before_loop="""
+        float sum = 0.0; // The sum of encountered values
+        """,
+    in_loop="""
+        sum += val;
+        """,
+    after_loop="""
+        // Calculate mean value
+        float meanval = 0.0;  // The average value encountered
+        meanval = sum / float(nsteps);
+        gl_FragColor = applyColormap(meanval);
+        """,
+)
+AVG_FRAG_SHADER = FRAG_SHADER.format(**AVG_SNIPPETS)
+frag_dict['avg'] = AVG_FRAG_SHADER
 
 
 # Custom volume class is needed for better 3D rendering
