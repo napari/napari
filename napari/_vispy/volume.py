@@ -56,7 +56,7 @@ MINIP_SNIPPETS = dict(
 
 MINIP_FRAG_SHADER = FRAG_SHADER.format(**MINIP_SNIPPETS)
 
-frag_dict['MinIP'] = MINIP_FRAG_SHADER
+frag_dict['minip'] = MINIP_FRAG_SHADER
 
 
 # Custom volume class is needed for better 3D rendering
