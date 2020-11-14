@@ -417,7 +417,8 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
 
     def _update_status(self, event):
         """Set the viewer status with the `event.status` string."""
-        self.status = event.status
+        if event.source.selected:
+            self.status = event.status
 
     def _update_help(self, event):
         """Set the viewer help with the `event.help` string."""
