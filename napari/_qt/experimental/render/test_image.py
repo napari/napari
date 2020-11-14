@@ -12,15 +12,13 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 
-def draw_text_grid(image, text: str, grid_shape: Tuple[int, int]) -> None:
+def draw_text_grid(image, text: str) -> None:
     """Draw some text into the given image in a grid.
 
     Parameters
     ----------
     test : str
         The text to draw. For example a slice index like "3".
-    grid_shape : Tuple[int, int]
-        Draw the text in a grid of is [height, weight] shape.
     """
 
     try:
@@ -32,7 +30,11 @@ def draw_text_grid(image, text: str, grid_shape: Tuple[int, int]) -> None:
     color = 'rgb(255, 255, 255)'  # white
     draw = ImageDraw.Draw(image)
 
-    rows, cols = grid_shape[0], grid_shape[1]
+    width, height = image.size
+
+    text_size = 100  # approx guess with some padding
+
+    rows, cols = int(height / text_size), int(width / text_size)
 
     for row in range(rows + 1):
         for col in range(cols + 1):
@@ -44,16 +46,14 @@ def draw_text_grid(image, text: str, grid_shape: Tuple[int, int]) -> None:
 
 
 def create_test_image(
-    text,
-    digit_shape: Tuple[int, int],
-    image_shape: Tuple[int, int] = (1024, 1024),
+    text, image_shape: Tuple[int, int] = (1024, 1024),
 ) -> np.ndarray:
     """Create a test image for testing tiled rendering.
 
     The test image just has digits all over it. The digits will typically
-    be used to show the slice number.
+    be used to show the slice number like "0" or "42".
 
-    shape: Tuple[int, int]
+    image_shape: Tuple[int, int]
         The [height, width] shape of the image.
     """
     text = str(text)  # Might be an int.
@@ -66,5 +66,5 @@ def create_test_image(
 
     # Create the image, draw on the text, return it.
     image = Image.new('RGB', image_size)
-    draw_text_grid(image, text, digit_shape)
+    draw_text_grid(image, text)
     return np.array(image)
