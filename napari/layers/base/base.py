@@ -483,7 +483,8 @@ class Layer(KeymapProvider, ABC):
         if self._position == _position:
             return
         self._position = _position
-        self._update_value_and_status()
+        if self.visible:
+            self._update_value_and_status()
 
     @property
     def dims(self):
