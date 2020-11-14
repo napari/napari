@@ -40,9 +40,7 @@ IMAGE_TYPE_DEFAULT = "Tiled"
 TEST_IMAGES = {
     "Digits": {
         "shape": None,
-        "factory": lambda image_shape: create_test_image(
-            "0", (16, 16), image_shape
-        ),
+        "factory": lambda image_shape: create_test_image("0", image_shape),
     }
 }
 TEST_IMAGE_DEFAULT = "Digits"

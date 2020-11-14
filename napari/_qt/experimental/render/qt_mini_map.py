@@ -9,8 +9,9 @@ from qtpy.QtWidgets import QLabel
 from ....layers.image.experimental import OctreeIntersection, OctreeLevel
 from ....layers.image.experimental.octree_image import OctreeImage
 
-# Width of the map in the dockable widget.
-MAP_WIDTH = 200
+# Longest edge of map bitmap in pixels. So at most MAP_SIZE wide and at
+# most MAP_SIZE high. In case it's narrow one way or the other.
+MAP_SIZE = 220
 
 # Tiles are seen if they are visible within the current view, otherwise unseen.
 COLOR_SEEN = (255, 0, 0, 255)  # red
@@ -71,8 +72,14 @@ class QtMiniMap(QLabel):
         """
         aspect = intersection.level.info.octree_info.aspect
 
+        # Limit to at most MAP_SIZE pixels, in whichever dimension is the
+        # bigger one. So it's not too huge even if an odd shape.
+        if aspect > 1:
+            map_shape = math.ceil(MAP_SIZE / aspect), MAP_SIZE
+        else:
+            map_shape = MAP_SIZE, math.ceil(MAP_SIZE * aspect)
+
         # Shape of the map bitmap: (row_pixels, col_pixels)
-        map_shape = math.ceil(MAP_WIDTH / aspect), MAP_WIDTH
 
         # The map shape with RGBA pixels
         bitmap_shape = map_shape + (4,)
