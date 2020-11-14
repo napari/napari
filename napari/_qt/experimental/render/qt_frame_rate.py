@@ -42,9 +42,9 @@ DECAY_MS = {"peak": [(0, 1000), (10, 2000), (20, 3000)], "active": [(0, 250)]}
 
 # LEDs are colors GREEN -> YELLOW -> RED using slightly non-pure colors.
 # Colors were chosen quickly and could be tweaked.
-GREEN = (57, 252, 3, 255)
-YELLOW = (252, 232, 3, 255)
-RED = (252, 78, 3, 255)
+GREEN = (57, 252, 3)
+YELLOW = (252, 232, 3)
+RED = (252, 78, 3)
 
 # Ten segments of each color.
 LED_COLORS = [(0, GREEN), (10, YELLOW), (20, RED)]
@@ -111,7 +111,7 @@ def _led_color(index: int) -> tuple:
         if index >= limit:
             return color
     assert False, "DECAY_MS table is messed up?"
-    return (0, 0, 0, 0)
+    return (0, 0, 0)
 
 
 def _get_peak(delta_seconds: float) -> int:
@@ -200,21 +200,24 @@ class DecayTimes:
         elapsed = now - self._last
         self._last[elapsed > self._decay] = 0
 
-    def get_alpha(self, now: float, index: int) -> int:
-        """Return alpha for this LED segment index.
+    def get_alpha(self, now: float) -> np.ndarray:
+        """Return alpha for every LED segment.
+
+        Alpha values will range from ALPHA_MAX if the LED was recently lit
+        up to ALPHA_OFF if the LED is past the its decay period.
 
         Parameters
         ----------
-        index : int
-            The LED segment index.
         now : float
             The current time in seconds.
-        """
-        duration = now - self._last[index]
-        decay = self._decay[index]
-        fraction = _clamp(1 - (duration / decay), 0, 1)
 
-        return _lerp(ALPHA_OFF, ALPHA_MAX, fraction)
+        Return
+        ------
+        np.ndarray
+            The alpha values for each LED.
+        """
+        fractions = (now - self._last) / self._decay
+        return np.interp(fractions, [0, 1], [ALPHA_MAX, ALPHA_OFF])
 
 
 def _print_calibration():
@@ -294,49 +297,26 @@ class LedState:
         self._active.expire(now)
         self._peak.expire(now)
 
-    def get_color(self, now: float, index: int) -> np.ndarray:
-        """Get color for this LED segment, including decay alpha.
+    def get_colors(self, now: float) -> np.ndarray:
+        """Get current color (with alpha for our LED segments.
 
         Parameters
         ----------
         now : float
             The current time in seconds.
-        index : int
-            The LED segment index.
 
         Return
         ------
-        int
-            Alpha in range [0..255]
+        np.ndarray
+            Color (r, g, b, a)values for each LED.
         """
-        # Jam the alpha right into the self._color table, faster?
-        self._color[index, 3] = self._get_alpha(now, index)
-        return self._color[index]
-
-    def _get_alpha(self, now: float, index: int) -> int:
-        """Get alpha for this LED segment.
-
-        Parameters
-        ----------
-        now : float
-            The current time in seconds.
-        index : int
-            The LED segment index.
-
-        Return
-        ------
-        int
-            Alpha in range [0..255]
-        """
-
-        if self._active.is_off(index) and self._peak.is_off(index):
-            return ALPHA_OFF  # LED is totally off.
-
-        # Draw whichever is brighter.
-        return max(
-            self._active.get_alpha(now, index),
-            self._peak.get_alpha(now, index),
+        # Use whichever alpha is higher (brighter).
+        alpha = np.maximum(
+            self._active.get_alpha(now), self._peak.get_alpha(now)
         )
+
+        # Combine the fixed colors with the computed alpha values.
+        return np.hstack((self._color, alpha.reshape(-1, 1)))
 
 
 class QtFrameRate(QLabel):
@@ -429,14 +409,15 @@ class QtFrameRate(QLabel):
         """
         self._image.fill(0)  # Start fresh each time.
 
+        # Get colors with latest alpha values accord to decay.
+        colors = self.leds.get_colors(now)
+
         # Draw each segment with the right color and alpha (due to decay).
-        # Would be cool to get all the colors in one numpy vectorized step!
         for index in range(NUM_SEGMENTS):
-            color = self.leds.get_color(now, index)
             x0 = int(index * SEGMENT_SPACING)
             x1 = int(x0 + SEGMENT_WIDTH)
             y0, y1 = 0, BITMAP_SHAPE[0]  # The whole height of the bitmap.
-            self._image[y0:y1, x0:x1] = color
+            self._image[y0:y1, x0:x1] = colors[index]
 
     def _update_bitmap(self) -> None:
         """Update the bitmap with latest image data."""
