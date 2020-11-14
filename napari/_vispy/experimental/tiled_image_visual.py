@@ -23,58 +23,6 @@ _QUAD = np.array(
 )
 
 
-def _vert_quad(chunk_data: ChunkData) -> np.ndarray:
-    """Return quad for the vertex buffer.
-
-    Parameters
-    ----------
-    chunk_data : ChunkData
-        Create a quad for this chunk.
-
-    Return
-    ------
-    np.darray
-        The quad vertices.
-    """
-    quad = _QUAD.copy()
-
-    # TODO_OCTREE: store as np.array in ChunkData?
-    scale = np.array(chunk_data.scale, dtype=np.float32)
-    scaled_shape = chunk_data.data.shape[:2] * scale
-
-    # Modify XY's into place
-    quad[:, :2] *= scaled_shape
-    quad[:, :2] += chunk_data.pos
-
-    return quad
-
-
-def _tex_quad(chunk_data: ChunkData) -> np.ndarray:
-    """Return quad for the texture coordinate buffer.
-
-    Parameters
-    ----------
-    chunk_data : ChunkData
-        Create a quad for this chunk.
-
-    Return
-    ------
-    np.darray
-        The quad texture coordinates.
-    """
-    quad = _QUAD.copy()[:, :2]
-
-    # TODO_OCTREE: store as np.array in ChunkData?
-    scale = np.array(chunk_data.scale, dtype=np.float32)
-    scaled_shape = chunk_data.data.shape[:2] * scale
-
-    # Modify XY's into place
-    quad[:, :2] *= scaled_shape
-    quad[:, :2] += chunk_data.pos
-
-    return quad
-
-
 class TiledImageVisual(ImageVisual):
     """A larger image that's drawn using some number of smaller tiles.
 
@@ -229,12 +177,12 @@ class TiledImageVisual(ImageVisual):
             The tile's index.
         """
 
-        tex_info = self._texture_atlas.add_tile(chunk_data.data)
+        atlas_tile = self._texture_atlas.add_tile(chunk_data)
 
-        if tex_info is None:
+        if atlas_tile is None:
             return  # No slot available in the atlas.
 
-        self._tiles.add(chunk_data, tex_info)
+        self._tiles.add(chunk_data, atlas_tile)
         self._need_vertex_update = True
 
     def remove_tile(self, tile_index: int) -> None:
@@ -260,7 +208,7 @@ class TiledImageVisual(ImageVisual):
         """
         for tile_data in list(self._tiles.tile_data):
             if tile_data.chunk_data.key not in visible_set:
-                tile_index = tile_data.tex_info.tile_index
+                tile_index = tile_data.atlas_tile.index
                 self.remove_tile(tile_index)
 
     def _build_vertex_data(self) -> None:
@@ -286,13 +234,9 @@ class TiledImageVisual(ImageVisual):
         # maybe one one vertex buffer sized according to the max
         # number of tiles we expect. But grow if needed.
         for tile_data in self._tiles.tile_data:
-            chunk_data = tile_data.chunk_data
-
-            vert_quad = _vert_quad(chunk_data)
-            verts = np.vstack((verts, vert_quad))
-
-            tex_quad = tile_data.tex_info.tex_coord
-            tex_coords = np.vstack((tex_coords, tex_quad))
+            tile = tile_data.atlas_tile
+            verts = np.vstack((verts, tile.verts))
+            tex_coords = np.vstack((tex_coords, tile.tex_coords))
 
         # Set the base ImageVisual _subdiv_ buffers
         self._subdiv_position.set_data(verts)
