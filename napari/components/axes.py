@@ -44,7 +44,7 @@ class Axes:
             arrows=None,
             labels=None,
         )
-        self._visible = True
+        self._visible = False
         self._labels = True
         self._colored = True
         self._background_color = np.array([1, 1, 1])
