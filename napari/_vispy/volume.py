@@ -67,8 +67,7 @@ AVG_SNIPPETS = dict(
         """,
     after_loop="""
         // Calculate mean value
-        float meanval = 0.0;  // The average value encountered
-        meanval = sum / float(nsteps);
+        float meanval = sum / float(nsteps);  // The average value encountered
         gl_FragColor = applyColormap(meanval);
         """,
 )
