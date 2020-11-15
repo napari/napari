@@ -6,6 +6,7 @@ import os
 import platform
 import sys
 import time
+import warnings
 
 from qtpy.QtCore import Qt
 from qtpy.QtGui import QIcon, QKeySequence
@@ -57,8 +58,6 @@ class Window:
         Help menu.
     main_menu : qtpy.QtWidgets.QMainWindow.menuBar
         Main menubar.
-    qt_viewer : QtViewer
-        Contained viewer widget.
     view_menu : qtpy.QtWidgets.QMenu
         View menu.
     window_menu : qtpy.QtWidgets.QMenu
@@ -127,7 +126,7 @@ class Window:
         app.aboutToQuit.connect(wait_for_workers_to_quit)
 
         # Connect the Viewer and create the Main Window
-        self.qt_viewer = QtViewer(viewer)
+        self._qt_viewer = QtViewer(viewer)
 
         self._qt_window = QMainWindow()
         self._qt_window.setAttribute(Qt.WA_DeleteOnClose)
@@ -136,12 +135,12 @@ class Window:
         # since we initialize canvas before window, we need to manually connect them again.
         if self._qt_window.windowHandle() is not None:
             self._qt_window.windowHandle().screenChanged.connect(
-                self.qt_viewer.canvas._backend.screen_changed
+                self._qt_viewer.canvas._backend.screen_changed
             )
         self._qt_center = QWidget(self._qt_window)
 
         self._qt_window.setCentralWidget(self._qt_center)
-        self._qt_window.setWindowTitle(self.qt_viewer.viewer.title)
+        self._qt_window.setWindowTitle(self._qt_viewer.viewer.title)
         self._qt_center.setLayout(QHBoxLayout())
         self._status_bar = QStatusBar()
         self._qt_window.setStatusBar(self._status_bar)
@@ -159,32 +158,44 @@ class Window:
         self._help = QLabel('')
         self._status_bar.addPermanentWidget(self._help)
 
-        self._qt_center.layout().addWidget(self.qt_viewer)
+        self._qt_center.layout().addWidget(self._qt_viewer)
         self._qt_center.layout().setContentsMargins(4, 0, 4, 0)
 
         self._update_palette()
 
-        self._add_viewer_dock_widget(self.qt_viewer.dockConsole)
-        self._add_viewer_dock_widget(self.qt_viewer.dockLayerControls)
-        self._add_viewer_dock_widget(self.qt_viewer.dockLayerList)
+        self._add_viewer_dock_widget(self._qt_viewer.dockConsole)
+        self._add_viewer_dock_widget(self._qt_viewer.dockLayerControls)
+        self._add_viewer_dock_widget(self._qt_viewer.dockLayerList)
 
-        self.qt_viewer.viewer.events.status.connect(self._status_changed)
-        self.qt_viewer.viewer.events.help.connect(self._help_changed)
-        self.qt_viewer.viewer.events.title.connect(self._title_changed)
-        self.qt_viewer.viewer.events.palette.connect(self._update_palette)
+        self._qt_viewer.viewer.events.status.connect(self._status_changed)
+        self._qt_viewer.viewer.events.help.connect(self._help_changed)
+        self._qt_viewer.viewer.events.title.connect(self._title_changed)
+        self._qt_viewer.viewer.events.palette.connect(self._update_palette)
 
         if perf.USE_PERFMON:
             # Add DebugMenu and dockPerformance if using perfmon.
             self._debug_menu = DebugMenu(self)
-            self._add_viewer_dock_widget(self.qt_viewer.dockPerformance)
+            self._add_viewer_dock_widget(self._qt_viewer.dockPerformance)
         else:
             self._debug_menu = None
 
-        if self.qt_viewer.dockRender is not None:
-            self._add_viewer_dock_widget(self.qt_viewer.dockRender)
+        if self._qt_viewer.dockRender is not None:
+            self._add_viewer_dock_widget(self._qt_viewer.dockRender)
 
         if show:
             self.show()
+
+    @property
+    def qt_viewer(self):
+        """QtViewer: qt viewer object (compatibility)."""
+        warnings.warn(
+            (
+                "The qt_viewer attribute is deprecated and will be removed in version 0.5.0."
+            ),
+            category=FutureWarning,
+            stacklevel=2,
+        )
+        return self._qt_viewer
 
     def _add_menubar(self):
         """Add menubar to napari app."""
@@ -222,19 +233,19 @@ class Window:
         open_images = QAction('Open File(s)...', self._qt_window)
         open_images.setShortcut('Ctrl+O')
         open_images.setStatusTip('Open file(s)')
-        open_images.triggered.connect(self.qt_viewer._open_files_dialog)
+        open_images.triggered.connect(self._qt_viewer._open_files_dialog)
 
         open_stack = QAction('Open Files as Stack...', self._qt_window)
         open_stack.setShortcut('Ctrl+Alt+O')
         open_stack.setStatusTip('Open files')
         open_stack.triggered.connect(
-            self.qt_viewer._open_files_dialog_as_stack_dialog
+            self._qt_viewer._open_files_dialog_as_stack_dialog
         )
 
         open_folder = QAction('Open Folder...', self._qt_window)
         open_folder.setShortcut('Ctrl+Shift+O')
         open_folder.setStatusTip('Open a folder')
-        open_folder.triggered.connect(self.qt_viewer._open_folder_dialog)
+        open_folder.triggered.connect(self._qt_viewer._open_folder_dialog)
 
         save_selected_layers = QAction(
             'Save Selected Layer(s)...', self._qt_window
@@ -242,14 +253,14 @@ class Window:
         save_selected_layers.setShortcut('Ctrl+S')
         save_selected_layers.setStatusTip('Save selected layers')
         save_selected_layers.triggered.connect(
-            lambda: self.qt_viewer._save_layers_dialog(selected=True)
+            lambda: self._qt_viewer._save_layers_dialog(selected=True)
         )
 
         save_all_layers = QAction('Save All Layers...', self._qt_window)
         save_all_layers.setShortcut('Ctrl+Shift+S')
         save_all_layers.setStatusTip('Save all layers')
         save_all_layers.triggered.connect(
-            lambda: self.qt_viewer._save_layers_dialog(selected=False)
+            lambda: self._qt_viewer._save_layers_dialog(selected=False)
         )
 
         screenshot = QAction('Save Screenshot...', self._qt_window)
@@ -257,7 +268,7 @@ class Window:
         screenshot.setStatusTip(
             'Save screenshot of current display, default .png'
         )
-        screenshot.triggered.connect(self.qt_viewer._screenshot_dialog)
+        screenshot.triggered.connect(self._qt_viewer._screenshot_dialog)
 
         screenshot_wv = QAction(
             'Save Screenshot with Viewer...', self._qt_window
@@ -316,7 +327,7 @@ class Window:
         toggle_theme = QAction('Toggle Theme', self._qt_window)
         toggle_theme.setShortcut('Ctrl+Shift+T')
         toggle_theme.setStatusTip('Toggle theme')
-        toggle_theme.triggered.connect(self.qt_viewer.viewer._toggle_theme)
+        toggle_theme.triggered.connect(self._qt_viewer.viewer._toggle_theme)
         toggle_fullscreen = QAction('Toggle Full Screen', self._qt_window)
         toggle_fullscreen.setShortcut('Ctrl+F')
         toggle_fullscreen.setStatusTip('Toggle full screen')
@@ -339,28 +350,28 @@ class Window:
             'Visible',
             parent=self._qt_window,
             checkable=True,
-            checked=self.qt_viewer.viewer.axes.visible,
+            checked=self._qt_viewer.viewer.axes.visible,
         )
         axes_visible_action.triggered.connect(self._toggle_axes_visible)
         axes_colored_action = QAction(
             'Colored',
             parent=self._qt_window,
             checkable=True,
-            checked=self.qt_viewer.viewer.axes.colored,
+            checked=self._qt_viewer.viewer.axes.colored,
         )
         axes_colored_action.triggered.connect(self._toggle_axes_colored)
         axes_dashed_action = QAction(
             'Dashed',
             parent=self._qt_window,
             checkable=True,
-            checked=self.qt_viewer.viewer.axes.dashed,
+            checked=self._qt_viewer.viewer.axes.dashed,
         )
         axes_dashed_action.triggered.connect(self._toggle_axes_dashed)
         axes_arrows_action = QAction(
             'Arrows',
             parent=self._qt_window,
             checkable=True,
-            checked=self.qt_viewer.viewer.axes.arrows,
+            checked=self._qt_viewer.viewer.axes.arrows,
         )
         axes_arrows_action.triggered.connect(self._toggle_axes_arrows)
         axes_menu.addAction(axes_visible_action)
@@ -375,7 +386,7 @@ class Window:
             'Visible',
             parent=self._qt_window,
             checkable=True,
-            checked=self.qt_viewer.viewer.scale_bar.visible,
+            checked=self._qt_viewer.viewer.scale_bar.visible,
         )
         scale_bar_visible_action.triggered.connect(
             self._toggle_scale_bar_visible
@@ -384,7 +395,7 @@ class Window:
             'Colored',
             parent=self._qt_window,
             checkable=True,
-            checked=self.qt_viewer.viewer.scale_bar.colored,
+            checked=self._qt_viewer.viewer.scale_bar.colored,
         )
         scale_bar_colored_action.triggered.connect(
             self._toggle_scale_bar_colored
@@ -393,7 +404,7 @@ class Window:
             'Ticks',
             parent=self._qt_window,
             checkable=True,
-            checked=self.qt_viewer.viewer.scale_bar.ticks,
+            checked=self._qt_viewer.viewer.scale_bar.ticks,
         )
         scale_bar_ticks_action.triggered.connect(self._toggle_scale_bar_ticks)
         scale_bar_menu.addAction(scale_bar_visible_action)
@@ -462,7 +473,7 @@ class Window:
         about_action.setShortcut("Ctrl+/")
         about_action.setStatusTip('About napari')
         about_action.triggered.connect(
-            lambda e: QtAbout.showAbout(self.qt_viewer)
+            lambda e: QtAbout.showAbout(self._qt_viewer)
         )
         self.help_menu.addAction(about_action)
 
@@ -471,30 +482,30 @@ class Window:
         about_key_bindings.setShortcutContext(Qt.ApplicationShortcut)
         about_key_bindings.setStatusTip('key_bindings')
         about_key_bindings.triggered.connect(
-            self.qt_viewer.show_key_bindings_dialog
+            self._qt_viewer.show_key_bindings_dialog
         )
         self.help_menu.addAction(about_key_bindings)
 
     def _toggle_scale_bar_visible(self, state):
-        self.qt_viewer.viewer.scale_bar.visible = state
+        self._qt_viewer.viewer.scale_bar.visible = state
 
     def _toggle_scale_bar_colored(self, state):
-        self.qt_viewer.viewer.scale_bar.colored = state
+        self._qt_viewer.viewer.scale_bar.colored = state
 
     def _toggle_scale_bar_ticks(self, state):
-        self.qt_viewer.viewer.scale_bar.ticks = state
+        self._qt_viewer.viewer.scale_bar.ticks = state
 
     def _toggle_axes_visible(self, state):
-        self.qt_viewer.viewer.axes.visible = state
+        self._qt_viewer.viewer.axes.visible = state
 
     def _toggle_axes_colored(self, state):
-        self.qt_viewer.viewer.axes.colored = state
+        self._qt_viewer.viewer.axes.colored = state
 
     def _toggle_axes_dashed(self, state):
-        self.qt_viewer.viewer.axes.dashed = state
+        self._qt_viewer.viewer.axes.dashed = state
 
     def _toggle_axes_arrows(self, state):
-        self.qt_viewer.viewer.axes.arrows = state
+        self._qt_viewer.viewer.axes.arrows = state
 
     def _toggle_fullscreen(self, event):
         """Toggle fullscreen mode."""
@@ -505,11 +516,11 @@ class Window:
 
     def _toggle_play(self, state):
         """Toggle play."""
-        if self.qt_viewer.dims.is_playing:
-            self.qt_viewer.dims.stop()
+        if self._qt_viewer.dims.is_playing:
+            self._qt_viewer.dims.stop()
         else:
-            axis = self.qt_viewer.viewer.dims.last_used or 0
-            self.qt_viewer.dims.play(axis)
+            axis = self._qt_viewer.viewer.dims.last_used or 0
+            self._qt_viewer.dims.play(axis)
 
     def add_dock_widget(
         self,
@@ -545,7 +556,7 @@ class Window:
         """
 
         dock_widget = QtViewerDockWidget(
-            self.qt_viewer,
+            self._qt_viewer,
             widget,
             name=name,
             area=area,
@@ -603,7 +614,7 @@ class Window:
         self._qt_window.resize(self._qt_window.layout().sizeHint())
         self._qt_window.show()
         # Resize axis labels now that window is shown
-        self.qt_viewer.dims._resize_axis_labels()
+        self._qt_viewer.dims._resize_axis_labels()
 
         # We want to bring the viewer to the front when
         # A) it is our own (gui_qt) event loop OR we are running in jupyter
@@ -628,7 +639,7 @@ class Window:
         """Update widget color palette."""
         # set window styles which don't use the primary stylesheet
         # FIXME: this is a problem with the stylesheet not using properties
-        palette = self.qt_viewer.viewer.palette
+        palette = self._qt_viewer.viewer.palette
         self._status_bar.setStyleSheet(
             template(
                 'QStatusBar { background: {{ background }}; '
@@ -674,7 +685,7 @@ class Window:
     def _screenshot_dialog(self):
         """Save screenshot of current display with viewer, default .png"""
         dial = ScreenshotDialog(
-            self.screenshot, self.qt_viewer, self.qt_viewer._last_visited_dir
+            self.screenshot, self._qt_viewer, self._qt_viewer._last_visited_dir
         )
         if dial.exec_():
             self._last_visited_dir = os.path.dirname(dial.selectedFiles()[0])
@@ -717,6 +728,6 @@ class Window:
             for i in range(8):
                 time.sleep(0.1)
                 QApplication.processEvents()
-        self.qt_viewer.close()
+        self._qt_viewer.close()
         self._qt_window.close()
         del self._qt_window

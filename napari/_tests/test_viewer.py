@@ -16,7 +16,7 @@ from napari.utils._tests.test_naming import eval_with_filename
 def test_viewer(make_test_viewer):
     """Test instantiating viewer."""
     viewer = make_test_viewer()
-    view = viewer.window.qt_viewer
+    view = viewer.window._qt_viewer
 
     assert viewer.title == 'napari'
     assert view.viewer == viewer
@@ -63,7 +63,7 @@ def test_no_qt_loop():
 def test_add_layer(make_test_viewer, layer_class, data, ndim, visible):
     viewer = make_test_viewer()
     layer = add_layer_by_type(viewer, layer_class, data, visible=visible)
-    check_viewer_functioning(viewer, viewer.window.qt_viewer, data, ndim)
+    check_viewer_functioning(viewer, viewer.window._qt_viewer, data, ndim)
 
     # Run all class key bindings
     for func in layer.class_keymap.values():

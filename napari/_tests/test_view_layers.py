@@ -130,7 +130,7 @@ def test_view(qtbot, layer_type, data, ndim):
     viewer = getattr(napari, f'view_{layer_type.__name__.lower()}')(
         data, show=False
     )
-    view = viewer.window.qt_viewer
+    view = viewer.window._qt_viewer
     check_viewer_functioning(viewer, view, data, ndim)
     viewer.close()
 

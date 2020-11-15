@@ -4,7 +4,7 @@ import numpy as np
 def test_camera(make_test_viewer):
     """Test vispy camera creation in 2D."""
     viewer = make_test_viewer()
-    vispy_camera = viewer.window.qt_viewer.camera
+    vispy_camera = viewer.window._qt_viewer.camera
 
     np.random.seed(0)
     data = np.random.random((11, 11, 11))
@@ -25,7 +25,7 @@ def test_camera(make_test_viewer):
 def test_vispy_camera_update_from_model(make_test_viewer):
     """Test vispy camera update from model in 2D."""
     viewer = make_test_viewer()
-    vispy_camera = viewer.window.qt_viewer.camera
+    vispy_camera = viewer.window._qt_viewer.camera
 
     np.random.seed(0)
     data = np.random.random((11, 11, 11))
@@ -51,7 +51,7 @@ def test_vispy_camera_update_from_model(make_test_viewer):
 def test_camera_model_update_from_vispy(make_test_viewer):
     """Test camera model updates from vispy in 2D."""
     viewer = make_test_viewer()
-    vispy_camera = viewer.window.qt_viewer.camera
+    vispy_camera = viewer.window._qt_viewer.camera
 
     np.random.seed(0)
     data = np.random.random((11, 11, 11))
@@ -78,7 +78,7 @@ def test_camera_model_update_from_vispy(make_test_viewer):
 def test_3D_camera(make_test_viewer):
     """Test vispy camera creation in 3D."""
     viewer = make_test_viewer()
-    vispy_camera = viewer.window.qt_viewer.camera
+    vispy_camera = viewer.window._qt_viewer.camera
 
     np.random.seed(0)
     data = np.random.random((11, 11, 11))
@@ -98,7 +98,7 @@ def test_3D_camera(make_test_viewer):
 def test_vispy_camera_update_from_model_3D(make_test_viewer):
     """Test vispy camera update from model in 3D."""
     viewer = make_test_viewer()
-    vispy_camera = viewer.window.qt_viewer.camera
+    vispy_camera = viewer.window._qt_viewer.camera
 
     np.random.seed(0)
     data = np.random.random((11, 11, 11))
@@ -123,7 +123,7 @@ def test_vispy_camera_update_from_model_3D(make_test_viewer):
 def test_camera_model_update_from_vispy_3D(make_test_viewer):
     """Test camera model updates from vispy in 3D."""
     viewer = make_test_viewer()
-    vispy_camera = viewer.window.qt_viewer.camera
+    vispy_camera = viewer.window._qt_viewer.camera
 
     np.random.seed(0)
     data = np.random.random((11, 11, 11))

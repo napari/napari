@@ -9,7 +9,7 @@ def test_viewer_key_bindings(make_test_viewer):
     """
     np.random.seed(0)
     viewer = make_test_viewer()
-    view = viewer.window.qt_viewer
+    view = viewer.window._qt_viewer
 
     mock_press = Mock()
     mock_release = Mock()
@@ -78,7 +78,7 @@ def test_layer_key_bindings(make_test_viewer):
     """
     np.random.seed(0)
     viewer = make_test_viewer()
-    view = viewer.window.qt_viewer
+    view = viewer.window._qt_viewer
 
     layer = viewer.add_image(np.random.random((10, 20)))
     layer.selected = True
@@ -145,7 +145,7 @@ def test_layer_key_bindings(make_test_viewer):
 def test_reset_scroll_progress(make_test_viewer):
     """Test select all key binding."""
     viewer = make_test_viewer()
-    view = viewer.window.qt_viewer
+    view = viewer.window._qt_viewer
     assert viewer.dims._scroll_progress == 0
 
     view.canvas.events.key_press(key=keys.Key('Control'))

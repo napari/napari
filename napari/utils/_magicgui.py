@@ -58,7 +58,7 @@ def find_viewer_ancestor(widget: QWidget) -> Optional[Viewer]:
     parent = widget.parent()
     while parent:
         if hasattr(parent, 'qt_viewer'):
-            return parent.qt_viewer.viewer
+            return parent._qt_viewer.viewer
         parent = parent.parent()
     return None
 

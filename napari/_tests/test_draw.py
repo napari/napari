@@ -11,7 +11,7 @@ import pytest
 def test_canvas_drawing(make_test_viewer):
     """Test drawing before and after adding and then deleting a layer."""
     viewer = make_test_viewer()
-    view = viewer.window.qt_viewer
+    view = viewer.window._qt_viewer
 
     assert len(viewer.layers) == 0
     # Check canvas context is not none before drawing, as currently on

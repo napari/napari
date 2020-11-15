@@ -299,7 +299,7 @@ def test_slice_labels(make_test_viewer):
     np.random.seed(0)
     data = np.random.random((20, 10, 10))
     viewer.add_image(data)
-    view = viewer.window.qt_viewer
+    view = viewer.window._qt_viewer
 
     # make sure the totslice_label is showing the correct number
     assert int(view.dims.slider_widgets[0].totslice_label.text()) == 19

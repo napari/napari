@@ -35,7 +35,7 @@ def test_exception_handler_gui(qtbot, make_test_viewer):
     handler = ExceptionHandler(gui_exceptions=True)
     with qtbot.waitSignal(handler.error, timeout=1000):
         handler.handle(ValueError, ValueError("whoops"), None)
-    assert handler.message in viewer.window.qt_viewer.canvas.native.children()
+    assert handler.message in viewer.window._qt_viewer.canvas.native.children()
     handler.message.toggle_expansion()
     assert handler.message.property('expanded') is True
     handler.message.toggle_expansion()

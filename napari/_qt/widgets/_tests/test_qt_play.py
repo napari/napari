@@ -106,7 +106,7 @@ def view(make_test_viewer):
     data = np.random.random((10, 10, 15))
     viewer.add_image(data)
 
-    return viewer.window.qt_viewer
+    return viewer.window._qt_viewer
 
 
 def test_play_raises_index_errors(qtbot, view):

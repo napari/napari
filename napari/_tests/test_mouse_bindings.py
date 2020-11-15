@@ -9,7 +9,7 @@ def test_viewer_mouse_bindings(make_test_viewer):
     """
     np.random.seed(0)
     viewer = make_test_viewer()
-    view = viewer.window.qt_viewer
+    view = viewer.window._qt_viewer
 
     if os.getenv("CI"):
         viewer.show()
@@ -83,7 +83,7 @@ def test_layer_mouse_bindings(make_test_viewer):
     """
     np.random.seed(0)
     viewer = make_test_viewer()
-    view = viewer.window.qt_viewer
+    view = viewer.window._qt_viewer
 
     if os.getenv("CI"):
         viewer.show()
@@ -159,7 +159,7 @@ def test_unselected_layer_mouse_bindings(make_test_viewer):
     """
     np.random.seed(0)
     viewer = make_test_viewer()
-    view = viewer.window.qt_viewer
+    view = viewer.window._qt_viewer
 
     if os.getenv("CI"):
         viewer.show()

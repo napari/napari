@@ -90,7 +90,7 @@ class PerformanceSubMenu:
 
     def _start_trace_dialog(self):
         """Open Save As dialog to start recording a trace file."""
-        viewer = self.main_window.qt_viewer
+        viewer = self.main_window._qt_viewer
 
         filename, _ = QFileDialog.getSaveFileName(
             parent=viewer,
