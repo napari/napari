@@ -62,5 +62,4 @@ class Rendering(StringEnum):
     ISO = auto()
     MIP = auto()
     ATTENUATED_MIP = auto()
-    VAR = auto()
     AVG = auto()
