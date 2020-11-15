@@ -1,14 +1,19 @@
 """QtImageInfo class.
 """
-from typing import List
-
 from qtpy.QtWidgets import QFrame, QLabel, QVBoxLayout
 
 
 def _get_shape(data):
-    if isinstance(data, List):
-        return data[0].shape
-    return data.shape
+    """Get shape of the data.
+
+    Return
+    ------
+    tuple
+        The shape of the data.
+    """
+    if isinstance(data, list):
+        return data[0].shape  # Level zero of multiscale.
+    return data.shape  # Single scale.
 
 
 class QtImageInfoLayout(QVBoxLayout):
