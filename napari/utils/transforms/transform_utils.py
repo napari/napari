@@ -232,7 +232,7 @@ def shear_matrix_from_angle(angle, ndim=3, axes=(-1, 0)):
     return matrix
 
 
-def is_upper_triangular(matrix):
+def is_matrix_upper_triangular(matrix):
     """Check if a matrix is upper triangular.
 
     Parameters
@@ -248,7 +248,7 @@ def is_upper_triangular(matrix):
     return np.allclose(matrix, np.triu(matrix))
 
 
-def is_lower_triangular(matrix):
+def is_matrix_lower_triangular(matrix):
     """Check if a matrix is lower triangular.
 
     Parameters
@@ -262,6 +262,27 @@ def is_lower_triangular(matrix):
         Whether matrix is lower triangular or not.
     """
     return np.allclose(matrix, np.tril(matrix))
+
+
+def is_matrix_triangular(matrix):
+    """Check if a matrix is triangular.
+
+    Parameters
+    ----------
+    matrix : np.ndarray
+        Matrix to be checked.
+
+    Returns
+    -------
+    bool
+        Whether matrix is triangular or not.
+    """
+    if is_matrix_upper_triangular(matrix) or is_matrix_lower_triangular(
+        matrix
+    ):
+        return True
+    else:
+        return False
 
 
 def check_shear_triangular(matrix):
@@ -281,9 +302,9 @@ def check_shear_triangular(matrix):
         True if matrix upper triangular, False if not.
     """
     if np.array(matrix).ndim == 2:
-        if is_upper_triangular(matrix):
+        if is_matrix_upper_triangular(matrix):
             return True
-        elif is_lower_triangular(matrix):
+        elif is_matrix_lower_triangular(matrix):
             return False
         else:
             raise ValueError(

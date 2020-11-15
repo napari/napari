@@ -2,11 +2,11 @@ import numpy as np
 import pytest
 
 from napari.utils.transforms.transform_utils import (
-    check_shear_triangular,
     compose_linear_matrix,
     decompose_linear_matrix,
-    is_lower_triangular,
-    is_upper_triangular,
+    is_matrix_lower_triangular,
+    is_matrix_triangular,
+    is_matrix_upper_triangular,
     shear_matrix_from_angle,
 )
 
@@ -51,23 +51,22 @@ lower = np.array([[1, 0], [1, 1]])
 full = np.array([[1, 1], [1, 1]])
 
 
-def test_is_upper_triangular():
+def test_is_matrix_upper_triangular():
     """Test if a matrix is upper triangular."""
-    assert is_upper_triangular(upper)
-    assert not is_upper_triangular(lower)
-    assert not is_upper_triangular(full)
+    assert is_matrix_upper_triangular(upper)
+    assert not is_matrix_upper_triangular(lower)
+    assert not is_matrix_upper_triangular(full)
 
 
-def test_is_lower_triangular():
+def test_is_matrix_lower_triangular():
     """Test if a matrix is lower triangular."""
-    assert not is_lower_triangular(upper)
-    assert is_lower_triangular(lower)
-    assert not is_lower_triangular(full)
+    assert not is_matrix_lower_triangular(upper)
+    assert is_matrix_lower_triangular(lower)
+    assert not is_matrix_lower_triangular(full)
 
 
-def test_check_shear_triangular():
-    """Determine shear triangular of matrix."""
-    assert check_shear_triangular(upper)
-    assert not check_shear_triangular(lower)
-    with pytest.raises(ValueError):
-        check_shear_triangular(full)
+def test_is_matrix_triangular():
+    """Test if a matrix is triangular."""
+    assert is_matrix_triangular(upper)
+    assert is_matrix_triangular(lower)
+    assert not is_matrix_triangular(full)

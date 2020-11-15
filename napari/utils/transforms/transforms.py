@@ -5,10 +5,11 @@ import toolz as tz
 
 from ..list import ListModel
 from .transform_utils import (
-    check_shear_triangular,
     compose_linear_matrix,
     decompose_linear_matrix,
     embed_in_identity_matrix,
+    is_matrix_triangular,
+    is_matrix_upper_triangular,
 )
 
 
@@ -319,7 +320,17 @@ class Affine(Transform):
             if shear is None:
                 shear = np.eye(len(scale))
             else:
-                self._upper_triangular = check_shear_triangular(shear)
+                if np.array(shear).ndim == 2:
+                    if is_matrix_triangular(shear):
+                        self._upper_triangular = is_matrix_upper_triangular(
+                            shear
+                        )
+                    else:
+                        raise ValueError(
+                            f'Only upper triangular or lower triangular matrices are '
+                            f'accepted for shear, got {shear}. For other matrices, set the '
+                            f'affine_matrix or linear_matrix directly.'
+                        )
             linear_matrix = compose_linear_matrix(rotate, scale, shear)
 
         ndim = max(linear_matrix.shape[0], len(translate))
@@ -387,7 +398,17 @@ class Affine(Transform):
     @shear.setter
     def shear(self, shear):
         """Set the shear of the transform."""
-        self._upper_triangular = check_shear_triangular(shear)
+        if np.array(shear).ndim == 2:
+            if is_matrix_triangular(shear):
+                self._upper_triangular = is_matrix_upper_triangular(shear)
+            else:
+                raise ValueError(
+                    f'Only upper triangular or lower triangular matrices are '
+                    f'accepted for shear, got {shear}. For other matrices, set the '
+                    f'affine_matrix or linear_matrix directly.'
+                )
+        else:
+            self._upper_triangular = True
         rotate, scale, _ = decompose_linear_matrix(
             self.linear_matrix, upper_triangular=self._upper_triangular
         )
