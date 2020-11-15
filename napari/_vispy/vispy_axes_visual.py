@@ -226,6 +226,14 @@ class VispyAxesVisual:
             color = np.subtract(1, self._axes.background_color)[:3]
             axes_colors = [color] * self._dims.ndisplay
 
+        # Make sure have enough colors and labels for displayed dimensions
+        if len(axes_colors) < self._dims.ndisplay:
+            axes_colors += [self._axes.background_color] * (
+                self._dims.ndisplay - len(axes_colors)
+            )
+        if len(axes_labels) < self._dims.ndisplay:
+            axes_labels += [''] * (self._dims.ndisplay - len(axes_labels))
+
         # Determine data based on number of displayed dimensions and
         # axes visualization parameters
         if self._axes.dashed and self._dims.ndisplay == 2:
