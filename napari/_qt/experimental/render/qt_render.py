@@ -1,12 +1,15 @@
-"""QtAsync widget.
+"""QtRender widget.
 """
-import numpy as np
-from qtpy.QtGui import QImage, QPixmap
-from qtpy.QtWidgets import QLabel, QVBoxLayout, QWidget
+
+
+from qtpy.QtWidgets import QVBoxLayout, QWidget
 
 from ....layers.image import Image
 from ....layers.image.experimental.octree_image import OctreeImage
-from .qt_image_info import QtImageInfo, QtOctreeInfo
+from .qt_frame_rate import QtFrameRate
+from .qt_image_info import QtImageInfo
+from .qt_mini_map import QtMiniMap
+from .qt_octree_info import QtOctreeInfo
 from .qt_test_image import QtTestImage
 
 
@@ -18,7 +21,7 @@ class QtRender(QWidget):
     viewer : Viewer
         The napari viewer.
     layer : Optional[Layer]
-        Show controls for this layer, or test image controls if no layer.
+        Show controls for this layer. If no layer show minimal controls.
     """
 
     def __init__(self, viewer, layer=None):
@@ -26,32 +29,34 @@ class QtRender(QWidget):
         """
         super().__init__()
         self.viewer = viewer
-        self.mini_map = None
+        self.layer = layer
 
         layout = QVBoxLayout()
 
+        # Basic info for any image layer.
         if isinstance(layer, Image):
             layout.addWidget(QtImageInfo(layer))
 
         if isinstance(layer, OctreeImage):
+            # Octree specific controls and widgets.
             layout.addWidget(QtOctreeInfo(layer))
 
-            self.mini_map = QLabel()
+            self.mini_map = QtMiniMap(layer)
             layout.addWidget(self.mini_map)
 
+            self.viewer.camera.events.center.connect(self._on_camera_move)
+
+        # Controls to create a new test image.
         layout.addStretch(1)
         layout.addWidget(QtTestImage(viewer))
+
+        # Frame rate meter.
+        self.frame_rate = QtFrameRate()
+        layout.addWidget(self.frame_rate)
+
         self.setLayout(layout)
 
-        # if self.mini_map is not None:
-        #    self._update_map()
-
-    def _update_map(self):
-        data = np.zeros((50, 50, 4), dtype=np.uint8)
-        data[:, 25, :] = (255, 255, 255, 255)
-        data[25, :, :] = (255, 255, 255, 255)
-
-        image = QImage(
-            data, data.shape[1], data.shape[0], QImage.Format_RGBA8888,
-        )
-        self.mini_map.setPixmap(QPixmap.fromImage(image))
+    def _on_camera_move(self, event=None):
+        """Called when the camera was moved."""
+        self.mini_map.update()
+        self.frame_rate.on_camera_move()

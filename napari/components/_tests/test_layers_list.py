@@ -50,6 +50,16 @@ def test_removing_layer():
     assert len(layers) == 0
 
 
+def test_popping_layer():
+    """Test popping a layer off layerlist."""
+    layers = LayerList()
+    layer = Image(np.random.random((10, 10)))
+    layers.append(layer)
+    assert len(layers) == 1
+    layers.pop(0)
+    assert len(layers) == 0
+
+
 def test_indexing():
     """
     Test indexing into a LayerList
@@ -104,59 +114,24 @@ def test_reordering():
     layers.append(layer_c)
 
     # Rearrange layers by tuple
-    layers[:] = layers[(1, 0, 2)]
+    layers[:] = [layers[i] for i in (1, 0, 2)]
     assert list(layers) == [layer_b, layer_a, layer_c]
-
-    # Swap layers by name
-    layers['image_b', 'image_c'] = layers['image_c', 'image_b']
-    assert list(layers) == [layer_c, layer_a, layer_b]
 
     # Reverse layers
     layers.reverse()
-    assert list(layers) == [layer_b, layer_a, layer_c]
+    assert list(layers) == [layer_c, layer_a, layer_b]
 
 
-def test_naming():
-    """
-    Test unique naming in LayerList
-    """
+def test_clearing_layerlist():
+    """Test clearing layer list."""
     layers = LayerList()
-    layer_a = Image(np.random.random((10, 10)), name='img')
-    layer_b = Image(np.random.random((15, 15)), name='img')
-    layers.append(layer_a)
-    layers.append(layer_b)
+    layer = Image(np.random.random((10, 10)))
+    layers.append(layer)
+    layers.append(layer)
+    assert len(layers) == 2
 
-    assert [lay.name for lay in layers] == ['img', 'img [1]']
-
-    layer_b.name = 'chg'
-    assert [lay.name for lay in layers] == ['img', 'chg']
-
-    layer_a.name = 'chg'
-    assert [lay.name for lay in layers] == ['chg [1]', 'chg']
-
-
-def test_selection():
-    """
-    Test only last added is selected.
-    """
-    layers = LayerList()
-    layer_a = Image(np.random.random((10, 10)))
-    layers.append(layer_a)
-    assert layers[0].selected is True
-
-    layer_b = Image(np.random.random((15, 15)))
-    layers.append(layer_b)
-    assert [lay.selected for lay in layers] == [False, True]
-
-    layer_c = Image(np.random.random((15, 15)))
-    layers.append(layer_c)
-    assert [lay.selected for lay in layers] == [False] * 2 + [True]
-
-    for lay in layers:
-        lay.selected = True
-    layer_d = Image(np.random.random((15, 15)))
-    layers.append(layer_d)
-    assert [lay.selected for lay in layers] == [False] * 3 + [True]
+    layers.clear()
+    assert len(layers) == 0
 
 
 def test_unselect_all():
@@ -194,6 +169,9 @@ def test_remove_selected():
     layers.append(layer_c)
 
     # remove last added layer as only one selected
+    layer_a.selected = False
+    layer_b.selected = False
+    layer_c.selected = True
     layers.remove_selected()
     assert list(layers) == [layer_a, layer_b]
 
@@ -309,7 +287,7 @@ def test_move_selected():
     assert [lay.selected for lay in layers] == [True, True, False, False]
 
     # Move first two selected to middle of list
-    layers.move_selected(0, 1)
+    layers.move_selected(0, 2)
     assert list(layers) == [layer_c, layer_a, layer_b, layer_d]
     assert [lay.selected for lay in layers] == [False, True, True, False]
 
@@ -335,31 +313,25 @@ def test_move_selected():
     layers.move_selected(2, 2)
     assert list(layers) == [layer_b, layer_a, layer_c, layer_d]
     assert [lay.selected for lay in layers] == [False, True, True, False]
-    layers[:] = layers[(1, 0, 2, 3)]
+    layers.move_multiple((1, 0, 2, 3), 0)
 
     # Move selection together to middle
     layers.move_selected(0, 1)
     assert list(layers) == [layer_b, layer_a, layer_c, layer_d]
     assert [lay.selected for lay in layers] == [False, True, True, False]
-    layers[:] = layers[(1, 0, 2, 3)]
+    layers.move_multiple((1, 0, 2, 3), 0)
 
     # Move selection together to end
     layers.move_selected(2, 3)
     assert list(layers) == [layer_b, layer_d, layer_a, layer_c]
     assert [lay.selected for lay in layers] == [False, False, True, True]
-    layers[:] = layers[(2, 0, 3, 1)]
-
-    # Move selection together to end
-    layers.move_selected(0, 2)
-    assert list(layers) == [layer_b, layer_d, layer_a, layer_c]
-    assert [lay.selected for lay in layers] == [False, False, True, True]
-    layers[:] = layers[(2, 0, 3, 1)]
+    layers.move_multiple((2, 0, 3, 1), 0)
 
     # Move selection together to end
     layers.move_selected(0, 3)
     assert list(layers) == [layer_b, layer_d, layer_a, layer_c]
     assert [lay.selected for lay in layers] == [False, False, True, True]
-    layers[:] = layers[(2, 0, 3, 1)]
+    layers.move_multiple((2, 0, 3, 1), 0)
 
     layer_e = Image(np.random.random((15, 15)))
     layer_f = Image(np.random.random((15, 15)))

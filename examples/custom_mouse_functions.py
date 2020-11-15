@@ -50,3 +50,21 @@ with napari.gui_qt():
             msg = f'clicked at {cords} on background which is ignored'
         layer.status = msg
         print(msg)
+
+
+    # Handle click or drag events separately
+    @labels_layer.mouse_drag_callbacks.append
+    def click_drag(layer, event):
+        print('mouse down')
+        dragged = False
+        yield
+        # on move
+        while event.type == 'mouse_move':
+            print(event.pos)
+            dragged = True
+            yield
+        # on release
+        if dragged:
+            print('drag end')
+        else:
+            print('clicked!')

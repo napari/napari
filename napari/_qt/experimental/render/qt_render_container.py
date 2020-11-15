@@ -1,14 +1,17 @@
 """QtRenderContainer class.
 """
-
-
 from qtpy.QtWidgets import QStackedWidget
 
+from ....components.viewer_model import ViewerModel
 from .qt_render import QtRender
 
 
 class QtRenderContainer(QStackedWidget):
     """Container widget for QtRender widgets.
+
+    QtRender is a debug/developer widget for rendering and octree related
+    functionality. We put up a QtRender for any later, but most of the
+    controls are only visible for OctreeImage layers.
 
     Parameters
     ----------
@@ -17,32 +20,32 @@ class QtRenderContainer(QStackedWidget):
 
     Attributes
     ----------
-    empty_widget : qtpy.QtWidgets.QFrame
-        Empty placeholder frame for when no layer is selected.
-    viewer : napari.components.ViewerModel
-        Napari viewer containing the rendered scene, layers, and controls.
+    default_widget : QtRender
+        A minimal version fo QtRender if no layer is selected.
+    viewer : ViewerModel
+        Napari viewer.
     widgets : dict
-        Dictionary of key value pairs matching layer with its widget controls.
-        widgets[layer] = controls
+        Maps layer to its QtRender widget.
     """
 
-    def __init__(self, viewer):
+    def __init__(self, viewer: ViewerModel):
 
         super().__init__()
         self.setProperty("emphasized", True)
         self.viewer = viewer
 
         self.setMouseTracking(True)
+        self.setMinimumWidth(250)
 
-        # We show QtRender even when there is no layer. However in that
-        # case it only shows the controls to create a new test image/layer.
-        self.empty_widget = QtRender(viewer)
+        # We show QtRender even if no layer is selected. But in that case the
+        # only control are to create test images.
+        self.default_widget = QtRender(viewer)
 
         self._widgets = {}
-        self.addWidget(self.empty_widget)
+        self.addWidget(self.default_widget)
         self._display(None)
 
-        self.viewer.layers.events.added.connect(self._add)
+        self.viewer.layers.events.inserted.connect(self._add)
         self.viewer.layers.events.removed.connect(self._remove)
         self.viewer.events.active_layer.connect(self._display)
 
@@ -52,7 +55,7 @@ class QtRenderContainer(QStackedWidget):
         Parameters
         ----------
         event : Event
-            Event with the target layer at `event.item`.
+            Event with the target layer at `event.value`.
         """
         if event is None:
             layer = None
@@ -60,7 +63,7 @@ class QtRenderContainer(QStackedWidget):
             layer = event.item
 
         if layer is None:
-            self.setCurrentWidget(self.empty_widget)
+            self.setCurrentWidget(self.default_widget)
         else:
             controls = self._widgets[layer]
             self.setCurrentWidget(controls)
@@ -71,9 +74,9 @@ class QtRenderContainer(QStackedWidget):
         Parameters
         ----------
         event : Event
-            Event with the target layer at `event.item`.
+            Event with the target layer at `event.value`.
         """
-        layer = event.item
+        layer = event.value
         controls = QtRender(self.viewer, layer)
         self.addWidget(controls)
         self._widgets[layer] = controls
@@ -84,9 +87,9 @@ class QtRenderContainer(QStackedWidget):
         Parameters
         ----------
         event : Event
-            Event with the target layer at `event.item`.
+            Event with the target layer at `event.value`.
         """
-        layer = event.item
+        layer = event.value
         controls = self._widgets[layer]
         self.removeWidget(controls)
         controls.deleteLater()

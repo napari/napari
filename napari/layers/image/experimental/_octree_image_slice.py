@@ -1,12 +1,15 @@
 """OctreeImageSlice class.
 """
 import logging
-from typing import Callable
+from typing import Callable, List, Optional
 
 from ....types import ArrayLike
 from ....utils.perf import block_timer
 from .._image_slice import ImageSlice
 from .octree import Octree
+from .octree_intersection import OctreeIntersection
+from .octree_level import OctreeLevelInfo
+from .octree_util import ChunkData, OctreeInfo
 
 LOGGER = logging.getLogger("napari.async")
 
@@ -22,7 +25,6 @@ class OctreeImageSlice(ImageSlice):
         rgb: bool,
         tile_size: int,
         octree_level: int,
-        data_corners,
     ):
         LOGGER.debug("OctreeImageSlice.__init__")
         super().__init__(image, image_converter, rgb)
@@ -30,7 +32,17 @@ class OctreeImageSlice(ImageSlice):
         self._tile_size = tile_size
         self._octree = None
         self._octree_level = octree_level
-        self._data_corners = data_corners
+
+    @property
+    def octree_level(self) -> int:
+        """Return the current level of the octree.
+
+        Return
+        ------
+        int
+            The current level of the octree.
+        """
+        return self._octree_level
 
     @property
     def num_octree_levels(self) -> int:
@@ -43,8 +55,7 @@ class OctreeImageSlice(ImageSlice):
         """
         if self._octree is None:
             return 0
-        else:
-            return self._octree.num_levels
+        return self._octree.num_levels
 
     def _set_raw_images(
         self, image: ArrayLike, thumbnail_source: ArrayLike
@@ -74,19 +85,77 @@ class OctreeImageSlice(ImageSlice):
             self._octree_level is None
             or self._octree_level >= self._octree.num_levels
         ):
-            self._octree_level = self._octree.num_levels - 1
+            self._octree_level = 0  # self._octree.num_levels - 1
 
         # self._octree.print_tiles()
 
+    def get_visible_chunks(self, corners_2d, auto_level) -> List[ChunkData]:
+        """Return the chunks currently in view.
+
+        Return
+        ------
+        List[ChunkData]
+            The chunks inside this intersection.
+        """
+        intersection = self.get_intersection(corners_2d, auto_level)
+
+        if auto_level:
+            # Set current level according to what was automatically selected.
+            level_index = intersection.level.info.level_index
+            self._octree_level = level_index
+
+        # Return the chunks in this intersection.
+        return intersection.get_chunks()
+
+    def get_intersection(self, corners_2d, auto_level: bool):
+        """Return the intersection with the octree."""
+
+        level_index = self._get_octree_level(corners_2d, auto_level)
+        level = self._octree.levels[level_index]
+
+        return OctreeIntersection(level, corners_2d)
+
+    def _get_octree_level(self, corners_2d, auto_level):
+        if not auto_level:
+            return self._octree_level
+
+        # Find the right level automatically.
+        width = corners_2d[1][1] - corners_2d[0][1]
+        tile_size = self._octree.info.tile_size
+        num_tiles = width / tile_size
+
+        # TODO_OCTREE: compute from canvas dimensions instead
+        max_tiles = 5
+
+        # Slow way to start, redo this O(1).
+        for i, level in enumerate(self._octree.levels):
+            if (num_tiles / level.info.scale) < max_tiles:
+                return i
+
+        return self._octree.num_levels - 1
+
     @property
-    def view_chunks(self):
-        """Return the chunks currently in view."""
+    def octree_info(self) -> OctreeInfo:
+        """Return information about the whole octree.
 
-        # This will be None if we have not been drawn yet.
-        if self._data_corners is None:
-            return []
+        Return
+        ------
+        OctreeInfo
+            Information about the whole octree.
+        """
+        if self._octree is None:
+            return None
+        return self._octree.info
 
-        # TODO_OCTREE: soon we will compute which level to draw.
-        level = self._octree.levels[self._octree_level]
+    @property
+    def octree_level_info(self) -> Optional[OctreeLevelInfo]:
+        """Return information about the current octree level.
 
-        return level.get_chunks(self._data_corners)
+        Return
+        ------
+        Optional[OctreeLevelInfo]
+            Information about current octree level, if there is one.
+        """
+        if self._octree is None:
+            return None
+        return self._octree.levels[self._octree_level].info

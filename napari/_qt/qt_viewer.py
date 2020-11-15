@@ -1,18 +1,12 @@
 import os.path
+import warnings
 from copy import copy
 from pathlib import Path
 
 import numpy as np
 from qtpy.QtCore import QCoreApplication, QSize, Qt
 from qtpy.QtGui import QCursor, QGuiApplication
-from qtpy.QtWidgets import (
-    QFileDialog,
-    QMessageBox,
-    QSplitter,
-    QVBoxLayout,
-    QWidget,
-)
-from vispy.scene import SceneCanvas
+from qtpy.QtWidgets import QFileDialog, QSplitter, QVBoxLayout, QWidget
 from vispy.visuals.transforms import ChainTransform
 
 from ..resources import get_stylesheet
@@ -39,18 +33,11 @@ from .widgets.qt_viewer_dock_widget import QtViewerDockWidget
 from .._vispy import (  # isort:skip
     VispyAxesVisual,
     VispyCamera,
+    VispyCanvas,
     VispyScaleBarVisual,
+    VispyWelcomeVisual,
     create_vispy_visual,
 )
-
-
-class KeyModifierFilterSceneCanvas(SceneCanvas):
-    """SceneCanvas overriding VisPy when mouse wheel events have modifiers."""
-
-    def _process_mouse_event(self, event):
-        if event.type == 'mouse_wheel' and len(event.modifiers) > 0:
-            return
-        super()._process_mouse_event(event)
 
 
 class QtViewer(QSplitter):
@@ -60,6 +47,9 @@ class QtViewer(QSplitter):
     ----------
     viewer : napari.components.ViewerModel
         Napari viewer containing the rendered scene, layers, and controls.
+    welcome : bool
+        Flag to show a welcome message when no layers are present in the
+        canvas.
 
     Attributes
     ----------
@@ -95,7 +85,8 @@ class QtViewer(QSplitter):
 
     raw_stylesheet = get_stylesheet()
 
-    def __init__(self, viewer):
+    def __init__(self, viewer, welcome=True):
+
         # Avoid circular import.
         from .layer_controls import QtLayerControlsContainer
 
@@ -166,7 +157,7 @@ class QtViewer(QSplitter):
             self.toggle_console_visibility
         )
 
-        self.canvas = KeyModifierFilterSceneCanvas(
+        self.canvas = VispyCanvas(
             keys=None,
             vsync=True,
             parent=self,
@@ -207,6 +198,17 @@ class QtViewer(QSplitter):
         )
         self.canvas.events.resize.connect(self.scale_bar._on_position_change)
 
+        self._show_welcome = welcome and config.allow_welcome_visual
+        if self._show_welcome:
+            self.welcome = VispyWelcomeVisual(
+                self.viewer, parent=self.view, order=-100
+            )
+            self.viewer.events.layers_change.connect(
+                self.welcome._on_visible_change
+            )
+            self.viewer.events.palette.connect(self.welcome._on_palette_change)
+            self.canvas.events.resize.connect(self.welcome._on_canvas_change)
+
         main_widget = QWidget()
         main_layout = QVBoxLayout()
         main_layout.setContentsMargins(10, 22, 10, 2)
@@ -230,15 +232,19 @@ class QtViewer(QSplitter):
         self._update_palette()
 
         self.viewer.events.interactive.connect(self._on_interactive)
-        self.viewer.events.cursor.connect(self._on_cursor)
+        self.viewer.cursor.events.style.connect(self._on_cursor)
+        self.viewer.cursor.events.size.connect(self._on_cursor)
         self.viewer.events.palette.connect(self._update_palette)
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
-        self.viewer.layers.events.added.connect(self._add_layer)
+        self.viewer.layers.events.inserted.connect(self._on_add_layer_change)
         self.viewer.layers.events.removed.connect(self._remove_layer)
         # stop any animations whenever the layers change
         self.viewer.events.layers_change.connect(lambda x: self.dims.stop())
 
         self.setAcceptDrops(True)
+
+        for layer in self.viewer.layers:
+            self._add_layer(layer)
 
     def _create_performance_dock_widget(self):
         """Create the dock widget that shows performance metrics.
@@ -254,8 +260,9 @@ class QtViewer(QSplitter):
         return None
 
     def _create_render_dock_widget(self):
-        """Create the dock widget that shows async controls.
+        """Create the dock widget that shows debug render controls.
         """
+        # We only show the render controls for octree right now.
         if config.async_octree:
             from .experimental.render.qt_render_container import (
                 QtRenderContainer,
@@ -299,7 +306,7 @@ class QtViewer(QSplitter):
         else:
             self.controls.setMaximumWidth(220)
 
-    def _add_layer(self, event):
+    def _on_add_layer_change(self, event):
         """When a layer is added, set its parent and order.
 
         Parameters
@@ -307,11 +314,22 @@ class QtViewer(QSplitter):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        layers = event.source
-        layer = event.item
+        layer = event.value
+        self._add_layer(layer)
+
+    def _add_layer(self, layer):
+        """When a layer is added, set its parent and order.
+
+        Parameters
+        ----------
+        layer : napari.layers.Layer
+            Layer to be added.
+        """
         vispy_layer = create_vispy_visual(layer)
+        self.viewer.camera.events.center.connect(vispy_layer._on_camera_move)
+
         vispy_layer.node.parent = self.view.scene
-        vispy_layer.order = len(layers) - 1
+        vispy_layer.order = len(self.viewer.layers) - 1
         self.layer_to_visual[layer] = vispy_layer
 
     def _remove_layer(self, event):
@@ -322,7 +340,7 @@ class QtViewer(QSplitter):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        layer = event.item
+        layer = event.value
         vispy_layer = self.layer_to_visual[layer]
         vispy_layer.node.transforms = ChainTransform()
         vispy_layer.node.parent = None
@@ -361,16 +379,24 @@ class QtViewer(QSplitter):
                 '\nor use "Save all layers..."'
             )
         if msg:
-            QMessageBox.warning(self, "Nothing to save", msg, QMessageBox.Ok)
-            return
+            raise IOError("Nothing to save")
 
         filename, _ = QFileDialog.getSaveFileName(
             parent=self,
             caption=f'Save {"selected" if selected else "all"} layers',
             directory=self._last_visited_dir,  # home dir by default
         )
+
         if filename:
-            self.viewer.layers.save(filename, selected=selected)
+            with warnings.catch_warnings(record=True) as wa:
+                saved = self.viewer.layers.save(filename, selected=selected)
+                error_messages = "\n".join(
+                    [str(x.message.args[0]) for x in wa]
+                )
+            if not saved:
+                raise IOError(
+                    f"File {filename} save failed.\n{error_messages}"
+                )
 
     def screenshot(self, path=None):
         """Take currently displayed screen and convert to an image array.
@@ -445,9 +471,14 @@ class QtViewer(QSplitter):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        cursor = self.viewer.cursor
+        cursor = self.viewer.cursor.style
+        # Scale size by zoom if needed
+        if self.viewer.cursor.scaled:
+            size = self.viewer.cursor.size * self.viewer.camera.zoom
+        else:
+            size = self.viewer.cursor.size
+
         if cursor == 'square':
-            size = self.viewer.cursor_size
             # make sure the square fits within the current canvas
             if size < 8 or size > (
                 min(*self.viewer.window.qt_viewer.canvas.size) - 4
@@ -456,10 +487,10 @@ class QtViewer(QSplitter):
             else:
                 q_cursor = QCursor(square_pixmap(size))
         elif cursor == 'circle':
-            size = self.viewer.cursor_size
             q_cursor = QCursor(circle_pixmap(size))
         else:
             q_cursor = self._cursors[cursor]
+
         self.canvas.native.setCursor(q_cursor)
 
     def _update_palette(self, event=None):
@@ -561,12 +592,11 @@ class QtViewer(QSplitter):
             return
 
         event = ReadOnlyWrapper(event)
+        self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
         mouse_wheel_callbacks(self.viewer, event)
 
         layer = self.viewer.active_layer
         if layer is not None:
-            # set cursor position in world coordinates
-            layer.position = self._map_canvas2world(list(event.pos))
             mouse_wheel_callbacks(layer, event)
 
     def on_mouse_press(self, event):
@@ -581,12 +611,11 @@ class QtViewer(QSplitter):
             return
 
         event = ReadOnlyWrapper(event)
+        self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
         mouse_press_callbacks(self.viewer, event)
 
         layer = self.viewer.active_layer
         if layer is not None:
-            # set cursor position in world coordinates
-            layer.position = self._map_canvas2world(list(event.pos))
             mouse_press_callbacks(layer, event)
 
     def on_mouse_move(self, event):
@@ -600,12 +629,11 @@ class QtViewer(QSplitter):
         if event.pos is None:
             return
 
+        self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
         mouse_move_callbacks(self.viewer, event)
 
         layer = self.viewer.active_layer
         if layer is not None:
-            # set cursor position in world coordinates
-            layer.position = self._map_canvas2world(list(event.pos))
             mouse_move_callbacks(layer, event)
 
     def on_mouse_release(self, event):
@@ -619,12 +647,11 @@ class QtViewer(QSplitter):
         if event.pos is None:
             return
 
+        self.viewer.cursor.position = self._map_canvas2world(list(event.pos))
         mouse_release_callbacks(self.viewer, event)
 
         layer = self.viewer.active_layer
         if layer is not None:
-            # set cursor position in world coordinates
-            layer.position = self._map_canvas2world(list(event.pos))
             mouse_release_callbacks(layer, event)
 
     def on_key_press(self, event):

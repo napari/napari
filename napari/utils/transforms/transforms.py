@@ -4,7 +4,7 @@ from typing import Sequence
 import numpy as np
 import toolz as tz
 
-from ..list import ListModel
+from ..events import EventedList
 from .transform_utils import (
     compose_linear_matrix,
     decompose_linear_matrix,
@@ -81,13 +81,17 @@ class Transform:
         raise NotImplementedError('Cannot subset arbitrary transforms.')
 
 
-class TransformChain(ListModel, Transform):
+class TransformChain(EventedList, Transform):
     def __init__(self, transforms=[]):
         super().__init__(
+            data=transforms,
             basetype=Transform,
-            iterable=transforms,
-            lookup={str: lambda q, e: q == e.name},
+            lookup={str: lambda x: x.name},
         )
+        # The above super().__init__() will not call Transform.__init__().
+        # For that to work every __init__() called using super() needs to
+        # in turn call super().__init__(). So we call it explicitly here.
+        Transform.__init__(self)
 
     def __call__(self, coords):
         return tz.pipe(coords, *self)

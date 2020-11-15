@@ -1,10 +1,9 @@
 from abc import ABC, abstractmethod
-from functools import lru_cache
 
 import numpy as np
-from vispy.app import Canvas
-from vispy.gloo import gl
 from vispy.visuals.transforms import MatrixTransform
+
+from .utils_gl import get_max_texture_sizes
 
 
 class VispyBaseLayer(ABC):
@@ -34,6 +33,7 @@ class VispyBaseLayer(ABC):
     MAX_TEXTURE_SIZE_3D : int
         Max texture size allowed by the vispy canvas during 2D rendering.
 
+
     Extended Summary
     ----------------
     _master_transform : vispy.visuals.transforms.MatrixTransform
@@ -47,9 +47,10 @@ class VispyBaseLayer(ABC):
         self._array_like = False
         self.node = node
 
-        MAX_TEXTURE_SIZE_2D, MAX_TEXTURE_SIZE_3D = get_max_texture_sizes()
-        self.MAX_TEXTURE_SIZE_2D = MAX_TEXTURE_SIZE_2D
-        self.MAX_TEXTURE_SIZE_3D = MAX_TEXTURE_SIZE_3D
+        (
+            self.MAX_TEXTURE_SIZE_2D,
+            self.MAX_TEXTURE_SIZE_3D,
+        ) = get_max_texture_sizes()
 
         self.layer.events.refresh.connect(lambda e: self.node.update())
         self.layer.events.set_data.connect(self._on_data_change)
@@ -151,30 +152,6 @@ class VispyBaseLayer(ABC):
         self._on_blending_change()
         self._on_matrix_change()
 
-
-@lru_cache()
-def get_max_texture_sizes():
-    """Get maximum texture sizes for 2D and 3D rendering.
-
-    Returns
-    -------
-    MAX_TEXTURE_SIZE_2D : int or None
-        Max texture size allowed by the vispy canvas during 2D rendering.
-    MAX_TEXTURE_SIZE_3D : int or None
-        Max texture size allowed by the vispy canvas during 2D rendering.
-    """
-    # A canvas must be created to access gl values
-    c = Canvas(show=False)
-    try:
-        MAX_TEXTURE_SIZE_2D = gl.glGetParameter(gl.GL_MAX_TEXTURE_SIZE)
-    finally:
-        c.close()
-    if MAX_TEXTURE_SIZE_2D == ():
-        MAX_TEXTURE_SIZE_2D = None
-    # vispy doesn't expose GL_MAX_3D_TEXTURE_SIZE so hard coding
-    # MAX_TEXTURE_SIZE_3D = gl.glGetParameter(gl.GL_MAX_3D_TEXTURE_SIZE)
-    # if MAX_TEXTURE_SIZE_3D == ():
-    #    MAX_TEXTURE_SIZE_3D = None
-    MAX_TEXTURE_SIZE_3D = 2048
-
-    return MAX_TEXTURE_SIZE_2D, MAX_TEXTURE_SIZE_3D
+    def _on_camera_move(self, event=None):
+        """Camera was moved."""
+        pass

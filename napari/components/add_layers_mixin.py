@@ -18,25 +18,14 @@ from ..utils.misc import is_sequence
 logger = getLogger(__name__)
 
 
-def _get_async_image_class():
-    """Return layer.Image or OctreeImage."""
-    if config.async_octree:
+def _get_image_class() -> layers.Image:
+    """Return Image or OctreeImage based config settings."""
+    if config.create_octree_image():
         from ..layers.image.experimental.octree_image import OctreeImage
 
         return OctreeImage
 
     return layers.Image
-
-
-def _get_image_class():
-    """Return layer.Image or OctreeImage."""
-    if config.async_loading:
-        return _get_async_image_class()
-    else:
-        return layers.Image
-
-
-_image_class = _get_image_class()
 
 
 class AddLayersMixin:
@@ -69,7 +58,11 @@ class AddLayersMixin:
         layer.events.cursor.connect(self._update_cursor)
         layer.events.cursor_size.connect(self._update_cursor_size)
         layer.events.data.connect(self._on_layers_change)
+        layer.name = self.layers._coerce_name(layer.name, layer)
+        layer.events.name.connect(self.layers._update_name)
+        layer.selected = True
         self.layers.append(layer)
+        self.layers.unselect_all(ignore=layer)
         self._update_layers(layers=[layer])
 
         if len(self.layers) == 1:
@@ -256,6 +249,9 @@ class AddLayersMixin:
             'metadata',
         }
 
+        # Image or OctreeImage.
+        image_class = _get_image_class()
+
         if channel_axis is None:
             kwargs['colormap'] = kwargs['colormap'] or 'gray'
             kwargs['blending'] = kwargs['blending'] or 'translucent'
@@ -268,13 +264,13 @@ class AddLayersMixin:
                         "did you mean to specify a 'channel_axis'? "
                     )
 
-            return self.add_layer(_image_class(data, **kwargs))
+            return self.add_layer(image_class(data, **kwargs))
         else:
             layerdata_list = split_channels(data, channel_axis, **kwargs)
 
             layer_list = list()
             for image, i_kwargs, _ in layerdata_list:
-                layer = self.add_layer(_image_class(image, **i_kwargs))
+                layer = self.add_layer(image_class(image, **i_kwargs))
                 layer_list.append(layer)
 
             return layer_list
