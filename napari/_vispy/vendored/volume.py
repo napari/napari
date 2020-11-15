@@ -377,7 +377,6 @@ ISO_SNIPPETS = dict(
 
 ISO_FRAG_SHADER = FRAG_SHADER.format(**ISO_SNIPPETS)
 
-
 frag_dict = {
     'mip': MIP_FRAG_SHADER,
     'iso': ISO_FRAG_SHADER,
