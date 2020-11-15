@@ -280,34 +280,3 @@ def is_matrix_triangular(matrix):
     return is_matrix_upper_triangular(matrix) or is_matrix_lower_triangular(
         matrix
     )
-
-
-def check_shear_triangular(matrix):
-    """Check if a matrix is triangular.
-
-    Raises an error if neither upper or lower triangular.
-    1-D arrays are taken to be upper triangular.
-
-    Parameters
-    ----------
-    matrix : np.ndarray
-        Matrix to be checked.
-
-    Returns
-    -------
-    bool
-        True if matrix upper triangular, False if not.
-    """
-    if np.array(matrix).ndim == 2:
-        if is_matrix_upper_triangular(matrix):
-            return True
-        elif is_matrix_lower_triangular(matrix):
-            return False
-        else:
-            raise ValueError(
-                f'Only upper triangular or lower triangular matrices are '
-                f'accepted for shear, got {matrix}. For other matrices, set the '
-                f'affine_matrix or linear_matrix directly.'
-            )
-    else:
-        return True
