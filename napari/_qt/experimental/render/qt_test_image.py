@@ -18,7 +18,7 @@ from ....components.experimental.chunk import async_config
 from ....utils import config
 from .image_defines import ImageConfig
 from .qt_render_widgets import QtLabeledComboBox, QtLabeledSpinBox
-from .test_image import create_test_image
+from .test_image import create_test_image_multi
 
 Callback = Callable[[], None]
 IntCallback = Callable[[int], None]
@@ -42,7 +42,9 @@ IMAGE_TYPE_DEFAULT = "Tiled"
 TEST_IMAGES = {
     "Digits": {
         "shape": None,
-        "factory": lambda image_config: create_test_image("0", image_config),
+        "factory": lambda image_config: create_test_image_multi(
+            "0", image_config
+        ),
     },
 }
 TEST_IMAGE_DEFAULT = "Digits"

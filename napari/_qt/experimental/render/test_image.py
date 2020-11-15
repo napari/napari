@@ -9,7 +9,7 @@ Long term we probably do not want to use PIL for example.
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-from ....layers.image.experimental import create_tiles
+from ....layers.image.experimental import create_multi_scale_image
 from ....utils.perf import block_timer
 from .image_defines import ImageConfig
 
@@ -70,11 +70,12 @@ def create_test_image(text, config: ImageConfig) -> np.ndarray:
 def create_test_image_multi(text, config: ImageConfig) -> np.ndarray:
     """Create a multiscale test image for testing tiled rendering.
 
-    The test image just has digits all over it. The digits will typically
-    be used to show the slice number.
+    The test image is blank with digits all over it. The digits will
+    typically be used to show the slice number. Should do something fancier
+    with colors and less repetition.
 
-    image_shape: Tuple[int, int]
-        The [height, width] shape of the image.
+    image_config: ImageConfig
+        The shape and other details about the image to be created.
     """
     text = str(text)  # Might be an int.
 
@@ -86,6 +87,5 @@ def create_test_image_multi(text, config: ImageConfig) -> np.ndarray:
     draw_text_grid(image, text)
     data = np.array(image)
 
-    with block_timer("create_tiles", print_time=True):
-        tiles = create_tiles(data, config.tile_size)
-    return [tiles]
+    with block_timer("create_multi_scale_image", print_time=True):
+        return create_multi_scale_image(data, config.tile_size)

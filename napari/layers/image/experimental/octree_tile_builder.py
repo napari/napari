@@ -193,3 +193,30 @@ def create_multi_scale_levels(image: np.ndarray, tile_size: int) -> List:
         levels.append(next_level)
 
     return levels
+
+
+def create_multi_scale_image(
+    image: np.ndarray, tile_size: int
+) -> List[np.ndarray]:
+    """Turn an image into a multi-scale image with levels.
+
+    The given image is level 0, the full resolution image. Each additional
+    level is downsized by half. The final root level is small enough to
+    fit in one tile.
+
+    Parameters
+    ----------
+    image : np.darray
+        The full image to create levels from.
+    """
+    levels = [image]
+
+    # Repeat until we have level that will fit in a single tile, that will
+    # be come the root/highest level.
+    while max(levels[-1].shape) > tile_size:
+        next_level = ndi.zoom(
+            levels[-1], [0.5, 0.5, 1], mode='nearest', prefilter=True, order=1
+        )
+        levels.append(next_level)
+
+    return levels
