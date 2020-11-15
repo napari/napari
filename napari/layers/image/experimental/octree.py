@@ -4,8 +4,12 @@ from typing import List
 
 import numpy as np
 
+from ....types import ArrayLike
 from .octree_level import OctreeLevel
-from .octree_tile_builder import create_multi_scale_levels
+from .octree_tile_builder import (
+    create_levels_from_multiscale_data,
+    create_multi_scale_from_image,
+)
 from .octree_util import OctreeInfo, TileArray
 
 Levels = List[TileArray]
@@ -63,7 +67,21 @@ class Octree:
         image : ndarray
             Create the octree for this single image.
         """
-        levels = create_multi_scale_levels(image, tile_size)
+        levels = create_multi_scale_from_image(image, tile_size)
 
         info = OctreeInfo.create(image.shape, tile_size)
+        return Octree(info, levels)
+
+    @classmethod
+    def from_multiscale_data(cls, data: List[ArrayLike], tile_size: int):
+        """Create octree from multiscale data.
+
+        Parameters
+        ----------
+        data : List[ArrayLike]
+            Create the octree from this multi-scale data.
+        """
+        levels = create_levels_from_multiscale_data(data, tile_size)
+
+        info = OctreeInfo.create(levels[0].shape, tile_size)
         return Octree(info, levels)

@@ -1,4 +1,4 @@
-"""create_multi_scale_levels() function.
+"""create_downsampled_levels() and create_multi_scale_image() functions.
 
 This file is early/placeholder. In normal useage we might never create
 tiles, because downsampling images is very slow. But for debugging and
@@ -13,6 +13,7 @@ from typing import List
 import numpy as np
 from scipy import ndimage as ndi
 
+from ....types import ArrayLike
 from ....utils.perf import block_timer
 from .octree_util import TileArray
 
@@ -37,8 +38,9 @@ def create_tiles(array: np.ndarray, tile_size: int) -> np.ndarray:
     Return an NxM array of (tile_size, tile_size) ndarrays except the edge
     tiles might be smaller if the array did not divide evenly.
 
-    TODO_OCTREE: slices_from_chunks from dask.array.core possibly does
-    the same thing, if we are going to use this in production.
+    TODO_OCTREE: Could we use slices_from_chunks() from dask.array.core to
+    do this without loops, faster? Right now this is just used for
+    testing/development, but if we do this in production, maybe upgrade it.
 
     Parameters
     ----------
@@ -70,7 +72,11 @@ def create_tiles(array: np.ndarray, tile_size: int) -> np.ndarray:
 
 
 def _combine_tiles(*tiles: np.ndarray) -> np.ndarray:
-    """Combine 1-4 tiles into a single tile.
+    """Combine between one and four tiles into a single tile.
+
+    The single resulting tile is not downsampled, so its size is the size
+    of the four tiles combined together. However, typically the result will
+    be downsampled by half in the following steps.
 
     Parameters
     ----------
@@ -87,18 +93,22 @@ def _combine_tiles(*tiles: np.ndarray) -> np.ndarray:
     # 0 1
     # 2 3
     if _none(tiles[1:4]):
+        # We only have one tile:
         # 0 X
         # X X
         return tiles[0]
     if _none(tiles[2:4]):
+        # We only have the top two tiles:
         # 0 1
         # X X
         return np.hstack(tiles[0:2])
     if _none((tiles[1], tiles[3])):
+        # We only have the left two tiles:
         # 0 X
         # 2 X
         return np.vstack((tiles[0], tiles[2]))
 
+    # We have all four tiles:
     # 0 1
     # 2 3
     row1 = np.hstack(tiles[0:2])
@@ -126,7 +136,9 @@ def _create_downsampled_tile(*tiles: np.ndarray) -> np.ndarray:
 def _create_coarser_level(tiles: TileArray) -> TileArray:
     """Return a level that is one level coarser.
 
-    Combine each 2x2 group of tiles into one downsampled tile.
+    Combine each 2x2 group of tiles into one downsampled tile. This is slow
+    so currently it's only used for testing. Most multi-scale data will
+    be provided pre-downsampled into multiple levels.
 
     Parameters
     ----------
@@ -160,7 +172,7 @@ def _create_coarser_level(tiles: TileArray) -> TileArray:
     return level
 
 
-def create_multi_scale_levels(image: np.ndarray, tile_size: int) -> List:
+def create_downsampled_levels(image: np.ndarray, tile_size: int) -> List:
     """Turn an image into a multi-scale image with levels.
 
     Parameters
@@ -195,7 +207,7 @@ def create_multi_scale_levels(image: np.ndarray, tile_size: int) -> List:
     return levels
 
 
-def create_multi_scale_image(
+def create_multi_scale_from_image(
     image: np.ndarray, tile_size: int
 ) -> List[np.ndarray]:
     """Turn an image into a multi-scale image with levels.
@@ -220,3 +232,18 @@ def create_multi_scale_image(
         levels.append(next_level)
 
     return levels
+
+
+def create_levels_from_multiscale_data(data: List[ArrayLike], tile_size: int):
+    """Create octree levels from multiscale data.
+
+    The data is already a list of ArrayLike levels, each own downsampled
+    by half. We are just creating the TileArray list of lists format
+    that the octree code expects today.
+
+    We'll almost certainly replace this lists of lists format with Dask or
+    some nicer chunked format. But this is what we've done since day one
+    until we upgrade it.
+    """
+
+    return [create_tiles(level_data, tile_size) for level_data in data]

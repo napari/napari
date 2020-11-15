@@ -2,10 +2,11 @@
 """
 from typing import List
 
+import numpy as np
+
 from ....utils.events import Event
 from ..image import Image
 from ._chunked_slice_data import ChunkedSliceData
-from ._octree_image_slice import OctreeImageSlice
 from ._octree_multiscale_slice import OctreeMultiscaleSlice
 from .octree_intersection import OctreeIntersection
 from .octree_level import OctreeLevelInfo
@@ -36,6 +37,31 @@ class OctreeImage(Image):
 
         super().__init__(*args, **kwargs)
         self.events.add(auto_level=Event, octree_level=Event, tile_size=Event)
+
+    def _get_value(self):
+        """Override Image._get_value()."""
+        return (0, (0, 0))  # Fake for now until have octree version.
+
+    @property
+    def loaded(self):
+        """Has the data for this layer been loaded yet."""
+        # TODO_OCTREE: what here?
+        return True
+
+    @property
+    def _empty(self) -> bool:
+        return False  # TODO_OCTREE: what here?
+
+    def _update_thumbnail(self):
+        # TODO_OCTREE: replace Image._update_thumbnail with nothing for
+        # the moment until we decide how to do thumbnail.
+        pass
+
+    @property
+    def _data_view(self):
+        """Viewable image for the current slice. (compatibility)"""
+        # Override Image._data_view
+        return np.zeros((64, 64, 3))  # fake: does octree need this?
 
     @property
     def track_view(self) -> bool:
@@ -175,25 +201,23 @@ class OctreeImage(Image):
     @property
     def num_octree_levels(self) -> int:
         """Return the total number of octree levels."""
-        return self._slice.num_octree_levels
+        return len(self.data) - 1  # Multiscale
 
-    def _new_empty_slice(self):
+    def _new_empty_slice(self) -> None:
         """Initialize the current slice to an empty image.
 
-        Overides Image._new_empty_slice so we can create slices that
-        render using an octree.
+        Overides Image._new_empty_slice() and does nothing because we don't
+        need an empty slice. We create self._slice when
+        self._set_view_slice() is called.
+
+        The empty slice was needed to satisfy the old VispyImageLayer that
+        used a single ImageVisual. But OctreeImage is drawn with
+        VispyTiledImageVisual. It does not need an empty image. It gets
+        chunks from our self.visible_chunks property, and it will just draw
+        nothing if that returns an empty list.
+
+        When OctreeImage become the only image class, this can go away.
         """
-        if self.multiscale:
-            self._slice = OctreeMultiscaleSlice()
-        else:
-            self._slice = OctreeImageSlice(
-                self._get_empty_image(),
-                self._raw_to_displayed,
-                self.rgb,
-                self._tile_size,
-                self._octree_level,
-            )
-        self._empty = True
 
     @property
     def visible_chunks(self) -> List[ChunkData]:
@@ -258,3 +282,39 @@ class OctreeImage(Image):
         if self.ndim == 2:
             return data_corners
         return data_corners[:, 1:3]
+
+    def _outside_data_range(self) -> bool:
+        """Return True if requested slice is outside of data range.
+
+        Return
+        ------
+        bool
+            True if requested slice is outside data range.
+        """
+        indices = np.array(self._slice_indices)
+        extent = self._extent_data
+        not_disp = self._dims.not_displayed
+
+        return np.any(
+            np.less(
+                [indices[ax] for ax in not_disp],
+                [extent[0, ax] for ax in not_disp],
+            )
+        ) or np.any(
+            np.greater(
+                [indices[ax] for ax in not_disp],
+                [extent[1, ax] for ax in not_disp],
+            )
+        )
+
+    def _set_view_slice(self):
+        """Set the view given the indices to slice with.
+
+        This replaces Image._set_view_slice() entirely. The hope is eventually
+        this class OctreeImage becomes Image. And the non-tiled multiscale
+        logic in Image._set_view_slice goes away entirely.
+        """
+        if self._outside_data_range():
+            return
+
+        self._slice = OctreeMultiscaleSlice(self.data, self._raw_to_displayed)
