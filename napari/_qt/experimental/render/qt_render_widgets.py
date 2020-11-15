@@ -137,7 +137,7 @@ class QtLabeledComboBox(QWidget):
         value : str
             Set the combo box to this value.
         """
-        for index, (key, opt_value) in enumerate(self.options.items()):
+        for index, opt_value in enumerate(self.options.values()):
             if opt_value == value:
                 self.combo.setCurrentIndex(index)
 
