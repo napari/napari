@@ -16,6 +16,7 @@ from qtpy.QtWidgets import (
 
 from ....components.experimental.chunk import async_config
 from ....utils import config
+from .image_defines import ImageConfig
 from .qt_render_widgets import QtLabeledComboBox, QtLabeledSpinBox
 from .test_image import create_test_image
 
@@ -26,6 +27,7 @@ TILE_SIZE_RANGE = range(1, 4096, 100)
 
 IMAGE_SHAPE_DEFAULT = (1024, 1024)  # (height, width)
 IMAGE_SHAPE_RANGE = range(1, 65536, 100)
+
 
 # We can create 3 types of images layers.
 IMAGE_TYPES = {
@@ -40,27 +42,30 @@ IMAGE_TYPE_DEFAULT = "Tiled"
 TEST_IMAGES = {
     "Digits": {
         "shape": None,
-        "factory": lambda image_shape: create_test_image("0", image_shape),
-    }
+        "factory": lambda image_config: create_test_image("0", image_config),
+    },
 }
 TEST_IMAGE_DEFAULT = "Digits"
 
 # Add skimage.data images if installed. Napari does not depend on
 # skimage but many developers will have it.
 try:
-    import skimage.data as data
+    import skimage.data
 
     TEST_IMAGES.update(
         {
             "Astronaut": {
                 "shape": (512, 512),
-                "factory": lambda: data.astronaut(),
+                "factory": lambda: skimage.data.astronaut(),
             },
             "Chelsea": {
                 "shape": (300, 451),
-                "factory": lambda: data.chelsea(),
+                "factory": lambda: skimage.data.chelsea(),
             },
-            "Coffee": {"shape": (400, 600), "factory": lambda: data.coffee()},
+            "Coffee": {
+                "shape": (400, 600),
+                "factory": lambda: skimage.data.coffee(),
+            },
         }
     )
 except ImportError:
@@ -185,7 +190,7 @@ class QtTestImageLayout(QVBoxLayout):
             self.shape_controls.fixed.show()
             self.shape_controls.fixed.set_shape(spec['shape'])
 
-    def _on_type(self, value: str) -> None:
+    def _on_type(self, _value: str) -> None:
         """User changed which type image they want to create.
 
         Parameters
@@ -198,25 +203,18 @@ class QtTestImageLayout(QVBoxLayout):
             self.image_type.get_value() != config.CREATE_IMAGE_NORMAL
         )
 
-    def get_image_shape(self) -> Tuple[int, int]:
-        """Return the configured image shape.
+    def get_image_config(self) -> ImageConfig:
+        """Return the desire image configuration.
 
         Return
         ------
-        Tuple[int, int]
-            The [height, width] shape requested by the user.
+        ImageConfig
+            The desired image configuration.
         """
-        return self.shape_controls.variable.get_shape()
-
-    def get_tile_size(self) -> int:
-        """Return the configured tile size.
-
-        Return
-        ------
-        int
-            The requested tile size.
-        """
-        return self.tile_size.spin.value()
+        return ImageConfig(
+            self.shape_controls.variable.get_shape(),
+            self.tile_size.spin.value(),
+        )
 
 
 class QtTestImage(QFrame):
@@ -245,11 +243,11 @@ class QtTestImage(QFrame):
         image_name = self.layout.name.currentText()
         spec = TEST_IMAGES[image_name]
         factory = spec['factory']
+        image_config = self.layout.get_image_config()
 
         if spec['shape'] is None:
             # This image has a settable shape provided by the UI.
-            shape = self.layout.get_image_shape()
-            data = factory(shape)
+            data = factory(image_config)
         else:
             # This image comes in just one specific shape.
             data = factory()
@@ -266,8 +264,11 @@ class QtTestImage(QFrame):
         layer = self.viewer.add_image(data, rgb=True, name=unique_name)
 
         # We've not (yet?) added OctreeImage-specific arguments to the
-        # OctreeImage constructor, because those arguments are special
-        # since they have to match the viewer add_image() method.
+        # OctreeImage constructor, because Layer class arguments are
+        # special. They have to match the viewer add_image() method?
         #
-        # So for now we just set these after construction.
-        layer.tile_size = self.layout.get_tile_size()
+        # So for now we just set these values after construction, which is
+        # kind of odd. And the class has to handle the value changing on
+        # the fly. It would be better if they could be arguments or
+        # passed in on construction somehow.
+        layer.tile_size = image_config.tile_size

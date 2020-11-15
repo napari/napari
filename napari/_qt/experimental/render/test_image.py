@@ -6,10 +6,12 @@ have a nicer way to generate them.
 
 Long term we probably do not want to use PIL for example.
 """
-from typing import Tuple
-
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
+
+from ....layers.image.experimental import create_tiles
+from ....utils.perf import block_timer
+from .image_defines import ImageConfig
 
 
 def draw_text_grid(image, text: str) -> None:
@@ -45,9 +47,7 @@ def draw_text_grid(image, text: str) -> None:
     draw.rectangle([0, 0, image.width, image.height], outline=color, width=5)
 
 
-def create_test_image(
-    text, image_shape: Tuple[int, int] = (1024, 1024),
-) -> np.ndarray:
+def create_test_image(text, config: ImageConfig) -> np.ndarray:
     """Create a test image for testing tiled rendering.
 
     The test image just has digits all over it. The digits will typically
@@ -59,12 +59,33 @@ def create_test_image(
     text = str(text)  # Might be an int.
 
     # Image.new wants (width, height) so swap them.
-    image_size = (
-        image_shape[1],
-        image_shape[0],
-    )
+    image_size = config.image_shape[::-1]
 
     # Create the image, draw on the text, return it.
     image = Image.new('RGB', image_size)
     draw_text_grid(image, text)
     return np.array(image)
+
+
+def create_test_image_multi(text, config: ImageConfig) -> np.ndarray:
+    """Create a multiscale test image for testing tiled rendering.
+
+    The test image just has digits all over it. The digits will typically
+    be used to show the slice number.
+
+    image_shape: Tuple[int, int]
+        The [height, width] shape of the image.
+    """
+    text = str(text)  # Might be an int.
+
+    # Image.new wants (width, height) so swap them.
+    image_size = config.image_shape[::-1]
+
+    # Create the image, draw on the text, return it.
+    image = Image.new('RGB', image_size)
+    draw_text_grid(image, text)
+    data = np.array(image)
+
+    with block_timer("create_tiles", print_time=True):
+        tiles = create_tiles(data, config.tile_size)
+    return [tiles]

@@ -8,40 +8,38 @@ from qtpy.QtWidgets import (
     QComboBox,
     QFrame,
     QHBoxLayout,
-    QHeaderView,
     QLabel,
-    QTableWidget,
-    QTableWidgetItem,
     QVBoxLayout,
 )
 
 from ....layers.image.experimental.octree_image import OctreeImage
+from .qt_render_widgets import QtSimpleTable
 
 IntCallback = Callable[[int], None]
 
 
-class QtSimpleTable(QTableWidget):
-    """A table of keys and values."""
+def _get_table_vales(layer: OctreeImage) -> dict:
+    """Get keys/values about this image for the table.
 
-    def __init__(self):
-        super().__init__()
-        self.verticalHeader().setVisible(False)
-        self.horizontalHeader().setVisible(False)
-        self.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.resizeRowsToContents()
-        self.setShowGrid(False)
+    layer : OctreeImage
+        Get values for this layer.
+    """
 
-    def set_values(self, values: dict) -> None:
-        """Populate the table with keys and values.
+    def _str(shape) -> str:
+        return f"{shape[1]}x{shape[0]}"
 
-        values : dict
-            Populate with these keys and values.
-        """
-        self.setRowCount(len(values))
-        self.setColumnCount(2)
-        for i, (key, value) in enumerate(values.items()):
-            self.setItem(i, 0, QTableWidgetItem(key))
-            self.setItem(i, 1, QTableWidgetItem(value))
+    level_info = layer.octree_level_info
+
+    shape_in_tiles = level_info.shape_in_tiles
+    shape_in_tiles_str = _str(shape_in_tiles)
+    num_tiles = shape_in_tiles[0] * shape_in_tiles[1]
+
+    return {
+        "Level": f"{layer.octree_level}",
+        "Tiles": f"{shape_in_tiles_str} = {num_tiles}",
+        "Tile Shape": _str([layer.tile_size, layer.tile_size]),
+        "Layer Shape": _str(level_info.image_shape),
+    }
 
 
 class QtLevelCombo(QHBoxLayout):
@@ -133,30 +131,7 @@ class QtOctreeInfoLayout(QVBoxLayout):
             Set controls based on this layer.
         """
         self.level.set_index(0 if layer.auto_level else layer.octree_level + 1)
-        self.table.set_values(self._get_values(layer))
-
-    def _get_values(self, layer: OctreeImage) -> None:
-        """Set the table based on the layer.
-
-        layer : OctreeImage
-            Set values from this layer.
-        """
-
-        def _str(shape) -> str:
-            return f"{shape[1]}x{shape[0]}"
-
-        level_info = layer.octree_level_info
-
-        shape_in_tiles = level_info.shape_in_tiles
-        shape_in_tiles_str = _str(shape_in_tiles)
-        num_tiles = shape_in_tiles[0] * shape_in_tiles[1]
-
-        return {
-            "Level": f"{layer.octree_level}",
-            "Tiles": f"{shape_in_tiles_str} = {num_tiles}",
-            "Tile Shape": _str([layer.tile_size, layer.tile_size]),
-            "Layer Shape": _str(level_info.image_shape),
-        }
+        self.table.set_values(_get_table_vales(layer))
 
 
 class QtOctreeInfo(QFrame):
@@ -181,7 +156,7 @@ class QtOctreeInfo(QFrame):
         layer.events.octree_level.connect(self._set_layout)
         layer.events.tile_size.connect(self._set_layout)
 
-    def _set_layout(self, event=None):
+    def _set_layout(self, _event=None):
         """Set layout controls based on the layer."""
         self.layout.set_layout(self.layer)
 

@@ -6,7 +6,16 @@ we can use instead of these?
 from typing import Callable
 
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QComboBox, QHBoxLayout, QLabel, QSpinBox, QWidget
+from qtpy.QtWidgets import (
+    QComboBox,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QSpinBox,
+    QTableWidget,
+    QTableWidgetItem,
+    QWidget,
+)
 
 
 class QtLabeledSpinBox(QWidget):
@@ -128,3 +137,27 @@ class QtLabeledComboBox(QWidget):
     def get_value(self):
         text = self.combo.currentText()
         return self.options[text]
+
+
+class QtSimpleTable(QTableWidget):
+    """A table of keys and values."""
+
+    def __init__(self):
+        super().__init__()
+        self.verticalHeader().setVisible(False)
+        self.horizontalHeader().setVisible(False)
+        self.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.resizeRowsToContents()
+        self.setShowGrid(False)
+
+    def set_values(self, values: dict) -> None:
+        """Populate the table with keys and values.
+
+        values : dict
+            Populate with these keys and values.
+        """
+        self.setRowCount(len(values))
+        self.setColumnCount(2)
+        for i, (key, value) in enumerate(values.items()):
+            self.setItem(i, 0, QTableWidgetItem(key))
+            self.setItem(i, 1, QTableWidgetItem(value))
