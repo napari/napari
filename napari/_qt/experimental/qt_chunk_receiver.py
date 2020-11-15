@@ -114,7 +114,8 @@ class QtChunkReceiver:
         self.gui_event = QtGuiEvent(parent, listen_event)
         self.gui_event.events.gui_event.connect(self._on_chunk_loaded_gui)
 
-    def _on_chunk_loaded_gui(self, event) -> None:
+    @staticmethod
+    def _on_chunk_loaded_gui(event) -> None:
         """A chunk was loaded. This method is called in the GUI thread.
 
         Parameters
