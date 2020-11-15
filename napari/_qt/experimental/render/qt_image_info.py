@@ -1,8 +1,14 @@
 """QtImageInfo class.
 """
-
+from typing import List
 
 from qtpy.QtWidgets import QFrame, QLabel, QVBoxLayout
+
+
+def _get_shape(data):
+    if isinstance(data, List):
+        return data[0].shape
+    return data.shape
 
 
 class QtImageInfoLayout(QVBoxLayout):
@@ -14,12 +20,13 @@ class QtImageInfoLayout(QVBoxLayout):
         Show info for this layer.
     """
 
+    # TODO_OCTREE: This class was going to have more, if not
+    # we can role this into QtRender itself?
+
     def __init__(self, layer):
         super().__init__()
 
-        # TODO_OCTREE: This class was going to have more, if not
-        # we can role this into QtRender itself?
-        shape = layer.data.shape
+        shape = _get_shape(layer.data)
         self.addWidget(QLabel(f"Shape: {shape}"))
 
 
