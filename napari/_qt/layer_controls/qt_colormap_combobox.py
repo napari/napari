@@ -60,7 +60,6 @@ class ColorStyledDelegate(QStyledItemDelegate):
 
     def sizeHint(self, style: QStyleOptionViewItem, model: QModelIndex):
         res = super().sizeHint(style, model)
-        # print(res)
         res.setHeight(self.base_height)
         res.setWidth(max(500, res.width()))
         return res
