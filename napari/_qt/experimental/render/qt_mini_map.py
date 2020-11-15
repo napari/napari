@@ -21,6 +21,28 @@ COLOR_UNSEEN = (80, 80, 80, 255)  # gray
 COLOR_VIEW = (227, 220, 111, 255)  # yellow
 
 
+def _draw_view(data, intersection: OctreeIntersection) -> None:
+    """Draw the view rectangle onto the map data.
+
+    Parameters
+    ----------
+    data : np.ndarray
+        Draw the view into this data.
+    intersection : OctreeIntersection
+        Draw the view in this intersection.
+    """
+    # Max (row, col) dimensions of the bitmap we are writing into.
+    max_dim = np.array([data.shape[0] - 1, data.shape[1] - 1])
+
+    # Convert normalized ranges into bitmap pixel ranges
+    ranges = (intersection.normalized_range * max_dim).astype(int)
+
+    # Write the view color into this rectangular regions.
+    # TODO_OCTREE: must be a nicer way to index this?
+    rows, cols = ranges[0], ranges[1]
+    data[rows[0] : rows[1], cols[0] : cols[1], :] = COLOR_VIEW
+
+
 class QtMiniMap(QLabel):
     """A small bitmap that shows the view bounds and which tiles are seen.
 
@@ -133,24 +155,3 @@ class QtMiniMap(QLabel):
 
         self._draw_view(data, intersection)
         return data
-
-    def _draw_view(self, data, intersection: OctreeIntersection) -> None:
-        """Draw the view rectangle onto the map data.
-
-        Parameters
-        ----------
-        data : np.ndarray
-            Draw the view into this data.
-        intersection : OctreeIntersection
-            Draw the view in this intersection.
-        """
-        # Max (row, col) dimensions of the bitmap we are writing into.
-        max_dim = np.array([data.shape[0] - 1, data.shape[1] - 1])
-
-        # Convert normalized ranges into bitmap pixel ranges
-        ranges = (intersection.normalized_range * max_dim).astype(int)
-
-        # Write the view color into this rectangular regions.
-        # TODO_OCTREE: must be a nicer way to index this?
-        rows, cols = ranges[0], ranges[1]
-        data[rows[0] : rows[1], cols[0] : cols[1], :] = COLOR_VIEW
