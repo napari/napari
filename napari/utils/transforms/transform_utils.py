@@ -277,12 +277,9 @@ def is_matrix_triangular(matrix):
     bool
         Whether matrix is triangular or not.
     """
-    if is_matrix_upper_triangular(matrix) or is_matrix_lower_triangular(
+    return is_matrix_upper_triangular(matrix) or is_matrix_lower_triangular(
         matrix
-    ):
-        return True
-    else:
-        return False
+    )
 
 
 def check_shear_triangular(matrix):
