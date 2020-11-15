@@ -129,12 +129,26 @@ class QtLabeledComboBox(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
 
-    def set_value(self, value):
+    def set_value(self, value: str) -> None:
+        """Make this value the selected item in the combo box.
+
+        Parameters
+        ----------
+        value : str
+            Set the combo box to this value.
+        """
         for index, (key, opt_value) in enumerate(self.options.items()):
             if opt_value == value:
                 self.combo.setCurrentIndex(index)
 
-    def get_value(self):
+    def get_value(self) -> str:
+        """Get the current value of the combo box.
+
+        Return
+        ------
+        str
+            The value currently selected in the combo box.
+        """
         text = self.combo.currentText()
         return self.options[text]
 
