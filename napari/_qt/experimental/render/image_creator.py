@@ -9,7 +9,7 @@ Long term we probably do not want to use PIL for example.
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-from ....layers.image.experimental import create_multi_scale_image
+from ....layers.image.experimental import create_multi_scale_from_image
 from ....utils.perf import block_timer
 from .image_defines import ImageConfig
 
@@ -87,5 +87,5 @@ def create_test_image_multi(text, config: ImageConfig) -> np.ndarray:
     draw_text_grid(image, text)
     data = np.array(image)
 
-    with block_timer("create_multi_scale_image", print_time=True):
-        return create_multi_scale_image(data, config.tile_size)
+    with block_timer("create_multi_scale_from_image", print_time=True):
+        return create_multi_scale_from_image(data, config.tile_size)

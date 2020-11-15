@@ -1,4 +1,4 @@
-"""create_downsampled_levels() and create_multi_scale_image() functions.
+"""Functions to downsample images and create multi-scale images.
 
 This file is early/placeholder. In normal useage we might never create
 tiles, because downsampling images is very slow. But for debugging and
