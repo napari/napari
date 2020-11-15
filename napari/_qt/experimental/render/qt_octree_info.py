@@ -30,6 +30,9 @@ def _get_table_vales(layer: OctreeImage) -> dict:
 
     level_info = layer.octree_level_info
 
+    if level_info is None:
+        return {}
+
     shape_in_tiles = level_info.shape_in_tiles
     shape_in_tiles_str = _str(shape_in_tiles)
     num_tiles = shape_in_tiles[0] * shape_in_tiles[1]
