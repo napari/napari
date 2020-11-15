@@ -16,9 +16,9 @@ from qtpy.QtWidgets import (
 
 from ....components.experimental.chunk import async_config
 from ....utils import config
+from .image_creator import create_test_image_multi
 from .image_defines import ImageConfig
 from .qt_render_widgets import QtLabeledComboBox, QtLabeledSpinBox
-from .test_image import create_test_image_multi
 
 Callback = Callable[[], None]
 IntCallback = Callable[[int], None]
