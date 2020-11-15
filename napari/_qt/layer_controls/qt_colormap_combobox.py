@@ -1,9 +1,8 @@
-from qtpy.QtCore import QModelIndex, QRect, Qt
-from qtpy.QtGui import QImage, QPainter, QPen
+from qtpy.QtCore import QModelIndex, QRect
+from qtpy.QtGui import QImage, QPainter
 from qtpy.QtWidgets import (
     QComboBox,
     QListView,
-    QStyle,
     QStyledItemDelegate,
     QStyleOptionViewItem,
 )
@@ -11,9 +10,8 @@ from qtpy.QtWidgets import (
 from ...utils.colormaps import ensure_colormap, make_colorbar
 
 COLORMAP_WIDTH = 50
-TEXT_WIDTH = 100
-ENTRY_HEIGHT = 18
-BORDER_WIDTH = 2
+TEXT_WIDTH = 130
+ENTRY_HEIGHT = 20
 PADDING = 1
 
 
@@ -38,31 +36,27 @@ class ColorStyledDelegate(QStyledItemDelegate):
         style: QStyleOptionViewItem,
         model: QModelIndex,
     ):
-        rect = QRect(
+        style2 = QStyleOptionViewItem(style)
+
+        cbar_rect = QRect(
             style.rect.x(),
             style.rect.y() + PADDING,
             style.rect.width() - TEXT_WIDTH,
             style.rect.height() - 2 * PADDING,
         )
-        rect2 = QRect(
-            style.rect.width() - TEXT_WIDTH + 10,
+        text_rect = QRect(
+            style.rect.width() - TEXT_WIDTH,
             style.rect.y() + PADDING,
             style.rect.width(),
             style.rect.height() - 2 * PADDING,
         )
+        style2.rect = text_rect
+        super().paint(painter, style2, model)
         cbar = make_colorbar(ensure_colormap(model.data()), (18, 100))
         image = QImage(
             cbar, cbar.shape[1], cbar.shape[0], QImage.Format_RGBA8888,
         )
-        painter.drawImage(rect, image)
-        painter.drawText(rect2, Qt.AlignCenter & Qt.AlignVCenter, model.data())
-        if int(style.state & QStyle.State_HasFocus):
-            painter.save()
-            pen = QPen()
-            pen.setWidth(BORDER_WIDTH)
-            painter.setPen(pen)
-            painter.drawRect(rect)
-            painter.restore()
+        painter.drawImage(cbar_rect, image)
 
     def sizeHint(self, style: QStyleOptionViewItem, model: QModelIndex):
         res = super().sizeHint(style, model)
