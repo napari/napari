@@ -9,22 +9,28 @@ from ....types import ArrayLike
 TileArray = List[List[np.ndarray]]
 
 
-class OctreeInfo:
-    """Information about the entire octree.
+class OctreeInfo(NamedTuple):
+    """Information related to the entire octree.
 
-    Parameters
-    -----------
+    Attributes
+    ----------
     base_shape : Tuple[int, int]
         The base shape of the entire image at full resolution.
+    aspect : float
+        Ratio of width to height of the base image.
     tile_size : int
-        The edge length of one square tile (e.g. 256).
+        The edge length of one square tile, such as 256.
     """
 
-    # TODO_OCTREE: will be namedtuple/dataclass if does not grow
-    def __init__(self, base_shape: Tuple[int, int], tile_size: int):
-        self.base_shape = base_shape
-        self.aspect = base_shape[1] / base_shape[0]
-        self.tile_size = tile_size
+    base_shape: Tuple[int, int]
+    aspect: float
+    tile_size: int
+
+    @classmethod
+    def create(cls, base_shape: Tuple[int, int], tile_size: int):
+        """Create OctreeInfo."""
+        aspect = base_shape[1] / base_shape[0]
+        return cls(base_shape, aspect, tile_size)
 
 
 class ChunkData(NamedTuple):

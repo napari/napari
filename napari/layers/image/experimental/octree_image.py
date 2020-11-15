@@ -6,6 +6,7 @@ from ....utils.events import Event
 from ..image import Image
 from ._chunked_slice_data import ChunkedSliceData
 from ._octree_image_slice import OctreeImageSlice
+from ._octree_multiscale_slice import OctreeMultiscaleSlice
 from .octree_intersection import OctreeIntersection
 from .octree_level import OctreeLevelInfo
 from .octree_util import ChunkData, OctreeInfo
@@ -23,7 +24,10 @@ class OctreeImage(Image):
 
     def __init__(self, *args, **kwargs):
         self._tile_size = DEFAULT_TILE_SIZE
+
+        # Is this the same as Image._data_level? Which should we use?
         self._octree_level = None
+
         self._corners_2d = None
         self._auto_level = True
         self._track_view = True
@@ -175,14 +179,20 @@ class OctreeImage(Image):
 
     def _new_empty_slice(self):
         """Initialize the current slice to an empty image.
+
+        Overides Image._new_empty_slice so we can create slices that
+        render using an octree.
         """
-        self._slice = OctreeImageSlice(
-            self._get_empty_image(),
-            self._raw_to_displayed,
-            self.rgb,
-            self._tile_size,
-            self._octree_level,
-        )
+        if self.multiscale:
+            self._slice = OctreeMultiscaleSlice()
+        else:
+            self._slice = OctreeImageSlice(
+                self._get_empty_image(),
+                self._raw_to_displayed,
+                self.rgb,
+                self._tile_size,
+                self._octree_level,
+            )
         self._empty = True
 
     @property
