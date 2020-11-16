@@ -133,18 +133,27 @@ class OctreeMultiscaleSlice:
         """
         location = request.key.location
         if location.slice_id != id(self):
+            # We don't consider this an error, but it means there was a load
+            # in progress when the slice was changed. So we just ignore it.
             print(f"IGNORE: wrong slice_id: {location}")
-            return
+            return False  # No load.
 
         chunk_data = self._get_chunk_data(location)
-        if isinstance(chunk_data, ChunkData):
-            print(f"LOADED: {chunk_data}")
-            data = request.chunks.get('data')
-            try:
-                chunk_data.data = data
-            except TypeError:
-                pass
-            assert not self._get_chunk_data(location).needs_load
-            assert isinstance(self._get_chunk_data(location).data, np.ndarray)
-        else:
-            print(f"Octree did not have ChunkData: {chunk_data}")
+        if not isinstance(chunk_data, ChunkData):
+            # This location in the octree should have already been turned into
+            # a ChunkData. When the load was initiated. So this is an unexpected
+            # error, but we want to log it an keep going.
+            print(f"ERROR: Octree did not have ChunkData: {chunk_data}")
+            return False  # No load.
+
+        print(f"LOADED: {chunk_data}")
+        # Shove the requests's ndarray into the octree's ChunkData
+        chunk_data.data = request.chunks.get('data')
+
+        # ChunkData should no longer need to be loaded. (remove eventually)
+        assert not self._get_chunk_data(location).needs_load
+
+        # ChunkLoader should only be giving us ndarray's. (remove eventually)
+        assert isinstance(self._get_chunk_data(location).data, np.ndarray)
+
+        return True  # Chunk was loaded.

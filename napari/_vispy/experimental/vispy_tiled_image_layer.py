@@ -67,6 +67,8 @@ class VispyTiledImageLayer(VispyImageLayer):
         # Optional grid shows tile borders.
         self.grid = TileGrid(self.node)
 
+        self.layer.events.loaded.connect(self._on_loaded)
+
     @property
     def num_tiles(self) -> int:
         """Return the number of tiles currently being drawn.
@@ -140,13 +142,7 @@ class VispyTiledImageLayer(VispyImageLayer):
         if self.node.tile_shape != tile_shape:
             self.node.set_tile_shape(tile_shape)
 
-    def _on_camera_move(self, event=None) -> None:
-        """Called on any camera movement.
-
-        Update tiles based on which chunks are currently visible.
-        """
-        super()._on_camera_move()
-
+    def _update_view(self):
         if not self.node.visible:
             return
 
@@ -161,3 +157,14 @@ class VispyTiledImageLayer(VispyImageLayer):
                 f"create: {stats.created} delete: {stats.deleted} "
                 f"time: {elapsed.duration_ms:.3f}ms"
             )
+
+    def _on_camera_move(self, event=None) -> None:
+        """Called on any camera movement.
+
+        Update tiles based on which chunks are currently visible.
+        """
+        super()._on_camera_move()
+        self._update_view()
+
+    def _on_loaded(self, _event):
+        self._update_view()

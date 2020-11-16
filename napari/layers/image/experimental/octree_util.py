@@ -55,6 +55,7 @@ class ChunkData:
 
     def __init__(self, data: ArrayLike, location: ChunkLocation):
         self._data = data
+        self._orig_data = data  # For now hold on to implement clear()
         self.location = location
         self.loading = False
 
@@ -95,3 +96,8 @@ class ChunkData:
     @property
     def needs_load(self) -> bool:
         return not self.in_memory and not self.loading
+
+    def clear(self) -> None:
+        # We only clear when not using the cache, to force a reload.
+        self._data = self._orig_data
+        self.loading = False
