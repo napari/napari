@@ -43,6 +43,10 @@ class ChunkLocation(NamedTuple):
     def __str__(self):
         return f"location=({self.level_index}, {self.row}, {self.col}) slice={self.slice_id} id={id(self)}"
 
+    @classmethod
+    def create_null(cls):
+        return cls(0, 0, 0, 0, np.zeros(0), np.zeros(0))
+
 
 class ChunkKey:
     """The key for one single ChunkRequest.
@@ -70,7 +74,7 @@ class ChunkKey:
         self,
         layer: Layer,
         indices: Tuple[Optional[slice], ...],
-        location: ChunkLocation,
+        location: ChunkLocation = ChunkLocation.create_null(),
     ):
         self.layer_id = id(layer)
         self.data_id = get_data_id(layer)
