@@ -1,9 +1,9 @@
 """QtMiniMap widget.
 
-Draws a bitmap that shows which octree tiles are being viewed.
+Creates a bitmap that shows which octree tiles are being viewed.
 """
 import math
-from typing import NamedTuple
+from typing import NamedTuple, Tuple
 
 import numpy as np
 from qtpy.QtGui import QImage, QPixmap
@@ -113,38 +113,46 @@ def _draw_tiles(
         y += scaled_shape[0]
 
 
-def _create_map_data(intersection: OctreeIntersection) -> np.ndarray:
-    """Return bitmap data for the map.
+def _get_map_shape(aspect: float) -> Tuple[int, int]:
+    """Get shape for the map bitmap.
 
-    Draw the tiles and the intersection with those tiles.
+    Parameters
+    ----------
+    aspect : float
+        The width:height aspect ratio of the base image for the map.
+
+    Return
+    ------
+    Tuple[int, int]
+        The shape for the map bitmap.
+    """
+    # Limit to at most MAP_SIZE pixels, in whichever dimension is the
+    # bigger one. So it's not too huge even if an odd shape.
+    if aspect > 1:
+        return math.ceil(MAP_SIZE / aspect), MAP_SIZE
+    else:
+        return MAP_SIZE, math.ceil(MAP_SIZE * aspect)
+
+
+def _draw_intersection(intersection: OctreeIntersection) -> np.ndarray:
+    """Return a bitmap that shows the tiles and the intersection.
 
     Parameters
     ----------
     intersection : OctreeIntersection
-        Draw this intersection on the map.
+        Draw this intersection.
     """
     aspect = intersection.level.info.image_config.aspect
     level: OctreeLevel = intersection.level
 
-    # Limit to at most MAP_SIZE pixels, in whichever dimension is the
-    # bigger one. So it's not too huge even if an odd shape.
-    if aspect > 1:
-        map_shape = math.ceil(MAP_SIZE / aspect), MAP_SIZE
-    else:
-        map_shape = MAP_SIZE, math.ceil(MAP_SIZE * aspect)
-
-    # Shape of the map bitmap: (row_pixels, col_pixels)
-
-    # The map shape with RGBA pixels
-    bitmap_shape = map_shape + (4,)
-
-    # The bitmap data.
+    # Map shape plus RGBA depth.
+    bitmap_shape = _get_map_shape(aspect) + (4,)
     data = np.zeros(bitmap_shape, dtype=np.uint8)
 
     scale = np.array(
         [
-            map_shape[0] / level.info.image_shape[0],
-            map_shape[1] / level.info.image_shape[1],
+            bitmap_shape[0] / level.info.image_shape[0],
+            bitmap_shape[1] / level.info.image_shape[1],
         ]
     )
 
@@ -195,7 +203,7 @@ class QtMiniMap(QLabel):
         intersection : OctreeIntersection
             The intersection we are drawing on the map.
         """
-        data = _create_map_data(intersection)
+        data = _draw_intersection(intersection)
         height, width = data.shape[:2]
         image = QImage(data, width, height, QImage.Format_RGBA8888)
         self.setPixmap(QPixmap.fromImage(image))
