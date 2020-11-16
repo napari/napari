@@ -32,11 +32,16 @@ def _flatten(indices) -> tuple:
 
 
 class ChunkLocation(NamedTuple):
+    # OCTREE_TODO: belongs in octree code not here
+    slice_id: int
     level_index: int
     row: int
     col: int
     pos: np.ndarray
     scale: np.ndarray
+
+    def __str__(self):
+        return f"location=({self.level_index}, {self.row}, {self.col}) slice={self.slice_id} id={id(self)}"
 
 
 class ChunkKey:
@@ -78,6 +83,7 @@ class ChunkKey:
             self.data_id,
             self.data_level,
             _flatten(self.indices),
+            self.location.slice_id,
             self.location.level_index,  # same as data_level!
             self.location.row,
             self.location.col,
