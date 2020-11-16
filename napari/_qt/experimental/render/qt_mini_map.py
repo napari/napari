@@ -3,7 +3,7 @@
 Creates a bitmap that shows which octree tiles are being viewed.
 """
 import math
-from typing import NamedTuple, Tuple
+from typing import NamedTuple
 
 import numpy as np
 from qtpy.QtGui import QImage, QPixmap
@@ -113,7 +113,7 @@ def _draw_tiles(
         y += scaled_shape[0]
 
 
-def _get_map_shape(aspect: float) -> Tuple[int, int]:
+def _get_bitmap_shape(aspect: float) -> np.ndarray:
     """Get shape for the map bitmap.
 
     Parameters
@@ -126,12 +126,16 @@ def _get_map_shape(aspect: float) -> Tuple[int, int]:
     Tuple[int, int]
         The shape for the map bitmap.
     """
+    depth = 4  # RGBA
+
     # Limit to at most MAP_SIZE pixels, in whichever dimension is the
     # bigger one. So it's not too huge even if an odd shape.
     if aspect > 1:
-        return math.ceil(MAP_SIZE / aspect), MAP_SIZE
-    else:
-        return MAP_SIZE, math.ceil(MAP_SIZE * aspect)
+        # Width is the longer dimension, so limit it.
+        return np.array((math.ceil(MAP_SIZE / aspect), MAP_SIZE, depth))
+
+    # Height is the longer dimension, so limit it.
+    return np.array((MAP_SIZE, math.ceil(MAP_SIZE * aspect), depth))
 
 
 def _draw_intersection(intersection: OctreeIntersection) -> np.ndarray:
@@ -146,15 +150,11 @@ def _draw_intersection(intersection: OctreeIntersection) -> np.ndarray:
     level: OctreeLevel = intersection.level
 
     # Map shape plus RGBA depth.
-    bitmap_shape = _get_map_shape(aspect) + (4,)
+    bitmap_shape = _get_bitmap_shape(aspect)
     data = np.zeros(bitmap_shape, dtype=np.uint8)
 
-    scale = np.array(
-        [
-            bitmap_shape[0] / level.info.image_shape[0],
-            bitmap_shape[1] / level.info.image_shape[1],
-        ]
-    )
+    # Scale the intersection down to fit in the bitmap.
+    scale = bitmap_shape[:2] / level.info.image_shape
 
     # Draw all the tiles, the seen ones in red.
     _draw_tiles(data, intersection, scale)
