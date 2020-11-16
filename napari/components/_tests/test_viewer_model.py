@@ -521,6 +521,19 @@ def test_active_layer():
     assert viewer.active_layer is None
 
 
+def test_active_layer_status_update():
+    """Test status updates from active layer on cursor move."""
+    viewer = ViewerModel()
+    np.random.seed(0)
+    viewer.add_image(np.random.random((5, 5, 10, 15)))
+    viewer.add_image(np.random.random((5, 6, 5, 10, 15)))
+    assert len(viewer.layers) == 2
+    assert viewer.active_layer == viewer.layers[1]
+
+    viewer.cursor.position = [1, 1, 1, 1, 1]
+    assert viewer.status == viewer.active_layer.status
+
+
 def test_sliced_world_extent():
     """Test world extent after adding layers and slicing."""
     np.random.seed(0)
