@@ -93,7 +93,7 @@ def compose_linear_matrix(rotate, scale, shear) -> np.array:
     full_scale = embed_in_identity_matrix(scale_mat, ndim)
     full_rotate = embed_in_identity_matrix(rotate_mat, ndim)
     full_shear = embed_in_identity_matrix(shear_mat, ndim)
-    return full_rotate @ full_scale @ full_shear
+    return full_rotate @ full_shear @ full_scale
 
 
 def expand_upper_triangular(vector):
@@ -194,12 +194,14 @@ def decompose_linear_matrix(
         tri = upper_tri.T
 
     scale = np.diag(tri).copy()
-    tri_normalized = tri / scale[:, np.newaxis]
 
+    # Take any reflection into account
     if np.linalg.det(rotate) < 0:
         scale[0] *= -1
         tri[0] *= -1
         rotate = matrix @ np.linalg.inv(tri)
+
+    tri_normalized = tri @ np.linalg.inv(np.diag(scale))
 
     if upper_triangular:
         shear = tri_normalized[np.triu(np.ones((n, n)), 1).astype(bool)]
