@@ -1,4 +1,6 @@
 """QtMiniMap widget.
+
+Draws a bitmap that shows which octree tiles are being viewed.
 """
 import math
 from typing import NamedTuple
@@ -14,25 +16,23 @@ from ....layers.image.experimental import (
 )
 from ....layers.image.experimental.octree_image import OctreeImage
 
-# from ....layers.image.experimental.octree_util import ChunkData
-
-# Longest edge of map bitmap in pixels. So at most MAP_SIZE wide and at
-# most MAP_SIZE high. In case it's narrow one way or the other.
+# Longest edge of map bitmap in pixels. So if in a odd shape it does not
+# become bigger than this in either direction.
 MAP_SIZE = 220
 
-# Tiles are seen if they are visible within the current view, otherwise unseen.
+# Seen tiles are inside the view.
 COLOR_SEEN = (255, 0, 0, 255)  # red
 COLOR_UNSEEN = (80, 80, 80, 255)  # gray
 
-# The view bounds itself is drawn on top of the seen/unseen tiles.
+# The view bounds are draw on top of the seen/unseen tiles.
 COLOR_VIEW = (227, 220, 111, 255)  # yellow
 
-# Edge around tiles, so gap is twice this.
+# Create a gap between the tiles.
 TILE_EDGE = 1
 
 
 class Rect(NamedTuple):
-    """Rectangle that we can "draw" into a numpy array."""
+    """Rectangle that we can draw into a numpy array."""
 
     x: float
     y: float
@@ -75,7 +75,19 @@ def _draw_view(data, intersection: OctreeIntersection) -> None:
     data[rows[0] : rows[1], cols[0] : cols[1], :] = COLOR_VIEW
 
 
-def _draw_tiles(data, intersection, level, scale_xy) -> None:
+def _draw_tiles(
+    data: np.ndarray, intersection: OctreeIntersection, scale: np.ndarray
+) -> None:
+    """Draw all the tiles, marking which are seen by the intersection.
+
+    Parameters
+    ----------
+    intersection : OctreeIntersection
+        The intersection we are drawing.
+    scale_xy : Tuple[float, float]
+        The scale to draw things that.
+    """
+    level: OctreeLevel = intersection.level
 
     y = 0
     for row, row_tiles in enumerate(level.tiles):
@@ -85,10 +97,9 @@ def _draw_tiles(data, intersection, level, scale_xy) -> None:
             if isinstance(tile, ChunkData):
                 tile = tile.data
 
-            tile_x = tile.shape[1] * scale_xy[0]
-            tile_y = tile.shape[0] * scale_xy[1]
+            scaled_shape = tile.shape[:2] * scale
 
-            rect = Rect(x, y, tile_x, tile_y)
+            rect = Rect(x, y, scaled_shape[1], scaled_shape[0])  # swap to XY
 
             color = (
                 COLOR_SEEN
@@ -98,8 +109,8 @@ def _draw_tiles(data, intersection, level, scale_xy) -> None:
 
             rect.draw(data, color)
 
-            x += tile_x
-        y += tile_y
+            x += scaled_shape[1]
+        y += scaled_shape[0]
 
 
 def _create_map_data(intersection: OctreeIntersection) -> np.ndarray:
@@ -113,6 +124,7 @@ def _create_map_data(intersection: OctreeIntersection) -> np.ndarray:
         Draw this intersection on the map.
     """
     aspect = intersection.level.info.image_config.aspect
+    level: OctreeLevel = intersection.level
 
     # Limit to at most MAP_SIZE pixels, in whichever dimension is the
     # bigger one. So it's not too huge even if an odd shape.
@@ -129,15 +141,15 @@ def _create_map_data(intersection: OctreeIntersection) -> np.ndarray:
     # The bitmap data.
     data = np.zeros(bitmap_shape, dtype=np.uint8)
 
-    level: OctreeLevel = intersection.level
-
-    scale_xy = [
-        map_shape[1] / level.info.image_shape[1],
-        map_shape[0] / level.info.image_shape[0],
-    ]
+    scale = np.array(
+        [
+            map_shape[0] / level.info.image_shape[0],
+            map_shape[1] / level.info.image_shape[1],
+        ]
+    )
 
     # Draw all the tiles, the seen ones in red.
-    _draw_tiles(data, intersection, level, scale_xy)
+    _draw_tiles(data, intersection, scale)
 
     # Draw the view frustum in yellow.
     _draw_view(data, intersection)
