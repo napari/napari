@@ -349,6 +349,13 @@ class Window:
             checked=self.qt_viewer.viewer.axes.colored,
         )
         axes_colored_action.triggered.connect(self._toggle_axes_colored)
+        axes_labels_action = QAction(
+            'Labels',
+            parent=self._qt_window,
+            checkable=True,
+            checked=self.qt_viewer.viewer.axes.labels,
+        )
+        axes_labels_action.triggered.connect(self._toggle_axes_labels)
         axes_dashed_action = QAction(
             'Dashed',
             parent=self._qt_window,
@@ -365,6 +372,7 @@ class Window:
         axes_arrows_action.triggered.connect(self._toggle_axes_arrows)
         axes_menu.addAction(axes_visible_action)
         axes_menu.addAction(axes_colored_action)
+        axes_menu.addAction(axes_labels_action)
         axes_menu.addAction(axes_dashed_action)
         axes_menu.addAction(axes_arrows_action)
         self.view_menu.addMenu(axes_menu)
@@ -489,6 +497,9 @@ class Window:
 
     def _toggle_axes_colored(self, state):
         self.qt_viewer.viewer.axes.colored = state
+
+    def _toggle_axes_labels(self, state):
+        self.qt_viewer.viewer.axes.labels = state
 
     def _toggle_axes_dashed(self, state):
         self.qt_viewer.viewer.axes.dashed = state
