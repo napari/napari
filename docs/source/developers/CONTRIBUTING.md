@@ -27,18 +27,35 @@ Install the package in editable mode, along with all of the developer tools
 pip install -r requirements.txt
 ```
 
-We use
-[`pre-commit`](https://pre-commit.com) to run [`black`](https://github.com/psf/black) formatting and [`flake8`](https://github.com/PyCQA/flake8) linting automatically prior to each commit.  Please install it in your environment as follows:
+We use [`pre-commit`](https://pre-commit.com) to sort imports with
+[`isort`](https://github.com/timothycrosley/isort), format code with
+[`black`](https://github.com/psf/black), and lint with
+[`flake8`](https://github.com/PyCQA/flake8) automatically prior to each commit.
+To minmize test errors when submitting pull requests, please install `pre-commit`
+in your environment as follows:
+
 ```sh
 pre-commit install
 ```
-Upon committing, your code will be formatted according to our [`black` configuration](../pyproject.toml),
-which includes the settings `skip-string-normalization = true` and `max-line-length = 79`.
-To learn more, see [`black`'s documentation](https://black.readthedocs.io/en/stable/).
 
-Code will also be linted to enforce the stylistic and logistical rules specified in our [`flake8` configuration](../setup.cfg), which currently ignores [E203](https://lintlyci.github.io/Flake8Rules/rules/E203.html), [E501](https://lintlyci.github.io/Flake8Rules/rules/E501.html), [W503](https://lintlyci.github.io/Flake8Rules/rules/W503.html) and [C901](https://lintlyci.github.io/Flake8Rules/rules/C901.html).  For information on any specific flake8 error code, see the [Flake8 Rules](https://lintlyci.github.io/Flake8Rules/).  You may also wish to refer to the [PEP 8 style guide](https://www.python.org/dev/peps/pep-0008/).
+Upon committing, your code will be formatted according to our [`black`
+configuration](https://github.com/napari/napari/blob/master/pyproject.toml), which includes the settings
+`skip-string-normalization = true` and `max-line-length = 79`. To learn more,
+see [`black`'s documentation](https://black.readthedocs.io/en/stable/).
 
-If you wish to tell the linter to ignore a specific line use the `# noqa` comment along with the specific error code (e.g. `import sys  # noqa: E402`) but please do not ignore errors lightly.
+Code will also be linted to enforce the stylistic and logistical rules specified
+in our [`flake8` configuration](https://github.com/napari/napari/blob/master/setup.cfg), which currently ignores
+[E203](https://lintlyci.github.io/Flake8Rules/rules/E203.html),
+[E501](https://lintlyci.github.io/Flake8Rules/rules/E501.html),
+[W503](https://lintlyci.github.io/Flake8Rules/rules/W503.html) and
+[C901](https://lintlyci.github.io/Flake8Rules/rules/C901.html).  For information
+on any specific flake8 error code, see the [Flake8
+Rules](https://lintlyci.github.io/Flake8Rules/).  You may also wish to refer to
+the [PEP 8 style guide](https://www.python.org/dev/peps/pep-0008/).
+
+If you wish to tell the linter to ignore a specific line use the `# noqa`
+comment along with the specific error code (e.g. `import sys  # noqa: E402`) but
+please do not ignore errors lightly.
 
 ## Adding icons
 
@@ -100,82 +117,14 @@ Add and commit your changed files:
 git add my-file-or-directory
 git commit -m "my message"
 ```
-## Running Tests
+## Tests
 
-To run our test suite locally, install test requirements and run pytest as follows:
+We use unit tests, integration tests, and functional tests to ensure that
+napari works as intended. Writing tests for new code is a critical part of
+keeping napari maintainable as it grows.
 
-```sh
-pip install -r requirements/test.txt
-pytest
-```
-
-There are a very small number of tests (<5) that require showing GUI elements, (such
-as testing screenshots). By default, these are only run during continuous integration.
-If you'd like to include them in local tests, set the environment variable "CI":
-
-```sh
-export CI=1
-```
-
-## Writing Tests
-
-Writing tests for new code is a critical part of keeping napari maintainable as
-it grows. Tests are written in files whose names
-begin with `test_*` and which are contained in one of the `_tests` directories.
-
-There are a couple things to keep in mind when writing a test where a `Qt` event
-loop or a `napari.Viewer` is required.  The important thing is that any widgets
-you create during testing are cleaned up at the end of each test:
-
-1. If you need a `QApplication` to be running for your test, you can use the
-   [`qtbot`](https://pytest-qt.readthedocs.io/en/latest/reference.html#pytestqt.qtbot.QtBot) fixture from `pytest-qt`
-
-    > note: fixtures in pytest can be a little mysterious, since it's not always
-    > clear where they are coming from.  In this case, using a pytest-qt fixture
-    > looks like this:
-
-    ```python
-    # just by putting `qtbot` in the list of arguments
-    # pytest-qt will start up an event loop for you
-    def test_something(qtbot):
-        ...
-    ```
-
-   `qtbot` provides a convenient
-   [`addWidget`](https://pytest-qt.readthedocs.io/en/latest/reference.html#pytestqt.qtbot.QtBot.addWidget)
-   method that will ensure that the widget gets closed at the end of the test.
-   It *also* provides a whole bunch of other
-   convenient methods for interacting with your GUI tests (clicking, waiting
-   signals, etc...).  See the [`qtbot` docs](https://pytest-qt.readthedocs.io/en/latest/reference.html#pytestqt.qtbot.QtBot) for details.
-
-    ```python
-    # the qtbot provides convenience methods like addWidget
-    def test_something_else(qtbot):
-        widget = QWidget()
-        qtbot.addWidget(widget)  # tell qtbot to clean this widget later
-        ...
-    ```
-
-2. When writing a test that requires a `napari.Viewer` object, we provide our
-   own convenient fixture called `viewer_factory` that will take care of
-   creating a viewer and cleaning up at the end of the test.  When using this
-   function, it is **not** necessary to use a `qtbot` fixture, nor should you do
-   any additional cleanup (such as using `qtbot.addWidget` or calling
-   `viewer.close()`) at the end of the test.  Duplicate cleanup may cause an
-   error.  Use the factory as follows:
-
-    ```python
-    # the viewer_factory fixture is defined in napari/conftest.py
-    def test_something_with_a_viewer(viewer_factory):
-        # viewer factory takes any keyword arguments that napari.Viewer() takes
-        view, viewer = viewer_factory()
-        # note, `view` here is just a pointer to viewer.window.qt_viewer
-
-        # do stuff with the viewer, no qtbot or viewer.close() methods needed.
-        ...
-    ```
-
-> If you're curious to see the actual `viewer_factory` fixture definition, it's in `napari/conftest.py`
+We have dedicated documentation on [testing](TESTING.md) that we recommend you
+read as you're working on your first contribution.
 
 ### Help us make sure it's you
 

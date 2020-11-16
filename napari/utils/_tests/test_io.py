@@ -1,12 +1,13 @@
-import os
 import csv
+import os
 from pathlib import Path
-import numpy as np
-from dask import array as da
 from tempfile import TemporaryDirectory
-from napari.utils import io
-import pytest
 
+import numpy as np
+import pytest
+from dask import array as da
+
+from napari.utils import io
 
 try:
     import zarr
@@ -111,6 +112,13 @@ def test_single_filename(single_tiff):
     assert images.shape == (2, 15, 10)
 
 
+def test_guess_zarr_path():
+    assert io.guess_zarr_path('dataset.zarr')
+    assert io.guess_zarr_path('dataset.zarr/some/long/path')
+    assert not io.guess_zarr_path('data.tif')
+    assert not io.guess_zarr_path('no_zarr_suffix/data.png')
+
+
 @pytest.mark.skipif(not zarr_available, reason='zarr not installed')
 def test_zarr():
     image = np.random.random((10, 20, 20))
@@ -121,6 +129,18 @@ def test_zarr():
         # Note: due to lazy loading, the next line needs to happen within
         # the context manager. Alternatively, we could convert to NumPy here.
         np.testing.assert_array_equal(image, image_in)
+
+
+@pytest.mark.skipif(not zarr_available, reason='zarr not installed')
+def test_zarr_nested(tmp_path):
+    image = np.random.random((10, 20, 20))
+    image_name = 'my_image'
+    root_path = tmp_path / 'dataset.zarr'
+    grp = zarr.open(str(root_path), mode='a')
+    grp.create_dataset(image_name, data=image)
+
+    image_in = io.magic_imread([str(root_path / image_name)])
+    np.testing.assert_array_equal(image, image_in)
 
 
 @pytest.mark.skipif(not zarr_available, reason='zarr not installed')

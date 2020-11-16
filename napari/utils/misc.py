@@ -1,17 +1,55 @@
 """Miscellaneous utility functions.
 """
+import builtins
 import collections.abc
 import inspect
 import itertools
 import re
-
+import sys
 from enum import Enum, EnumMeta
 from os import PathLike, fspath, path
 from typing import Optional, Sequence, Type, TypeVar
+from urllib.parse import urlparse
 
 import numpy as np
 
 ROOT_DIR = path.dirname(path.dirname(__file__))
+
+try:
+    from importlib import metadata as importlib_metadata
+except ImportError:
+    import importlib_metadata  # noqa
+
+
+def running_as_bundled_app() -> bool:
+    """Infer whether we are running as a briefcase bundle"""
+    # https://github.com/beeware/briefcase/issues/412
+    # https://github.com/beeware/briefcase/pull/425
+    app_module = sys.modules['__main__'].__package__
+    metadata = importlib_metadata.metadata(app_module)
+    return 'Briefcase-Version' in metadata
+
+
+def in_jupyter() -> bool:
+    """Return true if we're running in jupyter notebook/lab or qtconsole."""
+    try:
+        from IPython import get_ipython
+
+        return get_ipython().__class__.__name__ == 'ZMQInteractiveShell'
+    except Exception:
+        pass
+    return False
+
+
+def in_ipython() -> bool:
+    """Return true if we're running in an IPython interactive shell."""
+    try:
+        from IPython import get_ipython
+
+        return get_ipython().__class__.__name__ == 'TerminalInteractiveShell'
+    except Exception:
+        pass
+    return False
 
 
 def str_to_rgb(arg):
@@ -76,6 +114,18 @@ def ensure_sequence_of_iterables(obj, length: Optional[int] = None):
     If length is provided and the object is already a sequence of iterables,
     a ValueError will be raised if ``len(obj) != length``.
 
+    Parameters
+    ----------
+    obj : Any
+        the object to check
+    length : int, optional
+        If provided, assert that obj has len ``length``, by default None
+
+    Returns
+    -------
+    iterable
+        nested sequence of iterables, or an itertools.repeat instance
+
     Examples
     --------
     In [1]: ensure_sequence_of_iterables([1, 2])
@@ -89,18 +139,6 @@ def ensure_sequence_of_iterables(obj, length: Optional[int] = None):
 
     In [4]: ensure_sequence_of_iterables(None)
     Out[4]: repeat(None)
-
-    Parameters
-    ----------
-    obj : Any
-        the object to check
-    length : int, optional
-        If provided, assert that obj has len ``length``, by default None
-
-    Returns
-    -------
-    iterable
-        nested sequence of iterables, or an itertools.repeat instance
     """
     if obj and is_sequence(obj) and is_iterable(obj[0]):
         if length is not None and len(obj) != length:
@@ -151,7 +189,7 @@ class StringEnumMeta(EnumMeta):
             else:
                 raise ValueError(
                     f'{cls} may only be called with a `str`'
-                    f' or an instance of {cls}'
+                    f' or an instance of {cls}. Got {builtins.type(value)}'
                 )
 
         # otherwise create new Enum class
@@ -182,11 +220,18 @@ class StringEnum(Enum, metaclass=StringEnumMeta):
 
 
 camel_to_snake_pattern = re.compile(r'(.)([A-Z][a-z]+)')
+camel_to_spaces_pattern = re.compile(
+    r"((?<=[a-z])[A-Z]|(?<!\A)[A-R,T-Z](?=[a-z]))"
+)
 
 
 def camel_to_snake(name):
     # https://gist.github.com/jaytaylor/3660565
     return camel_to_snake_pattern.sub(r'\1_\2', name).lower()
+
+
+def camel_to_spaces(val):
+    return camel_to_spaces_pattern.sub(r" \1", val)
 
 
 T = TypeVar('T', str, Sequence[str])
@@ -214,7 +259,8 @@ def abspath_or_url(relpath: T) -> T:
 
     if isinstance(relpath, (str, PathLike)):
         relpath = fspath(relpath)
-        if relpath.startswith(('http:', 'https:', 'ftp:', 'file:')):
+        urlp = urlparse(relpath)
+        if urlp.scheme and urlp.netloc:
             return relpath
         return path.abspath(path.expanduser(relpath))
 

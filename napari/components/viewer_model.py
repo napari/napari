@@ -1,13 +1,19 @@
-from math import inf
-import itertools
+import warnings
+
 import numpy as np
 
-from .add_layers_mixin import AddLayersMixin
-from .dims import Dims
-from .layerlist import LayerList
-from ..utils.event import EmitterGroup, Event
+from ..utils.events import EmitterGroup, Event
 from ..utils.key_bindings import KeymapHandler, KeymapProvider
 from ..utils.theme import palettes
+from ._viewer_mouse_bindings import dims_scroll
+from .add_layers_mixin import AddLayersMixin
+from .axes import Axes
+from .camera import Camera
+from .cursor import Cursor
+from .dims import Dims
+from .grid import GridCanvas
+from .layerlist import LayerList
+from .scale_bar import ScaleBar
 
 
 class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
@@ -53,11 +59,9 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             help=Event,
             title=Event,
             interactive=Event,
-            cursor=Event,
             reset_view=Event,
             active_layer=Event,
             palette=Event,
-            grid=Event,
             layers_change=Event,
         )
 
@@ -66,26 +70,33 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         )
 
         self.layers = LayerList()
+        self.camera = Camera(self.dims)
+        self.cursor = Cursor()
+        self.axes = Axes()
+        self.scale_bar = ScaleBar()
 
         self._status = 'Ready'
         self._help = ''
         self._title = title
-        self._cursor = 'standard'
-        self._cursor_size = None
+
         self._interactive = True
         self._active_layer = None
-        self._grid_size = (1, 1)
-        self.grid_stride = 1
-
+        self.grid = GridCanvas()
+        # 2-tuple indicating height and width
+        self._canvas_size = (600, 800)
         self._palette = None
         self.theme = 'dark'
 
-        self.dims.events.camera.connect(self.reset_view)
+        self.grid.events.update.connect(self.reset_view)
+        self.grid.events.update.connect(self._on_grid_change)
         self.dims.events.ndisplay.connect(self._update_layers)
+        self.dims.events.ndisplay.connect(self.reset_view)
         self.dims.events.order.connect(self._update_layers)
-        self.dims.events.axis.connect(self._update_layers)
+        self.dims.events.order.connect(self.reset_view)
+        self.dims.events.current_step.connect(self._update_layers)
+        self.cursor.events.position.connect(self._on_cursor_position_change)
         self.layers.events.changed.connect(self._update_active_layer)
-        self.layers.events.changed.connect(self._update_grid)
+        self.layers.events.changed.connect(self._on_grid_change)
         self.layers.events.changed.connect(self._on_layers_change)
 
         self.keymap_providers = [self]
@@ -94,8 +105,16 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self.mouse_move_callbacks = []
         # Hold callbacks for when mouse is pressed, dragged, and released
         self.mouse_drag_callbacks = []
+        # Hold callbacks for when mouse wheel is scrolled
+        self.mouse_wheel_callbacks = [dims_scroll]
+
         self._persisted_mouse_event = {}
         self._mouse_drag_gen = {}
+        self._mouse_wheel_gen = {}
+
+    def __str__(self):
+        """Simple string representation"""
+        return f'napari.Viewer: {self.title}'
 
     @property
     def palette(self):
@@ -109,6 +128,8 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             return
 
         self._palette = palette
+        self.axes.background_color = self.palette['canvas']
+        self.scale_bar.background_color = self.palette['canvas']
         self.events.palette()
 
     @property
@@ -134,17 +155,53 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
 
     @property
     def grid_size(self):
-        """tuple: Size of grid
-        """
-        return self._grid_size
+        """tuple: Size of grid."""
+        warnings.warn(
+            (
+                "The viewer.grid_size parameter is deprecated and will be removed after version 0.4.3."
+                " Instead you should use viewer.grid.size"
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.grid.size
 
     @grid_size.setter
     def grid_size(self, grid_size):
-        if np.all(self.grid_size == grid_size):
-            return
-        self._grid_size = grid_size
-        self.reset_view()
-        self.events.grid()
+        warnings.warn(
+            (
+                "The viewer.grid_size parameter is deprecated and will be removed after version 0.4.3."
+                " Instead you should use viewer.grid.size"
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        self.grid.size = grid_size
+
+    @property
+    def grid_stride(self):
+        """int: Number of layers in each grid square."""
+        warnings.warn(
+            (
+                "The viewer.grid_stride parameter is deprecated and will be removed after version 0.4.3."
+                " Instead you should use viewer.grid.stride"
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.grid.stride
+
+    @grid_stride.setter
+    def grid_stride(self, grid_stride):
+        warnings.warn(
+            (
+                "The viewer.grid_stride parameter is deprecated and will be removed after version 0.4.3."
+                " Instead you should use viewer.grid.stride"
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        self.grid.stride = grid_stride
 
     @property
     def status(self):
@@ -200,32 +257,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self.events.interactive()
 
     @property
-    def cursor(self):
-        """string: String identifying cursor displayed over canvas.
-        """
-        return self._cursor
-
-    @cursor.setter
-    def cursor(self, cursor):
-        if cursor == self.cursor:
-            return
-        self._cursor = cursor
-        self.events.cursor()
-
-    @property
-    def cursor_size(self):
-        """int | None: Size of cursor if custom. None is yields default size
-        """
-        return self._cursor_size
-
-    @cursor_size.setter
-    def cursor_size(self, cursor_size):
-        if cursor_size == self.cursor_size:
-            return
-        self._cursor_size = cursor_size
-        self.events.cursor()
-
-    @property
     def active_layer(self):
         """int: index of active_layer
         """
@@ -246,67 +277,71 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
 
         self.events.active_layer(item=self._active_layer)
 
-    def _scene_shape(self):
-        """Get shape of currently viewed dimensions.
+    @property
+    def _sliced_extent_world(self) -> np.ndarray:
+        """Extent of layers in world coordinates after slicing.
+
+        D is either 2 or 3 depending on if the displayed data is 2D or 3D.
 
         Returns
-        ----------
-        centroid : list
-            List of center coordinates of scene, length 2 or 3 if displayed
-            view is 2D or 3D.
-        size : list
-            List of size of scene, length 2 or 3 if displayed view is 2D or 3D.
-        corner : list
-            List of coordinates of top left corner of scene, length 2 or 3 if
-            displayed view is 2D or 3D.
+        -------
+        sliced_extent_world : array, shape (2, D)
         """
-        # Scale the camera to the contents in the scene
-        min_shape, max_shape = self._calc_bbox()
-        size = np.subtract(max_shape, min_shape)
-        size = [size[i] for i in self.dims.displayed]
-        corner = [min_shape[i] for i in self.dims.displayed]
-
-        return size, corner
+        if len(self.layers) == 0 and self.dims.ndim != 2:
+            # If no data is present and dims model has not been reset to 0
+            # than someone has passed more than two axis labels which are
+            # being saved and so default values are used.
+            return np.vstack(
+                [np.zeros(self.dims.ndim), np.repeat(512, self.dims.ndim)]
+            )
+        else:
+            return self.layers.extent.world[:, self.dims.displayed]
 
     def reset_view(self, event=None):
-        """Resets the camera's view using `event.rect` a 4-tuple of the x, y
-        corner position followed by width and height of the camera
-        """
+        """Reset the camera view."""
 
-        scene_size, corner = self._scene_shape()
-        grid_size = list(self.grid_size)
+        extent = self._sliced_extent_world
+        scene_size = extent[1] - extent[0]
+        corner = extent[0]
+        grid_size = list(self.grid.actual_size(len(self.layers)))
         if len(scene_size) > len(grid_size):
             grid_size = [1] * (len(scene_size) - len(grid_size)) + grid_size
         size = np.multiply(scene_size, grid_size)
-        centroid = np.add(corner, np.divide(size, 2))
+        center = np.add(corner, np.divide(size, 2))[-self.dims.ndisplay :]
+        center = [0] * (self.dims.ndisplay - len(center)) + list(center)
 
-        if self.dims.ndisplay == 2:
-            # For a PanZoomCamera emit a 4-tuple of the rect
-            corner = np.subtract(corner, np.multiply(0.05, size))[::-1]
-            size = np.multiply(1.1, size)[::-1]
-            rect = tuple(corner) + tuple(size)
-            self.events.reset_view(rect=rect)
+        self.camera.center = center
+        # zoom is definied as the number of canvas pixels per world pixel
+        # The default value used below will zoom such that the whole field
+        # of view will occupy 95% of the canvas on the most filled axis
+        if np.max(size) == 0:
+            self.camera.zoom = 0.95 * np.min(self._canvas_size)
         else:
-            # For an ArcballCamera emit the center and scale_factor
-            center = centroid[::-1]
-            scale_factor = 1.1 * np.max(size[-2:])
-            # set initial camera angle so that it matches top layer of 2D view
-            # when transitioning to 3D view
-            quaternion = [np.pi / 2, 1, 0, 0]
-            self.events.reset_view(
-                center=center, scale_factor=scale_factor, quaternion=quaternion
+            self.camera.zoom = (
+                0.95 * np.min(self._canvas_size) / np.max(size[-2:])
             )
+        self.camera.angles = (0, 0, 90)
+
+        # Emit a reset view event, which is no longer used internally, but
+        # which maybe useful for building on napari.
+        self.events.reset_view(
+            center=self.camera.center,
+            zoom=self.camera.zoom,
+            angles=self.camera.angles,
+        )
 
     def _new_labels(self):
-        if self.dims.ndim == 0:
-            dims = (512, 512)
-        else:
-            dims = self._calc_bbox()[1]
-            dims = [np.ceil(d).astype('int') if d > 0 else 1 for d in dims]
-            if len(dims) < 1:
-                dims = (512, 512)
-        empty_labels = np.zeros(dims, dtype=int)
-        self.add_labels(empty_labels)
+        """Create new labels layer filling full world coordinates space."""
+        extent = self.layers.extent.world
+        scale = self.layers.extent.step
+        scene_size = extent[1] - extent[0]
+        corner = extent[0]
+        shape = [
+            np.round(s / sc).astype('int') + 1 if s > 0 else 1
+            for s, sc in zip(scene_size, scale)
+        ]
+        empty_labels = np.zeros(shape, dtype=int)
+        self.add_labels(empty_labels, translate=np.array(corner), scale=scale)
 
     def _update_layers(self, event=None, layers=None):
         """Updates the contained layers.
@@ -317,28 +352,10 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             List of layers to update. If none provided updates all.
         """
         layers = layers or self.layers
-
         for layer in layers:
-            # adjust the order of the global dims based on the number of
-            # dimensions that a layer has - for example a global order of
-            # [2, 1, 0, 3] -> [0, 1] for a layer that only has two dimesnions
-            # or -> [1, 0, 2] for a layer with three as that corresponds to
-            # the relative order of the last two and three dimensions
-            # respectively
-            offset = self.dims.ndim - layer.dims.ndim
-            order = np.array(self.dims.order)
-            if offset <= 0:
-                order = list(range(-offset)) + list(order - offset)
-            else:
-                order = list(order[order >= offset] - offset)
-            layer.dims.order = order
-            layer.dims.ndisplay = self.dims.ndisplay
-
-            # Update the point values of the layers for the dimensions that
-            # the layer has
-            for axis in range(layer.dims.ndim):
-                point = self.dims.point[axis + offset]
-                layer.dims.set_point(axis, point)
+            layer._slice_dims(
+                self.dims.point, self.dims.ndisplay, self.dims.order
+            )
 
     def _toggle_theme(self):
         """Switch to next theme in list of themes
@@ -371,13 +388,13 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         if active_layer is None:
             self.status = 'Ready'
             self.help = ''
-            self.cursor = 'standard'
+            self.cursor.style = 'standard'
             self.interactive = True
             self.active_layer = None
         else:
             self.status = active_layer.status
             self.help = active_layer.help
-            self.cursor = active_layer.cursor
+            self.cursor.style = active_layer.cursor
             self.interactive = active_layer.interactive
             self.active_layer = active_layer
 
@@ -386,56 +403,13 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             self.dims.ndim = 2
             self.dims.reset()
         else:
-            layer_range = self._calc_layers_ranges()
-            self.dims.ndim = len(layer_range)
-            for i, r in enumerate(layer_range):
-                self.dims.set_range(i, r)
+            extent = self.layers.extent.world
+            ss = self.layers.extent.step
+            ndim = extent.shape[1]
+            self.dims.ndim = ndim
+            for i in range(ndim):
+                self.dims.set_range(i, (extent[0, i], extent[1, i], ss[i]))
         self.events.layers_change()
-
-    def _calc_layers_ranges(self):
-        """Calculates the range along each axis from all present layers.
-        """
-
-        ndims = self._calc_layers_num_dims()
-        ranges = [(inf, -inf, inf)] * ndims
-
-        for layer in self.layers:
-            layer_range = layer.dims.range[::-1]
-            ranges = [
-                (min(a, b), max(c, d), min(e, f))
-                for (a, c, e), (b, d, f) in itertools.zip_longest(
-                    ranges, layer_range, fillvalue=(inf, -inf, inf)
-                )
-            ]
-
-        return ranges[::-1]
-
-    def _calc_bbox(self):
-        """Calculates the bounding box of all displayed layers.
-        This assumes that all layers are stacked.
-        """
-
-        min_shape = []
-        max_shape = []
-        for min, max, step in self._calc_layers_ranges():
-            min_shape.append(min)
-            max_shape.append(max)
-        if len(min_shape) == 0:
-            min_shape = [0] * self.dims.ndim
-            max_shape = [1] * self.dims.ndim
-
-        return min_shape, max_shape
-
-    def _calc_layers_num_dims(self):
-        """Calculates the number of maximum dimensions in the contained images.
-        """
-        max_dims = 0
-        for layer in self.layers:
-            dims = layer.ndim
-            if dims > max_dims:
-                max_dims = dims
-
-        return max_dims
 
     def _update_status(self, event):
         """Set the viewer status with the `event.status` string."""
@@ -451,11 +425,22 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
 
     def _update_cursor(self, event):
         """Set the viewer cursor with the `event.cursor` string."""
-        self.cursor = event.cursor
+        self.cursor.style = event.cursor
 
     def _update_cursor_size(self, event):
         """Set the viewer cursor_size with the `event.cursor_size` int."""
-        self.cursor_size = event.cursor_size
+        self.cursor.size = event.cursor_size
+
+    def _on_cursor_position_change(self, event):
+        """Set the layer cursor position."""
+        for layer in self.layers:
+            layer.position = self.cursor.position
+
+    def _on_grid_change(self, event):
+        """Arrange the current layers is a 2D grid."""
+        for i, layer in enumerate(self.layers[::-1]):
+            i_row, i_column = self.grid.position(i, len(self.layers))
+            self._subplot(layer, (i_row, i_column))
 
     def grid_view(self, n_row=None, n_column=None, stride=1):
         """Arrange the current layers is a 2D grid.
@@ -475,58 +460,62 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
             cause the order in which the layers are placed in the grid to be
             reversed.
         """
-        n_grid_squares = np.ceil(len(self.layers) / abs(stride)).astype(int)
-        if n_row is None and n_column is None:
-            n_row = np.ceil(np.sqrt(n_grid_squares)).astype(int)
-            n_column = n_row
-        elif n_row is None:
-            n_row = np.ceil(n_grid_squares / n_column).astype(int)
-        elif n_column is None:
-            n_column = np.ceil(n_grid_squares / n_row).astype(int)
-
-        n_row = max(1, n_row)
-        n_column = max(1, n_column)
-        self.grid_size = (n_row, n_column)
-        self.grid_stride = stride
-        for i, layer in enumerate(self.layers):
-            if stride > 0:
-                adj_i = len(self.layers) - i - 1
-            else:
-                adj_i = i
-            adj_i = adj_i // abs(stride)
-            adj_i = adj_i % (n_row * n_column)
-            i_row = adj_i // n_column
-            i_column = adj_i % n_column
-            self._subplot(layer, (i_row, i_column))
+        warnings.warn(
+            (
+                "The viewer.grid_view method is deprecated and will be removed after version 0.4.3."
+                " Instead you should use the viewer.grid.enabled = Turn to turn on the grid view,"
+                " and viewer.grid.size and viewer.grid.stride to set the size and stride of the"
+                " grid respectively."
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        self.grid.stride = stride
+        if n_row is None:
+            n_row = -1
+        if n_column is None:
+            n_column = -1
+        self.grid.size = (n_row, n_column)
+        self.grid.enabled = True
 
     def stack_view(self):
-        """Arrange the current layers is a stack.
+        """Arrange the current layers in a stack.
         """
-        self.grid_view(n_row=1, n_column=1, stride=1)
-
-    def _update_grid(self, event=None):
-        """Update grid with current grid values.
-        """
-        self.grid_view(
-            n_row=self.grid_size[0],
-            n_column=self.grid_size[1],
-            stride=self.grid_stride,
+        warnings.warn(
+            (
+                "The viewer.stack_view method is deprecated and will be removed after version 0.4.3."
+                " Instead you should use the viewer.grid.enabled = False to turn off the grid view."
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
         )
+        self.grid.enabled = False
 
     def _subplot(self, layer, position):
         """Shift a layer to a specified position in a 2D grid.
 
         Parameters
         ----------
-        layer : napar.layers.Layer
+        layer : napari.layers.Layer
             Layer that is to be moved.
         position : 2-tuple of int
             New position of layer in grid.
         size : 2-tuple of int
             Size of the grid that is being used.
         """
-        scene_size, corner = self._scene_shape()
-        translate_2d = np.multiply(scene_size[-2:], position)
+        extent = self._sliced_extent_world
+        scene_shift = extent[1] - extent[0] + 1
+        translate_2d = np.multiply(scene_shift[-2:], position)
         translate = [0] * layer.ndim
         translate[-2:] = translate_2d
         layer.translate_grid = translate
+
+    @property
+    def experimental(self):
+        """Experimental commands for IPython console.
+
+        For example run "viewer.experimental.cmds.loader.help".
+        """
+        from .experimental.commands import ExperimentalNamespace
+
+        return ExperimentalNamespace(self.layers)

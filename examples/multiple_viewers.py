@@ -12,6 +12,7 @@ with napari.gui_qt():
     photographer = data.camera()
     viewer_a = napari.view_image(photographer, name='photographer')
 
-    # add the image
+    # add the image in a new viewer window
     astronaut = data.astronaut()
+    # Also view_path, view_shapes, view_points, view_labels etc.
     viewer_b = napari.view_image(astronaut, name='astronaut')

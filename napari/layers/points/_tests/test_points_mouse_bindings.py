@@ -1,11 +1,13 @@
-import pytest
-import numpy as np
 import collections
+
+import numpy as np
+import pytest
+
 from napari.layers import Points
 from napari.utils.interactions import (
     ReadOnlyWrapper,
-    mouse_press_callbacks,
     mouse_move_callbacks,
+    mouse_press_callbacks,
     mouse_release_callbacks,
 )
 
@@ -31,7 +33,7 @@ def create_known_points_layer():
 
     Returns
     -------
-    layer : napar.layers.Points
+    layer : napari.layers.Points
         Points layer.
     n_points : int
         Number of points in the points layer

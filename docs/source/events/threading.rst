@@ -171,7 +171,7 @@ Generators for the Win!
         def my_generator():
             for i in range(10):
                 yield i
-        
+
 
 **Use a generator!** By writing our decorated function as a generator that
 ``yields`` results instead of a function that ``returns`` a single result at
@@ -192,7 +192,7 @@ Additionally, generator ``workers`` will also have a few additional methods:
 * ``quit`` - send a request to abort the worker
 
 
-Retreiving Intermediate Results
+Retrieving Intermediate Results
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 The most obvious benefit of using a generator is that you can monitor
@@ -239,7 +239,7 @@ the ``large_random_images`` function (**25**).  We also connected the
 ``yielded`` event in the :func:`@thread_worker
 <napari.qt.threading.thread_worker>` decorator to the previously-defined
 ``update_layer`` function (**19**).  The result is that the image in the viewer
-is updated everytime a new image is yielded.
+is updated every time a new image is yielded.
 
 Any time you can break up a long-running function into a stream of
 shorter-running yield statements like this, you not only benefit from the
@@ -261,7 +261,7 @@ button that aborts the worker when clicked:
 .. code-block:: python
    :linenos:
    :emphasize-lines: 19,29
-    
+
     import time
     import napari
     from qtpy.QtWidgets import QPushButton
@@ -334,7 +334,7 @@ hits "0":
 
     import napari
     import time
-    
+
     from napari.qt.threading import thread_worker
     from qtpy.QtWidgets import QLineEdit, QLabel, QWidget, QVBoxLayout
     from qtpy.QtGui import QDoubleValidator
@@ -460,7 +460,7 @@ depending on your function type. The following three examples are equivalent:
 .. code-block:: python
 
     from napari.qt.threading import FunctionWorker
-    
+
     def my_function(arg1, arg2=None):
        ...
 
@@ -490,11 +490,10 @@ keep in mind the following guidelines:
    <napari.qt.threading.WorkerBase.work>`.
 
 2. When implementing the :meth:`~napari.qt.threading.WorkerBase.work` method,
-it is 
-   important that you periodically check ``self.abort_requested`` in your
+   it is important that you periodically check ``self.abort_requested`` in your
    thread loop, and exit the thread accordingly, otherwise ``napari`` will not
    be able to gracefully exit a long-running thread.
-     
+
      .. code-block:: python
 
         def work(self):

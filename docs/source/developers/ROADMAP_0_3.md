@@ -32,7 +32,7 @@ Once the above goals are met, we will develop napari's capabilities for image pr
 
 - Add **layer groups** [#970](https://github.com/napari/napari/issues/970), which allow operating on many layers simultaneously making the viewer easier to use for multispectral or multimodal data, or, in the context of multiple canvases, where one wants to assign different groups to different canvases.
 
-- Improve the **user interface and design** of the viewer to make it easier to use. A [napari design audit](https://github.com/napari/napari/issues/469) last year dramatically improved the usability of the viewer. We must continue to run through these periodically to ensure the UI is friendly to new users, particularly non-programmers. See the [`design` label](https://github.com/napari/napari/labels/desgin) for more information.
+- Improve the **user interface and design** of the viewer to make it easier to use. A [napari design audit](https://github.com/napari/napari/issues/469) last year dramatically improved the usability of the viewer. We must continue to run through these periodically to ensure the UI is friendly to new users, particularly non-programmers. See the [`design` label](https://github.com/napari/napari/labels/design) for more information.
 
 ## Make a downloadable application with basic plugin management and persistent settings
 

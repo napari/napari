@@ -1,14 +1,16 @@
-from typing import Dict, Union, Tuple
+from typing import Dict, Tuple, Union
 
+import dask
 import numpy as np
-from vispy.color import Colormap
+
+from ...utils.colormaps import Colormap
 
 
 def calc_data_range(data):
     """Calculate range of data values. If all values are equal return [0, 1].
 
     Parameters
-    -------
+    ----------
     data : array
         Data to calculate range of values over.
 
@@ -35,6 +37,8 @@ def calc_data_range(data):
             [np.max(data[idx]) for idx in idxs],
             [np.min(data[idx]) for idx in idxs],
         ]
+        # compute everything in one go
+        reduced_data = dask.compute(*reduced_data)
     else:
         reduced_data = data
 
@@ -180,9 +184,9 @@ def map_property(
     ----------
     prop : np.ndarray
         The property to be colormapped
-    colormap : vispy.color.Colormap
-        The vispy colormap object to apply to the property
-    contrast_limits: Union[None, Tuple[float, float]]
+    colormap : napari.utils.Colormap
+        The colormap object to apply to the property
+    contrast_limits : Union[None, Tuple[float, float]]
         The contrast limits for applying the colormap to the property.
         If a 2-tuple is provided, it should be provided as (lower_bound, upper_bound).
         If None is provided, the contrast limits will be set to (property.min(), property.max()).
@@ -233,3 +237,42 @@ def compute_multiscale_level(
     else:
         level = 0
     return level
+
+
+def compute_multiscale_level_and_corners(
+    corner_pixels, shape_threshold, downsample_factors
+):
+    """Computed desired level and corners of a multiscale view.
+
+    The level of the multiscale should be the lowest resolution such that
+    the requested shape is above the shape threshold. By passing a shape
+    threshold corresponding to the shape of the canvas on the screen this
+    ensures that we have at least one data pixel per screen pixel, but no
+    more than we need.
+
+    Parameters
+    ----------
+    corner_pixels : array (2, D)
+        Requested corner pixels at full resolution.
+    shape_threshold : tuple
+        Maximum size of a displayed tile in pixels.
+    downsample_factors : list of tuple
+        Downsampling factors for each level of the multiscale. Must be increasing
+        for each level of the multiscale.
+
+    Returns
+    -------
+    level : int
+        Level of the multiscale to be viewing.
+    corners : array (2, D)
+        Needed corner pixels at target resolution.
+    """
+    requested_shape = corner_pixels[1] - corner_pixels[0]
+    level = compute_multiscale_level(
+        requested_shape, shape_threshold, downsample_factors
+    )
+
+    corners = corner_pixels / downsample_factors[level]
+    corners = np.array([np.floor(corners[0]), np.ceil(corners[1])]).astype(int)
+
+    return level, corners

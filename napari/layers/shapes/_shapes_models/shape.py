@@ -1,13 +1,14 @@
 from abc import ABC, abstractmethod
-import numpy as np
 from copy import copy
 
+import numpy as np
+
 from .._shapes_utils import (
+    is_collinear,
+    path_to_mask,
+    poly_to_mask,
     triangulate_edge,
     triangulate_face,
-    is_collinear,
-    poly_to_mask,
-    path_to_mask,
 )
 
 
@@ -373,7 +374,7 @@ class Shape(ABC):
             zoom_factor. Used for putting negative coordinates into the mask.
 
         Returns
-        ----------
+        -------
         mask : np.ndarray
             Boolean array with `True` for points inside the shape
         """

@@ -1,7 +1,6 @@
 import pytest
 
 from napari.components import Dims
-from napari.components.dims_constants import DimsMode
 
 
 def test_ndim():
@@ -68,22 +67,13 @@ def test_point():
     dims = Dims(4)
     assert dims.point == [0] * 4
 
+    dims.set_range(3, (0, 5, 1))
     dims.set_point(3, 4)
     assert dims.point == [0, 0, 0, 4]
 
+    dims.set_range(2, (0, 5, 1))
     dims.set_point(2, 1)
     assert dims.point == [0, 0, 1, 4]
-
-
-def test_mode():
-    """
-    Test mode setting.
-    """
-    dims = Dims(4)
-    assert dims.mode == [DimsMode.POINT] * 4
-
-    dims.set_mode(3, DimsMode.INTERVAL)
-    assert dims.mode == [DimsMode.POINT] * 3 + [DimsMode.INTERVAL]
 
 
 def test_range():
@@ -97,39 +87,6 @@ def test_range():
     assert dims.range == [(0, 2, 1)] * 3 + [(0, 4, 2)]
 
 
-def test_interval():
-    """
-    Test interval setting.
-    """
-    dims = Dims(4)
-    assert dims.interval == [(0, 1)] * 4
-
-    dims.set_interval(3, (0, 3))
-    assert dims.interval == [(0, 1)] * 3 + [(0, 3)]
-
-
-def test_indices():
-    """
-    Test indices values.
-    """
-    dims = Dims(4)
-    # On instantiation the last two dims are set to sliced mode
-    assert dims.indices == (0,) * 2 + (slice(None, None, None),) * 2
-
-    # Set the values of the first two dims in point mode outside of range
-    dims.set_point(0, 2)
-    dims.set_point(1, 3)
-    assert dims.indices == (1, 1) + (slice(None, None, None),) * 2
-
-    # Increase range and then set points again
-    # Note changing the step size changes the indices for the same point value
-    dims.set_range(0, (0, 4, 2))
-    dims.set_range(1, (0, 4, 2))
-    dims.set_point(0, 2)
-    dims.set_point(1, 3)
-    assert dims.indices == (1, 2) + (slice(None, None, None),) * 2
-
-
 def test_axis_labels():
     dims = Dims(4)
     assert dims.axis_labels == ['0', '1', '2', '3']
@@ -140,6 +97,7 @@ def test_order_when_changing_ndim():
     Test order of the dims when changing the number of dimensions.
     """
     dims = Dims(4)
+    dims.set_range(0, (0, 4, 1))
     dims.set_point(0, 2)
 
     dims.ndim = 5
@@ -148,6 +106,7 @@ def test_order_when_changing_ndim():
     assert dims.order == [0, 1, 2, 3, 4]
     assert dims.axis_labels == ['0', '1', '2', '3', '4']
 
+    dims.set_range(2, (0, 4, 1))
     dims.set_point(2, 3)
     dims.ndim = 3
     # Test that dims get removed from the beginning of lists
@@ -182,3 +141,84 @@ def test_axis_labels_str_to_list():
     dims = Dims()
     dims.axis_labels = 'TX'
     assert dims.axis_labels == ['T', 'X']
+
+
+def test_roll():
+    """Test basic roll behavior."""
+    dims = Dims(ndim=4)
+    dims.set_range(0, (0, 10, 1))
+    dims.set_range(1, (0, 10, 1))
+    dims.set_range(2, (0, 10, 1))
+    dims.set_range(3, (0, 10, 1))
+    assert dims.order == [0, 1, 2, 3]
+    dims._roll()
+    assert dims.order == [3, 0, 1, 2]
+    dims._roll()
+    assert dims.order == [2, 3, 0, 1]
+
+
+def test_roll_skip_dummy_axis_1():
+    """Test basic roll skips axis with length 1."""
+    dims = Dims(ndim=4)
+    dims.set_range(0, (0, 0, 1))
+    dims.set_range(1, (0, 10, 1))
+    dims.set_range(2, (0, 10, 1))
+    dims.set_range(3, (0, 10, 1))
+    assert dims.order == [0, 1, 2, 3]
+    dims._roll()
+    assert dims.order == [0, 3, 1, 2]
+    dims._roll()
+    assert dims.order == [0, 2, 3, 1]
+
+
+def test_roll_skip_dummy_axis_2():
+    """Test basic roll skips axis with length 1 when not first."""
+    dims = Dims(ndim=4)
+    dims.set_range(0, (0, 10, 1))
+    dims.set_range(1, (0, 0, 1))
+    dims.set_range(2, (0, 10, 1))
+    dims.set_range(3, (0, 10, 1))
+    assert dims.order == [0, 1, 2, 3]
+    dims._roll()
+    assert dims.order == [3, 1, 0, 2]
+    dims._roll()
+    assert dims.order == [2, 1, 3, 0]
+
+
+def test_roll_skip_dummy_axis_3():
+    """Test basic roll skips all axes with length 1."""
+    dims = Dims(ndim=4)
+    dims.set_range(0, (0, 10, 1))
+    dims.set_range(1, (0, 0, 1))
+    dims.set_range(2, (0, 10, 1))
+    dims.set_range(3, (0, 0, 1))
+    assert dims.order == [0, 1, 2, 3]
+    dims._roll()
+    assert dims.order == [2, 1, 0, 3]
+    dims._roll()
+    assert dims.order == [0, 1, 2, 3]
+
+
+def test_changing_focus(qtbot):
+    """Test changing focus updates the last_used prop."""
+    # too-few dims, should have no sliders to update
+    dims = Dims(2)
+    assert dims.last_used is None
+    dims._focus_down()
+    dims._focus_up()
+    assert dims.last_used is None
+
+    dims.ndim = 5
+    # Note that with no view attached last used remains
+    # None even though new non-displayed dimensions added
+    assert dims.last_used is None
+    dims._focus_down()
+    assert dims.last_used == 2
+    dims._focus_down()
+    assert dims.last_used == 1
+    dims._focus_up()
+    assert dims.last_used == 2
+    dims._focus_up()
+    assert dims.last_used == 0
+    dims._focus_down()
+    assert dims.last_used == 2
