@@ -52,8 +52,25 @@ class ChunkData:
     """
 
     def __init__(self, data: ArrayLike, location: ChunkLocation):
-        self.data = data
+        self._data = data
         self.location = location
+        self.loading = False
+
+    def __str__(self):
+        return f"{self.location}"
+
+    @property
+    def data(self) -> ArrayLike:
+        return self._data
+
+    @data.setter
+    def data(self, data: np.ndarray) -> None:
+        try:
+            assert not self.in_memory  # Should not set twice.
+        except AssertionError:
+            pass
+        print(f"set_data {self}")
+        self._data = data
         self.loading = False
 
     @property

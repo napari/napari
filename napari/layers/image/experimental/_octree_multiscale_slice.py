@@ -6,7 +6,7 @@ from typing import Callable, List, Optional
 
 import numpy as np
 
-from ....components.experimental.chunk import ChunkRequest
+from ....components.experimental.chunk import ChunkLocation, ChunkRequest
 from ....types import ArrayLike
 from .._image_view import ImageView
 from .octree import Octree
@@ -114,7 +114,11 @@ class OctreeMultiscaleSlice:
             self._octree_level = level_index
 
         # Return the chunks in this intersection.
-        return intersection.get_chunks()
+        return intersection.get_chunks(id(self))
+
+    def _get_chunk_data(self, location: ChunkLocation):
+        level = self._octree.levels[location.level_index]
+        return level.tiles[location.row][location.col]
 
     def on_chunk_loaded(self, request: ChunkRequest) -> None:
         """An asynchronous ChunkRequest was loaded.
@@ -127,11 +131,19 @@ class OctreeMultiscaleSlice:
             This request was loaded.
         """
         location = request.key.location
-        level = self._octree.levels[location.level_index]
-        chunk_data = level.tiles[location.row][location.col]
+        if location.slice_id != id(self):
+            print(f"IGNORE: wrong slice_id: {location}")
+            return
+
+        chunk_data = self._get_chunk_data(location)
         if isinstance(chunk_data, ChunkData):
-            print("LOADED")
-            chunk_data.data = request.chunks.get('data')
-            chunk_data.loading = False
+            print(f"LOADED: {chunk_data}")
+            data = request.chunks.get('data')
+            try:
+                chunk_data.data = data
+            except TypeError:
+                pass
+            assert not self._get_chunk_data(location).needs_load
+            assert isinstance(self._get_chunk_data(location).data, np.ndarray)
         else:
-            print("bogus")
+            print(f"Octree did not have ChunkData: {chunk_data}")

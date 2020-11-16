@@ -105,7 +105,7 @@ class OctreeImageSlice(ImageSlice):
             self._octree_level = level_index
 
         # Return the chunks in this intersection.
-        return intersection.get_chunks()
+        return intersection.get_chunks(id(self))
 
     def get_intersection(self, corners_2d, auto_level: bool):
         """Return the intersection with the octree."""

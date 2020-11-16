@@ -94,7 +94,7 @@ class OctreeIntersection:
 
         return _inside(row, self._row_range) and _inside(col, self._col_range)
 
-    def get_chunks(self) -> List[ChunkData]:
+    def get_chunks(self, slice_id) -> List[ChunkData]:
         """Return chunks inside this intersection.
 
         Parameters
@@ -125,9 +125,10 @@ class OctreeIntersection:
                 if not isinstance(data, ChunkData):
                     pos = np.array([x, y], dtype=np.float32)
                     location = ChunkLocation(
-                        level_index, row, col, pos, scale_vec
+                        slice_id, level_index, row, col, pos, scale_vec
                     )
                     chunk_data = ChunkData(data, location)
+                    print(f"Create ChunkData: {location}")
                     self.level.tiles[row][col] = chunk_data
                     chunks.append(chunk_data)
                 else:
