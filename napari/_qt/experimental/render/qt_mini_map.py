@@ -131,10 +131,10 @@ def _get_bitmap_shape(aspect: float) -> np.ndarray:
     # Limit to at most MAP_SIZE pixels, in whichever dimension is the
     # bigger one. So it's not too huge even if an odd shape.
     if aspect > 1:
-        # Width is the longer dimension, so limit it.
+        # Limit the width, it is longer.
         return np.array((math.ceil(MAP_SIZE / aspect), MAP_SIZE, depth))
 
-    # Height is the longer dimension, so limit it.
+    # Limit the height, it is longer.
     return np.array((MAP_SIZE, math.ceil(MAP_SIZE * aspect), depth))
 
 
@@ -145,6 +145,11 @@ def _draw_intersection(intersection: OctreeIntersection) -> np.ndarray:
     ----------
     intersection : OctreeIntersection
         Draw this intersection.
+
+    Returns
+    -------
+    np.ndarray
+        The bitmap showing the intersection.
     """
     aspect = intersection.level.info.image_config.aspect
     level: OctreeLevel = intersection.level
@@ -156,7 +161,7 @@ def _draw_intersection(intersection: OctreeIntersection) -> np.ndarray:
     # Scale the intersection down to fit in the bitmap.
     scale = bitmap_shape[:2] / level.info.image_shape
 
-    # Draw all the tiles, the seen ones in red.
+    # Draw all the tiles, the seen ones are drawn in red.
     _draw_tiles(data, intersection, scale)
 
     # Draw the view frustum in yellow.
@@ -193,15 +198,17 @@ class QtMiniMap(QLabel):
         intersection = self.layer.get_intersection()
 
         if intersection is not None:
-            self._draw_map(intersection)
+            self._draw(intersection)
 
-    def _draw_map(self, intersection: OctreeIntersection) -> None:
+    def _draw(self, intersection: OctreeIntersection) -> None:
         """Draw the minimap showing the latest intersection.
+
+        Update us with the new bitmap, we are a QLabel.
 
         Parameters
         ----------
         intersection : OctreeIntersection
-            The intersection we are drawing on the map.
+            The intersection we are drawing on the mini map.
         """
         data = _draw_intersection(intersection)
         height, width = data.shape[:2]
