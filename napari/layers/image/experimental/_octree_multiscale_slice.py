@@ -25,10 +25,11 @@ class OctreeMultiscaleSlice:
         image_converter: Callable[[ArrayLike], ArrayLike],
     ):
         self.data = data
+
         self._image_config = image_config
 
         self._octree = Octree.from_multiscale_data(data, image_config)
-        self._octree_level = 0
+        self._octree_level = self._octree.num_levels - 1
 
         thumbnail_image = np.zeros(
             (64, 64, 3)
