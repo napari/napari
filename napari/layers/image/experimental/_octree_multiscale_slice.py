@@ -2,6 +2,7 @@
 
 For viewing one slice of a multiscale image using an octree.
 """
+import logging
 from typing import Callable, List, Optional
 
 import numpy as np
@@ -13,6 +14,8 @@ from .octree import Octree
 from .octree_intersection import OctreeIntersection
 from .octree_level import OctreeLevelInfo
 from .octree_util import ChunkData, ImageConfig
+
+LOGGER = logging.getLogger("napari.async.octree")
 
 
 class OctreeMultiscaleSlice:
@@ -133,27 +136,35 @@ class OctreeMultiscaleSlice:
         """
         location = request.key.location
         if location.slice_id != id(self):
-            # We don't consider this an error, but it means there was a load
-            # in progress when the slice was changed. So we just ignore it.
-            print(f"IGNORE: wrong slice_id: {location}")
-            return False  # No load.
+            # There was probably a load in progress when the slice was changed.
+            # The original load finished, but we are now showing a new slice.
+            # Don't consider it error, just ignore the chunk.
+            LOGGER.debug("on_chunk_loaded: wrong slice_id: %s", location)
+            return False  # Do not load.
 
         chunk_data = self._get_chunk_data(location)
         if not isinstance(chunk_data, ChunkData):
-            # This location in the octree should have already been turned into
-            # a ChunkData. When the load was initiated. So this is an unexpected
-            # error, but we want to log it an keep going.
-            print(f"ERROR: Octree did not have ChunkData: {chunk_data}")
-            return False  # No load.
+            # This location in the octree is not a ChunkData. That's unexpected,
+            # becauase locations are turned into ChunkData's when a load
+            # is initiated. So this is an error, but log it and keep going.
+            LOGGER.error("on_chunk_loaded: missing ChunkData: %s", chunk_data)
+            return False  # Do not load.
 
-        print(f"LOADED: {chunk_data}")
-        # Shove the requests's ndarray into the octree's ChunkData
-        chunk_data.data = request.chunks.get('data')
+        # Looks good, we are loading this chunk.
+        LOGGER.debug("on_chunk_loaded: loading %s", chunk_data)
 
-        # ChunkData should no longer need to be loaded. (remove eventually)
+        # Get the data from the request.
+        incoming_data = request.chunks.get('data')
+
+        # Loaded data should always be an ndarray.
+        assert isinstance(incoming_data, np.ndarray)
+
+        # Shove the request's ndarray into the octree's ChunkData. This octree
+        # chunk now has an ndarray as its data, and it can be rendered.
+        chunk_data.data = incoming_data
+
+        # ChunkData should no longer need to be loaded. We can probably
+        # remove this check eventually, but for now to be sure.
         assert not self._get_chunk_data(location).needs_load
-
-        # ChunkLoader should only be giving us ndarray's. (remove eventually)
-        assert isinstance(self._get_chunk_data(location).data, np.ndarray)
 
         return True  # Chunk was loaded.
