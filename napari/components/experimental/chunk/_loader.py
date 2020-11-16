@@ -173,7 +173,7 @@ class ChunkLoader:
 
         LOGGER.info("ChunkLoader.load_chunk: cache miss %s", request.key)
         # Clear any pending requests for this specific data_id.
-        self._clear_pending(request.key.data_id)
+        # self._clear_pending(request.key.data_id)  # TODO_OCTREE: still do this?
 
         # Add to the delay queue, the delay queue will call our
         # _submit_async() method later on if the delay expires without the
