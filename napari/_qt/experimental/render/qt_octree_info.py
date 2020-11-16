@@ -53,6 +53,8 @@ class QtLevelCombo(QHBoxLayout):
     Parameters
     ----------
     num_levels : int
+        The number of available levels.
+    on
     """
 
     def __init__(self, num_levels: int, on_set_level: IntCallback):
@@ -95,22 +97,32 @@ class QtOctreeInfoLayout(QVBoxLayout):
         Call this when the octree level is changed.
     """
 
-    def __init__(
-        self,
-        layer: OctreeImage,
-        on_set_level: IntCallback,
-        on_set_track: IntCallback,
-        on_set_grid: IntCallback,
-    ):
+    def __init__(self, layer: OctreeImage):
         super().__init__()
 
-        def on_set_cache(value: int):
+        self.layer = layer
+
+        def on_set_cache(value: int) -> None:
             chunk_loader.cache.enabled = value != 0
+
+        def on_set_grid(value: int) -> None:
+            self.layer.show_grid = value != 0
+
+        def on_set_level(value: int) -> None:
+            # Drop down has AUTO at index 0.
+            if value == 0:
+                self.layer.auto_level = True
+            else:
+                self.layer.auto_level = False
+                self.layer.octree_level = value - 1
 
         # Checkbox to toggle the ChunkCache.
         self._create_checkbox(
             "Chunk Cache", chunk_loader.cache.enabled, on_set_cache
         )
+
+        def on_set_track(value: int):
+            self.layer.track_view = value != 0
 
         # Checkbox to toggle if the drawn tiles should update as the view
         # moves around. They normal state is yes.
@@ -164,9 +176,7 @@ class QtOctreeInfo(QFrame):
         super().__init__()
         self.layer = layer
 
-        self.layout = QtOctreeInfoLayout(
-            layer, self._on_set_level, self._on_set_track, self._on_set_grid
-        )
+        self.layout = QtOctreeInfoLayout(layer)
         self.setLayout(self.layout)
 
         # Initial update and connect for future updates.
@@ -178,34 +188,3 @@ class QtOctreeInfo(QFrame):
     def _set_layout(self, _event=None):
         """Set layout controls based on the layer."""
         self.layout.set_layout(self.layer)
-
-    def _on_set_level(self, value: int) -> None:
-        """Set octree level in the layer.
-
-        Parameters
-        ----------
-        value : int
-            The new level index.
-        """
-        # Drop down has AUTO at index 0.
-        if value == 0:
-            self.layer.auto_level = True
-        else:
-            self.layer.auto_level = False
-            self.layer.octree_level = value - 1
-
-    def _on_set_track(self, value: int) -> None:
-        """If True we update tiles drawn based on the current view.
-
-        value : int
-            If True we update tiles drawn based on the current view.
-        """
-        self.layer.track_view = value != 0
-
-    def _on_set_grid(self, value: int) -> None:
-        """If True the layer draws a grid around the tiles.
-
-        value : int
-            If True draw a grid around the tiles.
-        """
-        self.layer.show_grid = value != 0
