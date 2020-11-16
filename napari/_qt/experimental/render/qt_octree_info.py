@@ -116,36 +116,28 @@ class QtOctreeInfoLayout(QVBoxLayout):
                 self.layer.auto_level = False
                 self.layer.octree_level = value - 1
 
-        # Checkbox to toggle the ChunkCache.
-        self._create_checkbox(
-            "Chunk Cache", chunk_loader.cache.enabled, on_set_cache
-        )
-
         def on_set_track(value: int):
             self.layer.track_view = value != 0
 
-        # Checkbox to toggle if the drawn tiles should update as the view
-        # moves around. They normal state is yes.
-        self.track = QCheckBox("Track View")
-        self.track.stateChanged.connect(on_set_track)
-        self.track.setChecked(layer.track_view)
-        self.addWidget(self.track)
+        # Toggle the ChunkCache.
+        cache_enabled = chunk_loader.cache.enabled
+        self._create_checkbox("Chunk Cache", cache_enabled, on_set_cache)
 
-        # Checkbox to toggle debug grid around the tiles.
-        self.track = QCheckBox("Show Grid")
-        self.track.stateChanged.connect(on_set_grid)
-        self.track.setChecked(layer.show_grid)
-        self.addWidget(self.track)
+        # Toggle tracking: drawn tiles track view as it moves.
+        self._create_checkbox("Track View", layer.track_view, on_set_track)
 
-        # Choose AUTO or which octree level to view.
+        # Toggle debug grid drawn around tiles.
+        self._create_checkbox("Show Grid", layer.show_grid, on_set_grid)
+
+        # Select which octree level to view or AUTO for normal mode.
         self.level = QtLevelCombo(layer.num_octree_levels, on_set_level)
         self.addLayout(self.level)
 
-        # Keys and values about the octree.
+        # Show some keys and values about the octree.
         self.table = QtSimpleTable()
         self.addWidget(self.table)
 
-        self.set_layout(layer)  # Initial settings.
+        self.set_controls(layer)  # Initial settings.
 
     def _create_checkbox(self, label, initial_value, callback):
         checkbox = QCheckBox(label)
@@ -153,7 +145,7 @@ class QtOctreeInfoLayout(QVBoxLayout):
         checkbox.setChecked(initial_value)
         self.addWidget(checkbox)
 
-    def set_layout(self, layer: OctreeImage):
+    def set_controls(self, layer: OctreeImage):
         """Set controls based on the layer.
 
         Parameters
@@ -180,11 +172,11 @@ class QtOctreeInfo(QFrame):
         self.setLayout(self.layout)
 
         # Initial update and connect for future updates.
-        self._set_layout()
-        layer.events.auto_level.connect(self._set_layout)
-        layer.events.octree_level.connect(self._set_layout)
-        layer.events.tile_size.connect(self._set_layout)
+        self._update()  # initial update
+        layer.events.auto_level.connect(self._update)
+        layer.events.octree_level.connect(self._update)
+        layer.events.tile_size.connect(self._update)
 
-    def _set_layout(self, _event=None):
-        """Set layout controls based on the layer."""
-        self.layout.set_layout(self.layer)
+    def _update(self, _event=None):
+        """Set controls based on the current layer setting."""
+        self.layout.set_controls(self.layer)
