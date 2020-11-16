@@ -15,9 +15,9 @@ from qtpy.QtWidgets import (
 )
 
 from ....components.experimental.chunk import async_config
+from ....layers.image.experimental import ImageConfig
 from ....utils import config
 from .image_creator import create_test_image_multi
-from .image_defines import ImageConfig
 from .qt_render_widgets import QtLabeledComboBox, QtLabeledSpinBox
 
 Callback = Callable[[], None]
@@ -205,15 +205,16 @@ class QtTestImageLayout(QVBoxLayout):
             self.image_type.get_value() != config.CREATE_IMAGE_NORMAL
         )
 
-    def get_image_config(self) -> ImageConfig:
-        """Return the desire image configuration.
+    @property
+    def image_config(self) -> ImageConfig:
+        """The desired image configuration.
 
         Return
         ------
         ImageConfig
             The desired image configuration.
         """
-        return ImageConfig(
+        return ImageConfig.create(
             self.shape_controls.variable.get_shape(),
             self.tile_size.spin.value(),
         )
@@ -245,7 +246,7 @@ class QtTestImage(QFrame):
         image_name = self.layout.name.currentText()
         spec = TEST_IMAGES[image_name]
         factory = spec['factory']
-        image_config = self.layout.get_image_config()
+        image_config = self.layout.image_config
 
         if spec['shape'] is None:
             # This image has a settable shape provided by the UI.

@@ -238,6 +238,11 @@ class TextureAtlas2D(Texture2D):
         """
         data = chunk_data.data
 
+        if not isinstance(data, np.ndarray):
+            # Once async is working, the array should already be an ndarray, but
+            # for testing let's do this:
+            data = np.asarray(data)
+
         if not self.spec.is_compatible(data):
             # It will be not compatible of number of dimensions or depth
             # are wrong. Or if the data is too big to fit in one tile.

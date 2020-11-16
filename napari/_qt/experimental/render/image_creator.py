@@ -9,9 +9,11 @@ Long term we probably do not want to use PIL for example.
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
-from ....layers.image.experimental import create_multi_scale_from_image
+from ....layers.image.experimental import (
+    ImageConfig,
+    create_multi_scale_from_image,
+)
 from ....utils.perf import block_timer
-from .image_defines import ImageConfig
 
 
 def draw_text_grid(image, text: str) -> None:
@@ -67,7 +69,7 @@ def create_test_image(text, config: ImageConfig) -> np.ndarray:
     return np.array(image)
 
 
-def create_test_image_multi(text, config: ImageConfig) -> np.ndarray:
+def create_test_image_multi(text, image_config: ImageConfig) -> np.ndarray:
     """Create a multiscale test image for testing tiled rendering.
 
     The test image is blank with digits all over it. The digits will
@@ -80,7 +82,7 @@ def create_test_image_multi(text, config: ImageConfig) -> np.ndarray:
     text = str(text)  # Might be an int.
 
     # Image.new wants (width, height) so swap them.
-    image_size = config.image_shape[::-1]
+    image_size = image_config.base_shape[::-1]
 
     # Create the image, draw on the text, return it.
     image = Image.new('RGB', image_size)
@@ -88,4 +90,4 @@ def create_test_image_multi(text, config: ImageConfig) -> np.ndarray:
     data = np.array(image)
 
     with block_timer("create_multi_scale_from_image", print_time=True):
-        return create_multi_scale_from_image(data, config.tile_size)
+        return create_multi_scale_from_image(data, image_config.tile_size)

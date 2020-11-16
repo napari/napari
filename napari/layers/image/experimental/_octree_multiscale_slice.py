@@ -7,12 +7,11 @@ from typing import Callable, List, Optional
 import numpy as np
 
 from ....types import ArrayLike
-from .._image_slice_data import ImageSliceData
 from .._image_view import ImageView
 from .octree import Octree
 from .octree_intersection import OctreeIntersection
 from .octree_level import OctreeLevelInfo
-from .octree_util import ChunkData
+from .octree_util import ChunkData, ImageConfig
 
 
 class OctreeMultiscaleSlice:
@@ -20,17 +19,15 @@ class OctreeMultiscaleSlice:
 
     def __init__(
         self,
-        tile_size: int,
+        data,
+        image_config: ImageConfig,
         image_converter: Callable[[ArrayLike], ArrayLike],
     ):
-        self._tile_size = tile_size
+        self.data = data
+        self._image_config = image_config
 
-        # OCTREE_TODO: None until loaded for now, but can we change it so
-        # the data is loaded as soon as OctreeMultiscaleSlice is created?
-        # Better to have loaded and unloaded states.
-        self.data = None
-        self._octree_level = None
-        self._octree = None
+        self._octree = Octree.from_multiscale_data(data, image_config)
+        self._octree_level = 0
 
         thumbnail_image = np.zeros(
             (64, 64, 3)
@@ -39,7 +36,13 @@ class OctreeMultiscaleSlice:
 
     @property
     def octree_level(self) -> int:
-        # TODO_OCTREE: just have an exposed int instead?
+        """The current octree level.
+
+        Return
+        ------
+        int
+            The current octree level.
+        """
         return self._octree_level
 
     @property
@@ -50,22 +53,6 @@ class OctreeMultiscaleSlice:
         though none of our chunks/tiles might be loaded yet.
         """
         return self.data is not None
-
-    def load(self, data: ImageSliceData) -> bool:
-        """Load this data into the slice.
-
-        Parameters
-        ----------
-        data : ImageSliceData
-            The data to load into this slice.
-
-        Return
-        ------
-        bool
-            Return True if load was synchronous.
-        """
-        self.data = data
-        self._octree = Octree.from_multiscale_data(data, self._tile_size)
 
     @property
     def octree_level_info(self) -> Optional[OctreeLevelInfo]:
@@ -94,7 +81,7 @@ class OctreeMultiscaleSlice:
 
         # Find the right level automatically.
         width = corners_2d[1][1] - corners_2d[0][1]
-        tile_size = self._octree.info.tile_size
+        tile_size = self._octree.image_config.tile_size
         num_tiles = width / tile_size
 
         # TODO_OCTREE: compute from canvas dimensions instead

@@ -159,7 +159,8 @@ class TiledImageVisual(ImageVisual):
         chunks : List[ChunkData]
             Add any of these we are not already drawing.
         """
-        for chunk_data in chunks:
+        for i, chunk_data in enumerate(chunks):
+            print(f"add_chunks: adding {i} of {len(chunks)}...")
             if not self._tiles.contains_chunk_data(chunk_data):
                 self.add_one_tile(chunk_data)
 

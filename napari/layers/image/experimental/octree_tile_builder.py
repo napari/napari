@@ -8,14 +8,17 @@ Long term we might possible make tiles in the background at some point. So
 as you browse a large image that doesn't have tiles, they are created in
 the background. But that's pretty speculative and far out.
 """
+import time
 from typing import List
 
+import dask
+import dask.array as da
 import numpy as np
 from scipy import ndimage as ndi
 
 from ....types import ArrayLike
 from ....utils.perf import block_timer
-from .octree_util import TileArray
+from .octree_util import ImageConfig, TileArray
 
 
 def _get_tile(tiles: TileArray, row, col):
@@ -33,7 +36,16 @@ def _one_tile(tiles: TileArray) -> bool:
     return len(tiles) == 1 and len(tiles[0]) == 1
 
 
-def create_tiles(array: np.ndarray, tile_size: int) -> np.ndarray:
+def _add_delay(array, delay_ms: float):
+    @dask.delayed
+    def delayed(array):
+        time.sleep(delay_ms / 1000)
+        return array
+
+    return da.from_delayed(delayed(array), array.shape, array.dtype)
+
+
+def create_tiles(array: np.ndarray, image_config: ImageConfig) -> np.ndarray:
     """
     Return an NxM array of (tile_size, tile_size) ndarrays except the edge
     tiles might be smaller if the array did not divide evenly.
@@ -54,6 +66,8 @@ def create_tiles(array: np.ndarray, tile_size: int) -> np.ndarray:
     (rows, cols, _) = array.shape
 
     tiles = []
+    tile_size = image_config.tile_size
+    delay_ms = image_config.delay_ms
 
     print(f"create_tiles array={array.shape} tile_size={tile_size}")
 
@@ -63,6 +77,10 @@ def create_tiles(array: np.ndarray, tile_size: int) -> np.ndarray:
         col = 0
         while col < cols:
             tile = array[row : row + tile_size, col : col + tile_size, :]
+
+            if delay_ms is not None:
+                tile = _add_delay(tile, delay_ms)
+
             row_tiles.append(tile)
             col += tile_size
         tiles.append(row_tiles)
@@ -234,7 +252,9 @@ def create_multi_scale_from_image(
     return levels
 
 
-def create_levels_from_multiscale_data(data: List[ArrayLike], tile_size: int):
+def create_levels_from_multiscale_data(
+    data: List[ArrayLike], image_config: ImageConfig
+):
     """Create octree levels from multiscale data.
 
     The data is already a list of ArrayLike levels, each own downsampled
@@ -246,4 +266,4 @@ def create_levels_from_multiscale_data(data: List[ArrayLike], tile_size: int):
     until we upgrade it.
     """
 
-    return [create_tiles(level_data, tile_size) for level_data in data]
+    return [create_tiles(level_data, image_config) for level_data in data]

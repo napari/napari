@@ -9,7 +9,7 @@ from .._image_slice import ImageSlice
 from .octree import Octree
 from .octree_intersection import OctreeIntersection
 from .octree_level import OctreeLevelInfo
-from .octree_util import ChunkData, OctreeInfo
+from .octree_util import ChunkData, ImageConfig
 
 LOGGER = logging.getLogger("napari.async")
 
@@ -135,17 +135,17 @@ class OctreeImageSlice(ImageSlice):
         return self._octree.num_levels - 1
 
     @property
-    def octree_info(self) -> OctreeInfo:
+    def image_config(self) -> ImageConfig:
         """Return information about the whole octree.
 
         Return
         ------
-        OctreeInfo
-            Information about the whole octree.
+        ImageConfig
+            Basic image configuration.
         """
         if self._octree is None:
             return None
-        return self._octree.info
+        return self._octree.image_config
 
     @property
     def octree_level_info(self) -> Optional[OctreeLevelInfo]:

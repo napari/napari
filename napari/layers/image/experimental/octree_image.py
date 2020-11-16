@@ -10,7 +10,7 @@ from ._chunked_slice_data import ChunkedSliceData
 from ._octree_multiscale_slice import OctreeMultiscaleSlice
 from .octree_intersection import OctreeIntersection
 from .octree_level import OctreeLevelInfo
-from .octree_util import ChunkData, OctreeInfo
+from .octree_util import ChunkData, ImageConfig
 
 DEFAULT_TILE_SIZE = 64
 
@@ -128,17 +128,17 @@ class OctreeImage(Image):
         self.refresh()
 
     @property
-    def octree_info(self) -> OctreeInfo:
+    def image_config(self) -> ImageConfig:
         """Return information about the current octree.
 
         Return
         ------
-        OctreeInfo
-            Information about the current octree.
+        ImageConfig
+            Basic image configuration.
         """
         if self._slice is None:
             return None
-        return self._slice.octree_info
+        return self._slice.image_config
 
     @property
     def octree_level_info(self) -> OctreeLevelInfo:
@@ -316,5 +316,11 @@ class OctreeImage(Image):
         """
         if self._outside_data_range():
             return
+        delay_ms = 250
+        image_config = ImageConfig.create(
+            self.data[0].shape, self._tile_size, delay_ms
+        )
 
-        self._slice = OctreeMultiscaleSlice(self.data, self._raw_to_displayed)
+        self._slice = OctreeMultiscaleSlice(
+            self.data, image_config, self._raw_to_displayed
+        )

@@ -103,7 +103,7 @@ def _create_map_data(intersection: OctreeIntersection) -> np.ndarray:
     intersection : OctreeIntersection
         Draw this intersection on the map.
     """
-    aspect = intersection.level.info.octree_info.aspect
+    aspect = intersection.level.info.image_config.aspect
 
     # Limit to at most MAP_SIZE pixels, in whichever dimension is the
     # bigger one. So it's not too huge even if an odd shape.

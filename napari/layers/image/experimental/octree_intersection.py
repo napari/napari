@@ -36,7 +36,7 @@ class OctreeIntersection:
         self.rows: Float2 = self.corners_2d[:, 0]
         self.cols: Float2 = self.corners_2d[:, 1]
 
-        base = info.octree_info.base_shape
+        base = info.image_config.base_shape
 
         self.normalized_range = np.array(
             [
@@ -57,7 +57,7 @@ class OctreeIntersection:
         def _clamp(val, min_val, max_val):
             return max(min(val, max_val), min_val)
 
-        tile_size = self.level.info.octree_info.tile_size
+        tile_size = self.level.info.image_config.tile_size
 
         span_tiles = [span[0] / tile_size, span[1] / tile_size]
         clamped = [
@@ -109,7 +109,7 @@ class OctreeIntersection:
         scale = level_info.scale
         scale_vec = np.array([scale, scale], dtype=np.float32)
 
-        tile_size = level_info.octree_info.tile_size
+        tile_size = level_info.image_config.tile_size
         scaled_size = tile_size * scale
 
         # Iterate over every tile in the rectangular region.

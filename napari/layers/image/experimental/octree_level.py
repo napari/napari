@@ -2,7 +2,7 @@
 """
 from typing import Tuple
 
-from .octree_util import OctreeInfo, TileArray
+from .octree_util import ImageConfig, TileArray
 
 
 class OctreeLevelInfo:
@@ -10,7 +10,7 @@ class OctreeLevelInfo:
 
     Parameters
     ----------
-    octree_info : OctreeInfo
+    image_config : ImageConfig
         Information about the entire octree.
     level_index : int
         The index of this level within the whole tree.
@@ -20,16 +20,16 @@ class OctreeLevelInfo:
 
     def __init__(
         self,
-        octree_info: OctreeInfo,
+        image_config: ImageConfig,
         level_index: int,
         shape_in_tiles: Tuple[int, int],
     ):
-        self.octree_info = octree_info
+        self.image_config = image_config
 
         self.level_index = level_index
         self.scale = 2 ** self.level_index
 
-        base = self.octree_info.base_shape
+        base = image_config.base_shape
         self.image_shape = (
             int(base[0] / self.scale),
             int(base[1] / self.scale),
@@ -47,8 +47,8 @@ class OctreeLevel:
 
     Parameters
     ----------
-    octree_info : OctreeInfo
-        Info that pertains to the entire octree.
+    image_config : ImageConfig
+        Basic image configuration.
     level_index : int
         Index of this specific level (0 is full resolution).
     tile : TileArray
@@ -56,8 +56,8 @@ class OctreeLevel:
     """
 
     def __init__(
-        self, octree_info: OctreeInfo, level_index: int, tiles: TileArray
+        self, image_config: ImageConfig, level_index: int, tiles: TileArray
     ):
         shape_in_tiles = [len(tiles), len(tiles[0])]
-        self.info = OctreeLevelInfo(octree_info, level_index, shape_in_tiles)
+        self.info = OctreeLevelInfo(image_config, level_index, shape_in_tiles)
         self.tiles = tiles

@@ -10,7 +10,7 @@ from .octree_tile_builder import (
     create_levels_from_multiscale_data,
     create_multi_scale_from_image,
 )
-from .octree_util import OctreeInfo, TileArray
+from .octree_util import ImageConfig, TileArray
 
 Levels = List[TileArray]
 
@@ -46,12 +46,15 @@ class Octree:
         All the levels of the tree.
     """
 
-    def __init__(self, info: OctreeInfo, levels: Levels):
-        self.info = info
+    def __init__(self, image_config: ImageConfig, levels: Levels):
+        self.image_config = image_config
+
+        # One OctreeLevel per level.
         self.levels = [
-            OctreeLevel(info, i, level) for (i, level) in enumerate(levels)
+            OctreeLevel(image_config, i, level)
+            for (i, level) in enumerate(levels)
         ]
-        self.num_levels = len(self.levels)  # move to self.info?
+        self.num_levels = len(self.levels)
 
     def print_info(self):
         """Print information about our tiles."""
@@ -69,11 +72,13 @@ class Octree:
         """
         levels = create_multi_scale_from_image(image, tile_size)
 
-        info = OctreeInfo.create(image.shape, tile_size)
+        info = ImageConfig.create(image.shape, tile_size)
         return Octree(info, levels)
 
     @classmethod
-    def from_multiscale_data(cls, data: List[ArrayLike], tile_size: int):
+    def from_multiscale_data(
+        cls, data: List[ArrayLike], image_config: ImageConfig
+    ):
         """Create octree from multiscale data.
 
         Parameters
@@ -81,7 +86,5 @@ class Octree:
         data : List[ArrayLike]
             Create the octree from this multi-scale data.
         """
-        levels = create_levels_from_multiscale_data(data, tile_size)
-
-        info = OctreeInfo.create(levels[0].shape, tile_size)
-        return Octree(info, levels)
+        levels = create_levels_from_multiscale_data(data, image_config)
+        return Octree(image_config, levels)
