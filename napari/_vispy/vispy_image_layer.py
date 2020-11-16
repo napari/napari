@@ -2,6 +2,7 @@ import warnings
 
 import numpy as np
 from vispy.color import Colormap as VispyColormap
+from vispy.scene.node import Node
 
 from .image import Image as ImageNode
 from .vispy_base_layer import VispyBaseLayer
@@ -16,11 +17,33 @@ texture_dtypes = [
 ]
 
 
-class VispyImageLayer(VispyBaseLayer):
-    def __init__(self, layer):
+class ImageLayerNode:
+    def __init__(self, custom_node: Node = None):
+        self._custom_node = custom_node
         self._image_node = ImageNode(None, method='auto')
         self._volume_node = VolumeNode(np.zeros((1, 1, 1)), clim=[0, 1])
-        super().__init__(layer, self._image_node)
+
+    def get_node(self, ndisplay: int) -> Node:
+
+        # Return custom node if we have one.
+        if self._custom_node is not None:
+            return self._custom_node
+
+        # Return Image or Volume node based on 2D or 3D.
+        if ndisplay == 2:
+            return self._image_node
+        return self._volume_node
+
+
+class VispyImageLayer(VispyBaseLayer):
+    def __init__(self, layer, node=None):
+
+        # Use custom node from caller, or our standard image/volume nodes.
+        self._layer_node = ImageLayerNode(node)
+
+        # Default to 2D (image) node.
+        super().__init__(layer, self._layer_node.get_node(2))
+
         self._array_like = True
 
         self.layer.events.rendering.connect(self._on_rendering_change)
@@ -41,10 +64,7 @@ class VispyImageLayer(VispyBaseLayer):
         parent = self.node.parent
         self.node.parent = None
 
-        if self.layer._dims.ndisplay == 2:
-            self.node = self._image_node
-        else:
-            self.node = self._volume_node
+        self.node = self._layer_node.get_node(self.layer._dims.ndisplay)
 
         if data is None:
             data = np.zeros((1,) * self.layer._dims.ndisplay)

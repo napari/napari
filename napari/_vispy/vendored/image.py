@@ -113,8 +113,8 @@ _null_color_transform = 'vec4 pass(vec4 color) { return color; }'
 _c2l = 'float cmap(vec4 color) { return (color.r + color.g + color.b) / 3.; }'
 
 
-def _build_color_transform(data, clim, gamma, cmap):
-    if data.ndim == 2 or data.shape[2] == 1:
+def _build_color_transform(grayscale: bool, clim, gamma, cmap):
+    if grayscale:
         fclim = Function(_apply_clim_float)
         fgamma = Function(_apply_gamma_float)
         fun = FunctionChain(
@@ -546,10 +546,11 @@ class ImageVisual(Visual):
 
         if self._need_colortransform_update:
             prg = view.view_program
+            grayscale = self._data.ndim == 2 or self._data.shape[2] == 1
             self.shared_program.frag[
                 'color_transform'
             ] = _build_color_transform(
-                self._data, self.clim_normalized, self.gamma, self.cmap
+                grayscale, self.clim_normalized, self.gamma, self.cmap
             )
             self._need_colortransform_update = False
             prg['texture2D_LUT'] = (

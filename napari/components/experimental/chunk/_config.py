@@ -1,4 +1,8 @@
-"""AsyncConfig.
+"""AsyncConfig and OctreeConfig.
+
+Async/octree has its own little JSON config file. This is temporary because
+napari does not yet its own system-wide config file. Once that config file
+exists, we can roll these settings into there.
 """
 import errno
 import json
@@ -35,8 +39,14 @@ AsyncConfig = namedtuple(
         "use_processes",
         "auto_sync_ms",
         "delay_queue_ms",
+        "octree",
     ],
 )
+
+# The octree config settings.
+OctreeConfig = namedtuple("OctreeConfig", ["tile_size"],)
+
+DEFAULT_OCTREE_CONFIG = {"tile_size": 64}
 
 
 def _log_to_file(path: str) -> None:
@@ -89,7 +99,10 @@ def _get_config_data() -> dict:
     value = os.getenv("NAPARI_ASYNC")
 
     if value == "1" or config.async_octree:
-        return DEFAULT_ASYNC_CONFIG  # Async is enabled with defaults.
+        # Async is enabled with defaults.
+        async_defaults = DEFAULT_ASYNC_CONFIG
+        async_defaults['octree'] = DEFAULT_OCTREE_CONFIG
+        return async_defaults
 
     if value is None or value == "0":
         return DEFAULT_SYNC_CONFIG  # Async is disabled.
@@ -110,6 +123,12 @@ def _create_async_config(data: dict) -> AsyncConfig:
     AsyncConfig
         The config settings to use.
     """
+    octree_data = data.get("octree")
+    if octree_data is None:
+        octree_data = DEFAULT_OCTREE_CONFIG
+
+    octree_config = OctreeConfig(tile_size=octree_data.get("tile_size", 64))
+
     config = AsyncConfig(
         log_path=data.get("log_path"),
         synchronous=data.get("synchronous", True),
@@ -117,6 +136,7 @@ def _create_async_config(data: dict) -> AsyncConfig:
         use_processes=data.get("use_processes", False),
         auto_sync_ms=data.get("auto_sync_ms", 30),
         delay_queue_ms=data.get("delay_queue_ms", 100),
+        octree=octree_config,
     )
 
     _log_to_file(config.log_path)

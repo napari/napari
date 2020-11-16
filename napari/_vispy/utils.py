@@ -1,3 +1,5 @@
+from typing import Dict
+
 from ..layers import Image, Layer, Points, Shapes, Surface, Tracks, Vectors
 from ..utils import config
 from .vispy_base_layer import VispyBaseLayer
@@ -17,14 +19,52 @@ layer_to_visual = {
     Tracks: VispyTracksLayer,
 }
 
-if config.async_octree:
-    from ..layers.image.experimental.octree_image import OctreeImage
-    from .experimental.vispy_tiled_image_layer import VispyTiledImageLayer
 
-    # Insert OctreeImage in front so it gets picked over plain Image.
-    new_order = {OctreeImage: VispyTiledImageLayer}
-    new_order.update(layer_to_visual)
-    layer_to_visual = new_order
+def _get_octree_visual_class() -> VispyBaseLayer:
+    """Return which OctreeImage layer visual class to create.
+
+    OctreeImage layer supports two types of visuals:
+    # 1) VispyCompoundImageLayer - separate ImageVisuals
+    # 2) VispyTiledImageLayer - one TiledImageVisual
+
+    Return
+    ------
+    VispyBaseLayer
+        The visual layer class to create.
+    """
+
+    if config.create_image_type == config.CREATE_IMAGE_COMPOUND:
+        from .experimental.vispy_compound_image_layer import (
+            VispyCompoundImageLayer,
+        )
+
+        return VispyCompoundImageLayer
+    else:
+        from .experimental.vispy_tiled_image_layer import VispyTiledImageLayer
+
+        return VispyTiledImageLayer
+
+
+def get_layer_to_visual() -> Dict[Layer, VispyBaseLayer]:
+    """Get the layer to visual mapping.
+
+    We modify the layer layer to visual mapping for octree.
+
+    Returns
+    -------
+    Dict[Layer, VispyBaseLayer]
+        The mapping from layer to visual.
+    """
+    if not config.create_octree_image():
+        return layer_to_visual  # The normal non-experimental version.
+    else:
+        # OctreeImage layer with one of two types of visuals.
+        from ..layers.image.experimental.octree_image import OctreeImage
+
+        # Insert OctreeImage in front so it gets picked over plain Image.
+        new_mapping = {OctreeImage: _get_octree_visual_class()}
+        new_mapping.update(layer_to_visual)
+        return new_mapping
 
 
 def create_vispy_visual(layer: Layer) -> VispyBaseLayer:
@@ -40,7 +80,7 @@ def create_vispy_visual(layer: Layer) -> VispyBaseLayer:
     visual : vispy.scene.visuals.VisualNode
         Vispy visual node
     """
-    for layer_type, visual_class in layer_to_visual.items():
+    for layer_type, visual_class in get_layer_to_visual().items():
         if isinstance(layer, layer_type):
             return visual_class(layer)
 

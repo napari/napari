@@ -1,14 +1,15 @@
 """OctreeImageSlice class.
 """
 import logging
-from typing import Callable, List
+from typing import Callable, List, Optional
 
 from ....types import ArrayLike
 from ....utils.perf import block_timer
 from .._image_slice import ImageSlice
 from .octree import Octree
 from .octree_intersection import OctreeIntersection
-from .octree_util import ChunkData, OctreeInfo, OctreeLevelInfo
+from .octree_level import OctreeLevelInfo
+from .octree_util import ChunkData, OctreeInfo
 
 LOGGER = logging.getLogger("napari.async")
 
@@ -33,6 +34,17 @@ class OctreeImageSlice(ImageSlice):
         self._octree_level = octree_level
 
     @property
+    def octree_level(self) -> int:
+        """Return the current level of the octree.
+
+        Return
+        ------
+        int
+            The current level of the octree.
+        """
+        return self._octree_level
+
+    @property
     def num_octree_levels(self) -> int:
         """Return the number of levels in the octree.
 
@@ -43,8 +55,7 @@ class OctreeImageSlice(ImageSlice):
         """
         if self._octree is None:
             return 0
-        else:
-            return self._octree.num_levels
+        return self._octree.num_levels
 
     def _set_raw_images(
         self, image: ArrayLike, thumbnail_source: ArrayLike
@@ -105,33 +116,46 @@ class OctreeImageSlice(ImageSlice):
         return OctreeIntersection(level, corners_2d)
 
     def _get_octree_level(self, corners_2d, auto_level):
-        if auto_level:
-            width = corners_2d[1][1] - corners_2d[0][1]
-            tile_size = self._octree.info.tile_size
-            num_tiles = width / tile_size
-
-            # Compute from window width?
-            MAX_TILES = 5
-
-            # Slow way to start, redo this O(1).
-            for i, level in enumerate(self._octree.levels):
-                if (num_tiles / level.info.scale) < MAX_TILES:
-                    return i
-
-            return self._octree.num_levels - 1
-        else:
+        if not auto_level:
             return self._octree_level
+
+        # Find the right level automatically.
+        width = corners_2d[1][1] - corners_2d[0][1]
+        tile_size = self._octree.info.tile_size
+        num_tiles = width / tile_size
+
+        # TODO_OCTREE: compute from canvas dimensions instead
+        max_tiles = 5
+
+        # Slow way to start, redo this O(1).
+        for i, level in enumerate(self._octree.levels):
+            if (num_tiles / level.info.scale) < max_tiles:
+                return i
+
+        return self._octree.num_levels - 1
 
     @property
     def octree_info(self) -> OctreeInfo:
+        """Return information about the whole octree.
+
+        Return
+        ------
+        OctreeInfo
+            Information about the whole octree.
+        """
         if self._octree is None:
             return None
-        else:
-            return self._octree.info
+        return self._octree.info
 
     @property
-    def octree_level_info(self) -> OctreeLevelInfo:
+    def octree_level_info(self) -> Optional[OctreeLevelInfo]:
+        """Return information about the current octree level.
+
+        Return
+        ------
+        Optional[OctreeLevelInfo]
+            Information about current octree level, if there is one.
+        """
         if self._octree is None:
             return None
-        else:
-            return self._octree.levels[self._octree_level].info
+        return self._octree.levels[self._octree_level].info

@@ -332,7 +332,7 @@ def test_grid():
         data = np.random.random((15, 15))
         viewer.add_image(data)
     assert not viewer.grid.enabled
-    assert viewer.grid.actual_size(6) == (1, 1)
+    assert viewer.grid.actual_shape(6) == (1, 1)
     assert viewer.grid.stride == 1
     translations = [layer.translate_grid for layer in viewer.layers]
     expected_translations = np.zeros((6, 2))
@@ -341,7 +341,7 @@ def test_grid():
     # enter grid view
     viewer.grid.enabled = True
     assert viewer.grid.enabled
-    assert viewer.grid.actual_size(6) == (2, 3)
+    assert viewer.grid.actual_shape(6) == (2, 3)
     assert viewer.grid.stride == 1
     translations = [layer.translate_grid for layer in viewer.layers]
     expected_translations = [
@@ -357,7 +357,7 @@ def test_grid():
     # return to stack view
     viewer.grid.enabled = False
     assert not viewer.grid.enabled
-    assert viewer.grid.actual_size(6) == (1, 1)
+    assert viewer.grid.actual_shape(6) == (1, 1)
     assert viewer.grid.stride == 1
     translations = [layer.translate_grid for layer in viewer.layers]
     expected_translations = np.zeros((6, 2))
@@ -367,7 +367,7 @@ def test_grid():
     viewer.grid.stride = -2
     viewer.grid.enabled = True
     assert viewer.grid.enabled
-    assert viewer.grid.actual_size(6) == (2, 2)
+    assert viewer.grid.actual_shape(6) == (2, 2)
     assert viewer.grid.stride == -2
     translations = [layer.translate_grid for layer in viewer.layers]
     expected_translations = [
@@ -441,6 +441,39 @@ def test_add_layer_from_data_raises():
             {'rgb': True},  # vectors do not have an 'rgb' kwarg
             layer_type='vectors',
         )
+
+
+def test_naming():
+    """Test unique naming in LayerList."""
+    viewer = ViewerModel()
+    viewer.add_image(np.random.random((10, 10)), name='img')
+    viewer.add_image(np.random.random((10, 10)), name='img')
+
+    assert [lay.name for lay in viewer.layers] == ['img', 'img [1]']
+
+    viewer.layers[1].name = 'chg'
+    assert [lay.name for lay in viewer.layers] == ['img', 'chg']
+
+    viewer.layers[0].name = 'chg'
+    assert [lay.name for lay in viewer.layers] == ['chg [1]', 'chg']
+
+
+def test_selection():
+    """Test only last added is selected."""
+    viewer = ViewerModel()
+    viewer.add_image(np.random.random((10, 10)))
+    assert viewer.layers[0].selected is True
+
+    viewer.add_image(np.random.random((10, 10)))
+    assert [lay.selected for lay in viewer.layers] == [False, True]
+
+    viewer.add_image(np.random.random((10, 10)))
+    assert [lay.selected for lay in viewer.layers] == [False] * 2 + [True]
+
+    for lay in viewer.layers:
+        lay.selected = True
+    viewer.add_image(np.random.random((10, 10)))
+    assert [lay.selected for lay in viewer.layers] == [False] * 3 + [True]
 
 
 def test_add_delete_layers():

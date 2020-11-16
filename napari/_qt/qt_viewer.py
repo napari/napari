@@ -186,7 +186,7 @@ class QtViewer(QSplitter):
         self.viewer.cursor.events.size.connect(self._on_cursor)
         self.viewer.events.palette.connect(self._update_palette)
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
-        self.viewer.layers.events.added.connect(self._on_add_layer_change)
+        self.viewer.layers.events.inserted.connect(self._on_add_layer_change)
         self.viewer.layers.events.removed.connect(self._remove_layer)
 
         # stop any animations whenever the layers change
@@ -252,7 +252,7 @@ class QtViewer(QSplitter):
         )
         self.canvas.events.resize.connect(self.scale_bar._on_position_change)
 
-        self._show_welcome = welcome
+        self._show_welcome = welcome and config.allow_welcome_visual
         if self._show_welcome:
             self.welcome = VispyWelcomeVisual(
                 self.viewer, parent=self.view, order=-100
@@ -277,8 +277,9 @@ class QtViewer(QSplitter):
         return None
 
     def _create_render_dock_widget(self):
-        """Create the dock widget that shows async controls.
+        """Create the dock widget that shows debug render controls.
         """
+        # We only show the render controls for octree right now.
         if config.async_octree:
             from .experimental.render.qt_render_container import (
                 QtRenderContainer,
@@ -330,7 +331,7 @@ class QtViewer(QSplitter):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        layer = event.item
+        layer = event.value
         self._add_layer(layer)
 
     def _add_layer(self, layer):
@@ -356,7 +357,7 @@ class QtViewer(QSplitter):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        layer = event.item
+        layer = event.value
         vispy_layer = self.layer_to_visual[layer]
         vispy_layer.node.transforms = ChainTransform()
         vispy_layer.node.parent = None

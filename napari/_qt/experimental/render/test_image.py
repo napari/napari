@@ -3,28 +3,23 @@
 This is a throw-away file for creating a test image for octree rendering
 development. If we keep test images in the product long term we'll
 have a nicer way to generate them.
+
+Long term we probably do not want to use PIL for example.
 """
+from typing import Tuple
+
 import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 
-def draw_text(image, text, nx=0.5, ny=0.5):
+def draw_text_grid(image, text: str) -> None:
+    """Draw some text into the given image in a grid.
 
-    font = ImageFont.truetype('Arial Black.ttf', size=72)
-    (text_width, text_height) = font.getsize(text)
-    x = nx * image.width - text_width / 2
-    y = ny * image.height - text_height / 2
-
-    color = 'rgb(255, 255, 255)'  # white
-
-    draw = ImageDraw.Draw(image)
-    draw.text((x, y), text, fill=color, font=font)
-    draw.rectangle([0, 0, image.width, image.height], width=5)
-
-
-def draw_text_tiled(image, text, nrows=1, ncols=1):
-
-    print(f"Creating {nrows}x{ncols} text image: {text}")
+    Parameters
+    ----------
+    test : str
+        The text to draw. For example a slice index like "3".
+    """
 
     try:
         font = ImageFont.truetype('Arial Black.ttf', size=74)
@@ -35,31 +30,41 @@ def draw_text_tiled(image, text, nrows=1, ncols=1):
     color = 'rgb(255, 255, 255)'  # white
     draw = ImageDraw.Draw(image)
 
-    for row in range(nrows + 1):
-        for col in range(ncols + 1):
-            x = (col / ncols) * image.width - text_width / 2
-            y = (row / nrows) * image.height - text_height / 2
+    width, height = image.size
+
+    text_size = 100  # approx guess with some padding
+
+    rows, cols = int(height / text_size), int(width / text_size)
+
+    for row in range(rows + 1):
+        for col in range(cols + 1):
+            y = (row / rows) * image.height - text_height / 2
+            x = (col / cols) * image.width - text_width / 2
 
             draw.text((x, y), text, fill=color, font=font)
     draw.rectangle([0, 0, image.width, image.height], outline=color, width=5)
 
 
-def create_text_array(text, nx=0.5, ny=0.5, size=(1024, 1024)):
-    text = str(text)
-    image = Image.new('RGB', size)
-    draw_text(image, text, nx, ny)
-    return np.array(image)
+def create_test_image(
+    text, image_shape: Tuple[int, int] = (1024, 1024),
+) -> np.ndarray:
+    """Create a test image for testing tiled rendering.
 
+    The test image just has digits all over it. The digits will typically
+    be used to show the slice number like "0" or "42".
 
-def create_tiled_text_array(text, nrows, ncols, size=(1024, 1024)):
-    text = str(text)
-    image = Image.new('RGB', size)
-    draw_text_tiled(image, text, nrows, ncols)
-    return np.array(image)
+    image_shape: Tuple[int, int]
+        The [height, width] shape of the image.
+    """
+    text = str(text)  # Might be an int.
 
+    # Image.new wants (width, height) so swap them.
+    image_size = (
+        image_shape[1],
+        image_shape[0],
+    )
 
-def create_tiled_test_1(text, nrows, ncols, size=(1024, 1024)):
-    text = str(text)
-    image = Image.new('RGB', size)
-    draw_text_tiled(image, text, nrows, ncols)
+    # Create the image, draw on the text, return it.
+    image = Image.new('RGB', image_size)
+    draw_text_grid(image, text)
     return np.array(image)
