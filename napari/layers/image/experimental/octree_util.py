@@ -4,6 +4,7 @@ from typing import List, NamedTuple, Tuple
 
 import numpy as np
 
+from ....components.experimental.chunk import ChunkLocation
 from ....types import ArrayLike
 
 TileArray = List[List[np.ndarray]]
@@ -29,7 +30,7 @@ class ImageConfig(NamedTuple):
         return cls(base_shape, aspect, tile_size, delay_ms)
 
 
-class ChunkData(NamedTuple):
+class ChunkData:
     """One chunk of the full image.
 
     A chunk is a 2D tile or a 3D sub-volume.
@@ -50,10 +51,10 @@ class ChunkData(NamedTuple):
         The (x, y) scale of this chunk. Should be square/cubic.
     """
 
-    level_index: int
-    data: ArrayLike
-    pos: np.ndarray
-    scale: np.ndarray
+    def __init__(self, data: ArrayLike, location: ChunkLocation):
+        self.data = data
+        self.location = location
+        self.loading = False
 
     @property
     def key(self) -> Tuple[int, int, int]:
@@ -61,4 +62,17 @@ class ChunkData(NamedTuple):
 
         Switch to __hash__? Didn't immediately work.
         """
-        return (self.pos[0], self.pos[1], self.level_index)
+        return (
+            self.location.pos[0],
+            self.location.pos[1],
+            self.location.level_index,
+        )
+
+    @property
+    def in_memory(self) -> bool:
+        """Return True if the data is fully in memory."""
+        return isinstance(self.data, np.ndarray)
+
+    @property
+    def needs_load(self) -> bool:
+        return not self.in_memory and not self.loading

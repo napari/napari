@@ -30,12 +30,13 @@ def _chunk_verts(chunk_data: ChunkData) -> np.ndarray:
     """
     quad = _QUAD.copy()
 
-    scale = chunk_data.scale
+    location = chunk_data.location
+    scale = location.scale
     scaled_shape = chunk_data.data.shape[:2] * scale
 
     # Modify in place.
     quad[:, :2] *= scaled_shape[::-1]  # Reverse into (X, Y) form.
-    quad[:, :2] += chunk_data.pos
+    quad[:, :2] += location.pos
 
     return quad
 

@@ -2,7 +2,7 @@
 """
 import contextlib
 import logging
-from typing import Optional, Tuple
+from typing import NamedTuple, Optional, Tuple
 
 import numpy as np
 
@@ -31,6 +31,14 @@ def _flatten(indices) -> tuple:
     return tuple(result)
 
 
+class ChunkLocation(NamedTuple):
+    level_index: int
+    row: int
+    col: int
+    pos: np.ndarray
+    scale: np.ndarray
+
+
 class ChunkKey:
     """The key for one single ChunkRequest.
 
@@ -53,17 +61,26 @@ class ChunkKey:
         The combined key, all the identifiers together.
     """
 
-    def __init__(self, layer: Layer, indices: Tuple[Optional[slice], ...]):
+    def __init__(
+        self,
+        layer: Layer,
+        indices: Tuple[Optional[slice], ...],
+        location: ChunkLocation,
+    ):
         self.layer_id = id(layer)
         self.data_id = get_data_id(layer)
         self.data_level = layer._data_level
         self.indices = indices
+        self.location = location
 
         combined = (
             self.layer_id,
             self.data_id,
             self.data_level,
             _flatten(self.indices),
+            self.location.level_index,  # same as data_level!
+            self.location.row,
+            self.location.col,
         )
         self.key = hash(combined)
 

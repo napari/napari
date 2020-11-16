@@ -4,6 +4,7 @@ from typing import List, Tuple
 
 import numpy as np
 
+from ....components.experimental.chunk import ChunkLocation
 from .octree_level import OctreeLevel
 from .octree_util import ChunkData
 
@@ -120,13 +121,17 @@ class OctreeIntersection:
             for col in self._col_range:
 
                 data = self.level.tiles[row][col]
-                pos = np.array([x, y], dtype=np.float32)
 
-                # Only include chunks that have non-zero area. Not sure why
-                # some chunks are zero sized. But this will be a harmless
-                # check if we get rid of them.
-                if 0 not in data.shape:
-                    chunks.append(ChunkData(level_index, data, pos, scale_vec))
+                if not isinstance(data, ChunkData):
+                    pos = np.array([x, y], dtype=np.float32)
+                    location = ChunkLocation(
+                        level_index, row, col, pos, scale_vec
+                    )
+                    chunk_data = ChunkData(data, location)
+                    self.level.tiles[row][col] = chunk_data
+                    chunks.append(chunk_data)
+                else:
+                    chunks.append(data)
 
                 x += scaled_size
             y += scaled_size

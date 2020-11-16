@@ -9,6 +9,7 @@ from qtpy.QtWidgets import QLabel
 
 from ....layers.image.experimental import OctreeIntersection, OctreeLevel
 from ....layers.image.experimental.octree_image import OctreeImage
+from ....layers.image.experimental.octree_util import ChunkData
 
 # Longest edge of map bitmap in pixels. So at most MAP_SIZE wide and at
 # most MAP_SIZE high. In case it's narrow one way or the other.
@@ -75,6 +76,9 @@ def _draw_tiles(data, intersection, level, scale_xy) -> None:
     for row, row_tiles in enumerate(level.tiles):
         x = 0
         for col, tile in enumerate(row_tiles):
+
+            if isinstance(tile, ChunkData):
+                tile = tile.data
 
             tile_x = tile.shape[1] * scale_xy[0]
             tile_y = tile.shape[0] * scale_xy[1]

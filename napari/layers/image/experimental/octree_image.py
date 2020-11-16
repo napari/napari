@@ -4,6 +4,11 @@ from typing import List
 
 import numpy as np
 
+from ....components.experimental.chunk import (
+    ChunkKey,
+    ChunkRequest,
+    chunk_loader,
+)
 from ....utils.events import Event
 from ..image import Image
 from ._chunked_slice_data import ChunkedSliceData
@@ -24,6 +29,7 @@ class OctreeImage(Image):
     """
 
     def __init__(self, *args, **kwargs):
+        self.count = 0
         self._tile_size = DEFAULT_TILE_SIZE
 
         # Is this the same as Image._data_level? Which should we use?
@@ -32,6 +38,7 @@ class OctreeImage(Image):
         self._corners_2d = None
         self._auto_level = True
         self._track_view = True
+        self._slice = None
 
         self.show_grid = True  # Get/set directly.
 
@@ -228,24 +235,62 @@ class OctreeImage(Image):
 
         auto_level = self.auto_level and self.track_view
 
+        if self._slice is None:
+            return
         chunks = self._slice.get_visible_chunks(self._corners_2d, auto_level)
-        self._octree_level = self._slice.octree_level
-        self.events.octree_level()
-        return chunks
+
+        # If we switched to a new octree level, update our currently shown level.
+        slice_level = self._slice.octree_level
+        if self._octree_level != slice_level:
+            self._octree_level = slice_level
+            self.events.octree_level()
+
+        # Visible chunks are ones that are already loaded or that we are
+        # able to load synchronously. Perhaps in cache, etc.
+        # visible_chunks = [
+        #    chunk_data
+        #    for chunk_data in chunks
+        #    if not chunk_data.needs_load or self._load_chunk(chunk_data)
+        # ]
+        visible_chunks = []
+        for chunk_data in chunks:
+            if chunk_data.needs_load:
+                if self._load_chunk(chunk_data):
+                    print("SYNC LOAD")
+                    visible_chunks.append(chunk_data)
+                else:
+                    print("ASYNC LOAD")
+            else:
+                print("ALREADY LOADED")
+                visible_chunks.append(chunk_data)
+
+        return visible_chunks
+
+    def _load_chunk(self, chunk_data: ChunkData) -> None:
+
+        indices = np.array(self._slice_indices)
+        key = ChunkKey(self, indices, chunk_data.location)
+
+        chunks = {'data': chunk_data.data}
+
+        chunk_data.loading = True
+
+        # Create the ChunkRequest and load it with the ChunkLoader.
+        request = chunk_loader.create_request(self, key, chunks)
+
+        satisfied_request = chunk_loader.load_chunk(request)
+
+        if satisfied_request is None:
+            return False  # Load was async.
+
+        # Load was sync so we have the data already, we can assign it
+        # here and return this as a visible chunk immediately.
+        chunk_data.data = satisfied_request.chunks.get('data')
+        print("SYNC LOAD")
+        return True
 
     def _on_data_loaded(self, data: ChunkedSliceData, sync: bool) -> None:
         """The given data a was loaded, use it now."""
-        super()._on_data_loaded(data, sync)
-        self._octree_level = self._slice.octree_level
-
-        # TODO_OCTREE: The first time _on_data_loaded() is called it's from
-        # super().__init__() and the octree_level event has not been added
-        # yet. So we check here. This will go away when fold OctreeImage
-        # back into Image.
-        has_event = hasattr(self.events, 'octree_level')
-
-        if has_event:
-            self.events.octree_level()
 
     def _update_draw(self, scale_factor, corner_pixels, shape_threshold):
 
@@ -283,7 +328,7 @@ class OctreeImage(Image):
             return data_corners
         return data_corners[:, 1:3]
 
-    def _outside_data_range(self) -> bool:
+    def _outside_data_range(self, indices) -> bool:
         """Return True if requested slice is outside of data range.
 
         Return
@@ -291,7 +336,7 @@ class OctreeImage(Image):
         bool
             True if requested slice is outside data range.
         """
-        indices = np.array(self._slice_indices)
+
         extent = self._extent_data
         not_disp = self._dims.not_displayed
 
@@ -314,7 +359,10 @@ class OctreeImage(Image):
         this class OctreeImage becomes Image. And the non-tiled multiscale
         logic in Image._set_view_slice goes away entirely.
         """
-        if self._outside_data_range():
+        if self._slice is not None:  # bail as a test
+            return
+        indices = np.array(self._slice_indices)
+        if self._outside_data_range(indices):
             return
         delay_ms = 250
         image_config = ImageConfig.create(
@@ -324,3 +372,20 @@ class OctreeImage(Image):
         self._slice = OctreeMultiscaleSlice(
             self.data, image_config, self._raw_to_displayed
         )
+
+    def on_chunk_loaded(self, request: ChunkRequest) -> None:
+        """An asynchronous ChunkRequest was loaded.
+
+        Override Image.on_chunk_loaded() fully.
+
+        Parameters
+        ----------
+        request : ChunkRequest
+            This request was loaded.
+        """
+        self._slice.on_chunk_loaded(request)
+
+    def refresh(self, event=None):
+        if self.count < 10:  # as a test
+            self.count += 1
+            super().refresh(event)

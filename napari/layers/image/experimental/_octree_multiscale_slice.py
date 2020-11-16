@@ -6,6 +6,7 @@ from typing import Callable, List, Optional
 
 import numpy as np
 
+from ....components.experimental.chunk import ChunkRequest
 from ....types import ArrayLike
 from .._image_view import ImageView
 from .octree import Octree
@@ -114,3 +115,23 @@ class OctreeMultiscaleSlice:
 
         # Return the chunks in this intersection.
         return intersection.get_chunks()
+
+    def on_chunk_loaded(self, request: ChunkRequest) -> None:
+        """An asynchronous ChunkRequest was loaded.
+
+        Override Image.on_chunk_loaded() fully.
+
+        Parameters
+        ----------
+        request : ChunkRequest
+            This request was loaded.
+        """
+        location = request.key.location
+        level = self._octree.levels[location.level_index]
+        chunk_data = level.tiles[location.row][location.col]
+        if isinstance(chunk_data, ChunkData):
+            print("LOADED")
+            chunk_data.data = request.chunks.get('data')
+            chunk_data.loading = False
+        else:
+            print("bogus")

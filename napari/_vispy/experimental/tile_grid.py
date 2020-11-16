@@ -31,10 +31,11 @@ def _chunk_outline(chunk: ChunkData) -> np.ndarray:
     np.ndarray
         The verts for the outline.
     """
-    x, y = chunk.pos
+    location = chunk.location
+    x, y = location.pos
     h, w = chunk.data.shape[:2]
-    w *= chunk.scale[1]
-    h *= chunk.scale[0]
+    w *= location.scale[1]
+    h *= location.scale[0]
 
     # We draw lines on all four sides of the chunk. This means are
     # double-drawing all interior lines in the grid. We can avoid
