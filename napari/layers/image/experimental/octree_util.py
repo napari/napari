@@ -16,18 +16,20 @@ class ImageConfig(NamedTuple):
     base_shape: Tuple[int, int]
     aspect: float
     tile_size: int
-    delay_ms: float  # For testing, add a delay to tile access.
+    rand_loc: float
+    rand_scale: float
 
     @classmethod
     def create(
         cls,
         base_shape: Tuple[int, int],
         tile_size: int,
-        delay_ms: float = None,
+        rand_loc: float = None,
+        rand_scale: float = None,
     ):
         """Create ImageConfig."""
         aspect = base_shape[1] / base_shape[0]
-        return cls(base_shape, aspect, tile_size, delay_ms)
+        return cls(base_shape, aspect, tile_size, rand_loc, rand_scale)
 
 
 class ChunkData:

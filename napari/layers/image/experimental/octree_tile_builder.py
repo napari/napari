@@ -36,10 +36,11 @@ def _one_tile(tiles: TileArray) -> bool:
     return len(tiles) == 1 and len(tiles[0]) == 1
 
 
-def _add_delay(array, delay_ms: float):
+def _add_delay(array, rand_loc: float, rand_scale: float):
     @dask.delayed
     def delayed(array):
-        time.sleep(delay_ms / 1000)
+        sleep_ms = max(0, np.random.normal(rand_loc, rand_scale))
+        time.sleep(sleep_ms / 1000)
         return array
 
     return da.from_delayed(delayed(array), array.shape, array.dtype)
@@ -67,7 +68,8 @@ def create_tiles(array: np.ndarray, image_config: ImageConfig) -> np.ndarray:
 
     tiles = []
     tile_size = image_config.tile_size
-    delay_ms = image_config.delay_ms
+    rand_loc = image_config.rand_loc
+    rand_scale = image_config.rand_scale
 
     print(f"create_tiles array={array.shape} tile_size={tile_size}")
 
@@ -78,8 +80,8 @@ def create_tiles(array: np.ndarray, image_config: ImageConfig) -> np.ndarray:
         while col < cols:
             tile = array[row : row + tile_size, col : col + tile_size, :]
 
-            if delay_ms is not None:
-                tile = _add_delay(tile, delay_ms)
+            if rand_loc is not None:
+                tile = _add_delay(tile, rand_loc, rand_scale)
 
             row_tiles.append(tile)
             col += tile_size

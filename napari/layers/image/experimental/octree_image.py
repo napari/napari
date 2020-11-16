@@ -375,9 +375,11 @@ class OctreeImage(Image):
         indices = np.array(self._slice_indices)
         if self._outside_data_range(indices):
             return
-        delay_ms = 250
+
+        rand_loc = 500
+        rand_scale = 250
         image_config = ImageConfig.create(
-            self.data[0].shape, self._tile_size, delay_ms
+            self.data[0].shape, self._tile_size, rand_loc, rand_scale
         )
 
         if self._slice is None:
