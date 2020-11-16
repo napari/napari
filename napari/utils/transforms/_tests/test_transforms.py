@@ -248,16 +248,16 @@ def test_repeat_shear_setting():
     # decomposition of shear is working
     mat = np.eye(3)
     mat[2, 0] = 0.5
-    transform = Affine(shear=mat)
+    transform = Affine(shear=mat.copy())
     # Check shear decomposed into lower triangular
     np.testing.assert_almost_equal(mat, transform.shear)
 
     # Set shear to same value
-    transform.shear = mat
+    transform.shear = mat.copy()
     # Check shear still decomposed into lower triangular
     np.testing.assert_almost_equal(mat, transform.shear)
 
     # Set shear to same value
-    transform.shear = mat
+    transform.shear = mat.copy()
     # Check shear still decomposed into lower triangular
     np.testing.assert_almost_equal(mat, transform.shear)
