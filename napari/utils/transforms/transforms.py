@@ -1,4 +1,3 @@
-import warnings
 from typing import Sequence
 
 import numpy as np
@@ -9,6 +8,8 @@ from .transform_utils import (
     compose_linear_matrix,
     decompose_linear_matrix,
     embed_in_identity_matrix,
+    is_matrix_triangular,
+    is_matrix_upper_triangular,
 )
 
 
@@ -306,6 +307,7 @@ class Affine(Transform):
         name=None,
     ):
         super().__init__(name=name)
+        self._upper_triangular = True
 
         if affine_matrix is not None:
             linear_matrix = affine_matrix[:-1, :-1]
@@ -317,6 +319,18 @@ class Affine(Transform):
                 rotate = np.eye(len(scale))
             if shear is None:
                 shear = np.eye(len(scale))
+            else:
+                if np.array(shear).ndim == 2:
+                    if is_matrix_triangular(shear):
+                        self._upper_triangular = is_matrix_upper_triangular(
+                            shear
+                        )
+                    else:
+                        raise ValueError(
+                            f'Only upper triangular or lower triangular matrices are '
+                            f'accepted for shear, got {shear}. For other matrices, set the '
+                            f'affine_matrix or linear_matrix directly.'
+                        )
             linear_matrix = compose_linear_matrix(rotate, scale, shear)
 
         ndim = max(linear_matrix.shape[0], len(translate))
@@ -347,40 +361,57 @@ class Affine(Transform):
     @property
     def scale(self) -> np.array:
         """Return the scale of the transform."""
-        return decompose_linear_matrix(self.linear_matrix)[1]
+        return decompose_linear_matrix(
+            self.linear_matrix, upper_triangular=self._upper_triangular
+        )[1]
 
     @scale.setter
     def scale(self, scale):
         """Set the scale of the transform."""
-        rotate, _, shear = decompose_linear_matrix(self.linear_matrix)
+        rotate, _, shear = decompose_linear_matrix(
+            self.linear_matrix, upper_triangular=self._upper_triangular
+        )
         self.linear_matrix = compose_linear_matrix(rotate, scale, shear)
 
     @property
     def rotate(self) -> np.array:
         """Return the rotation of the transform."""
-        return decompose_linear_matrix(self.linear_matrix)[0]
+        return decompose_linear_matrix(
+            self.linear_matrix, upper_triangular=self._upper_triangular
+        )[0]
 
     @rotate.setter
     def rotate(self, rotate):
         """Set the rotation of the transform."""
-        _, scale, shear = decompose_linear_matrix(self.linear_matrix)
+        _, scale, shear = decompose_linear_matrix(
+            self.linear_matrix, upper_triangular=self._upper_triangular
+        )
         self.linear_matrix = compose_linear_matrix(rotate, scale, shear)
 
     @property
     def shear(self) -> np.array:
         """Return the shear of the transform."""
-        return decompose_linear_matrix(self.linear_matrix)[2]
+        return decompose_linear_matrix(
+            self.linear_matrix, upper_triangular=self._upper_triangular
+        )[2]
 
     @shear.setter
     def shear(self, shear):
         """Set the shear of the transform."""
-        rotate, scale, _ = decompose_linear_matrix(self.linear_matrix)
         if np.array(shear).ndim == 2:
-            warnings.warn(
-                'Non upper diagonal shear matrix passed so '
-                'reseting rotate to the identity.'
-            )
-            rotate = np.eye(rotate.shape[0])
+            if is_matrix_triangular(shear):
+                self._upper_triangular = is_matrix_upper_triangular(shear)
+            else:
+                raise ValueError(
+                    f'Only upper triangular or lower triangular matrices are '
+                    f'accepted for shear, got {shear}. For other matrices, set the '
+                    f'affine_matrix or linear_matrix directly.'
+                )
+        else:
+            self._upper_triangular = True
+        rotate, scale, _ = decompose_linear_matrix(
+            self.linear_matrix, upper_triangular=self._upper_triangular
+        )
         self.linear_matrix = compose_linear_matrix(rotate, scale, shear)
 
     @property
