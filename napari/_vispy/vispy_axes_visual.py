@@ -66,7 +66,7 @@ def color_lines(colors):
         )
     else:
         return ValueError(
-            'Either 2 or 3 colors ' f'must be provided, got f{len(colors)}.'
+            f'Either 2 or 3 colors must be provided, got {len(colors)}.'
         )
 
 
@@ -80,7 +80,7 @@ def color_dashed_lines(colors):
         )
     else:
         return ValueError(
-            'Either 2 or 3 colors ' f'must be provided, got f{len(colors)}.'
+            f'Either 2 or 3 colors must be provided, got {len(colors)}.'
         )
 
 
@@ -100,7 +100,7 @@ def color_arrowheads(colors, num_segments):
         )
     else:
         return ValueError(
-            'Either 2 or 3 colors ' f'must be provided, got f{len(colors)}.'
+            f'Either 2 or 3 colors must be provided, got {len(colors)}.'
         )
 
 
@@ -117,11 +117,11 @@ class VispyAxesVisual:
 
         # Target axes length in canvas pixels
         self._target_length = 80
-        # CYMRGB for 6 axes data in x, y, z, ... ordering
+        # CMYRGB for 6 axes data in x, y, z, ... ordering
         self._default_color = [
             [0, 1, 1, 1],
-            [1, 1, 0, 1],
             [1, 0, 1, 1],
+            [1, 1, 0, 1],
             [1, 0, 0, 1],
             [0, 1, 0, 1],
             [0, 0, 1, 1],
