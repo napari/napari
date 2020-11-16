@@ -1,4 +1,6 @@
 """QtOctreeInfo and QtOctreeInfoLayout classes.
+
+Shows octree-specific information in the QtRender widget.
 """
 from typing import Callable
 
@@ -12,7 +14,7 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
 )
 
-from ....components.experimental.chunk import chunk_loader
+from ....components.experimental import chunk_loader
 from ....layers.image.experimental.octree_image import OctreeImage
 from .qt_render_widgets import QtSimpleTable
 
