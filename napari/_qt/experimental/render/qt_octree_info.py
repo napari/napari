@@ -12,6 +12,7 @@ from qtpy.QtWidgets import (
     QVBoxLayout,
 )
 
+from ....components.experimental.chunk import chunk_loader
 from ....layers.image.experimental.octree_image import OctreeImage
 from .qt_render_widgets import QtSimpleTable
 
@@ -102,6 +103,14 @@ class QtOctreeInfoLayout(QVBoxLayout):
     ):
         super().__init__()
 
+        def on_set_cache(value: int):
+            chunk_loader.cache.enabled = value != 0
+
+        # Checkbox to toggle the ChunkCache.
+        self._create_checkbox(
+            "Chunk Cache", chunk_loader.cache.enabled, on_set_cache
+        )
+
         # Checkbox to toggle if the drawn tiles should update as the view
         # moves around. They normal state is yes.
         self.track = QCheckBox("Track View")
@@ -124,6 +133,12 @@ class QtOctreeInfoLayout(QVBoxLayout):
         self.addWidget(self.table)
 
         self.set_layout(layer)  # Initial settings.
+
+    def _create_checkbox(self, label, initial_value, callback):
+        checkbox = QCheckBox(label)
+        checkbox.stateChanged.connect(callback)
+        checkbox.setChecked(initial_value)
+        self.addWidget(checkbox)
 
     def set_layout(self, layer: OctreeImage):
         """Set controls based on the layer.
