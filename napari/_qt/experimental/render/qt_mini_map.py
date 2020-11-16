@@ -7,9 +7,14 @@ import numpy as np
 from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import QLabel
 
-from ....layers.image.experimental import OctreeIntersection, OctreeLevel
+from ....layers.image.experimental import (
+    ChunkData,
+    OctreeIntersection,
+    OctreeLevel,
+)
 from ....layers.image.experimental.octree_image import OctreeImage
-from ....layers.image.experimental.octree_util import ChunkData
+
+# from ....layers.image.experimental.octree_util import ChunkData
 
 # Longest edge of map bitmap in pixels. So at most MAP_SIZE wide and at
 # most MAP_SIZE high. In case it's narrow one way or the other.
