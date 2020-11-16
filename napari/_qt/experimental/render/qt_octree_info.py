@@ -21,14 +21,14 @@ from .qt_render_widgets import QtSimpleTable
 IntCallback = Callable[[int], None]
 
 
-def _get_table_vales(layer: OctreeImage) -> dict:
-    """Get keys/values about this image for the table.
+def _get_table_values(layer: OctreeImage) -> dict:
+    """Get keys/values about this octree image for the table.
 
     layer : OctreeImage
-        Get values for this layer.
+        Get values for this octree image.
     """
 
-    def _str(shape) -> str:
+    def _shape(shape) -> str:
         return f"{shape[1]}x{shape[0]}"
 
     level_info = layer.octree_level_info
@@ -37,14 +37,13 @@ def _get_table_vales(layer: OctreeImage) -> dict:
         return {}
 
     shape_in_tiles = level_info.shape_in_tiles
-    shape_in_tiles_str = _str(shape_in_tiles)
     num_tiles = shape_in_tiles[0] * shape_in_tiles[1]
 
     return {
         "Level": f"{layer.octree_level}",
-        "Tiles": f"{shape_in_tiles_str} = {num_tiles}",
-        "Tile Shape": _str([layer.tile_size, layer.tile_size]),
-        "Layer Shape": _str(level_info.image_shape),
+        "Tiles": f"{_shape(shape_in_tiles)} = {num_tiles}",
+        "Tile Shape": _shape([layer.tile_size, layer.tile_size]),
+        "Layer Shape": _shape(level_info.image_shape),
     }
 
 
@@ -151,7 +150,7 @@ class QtOctreeInfoLayout(QVBoxLayout):
             Set controls based on this layer.
         """
         self.level.set_index(0 if layer.auto_level else layer.octree_level + 1)
-        self.table.set_values(_get_table_vales(layer))
+        self.table.set_values(_get_table_values(layer))
 
 
 class QtOctreeInfo(QFrame):
