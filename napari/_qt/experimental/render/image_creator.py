@@ -1,10 +1,11 @@
 """Create test images
 
 This is a throw-away file for creating a test image for octree rendering
-development. If we keep test images in the product long term we'll
-have a nicer way to generate them.
+development. If we keep the in-napari creation of test images long term,
+we'll probably want a better system for creating them.
 
-Long term we probably do not want to use PIL for example.
+Also, long term we probably do not want to use PIL at all, since it's
+not a desirable dependency.
 """
 from typing import Tuple
 
@@ -75,8 +76,8 @@ def create_test_image(text, config: ImageConfig) -> np.ndarray:
     The test image just has digits all over it. The digits will typically
     be used to show the slice number like "0" or "42".
 
-    image_shape: Tuple[int, int]
-        The [height, width] shape of the image.
+    image_config: ImageConfig
+        The shape of the image to create and other details.
     """
     text = str(text)  # Might be an int.
 
@@ -93,13 +94,12 @@ def create_test_image_multi(text, image_config: ImageConfig) -> np.ndarray:
     """Create a multiscale test image for testing tiled rendering.
 
     The test image is blank with digits all over it. The digits will
-    typically be used to show the slice number. Should do something fancier
-    with colors and less repetition.
+    typically be used to show the slice number.
 
     image_config: ImageConfig
         The shape and other details about the image to be created.
     """
-    text = str(text)  # Might be an int.
+    text = str(text)  # Convert in case it's an int.
 
     # Image.new wants (width, height) so swap them.
     image_size = image_config.base_shape[::-1]
@@ -110,4 +110,6 @@ def create_test_image_multi(text, image_config: ImageConfig) -> np.ndarray:
     data = np.array(image)
 
     with block_timer("create_multi_scale_from_image", print_time=True):
+        # This is create all the octree layers, each coarser one
+        # downsampled from the previous level.
         return create_multi_scale_from_image(data, image_config.tile_size)
