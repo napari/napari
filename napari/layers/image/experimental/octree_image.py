@@ -329,9 +329,9 @@ class OctreeImage(Image):
         if satisfied_request is None:
             return False  # Load was async.
 
-        # Load was sync so we have the data already, we can assign it
-        # here and return this as a visible chunk immediately.
-        chunk_data.set_data(satisfied_request.chunks.get('data'))
+        # Load was sync so we can insert the data into the octree
+        # and we will draw it this frame.
+        chunk_data.data = satisfied_request.chunks.get('data')
         return True
 
     def _on_data_loaded(self, data: ChunkedSliceData, sync: bool) -> None:
@@ -410,8 +410,8 @@ class OctreeImage(Image):
         if self._outside_data_range(indices):
             return
 
-        rand_loc = 500
-        rand_scale = 250
+        rand_loc = 0
+        rand_scale = 0
         image_config = ImageConfig.create(
             self.data[0].shape, self._tile_size, rand_loc, rand_scale
         )
