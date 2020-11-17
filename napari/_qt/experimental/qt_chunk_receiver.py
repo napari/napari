@@ -127,8 +127,7 @@ class QtChunkReceiver:
         request = event.original_event.request
 
         LOGGER.info(
-            "QtChunkReceiver._on_chunk_loaded_gui: data_id=%d",
-            request.key.layer_key.data_id,
+            "QtChunkReceiver._on_chunk_loaded_gui: data_id=%d", request.data_id
         )
 
         layer.on_chunk_loaded(request)  # Pass the chunk to its layer.

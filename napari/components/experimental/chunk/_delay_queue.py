@@ -77,9 +77,7 @@ class DelayQueue(threading.Thread):
             self.submit_func(request)  # Submit with no delay.
             return
 
-        LOGGER.info(
-            "DelayQueue.add: data_id=%d", request.key.layer_key.data_id
-        )
+        LOGGER.info("DelayQueue.add: data_id=%d", request.data_id)
 
         # Create entry with the time to submit it.
         submit_time = time.time() + self.delay_seconds
@@ -127,8 +125,7 @@ class DelayQueue(threading.Thread):
         # If entry is due to be submitted.
         if entry.submit_time < now:
             LOGGER.info(
-                "DelayQueue.submit: data_id=%d",
-                entry.request.key.layer_key.data_id,
+                "DelayQueue.submit: data_id=%d", entry.request.data_id,
             )
             self.submit_func(entry.request)
             return True  # We submitted this request.

@@ -100,7 +100,7 @@ class ChunkedSliceData(ImageSliceData):
         request : ChunkRequest
             The request that was loaded.
         """
-        indices = request.key.indices
+        indices = request.key.layer_key.indices
         image = request.chunks.get('image')
         thumbnail_slice = request.chunks.get('thumbnail_slice')
         return cls(layer, indices, image, thumbnail_slice, request)

@@ -121,6 +121,10 @@ class ChunkRequest:
         self.timers: Dict[str, PerfEvent] = {}
 
     @property
+    def data_id(self) -> int:
+        return self.key.layer_key.data_id
+
+    @property
     def num_chunks(self) -> int:
         """Return the number of chunks in this request."""
         return len(self.chunks)

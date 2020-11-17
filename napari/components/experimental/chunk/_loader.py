@@ -251,7 +251,7 @@ class ChunkLoader:
         future.add_done_callback(self._done)
 
         # Store the future in case we need to cancel it.
-        self.futures.setdefault(request.key.data_id, []).append(future)
+        self.futures.setdefault(request.data_id, []).append(future)
 
     def _clear_pending(self, data_id: int) -> None:
         """Clear any pending requests for this data_id.
