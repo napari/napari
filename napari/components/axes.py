@@ -13,6 +13,9 @@ class Axes:
         Event emitter group
     visible : bool
         If axes are visible or not.
+    labels : bool
+        If axes labels are visible or not. Not the actual
+        axes labels are stored in `viewer.dims.axes_labels`.
     colored : bool
         If axes are colored or not. If colored then default
         coloring is x=cyan, y=yellow, z=magenta. If not
@@ -39,8 +42,10 @@ class Axes:
             colored=None,
             dashed=None,
             arrows=None,
+            labels=None,
         )
         self._visible = False
+        self._labels = True
         self._colored = True
         self._background_color = np.array([1, 1, 1])
         self._dashed = False
@@ -55,6 +60,16 @@ class Axes:
     def visible(self, visible):
         self._visible = visible
         self.events.visible()
+
+    @property
+    def labels(self):
+        """bool: If axes labels are visible or not."""
+        return self._labels
+
+    @labels.setter
+    def labels(self, labels):
+        self._labels = labels
+        self.events.labels()
 
     @property
     def colored(self):

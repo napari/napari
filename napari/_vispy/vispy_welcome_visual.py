@@ -1,4 +1,3 @@
-import sys
 from os.path import dirname, join
 
 import numpy as np
@@ -59,35 +58,19 @@ class VispyWelcomeVisual:
             np.mean(str_to_rgb(self._viewer.palette['background'])[:3])
             < 255 / 2
         ):
-            foreground_color = np.divide(
-                str_to_rgb(darken(self._viewer.palette['foreground'], 50)), 255
-            )
             background_color = np.divide(
                 str_to_rgb(darken(self._viewer.palette['background'], 70)), 255
             )
-            text_color = foreground_color
-            if sys.platform == 'darwin':
-                # Note this unsual scaling is done to preserve color balance on
-                # rendering by VisPy, which appears to be off when opacity < 1.
-                # It only needs to be done on a mac, where we need opacity < 1
-                # to achieve good blending.
-                text_color = np.multiply(text_color, [0.4, 0.65, 0.9])
-                text_color = list(text_color) + [0.7]
-            else:
-                text_color = list(text_color) + [1]
-
         else:
-            foreground_color = np.divide(
-                str_to_rgb(lighten(self._viewer.palette['foreground'], 30)),
-                255,
-            )
             background_color = np.divide(
-                str_to_rgb(lighten(self._viewer.palette['background'], 30)),
+                str_to_rgb(lighten(self._viewer.palette['background'], 70)),
                 255,
             )
-            text_color = np.divide(
-                str_to_rgb(darken(self._viewer.palette['background'], 60)), 255
-            )
+
+        foreground_color = np.divide(
+            str_to_rgb(self._viewer.palette['primary']), 255,
+        )
+        text_color = list(foreground_color) + [1]
 
         new_logo = np.zeros(self._logo_raw.shape)
         new_logo[self._logo_border, :3] = foreground_color

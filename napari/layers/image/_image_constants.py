@@ -44,6 +44,8 @@ class Rendering(StringEnum):
               the result is opaque.
             * mip: maximum intensity projection. Cast a ray and display the
               maximum value that was encountered.
+            * minip: minimum intensity projection. Cast a ray and display the
+              minimum value that was encountered.
             * attenuated_mip: attenuated maximum intensity projection. Cast a
               ray and attenuate values based on integral of encountered values,
               display the maximum value that was encountered after attenuation.
@@ -59,4 +61,5 @@ class Rendering(StringEnum):
     ADDITIVE = auto()
     ISO = auto()
     MIP = auto()
+    MINIP = auto()
     ATTENUATED_MIP = auto()

@@ -415,14 +415,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self.events.layers_change()
         self._update_active_layer(event)
 
-    def _update_status(self, event):
-        """Set the viewer status with the `event.status` string."""
-        self.status = event.status
-
-    def _update_help(self, event):
-        """Set the viewer help with the `event.help` string."""
-        self.help = event.help
-
     def _update_interactive(self, event):
         """Set the viewer interactivity with the `event.interactive` bool."""
         self.interactive = event.interactive
@@ -439,6 +431,11 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         """Set the layer cursor position."""
         for layer in self.layers:
             layer.position = self.cursor.position
+
+        # Update status and help bar based on active layer
+        if self.active_layer is not None:
+            self.status = self.active_layer.status
+            self.help = self.active_layer.help
 
     def _on_grid_change(self, event):
         """Arrange the current layers is a 2D grid."""
