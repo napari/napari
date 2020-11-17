@@ -31,7 +31,21 @@ def _flatten(indices) -> tuple:
     return tuple(result)
 
 
-class LayerIdentity(NamedTuple):
+class LayerKey(NamedTuple):
+    """The key for a layer and its important properties.
+
+    Attributes
+    ----------
+    layer_id : int
+        The id of the layer making the request.
+    data_id : int
+        The id of the data in the layer.
+    data_level : int
+        The level in the data (for multi-scale).
+    indices : Tuple[Optional[slice], ...]
+        The indices of the slice.
+    """
+
     layer_id: int
     data_id: int
     data_level: int
@@ -52,24 +66,20 @@ class ChunkKey:
     Parameters
     ----------
     layer : Layer
-        The layer to load data for.
+        The layer which is loading the chunk.
     indices : Indices
-        The indices to load from the layer.
+        The indices of the layer we are loading.
 
     Attributes
     ----------
-    layer_id : int
-        The id of the layer making the request.
-    data_level : int
-        The level in the data (for multi-scale).
-    indices : Tuple[Optional[slice], ...]
-        The indices of the slice.
+    layer_key : LayerKey
+        The layer specific parts of the key.
     key : Tuple
-        The combined key, all the identifiers together.
+        The combined key, everything hashed together.
     """
 
     def __init__(self, layer: Layer, indices: Tuple[Optional[slice], ...]):
-        self.layer_key = LayerIdentity(
+        self.layer_key = LayerKey(
             id(layer), get_data_id(layer), layer._data_level, indices
         )
 
