@@ -1,7 +1,8 @@
-"""QtLabeledComboBox and QtLabeledSpinBox classes.
+"""Widgets for QtRender.
 
-These were created for QtRender but are very generic. Maybe napari has something
-we can use instead of these?
+These were created for QtRender, but they are generic. Maybe we could switch
+from these to something more napari-standard. These were just created
+naively without knowing too much about napari's Qt code.
 """
 from typing import Callable
 
@@ -19,10 +20,7 @@ from qtpy.QtWidgets import (
 
 
 class QtLabeledSpinBox(QWidget):
-    """A label plus a SpinBox for the QtRender widget.
-
-    This was cobbled together quickly for QtRender. We could probably use
-    some napari-standard control instead?
+    """A label plus a SpinBox.
 
     Parameters
     ----------
@@ -49,7 +47,8 @@ class QtLabeledSpinBox(QWidget):
         connect: Callable[[int], None] = None,
     ):
         super().__init__()
-        self.connect = connect
+
+        self._connect = connect
         layout = QHBoxLayout()
 
         self.spin = self._create(initial_value, spin_range)
@@ -93,12 +92,11 @@ class QtLabeledSpinBox(QWidget):
         value : int
             The new value of the SpinBox.
         """
-        # We must clearFocus or it would double-step, no idea why.
+        # We must clearFocus or it double-steps, no idea why.
         self.spin.clearFocus()
 
-        # Notify any connection we have.
-        if self.connect is not None:
-            self.connect(value)
+        if self._connect is not None:
+            self._connect(value)  # Notify if we have a connection.
 
 
 class QtLabeledComboBox(QWidget):
