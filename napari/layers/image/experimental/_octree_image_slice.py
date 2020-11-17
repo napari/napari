@@ -9,7 +9,7 @@ from .._image_slice import ImageSlice
 from .octree import Octree
 from .octree_intersection import OctreeIntersection
 from .octree_level import OctreeLevelInfo
-from .octree_util import ChunkData, ImageConfig
+from .octree_util import ImageConfig, OctreeChunk
 
 LOGGER = logging.getLogger("napari.async")
 
@@ -89,12 +89,12 @@ class OctreeImageSlice(ImageSlice):
 
         # self._octree.print_tiles()
 
-    def get_visible_chunks(self, corners_2d, auto_level) -> List[ChunkData]:
+    def get_visible_chunks(self, corners_2d, auto_level) -> List[OctreeChunk]:
         """Return the chunks currently in view.
 
         Return
         ------
-        List[ChunkData]
+        List[OctreeChunk]
             The chunks inside this intersection.
         """
         intersection = self.get_intersection(corners_2d, auto_level)

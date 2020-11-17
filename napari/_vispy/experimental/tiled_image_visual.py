@@ -6,7 +6,7 @@ from typing import List, Set
 
 import numpy as np
 
-from ...layers.image.experimental.octree_util import ChunkData
+from ...layers.image.experimental.octree_util import OctreeChunk
 from ..vendored import ImageVisual
 from ..vendored.image import _build_color_transform
 from .texture_atlas import TextureAtlas2D
@@ -140,32 +140,32 @@ class TiledImageVisual(ImageVisual):
         return self._texture_atlas.num_slots_used
 
     @property
-    def chunk_data(self) -> List[ChunkData]:
+    def octree_chunk(self) -> List[OctreeChunk]:
         """Return data for the chunks we are drawing.
 
-        List[ChunkData]
+        List[OctreeChunk]
             The data for the chunks we are drawing.
         """
         return self._tiles.chunks
 
-    def add_chunks(self, chunks: List[ChunkData]):
+    def add_chunks(self, chunks: List[OctreeChunk]):
         """Any any chunks that we are not already drawing.
 
         Parameters
         ----------
-        chunks : List[ChunkData]
+        chunks : List[OctreeChunk]
             Add any of these we are not already drawing.
         """
-        for chunk_data in chunks:
-            if not self._tiles.contains_chunk_data(chunk_data):
-                self.add_one_tile(chunk_data)
+        for octree_chunk in chunks:
+            if not self._tiles.contains_octree_chunk(octree_chunk):
+                self.add_one_tile(octree_chunk)
 
-    def add_one_tile(self, chunk_data: ChunkData) -> None:
+    def add_one_tile(self, octree_chunk: OctreeChunk) -> None:
         """Add one tile to the tiled image.
 
         Parameters
         ----------
-        chunk_data : ChunkData
+        octree_chunk : OctreeChunk
             The data for the tile we are adding.
 
         Return
@@ -174,12 +174,12 @@ class TiledImageVisual(ImageVisual):
             The tile's index.
         """
 
-        atlas_tile = self._texture_atlas.add_tile(chunk_data)
+        atlas_tile = self._texture_atlas.add_tile(octree_chunk)
 
         if atlas_tile is None:
             return  # No slot available in the atlas.
 
-        self._tiles.add(chunk_data, atlas_tile)
+        self._tiles.add(octree_chunk, atlas_tile)
         self._need_vertex_update = True
 
     def remove_tile(self, tile_index: int) -> None:
@@ -197,14 +197,14 @@ class TiledImageVisual(ImageVisual):
         except IndexError:
             raise RuntimeError(f"Tile index {tile_index} not found.")
 
-    def prune_tiles(self, visible_set: Set[ChunkData]) -> None:
+    def prune_tiles(self, visible_set: Set[OctreeChunk]) -> None:
         """Remove tiles that are not part of the given visible set.
 
-        visible_set : Set[ChunkData]
+        visible_set : Set[OctreeChunk]
             The set of currently visible chunks.
         """
         for tile_data in list(self._tiles.tile_data):
-            if tile_data.chunk_data.key not in visible_set:
+            if tile_data.octree_chunk.key not in visible_set:
                 tile_index = tile_data.atlas_tile.index
                 self.remove_tile(tile_index)
 

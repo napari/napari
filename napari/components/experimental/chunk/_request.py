@@ -31,26 +31,11 @@ def _flatten(indices) -> tuple:
     return tuple(result)
 
 
-class ChunkLocation(NamedTuple):
-    """Location of one chunk within the octree."""
-
-    slice_id: int
-    level_index: int
-    row: int
-    col: int
-    pos: np.ndarray
-    scale: np.ndarray
-
-    def __str__(self):
-        return (
-            f"location=({self.level_index}, {self.row}, {self.col}) "
-            f"slice={self.slice_id} id={id(self)}"
-        )
-
-    @classmethod
-    def create_null(cls):
-        """Create null location that points to nothing."""
-        return cls(0, 0, 0, 0, np.zeros(0), np.zeros(0))
+class LayerIdentity(NamedTuple):
+    layer_id: int
+    data_id: int
+    data_level: int
+    indices: Tuple[Optional[slice], ...]
 
 
 class ChunkKey:
@@ -75,29 +60,15 @@ class ChunkKey:
         The combined key, all the identifiers together.
     """
 
-    def __init__(
-        self,
-        layer: Layer,
-        indices: Tuple[Optional[slice], ...],
-        location: ChunkLocation = ChunkLocation.create_null(),
-    ):
-        self.layer_id = id(layer)
-        self.data_id = get_data_id(layer)
-        self.data_level = layer._data_level
-        self.indices = indices
-        self.location = location
-
-        combined = (
-            self.layer_id,
-            self.data_id,
-            self.data_level,
-            _flatten(self.indices),
-            self.location.slice_id,
-            self.location.level_index,  # same as data_level!
-            self.location.row,
-            self.location.col,
+    def __init__(self, layer: Layer, indices: Tuple[Optional[slice], ...]):
+        self.layer_identity = LayerIdentity(
+            id(layer), get_data_id(layer), layer._data_level, indices
         )
-        self.key = hash(combined)
+
+        self.key = hash(self._get_hash_values())
+
+    def _get_hash_values(self):
+        return self.layer_identity
 
     def __str__(self):
         return (

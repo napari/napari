@@ -1,13 +1,66 @@
 """Octree utility classes.
 """
-from typing import List, NamedTuple, Tuple
+from typing import List, NamedTuple, Optional, Tuple
 
 import numpy as np
 
-from ....components.experimental.chunk import ChunkLocation
+from ....components.experimental.chunk import ChunkKey
+from ....layers import Layer
 from ....types import ArrayLike
 
 TileArray = List[List[np.ndarray]]
+
+
+class OctreeChunkGeom(NamedTuple):
+    pos: np.ndarray
+    scale: np.ndarray
+
+
+class OctreeLocation(NamedTuple):
+    """Location of one chunk within the octree."""
+
+    slice_id: int
+    level_index: int
+    row: int
+    col: int
+
+    def __str__(self):
+        return (
+            f"location=({self.level_index}, {self.row}, {self.col}) "
+            f"slice={self.slice_id} id={id(self)}"
+        )
+
+    @classmethod
+    def create_null(cls):
+        """Create null location that points to nothing."""
+        return cls(0, 0, 0, 0, np.zeros(0), np.zeros(0))
+
+
+class OctreeChunkKey(ChunkKey):
+    """Add octree specific identity information to the generic ChunkKey.
+
+    Parameters
+    ----------
+    layer : Layer
+        The OctreeImage layer.
+    indices : Tuple[Optional[slice], ...]
+        The indices of the image we are viewing.
+    location : OctreeLocation
+        The location of the chunk within the octree we are loading.
+    """
+
+    def __init__(
+        self,
+        layer: Layer,
+        indices: Tuple[Optional[slice], ...],
+        location: OctreeLocation,
+    ):
+        self.location = location
+        super().__init__(layer, indices)
+
+    def _get_hash_values(self):
+        parent = super()._get_hash_values()
+        return parent + (self.location)
 
 
 class ImageConfig(NamedTuple):
@@ -32,8 +85,8 @@ class ImageConfig(NamedTuple):
         return cls(base_shape, aspect, tile_size, rand_loc, rand_scale)
 
 
-class ChunkData:
-    """One chunk of the full image.
+class OctreeChunk:
+    """One chunk of the full 2D or 3D image in the octree.
 
     A chunk is a 2D tile or a 3D sub-volume.
 
@@ -53,7 +106,7 @@ class ChunkData:
         The (x, y) scale of this chunk. Should be square/cubic.
     """
 
-    def __init__(self, data: ArrayLike, location: ChunkLocation):
+    def __init__(self, data: ArrayLike, location: OctreeLocation):
         self._data = data
         self._orig_data = data  # For now hold on to implement clear()
         self.location = location
@@ -64,6 +117,7 @@ class ChunkData:
 
     @property
     def data(self) -> ArrayLike:
+        """Return the data associated with this chunk."""
         return self._data
 
     @data.setter
@@ -95,9 +149,20 @@ class ChunkData:
 
     @property
     def needs_load(self) -> bool:
+        """Return true if this chunk needs to loaded.
+
+        An unloaded chunk's data might be a Dask or similar deferred array.
+        A loaded chunk's data is always ndarray, It's always real binary
+        data in memory.
+        """
         return not self.in_memory and not self.loading
 
     def clear(self) -> None:
-        # We only clear when not using the cache, to force a reload.
+        """Clear out our loaded data, return to the original.
+
+        This is only done when running without the cache, so that we reload
+        the data again. With computation the loaded data might be different
+        each time.
+        """
         self._data = self._orig_data
         self.loading = False

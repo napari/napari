@@ -8,7 +8,7 @@ import numpy as np
 from vispy.scene.node import Node
 from vispy.scene.visuals import Line
 
-from ...layers.image.experimental.octree_util import ChunkData
+from ...layers.image.experimental.octree_util import OctreeChunk
 
 # Draw with lines of this width and color.
 GRID_WIDTH = 3
@@ -25,14 +25,14 @@ _OUTLINE = np.array(
 )
 
 
-def _chunk_outline(chunk: ChunkData) -> np.ndarray:
+def _chunk_outline(chunk: OctreeChunk) -> np.ndarray:
     """Return the verts that outline this single chunk.
 
     The Line is should be drawn in 'segments' mode.
 
     Parameters
     ----------
-    chunk : ChunkData
+    chunk : OctreeChunk
         Create outline of this chunk.
 
     Return
@@ -83,7 +83,7 @@ class TileGrid:
         line.parent = self.parent
         return line
 
-    def update_grid(self, chunks: List[ChunkData]) -> None:
+    def update_grid(self, chunks: List[OctreeChunk]) -> None:
         """Update grid for this set of chunks.
 
         Parameters
@@ -93,8 +93,8 @@ class TileGrid:
         """
         # TODO_OCTREE: create in one go without vstack?
         verts = np.zeros((0, 2), dtype=np.float32)
-        for chunk_data in chunks:
-            chunk_verts = _chunk_outline(chunk_data)
+        for octree_chunk in chunks:
+            chunk_verts = _chunk_outline(octree_chunk)
             verts = np.vstack([verts, chunk_verts])
 
         self.line.set_data(verts)

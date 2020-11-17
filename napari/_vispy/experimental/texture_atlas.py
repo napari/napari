@@ -7,7 +7,7 @@ from typing import NamedTuple, Optional, Tuple
 import numpy as np
 from vispy.gloo import Texture2D
 
-from ...layers.image.experimental.octree_util import ChunkData
+from ...layers.image.experimental.octree_util import OctreeChunk
 
 # Two triangles which cover a [0..1, 0..1] quad.
 _QUAD = np.array(
@@ -15,12 +15,12 @@ _QUAD = np.array(
 )
 
 
-def _chunk_verts(chunk_data: ChunkData) -> np.ndarray:
+def _chunk_verts(octree_chunk: OctreeChunk) -> np.ndarray:
     """Return a quad for the vertex buffer.
 
     Parameters
     ----------
-    chunk_data : ChunkData
+    octree_chunk : OctreeChunk
         Create a quad for this chunk.
 
     Return
@@ -30,9 +30,9 @@ def _chunk_verts(chunk_data: ChunkData) -> np.ndarray:
     """
     quad = _QUAD.copy()
 
-    location = chunk_data.location
+    location = octree_chunk.location
     scale = location.scale
-    scaled_shape = chunk_data.data.shape[:2] * scale
+    scaled_shape = octree_chunk.data.shape[:2] * scale
 
     # Modify in place.
     quad[:, :2] *= scaled_shape[::-1]  # Reverse into (X, Y) form.
@@ -229,7 +229,7 @@ class TextureAtlas2D(Texture2D):
 
         return quad
 
-    def add_tile(self, chunk_data: ChunkData) -> Optional[AtlasTile]:
+    def add_tile(self, octree_chunk: OctreeChunk) -> Optional[AtlasTile]:
         """Add one tile to the atlas.
 
         Parameters
@@ -237,14 +237,14 @@ class TextureAtlas2D(Texture2D):
         data : np.ndarray
             The image data for this one tile.
         """
-        data = chunk_data.data
+        data = octree_chunk.data
         assert isinstance(data, np.ndarray)
 
         if not self.spec.is_compatible(data):
             # It will be not compatible of number of dimensions or depth
             # are wrong. Or if the data is too big to fit in one tile.
             raise ValueError(
-                f"Data with shape {chunk_data.data.shape} is not compatible "
+                f"Data with shape {octree_chunk.data.shape} is not compatible "
                 f"with this TextureAtlas2D which has tile shape {self.spec.shape}"
             )
 
@@ -258,7 +258,7 @@ class TextureAtlas2D(Texture2D):
 
         # Return AtlasTile. The caller will need the texture coordinates to
         # render quads using our tiles.
-        verts = _chunk_verts(chunk_data)
+        verts = _chunk_verts(octree_chunk)
         tex_coords = self._get_tex_coords(tile_index, data)
         return AtlasTile(tile_index, verts, tex_coords)
 

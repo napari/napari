@@ -10,7 +10,7 @@ from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import QLabel
 
 from ....layers.image.experimental import (
-    ChunkData,
+    OctreeChunk,
     OctreeIntersection,
     OctreeLevel,
 )
@@ -94,7 +94,9 @@ def _draw_tiles(
         x = 0
         for col, tile in enumerate(row_tiles):
 
-            if isinstance(tile, ChunkData):
+            if isinstance(tile, OctreeChunk):
+                # This chunk has was loaded, so it's now an OctreeChunk, so
+                # pull out its data.
                 tile = tile.data
 
             scaled_shape = tile.shape[:2] * scale

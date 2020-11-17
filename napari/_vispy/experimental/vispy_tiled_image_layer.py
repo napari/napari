@@ -9,7 +9,7 @@ from typing import List
 from vispy.scene.visuals import create_visual_node
 
 from ...layers.image.experimental.octree_image import OctreeImage
-from ...layers.image.experimental.octree_util import ChunkData
+from ...layers.image.experimental.octree_util import OctreeChunk
 from ...utils.perf import block_timer
 from ..vispy_image_layer import VispyImageLayer
 from .tile_grid import TileGrid
@@ -99,13 +99,13 @@ class VispyTiledImageLayer(VispyImageLayer):
         3) Optionally update our grid to outline the visible chunks.
         """
         # Get the currently visible chunks from the layer.
-        visible_chunks: List[ChunkData] = self.layer.visible_chunks
+        visible_chunks: List[OctreeChunk] = self.layer.visible_chunks
 
         stats = ChunkStats(seen=len(visible_chunks))
 
         # Create the visible set of chunks using their keys.
-        # TODO_OCTREE: use __hash__ not ChunkData.key?
-        visible_set = set(chunk_data.key for chunk_data in visible_chunks)
+        # TODO_OCTREE: use __hash__ not OctreeChunk.key?
+        visible_set = set(octree_chunk.key for octree_chunk in visible_chunks)
 
         stats.start = self.num_tiles
 
@@ -123,7 +123,7 @@ class VispyTiledImageLayer(VispyImageLayer):
         stats.created = stats.final - stats.low
 
         if self.layer.show_grid:
-            self.grid.update_grid(self.node.chunk_data)
+            self.grid.update_grid(self.node.octree_chunk)
         else:
             self.grid.clear()
 

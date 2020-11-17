@@ -4,9 +4,8 @@ from typing import List, Tuple
 
 import numpy as np
 
-from ....components.experimental.chunk import ChunkLocation
 from .octree_level import OctreeLevel
-from .octree_util import ChunkData
+from .octree_util import OctreeChunk, OctreeLocation
 
 # TODO_OCTREE: These types might be a horrible idea but trying it for now.
 Float2 = np.ndarray  # [x, y] dtype=float64 (default type)
@@ -94,7 +93,7 @@ class OctreeIntersection:
 
         return _inside(row, self._row_range) and _inside(col, self._col_range)
 
-    def get_chunks(self, slice_id) -> List[ChunkData]:
+    def get_chunks(self, slice_id) -> List[OctreeChunk]:
         """Return chunks inside this intersection.
 
         Parameters
@@ -122,15 +121,15 @@ class OctreeIntersection:
 
                 data = self.level.tiles[row][col]
 
-                if not isinstance(data, ChunkData):
+                if not isinstance(data, OctreeChunk):
                     pos = np.array([x, y], dtype=np.float32)
-                    location = ChunkLocation(
+                    location = OctreeLocation(
                         slice_id, level_index, row, col, pos, scale_vec
                     )
-                    chunk_data = ChunkData(data, location)
-                    print(f"Create ChunkData: {location}")
-                    self.level.tiles[row][col] = chunk_data
-                    chunks.append(chunk_data)
+                    octree_chunk = OctreeChunk(data, location)
+                    print(f"Create OctreeChunk: {location}")
+                    self.level.tiles[row][col] = octree_chunk
+                    chunks.append(octree_chunk)
                 else:
                     chunks.append(data)
 

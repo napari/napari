@@ -7,13 +7,13 @@ from typing import Callable, List, Optional
 
 import numpy as np
 
-from ....components.experimental.chunk import ChunkLocation, ChunkRequest
+from ....components.experimental.chunk import ChunkRequest
 from ....types import ArrayLike
 from .._image_view import ImageView
 from .octree import Octree
 from .octree_intersection import OctreeIntersection
 from .octree_level import OctreeLevelInfo
-from .octree_util import ChunkData, ImageConfig
+from .octree_util import ImageConfig, OctreeChunk, OctreeLocation
 
 LOGGER = logging.getLogger("napari.async.octree")
 
@@ -99,12 +99,12 @@ class OctreeMultiscaleSlice:
 
         return self._octree.num_levels - 1
 
-    def get_visible_chunks(self, corners_2d, auto_level) -> List[ChunkData]:
+    def get_visible_chunks(self, corners_2d, auto_level) -> List[OctreeChunk]:
         """Return the chunks currently in view.
 
         Return
         ------
-        List[ChunkData]
+        List[OctreeChunk]
             The chunks inside this intersection.
         """
         intersection = self.get_intersection(corners_2d, auto_level)
@@ -120,7 +120,7 @@ class OctreeMultiscaleSlice:
         # Return the chunks in this intersection.
         return intersection.get_chunks(id(self))
 
-    def _get_chunk_data(self, location: ChunkLocation):
+    def _get_octree_chunk(self, location: OctreeLocation):
         level = self._octree.levels[location.level_index]
         return level.tiles[location.row][location.col]
 
@@ -142,16 +142,18 @@ class OctreeMultiscaleSlice:
             LOGGER.debug("on_chunk_loaded: wrong slice_id: %s", location)
             return False  # Do not load.
 
-        chunk_data = self._get_chunk_data(location)
-        if not isinstance(chunk_data, ChunkData):
-            # This location in the octree is not a ChunkData. That's unexpected,
-            # becauase locations are turned into ChunkData's when a load
+        octree_chunk = self._get_octree_chunk(location)
+        if not isinstance(octree_chunk, OctreeChunk):
+            # This location in the octree is not a OctreeChunk. That's unexpected,
+            # becauase locations are turned into OctreeChunk's when a load
             # is initiated. So this is an error, but log it and keep going.
-            LOGGER.error("on_chunk_loaded: missing ChunkData: %s", chunk_data)
+            LOGGER.error(
+                "on_chunk_loaded: missing OctreeChunk: %s", octree_chunk
+            )
             return False  # Do not load.
 
         # Looks good, we are loading this chunk.
-        LOGGER.debug("on_chunk_loaded: loading %s", chunk_data)
+        LOGGER.debug("on_chunk_loaded: loading %s", octree_chunk)
 
         # Get the data from the request.
         incoming_data = request.chunks.get('data')
@@ -159,12 +161,12 @@ class OctreeMultiscaleSlice:
         # Loaded data should always be an ndarray.
         assert isinstance(incoming_data, np.ndarray)
 
-        # Shove the request's ndarray into the octree's ChunkData. This octree
+        # Shove the request's ndarray into the octree's OctreeChunk. This octree
         # chunk now has an ndarray as its data, and it can be rendered.
-        chunk_data.data = incoming_data
+        octree_chunk.data = incoming_data
 
-        # ChunkData should no longer need to be loaded. We can probably
+        # OctreeChunk should no longer need to be loaded. We can probably
         # remove this check eventually, but for now to be sure.
-        assert not self._get_chunk_data(location).needs_load
+        assert not self._get_octree_chunk(location).needs_load
 
         return True  # Chunk was loaded.
