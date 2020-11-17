@@ -39,6 +39,17 @@ def test_decompose_linear_matrix(upper_triangular):
     np.testing.assert_almost_equal(B, C)
 
 
+def test_composition_order():
+    """Test composition order."""
+    # Order is rotate, shear, scale
+    rotate = np.array([[0, -1], [1, 0]])
+    shear = np.array([[1, 3], [0, 1]])
+    scale = [2, 5]
+
+    matrix = compose_linear_matrix(rotate, scale, shear)
+    np.testing.assert_almost_equal(matrix, rotate @ shear @ np.diag(scale))
+
+
 def test_shear_matrix_from_angle():
     """Test creating a shear matrix from an angle."""
     matrix = shear_matrix_from_angle(35)
