@@ -32,7 +32,8 @@ def _flatten(indices) -> tuple:
 
 
 class ChunkLocation(NamedTuple):
-    # OCTREE_TODO: belongs in octree code not here
+    """Location of one chunk within the octree."""
+
     slice_id: int
     level_index: int
     row: int
@@ -41,10 +42,14 @@ class ChunkLocation(NamedTuple):
     scale: np.ndarray
 
     def __str__(self):
-        return f"location=({self.level_index}, {self.row}, {self.col}) slice={self.slice_id} id={id(self)}"
+        return (
+            f"location=({self.level_index}, {self.row}, {self.col}) "
+            f"slice={self.slice_id} id={id(self)}"
+        )
 
     @classmethod
     def create_null(cls):
+        """Create null location that points to nothing."""
         return cls(0, 0, 0, 0, np.zeros(0), np.zeros(0))
 
 
