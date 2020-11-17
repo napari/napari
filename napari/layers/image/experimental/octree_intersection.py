@@ -5,7 +5,7 @@ from typing import List, Tuple
 import numpy as np
 
 from .octree_level import OctreeLevel
-from .octree_util import OctreeChunk, OctreeLocation
+from .octree_util import OctreeChunk, OctreeChunkGeom, OctreeLocation
 
 # TODO_OCTREE: These types might be a horrible idea but trying it for now.
 Float2 = np.ndarray  # [x, y] dtype=float64 (default type)
@@ -112,8 +112,16 @@ class OctreeIntersection:
         tile_size = level_info.image_config.tile_size
         scaled_size = tile_size * scale
 
-        # Iterate over every tile in the rectangular region.
-        data = None
+        # Get every chunk that is within the rectangle region. This is
+        # every chunk that's inside the current view.
+        #
+        # Chunks will either contain only the original data, or it will be
+        # an OctreeChunk meaning it has been viewed before.
+        #
+        # If it's not yet an OctreeChunk we turn it into one. The main
+        # point of OctreeChunk is that there can be load pending for that
+        # chunk. So we will draw the chunk only when that load has
+        # finished. But here we just return all the chunks.
         y = self._row_range.start * scaled_size
         for row in self._row_range:
             x = self._col_range.start * scaled_size
@@ -121,17 +129,22 @@ class OctreeIntersection:
 
                 data = self.level.tiles[row][col]
 
-                if not isinstance(data, OctreeChunk):
-                    pos = np.array([x, y], dtype=np.float32)
-                    location = OctreeLocation(
-                        slice_id, level_index, row, col, pos, scale_vec
-                    )
-                    octree_chunk = OctreeChunk(data, location)
-                    print(f"Create OctreeChunk: {location}")
-                    self.level.tiles[row][col] = octree_chunk
-                    chunks.append(octree_chunk)
-                else:
+                if isinstance(data, OctreeChunk):
+                    # Location is already an OctreeChunk, so return it.
                     chunks.append(data)
+                else:
+                    # Location is not an OctreeChunk yet, turn it into one now.
+                    location = OctreeLocation(slice_id, level_index, row, col)
+
+                    # Geom is used by the visual for rendering.
+                    pos = np.array([x, y], dtype=np.float32)
+                    geom = OctreeChunkGeom(pos, scale_vec)
+
+                    # Replace the location with the newly created chunk.
+                    chunk = OctreeChunk(data, location, geom)
+                    self.level.tiles[row][col] = chunk
+
+                    chunks.append(chunk)
 
                 x += scaled_size
             y += scaled_size

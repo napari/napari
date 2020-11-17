@@ -40,11 +40,11 @@ def _chunk_outline(chunk: OctreeChunk) -> np.ndarray:
     np.ndarray
         The verts for the outline.
     """
-    location = chunk.location
-    x, y = location.pos
+    geom = chunk.geom
+    x, y = geom.pos
     h, w = chunk.data.shape[:2]
-    w *= location.scale[1]
-    h *= location.scale[0]
+    w *= geom.scale[1]
+    h *= geom.scale[0]
 
     outline = _OUTLINE.copy()
 

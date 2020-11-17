@@ -26,8 +26,8 @@ def test_chunk_key():
     assert key1.key == key2.key
 
     # Check key1 attributes.
-    assert key1.layer_id == id(layer1)
-    assert key1.data_level == layer1.data_level
+    assert key1.layer_key.layer_id == id(layer1)
+    assert key1.layer_key.data_level == layer1.layer_key.data_level
 
     # key3 is for a different layer.
     key3 = ChunkKey(layer2, (0, 0))

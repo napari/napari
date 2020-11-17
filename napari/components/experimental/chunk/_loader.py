@@ -131,7 +131,7 @@ class ChunkLoader:
         chunks : Dict[str, ArrayLike]
             The arrays we want to load.
         """
-        layer_id = key.layer_id
+        layer_id = key.layer_key.layer_id
 
         # Add a LayerInfo if we don't already have one.
         if layer_id not in self.layer_map:
@@ -374,7 +374,7 @@ class ChunkLoader:
         KeyError
             If the layer is not found.
         """
-        layer_id = request.key.layer_id
+        layer_id = request.key.layer_key.layer_id
 
         # Raises KeyError if not found. This should never happen because we
         # add the layer to the layer_map in ChunkLoader.create_request().

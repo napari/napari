@@ -37,6 +37,14 @@ class LayerIdentity(NamedTuple):
     data_level: int
     indices: Tuple[Optional[slice], ...]
 
+    def _get_hash_values(self):
+        return (
+            self.layer_id,
+            self.data_id,
+            self.data_level,
+            _flatten(self.indices),
+        )
+
 
 class ChunkKey:
     """The key for one single ChunkRequest.
@@ -61,19 +69,20 @@ class ChunkKey:
     """
 
     def __init__(self, layer: Layer, indices: Tuple[Optional[slice], ...]):
-        self.layer_identity = LayerIdentity(
+        self.layer_key = LayerIdentity(
             id(layer), get_data_id(layer), layer._data_level, indices
         )
 
         self.key = hash(self._get_hash_values())
 
     def _get_hash_values(self):
-        return self.layer_identity
+        return self.layer_key._get_hash_values()
 
     def __str__(self):
+        layer_key = self.layer_key
         return (
-            f"layer_id={self.layer_id} data_id={self.data_id} "
-            f"data_level={self.data_level} indices={self.indices}"
+            f"layer_id={layer_key.layer_id} data_id={layer_key.data_id} "
+            f"data_level={layer_key.data_level} indices={layer_key.indices}"
         )
 
     def __eq__(self, other):

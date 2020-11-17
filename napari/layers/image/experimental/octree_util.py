@@ -59,8 +59,10 @@ class OctreeChunkKey(ChunkKey):
         super().__init__(layer, indices)
 
     def _get_hash_values(self):
+        # TODO_OCTREE: can't we just has with parent's hashed key instead
+        # of creating a single big has value? Probably.
         parent = super()._get_hash_values()
-        return parent + (self.location)
+        return parent + (self.location,)
 
 
 class ImageConfig(NamedTuple):
@@ -106,10 +108,13 @@ class OctreeChunk:
         The (x, y) scale of this chunk. Should be square/cubic.
     """
 
-    def __init__(self, data: ArrayLike, location: OctreeLocation):
+    def __init__(
+        self, data: ArrayLike, location: OctreeLocation, geom: OctreeChunkGeom
+    ):
         self._data = data
         self._orig_data = data  # For now hold on to implement clear()
         self.location = location
+        self.geom = geom
         self.loading = False
 
     def __str__(self):
@@ -137,8 +142,8 @@ class OctreeChunk:
         Switch to __hash__? Didn't immediately work.
         """
         return (
-            self.location.pos[0],
-            self.location.pos[1],
+            self.geom.pos[0],
+            self.geom.pos[1],
             self.location.level_index,
         )
 

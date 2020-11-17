@@ -30,13 +30,13 @@ def _chunk_verts(octree_chunk: OctreeChunk) -> np.ndarray:
     """
     quad = _QUAD.copy()
 
-    location = octree_chunk.location
-    scale = location.scale
+    geom = octree_chunk.geom
+    scale = geom.scale
     scaled_shape = octree_chunk.data.shape[:2] * scale
 
     # Modify in place.
     quad[:, :2] *= scaled_shape[::-1]  # Reverse into (X, Y) form.
-    quad[:, :2] += location.pos
+    quad[:, :2] += geom.pos
 
     return quad
 
