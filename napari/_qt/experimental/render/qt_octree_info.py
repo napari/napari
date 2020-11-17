@@ -1,4 +1,6 @@
 """QtOctreeInfo and QtOctreeInfoLayout classes.
+
+Shows octree-specific information in the QtRender widget.
 """
 from typing import Callable
 
@@ -8,40 +10,41 @@ from qtpy.QtWidgets import (
     QComboBox,
     QFrame,
     QHBoxLayout,
-    QHeaderView,
     QLabel,
-    QTableWidget,
-    QTableWidgetItem,
     QVBoxLayout,
 )
 
+from ....components.experimental import chunk_loader
 from ....layers.image.experimental.octree_image import OctreeImage
+from .qt_render_widgets import QtSimpleTable
 
 IntCallback = Callable[[int], None]
 
 
-class QtSimpleTable(QTableWidget):
-    """A table of keys and values."""
+def _get_table_values(layer: OctreeImage) -> dict:
+    """Get keys/values about this octree image for the table.
 
-    def __init__(self):
-        super().__init__()
-        self.verticalHeader().setVisible(False)
-        self.horizontalHeader().setVisible(False)
-        self.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
-        self.resizeRowsToContents()
-        self.setShowGrid(False)
+    layer : OctreeImage
+        Get values for this octree image.
+    """
 
-    def set_values(self, values: dict) -> None:
-        """Populate the table with keys and values.
+    def _shape(shape) -> str:
+        return f"{shape[1]}x{shape[0]}"
 
-        values : dict
-            Populate with these keys and values.
-        """
-        self.setRowCount(len(values))
-        self.setColumnCount(2)
-        for i, (key, value) in enumerate(values.items()):
-            self.setItem(i, 0, QTableWidgetItem(key))
-            self.setItem(i, 1, QTableWidgetItem(value))
+    level_info = layer.octree_level_info
+
+    if level_info is None:
+        return {}
+
+    shape_in_tiles = level_info.shape_in_tiles
+    num_tiles = shape_in_tiles[0] * shape_in_tiles[1]
+
+    return {
+        "Level": f"{layer.octree_level}",
+        "Tiles": f"{_shape(shape_in_tiles)} = {num_tiles}",
+        "Tile Shape": _shape([layer.tile_size, layer.tile_size]),
+        "Layer Shape": _shape(level_info.image_shape),
+    }
 
 
 class QtLevelCombo(QHBoxLayout):
@@ -50,6 +53,8 @@ class QtLevelCombo(QHBoxLayout):
     Parameters
     ----------
     num_levels : int
+        The number of available levels.
+    on
     """
 
     def __init__(self, num_levels: int, on_set_level: IntCallback):
@@ -92,39 +97,55 @@ class QtOctreeInfoLayout(QVBoxLayout):
         Call this when the octree level is changed.
     """
 
-    def __init__(
-        self,
-        layer: OctreeImage,
-        on_set_level: IntCallback,
-        on_set_track: IntCallback,
-        on_set_grid: IntCallback,
-    ):
+    def __init__(self, layer: OctreeImage):
         super().__init__()
 
-        # Checkbox to toggle if the drawn tiles should update as the view
-        # moves around. They normal state is yes.
-        self.track = QCheckBox("Track View")
-        self.track.stateChanged.connect(on_set_track)
-        self.track.setChecked(layer.track_view)
-        self.addWidget(self.track)
+        self.layer = layer
 
-        # Checkbox to toggle debug grid around the tiles.
-        self.track = QCheckBox("Show Grid")
-        self.track.stateChanged.connect(on_set_grid)
-        self.track.setChecked(layer.show_grid)
-        self.addWidget(self.track)
+        def on_set_cache(value: int) -> None:
+            chunk_loader.cache.enabled = value != 0
 
-        # Choose AUTO or which octree level to view.
+        def on_set_grid(value: int) -> None:
+            self.layer.show_grid = value != 0
+
+        def on_set_level(value: int) -> None:
+            # Drop down has AUTO at index 0.
+            if value == 0:
+                self.layer.auto_level = True
+            else:
+                self.layer.auto_level = False
+                self.layer.octree_level = value - 1
+
+        def on_set_track(value: int):
+            self.layer.track_view = value != 0
+
+        # Toggle the ChunkCache.
+        cache_enabled = chunk_loader.cache.enabled
+        self._create_checkbox("Chunk Cache", cache_enabled, on_set_cache)
+
+        # Toggle tracking: drawn tiles track view as it moves.
+        self._create_checkbox("Track View", layer.track_view, on_set_track)
+
+        # Toggle debug grid drawn around tiles.
+        self._create_checkbox("Show Grid", layer.show_grid, on_set_grid)
+
+        # Select which octree level to view or AUTO for normal mode.
         self.level = QtLevelCombo(layer.num_octree_levels, on_set_level)
         self.addLayout(self.level)
 
-        # Keys and values about the octree.
+        # Show some keys and values about the octree.
         self.table = QtSimpleTable()
         self.addWidget(self.table)
 
-        self.set_layout(layer)  # Initial settings.
+        self.set_controls(layer)  # Initial settings.
 
-    def set_layout(self, layer: OctreeImage):
+    def _create_checkbox(self, label, initial_value, callback):
+        checkbox = QCheckBox(label)
+        checkbox.stateChanged.connect(callback)
+        checkbox.setChecked(initial_value)
+        self.addWidget(checkbox)
+
+    def set_controls(self, layer: OctreeImage):
         """Set controls based on the layer.
 
         Parameters
@@ -133,30 +154,7 @@ class QtOctreeInfoLayout(QVBoxLayout):
             Set controls based on this layer.
         """
         self.level.set_index(0 if layer.auto_level else layer.octree_level + 1)
-        self.table.set_values(self._get_values(layer))
-
-    def _get_values(self, layer: OctreeImage) -> None:
-        """Set the table based on the layer.
-
-        layer : OctreeImage
-            Set values from this layer.
-        """
-
-        def _str(shape) -> str:
-            return f"{shape[1]}x{shape[0]}"
-
-        level_info = layer.octree_level_info
-
-        shape_in_tiles = level_info.shape_in_tiles
-        shape_in_tiles_str = _str(shape_in_tiles)
-        num_tiles = shape_in_tiles[0] * shape_in_tiles[1]
-
-        return {
-            "Level": f"{layer.octree_level}",
-            "Tiles": f"{shape_in_tiles_str} = {num_tiles}",
-            "Tile Shape": _str([layer.tile_size, layer.tile_size]),
-            "Layer Shape": _str(level_info.image_shape),
-        }
+        self.table.set_values(_get_table_values(layer))
 
 
 class QtOctreeInfo(QFrame):
@@ -170,48 +168,15 @@ class QtOctreeInfo(QFrame):
         super().__init__()
         self.layer = layer
 
-        self.layout = QtOctreeInfoLayout(
-            layer, self._on_set_level, self._on_set_track, self._on_set_grid
-        )
+        self.layout = QtOctreeInfoLayout(layer)
         self.setLayout(self.layout)
 
         # Initial update and connect for future updates.
-        self._set_layout()
-        layer.events.auto_level.connect(self._set_layout)
-        layer.events.octree_level.connect(self._set_layout)
-        layer.events.tile_size.connect(self._set_layout)
+        self._update()  # initial update
+        layer.events.auto_level.connect(self._update)
+        layer.events.octree_level.connect(self._update)
+        layer.events.tile_size.connect(self._update)
 
-    def _set_layout(self, event=None):
-        """Set layout controls based on the layer."""
-        self.layout.set_layout(self.layer)
-
-    def _on_set_level(self, value: int) -> None:
-        """Set octree level in the layer.
-
-        Parameters
-        ----------
-        value : int
-            The new level index.
-        """
-        # Drop down has AUTO at index 0.
-        if value == 0:
-            self.layer.auto_level = True
-        else:
-            self.layer.auto_level = False
-            self.layer.octree_level = value - 1
-
-    def _on_set_track(self, value: int) -> None:
-        """If True we update tiles drawn based on the current view.
-
-        value : int
-            If True we update tiles drawn based on the current view.
-        """
-        self.layer.track_view = value != 0
-
-    def _on_set_grid(self, value: int) -> None:
-        """If True the layer draws a grid around the tiles.
-
-        value : int
-            If True draw a grid around the tiles.
-        """
-        self.layer.show_grid = value != 0
+    def _update(self, _event=None):
+        """Set controls based on the current layer setting."""
+        self.layout.set_controls(self.layer)

@@ -9,7 +9,7 @@ from .._image_slice import ImageSlice
 from .octree import Octree
 from .octree_intersection import OctreeIntersection
 from .octree_level import OctreeLevelInfo
-from .octree_util import ChunkData, OctreeInfo
+from .octree_util import ImageConfig, OctreeChunk
 
 LOGGER = logging.getLogger("napari.async")
 
@@ -89,12 +89,12 @@ class OctreeImageSlice(ImageSlice):
 
         # self._octree.print_tiles()
 
-    def get_visible_chunks(self, corners_2d, auto_level) -> List[ChunkData]:
+    def get_visible_chunks(self, corners_2d, auto_level) -> List[OctreeChunk]:
         """Return the chunks currently in view.
 
         Return
         ------
-        List[ChunkData]
+        List[OctreeChunk]
             The chunks inside this intersection.
         """
         intersection = self.get_intersection(corners_2d, auto_level)
@@ -105,7 +105,7 @@ class OctreeImageSlice(ImageSlice):
             self._octree_level = level_index
 
         # Return the chunks in this intersection.
-        return intersection.get_chunks()
+        return intersection.get_chunks(id(self))
 
     def get_intersection(self, corners_2d, auto_level: bool):
         """Return the intersection with the octree."""
@@ -135,17 +135,17 @@ class OctreeImageSlice(ImageSlice):
         return self._octree.num_levels - 1
 
     @property
-    def octree_info(self) -> OctreeInfo:
+    def image_config(self) -> ImageConfig:
         """Return information about the whole octree.
 
         Return
         ------
-        OctreeInfo
-            Information about the whole octree.
+        ImageConfig
+            Basic image configuration.
         """
         if self._octree is None:
             return None
-        return self._octree.info
+        return self._octree.image_config
 
     @property
     def octree_level_info(self) -> Optional[OctreeLevelInfo]:

@@ -5,9 +5,8 @@ A visual that draws tiles using a texture atlas.
 from typing import List, Set
 
 import numpy as np
-from vispy.gloo.buffer import VertexBuffer
 
-from ...layers.image.experimental.octree_util import ChunkData
+from ...layers.image.experimental.octree_util import OctreeChunk
 from ..vendored import ImageVisual
 from ..vendored.image import _build_color_transform
 from .texture_atlas import TextureAtlas2D
@@ -17,14 +16,8 @@ from .tile_set import TileSet
 SHAPE_IN_TILES = (16, 16)
 
 
-# Two triangles to cover a [0..1, 0..1] quad.
-_QUAD = np.array(
-    [[0, 0], [1, 0], [1, 1], [0, 0], [1, 1], [0, 1]], dtype=np.float32,
-)
-
-
 class TiledImageVisual(ImageVisual):
-    """A larger image that's drawn using some number of smaller tiles.
+    """An image that is drawn using smaller tiles.
 
     TiledImageVisual draws a single large image using a set of square image
     tiles. The size of the tiles is configurable, but 256x256 or 512x512
@@ -48,9 +41,11 @@ class TiledImageVisual(ImageVisual):
     rebuilt. This is another reason TiledImageVisual is faster than
     creating a stand-alone ImageVisuals to draw each tile.
 
-    Finally, rendering the tiles is also efficient. In one draw pass
-    TiledImageVisual can render all the tiles. If all the tiles are stored
-    in the same large texture, there will be zero texture swaps.
+    Finally, rendering the tiles is efficient. TiledImageVisual renders by
+    drawing one single list of quads. The texture coordinates of the quads
+    point to the various tiles in the texture atlas. If all the tiles are
+    stored in the same large texture, there will be zero texture swaps,
+    which are expensive.
 
     Parameters
     ----------
@@ -63,12 +58,9 @@ class TiledImageVisual(ImageVisual):
 
         self._tiles = TileSet()  # The tiles we are drawing.
 
-        # We populate these buffers, the shader draws using them.
-        self._verts = VertexBuffer()
-        self._tex_coords = VertexBuffer()
-
         self._clim = np.array([0, 1])  # TOOD_OCTREE: need to support clim
 
+        # Initialize our parent ImageVisual.
         super().__init__(*args, **kwargs)
 
         # Must create the texture atlas after calling __init__ so
@@ -83,7 +75,7 @@ class TiledImageVisual(ImageVisual):
         Attributes
         ----------
         tile_shape : np.ndarray
-            The shape of our tiles like (256, 256, 4).
+            The shape of our tiles such as (256, 256, 4).
 
         Return
         ------
@@ -94,16 +86,21 @@ class TiledImageVisual(ImageVisual):
         return TextureAtlas2D(tile_shape, SHAPE_IN_TILES, interpolation=interp)
 
     def set_data(self, image) -> None:
-        # VispyImageLayer._on_display_change calls this with an empty image, but
-        # we can just ignore it.
-        pass
+        """Set data of the ImageVisual.
+
+        VispyImageLayer._on_display_change calls this with an empty image, but
+        we can just ignore it. When created we are "empty" by virtue of not
+        drawing any tiles yet.
+        """
 
     def set_tile_shape(self, tile_shape: np.ndarray) -> None:
         """Set the shape of our tiles.
 
         All tiles are the same shape in terms of texels. However they might
-        be drawn different sizes. For example a quadtree might draw one
-        tile 2X or 4X bigger than another tile.
+        be drawn different physical sizes. For example drawing a single
+        view into a quadtree might end up drawing some tiles 2X or 4X
+        bigger than others. Typically you want to draw the "best available"
+        data which might be on a different level.
 
         Parameters
         ----------
@@ -143,32 +140,32 @@ class TiledImageVisual(ImageVisual):
         return self._texture_atlas.num_slots_used
 
     @property
-    def chunk_data(self) -> List[ChunkData]:
+    def octree_chunk(self) -> List[OctreeChunk]:
         """Return data for the chunks we are drawing.
 
-        List[ChunkData]
+        List[OctreeChunk]
             The data for the chunks we are drawing.
         """
         return self._tiles.chunks
 
-    def add_chunks(self, chunks: List[ChunkData]):
+    def add_chunks(self, chunks: List[OctreeChunk]):
         """Any any chunks that we are not already drawing.
 
         Parameters
         ----------
-        chunks : List[ChunkData]
+        chunks : List[OctreeChunk]
             Add any of these we are not already drawing.
         """
-        for chunk_data in chunks:
-            if not self._tiles.contains_chunk_data(chunk_data):
-                self.add_one_tile(chunk_data)
+        for octree_chunk in chunks:
+            if not self._tiles.contains_octree_chunk(octree_chunk):
+                self.add_one_tile(octree_chunk)
 
-    def add_one_tile(self, chunk_data: ChunkData) -> None:
+    def add_one_tile(self, octree_chunk: OctreeChunk) -> None:
         """Add one tile to the tiled image.
 
         Parameters
         ----------
-        chunk_data : ChunkData
+        octree_chunk : OctreeChunk
             The data for the tile we are adding.
 
         Return
@@ -177,12 +174,12 @@ class TiledImageVisual(ImageVisual):
             The tile's index.
         """
 
-        atlas_tile = self._texture_atlas.add_tile(chunk_data)
+        atlas_tile = self._texture_atlas.add_tile(octree_chunk)
 
         if atlas_tile is None:
             return  # No slot available in the atlas.
 
-        self._tiles.add(chunk_data, atlas_tile)
+        self._tiles.add(octree_chunk, atlas_tile)
         self._need_vertex_update = True
 
     def remove_tile(self, tile_index: int) -> None:
@@ -200,14 +197,14 @@ class TiledImageVisual(ImageVisual):
         except IndexError:
             raise RuntimeError(f"Tile index {tile_index} not found.")
 
-    def prune_tiles(self, visible_set: Set[ChunkData]) -> None:
+    def prune_tiles(self, visible_set: Set[OctreeChunk]) -> None:
         """Remove tiles that are not part of the given visible set.
 
-        visible_set : Set[ChunkData]
+        visible_set : Set[OctreeChunk]
             The set of currently visible chunks.
         """
         for tile_data in list(self._tiles.tile_data):
-            if tile_data.chunk_data.key not in visible_set:
+            if tile_data.octree_chunk.key not in visible_set:
                 tile_index = tile_data.atlas_tile.index
                 self.remove_tile(tile_index)
 

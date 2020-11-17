@@ -9,7 +9,7 @@ from typing import List
 from vispy.scene.visuals import create_visual_node
 
 from ...layers.image.experimental.octree_image import OctreeImage
-from ...layers.image.experimental.octree_util import ChunkData
+from ...layers.image.experimental.octree_util import OctreeChunk
 from ...utils.perf import block_timer
 from ..vispy_image_layer import VispyImageLayer
 from .tile_grid import TileGrid
@@ -67,6 +67,8 @@ class VispyTiledImageLayer(VispyImageLayer):
         # Optional grid shows tile borders.
         self.grid = TileGrid(self.node)
 
+        self.layer.events.loaded.connect(self._on_loaded)
+
     @property
     def num_tiles(self) -> int:
         """Return the number of tiles currently being drawn.
@@ -97,13 +99,13 @@ class VispyTiledImageLayer(VispyImageLayer):
         3) Optionally update our grid to outline the visible chunks.
         """
         # Get the currently visible chunks from the layer.
-        visible_chunks: List[ChunkData] = self.layer.visible_chunks
+        visible_chunks: List[OctreeChunk] = self.layer.visible_chunks
 
         stats = ChunkStats(seen=len(visible_chunks))
 
         # Create the visible set of chunks using their keys.
-        # TODO_OCTREE: use __hash__ not ChunkData.key?
-        visible_set = set(chunk_data.key for chunk_data in visible_chunks)
+        # TODO_OCTREE: use __hash__ not OctreeChunk.key?
+        visible_set = set(octree_chunk.key for octree_chunk in visible_chunks)
 
         stats.start = self.num_tiles
 
@@ -121,7 +123,7 @@ class VispyTiledImageLayer(VispyImageLayer):
         stats.created = stats.final - stats.low
 
         if self.layer.show_grid:
-            self.grid.update_grid(self.node.chunk_data)
+            self.grid.update_grid(self.node.octree_chunk)
         else:
             self.grid.clear()
 
@@ -140,13 +142,7 @@ class VispyTiledImageLayer(VispyImageLayer):
         if self.node.tile_shape != tile_shape:
             self.node.set_tile_shape(tile_shape)
 
-    def _on_camera_move(self, event=None) -> None:
-        """Called on any camera movement.
-
-        Update tiles based on which chunks are currently visible.
-        """
-        super()._on_camera_move()
-
+    def _update_view(self):
         if not self.node.visible:
             return
 
@@ -161,3 +157,14 @@ class VispyTiledImageLayer(VispyImageLayer):
                 f"create: {stats.created} delete: {stats.deleted} "
                 f"time: {elapsed.duration_ms:.3f}ms"
             )
+
+    def _on_camera_move(self, event=None) -> None:
+        """Called on any camera movement.
+
+        Update tiles based on which chunks are currently visible.
+        """
+        super()._on_camera_move()
+        self._update_view()
+
+    def _on_loaded(self, _event):
+        self._update_view()

@@ -5,7 +5,7 @@ from typing import List, Set
 
 from vispy.visuals.transforms import STTransform
 
-from ...layers.image.experimental.octree_util import ChunkData
+from ...layers.image.experimental.octree_util import OctreeChunk
 from ...utils.perf import block_timer
 from ..image import Image as ImageVisual
 from ..vispy_image_layer import VispyImageLayer
@@ -50,16 +50,16 @@ class ImageChunk:
 
     Parameters
     ----------
-    chunk : ChunkData
+    chunk : OctreeChunk
         The data for the ImageChunk.
     node : Optional[ImageVisual]
         The ImageVisual if one was available.
     """
 
     # TODO_OCTREE: make this a namedtuple if it doesn't grow.
-    def __init__(self, chunk_data: ChunkData):
-        self.chunk_data = chunk_data
-        self.data_id = id(chunk_data.data)
+    def __init__(self, octree_chunk: OctreeChunk):
+        self.octree_chunk = octree_chunk
+        self.data_id = id(octree_chunk.data)
 
         # ImageVisual should be assigned later
         self.node = None
@@ -121,14 +121,14 @@ class VispyCompoundImageLayer(VispyImageLayer):
         node = image_chunk.node
         assert node
 
-        chunk_data = image_chunk.chunk_data
+        octree_chunk = image_chunk.octree_chunk
 
         # Call VispyImageLayer._set_node_data() to process the data assign
         # it to the ImageVisual node.
-        self._set_node_data(node, chunk_data.data)
+        self._set_node_data(node, octree_chunk.data)
 
         # Add the node under us, transformed into the right place.
-        node.transform = STTransform(chunk_data.scale, chunk_data.pos)
+        node.transform = STTransform(octree_chunk.scale, octree_chunk.pos)
         node.parent = self._tiled_visual_parent
         node.order = IMAGE_NODE_ORDER
 
@@ -156,7 +156,7 @@ class VispyCompoundImageLayer(VispyImageLayer):
 
         num_seen = len(visible_chunks)
 
-        # Set is keyed by id(chunk_data.data) and chunk_data.level_index
+        # Set is keyed by id(octree_chunk.data) and octree_chunk.level_index
         visible_set = set(c.key for c in visible_chunks)
 
         num_start = len(self.image_chunks)
@@ -176,15 +176,15 @@ class VispyCompoundImageLayer(VispyImageLayer):
         num_final = len(self.image_chunks)
 
         if SHOW_GRID:
-            chunk_datas = [
-                image_chunk.chunk_data
+            octree_chunks = [
+                image_chunk.octree_chunk
                 for image_chunk in self.image_chunks.values()
             ]
-            self.grid.update_grid(chunk_datas)
+            self.grid.update_grid(octree_chunks)
 
         return Stats(num_seen, num_start, num_created, num_deleted, num_final)
 
-    def _update_visible(self, visible_chunks: List[ChunkData]) -> None:
+    def _update_visible(self, visible_chunks: List[OctreeChunk]) -> None:
         """Create or update all visible ImageChunks.
 
         Go through all visible chunks:
@@ -194,14 +194,14 @@ class VispyCompoundImageLayer(VispyImageLayer):
 
         Parameters
         ----------
-        visible_chunks : List[ChunkData]
+        visible_chunks : List[OctreeChunk]
         """
         track_view = self.layer.track_view
 
-        for chunk_data in visible_chunks:
-            if chunk_data.key not in self.image_chunks:
-                # Create an ImageChunk for this ChunkData.
-                self.image_chunks[chunk_data.key] = ImageChunk(chunk_data)
+        for octree_chunk in visible_chunks:
+            if octree_chunk.key not in self.image_chunks:
+                # Create an ImageChunk for this OctreeChunk.
+                self.image_chunks[octree_chunk.key] = ImageChunk(octree_chunk)
 
             if not track_view:
                 # We are not actively create ImageVisuals, for example to
@@ -210,7 +210,7 @@ class VispyCompoundImageLayer(VispyImageLayer):
 
             # Whether we just created this ImageChunk or it's older, if it
             # doesn't have an ImageVisual try to add one one
-            image_chunk = self.image_chunks[chunk_data.key]
+            image_chunk = self.image_chunks[octree_chunk.key]
             if image_chunk.node is None:
                 # The ImageChunk already existed but there was no
                 # ImageVisual available. Attempt to assign one from the
@@ -218,7 +218,7 @@ class VispyCompoundImageLayer(VispyImageLayer):
                 image_chunk.node = self.pool.get_visual()
                 self._add_image_chunk_node(image_chunk)
 
-    def _remove_stale_chunks(self, visible_set: Set[ChunkData]) -> None:
+    def _remove_stale_chunks(self, visible_set: Set[OctreeChunk]) -> None:
         """Remove stale chunks which are not longer visible.
 
         Parameters
@@ -227,11 +227,11 @@ class VispyCompoundImageLayer(VispyImageLayer):
             The data_id's of the currently visible chunks.
         """
         for image_chunk in list(self.image_chunks.values()):
-            chunk_data = image_chunk.chunk_data
-            if chunk_data.key not in visible_set:
+            octree_chunk = image_chunk.octree_chunk
+            if octree_chunk.key not in visible_set:
                 if image_chunk.node is not None:
                     self.pool.return_visual(image_chunk.node)
-                del self.image_chunks[chunk_data.key]
+                del self.image_chunks[octree_chunk.key]
 
     def _on_camera_move(self, event=None):
         super()._on_camera_move()

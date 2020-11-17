@@ -1,19 +1,26 @@
-"""QtLabeledComboBox and QtLabeledSpinBox classes.
+"""Widgets for QtRender.
 
-These were created for QtRender but are very generic. Maybe napari has something
-we can use instead of these?
+These were created for QtRender, but they are generic. Maybe we could switch
+from these to something more napari-standard. These were just created
+naively without knowing too much about napari's Qt code.
 """
 from typing import Callable
 
 from qtpy.QtCore import Qt
-from qtpy.QtWidgets import QComboBox, QHBoxLayout, QLabel, QSpinBox, QWidget
+from qtpy.QtWidgets import (
+    QComboBox,
+    QHBoxLayout,
+    QHeaderView,
+    QLabel,
+    QSpinBox,
+    QTableWidget,
+    QTableWidgetItem,
+    QWidget,
+)
 
 
 class QtLabeledSpinBox(QWidget):
-    """A label plus a SpinBox for the QtRender widget.
-
-    This was cobbled together quickly for QtRender. We could probably use
-    some napari-standard control instead?
+    """A label plus a SpinBox.
 
     Parameters
     ----------
@@ -40,7 +47,8 @@ class QtLabeledSpinBox(QWidget):
         connect: Callable[[int], None] = None,
     ):
         super().__init__()
-        self.connect = connect
+
+        self._connect = connect
         layout = QHBoxLayout()
 
         self.spin = self._create(initial_value, spin_range)
@@ -84,12 +92,11 @@ class QtLabeledSpinBox(QWidget):
         value : int
             The new value of the SpinBox.
         """
-        # We must clearFocus or it would double-step, no idea why.
+        # We must clearFocus or it double-steps, no idea why.
         self.spin.clearFocus()
 
-        # Notify any connection we have.
-        if self.connect is not None:
-            self.connect(value)
+        if self._connect is not None:
+            self._connect(value)  # Notify if we have a connection.
 
 
 class QtLabeledComboBox(QWidget):
@@ -120,11 +127,49 @@ class QtLabeledComboBox(QWidget):
         layout.setContentsMargins(0, 0, 0, 0)
         self.setLayout(layout)
 
-    def set_value(self, value):
-        for index, (key, opt_value) in enumerate(self.options.items()):
+    def set_value(self, value: str) -> None:
+        """Make this value the selected item in the combo box.
+
+        Parameters
+        ----------
+        value : str
+            Set the combo box to this value.
+        """
+        for index, opt_value in enumerate(self.options.values()):
             if opt_value == value:
                 self.combo.setCurrentIndex(index)
 
-    def get_value(self):
+    def get_value(self) -> str:
+        """Get the current value of the combo box.
+
+        Return
+        ------
+        str
+            The value currently selected in the combo box.
+        """
         text = self.combo.currentText()
         return self.options[text]
+
+
+class QtSimpleTable(QTableWidget):
+    """A table of keys and values."""
+
+    def __init__(self):
+        super().__init__()
+        self.verticalHeader().setVisible(False)
+        self.horizontalHeader().setVisible(False)
+        self.horizontalHeader().setSectionResizeMode(QHeaderView.Stretch)
+        self.resizeRowsToContents()
+        self.setShowGrid(False)
+
+    def set_values(self, values: dict) -> None:
+        """Populate the table with keys and values.
+
+        values : dict
+            Populate with these keys and values.
+        """
+        self.setRowCount(len(values))
+        self.setColumnCount(2)
+        for i, (key, value) in enumerate(values.items()):
+            self.setItem(i, 0, QTableWidgetItem(key))
+            self.setItem(i, 1, QTableWidgetItem(value))

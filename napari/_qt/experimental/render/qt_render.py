@@ -56,7 +56,7 @@ class QtRender(QWidget):
 
         self.setLayout(layout)
 
-    def _on_camera_move(self, event=None):
+    def _on_camera_move(self, _event=None):
         """Called when the camera was moved."""
         self.mini_map.update()
         self.frame_rate.on_camera_move()

@@ -98,7 +98,7 @@ def _get_config_data() -> dict:
     """
     value = os.getenv("NAPARI_ASYNC")
 
-    if value == "1" or config.async_octree:
+    if value == "1" or (value == "0" and config.async_octree):
         # Async is enabled with defaults.
         async_defaults = DEFAULT_ASYNC_CONFIG
         async_defaults['octree'] = DEFAULT_OCTREE_CONFIG

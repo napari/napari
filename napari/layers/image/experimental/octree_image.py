@@ -1,16 +1,22 @@
 """OctreeImage class.
 """
+import logging
 from typing import List
 
+import numpy as np
+
+from ....components.experimental.chunk import ChunkRequest, chunk_loader
 from ....utils.events import Event
 from ..image import Image
 from ._chunked_slice_data import ChunkedSliceData
-from ._octree_image_slice import OctreeImageSlice
+from ._octree_multiscale_slice import OctreeMultiscaleSlice
 from .octree_intersection import OctreeIntersection
 from .octree_level import OctreeLevelInfo
-from .octree_util import ChunkData, OctreeInfo
+from .octree_util import ImageConfig, OctreeChunk, OctreeChunkKey
 
-DEFAULT_TILE_SIZE = 64
+DEFAULT_TILE_SIZE = 64  # TODO_OCTREE: get from somewhere else
+
+LOGGER = logging.getLogger("napari.async.octree")
 
 
 class OctreeImage(Image):
@@ -23,15 +29,50 @@ class OctreeImage(Image):
 
     def __init__(self, *args, **kwargs):
         self._tile_size = DEFAULT_TILE_SIZE
+
+        # Is this the same as Image._data_level? Which should we use?
         self._octree_level = None
+
         self._corners_2d = None
         self._auto_level = True
         self._track_view = True
+        self._slice = None
 
         self.show_grid = True  # Get/set directly.
 
+        # Temporary to implement a disabled cache.
+        self._last_visible_set = set()
+
+        # For logging only
+        self.frame_count = 0
+
         super().__init__(*args, **kwargs)
         self.events.add(auto_level=Event, octree_level=Event, tile_size=Event)
+
+    def _get_value(self):
+        """Override Image._get_value()."""
+        return (0, (0, 0))  # Fake for now until have octree version.
+
+    @property
+    def loaded(self):
+        """Has the data for this layer been loaded yet."""
+        # TODO_OCTREE: what here?
+        return True
+
+    @property
+    def _empty(self) -> bool:
+        return False  # TODO_OCTREE: what here?
+
+    def _update_thumbnail(self):
+        # TODO_OCTREE: replace Image._update_thumbnail with nothing for
+        # the moment until we decide how to do thumbnail.
+        pass
+
+    @property
+    def _data_view(self):
+        """Viewable image for the current slice. (compatibility)"""
+        # Override Image._data_view
+        return np.zeros((64, 64, 3))  # fake: does octree need this?
 
     @property
     def track_view(self) -> bool:
@@ -98,17 +139,17 @@ class OctreeImage(Image):
         self.refresh()
 
     @property
-    def octree_info(self) -> OctreeInfo:
+    def image_config(self) -> ImageConfig:
         """Return information about the current octree.
 
         Return
         ------
-        OctreeInfo
-            Information about the current octree.
+        ImageConfig
+            Basic image configuration.
         """
         if self._slice is None:
             return None
-        return self._slice.octree_info
+        return self._slice.image_config
 
     @property
     def octree_level_info(self) -> OctreeLevelInfo:
@@ -171,47 +212,125 @@ class OctreeImage(Image):
     @property
     def num_octree_levels(self) -> int:
         """Return the total number of octree levels."""
-        return self._slice.num_octree_levels
+        return len(self.data) - 1  # Multiscale
 
-    def _new_empty_slice(self):
+    def _new_empty_slice(self) -> None:
         """Initialize the current slice to an empty image.
+
+        Overides Image._new_empty_slice() and does nothing because we don't
+        need an empty slice. We create self._slice when
+        self._set_view_slice() is called.
+
+        The empty slice was needed to satisfy the old VispyImageLayer that
+        used a single ImageVisual. But OctreeImage is drawn with
+        VispyTiledImageVisual. It does not need an empty image. It gets
+        chunks from our self.visible_chunks property, and it will just draw
+        nothing if that returns an empty list.
+
+        When OctreeImage become the only image class, this can go away.
         """
-        self._slice = OctreeImageSlice(
-            self._get_empty_image(),
-            self._raw_to_displayed,
-            self.rgb,
-            self._tile_size,
-            self._octree_level,
-        )
-        self._empty = True
 
     @property
-    def visible_chunks(self) -> List[ChunkData]:
+    def visible_chunks(self) -> List[OctreeChunk]:
         """Chunks in the current slice which in currently in view."""
+        # OCTREE_TODO: simplify this method...
         # This will be None if we have not been drawn yet.
-        if self._corners_2d is None:
+        if self._slice is None or self._corners_2d is None:
             return []
 
         auto_level = self.auto_level and self.track_view
 
         chunks = self._slice.get_visible_chunks(self._corners_2d, auto_level)
-        self._octree_level = self._slice.octree_level
-        self.events.octree_level()
-        return chunks
+
+        LOGGER.debug(
+            "OctreeImage.visible_chunks: frame=%d num_chunks=%d",
+            self.frame_count,
+            len(chunks),
+        )
+        self.frame_count += 1
+
+        visible_set = set(octree_chunk.key for octree_chunk in chunks)
+
+        # Remove any chunks from our self._last_visible set which are no
+        # longer in view.
+        for key in list(self._last_visible_set):
+            if key not in visible_set:
+                self._last_visible_set.remove(key)
+
+        # If we switched to a new octree level, update our currently shown level.
+        slice_level = self._slice.octree_level
+        if self._octree_level != slice_level:
+            self._octree_level = slice_level
+            self.events.octree_level()
+
+        def _log(i, count, label, chunk):
+            LOGGER.debug(
+                "Visible Chunk: %d of %d -> %s: %s", i, count, label, chunk
+            )
+
+        visible_chunks = []  # TODO_OCTREE combine list/set
+        visible_set = set()
+        for i, octree_chunk in enumerate(chunks):
+
+            if not chunk_loader.cache.enabled:
+                new_in_view = octree_chunk.key not in self._last_visible_set
+                if new_in_view and octree_chunk.in_memory:
+                    # Not using cache, so if this chunk just came into view
+                    # clear it out, so it gets reloaded.
+                    octree_chunk.clear()
+
+            if octree_chunk.in_memory:
+                # The chunk is fully in memory, we can view it right away.
+                _log(i, len(chunks), "ALREADY LOADED", octree_chunk)
+                visible_chunks.append(octree_chunk)
+                visible_set.add(octree_chunk.key)
+            elif octree_chunk.loading:
+                # The chunk is being loaded, do not view it yet.
+                _log(i, len(chunks), "LOADING:", octree_chunk)
+            else:
+                # The chunk is not in memory and is not being loaded, so
+                # we are going to load it.
+                if self._load_chunk(octree_chunk):
+                    # The chunk was loaded synchronously. Either it hit the
+                    # cache, or it's fast-loading data. We can draw it now.
+                    _log(i, len(chunks), "SYNC LOAD", octree_chunk)
+                    visible_chunks.append(octree_chunk)
+                    visible_set.add(octree_chunk.key)
+                else:
+                    # An async load was initiated, sometime later our
+                    # self._on_chunk_loaded method will be called.
+                    _log(i, len(chunks), "ASYNC LOAD", octree_chunk)
+
+        # Update our _last_visible_set with what is in view.
+        for octree_chunk in chunks:
+            self._last_visible_set.add(octree_chunk.key)
+
+        return visible_chunks
+
+    def _load_chunk(self, octree_chunk: OctreeChunk) -> None:
+
+        indices = np.array(self._slice_indices)
+        key = OctreeChunkKey(self, indices, octree_chunk.location)
+
+        chunks = {'data': octree_chunk.data}
+
+        octree_chunk.loading = True
+
+        # Create the ChunkRequest and load it with the ChunkLoader.
+        request = chunk_loader.create_request(self, key, chunks)
+
+        satisfied_request = chunk_loader.load_chunk(request)
+
+        if satisfied_request is None:
+            return False  # Load was async.
+
+        # Load was sync so we can insert the data into the octree
+        # and we will draw it this frame.
+        octree_chunk.data = satisfied_request.chunks.get('data')
+        return True
 
     def _on_data_loaded(self, data: ChunkedSliceData, sync: bool) -> None:
         """The given data a was loaded, use it now."""
-        super()._on_data_loaded(data, sync)
-        self._octree_level = self._slice.octree_level
-
-        # TODO_OCTREE: The first time _on_data_loaded() is called it's from
-        # super().__init__() and the octree_level event has not been added
-        # yet. So we check here. This will go away when fold OctreeImage
-        # back into Image.
-        has_event = hasattr(self.events, 'octree_level')
-
-        if has_event:
-            self.events.octree_level()
 
     def _update_draw(self, scale_factor, corner_pixels, shape_threshold):
 
@@ -248,3 +367,65 @@ class OctreeImage(Image):
         if self.ndim == 2:
             return data_corners
         return data_corners[:, 1:3]
+
+    def _outside_data_range(self, indices) -> bool:
+        """Return True if requested slice is outside of data range.
+
+        Return
+        ------
+        bool
+            True if requested slice is outside data range.
+        """
+
+        extent = self._extent_data
+        not_disp = self._dims.not_displayed
+
+        return np.any(
+            np.less(
+                [indices[ax] for ax in not_disp],
+                [extent[0, ax] for ax in not_disp],
+            )
+        ) or np.any(
+            np.greater(
+                [indices[ax] for ax in not_disp],
+                [extent[1, ax] for ax in not_disp],
+            )
+        )
+
+    def _set_view_slice(self):
+        """Set the view given the indices to slice with.
+
+        This replaces Image._set_view_slice() entirely. The hope is eventually
+        this class OctreeImage becomes Image. And the non-tiled multiscale
+        logic in Image._set_view_slice goes away entirely.
+        """
+        if self._slice is not None:  # bail as a test
+            return
+        indices = np.array(self._slice_indices)
+        if self._outside_data_range(indices):
+            return
+
+        rand_loc = 0
+        rand_scale = 0
+        image_config = ImageConfig.create(
+            self.data[0].shape, self._tile_size, rand_loc, rand_scale
+        )
+
+        if self._slice is None:
+            self._slice = OctreeMultiscaleSlice(
+                self.data, image_config, self._raw_to_displayed
+            )
+
+    def on_chunk_loaded(self, request: ChunkRequest) -> None:
+        """An asynchronous ChunkRequest was loaded.
+
+        Override Image.on_chunk_loaded() fully.
+
+        Parameters
+        ----------
+        request : ChunkRequest
+            This request was loaded.
+        """
+        if self._slice.on_chunk_loaded(request):
+            # Tell the visual to redraw with this new chunk.
+            self.events.loaded()

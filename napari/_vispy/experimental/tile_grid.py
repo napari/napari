@@ -1,4 +1,6 @@
 """TileGrid class.
+
+Tile grid is a grid draw around/between the tiles for debugging.
 """
 from typing import List
 
@@ -6,7 +8,7 @@ import numpy as np
 from vispy.scene.node import Node
 from vispy.scene.visuals import Line
 
-from ...layers.image.experimental.octree_util import ChunkData
+from ...layers.image.experimental.octree_util import OctreeChunk
 
 # Draw with lines of this width and color.
 GRID_WIDTH = 3
@@ -16,14 +18,21 @@ GRID_COLOR = (1, 0, 0, 1)
 LINE_VISUAL_ORDER = 10
 
 
-def _chunk_outline(chunk: ChunkData) -> np.ndarray:
+# Outline for 'segments' point, each pair is one line segment.
+_OUTLINE = np.array(
+    [[0, 0], [1, 0], [1, 0], [1, 1], [1, 1], [0, 1], [0, 1], [0, 0]],
+    dtype=np.float32,
+)
+
+
+def _chunk_outline(chunk: OctreeChunk) -> np.ndarray:
     """Return the verts that outline this single chunk.
 
     The Line is should be drawn in 'segments' mode.
 
     Parameters
     ----------
-    chunk : ChunkData
+    chunk : OctreeChunk
         Create outline of this chunk.
 
     Return
@@ -31,29 +40,19 @@ def _chunk_outline(chunk: ChunkData) -> np.ndarray:
     np.ndarray
         The verts for the outline.
     """
-    x, y = chunk.pos
+    geom = chunk.geom
+    x, y = geom.pos
     h, w = chunk.data.shape[:2]
-    w *= chunk.scale[1]
-    h *= chunk.scale[0]
+    w *= geom.scale[1]
+    h *= geom.scale[0]
 
-    # We draw lines on all four sides of the chunk. This means are
-    # double-drawing all interior lines in the grid. We can avoid
-    # this duplication if it becomes a performance issue.
+    outline = _OUTLINE.copy()
 
-    # TODO_OCTREE: construct from a _QUAD like we do elsewhere.
-    return np.array(
-        (
-            [x, y],
-            [x + w, y],
-            [x + w, y],
-            [x + w, y + h],
-            [x + w, y + h],
-            [x, y + h],
-            [x, y + h],
-            [x, y],
-        ),
-        dtype=np.float32,
-    )
+    # Modify in place.
+    outline[:, :2] *= (w, h)
+    outline[:, :2] += (x, y)
+
+    return outline
 
 
 class TileGrid:
@@ -84,7 +83,7 @@ class TileGrid:
         line.parent = self.parent
         return line
 
-    def update_grid(self, chunks: List[ChunkData]) -> None:
+    def update_grid(self, chunks: List[OctreeChunk]) -> None:
         """Update grid for this set of chunks.
 
         Parameters
@@ -94,8 +93,8 @@ class TileGrid:
         """
         # TODO_OCTREE: create in one go without vstack?
         verts = np.zeros((0, 2), dtype=np.float32)
-        for chunk_data in chunks:
-            chunk_verts = _chunk_outline(chunk_data)
+        for octree_chunk in chunks:
+            chunk_verts = _chunk_outline(octree_chunk)
             verts = np.vstack([verts, chunk_verts])
 
         self.line.set_data(verts)
