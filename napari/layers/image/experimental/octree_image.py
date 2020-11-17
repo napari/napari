@@ -1,5 +1,6 @@
 """OctreeImage class.
 """
+import logging
 from typing import List
 
 import numpy as np
@@ -13,9 +14,9 @@ from .octree_intersection import OctreeIntersection
 from .octree_level import OctreeLevelInfo
 from .octree_util import ImageConfig, OctreeChunk, OctreeChunkKey
 
-DEFAULT_TILE_SIZE = 64
+DEFAULT_TILE_SIZE = 64  # TODO_OCTREE: get from somewhere else
 
-frame_num = 0
+LOGGER = logging.getLogger("napari.async.octree")
 
 
 class OctreeImage(Image):
@@ -27,7 +28,6 @@ class OctreeImage(Image):
     """
 
     def __init__(self, *args, **kwargs):
-        self.count = 0
         self._tile_size = DEFAULT_TILE_SIZE
 
         # Is this the same as Image._data_level? Which should we use?
@@ -42,6 +42,9 @@ class OctreeImage(Image):
 
         # Temporary to implement a disabled cache.
         self._last_visible_set = set()
+
+        # For logging only
+        self.frame_count = 0
 
         super().__init__(*args, **kwargs)
         self.events.add(auto_level=Event, octree_level=Event, tile_size=Event)
@@ -230,21 +233,21 @@ class OctreeImage(Image):
     @property
     def visible_chunks(self) -> List[OctreeChunk]:
         """Chunks in the current slice which in currently in view."""
+        # OCTREE_TODO: simplify this method...
         # This will be None if we have not been drawn yet.
         if self._slice is None or self._corners_2d is None:
             return []
 
         auto_level = self.auto_level and self.track_view
 
-        if self._slice is None:
-            return []
-
         chunks = self._slice.get_visible_chunks(self._corners_2d, auto_level)
-        global frame_num
-        print(
-            f"OctreeImage.visible_chunks: frame={frame_num} num_chunks={len(chunks)}"
+
+        LOGGER.debug(
+            "OctreeImage.visible_chunks: frame=%d num_chunks=%d",
+            self.frame_count,
+            len(chunks),
         )
-        frame_num += 1
+        self.frame_count += 1
 
         visible_set = set(octree_chunk.key for octree_chunk in chunks)
 
@@ -260,16 +263,11 @@ class OctreeImage(Image):
             self._octree_level = slice_level
             self.events.octree_level()
 
-        def _print(i, count, label, octree_chunk):
-            print(f"Visible Chunk: {i} of {count} -> {label}: {octree_chunk}")
+        def _log(i, count, label, chunk):
+            LOGGER.debug(
+                "Visible Chunk: %d of %d -> %s: %s", i, count, label, chunk
+            )
 
-        # Visible chunks are ones that are already loaded or that we are
-        # able to load synchronously. Perhaps in cache, etc.
-        # visible_chunks = [
-        #    octree_chunk
-        #    for octree_chunk in chunks
-        #    if not octree_chunk.needs_load or self._load_chunk(octree_chunk)
-        # ]
         visible_chunks = []  # TODO_OCTREE combine list/set
         visible_set = set()
         for i, octree_chunk in enumerate(chunks):
@@ -283,25 +281,25 @@ class OctreeImage(Image):
 
             if octree_chunk.in_memory:
                 # The chunk is fully in memory, we can view it right away.
-                _print(i, len(chunks), "ALREADY LOADED", octree_chunk)
+                _log(i, len(chunks), "ALREADY LOADED", octree_chunk)
                 visible_chunks.append(octree_chunk)
                 visible_set.add(octree_chunk.key)
             elif octree_chunk.loading:
                 # The chunk is being loaded, do not view it yet.
-                _print(i, len(chunks), "LOADING:", octree_chunk)
+                _log(i, len(chunks), "LOADING:", octree_chunk)
             else:
                 # The chunk is not in memory and is not being loaded, so
-                # we are going to loaded it.
+                # we are going to load it.
                 if self._load_chunk(octree_chunk):
                     # The chunk was loaded synchronously. Either it hit the
                     # cache, or it's fast-loading data. We can draw it now.
-                    _print(i, len(chunks), "SYNC LOAD", octree_chunk)
+                    _log(i, len(chunks), "SYNC LOAD", octree_chunk)
                     visible_chunks.append(octree_chunk)
                     visible_set.add(octree_chunk.key)
                 else:
                     # An async load was initiated, sometime later our
                     # self._on_chunk_loaded method will be called.
-                    _print(i, len(chunks), "ASYNC LOAD", octree_chunk)
+                    _log(i, len(chunks), "ASYNC LOAD", octree_chunk)
 
         # Update our _last_visible_set with what is in view.
         for octree_chunk in chunks:
