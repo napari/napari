@@ -55,6 +55,8 @@ class Rendering(StringEnum):
             * iso: isosurface. Cast a ray until a certain threshold is
               encountered. At that location, lighning calculations are
               performed to give the visual appearance of a surface.
+            * average: average intensity projection. Cast a ray and display the
+              average of values that were encountered.
     """
 
     TRANSLUCENT = auto()
@@ -63,3 +65,4 @@ class Rendering(StringEnum):
     MIP = auto()
     MINIP = auto()
     ATTENUATED_MIP = auto()
+    AVERAGE = auto()

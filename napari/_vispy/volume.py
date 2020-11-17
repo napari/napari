@@ -58,6 +58,26 @@ MINIP_FRAG_SHADER = FRAG_SHADER.format(**MINIP_SNIPPETS)
 
 frag_dict['minip'] = MINIP_FRAG_SHADER
 
+AVG_SNIPPETS = dict(
+    before_loop="""
+        float n = 0; // Counter for encountered values
+        float meanval = 0.0; // The mean of encountered values
+        float prev_mean = 0.0; // Variable to store the previous incremental mean
+        """,
+    in_loop="""
+        // Incremental mean value used for numerical stability
+        n += 1; // Increment the counter
+        prev_mean = meanval; // Update the mean for previous iteration
+        meanval = prev_mean + (val - prev_mean) / n; // Calculate the mean
+        """,
+    after_loop="""
+        // Apply colormap on mean value
+        gl_FragColor = applyColormap(meanval);
+        """,
+)
+AVG_FRAG_SHADER = FRAG_SHADER.format(**AVG_SNIPPETS)
+frag_dict['average'] = AVG_FRAG_SHADER
+
 
 # Custom volume class is needed for better 3D rendering
 class Volume(BaseVolume):
