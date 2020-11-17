@@ -580,7 +580,7 @@ class Layer(KeymapProvider, ABC):
         if self.ndim > self._dims.ndisplay:
             # Subspace spanned by non displayed dimensions
             non_displayed_subspace = np.zeros(self.ndim)
-            for d in self.dims.not_displayed:
+            for d in self._dims.not_displayed:
                 non_displayed_subspace[d] = 1
             # Map subspace through inverse transform, ignoring translation
             mapped_nd_subspace = inv_transform(
@@ -588,14 +588,15 @@ class Layer(KeymapProvider, ABC):
             ) - inv_transform(np.zeros(self.ndim))
             # Look at displayed subspace
             displayed_mapped_subspace = [
-                mapped_nd_subspace[d] for d in self.dims.displayed
+                mapped_nd_subspace[d] for d in self._dims.displayed
             ]
             # Check that displayed subspace is null
             if not np.allclose(displayed_mapped_subspace, 0):
                 warnings.warn(
                     'Non-orthogonal slicing is being requested, but'
                     ' is not fully supported. Data is displayed without'
-                    ' applying an out-of-slice rotation or shear component.'
+                    ' applying an out-of-slice rotation or shear component.',
+                    category=UserWarning,
                 )
 
         slice_inv_transform = inv_transform.set_slice(self._dims.not_displayed)
