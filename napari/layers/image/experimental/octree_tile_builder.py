@@ -17,7 +17,6 @@ import numpy as np
 from scipy import ndimage as ndi
 
 from ....types import ArrayLike
-from ....utils.perf import block_timer
 from .octree_util import ImageConfig, TileArray
 
 
@@ -190,41 +189,6 @@ def _create_coarser_level(tiles: TileArray) -> TileArray:
         level.append(row_tiles)
 
     return level
-
-
-def create_downsampled_levels(image: np.ndarray, tile_size: int) -> List:
-    """Turn an image into a multi-scale image with levels.
-
-    Parameters
-    ----------
-    image : np.darray
-        The full image to create levels from.
-    tile_size : int
-        The edge length for the square tiles we should use, like 256.
-    """
-    with block_timer("create_tiles", print_time=True):
-        tiles = create_tiles(image, tile_size)
-
-    # This is the full resolution level zero.
-    levels = [tiles]
-
-    # Create the high levels by combining tiles. With each higher level four
-    # tiles from the lower level combine into one tile at the higher level.
-    # All the tiles are the same size in pixels, so the four tiles are combined
-    # and then sized down by half.
-    #
-    # We keep creating new levels by combining tiles until we create a level
-    # that on has a single tile. This is the root level.
-
-    # Keep going as long as the last level we created as more than one tile.
-    while not _one_tile(levels[-1]):
-        with block_timer(
-            f"Create coarser level {len(levels)}:", print_time=True
-        ):
-            next_level = _create_coarser_level(levels[-1])
-        levels.append(next_level)
-
-    return levels
 
 
 def create_multi_scale_from_image(
