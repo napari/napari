@@ -12,6 +12,8 @@ TileArray = List[List[np.ndarray]]
 
 
 class OctreeChunkGeom(NamedTuple):
+    """Position and scale of the chunk, for rendering."""
+
     pos: np.ndarray
     scale: np.ndarray
 
