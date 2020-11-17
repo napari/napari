@@ -2,23 +2,12 @@
 
 Shows octree-specific information in the QtRender widget.
 """
-from typing import Callable
-
 import numpy as np
-from qtpy.QtWidgets import (
-    QCheckBox,
-    QComboBox,
-    QFrame,
-    QHBoxLayout,
-    QLabel,
-    QVBoxLayout,
-)
+from qtpy.QtWidgets import QCheckBox, QFrame, QVBoxLayout
 
 from ....components.experimental import chunk_loader
-from ....layers.image.experimental.octree_image import OctreeImage
-from .qt_render_widgets import QtSimpleTable
-
-IntCallback = Callable[[int], None]
+from ....layers.image.experimental.octree_image import NormalNoise, OctreeImage
+from .qt_render_widgets import QtLabeledComboBox, QtSimpleTable
 
 
 def _get_table_values(layer: OctreeImage) -> dict:
@@ -47,40 +36,30 @@ def _get_table_values(layer: OctreeImage) -> dict:
     }
 
 
-class QtLevelCombo(QHBoxLayout):
-    """Combo box to choose an octree level or AUTO.
+def _create_mean_combo(on_set) -> QtLabeledComboBox:
+    """Return combo box for the mean noise setting.
 
-    Parameters
-    ----------
-    num_levels : int
-        The number of available levels.
-    on
+    Return
+    ------
+    QtLabeledComboBox
+        The new combo box.
     """
+    options = {str(x): x for x in [0, 10, 20, 50, 100, 200, 500, 1000]}
+    return QtLabeledComboBox("Mean Delay (ms)", options, on_set)
 
-    def __init__(self, num_levels: int, on_set_level: IntCallback):
-        super().__init__()
 
-        self.addWidget(QLabel("Octree Level"))
+def _create_std_dev_combo(on_set) -> QtLabeledComboBox:
+    """Return combo box for the std dev noise setting.
 
-        # AUTO means napari selects the appropriate octree level
-        # dynamically as you zoom in or out.
-        items = ["AUTO"] + [str(x) for x in np.arange(0, num_levels)]
-
-        self.level = QComboBox()
-        self.level.addItems(items)
-        self.level.activated[int].connect(on_set_level)
-        self.addWidget(self.level)
-
-    def set_index(self, index: int) -> None:
-        """Set the dropdown's value.
-
-        Parameters
-        ----------
-        index : int
-            Index of dropdown where AUTO is index 0.
-        """
-        # Add one because AUTO is at index 0.
-        self.level.setCurrentIndex(0 if index is None else (index + 1))
+    Return
+    ------
+    QtLabeledComboBox
+        The new combo box.
+    """
+    options = {
+        str(x): x for x in [0, 1, 2, 5, 10, 20, 50, 100, 200, 500, 1000]
+    }
+    return QtLabeledComboBox("Std Dev (ms)", options, on_set)
 
 
 class QtOctreeInfoLayout(QVBoxLayout):
@@ -93,7 +72,7 @@ class QtOctreeInfoLayout(QVBoxLayout):
     ----------
     layer : OctreeImage
         Show octree info for this layer.
-    on_set_level : IntCallback
+    on_set_level : Callable[[int], None]
         Call this when the octree level is changed.
     """
 
@@ -109,12 +88,17 @@ class QtOctreeInfoLayout(QVBoxLayout):
             self.layer.show_grid = value != 0
 
         def on_set_level(value: int) -> None:
-            # Drop down has AUTO at index 0.
-            if value == 0:
+            if value == 0:  # This is AUTO
                 self.layer.auto_level = True
             else:
+                level = value - 1  # Account for AUTO at 0
                 self.layer.auto_level = False
-                self.layer.octree_level = value - 1
+                self.layer.octree_level = level
+
+        def on_set_delay(_value: int) -> None:
+            mean = self.mean_combo.get_value()
+            std_dev = self.std_dev_combo.get_value()
+            self.layer.delay_ms = NormalNoise(mean, std_dev)
 
         def on_set_track(value: int):
             self.layer.track_view = value != 0
@@ -129,9 +113,24 @@ class QtOctreeInfoLayout(QVBoxLayout):
         # Toggle debug grid drawn around tiles.
         self._create_checkbox("Show Grid", layer.show_grid, on_set_grid)
 
-        # Select which octree level to view or AUTO for normal mode.
-        self.level = QtLevelCombo(layer.num_octree_levels, on_set_level)
-        self.addLayout(self.level)
+        num_levels = layer.num_octree_levels
+
+        # Show AUTO followed by the valid layer numbers we can choose. AUTO
+        # means OctreeImage selects the appropriate octree level
+        # dynamically as you zoom in or out. Which is the normal behavior
+        # the user almost always wants.
+        level_options = {"AUTO": -1}
+        level_options.update({str(x): x for x in np.arange(0, num_levels)})
+        self.level = QtLabeledComboBox(
+            "Octree Level", level_options, on_set_level
+        )
+        self.addWidget(self.level)
+
+        # Delay for debugging (simulates latency).
+        self.mean_combo = _create_mean_combo(on_set_delay)
+        self.addWidget(self.mean_combo)
+        self.std_dev_combo = _create_std_dev_combo(on_set_delay)
+        self.addWidget(self.std_dev_combo)
 
         # Show some keys and values about the octree.
         self.table = QtSimpleTable()
@@ -153,7 +152,9 @@ class QtOctreeInfoLayout(QVBoxLayout):
         layer : OctreeImage
             Set controls based on this layer.
         """
-        self.level.set_index(0 if layer.auto_level else layer.octree_level + 1)
+        self.level.set_value(
+            "AUTO" if layer.auto_level else layer.octree_level
+        )
         self.table.set_values(_get_table_values(layer))
 
 
