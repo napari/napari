@@ -236,11 +236,7 @@ class TextureAtlas2D(Texture2D):
         pos = pos[::-1]
         shape = shape[::-1]
 
-        quad = _QUAD.copy()
-        quad[:, :2] *= shape
-        quad[:, :2] += pos
-
-        return quad
+        return _quad(shape, pos)
 
     def add_tile(self, octree_chunk: OctreeChunk) -> Optional[AtlasTile]:
         """Add one tile to the atlas.
