@@ -1,4 +1,6 @@
 """TileGrid class.
+
+Tile grid is a grid draw around/between the tiles for debugging.
 """
 from typing import List
 
@@ -14,6 +16,13 @@ GRID_COLOR = (1, 0, 0, 1)
 
 # Draw grid on top of the tiles.
 LINE_VISUAL_ORDER = 10
+
+
+# Outline for 'segments' point, each pair is one line segment.
+_OUTLINE = np.array(
+    [[0, 0], [1, 0], [1, 0], [1, 1], [1, 1], [0, 1], [0, 1], [0, 0]],
+    dtype=np.float32,
+)
 
 
 def _chunk_outline(chunk: ChunkData) -> np.ndarray:
@@ -37,24 +46,13 @@ def _chunk_outline(chunk: ChunkData) -> np.ndarray:
     w *= location.scale[1]
     h *= location.scale[0]
 
-    # We draw lines on all four sides of the chunk. This means are
-    # double-drawing all interior lines in the grid. We can avoid
-    # this duplication if it becomes a performance issue.
+    outline = _OUTLINE.copy()
 
-    # TODO_OCTREE: construct from a _QUAD like we do elsewhere.
-    return np.array(
-        (
-            [x, y],
-            [x + w, y],
-            [x + w, y],
-            [x + w, y + h],
-            [x + w, y + h],
-            [x, y + h],
-            [x, y + h],
-            [x, y],
-        ),
-        dtype=np.float32,
-    )
+    # Modify in place.
+    outline[:, :2] *= (w, h)
+    outline[:, :2] += (x, y)
+
+    return outline
 
 
 class TileGrid:
