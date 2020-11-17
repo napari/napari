@@ -60,14 +60,18 @@ frag_dict['minip'] = MINIP_FRAG_SHADER
 
 AVG_SNIPPETS = dict(
     before_loop="""
-        float sum = 0.0; // The sum of encountered values
+        float n = 0; // Counter for encountered values
+        float meanval = 0.0; // The mean of encountered values
+        float prev_mean = 0.0; // Variable to store the previous incremental mean
         """,
     in_loop="""
-        sum += val;
+        // Incremental mean value used for numerical stability
+        n += 1; // Increment the counter
+        prev_mean = meanval; // Update the mean for previous iteration
+        meanval = prev_mean + (val - prev_mean) / n; // Calculate the mean
         """,
     after_loop="""
-        // Calculate mean value
-        float meanval = sum / float(nsteps);  // The average value encountered
+        // Apply colormap on mean value
         gl_FragColor = applyColormap(meanval);
         """,
 )
