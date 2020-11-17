@@ -172,13 +172,18 @@ class ChunkLoader:
             return request
 
         LOGGER.info("ChunkLoader.load_chunk: cache miss %s", request.key)
+
         # Clear any pending requests for this specific data_id.
-        # self._clear_pending(request.key.data_id)  # TODO_OCTREE: still do this?
+        # TODO_OCTREE: turn this off because all our request come from the
+        # same data_id. But maybe we can clear pending on something more
+        # specific?
+        # self._clear_pending(request.key.data_id)
 
         # Add to the delay queue, the delay queue will call our
         # _submit_async() method later on if the delay expires without the
         # request getting cancelled.
         self.delay_queue.add(request)
+        return None
 
     def _load_synchronously(self, request: ChunkRequest) -> bool:
         """Return True if we loaded the request synchronously."""
@@ -390,7 +395,7 @@ class ChunkLoader:
         """Wait for all in-progress requests to finish."""
         self.delay_queue.flush()
 
-        for data_id, future_list in self.futures.items():
+        for future_list in self.futures.values():
             # Result blocks until the future is done or cancelled
             [future.result() for future in future_list]
 
@@ -405,7 +410,9 @@ class ChunkLoader:
         try:
             future_list = self.futures[data_id]
         except KeyError:
-            LOGGER.warn("ChunkLoader.wait: no futures for data_id %d", data_id)
+            LOGGER.warning(
+                "ChunkLoader.wait: no futures for data_id %d", data_id
+            )
             return
 
         LOGGER.info(
