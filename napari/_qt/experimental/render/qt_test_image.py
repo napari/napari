@@ -1,6 +1,6 @@
-"""QtTestImage and QtTestImageLayout classes.
+"""QtTestImage class.
 
-Creating test images is meant as an internal developer feature.
+Creating test images is meant as an internal developer feature for now.
 """
 from collections import namedtuple
 from typing import Callable, Tuple
@@ -249,10 +249,12 @@ class QtTestImage(QFrame):
         image_config = self.layout.image_config
 
         if spec['shape'] is None:
-            # This image has a settable shape provided by the UI.
+            # This image has a settable shape provided by the UI, so we
+            # pass the image_config into the factory.
             data = factory(image_config)
         else:
-            # This image comes in just one specific shape.
+            # This image comes in just one specific shape, so the factory
+            # takes no arguments.
             data = factory()
 
         # Give each new layer a unique name.
@@ -266,9 +268,10 @@ class QtTestImage(QFrame):
         # Add the new image layer.
         layer = self.viewer.add_image(data, rgb=True, name=unique_name)
 
-        # We've not (yet?) added OctreeImage-specific arguments to the
-        # OctreeImage constructor, because Layer class arguments are
-        # special. They have to match the viewer add_image() method?
+        # TODO_OCTREE: We've not (yet?) added OctreeImage-specific
+        # arguments to the OctreeImage constructor, because Layer class
+        # arguments are special. They have to match the viewer add_image()
+        # method?
         #
         # So for now we just set these values after construction, which is
         # kind of odd. And the class has to handle the value changing on
