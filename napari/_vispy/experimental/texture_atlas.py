@@ -15,6 +15,25 @@ _QUAD = np.array(
 )
 
 
+def _quad(size: np.ndarray, pos: np.ndarray) -> np.ndarray:
+    """Return one quad with the given size and position.
+
+    Parameters
+    ----------
+    size : np.ndarray
+        Size of the quad (X, Y).
+    pos : np.ndarray
+        Position of the quad (X, Y)
+    """
+    quad = _QUAD.copy()
+
+    # Modify the copy in place.
+    quad[:, :2] *= size
+    quad[:, :2] += pos
+
+    return quad
+
+
 def _chunk_verts(octree_chunk: OctreeChunk) -> np.ndarray:
     """Return a quad for the vertex buffer.
 
@@ -28,17 +47,11 @@ def _chunk_verts(octree_chunk: OctreeChunk) -> np.ndarray:
     np.darray
         The quad vertices.
     """
-    quad = _QUAD.copy()
-
     geom = octree_chunk.geom
-    scale = geom.scale
-    scaled_shape = octree_chunk.data.shape[:2] * scale
+    scaled_shape = octree_chunk.data.shape[:2] * geom.scale
+    size = scaled_shape[::-1]  # Reverse into (X, Y) form.
 
-    # Modify in place.
-    quad[:, :2] *= scaled_shape[::-1]  # Reverse into (X, Y) form.
-    quad[:, :2] += geom.pos
-
-    return quad
+    return _quad(size, geom.pos)
 
 
 class AtlasTile(NamedTuple):
