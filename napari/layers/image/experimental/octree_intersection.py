@@ -112,16 +112,19 @@ class OctreeIntersection:
         tile_size = level_info.image_config.tile_size
         scaled_size = tile_size * scale
 
-        # Get every chunk that is within the rectangle region. This is
-        # every chunk that's inside the current view.
+        # Get every chunk that is within the rectangular region. These are
+        # all the chunks we might possible draw, because they are within
+        # the current view.
         #
-        # Chunks will either contain only the original data, or it will be
-        # an OctreeChunk meaning it has been viewed before.
+        # Chunks will either contain the original data, or they will
+        # contain an OctreeChunk. This implies the chunk was viewed before.
         #
-        # If it's not yet an OctreeChunk we turn it into one. The main
-        # point of OctreeChunk is that there can be load pending for that
-        # chunk. So we will draw the chunk only when that load has
-        # finished. But here we just return all the chunks.
+        # If the chunk is not yet an OctreeChunk we turn it into one. The
+        # main reason we have OctreeChunks is so that have service as the
+        # home for a pending chunk, a chunk in the process of being loaded.
+        #
+        # We will draw the chunk only when that load has finished. But here
+        # we just return all the chunks that are within the intersection.
         y = self._row_range.start * scaled_size
         for row in self._row_range:
             x = self._col_range.start * scaled_size
