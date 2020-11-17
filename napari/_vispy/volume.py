@@ -72,7 +72,7 @@ AVG_SNIPPETS = dict(
         """,
 )
 AVG_FRAG_SHADER = FRAG_SHADER.format(**AVG_SNIPPETS)
-frag_dict['avg'] = AVG_FRAG_SHADER
+frag_dict['average'] = AVG_FRAG_SHADER
 
 
 # Custom volume class is needed for better 3D rendering

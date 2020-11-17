@@ -65,4 +65,4 @@ class Rendering(StringEnum):
     MIP = auto()
     MINIP = auto()
     ATTENUATED_MIP = auto()
-    AVG = auto()
+    AVERAGE = auto()
