@@ -5,7 +5,6 @@ A visual that draws tiles using a texture atlas.
 from typing import List, Set
 
 import numpy as np
-from vispy.gloo.buffer import VertexBuffer
 
 from ...layers.image.experimental.octree_util import ChunkData
 from ..vendored import ImageVisual
@@ -15,12 +14,6 @@ from .tile_set import TileSet
 
 # Shape of she whole texture in tiles. Hardcode for now.
 SHAPE_IN_TILES = (16, 16)
-
-
-# Two triangles to cover a [0..1, 0..1] quad.
-_QUAD = np.array(
-    [[0, 0], [1, 0], [1, 1], [0, 0], [1, 1], [0, 1]], dtype=np.float32,
-)
 
 
 class TiledImageVisual(ImageVisual):
@@ -62,10 +55,6 @@ class TiledImageVisual(ImageVisual):
         self.tile_shape = tile_shape
 
         self._tiles = TileSet()  # The tiles we are drawing.
-
-        # We populate these buffers, the shader draws using them.
-        self._verts = VertexBuffer()
-        self._tex_coords = VertexBuffer()
 
         self._clim = np.array([0, 1])  # TOOD_OCTREE: need to support clim
 
