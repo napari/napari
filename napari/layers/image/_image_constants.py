@@ -55,7 +55,7 @@ class Rendering(StringEnum):
             * iso: isosurface. Cast a ray until a certain threshold is
               encountered. At that location, lighning calculations are
               performed to give the visual appearance of a surface.
-            * avg: average intensity projection. Cast a ray and display the
+            * average: average intensity projection. Cast a ray and display the
               average of values that were encountered.
     """
 
