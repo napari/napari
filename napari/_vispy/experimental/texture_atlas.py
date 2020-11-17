@@ -238,11 +238,7 @@ class TextureAtlas2D(Texture2D):
             The image data for this one tile.
         """
         data = chunk_data.data
-
-        if not isinstance(data, np.ndarray):
-            # Once async is working, the array should already be an ndarray, but
-            # for testing let's do this:
-            data = np.asarray(data)
+        assert isinstance(data, np.ndarray)
 
         if not self.spec.is_compatible(data):
             # It will be not compatible of number of dimensions or depth
