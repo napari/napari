@@ -11,6 +11,23 @@ from ....types import ArrayLike
 TileArray = List[List[np.ndarray]]
 
 
+class TestImageSettings(NamedTuple):
+    """Settings for a test image we are creating."""
+
+    base_shape: Tuple[int, int]
+    tile_size: int
+
+
+class NormalNoise(NamedTuple):
+    mean: float = 0
+    std_dev: float = 0
+
+    @property
+    def is_zero(self) -> bool:
+        """Return true if there is no noise at all."""
+        return self.mean == 0 and self.std_dev == 0
+
+
 class OctreeChunkGeom(NamedTuple):
     """Position and scale of the chunk, for rendering."""
 
@@ -71,22 +88,17 @@ class ImageConfig(NamedTuple):
     """Configuration for a tiled image."""
 
     base_shape: Tuple[int, int]
-    aspect: float
+    num_levels: int
     tile_size: int
-    rand_loc: float
-    rand_scale: float
+    delay_ms: NormalNoise = NormalNoise()
 
-    @classmethod
-    def create(
-        cls,
-        base_shape: Tuple[int, int],
-        tile_size: int,
-        rand_loc: float = None,
-        rand_scale: float = None,
-    ):
-        """Create ImageConfig."""
-        aspect = base_shape[1] / base_shape[0]
-        return cls(base_shape, aspect, tile_size, rand_loc, rand_scale)
+    @property
+    def aspect_ratio(self):
+        """Return the width:height aspect ratio of the base image.
+
+        For example HDTV resolution is 16:9 which is 1.77.
+        """
+        return self.base_shape[1] / self.base_shape[0]
 
 
 class OctreeChunk:
