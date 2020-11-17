@@ -34,16 +34,17 @@ class ChunkStats:
 class VispyTiledImageLayer(VispyImageLayer):
     """A tiled image drawn using a single TiledImageVisual.
 
-    The original VispyCompoundImageLayer was a tiled image drawn with an
-    individual ImageVisual for each tile. That was slow and led to crashes
-    with PyQt5. This version uses a single TiledImageVisual instead, which
-    stores the texture tiles in a TextureAtlas2D.
+    Tiles are rendered using TiledImageVisual which uses a TextureAtlas2D,
+    see those classes for more details.
 
-    The benefit is adding or removing tiles does not cause any scene graph
-    changes. And it does not cause the shader to be rebuilt either. It's
-    bandwidth efficient because we only send one tile's worth of data to
-    the card at a time. Only the tile's footprint in the atlas texture gets
-    modified.
+    History
+    -------
+
+    An early tiled visual we had created a new ImageVisual for each tile.
+    This led to crashes with PyQt5 due to the constant scene graph changes.
+    Also each new ImageVisual caused a slow down, the shader build was one
+    reason. Finally rendering was slower because it required a texture swap
+    for each tile. This new tiled version solves those problems.
 
     Parameters
     ----------

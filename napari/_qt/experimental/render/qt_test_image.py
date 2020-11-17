@@ -32,7 +32,6 @@ IMAGE_SHAPE_RANGE = range(1, 65536, 100)
 # We can create 3 types of images layers.
 IMAGE_TYPES = {
     "Normal": config.CREATE_IMAGE_NORMAL,
-    "Compound": config.CREATE_IMAGE_COMPOUND,
     "Tiled": config.CREATE_IMAGE_TILED,
 }
 IMAGE_TYPE_DEFAULT = "Tiled"
