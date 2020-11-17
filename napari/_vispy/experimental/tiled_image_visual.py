@@ -17,7 +17,7 @@ SHAPE_IN_TILES = (16, 16)
 
 
 class TiledImageVisual(ImageVisual):
-    """A larger image that's drawn using some number of smaller tiles.
+    """An image that is drawn using smaller tiles.
 
     TiledImageVisual draws a single large image using a set of square image
     tiles. The size of the tiles is configurable, but 256x256 or 512x512
@@ -41,9 +41,11 @@ class TiledImageVisual(ImageVisual):
     rebuilt. This is another reason TiledImageVisual is faster than
     creating a stand-alone ImageVisuals to draw each tile.
 
-    Finally, rendering the tiles is also efficient. In one draw pass
-    TiledImageVisual can render all the tiles. If all the tiles are stored
-    in the same large texture, there will be zero texture swaps.
+    Finally, rendering the tiles is efficient. TiledImageVisual renders by
+    drawing one single list of quads. The texture coordinates of the quads
+    point to the various tiles in the texture atlas. If all the tiles are
+    stored in the same large texture, there will be zero texture swaps,
+    which are expensive.
 
     Parameters
     ----------
@@ -58,6 +60,7 @@ class TiledImageVisual(ImageVisual):
 
         self._clim = np.array([0, 1])  # TOOD_OCTREE: need to support clim
 
+        # Initialize our parent ImageVisual.
         super().__init__(*args, **kwargs)
 
         # Must create the texture atlas after calling __init__ so
@@ -72,7 +75,7 @@ class TiledImageVisual(ImageVisual):
         Attributes
         ----------
         tile_shape : np.ndarray
-            The shape of our tiles like (256, 256, 4).
+            The shape of our tiles such as (256, 256, 4).
 
         Return
         ------
@@ -83,16 +86,21 @@ class TiledImageVisual(ImageVisual):
         return TextureAtlas2D(tile_shape, SHAPE_IN_TILES, interpolation=interp)
 
     def set_data(self, image) -> None:
-        # VispyImageLayer._on_display_change calls this with an empty image, but
-        # we can just ignore it.
-        pass
+        """Set data of the ImageVisual.
+
+        VispyImageLayer._on_display_change calls this with an empty image, but
+        we can just ignore it. When created we are "empty" by virtue of not
+        drawing any tiles yet.
+        """
 
     def set_tile_shape(self, tile_shape: np.ndarray) -> None:
         """Set the shape of our tiles.
 
         All tiles are the same shape in terms of texels. However they might
-        be drawn different sizes. For example a quadtree might draw one
-        tile 2X or 4X bigger than another tile.
+        be drawn different physical sizes. For example drawing a single
+        view into a quadtree might end up drawing some tiles 2X or 4X
+        bigger than others. Typically you want to draw the "best available"
+        data which might be on a different level.
 
         Parameters
         ----------
@@ -148,8 +156,7 @@ class TiledImageVisual(ImageVisual):
         chunks : List[ChunkData]
             Add any of these we are not already drawing.
         """
-        for i, chunk_data in enumerate(chunks):
-            print(f"add_chunks: adding {i} of {len(chunks)}...")
+        for chunk_data in chunks:
             if not self._tiles.contains_chunk_data(chunk_data):
                 self.add_one_tile(chunk_data)
 
