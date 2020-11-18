@@ -2,26 +2,10 @@
 """
 from typing import List
 
-from ...._vendor.experimental.humanize.src.humanize import intword
 from ....utils.perf import block_timer
-from .octree_level import OctreeLevel
+from .octree_level import OctreeLevel, print_levels
 from .octree_tile_builder import create_downsampled_levels
 from .octree_util import SliceConfig
-
-
-def _dim_str(dim: tuple) -> None:
-    return f"{dim[0]} x {dim[1]} = {intword(dim[0] * dim[1])}"
-
-
-def _print_levels(
-    label: str, levels: List[OctreeLevel], start: int = 0
-) -> None:
-    print(f"{label} {len(levels)} levels:")
-    for i, level in enumerate(levels):
-        image_str = _dim_str(level.info.image_shape)
-        tiles_str = _dim_str(level.info.shape_in_tiles)
-        level = start + i
-        print(f"    Level {level}: {image_str} pixels -> {tiles_str} tiles")
 
 
 class Octree:
@@ -72,7 +56,7 @@ class Octree:
                 f"Data of shape {data.shape} resulted " "no octree levels?"
             )
 
-        _print_levels("Octree input data has", self.levels)
+        print_levels("Octree input data has", self.levels)
         original_levels = len(self.levels)
 
         # If root level contains more than one tile, add more levels
@@ -81,7 +65,7 @@ class Octree:
             with block_timer("_create_additional_levels") as timer:
                 more_levels = self._create_additional_levels(slice_id)
 
-            _print_levels(
+            print_levels(
                 f"In {timer.duration_ms:.3f}ms created",
                 more_levels,
                 start=original_levels,
