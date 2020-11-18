@@ -371,10 +371,7 @@ class OctreeImage(Image):
         """
         Get data corners in 2d.
         """
-        # TODO_OCTREE: This is placeholder. Need to handle dims correctly.
-        if self.ndim == 2:
-            return data_corners
-        return data_corners[:, 1:3]
+        return data_corners[:, self._dims.displayed]
 
     def _outside_data_range(self, indices) -> bool:
         """Return True if requested slice is outside of data range.
@@ -417,12 +414,16 @@ class OctreeImage(Image):
         if self._outside_data_range(indices):
             return
 
-        slice_config = SliceConfig(
-            self.data[0].shape, len(self.data), self._tile_size, self._delay_ms
-        )
-
         # Indices to get at the data we are currently viewing.
         indices = self._get_slice_indices()
+
+        # TODO_OCTREE: easier way to do this?
+        base_shape = self.data[0].shape
+        base_shape_2d = [base_shape[i] for i in self._dims.displayed]
+
+        slice_config = SliceConfig(
+            base_shape_2d, len(self.data), self._tile_size, self._delay_ms
+        )
 
         # OctreeMultiscaleSlice wants all the levels, but only the dimensions
         # of each level that we are currently viewing.
