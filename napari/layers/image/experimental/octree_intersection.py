@@ -34,7 +34,7 @@ class OctreeView(NamedTuple):
 
         Return
         ------
-            The width.
+            The width in data coordinates.
         """
         return self.corners[1][1] - self.corners[0][1]
 
@@ -68,23 +68,19 @@ class OctreeIntersection:
 
         # TODO_OCTREE: don't split rows/cols so all these pairs of variables
         # are just one variable each? Use numpy more.
-        self.rows = view.corners[:, 0]
-        self.cols = view.corners[:, 1]
+        rows, cols = view.corners[:, 0], view.corners[:, 1]
 
         base = info.slice_config.base_shape
 
         self.normalized_range = np.array(
-            [
-                np.clip(self.rows / base[0], 0, 1),
-                np.clip(self.cols / base[1], 0, 1),
-            ]
+            [np.clip(rows / base[0], 0, 1), np.clip(cols / base[1], 0, 1)]
         )
 
-        self.rows /= info.scale
-        self.cols /= info.scale
+        scaled_rows = rows / info.scale
+        scaled_cols = cols / info.scale
 
-        self._row_range = self.row_range(self.rows)
-        self._col_range = self.column_range(self.cols)
+        self._row_range = self.row_range(scaled_rows)
+        self._col_range = self.column_range(scaled_cols)
 
     def tile_range(self, span, num_tiles):
         """Return tiles indices needed to draw the span."""
