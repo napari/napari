@@ -9,13 +9,13 @@ from . import _builtins, hook_specifications
 
 if sys.platform.startswith('linux') and running_as_bundled_app():
     sys.path.append(user_site_packages())
+elif os.name == 'nt':
+    import site
 
+    for dir in site.getsitepackages():
+        if dir not in sys.path:
+            sys.path.append(dir)
 
-if os.name == 'nt':
-    # This is where plugins will be in bundled apps on windows
-    exe_dir = os.path.dirname(sys.executable)
-    winlib = os.path.join(exe_dir, "Lib", "site-packages")
-    sys.path.append(winlib)
 
 # the main plugin manager instance for the `napari` plugin namespace.
 plugin_manager = PluginManager(
