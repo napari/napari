@@ -33,7 +33,8 @@ class OctreeMultiscaleSlice:
 
         self._slice_config = slice_config
 
-        self._octree = Octree(id(self), data, slice_config)
+        slice_id = id(self)
+        self._octree = Octree(slice_id, data, slice_config)
         self._octree_level = self._octree.num_levels - 1
 
         thumbnail_image = np.zeros(
@@ -87,7 +88,6 @@ class OctreeMultiscaleSlice:
 
     def get_intersection(self, view: OctreeView):
         """Return this view's intersection with the octree."""
-        assert self._octree
         level = self._get_octree_level(view)
         return OctreeIntersection(level, view)
 
