@@ -1,5 +1,6 @@
 """OctreeLevel and OctreeLevelInfo classes.
 """
+import math
 from typing import Optional
 
 import numpy as np
@@ -38,9 +39,11 @@ class OctreeLevelInfo:
         scaled_size = tile_size * self.scale
 
         self.shape_in_tiles = [
-            int(base[0] / scaled_size),
-            int(base[1] / scaled_size),
+            math.ceil(base[0] / scaled_size),
+            math.ceil(base[1] / scaled_size),
         ]
+
+        self.num_tiles = self.shape_in_tiles[0] * self.shape_in_tiles[1]
 
 
 class OctreeLevel:
@@ -71,6 +74,9 @@ class OctreeLevel:
     ):
         self.slice_id = slice_id
         self.data = data
+
+        # TODO_OCTREE: change from "info" to "meta"/"metadata"?
+        # info is kind of dumb sounding.
         self.info = OctreeLevelInfo(slice_config, level_index)
         self.tiles = {}
 
