@@ -1,3 +1,4 @@
+from . import __version__
 from ._qt import Window
 from .components import ViewerModel
 from .utils import config
@@ -31,6 +32,10 @@ class Viewer(ViewerModel):
         axis_labels=None,
         show=True,
     ):
+        # set _napari_app_id to False to avoid overwriting dock icon on windows
+        # set _napari_app_id to custom string to prevent grouping different base viewer
+        self._napari_app_id = 'napari.napari.viewer.' + str(__version__)
+
         super().__init__(
             title=title,
             ndisplay=ndisplay,
