@@ -213,6 +213,7 @@ class Labels(Image):
         self.events.add(
             mode=Event,
             preserve_labels=Event,
+            properties=Event,
             n_dimensional=Event,
             contiguous=Event,
             brush_size=Event,
@@ -321,6 +322,7 @@ class Labels(Image):
                 label_index = self._map_index(properties)
         self._properties = self._validate_properties(properties)
         self._label_index = label_index
+        self.events.properties()
 
     @property
     def color(self):
