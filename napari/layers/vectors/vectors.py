@@ -186,6 +186,7 @@ class Vectors(Layer):
             edge_width=Event,
             edge_color=Event,
             edge_color_mode=Event,
+            properties=Event,
         )
 
         self.visible = False
@@ -277,6 +278,7 @@ class Vectors(Layer):
         ):
             self._edge_color_property = ''
             warnings.warn('property used for edge_color dropped')
+        self.events.properties()
 
     def _validate_properties(
         self, properties: Dict[str, np.ndarray]
