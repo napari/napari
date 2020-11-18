@@ -5,17 +5,19 @@ from typing import List
 
 import numpy as np
 
-from ....components.experimental.chunk import ChunkRequest, chunk_loader
+from ....components.experimental.chunk import (
+    ChunkRequest,
+    async_config,
+    chunk_loader,
+)
 from ....utils.events import Event
 from ..image import Image
 from ._chunked_slice_data import ChunkedSliceData
-from ._octree_multiscale_slice import OctreeMultiscaleSlice
+from ._octree_multiscale_slice import OctreeMultiscaleSlice, OctreeView
 from .octree_chunk import OctreeChunk, OctreeChunkKey
 from .octree_intersection import OctreeIntersection
 from .octree_level import OctreeLevelInfo
 from .octree_util import NormalNoise, SliceConfig
-
-DEFAULT_TILE_SIZE = 64  # TODO_OCTREE: get from somewhere else
 
 LOGGER = logging.getLogger("napari.async.octree")
 
@@ -29,13 +31,14 @@ class OctreeImage(Image):
     """
 
     def __init__(self, *args, **kwargs):
-        self._tile_size = DEFAULT_TILE_SIZE
+        self._tile_size = async_config.octree.tile_size
 
         # Is this the same as Image._data_level? Which should we use?
         self._octree_level = None
 
-        self._corners_2d = None
-        self._auto_level = True
+        self._view: OctreeView = None
+
+        self._freeze_level = False
         self._track_view = True
         self._slice = None
 
@@ -53,7 +56,9 @@ class OctreeImage(Image):
         self._delay_ms = NormalNoise()
 
         super().__init__(*args, **kwargs)
-        self.events.add(auto_level=Event, octree_level=Event, tile_size=Event)
+        self.events.add(
+            freeze_level=Event, octree_level=Event, tile_size=Event
+        )
 
     def _get_value(self):
         """Override Image._get_value()."""
@@ -171,30 +176,30 @@ class OctreeImage(Image):
         return self._slice.octree_level_info
 
     @property
-    def auto_level(self) -> bool:
-        """Return True if we are computing the octree level automatically.
+    def freeze_level(self) -> bool:
+        """Return True if we are forzen viewing a single octree level.
 
-        When viewing the octree normally, auto_level is always True, but
-        during debugging or other special situations it might be off.
+        When viewing the octree normally, freeze_level is always False, but
+        during debugging or other special situations it might be on.
 
         Returns
         -------
         bool
-            True if we are computing the octree level automatically.
+            True if the view is currently frozen viewing on level.
         """
-        return self._auto_level
+        return self._freeze_level
 
-    @auto_level.setter
-    def auto_level(self, value: bool) -> None:
-        """Set whether we are choosing the octree level automatically.
+    @freeze_level.setter
+    def freeze_level(self, freeze: bool) -> None:
+        """Set whether we are frozen viewing a single octree level.
 
         Parameters
         ----------
         value : bool
             True if we should determine the octree level automatically.
         """
-        self._auto_level = value
-        self.events.auto_level()
+        self._freeze_level = freeze
+        self.events.freeze_level()
 
     @property
     def octree_level(self):
@@ -241,14 +246,10 @@ class OctreeImage(Image):
     @property
     def visible_chunks(self) -> List[OctreeChunk]:
         """Chunks in the current slice which in currently in view."""
-        # OCTREE_TODO: simplify this method...
-        # This will be None if we have not been drawn yet.
-        if self._slice is None or self._corners_2d is None:
+        if self._slice is None or self._view is None:
             return []
 
-        auto_level = self.auto_level and self.track_view
-
-        chunks = self._slice.get_visible_chunks(self._corners_2d, auto_level)
+        chunks = self._slice.get_visible_chunks(self._view)
 
         LOGGER.debug(
             "OctreeImage.visible_chunks: frame=%d num_chunks=%d",
@@ -343,13 +344,21 @@ class OctreeImage(Image):
     def _update_draw(self, scale_factor, corner_pixels, shape_threshold):
 
         # Need refresh if have not been draw at all yet.
-        need_refresh = self._corners_2d is None
-
-        # Compute self._corners_2d which we use for intersections.
-        data_corners = self._transforms[1:].simplified.inverse(corner_pixels)
-        self._corners_2d = self._convert_to_corners_2d(data_corners)
+        # TODO_OCTREE: why? do we really?
+        need_refresh = self._view is None
 
         super()._update_draw(scale_factor, corner_pixels, shape_threshold)
+
+        # Compute our 2D corners from the incoming n-d corner_pixels
+        data_corners = self._transforms[1:].simplified.inverse(corner_pixels)
+        corners = data_corners[:, self._dims.displayed]
+
+        # Update our self._view to to catpure the state of things right
+        # before we are drawn. Our self._view will used by our
+        # visible_chunks() method.
+        self._view = OctreeView(
+            corners, shape_threshold, self.freeze_level, self.track_view
+        )
 
         if need_refresh:
             self.refresh()
@@ -365,13 +374,7 @@ class OctreeImage(Image):
         if self._slice is None:
             return None
 
-        return self._slice.get_intersection(self._corners_2d, self.auto_level)
-
-    def _convert_to_corners_2d(self, data_corners):
-        """
-        Get data corners in 2d.
-        """
-        return data_corners[:, self._dims.displayed]
+        return self._slice.get_intersection(self._view)
 
     def _outside_data_range(self, indices) -> bool:
         """Return True if requested slice is outside of data range.
@@ -484,9 +487,23 @@ class OctreeImage(Image):
 
     @property
     def show_grid(self) -> bool:
+        """True if we are drawing a grid on top of the tiles.
+
+        Return
+        ------
+        bool
+            True if we are drawing a grid on top of the tiles.
+        """
         return self._show_grid
 
     @show_grid.setter
     def show_grid(self, show: bool) -> None:
+        """Set whether we should draw a grid on top of the tiles.
+
+        Parameters
+        ----------
+        show : bool
+            True if we should draw a grid on top of the tiles.
+        """
         self._show_grid = show
         self.events.loaded()  # redraw

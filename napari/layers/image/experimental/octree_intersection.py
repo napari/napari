@@ -1,14 +1,53 @@
 """OctreeIntersection class.
 """
-from typing import List, Tuple
+from typing import List, NamedTuple, Tuple
 
 import numpy as np
 
 from .octree_chunk import OctreeChunk
 from .octree_level import OctreeLevel
 
-# TODO_OCTREE: These types might be a horrible idea but trying it for now.
-Float2 = np.ndarray  # [x, y] dtype=float64 (default type)
+
+class OctreeView(NamedTuple):
+    """A view into the octree.
+
+    Attributes
+    ----------
+    corner : np.ndarray
+        The two (row, col) corners in data coordinates, base image pixels.
+    canvas : np.ndarray
+        The shape of the canvas, the window we are drawing into.
+    freeze_level : bool
+        If True the octree level will not be automatically chosen.
+    track_view : bool
+        If True which chunks are being rendered should update as the view is moved.
+    """
+
+    corners: np.ndarray
+    canvas: np.ndarray
+    freeze_level: bool
+    track_view: bool
+
+    @property
+    def data_width(self) -> int:
+        """The width between the corners, in data coordinates.
+
+        Return
+        ------
+            The width.
+        """
+        return self.corners[1][1] - self.corners[0][1]
+
+    @property
+    def auto_level(self) -> bool:
+        """True if the octree level should be selected automatically.
+
+        Return
+        ------
+        bool
+            True if the octree level should be selected automatically.
+        """
+        return not self.freeze_level and self.track_view
 
 
 class OctreeIntersection:
@@ -22,21 +61,15 @@ class OctreeIntersection:
         The lower left and upper right corners of the view in data coordinates.
     """
 
-    def __init__(self, level: OctreeLevel, corners_2d: np.ndarray):
+    def __init__(self, level: OctreeLevel, view: OctreeView):
         self.level = level
-
-        # OCTREE_TODO: We modify below with self.rows /= info.scale which
-        # we should probably not do! Without this copy all things go
-        # haywire, because we are altering the incoming array. There's
-        # no const params in Python!
-        self.corners_2d = corners_2d.copy()
 
         info = self.level.info
 
         # TODO_OCTREE: don't split rows/cols so all these pairs of variables
         # are just one variable each? Use numpy more.
-        self.rows: Float2 = self.corners_2d[:, 0]
-        self.cols: Float2 = self.corners_2d[:, 1]
+        self.rows = view.corners[:, 0]
+        self.cols = view.corners[:, 1]
 
         base = info.slice_config.base_shape
 

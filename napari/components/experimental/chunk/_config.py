@@ -46,7 +46,7 @@ AsyncConfig = namedtuple(
 # The octree config settings.
 OctreeConfig = namedtuple("OctreeConfig", ["tile_size"],)
 
-DEFAULT_OCTREE_CONFIG = {"tile_size": 64}
+DEFAULT_OCTREE_CONFIG = {"tile_size": 256}
 
 
 def _log_to_file(path: str) -> None:

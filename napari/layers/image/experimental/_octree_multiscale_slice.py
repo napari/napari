@@ -3,6 +3,7 @@
 For viewing one slice of a multiscale image using an octree.
 """
 import logging
+import math
 from typing import Callable, List, Optional
 
 import numpy as np
@@ -12,7 +13,7 @@ from ....types import ArrayLike
 from .._image_view import ImageView
 from .octree import Octree
 from .octree_chunk import OctreeChunk, OctreeLocation
-from .octree_intersection import OctreeIntersection
+from .octree_intersection import OctreeIntersection, OctreeView
 from .octree_level import OctreeLevelInfo
 from .octree_util import SliceConfig
 
@@ -53,9 +54,7 @@ class OctreeMultiscaleSlice:
 
     @octree_level.setter
     def octree_level(self, level: int) -> None:
-        """Set the octree level that the slice is showing.
-
-        This will be ignore if AUTO_LEVEL is one.
+        """Set the octree level we are viewing.
 
         Parameters
         ----------
@@ -86,50 +85,51 @@ class OctreeMultiscaleSlice:
             return None
         return self._octree.levels[self._octree_level].info
 
-    def get_intersection(self, corners_2d, auto_level: bool):
-        """Return the intersection with the octree."""
-        if self._octree is None:
-            return None
-        level_index = self._get_octree_level(corners_2d, auto_level)
-        level = self._octree.levels[level_index]
-        return OctreeIntersection(level, corners_2d)
+    def get_intersection(self, view: OctreeView):
+        """Return this view's intersection with the octree."""
+        assert self._octree
+        level = self._get_octree_level(view)
+        return OctreeIntersection(level, view)
 
-    def _get_octree_level(self, corners_2d, auto_level):
-        if not auto_level:
+    def _get_octree_level(self, view: OctreeView):
+        return self._octree.levels[self._get_octree_level_index(view)]
+
+    def _get_octree_level_index(self, view: OctreeView):
+
+        if not view.auto_level:
+            # Return current level, do not update it.
             return self._octree_level
 
-        # Find the right level automatically.
-        width = corners_2d[1][1] - corners_2d[0][1]
-        tile_size = self._octree.slice_config.tile_size
-        num_tiles = width / tile_size
+        # Find the right level automatically. Choose a level where the texels
+        # in the octree tiles are around the same size as screen pixels.
+        # We can do this smarter in the future, maybe have some hysterisis
+        # so you don't "pop" to the next level as easily, so there is some
+        # fudge factor or dead zone.
+        ratio = view.data_width / view.canvas[0]
 
-        # TODO_OCTREE: compute from canvas dimensions instead
-        max_tiles = 5
+        if ratio < 1:
+            return 0  # Show the best we've got!
 
-        # Slow way to start, redo this O(1).
-        for i, level in enumerate(self._octree.levels):
-            if (num_tiles / level.info.scale) < max_tiles:
-                return i
+        # Choose the right level...
+        return math.floor(math.log2(ratio))
 
-        return self._octree.num_levels - 1
-
-    def get_visible_chunks(self, corners_2d, auto_level) -> List[OctreeChunk]:
+    def get_visible_chunks(self, view: OctreeView) -> List[OctreeChunk]:
         """Return the chunks currently in view.
 
         Return
         ------
         List[OctreeChunk]
-            The chunks inside this intersection.
+            The chunks which are visible in the given view.
         """
-        intersection = self.get_intersection(corners_2d, auto_level)
+        intersection = self.get_intersection(view)
 
         if intersection is None:
             return []
 
-        if auto_level:
-            # Set current level according to what was automatically selected.
-            level_index = intersection.level.info.level_index
-            self._octree_level = level_index
+        if view.auto_level:
+            # Update our self._octree_level based on what level was automatically
+            # selected by the intersection.
+            self._octree_level = intersection.level.info.level_index
 
         # Return the chunks in this intersection.
         return intersection.get_chunks(id(self))
