@@ -90,7 +90,7 @@ our colormap selection dropdown to make colormap selection easier.
 - Fix bundle build by adding sudo for disk detach (#1844)
 - Patch mac bundle differently (#1848)
 - Bump qtconsole version requirement to fix #1854 (#1855)
-
+- Update set-env in make_release action (#1897)
 
 ## 18 authors added to this release (alphabetical)
 
