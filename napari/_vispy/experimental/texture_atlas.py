@@ -134,12 +134,12 @@ class TextureAtlas2D(Texture2D):
         # The full texture's shape in tiles, for example 4x4.
         self.shape_in_tiles = shape_in_tiles
 
-        depth = 3  # TODO_OCTREE: get from the data
-
         # The full texture's shape in texels, for example 1024x1024.
         height = self.spec.height * self.shape_in_tiles[0]
         width = self.spec.width * self.shape_in_tiles[1]
-        self.full_shape = np.array([width, height, depth], dtype=np.int32)
+        self.full_shape = np.array(
+            [width, height, self.spec.depth], dtype=np.int32
+        )
 
         # Total number of texture slots in the atlas.
         self.num_slots_total = shape_in_tiles[0] * shape_in_tiles[1]
