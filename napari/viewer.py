@@ -1,10 +1,3 @@
-import os
-import platform
-import sys
-
-from qtpy.QtGui import QIcon
-from qtpy.QtWidgets import QApplication
-
 from . import __version__
 from ._qt import Window
 from .components import ViewerModel
@@ -30,7 +23,11 @@ class Viewer(ViewerModel):
         Whether to show the viewer after instantiation. by default True.
     """
 
+    # set _napari_app_id to False to avoid overwriting dock icon on windows
+    # set _napari_app_id to custom string to prevent grouping different base viewer
     _napari_app_id = 'napari.napari.viewer.' + str(__version__)
+
+    # set _napari_global_logo to control if napari logo should be set as application logo
     _napari_global_logo = True
 
     def __init__(
@@ -49,22 +46,6 @@ class Viewer(ViewerModel):
             axis_labels=axis_labels,
         )
         self.window = Window(self, show=show)
-        if (
-            platform.system() == "Windows"
-            and not getattr(sys, 'frozen', False)
-            and self._napari_app_id
-        ):
-            import ctypes
-
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
-                self._napari_app_id
-            )
-        if self._napari_global_logo:
-            app = QApplication.instance()
-            logopath = os.path.join(
-                os.path.dirname(__file__), 'resources', 'logo.png'
-            )
-            app.setWindowIcon(QIcon(logopath))
 
     def update_console(self, variables):
         """Update console's namespace with desired variables.

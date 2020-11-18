@@ -3,6 +3,8 @@ Custom Qt widgets that serve as native objects that the public-facing elements
 wrap.
 """
 import os
+import platform
+import sys
 import time
 
 from qtpy.QtCore import Qt
@@ -20,7 +22,6 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
-from .. import __version__
 from ..resources import get_stylesheet
 from ..utils import perf
 from ..utils.io import imsave
@@ -63,9 +64,6 @@ class Window:
         Window menu.
     """
 
-    # set _napari_app_id to False to avoid overwriting dock icon on windows
-    # set _napari_app_id to custom string to prevent grouping different base viewer
-    _napari_app_id = 'napari.napari.viewer.' + str(__version__)
     raw_stylesheet = get_stylesheet()
 
     def __init__(self, viewer, *, show: bool = True):
@@ -103,10 +101,31 @@ class Window:
 
             # Will patch based on config file.
             perf_config.patch_callables()
+        if (
+            platform.system() == "Windows"
+            and not getattr(sys, 'frozen', False)
+            and hasattr(viewer, "_napari_app_id")
+            and viewer._napari_app_id
+        ):
+            import ctypes
+
+            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
+                viewer._napari_app_id
+            )
 
         logopath = os.path.join(
             os.path.dirname(__file__), '..', 'resources', 'logo.png'
         )
+
+        if (
+            hasattr(viewer, "_napari_global_logo")
+            and viewer._napari_global_logo
+        ):
+            app = QApplication.instance()
+            logopath = os.path.join(
+                os.path.dirname(__file__), 'resources', 'logo.png'
+            )
+            app.setWindowIcon(QIcon(logopath))
 
         # see docstring of `wait_for_workers_to_quit` for caveats on killing
         # workers at shutdown.
