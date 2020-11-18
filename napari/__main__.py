@@ -230,6 +230,10 @@ def main():
     _RUNNING_CONDA = "CONDA_PREFIX" in os.environ
     _RUNNING_PYTHONW = "PYTHONEXECUTABLE" in os.environ
 
+    # quick fix for Big Sur py3.9
+    if _MACOS_LATEST:
+        os.environ['QT_MAC_WANTS_LAYER'] = '1'
+
     if _MACOS_LATEST and _RUNNING_CONDA and not _RUNNING_PYTHONW:
         python_path = Path(sys.exec_prefix) / 'bin' / 'pythonw'
 
