@@ -92,7 +92,10 @@ class OctreeMultiscaleSlice:
         return OctreeIntersection(level, view)
 
     def _get_octree_level(self, view: OctreeView):
-        return self._octree.levels[self._get_octree_level_index(view)]
+        index = self._get_octree_level_index(view)
+        if index < 0 or index >= self._octree.num_levels:
+            raise ValueError(f"Invalid octree level {index}")
+        return self._octree.levels[index]
 
     def _get_octree_level_index(self, view: OctreeView):
 
@@ -107,11 +110,11 @@ class OctreeMultiscaleSlice:
         # fudge factor or dead zone.
         ratio = view.data_width / view.canvas[0]
 
-        if ratio < 1:
+        if ratio <= 1:
             return 0  # Show the best we've got!
 
         # Choose the right level...
-        return math.floor(math.log2(ratio))
+        return min(math.floor(math.log2(ratio)), self._octree.num_levels - 1)
 
     def get_visible_chunks(self, view: OctreeView) -> List[OctreeChunk]:
         """Return the chunks currently in view.
@@ -136,7 +139,7 @@ class OctreeMultiscaleSlice:
 
     def _get_octree_chunk(self, location: OctreeLocation):
         level = self._octree.levels[location.level_index]
-        return level.tiles[location.row][location.col]
+        return level.get_chunk(location.row, location.col)
 
     def on_chunk_loaded(self, request: ChunkRequest) -> None:
         """An asynchronous ChunkRequest was loaded.
