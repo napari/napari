@@ -25,14 +25,16 @@ class OctreeIntersection:
     def __init__(self, level: OctreeLevel, corners_2d: np.ndarray):
         self.level = level
 
-        # We modify below with self.rows /= info.scale which we should
-        # probably not do!
+        # OCTREE_TODO: We modify below with self.rows /= info.scale which
+        # we should probably not do! Without this copy all things go
+        # haywire, because we are altering the incoming array. There's
+        # no const params in Python!
         self.corners_2d = corners_2d.copy()
 
         info = self.level.info
 
         # TODO_OCTREE: don't split rows/cols so all these pairs of variables
-        # are just one variable each?
+        # are just one variable each? Use numpy more.
         self.rows: Float2 = self.corners_2d[:, 0]
         self.cols: Float2 = self.corners_2d[:, 1]
 
