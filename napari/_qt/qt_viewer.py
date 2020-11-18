@@ -472,14 +472,10 @@ class QtViewer(QSplitter):
         """
         cursor = self.viewer.cursor.style
         # Scale size by zoom if needed
-        size = self.viewer.cursor.size
-        if self.viewer.active_layer is not None:
-            size *= self.viewer.active_layer.scale[
-                (tuple(self.viewer.dims.displayed),)
-            ].max()
-
         if self.viewer.cursor.scaled:
-            size *= self.viewer.camera.zoom
+            size = self.viewer.cursor.size * self.viewer.camera.zoom
+        else:
+            size = self.viewer.cursor.size
 
         if cursor == 'square':
             # make sure the square fits within the current canvas
