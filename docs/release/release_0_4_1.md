@@ -54,6 +54,7 @@ our colormap selection dropdown to make colormap selection easier.
 - Add reverse gray colormap (#1879)
 - Async-25: Remove VispyCompoundImageLayer (#1890)
 - Async-26: Artificial Delay and fixes (#1891)
+- Add properties event (#1896)
 
 ## Bug Fixes
 
@@ -102,6 +103,7 @@ our colormap selection dropdown to make colormap selection easier.
 - [Genevieve Buckley](https://github.com/napari/napari/commits?author=GenevieveBuckley) - @GenevieveBuckley
 - [Grzegorz Bokota](https://github.com/napari/napari/commits?author=Czaki) - @Czaki
 - [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - @jni
+- [Kevin Yamauchi](https://github.com/napari/napari/commits?author=kevinyamauchi) - @kevinyamauchi
 - [kir0ul](https://github.com/napari/napari/commits?author=kir0ul) - @kir0ul
 - [Nicholas Sofroniew](https://github.com/napari/napari/commits?author=sofroniewn) - @sofroniewn
 - [Paddy Harrison](https://github.com/napari/napari/commits?author=harripj) - @harripj
