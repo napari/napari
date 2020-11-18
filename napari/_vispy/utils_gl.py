@@ -46,10 +46,14 @@ def get_max_texture_sizes() -> Tuple[int, int]:
     if max_size_2d == ():
         max_size_2d = None
 
-    # vispy doesn't expose GL_MAX_3D_TEXTURE_SIZE so hard coding for now.
+    # vispy doesn't expose GL_MAX_3D_TEXTURE_SIZE so estimating based on
+    # memory requirements for 2D texture. This is not necessarily correct.
     # MAX_TEXTURE_SIZE_3D = gl.glGetParameter(gl.GL_MAX_3D_TEXTURE_SIZE)
     # if MAX_TEXTURE_SIZE_3D == ():
     #    MAX_TEXTURE_SIZE_3D = None
-    max_size_3d = 2048
+    if max_size_2d is not None:
+        max_size_3d = round(max_size_2d ** (2.0 / 3.0))
+    else:
+        max_size_3d = None
 
     return max_size_2d, max_size_3d
