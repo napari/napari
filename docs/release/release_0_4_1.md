@@ -94,6 +94,7 @@ our colormap selection dropdown to make colormap selection easier.
 - Patch mac bundle differently (#1848)
 - Bump qtconsole version requirement to fix #1854 (#1855)
 - Update set-env in make_release action (#1897)
+- Fix set-env for bundle build (#1901)
 
 ## 18 authors added to this release (alphabetical)
 
