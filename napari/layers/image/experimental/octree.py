@@ -2,10 +2,23 @@
 """
 from typing import List
 
+from ...._vendor.experimental.humanize.src.humanize import intword
 from ....utils.perf import block_timer
 from .octree_level import OctreeLevel
 from .octree_tile_builder import create_downsampled_levels
 from .octree_util import SliceConfig
+
+
+def _dim_str(dim: tuple) -> None:
+    return f"{dim[0]} x {dim[1]} = {intword(dim[0] * dim[1])}"
+
+
+def _print_levels(label: str, levels: List[OctreeLevel]):
+    print(f"{label} {len(levels)} levels:")
+    for i, level in enumerate(levels):
+        image_str = _dim_str(level.info.image_shape)
+        tiles_str = _dim_str(level.info.shape_in_tiles)
+        print(f"    Level {i}: {image_str} pixels -> {tiles_str} tiles")
 
 
 class Octree:
@@ -56,14 +69,16 @@ class Octree:
                 f"Data of shape {data.shape} resulted " "no octree levels?"
             )
 
+        _print_levels("Octree input data has", self.levels)
+
         # If root level contains more than one tile, add more levels
         # until the root does consist of a single tile.
         if self.levels[-1].info.num_tiles > 1:
-            with block_timer("Create additional levels", print_time=True):
-                additional_levels = self._create_additional_levels(slice_id)
+            with block_timer("_create_additional_levels") as timer:
+                more_levels = self._create_additional_levels(slice_id)
 
-            print(f"Created {len(additional_levels)} additional levels.")
-            self.levels.extend(additional_levels)
+            _print_levels(f"In {timer.duration_ms:.3f}ms created", more_levels)
+            self.levels.extend(more_levels)
 
             print(f"Tree now has {len(self.levels)} total levels.")
 
