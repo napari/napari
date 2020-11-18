@@ -42,9 +42,39 @@ class NormalNoise(NamedTuple):
 
 
 class SliceConfig(NamedTuple):
-    """Configuration for a tiled image."""
+    """Configuration for a tiled image.
 
-    base_shape: Tuple[int, int]
+    Attributes
+    ----------
+    base_shape : np.ndarray
+        The base [height, width] shape of the entire full resolution image.
+    num_levels : int
+        The number of octree levels in the image.
+    tile_size : int
+        The default tile size. However each OctreeLevel has its own tile size
+        which can override this.
+
+    Notes
+    -----
+    This SliceConfig.tile_size will be used by the OctreeLevels in the tree
+    in general. But the highest level OctreeLevel might use a larger size
+    so that it can consist of a single chunk.
+
+    For example we might be using 256x256 tiles in general. For best
+    performance it might make sense to have octree levels such that the
+    highest level fits inside a single 256x256 tiles.
+
+    But if we are displaying user provided data, they did not know our tile
+    size. Instead their root level might be something pretty big, like
+    6000x6000. In that case we use 6000x6000 as the tile size in our root,
+    so the root level consists of a single tile.
+
+    TODO_OCTREE: we don't actually support larger size tiles yet! However
+    it's still a good idea to assume that each OctreeLevel could have its
+    own tile size.
+    """
+
+    base_shape: np.darray
     num_levels: int
     tile_size: int
     delay_ms: NormalNoise = NormalNoise()
