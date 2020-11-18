@@ -9,12 +9,6 @@ from . import _builtins, hook_specifications
 
 if sys.platform.startswith('linux') and running_as_bundled_app():
     sys.path.append(user_site_packages())
-elif os.name == 'nt':
-    import site
-
-    for dir in site.getsitepackages():
-        if dir not in sys.path:
-            sys.path.append(dir)
 
 
 # the main plugin manager instance for the `napari` plugin namespace.
