@@ -78,7 +78,7 @@ class OctreeLevel:
         # TODO_OCTREE: change from "info" to "meta"/"metadata"?
         # info is kind of dumb sounding.
         self.info = OctreeLevelInfo(slice_config, level_index)
-        self.tiles = {}
+        self._tiles = {}
 
     def get_chunk(
         self, row: int, col: int, create_chunks=False
@@ -102,14 +102,14 @@ class OctreeLevel:
             The OctreeChunk if one exists at this location.
         """
         try:
-            return self.tiles[(row, col)]
+            return self._tiles[(row, col)]
         except KeyError:
             if not create_chunks:
                 return None
 
         # Create a chunk at this location and return it.
         octree_chunk = self._create_chunk(row, col)
-        self.tiles[(row, col)] = octree_chunk
+        self._tiles[(row, col)] = octree_chunk
         return octree_chunk
 
     def _create_chunk(self, row: int, col: int) -> OctreeChunk:
