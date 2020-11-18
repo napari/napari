@@ -299,7 +299,8 @@ class OctreeImage(Image):
             else:
                 # The chunk is not in memory and is not being loaded, so
                 # we are going to load it.
-                if self._load_chunk(octree_chunk):
+                sync_load = self._load_chunk(octree_chunk)
+                if sync_load:
                     # The chunk was loaded synchronously. Either it hit the
                     # cache, or it's fast-loading data. We can draw it now.
                     _log(i, len(chunks), "SYNC LOAD", octree_chunk)
@@ -350,8 +351,12 @@ class OctreeImage(Image):
         super()._update_draw(scale_factor, corner_pixels, shape_threshold)
 
         # Compute our 2D corners from the incoming n-d corner_pixels
-        data_corners = self._transforms[1:].simplified.inverse(corner_pixels)
-        corners = data_corners[:, self._dims.displayed]
+        # TODO_OCTREE: Throw in the two copies to fix weird bug, need
+        # to fix it for real soon.
+        data_corners = (
+            self._transforms[1:].simplified.inverse(corner_pixels).copy()
+        )
+        corners = data_corners[:, self._dims.displayed].copy()
 
         # Update our self._view to to catpure the state of things right
         # before we are drawn. Our self._view will used by our
