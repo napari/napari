@@ -59,12 +59,12 @@ class Viewer(ViewerModel):
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
                 self._napari_app_id
             )
-            if self._napari_global_logo:
-                app = QApplication.instance()
-                logopath = os.path.join(
-                    os.path.dirname(__file__), 'resources', 'logo.png'
-                )
-                app.setWindowIcon(QIcon(logopath))
+        if self._napari_global_logo:
+            app = QApplication.instance()
+            logopath = os.path.join(
+                os.path.dirname(__file__), 'resources', 'logo.png'
+            )
+            app.setWindowIcon(QIcon(logopath))
 
     def update_console(self, variables):
         """Update console's namespace with desired variables.
