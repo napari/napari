@@ -83,11 +83,8 @@ def _draw_tiles(
     scale_xy : Tuple[float, float]
         The scale to draw things that.
     """
-
-    return  # need to redo this for sparse octree
-
-    """
     level = intersection.level
+    shape = level.info.slice_config.base_shape
 
     y = 0
     for row in range(shape[0]):
@@ -113,7 +110,6 @@ def _draw_tiles(
             rect.draw(bitmap, color)
             x += scaled[1]
         y += scaled[0]
-    """
 
 
 def _get_bitmap_shape(aspect: float) -> np.ndarray:
@@ -154,7 +150,7 @@ def _draw_intersection(intersection: OctreeIntersection) -> np.ndarray:
     np.ndarray
         The bitmap showing the intersection.
     """
-    aspect = intersection.level.info86.aspect_ratio
+    aspect = intersection.level.info.slice_config.aspect_ratio
     level: OctreeLevel = intersection.level
 
     # Map shape plus RGBA depth.
