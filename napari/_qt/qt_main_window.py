@@ -22,6 +22,7 @@ from qtpy.QtWidgets import (
     QWidget,
 )
 
+from .. import __version__
 from ..resources import get_stylesheet
 from ..utils import perf
 from ..utils.io import imsave
@@ -101,30 +102,28 @@ class Window:
 
             # Will patch based on config file.
             perf_config.patch_callables()
+        _napari_app_id = getattr(
+            viewer,
+            "_napari_app_id",
+            'napari.napari.viewer.' + str(__version__),
+        )
         if (
             platform.system() == "Windows"
             and not getattr(sys, 'frozen', False)
-            and hasattr(viewer, "_napari_app_id")
-            and viewer._napari_app_id
+            and _napari_app_id
         ):
             import ctypes
 
             ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
-                viewer._napari_app_id
+                _napari_app_id
             )
 
         logopath = os.path.join(
             os.path.dirname(__file__), '..', 'resources', 'logo.png'
         )
 
-        if (
-            hasattr(viewer, "_napari_global_logo")
-            and viewer._napari_global_logo
-        ):
+        if getattr(viewer, "_napari_global_logo", True):
             app = QApplication.instance()
-            logopath = os.path.join(
-                os.path.dirname(__file__), 'resources', 'logo.png'
-            )
             app.setWindowIcon(QIcon(logopath))
 
         # see docstring of `wait_for_workers_to_quit` for caveats on killing
