@@ -69,7 +69,8 @@ our colormap selection dropdown to make colormap selection easier.
 - Apply requested opacity in points layer (#1864)
 - Fix active layer update (#1882)
 - Fix affine composition order (#1884)
-- fix affine warning (#1886)
+- Fix affine warning (#1886)
+- Fix Py3.9 Big Sur bug (#1894)
 
 ## API Changes
 
@@ -90,7 +91,7 @@ our colormap selection dropdown to make colormap selection easier.
 - Bump qtconsole version requirement to fix #1854 (#1855)
 
 
-## 16 authors added to this release (alphabetical)
+## 18 authors added to this release (alphabetical)
 
 - [Abhishek Patil](https://github.com/napari/napari/commits?author=zeroth) - @zeroth
 - [Abigail McGovern](https://github.com/napari/napari/commits?author=AbigailMcGovern) - @AbigailMcGovern
@@ -103,6 +104,7 @@ our colormap selection dropdown to make colormap selection easier.
 - [Juan Nunez-Iglesias](https://github.com/napari/napari/commits?author=jni) - @jni
 - [kir0ul](https://github.com/napari/napari/commits?author=kir0ul) - @kir0ul
 - [Nicholas Sofroniew](https://github.com/napari/napari/commits?author=sofroniewn) - @sofroniewn
+- [Paddy Harrison](https://github.com/napari/napari/commits?author=harripj) - @harripj
 - [Philip Winston](https://github.com/napari/napari/commits?author=pwinston) - @pwinston
 - [Talley Lambert](https://github.com/napari/napari/commits?author=tlambert03) - @tlambert03
 - [Umberto Perco](https://github.com/napari/napari/commits?author=UmbWill) - @UmbWill
