@@ -39,7 +39,7 @@ class OctreeImage(Image):
         self._track_view = True
         self._slice = None
 
-        self.show_grid = True  # Get/set directly.
+        self._show_grid = True
 
         # Temporary to implement a disabled cache.
         self._last_visible_set = set()
@@ -481,3 +481,12 @@ class OctreeImage(Image):
         self._delay_ms = delay_ms
         self._slice = None  # For now must explicitly delete it
         self.refresh()  # Create a new slice.
+
+    @property
+    def show_grid(self) -> bool:
+        return self._show_grid
+
+    @show_grid.setter
+    def show_grid(self, show: bool) -> None:
+        self._show_grid = show
+        self.events.loaded()  # redraw
