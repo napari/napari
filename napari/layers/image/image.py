@@ -19,7 +19,7 @@ from ._image_slice import ImageSlice
 from ._image_slice_data import ImageSliceData
 from ._image_utils import guess_multiscale, guess_rgb
 
-# Use sync or async SliceData class.
+# Use special ChunkedSlideData for async.
 if config.async_loading:
     from .experimental._chunked_slice_data import ChunkedSliceData
 
@@ -495,7 +495,7 @@ class Image(IntensityVisualizationMixin, Layer):
         """
         warnings.warn(
             (
-                "The shape attribute is deprecated and will be removed in version 0.4.1."
+                "The shape attribute is deprecated and will be removed in version 0.4.2."
                 " Instead you should use the extent.data and extent.world attributes"
                 " to get the extent of the data in data or world coordinates."
             ),
@@ -700,7 +700,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
     def _update_thumbnail(self):
         """Update thumbnail with current image data and colormap."""
-        if not self._slice.loaded:
+        if not self.loaded:
             # ASYNC_TODO: Do not compute the thumbnail until we are loaded.
             # Is there a nicer way to prevent this from getting called?
             return
@@ -798,7 +798,7 @@ class Image(IntensityVisualizationMixin, Layer):
 
         return value
 
-    # One additional method for async
+    # For async we add an on_chunk_loaded() method.
     if config.async_loading:
         from ...components.experimental.chunk import ChunkRequest
 

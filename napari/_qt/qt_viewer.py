@@ -157,57 +157,7 @@ class QtViewer(QSplitter):
             self.toggle_console_visibility
         )
 
-        self.canvas = VispyCanvas(
-            keys=None,
-            vsync=True,
-            parent=self,
-            size=self.viewer._canvas_size[::-1],
-        )
-        self.canvas.events.ignore_callback_errors = False
-        self.canvas.events.draw.connect(self.dims.enable_play)
-        self.canvas.native.setMinimumSize(QSize(200, 200))
-        self.canvas.context.set_depth_func('lequal')
-
-        self.canvas.connect(self.on_mouse_move)
-        self.canvas.connect(self.on_mouse_press)
-        self.canvas.connect(self.on_mouse_release)
-        self.canvas.connect(self.on_key_press)
-        self.canvas.connect(self.on_key_release)
-        self.canvas.connect(self.on_mouse_wheel)
-        self.canvas.connect(self.on_draw)
-        self.canvas.connect(self.on_resize)
-
-        self.view = self.canvas.central_widget.add_view()
-        self.camera = VispyCamera(
-            self.view, self.viewer.camera, self.viewer.dims
-        )
-        self.canvas.connect(self.camera.on_draw)
-
-        self.axes = VispyAxesVisual(
-            self.viewer.axes,
-            self.viewer.camera,
-            self.viewer.dims,
-            parent=self.view.scene,
-            order=1e6,
-        )
-        self.scale_bar = VispyScaleBarVisual(
-            self.viewer.scale_bar,
-            self.viewer.camera,
-            parent=self.view,
-            order=1e6 + 1,
-        )
-        self.canvas.events.resize.connect(self.scale_bar._on_position_change)
-
-        self._show_welcome = welcome
-        if self._show_welcome:
-            self.welcome = VispyWelcomeVisual(
-                self.viewer, parent=self.view, order=-100
-            )
-            self.viewer.events.layers_change.connect(
-                self.welcome._on_visible_change
-            )
-            self.viewer.events.palette.connect(self.welcome._on_palette_change)
-            self.canvas.events.resize.connect(self.welcome._on_canvas_change)
+        self._create_canvas()
 
         main_widget = QWidget()
         main_layout = QVBoxLayout()
@@ -236,8 +186,9 @@ class QtViewer(QSplitter):
         self.viewer.cursor.events.size.connect(self._on_cursor)
         self.viewer.events.palette.connect(self._update_palette)
         self.viewer.layers.events.reordered.connect(self._reorder_layers)
-        self.viewer.layers.events.added.connect(self._on_add_layer_change)
+        self.viewer.layers.events.inserted.connect(self._on_add_layer_change)
         self.viewer.layers.events.removed.connect(self._remove_layer)
+
         # stop any animations whenever the layers change
         self.viewer.events.layers_change.connect(lambda x: self.dims.stop())
 
@@ -245,6 +196,72 @@ class QtViewer(QSplitter):
 
         for layer in self.viewer.layers:
             self._add_layer(layer)
+
+        self.view = self.canvas.central_widget.add_view()
+        self.camera = VispyCamera(
+            self.view, self.viewer.camera, self.viewer.dims
+        )
+        self.canvas.connect(self.camera.on_draw)
+
+        # Add axes, scale bar and welcome visuals.
+        self._add_visuals(welcome)
+
+    def _create_canvas(self) -> None:
+        """Create the canvas and hook up events."""
+        self.canvas = VispyCanvas(
+            keys=None,
+            vsync=True,
+            parent=self,
+            size=self.viewer._canvas_size[::-1],
+        )
+        self.canvas.events.ignore_callback_errors = False
+        self.canvas.events.draw.connect(self.dims.enable_play)
+        self.canvas.native.setMinimumSize(QSize(200, 200))
+        self.canvas.context.set_depth_func('lequal')
+
+        self.canvas.connect(self.on_mouse_move)
+        self.canvas.connect(self.on_mouse_press)
+        self.canvas.connect(self.on_mouse_release)
+        self.canvas.connect(self.on_key_press)
+        self.canvas.connect(self.on_key_release)
+        self.canvas.connect(self.on_mouse_wheel)
+        self.canvas.connect(self.on_draw)
+        self.canvas.connect(self.on_resize)
+
+    def _add_visuals(self, welcome: bool) -> None:
+        """Add visuals for axes, scale bar, and welcome text.
+
+        Parameters
+        ----------
+        welcome : bool
+            Show the welcome visual.
+        """
+
+        self.axes = VispyAxesVisual(
+            self.viewer.axes,
+            self.viewer.camera,
+            self.viewer.dims,
+            parent=self.view.scene,
+            order=1e6,
+        )
+        self.scale_bar = VispyScaleBarVisual(
+            self.viewer.scale_bar,
+            self.viewer.camera,
+            parent=self.view,
+            order=1e6 + 1,
+        )
+        self.canvas.events.resize.connect(self.scale_bar._on_position_change)
+
+        self._show_welcome = welcome and config.allow_welcome_visual
+        if self._show_welcome:
+            self.welcome = VispyWelcomeVisual(
+                self.viewer, parent=self.view, order=-100
+            )
+            self.viewer.events.layers_change.connect(
+                self.welcome._on_visible_change
+            )
+            self.viewer.events.palette.connect(self.welcome._on_palette_change)
+            self.canvas.events.resize.connect(self.welcome._on_canvas_change)
 
     def _create_performance_dock_widget(self):
         """Create the dock widget that shows performance metrics.
@@ -260,8 +277,9 @@ class QtViewer(QSplitter):
         return None
 
     def _create_render_dock_widget(self):
-        """Create the dock widget that shows async controls.
+        """Create the dock widget that shows debug render controls.
         """
+        # We only show the render controls for octree right now.
         if config.async_octree:
             from .experimental.render.qt_render_container import (
                 QtRenderContainer,
@@ -313,7 +331,7 @@ class QtViewer(QSplitter):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        layer = event.item
+        layer = event.value
         self._add_layer(layer)
 
     def _add_layer(self, layer):
@@ -339,7 +357,7 @@ class QtViewer(QSplitter):
         event : napari.utils.event.Event
             The napari event that triggered this method.
         """
-        layer = event.item
+        layer = event.value
         vispy_layer = self.layer_to_visual[layer]
         vispy_layer.node.transforms = ChainTransform()
         vispy_layer.node.parent = None

@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from napari.layers.image.experimental.octree import _combine_tiles
+from napari.layers.image.experimental.octree_tile_builder import _combine_tiles
 
 
 def _square(value):

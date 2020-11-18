@@ -489,7 +489,7 @@ class Layer(KeymapProvider, ABC):
     def dims(self):
         warnings.warn(
             (
-                "The layer.dims parameter is deprecated and will be removed in version 0.4.1."
+                "The layer.dims parameter is deprecated and will be removed in version 0.4.2."
                 " Instead you should use the viewer.dims parameter on the main viewer object."
             ),
             category=DeprecationWarning,
@@ -575,22 +575,28 @@ class Layer(KeymapProvider, ABC):
     @property
     def _slice_indices(self):
         """(D, ) array: Slice indices in data coordinates."""
-        # clipping plane in world coordinates
-        # clipping_plane = [1, 0, 0]
         inv_transform = self._transforms['data2world'].inverse
-        # data_clipping_plane = inv_transform(clipping_plane)
 
         if self.ndim > self._dims.ndisplay:
-            clipping_plane = np.ones(self.ndim)
-            clipping_plane[-self._dims.ndisplay :] = 0
-            mapped_clipping_plane = inv_transform(clipping_plane)
-            if not np.allclose(
-                mapped_clipping_plane[-self._dims.ndisplay :], 0
-            ):
+            # Subspace spanned by non displayed dimensions
+            non_displayed_subspace = np.zeros(self.ndim)
+            for d in self._dims.not_displayed:
+                non_displayed_subspace[d] = 1
+            # Map subspace through inverse transform, ignoring translation
+            mapped_nd_subspace = inv_transform(
+                non_displayed_subspace
+            ) - inv_transform(np.zeros(self.ndim))
+            # Look at displayed subspace
+            displayed_mapped_subspace = [
+                mapped_nd_subspace[d] for d in self._dims.displayed
+            ]
+            # Check that displayed subspace is null
+            if not np.allclose(displayed_mapped_subspace, 0):
                 warnings.warn(
                     'Non-orthogonal slicing is being requested, but'
                     ' is not fully supported. Data is displayed without'
-                    ' applying an out-of-slice rotation or shear component.'
+                    ' applying an out-of-slice rotation or shear component.',
+                    category=UserWarning,
                 )
 
         slice_inv_transform = inv_transform.set_slice(self._dims.not_displayed)
@@ -616,7 +622,7 @@ class Layer(KeymapProvider, ABC):
         """
         warnings.warn(
             (
-                "The shape attribute is deprecated and will be removed in version 0.4.1."
+                "The shape attribute is deprecated and will be removed in version 0.4.2."
                 " Instead you should use the extent.data and extent.world attributes"
                 " to get the extent of the data in data or world coordinates."
             ),

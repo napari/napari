@@ -131,7 +131,7 @@ class ChunkLoader:
         chunks : Dict[str, ArrayLike]
             The arrays we want to load.
         """
-        layer_id = key.layer_id
+        layer_id = key.layer_key.layer_id
 
         # Add a LayerInfo if we don't already have one.
         if layer_id not in self.layer_map:
@@ -172,13 +172,18 @@ class ChunkLoader:
             return request
 
         LOGGER.info("ChunkLoader.load_chunk: cache miss %s", request.key)
+
         # Clear any pending requests for this specific data_id.
-        self._clear_pending(request.key.data_id)
+        # TODO_OCTREE: turn this off because all our request come from the
+        # same data_id. But maybe we can clear pending on something more
+        # specific?
+        # self._clear_pending(request.key.data_id)
 
         # Add to the delay queue, the delay queue will call our
         # _submit_async() method later on if the delay expires without the
         # request getting cancelled.
         self.delay_queue.add(request)
+        return None
 
     def _load_synchronously(self, request: ChunkRequest) -> bool:
         """Return True if we loaded the request synchronously."""
@@ -246,7 +251,7 @@ class ChunkLoader:
         future.add_done_callback(self._done)
 
         # Store the future in case we need to cancel it.
-        self.futures.setdefault(request.key.data_id, []).append(future)
+        self.futures.setdefault(request.data_id, []).append(future)
 
     def _clear_pending(self, data_id: int) -> None:
         """Clear any pending requests for this data_id.
@@ -369,7 +374,7 @@ class ChunkLoader:
         KeyError
             If the layer is not found.
         """
-        layer_id = request.key.layer_id
+        layer_id = request.key.layer_key.layer_id
 
         # Raises KeyError if not found. This should never happen because we
         # add the layer to the layer_map in ChunkLoader.create_request().
@@ -390,7 +395,7 @@ class ChunkLoader:
         """Wait for all in-progress requests to finish."""
         self.delay_queue.flush()
 
-        for data_id, future_list in self.futures.items():
+        for future_list in self.futures.values():
             # Result blocks until the future is done or cancelled
             [future.result() for future in future_list]
 
@@ -405,7 +410,9 @@ class ChunkLoader:
         try:
             future_list = self.futures[data_id]
         except KeyError:
-            LOGGER.warn("ChunkLoader.wait: no futures for data_id %d", data_id)
+            LOGGER.warning(
+                "ChunkLoader.wait: no futures for data_id %d", data_id
+            )
             return
 
         LOGGER.info(

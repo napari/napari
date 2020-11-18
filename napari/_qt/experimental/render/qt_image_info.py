@@ -1,26 +1,19 @@
 """QtImageInfo class.
 """
-
-
 from qtpy.QtWidgets import QFrame, QLabel, QVBoxLayout
 
 
-class QtImageInfoLayout(QVBoxLayout):
-    """Image info is generic to all image layers (not just Octree).
+def _get_shape(data) -> tuple:
+    """Get shape of the data.
 
-    Parameters
-    ----------
-    layer : Layer
-        Show info for this layer.
+    Return
+    ------
+    tuple
+        The shape of the data.
     """
-
-    def __init__(self, layer):
-        super().__init__()
-
-        # TODO_OCTREE: This class was going to have more, if not
-        # we can role this into QtRender itself?
-        shape = layer.data.shape
-        self.addWidget(QLabel(f"Shape: {shape}"))
+    if isinstance(data, list):
+        return data[0].shape  # Level zero of multiscale.
+    return data.shape  # Single scale.
 
 
 class QtImageInfo(QFrame):
@@ -32,6 +25,7 @@ class QtImageInfo(QFrame):
 
     def __init__(self, layer):
         super().__init__()
-
-        layout = QtImageInfoLayout(layer)
+        layout = QVBoxLayout()
+        shape = _get_shape(layer.data)
+        layout.addWidget(QLabel(f"Shape: {shape}"))
         self.setLayout(layout)

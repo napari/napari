@@ -297,6 +297,7 @@ class Points(Layer):
             current_face_color=Event,
             edge_color=Event,
             current_edge_color=Event,
+            properties=Event,
             current_properties=Event,
             symbol=Event,
             n_dimensional=Event,
@@ -616,6 +617,7 @@ class Points(Layer):
 
         if self.text.values is not None:
             self.refresh_text()
+        self.events.properties()
 
     @property
     def current_properties(self) -> Dict[str, np.ndarray]:

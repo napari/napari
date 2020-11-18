@@ -354,6 +354,7 @@ class Shapes(Layer):
             edge_width=Event,
             edge_color=Event,
             face_color=Event,
+            properties=Event,
             current_edge_color=Event,
             current_face_color=Event,
             current_properties=Event,
@@ -576,6 +577,7 @@ class Shapes(Layer):
 
         if self.text.values is not None:
             self.refresh_text()
+        self.events.properties()
 
     def _get_ndim(self):
         """Determine number of dimensions of the layer."""

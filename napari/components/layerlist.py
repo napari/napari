@@ -6,49 +6,28 @@ from typing import List, Optional
 import numpy as np
 
 from ..layers import Layer
-from ..utils.list import ListModel
+from ..utils.events import EventedList
 from ..utils.naming import inc_name_count
 
 Extent = namedtuple('Extent', 'data world step')
 
 
-def _add(event):
-    """When a layer is added, set its name."""
-    layers = event.source
-    layer = event.item
-    layer.name = layers._coerce_name(layer.name, layer)
-    layer.events.name.connect(lambda e: layers._update_name(e))
-    layers.unselect_all(ignore=layer)
-
-
-class LayerList(ListModel):
+class LayerList(EventedList):
     """List-like layer collection with built-in reordering and callback hooks.
 
     Parameters
     ----------
-    iterable : iterable
+    data : iterable
         Iterable of napari.layer.Layer
-
-    Attributes
-    ----------
-    events : vispy.util.event.EmitterGroup
-        Event hooks:
-            * added(item, index): whenever an item is added
-            * removed(item): whenever an item is removed
-            * reordered(): whenever the list is reordered
     """
 
-    def __init__(self, iterable=()):
+    def __init__(self, data=()):
         super().__init__(
-            basetype=Layer,
-            iterable=iterable,
-            lookup={str: lambda q, e: q == e.name},
+            data=data, basetype=Layer, lookup={str: lambda e: e.name},
         )
 
-        self.events.added.connect(_add)
-
-    def __newlike__(self, iterable):
-        return ListModel(self._basetype, iterable, self._lookup)
+    def __newlike__(self, data):
+        return LayerList(data)
 
     def _coerce_name(self, name, layer=None):
         """Coerce a name into a unique equivalent.
@@ -100,23 +79,14 @@ class LayerList(ListModel):
         insert : int
             Index that item(s) will be inserted at
         """
-        total = len(self)
-        indices = list(range(total))
         if not self[index].selected:
             self.unselect_all()
             self[index].selected = True
-        selected = [i for i in range(total) if self[i].selected]
-
-        # remove all indices to be moved
-        for i in selected:
-            indices.remove(i)
-        # adjust offset based on selected indices to move
-        offset = sum([i < insert and i != index for i in selected])
-        # insert indices to be moved at correct start
-        for insert_idx, elem_idx in enumerate(selected, start=insert - offset):
-            indices.insert(insert_idx, elem_idx)
-        # reorder list
-        self[:] = self[tuple(indices)]
+            moving = (index,)
+        else:
+            moving = [i for i, item in enumerate(self) if item.selected]
+        offset = insert >= index
+        self.move_multiple(moving, insert + offset)
 
     def unselect_all(self, ignore=None):
         """Unselects all layers expect any specified in ignore.

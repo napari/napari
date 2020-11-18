@@ -2,7 +2,7 @@
 """
 import contextlib
 import logging
-from typing import Optional, Tuple
+from typing import NamedTuple, Optional, Tuple
 
 import numpy as np
 
@@ -31,46 +31,68 @@ def _flatten(indices) -> tuple:
     return tuple(result)
 
 
+class LayerKey(NamedTuple):
+    """The key for a layer and its important properties.
+
+    Attributes
+    ----------
+    layer_id : int
+        The id of the layer making the request.
+    data_id : int
+        The id of the data in the layer.
+    data_level : int
+        The level in the data (for multi-scale).
+    indices : Tuple[Optional[slice], ...]
+        The indices of the slice.
+    """
+
+    layer_id: int
+    data_id: int
+    data_level: int
+    indices: Tuple[Optional[slice], ...]
+
+    def _get_hash_values(self):
+        return (
+            self.layer_id,
+            self.data_id,
+            self.data_level,
+            _flatten(self.indices),
+        )
+
+
 class ChunkKey:
     """The key for one single ChunkRequest.
 
     Parameters
     ----------
     layer : Layer
-        The layer to load data for.
+        The layer which is loading the chunk.
     indices : Indices
-        The indices to load from the layer.
+        The indices of the layer we are loading.
 
     Attributes
     ----------
-    layer_id : int
-        The id of the layer making the request.
-    data_level : int
-        The level in the data (for multi-scale).
-    indices : Tuple[Optional[slice], ...]
-        The indices of the slice.
+    layer_key : LayerKey
+        The layer specific parts of the key.
     key : Tuple
-        The combined key, all the identifiers together.
+        The combined key, everything hashed together.
     """
 
     def __init__(self, layer: Layer, indices: Tuple[Optional[slice], ...]):
-        self.layer_id = id(layer)
-        self.data_id = get_data_id(layer)
-        self.data_level = layer._data_level
-        self.indices = indices
-
-        combined = (
-            self.layer_id,
-            self.data_id,
-            self.data_level,
-            _flatten(self.indices),
+        self.layer_key = LayerKey(
+            id(layer), get_data_id(layer), layer._data_level, indices
         )
-        self.key = hash(combined)
+
+        self.key = hash(self._get_hash_values())
+
+    def _get_hash_values(self):
+        return self.layer_key._get_hash_values()
 
     def __str__(self):
+        layer_key = self.layer_key
         return (
-            f"layer_id={self.layer_id} data_id={self.data_id} "
-            f"data_level={self.data_level} indices={self.indices}"
+            f"layer_id={layer_key.layer_id} data_id={layer_key.data_id} "
+            f"data_level={layer_key.data_level} indices={layer_key.indices}"
         )
 
     def __eq__(self, other):
@@ -107,6 +129,10 @@ class ChunkRequest:
         self.chunks = chunks
 
         self.timers: Dict[str, PerfEvent] = {}
+
+    @property
+    def data_id(self) -> int:
+        return self.key.layer_key.data_id
 
     @property
     def num_chunks(self) -> int:
