@@ -1,14 +1,53 @@
 """OctreeIntersection class.
 """
-from typing import List, Tuple
+from typing import List, NamedTuple, Tuple
 
 import numpy as np
 
+from .octree_chunk import OctreeChunk
 from .octree_level import OctreeLevel
-from .octree_util import OctreeChunk, OctreeChunkGeom, OctreeLocation
 
-# TODO_OCTREE: These types might be a horrible idea but trying it for now.
-Float2 = np.ndarray  # [x, y] dtype=float64 (default type)
+
+class OctreeView(NamedTuple):
+    """A view into the octree.
+
+    Attributes
+    ----------
+    corner : np.ndarray
+        The two (row, col) corners in data coordinates, base image pixels.
+    canvas : np.ndarray
+        The shape of the canvas, the window we are drawing into.
+    freeze_level : bool
+        If True the octree level will not be automatically chosen.
+    track_view : bool
+        If True which chunks are being rendered should update as the view is moved.
+    """
+
+    corners: np.ndarray
+    canvas: np.ndarray
+    freeze_level: bool
+    track_view: bool
+
+    @property
+    def data_width(self) -> int:
+        """The width between the corners, in data coordinates.
+
+        Return
+        ------
+            The width in data coordinates.
+        """
+        return self.corners[1][1] - self.corners[0][1]
+
+    @property
+    def auto_level(self) -> bool:
+        """True if the octree level should be selected automatically.
+
+        Return
+        ------
+        bool
+            True if the octree level should be selected automatically.
+        """
+        return not self.freeze_level and self.track_view
 
 
 class OctreeIntersection:
@@ -22,34 +61,26 @@ class OctreeIntersection:
         The lower left and upper right corners of the view in data coordinates.
     """
 
-    def __init__(self, level: OctreeLevel, corners_2d: np.ndarray):
+    def __init__(self, level: OctreeLevel, view: OctreeView):
         self.level = level
-
-        # We modify below with self.rows /= info.scale which we should
-        # probably not do!
-        self.corners_2d = corners_2d.copy()
 
         info = self.level.info
 
         # TODO_OCTREE: don't split rows/cols so all these pairs of variables
-        # are just one variable each?
-        self.rows: Float2 = self.corners_2d[:, 0]
-        self.cols: Float2 = self.corners_2d[:, 1]
+        # are just one variable each? Use numpy more.
+        rows, cols = view.corners[:, 0], view.corners[:, 1]
 
-        base = info.image_config.base_shape
+        base = info.slice_config.base_shape
 
         self.normalized_range = np.array(
-            [
-                np.clip(self.rows / base[0], 0, 1),
-                np.clip(self.cols / base[1], 0, 1),
-            ]
+            [np.clip(rows / base[0], 0, 1), np.clip(cols / base[1], 0, 1)]
         )
 
-        self.rows /= info.scale
-        self.cols /= info.scale
+        scaled_rows = rows / info.scale
+        scaled_cols = cols / info.scale
 
-        self._row_range = self.row_range(self.rows)
-        self._col_range = self.column_range(self.cols)
+        self._row_range = self.row_range(scaled_rows)
+        self._col_range = self.column_range(scaled_cols)
 
     def tile_range(self, span, num_tiles):
         """Return tiles indices needed to draw the span."""
@@ -57,7 +88,7 @@ class OctreeIntersection:
         def _clamp(val, min_val, max_val):
             return max(min(val, max_val), min_val)
 
-        tile_size = self.level.info.image_config.tile_size
+        tile_size = self.level.info.slice_config.tile_size
 
         span_tiles = [span[0] / tile_size, span[1] / tile_size]
         clamped = [
@@ -93,63 +124,34 @@ class OctreeIntersection:
 
         return _inside(row, self._row_range) and _inside(col, self._col_range)
 
-    def get_chunks(self, slice_id) -> List[OctreeChunk]:
+    def get_chunks(self, create_chunks=False) -> List[OctreeChunk]:
         """Return chunks inside this intersection.
 
         Parameters
         ----------
-        intersection : OctreeIntersection
-            Describes some subset of one octree level.
+        create_chunks : bool
+            If True, create an OctreeChunk at any location that does
+            not already have a chunk.
         """
         chunks = []
 
-        level_info = self.level.info
-        level_index = level_info.level_index
-
-        scale = level_info.scale
-        scale_vec = np.array([scale, scale], dtype=np.float32)
-
-        tile_size = level_info.image_config.tile_size
-        scaled_size = tile_size * scale
-
         # Get every chunk that is within the rectangular region. These are
-        # all the chunks we might possible draw, because they are within
+        # all the chunks we might possibly draw, because they are within
         # the current view.
         #
-        # Chunks will either contain the original data, or they will
-        # contain an OctreeChunk. This implies the chunk was viewed before.
+        # If we've accessed the chunk recently the existing OctreeChunk
+        # will be returned, otherwise a new OctreeChunk is created
+        # and returned.
         #
-        # If the chunk is not yet an OctreeChunk we turn it into one. The
-        # main reason we have OctreeChunks is so that have service as the
-        # home for a pending chunk, a chunk in the process of being loaded.
-        #
-        # We will draw the chunk only when that load has finished. But here
-        # we just return all the chunks that are within the intersection.
-        y = self._row_range.start * scaled_size
+        # OctreeChunks can be loaded or unloaded. Unloaded chunks are not
+        # drawn until their data as been loaded in. But here we return
+        # every chunk within the rectangle.
         for row in self._row_range:
-            x = self._col_range.start * scaled_size
             for col in self._col_range:
-
-                data = self.level.tiles[row][col]
-
-                if isinstance(data, OctreeChunk):
-                    # Location is already an OctreeChunk, so return it.
-                    chunks.append(data)
-                else:
-                    # Location is not an OctreeChunk yet, turn it into one now.
-                    location = OctreeLocation(slice_id, level_index, row, col)
-
-                    # Geom is used by the visual for rendering.
-                    pos = np.array([x, y], dtype=np.float32)
-                    geom = OctreeChunkGeom(pos, scale_vec)
-
-                    # Replace the location with the newly created chunk.
-                    chunk = OctreeChunk(data, location, geom)
-                    self.level.tiles[row][col] = chunk
-
+                chunk = self.level.get_chunk(
+                    row, col, create_chunks=create_chunks
+                )
+                if chunk is not None:
                     chunks.append(chunk)
-
-                x += scaled_size
-            y += scaled_size
 
         return chunks

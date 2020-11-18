@@ -1,8 +1,13 @@
 """OctreeLevel and OctreeLevelInfo classes.
 """
-from typing import Tuple
+import math
+from typing import Optional
 
-from .octree_util import ImageConfig, TileArray
+import numpy as np
+
+from ....types import ArrayLike
+from .octree_chunk import OctreeChunk, OctreeChunkGeom, OctreeLocation
+from .octree_util import SliceConfig
 
 
 class OctreeLevelInfo:
@@ -10,7 +15,7 @@ class OctreeLevelInfo:
 
     Parameters
     ----------
-    image_config : ImageConfig
+    slice_config : SliceConfig
         Information about the entire octree.
     level_index : int
         The index of this level within the whole tree.
@@ -18,24 +23,27 @@ class OctreeLevelInfo:
         The (height, width) dimensions of this level in terms of tiles.
     """
 
-    def __init__(
-        self,
-        image_config: ImageConfig,
-        level_index: int,
-        shape_in_tiles: Tuple[int, int],
-    ):
-        self.image_config = image_config
+    def __init__(self, slice_config: SliceConfig, level_index: int):
+        self.slice_config = slice_config
 
         self.level_index = level_index
         self.scale = 2 ** self.level_index
 
-        base = image_config.base_shape
+        base = slice_config.base_shape
         self.image_shape = (
             int(base[0] / self.scale),
             int(base[1] / self.scale),
         )
 
-        self.shape_in_tiles = shape_in_tiles
+        tile_size = self.slice_config.tile_size
+        scaled_size = tile_size * self.scale
+
+        self.shape_in_tiles = [
+            math.ceil(base[0] / scaled_size),
+            math.ceil(base[1] / scaled_size),
+        ]
+
+        self.num_tiles = self.shape_in_tiles[0] * self.shape_in_tiles[1]
 
 
 class OctreeLevel:
@@ -47,17 +55,114 @@ class OctreeLevel:
 
     Parameters
     ----------
-    image_config : ImageConfig
-        Basic image configuration.
+    slice_id : int
+        The id of the OctreeMultiscaleSlice we are in.
+    data : ArrayLike
+        The data for this level.
+    slice_config : SliceConfig
+        The base image shape and other details.
     level_index : int
         Index of this specific level (0 is full resolution).
-    tile : TileArray
-        The tiles for this level.
     """
 
     def __init__(
-        self, image_config: ImageConfig, level_index: int, tiles: TileArray
+        self,
+        slice_id: int,
+        data: ArrayLike,
+        slice_config: SliceConfig,
+        level_index: int,
     ):
-        shape_in_tiles = [len(tiles), len(tiles[0])]
-        self.info = OctreeLevelInfo(image_config, level_index, shape_in_tiles)
-        self.tiles = tiles
+        self.slice_id = slice_id
+        self.data = data
+
+        # TODO_OCTREE: change from "info" to "meta"/"metadata"?
+        # info is kind of dumb sounding.
+        self.info = OctreeLevelInfo(slice_config, level_index)
+        self._tiles = {}
+
+    def get_chunk(
+        self, row: int, col: int, create_chunks=False
+    ) -> Optional[OctreeChunk]:
+        """Return the OctreeChunk at this location if it exists.
+
+        If create is True, an OctreeChunk will be created if one does not exist.
+
+        Parameters
+        ----------
+        row : int
+            The row in the level.
+        col : int
+            The column in the level.
+        create_chunks : bool
+            If True, create the OctreeChunk if it does not exist.
+
+        Return
+        ------
+        Optional[OctreeChunk]
+            The OctreeChunk if one exists at this location.
+        """
+        try:
+            return self._tiles[(row, col)]
+        except KeyError:
+            if not create_chunks:
+                return None
+
+        # Create a chunk at this location and return it.
+        octree_chunk = self._create_chunk(row, col)
+        self._tiles[(row, col)] = octree_chunk
+        return octree_chunk
+
+    def _create_chunk(self, row: int, col: int) -> OctreeChunk:
+        """Create a new OctreeChunk for this location in the level.
+
+        Parameters
+        ----------
+        row : int
+            The row in the level.
+        col : int
+            The column in the level.
+
+        Return
+        ------
+        OctreeChunk
+            The newly created chunk.
+        """
+        level_index = self.info.level_index
+        location = OctreeLocation(self.slice_id, level_index, row, col)
+
+        scale = self.info.scale
+        scale_vec = np.array([scale, scale], dtype=np.float32)
+
+        tile_size = self.info.slice_config.tile_size
+        scaled_size = tile_size * scale
+
+        pos = np.array(
+            [col * scaled_size, row * scaled_size], dtype=np.float32
+        )
+
+        # Geom is used by the visual for rendering this chunk.
+        geom = OctreeChunkGeom(pos, scale_vec)
+
+        data = self._get_data(row, col)
+
+        # Return the newly created chunk.
+        return OctreeChunk(data, location, geom)
+
+    def _get_data(self, row: int, col: int) -> ArrayLike:
+
+        tile_size = self.info.slice_config.tile_size
+
+        array_slice = (
+            slice(row * tile_size, (row + 1) * tile_size),
+            slice(col * tile_size, (col + 1) * tile_size),
+        )
+
+        if self.data.ndim == 3:
+            array_slice += (slice(None),)  # Add the colors.
+
+        data = self.data[array_slice]
+
+        # if not delay_ms.is_zero:
+        #    data = _add_delay(data, delay_ms)
+
+        return data

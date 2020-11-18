@@ -13,7 +13,7 @@ import numpy as np
 from PIL import Image, ImageDraw, ImageFont
 
 from ....layers.image.experimental import (
-    ImageConfig,
+    SliceConfig,
     create_multi_scale_from_image,
 )
 from ....utils.perf import block_timer
@@ -70,19 +70,19 @@ def draw_text_grid(image, text: str) -> None:
     draw.rectangle([0, 0, image.width, image.height], outline=color, width=5)
 
 
-def create_test_image(text, config: ImageConfig) -> np.ndarray:
+def create_test_image(text, slice_config: SliceConfig) -> np.ndarray:
     """Create a test image for testing tiled rendering.
 
     The test image just has digits all over it. The digits will typically
     be used to show the slice number like "0" or "42".
 
-    image_config: ImageConfig
-        The shape of the image to create and other details.
+    slice_config: SliceConfig
+        The base image shape and other details.
     """
     text = str(text)  # Might be an int.
 
     # Image.new wants (width, height) so swap them.
-    image_size = config.image_shape[::-1]
+    image_size = slice_config.image_shape[::-1]
 
     # Create the image, draw on the text, return it.
     image = Image.new('RGB', image_size)
@@ -90,19 +90,19 @@ def create_test_image(text, config: ImageConfig) -> np.ndarray:
     return np.array(image)
 
 
-def create_test_image_multi(text, image_config: ImageConfig) -> np.ndarray:
+def create_test_image_multi(text, slice_config: SliceConfig) -> np.ndarray:
     """Create a multiscale test image for testing tiled rendering.
 
     The test image is blank with digits all over it. The digits will
     typically be used to show the slice number.
 
-    image_config: ImageConfig
-        The shape and other details about the image to be created.
+    slice_config: SliceConfig
+        The base image shape and other details.
     """
     text = str(text)  # Convert in case it's an int.
 
     # Image.new wants (width, height) so swap them.
-    image_size = image_config.base_shape[::-1]
+    image_size = slice_config.base_shape[::-1]
 
     # Create the image, draw on the text, return it.
     image = Image.new('RGB', image_size)
@@ -112,4 +112,4 @@ def create_test_image_multi(text, image_config: ImageConfig) -> np.ndarray:
     with block_timer("create_multi_scale_from_image", print_time=True):
         # This is create all the octree layers, each coarser one
         # downsampled from the previous level.
-        return create_multi_scale_from_image(data, image_config.tile_size)
+        return create_multi_scale_from_image(data, slice_config.tile_size)

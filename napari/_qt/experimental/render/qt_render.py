@@ -12,6 +12,8 @@ from .qt_mini_map import QtMiniMap
 from .qt_octree_info import QtOctreeInfo
 from .qt_test_image import QtTestImage
 
+SHOW_MINIMAP = False
+
 
 class QtRender(QWidget):
     """Dockable widget for render controls.
@@ -41,8 +43,9 @@ class QtRender(QWidget):
             # Octree specific controls and widgets.
             layout.addWidget(QtOctreeInfo(layer))
 
-            self.mini_map = QtMiniMap(layer)
-            layout.addWidget(self.mini_map)
+            if SHOW_MINIMAP:
+                self.mini_map = QtMiniMap(layer)
+                layout.addWidget(self.mini_map)
 
             self.viewer.camera.events.center.connect(self._on_camera_move)
 
@@ -58,5 +61,6 @@ class QtRender(QWidget):
 
     def _on_camera_move(self, _event=None):
         """Called when the camera was moved."""
-        self.mini_map.update()
+        if SHOW_MINIMAP:
+            self.mini_map.update()
         self.frame_rate.on_camera_move()

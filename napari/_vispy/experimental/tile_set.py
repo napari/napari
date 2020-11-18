@@ -3,7 +3,7 @@
 from dataclasses import dataclass
 from typing import List
 
-from ...layers.image.experimental.octree_util import OctreeChunk
+from ...layers.image.experimental import OctreeChunk
 from .texture_atlas import AtlasTile
 
 

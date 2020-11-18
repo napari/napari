@@ -176,7 +176,7 @@ class ChunkRequest:
         We time the overall load with the special name "load_chunks" and then
         we time each chunk as it loads, using it's array name as the key.
         """
-        with self.chunk_timer("load_chunks"):
+        with self.chunk_timer("ChunkRequest.load_chunks"):
             for key, array in self.chunks.items():
                 with self.chunk_timer(key):
                     loaded_array = np.asarray(array)

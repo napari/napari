@@ -6,7 +6,7 @@ from typing import List, Set
 
 import numpy as np
 
-from ...layers.image.experimental.octree_util import OctreeChunk
+from ...layers.image.experimental import OctreeChunk
 from ..vendored import ImageVisual
 from ..vendored.image import _build_color_transform
 from .texture_atlas import TextureAtlas2D

@@ -118,8 +118,9 @@ class LoadStats:
             True if the load was synchronous.
         """
         try:
-            # Use the special "load_chunks" timer for all chunks combined.
-            load_ms = request.timers['load_chunks'].duration_ms
+            # Use the special "ChunkRequest.load_chunks" timer to time
+            # the loading of all the chunks in this request combine.
+            load_ms = request.timers['ChunkRequest.load_chunks'].duration_ms
 
             # Update our StatWindow.
             self.window_ms.add(load_ms)
@@ -135,7 +136,7 @@ class LoadStats:
         self.counts.bytes += num_bytes
 
         # Time to load all chunks.
-        load_ms = request.timers['load_chunks'].duration_ms
+        load_ms = request.timers['ChunkRequest.load_chunks'].duration_ms
 
         # Update our StatWindows.
         self.window_bytes.add(num_bytes)

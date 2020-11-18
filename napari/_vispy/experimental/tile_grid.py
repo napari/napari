@@ -8,7 +8,7 @@ import numpy as np
 from vispy.scene.node import Node
 from vispy.scene.visuals import Line
 
-from ...layers.image.experimental.octree_util import OctreeChunk
+from ...layers.image.experimental import OctreeChunk
 
 # Draw with lines of this width and color.
 GRID_WIDTH = 3
