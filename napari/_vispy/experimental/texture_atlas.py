@@ -7,7 +7,7 @@ from typing import NamedTuple, Optional, Tuple
 import numpy as np
 from vispy.gloo import Texture2D
 
-from ...layers.image.experimental.octree_util import OctreeChunk
+from ...layers.image.experimental import OctreeChunk
 
 # Two triangles which cover a [0..1, 0..1] quad.
 _QUAD = np.array(

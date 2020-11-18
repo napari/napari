@@ -250,7 +250,7 @@ class QtTestImage(QFrame):
 
         if spec['shape'] is None:
             # This image has a settable shape provided by the UI, so we
-            # pass the image_config into the factory.
+            # pass the settings into the factory.
             data = factory(image_settings)
         else:
             # This image comes in just one specific shape, so the factory

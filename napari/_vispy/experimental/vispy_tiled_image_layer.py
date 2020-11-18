@@ -8,8 +8,8 @@ from typing import List
 
 from vispy.scene.visuals import create_visual_node
 
+from ...layers.image.experimental import OctreeChunk
 from ...layers.image.experimental.octree_image import OctreeImage
-from ...layers.image.experimental.octree_util import OctreeChunk
 from ...utils.perf import block_timer
 from ..vispy_image_layer import VispyImageLayer
 from .tile_grid import TileGrid

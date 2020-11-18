@@ -10,9 +10,10 @@ from ....utils.events import Event
 from ..image import Image
 from ._chunked_slice_data import ChunkedSliceData
 from ._octree_multiscale_slice import OctreeMultiscaleSlice
+from .octree_chunk import OctreeChunk, OctreeChunkKey
 from .octree_intersection import OctreeIntersection
 from .octree_level import OctreeLevelInfo
-from .octree_util import ImageConfig, NormalNoise, OctreeChunk, OctreeChunkKey
+from .octree_util import NormalNoise, SliceConfig
 
 DEFAULT_TILE_SIZE = 64  # TODO_OCTREE: get from somewhere else
 
@@ -144,17 +145,17 @@ class OctreeImage(Image):
         self.refresh()  # Create a new slice.
 
     @property
-    def image_config(self) -> ImageConfig:
+    def slice_config(self) -> SliceConfig:
         """Return information about the current octree.
 
         Return
         ------
-        ImageConfig
-            Basic image configuration.
+        SliceConfig
+            Configuration information.
         """
         if self._slice is None:
             return None
-        return self._slice.image_config
+        return self._slice.slice_config
 
     @property
     def octree_level_info(self) -> OctreeLevelInfo:
@@ -416,7 +417,7 @@ class OctreeImage(Image):
         if self._outside_data_range(indices):
             return
 
-        image_config = ImageConfig(
+        slice_config = SliceConfig(
             self.data[0].shape, len(self.data), self._tile_size, self._delay_ms
         )
 
@@ -428,7 +429,7 @@ class OctreeImage(Image):
         slice_data = [level_data[indices] for level_data in self.data]
 
         self._slice = OctreeMultiscaleSlice(
-            slice_data, image_config, self._raw_to_displayed,
+            slice_data, slice_config, self._raw_to_displayed,
         )
 
     def _get_slice_indices(self) -> tuple:

@@ -1,18 +1,7 @@
 """Octree class.
 """
-from typing import List
-
-import numpy as np
-
-from ....types import ArrayLike
 from .octree_level import OctreeLevel
-from .octree_tile_builder import (
-    create_levels_from_multiscale_data,
-    create_multi_scale_from_image,
-)
-from .octree_util import ImageConfig, TileArray
-
-Levels = List[TileArray]
+from .octree_util import SliceConfig
 
 
 class Octree:
@@ -46,47 +35,17 @@ class Octree:
         All the levels of the tree.
     """
 
-    def __init__(self, image_config: ImageConfig, levels: Levels):
-        self.image_config = image_config
+    def __init__(self, slice_id: int, data, slice_config: SliceConfig):
+        self.data = data
+        self.slice_config = slice_config
 
-        # One OctreeLevel per level.
         self.levels = [
-            OctreeLevel(image_config, i, level)
-            for (i, level) in enumerate(levels)
+            OctreeLevel(slice_id, data[i], slice_config, i)
+            for i in range(len(data))
         ]
-        self.num_levels = len(self.levels)
+        self.num_levels = len(data)
 
     def print_info(self):
         """Print information about our tiles."""
         for level in self.levels:
             level.print_info()
-
-    @classmethod
-    def from_image(cls, image: np.ndarray, tile_size: int):
-        """Create octree from given single image.
-
-        Parameters
-        ----------
-        image : ndarray
-            Create the octree for this single image.
-        """
-        levels = create_multi_scale_from_image(image, tile_size)
-
-        info = ImageConfig.create(image.shape, tile_size)
-        return Octree(info, levels)
-
-    @classmethod
-    def from_multiscale_data(
-        cls, data: List[ArrayLike], image_config: ImageConfig
-    ):
-        """Create octree from multiscale data.
-
-        Parameters
-        ----------
-        data : List[ArrayLike]
-            Create the octree from this multi-scale data.
-        """
-        tile_size = image_config.tile_size
-        delay_ms = image_config.delay_ms
-        levels = create_levels_from_multiscale_data(data, tile_size, delay_ms)
-        return Octree(image_config, levels)

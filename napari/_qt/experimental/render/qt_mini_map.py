@@ -9,11 +9,7 @@ import numpy as np
 from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import QLabel
 
-from ....layers.image.experimental import (
-    OctreeChunk,
-    OctreeIntersection,
-    OctreeLevel,
-)
+from ....layers.image.experimental import OctreeIntersection, OctreeLevel
 from ....layers.image.experimental.octree_image import OctreeImage
 
 # Longest edge of map bitmap in pixels. So if in a odd shape it does not
@@ -76,7 +72,7 @@ def _draw_view(data, intersection: OctreeIntersection) -> None:
 
 
 def _draw_tiles(
-    data: np.ndarray, intersection: OctreeIntersection, scale: np.ndarray
+    bitmap: np.ndarray, intersection: OctreeIntersection, scale: np.ndarray
 ) -> None:
     """Draw all the tiles, marking which are seen by the intersection.
 
@@ -87,21 +83,26 @@ def _draw_tiles(
     scale_xy : Tuple[float, float]
         The scale to draw things that.
     """
-    level: OctreeLevel = intersection.level
+
+    return  # need to redo this for sparse octree
+
+    """
+    level = intersection.level
 
     y = 0
-    for row, row_tiles in enumerate(level.tiles):
+    for row in range(shape[0]):
         x = 0
-        for col, tile in enumerate(row_tiles):
+        for col in range(shape[1]):
+            octree_chunk = level.get_chunk(row, col)
 
-            if isinstance(tile, OctreeChunk):
-                # This chunk has was loaded, so it's now an OctreeChunk, so
-                # pull out its data.
-                tile = tile.data
+            if octree_chunk is None:
+                print(f"NO CHUNK: {row}, {col}")
+                scaled = [0, 0]
+                continue  # should not happen?
 
-            scaled_shape = tile.shape[:2] * scale
-
-            rect = Rect(x, y, scaled_shape[1], scaled_shape[0])  # swap to XY
+            scaled = octree_chunk.data.shape[:2] * scale
+            rect = Rect(x, y, scaled[1], scaled[0])
+            row, col = octree_chunk.location.row, octree_chunk.location.col
 
             color = (
                 COLOR_SEEN
@@ -109,10 +110,10 @@ def _draw_tiles(
                 else COLOR_UNSEEN
             )
 
-            rect.draw(data, color)
-
-            x += scaled_shape[1]
-        y += scaled_shape[0]
+            rect.draw(bitmap, color)
+            x += scaled[1]
+        y += scaled[0]
+    """
 
 
 def _get_bitmap_shape(aspect: float) -> np.ndarray:
@@ -153,7 +154,7 @@ def _draw_intersection(intersection: OctreeIntersection) -> np.ndarray:
     np.ndarray
         The bitmap showing the intersection.
     """
-    aspect = intersection.level.info.image_config.aspect_ratio
+    aspect = intersection.level.info86.aspect_ratio
     level: OctreeLevel = intersection.level
 
     # Map shape plus RGBA depth.

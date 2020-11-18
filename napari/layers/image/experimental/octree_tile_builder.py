@@ -9,7 +9,7 @@ as you browse a large image that doesn't have tiles, they are created in
 the background. But that's pretty speculative and far out.
 """
 import time
-from typing import List, Optional
+from typing import List
 
 import dask
 import dask.array as da
@@ -17,7 +17,9 @@ import numpy as np
 from scipy import ndimage as ndi
 
 from ....types import ArrayLike
-from .octree_util import NormalNoise, TileArray
+from .octree_util import NormalNoise
+
+TileArray = List[List[ArrayLike]]
 
 
 def _get_tile(tiles: TileArray, row, col):
@@ -29,10 +31,6 @@ def _get_tile(tiles: TileArray, row, col):
 
 def _none(items):
     return all(x is None for x in items)
-
-
-def _one_tile(tiles: TileArray) -> bool:
-    return len(tiles) == 1 and len(tiles[0]) == 1
 
 
 def _add_delay(array, delay_ms: NormalNoise):
@@ -51,58 +49,6 @@ def _add_delay(array, delay_ms: NormalNoise):
         return array
 
     return da.from_delayed(delayed(array), array.shape, array.dtype)
-
-
-def create_tiles(
-    array: np.ndarray, tile_size: int, delay_ms: Optional[NormalNoise] = None
-) -> np.ndarray:
-    """
-    Return an NxM array of (tile_size, tile_size) ndarrays except the edge
-    tiles might be smaller if the array did not divide evenly.
-
-    TODO_OCTREE: Could we use slices_from_chunks() from dask.array.core to
-    do this without loops, faster? Right now this is just used for
-    testing/development, but if we do this in production, maybe upgrade it.
-
-    Parameters
-    ----------
-    array : np.ndarray
-        The array to create tiles out of.
-    tiles_size : int
-        Edge length of the square tiles.
-    """
-    # Array is either ndim==2 (grayscale) or ndim==3 (RGB).
-    if array.ndim < 2 or array.ndim > 3:
-        raise ValueError(f"Unexpected array dimension {array.ndim}")
-    rows, cols = array.shape[:2]
-
-    tiles = []
-
-    print(f"create_tiles array={array.shape} tile_size={tile_size}")
-
-    row = 0
-    while row < rows:
-        row_tiles = []
-        col = 0
-        while col < cols:
-            array_slice = (
-                slice(row, row + tile_size),
-                slice(col, col + tile_size),
-            )
-            if array.ndim == 3:
-                array_slice += (slice(None),)  # Add the colors.
-
-            tile = array[array_slice]
-
-            if not delay_ms.is_zero:
-                tile = _add_delay(tile, delay_ms)
-
-            row_tiles.append(tile)
-            col += tile_size
-        tiles.append(row_tiles)
-        row += tile_size
-
-    return tiles
 
 
 def _combine_tiles(*tiles: np.ndarray) -> np.ndarray:
@@ -231,22 +177,3 @@ def create_multi_scale_from_image(
         levels.append(next_level)
 
     return levels
-
-
-def create_levels_from_multiscale_data(
-    data: List[ArrayLike], tile_size: int, delay_ms: NormalNoise
-):
-    """Create octree levels from multiscale data.
-
-    The data is already a list of ArrayLike levels, each own downsampled
-    by half. We are just creating the TileArray list of lists format
-    that the octree code expects today.
-
-    We'll almost certainly replace this lists of lists format with Dask or
-    some nicer chunked format. But this is what we've done since day one
-    until we upgrade it.
-    """
-
-    return [
-        create_tiles(level_data, tile_size, delay_ms) for level_data in data
-    ]

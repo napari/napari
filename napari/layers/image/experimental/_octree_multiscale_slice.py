@@ -11,9 +11,10 @@ from ....components.experimental.chunk import ChunkRequest
 from ....types import ArrayLike
 from .._image_view import ImageView
 from .octree import Octree
+from .octree_chunk import OctreeChunk, OctreeLocation
 from .octree_intersection import OctreeIntersection
 from .octree_level import OctreeLevelInfo
-from .octree_util import ImageConfig, OctreeChunk, OctreeLocation
+from .octree_util import SliceConfig
 
 LOGGER = logging.getLogger("napari.async.octree")
 
@@ -24,14 +25,14 @@ class OctreeMultiscaleSlice:
     def __init__(
         self,
         data,
-        image_config: ImageConfig,
+        slice_config: SliceConfig,
         image_converter: Callable[[ArrayLike], ArrayLike],
     ):
         self.data = data
 
-        self._image_config = image_config
+        self._slice_config = slice_config
 
-        self._octree = Octree.from_multiscale_data(data, image_config)
+        self._octree = Octree(id(self), data, slice_config)
         self._octree_level = self._octree.num_levels - 1
 
         thumbnail_image = np.zeros(
@@ -99,7 +100,7 @@ class OctreeMultiscaleSlice:
 
         # Find the right level automatically.
         width = corners_2d[1][1] - corners_2d[0][1]
-        tile_size = self._octree.image_config.tile_size
+        tile_size = self._octree.slice_config.tile_size
         num_tiles = width / tile_size
 
         # TODO_OCTREE: compute from canvas dimensions instead
