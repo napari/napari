@@ -10,14 +10,23 @@ from ....types import ArrayLike
 
 
 class OctreeChunkGeom(NamedTuple):
-    """Position and scale of the chunk, for rendering."""
+    """Position and scale of the chunk, for rendering.
+
+    Stored in the OctreeChunk so that we calculate them just once
+    at OctreeChunk creation time.
+    """
 
     pos: np.ndarray
     scale: np.ndarray
 
 
 class OctreeLocation(NamedTuple):
-    """Location of one chunk within the octree."""
+    """Location of one chunk within the octree.
+
+    This is used as part of the OctreeChunkKey to uniquely identify a
+    chunk. The OctreeChunkKey is used when we load chunk and used
+    related to the cache.
+    """
 
     slice_id: int
     level_index: int
@@ -37,24 +46,33 @@ class OctreeLocation(NamedTuple):
 
 
 class OctreeChunk:
-    """One chunk of the full 2D or 3D image in the octree.
+    """A geographically meaningful portion of the full 2D or 3D image.
 
-    A chunk is a 2D tile or a 3D sub-volume.
+    For 2D images a chunk is a "tile". It's a 2D square region of pixels
+    which are part of the full 2D image. If it's in level 0 of the octree,
+    the pixels are 1:1 identical to the portion of the full image. The tile
+    is full resolution. If it's in level 1 or greater the pixels are
+    downsampled from the full resolution image.
 
-    We include level_index because id(data) is sometimes duplicated in #
-    adjacent levels, somehow. But it makes sense to include it anyway,
-    it's an important aspect of the chunk.
+    For 3D, not yet implemented, a chunk is a sub-volume. Again for level 0
+    the voxels are at the full resolution of the full image, but for other
+    levels the voxels are downsampled.
+
+    The highest level of the tree contains a single chunk which depicts the
+    entire image, whether 2D or 3D.
 
     Attributes
     ----------
-    level_index : int
-        The octree level where this chunk is from.
     data : ArrayLike
         The data to draw for this chunk.
-    pos : np.ndarray
-        The x, y coordinates of the chunk.
-    scale : np.ndarray
-        The (x, y) scale of this chunk. Should be square/cubic.
+    _orig_data : ArrayLike
+        The original unloaded data that we use to implement OctreeChunk.clear().
+    location : OctreeLocation
+        The location of this chunk, including the level_index, row, col.
+    geom : OctreeChunkGeom
+        The x, y coordinates and scale of the chunk.
+    loading : bool
+        If True the chunk has been queued to be loaded.
     """
 
     def __init__(
@@ -71,24 +89,42 @@ class OctreeChunk:
 
     @property
     def data(self) -> ArrayLike:
-        """Return the data associated with this chunk."""
+        """Return the data associated with this chunk.
+
+        Because the chunk has been loaded this might be an ndarray or it
+        might be Dask array or other array-like object. After the chunk has
+        been loaded it will always be an ndarray. The bytes will be
+        in memory and ready to be drawn.
+        """
         return self._data
 
     @data.setter
     def data(self, data: np.ndarray) -> None:
-        try:
-            assert not self.in_memory  # Should not set twice.
-        except AssertionError:
-            pass
+        """Set the new data for this chunk.
+
+        We set the data after a chunk as been loaded..
+
+        Parameters
+        ----------
+        data : np.ndarray
+            The new data for the chunk.
+        """
         print(f"set_data {self}")
+
+        # An ndarray mean it's actual bytes in memory.
+        assert isinstance(data, np.ndarray)
+
         self._data = data
+
+        # Declary in-progress load is now finished.
         self.loading = False
 
     @property
     def key(self) -> Tuple[int, int, int]:
         """The unique key for this chunk.
 
-        Switch to __hash__? Didn't immediately work.
+        TODO_OCTREE: Switch to __hash__? Tried __hash__ a while ago and ran
+        into problems, but maybe try again.
         """
         return (
             self.geom.pos[0],
@@ -98,7 +134,13 @@ class OctreeChunk:
 
     @property
     def in_memory(self) -> bool:
-        """Return True if the data is fully in memory."""
+        """Return True if the data is fully in memory.
+
+        Return
+        ------
+        bool
+            True if data is fully in memory.
+        """
         return isinstance(self.data, np.ndarray)
 
     @property
@@ -106,8 +148,11 @@ class OctreeChunk:
         """Return true if this chunk needs to loaded.
 
         An unloaded chunk's data might be a Dask or similar deferred array.
-        A loaded chunk's data is always ndarray, It's always real binary
-        data in memory.
+        A loaded chunk's data is always ndarray.
+
+        Return
+        ------
+            True if the chunk needs to be loaded.
         """
         return not self.in_memory and not self.loading
 
@@ -116,14 +161,17 @@ class OctreeChunk:
 
         This is only done when running without the cache, so that we reload
         the data again. With computation the loaded data might be different
-        each time.
+        each time, so we need to do it each time.
+
+        TODO_OCTREE: Depending on how we end up doing caching we might
+        no longer need this method?
         """
         self._data = self._orig_data
         self.loading = False
 
 
 class OctreeChunkKey(ChunkKey):
-    """Add octree specific identity information to the generic ChunkKey.
+    """A ChunkKey with octree specific fields.
 
     Parameters
     ----------
@@ -132,7 +180,7 @@ class OctreeChunkKey(ChunkKey):
     indices : Tuple[Optional[slice], ...]
         The indices of the image we are viewing.
     location : OctreeLocation
-        The location of the chunk within the octree we are loading.
+        The location of the chunk within the octree.
     """
 
     def __init__(
