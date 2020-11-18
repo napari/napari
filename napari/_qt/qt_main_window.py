@@ -3,8 +3,6 @@ Custom Qt widgets that serve as native objects that the public-facing elements
 wrap.
 """
 import os
-import platform
-import sys
 import time
 
 from qtpy.QtCore import Qt
@@ -106,21 +104,9 @@ class Window:
             # Will patch based on config file.
             perf_config.patch_callables()
 
-        if (
-            platform.system() == "Windows"
-            and not getattr(sys, 'frozen', False)
-            and self._napari_app_id
-        ):
-            import ctypes
-
-            ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID(
-                self._napari_app_id
-            )
-
         logopath = os.path.join(
             os.path.dirname(__file__), '..', 'resources', 'logo.png'
         )
-        app.setWindowIcon(QIcon(logopath))
 
         # see docstring of `wait_for_workers_to_quit` for caveats on killing
         # workers at shutdown.
@@ -130,6 +116,7 @@ class Window:
         self.qt_viewer = QtViewer(viewer)
 
         self._qt_window = QMainWindow()
+        self._qt_window.setWindowIcon(QIcon(logopath))
         self._qt_window.setAttribute(Qt.WA_DeleteOnClose)
         self._qt_window.setUnifiedTitleAndToolBarOnMac(True)
 
