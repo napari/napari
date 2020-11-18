@@ -55,6 +55,7 @@ our colormap selection dropdown to make colormap selection easier.
 - Async-25: Remove VispyCompoundImageLayer (#1890)
 - Async-26: Artificial Delay and fixes (#1891)
 - Add properties event (#1896)
+- Async-27: Sparse Octree (#1892)
 
 ## Bug Fixes
 
@@ -72,6 +73,8 @@ our colormap selection dropdown to make colormap selection easier.
 - Fix affine composition order (#1884)
 - Fix affine warning (#1886)
 - Fix Py3.9 Big Sur bug (#1894)
+- Make control of grouping part of public api again (#1895)
+- Fix windows plugin dupe (#1899)
 
 ## API Changes
 
