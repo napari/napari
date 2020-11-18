@@ -12,7 +12,7 @@ from ._chunked_slice_data import ChunkedSliceData
 from ._octree_multiscale_slice import OctreeMultiscaleSlice
 from .octree_intersection import OctreeIntersection
 from .octree_level import OctreeLevelInfo
-from .octree_util import ImageConfig, OctreeChunk, OctreeChunkKey
+from .octree_util import ImageConfig, NormalNoise, OctreeChunk, OctreeChunkKey
 
 DEFAULT_TILE_SIZE = 64  # TODO_OCTREE: get from somewhere else
 
@@ -45,6 +45,11 @@ class OctreeImage(Image):
 
         # For logging only
         self.frame_count = 0
+
+        # For debugging and demos, inject a random delay in from of every
+        # octree chunk that we access. To simulate latency from IO or
+        # computation.
+        self._delay_ms = NormalNoise()
 
         super().__init__(*args, **kwargs)
         self.events.add(auto_level=Event, octree_level=Event, tile_size=Event)
@@ -135,8 +140,8 @@ class OctreeImage(Image):
     def tile_size(self, tile_size: int) -> None:
         self._tile_size = tile_size
         self.events.tile_size()
-        self._slice = None
-        self.refresh()
+        self._slice = None  # For now must explicitly delete it
+        self.refresh()  # Create a new slice.
 
     @property
     def image_config(self) -> ImageConfig:
@@ -207,12 +212,14 @@ class OctreeImage(Image):
         assert 0 <= level < self.num_octree_levels
         self._octree_level = level
         self.events.octree_level()
-        self.refresh()  # Create new slice with this level.
+        if self._slice is not None:
+            self._slice.octree_level = level
+        self.events.loaded()  # redraw
 
     @property
     def num_octree_levels(self) -> int:
         """Return the total number of octree levels."""
-        return len(self.data) - 1  # Multiscale
+        return len(self.data)  # Multiscale
 
     def _new_empty_slice(self) -> None:
         """Initialize the current slice to an empty image.
@@ -281,7 +288,7 @@ class OctreeImage(Image):
 
             if octree_chunk.in_memory:
                 # The chunk is fully in memory, we can view it right away.
-                _log(i, len(chunks), "ALREADY LOADED", octree_chunk)
+                # _log(i, len(chunks), "ALREADY LOADED", octree_chunk)
                 visible_chunks.append(octree_chunk)
                 visible_set.add(octree_chunk.key)
             elif octree_chunk.loading:
@@ -399,22 +406,39 @@ class OctreeImage(Image):
         this class OctreeImage becomes Image. And the non-tiled multiscale
         logic in Image._set_view_slice goes away entirely.
         """
-        if self._slice is not None:  # bail as a test
+        if self._slice is not None:
+            # For now bail out so we don't nuke an existing slice which
+            # contains an existing octree. Soon we'll need to figure out
+            # if we are really changing slices (and need a new octree).
             return
+
         indices = np.array(self._slice_indices)
         if self._outside_data_range(indices):
             return
 
-        rand_loc = 0
-        rand_scale = 0
-        image_config = ImageConfig.create(
-            self.data[0].shape, self._tile_size, rand_loc, rand_scale
+        image_config = ImageConfig(
+            self.data[0].shape, len(self.data), self._tile_size, self._delay_ms
         )
 
-        if self._slice is None:
-            self._slice = OctreeMultiscaleSlice(
-                self.data, image_config, self._raw_to_displayed
-            )
+        # Indices to get at the data we are currently viewing.
+        indices = self._get_slice_indices()
+
+        # OctreeMultiscaleSlice wants all the levels, but only the dimensions
+        # of each level that we are currently viewing.
+        slice_data = [level_data[indices] for level_data in self.data]
+
+        self._slice = OctreeMultiscaleSlice(
+            slice_data, image_config, self._raw_to_displayed,
+        )
+
+    def _get_slice_indices(self) -> tuple:
+        """Get the slice indices including possible depth for RGB."""
+        indices = tuple(self._slice_indices)
+
+        if self.rgb:
+            indices += (slice(None),)
+
+        return indices
 
     def on_chunk_loaded(self, request: ChunkRequest) -> None:
         """An asynchronous ChunkRequest was loaded.
@@ -429,3 +453,29 @@ class OctreeImage(Image):
         if self._slice.on_chunk_loaded(request):
             # Tell the visual to redraw with this new chunk.
             self.events.loaded()
+
+    @property
+    def delay_ms(self) -> NormalNoise:
+        """Return the currently configured artificial load delay.
+
+        Return
+        ------
+        NormalNoise
+            The current configured delay.
+        """
+        return self._delay_ms
+
+    @delay_ms.setter
+    def delay_ms(self, delay_ms: NormalNoise):
+        """Set the new artificial load delay.
+
+        We sometimes want to simulate latency for debugging or demos.
+
+        Parameters
+        ----------
+        delay_ms : NormalNoise
+            Optional delay to simulate latency.
+        """
+        self._delay_ms = delay_ms
+        self._slice = None  # For now must explicitly delete it
+        self.refresh()  # Create a new slice.

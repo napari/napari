@@ -86,5 +86,7 @@ class Octree:
         data : List[ArrayLike]
             Create the octree from this multi-scale data.
         """
-        levels = create_levels_from_multiscale_data(data, image_config)
+        tile_size = image_config.tile_size
+        delay_ms = image_config.delay_ms
+        levels = create_levels_from_multiscale_data(data, tile_size, delay_ms)
         return Octree(image_config, levels)

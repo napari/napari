@@ -153,7 +153,7 @@ def _draw_intersection(intersection: OctreeIntersection) -> np.ndarray:
     np.ndarray
         The bitmap showing the intersection.
     """
-    aspect = intersection.level.info.image_config.aspect
+    aspect = intersection.level.info.image_config.aspect_ratio
     level: OctreeLevel = intersection.level
 
     # Map shape plus RGBA depth.

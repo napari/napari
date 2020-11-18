@@ -15,7 +15,7 @@ from qtpy.QtWidgets import (
 )
 
 from ....components.experimental.chunk import async_config
-from ....layers.image.experimental import ImageConfig
+from ....layers.image.experimental import TestImageSettings
 from ....utils import config
 from .image_creator import create_test_image_multi
 from .qt_render_widgets import QtLabeledComboBox, QtLabeledSpinBox
@@ -32,6 +32,7 @@ IMAGE_SHAPE_RANGE = range(1, 65536, 100)
 # We can create 3 types of images layers.
 IMAGE_TYPES = {
     "Normal": config.CREATE_IMAGE_NORMAL,
+    "Compound": config.CREATE_IMAGE_COMPOUND,
     "Tiled": config.CREATE_IMAGE_TILED,
 }
 IMAGE_TYPE_DEFAULT = "Tiled"
@@ -41,8 +42,8 @@ IMAGE_TYPE_DEFAULT = "Tiled"
 TEST_IMAGES = {
     "Digits": {
         "shape": None,
-        "factory": lambda image_config: create_test_image_multi(
-            "0", image_config
+        "factory": lambda image_settings: create_test_image_multi(
+            "0", image_settings
         ),
     },
 }
@@ -205,15 +206,15 @@ class QtTestImageLayout(QVBoxLayout):
         )
 
     @property
-    def image_config(self) -> ImageConfig:
-        """The desired image configuration.
+    def settings(self) -> TestImageSettings:
+        """The desired image settings.
 
         Return
         ------
-        ImageConfig
-            The desired image configuration.
+        ImageSetttings
+            The desired image settings.
         """
-        return ImageConfig.create(
+        return TestImageSettings(
             self.shape_controls.variable.get_shape(),
             self.tile_size.spin.value(),
         )
@@ -245,12 +246,12 @@ class QtTestImage(QFrame):
         image_name = self.layout.name.currentText()
         spec = TEST_IMAGES[image_name]
         factory = spec['factory']
-        image_config = self.layout.image_config
+        image_settings = self.layout.settings
 
         if spec['shape'] is None:
             # This image has a settable shape provided by the UI, so we
             # pass the image_config into the factory.
-            data = factory(image_config)
+            data = factory(image_settings)
         else:
             # This image comes in just one specific shape, so the factory
             # takes no arguments.
@@ -276,4 +277,4 @@ class QtTestImage(QFrame):
         # kind of odd. And the class has to handle the value changing on
         # the fly. It would be better if they could be arguments or
         # passed in on construction somehow.
-        layer.tile_size = image_config.tile_size
+        layer.tile_size = image_settings.tile_size

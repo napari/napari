@@ -50,6 +50,19 @@ class OctreeMultiscaleSlice:
         """
         return self._octree_level
 
+    @octree_level.setter
+    def octree_level(self, level: int) -> None:
+        """Set the octree level that the slice is showing.
+
+        This will be ignore if AUTO_LEVEL is one.
+
+        Parameters
+        ----------
+        level : int
+            The new level to display.
+        """
+        self._octree_level = level
+
     @property
     def loaded(self) -> bool:
         """Return True if the data has been loaded.

@@ -112,15 +112,22 @@ class QtLabeledComboBox(QWidget):
         The text label for the control.
     options : dict
         We display the keys and return the values.
+    callback : Callable[[int], None]
+        Called when the value is changed by the user.
     """
 
-    def __init__(self, label: str, options: dict):
+    def __init__(
+        self, label: str, options: dict, callback: Callable[[int], None] = None
+    ):
         super().__init__()
         self.options = options
         layout = QHBoxLayout()
 
         self.combo = QComboBox()
         self.combo.addItems(list(options.keys()))
+
+        if callback is not None:
+            self.combo.activated[int].connect(callback)
 
         layout.addWidget(QLabel(label))
         layout.addWidget(self.combo)
@@ -138,6 +145,16 @@ class QtLabeledComboBox(QWidget):
         for index, opt_value in enumerate(self.options.values()):
             if opt_value == value:
                 self.combo.setCurrentIndex(index)
+
+    def set_index(self, index: int) -> None:
+        """Set what the combo box is showing based on the index.
+
+        Parameters
+        ----------
+        index : int
+            Set the combo box to this index.
+        """
+        self.combo.setCurrentIndex(index)
 
     def get_value(self) -> str:
         """Get the current value of the combo box.

@@ -9,7 +9,7 @@ as you browse a large image that doesn't have tiles, they are created in
 the background. But that's pretty speculative and far out.
 """
 import time
-from typing import List
+from typing import List, Optional
 
 import dask
 import dask.array as da
@@ -17,7 +17,7 @@ import numpy as np
 from scipy import ndimage as ndi
 
 from ....types import ArrayLike
-from .octree_util import ImageConfig, TileArray
+from .octree_util import NormalNoise, TileArray
 
 
 def _get_tile(tiles: TileArray, row, col):
@@ -35,17 +35,27 @@ def _one_tile(tiles: TileArray) -> bool:
     return len(tiles) == 1 and len(tiles[0]) == 1
 
 
-def _add_delay(array, rand_loc: float, rand_scale: float):
+def _add_delay(array, delay_ms: NormalNoise):
+    """Add a random delay when this array is first accessed.
+
+    Parameters
+    ----------
+    noise : NormalNoise
+        The amount of the random delay in milliseconds.
+    """
+
     @dask.delayed
     def delayed(array):
-        sleep_ms = max(0, np.random.normal(rand_loc, rand_scale))
+        sleep_ms = max(0, np.random.normal(delay_ms.mean, delay_ms.std_dev))
         time.sleep(sleep_ms / 1000)
         return array
 
     return da.from_delayed(delayed(array), array.shape, array.dtype)
 
 
-def create_tiles(array: np.ndarray, image_config: ImageConfig) -> np.ndarray:
+def create_tiles(
+    array: np.ndarray, tile_size: int, delay_ms: Optional[NormalNoise] = None
+) -> np.ndarray:
     """
     Return an NxM array of (tile_size, tile_size) ndarrays except the edge
     tiles might be smaller if the array did not divide evenly.
@@ -61,14 +71,12 @@ def create_tiles(array: np.ndarray, image_config: ImageConfig) -> np.ndarray:
     tiles_size : int
         Edge length of the square tiles.
     """
-    if array.ndim != 3:
+    # Array is either ndim==2 (grayscale) or ndim==3 (RGB).
+    if array.ndim < 2 or array.ndim > 3:
         raise ValueError(f"Unexpected array dimension {array.ndim}")
-    (rows, cols, _) = array.shape
+    rows, cols = array.shape[:2]
 
     tiles = []
-    tile_size = image_config.tile_size
-    rand_loc = image_config.rand_loc
-    rand_scale = image_config.rand_scale
 
     print(f"create_tiles array={array.shape} tile_size={tile_size}")
 
@@ -77,10 +85,17 @@ def create_tiles(array: np.ndarray, image_config: ImageConfig) -> np.ndarray:
         row_tiles = []
         col = 0
         while col < cols:
-            tile = array[row : row + tile_size, col : col + tile_size, :]
+            array_slice = (
+                slice(row, row + tile_size),
+                slice(col, col + tile_size),
+            )
+            if array.ndim == 3:
+                array_slice += (slice(None),)  # Add the colors.
 
-            if rand_loc is not None:
-                tile = _add_delay(tile, rand_loc, rand_scale)
+            tile = array[array_slice]
+
+            if not delay_ms.is_zero:
+                tile = _add_delay(tile, delay_ms)
 
             row_tiles.append(tile)
             col += tile_size
@@ -219,7 +234,7 @@ def create_multi_scale_from_image(
 
 
 def create_levels_from_multiscale_data(
-    data: List[ArrayLike], image_config: ImageConfig
+    data: List[ArrayLike], tile_size: int, delay_ms: NormalNoise
 ):
     """Create octree levels from multiscale data.
 
@@ -232,4 +247,6 @@ def create_levels_from_multiscale_data(
     until we upgrade it.
     """
 
-    return [create_tiles(level_data, image_config) for level_data in data]
+    return [
+        create_tiles(level_data, tile_size, delay_ms) for level_data in data
+    ]
