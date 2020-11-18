@@ -152,28 +152,63 @@ def _create_coarser_level(tiles: TileArray) -> TileArray:
     return level
 
 
-def create_multi_scale_from_image(
+def create_downsampled_levels(
     image: np.ndarray, tile_size: int
 ) -> List[np.ndarray]:
-    """Turn an image into a multi-scale image with levels.
+    """Return a list of levels coarser then this own.
 
-    The given image is level 0, the full resolution image. Each additional
-    level is downsized by half. The final root level is small enough to
-    fit in one tile.
+    The first returned level is half the size of the input image, and each
+    additional level is half as small again. The longest size in the
+    last level is equal to or smaller than tile_size.
+
+    For example if the tile_size is 256, the data in the file level will
+    be smaller than (256, 256).
 
     Parameters
     ----------
     image : np.darray
         The full image to create levels from.
+
+    Return
+    ------
+    List[np.ndarray]
+        A list of levels where levels[0] is the first downsampled level.
     """
-    levels = [image]
+    if image.ndim == 2:
+        zoom = [0.5, 0.5]
+    else:
+        assert image.ndim == 3
+        zoom = [0.5, 0.5, 1]
+
+    previous = image
+    levels = []
 
     # Repeat until we have level that will fit in a single tile, that will
     # be come the root/highest level.
-    while max(levels[-1].shape) > tile_size:
+    while max(previous.shape) > tile_size:
         next_level = ndi.zoom(
-            levels[-1], [0.5, 0.5, 1], mode='nearest', prefilter=True, order=1
+            previous, zoom, mode='nearest', prefilter=True, order=1
         )
         levels.append(next_level)
+        previous = levels[-1]
 
+    return levels
+
+
+def create_multi_scale_from_image(
+    image: np.ndarray, tile_size: int
+) -> List[np.ndarray]:
+    """Turn an image into a multi-scale image with levels.
+
+    Parameters
+    ----------
+    image : np.darray
+        The full image to create levels from.
+
+    Return
+    ------
+    List[np.ndarray]
+        A list of levels where levels[0] is the input image.
+    """
+    levels = [image] + create_downsampled_levels(image)
     return levels
