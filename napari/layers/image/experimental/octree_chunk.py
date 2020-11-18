@@ -109,14 +109,11 @@ class OctreeChunk:
         data : np.ndarray
             The new data for the chunk.
         """
-        print(f"set_data {self}")
-
         # An ndarray mean it's actual bytes in memory.
         assert isinstance(data, np.ndarray)
 
+        # Assign and say this in-progress load is now finished.
         self._data = data
-
-        # Declary in-progress load is now finished.
         self.loading = False
 
     @property
