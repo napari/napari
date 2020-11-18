@@ -6,26 +6,29 @@ It's designed for browsing, annotating, and analyzing large multi-dimensional
 images. It's built on top of Qt (for the GUI), vispy (for performant GPU-based
 rendering), and the scientific Python stack (numpy, scipy).
 
-
 For more information, examples, and documentation, please visit our website:
 https://github.com/napari/napari
 
 ## Highlights
-The napari 0.4.1 release is mainly a bug fix and improvements release following on from
-recent 0.4.0 release. We've added a couple of nice new rendering modes for volumetric
-data like minimum and average intesity projections, text labels to our axes visual,
-and full colorbars in our colormap selection dropdown.
 
+This release follows our recent 0.4.0 release with a number of bug fixes and
+small improvements. We fixed a regression that caused the status bar to always
+display information from the topmost layer, rather than the selected layer.
+We've also added new minimum and average intensity projection rendering modes
+for volumetric data. Finally, we made some useful visual improvements, such as
+displaying text labels identifying axes on our axes visual, and colorbars in
+our colormap selection dropdown to make colormap selection easier.
 
 ## New Features
+
 - Live tiff loader example (#1610)
 - Add NAPARI_EXIT_ON_ERROR (#1812)
 - Add text labels to axes (#1860)
 - Add minimum intensity projection shader to 3d rendering mode (#1861)
 - Average intensity projection shader for 3d rendering (#1871)
 
-
 ## Improvements
+
 - Integrated plugin dialog with install/uninstall & remote discovery (#1357)
 - Use TypedEventedList and TypedList for LayerList and TransformChain (#1504)
 - Add checkbox to labels layer controls for displaying selected color mode (#1762)
@@ -44,7 +47,7 @@ and full colorbars in our colormap selection dropdown.
 - Async-21: TiledImageVisual with Texture Atlas (#1837)
 - Return estimate for 3D texture size instead of hard-coded value (#1857)
 - Drop old typed list (#1859)
-- Colormap presention in dropdown list (#1862)
+- Colormap presentation in dropdown list (#1862)
 - Async-22: Support Edge/Corner Tiles (#1867)
 - Async-23: QtRender Fixes (#1870)
 - Async-24: Multiscale Octree w/ Async Loading (Golden Spike) (#1876)
@@ -52,8 +55,8 @@ and full colorbars in our colormap selection dropdown.
 - Async-25: Remove VispyCompoundImageLayer (#1890)
 - Async-26: Artificial Delay and fixes (#1891)
 
-
 ## Bug Fixes
+
 - Fix zoom of scale bar and axes visuals on launch (#1791)
 - Fix ValueError in Layer.coordinates during layer load (#1798)
 - Fix TransformChain.__init__() (#1809)
@@ -61,19 +64,22 @@ and full colorbars in our colormap selection dropdown.
 - Fix keybinding inheritance (#1838)
 - Fix lower triangular shear values (#1839)
 - Fix bug for painting when scale above 1  (#1840)
-- Enhance accessibility by ensuring welcome screen contrast meets required standards (#1863)
+- Enhance accessibility by ensuring welcome screen contrast meets required
+  standards (#1863)
 - Apply requested opacity in points layer (#1864)
 - Fix active layer update (#1882)
 - Fix affine composition order (#1884)
 - fix affine warning (#1886)
 
-
 ## API Changes
-- Changes to grid mode API (#1821)
-- Change grid size to shape (#1847)
 
+- ``Viewer.grid_view()`` and ``Viewer.stack_view()`` are deprecated.
+  Instead, use ``viewer.grid.enabled = <True/False>``. (#1821)
+- ``Viewer.grid_stride`` and ``Viewer.grid_size`` are deprecated. Instead,
+  use ``Viewer.grid.stride`` and ``Viewer.grid.shape``. (#1821, #1847)
 
 ## Build Tools and Docs
+
 - Update setup.cfg to add aliases for pyqt5 and pyside in extras_require (#1795)
 - Unpin qt, exclude 5.15.0 (#1804)
 - Allow ability to run all tests on local Windows installs (#1807)
