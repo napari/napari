@@ -44,7 +44,7 @@ jobs:
         shell: bash
         run: |
           VER=`python bundle.py --version`
-          echo "::set-env name=version::$VER"
+          echo "version=${VER}" >> $GITHUB_ENV
           echo $VER
       - name: Make Bundle
         uses: nick-invision/retry@v1
