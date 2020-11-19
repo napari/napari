@@ -2,15 +2,17 @@
 
 Experimental shared memory monitor.
 
-With this monitor a program can publish data to shared memory. It will
-startup any number of clients and pass them a blob of JSON as
-configuration. The blob will contain at minimum the name of some shared
-memory resource.
+With this monitor a program can publish data to shared memory. The monitor
+has a JSON config file. When the monitor starts will launch any number of
+clients listed in that config file.
+
+It will pass each client a blob of JSON as configuration data. The blob
+will contain at minimum the name of some shared memory resource.
 
 The client can read out of the shared memory and do whatever it wants with
-the data. A possible client is a Flask-SocketIO web server. The user can
-point their web browser at some port, and get some sort of dynamic
-visualization of what's going in inside the program.
+the data. A possible client might be a Flask-SocketIO web server. The user
+can point their web browser at some port and see a dynamic visualization of
+what's going in inside the program.
 
 Only if NAPARI_MON is set and points to a config file will the monitor even
 start. Run napari like:
@@ -51,26 +53,26 @@ For now the client configuration is just:
 
 But it will evolve over time.
 
-Currently the only shared resources is a single ShareableList, the client
-connects to the shared_list_name above like this:
+Currently the only shared resource is a single ShareableList, the client
+can connect to the list like this:
 
-    shared_list = ShareableList(name=list_name)
+    shared_list = ShareableList(name=data['shared_list_name'])
 
-The list has just two entires with these indexes:
+The list has just two entries right now. With these indexes:
 
-    SLOT_FRAME_NUMBER = 0
-    SLOT_JSON_BLOB = 1
+    FRAME_NUMBER = 0
+    JSON_BLOB = 1
 
-The client can check shared_list[SLOT_FRAME_NUMBER] for the integer frame
+The client can check shared_list[FRAME_NUMBER] for the integer frame
 number. If it sees a new number, it can decode the string in
-shared_list[SLOT_JSON_BLOB].
+shared_list[JSON_BLOB].
 
-The blob will be the union of every call made to monitor.add_aded() inside
-napari. For example within napari you can do:
+The blob will be the union of every call made to monitor.add(). For example
+within napari you can do:
 
     monitor.add_data({"frame_time": delta_seconds})
 
-somewhere else you can
+somewhere else you can do:
 
     data = {
         "tiled_image_layer": {
@@ -81,23 +83,23 @@ somewhere else you can
     }
     monitor.add_data(data)
 
-The client can look for data['frame_time'] or data['tiled_image_layer'] or
-any nested value. The client should be resilient, so that it does not
-crash if something missing.
+Client can access data['frame_time'] or data['tiled_image_layer']. Clients
+should be resilient, so that it does not crash if something missing.
 
-In summary within napari you can call monitor.add_data() from anywhere.
-Once per frame the data is unioned together and written to shared memory as
-a string, then the frame number is incremented.
+In summary within napari you can call monitor.add() from anywhere. Once per
+frame the combined data is written to shared memory as JSON, then the frame
+number is incremented.
 
-The time to encode the example data above and write it to shared memory was
-measured at less then 0.1 milliseconds. But it would get slower as it got
-bigger.
+It only takes about 0.1 milliseconds to encode the above data and write to
+shared memory. But this will slow down as more data is written.
 
 Future Work
 -----------
-Use numpy recarray for bulk binary data that's not appropriate for JSON. We
-can keep the JSON blob slot for low-data clients, but add new slots or
-completely separate shared memory buffers.
+JSON is no appropriate for lots of data. A better solution is numpy/recarry
+where it should be possible to have any number of fields of any time of
+binary data. We can keep the JSON blob slot for ad-hoc use, or we can
+replace it entirely with numpy. It was just simple to start with JSON
+and ShareableList.
 """
 import base64
 import copy
@@ -134,8 +136,8 @@ BUFFER_SIZE = 1024 * 1024
 
 # Slots in our ShareableList, this is probably not a good system, but
 # it's an easy way to prototype.
-SLOT_FRAME_NUMBER = 0
-SLOT_JSON_BLOB = 1
+FRAME_NUMBER = 0
+JSON_BLOB = 1
 
 
 def _load_config(config_path: str) -> dict:
@@ -260,13 +262,13 @@ class MonitorService(Thread):
     def _post_data(self):
         """Encode data as JSON and write it to shared memory."""
         with block_timer("json encode", print_time=True):
-            self.shared_list[SLOT_JSON_BLOB] = json.dumps(self.data)
+            self.shared_list[JSON_BLOB] = json.dumps(self.data)
 
     def add_data(self, data):
         """Add data, combined data will be posted once per frame."""
         self.data.update(data)
         self.frame_number += 1  # for now, need timer instead
-        self.shared_list[SLOT_FRAME_NUMBER] = self.frame_number
+        self.shared_list[FRAME_NUMBER] = self.frame_number
         self._post_data()
 
     def get_shared_name(self):
@@ -294,6 +296,9 @@ class Monitor:
         """
         if self.data is not None:
             self.service = MonitorService(self.data)
+
+    def stop(self):
+        """Need to cleanup?"""
 
     def add(self, data):
         """Add monitoring data."""
