@@ -61,10 +61,11 @@ jobs:
           name: napari-${{ env.version }}-${{ runner.os }}.zip
           path: napari-${{ env.version }}-${{ runner.os }}.zip
       - name: Get Release
+        if: startsWith(github.ref, 'refs/tags/v')
         id: get_release
         uses: bruceadams/get-release@v1.2.0
       - name: Upload Release Asset
-        if: startsWith(github.ref, 'refs/tags/v') != true
+        if: startsWith(github.ref, 'refs/tags/v')
         uses: actions/upload-release-asset@v1
         with:
           upload_url: ${{ steps.get_release.outputs.upload_url }}
