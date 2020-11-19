@@ -22,7 +22,7 @@ You can read more about how this roadmap builds on and continues the work in our
 
 - **Improving the performance of operations on in-memory data**. Even when data is loaded in memory, some operations, such as label and shape painting or slicing along large numbers of points can be slow. We will continue developing our [benchmark suite](https://github.com/napari/napari/blob/master/docs/developers/BENCHMARKS.md) and work to integrate it into our development process. See the [`performance` label](https://github.com/napari/napari/labels/performance) for a current list of issues related to performance.
 
-- Add a unified **physical coordinates**. We now have a world coordinate system and transforms that can move between data coordinates, world coordinates, and the canvas where things are rendered; however, we still don't have a concept of phyiscal units. See [#1701](https://github.com/napari/napari/issues/1701) for additional discussion.
+- Add **physical coordinates**. We now have a world coordinate system and transforms that can move between data coordinates, world coordinates, and the canvas where things are rendered; however, we still don't have a concept of phyiscal units. See [#1701](https://github.com/napari/napari/issues/1701) for additional discussion.
 
 - Add **linked multi-canvas support** ([#760](https://github.com/napari/napari/issues/760)) to allow orthogonal views, or linked views of two datasets, for example to select keypoints for image alignment, or simultaneous 2D slices with 3D rendering.
 
