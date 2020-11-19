@@ -8,7 +8,7 @@ from typing import List
 
 from vispy.scene.visuals import create_visual_node
 
-from ...components.experimental.shared_mem.monitor import monitor
+from ...components.experimental import monitor
 from ...layers.image.experimental import OctreeChunk
 from ...layers.image.experimental.octree_image import OctreeImage
 from ...utils.perf import block_timer

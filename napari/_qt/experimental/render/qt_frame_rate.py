@@ -11,7 +11,7 @@ from qtpy.QtCore import QTimer
 from qtpy.QtGui import QImage, QPixmap
 from qtpy.QtWidgets import QLabel
 
-from ....components.experimental.shared_mem.monitor import monitor
+from ....components.experimental import monitor
 
 # Shape of the bitmap.
 BITMAP_SHAPE = (20, 270, 4)

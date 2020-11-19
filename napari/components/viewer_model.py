@@ -2,7 +2,7 @@ import warnings
 
 import numpy as np
 
-from ..components.experimental.shared_mem.monitor import monitor
+from ..components.experimental import monitor
 from ..utils.events import EmitterGroup, Event
 from ..utils.key_bindings import KeymapHandler, KeymapProvider
 from ..utils.theme import palettes
