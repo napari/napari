@@ -2,6 +2,7 @@ import warnings
 
 import numpy as np
 
+from ..components.experimental.shared_mem.monitor import monitor
 from ..utils.events import EmitterGroup, Event
 from ..utils.key_bindings import KeymapHandler, KeymapProvider
 from ..utils.theme import palettes
@@ -114,6 +115,8 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self._persisted_mouse_event = {}
         self._mouse_drag_gen = {}
         self._mouse_wheel_gen = {}
+
+        monitor.start()  # Shared memory monitor
 
     def __str__(self):
         """Simple string representation"""

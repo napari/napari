@@ -1,7 +1,5 @@
 """QtRender widget.
 """
-
-
 from qtpy.QtWidgets import QVBoxLayout, QWidget
 
 from ....layers.image import Image

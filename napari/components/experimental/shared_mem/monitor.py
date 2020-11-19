@@ -1,9 +1,23 @@
 """Monitor class.
 
-Experimental shared memory monitor/server.
+Experimental shared memory monitor.
 
-Run napari with NAPARI_MON=~/.mon
-Where .mon is a JSON file like:
+With this monitor a program can publish data to shared memory. It will
+startup any number of clients and pass them a blob of JSON as
+configuration. The blob will contain at minimum the name of some shared
+memory resource.
+
+The client can read out of the shared memory and do whatever it wants with
+the data. A possible client is a Flask-SocketIO web server. The user can
+point their web browser at some port, and get some sort of dynamic
+visualization of what's going in inside the program.
+
+Only if NAPARI_MON is set and points to a config file will the monitor even
+start. Run napari like:
+
+    NAPARI_MON=~/.napari-mon napari
+
+The format of the .napari-mon config file is:
 
 {
     "clients": [
@@ -11,28 +25,79 @@ Where .mon is a JSON file like:
     ]
 }
 
-Monitor will run all given clients on start. The client should check
-environment variable NAPARI_MON_CLIENT. It will contain a base64 encoded
-string which it can parse as JSON like this:
+All of the listed clients will be started. They can be the same program run
+with different arguments, or different programs. All clients will have
+access to the same shared memory.
 
-def _get_client_config() -> dict:
-    env_str = os.getenv("NAPARI_MON_CLIENT")
-    if env_str is None:
-        return None
+The client gets the shared memory information by checking for the
+NAPARI_MON_CLIENT variable. It can be decoded like this:
 
-    env_bytes = env_str.encode('ascii')
-    config_bytes = base64.b64decode(env_bytes)
-    config_str = config_bytes.decode('ascii')
+    def _get_client_config() -> dict:
+        env_str = os.getenv("NAPARI_MON_CLIENT")
+        if env_str is None:
+            return None
 
-    return json.loads(config_str)
+        env_bytes = env_str.encode('ascii')
+        config_bytes = base64.b64decode(env_bytes)
+        config_str = config_bytes.decode('ascii')
 
-For now the client config is like this:
+        return json.loads(config_str)
 
-{
-    "shared_list_name": "<name>"
-}
+For now the client configuration is just:
 
-But it will evolve rapidly to start.
+    {
+        "shared_list_name": "<name>"
+    }
+
+But it will evolve over time.
+
+Currently the only shared resources is a single ShareableList, the client
+connects to the shared_list_name above like this:
+
+    shared_list = ShareableList(name=list_name)
+
+The list has just two entires with these indexes:
+
+    SLOT_FRAME_NUMBER = 0
+    SLOT_JSON_BLOB = 1
+
+The client can check shared_list[SLOT_FRAME_NUMBER] for the integer frame
+number. If it sees a new number, it can decode the string in
+shared_list[SLOT_JSON_BLOB].
+
+The blob will be the union of every call made to monitor.add_aded() inside
+napari. For example within napari you can do:
+
+    monitor.add_data({"frame_time": delta_seconds})
+
+somewhere else you can
+
+    data = {
+        "tiled_image_layer": {
+            "num_created": stats.created,
+            "num_deleted": stats.deleted,
+            "duration_ms": elapsed.duration_ms,
+        }
+    }
+    monitor.add_data(data)
+
+The client can look for data['frame_time'] or data['tiled_image_layer'] or
+any nested value. The client should be resilient, so that it does not
+crash if something missing.
+
+In summary within napari you can call monitor.add_data() from anywhere.
+Once per frame the data is unioned together and written to shared memory as
+a string, then the frame number is incremented.
+
+The time to encode the example data above and write it to shared memory was
+measured at less then 0.1 milliseconds. But it would get slower as it got
+bigger.
+
+Future Work
+-----------
+Use numpy recarray for bulk binary data that's not appropriate for JSON. We
+can keep the JSON blob slot for low-data clients, but add new slots or
+completely separate shared memory buffers.
 """
 import base64
 import copy
@@ -44,6 +109,8 @@ import time
 from multiprocessing.shared_memory import ShareableList
 from pathlib import Path
 from threading import Event, Thread
+
+from ....utils.perf import block_timer
 
 
 def _base64_json(data: dict) -> str:
@@ -64,6 +131,11 @@ client_config_template = {"shared_list_name": "<name>"}
 
 # Create empty string of this size up front, since cannot grow it.
 BUFFER_SIZE = 1024 * 1024
+
+# Slots in our ShareableList, this is probably not a good system, but
+# it's an easy way to prototype.
+SLOT_FRAME_NUMBER = 0
+SLOT_JSON_BLOB = 1
 
 
 def _load_config(config_path: str) -> dict:
@@ -121,7 +193,7 @@ def _get_monitor_config():
     return _load_config(value)
 
 
-class Monitor(Thread):
+class MonitorService(Thread):
     """Make data available to a client via shared memory.
 
     We are using JSON via ShareableList for prototyping with small amounts
@@ -130,24 +202,29 @@ class Monitor(Thread):
     any non-trivial size.
     """
 
-    def __init__(self, data):
+    def __init__(self, config):
         super().__init__()
-        self.data = data
+        self.config = config
 
-        # Create in the thread.
+        # Anyone can add to data with our self.add_data() then once per
+        # frame we encode it into JSON and write into the shared list.
+        self.data = {}
+        self.frame_number = 0
+
+        # We create the shared list in the thread.
         self.shared_list = None
         self.shared_list_name = None
 
         # Start our thread.
-        num_clients = len(self.data['clients'])
-        print(f"NapariMon: starting with {num_clients}")
+        num_clients = len(self.config['clients'])
+        print(f"Monitor: Starting with {num_clients} clients.")
         self.ready = Event()
         self.start()
 
         # Wait for shared memory to be setup then start clients.
         self.ready.wait()
         self._start_clients()
-        print(f"NapariMon: started {num_clients} clients")
+        print(f"Monitor: Started {num_clients} clients.")
 
     def _start_clients(self):
         """Start every client in our config."""
@@ -156,7 +233,7 @@ class Monitor(Thread):
         client_config = copy.deepcopy(client_config_template)
         client_config['shared_list_name'] = self.shared_list_name
 
-        for args in self.data['clients']:
+        for args in self.config['clients']:
             _start_client(args, client_config)
 
     def start_clients(self):
@@ -164,18 +241,33 @@ class Monitor(Thread):
 
     def run(self):
         """Setup shared memory and wait."""
-        place_holder_str = " " * BUFFER_SIZE
+        # Create placeholder so we reserve the space. Probably not the best
+        # way to pass JSON but it works.
+        place_holder = " " * BUFFER_SIZE
 
-        self.shared_list = ShareableList([place_holder_str])
+        self.shared_list = ShareableList([self.frame_number, place_holder])
         self.shared_list_name = self.shared_list.shm.name
 
+        # Post the empty JSON or clients will choke on the blank string.
+        self._post_data()
+
+        # All good.
         self.ready.set()
+
+        # We don't really need a thread right now, but maybe?
         time.sleep(10000000)
 
-    def post_message(self, data):
-        """Post a message to shared memory."""
-        json_str = json.dumps(data)
-        self.shared_list[0] = json_str
+    def _post_data(self):
+        """Encode data as JSON and write it to shared memory."""
+        with block_timer("json encode", print_time=True):
+            self.shared_list[SLOT_JSON_BLOB] = json.dumps(self.data)
+
+    def add_data(self, data):
+        """Add data, combined data will be posted once per frame."""
+        self.data.update(data)
+        self.frame_number += 1  # for now, need timer instead
+        self.shared_list[SLOT_FRAME_NUMBER] = self.frame_number
+        self._post_data()
 
     def get_shared_name(self):
         """Wait and then return the shared name."""
@@ -183,14 +275,30 @@ class Monitor(Thread):
         return self.shared_name
 
 
-def _create_monitor():
-    """Start the shared memory monitor."""
-    data = _get_monitor_config()
+class Monitor:
+    """Wrapper so we only start the service if NAPARI_MON was defined.
 
-    if data is None:
-        return None  # Env var not set, do not create.
+    Any calls to monitor.add() will be no-ops if the service was not
+    started.
+    """
 
-    return Monitor(data)
+    def __init__(self):
+        self.service = None
+        self.data = _get_monitor_config()
+
+    def start(self):
+        """Start the monitor service if configured
+
+        Only start if NAPARI_MON was defined and pointed to a JSON file
+        that we were able to parse.
+        """
+        if self.data is not None:
+            self.service = MonitorService(self.data)
+
+    def add(self, data):
+        """Add monitoring data."""
+        if self.service is not None:
+            self.service.add_data(data)
 
 
-monitor = _create_monitor()
+monitor = Monitor()

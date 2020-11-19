@@ -8,6 +8,7 @@ from typing import List
 
 from vispy.scene.visuals import create_visual_node
 
+from ...components.experimental.shared_mem.monitor import monitor
 from ...layers.image.experimental import OctreeChunk
 from ...layers.image.experimental.octree_image import OctreeImage
 from ...utils.perf import block_timer
@@ -158,6 +159,15 @@ class VispyTiledImageLayer(VispyImageLayer):
                 f"create: {stats.created} delete: {stats.deleted} "
                 f"time: {elapsed.duration_ms:.3f}ms"
             )
+
+        data = {
+            "tiled_image_layer": {
+                "num_created": stats.created,
+                "num_deleted": stats.deleted,
+                "duration_ms": elapsed.duration_ms,
+            }
+        }
+        monitor.add(data)
 
     def _on_camera_move(self, event=None) -> None:
         """Called on any camera movement.
