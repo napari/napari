@@ -109,7 +109,7 @@ import json
 import os
 import subprocess
 import time
-from multiprocessing.shared_memory import ShareableList
+from multiprocessing.managers import SharedMemoryManager
 from pathlib import Path
 from threading import Event, Thread
 from typing import Optional
@@ -196,6 +196,10 @@ def _get_monitor_config() -> Optional[dict]:
     return _load_config(value)
 
 
+def _test_callable():
+    print("TEST CALLABLE")
+
+
 class MonitorService(Thread):
     """Make data available to a client via shared memory.
 
@@ -208,6 +212,11 @@ class MonitorService(Thread):
     def __init__(self, config):
         super().__init__()
         self.config = config
+
+        SharedMemoryManager.register('test_callable', callable=_test_callable)
+
+        self.manager = SharedMemoryManager()
+        self.manager.start()
 
         # Anyone can add to data with our self.add_data() then once per
         # frame we encode it into JSON and write into the shared list.
@@ -229,7 +238,7 @@ class MonitorService(Thread):
         self._start_clients()
         print(f"Monitor: Started {num_clients} clients.")
 
-    def _start_clients(self):
+    def _start_clients(self) -> None:
         """Start every client in our config."""
 
         # Every client gets the same config, stuff in current values.
@@ -239,10 +248,7 @@ class MonitorService(Thread):
         for args in self.config['clients']:
             _start_client(args, client_config)
 
-    def start_clients(self):
-        """Return once the shared memory is setup."""
-
-    def run(self):
+    def run(self) -> None:
         """Setup shared memory and wait."""
         # Create placeholder so we reserve the space. Probably not the best
         # way to pass JSON but it works. See shared memory with numpy
@@ -254,7 +260,7 @@ class MonitorService(Thread):
         # FROM_NAPARI = 1
         # TO_NAPARI = 2
         slots = [self.frame_number, buffer_str, buffer_str]
-        self.shared_list = ShareableList(slots)
+        self.shared_list = self.manager.ShareableList(slots)
         self.shared_list_name = self.shared_list.shm.name
 
         # Poll once so slots have at least valid empty JSON.
@@ -266,13 +272,15 @@ class MonitorService(Thread):
         # We don't really need a thread right now, but maybe?
         time.sleep(10000000)
 
-    def poll(self):
+    def poll(self) -> None:
         """Shuttle data from/to napari."""
         # Post accumulated data from napari.
         self.shared_list[FROM_NAPARI] = json.dumps(self.data)
 
         # Get new data from clients.
         json_str = self.shared_list[TO_NAPARI].rstrip()
+        if len(json_str) > 3:
+            print(f"Monitor: from client: {json_str}")
 
         try:
             self.from_client = json.loads(json_str)
@@ -282,23 +290,22 @@ class MonitorService(Thread):
         if self.from_client:
             print(f"Monitor: data from clients: {json_str}")
 
-        # Clear out the new data.
-        # TODO_MON: Use a queue? What if we have multiple clients!?
-        self.shared_list[TO_NAPARI] = "{}"
-
         # Update the frame number so clients know something changed.
         # Better would be a queue they can wait on?
         self.frame_number += 1
         self.shared_list[FRAME_NUMBER] = self.frame_number
 
-    def add_data(self, data):
+    def add_data(self, data) -> None:
         """Add data, combined data will be posted once per frame."""
         self.data.update(data)
 
-    def get_shared_name(self):
+    def get_shared_name(self) -> None:
         """Wait and then return the shared name."""
         self.ready.wait()
         return self.shared_name
+
+    def stop(self) -> None:
+        self.manager.shutdown()
 
 
 class Monitor:
@@ -322,7 +329,8 @@ class Monitor:
             self.service = MonitorService(self.data)
 
     def stop(self):
-        """Need to cleanup?"""
+        """TODO_MON: call this somewhere!"""
+        self.service.stop
 
     def add(self, data):
         """Add monitoring data."""

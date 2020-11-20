@@ -1,5 +1,6 @@
 """QtRender widget.
 """
+from qtpy.QtCore import QTimer
 from qtpy.QtWidgets import QVBoxLayout, QWidget
 
 from ....components.experimental import monitor
@@ -58,6 +59,32 @@ class QtRender(QWidget):
 
         self.setLayout(layout)
 
+        # We have no layer sometimes because QtRender
+        # is shown even when there is no layer present.
+        if self.layer is not None:
+            self._timer = QTimer()
+            self._timer.setInterval(33)
+            self._timer.timeout.connect(self._on_timer)
+            self._timer.start()
+
+    def _on_timer(self) -> None:
+
+        # To send out data we could poll only when we've updated something.
+        # Right now to receive data we have to constantly poll. Not sure
+        # how to avoid polling but maybe there is a way?
+        monitor.poll()
+
+        # TODO_MON: let users of the monitor register events, and get
+        # notified using those events? For check for now.
+        if monitor.service is not None:
+            data = monitor.service.from_client
+            try:
+                show = data['show_grid']
+                print(f"Monitor: setting grid to {show}")
+                self.layer.show_grid = show
+            except KeyError:
+                pass  # no client setting, that's fine
+
     def _monitor(self):
         intersection = self.layer.get_intersection()
         level = intersection.level
@@ -72,17 +99,9 @@ class QtRender(QWidget):
                     seen.append([row, col])
         monitor.add({"tile_state": {"seen": seen}})
 
-        # TODO_MON: Move this to somewhere central!
+        # Zooming starves our timer, so poll here for now. Utlimately
+        # polling for input should go away totally.
         monitor.poll()
-
-        # TODO_MON: let users of the monitor register events, and get
-        # notified using those events? For check for now.
-        if monitor.service is not None:
-            data = monitor.service.from_client
-            try:
-                self.layer.show_grid = data['show_grid']
-            except KeyError:
-                pass  # no client setting, that's fine
 
     def _on_camera_move(self, _event=None):
         """Called when the camera was moved."""

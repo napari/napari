@@ -510,5 +510,6 @@ class OctreeImage(Image):
         show : bool
             True if we should draw a grid on top of the tiles.
         """
-        self._show_grid = show
-        self.events.loaded()  # redraw
+        if self._show_grid != show:
+            self._show_grid = show
+            self.events.loaded()  # redraw
