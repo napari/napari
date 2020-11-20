@@ -13,6 +13,7 @@ from typing import (
     cast,
 )
 
+import numpy as np
 import toolz as tz
 import typing_extensions as _te
 
@@ -92,7 +93,7 @@ def set_with_events(self: C, name: str, value: Any) -> None:
     # TODO: use np.all(old_val == new_val)
 
     after = getattr(self, name)
-    if before != after:
+    if np.any(before != after):
         # use gettattr again in case `_on_name_set` has modified it
         getattr(self.events, name)(value=after)  # type: ignore
 
