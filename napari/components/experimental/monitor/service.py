@@ -277,7 +277,10 @@ class MonitorService(Thread):
         try:
             self.from_client = json.loads(json_str)
         except json.decoder.JSONDecodeError:
-            print("Monitor: error parsing json: {json_str}")
+            print(f"Monitor: error parsing json: {json_str}")
+
+        if self.from_client:
+            print(f"Monitor: data from clients: {json_str}")
 
         # Clear out the new data.
         # TODO_MON: Use a queue? What if we have multiple clients!?
