@@ -210,5 +210,5 @@ def create_multi_scale_from_image(
     List[np.ndarray]
         A list of levels where levels[0] is the input image.
     """
-    levels = [image] + create_downsampled_levels(image)
+    levels = [image] + create_downsampled_levels(image, tile_size)
     return levels

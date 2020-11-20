@@ -251,7 +251,7 @@ class MonitorService(Thread):
         self.shared_list_name = self.shared_list.shm.name
 
         # Post the empty JSON or clients will choke on the blank string.
-        self._post_data()
+        self.end_frame()
 
         # All good.
         self.ready.set()
@@ -259,17 +259,16 @@ class MonitorService(Thread):
         # We don't really need a thread right now, but maybe?
         time.sleep(10000000)
 
-    def _post_data(self):
+    def end_frame(self):
         """Encode data as JSON and write it to shared memory."""
         with block_timer("json encode", print_time=True):
             self.shared_list[JSON_BLOB] = json.dumps(self.data)
+        self.frame_number += 1  # for now, need timer instead
+        self.shared_list[FRAME_NUMBER] = self.frame_number
 
     def add_data(self, data):
         """Add data, combined data will be posted once per frame."""
         self.data.update(data)
-        self.frame_number += 1  # for now, need timer instead
-        self.shared_list[FRAME_NUMBER] = self.frame_number
-        self._post_data()
 
     def get_shared_name(self):
         """Wait and then return the shared name."""
@@ -304,6 +303,10 @@ class Monitor:
         """Add monitoring data."""
         if self.service is not None:
             self.service.add_data(data)
+
+    def end_frame(self):
+        if self.service is not None:
+            self.service.end_frame()
 
 
 monitor = Monitor()

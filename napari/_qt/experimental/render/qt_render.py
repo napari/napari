@@ -2,6 +2,7 @@
 """
 from qtpy.QtWidgets import QVBoxLayout, QWidget
 
+from ....components.experimental import monitor
 from ....layers.image import Image
 from ....layers.image.experimental.octree_image import OctreeImage
 from .qt_frame_rate import QtFrameRate
@@ -57,8 +58,26 @@ class QtRender(QWidget):
 
         self.setLayout(layout)
 
+    def _monitor(self):
+        intersection = self.layer.get_intersection()
+        level = intersection.level
+        shape = level.info.shape_in_tiles
+
+        # Only have to do this when it changes but for now do it every time.
+        monitor.add({"tile_config": {"rows": shape[0], "cols": shape[1]}})
+
+        seen = []
+        for row in range(shape[0]):
+            for col in range(shape[1]):
+                if intersection.is_visible(row, col):
+                    seen.append([row, col])
+        monitor.add({"tile_state": {"seen": seen}})
+
+        monitor.end_frame()  # need to do somewhere central
+
     def _on_camera_move(self, _event=None):
         """Called when the camera was moved."""
         if SHOW_MINIMAP:
             self.mini_map.update()
         self.frame_rate.on_camera_move()
+        self._monitor()
