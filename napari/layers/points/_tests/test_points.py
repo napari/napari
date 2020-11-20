@@ -8,7 +8,6 @@ from vispy.color import get_colormap
 
 from napari._tests.utils import check_layer_world_data_extent
 from napari.layers import Points
-from napari.layers.points._points_utils import points_to_squares
 from napari.utils.colormaps.standardize_color import transform_color
 
 
@@ -1455,24 +1454,6 @@ def test_view_colors():
     layer._slice_dims([2, slice(None), slice(None)])
     assert len(layer._view_face_color) == 0
     assert len(layer._view_edge_color) == 0
-
-
-def test_interaction_box():
-    """Test the boxes calculated for selected points"""
-    data = [[3, 3]]
-    size = 2
-    layer = Points(data, size=size)
-
-    # get a box with no points selected
-    index = []
-    box = layer.interaction_box(index)
-    assert box is None
-
-    # get a box with a point selected
-    index = [0]
-    expected_box = points_to_squares(data, size)
-    box = layer.interaction_box(index)
-    np.all([np.isin(p, expected_box) for p in box])
 
 
 def test_world_data_extent():

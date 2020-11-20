@@ -32,32 +32,19 @@ class VispyPointsLayer(VispyBaseLayer):
         self._reset_base()
 
     def _on_data_change(self, event=None):
-        if len(self.layer._indices_view) > 0:
-            edge_color = self.layer._view_edge_color
-            face_color = self.layer._view_face_color
-        else:
-            edge_color = np.array([[0.0, 0.0, 0.0, 1.0]], dtype=np.float32)
-            face_color = np.array([[1.0, 1.0, 1.0, 1.0]], dtype=np.float32)
+        # Slice by indices
+        sliced_points_data = self.layer._full._slice_by_index(
+            self.layer._indices_view, self.layer._dims.displayed
+        )
 
-        # Set vispy data, noting that the order of the points needs to be
-        # reversed to make the most recently added point appear on top
-        # and the rows / columns need to be switch for vispys x / y ordering
-        if len(self.layer._indices_view) == 0:
-            data = np.zeros((1, self.layer._dims.ndisplay))
-            size = [0]
-        else:
-            data = self.layer._view_data
-            size = self.layer._view_size
-
-        set_data = self.node._subvisuals[0].set_data
-
-        set_data(
-            data[:, ::-1],
-            size=size,
+        self.node._subvisuals[0].set_data(
+            sliced_points_data.data[:, ::-1],
+            size=sliced_points_data.size.mean(axis=1)
+            * self.layer._view_size_scale,
             edge_width=self.layer.edge_width,
             symbol=self.layer.symbol,
-            edge_color=edge_color,
-            face_color=face_color,
+            edge_color=sliced_points_data.edge_color,
+            face_color=sliced_points_data.face_color,
             scaling=True,
         )
 

@@ -29,7 +29,8 @@ from ..utils.layer_utils import (
 from ..utils.text import TextManager
 from ._points_constants import SYMBOL_ALIAS, ColorMode, Mode, Symbol
 from ._points_mouse_bindings import add, highlight, select
-from ._points_utils import create_box, points_to_squares
+from ._points_utils import create_box
+from .points_data import PointsData
 
 DEFAULT_COLOR_CYCLE = np.array([[1, 0, 1, 1], [0, 1, 0, 1]])
 
@@ -289,6 +290,13 @@ class Points(Layer):
             visible=visible,
         )
 
+        self._full = PointsData(
+            data=np.zeros((0, ndim)),
+            size=np.zeros((0, ndim)),
+            edge_color=np.zeros((0, 4)),
+            face_color=np.zeros((0, 4)),
+        )
+
         self.events.add(
             mode=Event,
             size=Event,
@@ -310,7 +318,7 @@ class Points(Layer):
         self._colors = get_color_namelist()
 
         # Save the point coordinates
-        self._data = np.asarray(data)
+        self._full.data = np.asarray(data)
 
         # Save the properties
         if properties is None:
@@ -422,8 +430,8 @@ class Points(Layer):
         else:
             self._current_edge_color = self.edge_color[-1]
             self._current_face_color = self.face_color[-1]
-            self._face_color = np.empty((0, 4))
-            self._edge_color = np.empty((0, 4))
+            self._full._face_color = np.empty((0, 4))
+            self._full._edge_color = np.empty((0, 4))
             self.current_properties = {}
 
         # Trigger generation of view slice and thumbnail
@@ -477,21 +485,21 @@ class Points(Layer):
     @property
     def data(self) -> np.ndarray:
         """(N, D) array: coordinates for N points in D dimensions."""
-        return self._data
+        return self._full.data
 
     @data.setter
     def data(self, data: np.ndarray):
-        cur_npoints = len(self._data)
-        self._data = data
+        cur_npoints = len(self.data)
+        self._full.data = data
 
         # Adjust the size array when the number of points has changed
         if len(data) < cur_npoints:
             # If there are now fewer points, remove the size and colors of the
             # extra ones
             with self.events.set_data.blocker():
-                self._edge_color = self.edge_color[: len(data)]
-                self._face_color = self.face_color[: len(data)]
-                self._size = self._size[: len(data)]
+                self._full.edge_color = self.edge_color[: len(data)]
+                self._full.face_color = self.face_color[: len(data)]
+                self._full.size = self._full.size[: len(data)]
 
                 for k in self.properties:
                     self.properties[k] = self.properties[k][: len(data)]
@@ -501,14 +509,14 @@ class Points(Layer):
             # new ones
             with self.events.set_data.blocker():
                 adding = len(data) - cur_npoints
-                if len(self._size) > 0:
-                    new_size = copy(self._size[-1])
+                if len(self._full.size) > 0:
+                    new_size = copy(self._full.size[-1])
                     for i in self._dims.displayed:
                         new_size[i] = self.current_size
                 else:
                     # Add the default size, with a value for each dimension
                     new_size = np.repeat(
-                        self.current_size, self._size.shape[1]
+                        self.current_size, self._full.size.shape[1]
                     )
                 size = np.repeat([new_size], adding, axis=0)
 
@@ -526,7 +534,7 @@ class Points(Layer):
                 # add new face colors
                 self._add_point_color(adding, 'face')
 
-                self.size = np.concatenate((self._size, size), axis=0)
+                self.size = np.concatenate((self._full.size, size), axis=0)
                 self.selected_data = set(np.arange(cur_npoints, len(data)))
 
                 self.text.add(self.current_properties, adding)
@@ -583,10 +591,12 @@ class Points(Layer):
             new_colors = np.tile(fc, (adding, 1))
         colors = getattr(self, f'{attribute}_color')
         if len(colors) == 0:
-            setattr(self, f'_{attribute}_color', new_colors)
+            setattr(self._full, f'{attribute}_color', new_colors)
         else:
             setattr(
-                self, f'_{attribute}_color', np.vstack((colors, new_colors))
+                self._full,
+                f'{attribute}_color',
+                np.vstack((colors, new_colors)),
             )
 
     @property
@@ -726,15 +736,15 @@ class Points(Layer):
     @property
     def size(self) -> Union[int, float, np.ndarray, list]:
         """(N, D) array: size of all N points in D dimensions."""
-        return self._size
+        return self._full.size
 
     @size.setter
     def size(self, size: Union[int, float, np.ndarray, list]) -> None:
         try:
-            self._size = np.broadcast_to(size, self.data.shape).copy()
+            self._full.size = np.broadcast_to(size, self.data.shape).copy()
         except Exception:
             try:
-                self._size = np.broadcast_to(
+                self._full.size = np.broadcast_to(
                     size, self.data.shape[::-1]
                 ).T.copy()
             except Exception:
@@ -774,7 +784,7 @@ class Points(Layer):
     @property
     def edge_color(self) -> np.ndarray:
         """(N x 4) np.ndarray: Array of RGBA edge colors for each point"""
-        return self._edge_color
+        return self._full.edge_color
 
     @edge_color.setter
     def edge_color(self, edge_color):
@@ -858,7 +868,7 @@ class Points(Layer):
     @property
     def face_color(self) -> np.ndarray:
         """(N x 4) np.ndarray: Array of RGBA face colors for each point"""
-        return self._face_color
+        return self._full.face_color
 
     @face_color.setter
     def face_color(self, face_color):
@@ -1020,7 +1030,7 @@ class Points(Layer):
             colors = normalize_and_broadcast_colors(
                 len(self.data), transformed_color
             )
-            setattr(self, f'_{attribute}_color', colors)
+            setattr(self._full, f'{attribute}_color', colors)
             setattr(self, f'_{attribute}_color_mode', ColorMode.DIRECT)
 
             color_event = getattr(self.events, f'{attribute}_color')
@@ -1284,30 +1294,6 @@ class Points(Layer):
                 self.current_properties = properties
         self._set_highlight()
 
-    def interaction_box(self, index) -> np.ndarray:
-        """Create the interaction box around a list of points in view.
-
-        Parameters
-        ----------
-        index : list
-            List of points around which to construct the interaction box.
-
-        Returns
-        -------
-        box : np.ndarray
-            4x2 array of corners of the interaction box in clockwise order
-            starting in the upper-left corner.
-        """
-        if len(index) == 0:
-            box = None
-        else:
-            data = self._view_data[index]
-            size = self._view_size[index]
-            data = points_to_squares(data, size)
-            box = create_box(data)
-
-        return box
-
     @property
     def mode(self) -> str:
         """str: Interactive mode
@@ -1380,15 +1366,10 @@ class Points(Layer):
         view_data : (N x D) np.ndarray
             Array of coordinates for the N points in view
         """
-        if len(self._indices_view) > 0:
-
-            data = self.data[np.ix_(self._indices_view, self._dims.displayed)]
-
-        else:
-            # if no points in this slice send dummy data
-            data = np.zeros((0, self._dims.ndisplay))
-
-        return data
+        view = self._full._slice_by_index(
+            self._indices_view, self._dims.displayed
+        )
+        return view.data
 
     @property
     def _view_text(self) -> np.ndarray:
@@ -1423,43 +1404,10 @@ class Points(Layer):
         view_size : (N x D) np.ndarray
             Array of sizes for the N points in view
         """
-        if len(self._indices_view) > 0:
-            # Get the point sizes and scale for ndim display
-            sizes = (
-                self.size[
-                    np.ix_(self._indices_view, self._dims.displayed)
-                ].mean(axis=1)
-                * self._view_size_scale
-            )
-
-        else:
-            # if no points, return an empty list
-            sizes = np.array([])
-        return sizes
-
-    @property
-    def _view_face_color(self) -> np.ndarray:
-        """Get the face colors of the points in view
-
-        Returns
-        -------
-        view_face_color : (N x 4) np.ndarray
-            RGBA color array for the face colors of the N points in view.
-            If there are no points in view, returns array of length 0.
-        """
-        return self.face_color[self._indices_view]
-
-    @property
-    def _view_edge_color(self) -> np.ndarray:
-        """Get the edge colors of the points in view
-
-        Returns
-        -------
-        view_edge_color : (N x 4) np.ndarray
-            RGBA color array for the edge colors of the N points in view.
-            If there are no points in view, returns array of length 0.
-        """
-        return self.edge_color[self._indices_view]
+        view = self._full._slice_by_index(
+            self._indices_view, self._dims.displayed
+        )
+        return view.size.mean(axis=1) * self._view_size_scale
 
     def _set_editable(self, editable=None):
         """Set editable mode based on layer properties."""
@@ -1523,7 +1471,7 @@ class Points(Layer):
             Index of point that is at the current coordinate if any.
         """
         # Display points if there are any in this slice
-        if len(self._view_data) > 0:
+        if len(self._indices_view) > 0:
             # Get the point sizes
             distances = abs(self._view_data - self.displayed_coordinates)
             in_slice_matches = np.all(
@@ -1631,8 +1579,9 @@ class Points(Layer):
     def _update_thumbnail(self):
         """Update thumbnail with current points and colors."""
         colormapped = np.zeros(self._thumbnail_shape)
+        view_data = self._view_data
         colormapped[..., 3] = 1
-        if len(self._view_data) > 0:
+        if len(view_data) > 0:
             de = self._extent_data
             min_vals = [de[0, i] for i in self._dims.displayed]
             shape = np.ceil(
@@ -1641,13 +1590,13 @@ class Points(Layer):
             zoom_factor = np.divide(
                 self._thumbnail_shape[:2], shape[-2:]
             ).min()
-            if len(self._view_data) > self._max_points_thumbnail:
+            if len(view_data) > self._max_points_thumbnail:
                 thumbnail_indices = np.random.randint(
-                    0, len(self._view_data), self._max_points_thumbnail
+                    0, len(view_data), self._max_points_thumbnail
                 )
-                points = self._view_data[thumbnail_indices]
+                points = view_data[thumbnail_indices]
             else:
-                points = self._view_data
+                points = view_data
                 thumbnail_indices = self._indices_view
             coords = np.floor(
                 (points[:, -2:] - min_vals[-2:] + 0.5) * zoom_factor
@@ -1675,9 +1624,9 @@ class Points(Layer):
         index = list(self.selected_data)
         index.sort()
         if len(index) > 0:
-            self._size = np.delete(self._size, index, axis=0)
-            self._edge_color = np.delete(self.edge_color, index, axis=0)
-            self._face_color = np.delete(self.face_color, index, axis=0)
+            self._full.size = np.delete(self._full.size, index, axis=0)
+            self._full.edge_color = np.delete(self.edge_color, index, axis=0)
+            self._full.face_color = np.delete(self.face_color, index, axis=0)
             for k in self.properties:
                 self.properties[k] = np.delete(
                     self.properties[k], index, axis=0
@@ -1713,7 +1662,7 @@ class Points(Layer):
 
     def _paste_data(self):
         """Paste any point from clipboard and select them."""
-        npoints = len(self._view_data)
+        npoints = len(self._indices_view)
         totpoints = len(self.data)
 
         if len(self._clipboard.keys()) > 0:
@@ -1724,17 +1673,17 @@ class Points(Layer):
                 for i in not_disp
             ]
             data[:, not_disp] = data[:, not_disp] + np.array(offset)
-            self._data = np.append(self.data, data, axis=0)
-            self._size = np.append(
+            self._full.data = np.append(self.data, data, axis=0)
+            self._full.size = np.append(
                 self.size, deepcopy(self._clipboard['size']), axis=0
             )
-            self._edge_color = np.vstack(
+            self._full.edge_color = np.vstack(
                 (
                     self.edge_color,
                     transform_color(deepcopy(self._clipboard['edge_color'])),
                 )
             )
-            self._face_color = np.vstack(
+            self._full.face_color = np.vstack(
                 (
                     self.face_color,
                     transform_color(deepcopy(self._clipboard['face_color'])),
