@@ -61,11 +61,12 @@ can connect to the list like this:
 The list has just two entries right now. With these indexes:
 
     FRAME_NUMBER = 0
-    JSON_BLOB = 1
+    FROM_NAPARI = 1
+    TO_NAPARI = 2
 
 The client can check shared_list[FRAME_NUMBER] for the integer frame
 number. If it sees a new number, it can decode the string in
-shared_list[JSON_BLOB].
+shared_list[FROM_NAPARI].
 
 The blob will be the union of every call made to monitor.add(). For example
 within napari you can do:
@@ -111,8 +112,7 @@ import time
 from multiprocessing.shared_memory import ShareableList
 from pathlib import Path
 from threading import Event, Thread
-
-from ....utils.perf import block_timer
+from typing import Optional
 
 
 def _base64_json(data: dict) -> str:
@@ -137,7 +137,8 @@ BUFFER_SIZE = 1024 * 1024
 # Slots in our ShareableList, this is probably not a good system, but
 # it's an easy way to prototype.
 FRAME_NUMBER = 0
-JSON_BLOB = 1
+FROM_NAPARI = 1
+TO_NAPARI = 2
 
 
 def _load_config(config_path: str) -> dict:
@@ -156,7 +157,7 @@ def _load_config(config_path: str) -> dict:
     path = Path(config_path).expanduser()
     if not path.exists():
         raise FileNotFoundError(
-            errno.ENOENT, f"Napari Monitor config file not found: {path}"
+            errno.ENOENT, f"Monitor: Config file not found: {path}"
         )
 
     with path.open() as infile:
@@ -175,18 +176,18 @@ def _start_client(args, client_config) -> None:
     """
     env = {"NAPARI_MON_CLIENT": _base64_json(client_config)}
 
-    print(f"NapariMon: starting client {args}")
+    print(f"Monitor: starting client {args}")
 
     # Use Popen to run and do not wait for it to finish.
     subprocess.Popen(args, env=env)
 
 
-def _get_monitor_config():
-    """Return the NapariMonitor config file data, or None.
+def _get_monitor_config() -> Optional[dict]:
+    """Return the MonitorService config file data, or None.
 
     Return
     ------
-    dict
+    Optional[dict]
         The parsed config file data.
     """
     value = os.getenv("NAPARI_MON")
@@ -244,14 +245,20 @@ class MonitorService(Thread):
     def run(self):
         """Setup shared memory and wait."""
         # Create placeholder so we reserve the space. Probably not the best
-        # way to pass JSON but it works.
-        place_holder = " " * BUFFER_SIZE
+        # way to pass JSON but it works. See shared memory with numpy
+        # for much more powerful options or all types including strings.
+        buffer_str = "{}" + " " * BUFFER_SIZE
 
-        self.shared_list = ShareableList([self.frame_number, place_holder])
+        # These are our three shared memory slots.
+        # FRAME_NUMBER = 0
+        # FROM_NAPARI = 1
+        # TO_NAPARI = 2
+        slots = [self.frame_number, buffer_str, buffer_str]
+        self.shared_list = ShareableList(slots)
         self.shared_list_name = self.shared_list.shm.name
 
-        # Post the empty JSON or clients will choke on the blank string.
-        self.end_frame()
+        # Poll once so slots have at least valid empty JSON.
+        self.poll()
 
         # All good.
         self.ready.set()
@@ -259,11 +266,26 @@ class MonitorService(Thread):
         # We don't really need a thread right now, but maybe?
         time.sleep(10000000)
 
-    def end_frame(self):
-        """Encode data as JSON and write it to shared memory."""
-        with block_timer("json encode", print_time=True):
-            self.shared_list[JSON_BLOB] = json.dumps(self.data)
-        self.frame_number += 1  # for now, need timer instead
+    def poll(self):
+        """Shuttle data from/to napari."""
+        # Post accumulated data from napari.
+        self.shared_list[FROM_NAPARI] = json.dumps(self.data)
+
+        # Get new data from clients.
+        json_str = self.shared_list[TO_NAPARI].rstrip()
+
+        try:
+            self.from_client = json.loads(json_str)
+        except json.decoder.JSONDecodeError:
+            print("Monitor: error parsing json: {json_str}")
+
+        # Clear out the new data.
+        # TODO_MON: Use a queue? What if we have multiple clients!?
+        self.shared_list[TO_NAPARI] = "{}"
+
+        # Update the frame number so clients know something changed.
+        # Better would be a queue they can wait on?
+        self.frame_number += 1
         self.shared_list[FRAME_NUMBER] = self.frame_number
 
     def add_data(self, data):
@@ -304,9 +326,9 @@ class Monitor:
         if self.service is not None:
             self.service.add_data(data)
 
-    def end_frame(self):
+    def poll(self):
         if self.service is not None:
-            self.service.end_frame()
+            self.service.poll()
 
 
 monitor = Monitor()

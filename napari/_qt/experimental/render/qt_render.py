@@ -63,7 +63,6 @@ class QtRender(QWidget):
         level = intersection.level
         shape = level.info.shape_in_tiles
 
-        # Only have to do this when it changes but for now do it every time.
         monitor.add({"tile_config": {"rows": shape[0], "cols": shape[1]}})
 
         seen = []
@@ -73,7 +72,17 @@ class QtRender(QWidget):
                     seen.append([row, col])
         monitor.add({"tile_state": {"seen": seen}})
 
-        monitor.end_frame()  # need to do somewhere central
+        # TODO_MON: Move this to somewhere central!
+        monitor.poll()
+
+        # TODO_MON: let users of the monitor register events, and get
+        # notified using those events? For check for now.
+        if monitor.service is not None:
+            data = monitor.service.from_client
+            try:
+                self.layer.show_grid = data['show_grid']
+            except KeyError:
+                pass  # no client setting, that's fine
 
     def _on_camera_move(self, _event=None):
         """Called when the camera was moved."""
