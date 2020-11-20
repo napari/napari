@@ -75,6 +75,7 @@ our colormap selection dropdown to make colormap selection easier.
 - Fix Py3.9 Big Sur bug (#1894)
 - Make control of grouping part of public api again (#1895)
 - Fix windows plugin dupe (#1899)
+- Revert #1857 "Return estimate for 3D texture size instead of hard-coded value" (#1907)
 
 ## API Changes
 
