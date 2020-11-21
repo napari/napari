@@ -2,7 +2,8 @@ from enum import auto
 
 import numpy as np
 
-from ...utils.misc import StringEnum
+from ..events.dataclass import Property, dataclass
+from ..misc import StringEnum
 from .colorbars import make_colorbar
 from .standardize_color import transform_color
 
@@ -21,6 +22,7 @@ class ColormapInterpolationMode(StringEnum):
     ZERO = auto()
 
 
+@dataclass(events=True, properties=True)
 class Colormap:
     """Colormap that relates intensity values to colors.
 
@@ -39,23 +41,22 @@ class Colormap:
         Name of the colormap.
     """
 
-    def __init__(
-        self, colors, *, controls=None, interpolation='linear', name='custom'
-    ):
+    colors: Property[np.ndarray, None, transform_color]
+    name: str = 'custom'
+    controls: np.ndarray = np.zeros((0, 4))
+    interpolation: Property[
+        ColormapInterpolationMode, str, ColormapInterpolationMode
+    ] = ColormapInterpolationMode.LINEAR
 
-        self.name = name
-        self.colors = transform_color(colors)
-        self._interpolation = ColormapInterpolationMode(interpolation)
-        if controls is None:
+    def __post_init__(self):
+        if len(self.controls) == 0:
             n_controls = len(self.colors) + int(
                 self._interpolation == ColormapInterpolationMode.ZERO
             )
             self.controls = np.linspace(0, 1, n_controls)
-        else:
-            self.controls = np.asarray(controls)
 
     def __iter__(self):
-        yield from (self.colors, self.controls, str(self.interpolation))
+        yield from (self.colors, self.controls, self.interpolation)
 
     def map(self, values):
         values = np.atleast_1d(values)
@@ -80,7 +81,3 @@ class Colormap:
     @property
     def colorbar(self):
         return make_colorbar(self)
-
-    @property
-    def interpolation(self):
-        return str(self._interpolation)
