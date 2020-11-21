@@ -34,7 +34,7 @@ class ScaleBar:
     visible: bool = False
     colored: bool = True
     ticks: bool = True
-    position: Property[np.ndarray, str, Position] = Position.BOTTOM_RIGHT
+    position: Property[Position, str, Position] = Position.BOTTOM_RIGHT
     background_color: Property[
         np.ndarray, None, transform_single_color
     ] = np.array([1, 1, 1, 1])
