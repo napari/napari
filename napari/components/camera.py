@@ -38,7 +38,7 @@ class Camera:
 
     center: Property[Tuple, None, tuple] = (0, 0, 0)
     zoom: int = 1
-    angles: int = (0, 0, 90)
+    angles: Property[Tuple, None, tuple] = (0, 0, 90)
 
     def __post_init__(self, dims):
         self._dims = dims
