@@ -13,7 +13,6 @@ def test_camera(make_test_viewer):
     # Test default values camera values are used and vispy camera has been
     # updated
     assert viewer.dims.ndisplay == 2
-    assert viewer.camera.ndisplay == 2
 
     np.testing.assert_almost_equal(viewer.camera.angles, (0, 0, 90))
     np.testing.assert_almost_equal(viewer.camera.center, (5.0, 5.0))
@@ -34,7 +33,6 @@ def test_vispy_camera_update_from_model(make_test_viewer):
     # Test default values camera values are used and vispy camera has been
     # updated
     assert viewer.dims.ndisplay == 2
-    assert viewer.camera.ndisplay == 2
 
     # Update camera center and zoom
     viewer.camera.center = (11, 12)
@@ -60,7 +58,6 @@ def test_camera_model_update_from_vispy(make_test_viewer):
     # Test default values camera values are used and vispy camera has been
     # updated
     assert viewer.dims.ndisplay == 2
-    assert viewer.camera.ndisplay == 2
 
     # Update vispy camera center and zoom
     vispy_camera.center = (11, 12)
@@ -85,7 +82,6 @@ def test_3D_camera(make_test_viewer):
     viewer.add_image(data)
 
     viewer.dims.ndisplay = 3
-    assert viewer.camera.ndisplay == 3
 
     # Test camera values have updated
     np.testing.assert_almost_equal(viewer.camera.angles, (0, 0, 90))
@@ -105,7 +101,6 @@ def test_vispy_camera_update_from_model_3D(make_test_viewer):
     viewer.add_image(data)
 
     viewer.dims.ndisplay = 3
-    assert viewer.camera.ndisplay == 3
 
     # Update camera angles, center, and zoom
     viewer.camera.angles = (24, 12, -19)
@@ -130,7 +125,6 @@ def test_camera_model_update_from_vispy_3D(make_test_viewer):
     viewer.add_image(data)
 
     viewer.dims.ndisplay = 3
-    assert viewer.camera.ndisplay == 3
 
     # Update vispy camera angles, center, and zoom
     viewer.camera.angles = (24, 12, -19)

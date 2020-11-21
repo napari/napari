@@ -70,7 +70,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         )
 
         self.layers = LayerList()
-        self.camera = Camera(self.dims)
+        self.camera = Camera(center=(0,) * self.dims.ndisplay)
         self.cursor = Cursor()
         self.axes = Axes()
         self.scale_bar = ScaleBar()
@@ -312,7 +312,6 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         size = np.multiply(scene_size, grid_size)
         center = np.add(corner, np.divide(size, 2))[-self.dims.ndisplay :]
         center = [0] * (self.dims.ndisplay - len(center)) + list(center)
-
         self.camera.center = center
         # zoom is definied as the number of canvas pixels per world pixel
         # The default value used below will zoom such that the whole field
