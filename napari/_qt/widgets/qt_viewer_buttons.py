@@ -241,7 +241,7 @@ class QtGridViewButton(QCheckBox):
 
         self.viewer = viewer
         self.setToolTip('Toggle grid view')
-        self.viewer.grid.events.update.connect(self._on_grid_change)
+        self.viewer.grid.events.connect(self._on_grid_change)
         self.stateChanged.connect(self.change_grid)
         self._on_grid_change()
 
@@ -263,7 +263,7 @@ class QtGridViewButton(QCheckBox):
         event : qtpy.QtCore.QEvent
             Event from the Qt context.
         """
-        with self.viewer.grid.events.update.blocker():
+        with self.viewer.grid.events.blocker():
             self.setChecked(not self.viewer.grid.enabled)
 
 

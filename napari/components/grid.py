@@ -1,18 +1,19 @@
+from typing import Tuple
+
 import numpy as np
 
-from ..utils.events import EmitterGroup
+from ..utils.events.dataclass import Property, dataclass
 
 
+@dataclass(events=True, properties=True)
 class GridCanvas:
     """Grid for canvas.
 
     Right now the only grid mode that is still inside one canvas with one
     camera, but future grid modes could support multiple canvases.
 
-    Attributes
+    Parameters
     ----------
-    events : EmitterGroup
-        Event emitter group
     enabled : bool
         If grid is enabled or not.
     shape : 2-tuple of int
@@ -28,46 +29,9 @@ class GridCanvas:
         reversed.
     """
 
-    def __init__(self, *, shape=(-1, -1), stride=1, enabled=False):
-
-        # Events:
-        self.events = EmitterGroup(
-            source=self, auto_connect=True, update=None,
-        )
-
-        self._enabled = enabled
-        self._stride = stride
-        self._shape = shape
-
-    @property
-    def enabled(self):
-        """bool: If grid is enabled or not."""
-        return self._enabled
-
-    @enabled.setter
-    def enabled(self, enabled):
-        self._enabled = enabled
-        self.events.update()
-
-    @property
-    def shape(self):
-        """2-tuple of int: Number of rows and columns in the grid."""
-        return self._shape
-
-    @shape.setter
-    def shape(self, shape):
-        self._shape = tuple(shape)
-        self.events.update()
-
-    @property
-    def stride(self):
-        """int: Number of layers in each grid square."""
-        return self._stride
-
-    @stride.setter
-    def stride(self, stride):
-        self._stride = stride
-        self.events.update()
+    enabled: bool = False
+    stride: int = 1
+    shape: Property[Tuple, None, tuple] = (-1, -1)
 
     def actual_shape(self, nlayers=1):
         """Return the actual shape of the grid.
