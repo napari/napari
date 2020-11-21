@@ -47,9 +47,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
 
     themes = palettes
 
-    def __init__(
-        self, title='napari', ndisplay=2, order=None, axis_labels=None
-    ):
+    def __init__(self, title='napari', ndisplay=2, order=(), axis_labels=()):
         super().__init__()
 
         self.events = EmitterGroup(
@@ -66,7 +64,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         )
 
         self.dims = Dims(
-            ndim=None, ndisplay=ndisplay, order=order, axis_labels=axis_labels
+            ndisplay=ndisplay, order=order, axis_labels=axis_labels
         )
 
         self.layers = LayerList()
