@@ -3,9 +3,10 @@ on:
     # Sequence of patterns matched against refs/tags
     tags:
       - "v*" # Push events to matching v*, i.e. v1.0, v20.15.10
-  pull_request:
     branches:
-      - '**'
+      - master
+  schedule:
+    - cron: '0 0 * * *'
 
 name: Create App Bundle
 
@@ -56,6 +57,7 @@ jobs:
           max_attempts: 3
           command: python -m bundle
       - name: Upload Artifact
+        if ${{ github.event_name == 'schedule' }} 
         uses: actions/upload-artifact@v2
         with:
           name: napari-${{ env.version }}-${{ runner.os }}.zip
@@ -66,9 +68,21 @@ jobs:
         uses: bruceadams/get-release@v1.2.0
       - name: Upload Release Asset
         if: startsWith(github.ref, 'refs/tags/v')
-        uses: actions/upload-release-asset@v1
+        uses: actions/upload-release-asset@v1.0.2
         with:
           upload_url: ${{ steps.get_release.outputs.upload_url }}
           asset_path: napari-${{ env.version }}-${{ runner.os }}.zip
           asset_name: napari-${{ env.version }}-${{ runner.os }}.zip
           asset_content_type: application/zip
+      - name: Upload Nightly Build Asset
+        if: ${{ github.event_name == 'schedule' }}
+        uses: WebFreak001/deploy-nightly@v1.1.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: https://uploads.github.com/repos/napari/napari/releases/34273071/assets{?name,label}
+          release_id: 34273071
+          asset_path: napari-${{ env.version }}-${{ runner.os }}.zip
+          asset_name: napari-${{ env.version }}-${{ runner.os }}.zip
+          asset_content_type: application/zip
+          max_releases: 1
