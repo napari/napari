@@ -25,7 +25,6 @@ import typing
 
 from numpydoc.docscrape import NumpyDocString
 
-from .components.add_layers_mixin import AddLayersMixin
 from .viewer import Viewer
 
 VIEW_DOC = NumpyDocString(Viewer.__doc__)
@@ -90,7 +89,7 @@ def _generate_view_function(layer_string: str, method_name: str = None):
     layer_string : str
         The name of the layer type
     method_name : str
-        The name of the method in AddLayersMixin to use, by default will use
+        The name of the method in Viewr to use, by default will use
         f'add_{layer_string}'
 
     Returns
@@ -101,7 +100,7 @@ def _generate_view_function(layer_string: str, method_name: str = None):
     # name of the corresponding add_* func
     add_string = method_name or f'add_{layer_string}'
     try:
-        add_method = getattr(AddLayersMixin, add_string)
+        add_method = getattr(Viewer, add_string)
     except AttributeError:
         raise AttributeError(f"No Viewer method named '{add_string}'")
 
