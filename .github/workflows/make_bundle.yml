@@ -57,7 +57,6 @@ jobs:
           max_attempts: 3
           command: python -m bundle
       - name: Upload Artifact
-        if ${{ github.event_name == 'schedule' }} 
         uses: actions/upload-artifact@v2
         with:
           name: napari-${{ env.version }}-${{ runner.os }}.zip
