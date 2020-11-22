@@ -599,8 +599,9 @@ class Layer(KeymapProvider, ABC):
                     category=UserWarning,
                 )
 
-        print('aa', self._dims.ndim, self._dims.not_displayed)
-        slice_inv_transform = inv_transform.set_slice(self._dims.not_displayed)
+        slice_inv_transform = inv_transform.set_slice(
+            list(self._dims.not_displayed)
+        )
 
         world_pts = [self._dims_point[ax] for ax in self._dims.not_displayed]
         data_pts = slice_inv_transform(world_pts)

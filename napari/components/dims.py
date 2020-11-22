@@ -97,7 +97,6 @@ class Dims:
             self.ndim = max_ndim
         else:
             self._update(self.ndim)
-        print('aaa', self.ndim, self.range)
 
     def _on_ndim_set(self, ndim):
         self._update(ndim)
@@ -128,7 +127,6 @@ class Dims:
         ndim : int
             New dimensionality
         """
-
         if len(self.range) < ndim:
             # Range value is (min, max, step) for the entire slider
             self._range = ((0, 2, 1),) * (ndim - len(self.range)) + self.range
@@ -142,18 +140,22 @@ class Dims:
         if len(self.current_step) > ndim:
             self._current_step = self.current_step[-ndim:]
 
-        self.order = tuple(range(ndim - len(self.order))) + tuple(
-            o + ndim - len(self.order) for o in self.order
-        )
-
-        # Append new "default" labels to existing ones
-        if self.axis_labels == tuple(map(str, range(len(self.axis_labels)))):
-            self._axis_labels = tuple(map(str, range(ndim)))
-        else:
-            self._axis_labels = (
-                tuple(map(str, range(ndim - len(self.axis_labels))))
-                + self.axis_labels
+        if len(self.order) != ndim:
+            self._order = tuple(range(ndim - len(self.order))) + tuple(
+                o + ndim - len(self.order) for o in self.order
             )
+
+        if len(self.axis_labels) != ndim:
+            # Append new "default" labels to existing ones
+            if self.axis_labels == tuple(
+                map(str, range(len(self.axis_labels)))
+            ):
+                self._axis_labels = tuple(map(str, range(ndim)))
+            else:
+                self._axis_labels = (
+                    tuple(map(str, range(ndim - len(self.axis_labels))))
+                    + self.axis_labels
+                )
 
     @property
     def nsteps(self):
@@ -215,6 +217,7 @@ class Dims:
             full_range = list(self.range)
             full_range[axis] = _range
             self.range = full_range
+        self.last_used = axis
 
     def set_point(self, axis: int, value: Union[int, float]):
         """Sets point to slice dimension in world coordinates.
@@ -254,6 +257,7 @@ class Dims:
             full_current_step = list(self.current_step)
             full_current_step[axis] = step
             self.current_step = full_current_step
+        self.last_used = axis
 
     def _increment_dims_right(self, axis: int = None):
         """Increment dimensions to the right along given axis, or last used axis if None
@@ -320,6 +324,7 @@ class Dims:
             full_axis_labels = list(self.axis_labels)
             full_axis_labels[axis] = str(label)
             self.axis_labels = full_axis_labels
+        self.last_used = axis
 
     def _assert_axis_in_bounds(self, axis: int) -> int:
         """Assert a given value is inside the existing axes of the image.

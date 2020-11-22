@@ -56,10 +56,8 @@ class QtDims(QWidget):
         # Update the number of sliders now that the dims have been added
         self._update_nsliders()
         self.dims.events.ndim.connect(self._update_nsliders)
-        self.dims.events.current_step.connect(
-            lambda ev: self._update_slider(ev.axis)
-        )
-        self.dims.events.range.connect(lambda ev: self._update_range(ev.axis))
+        self.dims.events.current_step.connect(self._update_slider)
+        self.dims.events.range.connect(self._update_range)
         self.dims.events.ndisplay.connect(self._update_display)
         self.dims.events.order.connect(self._update_display)
         self.dims.events.last_used.connect(self._on_last_used_changed)
@@ -89,7 +87,7 @@ class QtDims(QWidget):
             sld.style().unpolish(sld)
             sld.style().polish(sld)
 
-    def _update_slider(self, axis: int):
+    def _update_slider(self, event):
         """Updates position for a given slider.
 
         Parameters
@@ -97,12 +95,8 @@ class QtDims(QWidget):
         axis : int
             Axis index.
         """
-
-        if axis >= len(self.slider_widgets):
-            return
-
-        self.slider_widgets[axis]._update_slider()
-        self.dims.last_used = axis
+        for widget in self.slider_widgets:
+            widget._update_slider()
 
     def _update_range(self, axis: int):
         """Updates range for a given slider.
@@ -112,10 +106,9 @@ class QtDims(QWidget):
         axis : int
             Axis index.
         """
-        if axis >= len(self.slider_widgets):
-            return
+        for widget in self.slider_widgets:
+            widget._update_range()
 
-        self.slider_widgets[axis]._update_range()
         nsliders = np.sum(self._displayed_sliders)
         self.setMinimumHeight(nsliders * self.SLIDERHEIGHT)
         self._resize_slice_labels()
