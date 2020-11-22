@@ -75,6 +75,7 @@ our colormap selection dropdown to make colormap selection easier.
 - Fix Py3.9 Big Sur bug (#1894)
 - Make control of grouping part of public api again (#1895)
 - Fix windows plugin dupe (#1899)
+- Hide welcome visual (#1922)
 
 ## API Changes
 
