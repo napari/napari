@@ -263,22 +263,29 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
     def active_layer(self):
         """int: index of active_layer
         """
-        return self._active_layer
+        warnings.warn(
+            (
+                "The viewer.active_layer property is deprecated and will be removed after version 0.4.4."
+                " Instead you should use the viewer.layers.active property"
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
+        return self.layers.active
 
     @active_layer.setter
     def active_layer(self, active_layer):
+        warnings.warn(
+            (
+                "The viewer.active_layer property is deprecated and will be removed after version 0.4.4."
+                " Instead you should use the viewer.layers.active property"
+            ),
+            category=DeprecationWarning,
+            stacklevel=2,
+        )
         if active_layer == self.active_layer:
             return
-
-        if self._active_layer is not None:
-            self.keymap_providers.remove(self._active_layer)
-
-        self._active_layer = active_layer
-
-        if active_layer is not None:
-            self.keymap_providers.insert(0, active_layer)
-
-        self.events.active_layer(item=self._active_layer)
+        self.layers.active = active_layer
 
     @property
     def _sliced_extent_world(self) -> np.ndarray:
@@ -377,29 +384,29 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         event : Event
             No Event parameters are used
         """
-        # iteration goes backwards to find top most selected layer if any
-        # if multiple layers are selected sets the active layer to None
-
-        active_layer = None
-        for layer in self.layers:
-            if active_layer is None and layer.selected:
-                active_layer = layer
-            elif active_layer is not None and layer.selected:
-                active_layer = None
-                break
+        active_layer = self.layers.active
+        if self._active_layer == active_layer:
+            return
 
         if active_layer is None:
             self.status = 'Ready'
             self.help = ''
             self.cursor.style = 'standard'
             self.interactive = True
-            self.active_layer = None
         else:
             self.status = active_layer.status
             self.help = active_layer.help
             self.cursor.style = active_layer.cursor
             self.interactive = active_layer.interactive
-            self.active_layer = active_layer
+
+        if self._active_layer in self.keymap_providers:
+            self.keymap_providers.remove(self._active_layer)
+
+        if active_layer is not None:
+            self.keymap_providers.insert(0, active_layer)
+
+        self._active_layer = active_layer
+        self.events.active_layer(item=active_layer)
 
     def _on_layers_change(self, event):
         if len(self.layers) == 0:

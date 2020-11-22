@@ -62,6 +62,26 @@ class LayerList(EventedList):
         """List of selected layers."""
         return [layer for layer in self if layer.selected]
 
+    @property
+    def active(self):
+        """Active layer, if any, given by top most selected."""
+        active_layer = None
+        # if multiple layers are selected sets the active layer to None
+        for layer in self:
+            if active_layer is None and layer.selected:
+                active_layer = layer
+            elif active_layer is not None and layer.selected:
+                active_layer = None
+                break
+        return active_layer
+
+    @active.setter
+    def active(self, active):
+        if active not in self:
+            raise ValueError('Active layer must be in layer list')
+        self.unselect_all(ignore=active)
+        active.selected = True
+
     def move_selected(self, index, insert):
         """Reorder list by moving the item at index and inserting it
         at the insert index. If additional items are selected these will
