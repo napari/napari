@@ -97,6 +97,7 @@ class Dims:
             self.ndim = max_ndim
         else:
             self._update(self.ndim)
+        print('aaa', self.ndim, self.range)
 
     def _on_ndim_set(self, ndim):
         self._update(ndim)
@@ -110,13 +111,13 @@ class Dims:
     def _on_axis_labels_set(self, axis_labels):
         if not len(axis_labels) == self.ndim:
             raise ValueError(
-                f"Invalid number of axis labels {axis_labels} for {self.ndim} dimensions"
+                f"Invalid number of axis labels {len(axis_labels)} for {self.ndim} dimensions"
             )
 
     def _on_range_set(self, range_var):
         if not len(range_var) == self.ndim:
             raise ValueError(
-                f"Invalid length range {range_var} for {self.ndim} dimensions"
+                f"Invalid length range {len(range_var)} for {self.ndim} dimensions"
             )
 
     def _update(self, ndim):
@@ -130,18 +131,18 @@ class Dims:
 
         if len(self.range) < ndim:
             # Range value is (min, max, step) for the entire slider
-            self._range = ((0, 2, 1),) * (len(self.range) - ndim) + self.range
+            self._range = ((0, 2, 1),) * (ndim - len(self.range)) + self.range
         if len(self.range) > ndim:
             self._range = self.range[-ndim:]
 
         if len(self.current_step) < ndim:
             self._current_step = (0,) * (
-                len(self.current_step) - ndim
+                ndim - len(self.current_step)
             ) + self.current_step
         if len(self.current_step) > ndim:
             self._current_step = self.current_step[-ndim:]
 
-        self._order = tuple(range(ndim - len(self.order))) + tuple(
+        self.order = tuple(range(ndim - len(self.order))) + tuple(
             o + ndim - len(self.order) for o in self.order
         )
 
@@ -158,21 +159,21 @@ class Dims:
     def nsteps(self):
         """Number of slider steps for each dimension.
         """
-        return [
+        return tuple(
             int((max_val - min_val) // step_size) + 1
-            for min_val, max_val, step_size in self._range
-        ]
+            for min_val, max_val, step_size in self.range
+        )
 
     @property
     def point(self):
         """List of float: value of each dimension."""
         # The point value is computed from the current_step
-        point = [
+        point = tuple(
             min_val + step_size * value
             for (min_val, max_val, step_size), value in zip(
-                self._range, self._current_step
+                self.range, self.current_step
             )
-        ]
+        )
         return point
 
     @property
