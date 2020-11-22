@@ -6,7 +6,6 @@ from typing import List, Optional
 
 import numpy as np
 
-from ...components import Dims
 from ...utils.dask_utils import configure_dask
 from ...utils.events import EmitterGroup, Event
 from ...utils.key_bindings import KeymapProvider
@@ -21,6 +20,9 @@ from ..utils.layer_utils import (
 from ._base_constants import Blending
 
 Extent = namedtuple('Extent', 'data world step')
+Dims = namedtuple(
+    'Dims', 'ndim ndisplay displayed not_displayed order displayed_order'
+)
 
 
 class Layer(KeymapProvider, ABC):
@@ -192,7 +194,9 @@ class Layer(KeymapProvider, ABC):
         self.scale_factor = 1
         self.multiscale = multiscale
 
-        self._dims = Dims(ndim)
+        self._dims_ndim = ndim
+        self._dims_ndisplay = 2
+        self._dims_order = list(range(ndim))
 
         # Create a transform chain consisting of three transforms:
         # 1. `tile2data`: An initial transform only needed displaying tiles
@@ -244,7 +248,7 @@ class Layer(KeymapProvider, ABC):
             ]
         )
 
-        self._position = (0,) * self._dims.ndim
+        self._position = (0,) * self._dims_ndim
         self._dims_point = [0] * ndim
         self.corner_pixels = np.zeros((2, ndim), dtype=int)
         self._editable = True
@@ -278,6 +282,7 @@ class Layer(KeymapProvider, ABC):
             cursor_size=Event,
             editable=Event,
             loaded=Event,
+            _ndisplay=Event,
         )
         self.name = name
 
@@ -486,22 +491,24 @@ class Layer(KeymapProvider, ABC):
         self._update_value_and_status()
 
     @property
-    def dims(self):
-        warnings.warn(
-            (
-                "The layer.dims parameter is deprecated and will be removed in version 0.4.2."
-                " Instead you should use the viewer.dims parameter on the main viewer object."
-            ),
-            category=DeprecationWarning,
-            stacklevel=2,
+    def _dims(self):
+        """To be removed private dims."""
+        order = np.array(self._dims_order[-self._dims_ndisplay :])
+        order[np.argsort(order)] = list(range(len(order)))
+        return Dims(
+            ndim=self._dims_ndim,
+            ndisplay=self._dims_ndisplay,
+            order=self._dims_order,
+            displayed=self._dims_order[-self._dims_ndisplay :],
+            not_displayed=self._dims_order[: -self._dims_ndisplay],
+            displayed_order=tuple(order),
         )
-        return self._dims
 
     def _update_dims(self, event=None):
         """Updates dims model, which is useful after data has been changed."""
         ndim = self._get_ndim()
 
-        old_ndim = self._dims.ndim
+        old_ndim = self._dims_ndim
         if old_ndim > ndim:
             keep_axes = range(old_ndim - ndim, old_ndim)
             self._transforms = self._transforms.set_slice(keep_axes)
@@ -513,7 +520,7 @@ class Layer(KeymapProvider, ABC):
             self._dims_point = [0] * (ndim - old_ndim) + self._dims_point
             self._position = (0,) * (ndim - old_ndim) + self._position
 
-        self._dims.ndim = ndim
+        self._dims_ndim = ndim
 
         self.refresh()
         self._update_value_and_status()
@@ -577,7 +584,7 @@ class Layer(KeymapProvider, ABC):
         """(D, ) array: Slice indices in data coordinates."""
         inv_transform = self._transforms['data2world'].inverse
 
-        if self.ndim > self._dims.ndisplay:
+        if self.ndim > self._dims_ndisplay:
             # Subspace spanned by non displayed dimensions
             non_displayed_subspace = np.zeros(self.ndim)
             for d in self._dims.not_displayed:
@@ -708,7 +715,7 @@ class Layer(KeymapProvider, ABC):
     @property
     def ndim(self):
         """int: Number of dimensions in the data."""
-        return self._dims.ndim
+        return self._dims_ndim
 
     @property
     def selected(self):
@@ -838,14 +845,16 @@ class Layer(KeymapProvider, ABC):
 
         # If no slide data has changed, then do nothing
         if (
-            np.all(order == self._dims.order)
-            and ndisplay == self._dims.ndisplay
+            np.all(order == self._dims_order)
+            and ndisplay == self._dims_ndisplay
             and np.all(point[offset:] == self._dims_point)
         ):
             return
 
-        self._dims.order = order
-        self._dims.ndisplay = ndisplay
+        self._dims_order = order
+        if self._dims_ndisplay != ndisplay:
+            self._dims_ndisplay = ndisplay
+            self.events._ndisplay()
 
         # Update the point values
         self._dims_point = point[offset:]
@@ -937,7 +946,7 @@ class Layer(KeymapProvider, ABC):
             data_corners, self.extent.data[0], self.extent.data[1]
         )
 
-        if self._dims.ndisplay == 2 and self.multiscale:
+        if self._dims_ndisplay == 2 and self.multiscale:
             level, displayed_corners = compute_multiscale_level_and_corners(
                 data_corners[:, self._dims.displayed],
                 shape_threshold,

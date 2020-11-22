@@ -48,7 +48,7 @@ class QtImageControls(QtBaseImageControls):
         self.layer.events.rendering.connect(self._on_rendering_change)
         self.layer.events.iso_threshold.connect(self._on_iso_threshold_change)
         self.layer.events.attenuation.connect(self._on_attenuation_change)
-        self.layer._dims.events.ndisplay.connect(self._on_ndisplay_change)
+        self.layer.events._ndisplay.connect(self._on_ndisplay_change)
 
         self.interpComboBox = QComboBox(self)
         self.interpComboBox.activated[str].connect(self.changeInterpolation)
