@@ -36,7 +36,8 @@ jobs:
         run: |
           sudo apt-get install -y libdbus-1-3 libxkbcommon-x11-0 libxcb-icccm4 \
           libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 \
-          libxcb-xinerama0 libxcb-xfixes0 python3-gdbm
+          libxcb-xinerama0 libxcb-xfixes0
+          sudo ln -s /usr/lib/x86_64-linux-gnu/libgdbm.so.3.0.0 /usr/lib/x86_64-linux-gnu/libgdbm.so.5
           /sbin/start-stop-daemon --start --quiet \
             --pidfile /tmp/custom_xvfb_99.pid --make-pidfile \
             --background --exec /usr/bin/Xvfb \
@@ -53,11 +54,8 @@ jobs:
           echo "version=${VER}" >> $GITHUB_ENV
           echo $VER
       - name: Make Bundle
-        uses: nick-invision/retry@v1
-        with:
-          timeout_minutes: 30
-          max_attempts: 3
-          command: python -m bundle
+        run: |
+          python -m bundle
       - name: Upload Artifact
         uses: actions/upload-artifact@v2
         with:
