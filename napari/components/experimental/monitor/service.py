@@ -1,4 +1,4 @@
-"""Monitor class.
+"""MonitorService class.
 
 Experimental shared memory monitor.
 
@@ -48,15 +48,23 @@ NAPARI_MON_CLIENT variable. It can be decoded like this:
 For now the client configuration is just:
 
     {
-        "shared_list_name": "<name>"
+        "shared_list_name": "<name>",
+        "server_port": "<number>"
     }
 
 But it will evolve over time.
 
-Currently the only shared resource is a single ShareableList, the client
-can connect to the list like this:
+The list name refers to a ShareableList, the client can connect to it like
+this:
 
     shared_list = ShareableList(name=data['shared_list_name'])
+
+The server port should be used when creating a SharedMemoryManager:
+
+    self.manager = SharedMemoryManager(
+        address=('localhost', config['server_port']),
+        authkey=str.encode('napari')
+    )
 
 The list has just two entries right now. With these indexes:
 
@@ -125,7 +133,10 @@ def _base64_json(data: dict) -> str:
 
 # We send this to the client when it starts. So it can attach to our shared
 # memory among other things. We insert the real <name>.
-client_config_template = {"shared_list_name": "<name>"}
+client_config_template = {
+    "shared_list_name": "<name>",
+    "server_port": "<number>",
+}
 
 # Create empty string of this size up front, since cannot grow it.
 BUFFER_SIZE = 1024 * 1024
@@ -156,16 +167,17 @@ def _start_client(args, client_config) -> None:
 
 
 def _test_callable():
-    print("TEST CALLABLE")
+    print("test_callable")
+    return 1234
 
 
 class MonitorService(Thread):
     """Make data available to a client via shared memory.
 
     We are using JSON via ShareableList for prototyping with small amounts
-    of data. It looks like using numpy's recarray with complex fields is
-    the most powerful approach. Definitely do not use JSON for data of
-    any non-trivial size.
+    of data. For bulk binary data, like images, it looks like using numpy's
+    recarray with complex fields is the most powerful approach. Definitely
+    do not use JSON for "lots" of data.
     """
 
     def __init__(self, config):
@@ -174,8 +186,14 @@ class MonitorService(Thread):
 
         SharedMemoryManager.register('test_callable', callable=_test_callable)
 
-        self.manager = SharedMemoryManager()
+        self.manager = SharedMemoryManager(
+            address=('127.0.0.1', 0), authkey=str.encode('napari')
+        )
         self.manager.start()
+
+        # We asked for port 0 which means the OS will pick a port, we
+        # save it off so we can send it the clients are starting up.
+        self.server_port = self.manager.address[1]
 
         # Right now JSON from clients is written into here. Hopefully this
         # will go away if we start using the BaseManager callback feature.
@@ -210,6 +228,7 @@ class MonitorService(Thread):
         # Every client gets the same config, stuff in current values.
         client_config = copy.deepcopy(client_config_template)
         client_config['shared_list_name'] = self.shared_list.shm.name
+        client_config['server_port'] = self.server_port
 
         for args in self.config['clients']:
             _start_client(args, client_config)
