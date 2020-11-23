@@ -101,6 +101,8 @@ investigate some crashes that it seemed to be contributing to. See #1905.
 - Bump qtconsole version requirement to fix #1854 (#1855)
 - Update set-env in make_release action (#1897)
 - Fix set-env for bundle build (#1901)
+- Fix linux bundle by linking gdbm library 3 to 5 (#1918)
+- Update documentation for the nightly build release (#1932)
 
 ## 18 authors added to this release (alphabetical)
 
