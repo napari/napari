@@ -79,7 +79,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: https://uploads.github.com/repos/napari/napari/releases/34273071/assets{?name,label}
+          upload_url: https://uploads.github.com/repos/napari/napari/releases/34273071/assets{?name,label} # nightly build release from https://api.github.com/repos/napari/napari/releases
           release_id: 34273071
           asset_path: napari-${{ env.version }}-${{ runner.os }}.zip
           asset_name: napari-${{ env.version }}-${{ runner.os }}.zip
