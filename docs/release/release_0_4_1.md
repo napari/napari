@@ -59,6 +59,7 @@ investigate some crashes that it seemed to be contributing to. See #1905.
 - Async-26: Artificial Delay and fixes (#1891)
 - Add properties event (#1896)
 - Async-27: Sparse Octree (#1892)
+- Standardize grid events (#1926)
 
 ## Bug Fixes
 
@@ -136,4 +137,3 @@ investigate some crashes that it seemed to be contributing to. See #1905.
 - [Philip Winston](https://github.com/napari/napari/commits?author=pwinston) - @pwinston
 - [Talley Lambert](https://github.com/napari/napari/commits?author=tlambert03) - @tlambert03
 - [Volker Hilsenstein](https://github.com/napari/napari/commits?author=VolkerH) - @VolkerH
-
