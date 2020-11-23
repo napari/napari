@@ -25,7 +25,12 @@ def running_as_bundled_app() -> bool:
     """Infer whether we are running as a briefcase bundle"""
     # https://github.com/beeware/briefcase/issues/412
     # https://github.com/beeware/briefcase/pull/425
-    if sys.modules['__main__'].__spec__.name in {"cProfile", "yappi"}:
+    main_module = sys.modules['__main__']
+    if (
+        hasattr(main_module, "__spec__")
+        and hasattr(main_module.__spec__, "name")
+        and main_module.__spec__.name in {"cProfile", "yappi"}
+    ):
         # check if run from profiler
         return False
     app_module = sys.modules['__main__'].__package__
