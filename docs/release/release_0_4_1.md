@@ -59,6 +59,7 @@ investigate some crashes that it seemed to be contributing to. See #1905.
 - Async-26: Artificial Delay and fixes (#1891)
 - Add properties event (#1896)
 - Async-27: Sparse Octree (#1892)
+- Standardize grid events (#1926)
 
 ## Bug Fixes
 
@@ -87,6 +88,9 @@ investigate some crashes that it seemed to be contributing to. See #1905.
   Instead, use ``viewer.grid.enabled = <True/False>``. (#1821)
 - ``Viewer.grid_stride`` and ``Viewer.grid_size`` are deprecated. Instead,
   use ``Viewer.grid.stride`` and ``Viewer.grid.shape``. (#1821, #1847)
+- Use ``Viewer.grid.events.update`` is removed, there are now
+  individual events for each attribute. Use ``Viewer.grid.events.connect``
+  to connect with all of them. (#1926)
 
 ## Build Tools and Docs
 
