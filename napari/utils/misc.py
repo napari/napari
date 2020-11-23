@@ -25,8 +25,12 @@ def running_as_bundled_app() -> bool:
     """Infer whether we are running as a briefcase bundle"""
     # https://github.com/beeware/briefcase/issues/412
     # https://github.com/beeware/briefcase/pull/425
+    if sys.modules['__main__'].__spec__.name in {"cProfile", "yappi"}:
+        # check if run from profiler
+        return False
     app_module = sys.modules['__main__'].__package__
     metadata = importlib_metadata.metadata(app_module)
+
     return 'Briefcase-Version' in metadata
 
 
