@@ -7,6 +7,7 @@ from napari._qt.exceptions import ExceptionHandler
 
 # caplog fixture comes from pytest
 # https://docs.pytest.org/en/stable/logging.html#caplog-fixture
+@pytest.mark.skip("testing CI")
 def test_exception_handler_interactive(qtbot, caplog):
     """Test exception handler logs to console and emits a signal."""
     handler = ExceptionHandler(gui_exceptions=False)
@@ -20,6 +21,7 @@ def test_exception_handler_interactive(qtbot, caplog):
     assert 'ValueError: whoops' in record.message
 
 
+@pytest.mark.skip("testing CI")
 # caplog fixture comes from pytest
 # https://docs.pytest.org/en/stable/logging.html#caplog-fixture
 def test_keyboard_interupt_handler(qtbot, capsys):
@@ -29,6 +31,7 @@ def test_keyboard_interupt_handler(qtbot, capsys):
     assert capsys.readouterr().err == "Closed by KeyboardInterrupt\n"
 
 
+@pytest.mark.skip("testing CI")
 def test_exception_handler_gui(qtbot, make_test_viewer):
     """Test exception handler can create a NapariNotification"""
     viewer = make_test_viewer()
