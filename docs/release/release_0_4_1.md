@@ -19,6 +19,9 @@ for volumetric data. Finally, we made some useful visual improvements, such as
 displaying text labels identifying axes on our axes visual, and colorbars in
 our colormap selection dropdown to make colormap selection easier.
 
+A small note: we have temporarily disabled the viewer's welcome visual while we
+investigate some crashes that it seemed to be contributing to. See #1905.
+
 ## New Features
 
 - Live tiff loader example (#1610)
