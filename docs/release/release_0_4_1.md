@@ -101,6 +101,7 @@ investigate some crashes that it seemed to be contributing to. See #1905.
 - Bump qtconsole version requirement to fix #1854 (#1855)
 - Update set-env in make_release action (#1897)
 - Fix set-env for bundle build (#1901)
+- Exclude qt 5.12.2 (#1927)
 
 ## 18 authors added to this release (alphabetical)
 
