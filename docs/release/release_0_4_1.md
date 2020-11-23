@@ -19,6 +19,9 @@ for volumetric data. Finally, we made some useful visual improvements, such as
 displaying text labels identifying axes on our axes visual, and colorbars in
 our colormap selection dropdown to make colormap selection easier.
 
+A small note: we have temporarily disabled the viewer's welcome visual while we
+investigate some crashes that it seemed to be contributing to. See #1905.
+
 ## New Features
 
 - Live tiff loader example (#1610)
@@ -76,6 +79,7 @@ our colormap selection dropdown to make colormap selection easier.
 - Make control of grouping part of public api again (#1895)
 - Fix windows plugin dupe (#1899)
 - Revert #1857 "Return estimate for 3D texture size instead of hard-coded value" (#1907)
+- Hide welcome visual (#1922)
 
 ## API Changes
 
