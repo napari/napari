@@ -104,15 +104,11 @@ and ShareableList.
 """
 import base64
 import copy
-import errno
 import json
-import os
 import subprocess
 import time
 from multiprocessing.managers import SharedMemoryManager
-from pathlib import Path
 from threading import Event, Thread
-from typing import Optional
 
 
 def _base64_json(data: dict) -> str:
@@ -141,29 +137,6 @@ FROM_NAPARI = 1
 TO_NAPARI = 2
 
 
-def _load_config(config_path: str) -> dict:
-    """Load the JSON formatted config file.
-
-    Parameters
-    ----------
-    config_path : str
-        The path of the JSON file we should load.
-
-    Return
-    ------
-    dict
-        The parsed data from the JSON file.
-    """
-    path = Path(config_path).expanduser()
-    if not path.exists():
-        raise FileNotFoundError(
-            errno.ENOENT, f"Monitor: Config file not found: {path}"
-        )
-
-    with path.open() as infile:
-        return json.load(infile)
-
-
 def _start_client(args, client_config) -> None:
     """Start this one client, pass the config as an env variable.
 
@@ -180,20 +153,6 @@ def _start_client(args, client_config) -> None:
 
     # Use Popen to run and do not wait for it to finish.
     subprocess.Popen(args, env=env)
-
-
-def _get_monitor_config() -> Optional[dict]:
-    """Return the MonitorService config file data, or None.
-
-    Return
-    ------
-    Optional[dict]
-        The parsed config file data.
-    """
-    value = os.getenv("NAPARI_MON")
-    if value in [None, "0"]:
-        return None
-    return _load_config(value)
 
 
 def _test_callable():
@@ -218,6 +177,10 @@ class MonitorService(Thread):
         self.manager = SharedMemoryManager()
         self.manager.start()
 
+        # Right now JSON from clients is written into here. Hopefully this
+        # will go away if we start using the BaseManager callback feature.
+        self.from_client = {}
+
         # Anyone can add to data with our self.add_data() then once per
         # frame we encode it into JSON and write into the shared list.
         self.data = {}
@@ -225,7 +188,6 @@ class MonitorService(Thread):
 
         # We create the shared list in the thread.
         self.shared_list = None
-        self.shared_list_name = None
 
         # Start our thread.
         num_clients = len(self.config['clients'])
@@ -235,6 +197,10 @@ class MonitorService(Thread):
 
         # Wait for shared memory to be setup then start clients.
         self.ready.wait()
+
+        # We could start clients from the thread, but that might lead to
+        # confusing with prints/logging as napari and the clients are
+        # starting up at the exact same time. Maybe someday.
         self._start_clients()
         print(f"Monitor: Started {num_clients} clients.")
 
@@ -243,7 +209,7 @@ class MonitorService(Thread):
 
         # Every client gets the same config, stuff in current values.
         client_config = copy.deepcopy(client_config_template)
-        client_config['shared_list_name'] = self.shared_list_name
+        client_config['shared_list_name'] = self.shared_list.shm.name
 
         for args in self.config['clients']:
             _start_client(args, client_config)
@@ -261,7 +227,6 @@ class MonitorService(Thread):
         # TO_NAPARI = 2
         slots = [self.frame_number, buffer_str, buffer_str]
         self.shared_list = self.manager.ShareableList(slots)
-        self.shared_list_name = self.shared_list.shm.name
 
         # Poll once so slots have at least valid empty JSON.
         self.poll()
@@ -305,41 +270,5 @@ class MonitorService(Thread):
         return self.shared_name
 
     def stop(self) -> None:
+        """Stop the shared memory service."""
         self.manager.shutdown()
-
-
-class Monitor:
-    """Wrapper so we only start the service if NAPARI_MON was defined.
-
-    Any calls to monitor.add() will be no-ops if the service was not
-    started.
-    """
-
-    def __init__(self):
-        self.service = None
-        self.data = _get_monitor_config()
-
-    def start(self):
-        """Start the monitor service if configured
-
-        Only start if NAPARI_MON was defined and pointed to a JSON file
-        that we were able to parse.
-        """
-        if self.data is not None:
-            self.service = MonitorService(self.data)
-
-    def stop(self):
-        """TODO_MON: call this somewhere!"""
-        self.service.stop
-
-    def add(self, data):
-        """Add monitoring data."""
-        if self.service is not None:
-            self.service.add_data(data)
-
-    def poll(self):
-        if self.service is not None:
-            self.service.poll()
-
-
-monitor = Monitor()

@@ -86,18 +86,54 @@ class QtRender(QWidget):
                 pass  # no client setting, that's fine
 
     def _monitor(self):
+        # TODO_OCTREE: The OctreeLevelInfo and SliceConfig and
+        # their attributes are messy. This becomes clear trying
+        # to send a coherent message to the monitor. Ideally
+        # the message comes from the octree code directly, and
+        # references the data it stores (names, etc).
         intersection = self.layer.get_intersection()
         level = intersection.level
-        shape = level.info.shape_in_tiles
+        image_shape = level.info.image_shape
+        shape_in_tiles = level.info.shape_in_tiles
 
-        monitor.add({"tile_config": {"rows": shape[0], "cols": shape[1]}})
+        # slice_config are properties of the whole octree, not
+        # specific to this level. Confusingly.
+        slice_config = level.info.slice_config
+        base_shape = slice_config.base_shape
+        tile_size = slice_config.tile_size
 
+        data = {
+            "tile_config": {
+                "base_shape": base_shape,
+                "image_shape": image_shape,
+                "shape_in_tiles": shape_in_tiles,
+                "tile_size": tile_size,
+            }
+        }
+
+        monitor.add(data)
+
+        # Create seen, a list of (row, col) pairs of tiles which were
+        # visible in the intersection. When the octree code provides
+        # this message, it can do it more efficiently than querying
+        # every possible pair!
+        shape = shape_in_tiles
         seen = []
         for row in range(shape[0]):
             for col in range(shape[1]):
                 if intersection.is_visible(row, col):
                     seen.append([row, col])
-        monitor.add({"tile_state": {"seen": seen}})
+
+        # If we create our own json encoder for numpy (like vispy does)
+        # then we don't need to call tolist() here.
+        monitor.add(
+            {
+                "tile_state": {
+                    "seen": seen,
+                    "corners": intersection.corners.tolist(),
+                }
+            }
+        )
 
         # Zooming starves our timer, so poll here for now. Utlimately
         # polling for input should go away totally.

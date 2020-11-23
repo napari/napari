@@ -1,2 +1,2 @@
 from .chunk import chunk_loader
-from .monitor.service import monitor
+from .monitor.wrapper import monitor

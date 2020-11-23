@@ -63,6 +63,7 @@ class OctreeIntersection:
 
     def __init__(self, level: OctreeLevel, view: OctreeView):
         self.level = level
+        self.corners = view.corners
 
         info = self.level.info
 
