@@ -104,6 +104,7 @@ investigate some crashes that it seemed to be contributing to. See #1905.
 - Fix linux bundle by linking gdbm library 3 to 5 (#1918)
 - Pin Pyside2 5.15.1 for linux CI and bundle build (#1925)
 - Update documentation for the nightly build release (#1932)
+- Install specific PySide version when building bundle (#1936)
 
 ## 18 authors added to this release (alphabetical)
 
