@@ -18,7 +18,7 @@ APP = 'napari'
 # PySide2:
 # python bundle.py --add 'PySide2==5.15.0' 'ome-zarr'
 
-EXTRA_REQS = ["pip", "PySide2==5.14.2.3", "scikit-image", "zarr"]
+EXTRA_REQS = ["pip", "PySide2==5.14.2.3", "scikit-image", "zarr", "pims"]
 
 
 WINDOWS = os.name == 'nt'
