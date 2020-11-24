@@ -1,6 +1,6 @@
 """MonitorService class.
 
-Experimental shared memory monitor.
+Experimental shared memory monitor service.
 
 With this monitor a program can publish data to shared memory. The monitor
 has a JSON config file. When the monitor starts will launch any number of
@@ -79,7 +79,7 @@ shared_list[FROM_NAPARI].
 The blob will be the union of every call made to monitor.add(). For example
 within napari you can do:
 
-    monitor.add_data({"frame_time": delta_seconds})
+    monitor.add({"frame_time": delta_seconds})
 
 somewhere else you can do:
 
@@ -90,7 +90,7 @@ somewhere else you can do:
             "duration_ms": elapsed.duration_ms,
         }
     }
-    monitor.add_data(data)
+    monitor.add(data)
 
 Client can access data['frame_time'] or data['tiled_image_layer']. Clients
 should be resilient, so that it does not crash if something missing.
@@ -166,8 +166,8 @@ def _start_client(args, client_config) -> None:
     subprocess.Popen(args, env=env)
 
 
-def _test_callable():
-    print("test_callable")
+def _test_callable(input_value):
+    print(f"test_callable: {input_value}")
     return 1234
 
 
@@ -194,6 +194,8 @@ class MonitorService(Thread):
         # We asked for port 0 which means the OS will pick a port, we
         # save it off so we can send it the clients are starting up.
         self.server_port = self.manager.address[1]
+
+        print(f"Monitor: listening on port {self.server_port}")
 
         # Right now JSON from clients is written into here. Hopefully this
         # will go away if we start using the BaseManager callback feature.
