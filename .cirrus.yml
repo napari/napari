@@ -92,8 +92,7 @@ linux_task:
 
   test_pyside2_with_coverage_script: |
     if [[ $PYTEST_FLAGS == "" ]]; then
-      pytest -v --cov-report=xml --cov=./napari
-      codecov
+      QT_DEBUG_PLUGINS=1 pytest -v 
     fi;
 
   test_pyqt5_script:
