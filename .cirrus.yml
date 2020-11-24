@@ -66,7 +66,7 @@ linux_task:
     - conda install -y python=$PY_VER
 
   # https://github.com/cirruslabs/cirrus-ci-docs/issues/97
-  xvfb_start_background_script: Xvfb $DISPLAY -ac -screen 0 1024x768x24
+  # xvfb_start_background_script: Xvfb $DISPLAY -ac -screen 0 1024x768x24
   # https://pytest-qt.readthedocs.io/en/latest/troubleshooting.html#xvfb-assertionerror-timeouterror-when-using-waituntil-waitexposed-and-ui-events
   herbstluftwm_start_background_script: herbstluftwm
 
@@ -82,7 +82,7 @@ linux_task:
   install_script:
     - python -m pip install --retries 3 --upgrade pip
     - python -m pip install --retries 3 -r requirements/test.txt $PIP_FLAGS
-    - python -m pip install --retries 3 pytest-cov codecov
+    - python -m pip install --retries 3 pytest-cov codecov pytest-xvfb
     - python tools/minreq.py  # no-op if MIN_REQ is not set
     - python -m pip install -e .[pyside2] $PIP_FLAGS
 
