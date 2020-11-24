@@ -118,6 +118,9 @@ import time
 from multiprocessing.managers import SharedMemoryManager
 from threading import Event, Thread
 
+# If False we don't start any clients, for debugging.
+START_CLIENTS = True
+
 
 def _base64_json(data: dict) -> str:
     """Return base64 encoded version of this data as JSON.
@@ -166,11 +169,6 @@ def _start_client(args, client_config) -> None:
     subprocess.Popen(args, env=env)
 
 
-def _test_callable(input_value):
-    print(f"test_callable: {input_value}")
-    return 1234
-
-
 class MonitorService(Thread):
     """Make data available to a client via shared memory.
 
@@ -184,7 +182,7 @@ class MonitorService(Thread):
         super().__init__()
         self.config = config
 
-        SharedMemoryManager.register('test_callable', callable=_test_callable)
+        # self._api = MonitorApi(None)
 
         self.manager = SharedMemoryManager(
             address=('127.0.0.1', 0), authkey=str.encode('napari')
@@ -218,11 +216,12 @@ class MonitorService(Thread):
         # Wait for shared memory to be setup then start clients.
         self.ready.wait()
 
-        # We could start clients from the thread, but that might lead to
-        # confusing with prints/logging as napari and the clients are
-        # starting up at the exact same time. Maybe someday.
-        self._start_clients()
-        print(f"Monitor: Started {num_clients} clients.")
+        if START_CLIENTS:
+            # We could start clients from the thread, but that might lead to
+            # confusing with prints/logging as napari and the clients are
+            # starting up at the exact same time. Maybe someday.
+            self._start_clients()
+            print(f"Monitor: Started {num_clients} clients.")
 
     def _start_clients(self) -> None:
         """Start every client in our config."""

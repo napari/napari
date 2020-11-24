@@ -116,7 +116,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self._mouse_drag_gen = {}
         self._mouse_wheel_gen = {}
 
-        _start_monitor()  # Experimental monitor service.
+        _start_monitor(self.layers)  # Experimental monitor service.
 
     def __str__(self):
         """Simple string representation"""
@@ -525,9 +525,9 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         return ExperimentalNamespace(self.layers)
 
 
-def _start_monitor() -> None:
+def _start_monitor(layers: LayerList) -> None:
     """Start the monitor service if configured for it."""
     if os.getenv("NAPARI_MON") not in [None, "0"]:
-        from ..components.experimental import monitor
+        from ..components.experimental.monitor import monitor
 
-        monitor.start()
+        monitor.start(layers)
