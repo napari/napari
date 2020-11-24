@@ -3,7 +3,7 @@
 from qtpy.QtCore import QObject
 
 from ...components.camera import Camera
-from ...components.experimental import monitor
+from ...components.experimental.monitor import monitor
 
 
 class QtMonitor(QObject):
