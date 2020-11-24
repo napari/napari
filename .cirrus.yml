@@ -94,7 +94,7 @@ linux_task:
   test_pyside2_with_coverage_script: |
     QT_DEBUG_PLUGINS=1 python qt_verify.py
     if [[ $PYTEST_FLAGS == "" ]]; then
-      QT_DEBUG_PLUGINS=1 pytest -v
+      pytest -v
     fi;
 
   test_pyqt5_script:
