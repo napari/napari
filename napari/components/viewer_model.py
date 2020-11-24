@@ -1,3 +1,4 @@
+import os
 import warnings
 
 import numpy as np
@@ -114,6 +115,8 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self._persisted_mouse_event = {}
         self._mouse_drag_gen = {}
         self._mouse_wheel_gen = {}
+
+        _start_monitor()  # Experimental monitor service.
 
     def __str__(self):
         """Simple string representation"""
@@ -520,3 +523,11 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         from .experimental.commands import ExperimentalNamespace
 
         return ExperimentalNamespace(self.layers)
+
+
+def _start_monitor() -> None:
+    """Start the monitor service if configured for it."""
+    if os.getenv("NAPARI_MON") not in [None, "0"]:
+        from ..components.experimental import monitor
+
+        monitor.start()
