@@ -34,50 +34,92 @@ class MonitorApi:
     # returned by manager.get_queue actually has items in it.
     _queue = Queue()
 
-    def get_queue():
+    @staticmethod
+    def _get_queue():
         """Can't use a lambda or manager will try to pickle it."""
         return MonitorApi._queue
 
     def __init__(self, layers: LayerList):
-        self.commands = MonitorCommands(layers)
+        self._commands = MonitorCommands(layers)
+        self._pid = os.getpid()
 
-        # We need to register these before the instance of
-        # SharedMemoryManager is create inside MonitorService.
-        SharedMemoryManager.register(
-            'command_queue', callable=MonitorApi.get_queue
-        )
+        # We need to register all our callbacks before we create our
+        # instance of SharedMemoryManager. Callbacks generally return
+        # objects that SyncManager can create proxy objects for.
+        #
+        # SharedMemoryManager is derived from BaseManager, but it has
+        # similar functionality to SyncManager.
+        SharedMemoryManager.register('command_queue', callable=self._get_queue)
 
-        # Set once a manager is assigned.
-        self.command_queue = None
+        # These are set in our start_manager().
+        self._manager = None
+        self._command_queue = None
 
-    def set_manager(self, manager: SharedMemoryManager) -> None:
-        """Set the shared manager we will get values from.
+    def start_manager(self) -> SharedMemoryManager:
+        """Start our SharedMemoryManager and return it.
 
-        Parameters
-        ----------
-        manager : SharedMemoryManager
-            Get values from this manager.
+        Return
+        ------
+        SharedMemoryManager
+            Our manager.
         """
-        # Now that there is a manager, we can get the proxy object.
-        self.command_queue = manager.command_queue()
+        self._manager = SharedMemoryManager(
+            address=('127.0.0.1', 0), authkey=str.encode('napari')
+        )
+        self._manager.start()
+
+        # Now we have queue.
+        self._command_queue = self._manager.command_queue()
+
+        return self._manager
 
     def poll(self):
-        """Poll the shared dict for new commands."""
-        if self.command_queue is None:
+        """Poll the MonitorApi for new commands, etc."""
+        if self._command_queue is None:
             return  # Nothing to poll yet.
+
+        self._process_commands()
+
+    def _process_commands(self) -> None:
+        """Process every new command in the queue."""
 
         while True:
             try:
-                command = self.command_queue.get_nowait()
+                command = self._command_queue.get_nowait()
+
+                if not isinstance(command, dict):
+                    self._log("ignoring non-dict command {command}")
+                    continue
+
                 self._process_command(command)
             except Empty:
                 return  # No commands to process.
 
     def _process_command(self, command: dict):
-        for command, args in command.items():
-            method = getattr(self.commands, command)
-            method(args)
+        """Process this one command from the remote client.
+
+        Parameters
+        ----------
+        command : dict
+            The remote command.
+        """
+        # Every top-level key in the dict should be a method in our
+        # MonitorCommands class.
+        for name, args in command.items():
+            try:
+                method = getattr(self._commands, name)
+                method(args)
+            except AttributeError:
+                self._log(f"command not found {command}")
 
     def _log(self, msg: str) -> None:
-        # print for now but change to logging
-        print(f"MonitorApi: process={os.getpid()} {msg}")
+        """Log a message.
+
+        This is a print for now. But we should switch to logging.
+
+        Parameters
+        ----------
+        msg : str
+            The message to log.
+        """
+        print(f"MonitorApi: process={self._pid} {msg}")

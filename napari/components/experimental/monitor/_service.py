@@ -112,10 +112,9 @@ and ShareableList.
 import base64
 import copy
 import json
+import os
 import subprocess
-import time
 from multiprocessing.managers import SharedMemoryManager
-from threading import Event, Thread
 
 # If False we don't start any clients, for debugging.
 START_CLIENTS = True
@@ -161,13 +160,11 @@ def _start_client(args, client_config) -> None:
     """
     env = {"NAPARI_MON_CLIENT": _base64_json(client_config)}
 
-    print(f"Monitor: starting client {args}")
-
     # Use Popen to run and do not wait for it to finish.
     subprocess.Popen(args, env=env)
 
 
-class MonitorService(Thread):
+class MonitorService:
     """Make data available to a client via shared memory.
 
     We are using JSON via ShareableList for prototyping with small amounts
@@ -176,64 +173,52 @@ class MonitorService(Thread):
     do not use JSON for "lots" of data.
     """
 
-    def __init__(self, config):
+    def __init__(self, config: dict, manager: SharedMemoryManager):
         super().__init__()
-        self.config = config
-
-        # self._api = MonitorApi(None)
-
-        self.manager = SharedMemoryManager(
-            address=('127.0.0.1', 0), authkey=str.encode('napari')
-        )
-        self.manager.start()
-
-        # We asked for port 0 which means the OS will pick a port, we
-        # save it off so we can send it the clients are starting up.
-        self.server_port = self.manager.address[1]
-
-        print(f"Monitor: listening on port {self.server_port}")
-
-        # Right now JSON from clients is written into here. Hopefully this
-        # will go away if we start using the BaseManager callback feature.
-        self.from_client = {}
+        self._config = config
+        self._manager = manager
+        self._pid = os.getpid()
 
         # Anyone can add to data with our self.add_data() then once per
         # frame we encode it into JSON and write into the shared list.
-        self.data = {}
+        #
+        # Using JSON and a shared list slot might be replaced by
+        # SyncManager objects. But it was a quick way to get started.
+        # And quite fast really.
+        self._data = {}
         self.frame_number = 0
 
-        # We create the shared list in the thread.
-        self.shared_list = None
-
-        # Start our thread.
-        num_clients = len(self.config['clients'])
-        print(f"Monitor: Starting with {num_clients} clients.")
-        self.ready = Event()
-        self.start()
-
-        # Wait for shared memory to be setup then start clients.
-        self.ready.wait()
+        # We expect to have more shared memory resources soon, but right
+        # now it's just this shared list.
+        self.shared_list = self._create_shared_list()
 
         if START_CLIENTS:
-            # We could start clients from the thread, but that might lead to
-            # confusing with prints/logging as napari and the clients are
-            # starting up at the exact same time. Maybe someday.
             self._start_clients()
-            print(f"Monitor: Started {num_clients} clients.")
 
     def _start_clients(self) -> None:
         """Start every client in our config."""
+        # We asked for port 0 which means the OS will pick a port, we
+        # save it off so we can send it the clients are starting up.
+        server_port = self._manager.address[1]
+        self._log("listening on port {self.server_port}")
+
+        num_clients = len(self._config['clients'])
+        self._log(f"starting {num_clients} clients.")
 
         # Every client gets the same config, stuff in current values.
         client_config = copy.deepcopy(client_config_template)
         client_config['shared_list_name'] = self.shared_list.shm.name
-        client_config['server_port'] = self.server_port
+        client_config['server_port'] = server_port
 
-        for args in self.config['clients']:
+        # Start every client.
+        for args in self._config['clients']:
+            self._log(f"starting client {args}")
             _start_client(args, client_config)
 
-    def run(self) -> None:
-        """Setup shared memory and wait."""
+        self._log(f"started {num_clients} clients.")
+
+    def _create_shared_list(self) -> None:
+        """Create our shared list."""
         # Create placeholder so we reserve the space. Probably not the best
         # way to pass JSON but it works. See shared memory with numpy
         # for much more powerful options or all types including strings.
@@ -243,21 +228,13 @@ class MonitorService(Thread):
         # FRAME_NUMBER = 0
         # FROM_NAPARI = 1
         slots = [self.frame_number, buffer_str, buffer_str]
-        self.shared_list = self.manager.ShareableList(slots)
+        shared_list = self._manager.ShareableList(slots)
 
-        # Poll once so slots have at least valid empty JSON.
-        self.poll()
-
-        # All good.
-        self.ready.set()
-
-        # We don't really need a thread right now, but maybe?
-        time.sleep(10000000)
+        return shared_list
 
     def poll(self) -> None:
-        """Shuttle data from/to napari."""
-        # Post accumulated data from napari.
-        self.shared_list[FROM_NAPARI] = json.dumps(self.data)
+        """Write accumulated data into shared memory."""
+        self.shared_list[FROM_NAPARI] = json.dumps(self._data)
 
         # Update the frame number so clients know something changed.
         self.frame_number += 1
@@ -265,13 +242,20 @@ class MonitorService(Thread):
 
     def add_data(self, data) -> None:
         """Add data, combined data will be posted once per frame."""
-        self.data.update(data)
-
-    def get_shared_name(self) -> None:
-        """Wait and then return the shared name."""
-        self.ready.wait()
-        return self.shared_name
+        self._data.update(data)
 
     def stop(self) -> None:
         """Stop the shared memory service."""
-        self.manager.shutdown()
+        self._manager.shutdown()
+
+    def _log(self, msg: str) -> None:
+        """Log a message.
+
+        This is a print for now. But we should switch to logging.
+
+        Parameters
+        ----------
+        msg : str
+            The message to log.
+        """
+        print(f"MonitorService: process={self._pid} {msg}")

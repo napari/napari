@@ -142,16 +142,24 @@ class Monitor:
         from ._api import MonitorApi
         from ._service import MonitorService
 
-        # Create the API first so it can register our callbacks.
+        # Create the API first. It will register our callbacks, then
+        # we start the manager that will serve those callbacks.
         self._api = MonitorApi(layers)
-        self._service = MonitorService(config)
+        manager = self._api.start_manager()
 
-        # API needs the manager to fetch shared data.
-        self._api.set_manager(self._service.manager)
+        # Now we can start our service.
+        self._service = MonitorService(config, manager)
+
         return True  # We started the service.
 
     def get(self) -> 'Optional[MonitorService]':
-        """Return the MonitorService instance if it was started."""
+        """Return the MonitorService instance if it was started.
+
+        Return
+        ------
+        Optional[MonitorService]
+            The running service, if there is one.
+        """
         return self._service
 
     def poll(self):
