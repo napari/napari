@@ -60,16 +60,20 @@ linux_task:
   name: linux ${PY_VER}
 
   container:
-    image: gcc:latest
+    image: ubuntu:latest
 
   env:
     PATH: $HOME/conda/bin:$PATH
+    TZ: America/Los_Angeles
     DISPLAY: ":99"
     CODECOV_TOKEN: ENCRYPTED[be41b51dac12576cfe9889ddd604d1f9db97cee5db0d98f7241fc8d5adf8d23da1135cd67e20b2ecec4005ac03083286]
 
   system_script:
+    - ln -snf /usr/share/zoneinfo/$TZ /etc/localtime && echo $TZ > /etc/timezone
     - apt-get update
     - apt-get install -y libgl1-mesa-glx xvfb libqt5x11extras5 herbstluftwm
+    - apt-get install -y libgl1-mesa-glx xvfb libqt5x11extras5 herbstluftwm curl git gcc
+    - apt-get install -y libdbus-1-3 libxkbcommon-x11-0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-randr0 libxcb-render-util0 libxcb-xinerama0 libxcb-xinput0 libxcb-xfixes0
 
   conda_script:
     - curl -L https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh > install.sh
@@ -97,9 +101,6 @@ linux_task:
     - python -m pip install --retries 3 --upgrade pip
     - python -m pip install --retries 3 -r requirements/test.txt $PIP_FLAGS
     - python -m pip install --retries 3 pytest-cov codecov
-    # Needed due to failing 5.15.2 on Linux
-    # See https://github.com/napari/napari/pull/1925
-    - python -m pip install --retries 3 PySide2==5.15.1
     - python tools/minreq.py  # no-op if MIN_REQ is not set
     - python -m pip install -e .[pyside2] $PIP_FLAGS
 
