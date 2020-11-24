@@ -50,6 +50,7 @@ linux_task:
 
   env:
     PATH: $HOME/conda/bin:$PATH
+    TZ: America/Los_Angeles
     DISPLAY: ":99"
     CODECOV_TOKEN: ENCRYPTED[be41b51dac12576cfe9889ddd604d1f9db97cee5db0d98f7241fc8d5adf8d23da1135cd67e20b2ecec4005ac03083286]
 
