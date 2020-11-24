@@ -2,7 +2,7 @@
 """
 from qtpy.QtWidgets import QVBoxLayout, QWidget
 
-from ....components.experimental import monitor
+from ....components.experimental.monitor import monitor
 from ....layers.image import Image
 from ....layers.image.experimental.octree_image import OctreeImage
 from .qt_frame_rate import QtFrameRate
