@@ -2,7 +2,6 @@
 """
 from qtpy.QtWidgets import QStackedWidget
 
-from ....components.experimental import monitor
 from ....components.viewer_model import ViewerModel
 from .qt_render import QtRender
 
@@ -49,8 +48,6 @@ class QtRenderContainer(QStackedWidget):
         self.viewer.layers.events.inserted.connect(self._add)
         self.viewer.layers.events.removed.connect(self._remove)
         self.viewer.events.active_layer.connect(self._display)
-
-        monitor.start()  # Shared memory monitor
 
     def _display(self, event):
         """Change the displayed controls to be those of the target layer.

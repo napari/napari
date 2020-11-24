@@ -393,7 +393,8 @@ class QtFrameRate(QLabel):
         if use_delta:
             delta_seconds = now - self._last_time
 
-            monitor.add({"frame_time": delta_seconds})
+            if monitor:
+                monitor.add({"frame_time": delta_seconds})
 
             self.leds.set_peak(now, delta_seconds)
 
