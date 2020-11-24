@@ -29,10 +29,6 @@ linux_task:
   matrix:
     env:
       PY_VER: "3.7"
-      PYTEST_FLAGS: ""
-      PIP_FLAGS: ""
-    env:
-      PY_VER: "3.7"
       MIN_REQ: "1"
       # needed for NumPy 1.16 compatibility with dask arrays; see:
       # https://github.com/napari/napari/pull/1617#issuecomment-692372655
@@ -43,16 +39,6 @@ linux_task:
       PYTEST_FLAGS: ""
       PIP_FLAGS: ""
     env:
-      PY_VER: "3.8"
-      PYTEST_FLAGS: --perfmon-only
-      NAPARI_PERFMON: "1"
-      PIP_FLAGS: ""
-    env:
-      PY_VER: "3.8"
-      PYTEST_FLAGS: --async_only
-      NAPARI_ASYNC: "1"
-      PIP_FLAGS: ""
-    env:
       # Early warning signal if upcoming dependency releases will break napari
       PY_VER: "3.8"
       PIP_FLAGS: "--pre"
@@ -60,7 +46,7 @@ linux_task:
   name: linux ${PY_VER}
 
   container:
-      image: ubuntu:bionic
+    image: gcc:latest
 
   env:
     PATH: $HOME/conda/bin:$PATH
@@ -69,7 +55,7 @@ linux_task:
 
   system_script:
     - apt-get update
-    - apt-get install -y libgl1-mesa-glx xvfb libqt5x11extras5 herbstluftwm curl
+    - apt-get install -y libgl1-mesa-glx xvfb libqt5x11extras5 herbstluftwm
 
   conda_script:
     - curl -L https://repo.continuum.io/miniconda/Miniconda3-latest-Linux-x86_64.sh > install.sh
