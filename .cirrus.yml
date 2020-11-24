@@ -90,10 +90,8 @@ linux_task:
     - conda list
     - python -c "import napari; print(napari.__version__)"
 
-  test_qt_app_run:
-    QT_DEBUG_PLUGINS=1 python qt_verify.py
-
   test_pyside2_with_coverage_script: |
+    QT_DEBUG_PLUGINS=1 python qt_verify.py
     if [[ $PYTEST_FLAGS == "" ]]; then
       QT_DEBUG_PLUGINS=1 pytest -v
     fi;
