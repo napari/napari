@@ -90,7 +90,7 @@ linux_task:
     - conda list
     - python -c "import napari; print(napari.__version__)"
 
-  qt_app_run:
+  test_qt_app_run:
     QT_DEBUG_PLUGINS=1 python qt_verify.py
 
   test_pyside2_with_coverage_script: |
