@@ -70,7 +70,6 @@ The list has just two entries right now. With these indexes:
 
     FRAME_NUMBER = 0
     FROM_NAPARI = 1
-    TO_NAPARI = 2
 
 The client can check shared_list[FRAME_NUMBER] for the integer frame
 number. If it sees a new number, it can decode the string in
@@ -148,7 +147,6 @@ BUFFER_SIZE = 1024 * 1024
 # it's an easy way to prototype.
 FRAME_NUMBER = 0
 FROM_NAPARI = 1
-TO_NAPARI = 2
 
 
 def _start_client(args, client_config) -> None:
@@ -241,10 +239,9 @@ class MonitorService(Thread):
         # for much more powerful options or all types including strings.
         buffer_str = "{}" + " " * BUFFER_SIZE
 
-        # These are our three shared memory slots.
+        # These are our two shared memory slots.
         # FRAME_NUMBER = 0
         # FROM_NAPARI = 1
-        # TO_NAPARI = 2
         slots = [self.frame_number, buffer_str, buffer_str]
         self.shared_list = self.manager.ShareableList(slots)
 
@@ -262,21 +259,7 @@ class MonitorService(Thread):
         # Post accumulated data from napari.
         self.shared_list[FROM_NAPARI] = json.dumps(self.data)
 
-        # Get new data from clients.
-        json_str = self.shared_list[TO_NAPARI].rstrip()
-        if len(json_str) > 3:
-            print(f"Monitor: from client: {json_str}")
-
-        try:
-            self.from_client = json.loads(json_str)
-        except json.decoder.JSONDecodeError:
-            print(f"Monitor: error parsing json: {json_str}")
-
-        if self.from_client:
-            print(f"Monitor: data from clients: {json_str}")
-
         # Update the frame number so clients know something changed.
-        # Better would be a queue they can wait on?
         self.frame_number += 1
         self.shared_list[FRAME_NUMBER] = self.frame_number
 

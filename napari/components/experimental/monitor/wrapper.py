@@ -108,8 +108,8 @@ class Monitor:
     def __init__(self):
         # Both are set when start() is called, and only if we have
         # a parseable config file, have Python 3.9, etc.
-        self.service = None
-        self.api = None
+        self._service = None
+        self._api = None
 
     def __nonzero__(self):
         """Return True if the service is running.
@@ -119,7 +119,7 @@ class Monitor:
             if monitor:
                 monitor.add(...)
         """
-        return self.service is not None
+        return self._service is not None
 
     def start(self, layers: LayerList) -> bool:
         """Start the monitor service, if it hasn't been started already.
@@ -129,7 +129,7 @@ class Monitor:
         bool
             True if we started the service or it was already started.
         """
-        if self.service is not None:
+        if self._service is not None:
             return True  # It was already started.
 
         config = _get_monitor_config()
@@ -144,16 +144,21 @@ class Monitor:
 
         # Create the API first so it can register our callbacks.
         self._api = MonitorApi(layers)
-        self.service = MonitorService(config)
+        self._service = MonitorService(config)
+
+        # API needs the manager to fetch shared data.
+        self._api.set_manager(self._service.manager)
+        return True  # We started the service.
 
     def get(self) -> 'Optional[MonitorService]':
         """Return the MonitorService instance if it was started."""
-        return self.service
+        return self._service
 
     def poll(self):
         """Poll the monitor service if it was started."""
-        if self.service is not None:
-            self.service.poll()
+        if self._service is not None:
+            self._service.poll()
+            self._api.poll()
 
     def add(self, data):
         """Add data to the monitor service.
@@ -165,8 +170,8 @@ class Monitor:
         If they do not want to waste time create the input dict unless
         the service is running.
         """
-        if self.service is not None:
-            self.service.add_data(data)
+        if self._service is not None:
+            self._service.add_data(data)
 
 
 monitor = Monitor()
