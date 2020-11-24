@@ -82,7 +82,7 @@ linux_task:
   install_script:
     - python -m pip install --retries 3 --upgrade pip
     - python -m pip install --retries 3 -r requirements/test.txt $PIP_FLAGS
-    - python -m pip install --retries 3 pytest-cov codecov pytest-xvfb
+    - python -m pip install --retries 3 pytest-cov codecov
     - python tools/minreq.py  # no-op if MIN_REQ is not set
     - python -m pip install -e .[pyside2] $PIP_FLAGS
 
