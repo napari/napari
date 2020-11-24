@@ -66,7 +66,7 @@ linux_task:
     - conda install -y python=$PY_VER
 
   # https://github.com/cirruslabs/cirrus-ci-docs/issues/97
-  # xvfb_start_background_script: Xvfb $DISPLAY -ac -screen 0 1024x768x24
+  xvfb_start_background_script: Xvfb $DISPLAY -ac -screen 0 1024x768x24
   # https://pytest-qt.readthedocs.io/en/latest/troubleshooting.html#xvfb-assertionerror-timeouterror-when-using-waituntil-waitexposed-and-ui-events
   herbstluftwm_start_background_script: herbstluftwm
 
@@ -90,9 +90,12 @@ linux_task:
     - conda list
     - python -c "import napari; print(napari.__version__)"
 
+  qt_app_run:
+    QT_DEBUG_PLUGINS=1 python qt_verify.py
+
   test_pyside2_with_coverage_script: |
     if [[ $PYTEST_FLAGS == "" ]]; then
-      QT_DEBUG_PLUGINS=1 pytest -v 
+      QT_DEBUG_PLUGINS=1 pytest -v
     fi;
 
   test_pyqt5_script:
