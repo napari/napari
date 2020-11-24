@@ -5,6 +5,7 @@ from multiprocessing.managers import SharedMemoryManager
 from queue import Empty, Queue
 
 from ...layerlist import LayerList
+from ._commands import MonitorCommands
 
 
 class MonitorApi:
@@ -13,10 +14,19 @@ class MonitorApi:
     There is only one API command right now:
         command_queue
 
-    Which returned a Queue() that the client can add "commands" to which
-    we'll process when we are polled. The SharedMemoryManager provides the
-    same proxy objects as SyncManager including Queue, but also dict, list
-    and others. See the docs for multiprocessing.managers.SyncManager.
+    The commands returneds a Queue() proxy object that the client can add
+    "commands" to which we'll process when we are polled.
+
+    The SharedMemoryManager provides the same proxy objects as SyncManager
+    including Queue, but also dict, list and others. So we can add more
+    commands with more/different types of objects.
+
+    See the docs for multiprocessing.managers.SyncManager.
+
+    Parameters
+    ----------
+    Layer : LayerList
+        The viewer's layers.
     """
 
     # This can't be an attribute of MonitorApi or the manager will try to
@@ -29,8 +39,7 @@ class MonitorApi:
         return MonitorApi._queue
 
     def __init__(self, layers: LayerList):
-        self._log("starting")
-        self.layers = None
+        self.commands = MonitorCommands(layers)
 
         # We need to register these before the instance of
         # SharedMemoryManager is create inside MonitorService.
@@ -57,17 +66,17 @@ class MonitorApi:
         if self.command_queue is None:
             return  # Nothing to poll yet.
 
-        self._log("Checking command queue")
         while True:
             try:
                 command = self.command_queue.get_nowait()
                 self._process_command(command)
             except Empty:
-                self._log("EMPTY")
-                return
+                return  # No commands to process.
 
     def _process_command(self, command: dict):
-        self._log(f"command={command}")
+        for command, args in command.items():
+            method = getattr(self.commands, command)
+            method(args)
 
     def _log(self, msg: str) -> None:
         # print for now but change to logging
