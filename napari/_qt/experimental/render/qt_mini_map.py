@@ -193,7 +193,6 @@ class QtMiniMap(QLabel):
 
     def update(self) -> None:
         """Update the minimap to show latest intersection."""
-        # This actually performs the intersection, but it's very fast.
         intersection = self.layer.get_intersection()
 
         if intersection is not None:
