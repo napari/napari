@@ -32,7 +32,11 @@ class GridCanvas:
 
         # Events:
         self.events = EmitterGroup(
-            source=self, auto_connect=True, update=None,
+            source=self,
+            auto_connect=True,
+            enabled=None,
+            stride=None,
+            shape=None,
         )
 
         self._enabled = enabled
@@ -47,7 +51,7 @@ class GridCanvas:
     @enabled.setter
     def enabled(self, enabled):
         self._enabled = enabled
-        self.events.update()
+        self.events.enabled()
 
     @property
     def shape(self):
@@ -57,7 +61,7 @@ class GridCanvas:
     @shape.setter
     def shape(self, shape):
         self._shape = tuple(shape)
-        self.events.update()
+        self.events.shape()
 
     @property
     def stride(self):
@@ -67,7 +71,7 @@ class GridCanvas:
     @stride.setter
     def stride(self, stride):
         self._stride = stride
-        self.events.update()
+        self.events.stride()
 
     def actual_shape(self, nlayers=1):
         """Return the actual shape of the grid.
