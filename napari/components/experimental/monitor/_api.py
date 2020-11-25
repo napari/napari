@@ -1,11 +1,14 @@
-"""Monitor API.
+"""MonitorApi class.
 """
+import logging
 import os
 from multiprocessing.managers import SharedMemoryManager
 from queue import Empty, Queue
 
 from ...layerlist import LayerList
 from ._commands import MonitorCommands
+
+LOGGER = logging.getLogger("napari.monitor")
 
 
 class MonitorApi:
@@ -14,12 +17,12 @@ class MonitorApi:
     There is only one API command right now:
         command_queue
 
-    The commands returneds a Queue() proxy object that the client can add
-    "commands" to which we'll process when we are polled.
+    The command_queue function returneds a Queue() proxy object that the
+    client can add "commands". We process these commands when polled.
 
     The SharedMemoryManager provides the same proxy objects as SyncManager
-    including Queue, but also dict, list and others. So we can add more
-    commands with more/different types of objects.
+    including Queue, dict, list and many others. So we can add other
+    API's that return other shared resources.
 
     See the docs for multiprocessing.managers.SyncManager.
 
@@ -31,15 +34,17 @@ class MonitorApi:
 
     # This can't be an attribute of MonitorApi or the manager will try to
     # pickle it. Note this instance does not get updated. Only the proxy
-    # returned by manager.get_queue actually has items in it.
+    # returned by by the manager has items in it.
     _queue = Queue()
 
     @staticmethod
-    def _get_queue():
-        """Can't use a lambda or manager will try to pickle it."""
+    def _get_queue() -> Queue:
+        """Static method since can't use lambda, it can't be pickled."""
         return MonitorApi._queue
 
     def __init__(self, layers: LayerList):
+        # We expect there's a MonitorCommands method for every command
+        # that we pull out of the queue.
         self._commands = MonitorCommands(layers)
         self._pid = os.getpid()
 
@@ -88,7 +93,7 @@ class MonitorApi:
                 command = self._command_queue.get_nowait()
 
                 if not isinstance(command, dict):
-                    self._log("ignoring non-dict command {command}")
+                    LOGGER.warning("Command was not a dict: %s", command)
                     continue
 
                 self._process_command(command)
@@ -103,23 +108,19 @@ class MonitorApi:
         command : dict
             The remote command.
         """
+        LOGGER.info("Processing command: %s", command)
+
         # Every top-level key in the dict should be a method in our
-        # MonitorCommands class.
+        # MonitorCommands class. For example if the dict is:
+        #
+        #     { "set_grid": True }
+        #
+        # Then we'll call self._commands.set_grid(True)
+        #
         for name, args in command.items():
             try:
                 method = getattr(self._commands, name)
+                LOGGER.info("Calling MonitorCommands.%s(%s)", name, args)
                 method(args)
             except AttributeError:
-                self._log(f"command not found {command}")
-
-    def _log(self, msg: str) -> None:
-        """Log a message.
-
-        This is a print for now. But we should switch to logging.
-
-        Parameters
-        ----------
-        msg : str
-            The message to log.
-        """
-        print(f"MonitorApi: process={self._pid} {msg}")
+                LOGGER.error("MonitorCommands.%s does not exist.", name)

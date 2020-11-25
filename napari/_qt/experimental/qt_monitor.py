@@ -35,10 +35,12 @@ class QtMonitor(QObject):
         self.timer.timeout.connect(self._on_timer)
         self.timer.start()
 
-    def _on_camera_move(self, _event) -> None:
+    @staticmethod
+    def _on_camera_move(_event) -> None:
         """Called when camera was moved."""
         monitor.poll()
 
-    def _on_timer(self) -> None:
+    @staticmethod
+    def _on_timer() -> None:
         """Called every POLL_INTERVAL_MS milliseconds."""
         monitor.poll()

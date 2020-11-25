@@ -1,10 +1,13 @@
-"""Global monitor server.
+"""Monitor class.
 
-The global "monitor" object will be None unless NAPARI_MON points to a
-parsesable config file and we are running under Python 3.9 or newer.
+The Monitor class wraps the MonitorServer and MonitorApi. One reason
+for having a wrapper class is that so the rest of napari does not
+need to import any multiprocessing code unless actually using
+the monitor.
 """
 import errno
 import json
+import logging
 import os
 import sys
 from pathlib import Path
@@ -14,6 +17,8 @@ from ...layerlist import LayerList
 
 if TYPE_CHECKING:
     from ._service import MonitorService
+
+LOGGER = logging.getLogger("napari.monitor")
 
 # If False monitor is disabled even if we meet all other requirements.
 ENABLE_MONITOR = True
@@ -57,6 +62,30 @@ def _load_monitor_config() -> Optional[dict]:
         return None
 
     return _load_config(value)
+
+
+def _setup_logging(config: dict) -> None:
+    """Log "napari.monitor" messages to the configured file.
+
+    Parameters
+    ----------
+    config : dict
+        Monitor configuration
+    """
+    try:
+        log_path = config['log_path']
+    except KeyError:
+        return  # No log file.
+
+    # For a real server process it's probably not good form to nuke
+    # the exist log. But it's convenient for now, annoying to have
+    # to wade through many invocations of napri.
+    Path(log_path).unlink()
+
+    fh = logging.FileHandler(log_path)
+    LOGGER.addHandler(fh)
+    LOGGER.setLevel(logging.DEBUG)
+    LOGGER.info("Writing to log path %s", log_path)
 
 
 def _get_monitor_config() -> Optional[dict]:
@@ -136,6 +165,8 @@ class Monitor:
 
         if config is None:
             return False  # Can't start without config.
+
+        _setup_logging(config)
 
         # Late imports so no multiprocessing modules are even
         # imported unless we are going to start the service.
