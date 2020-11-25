@@ -87,8 +87,8 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
         self._palette = None
         self.theme = 'dark'
 
-        self.grid.events.update.connect(self.reset_view)
-        self.grid.events.update.connect(self._on_grid_change)
+        self.grid.events.connect(self.reset_view)
+        self.grid.events.connect(self._on_grid_change)
         self.dims.events.ndisplay.connect(self._update_layers)
         self.dims.events.ndisplay.connect(self.reset_view)
         self.dims.events.order.connect(self._update_layers)
