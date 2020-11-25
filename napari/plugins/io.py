@@ -47,7 +47,7 @@ def read_data_with_plugins(
     -------
     LayerData : list of tuples, or None
         LayerData that can be passed to :func:`Viewer._add_layer_from_data()
-        <napari.components.add_layers_mixin.AddLayersMixin._add_layer_from_data>`.
+        <napari.components.viewer_model.ViewerModel._add_layer_from_data>`.
         ``LayerData`` is a list tuples, where each tuple is one of
         ``(data,)``, ``(data, meta)``, or ``(data, meta, layer_type)`` .
 
