@@ -85,7 +85,7 @@ class QtViewer(QSplitter):
 
     raw_stylesheet = get_stylesheet()
 
-    def __init__(self, viewer, welcome=True):
+    def __init__(self, viewer, welcome=False):
 
         # Avoid circular import.
         from .layer_controls import QtLayerControlsContainer
