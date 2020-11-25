@@ -89,7 +89,7 @@ def _generate_view_function(layer_string: str, method_name: str = None):
     layer_string : str
         The name of the layer type
     method_name : str
-        The name of the method in Viewr to use, by default will use
+        The name of the method in Viewer to use, by default will use
         f'add_{layer_string}'
 
     Returns
