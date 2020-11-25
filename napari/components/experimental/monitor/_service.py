@@ -1,14 +1,18 @@
 """MonitorService class.
 
-Experimental shared memory monitor service:
+Experimental shared memory service.
 
 1) Creates a ShareableList with two slots:
     FRAME_NUMBER = 0
     JSON_DATA = 1
+
 2) Starts all clients specified in the config file.
-3) Anyone can call MonitorService.add_data any number of times.
-4) When poll'd the *union* of all the data is writted to slot JSON_DATA.
-   JSON string. And the frame number is incremented in slot FRAME_NUMBER.
+
+3) Anywhere in napari can call MonitorService.add_data any number of times.
+
+4) When MonitorService.poll() is called, the *union* of all the data is
+   writted to slot JSON_DATA. JSON string. And the frame number is
+   incremented in slot FRAME_NUMBER.
 
 When a shared memory client sees the frame number has incremented, it can
 grab the latest JSON from JSON_DATA.
@@ -52,16 +56,23 @@ The client configuration is:
         "server_port": "<number>"
     }
 
-The list name refers to a ShareableList, the client can connect to it like
-this:
+The client can access the ShareableList like this:
 
     shared_list = ShareableList(name=data['shared_list_name'])
 
-The server port should be used when creating a SharedMemoryManager:
+The client can access the MonitorApi by creating a SharedMemoryManager:
 
+    SharedMemoryManager.register('command_queue')
     self.manager = SharedMemoryManager(
         address=('localhost', config['server_port']),
         authkey=str.encode('napari')
+    )
+    self._commands = self._manager.command_queue()
+
+It can send command like:
+
+    self._commands.put(
+       {"test_command": {"value": 42, "names": ["fred", "joe"]}}
     )
 
 Passing Data
@@ -86,6 +97,8 @@ Future Work
 We plan to use numpy shared memory buffers /w recarray for bulk binary
 data. JSON is not appropriate for bulk data, but it was simple thing
 to start with. And is pretty fast given it's in shared memory.
+
+The JSON_DATA might be replaced with a Queue or something as well.
 """
 import base64
 import copy
