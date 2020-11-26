@@ -420,12 +420,13 @@ class ViewerModel(KeymapHandler, KeymapProvider):
             self.dims.ndim = 2
             self.dims.reset()
         else:
-            extent = self.layers.extent.world
-            ss = self.layers.extent.step
-            ndim = extent.shape[1]
+            extent = self.layers.extent
+            world = extent.world
+            ss = extent.step
+            ndim = world.shape[1]
             self.dims.ndim = ndim
             for i in range(ndim):
-                self.dims.set_range(i, (extent[0, i], extent[1, i], ss[i]))
+                self.dims.set_range(i, (world[0, i], world[1, i], ss[i]))
         self.events.layers_change()
         self._update_active_layer(event)
 
