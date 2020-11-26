@@ -2,6 +2,7 @@ import inspect
 import itertools
 import os
 import warnings
+from contextlib import contextmanager
 from functools import lru_cache
 from typing import Any, Dict, List, Optional, Sequence, Set, Union
 
@@ -415,6 +416,8 @@ class ViewerModel(KeymapHandler, KeymapProvider):
             self.active_layer = active_layer
 
     def _on_layers_change(self, event):
+        if self._block_updates:
+            return
         if len(self.layers) == 0:
             self.dims.ndim = 2
             self.dims.reset()
@@ -452,9 +455,46 @@ class ViewerModel(KeymapHandler, KeymapProvider):
 
     def _on_grid_change(self, event):
         """Arrange the current layers is a 2D grid."""
+        if self._block_updates:
+            return
         for i, layer in enumerate(self.layers[::-1]):
             i_row, i_column = self.grid.position(i, len(self.layers))
             self._subplot(layer, (i_row, i_column))
+
+    def set_block_repaint(self, block: bool):
+        """
+        Set if block repaint event. Return older state.
+
+        Parameters
+        ----------
+        block: bool
+            if block repaint event.
+        """
+        old = self._block_updates
+        self._block_updates = block
+        if not block:
+            self._on_grid_change(None)
+            self._on_layers_change(None)
+        return old
+
+    @contextmanager
+    def blocking_updates(self):
+        """
+        Allow part of updates during adding multiple layers for speedup execution.
+
+        >>> viewer = ViewerModel()
+        >>> with viewer.blocking_updates():
+        >>>     for i in range(50):
+        >>>         viewer.add_image(np.zeros((10, 10)))
+
+        """
+        old_block = self._block_updates
+        self._block_updates = True
+        yield
+        self._block_updates = old_block
+        if not old_block:
+            self._on_grid_change(None)
+            self._on_layers_change(None)
 
     def grid_view(self, n_row=None, n_column=None, stride=1):
         """Arrange the current layers is a 2D grid.
