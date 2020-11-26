@@ -2,26 +2,10 @@
 """
 from typing import List
 
-from ...._vendor.experimental.humanize.src.humanize import intword
 from ....utils.perf import block_timer
-from .octree_level import OctreeLevel
+from .octree_level import OctreeLevel, print_levels
 from .octree_tile_builder import create_downsampled_levels
 from .octree_util import SliceConfig
-
-
-def _dim_str(dim: tuple) -> None:
-    return f"{dim[0]} x {dim[1]} = {intword(dim[0] * dim[1])}"
-
-
-def _print_levels(
-    label: str, levels: List[OctreeLevel], start: int = 0
-) -> None:
-    print(f"{label} {len(levels)} levels:")
-    for i, level in enumerate(levels):
-        image_str = _dim_str(level.info.image_shape)
-        tiles_str = _dim_str(level.info.shape_in_tiles)
-        level = start + i
-        print(f"    Level {level}: {image_str} pixels -> {tiles_str} tiles")
 
 
 class Octree:
@@ -58,6 +42,7 @@ class Octree:
     """
 
     def __init__(self, slice_id: int, data, slice_config: SliceConfig):
+        self.slice_id = slice_id
         self.data = data
         self.slice_config = slice_config
 
@@ -72,23 +57,13 @@ class Octree:
                 f"Data of shape {data.shape} resulted " "no octree levels?"
             )
 
-        _print_levels("Octree input data has", self.levels)
-        original_levels = len(self.levels)
+        print_levels("Octree input data has", self.levels)
 
-        # If root level contains more than one tile, add more levels
-        # until the root does consist of a single tile.
+        # If root level contains more than one tile, add extra levels
+        # until the root does consist of a single tile. We have to do this
+        # because we cannot draw tiles larger than the standard size right now.
         if self.levels[-1].info.num_tiles > 1:
-            with block_timer("_create_additional_levels") as timer:
-                more_levels = self._create_additional_levels(slice_id)
-
-            _print_levels(
-                f"In {timer.duration_ms:.3f}ms created",
-                more_levels,
-                start=original_levels,
-            )
-            self.levels.extend(more_levels)
-
-            print(f"Tree now has {len(self.levels)} total levels.")
+            self.levels.extend(self._get_extra_levels())
 
         # Now the root should definitely contain only a single tile.
         assert self.levels[-1].info.num_tiles == 1
@@ -96,7 +71,27 @@ class Octree:
         # This now the total number of levels.
         self.num_levels = len(data)
 
-    def _create_additional_levels(self, slice_id: int) -> List[OctreeLevel]:
+    def _get_extra_levels(self) -> List[OctreeLevel]:
+        """Compute the extra levels and return them.
+
+        Return
+        ------
+        List[OctreeLevel]
+            The extra levels.
+        """
+        num_levels = len(self.levels)
+
+        with block_timer("_create_extra_levels") as timer:
+            extra_levels = self._create_extra_levels(self.slice_id)
+
+        label = f"In {timer.duration_ms:.3f}ms created"
+        print_levels(label, extra_levels, num_levels)
+
+        print(f"Tree now has {len(self.levels)} total levels.")
+
+        return extra_levels
+
+    def _create_extra_levels(self, slice_id: int) -> List[OctreeLevel]:
         """Add additional levels to the octree.
 
         Keep adding levels until we each a root level where the image

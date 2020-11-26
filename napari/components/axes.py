@@ -24,11 +24,11 @@ class Axes:
         If axes are dashed or not. If not dashed then
         all the axes are solid. If dashed then x=solid,
         y=dashed, z=dotted.
+    arrows : bool
+        If axes have arrowheads or not.
     background_color : np.ndarray
         Background color of canvas. If axes are not colored
         then they have the color opposite of this color.
-    arrows : bool
-        If axes have arrowheads or not.
     """
 
     visible: bool = False

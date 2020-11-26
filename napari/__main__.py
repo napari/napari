@@ -15,7 +15,7 @@ from textwrap import wrap
 from typing import Any, Dict, List
 
 from . import __version__, gui_qt, layers, view_path
-from .components.add_layers_mixin import valid_add_kwargs
+from .components.viewer_model import valid_add_kwargs
 from .utils import citation_text, sys_info
 
 

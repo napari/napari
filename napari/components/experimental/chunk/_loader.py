@@ -91,7 +91,7 @@ class ChunkLoader:
     """
 
     def __init__(self):
-        self.synchronous: bool = async_config.synchronous
+        self.force_synchronous: bool = async_config.force_synchronous
         self.num_workers: int = async_config.num_workers
         self.use_processes: bool = async_config.use_processes
 
@@ -216,8 +216,8 @@ class ChunkLoader:
 
         assert info.load_type == LoadType.AUTO  # AUTO is the only other type.
 
-        # If ChunkLoader is synchronous then AUTO always means synchronous.
-        if self.synchronous:
+        # If forcing synchronous then AUTO always means synchronous.
+        if self.force_synchronous:
             return True
 
         # If it's been loading "fast" then load synchronously. There's no
@@ -434,10 +434,10 @@ def synchronous_loading(enabled):
         layer = Image(data)
         ... use layer ...
     """
-    previous = chunk_loader.synchronous
-    chunk_loader.synchronous = enabled
+    previous = chunk_loader.force_synchronous
+    chunk_loader.force_synchronous = enabled
     yield
-    chunk_loader.synchronous = previous
+    chunk_loader.force_synchronous = previous
 
 
 def wait_for_async():
