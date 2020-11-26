@@ -458,8 +458,9 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         if self._block_repaint:
             return
         extent = self._sliced_extent_world
-        for i, layer in enumerate(self.layers[::-1]):
-            i_row, i_column = self.grid.position(i, len(self.layers))
+        n_layers = len(self.layers)
+        for i, layer in enumerate(self.layers):
+            i_row, i_column = self.grid.position(n_layers - 1 - i, n_layers)
             self._subplot(layer, (i_row, i_column), extent)
 
     def set_block_repaint(self, block: bool):
@@ -551,8 +552,8 @@ class ViewerModel(KeymapHandler, KeymapProvider):
             Layer that is to be moved.
         position : 2-tuple of int
             New position of layer in grid.
-        size : 2-tuple of int
-            Size of the grid that is being used.
+        extent : array, shape (2, D)
+            Extent of the world.
         """
         scene_shift = extent[1] - extent[0] + 1
         translate_2d = np.multiply(scene_shift[-2:], position)
