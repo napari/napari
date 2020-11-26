@@ -455,9 +455,10 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         """Arrange the current layers is a 2D grid."""
         if self._block_repaint:
             return
+        extent = self._sliced_extent_world
         for i, layer in enumerate(self.layers[::-1]):
             i_row, i_column = self.grid.position(i, len(self.layers))
-            self._subplot(layer, (i_row, i_column))
+            self._subplot(layer, (i_row, i_column), extent)
 
     def set_block_repaint(self, block: bool):
         """
@@ -535,7 +536,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         )
         self.grid.enabled = False
 
-    def _subplot(self, layer, position):
+    def _subplot(self, layer, position, extent):
         """Shift a layer to a specified position in a 2D grid.
 
         Parameters
@@ -547,7 +548,6 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         size : 2-tuple of int
             Size of the grid that is being used.
         """
-        extent = self._sliced_extent_world
         scene_shift = extent[1] - extent[0] + 1
         translate_2d = np.multiply(scene_shift[-2:], position)
         translate = [0] * layer.ndim
