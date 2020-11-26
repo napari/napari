@@ -111,6 +111,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         self.layers.events.inserted.connect(self._on_grid_change)
         self.layers.events.removed.connect(self._on_grid_change)
         self.layers.events.reordered.connect(self._on_grid_change)
+        self.layers.events.inserted.connect(self._on_add_layer)
         self.layers.events.inserted.connect(self._on_layers_change)
         self.layers.events.removed.connect(self._on_layers_change)
         self.layers.events.reordered.connect(self._on_layers_change)
@@ -452,8 +453,10 @@ class ViewerModel(KeymapHandler, KeymapProvider):
 
     def _on_grid_change(self, event):
         """Arrange the current layers is a 2D grid."""
-        for i, layer in enumerate(self.layers[::-1]):
-            i_row, i_column = self.grid.position(i, len(self.layers))
+        for i, layer in enumerate(self.layers):
+            i_row, i_column = self.grid.position(
+                len(self.layers) - 1 - i, len(self.layers)
+            )
             self._subplot(layer, (i_row, i_column))
 
     def grid_view(self, n_row=None, n_column=None, stride=1):
@@ -534,6 +537,35 @@ class ViewerModel(KeymapHandler, KeymapProvider):
 
         return ExperimentalNamespace(self.layers)
 
+    def _on_add_layer(self, event):
+        """Add a layer to the viewer.
+
+        Parameters
+        ----------
+        layer : :class:`napari.layers.Layer`
+            Layer to add.
+
+        Returns
+        -------
+        layer : :class:`napari.layers.Layer` or list
+            The layer that was added (same as input).
+        """
+        layer = event.value
+        layer.events.select.connect(self._update_active_layer)
+        layer.events.deselect.connect(self._update_active_layer)
+        layer.events.interactive.connect(self._update_interactive)
+        layer.events.cursor.connect(self._update_cursor)
+        layer.events.cursor_size.connect(self._update_cursor_size)
+        layer.events.data.connect(self._on_layers_change)
+        layer.name = self.layers._coerce_name(layer.name, layer)
+        layer.events.name.connect(self.layers._update_name)
+        layer.selected = True
+        self.layers.unselect_all(ignore=layer)
+        self._update_layers(layers=[layer])
+
+        if len(self.layers) == 1:
+            self.reset_view()
+
     def add_layer(self, layer: layers.Layer) -> layers.Layer:
         """Add a layer to the viewer.
 
@@ -547,21 +579,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         layer : :class:`napari.layers.Layer` or list
             The layer that was added (same as input).
         """
-        layer.events.select.connect(self._update_active_layer)
-        layer.events.deselect.connect(self._update_active_layer)
-        layer.events.interactive.connect(self._update_interactive)
-        layer.events.cursor.connect(self._update_cursor)
-        layer.events.cursor_size.connect(self._update_cursor_size)
-        layer.events.data.connect(self._on_layers_change)
-        layer.name = self.layers._coerce_name(layer.name, layer)
-        layer.events.name.connect(self.layers._update_name)
-        layer.selected = True
         self.layers.append(layer)
-        self.layers.unselect_all(ignore=layer)
-        self._update_layers(layers=[layer])
-
-        if len(self.layers) == 1:
-            self.reset_view()
         return layer
 
     def add_image(
