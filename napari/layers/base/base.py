@@ -292,6 +292,7 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
         self.events = EmitterGroup(
             source=self,
             auto_connect=False,
+            event_added=self._connect_event,
             refresh=Event,
             set_data=Event,
             blending=Event,
@@ -329,6 +330,14 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
             ),
         )
         self.name = name
+
+    def _connect_event(self, name, emitter):
+        if name in {"status"}:
+            return
+        emitter.connect(self.clean_cache)
+
+    def clean_cache(self, event):
+        self._extent_cache = None
 
     def __str__(self):
         """Return self.name."""
@@ -698,12 +707,13 @@ class Layer(KeymapProvider, MousemapProvider, ABC):
     @property
     def extent(self) -> Extent:
         """Extent of layer in data and world coordinates."""
-        data = self._extent_data
-        return Extent(
-            data=data,
-            world=self._get_extent_world(data),
-            step=abs(self._data_to_world.scale),
-        )
+        if self._extent_cache is None:
+            self._extent_cache = Extent(
+                data=self._extent_data,
+                world=self._extent_world,
+                step=abs(self.scale),
+            )
+        return self._extent_cache
 
     @property
     def _slice_indices(self):

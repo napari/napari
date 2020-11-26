@@ -841,6 +841,7 @@ class EmitterGroup(EventEmitter):
         self,
         source: Any = None,
         auto_connect: bool = True,
+        event_added=None,
         **emitters: Union[Type[Event], EventEmitter, None],
     ):
         EventEmitter.__init__(self, source)
@@ -850,6 +851,7 @@ class EmitterGroup(EventEmitter):
         self._emitters: Dict[str, EventEmitter] = dict()
         # whether the sub-emitters have been connected to the group:
         self._emitters_connected: bool = False
+        self._event_added = event_added
         self.add(**emitters)  # type: ignore
 
     def __getattr__(self, name) -> EventEmitter:
@@ -944,6 +946,9 @@ class EmitterGroup(EventEmitter):
                 and hasattr(self.source, self.auto_connect_format % name)
             ):
                 emitter.connect((self.source, self.auto_connect_format % name))
+
+            if self._event_added:
+                self._event_added(name, emitter)
 
             # If emitters are connected to the group already, then this one
             # should be connected as well.
