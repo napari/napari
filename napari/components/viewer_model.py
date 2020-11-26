@@ -419,12 +419,13 @@ class ViewerModel(KeymapHandler, KeymapProvider):
             self.dims.ndim = 2
             self.dims.reset()
         else:
-            extent = self.layers.extent.world
-            ss = self.layers.extent.step
-            ndim = extent.shape[1]
+            extent = self.layers.extent
+            world = extent.world
+            ss = extent.step
+            ndim = world.shape[1]
             self.dims.ndim = ndim
             for i in range(ndim):
-                self.dims.set_range(i, (extent[0, i], extent[1, i], ss[i]))
+                self.dims.set_range(i, (world[0, i], world[1, i], ss[i]))
         self.events.layers_change()
         self._update_active_layer(event)
 
@@ -452,9 +453,11 @@ class ViewerModel(KeymapHandler, KeymapProvider):
 
     def _on_grid_change(self, event):
         """Arrange the current layers is a 2D grid."""
-        for i, layer in enumerate(self.layers[::-1]):
-            i_row, i_column = self.grid.position(i, len(self.layers))
-            self._subplot(layer, (i_row, i_column))
+        extent = self._sliced_extent_world
+        n_layers = len(self.layers)
+        for i, layer in enumerate(self.layers):
+            i_row, i_column = self.grid.position(n_layers - 1 - i, n_layers)
+            self._subplot(layer, (i_row, i_column), extent)
 
     def grid_view(self, n_row=None, n_column=None, stride=1):
         """Arrange the current layers is a 2D grid.
@@ -505,7 +508,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         )
         self.grid.enabled = False
 
-    def _subplot(self, layer, position):
+    def _subplot(self, layer, position, extent):
         """Shift a layer to a specified position in a 2D grid.
 
         Parameters
@@ -516,8 +519,9 @@ class ViewerModel(KeymapHandler, KeymapProvider):
             New position of layer in grid.
         size : 2-tuple of int
             Size of the grid that is being used.
+        extent : array, shape (2, D)
+            Extent of the world.
         """
-        extent = self._sliced_extent_world
         scene_shift = extent[1] - extent[0] + 1
         translate_2d = np.multiply(scene_shift[-2:], position)
         translate = [0] * layer.ndim
