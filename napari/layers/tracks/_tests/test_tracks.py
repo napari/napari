@@ -57,10 +57,11 @@ def test_track_layer_data():
     assert np.all(layer.data == data)
 
 
-def test_track_layer_data_nonzero_time():
-    """Test data with time not starting at zero."""
+@pytest.mark.parametrize("time", [np.arange(100, 200), np.arange(100, 300, 2)])
+def test_track_layer_data_nonzero_time(time):
+    """Test data with sparse time stamps or not starting at zero."""
     data = np.zeros((100, 4))
-    data[:, 1] = np.arange(100, 200)
+    data[:, 1] = time
     layer = Tracks(data)
     assert np.all(layer.data == data)
 
