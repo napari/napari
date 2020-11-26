@@ -174,12 +174,18 @@ class Monitor:
         # Create the API first. It will register our callbacks, then
         # we start the manager that will serve those callbacks.
         self._api = MonitorApi(layers)
-        manager = self._api.start_manager()
 
         # Now we can start our service.
-        self._service = MonitorService(config, manager)
+        self._service = MonitorService(config, self._api.manager)
 
         return True  # We started the service.
+
+    def stop(self) -> None:
+        """Stop the monitor service."""
+        if self._service is not None:
+            self._api.stop()
+            self._service.stop()
+            self._service = None
 
     def get(self) -> 'Optional[MonitorService]':
         """Return the MonitorService instance if it was started.

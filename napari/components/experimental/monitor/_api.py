@@ -4,6 +4,7 @@ import logging
 import os
 from multiprocessing.managers import SharedMemoryManager
 from queue import Empty, Queue
+from threading import Event
 
 from ...layerlist import LayerList
 from ._commands import MonitorCommands
@@ -14,17 +15,27 @@ LOGGER = logging.getLogger("napari.monitor")
 class MonitorApi:
     """The API that monitor clients can access.
 
-    There is only one API command right now:
+    We expose these API commands to the client:
+        shutdown_event
         command_queue
 
-    The command_queue function returneds a Queue() proxy object that the
-    client can add "commands". We process these commands when polled.
+    shutdown_event -> Event()
+        Signaled when napari is shutting down.
 
+    command_queue -> Queue()
+        Client can put "commands" on this queue.
+
+    MonitorApi will execute the commands when it is polled.
+
+    Notes
+    -----
     The SharedMemoryManager provides the same proxy objects as SyncManager
-    including Queue, dict, list and many others. So we can add other
-    API's that return other shared resources.
+    including list, dict, Barrier, BoundedSemaphore, Condition, Event,
+    Lock, Namespace, Queue, RLock, Semaphore, Array, Value.
 
-    See the docs for multiprocessing.managers.SyncManager.
+    SharedMemoryManager is derived from BaseManager, but it has similar
+    functionality to SyncManager. See the docs for
+    multiprocessing.managers.SyncManager.
 
     Parameters
     ----------
@@ -32,14 +43,18 @@ class MonitorApi:
         The viewer's layers.
     """
 
-    # This can't be an attribute of MonitorApi or the manager will try to
-    # pickle it. Note this instance does not get updated. Only the proxy
-    # returned by by the manager has items in it.
+    # These can't be an attribute of MonitorApi or the manager will try to
+    # pickle them. These instances are NOT updated. Only the proxies returned
+    # by the manager are.
+    _event = Event()
     _queue = Queue()
 
     @staticmethod
+    def _get_event() -> Event:
+        return MonitorApi._event
+
+    @staticmethod
     def _get_queue() -> Queue:
-        """Static method since can't use lambda, it can't be pickled."""
         return MonitorApi._queue
 
     def __init__(self, layers: LayerList):
@@ -51,38 +66,32 @@ class MonitorApi:
         # We need to register all our callbacks before we create our
         # instance of SharedMemoryManager. Callbacks generally return
         # objects that SyncManager can create proxy objects for.
-        #
-        # SharedMemoryManager is derived from BaseManager, but it has
-        # similar functionality to SyncManager.
+        SharedMemoryManager.register(
+            'shutdown_event', callable=self._get_event
+        )
         SharedMemoryManager.register('command_queue', callable=self._get_queue)
 
-        # These are set in our start_manager().
-        self._manager = None
-        self._command_queue = None
-
-    def start_manager(self) -> SharedMemoryManager:
-        """Start our SharedMemoryManager and return it.
-
-        Return
-        ------
-        SharedMemoryManager
-            Our manager.
-        """
         self._manager = SharedMemoryManager(
             address=('127.0.0.1', 0), authkey=str.encode('napari')
         )
         self._manager.start()
 
-        # Now we have queue.
+        # Now we have these proxy objects.
+        self._shutdown_event = self._manager.shutdown_event()
         self._command_queue = self._manager.command_queue()
 
+    @property
+    def manager(self) -> SharedMemoryManager:
+        """Our shared memory manager."""
         return self._manager
+
+    def stop(self) -> None:
+        """Notify clients we are shutting down."""
+        self._shutdown_event.set()
 
     def poll(self):
         """Poll the MonitorApi for new commands, etc."""
-        if self._command_queue is None:
-            return  # Nothing to poll yet.
-
+        assert self._manager is not None
         self._process_commands()
 
     def _process_commands(self) -> None:

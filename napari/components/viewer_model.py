@@ -526,7 +526,7 @@ class ViewerModel(AddLayersMixin, KeymapHandler, KeymapProvider):
 
 
 def _start_monitor(layers: LayerList) -> None:
-    """Start the monitor service if configured for it."""
+    """Start the monitor service if configured to use it."""
     if os.getenv("NAPARI_MON") not in [None, "0"]:
         from ..components.experimental.monitor import monitor
 
