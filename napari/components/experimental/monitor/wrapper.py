@@ -77,9 +77,7 @@ def _setup_logging(config: dict) -> None:
     except KeyError:
         return  # No log file.
 
-    # For a real server process it's probably not good form to nuke
-    # the exist log. But it's convenient for now, annoying to have
-    # to wade through many invocations of napri.
+    # Nuke/reset log for now.
     Path(log_path).unlink()
 
     fh = logging.FileHandler(log_path)
