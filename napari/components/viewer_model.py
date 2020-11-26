@@ -493,6 +493,8 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         self._block_repaint = True
         yield
         self._block_repaint = old_block
+        if not old_block:
+            self._on_grid_change(None)
 
     def grid_view(self, n_row=None, n_column=None, stride=1):
         """Arrange the current layers is a 2D grid.
