@@ -57,6 +57,14 @@ def test_track_layer_data():
     assert np.all(layer.data == data)
 
 
+def test_track_layer_data_nonzero_time():
+    """Test data with time not starting at zero."""
+    data = np.zeros((100, 4))
+    data[:, 1] = np.arange(100, 200)
+    layer = Tracks(data)
+    assert np.all(layer.data == data)
+
+
 def test_track_layer_data_flipped():
     """Test data flipped."""
     data = np.zeros((100, 4))
