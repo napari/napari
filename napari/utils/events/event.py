@@ -518,9 +518,8 @@ class EventEmitter(object):
             for cb in rem:
                 self.disconnect(cb)
         finally:
-            pass
-            # if event._pop_source() != self.source:
-            #     raise RuntimeError("Event source-stack mismatch.")
+            if event._pop_source() != self.source:
+                raise RuntimeError("Event source-stack mismatch.")
 
         return event
 
