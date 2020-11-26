@@ -461,9 +461,9 @@ class ViewerModel(KeymapHandler, KeymapProvider):
             i_row, i_column = self.grid.position(i, len(self.layers))
             self._subplot(layer, (i_row, i_column))
 
-    def set_block_repaint(self, block: bool):
+    def set_block_updates(self, block: bool):
         """
-        Set if block repaint event. Return older state.
+        Set if block part of expensive updates. Return older state.
 
         Parameters
         ----------
