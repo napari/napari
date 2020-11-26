@@ -14,7 +14,7 @@ def test_random_labels():
     layer = Labels(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    assert layer.shape == shape
+    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape)
     assert layer._data_view.shape == shape[-2:]
     assert layer.editable is True
 
@@ -26,7 +26,7 @@ def test_all_zeros_labels():
     layer = Labels(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    assert layer.shape == shape
+    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape)
     assert layer._data_view.shape == shape[-2:]
 
 
@@ -38,7 +38,7 @@ def test_3D_labels():
     layer = Labels(data)
     assert np.all(layer.data == data)
     assert layer.ndim == len(shape)
-    assert layer.shape == shape
+    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape)
     assert layer._data_view.shape == shape[-2:]
     assert layer.editable is True
 
@@ -59,7 +59,7 @@ def test_changing_labels():
     layer.data = data_b
     assert np.all(layer.data == data_b)
     assert layer.ndim == len(shape_b)
-    assert layer.shape == shape_b
+    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape_b)
     assert layer._data_view.shape == shape_b[-2:]
 
 
@@ -75,7 +75,7 @@ def test_changing_labels_dims():
     layer.data = data_b
     assert np.all(layer.data == data_b)
     assert layer.ndim == len(shape_b)
-    assert layer.shape == shape_b
+    np.testing.assert_array_equal(layer.extent.data[1] + 1, shape_b)
     assert layer._data_view.shape == shape_b[-2:]
 
 
