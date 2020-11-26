@@ -417,6 +417,8 @@ class ViewerModel(KeymapHandler, KeymapProvider):
             self.active_layer = active_layer
 
     def _on_layers_change(self, event):
+        if self._block_repaint:
+            return
         if len(self.layers) == 0:
             self.dims.ndim = 2
             self.dims.reset()
@@ -476,6 +478,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         self._block_repaint = block
         if not block:
             self._on_grid_change(None)
+            self._on_layers_change(None)
         return old
 
     @contextmanager
@@ -495,6 +498,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         self._block_repaint = old_block
         if not old_block:
             self._on_grid_change(None)
+            self._on_layers_change(None)
 
     def grid_view(self, n_row=None, n_column=None, stride=1):
         """Arrange the current layers is a 2D grid.
