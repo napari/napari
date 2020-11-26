@@ -2,6 +2,7 @@ import inspect
 import itertools
 import os
 import warnings
+from contextlib import contextmanager
 from functools import lru_cache
 from typing import Any, Dict, List, Optional, Sequence, Set, Union
 
@@ -476,6 +477,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
             self._on_grid_change(None)
         return old
 
+    @contextmanager
     def blocking_repaint(self):
         """
         Allow blocking repaint event until all new data points are add.
@@ -486,7 +488,10 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         >>>         viewer.add_image(np.zeros((10, 10)))
 
         """
-        return RepaintBlock(self)
+        old_block = self._block_repaint
+        self._block_repaint = True
+        yield
+        self._block_repaint = old_block
 
     def grid_view(self, n_row=None, n_column=None, stride=1):
         """Arrange the current layers is a 2D grid.
@@ -1194,15 +1199,3 @@ for _layer in (
 ):
     func = create_add_method(_layer)
     setattr(ViewerModel, func.__name__, func)
-
-
-class RepaintBlock:
-    def __init__(self, viewer: ViewerModel):
-        self.viewer = viewer
-        self.blocked = False
-
-    def __enter__(self):
-        self.blocked = self.viewer.set_block_repaint(True)
-
-    def __exit__(self, exc_type, value, traceback):
-        self.viewer.set_block_repaint(self.blocked)
