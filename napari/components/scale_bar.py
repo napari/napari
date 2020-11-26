@@ -32,7 +32,7 @@ class ScaleBar:
     """
 
     visible: bool = False
-    colored: bool = True
+    colored: bool = False
     ticks: bool = True
     position: Property[Position, str, Position] = Position.BOTTOM_RIGHT
     background_color: Property[
