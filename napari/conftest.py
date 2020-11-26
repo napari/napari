@@ -336,7 +336,7 @@ def configure_loading(request):
 @pytest.fixture(autouse=True)
 def skip_sync_only(request):
     """Skip tests depending on our sync/async settings."""
-    async_mode = not chunk_loader.synchronous
+    async_mode = not chunk_loader.force_synchronous
     sync_only_test = request.node.get_closest_marker('sync_only')
     if async_mode and sync_only_test:
         pytest.skip("running with --async_only")
