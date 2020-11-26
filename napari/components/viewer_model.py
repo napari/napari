@@ -128,6 +128,7 @@ class ViewerModel(KeymapHandler, KeymapProvider):
         self._persisted_mouse_event = {}
         self._mouse_drag_gen = {}
         self._mouse_wheel_gen = {}
+        self._block_updates = False
 
     def __str__(self):
         """Simple string representation"""
