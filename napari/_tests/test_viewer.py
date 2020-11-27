@@ -1,4 +1,5 @@
 import os
+import platform
 
 import numpy as np
 import pytest
@@ -209,3 +210,37 @@ def test_toggling_scale_bar(make_test_viewer):
     # Make scale bar not visible
     viewer.scale_bar.visible = False
     assert not viewer.scale_bar.visible
+
+
+@pytest.mark.skipif(platform.system() != "Windows", reason="Windows specific")
+def test_windows_grouping_overwrite(make_test_viewer):
+    import ctypes
+
+    class OwnViewer(Viewer):
+        _napari_app_id = "custom_string"
+
+    make_test_viewer(viewer_class=OwnViewer)
+
+    assert (
+        OwnViewer._napari_app_id
+        == ctypes.windll.shell32.GetCurrentProcessExplicitAppUserModelID()
+    )
+
+    make_test_viewer()
+
+    assert (
+        Viewer._napari_app_id
+        == ctypes.windll.shell32.GetCurrentProcessExplicitAppUserModelID()
+    )
+
+    ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("test_text")
+
+    class OwnViewer2(Viewer):
+        _napari_app_id = ""
+
+    make_test_viewer(viewer_class=OwnViewer2)
+
+    assert (
+        "test_text"
+        == ctypes.windll.shell32.GetCurrentProcessExplicitAppUserModelID()
+    )

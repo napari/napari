@@ -98,11 +98,11 @@ def qtbot(qtbot):
 def make_test_viewer(qtbot, request):
     viewers: List[Viewer] = []
 
-    def actual_factory(*model_args, **model_kwargs):
+    def actual_factory(*model_args, viewer_class=Viewer, **model_kwargs):
         model_kwargs['show'] = model_kwargs.pop(
             'show', request.config.getoption("--show-viewer")
         )
-        viewer = Viewer(*model_args, **model_kwargs)
+        viewer = viewer_class(*model_args, **model_kwargs)
         viewers.append(viewer)
         return viewer
 
