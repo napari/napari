@@ -255,7 +255,7 @@ class Layer(KeymapProvider, ABC):
         self._name = ''
         self.events = EmitterGroup(
             source=self,
-            auto_connect=True,
+            auto_connect=False,
             refresh=Event,
             set_data=Event,
             blending=Event,
