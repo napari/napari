@@ -400,10 +400,11 @@ def test_labels_painting(make_test_viewer):
     assert screenshot[:, :, :2].max() > 0
 
 
+@pytest.mark.skip("Welcome visual temporarily disabled")
 @skip_on_win_ci
 @skip_local_popups
 def test_welcome(make_test_viewer):
-    """Test that something appears when axes become visible."""
+    """Test that something visible on launch."""
     viewer = make_test_viewer(show=True)
 
     # Check something is visible
