@@ -1,8 +1,11 @@
+from typing import Tuple
+
 import numpy as np
 
-from ..utils.events import EmitterGroup
+from ..utils.events.dataclass import Property, dataclass
 
 
+@dataclass(events=True, properties=True)
 class GridCanvas:
     """Grid for canvas.
 
@@ -11,67 +14,24 @@ class GridCanvas:
 
     Attributes
     ----------
-    events : EmitterGroup
-        Event emitter group
     enabled : bool
         If grid is enabled or not.
-    shape : 2-tuple of int
-        Number of rows and columns in the grid. A value of -1 for either or
-        both of will be used the row and column numbers will trigger an
-        auto calculation of the necessary grid shape to appropriately fill
-        all the layers at the appropriate stride.
     stride : int
         Number of layers to place in each grid square before moving on to
         the next square. The default ordering is to place the most visible
         layer in the top left corner of the grid. A negative stride will
         cause the order in which the layers are placed in the grid to be
         reversed.
+    shape : 2-tuple of int
+        Number of rows and columns in the grid. A value of -1 for either or
+        both of will be used the row and column numbers will trigger an
+        auto calculation of the necessary grid shape to appropriately fill
+        all the layers at the appropriate stride.
     """
 
-    def __init__(self, *, shape=(-1, -1), stride=1, enabled=False):
-
-        # Events:
-        self.events = EmitterGroup(
-            source=self,
-            auto_connect=True,
-            enabled=None,
-            stride=None,
-            shape=None,
-        )
-
-        self._enabled = enabled
-        self._stride = stride
-        self._shape = shape
-
-    @property
-    def enabled(self):
-        """bool: If grid is enabled or not."""
-        return self._enabled
-
-    @enabled.setter
-    def enabled(self, enabled):
-        self._enabled = enabled
-        self.events.enabled()
-
-    @property
-    def shape(self):
-        """2-tuple of int: Number of rows and columns in the grid."""
-        return self._shape
-
-    @shape.setter
-    def shape(self, shape):
-        self._shape = tuple(shape)
-        self.events.shape()
-
-    @property
-    def stride(self):
-        """int: Number of layers in each grid square."""
-        return self._stride
-
-    @stride.setter
-    def stride(self, stride):
-        self._stride = stride
-        self.events.stride()
+    enabled: bool = False
+    stride: int = 1
+    shape: Property[Tuple, None, tuple] = (-1, -1)
 
     def actual_shape(self, nlayers=1):
         """Return the actual shape of the grid.
