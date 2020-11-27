@@ -26,8 +26,8 @@ class MonitorCommands:
     This is kind of a crude event or call back system. It proves we can
     receive and execute commands from remote clients. Probably we want
     something integrated with our event system? Something so the code
-    processing commands can be distributed throughout the system and not
-    centralized.
+    processing commands can be distributed throughout the system and is not
+    centralized here.
     """
 
     def __init__(self, layers: LayerList):

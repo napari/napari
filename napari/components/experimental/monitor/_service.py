@@ -100,35 +100,20 @@ to start with. And is pretty fast given it's in shared memory.
 
 The JSON_DATA might be replaced with a Queue or something as well.
 """
-import base64
 import copy
-import json
 import logging
 import subprocess
 from multiprocessing.managers import SharedMemoryManager
 
-from ._utils import numpy_dumps
+from ._utils import base64_encoded_json, numpy_dumps
 
 LOGGER = logging.getLogger("napari.monitor")
 
 # If False we don't start any clients, for debugging.
 START_CLIENTS = True
 
-
-def _base64_json(data: dict) -> str:
-    """Return base64 encoded version of this data as JSON.
-
-    data : dict
-        The data to write as JSON then base64 encode.
-    """
-    json_str = json.dumps(data)
-    json_bytes = json_str.encode('ascii')
-    message_bytes = base64.b64encode(json_bytes)
-    return message_bytes.decode('ascii')
-
-
-# We send this to the client when it starts. So it can attach to our shared
-# memory among other things. We insert the real <name>.
+# We pass the data in this template to each client as an encoded
+# NAPARI_MON_CLIENT environment variable.
 client_config_template = {
     "shared_list_name": "<name>",
     "server_port": "<number>",
@@ -137,26 +122,9 @@ client_config_template = {
 # Create empty string of this size up front, since cannot grow it.
 BUFFER_SIZE = 1024 * 1024
 
-# Slots in our ShareableList, this is probably not a good system, but
-# it's an easy way to prototype.
+# Slots in our ShareableList.
 FRAME_NUMBER = 0
 JSON_DATA = 1
-
-
-def _start_client(args, client_config) -> None:
-    """Start this one client, pass the config as an env variable.
-
-    Parameters
-    ----------
-    args : List[str]
-        The path of the client and any arguments.
-    client_config : dict
-        The data to pass the client.
-    """
-    env = {"NAPARI_MON_CLIENT": _base64_json(client_config)}
-
-    # Use Popen to run and do not wait for it to finish.
-    subprocess.Popen(args, env=env)
 
 
 class MonitorService:
@@ -203,11 +171,14 @@ class MonitorService:
         client_config = copy.deepcopy(client_config_template)
         client_config['shared_list_name'] = self.shared_list.shm.name
         client_config['server_port'] = server_port
+        env = {"NAPARI_MON_CLIENT": base64_encoded_json(client_config)}
 
         # Start every client.
         for args in self._config['clients']:
             LOGGER.info("Starting client %s", args)
-            _start_client(args, client_config)
+
+            # Use Popen to run and not wait for the process to finish.
+            subprocess.Popen(args, env=env)
 
         LOGGER.info("Started %d clients.", num_clients)
 

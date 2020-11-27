@@ -1,5 +1,6 @@
 """Monitor Utilities.
 """
+import base64
 import json
 
 import numpy as np
@@ -8,10 +9,10 @@ import numpy as np
 class NumpyJSONEncoder(json.JSONEncoder):
     """A JSONEncoder that also converts ndarray's to lists."""
 
-    def default(self, obj):
-        if isinstance(obj, np.ndarray):
-            return obj.tolist()
-        return json.JSONEncoder.default(self, obj)
+    def default(self, o):
+        if isinstance(o, np.ndarray):
+            return o.tolist()
+        return json.JSONEncoder.default(self, o)
 
 
 def numpy_dumps(data: dict) -> str:
@@ -23,3 +24,15 @@ def numpy_dumps(data: dict) -> str:
         The JSON string.
     """
     return json.dumps(data, cls=NumpyJSONEncoder)
+
+
+def base64_encoded_json(data: dict) -> str:
+    """Return base64 encoded version of this data as JSON.
+
+    data : dict
+        The data to write as JSON then base64 encode.
+    """
+    json_str = numpy_dumps(data)
+    json_bytes = json_str.encode('ascii')
+    message_bytes = base64.b64encode(json_bytes)
+    return message_bytes.decode('ascii')
