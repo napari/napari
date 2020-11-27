@@ -9,7 +9,7 @@ from ._viewer_constants import Position
 class ScaleBar:
     """Scale bar indicating size in world coordinates.
 
-    Parameters
+    Attributes
     ----------
     visible : bool
         If scale bar is visible or not.
