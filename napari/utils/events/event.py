@@ -59,7 +59,6 @@ import weakref
 from collections import OrderedDict
 from typing import Any
 
-from vispy.ext.six import string_types
 from vispy.util.logs import _handle_exception, logger
 
 
@@ -380,7 +379,7 @@ class EventEmitter(object):
                     ref = callback.__class__.__name__
             else:
                 ref = None
-        elif not isinstance(ref, string_types):
+        elif not isinstance(ref, str):
             raise TypeError('ref must be a bool or string')
         if ref is not None and ref in self._callback_refs:
             raise ValueError('ref "%s" is not unique' % ref)
@@ -519,9 +518,8 @@ class EventEmitter(object):
             for cb in rem:
                 self.disconnect(cb)
         finally:
-            pass
-            # if event._pop_source() != self.source:
-            #     raise RuntimeError("Event source-stack mismatch.")
+            if event._pop_source() != self.source:
+                raise RuntimeError("Event source-stack mismatch.")
 
         return event
 
